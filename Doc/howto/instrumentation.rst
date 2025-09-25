@@ -22,6 +22,13 @@ known as "probes", that can be observed by a DTrace or SystemTap script,
 making it easier to monitor what the CPython processes on a system are
 doing.
 
+.. note::
+
+   As of Python 3.12, the ``function__entry``, ``function__return``, and ``line``
+   probes have been removed due to the implementation of :pep:`669` (Low Impact
+   Monitoring for CPython). The remaining available probes focus on garbage
+   collection, module imports, and audit events.
+
 .. impl-detail::
 
    DTrace markers are implementation details of the CPython interpreter.
@@ -57,18 +64,15 @@ On macOS, you can list available DTrace probes by running a Python
 process in the background and listing all probes made available by the
 Python provider::
 
-   $ python3.6 -q &
-   $ sudo dtrace -l -P python$!  # or: dtrace -l -m python3.6
+   $ python3.12 -q &
+   $ sudo dtrace -l -P python$!  # or: dtrace -l -m python3.12
 
       ID   PROVIDER            MODULE                          FUNCTION NAME
-   29564 python18035        python3.6          _PyEval_EvalFrameDefault function-entry
-   29565 python18035        python3.6             dtrace_function_entry function-entry
-   29566 python18035        python3.6          _PyEval_EvalFrameDefault function-return
-   29567 python18035        python3.6            dtrace_function_return function-return
-   29568 python18035        python3.6                           collect gc-done
-   29569 python18035        python3.6                           collect gc-start
-   29570 python18035        python3.6          _PyEval_EvalFrameDefault line
-   29571 python18035        python3.6                 maybe_dtrace_line line
+   29568 python18035        python3.12                          collect gc-done
+   29569 python18035        python3.12                          collect gc-start
+   29570 python18035        python3.12                          import import-find-load-start
+   29571 python18035        python3.12                          import import-find-load-done
+   29572 python18035        python3.12                          audit audit
 
 On Linux, you can verify if the SystemTap static markers are present in
 the built binary by seeing if it contains a ".note.stapsdt" section.
@@ -113,14 +117,19 @@ Sufficiently modern readelf can print the metadata::
             Arguments: -8@%rax
         stapsdt              0x00000045          NT_STAPSDT (SystemTap probe descriptors)
             Provider: python
-            Name: function__entry
+            Name: import__find__load__start
             Location: 0x000000000053db6c, Base: 0x0000000000630ce2, Semaphore: 0x00000000008d6be8
-            Arguments: 8@%rbp 8@%r12 -4@%eax
+            Arguments: 8@%rbp
         stapsdt              0x00000046          NT_STAPSDT (SystemTap probe descriptors)
             Provider: python
-            Name: function__return
+            Name: import__find__load__done
             Location: 0x000000000053dba8, Base: 0x0000000000630ce2, Semaphore: 0x00000000008d6bea
-            Arguments: 8@%rbp 8@%r12 -4@%eax
+            Arguments: 8@%rbp 8@%r12
+        stapsdt              0x00000047          NT_STAPSDT (SystemTap probe descriptors)
+            Provider: python
+            Name: audit
+            Location: 0x000000000053dba8, Base: 0x0000000000630ce2, Semaphore: 0x00000000008d6bec
+            Arguments: 8@%rbp 8@%r12
 
 The above metadata contains information for SystemTap describing how it
 can patch strategically placed machine code instructions to enable the
@@ -130,71 +139,54 @@ tracing hooks used by a SystemTap script.
 Static DTrace probes
 --------------------
 
-The following example DTrace script can be used to show the call/return
-hierarchy of a Python script, only tracing within the invocation of
-a function called "start". In other words, import-time function
-invocations are not going to be listed:
+The following example DTrace script can be used to monitor garbage collection
+activity in a Python script:
 
 .. code-block:: none
 
-    self int indent;
-
-    python$target:::function-entry
-    /copyinstr(arg1) == "start"/
+    python$target:::gc-start
     {
-            self->trace = 1;
+            printf("%d: GC started (generation %d)\n", timestamp, arg0);
     }
 
-    python$target:::function-entry
-    /self->trace/
+    python$target:::gc-done
     {
-            printf("%d\t%*s:", timestamp, 15, probename);
-            printf("%*s", self->indent, "");
-            printf("%s:%s:%d\n", basename(copyinstr(arg0)), copyinstr(arg1), arg2);
-            self->indent++;
+            printf("%d: GC completed (%d objects collected)\n", timestamp, arg0);
     }
 
-    python$target:::function-return
-    /self->trace/
+    python$target:::import-find-load-start
     {
-            self->indent--;
-            printf("%d\t%*s:", timestamp, 15, probename);
-            printf("%*s", self->indent, "");
-            printf("%s:%s:%d\n", basename(copyinstr(arg0)), copyinstr(arg1), arg2);
+            printf("%d: Import started: %s\n", timestamp, copyinstr(arg0));
     }
 
-    python$target:::function-return
-    /copyinstr(arg1) == "start"/
+    python$target:::import-find-load-done
     {
-            self->trace = 0;
+            printf("%d: Import %s: %s\n", timestamp,
+                   arg1 ? "successful" : "failed", copyinstr(arg0));
+    }
+
+    python$target:::audit
+    {
+            printf("%d: Audit event: %s\n", timestamp, copyinstr(arg0));
     }
 
 It can be invoked like this::
 
-  $ sudo dtrace -q -s call_stack.d -c "python3.6 script.py"
+  $ sudo dtrace -q -s monitoring.d -c "python3.12 script.py"
 
 The output looks like this:
 
 .. code-block:: none
 
-    156641360502280  function-entry:call_stack.py:start:23
-    156641360518804  function-entry: call_stack.py:function_1:1
-    156641360532797  function-entry:  call_stack.py:function_3:9
-    156641360546807 function-return:  call_stack.py:function_3:10
-    156641360563367 function-return: call_stack.py:function_1:2
-    156641360578365  function-entry: call_stack.py:function_2:5
-    156641360591757  function-entry:  call_stack.py:function_1:1
-    156641360605556  function-entry:   call_stack.py:function_3:9
-    156641360617482 function-return:   call_stack.py:function_3:10
-    156641360629814 function-return:  call_stack.py:function_1:2
-    156641360642285 function-return: call_stack.py:function_2:6
-    156641360656770  function-entry: call_stack.py:function_3:9
-    156641360669707 function-return: call_stack.py:function_3:10
-    156641360687853  function-entry: call_stack.py:function_4:13
-    156641360700719 function-return: call_stack.py:function_4:14
-    156641360719640  function-entry: call_stack.py:function_5:18
-    156641360732567 function-return: call_stack.py:function_5:21
-    156641360747370 function-return:call_stack.py:start:28
+    156641360502280: Import started: sys
+    156641360518804: Import successful: sys
+    156641360532797: Import started: os
+    156641360546807: Import successful: os
+    156641360563367: GC started (generation 0)
+    156641360578365: GC completed (15 objects collected)
+    156641360591757: Audit event: open
+    156641360605556: Import started: json
+    156641360617482: Import successful: json
 
 
 Static SystemTap markers
@@ -204,53 +196,53 @@ The low-level way to use the SystemTap integration is to use the static
 markers directly.  This requires you to explicitly state the binary file
 containing them.
 
-For example, this SystemTap script can be used to show the call/return
-hierarchy of a Python script:
+For example, this SystemTap script can be used to monitor module imports
+and garbage collection in a Python script:
 
 .. code-block:: none
 
-   probe process("python").mark("function__entry") {
-        filename = user_string($arg1);
-        funcname = user_string($arg2);
-        lineno = $arg3;
-
-        printf("%s => %s in %s:%d\\n",
-               thread_indent(1), funcname, filename, lineno);
+   probe process("python").mark("import__find__load__start") {
+        modulename = user_string($arg1);
+        printf("%s Import started: %s\\n",
+               ctime(gettimeofday_s()), modulename);
    }
 
-   probe process("python").mark("function__return") {
-       filename = user_string($arg1);
-       funcname = user_string($arg2);
-       lineno = $arg3;
+   probe process("python").mark("import__find__load__done") {
+       modulename = user_string($arg1);
+       found = $arg2;
+       printf("%s Import %s: %s\\n",
+              ctime(gettimeofday_s()),
+              found ? "successful" : "failed", modulename);
+   }
 
-       printf("%s <= %s in %s:%d\\n",
-              thread_indent(-1), funcname, filename, lineno);
+   probe process("python").mark("gc__start") {
+       generation = $arg1;
+       printf("%s GC started (generation %d)\\n",
+              ctime(gettimeofday_s()), generation);
+   }
+
+   probe process("python").mark("gc__done") {
+       collected = $arg1;
+       printf("%s GC completed (%d objects collected)\\n",
+              ctime(gettimeofday_s()), collected);
    }
 
 It can be invoked like this::
 
    $ stap \
-     show-call-hierarchy.stp \
+     monitor-python.stp \
      -c "./python test.py"
 
-The output looks like this:
+The output shows import and garbage collection activity:
 
 .. code-block:: none
 
-   11408 python(8274):        => __contains__ in Lib/_abcoll.py:362
-   11414 python(8274):         => __getitem__ in Lib/os.py:425
-   11418 python(8274):          => encode in Lib/os.py:490
-   11424 python(8274):          <= encode in Lib/os.py:493
-   11428 python(8274):         <= __getitem__ in Lib/os.py:426
-   11433 python(8274):        <= __contains__ in Lib/_abcoll.py:366
-
-where the columns are:
-
-- time in microseconds since start of script
-- name of executable
-- PID of process
-
-and the remainder indicates the call/return hierarchy as the script executes.
+   Mon Sep 26 10:15:23 2025 Import started: sys
+   Mon Sep 26 10:15:23 2025 Import successful: sys
+   Mon Sep 26 10:15:23 2025 Import started: os
+   Mon Sep 26 10:15:23 2025 Import successful: os
+   Mon Sep 26 10:15:24 2025 GC started (generation 0)
+   Mon Sep 26 10:15:24 2025 GC completed (15 objects collected)
 
 For a :option:`--enable-shared` build of CPython, the markers are contained within the
 libpython shared library, and the probe's dotted path needs to reflect this. For
@@ -264,9 +256,9 @@ should instead read:
 
 .. code-block:: none
 
-   probe process("python").library("libpython3.6dm.so.1.0").mark("function__entry") {
+   probe process("python").library("libpython3.12dm.so.1.0").mark("gc__start") {
 
-(assuming a :ref:`debug build <debug-build>` of CPython 3.6)
+(assuming a :ref:`debug build <debug-build>` of CPython 3.12)
 
 
 .. _static-markers:
@@ -274,37 +266,12 @@ should instead read:
 Available static markers
 ------------------------
 
-.. object:: function__entry(str filename, str funcname, int lineno)
+.. note::
 
-   This marker indicates that execution of a Python function has begun.
-   It is only triggered for pure-Python (bytecode) functions.
-
-   The filename, function name, and line number are provided back to the
-   tracing script as positional arguments, which must be accessed using
-   ``$arg1``, ``$arg2``, ``$arg3``:
-
-       * ``$arg1`` : ``(const char *)`` filename, accessible using ``user_string($arg1)``
-
-       * ``$arg2`` : ``(const char *)`` function name, accessible using
-         ``user_string($arg2)``
-
-       * ``$arg3`` : ``int`` line number
-
-.. object:: function__return(str filename, str funcname, int lineno)
-
-   This marker is the converse of :c:func:`!function__entry`, and indicates that
-   execution of a Python function has ended (either via ``return``, or via an
-   exception).  It is only triggered for pure-Python (bytecode) functions.
-
-   The arguments are the same as for :c:func:`!function__entry`
-
-.. object:: line(str filename, str funcname, int lineno)
-
-   This marker indicates a Python line is about to be executed.  It is
-   the equivalent of line-by-line tracing with a Python profiler.  It is
-   not triggered within C functions.
-
-   The arguments are the same as for :c:func:`!function__entry`.
+   The ``function__entry``, ``function__return``, and ``line`` markers were
+   removed in Python 3.12 due to the implementation of :pep:`669` (Low Impact
+   Monitoring for CPython). For function-level monitoring, consider using
+   Python's built-in profiling tools or the new monitoring APIs instead.
 
 .. object:: gc__start(int generation)
 
@@ -348,89 +315,121 @@ The higher-level way to use the SystemTap integration is to use a "tapset":
 SystemTap's equivalent of a library, which hides some of the lower-level
 details of the static markers.
 
-Here is a tapset file, based on a non-shared build of CPython:
+Here is a tapset file for the available markers, based on a non-shared build of CPython:
 
 .. code-block:: none
 
     /*
-       Provide a higher-level wrapping around the function__entry and
-       function__return markers:
-     \*/
-    probe python.function.entry = process("python").mark("function__entry")
+       Provide higher-level wrapping around the remaining Python markers
+     */
+    probe python.gc.start = process("python").mark("gc__start")
     {
-        filename = user_string($arg1);
-        funcname = user_string($arg2);
-        lineno = $arg3;
-        frameptr = $arg4
+        generation = $arg1;
     }
-    probe python.function.return = process("python").mark("function__return")
+    probe python.gc.done = process("python").mark("gc__done")
     {
-        filename = user_string($arg1);
-        funcname = user_string($arg2);
-        lineno = $arg3;
-        frameptr = $arg4
+        collected = $arg1;
+    }
+    probe python.import.start = process("python").mark("import__find__load__start")
+    {
+        modulename = user_string($arg1);
+    }
+    probe python.import.done = process("python").mark("import__find__load__done")
+    {
+        modulename = user_string($arg1);
+        found = $arg2;
+    }
+    probe python.audit = process("python").mark("audit")
+    {
+        event = user_string($arg1);
     }
 
 If this file is installed in SystemTap's tapset directory (e.g.
 ``/usr/share/systemtap/tapset``), then these additional probepoints become
 available:
 
-.. object:: python.function.entry(str filename, str funcname, int lineno, frameptr)
+.. object:: python.gc.start(int generation)
 
-   This probe point indicates that execution of a Python function has begun.
-   It is only triggered for pure-Python (bytecode) functions.
+   This probe point indicates that garbage collection has started for the
+   specified generation.
 
-.. object:: python.function.return(str filename, str funcname, int lineno, frameptr)
+.. object:: python.gc.done(int collected)
 
-   This probe point is the converse of ``python.function.return``, and
-   indicates that execution of a Python function has ended (either via
-   ``return``, or via an exception).  It is only triggered for pure-Python
-   (bytecode) functions.
+   This probe point indicates that garbage collection has completed,
+   with the number of objects collected.
+
+.. object:: python.import.start(str modulename)
+
+   This probe point indicates that module import has started.
+
+.. object:: python.import.done(str modulename, int found)
+
+   This probe point indicates that module import has completed,
+   with a flag indicating success or failure.
+
+.. object:: python.audit(str event)
+
+   This probe point fires when an audit event occurs.
 
 
 Examples
 --------
-This SystemTap script uses the tapset above to more cleanly implement the
-example given above of tracing the Python function-call hierarchy, without
-needing to directly name the static markers:
+This SystemTap script uses the tapset above to monitor Python import and
+garbage collection activity:
 
 .. code-block:: none
 
-    probe python.function.entry
+    probe python.import.start
     {
-      printf("%s => %s in %s:%d\n",
-             thread_indent(1), funcname, filename, lineno);
+      printf("%s Import starting: %s\n",
+             ctime(gettimeofday_s()), modulename);
     }
 
-    probe python.function.return
+    probe python.import.done
     {
-      printf("%s <= %s in %s:%d\n",
-             thread_indent(-1), funcname, filename, lineno);
+      printf("%s Import %s: %s\n",
+             ctime(gettimeofday_s()),
+             found ? "successful" : "failed", modulename);
+    }
+
+    probe python.gc.start
+    {
+      printf("%s GC starting (generation %d)\n",
+             ctime(gettimeofday_s()), generation);
+    }
+
+    probe python.gc.done
+    {
+      printf("%s GC completed (%d objects collected)\n",
+             ctime(gettimeofday_s()), collected);
     }
 
 
-The following script uses the tapset above to provide a top-like view of all
-running CPython code, showing the top 20 most frequently entered bytecode
-frames, each second, across the whole system:
+The following script provides a summary of Python activity, showing import
+and garbage collection statistics:
 
 .. code-block:: none
 
-    global fn_calls;
+    global import_count, gc_collections, gc_total_collected;
 
-    probe python.function.entry
+    probe python.import.done
     {
-        fn_calls[pid(), filename, funcname, lineno] += 1;
+        if (found) import_count++;
     }
 
-    probe timer.ms(1000) {
-        printf("\033[2J\033[1;1H") /* clear screen \*/
-        printf("%6s %80s %6s %30s %6s\n",
-               "PID", "FILENAME", "LINE", "FUNCTION", "CALLS")
-        foreach ([pid, filename, funcname, lineno] in fn_calls- limit 20) {
-            printf("%6d %80s %6d %30s %6d\n",
-                pid, filename, lineno, funcname,
-                fn_calls[pid, filename, funcname, lineno]);
-        }
-        delete fn_calls;
+    probe python.gc.done
+    {
+        gc_collections++;
+        gc_total_collected += collected;
+    }
+
+    probe timer.ms(5000) {
+        printf("\033[2J\033[1;1H") /* clear screen */
+        printf("Python Activity Summary:\n");
+        printf("Successful imports: %d\n", import_count);
+        printf("GC collections: %d\n", gc_collections);
+        printf("Total objects collected: %d\n", gc_total_collected);
+        printf("Average objects per collection: %d\n",
+               gc_collections ? gc_total_collected / gc_collections : 0);
     }
 
