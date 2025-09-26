@@ -955,14 +955,6 @@ ins1(arrayobject *self, Py_ssize_t where, PyObject *v)
 }
 
 /* Methods */
-
-static int
-array_tp_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
-
 static void
 array_dealloc(PyObject *op)
 {
@@ -1845,7 +1837,7 @@ array.array.fromfile
 
     cls: defining_class
     f: object
-    n: Py_ssize_t
+    n: Py_ssize_t(allow_negative=False)
     /
 
 Read n objects from the file object f and append them to the end of the array.
@@ -1854,22 +1846,17 @@ Read n objects from the file object f and append them to the end of the array.
 static PyObject *
 array_array_fromfile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f,
                           Py_ssize_t n)
-/*[clinic end generated code: output=83a667080b345ebc input=b2b4bdfb7ad4d4ae]*/
+/*[clinic end generated code: output=83a667080b345ebc input=db46b06ac1b6de87]*/
 {
     PyObject *b, *res;
     int itemsize = self->ob_descr->itemsize;
     Py_ssize_t nbytes;
     int not_enough_bytes;
 
-    if (n < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative count");
-        return NULL;
-    }
     if (!arraydata_size_valid(n, itemsize)) {
         PyErr_NoMemory();
         return NULL;
     }
-
 
     array_state *state = get_array_state_by_class(cls);
     assert(state != NULL);
@@ -3409,7 +3396,7 @@ static PyType_Slot array_slots[] = {
     {Py_tp_getset, array_getsets},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, array_new},
-    {Py_tp_traverse, array_tp_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
 
     /* as sequence */
     {Py_sq_length, array_length},

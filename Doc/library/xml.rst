@@ -55,7 +55,7 @@ An attacker can abuse XML features to carry out denial of service attacks,
 access local files, generate network connections to other machines, or
 circumvent firewalls.
 
-Expat versions lower that 2.6.0 may be vulnerable to "billion laughs",
+Expat versions lower than 2.6.0 may be vulnerable to "billion laughs",
 "quadratic blowup" and "large tokens". Python may be vulnerable if it uses such
 older versions of Expat as a system-provided library.
 Check :const:`!pyexpat.EXPAT_VERSION`.

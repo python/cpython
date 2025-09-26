@@ -4359,7 +4359,7 @@ then :
 	yes)
 		case $ac_sys_system in
 			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=iOS/Frameworks/\$\(MULTIARCH\) ;;
+			iOS)    enableval=Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
 		esac
 	esac
@@ -4470,9 +4470,9 @@ then :
 
 				prefix=$PYTHONFRAMEWORKPREFIX
 				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
-				RESSRCDIR=iOS/Resources
+				RESSRCDIR=Apple/iOS/Resources
 
-				ac_config_files="$ac_config_files iOS/Resources/Info.plist"
+				ac_config_files="$ac_config_files Apple/iOS/Resources/Info.plist"
 
 				;;
 			*)
@@ -7903,8 +7903,10 @@ then :
   as_fn_append HOSTRUNNER " --experimental-wasm-memory64"
 fi
      ;; #(
-              WASI) :
-    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2=n --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
+  WASI) :
+
+      as_fn_error $? "HOSTRUNNER must be set when cross-compiling to WASI" "$LINENO" 5
+     ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -8407,6 +8409,13 @@ fi
 
 
 if test "$Py_OPT" = 'true' ; then
+  # Check for conflicting CFLAGS=-O0 and --enable-optimizations
+  case "$CFLAGS" in
+    *-O0*)
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: CFLAGS contains -O0 which may conflict with --enable-optimizations. Consider removing -O0 from CFLAGS for optimal performance." >&5
+printf "%s\n" "$as_me: WARNING: CFLAGS contains -O0 which may conflict with --enable-optimizations. Consider removing -O0 from CFLAGS for optimal performance." >&2;}
+      ;;
+  esac
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
@@ -9604,7 +9613,7 @@ fi
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
         as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
@@ -10882,7 +10891,8 @@ printf "%s\n" "$tier2_flags $jit_flags" >&6; }
 if test "$disable_gil" = "yes" -a "$enable_experimental_jit" != "no"; then
   # GH-133171: This configuration builds the JIT but never actually uses it,
   # which is surprising (and strictly worse than not building it at all):
-  as_fn_error $? "--enable-experimental-jit cannot be used with --disable-gil." "$LINENO" 5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: --enable-experimental-jit does not work correctly with --disable-gil." >&5
+printf "%s\n" "$as_me: WARNING: --enable-experimental-jit does not work correctly with --disable-gil." >&2;}
 fi
 
 case "$ac_cv_cc_name" in
@@ -11995,7 +12005,7 @@ then :
 fi
 
 
-# On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
+# On Linux, can.h, can/bcm.h, can/isotp.h, can/j1939.h, can/raw.h require sys/socket.h
 # On NetBSD, netcan/can.h requires sys/socket.h
 ac_fn_c_check_header_compile "$LINENO" "linux/can.h" "ac_cv_header_linux_can_h" "
 #ifdef HAVE_SYS_SOCKET_H
@@ -12017,6 +12027,17 @@ ac_fn_c_check_header_compile "$LINENO" "linux/can/bcm.h" "ac_cv_header_linux_can
 if test "x$ac_cv_header_linux_can_bcm_h" = xyes
 then :
   printf "%s\n" "#define HAVE_LINUX_CAN_BCM_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "linux/can/isotp.h" "ac_cv_header_linux_can_isotp_h" "
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+"
+if test "x$ac_cv_header_linux_can_isotp_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_LINUX_CAN_ISOTP_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "linux/can/j1939.h" "ac_cv_header_linux_can_j1939_h" "
@@ -19081,7 +19102,7 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_syscalls.o'
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o Python/emscripten_syscalls.o'
     as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
    ;; #(
   *) :
@@ -29794,7 +29815,7 @@ then :
 if test "$withval" = yes
 then
 
-printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
+printf "%s\n" "#define _Py_TAIL_CALL_INTERP 1" >>confdefs.h
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
@@ -29802,7 +29823,7 @@ fi
 if test "$withval" = no
 then
 
-printf "%s\n" "#define Py_TAIL_CALL_INTERP 0" >>confdefs.h
+printf "%s\n" "#define _Py_TAIL_CALL_INTERP 0" >>confdefs.h
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
@@ -34173,6 +34194,34 @@ fi
 printf "%s\n" "$py_cv_module_xxlimited_35" >&6; }
 
 
+# Determine JIT stencils header files based on target platform
+JIT_STENCILS_H=""
+case "$host" in
+  aarch64-apple-darwin*)
+    JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
+    ;;
+  x86_64-apple-darwin*)
+    JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
+    ;;
+  aarch64-pc-windows-msvc)
+    JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
+    ;;
+  i686-pc-windows-msvc)
+    JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
+    ;;
+  x86_64-pc-windows-msvc)
+    JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
+    ;;
+  aarch64-*-linux-gnu)
+    JIT_STENCILS_H="jit_stencils-$host.h"
+    ;;
+  x86_64-*-linux-gnu)
+    JIT_STENCILS_H="jit_stencils-$host.h"
+    ;;
+esac
+
+
+
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 
 
@@ -35215,7 +35264,7 @@ do
     "Mac/PythonLauncher/Makefile") CONFIG_FILES="$CONFIG_FILES Mac/PythonLauncher/Makefile" ;;
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
-    "iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES iOS/Resources/Info.plist" ;;
+    "Apple/iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Apple/iOS/Resources/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;

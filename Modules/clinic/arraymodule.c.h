@@ -464,6 +464,11 @@ array_array_fromfile(PyObject *self, PyTypeObject *cls, PyObject *const *args, P
             goto exit;
         }
         n = ival;
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "n cannot be negative");
+            goto exit;
+        }
     }
     return_value = array_array_fromfile_impl((arrayobject *)self, cls, f, n);
 
