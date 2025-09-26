@@ -1960,7 +1960,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         i++;
         /* A % has been seen and ch is the character after it. */
         PyObject *replacement = NULL;
-        int need_decref_replacement = 0;
 
         if (ch == 'z') {
             /* %z -> +HHMM */
