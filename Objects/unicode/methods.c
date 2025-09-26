@@ -1148,29 +1148,6 @@ PyUnicode_RPartition(PyObject *str_obj, PyObject *sep_obj)
 }
 
 
-#ifdef Py_DEBUG
-/* Functions wrapping macros for use in debugger */
-const char *_PyUnicode_utf8(void *unicode_raw){
-    PyObject *unicode = _PyObject_CAST(unicode_raw);
-    return PyUnicode_UTF8(unicode);
-}
-
-const void *_PyUnicode_compact_data(void *unicode_raw) {
-    PyObject *unicode = _PyObject_CAST(unicode_raw);
-    return _PyUnicode_COMPACT_DATA(unicode);
-}
-const void *_PyUnicode_data(void *unicode_raw) {
-    PyObject *unicode = _PyObject_CAST(unicode_raw);
-    printf("obj %p\n", (void*)unicode);
-    printf("compact %d\n", PyUnicode_IS_COMPACT(unicode));
-    printf("compact ascii %d\n", PyUnicode_IS_COMPACT_ASCII(unicode));
-    printf("ascii op %p\n", (void*)(_PyASCIIObject_CAST(unicode) + 1));
-    printf("compact op %p\n", (void*)(_PyCompactUnicodeObject_CAST(unicode) + 1));
-    printf("compact data %p\n", _PyUnicode_COMPACT_DATA(unicode));
-    return PyUnicode_DATA(unicode);
-}
-
-
 static const char*
 unicode_kind_name(PyObject *unicode)
 {
@@ -1206,6 +1183,29 @@ unicode_kind_name(PyObject *unicode)
     default:
         return "<invalid compact kind>";
     }
+}
+
+
+#ifdef Py_DEBUG
+/* Functions wrapping macros for use in debugger */
+const char *_PyUnicode_utf8(void *unicode_raw){
+    PyObject *unicode = _PyObject_CAST(unicode_raw);
+    return PyUnicode_UTF8(unicode);
+}
+
+const void *_PyUnicode_compact_data(void *unicode_raw) {
+    PyObject *unicode = _PyObject_CAST(unicode_raw);
+    return _PyUnicode_COMPACT_DATA(unicode);
+}
+const void *_PyUnicode_data(void *unicode_raw) {
+    PyObject *unicode = _PyObject_CAST(unicode_raw);
+    printf("obj %p\n", (void*)unicode);
+    printf("compact %d\n", PyUnicode_IS_COMPACT(unicode));
+    printf("compact ascii %d\n", PyUnicode_IS_COMPACT_ASCII(unicode));
+    printf("ascii op %p\n", (void*)(_PyASCIIObject_CAST(unicode) + 1));
+    printf("compact op %p\n", (void*)(_PyCompactUnicodeObject_CAST(unicode) + 1));
+    printf("compact data %p\n", _PyUnicode_COMPACT_DATA(unicode));
+    return PyUnicode_DATA(unicode);
 }
 
 
