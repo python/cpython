@@ -1,1 +1,1 @@
-Make binarysort adaptative. Give an initial value to M before entering the outer loop, and move the M calculation to the end of the inner loop.
+Make binarysort adaptative. This improve `sorting()` performance by reducing the amount of comparisons of already sorted intervals.
