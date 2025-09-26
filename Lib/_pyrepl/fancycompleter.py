@@ -164,10 +164,8 @@ class Completer(rlcompleter.Completer):
         return getattr(self.theme.fancycompleter, typename, ANSIColors.RESET)
 
 
-def commonprefix(names, base=''):
-    """Return the common prefix of all 'names' starting with 'base'"""
-    if base:
-        names = [x for x in names if x.startswith(base)]
+def commonprefix(names):
+    """Return the common prefix of all 'names'"""
     if not names:
         return ''
     s1 = min(names)
