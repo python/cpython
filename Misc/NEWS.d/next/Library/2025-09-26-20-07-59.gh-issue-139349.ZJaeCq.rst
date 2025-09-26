@@ -1,2 +1,2 @@
-Fix: make dataclass Console init right to avoid has no attribute 'posxy'
-error
+Avoid an ``AttributeError`` when calling :func:`repr` on
+``_pyrepl.readline._wrapper.reader`` before the console has been prepared.
