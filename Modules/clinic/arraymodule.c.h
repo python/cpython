@@ -851,4 +851,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=46ca729af0fdb7cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7632e84190716841 input=a9049054013a1b77]*/
