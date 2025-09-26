@@ -1,3 +1,2 @@
-Force to use :c:macro:`Py_TPFLAGS_HAVE_GC` if
-:c:macro:`Py_TPFLAGS_MANAGED_DICT` or :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
-used.
+If :c:macro:`Py_TPFLAGS_MANAGED_DICT` and :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
+are used, then :c:macro:`Py_TPFLAGS_HAVE_GC` must be used as well.
