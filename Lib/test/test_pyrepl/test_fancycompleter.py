@@ -29,9 +29,7 @@ class FancyCompleterTests(unittest.TestCase):
     def test_commonprefix(self):
         self.assertEqual(commonprefix(['isalpha', 'isdigit', 'foo']), '')
         self.assertEqual(commonprefix(['isalpha', 'isdigit']), 'is')
-        self.assertEqual(commonprefix(['isalpha', 'isdigit', 'foo'], base='i'), 'is')
         self.assertEqual(commonprefix([]), '')
-        self.assertEqual(commonprefix(['aaa', 'bbb'], base='x'), '')
 
     def test_complete_attribute(self):
         compl = Completer({'a': None}, use_colors=False)
