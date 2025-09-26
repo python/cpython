@@ -1184,6 +1184,116 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
 }
 #endif
 
+#if XML_COMBINED_VERSION >= 20402
+static PyObject *
+set_activation_threshold(xmlparseobject *self,
+                         PyTypeObject *cls,
+                         unsigned long long threshold,
+                         XML_Bool (*setter)(XML_Parser, unsigned long long))
+{
+    assert(self->itself != NULL);
+    if (setter(self->itself, threshold) == XML_TRUE) {
+        Py_RETURN_NONE;
+    }
+    // The setter fails if self->itself is NULL (which is not possible here)
+    // or is a non-root parser, which currently only happens for parsers
+    // created by ExternalEntityParserCreate().
+    pyexpat_state *state = PyType_GetModuleState(cls);
+    return set_invalid_arg(state, self, "parser must be a root parser");
+}
+
+static PyObject *
+set_maximum_amplification(xmlparseobject *self,
+                          PyTypeObject *cls,
+                          float max_factor,
+                          XML_Bool (*setter)(XML_Parser, float))
+{
+    assert(self->itself != NULL);
+    if (setter(self->itself, max_factor) == XML_TRUE) {
+        Py_RETURN_NONE;
+    }
+    // The setter fails if self->itself is NULL (which is not possible here),
+    // is a non-root parser, which currently only happens for parsers created
+    // by ExternalEntityParserCreate(), or if 'max_factor' is NaN or < 1.0.
+    pyexpat_state *state = PyType_GetModuleState(cls);
+    // Note: Expat has no API to determine whether a parser is a root parser,
+    // and since the Expat functions for defining the various maximum allowed
+    // amplifcation factors fail when a bad parser or an out-of-range factor
+    // is given without specifying which check failed, we check whether the
+    // factor is out-of-range to improve the error message. See also gh-90949.
+    const char *message = (isnan(max_factor) || max_factor < 1.0f)
+          ? "'max_factor' must be at least 1.0"
+          : "parser must be a root parser";
+    return set_invalid_arg(state, self, message);
+}
+#endif
+
+#if XML_COMBINED_VERSION >= 20402
+/*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
+pyexpat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold
+
+    cls: defining_class
+    threshold: unsigned_long_long
+    /
+
+Sets the number of output bytes needed to activate protection against billion laughs attacks.
+
+By default, parser objects have a protection activation threshold of 8 MiB.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold_impl(xmlparseobject *self,
+                                                                           PyTypeObject *cls,
+                                                                           unsigned long long threshold)
+/*[clinic end generated code: output=0c082342f1c78114 input=a420a76f682ffc76]*/
+{
+    return set_activation_threshold(
+        self, cls, threshold,
+        XML_SetBillionLaughsAttackProtectionActivationThreshold
+    );
+}
+#endif
+
+#if XML_COMBINED_VERSION >= 20402
+/*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
+pyexpat.xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification
+
+    cls: defining_class
+    max_factor: float
+    /
+
+Sets the maximum tolerated amplification factor for protection against billion laughs attacks.
+
+The amplification factor is calculated as "(direct + indirect) / direct"
+while parsing, where "direct" is the number of bytes read from the primary
+document in parsing and "indirect" is the number of bytes added by expanding
+entities and reading external DTD files, combined.
+
+The 'max_factor' value must be a non-NaN floating point value greater than
+or equal to 1.0. Amplification factors greater than 30,000 can be observed
+in the middle of parsing even with benign files in practice. In particular,
+the activation threshold should be carefully chosen to avoid false positives.
+
+By default, parser objects have a maximum amplification factor of 100.0.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification_impl(xmlparseobject *self,
+                                                                            PyTypeObject *cls,
+                                                                            float max_factor)
+/*[clinic end generated code: output=c590439eadf463fa input=aec034366805f6c7]*/
+{
+    return set_maximum_amplification(
+        self, cls, max_factor,
+        XML_SetBillionLaughsAttackProtectionMaximumAmplification
+    );
+}
+#endif
+
 #if XML_COMBINED_VERSION >= 20702
 /*[clinic input]
 @permit_long_summary
@@ -1205,15 +1315,10 @@ pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
                                                           unsigned long long threshold)
 /*[clinic end generated code: output=bed7e93207ba08c5 input=54182cd71ad69978]*/
 {
-    assert(self->itself != NULL);
-    if (XML_SetAllocTrackerActivationThreshold(self->itself, threshold) == XML_TRUE) {
-        Py_RETURN_NONE;
-    }
-    // XML_SetAllocTrackerActivationThreshold() can only fail if self->itself
-    // is not a root parser (currently, this is equivalent to be created
-    // by ExternalEntityParserCreate()).
-    pyexpat_state *state = PyType_GetModuleState(cls);
-    return set_invalid_arg(state, self, "parser must be a root parser");
+    return set_activation_threshold(
+        self, cls, threshold,
+        XML_SetAllocTrackerActivationThreshold
+    );
 }
 #endif
 
@@ -1248,24 +1353,10 @@ pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            float max_factor)
 /*[clinic end generated code: output=6e44bd48c9b112a0 input=3544abf9dd7ae055]*/
 {
-    assert(self->itself != NULL);
-    if (XML_SetAllocTrackerMaximumAmplification(self->itself, max_factor) == XML_TRUE) {
-        Py_RETURN_NONE;
-    }
-    // XML_SetAllocTrackerMaximumAmplification() can fail if self->itself
-    // is not a root parser (currently, this is equivalent to be created
-    // by ExternalEntityParserCreate()) or if 'max_factor' is NaN or < 1.0.
-    //
-    // Expat does not provide a way to determine whether a parser is a root
-    // or not, nor does it provide a way to distinguish between failures in
-    // XML_SetAllocTrackerMaximumAmplification() (see gh-90949), we manually
-    // detect the factor out-of-range issue here so that users have a better
-    // error message.
-    pyexpat_state *state = PyType_GetModuleState(cls);
-    const char *message = (isnan(max_factor) || max_factor < 1.0f)
-        ? "'max_factor' must be at least 1.0"
-        : "parser must be a root parser";
-    return set_invalid_arg(state, self, message);
+    return set_maximum_amplification(
+        self, cls, max_factor,
+        XML_SetAllocTrackerMaximumAmplification
+    );
 }
 #endif
 
@@ -1278,6 +1369,8 @@ static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF
     PYEXPAT_XMLPARSER_SETPARAMENTITYPARSING_METHODDEF
     PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
+    PYEXPAT_XMLPARSER_SETBILLIONLAUGHSATTACKPROTECTIONACTIVATIONTHRESHOLD_METHODDEF
+    PYEXPAT_XMLPARSER_SETBILLIONLAUGHSATTACKPROTECTIONMAXIMUMAMPLIFICATION_METHODDEF
     PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
     PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     PYEXPAT_XMLPARSER_SETREPARSEDEFERRALENABLED_METHODDEF
@@ -2292,7 +2385,13 @@ pyexpat_exec(PyObject *mod)
     capi->SetAllocTrackerActivationThreshold = NULL;
     capi->SetAllocTrackerMaximumAmplification = NULL;
 #endif
-
+#if XML_COMBINED_VERSION >= 20400
+    capi->SetBillionLaughsAttackProtectionActivationThreshold = XML_SetBillionLaughsAttackProtectionActivationThreshold;
+    capi->SetBillionLaughsAttackProtectionMaximumAmplification = XML_SetBillionLaughsAttackProtectionMaximumAmplification;
+#else
+    capi->SetAllocTrackerActivationThreshold = NULL;
+    capi->SetAllocTrackerMaximumAmplification = NULL;
+#endif
     /* export using capsule */
     PyObject *capi_object = PyCapsule_New(capi, PyExpat_CAPSULE_NAME,
                                           pyexpat_capsule_destructor);

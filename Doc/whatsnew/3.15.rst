@@ -556,8 +556,16 @@ unittest
 xml.parsers.expat
 -----------------
 
-* Add :func:`~xml.parsers.expat.xmlparser.SetAllocTrackerActivationThreshold`
-  and :func:`~xml.parsers.expat.xmlparser.SetAllocTrackerMaximumAmplification`
+* Add :meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold`
+  and :meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification`
+  to :ref:`xmlparser <xmlparser-objects>` objects to mitigate `billion laughs`_
+  attacks.
+  (Contributed by Bénédikt Tran in :gh:`90949`.)
+
+  .. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
+
+* Add :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerActivationThreshold`
+  and :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerMaximumAmplification`
   to :ref:`xmlparser <xmlparser-objects>` objects to prevent use of
   disproportional amounts of dynamic memory from within an Expat parser.
   (Contributed by Bénédikt Tran in :gh:`90949`.)

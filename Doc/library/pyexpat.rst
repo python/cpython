@@ -241,6 +241,55 @@ XMLParser Objects
 :class:`!xmlparser` objects have the following methods to mitigate some
 common XML vulnerabilities.
 
+.. method:: xmlparser.SetBillionLaughsAttackProtectionActivationThreshold(threshold, /)
+
+   Sets the number of output bytes needed to activate protection against
+   `billion laughs`_ attacks.
+
+   The number of output bytes includes amplification from entity expansion
+   and reading DTD files.
+
+   By default, parser objects have a protection activation threshold of 8 MiB,
+   or equivalently 8,388,608 bytes.
+
+   An :exc:`ExpatError` is raised if this method is called on a
+   |xml-non-root-parser| parser.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
+
+   .. versionadded:: next
+
+.. method:: xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification(max_factor, /)
+
+   Sets the maximum tolerated amplification factor for protection against
+   `billion laughs`_ attacks.
+
+   The amplification factor is calculated as ``(direct + indirect) / direct``
+   while parsing, where ``direct`` is the number of bytes read from
+   the primary document in parsing and ``indirect`` is the number of
+   bytes added by expanding entities and reading of external DTD files.
+
+   The *max_factor* value must be a non-NaN :class:`float` value greater than
+   or equal to 1.0. Peak amplifications of factor 15,000 for the entire payload
+   and of factor 30,000 in the middle of parsing have been observed with small
+   benign files in practice. In particular, the activation threshold should be
+   carefully chosen to avoid false positives.
+
+   By default, parser objects have a maximum amplification factor of 100.0.
+
+   An :exc:`ExpatError` is raised if this method is called on a
+   |xml-non-root-parser| parser or if *max_factor* is outside the valid range.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
+
+   .. note::
+
+      The maximum amplification factor is only considered if the threshold
+      that can be adjusted by :meth:`.SetBillionLaughsAttackProtectionActivationThreshold`
+      is exceeded.
+
+   .. versionadded:: next
+
 .. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
 
    Sets the number of allocated bytes of dynamic memory needed to activate
@@ -281,8 +330,8 @@ common XML vulnerabilities.
    .. note::
 
       The maximum amplification factor is only considered if the threshold
-      that can be adjusted :meth:`.SetAllocTrackerActivationThreshold` is
-      exceeded.
+      that can be adjusted by :meth:`.SetAllocTrackerActivationThreshold`
+      is exceeded.
 
    .. versionadded:: next
 
@@ -1010,4 +1059,6 @@ The ``errors`` module has the following attributes:
    not. See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
    and https://www.iana.org/assignments/character-sets/character-sets.xhtml.
 
+
+.. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
 .. |xml-non-root-parser| replace:: :ref:`non-root <xmlparser-non-root>`
