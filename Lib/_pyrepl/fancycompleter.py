@@ -33,6 +33,10 @@ class Completer(rlcompleter.Completer):
 
         if self.use_colors:
             readline.parse_and_bind('set dont-escape-ctrl-chars on')
+            self.theme = get_theme()
+        else:
+            self.theme = None
+
         if self.consider_getitems:
             delims = readline.get_completer_delims()
             delims = delims.replace('[', '')
@@ -152,13 +156,12 @@ class Completer(rlcompleter.Completer):
         return f"{N}{color}{name}{ANSIColors.RESET}"
 
     def color_by_type(self, t):
-        theme = get_theme()
         typename = t.__name__
         # this is needed e.g. to turn method-wrapper into method_wrapper,
         # because if we want _colorize.FancyCompleter to be "dataclassable"
         # our keys need to be valid identifiers.
         typename = typename.replace('-', '_').replace('.', '_')
-        return getattr(theme.fancycompleter, typename, ANSIColors.RESET)
+        return getattr(self.theme.fancycompleter, typename, ANSIColors.RESET)
 
 
 def commonprefix(names, base=''):
