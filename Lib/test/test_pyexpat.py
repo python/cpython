@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import sysconfig
+import textwrap
 import unittest
 import traceback
 from io import BytesIO
@@ -834,24 +835,42 @@ class AttackProtectionTestBase(abc.ABC):
     """
 
     @staticmethod
-    def exponential_expansion_payload(ncols, nrows, text='.'):
+    def exponential_expansion_payload(*, nrows, ncols, text='.'):
         """Create a billion laughs attack payload.
 
         Be careful: the number of total items is pow(n, k), thereby
         requiring at least pow(ncols, nrows) * sizeof(text) memory!
         """
+        template = textwrap.dedent(f"""\
+            <?xml version="1.0"?>
+            <!DOCTYPE doc [
+                <!ENTITY row0 "{text}">
+                <!ELEMENT doc (#PCDATA)>
+            {{body}}
+            ]>
+            <doc>&row{nrows};</doc>
+        """).rstrip()
+
         body = '\n'.join(
             f'<!ENTITY row{i + 1} "{f"&row{i};" * ncols}">'
             for i in range(nrows)
         )
-        return f"""\
-<?xml version="1.0"?>
-<!DOCTYPE doc [
-<!ENTITY row0 "{text}">
-<!ELEMENT doc (#PCDATA)>
-{body}
-]>
-<doc>&row{nrows};</doc>"""
+        body = textwrap.indent(body, ' ' * 4)
+        return template.format(body=body)
+
+    def test_payload_generation(self):
+        # self-test for exponential_expansion_payload()
+        payload = self.exponential_expansion_payload(nrows=2, ncols=3)
+        self.assertEqual(payload, textwrap.dedent("""\
+            <?xml version="1.0"?>
+            <!DOCTYPE doc [
+                <!ENTITY row0 ".">
+                <!ELEMENT doc (#PCDATA)>
+                <!ENTITY row1 "&row0;&row0;&row0;">
+                <!ENTITY row2 "&row1;&row1;&row1;">
+            ]>
+            <doc>&row2;</doc>
+        """).rstrip())
 
     def assert_root_parser_failure(self, func, /, *args, **kwargs):
         """Check that func(*args, **kwargs) is invalid for a sub-parser."""
@@ -966,7 +985,7 @@ class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
         # Check that the threshold is reached by choosing a small factor
         # and a payload whose peak amplification factor exceeds it.
         self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
-        payload = self.exponential_expansion_payload(10, 4)
+        payload = self.exponential_expansion_payload(ncols=10, nrows=4)
         self.assert_rejected(parser.Parse, payload, True)
 
     def test_set_activation_threshold__threshold_not_reached(self):
@@ -976,7 +995,7 @@ class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
         # Check that the threshold is reached by choosing a small factor
         # and a payload whose peak amplification factor exceeds it.
         self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
-        payload = self.exponential_expansion_payload(10, 4)
+        payload = self.exponential_expansion_payload(ncols=10, nrows=4)
         self.assertIsNotNone(parser.Parse(payload, True))
 
     def test_set_maximum_amplification__amplification_exceeded(self):
@@ -986,7 +1005,7 @@ class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
         # Choose a max amplification factor expected to always be exceeded.
         self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
         # Craft a payload for which the peak amplification factor is > 1.0.
-        payload = self.exponential_expansion_payload(1, 2)
+        payload = self.exponential_expansion_payload(ncols=1, nrows=2)
         self.assert_rejected(parser.Parse, payload, True)
 
     def test_set_maximum_amplification__amplification_not_exceeded(self):
@@ -996,7 +1015,7 @@ class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
         # Choose a max amplification factor expected to never be exceeded.
         self.assertIsNone(self.set_maximum_amplification(parser, 1e4))
         # Craft a payload for which the peak amplification factor is < 1e4.
-        payload = self.exponential_expansion_payload(1, 2)
+        payload = self.exponential_expansion_payload(ncols=1, nrows=2)
         self.assertIsNotNone(parser.Parse(payload, True))
 
 

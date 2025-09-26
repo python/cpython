@@ -72,6 +72,13 @@ The :mod:`xml.parsers.expat` module contains two functions:
    *encoding* [1]_ is given it will override the implicit or explicit encoding of the
    document.
 
+   .. _xmlparser-non-root:
+
+   Parsers created through :func:`!ParserCreate` are called "root" parsers,
+   in the sense that they do not have any parent parser attached. Non-root
+   parsers are created by :meth:`parser.ExternalEntityParserCreate
+   <xmlparser.ExternalEntityParserCreate>`.
+
    Expat can optionally do XML namespace processing for you, enabled by providing a
    value for *namespace_separator*.  The value must be a one-character string; a
    :exc:`ValueError` will be raised if the string has an illegal length (``None``
@@ -119,11 +126,6 @@ The :mod:`xml.parsers.expat` module contains two functions:
 
 XMLParser Objects
 -----------------
-
-.. class:: xmlparser
-
-   The type of an Expat XML parser created by :func:`ParserCreate`.
-
 
 :class:`xmlparser` objects have the following methods:
 
@@ -236,7 +238,7 @@ XMLParser Objects
    .. versionadded:: 3.13
 
 
-:class:`xmlparser` objects have the following methods to mitigate some
+:class:`!xmlparser` objects have the following methods to mitigate some
 common XML vulnerabilities.
 
 .. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
@@ -247,7 +249,8 @@ common XML vulnerabilities.
    By default, parser objects have an allocation activation threshold of 64 MiB,
    or equivalently 67,108,864 bytes.
 
-   An :exc:`ExpatError` is raised if this method is called on a non-root parser.
+   An :exc:`ExpatError` is raised if this method is called on a
+   |xml-non-root-parser| parser.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
@@ -270,8 +273,8 @@ common XML vulnerabilities.
 
    By default, parser objects have a maximum amplification factor of 100.0.
 
-   An :exc:`ExpatError` is raised if this method is called on a non-root
-   parser or if *max_factor* is outside the valid range.
+   An :exc:`ExpatError` is raised if this method is called on a
+   |xml-non-root-parser| parser or if *max_factor* is outside the valid range.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
@@ -1007,3 +1010,4 @@ The ``errors`` module has the following attributes:
    not. See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
    and https://www.iana.org/assignments/character-sets/character-sets.xhtml.
 
+.. |xml-non-root-parser| replace:: :ref:`non-root <xmlparser-non-root>`

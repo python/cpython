@@ -545,7 +545,7 @@ xml.parsers.expat
 
 * Add :func:`~xml.parsers.expat.xmlparser.SetAllocTrackerActivationThreshold`
   and :func:`~xml.parsers.expat.xmlparser.SetAllocTrackerMaximumAmplification`
-  to :class:`~xml.parsers.expat.xmlparser` objects to prevent use of
+  to :ref:`xmlparser <xmlparser-objects>` objects to prevent use of
   disproportional amounts of dynamic memory from within an Expat parser.
   (Contributed by Bénédikt Tran in :gh:`90949`.)
 
