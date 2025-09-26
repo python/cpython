@@ -225,7 +225,7 @@ class PyclbrTest(TestCase, ExtraAssertions):
         cm(
             'pdb',
             # pyclbr does not handle elegantly `typing` or properties
-            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget'),
+            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'rlcompleter'),
         )
         cm('pydoc', ignore=('input', 'output',)) # properties
 
