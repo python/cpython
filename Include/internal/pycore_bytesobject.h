@@ -73,6 +73,26 @@ struct PyBytesWriter {
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(PyBytesWriter*) _PyBytesWriter_CreateByteArray(Py_ssize_t size);
 
+static inline Py_ssize_t
+_PyBytesWriter_GetSize(PyBytesWriter *writer)
+{
+    return writer->size;
+}
+
+static inline char*
+_PyBytesWriter_GetData(PyBytesWriter *writer)
+{
+    if (writer->obj == NULL) {
+        return writer->small_buffer;
+    }
+    else if (writer->use_bytearray) {
+        return PyByteArray_AS_STRING(writer->obj);
+    }
+    else {
+        return PyBytes_AS_STRING(writer->obj);
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif

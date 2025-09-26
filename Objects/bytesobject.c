@@ -3480,15 +3480,7 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
 static inline char*
 byteswriter_data(PyBytesWriter *writer)
 {
-    if (writer->obj == NULL) {
-        return writer->small_buffer;
-    }
-    else if (writer->use_bytearray) {
-        return PyByteArray_AS_STRING(writer->obj);
-    }
-    else {
-        return PyBytes_AS_STRING(writer->obj);
-    }
+    return _PyBytesWriter_GetData(writer);
 }
 
 
@@ -3710,7 +3702,7 @@ PyBytesWriter_GetData(PyBytesWriter *writer)
 Py_ssize_t
 PyBytesWriter_GetSize(PyBytesWriter *writer)
 {
-    return writer->size;
+    return _PyBytesWriter_GetSize(writer);
 }
 
 

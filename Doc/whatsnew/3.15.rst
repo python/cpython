@@ -294,6 +294,14 @@ New modules
 Improved modules
 ================
 
+collections
+-----------
+
+* Added :meth:`!collections.Counter.__xor__` and
+  :meth:`!collections.Counter.__ixor__` to compute the symmetric difference
+  between :class:`~collections.Counter` objects.
+  (Contributed by Raymond Hettinger in :gh:`138682`.)
+
 collections.abc
 ---------------
 
@@ -867,6 +875,11 @@ Removed C APIs
 
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
   of :c:func:`PyImport_ImportModule`.
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+* :c:func:`!PyWeakref_GetObject` and :c:macro:`!PyWeakref_GET_OBJECT`:
+  use :c:func:`PyWeakref_GetRef` instead. The |pythoncapi_compat_project|
+  can be used to get :c:func:`!PyWeakref_GetRef` on Python 3.12 and older.
   (Contributed by Bénédikt Tran in :gh:`133644`.)
 
 * Remove deprecated :c:func:`!PySys_ResetWarnOptions`.
