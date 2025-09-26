@@ -6,7 +6,6 @@ import contextlib
 import errno
 import os
 import platform
-import posix
 import signal
 import stat
 import subprocess
@@ -22,6 +21,10 @@ from test.support.os_helper import FakePath
 from test.support.script_helper import assert_python_ok
 from .utils import requires_sched
 
+try:
+    import posix
+except ImportError:
+    import nt as posix
 try:
     import _testcapi
 except ImportError:

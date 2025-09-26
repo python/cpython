@@ -4,13 +4,17 @@ Test random bytes: getrandom(), urandom(), etc.
 
 import errno
 import os
-import resource
 import sys
 import sysconfig
 import unittest
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 from .utils import create_file
+
+try:
+    import resource
+except ImportError:
+    resource = None
 
 
 @unittest.skipUnless(hasattr(os, 'getrandom'), 'need os.getrandom()')

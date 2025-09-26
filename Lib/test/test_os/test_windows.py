@@ -22,6 +22,7 @@ import _winapi
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import warnings_helper
 from .utils import create_file
 
 
@@ -45,6 +46,25 @@ class FileTests(unittest.TestCase):
 
 
 class PidTests(unittest.TestCase):
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def check_waitpid(self, code, exitcode, callback=None):
+        if sys.platform == 'win32':
+            # On Windows, os.spawnv() simply joins arguments with spaces:
+            # arguments need to be quoted
+            args = [f'"{sys.executable}"', '-c', f'"{code}"']
+        else:
+            args = [sys.executable, '-c', code]
+        pid = os.spawnv(os.P_NOWAIT, sys.executable, args)
+
+        if callback is not None:
+            callback(pid)
+
+        # don't use support.wait_process() to test directly os.waitpid()
+        # and os.waitstatus_to_exitcode()
+        pid2, status = os.waitpid(pid, 0)
+        self.assertEqual(os.waitstatus_to_exitcode(status), exitcode)
+        self.assertEqual(pid2, pid)
+
     def test_waitpid_windows(self):
         # bpo-40138: test os.waitpid() and os.waitstatus_to_exitcode()
         # with exit code larger than INT_MAX.

@@ -4,13 +4,17 @@ Tests for the posix *at functions.
 
 import errno
 import os
-import posix
 import stat
 import time
 import unittest
 from contextlib import contextmanager
 from test import support
 from test.support import os_helper
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 
 class TestPosixDirFd(unittest.TestCase):

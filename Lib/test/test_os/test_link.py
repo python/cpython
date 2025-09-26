@@ -3,13 +3,17 @@ Test symbolic and hard links: os.link(), os.symlink(), etc.
 """
 
 import os
-import posix
 import shutil
 import sys
 import unittest
 from test.support import os_helper
 from test.support.os_helper import FakePath
 from .utils import create_file
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 
 @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')

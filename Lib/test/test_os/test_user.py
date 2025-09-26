@@ -4,12 +4,20 @@ Test user functions: getuid(), setgid(), getgroups(), getlogin(), etc.
 
 import errno
 import os
-import posix
-import pwd
 import subprocess
 import sys
 import unittest
 from test import support
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
+
+try:
+    import pwd
+except ImportError:
+    pwd = None
 
 # Issue #14110: Some tests fail on FreeBSD if the user is in the wheel group.
 HAVE_WHEEL_GROUP = (sys.platform.startswith('freebsd') and os.getgid() == 0)

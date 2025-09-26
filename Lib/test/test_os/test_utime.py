@@ -5,13 +5,17 @@ Test the os.utime() function.
 import decimal
 import fractions
 import os
-import posix
 import sys
 import time
 import unittest
 from test import support
 from test.support import os_helper
 from .utils import create_file
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 
 class UtimeTests(unittest.TestCase):

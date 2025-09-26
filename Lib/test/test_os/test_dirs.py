@@ -5,7 +5,6 @@ Test directories: listdir(), walk(), getcwd(), mkdir(), rmdir(), etc.
 import errno
 import itertools
 import os
-import posix
 import shutil
 import stat
 import subprocess
@@ -15,6 +14,11 @@ import unittest
 from test import support
 from test.support import os_helper
 from .utils import create_file
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 
 class WalkTests(unittest.TestCase):

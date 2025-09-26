@@ -5,7 +5,6 @@ Test file descriptors: pipe(), set_blocking(), memfd_create(), eventfd, etc.
 import errno
 import itertools
 import os
-import posix
 import select
 import struct
 import sys
@@ -13,6 +12,11 @@ import unittest
 import warnings
 from test import support
 from test.support import os_helper
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 
 @unittest.skipIf(support.is_wasi, "Cannot create invalid FD on WASI.")

@@ -6,12 +6,16 @@ import copy
 import errno
 import os
 import pickle
-import posix
 import sys
 import unittest
 from test import support
 from test.support.script_helper import assert_python_ok
 from .utils import requires_sched
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 
 class PosixTester(unittest.TestCase):

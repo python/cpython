@@ -112,7 +112,7 @@ class DeviceEncodingTests(unittest.TestCase):
             (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET'))),
             'test requires a tty and either Windows or nl_langinfo(CODESET)')
     def test_device_encoding(self):
-        ncoding = os.device_encoding(0)
+        encoding = os.device_encoding(0)
         self.assertIsNotNone(encoding)
         self.assertTrue(codecs.lookup(encoding))
 

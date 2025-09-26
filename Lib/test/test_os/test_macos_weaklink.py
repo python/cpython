@@ -2,14 +2,20 @@
 Test macOS weak linking.
 """
 
-import os
-import posix
 import sys
 import unittest
+if sys.platform != "darwin":
+    raise unittest.SkipTest("test weak linking on macOS")
+
+import os
 from test.support import os_helper
 
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
-@unittest.skipUnless(sys.platform == "darwin", "test weak linking on macOS")
+
 class TestPosixWeaklinking(unittest.TestCase):
     # These test cases verify that weak linking support on macOS works
     # as expected. These cases only test new behaviour introduced by weak linking,

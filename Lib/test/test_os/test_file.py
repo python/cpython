@@ -4,12 +4,16 @@ Test files: open(), read(), pwritev(), truncate(), etc.
 
 import errno
 import os
-import posix
 import sys
 import unittest
 from test import support
 from test.support import os_helper
 from .utils import create_file
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 try:
     import fcntl

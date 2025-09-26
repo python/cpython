@@ -5,13 +5,17 @@ Test os.stat(), os.fstat(), etc.
 import errno
 import os
 import pickle
-import posix
 import stat
 import subprocess
 import sys
 import unittest
 from test.support import os_helper
 from .utils import create_file
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 
 # Test attributes on return values from os.*stat* family.

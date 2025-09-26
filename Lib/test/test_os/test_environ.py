@@ -3,7 +3,6 @@ Test the environment: os.environ, putenv(), etc.
 """
 
 import os
-import posix
 import subprocess
 import sys
 import unittest
@@ -12,6 +11,11 @@ from test import support
 from test import mapping_tests
 from test.support import os_helper
 from test.support import unix_shell
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 
 class EnvironTests(mapping_tests.BasicTestMappingProtocol):

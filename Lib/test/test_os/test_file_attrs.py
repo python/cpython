@@ -7,7 +7,6 @@ import errno
 import fractions
 import os
 import platform
-import posix
 import stat
 import sys
 import tempfile
@@ -15,6 +14,11 @@ import unittest
 from test import support
 from test.support import os_helper
 from .utils import create_file
+
+try:
+    import posix
+except ImportError:
+    import nt as posix
 
 try:
     import pwd
