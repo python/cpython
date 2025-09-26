@@ -125,7 +125,7 @@ CALL_XML_HANDLER_SETTER(const struct HandlerInfo *handler_info,
 }
 
 static int
-set_error_code(PyObject *err, enum XML_Error code)
+set_xml_error_attr_code(PyObject *err, enum XML_Error code)
 {
     PyObject *v = PyLong_FromLong((long)code);
     int ok = v != NULL && PyObject_SetAttr(err, &_Py_ID(code), v) != -1;
@@ -137,7 +137,7 @@ set_error_code(PyObject *err, enum XML_Error code)
  * false on an exception.
  */
 static int
-set_error_location(PyObject *err, const char *name, XML_Size value)
+set_xml_error_attr_location(PyObject *err, const char *name, XML_Size value)
 {
     PyObject *v = PyLong_FromSize_t((size_t)value);
     int ok = v != NULL && PyObject_SetAttrString(err, name, v) != -1;
@@ -147,31 +147,21 @@ set_error_location(PyObject *err, const char *name, XML_Size value)
 
 
 static PyObject *
-format_xml_error(enum XML_Error code, XML_Size lineno, XML_Size column)
-{
-    const char *errmsg = XML_ErrorString(code);
-    PyUnicodeWriter *writer = PyUnicodeWriter_Create(strlen(errmsg) + 1);
-    if (writer == NULL) {
-        return NULL;
-    }
-    if (PyUnicodeWriter_Format(writer,
-                               "%s: line %zu, column %zu",
-                               errmsg, (size_t)lineno, (size_t)column) < 0)
-    {
-        PyUnicodeWriter_Discard(writer);
-        return NULL;
-    }
-    return PyUnicodeWriter_Finish(writer);
-}
-
-static PyObject *
 set_xml_error(pyexpat_state *state,
               enum XML_Error code, XML_Size lineno, XML_Size column,
               const char *errmsg)
 {
-    PyObject *arg = errmsg == NULL
-        ? format_xml_error(code, lineno, column)
-        : PyUnicode_FromStringAndSize(errmsg, strlen(errmsg));
+    PyObject *arg;
+    if (errmsg == NULL) {
+        arg = PyUnicode_FromFormat(
+            "%s: line %zu, column %zu",
+            XML_ErrorString(code),
+            (size_t)lineno, (size_t)column
+        );
+    }
+    else {
+        arg = PyUnicode_FromStringAndSize(errmsg, strlen(errmsg));
+    }
     if (arg == NULL) {
         return NULL;
     }
@@ -179,9 +169,9 @@ set_xml_error(pyexpat_state *state,
     Py_DECREF(arg);
     if (
         res != NULL
-        && set_error_code(res, code)
-        && set_error_location(res, "lineno", lineno)
-        && set_error_location(res, "offset", column)
+        && set_xml_error_attr_code(res, code)
+        && set_xml_error_attr_location(res, "lineno", lineno)
+        && set_xml_error_attr_location(res, "offset", column)
     ) {
         PyErr_SetObject(state->error, res);
     }
