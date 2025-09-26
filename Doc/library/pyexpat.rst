@@ -282,8 +282,8 @@ common XML vulnerabilities.
    .. note::
 
       The maximum amplification factor is only considered if the threshold
-      that can be adjusted :meth:`.SetAllocTrackerActivationThreshold` is
-      exceeded.
+      that can be adjusted by :meth:`.SetAllocTrackerActivationThreshold`
+      is exceeded.
 
    .. versionadded:: next
 
