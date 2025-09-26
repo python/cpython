@@ -424,7 +424,7 @@ pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
                                                           unsigned long long threshold);
 
 static PyObject *
-pyexpat_xmlparser_SetAllocTrackerActivationThreshold(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pyexpat_xmlparser_SetAllocTrackerActivationThreshold(xmlparseobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -443,15 +443,14 @@ pyexpat_xmlparser_SetAllocTrackerActivationThreshold(PyObject *self, PyTypeObjec
     PyObject *argsbuf[1];
     unsigned long long threshold;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (!_PyLong_UnsignedLongLong_Converter(args[0], &threshold)) {
         goto exit;
     }
-    return_value = pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl((xmlparseobject *)self, cls, threshold);
+    return_value = pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(self, cls, threshold);
 
 exit:
     return return_value;
@@ -488,7 +487,7 @@ pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            float max_factor);
 
 static PyObject *
-pyexpat_xmlparser_SetAllocTrackerMaximumAmplification(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pyexpat_xmlparser_SetAllocTrackerMaximumAmplification(xmlparseobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -507,8 +506,7 @@ pyexpat_xmlparser_SetAllocTrackerMaximumAmplification(PyObject *self, PyTypeObje
     PyObject *argsbuf[1];
     float max_factor;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -522,7 +520,7 @@ pyexpat_xmlparser_SetAllocTrackerMaximumAmplification(PyObject *self, PyTypeObje
             goto exit;
         }
     }
-    return_value = pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl((xmlparseobject *)self, cls, max_factor);
+    return_value = pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(self, cls, max_factor);
 
 exit:
     return return_value;
@@ -679,4 +677,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF) */
-/*[clinic end generated code: output=e73935658c04c83e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2e787fd99710eb5b input=a9049054013a1b77]*/

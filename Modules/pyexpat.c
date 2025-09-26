@@ -1151,7 +1151,7 @@ static PyObject *
 pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
                                                           PyTypeObject *cls,
                                                           unsigned long long threshold)
-/*[clinic end generated code: output=bed7e93207ba08c5 input=54182cd71ad69978]*/
+/*[clinic end generated code: output=bed7e93207ba08c5 input=9c706b75c18e4ea1]*/
 {
     assert(self->itself != NULL);
     if (XML_SetAllocTrackerActivationThreshold(self->itself, threshold) == XML_TRUE) {
@@ -1192,7 +1192,7 @@ static PyObject *
 pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            PyTypeObject *cls,
                                                            float max_factor)
-/*[clinic end generated code: output=6e44bd48c9b112a0 input=3544abf9dd7ae055]*/
+/*[clinic end generated code: output=6e44bd48c9b112a0 input=918b9266b490a722]*/
 {
     assert(self->itself != NULL);
     if (XML_SetAllocTrackerMaximumAmplification(self->itself, max_factor) == XML_TRUE) {
