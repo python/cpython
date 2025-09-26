@@ -350,6 +350,24 @@ Communicating Between Interpreters
       The queue's ID.
 
 
+   .. method:: put(obj, block=True, timeout=None, *, unbounditems=None)
+
+      Add the object to the queue.
+
+      This method behaves like :meth:`queue.Queue.put`, with the additional
+      *unbounditems* parameter. See :func:`create_queue` for details on
+      the *unbounditems* parameter and its behavior.
+
+
+   .. method:: put_nowait(obj, *, unbounditems=None)
+
+      Add the object to the queue without blocking.
+
+      This method behaves like :meth:`queue.Queue.put_nowait`, with the
+      additional *unbounditems* parameter. See :func:`create_queue` for
+      details on the *unbounditems* parameter and its behavior.
+
+
 .. exception:: QueueEmpty
 
    This exception, a subclass of :exc:`queue.Empty`, is raised from
