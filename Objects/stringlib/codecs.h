@@ -354,8 +354,8 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
             case _Py_ERROR_BACKSLASHREPLACE:
                 /* subtract preallocated bytes */
                 writer->size -= max_char_size * (endpos - startpos);
-                p = _Py_backslashreplace(writer, p,
-                                         unicode, startpos, endpos);
+                p = _PyUnicode_Backslashreplace(writer, p,
+                                                unicode, startpos, endpos);
                 if (p == NULL)
                     goto error;
                 i += (endpos - startpos - 1);
@@ -364,8 +364,8 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
             case _Py_ERROR_XMLCHARREFREPLACE:
                 /* subtract preallocated bytes */
                 writer->size -= max_char_size * (endpos - startpos);
-                p = _Py_xmlcharrefreplace(writer, p,
-                                          unicode, startpos, endpos);
+                p = _PyUnicode_Xmlcharrefreplace(writer, p,
+                                                 unicode, startpos, endpos);
                 if (p == NULL)
                     goto error;
                 i += (endpos - startpos - 1);

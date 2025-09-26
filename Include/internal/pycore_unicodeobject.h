@@ -124,13 +124,13 @@ extern PyObject* _PyUnicode_DecodeUTF8(
     _Py_error_handler error_handler,
     const char *errors,
     Py_ssize_t *consumed);
-extern char* _Py_backslashreplace(
+extern char* _PyUnicode_Backslashreplace(
     PyBytesWriter *writer,
     char *str,
     PyObject *unicode,
     Py_ssize_t collstart,
     Py_ssize_t collend);
-extern char* _Py_xmlcharrefreplace(
+extern char* _PyUnicode_Xmlcharrefreplace(
     PyBytesWriter *writer,
     char *str,
     PyObject *unicode,

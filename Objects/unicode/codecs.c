@@ -17,8 +17,9 @@ struct encoding_map;
 /* Implementation of the "backslashreplace" error handler for 8-bit encodings:
    ASCII, Latin1, UTF-8, etc. */
 char*
-_Py_backslashreplace(PyBytesWriter *writer, char *str,
-                     PyObject *unicode, Py_ssize_t collstart, Py_ssize_t collend)
+_PyUnicode_Backslashreplace(PyBytesWriter *writer, char *str,
+                            PyObject *unicode,
+                            Py_ssize_t collstart, Py_ssize_t collend)
 {
     Py_ssize_t size, i;
     Py_UCS4 ch;
@@ -84,8 +85,9 @@ _Py_backslashreplace(PyBytesWriter *writer, char *str,
 /* Implementation of the "xmlcharrefreplace" error handler for 8-bit encodings:
    ASCII, Latin1, UTF-8, etc. */
 char*
-_Py_xmlcharrefreplace(PyBytesWriter *writer, char *str, PyObject *unicode,
-                      Py_ssize_t collstart, Py_ssize_t collend)
+_PyUnicode_Xmlcharrefreplace(PyBytesWriter *writer, char *str,
+                             PyObject *unicode,
+                             Py_ssize_t collstart, Py_ssize_t collend)
 {
     Py_ssize_t size, i;
     Py_UCS4 ch;
@@ -2233,8 +2235,8 @@ _PyUnicode_EncodeUCS1(PyObject *unicode,
             case _Py_ERROR_BACKSLASHREPLACE:
                 /* subtract preallocated bytes */
                 writer->size -= (collend - collstart);
-                str = _Py_backslashreplace(writer, str,
-                                           unicode, collstart, collend);
+                str = _PyUnicode_Backslashreplace(writer, str, unicode,
+                                                  collstart, collend);
                 if (str == NULL)
                     goto onError;
                 pos = collend;
@@ -2243,8 +2245,8 @@ _PyUnicode_EncodeUCS1(PyObject *unicode,
             case _Py_ERROR_XMLCHARREFREPLACE:
                 /* subtract preallocated bytes */
                 writer->size -= (collend - collstart);
-                str = _Py_xmlcharrefreplace(writer, str,
-                                            unicode, collstart, collend);
+                str = _PyUnicode_Xmlcharrefreplace(writer, str, unicode,
+                                                   collstart, collend);
                 if (str == NULL)
                     goto onError;
                 pos = collend;
