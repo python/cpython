@@ -233,7 +233,7 @@ This module defines the following functions:
    object for it.
 
    *maxsize* is an integer that sets the upperbound limit on the number of
-   items that can be placed in the queue. Insertion will block once this
+   items that can be placed in the queue. Insertion will be blocked once this
    size has been reached, until queue items are consumed. If *maxsize* is
    less than or equal to zero, the queue size is infinite.
 
@@ -352,7 +352,7 @@ Communicating Between Interpreters
 
    .. method:: put(obj, block=True, timeout=None, *, unbounditems=None)
 
-      Add the object to the queue.
+      Add the object *obj* to the queue.
 
       This method behaves like :meth:`queue.Queue.put`, with the additional
       *unbounditems* parameter. See :func:`create_queue` for details on
@@ -361,7 +361,7 @@ Communicating Between Interpreters
 
    .. method:: put_nowait(obj, *, unbounditems=None)
 
-      Add the object to the queue without blocking.
+      Add the object *obj* to the queue without blocking.
 
       This method behaves like :meth:`queue.Queue.put_nowait`, with the
       additional *unbounditems* parameter. See :func:`create_queue` for
@@ -383,7 +383,7 @@ Communicating Between Interpreters
 
 .. exception:: ItemInterpreterDestroyed
 
-   This exception, a subclass of :exc:`QueueError`, is raised from
+   This exception, a subclass of :exc:`QueueError`, is raised by
    :meth:`!Queue.get` and :meth:`!Queue.get_nowait` when the original
    interpreter that put an item into the queue has been destroyed and
    the queue was created with ``unbounditems=UNBOUND_ERROR``.
