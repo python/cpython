@@ -2425,9 +2425,9 @@ class TestCounter(unittest.TestCase):
         self.assertFalse(Counter(a=2, b=1, c=0) > Counter('aab'))
 
     def test_symmetric_difference(self):
-        pop = (-4, -3, -2, -1, 0, 1, 2, 3, 4)
+        population = (-4, -3, -2, -1, 0, 1, 2, 3, 4)
 
-        for a, b1, b2, c in product(pop, repeat=4):
+        for a, b1, b2, c in product(population, repeat=4):
             p = Counter(a=a, b=b1)
             q = Counter(b=b2, c=c)
             r = p ^ q
