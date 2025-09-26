@@ -227,10 +227,25 @@ This module defines the following functions:
    Initialize a new (idle) Python interpreter
    and return a :class:`Interpreter` object for it.
 
-.. function:: create_queue()
+.. function:: create_queue(maxsize=0, *, unbounditems=UNBOUND)
 
    Initialize a new cross-interpreter queue and return a :class:`Queue`
    object for it.
+
+   *maxsize* is an integer that sets the upperbound limit on the number of
+   items that can be placed in the queue. Insertion will block once this
+   size has been reached, until queue items are consumed. If *maxsize* is
+   less than or equal to zero, the queue size is infinite.
+
+   *unbounditems* controls the behavior when the interpreter that put an
+   item into the queue is destroyed. It can be one of:
+
+   * :const:`UNBOUND_ERROR` - raise :exc:`ItemInterpreterDestroyed` when
+     getting an item from a destroyed interpreter
+   * :const:`UNBOUND_REMOVE` - automatically remove items when their
+     original interpreter is destroyed
+   * :const:`UNBOUND` - return :const:`UNBOUND` in place of the original
+     item (default)
 
 
 Interpreter objects
@@ -346,6 +361,14 @@ Communicating Between Interpreters
    This exception, a subclass of :exc:`queue.Full`, is raised from
    :meth:`!Queue.put` and :meth:`!Queue.put_nowait` when the queue
    is full.
+
+
+.. exception:: ItemInterpreterDestroyed
+
+   This exception, a subclass of :exc:`QueueError`, is raised from
+   :meth:`!Queue.get` and :meth:`!Queue.get_nowait` when the original
+   interpreter that put an item into the queue has been destroyed and
+   the queue was created with ``unbounditems=UNBOUND_ERROR``.
 
 
 Basic usage
