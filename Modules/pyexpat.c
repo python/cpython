@@ -1218,7 +1218,7 @@ set_maximum_amplification(xmlparseobject *self,
 }
 #endif
 
-#if XML_COMBINED_VERSION >= 20402
+#if XML_COMBINED_VERSION >= 20400
 /*[clinic input]
 @permit_long_summary
 @permit_long_docstring_body
@@ -1246,7 +1246,7 @@ pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold_impl(xmlpa
 }
 #endif
 
-#if XML_COMBINED_VERSION >= 20402
+#if XML_COMBINED_VERSION >= 20400
 /*[clinic input]
 @permit_long_summary
 @permit_long_docstring_body
@@ -2382,6 +2382,7 @@ pyexpat_exec(PyObject *mod)
     capi->SetAllocTrackerActivationThreshold = NULL;
     capi->SetAllocTrackerMaximumAmplification = NULL;
 #endif
+
     /* export using capsule */
     PyObject *capi_object = PyCapsule_New(capi, PyExpat_CAPSULE_NAME,
                                           pyexpat_capsule_destructor);
