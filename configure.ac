@@ -7174,6 +7174,8 @@ SRCDIRS="\
   Objects \
   Objects/mimalloc \
   Objects/mimalloc/prim \
+  Objects/stringlib \
+  Objects/unicode \
   Parser \
   Parser/tokenizer \
   Parser/lexer \

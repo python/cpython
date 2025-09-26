@@ -556,7 +556,16 @@
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\typevarobject.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
-    <ClCompile Include="..\Objects\unicodeobject.c" />
+    <ClCompile Include="..\Objects\unicode\codecs.c" />
+    <ClCompile Include="..\Objects\unicode\convert.c" />
+    <ClCompile Include="..\Objects\unicode\format.c" />
+    <ClCompile Include="..\Objects\unicode\fromformat.c" />
+    <ClCompile Include="..\Objects\unicode\iter.c" />
+    <ClCompile Include="..\Objects\unicode\methods.c" />
+    <ClCompile Include="..\Objects\unicode\module.c" />
+    <ClCompile Include="..\Objects\unicode\object.c" />
+    <ClCompile Include="..\Objects\unicode\utf_codecs.c" />
+    <ClCompile Include="..\Objects\unicode\writer.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
     <ClCompile Include="..\Parser\myreadline.c" />

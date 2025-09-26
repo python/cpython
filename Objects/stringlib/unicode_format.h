@@ -937,8 +937,8 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
 /************************************************************************/
 
 /* this is the main entry point */
-static PyObject *
-do_string_format(PyObject *self, PyObject *args, PyObject *kwargs)
+PyObject*
+_PyUnicode_do_string_format(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     SubString input;
 
@@ -954,10 +954,10 @@ do_string_format(PyObject *self, PyObject *args, PyObject *kwargs)
     return build_string(&input, args, kwargs, recursion_depth, &auto_number);
 }
 
-static PyObject *
-do_string_format_map(PyObject *self, PyObject *obj)
+PyObject*
+_PyUnicode_do_string_format_map(PyObject *self, PyObject *obj)
 {
-    return do_string_format(self, NULL, obj);
+    return _PyUnicode_do_string_format(self, NULL, obj);
 }
 
 
@@ -1062,7 +1062,7 @@ static PyMethodDef formatteriter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyTypeObject PyFormatterIter_Type = {
+PyTypeObject _Py_FormatterIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "formatteriterator",                /* tp_name */
     sizeof(formatteriterobject),        /* tp_basicsize */
@@ -1109,7 +1109,7 @@ formatter_parser(PyObject *Py_UNUSED(module), PyObject *self)
         return NULL;
     }
 
-    it = PyObject_New(formatteriterobject, &PyFormatterIter_Type);
+    it = PyObject_New(formatteriterobject, &_Py_FormatterIter_Type);
     if (it == NULL)
         return NULL;
 
@@ -1196,7 +1196,7 @@ static PyMethodDef fieldnameiter_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyTypeObject PyFieldNameIter_Type = {
+PyTypeObject _Py_FieldNameIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "fieldnameiterator",                /* tp_name */
     sizeof(fieldnameiterobject),        /* tp_basicsize */
@@ -1250,7 +1250,7 @@ formatter_field_name_split(PyObject *Py_UNUSED(module), PyObject *self)
         return NULL;
     }
 
-    it = PyObject_New(fieldnameiterobject, &PyFieldNameIter_Type);
+    it = PyObject_New(fieldnameiterobject, &_Py_FieldNameIter_Type);
     if (it == NULL)
         return NULL;
 

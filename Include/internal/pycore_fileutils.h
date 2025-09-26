@@ -22,6 +22,7 @@ extern "C" {
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
+extern _Py_error_handler _Py_GetErrorHandlerWide(const wchar_t *errors);
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _Py_DecodeLocaleEx(

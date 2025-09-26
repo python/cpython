@@ -558,7 +558,16 @@ OBJECT_OBJS=	\
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
 		Objects/typevarobject.o \
-		Objects/unicodeobject.o \
+		Objects/unicode/codecs.o \
+		Objects/unicode/convert.o \
+		Objects/unicode/format.o \
+		Objects/unicode/fromformat.o \
+		Objects/unicode/iter.o \
+		Objects/unicode/methods.o \
+		Objects/unicode/module.o \
+		Objects/unicode/object.o \
+		Objects/unicode/utf_codecs.o \
+		Objects/unicode/writer.o \
 		Objects/unicodectype.o \
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
@@ -2105,7 +2114,16 @@ Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
 Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
-Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
+Objects/unicode/codecs.o: $(srcdir)/Objects/unicode/codecs.c $(UNICODE_DEPS)
+Objects/unicode/convert.o: $(srcdir)/Objects/unicode/convert.c $(UNICODE_DEPS)
+Objects/unicode/format.o: $(srcdir)/Objects/unicode/format.c $(UNICODE_DEPS)
+Objects/unicode/fromformat.o: $(srcdir)/Objects/unicode/fromformat.c $(UNICODE_DEPS)
+Objects/unicode/iter.o: $(srcdir)/Objects/unicode/iter.c $(UNICODE_DEPS)
+Objects/unicode/methods.o: $(srcdir)/Objects/unicode/methods.c $(UNICODE_DEPS)
+Objects/unicode/module.o: $(srcdir)/Objects/unicode/module.c $(UNICODE_DEPS)
+Objects/unicode/object.o: $(srcdir)/Objects/unicode/object.c $(UNICODE_DEPS)
+Objects/unicode/utf_codecs.o: $(srcdir)/Objects/unicode/utf_codecs.c $(UNICODE_DEPS)
+Objects/unicode/writer.o: $(srcdir)/Objects/unicode/writer.c $(UNICODE_DEPS)
 
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h

@@ -2,6 +2,7 @@
 #include "pycore_fileutils.h"     // fileutils definitions
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
+#include "pycore_unicodeobject.h" // _Py_normalize_encoding()
 #include "osdefs.h"               // SEP
 
 #include <stdlib.h>               // mbstowcs()
@@ -179,8 +180,6 @@ _Py_mbrtowc(wchar_t *pwc, const char *str, size_t len, mbstate_t *pmbs)
 #if !defined(_Py_FORCE_UTF8_FS_ENCODING) && !defined(MS_WINDOWS)
 
 #define USE_FORCE_ASCII
-
-extern int _Py_normalize_encoding(const char *, char *, size_t);
 
 /* Workaround FreeBSD and OpenIndiana locale encoding issue with the C locale
    and POSIX locale. nl_langinfo(CODESET) announces an alias of the
