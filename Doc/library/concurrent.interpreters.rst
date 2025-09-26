@@ -335,13 +335,13 @@ Communicating Between Interpreters
       The queue's ID.
 
 
-.. exception:: QueueEmptyError
+.. exception:: QueueEmpty
 
    This exception, a subclass of :exc:`queue.Empty`, is raised from
    :meth:`!Queue.get` and :meth:`!Queue.get_nowait` when the queue
    is empty.
 
-.. exception:: QueueFullError
+.. exception:: QueueFull
 
    This exception, a subclass of :exc:`queue.Full`, is raised from
    :meth:`!Queue.put` and :meth:`!Queue.put_nowait` when the queue
