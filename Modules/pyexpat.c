@@ -3,6 +3,9 @@
 
 #include <stdbool.h>
 #include "structmember.h"         // PyMemberDef
+#include <stddef.h>               // offsetof()
+
+#include "expat_config.h"
 #include "expat.h"
 
 #include "pyexpat.h"
@@ -103,21 +106,79 @@ struct HandlerInfo {
 
 static struct HandlerInfo handler_info[64];
 
+static int
+set_error_code(PyObject *err, enum XML_Error code)
+{
+    PyObject *v = PyLong_FromLong((long)code);
+    int ok = v != NULL && PyObject_SetAttr(err, &_Py_ID(code), v) != -1;
+    Py_XDECREF(v);
+    return ok;
+}
+
 /* Set an integer attribute on the error object; return true on success,
  * false on an exception.
  */
 static int
-set_error_attr(PyObject *err, const char *name, int value)
+set_error_location(PyObject *err, const char *name, XML_Size value)
 {
-    PyObject *v = PyLong_FromLong(value);
-
-    if (v == NULL || PyObject_SetAttrString(err, name, v) == -1) {
-        Py_XDECREF(v);
-        return 0;
-    }
-    Py_DECREF(v);
-    return 1;
+    PyObject *v = PyLong_FromSize_t((size_t)value);
+    int ok = v != NULL && PyObject_SetAttrString(err, name, v) != -1;
+    Py_XDECREF(v);
+    return ok;
 }
+
+
+static PyObject *
+format_xml_error(enum XML_Error code, XML_Size lineno, XML_Size column)
+{
+    const char *errmsg = XML_ErrorString(code);
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(strlen(errmsg) + 1);
+    if (writer == NULL) {
+        return NULL;
+    }
+    if (PyUnicodeWriter_Format(writer,
+                               "%s: line %zu, column %zu",
+                               errmsg, (size_t)lineno, (size_t)column) < 0)
+    {
+        PyUnicodeWriter_Discard(writer);
+        return NULL;
+    }
+    return PyUnicodeWriter_Finish(writer);
+}
+
+static PyObject *
+set_xml_error(pyexpat_state *state,
+              enum XML_Error code, XML_Size lineno, XML_Size column,
+              const char *errmsg)
+{
+    PyObject *arg = errmsg == NULL
+        ? format_xml_error(code, lineno, column)
+        : PyUnicode_FromStringAndSize(errmsg, strlen(errmsg));
+    if (arg == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyObject_CallOneArg(state->error, arg);
+    Py_DECREF(arg);
+    if (
+        res != NULL
+        && set_error_code(res, code)
+        && set_error_location(res, "lineno", lineno)
+        && set_error_location(res, "offset", column)
+    ) {
+        PyErr_SetObject(state->error, res);
+    }
+    Py_XDECREF(res);
+    return NULL;
+}
+
+#define SET_XML_ERROR(STATE, SELF, CODE, ERRMSG)                    \
+    do {                                                            \
+        XML_Parser parser = SELF->itself;                           \
+        assert(parser != NULL);                                     \
+        XML_Size lineno = XML_GetCurrentLineNumber(parser);         \
+        XML_Size column = XML_GetCurrentColumnNumber(parser);       \
+        (void)set_xml_error(state, CODE, lineno, column, ERRMSG);   \
+    } while (0)
 
 /* Build and set an Expat exception, including positioning
  * information.  Always returns NULL.
@@ -125,27 +186,18 @@ set_error_attr(PyObject *err, const char *name, int value)
 static PyObject *
 set_error(pyexpat_state *state, xmlparseobject *self, enum XML_Error code)
 {
-    PyObject *err;
-    PyObject *buffer;
-    XML_Parser parser = self->itself;
-    int lineno = XML_GetErrorLineNumber(parser);
-    int column = XML_GetErrorColumnNumber(parser);
-
-    buffer = PyUnicode_FromFormat("%s: line %i, column %i",
-                                  XML_ErrorString(code), lineno, column);
-    if (buffer == NULL)
-        return NULL;
-    err = PyObject_CallOneArg(state->error, buffer);
-    Py_DECREF(buffer);
-    if (  err != NULL
-          && set_error_attr(err, "code", code)
-          && set_error_attr(err, "offset", column)
-          && set_error_attr(err, "lineno", lineno)) {
-        PyErr_SetObject(state->error, err);
-    }
-    Py_XDECREF(err);
+    SET_XML_ERROR(state, self, code, NULL);
     return NULL;
 }
+
+static PyObject *
+set_invalid_arg(pyexpat_state *state, xmlparseobject *self, const char *errmsg)
+{
+    SET_XML_ERROR(state, self, XML_ERROR_INVALID_ARGUMENT, errmsg);
+    return NULL;
+}
+
+#undef SET_XML_ERROR
 
 static int
 have_handler(xmlparseobject *self, int type)
@@ -1095,6 +1147,87 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
 }
 #endif
 
+#if XML_COMBINED_VERSION >= 20702
+/*[clinic input]
+pyexpat.xmlparser.SetAllocTrackerActivationThreshold
+
+    cls: defining_class
+    threshold: unsigned_long_long
+    /
+
+Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.
+
+By default, parser objects have an allocation activation threshold of 64 MiB.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
+                                                          PyTypeObject *cls,
+                                                          unsigned long long threshold)
+/*[clinic end generated code: output=bed7e93207ba08c5 input=9c706b75c18e4ea1]*/
+{
+    assert(self->itself != NULL);
+    if (XML_SetAllocTrackerActivationThreshold(self->itself, threshold) == XML_TRUE) {
+        Py_RETURN_NONE;
+    }
+    // XML_SetAllocTrackerActivationThreshold() can only fail if self->itself
+    // is not a root parser (currently, this is equivalent to be created
+    // by ExternalEntityParserCreate()).
+    pyexpat_state *state = PyType_GetModuleState(cls);
+    return set_invalid_arg(state, self, "parser must be a root parser");
+}
+#endif
+
+#if XML_COMBINED_VERSION >= 20702
+/*[clinic input]
+pyexpat.xmlparser.SetAllocTrackerMaximumAmplification
+
+    cls: defining_class
+    max_factor: float
+    /
+
+Sets the maximum amplification factor between direct input and bytes of dynamic memory allocated.
+
+The amplification factor is calculated as "allocated / direct" while parsing,
+where "direct" is the number of bytes read from the primary document in parsing
+and "allocated" is the number of bytes of dynamic memory allocated in the parser
+hierarchy.
+
+The 'max_factor' value must be a non-NaN floating point value greater than
+or equal to 1.0. Amplification factors greater than 100.0 can be observed
+near the start of parsing even with benign files in practice. In particular,
+the activation threshold should be carefully chosen to avoid false positives.
+
+By default, parser objects have a maximum amplification factor of 100.0.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
+                                                           PyTypeObject *cls,
+                                                           float max_factor)
+/*[clinic end generated code: output=6e44bd48c9b112a0 input=918b9266b490a722]*/
+{
+    assert(self->itself != NULL);
+    if (XML_SetAllocTrackerMaximumAmplification(self->itself, max_factor) == XML_TRUE) {
+        Py_RETURN_NONE;
+    }
+    // XML_SetAllocTrackerMaximumAmplification() can fail if self->itself
+    // is not a root parser (currently, this is equivalent to be created
+    // by ExternalEntityParserCreate()) or if 'max_factor' is NaN or < 1.0.
+    //
+    // Expat does not provide a way to determine whether a parser is a root
+    // or not, nor does it provide a way to distinguish between failures in
+    // XML_SetAllocTrackerMaximumAmplification() (see gh-90949), we manually
+    // detect the factor out-of-range issue here so that users have a better
+    // error message.
+    pyexpat_state *state = PyType_GetModuleState(cls);
+    const char *message = (isnan(max_factor) || max_factor < 1.0f)
+        ? "'max_factor' must be at least 1.0"
+        : "parser must be a root parser";
+    return set_invalid_arg(state, self, message);
+}
+#endif
+
 static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_PARSE_METHODDEF
     PYEXPAT_XMLPARSER_PARSEFILE_METHODDEF
@@ -1103,9 +1236,9 @@ static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_GETINPUTCONTEXT_METHODDEF
     PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF
     PYEXPAT_XMLPARSER_SETPARAMENTITYPARSING_METHODDEF
-#if XML_COMBINED_VERSION >= 19505
     PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
-#endif
+    PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
+    PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     PYEXPAT_XMLPARSER_SETREPARSEDEFERRALENABLED_METHODDEF
     PYEXPAT_XMLPARSER_GETREPARSEDEFERRALENABLED_METHODDEF
     {NULL, NULL}  /* sentinel */
@@ -2085,6 +2218,13 @@ pyexpat_exec(PyObject *mod)
     capi->SetReparseDeferralEnabled = XML_SetReparseDeferralEnabled;
 #else
     capi->SetReparseDeferralEnabled = NULL;
+#endif
+#if XML_COMBINED_VERSION >= 20702
+    capi->SetAllocTrackerActivationThreshold = XML_SetAllocTrackerActivationThreshold;
+    capi->SetAllocTrackerMaximumAmplification = XML_SetAllocTrackerMaximumAmplification;
+#else
+    capi->SetAllocTrackerActivationThreshold = NULL;
+    capi->SetAllocTrackerMaximumAmplification = NULL;
 #endif
 
     /* export using capsule */
