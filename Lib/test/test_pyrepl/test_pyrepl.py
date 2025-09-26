@@ -1414,6 +1414,26 @@ class TestDumbTerminal(ReplTestCase):
         self.assertNotIn("Traceback", output)
 
 
+class TestConsoleRepr(TestCase):
+
+    def test_console_repr_with_missing_attributes(self):
+        from _pyrepl.unix_console import UnixConsole
+        console = UnixConsole()
+
+        repr_str = repr(console)
+
+        self.assertIsInstance(repr_str, str)
+        self.assertIn("UnixConsole", repr_str)
+
+    def test_readline_wrapper_repr_after_import(self):
+        import _pyrepl.readline
+
+        wrapper = _pyrepl.readline._wrapper
+        if wrapper is not None and wrapper.reader is not None:
+            repr_str = repr(wrapper.reader)
+            self.assertIsInstance(repr_str, str)
+
+
 @skipUnless(pty, "requires pty")
 @skipIf((os.environ.get("TERM") or "dumb") == "dumb", "can't use pyrepl in dumb terminal")
 class TestMain(ReplTestCase):

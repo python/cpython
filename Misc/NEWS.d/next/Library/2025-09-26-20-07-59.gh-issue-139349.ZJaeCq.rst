@@ -1,0 +1,2 @@
+Fix: make dataclass Console init right to avoid has no attribute 'posxy'
+error
