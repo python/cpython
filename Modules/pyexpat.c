@@ -1174,7 +1174,7 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
 }
 #endif
 
-#if XML_COMBINED_VERSION >= 20402
+#if XML_COMBINED_VERSION >= 20400
 static PyObject *
 set_activation_threshold(xmlparseobject *self,
                          PyTypeObject *cls,
@@ -1281,50 +1281,6 @@ pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification_impl(xmlp
         self, cls, max_factor,
         XML_SetBillionLaughsAttackProtectionMaximumAmplification
     );
-}
-#endif
-
-#if XML_COMBINED_VERSION >= 20702
-static PyObject *
-set_activation_threshold(xmlparseobject *self,
-                         PyTypeObject *cls,
-                         unsigned long long threshold,
-                         XML_Bool (*setter)(XML_Parser, unsigned long long))
-{
-    assert(self->itself != NULL);
-    if (setter(self->itself, threshold) == XML_TRUE) {
-        Py_RETURN_NONE;
-    }
-    // The setter fails if self->itself is NULL (which is not possible here)
-    // or is a non-root parser, which currently only happens for parsers
-    // created by ExternalEntityParserCreate().
-    pyexpat_state *state = PyType_GetModuleState(cls);
-    return set_invalid_arg(state, self, "parser must be a root parser");
-}
-
-static PyObject *
-set_maximum_amplification(xmlparseobject *self,
-                          PyTypeObject *cls,
-                          float max_factor,
-                          XML_Bool (*setter)(XML_Parser, float))
-{
-    assert(self->itself != NULL);
-    if (setter(self->itself, max_factor) == XML_TRUE) {
-        Py_RETURN_NONE;
-    }
-    // The setter fails if self->itself is NULL (which is not possible here),
-    // is a non-root parser, which currently only happens for parsers created
-    // by ExternalEntityParserCreate(), or if 'max_factor' is NaN or < 1.0.
-    pyexpat_state *state = PyType_GetModuleState(cls);
-    // Note: Expat has no API to determine whether a parser is a root parser,
-    // and since the Expat functions for defining the various maximum allowed
-    // amplifcation factors fail when a bad parser or an out-of-range factor
-    // is given without specifying which check failed, we check whether the
-    // factor is out-of-range to improve the error message. See also gh-90949.
-    const char *message = (isnan(max_factor) || max_factor < 1.0f)
-          ? "'max_factor' must be at least 1.0"
-          : "parser must be a root parser";
-    return set_invalid_arg(state, self, message);
 }
 #endif
 
