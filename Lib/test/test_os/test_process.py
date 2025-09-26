@@ -396,6 +396,7 @@ class SpawnTests(unittest.TestCase):
 
 class PosixTester(unittest.TestCase):
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(getattr(os, 'execve', None) in os.supports_fd, "test needs execve() to support the fd parameter")
     @support.requires_fork()
     def test_fexecve(self):
