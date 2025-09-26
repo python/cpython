@@ -135,7 +135,7 @@ class Completer(rlcompleter.Completer):
             return self.colorize_matches(names, values)
 
         if prefix:
-            names += [' ']
+            names.append(' ')
         return names
 
     def colorize_matches(self, names, values):
