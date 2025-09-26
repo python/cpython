@@ -383,10 +383,9 @@ Communicating Between Interpreters
 
 .. exception:: ItemInterpreterDestroyed
 
-   This exception, a subclass of :exc:`QueueError`, is raised by
-   :meth:`!Queue.get` and :meth:`!Queue.get_nowait` when the original
-   interpreter that put an item into the queue has been destroyed and
-   the queue was created with ``unbounditems=UNBOUND_ERROR``.
+   This exception is raised by :meth:`!Queue.get` and :meth:`!Queue.get_nowait`
+   when the original interpreter that put an item into the queue has been
+   destroyed and the queue was created with ``unbounditems=UNBOUND_ERROR``.
 
 
 Basic usage
