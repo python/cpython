@@ -1136,8 +1136,6 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
 
 #if XML_COMBINED_VERSION >= 20702
 /*[clinic input]
-@permit_long_summary
-@permit_long_docstring_body
 pyexpat.xmlparser.SetAllocTrackerActivationThreshold
 
     cls: defining_class
@@ -1169,8 +1167,6 @@ pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
 
 #if XML_COMBINED_VERSION >= 20702
 /*[clinic input]
-@permit_long_summary
-@permit_long_docstring_body
 pyexpat.xmlparser.SetAllocTrackerMaximumAmplification
 
     cls: defining_class
