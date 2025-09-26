@@ -1,1 +1,1 @@
-Make binarysort adaptative. This improve `sorting()` performance by reducing the amount of comparisons of already sorted intervals.
+Make binarysort adaptative. This improve sorting() performance by reducing the amount of comparisons of already sorted intervals.
