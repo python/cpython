@@ -410,6 +410,7 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fp)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(hasattr(posix, 'waitid'), "test needs posix.waitid()")
     @support.requires_fork()
     def test_waitid(self):
