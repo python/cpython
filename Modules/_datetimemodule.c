@@ -1921,6 +1921,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *colonzreplacement = NULL; /* py string, replacement for %:z */
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
+    PyObject *dash_replacement = NULL;  /* py string, replacement for %- */
 
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
@@ -2058,13 +2059,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
             i++;
 
-            PyObject *tmp = make_dash_replacement(object, next_ch, timetuple);
-            if (tmp == NULL) {
+            Py_XDECREF(dash_replacement);
+            dash_replacement = make_dash_replacement(object, next_ch, timetuple);
+            if (dash_replacement == NULL) {
                 goto Error;
             }
-
-            replacement = tmp;
-            need_decref_replacement = 1;
+            replacement = dash_replacement;
         }
         #endif
         else {
@@ -2074,20 +2074,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         assert(replacement != NULL);
         assert(PyUnicode_Check(replacement));
         if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
-            if (need_decref_replacement) {
-                Py_DECREF(replacement);
-            }
             goto Error;
         }
         start = i;
         if (PyUnicodeWriter_WriteStr(writer, replacement) < 0) {
-            if (need_decref_replacement) {
-                Py_DECREF(replacement);
-            }
             goto Error;
-        }
-        if (need_decref_replacement) {
-            Py_DECREF(replacement);
         }
     }  /* end while() */
 
@@ -2115,6 +2106,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
     Py_XDECREF(strftime);
+    Py_XDECREF(dash_replacement);
     return result;
 
  Error:
