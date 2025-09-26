@@ -22,6 +22,7 @@ from test.support.os_helper import unlink
 from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
 from test.support.socket_helper import find_unused_port
 from test.support import requires_subprocess, is_emscripten
+from test.support import captured_stdout, captured_stderr
 
 PROCESS_VM_READV_SUPPORTED = False
 
@@ -272,25 +273,28 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Test with empty frames
         collector.collect([])
-        self.assertEqual(len(collector.call_trees), 0)
+        self.assertEqual(len(collector.stack_counter), 0)
 
         # Test with single frame stack
         test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func")])])]
         collector.collect(test_frames)
-        self.assertEqual(len(collector.call_trees), 1)
-        self.assertEqual(collector.call_trees[0], [("file.py", 10, "func")])
+        self.assertEqual(len(collector.stack_counter), 1)
+        ((path, thread_id), count), = collector.stack_counter.items()
+        self.assertEqual(path, (("file.py", 10, "func"),))
+        self.assertEqual(thread_id, 1)
+        self.assertEqual(count, 1)
 
         # Test with very deep stack
         deep_stack = [(f"file{i}.py", i, f"func{i}") for i in range(100)]
         test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, deep_stack)])]
         collector = CollapsedStackCollector()
         collector.collect(test_frames)
-        self.assertEqual(len(collector.call_trees[0]), 100)
-        # Check it's properly reversed
-        self.assertEqual(
-            collector.call_trees[0][0], ("file99.py", 99, "func99")
-        )
-        self.assertEqual(collector.call_trees[0][-1], ("file0.py", 0, "func0"))
+        # One aggregated path with 100 frames (reversed)
+        ((path_tuple, thread_id),), = (collector.stack_counter.keys(),)
+        self.assertEqual(len(path_tuple), 100)
+        self.assertEqual(path_tuple[0], ("file99.py", 99, "func99"))
+        self.assertEqual(path_tuple[-1], ("file0.py", 0, "func0"))
+        self.assertEqual(thread_id, 1)
 
     def test_pstats_collector_basic(self):
         """Test basic PstatsCollector functionality."""
@@ -382,8 +386,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector = CollapsedStackCollector()
 
         # Test empty state
-        self.assertEqual(len(collector.call_trees), 0)
-        self.assertEqual(len(collector.function_samples), 0)
+        self.assertEqual(len(collector.stack_counter), 0)
 
         # Test collecting sample data
         test_frames = [
@@ -391,18 +394,13 @@ class TestSampleProfilerComponents(unittest.TestCase):
         ]
         collector.collect(test_frames)
 
-        # Should store call tree (reversed)
-        self.assertEqual(len(collector.call_trees), 1)
-        expected_tree = [("file.py", 20, "func2"), ("file.py", 10, "func1")]
-        self.assertEqual(collector.call_trees[0], expected_tree)
-
-        # Should count function samples
-        self.assertEqual(
-            collector.function_samples[("file.py", 10, "func1")], 1
-        )
-        self.assertEqual(
-            collector.function_samples[("file.py", 20, "func2")], 1
-        )
+        # Should store one reversed path
+        self.assertEqual(len(collector.stack_counter), 1)
+        ((path, thread_id), count), = collector.stack_counter.items()
+        expected_tree = (("file.py", 20, "func2"), ("file.py", 10, "func1"))
+        self.assertEqual(path, expected_tree)
+        self.assertEqual(thread_id, 1)
+        self.assertEqual(count, 1)
 
     def test_collapsed_stack_collector_export(self):
         collapsed_out = tempfile.NamedTemporaryFile(delete=False)
@@ -422,7 +420,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.collect(test_frames2)
         collector.collect(test_frames3)
 
-        collector.export(collapsed_out.name)
+        with (captured_stdout(), captured_stderr()):
+            collector.export(collapsed_out.name)
         # Check file contents
         with open(collapsed_out.name, "r") as f:
             content = f.read()
@@ -430,9 +429,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         lines = content.strip().split("\n")
         self.assertEqual(len(lines), 2)  # Two unique stacks
 
-        # Check collapsed format: file:func:line;file:func:line count
-        stack1_expected = "file.py:func2:20;file.py:func1:10 2"
-        stack2_expected = "other.py:other_func:5 1"
+        # Check collapsed format: tid:X;file:func:line;file:func:line count
+        stack1_expected = "tid:1;file.py:func2:20;file.py:func1:10 2"
+        stack2_expected = "tid:1;other.py:other_func:5 1"
 
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
@@ -441,9 +440,13 @@ class TestSampleProfilerComponents(unittest.TestCase):
         """Test basic FlamegraphCollector functionality."""
         collector = FlamegraphCollector()
 
-        # Test empty state (inherits from StackTraceCollector)
-        self.assertEqual(len(collector.call_trees), 0)
-        self.assertEqual(len(collector.function_samples), 0)
+        # Empty collector should produce 'No Data'
+        data = collector._convert_to_flamegraph_format()
+        # With string table, name is now an index - resolve it using the strings array
+        strings = data.get("strings", [])
+        name_index = data.get("name", 0)
+        resolved_name = strings[name_index] if isinstance(name_index, int) and 0 <= name_index < len(strings) else str(name_index)
+        self.assertIn(resolved_name, ("No Data", "No significant data"))
 
         # Test collecting sample data
         test_frames = [
@@ -454,18 +457,22 @@ class TestSampleProfilerComponents(unittest.TestCase):
         ]
         collector.collect(test_frames)
 
-        # Should store call tree (reversed)
-        self.assertEqual(len(collector.call_trees), 1)
-        expected_tree = [("file.py", 20, "func2"), ("file.py", 10, "func1")]
-        self.assertEqual(collector.call_trees[0], expected_tree)
-
-        # Should count function samples
-        self.assertEqual(
-            collector.function_samples[("file.py", 10, "func1")], 1
-        )
-        self.assertEqual(
-            collector.function_samples[("file.py", 20, "func2")], 1
-        )
+        # Convert and verify structure: func2 -> func1 with counts = 1
+        data = collector._convert_to_flamegraph_format()
+        # Expect promotion: root is the single child (func2), with func1 as its only child
+        strings = data.get("strings", [])
+        name_index = data.get("name", 0)
+        name = strings[name_index] if isinstance(name_index, int) and 0 <= name_index < len(strings) else str(name_index)
+        self.assertIsInstance(name, str)
+        self.assertTrue(name.startswith("Program Root: "))
+        self.assertIn("func2 (file.py:20)", name)  # formatted name
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        child_name_index = child.get("name", 0)
+        child_name = strings[child_name_index] if isinstance(child_name_index, int) and 0 <= child_name_index < len(strings) else str(child_name_index)
+        self.assertIn("func1 (file.py:10)", child_name)  # formatted name
+        self.assertEqual(child["value"], 1)
 
     def test_flamegraph_collector_export(self):
         """Test flamegraph HTML export functionality."""
@@ -498,7 +505,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.collect(test_frames3)
 
         # Export flamegraph
-        collector.export(flamegraph_out.name)
+        with (captured_stdout(), captured_stderr()):
+            collector.export(flamegraph_out.name)
 
         # Verify file was created and contains valid data
         self.assertTrue(os.path.exists(flamegraph_out.name))
@@ -1508,28 +1516,30 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
         for frames in recursive_frames:
             collector.collect([frames])
 
-        # Should capture both call trees
-        self.assertEqual(len(collector.call_trees), 2)
+        # Should capture both call paths
+        self.assertEqual(len(collector.stack_counter), 2)
 
-        # First tree should be longer (deeper recursion)
-        tree1 = collector.call_trees[0]
-        tree2 = collector.call_trees[1]
-
-        # Trees should be different lengths due to different recursion depths
-        self.assertNotEqual(len(tree1), len(tree2))
+        # First path should be longer (deeper recursion) than the second
+        path_tuples = list(collector.stack_counter.keys())
+        paths = [p[0] for p in path_tuples]  # Extract just the call paths
+        lengths = [len(p) for p in paths]
+        self.assertNotEqual(lengths[0], lengths[1])
 
         # Both should contain factorial calls
-        self.assertTrue(any("factorial" in str(frame) for frame in tree1))
-        self.assertTrue(any("factorial" in str(frame) for frame in tree2))
+        self.assertTrue(any(any(f[2] == "factorial" for f in p) for p in paths))
 
-        # Function samples should count all occurrences
+        # Verify total occurrences via aggregation
         factorial_key = ("factorial.py", 10, "factorial")
         main_key = ("main.py", 5, "main")
 
-        # factorial appears 5 times total (3 + 2)
-        self.assertEqual(collector.function_samples[factorial_key], 5)
-        # main appears 2 times total
-        self.assertEqual(collector.function_samples[main_key], 2)
+        def total_occurrences(func):
+            total = 0
+            for (path, thread_id), count in collector.stack_counter.items():
+                total += sum(1 for f in path if f == func) * count
+            return total
+
+        self.assertEqual(total_occurrences(factorial_key), 5)
+        self.assertEqual(total_occurrences(main_key), 2)
 
 
 @requires_subprocess()
@@ -1915,7 +1925,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
         self.addCleanup(shutil.rmtree, tempdir.name)
 
 
-        with contextlib.chdir(tempdir.name):
+        with (contextlib.chdir(tempdir.name), captured_stdout(), captured_stderr()):
             for fmt in valid_formats:
                 try:
                     # This will likely fail with permissions, but the format should be valid
@@ -1996,6 +2006,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
+                mode=0
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2023,6 +2034,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
+                mode=0
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2050,6 +2062,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
+                mode=0
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2149,6 +2162,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
+                mode=0
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2182,6 +2196,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="collapsed",
                 realtime_stats=False,
+                mode=0
             )
 
     def test_cli_empty_module_name(self):
@@ -2393,6 +2408,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
+                mode=0
             )
 
     def test_sort_options(self):
@@ -2421,6 +2437,362 @@ class TestSampleProfilerCLI(unittest.TestCase):
                     expected_sort_value,
                 )
                 mock_sample.reset_mock()
+
+
+class TestCpuModeFiltering(unittest.TestCase):
+    """Test CPU mode filtering functionality (--mode=cpu)."""
+
+    def test_mode_validation(self):
+        """Test that CLI validates mode choices correctly."""
+        # Invalid mode choice should raise SystemExit
+        test_args = ["profiling.sampling.sample", "--mode", "invalid", "-p", "12345"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            profiling.sampling.sample.main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("invalid choice", error_msg)
+
+    def test_frames_filtered_with_skip_idle(self):
+        """Test that frames are actually filtered when skip_idle=True."""
+        # Create mock frames with different thread statuses
+        class MockThreadInfoWithStatus:
+            def __init__(self, thread_id, frame_info, status):
+                self.thread_id = thread_id
+                self.frame_info = frame_info
+                self.status = status
+
+        # Create test data: running thread, idle thread, and another running thread
+        test_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfoWithStatus(1, [MockFrameInfo("active1.py", 10, "active_func1")], 0),  # RUNNING
+                MockThreadInfoWithStatus(2, [MockFrameInfo("idle.py", 20, "idle_func")], 1),        # IDLE
+                MockThreadInfoWithStatus(3, [MockFrameInfo("active2.py", 30, "active_func2")], 0),  # RUNNING
+            ])
+        ]
+
+        # Test with skip_idle=True - should only process running threads
+        collector_skip = PstatsCollector(sample_interval_usec=1000, skip_idle=True)
+        collector_skip.collect(test_frames)
+
+        # Should only have functions from running threads (status 0)
+        active1_key = ("active1.py", 10, "active_func1")
+        active2_key = ("active2.py", 30, "active_func2")
+        idle_key = ("idle.py", 20, "idle_func")
+
+        self.assertIn(active1_key, collector_skip.result)
+        self.assertIn(active2_key, collector_skip.result)
+        self.assertNotIn(idle_key, collector_skip.result)  # Idle thread should be filtered out
+
+        # Test with skip_idle=False - should process all threads
+        collector_no_skip = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
+        collector_no_skip.collect(test_frames)
+
+        # Should have functions from all threads
+        self.assertIn(active1_key, collector_no_skip.result)
+        self.assertIn(active2_key, collector_no_skip.result)
+        self.assertIn(idle_key, collector_no_skip.result)  # Idle thread should be included
+
+    @requires_subprocess()
+    def test_cpu_mode_integration_filtering(self):
+        """Integration test: CPU mode should only capture active threads, not idle ones."""
+        # Script with one mostly-idle thread and one CPU-active thread
+        cpu_vs_idle_script = '''
+import time
+import threading
+
+def idle_worker():
+    time.sleep(999999)
+
+def cpu_active_worker():
+    x = 1
+    while True:
+        x += 1
+
+def main():
+# Start both threads
+    idle_thread = threading.Thread(target=idle_worker)
+    cpu_thread = threading.Thread(target=cpu_active_worker)
+    idle_thread.start()
+    cpu_thread.start()
+    idle_thread.join()
+    cpu_thread.join()
+
+main()
+
+'''
+        with test_subprocess(cpu_vs_idle_script) as proc:
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        proc.pid,
+                        duration_sec=0.5,
+                        sample_interval_usec=5000,
+                        mode=1,  # CPU mode
+                        show_summary=False,
+                        all_threads=True,
+                    )
+                except (PermissionError, RuntimeError) as e:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+                cpu_mode_output = captured_output.getvalue()
+
+            # Test wall-clock mode (mode=0) - should capture both functions
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        proc.pid,
+                        duration_sec=0.5,
+                        sample_interval_usec=5000,
+                        mode=0,  # Wall-clock mode
+                        show_summary=False,
+                        all_threads=True,
+                    )
+                except (PermissionError, RuntimeError) as e:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+                wall_mode_output = captured_output.getvalue()
+
+            # Verify both modes captured samples
+            self.assertIn("Captured", cpu_mode_output)
+            self.assertIn("samples", cpu_mode_output)
+            self.assertIn("Captured", wall_mode_output)
+            self.assertIn("samples", wall_mode_output)
+
+            # CPU mode should strongly favor cpu_active_worker over mostly_idle_worker
+            self.assertIn("cpu_active_worker", cpu_mode_output)
+            self.assertNotIn("idle_worker", cpu_mode_output)
+
+            # Wall-clock mode should capture both types of work
+            self.assertIn("cpu_active_worker", wall_mode_output)
+            self.assertIn("idle_worker", wall_mode_output)
+
+
+class TestGilModeFiltering(unittest.TestCase):
+    """Test GIL mode filtering functionality (--mode=gil)."""
+
+    def test_gil_mode_validation(self):
+        """Test that CLI accepts gil mode choice correctly."""
+        test_args = ["profiling.sampling.sample", "--mode", "gil", "-p", "12345"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
+        ):
+            try:
+                profiling.sampling.sample.main()
+            except SystemExit:
+                pass  # Expected due to invalid PID
+
+        # Should have attempted to call sample with mode=2 (GIL mode)
+        mock_sample.assert_called_once()
+        call_args = mock_sample.call_args[1]
+        self.assertEqual(call_args["mode"], 2)  # PROFILING_MODE_GIL
+
+    def test_gil_mode_sample_function_call(self):
+        """Test that sample() function correctly uses GIL mode."""
+        with (
+            mock.patch("profiling.sampling.sample.SampleProfiler") as mock_profiler,
+            mock.patch("profiling.sampling.sample.PstatsCollector") as mock_collector,
+        ):
+            # Mock the profiler instance
+            mock_instance = mock.Mock()
+            mock_profiler.return_value = mock_instance
+
+            # Mock the collector instance
+            mock_collector_instance = mock.Mock()
+            mock_collector.return_value = mock_collector_instance
+
+            # Call sample with GIL mode and a filename to avoid pstats creation
+            profiling.sampling.sample.sample(
+                12345,
+                mode=2,  # PROFILING_MODE_GIL
+                duration_sec=1,
+                sample_interval_usec=1000,
+                filename="test_output.txt",
+            )
+
+            # Verify SampleProfiler was created with correct mode
+            mock_profiler.assert_called_once()
+            call_args = mock_profiler.call_args
+            self.assertEqual(call_args[1]['mode'], 2)  # mode parameter
+
+            # Verify profiler.sample was called
+            mock_instance.sample.assert_called_once()
+
+            # Verify collector.export was called since we provided a filename
+            mock_collector_instance.export.assert_called_once_with("test_output.txt")
+
+    def test_gil_mode_collector_configuration(self):
+        """Test that collectors are configured correctly for GIL mode."""
+        with (
+            mock.patch("profiling.sampling.sample.SampleProfiler") as mock_profiler,
+            mock.patch("profiling.sampling.sample.PstatsCollector") as mock_collector,
+            captured_stdout(), captured_stderr()
+        ):
+            # Mock the profiler instance
+            mock_instance = mock.Mock()
+            mock_profiler.return_value = mock_instance
+
+            # Call sample with GIL mode
+            profiling.sampling.sample.sample(
+                12345,
+                mode=2,  # PROFILING_MODE_GIL
+                output_format="pstats",
+            )
+
+            # Verify collector was created with skip_idle=True (since mode != WALL)
+            mock_collector.assert_called_once()
+            call_args = mock_collector.call_args[1]
+            self.assertTrue(call_args['skip_idle'])
+
+    def test_gil_mode_with_collapsed_format(self):
+        """Test GIL mode with collapsed stack format."""
+        with (
+            mock.patch("profiling.sampling.sample.SampleProfiler") as mock_profiler,
+            mock.patch("profiling.sampling.sample.CollapsedStackCollector") as mock_collector,
+        ):
+            # Mock the profiler instance
+            mock_instance = mock.Mock()
+            mock_profiler.return_value = mock_instance
+
+            # Call sample with GIL mode and collapsed format
+            profiling.sampling.sample.sample(
+                12345,
+                mode=2,  # PROFILING_MODE_GIL
+                output_format="collapsed",
+                filename="test_output.txt",
+            )
+
+            # Verify collector was created with skip_idle=True
+            mock_collector.assert_called_once()
+            call_args = mock_collector.call_args[1]
+            self.assertTrue(call_args['skip_idle'])
+
+    def test_gil_mode_cli_argument_parsing(self):
+        """Test CLI argument parsing for GIL mode with various options."""
+        test_args = [
+            "profiling.sampling.sample",
+            "--mode", "gil",
+            "--interval", "500",
+            "--duration", "5",
+            "-p", "12345"
+        ]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
+        ):
+            try:
+                profiling.sampling.sample.main()
+            except SystemExit:
+                pass  # Expected due to invalid PID
+
+        # Verify all arguments were parsed correctly
+        mock_sample.assert_called_once()
+        call_args = mock_sample.call_args[1]
+        self.assertEqual(call_args["mode"], 2)  # GIL mode
+        self.assertEqual(call_args["sample_interval_usec"], 500)
+        self.assertEqual(call_args["duration_sec"], 5)
+
+    @requires_subprocess()
+    def test_gil_mode_integration_behavior(self):
+        """Integration test: GIL mode should capture GIL-holding threads."""
+        # Create a test script with GIL-releasing operations
+        gil_test_script = '''
+import time
+import threading
+
+def gil_releasing_work():
+    time.sleep(999999)
+
+def gil_holding_work():
+    x = 1
+    while True:
+        x += 1
+
+def main():
+# Start both threads
+    idle_thread = threading.Thread(target=gil_releasing_work)
+    cpu_thread = threading.Thread(target=gil_holding_work)
+    idle_thread.start()
+    cpu_thread.start()
+    idle_thread.join()
+    cpu_thread.join()
+
+main()
+'''
+        with test_subprocess(gil_test_script) as proc:
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        proc.pid,
+                        duration_sec=0.5,
+                        sample_interval_usec=5000,
+                        mode=2,  # GIL mode
+                        show_summary=False,
+                        all_threads=True,
+                    )
+                except (PermissionError, RuntimeError) as e:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+                gil_mode_output = captured_output.getvalue()
+
+            # Test wall-clock mode for comparison
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        proc.pid,
+                        duration_sec=0.5,
+                        sample_interval_usec=5000,
+                        mode=0,  # Wall-clock mode
+                        show_summary=False,
+                        all_threads=True,
+                    )
+                except (PermissionError, RuntimeError) as e:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+                wall_mode_output = captured_output.getvalue()
+
+            # GIL mode should primarily capture GIL-holding work
+            # (Note: actual behavior depends on threading implementation)
+            self.assertIn("gil_holding_work", gil_mode_output)
+
+            # Wall-clock mode should capture both types of work
+            self.assertIn("gil_holding_work", wall_mode_output)
+
+    def test_mode_constants_are_defined(self):
+        """Test that all profiling mode constants are properly defined."""
+        self.assertEqual(profiling.sampling.sample.PROFILING_MODE_WALL, 0)
+        self.assertEqual(profiling.sampling.sample.PROFILING_MODE_CPU, 1)
+        self.assertEqual(profiling.sampling.sample.PROFILING_MODE_GIL, 2)
+
+    def test_parse_mode_function(self):
+        """Test the _parse_mode function with all valid modes."""
+        self.assertEqual(profiling.sampling.sample._parse_mode("wall"), 0)
+        self.assertEqual(profiling.sampling.sample._parse_mode("cpu"), 1)
+        self.assertEqual(profiling.sampling.sample._parse_mode("gil"), 2)
+
+        # Test invalid mode raises KeyError
+        with self.assertRaises(KeyError):
+            profiling.sampling.sample._parse_mode("invalid")
 
 
 if __name__ == "__main__":

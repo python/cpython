@@ -273,6 +273,17 @@ Other language changes
   This speeds up class creation, and helps avoid reference cycles.
   (Contributed by Petr Viktorin in :gh:`135228`.)
 
+* The :option:`-W` option and the :envvar:`PYTHONWARNINGS` environment variable
+  can now specify regular expressions instead of literal strings to match
+  the warning message and the module name, if the corresponding field starts
+  and ends with a forward slash (``/``).
+  (Contributed by Serhiy Storchaka in :gh:`134716`.)
+
+* Functions that take timestamp or timeout arguments now accept any real
+  numbers (such as :class:`~decimal.Decimal` and :class:`~fractions.Fraction`),
+  not only integers or floats, although this does not improve precision.
+  (Contributed by Serhiy Storchaka in :gh:`67795`.)
+
 
 New modules
 ===========
@@ -291,6 +302,24 @@ collections
   between :class:`~collections.Counter` objects.
   (Contributed by Raymond Hettinger in :gh:`138682`.)
 
+collections.abc
+---------------
+
+* :class:`collections.abc.ByteString` has been removed from
+  ``collections.abc.__all__``. :class:`!collections.abc.ByteString` has been
+  deprecated since Python 3.12, and is scheduled for removal in Python 3.17.
+
+* The following statements now cause ``DeprecationWarning``\ s to be emitted at
+  runtime:
+
+  * ``from collections.abc import ByteString``
+  * ``import collections.abc; collections.abc.ByteString``.
+
+  ``DeprecationWarning``\ s were already emitted if
+  :class:`collections.abc.ByteString` was subclassed or used as the second
+  argument to :func:`isinstance` or :func:`issubclass`, but warnings were not
+  previously emitted if it was merely imported or accessed from the
+  :mod:`!collections.abc` module.
 
 dbm
 ---
@@ -299,10 +328,6 @@ dbm
   which allow to recover unused free space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
 
-* Add the ``'m'`` flag for :func:`dbm.gnu.open` which allows to disable
-  the use of :manpage:`mmap(2)`.
-  This may harm performance, but improve crash tolerance.
-  (Contributed by Serhiy Storchaka in :gh:`66234`.)
 
 
 difflib
@@ -405,6 +430,13 @@ shelve
 * Added new :meth:`!reorganize` method to :mod:`shelve` used to recover unused free
   space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
+
+
+socket
+------
+
+* Add constants for the ISO-TP CAN protocol.
+  (Contributed by Patrick Menschel and Stefan Tatschner in :gh:`86819`.)
 
 
 sqlite3
@@ -546,6 +578,17 @@ module_name
 Deprecated
 ==========
 
+CLI
+---
+
+* Deprecate :option:`-b` and :option:`!-bb` command line options
+  and schedule them to become no-op in Python 3.17.
+  These were primarily helpers for the Python 2 -> 3 transition.
+  Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+  for these cases; use a type checker instead.
+
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
+
 hashlib
 -------
 
@@ -656,6 +699,27 @@ typing
   as it was incorrectly infered in runtime before.
   (Contributed by Nikita Sobolev in :gh:`137191`.)
 
+* :class:`typing.ByteString` has been removed from ``typing.__all__``.
+  :class:`!typing.ByteString` has been deprecated since Python 3.9, and is
+  scheduled for removal in Python 3.17.
+
+* The following statements now cause ``DeprecationWarning``\ s to be emitted at
+  runtime:
+
+  * ``from typing import ByteString``
+  * ``import typing; typing.ByteString``.
+
+  ``DeprecationWarning``\ s were already emitted if :class:`typing.ByteString`
+  was subclassed or used as the second argument to :func:`isinstance` or
+  :func:`issubclass`, but warnings were not previously emitted if it was merely
+  imported or accessed from the :mod:`!typing` module.
+
+
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 17.0.0.
+
 
 wave
 ----
@@ -710,6 +774,24 @@ New features
   and :c:data:`Py_mod_abi`.
   (Contributed by Petr Viktorin in :gh:`137210`.)
 
+* Implement :pep:`782`, the :ref:`PyBytesWriter API <pybyteswriter>`.
+  Add functions:
+
+  * :c:func:`PyBytesWriter_Create`
+  * :c:func:`PyBytesWriter_Discard`
+  * :c:func:`PyBytesWriter_FinishWithPointer`
+  * :c:func:`PyBytesWriter_FinishWithSize`
+  * :c:func:`PyBytesWriter_Finish`
+  * :c:func:`PyBytesWriter_Format`
+  * :c:func:`PyBytesWriter_GetData`
+  * :c:func:`PyBytesWriter_GetSize`
+  * :c:func:`PyBytesWriter_GrowAndUpdatePointer`
+  * :c:func:`PyBytesWriter_Grow`
+  * :c:func:`PyBytesWriter_Resize`
+  * :c:func:`PyBytesWriter_WriteBytes`
+
+  (Contributed by Victor Stinner in :gh:`129813`.)
+
 
 Porting to Python 3.15
 ----------------------
@@ -749,6 +831,11 @@ Deprecated C APIs
   signed integer type of the same size is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`132629`.)
 
+* :c:func:`PyBytes_FromStringAndSize(NULL, len) <PyBytes_FromStringAndSize>`
+  and :c:func:`_PyBytes_Resize` are :term:`soft deprecated`,
+  use the :c:type:`PyBytesWriter` API instead.
+  (Contributed by Victor Stinner in :gh:`129813`.)
+
 * Deprecate :c:member:`~PyComplexObject.cval` field of the the
   :c:type:`PyComplexObject` type.
   Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
@@ -760,6 +847,10 @@ Deprecated C APIs
   :c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and
   :c:func:`_Py_c_abs` are :term:`soft deprecated`.
   (Contributed by Sergey B Kirpichev in :gh:`128813`.)
+
+* :c:member:`~PyConfig.bytes_warning` is deprecated
+  since 3.15 and will be removed in 3.17.
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
 
 
 .. Add C API deprecations above alphabetically, not here at the end.
@@ -785,6 +876,16 @@ Removed C APIs
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
   of :c:func:`PyImport_ImportModule`.
   (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+* :c:func:`!PyWeakref_GetObject` and :c:macro:`!PyWeakref_GET_OBJECT`:
+  use :c:func:`PyWeakref_GetRef` instead. The |pythoncapi_compat_project|
+  can be used to get :c:func:`!PyWeakref_GetRef` on Python 3.12 and older.
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+* Remove deprecated :c:func:`!PySys_ResetWarnOptions`.
+  Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
+
+  (Contributed by Nikita Sobolev in :gh:`138886`.)
 
 The following functions are removed in favor of :c:func:`PyConfig_Get`.
 The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`

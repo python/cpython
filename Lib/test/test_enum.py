@@ -4887,7 +4887,7 @@ class TestInternals(unittest.TestCase):
                 def _generate_next_value_(name, start, count, last):
                     return name
 
-    def test_auto_order_wierd(self):
+    def test_auto_order_weird(self):
         weird_auto = auto()
         weird_auto.value = 'pathological case'
         class Color(Enum):
