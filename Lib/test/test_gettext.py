@@ -668,7 +668,7 @@ class GNUTranslationParsingTest(GettextBaseTest):
     @property
     def expected_filename(self):
         if sys.platform == 'win32':
-            return 'xx\\LC_MESSAGES\\gettext.mo'
+            return r'xx\\LC_MESSAGES\\gettext.mo'
         return 'xx/LC_MESSAGES/gettext.mo'
 
     def test_raise_descriptive_error_for_incorrect_content_type(self):
