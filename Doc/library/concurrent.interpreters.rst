@@ -271,7 +271,7 @@ Interpreter objects
       Some objects are actually shared and some are copied efficiently,
       but most are copied via :mod:`pickle`.  See :ref:`interp-object-sharing`.
 
-   .. method:: exec(code, /, dedent=True)
+   .. method:: exec(code, /)
 
       Run the given source code in the interpreter (in the current thread).
 
