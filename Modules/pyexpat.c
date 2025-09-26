@@ -1208,7 +1208,7 @@ set_maximum_amplification(xmlparseobject *self,
     pyexpat_state *state = PyType_GetModuleState(cls);
     // Note: Expat has no API to determine whether a parser is a root parser,
     // and since the Expat functions for defining the various maximum allowed
-    // amplifcation factors fail when a bad parser or a out-of-range factor
+    // amplifcation factors fail when a bad parser or an out-of-range factor
     // is given without specifying which check failed, we check whether the
     // factor is out-of-range to improve the error message. See also gh-90949.
     const char *message = (isnan(max_factor) || max_factor < 1.0f)
