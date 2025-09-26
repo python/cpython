@@ -4655,12 +4655,7 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
     if (ctx->add_weak) {
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF) == 0);
         type_add_flags(type, Py_TPFLAGS_MANAGED_WEAKREF);
-        if (_PyType_IS_GC(type)) {
-            type->tp_weaklistoffset = MANAGED_WEAKREF_OFFSET;
-        }
-        else {
-            type->tp_weaklistoffset = MANAGED_WEAKREF_OFFSET_NO_GC;
-        }
+        type->tp_weaklistoffset = MANAGED_WEAKREF_OFFSET;
     }
     if (ctx->add_dict) {
         assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
@@ -8505,13 +8500,6 @@ overrides_hash(PyTypeObject *type)
     return r;
 }
 
-void
-PyObject_NoGC_Preheader_Del(void *op)
-{
-    size_t presize = _PyType_PreHeaderSize(Py_TYPE(op));
-    PyObject_Free(((char *)op) - presize);
-}
-
 static int
 inherit_slots(PyTypeObject *type, PyTypeObject *base)
 {
@@ -8689,21 +8677,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         if ((type->tp_flags & Py_TPFLAGS_HAVE_GC) ==
             (base->tp_flags & Py_TPFLAGS_HAVE_GC)) {
             /* They agree about gc. */
-
-            if ((type->tp_flags & Py_TPFLAGS_PREHEADER) &&
-                type->tp_free == NULL &&
-                base->tp_free == PyObject_Free) {
-                /* Because type has preheader fields, its
-                 * objects will be allocated with those fields
-                 * and it should be take in account when object
-                 * is freed, so we use special tp_free.
-                 */
-                type->tp_free = PyObject_NoGC_Preheader_Del;
-            }
-            else {
-                COPYSLOT(tp_free);
-            }
-
+            COPYSLOT(tp_free);
         }
         else if ((type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
                  type->tp_free == NULL &&
@@ -8919,6 +8893,13 @@ type_ready_preheader(PyTypeObject *type)
                         type->tp_name);
             return -1;
         }
+        if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC)) {
+            PyErr_Format(PyExc_SystemError,
+                        "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
+                        "but not Py_TPFLAGS_HAVE_GC flag",
+                        type->tp_name);
+            return -1;
+        }
         type->tp_dictoffset = -1;
     }
     if (type->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF) {
@@ -8931,12 +8912,14 @@ type_ready_preheader(PyTypeObject *type)
                         type->tp_name);
             return -1;
         }
-        if (_PyType_IS_GC(type)) {
-            type->tp_weaklistoffset = MANAGED_WEAKREF_OFFSET;
+        if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC)) {
+            PyErr_Format(PyExc_SystemError,
+                        "type %s has the Py_TPFLAGS_MANAGED_WEAKREF flag "
+                        "but not Py_TPFLAGS_HAVE_GC flag",
+                        type->tp_name);
+            return -1;
         }
-        else {
-            type->tp_weaklistoffset = MANAGED_WEAKREF_OFFSET_NO_GC;
-        }
+        type->tp_weaklistoffset = MANAGED_WEAKREF_OFFSET;
     }
     return 0;
 }

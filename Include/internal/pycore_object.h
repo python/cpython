@@ -936,13 +936,9 @@ extern int _PyType_CacheInitForSpecialization(PyHeapTypeObject *type,
 #ifdef Py_GIL_DISABLED
 #  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-1)
 #  define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-2)
-#  define MANAGED_DICT_OFFSET_NO_GC    (((Py_ssize_t)sizeof(PyObject *))*-1)
-#  define MANAGED_WEAKREF_OFFSET_NO_GC (((Py_ssize_t)sizeof(PyObject *))*-2)
 #else
 #  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-3)
 #  define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-4)
-#  define MANAGED_DICT_OFFSET_NO_GC    (((Py_ssize_t)sizeof(PyObject *))*-1)
-#  define MANAGED_WEAKREF_OFFSET_NO_GC (((Py_ssize_t)sizeof(PyObject *))*-2)
 #endif
 
 typedef union {
@@ -952,13 +948,8 @@ typedef union {
 static inline PyManagedDictPointer *
 _PyObject_ManagedDictPointer(PyObject *obj)
 {
-    PyTypeObject *type = Py_TYPE(obj);
-    assert(type->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    Py_ssize_t offset = MANAGED_DICT_OFFSET;
-    if (!_PyType_IS_GC(type)) {
-        offset = MANAGED_DICT_OFFSET_NO_GC;
-    }
-    return (PyManagedDictPointer *)((char *)obj + offset);
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    return (PyManagedDictPointer *)((char *)obj + MANAGED_DICT_OFFSET);
 }
 
 static inline PyDictObject *
