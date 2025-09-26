@@ -4119,10 +4119,14 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
 
     PyInterpreterState *interp = tstate->interp;
 
-    PyObject *mod = PyImport_GetModule(abs_name);
-    if (mod != NULL) {
-        Py_DECREF(abs_name);
-        return mod;
+    // Don't return early if we have a fromlist - we need to handle the import properly
+    // to ensure submodules are loaded
+    if (fromlist == NULL || fromlist == Py_None) {
+        PyObject *mod = PyImport_GetModule(abs_name);
+        if (mod != NULL) {
+            Py_DECREF(abs_name);
+            return mod;
+        }
     }
 
     // Check if the filter disables the lazy import
