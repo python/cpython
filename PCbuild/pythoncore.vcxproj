@@ -555,6 +555,16 @@
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\typevarobject.c" />
+    <ClCompile Include="..\Objects\unicode_codecs.c" />
+    <ClCompile Include="..\Objects\unicode_codecs_utf.c" />
+    <ClCompile Include="..\Objects\unicode_codecs_win.c" />
+    <ClCompile Include="..\Objects\unicode_convert.c" />
+    <ClCompile Include="..\Objects\unicode_format.c" />
+    <ClCompile Include="..\Objects\unicode_fromformat.c" />
+    <ClCompile Include="..\Objects\unicode_iter.c" />
+    <ClCompile Include="..\Objects\unicode_methods.c" />
+    <ClCompile Include="..\Objects\unicode_module.c" />
+    <ClCompile Include="..\Objects\unicode_writer.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />

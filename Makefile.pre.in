@@ -558,8 +558,18 @@ OBJECT_OBJS=	\
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
 		Objects/typevarobject.o \
-		Objects/unicodeobject.o \
+		Objects/unicode_codecs.o \
+		Objects/unicode_codecs_utf.o \
+		Objects/unicode_codecs_win.o \
+		Objects/unicode_convert.o \
+		Objects/unicode_format.o \
+		Objects/unicode_fromformat.o \
+		Objects/unicode_iter.o \
+		Objects/unicode_methods.o \
+		Objects/unicode_module.o \
+		Objects/unicode_writer.o \
 		Objects/unicodectype.o \
+		Objects/unicodeobject.o \
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
 		@PERF_TRAMPOLINE_OBJ@
@@ -2105,6 +2115,16 @@ Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
 Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
+Objects/unicode_codecs.o: $(srcdir)/Objects/unicode_codecs.c $(UNICODE_DEPS)
+Objects/unicode_codecs_utf.o: $(srcdir)/Objects/unicode_codecs_utf.c $(UNICODE_DEPS)
+Objects/unicode_codecs_win.o: $(srcdir)/Objects/unicode_codecs_win.c $(UNICODE_DEPS)
+Objects/unicode_convert.o: $(srcdir)/Objects/unicode_convert.c $(UNICODE_DEPS)
+Objects/unicode_format.o: $(srcdir)/Objects/unicode_format.c $(UNICODE_DEPS)
+Objects/unicode_fromformat.o: $(srcdir)/Objects/unicode_fromformat.c $(UNICODE_DEPS)
+Objects/unicode_iter.o: $(srcdir)/Objects/unicode_iter.c $(UNICODE_DEPS)
+Objects/unicode_methods.o: $(srcdir)/Objects/unicode_methods.c $(UNICODE_DEPS)
+Objects/unicode_module.o: $(srcdir)/Objects/unicode_module.c $(UNICODE_DEPS)
+Objects/unicode_writer.o: $(srcdir)/Objects/unicode_writer.c $(UNICODE_DEPS)
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h

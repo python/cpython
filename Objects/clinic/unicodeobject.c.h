@@ -9,24 +9,6 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
-PyDoc_STRVAR(EncodingMap_size__doc__,
-"size($self, /)\n"
-"--\n"
-"\n"
-"Return the size (in bytes) of this object.");
-
-#define ENCODINGMAP_SIZE_METHODDEF    \
-    {"size", (PyCFunction)EncodingMap_size, METH_NOARGS, EncodingMap_size__doc__},
-
-static PyObject *
-EncodingMap_size_impl(struct encoding_map *self);
-
-static PyObject *
-EncodingMap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return EncodingMap_size_impl((struct encoding_map *)self);
-}
-
 PyDoc_STRVAR(unicode_title__doc__,
 "title($self, /)\n"
 "--\n"
@@ -1908,4 +1890,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=238917fe66120bde input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f8fab6c369e02387 input=a9049054013a1b77]*/

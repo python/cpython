@@ -11,6 +11,257 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
+// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
+// The value must be the same in fileutils.c.
+#define _Py_MAX_UNICODE 0x10ffff
+
+#define _Py_LEFTSTRIP 0
+#define _Py_RIGHTSTRIP 1
+#define _Py_BOTHSTRIP 2
+
+extern int _PyUnicode_CheckEncodingErrors(
+    const char *encoding,
+    const char *errors);
+extern PyObject* _PyUnicode_GetEmpty(void);
+extern PyObject* _PyUnicode_Result(PyObject *unicode);
+extern PyObject* _PyUnicode_ResultUnchanged(PyObject *unicode);
+extern Py_ssize_t _PyUnicode_FindChar(
+    const void *s,
+    int kind,
+    Py_ssize_t size,
+    Py_UCS4 ch,
+    int direction);
+extern PyObject* _PyUnicode_GetLatin1Char(Py_UCS1 ch);
+extern char* PyUnicode_UTF8(PyObject *op);
+extern Py_ssize_t PyUnicode_UTF8_LENGTH(PyObject *op);
+extern void _PyUnicode_SET_UTF8(PyObject *op, char *utf8);
+extern void _PyUnicode_SET_UTF8_LENGTH(PyObject *op, Py_ssize_t length);
+extern PyObject* _PyUnicode_FromUCS1(const Py_UCS1* u, Py_ssize_t size);
+extern PyObject* _PyUnicode_TranslateCharmap(
+    PyObject *input,
+    PyObject *mapping,
+    const char *errors);
+extern int _PyUnicode_FillUTF8(PyObject *unicode);
+extern int _PyUnicode_DecodeUTF8Writer(
+    _PyUnicodeWriter *writer,
+    const char *s,
+    Py_ssize_t size,
+    _Py_error_handler error_handler,
+    const char *errors,
+    Py_ssize_t *consumed);
+extern int _Py_normalize_encoding(const char *, char *, size_t);
+extern void* _PyUnicode_AsKind(
+    int skind,
+    void const *data,
+    Py_ssize_t len,
+    int kind);
+extern int _PyUnicode_Tailmatch(
+    PyObject *self,
+    PyObject *substring,
+    Py_ssize_t start,
+    Py_ssize_t end,
+    int direction);
+extern Py_ssize_t _PyUnicode_Count(
+    PyObject *str,
+    PyObject *substr,
+    Py_ssize_t start,
+    Py_ssize_t end);
+extern PyObject * _PyUnicode_Replace(
+    PyObject *self,
+    PyObject *str1,
+    PyObject *str2,
+    Py_ssize_t maxcount);
+extern Py_ssize_t _PyUnicode_AnylibFindSlice(
+    PyObject* s1,
+    PyObject* s2,
+    Py_ssize_t start,
+    Py_ssize_t end,
+    int direction);
+extern int _PyUnicode_FindMaxCharSurrogates(
+    const wchar_t *begin,
+    const wchar_t *end,
+    Py_UCS4 *maxchar,
+    Py_ssize_t *num_surrogates);
+extern void _PyUnicode_WriteWideChar(
+    int kind,
+    void *data,
+    const wchar_t *u,
+    Py_ssize_t size,
+    Py_ssize_t num_surrogates);
+extern PyObject* _PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size);
+extern PyObject* _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size);
+extern PyObject* _PyUnicode_FromOrdinal(Py_UCS4 ordinal);
+extern PyObject* _PyUnicode_do_string_format(
+    PyObject *self,
+    PyObject *args,
+    PyObject *kwargs);
+extern PyObject* _PyUnicode_do_string_format_map(
+    PyObject *self,
+    PyObject *obj);
+extern Py_hash_t _PyUnicode_Hash(PyObject *self);
+extern PyObject* _PyUnicode_Iter(PyObject *seq);
+extern int _PyUnicode_IsModifiable(PyObject *unicode);
+extern void _PyUnicode_Fill(
+    int kind,
+    void *data,
+    Py_UCS4 value,
+    Py_ssize_t start,
+    Py_ssize_t length);
+extern PyObject* _PyUnicode_ResizeCompact(
+    PyObject *unicode,
+    Py_ssize_t length);
+extern int _PyUnicode_CheckModifiable(PyObject *unicode);
+extern PyObject* _PyUnicode_Repr(PyObject *unicode);
+extern PyObject* _PyUnicode_Pad(
+    PyObject *self,
+    Py_ssize_t left,
+    Py_ssize_t right,
+    Py_UCS4 fill);
+extern int _PyUnicode_Resize(PyObject **p_unicode, Py_ssize_t length);
+extern PyObject* _PyUnicode_EncodeUTF8(
+    PyObject *unicode,
+    _Py_error_handler error_handler,
+    const char *errors);
+extern PyObject* _PyUnicode_DecodeUTF8(
+    const char *s,
+    Py_ssize_t size,
+    _Py_error_handler error_handler,
+    const char *errors,
+    Py_ssize_t *consumed);
+extern char* _PyUnicode_Backslashreplace(
+    PyBytesWriter *writer,
+    char *str,
+    PyObject *unicode,
+    Py_ssize_t collstart,
+    Py_ssize_t collend);
+extern char* _PyUnicode_Xmlcharrefreplace(
+    PyBytesWriter *writer,
+    char *str,
+    PyObject *unicode,
+    Py_ssize_t collstart,
+    Py_ssize_t collend);
+extern PyObject* _PyUnicode_EncodeCallErrorHandler(
+    const char *errors,
+    PyObject **errorHandler,
+    const char *encoding,
+    const char *reason,
+    PyObject *unicode,
+    PyObject **exceptionObject,
+    Py_ssize_t startpos,
+    Py_ssize_t endpos,
+    Py_ssize_t *newpos);
+extern void _PyUnicode_RaiseEncodeException(
+    PyObject **exceptionObject,
+    const char *encoding,
+    PyObject *unicode,
+    Py_ssize_t startpos,
+    Py_ssize_t endpos,
+    const char *reason);
+extern int _PyUnicode_DecodeCallErrorHandlerWriter(
+    const char *errors,
+    PyObject **errorHandler,
+    const char *encoding,
+    const char *reason,
+    const char **input,
+    const char **inend,
+    Py_ssize_t *startinpos,
+    Py_ssize_t *endinpos,
+    PyObject **exceptionObject,
+    const char **inptr,
+    _PyUnicodeWriter *writer);
+extern PyObject* _PyUnicode_EncodeUCS1(
+    PyObject *unicode,
+    const char *errors,
+    const Py_UCS4 limit);
+extern void _PyUnicode_InitGlobalState(void);
+extern PyObject* _PyUnicode_do_strip(PyObject *self, int striptype);
+extern PyObject* _PyUnicode_Split(
+    PyObject *self,
+    PyObject *substring,
+    Py_ssize_t maxcount);
+extern PyObject* _PyUnicode_RSplit(
+    PyObject *self,
+    PyObject *substring,
+    Py_ssize_t maxcount);
+extern PyObject* _PyUnicode_Maketrans(
+    PyObject *x,
+    PyObject *y,
+    PyObject *z);
+extern PyObject* _PyUnicode_Expandtabs(
+    PyObject *self,
+    int tabsize);
+void _PyUnicode_MakeDecodeException(
+    PyObject **exceptionObject,
+    const char *encoding,
+    const char *input, Py_ssize_t length,
+    Py_ssize_t startpos, Py_ssize_t endpos,
+    const char *reason);
+
+extern PyTypeObject _Py_EncodingMapType;
+extern PyTypeObject _Py_FieldNameIter_Type;
+extern PyTypeObject _Py_FormatterIter_Type;
+
+/* helper macro to fixup start/end slice values */
+#define _Py_ADJUST_INDICES(start, end, len) \
+    do {                                \
+        if (end > len) {                \
+            end = len;                  \
+        }                               \
+        else if (end < 0) {             \
+            end += len;                 \
+            if (end < 0) {              \
+                end = 0;                \
+            }                           \
+        }                               \
+        if (start < 0) {                \
+            start += len;               \
+            if (start < 0) {            \
+                start = 0;              \
+            }                           \
+        }                               \
+    } while (0)
+
+/* Generic helper macro to convert characters of different types.
+   from_type and to_type have to be valid type names, begin and end
+   are pointers to the source characters which should be of type
+   "from_type *".  to is a pointer of type "to_type *" and points to the
+   buffer where the result characters are written to. */
+#define _PyUnicode_CONVERT_BYTES(from_type, to_type, begin, end, to) \
+    do {                                                \
+        to_type *_to = (to_type *)(to);                 \
+        const from_type *_iter = (const from_type *)(begin);\
+        const from_type *_end = (const from_type *)(end);\
+        Py_ssize_t n = (_end) - (_iter);                \
+        const from_type *_unrolled_end =                \
+            _iter + _Py_SIZE_ROUND_DOWN(n, 4);          \
+        while (_iter < (_unrolled_end)) {               \
+            _to[0] = (to_type) _iter[0];                \
+            _to[1] = (to_type) _iter[1];                \
+            _to[2] = (to_type) _iter[2];                \
+            _to[3] = (to_type) _iter[3];                \
+            _iter += 4; _to += 4;                       \
+        }                                               \
+        while (_iter < (_end))                          \
+            *_to++ = (to_type) *_iter++;                \
+    } while (0)
+
+#ifdef Py_DEBUG
+#  define _PyUnicode_CHECK(op) _PyUnicode_CheckConsistency(op, 0)
+#else
+#  define _PyUnicode_CHECK(op) PyUnicode_Check(op)
+#endif
+
+static inline int
+_PyUnicode_Ensure(PyObject *obj)
+{
+    if (!PyUnicode_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "must be str, not %T", obj);
+        return -1;
+    }
+    return 0;
+}
+
+
 /* --- Characters Type APIs ----------------------------------------------- */
 
 extern int _PyUnicode_IsXidStart(Py_UCS4 ch);
@@ -73,6 +324,17 @@ extern Py_UCS4 _PyUnicode_FindMaxChar (
 
 /* --- _PyUnicodeWriter API ----------------------------------------------- */
 
+static inline int
+_PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
+{
+    assert(ch <= _Py_MAX_UNICODE);
+    if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0)
+        return -1;
+    PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
+    writer->pos++;
+    return 0;
+}
+
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
 extern int _PyUnicode_FormatAdvancedWriter(
@@ -87,6 +349,10 @@ extern int _PyUnicodeWriter_FormatV(
     PyUnicodeWriter *writer,
     const char *format,
     va_list vargs);
+
+extern void _PyUnicodeWriter_InitWithBuffer(
+    _PyUnicodeWriter *writer,
+    PyObject *buffer);
 
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
