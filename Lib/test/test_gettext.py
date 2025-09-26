@@ -1,6 +1,7 @@
 import os
 import base64
 import gettext
+import sys
 import unittest
 import unittest.mock
 from functools import partial
@@ -664,6 +665,12 @@ class GNUTranslationParsingTest(GettextBaseTest):
             t = gettext.GNUTranslations(fp)
             self.assertEqual(t.info()["plural-forms"], "nplurals=2; plural=(n != 1);")
 
+    @property
+    def expected_filename(self):
+        if sys.platform == 'win32':
+            return 'xx\LC_MESSAGES\gettext.mo'
+        return 'xx/LC_MESSAGES/gettext.mo'
+
     def test_raise_descriptive_error_for_incorrect_content_type(self):
         with open(MOFILE, 'wb') as fp:
             # below is msgfmt run on such a PO file:
@@ -677,8 +684,8 @@ class GNUTranslationParsingTest(GettextBaseTest):
             )
         with self.assertRaisesRegex(
             ValueError,
-            "expected 'charset=' in Content-Type metadata in xx/LC_MESSAGES/gettext.mo, "
-            "got 'text/plain; charste=UTF-8'"
+            f"expected 'charset=' in Content-Type metadata in {self.expected_filename}, "
+            f"got 'text/plain; charste=UTF-8'"
         ):
             with open(MOFILE, 'rb') as fp:
                 gettext.GNUTranslations(fp)
@@ -696,7 +703,7 @@ class GNUTranslationParsingTest(GettextBaseTest):
             )
         with self.assertRaisesRegex(
             ValueError,
-            "expected ';' and 'plural=' in Plural-Forms metadata in xx/LC_MESSAGES/gettext.mo, got ''"
+            f"expected ';' and 'plural=' in Plural-Forms metadata in {self.expected_filename}, got ''",
         ):
             with open(MOFILE, 'rb') as fp:
                 gettext.GNUTranslations(fp)
@@ -716,7 +723,7 @@ class GNUTranslationParsingTest(GettextBaseTest):
             )
         with self.assertRaisesRegex(
             ValueError,
-            "expected ';' and 'plural=' in Plural-Forms metadata in xx/LC_MESSAGES/gettext.mo, "
+            f"expected ';' and 'plural=' in Plural-Forms metadata in {self.expected_filename}, "
             "got 'nplurals=1; prulal=0;'"
         ):
             with open(MOFILE, 'rb') as fp:
