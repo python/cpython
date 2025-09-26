@@ -1175,6 +1175,50 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
 #endif
 
 #if XML_COMBINED_VERSION >= 20702
+static PyObject *
+set_activation_threshold(xmlparseobject *self,
+                         PyTypeObject *cls,
+                         unsigned long long threshold,
+                         XML_Bool (*setter)(XML_Parser, unsigned long long))
+{
+    assert(self->itself != NULL);
+    if (setter(self->itself, threshold) == XML_TRUE) {
+        Py_RETURN_NONE;
+    }
+    // The setter fails if self->itself is NULL (which is not possible here)
+    // or is a non-root parser, which currently only happens for parsers
+    // created by ExternalEntityParserCreate().
+    pyexpat_state *state = PyType_GetModuleState(cls);
+    return set_invalid_arg(state, self, "parser must be a root parser");
+}
+
+static PyObject *
+set_maximum_amplification(xmlparseobject *self,
+                          PyTypeObject *cls,
+                          float max_factor,
+                          XML_Bool (*setter)(XML_Parser, float))
+{
+    assert(self->itself != NULL);
+    if (setter(self->itself, max_factor) == XML_TRUE) {
+        Py_RETURN_NONE;
+    }
+    // The setter fails if self->itself is NULL (which is not possible here),
+    // is a non-root parser, which currently only happens for parsers created
+    // by ExternalEntityParserCreate(), or if 'max_factor' is NaN or < 1.0.
+    pyexpat_state *state = PyType_GetModuleState(cls);
+    // Note: Expat has no API to determine whether a parser is a root parser,
+    // and since the Expat functions for defining the various maximum allowed
+    // amplifcation factors fail when a bad parser or a out-of-range factor
+    // is given without specifying which check failed, we check whether the
+    // factor is out-of-range to improve the error message. See also gh-90949.
+    const char *message = (isnan(max_factor) || max_factor < 1.0f)
+          ? "'max_factor' must be at least 1.0"
+          : "parser must be a root parser";
+    return set_invalid_arg(state, self, message);
+}
+#endif
+
+#if XML_COMBINED_VERSION >= 20702
 /*[clinic input]
 @permit_long_summary
 @permit_long_docstring_body
@@ -1195,15 +1239,10 @@ pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
                                                           unsigned long long threshold)
 /*[clinic end generated code: output=bed7e93207ba08c5 input=54182cd71ad69978]*/
 {
-    assert(self->itself != NULL);
-    if (XML_SetAllocTrackerActivationThreshold(self->itself, threshold) == XML_TRUE) {
-        Py_RETURN_NONE;
-    }
-    // XML_SetAllocTrackerActivationThreshold() can only fail if self->itself
-    // is not a root parser (currently, this is equivalent to be created
-    // by ExternalEntityParserCreate()).
-    pyexpat_state *state = PyType_GetModuleState(cls);
-    return set_invalid_arg(state, self, "parser must be a root parser");
+    return set_activation_threshold(
+        self, cls, threshold,
+        XML_SetAllocTrackerActivationThreshold
+    );
 }
 #endif
 
@@ -1238,24 +1277,10 @@ pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            float max_factor)
 /*[clinic end generated code: output=6e44bd48c9b112a0 input=3544abf9dd7ae055]*/
 {
-    assert(self->itself != NULL);
-    if (XML_SetAllocTrackerMaximumAmplification(self->itself, max_factor) == XML_TRUE) {
-        Py_RETURN_NONE;
-    }
-    // XML_SetAllocTrackerMaximumAmplification() can fail if self->itself
-    // is not a root parser (currently, this is equivalent to be created
-    // by ExternalEntityParserCreate()) or if 'max_factor' is NaN or < 1.0.
-    //
-    // Expat does not provide a way to determine whether a parser is a root
-    // or not, nor does it provide a way to distinguish between failures in
-    // XML_SetAllocTrackerMaximumAmplification() (see gh-90949), we manually
-    // detect the factor out-of-range issue here so that users have a better
-    // error message.
-    pyexpat_state *state = PyType_GetModuleState(cls);
-    const char *message = (isnan(max_factor) || max_factor < 1.0f)
-        ? "'max_factor' must be at least 1.0"
-        : "parser must be a root parser";
-    return set_invalid_arg(state, self, message);
+    return set_maximum_amplification(
+        self, cls, max_factor,
+        XML_SetAllocTrackerMaximumAmplification
+    );
 }
 #endif
 
