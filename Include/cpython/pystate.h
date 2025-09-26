@@ -107,6 +107,7 @@ struct _ts {
 #  define _PyThreadState_WHENCE_THREADING 3
 #  define _PyThreadState_WHENCE_GILSTATE 4
 #  define _PyThreadState_WHENCE_EXEC 5
+#  define _PyThreadState_WHENCE_THREADING_DAEMON 6
 #endif
 
     /* Currently holds the GIL. Must be its own field to avoid data races */
@@ -157,6 +158,11 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
+    /* List of objects that still need to be cleaned up, singly linked
+     * via their gc headers' gc_next pointers. The list is populated by
+     * _PyTrash_thread_deposit_object and cleaned up by
+     * _PyTrash_thread_destroy_chain.
+     */
     PyObject *delete_later;
 
     /* Tagged pointer to top-most critical section, or zero if there is no

@@ -948,6 +948,20 @@ class UtimeTests(unittest.TestCase):
         # issue, os.utime() rounds towards minus infinity.
         return (ns * 1e-9) + 0.5e-9
 
+    @staticmethod
+    def ns_to_sec_decimal(ns):
+        # Convert a number of nanosecond (int) to a number of seconds (Decimal).
+        # Round towards infinity by adding 0.5 nanosecond to avoid rounding
+        # issue, os.utime() rounds towards minus infinity.
+        return decimal.Decimal('1e-9') * ns + decimal.Decimal('0.5e-9')
+
+    @staticmethod
+    def ns_to_sec_fraction(ns):
+        # Convert a number of nanosecond (int) to a number of seconds (Fraction).
+        # Round towards infinity by adding 0.5 nanosecond to avoid rounding
+        # issue, os.utime() rounds towards minus infinity.
+        return fractions.Fraction(ns, 10**9) + fractions.Fraction(1, 2*10**9)
+
     def test_utime_by_indexed(self):
         # pass times as floating-point seconds as the second indexed parameter
         def set_time(filename, ns):
@@ -966,6 +980,24 @@ class UtimeTests(unittest.TestCase):
             mtime = self.ns_to_sec(mtime_ns)
             # test the times keyword parameter
             os.utime(filename, times=(atime, mtime))
+        self._test_utime(set_time)
+
+    def test_utime_decimal(self):
+        # pass times as Decimal seconds
+        def set_time(filename, ns):
+            atime_ns, mtime_ns = ns
+            atime = self.ns_to_sec_decimal(atime_ns)
+            mtime = self.ns_to_sec_decimal(mtime_ns)
+            os.utime(filename, (atime, mtime))
+        self._test_utime(set_time)
+
+    def test_utime_fraction(self):
+        # pass times as Fraction seconds
+        def set_time(filename, ns):
+            atime_ns, mtime_ns = ns
+            atime = self.ns_to_sec_fraction(atime_ns)
+            mtime = self.ns_to_sec_fraction(mtime_ns)
+            os.utime(filename, (atime, mtime))
         self._test_utime(set_time)
 
     @unittest.skipUnless(os.utime in os.supports_follow_symlinks,
@@ -1064,9 +1096,15 @@ class UtimeTests(unittest.TestCase):
         if self.get_file_system(self.dirname) != "NTFS":
             self.skipTest("requires NTFS")
 
-        large = 5000000000   # some day in 2128
-        os.utime(self.fname, (large, large))
-        self.assertEqual(os.stat(self.fname).st_mtime, large)
+        times = (
+            5000000000,  # some day in 2128
+            # boundaries of the fast path cutoff in posixmodule.c:fill_time
+            -9223372037, -9223372036, 9223372035, 9223372036,
+        )
+        for large in times:
+            with self.subTest(large=large):
+                os.utime(self.fname, (large, large))
+                self.assertEqual(os.stat(self.fname).st_mtime, large)
 
     def test_utime_invalid_arguments(self):
         # seconds and nanoseconds parameters are mutually exclusive

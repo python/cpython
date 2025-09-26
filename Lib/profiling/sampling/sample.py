@@ -12,16 +12,34 @@ from collections import deque
 from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
-from .stack_collector import CollapsedStackCollector
+from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
-_MAX_STARTUP_ATTEMPTS = 5
-_STARTUP_RETRY_DELAY_SECONDS = 0.1
+
+# Profiling mode constants
+PROFILING_MODE_WALL = 0
+PROFILING_MODE_CPU = 1
+PROFILING_MODE_GIL = 2
+
+
+def _parse_mode(mode_string):
+    """Convert mode string to mode constant."""
+    mode_map = {
+        "wall": PROFILING_MODE_WALL,
+        "cpu": PROFILING_MODE_CPU,
+        "gil": PROFILING_MODE_GIL,
+    }
+    return mode_map[mode_string]
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
 Supports the following target modes:
   - -p PID: Profile an existing process by PID
   - -m MODULE [ARGS...]: Profile a module as python -m module ...
   - filename [ARGS...]: Profile the specified script by running it in a subprocess
+
+Supports the following output formats:
+  - --pstats: Detailed profiling statistics with sorting options
+  - --collapsed: Stack traces for generating flamegraphs
+  - --flamegraph Interactive HTML flamegraph visualization (requires web browser)
 
 Examples:
   # Profile process 1234 for 10 seconds with default settings
@@ -38,6 +56,9 @@ Examples:
 
   # Generate collapsed stacks for flamegraph
   python -m profiling.sampling --collapsed -p 1234
+
+  # Generate a HTML flamegraph
+  python -m profiling.sampling --flamegraph -p 1234
 
   # Profile all threads, sort by total time
   python -m profiling.sampling -a --sort-tottime -p 1234
@@ -114,18 +135,18 @@ def _run_with_sync(original_cmd):
 
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads
+                self.pid, all_threads=self.all_threads, mode=mode
             )
         else:
             only_active_threads = bool(self.all_threads)
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=only_active_threads
+                self.pid, only_active_thread=only_active_threads, mode=mode
             )
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
@@ -185,9 +206,16 @@ class SampleProfiler:
         if self.realtime_stats and len(self.sample_intervals) > 0:
             print()  # Add newline after real-time stats
 
+        sample_rate = num_samples / running_time
+        error_rate = (errors / num_samples) * 100 if num_samples > 0 else 0
+
         print(f"Captured {num_samples} samples in {running_time:.2f} seconds")
-        print(f"Sample rate: {num_samples / running_time:.2f} samples/sec")
-        print(f"Error rate: {(errors / num_samples) * 100:.2f}%")
+        print(f"Sample rate: {sample_rate:.2f} samples/sec")
+        print(f"Error rate: {error_rate:.2f}%")
+
+        # Pass stats to flamegraph collector if it's the right type
+        if hasattr(collector, 'set_stats'):
+            collector.set_stats(self.sample_interval_usec, running_time, sample_rate, error_rate)
 
         expected_samples = int(duration_sec / sample_interval_sec)
         if num_samples < expected_samples:
@@ -583,19 +611,26 @@ def sample(
     show_summary=True,
     output_format="pstats",
     realtime_stats=False,
+    mode=PROFILING_MODE_WALL,
 ):
     profiler = SampleProfiler(
-        pid, sample_interval_usec, all_threads=all_threads
+        pid, sample_interval_usec, all_threads=all_threads, mode=mode
     )
     profiler.realtime_stats = realtime_stats
+
+    # Determine skip_idle for collector compatibility
+    skip_idle = mode != PROFILING_MODE_WALL
 
     collector = None
     match output_format:
         case "pstats":
-            collector = PstatsCollector(sample_interval_usec)
+            collector = PstatsCollector(sample_interval_usec, skip_idle=skip_idle)
         case "collapsed":
-            collector = CollapsedStackCollector()
+            collector = CollapsedStackCollector(skip_idle=skip_idle)
             filename = filename or f"collapsed.{pid}.txt"
+        case "flamegraph":
+            collector = FlamegraphCollector(skip_idle=skip_idle)
+            filename = filename or f"flamegraph.{pid}.html"
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
 
@@ -645,6 +680,8 @@ def wait_for_process_and_sample(pid, sort_value, args):
     if not filename and args.format == "collapsed":
         filename = f"collapsed.{pid}.txt"
 
+    mode = _parse_mode(args.mode)
+
     sample(
         pid,
         sort=sort_value,
@@ -656,6 +693,7 @@ def wait_for_process_and_sample(pid, sort_value, args):
         show_summary=not args.no_summary,
         output_format=args.format,
         realtime_stats=args.realtime_stats,
+        mode=mode,
     )
 
 
@@ -710,6 +748,15 @@ def main():
         help="Print real-time sampling statistics (Hz, mean, min, max, stdev) during profiling",
     )
 
+    # Mode options
+    mode_group = parser.add_argument_group("Mode options")
+    mode_group.add_argument(
+        "--mode",
+        choices=["wall", "cpu", "gil"],
+        default="wall",
+        help="Sampling mode: wall (all threads), cpu (only CPU-running threads), gil (only GIL-holding threads) (default: wall)",
+    )
+
     # Output format selection
     output_group = parser.add_argument_group("Output options")
     output_format = output_group.add_mutually_exclusive_group()
@@ -728,12 +775,20 @@ def main():
         dest="format",
         help="Generate collapsed stack traces for flamegraphs",
     )
+    output_format.add_argument(
+        "--flamegraph",
+        action="store_const",
+        const="flamegraph",
+        dest="format",
+        help="Generate HTML flamegraph visualization",
+    )
 
     output_group.add_argument(
         "-o",
         "--outfile",
         help="Save output to a file (if omitted, prints to stdout for pstats, "
-        "or saves to collapsed.<pid>.txt for collapsed format)",
+        "or saves to collapsed.<pid>.txt or flamegraph.<pid>.html for the "
+        "respective output formats)"
     )
 
     # pstats-specific options
@@ -826,6 +881,8 @@ def main():
     elif target_count > 1:
         parser.error("only one target type can be specified: -p/--pid, -m/--module, or script")
 
+    mode = _parse_mode(args.mode)
+
     if args.pid:
         sample(
             args.pid,
@@ -838,6 +895,7 @@ def main():
             show_summary=not args.no_summary,
             output_format=args.format,
             realtime_stats=args.realtime_stats,
+            mode=mode,
         )
     elif args.module or args.args:
         if args.module:
