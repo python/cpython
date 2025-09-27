@@ -169,6 +169,7 @@ def main(args=None):
     parser.add_argument('--python', '-p', default=None,
             help="The name of the Python interpreter to use "
                  "(default: no shebang line).")
+    python get-pip.py
     parser.add_argument('--main', '-m', default=None,
             help="The main function of the application "
                  "(default: use an existing __main__.py).")
