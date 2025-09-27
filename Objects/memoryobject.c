@@ -1086,6 +1086,16 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
     return ret;
 }
 
+static inline Py_ssize_t
+get_exports(PyMemoryViewObject *buf)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&buf->exports);
+#else
+    return buf->exports;
+#endif
+}
+
 
 /****************************************************************************/
 /*                           Release/GC management                          */
@@ -1098,7 +1108,7 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
 static void
 _memory_release(PyMemoryViewObject *self)
 {
-    assert(self->exports == 0);
+    assert(get_exports(self) == 0);
     if (self->flags & _Py_MEMORYVIEW_RELEASED)
         return;
 
@@ -1119,15 +1129,16 @@ static PyObject *
 memoryview_release_impl(PyMemoryViewObject *self)
 /*[clinic end generated code: output=d0b7e3ba95b7fcb9 input=bc71d1d51f4a52f0]*/
 {
-    if (self->exports == 0) {
+    Py_ssize_t exports = get_exports(self);
+    if (exports == 0) {
         _memory_release(self);
         Py_RETURN_NONE;
     }
 
-    if (self->exports > 0) {
+    if (exports > 0) {
         PyErr_Format(PyExc_BufferError,
-            "memoryview has %zd exported buffer%s", self->exports,
-            self->exports==1 ? "" : "s");
+            "memoryview has %zd exported buffer%s", exports,
+            exports==1 ? "" : "s");
         return NULL;
     }
 
@@ -1140,7 +1151,7 @@ static void
 memory_dealloc(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    assert(self->exports == 0);
+    assert(get_exports(self) == 0);
     _PyObject_GC_UNTRACK(self);
     _memory_release(self);
     Py_CLEAR(self->mbuf);
@@ -1161,7 +1172,7 @@ static int
 memory_clear(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    if (self->exports == 0) {
+    if (get_exports(self) == 0) {
         _memory_release(self);
         Py_CLEAR(self->mbuf);
     }
@@ -1589,7 +1600,11 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 
 
     view->obj = Py_NewRef(self);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->exports, 1);
+#else
     self->exports++;
+#endif
 
     return 0;
 }
@@ -1598,7 +1613,11 @@ static void
 memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->exports, -1);
+#else
     self->exports--;
+#endif
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
 }
@@ -2064,7 +2083,7 @@ struct_get_unpacker(const char *fmt, Py_ssize_t itemsize)
     PyObject *format = NULL;
     struct unpacker *x = NULL;
 
-    Struct = _PyImport_GetModuleAttrString("struct", "Struct");
+    Struct = PyImport_ImportModuleAttrString("struct", "Struct");
     if (Struct == NULL)
         return NULL;
 
@@ -2246,6 +2265,7 @@ memoryview_tolist_impl(PyMemoryViewObject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 memoryview.tobytes
 
     order: str(accept={str, NoneType}, c_default="NULL") = 'C'
@@ -2261,11 +2281,10 @@ to C first. order=None is the same as order='C'.
 
 static PyObject *
 memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
-/*[clinic end generated code: output=1288b62560a32a23 input=0efa3ddaeda573a8]*/
+/*[clinic end generated code: output=1288b62560a32a23 input=23c9faf372cfdbcc]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     char ord = 'C';
-    PyObject *bytes;
 
     CHECK_RELEASED(self);
 
@@ -2283,16 +2302,18 @@ memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
         }
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, src->len);
-    if (bytes == NULL)
-        return NULL;
-
-    if (PyBuffer_ToContiguous(PyBytes_AS_STRING(bytes), src, src->len, ord) < 0) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
+    if (writer == NULL) {
         return NULL;
     }
 
-    return bytes;
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              src, src->len, ord) < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    return PyBytesWriter_Finish(writer);
 }
 
 /*[clinic input]
@@ -2324,8 +2345,6 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
 /*[clinic end generated code: output=430ca760f94f3ca7 input=539f6a3a5fb56946]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
-    PyObject *bytes;
-    PyObject *ret;
 
     CHECK_RELEASED(self);
 
@@ -2333,19 +2352,22 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
         return _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, src->len);
-    if (bytes == NULL)
-        return NULL;
-
-    if (PyBuffer_ToContiguous(PyBytes_AS_STRING(bytes), src, src->len, 'C') < 0) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(src->len);
+    if (writer == NULL) {
         return NULL;
     }
 
-    ret = _Py_strhex_with_sep(
-            PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes),
-            sep, bytes_per_sep);
-    Py_DECREF(bytes);
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              src, src->len, 'C') < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    PyObject *ret = _Py_strhex_with_sep(
+        PyBytesWriter_GetData(writer),
+        PyBytesWriter_GetSize(writer),
+        sep, bytes_per_sep);
+    PyBytesWriter_Discard(writer);
 
     return ret;
 }
@@ -2762,8 +2784,8 @@ Count the number of occurrences of a value.
 [clinic start generated code]*/
 
 static PyObject *
-memoryview_count(PyMemoryViewObject *self, PyObject *value)
-/*[clinic end generated code: output=e2c255a8d54eaa12 input=e3036ce1ed7d1823]*/
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
+/*[clinic end generated code: output=a15cb19311985063 input=e3036ce1ed7d1823]*/
 {
     PyObject *iter = PyObject_GetIter(_PyObject_CAST(self));
     if (iter == NULL) {

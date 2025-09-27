@@ -45,6 +45,9 @@ typedef struct instruction_sequence {
 
     /* PyList of instruction sequences of nested functions */
     PyObject *s_nested;
+
+    /* Code for creating annotations, spliced into the main sequence later */
+    struct instruction_sequence *s_annotations_code;
 } _PyInstructionSequence;
 
 typedef struct {
@@ -66,6 +69,8 @@ _PyJumpTargetLabel _PyInstructionSequence_NewLabel(_PyInstructionSequence *seq);
 int _PyInstructionSequence_ApplyLabelMap(_PyInstructionSequence *seq);
 int _PyInstructionSequence_InsertInstruction(_PyInstructionSequence *seq, int pos,
                                              int opcode, int oparg, _Py_SourceLocation loc);
+int _PyInstructionSequence_SetAnnotationsCode(_PyInstructionSequence *seq,
+                                              _PyInstructionSequence *annotations);
 int _PyInstructionSequence_AddNested(_PyInstructionSequence *seq, _PyInstructionSequence *nested);
 void PyInstructionSequence_Fini(_PyInstructionSequence *seq);
 

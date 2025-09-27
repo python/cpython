@@ -69,7 +69,6 @@ Objects/tupleobject.c:_Py_tuple_zero_allocs                      Py_ssize_t _Py_
 Objects/typeobject.c:next_version_tag                            static unsigned int next_version_tag
 Python/Python-ast.c:init_types():initialized                     static int initialized
 Python/bootstrap_hash.c:urandom_cache                            static struct { int fd; dev_t st_dev; ino_t st_ino; } urandom_cache
-Python/ceval.c:lltrace                                           static int lltrace
 Python/ceval.c:make_pending_calls():busy                         static int busy
 Python/dynload_shlib.c:handles                                   static struct { dev_t dev; ino_t ino; void *handle; } handles[128]
 Python/dynload_shlib.c:nhandles                                  static int nhandles
@@ -533,7 +532,7 @@ Python/pythonrun.c:PyId_stdin                                    _Py_IDENTIFIER(
 Python/pythonrun.c:PyId_stdout                                   _Py_IDENTIFIER(stdout)
 Python/pythonrun.c:PyRun_InteractiveOneObjectEx():PyId___main__  _Py_IDENTIFIER(__main__)
 Python/pythonrun.c:PyRun_InteractiveOneObjectEx():PyId_encoding  _Py_IDENTIFIER(encoding)
-Python/pythonrun.c:_Py_HandleSystemExit():PyId_code              _Py_IDENTIFIER(code)
+Python/pythonrun.c:_Py_HandleSystemExitAndKeyboardInterrupt():PyId_code _Py_IDENTIFIER(code)
 Python/pythonrun.c:parse_syntax_error():PyId_filename            _Py_IDENTIFIER(filename)
 Python/pythonrun.c:parse_syntax_error():PyId_lineno              _Py_IDENTIFIER(lineno)
 Python/pythonrun.c:parse_syntax_error():PyId_msg                 _Py_IDENTIFIER(msg)
@@ -795,6 +794,7 @@ Objects/genobject.c:_PyAsyncGenASend_Type                        PyTypeObject _P
 Objects/genobject.c:_PyAsyncGenAThrow_Type                       PyTypeObject _PyAsyncGenAThrow_Type
 Objects/genobject.c:_PyAsyncGenWrappedValue_Type                 PyTypeObject _PyAsyncGenWrappedValue_Type
 Objects/genobject.c:_PyCoroWrapper_Type                          PyTypeObject _PyCoroWrapper_Type
+Objects/interpolationobject.c:_PyInterpolation_Type              PyTypeObject _PyInterpolation_Type
 Objects/interpreteridobject.c:_PyInterpreterID_Type              PyTypeObject _PyInterpreterID_Type
 Objects/iterobject.c:PyCallIter_Type                             PyTypeObject PyCallIter_Type
 Objects/iterobject.c:PySeqIter_Type                              PyTypeObject PySeqIter_Type
@@ -828,6 +828,8 @@ Objects/sliceobject.c:PyEllipsis_Type                            PyTypeObject Py
 Objects/sliceobject.c:PySlice_Type                               PyTypeObject PySlice_Type
 Objects/stringlib/unicode_format.h:PyFieldNameIter_Type          static PyTypeObject PyFieldNameIter_Type
 Objects/stringlib/unicode_format.h:PyFormatterIter_Type          static PyTypeObject PyFormatterIter_Type
+Objects/templateobject.c:_PyTemplateIter_Type                    PyTypeObject _PyTemplateIter_Type
+Objects/templateobject.c:_PyTemplate_Type                        PyTypeObject _PyTemplate_Type
 Objects/tupleobject.c:PyTupleIter_Type                           PyTypeObject PyTupleIter_Type
 Objects/tupleobject.c:PyTuple_Type                               PyTypeObject PyTuple_Type
 Objects/typeobject.c:PyBaseObject_Type                           PyTypeObject PyBaseObject_Type

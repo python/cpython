@@ -48,6 +48,29 @@ class CookieTests(unittest.TestCase):
                     'Set-Cookie: d=r',
                     'Set-Cookie: f=h'
                 ))
+            },
+
+            # gh-92936: allow double quote in cookie values
+            {
+                'data': 'cookie="{"key": "value"}"',
+                'dict': {'cookie': '{"key": "value"}'},
+                'repr': "<SimpleCookie: cookie='{\"key\": \"value\"}'>",
+                'output': 'Set-Cookie: cookie="{"key": "value"}"',
+            },
+            {
+                'data': 'key="some value; surrounded by quotes"',
+                'dict': {'key': 'some value; surrounded by quotes'},
+                'repr': "<SimpleCookie: key='some value; surrounded by quotes'>",
+                'output': 'Set-Cookie: key="some value; surrounded by quotes"',
+            },
+            {
+                'data': 'session="user123"; preferences="{"theme": "dark"}"',
+                'dict': {'session': 'user123', 'preferences': '{"theme": "dark"}'},
+                'repr': "<SimpleCookie: preferences='{\"theme\": \"dark\"}' session='user123'>",
+                'output': '\n'.join((
+                    'Set-Cookie: preferences="{"theme": "dark"}"',
+                    'Set-Cookie: session="user123"',
+                ))
             }
         ]
 
@@ -180,7 +203,7 @@ class CookieTests(unittest.TestCase):
         C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
         C['Customer']['expires'] = 0
         # can't test exact output, it always depends on current date/time
-        self.assertTrue(C.output().endswith('GMT'))
+        self.assertEndsWith(C.output(), 'GMT')
 
         # loading 'expires'
         C = cookies.SimpleCookie()
@@ -204,6 +227,14 @@ class CookieTests(unittest.TestCase):
         C['Customer']['httponly'] = True
         self.assertEqual(C.output(),
             'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Secure')
+
+    def test_set_secure_httponly_partitioned_attrs(self):
+        C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
+        C['Customer']['secure'] = True
+        C['Customer']['httponly'] = True
+        C['Customer']['partitioned'] = True
+        self.assertEqual(C.output(),
+            'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Partitioned; Secure')
 
     def test_samesite_attrs(self):
         samesite_values = ['Strict', 'Lax', 'strict', 'lax']

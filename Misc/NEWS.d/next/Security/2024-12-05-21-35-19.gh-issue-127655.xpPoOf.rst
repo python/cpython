@@ -1,1 +1,0 @@
-Fixed the :class:`!asyncio.selector_events._SelectorSocketTransport` transport not pausing writes for the protocol when the buffer reaches the high water mark when using :meth:`asyncio.WriteTransport.writelines`.

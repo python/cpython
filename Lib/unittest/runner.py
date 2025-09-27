@@ -4,7 +4,7 @@ import sys
 import time
 import warnings
 
-from _colorize import get_colors
+from _colorize import get_theme
 
 from . import result
 from .case import _SubTest
@@ -45,7 +45,7 @@ class TextTestResult(result.TestResult):
         self.showAll = verbosity > 1
         self.dots = verbosity == 1
         self.descriptions = descriptions
-        self._ansi = get_colors()
+        self._theme = get_theme(tty_file=stream).unittest
         self._newline = True
         self.durations = durations
 
@@ -79,101 +79,99 @@ class TextTestResult(result.TestResult):
 
     def addSubTest(self, test, subtest, err):
         if err is not None:
-            red, reset = self._ansi.RED, self._ansi.RESET
+            t = self._theme
             if self.showAll:
                 if issubclass(err[0], subtest.failureException):
-                    self._write_status(subtest, f"{red}FAIL{reset}")
+                    self._write_status(subtest, f"{t.fail}FAIL{t.reset}")
                 else:
-                    self._write_status(subtest, f"{red}ERROR{reset}")
+                    self._write_status(subtest, f"{t.fail}ERROR{t.reset}")
             elif self.dots:
                 if issubclass(err[0], subtest.failureException):
-                    self.stream.write(f"{red}F{reset}")
+                    self.stream.write(f"{t.fail}F{t.reset}")
                 else:
-                    self.stream.write(f"{red}E{reset}")
+                    self.stream.write(f"{t.fail}E{t.reset}")
                 self.stream.flush()
         super(TextTestResult, self).addSubTest(test, subtest, err)
 
     def addSuccess(self, test):
         super(TextTestResult, self).addSuccess(test)
-        green, reset = self._ansi.GREEN, self._ansi.RESET
+        t = self._theme
         if self.showAll:
-            self._write_status(test, f"{green}ok{reset}")
+            self._write_status(test, f"{t.passed}ok{t.reset}")
         elif self.dots:
-            self.stream.write(f"{green}.{reset}")
+            self.stream.write(f"{t.passed}.{t.reset}")
             self.stream.flush()
 
     def addError(self, test, err):
         super(TextTestResult, self).addError(test, err)
-        red, reset = self._ansi.RED, self._ansi.RESET
+        t = self._theme
         if self.showAll:
-            self._write_status(test, f"{red}ERROR{reset}")
+            self._write_status(test, f"{t.fail}ERROR{t.reset}")
         elif self.dots:
-            self.stream.write(f"{red}E{reset}")
+            self.stream.write(f"{t.fail}E{t.reset}")
             self.stream.flush()
 
     def addFailure(self, test, err):
         super(TextTestResult, self).addFailure(test, err)
-        red, reset = self._ansi.RED, self._ansi.RESET
+        t = self._theme
         if self.showAll:
-            self._write_status(test, f"{red}FAIL{reset}")
+            self._write_status(test, f"{t.fail}FAIL{t.reset}")
         elif self.dots:
-            self.stream.write(f"{red}F{reset}")
+            self.stream.write(f"{t.fail}F{t.reset}")
             self.stream.flush()
 
     def addSkip(self, test, reason):
         super(TextTestResult, self).addSkip(test, reason)
-        yellow, reset = self._ansi.YELLOW, self._ansi.RESET
+        t = self._theme
         if self.showAll:
-            self._write_status(test, f"{yellow}skipped{reset} {reason!r}")
+            self._write_status(test, f"{t.warn}skipped{t.reset} {reason!r}")
         elif self.dots:
-            self.stream.write(f"{yellow}s{reset}")
+            self.stream.write(f"{t.warn}s{t.reset}")
             self.stream.flush()
 
     def addExpectedFailure(self, test, err):
         super(TextTestResult, self).addExpectedFailure(test, err)
-        yellow, reset = self._ansi.YELLOW, self._ansi.RESET
+        t = self._theme
         if self.showAll:
-            self.stream.writeln(f"{yellow}expected failure{reset}")
+            self.stream.writeln(f"{t.warn}expected failure{t.reset}")
             self.stream.flush()
         elif self.dots:
-            self.stream.write(f"{yellow}x{reset}")
+            self.stream.write(f"{t.warn}x{t.reset}")
             self.stream.flush()
 
     def addUnexpectedSuccess(self, test):
         super(TextTestResult, self).addUnexpectedSuccess(test)
-        red, reset = self._ansi.RED, self._ansi.RESET
+        t = self._theme
         if self.showAll:
-            self.stream.writeln(f"{red}unexpected success{reset}")
+            self.stream.writeln(f"{t.fail}unexpected success{t.reset}")
             self.stream.flush()
         elif self.dots:
-            self.stream.write(f"{red}u{reset}")
+            self.stream.write(f"{t.fail}u{t.reset}")
             self.stream.flush()
 
     def printErrors(self):
-        bold_red = self._ansi.BOLD_RED
-        red = self._ansi.RED
-        reset = self._ansi.RESET
+        t = self._theme
         if self.dots or self.showAll:
             self.stream.writeln()
             self.stream.flush()
-        self.printErrorList(f"{red}ERROR{reset}", self.errors)
-        self.printErrorList(f"{red}FAIL{reset}", self.failures)
+        self.printErrorList(f"{t.fail}ERROR{t.reset}", self.errors)
+        self.printErrorList(f"{t.fail}FAIL{t.reset}", self.failures)
         unexpectedSuccesses = getattr(self, "unexpectedSuccesses", ())
         if unexpectedSuccesses:
             self.stream.writeln(self.separator1)
             for test in unexpectedSuccesses:
                 self.stream.writeln(
-                    f"{red}UNEXPECTED SUCCESS{bold_red}: "
-                    f"{self.getDescription(test)}{reset}"
+                    f"{t.fail}UNEXPECTED SUCCESS{t.fail_info}: "
+                    f"{self.getDescription(test)}{t.reset}"
                 )
             self.stream.flush()
 
     def printErrorList(self, flavour, errors):
-        bold_red, reset = self._ansi.BOLD_RED, self._ansi.RESET
+        t = self._theme
         for test, err in errors:
             self.stream.writeln(self.separator1)
             self.stream.writeln(
-                f"{flavour}{bold_red}: {self.getDescription(test)}{reset}"
+                f"{flavour}{t.fail_info}: {self.getDescription(test)}{t.reset}"
             )
             self.stream.writeln(self.separator2)
             self.stream.writeln("%s" % err)
@@ -286,31 +284,26 @@ class TextTestRunner(object):
             expected_fails, unexpected_successes, skipped = results
 
         infos = []
-        ansi = get_colors()
-        bold_red = ansi.BOLD_RED
-        green = ansi.GREEN
-        red = ansi.RED
-        reset = ansi.RESET
-        yellow = ansi.YELLOW
+        t = get_theme(tty_file=self.stream).unittest
 
         if not result.wasSuccessful():
-            self.stream.write(f"{bold_red}FAILED{reset}")
+            self.stream.write(f"{t.fail_info}FAILED{t.reset}")
             failed, errored = len(result.failures), len(result.errors)
             if failed:
-                infos.append(f"{bold_red}failures={failed}{reset}")
+                infos.append(f"{t.fail_info}failures={failed}{t.reset}")
             if errored:
-                infos.append(f"{bold_red}errors={errored}{reset}")
+                infos.append(f"{t.fail_info}errors={errored}{t.reset}")
         elif run == 0 and not skipped:
-            self.stream.write(f"{yellow}NO TESTS RAN{reset}")
+            self.stream.write(f"{t.warn}NO TESTS RAN{t.reset}")
         else:
-            self.stream.write(f"{green}OK{reset}")
+            self.stream.write(f"{t.passed}OK{t.reset}")
         if skipped:
-            infos.append(f"{yellow}skipped={skipped}{reset}")
+            infos.append(f"{t.warn}skipped={skipped}{t.reset}")
         if expected_fails:
-            infos.append(f"{yellow}expected failures={expected_fails}{reset}")
+            infos.append(f"{t.warn}expected failures={expected_fails}{t.reset}")
         if unexpected_successes:
             infos.append(
-                f"{red}unexpected successes={unexpected_successes}{reset}"
+                f"{t.fail}unexpected successes={unexpected_successes}{t.reset}"
             )
         if infos:
             self.stream.writeln(" (%s)" % (", ".join(infos),))

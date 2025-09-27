@@ -3,8 +3,8 @@ Low-level OS functionality wrappers used by pathlib.
 """
 
 from errno import *
+from io import TextIOWrapper, text_encoding
 import os
-import stat
 import sys
 try:
     import fcntl
@@ -101,13 +101,13 @@ else:
 
 
 if _winapi and hasattr(_winapi, 'CopyFile2'):
-    def copyfile(source, target):
+    def copyfile2(source, target):
         """
         Copy from one file to another using CopyFile2 (Windows only).
         """
         _winapi.CopyFile2(source, target, 0)
 else:
-    copyfile = None
+    copyfile2 = None
 
 
 def copyfileobj(source_f, target_f):
@@ -165,98 +165,139 @@ def copyfileobj(source_f, target_f):
         write_target(buf)
 
 
-# Kinds of metadata supported by the operating system.
-file_metadata_keys = {'mode', 'times_ns'}
-if hasattr(os.stat_result, 'st_flags'):
-    file_metadata_keys.add('flags')
-if hasattr(os, 'listxattr'):
-    file_metadata_keys.add('xattrs')
-file_metadata_keys = frozenset(file_metadata_keys)
-
-
-def read_file_metadata(path, keys=None, *, follow_symlinks=True):
-    """
-    Returns local path metadata as a dict with string keys.
-    """
-    if keys is None:
-        keys = file_metadata_keys
-    assert keys.issubset(file_metadata_keys)
-    result = {}
-    for key in keys:
-        if key == 'xattrs':
-            try:
-                result['xattrs'] = [
-                    (attr, os.getxattr(path, attr, follow_symlinks=follow_symlinks))
-                    for attr in os.listxattr(path, follow_symlinks=follow_symlinks)]
-            except OSError as err:
-                if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                    raise
-            continue
-        st = os.stat(path, follow_symlinks=follow_symlinks)
-        if key == 'mode':
-            result['mode'] = stat.S_IMODE(st.st_mode)
-        elif key == 'times_ns':
-            result['times_ns'] = st.st_atime_ns, st.st_mtime_ns
-        elif key == 'flags':
-            result['flags'] = st.st_flags
-    return result
-
-
-def write_file_metadata(path, metadata, *, follow_symlinks=True):
-    """
-    Sets local path metadata from the given dict with string keys.
-    """
-    assert frozenset(metadata.keys()).issubset(file_metadata_keys)
-
-    def _nop(*args, ns=None, follow_symlinks=None):
-        pass
-
-    if follow_symlinks:
-        # use the real function if it exists
-        def lookup(name):
-            return getattr(os, name, _nop)
+def _open_reader(obj):
+    cls = type(obj)
+    try:
+        open_reader = cls.__open_reader__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for reading") from None
     else:
-        # use the real function only if it exists
-        # *and* it supports follow_symlinks
-        def lookup(name):
-            fn = getattr(os, name, _nop)
-            if fn in os.supports_follow_symlinks:
-                return fn
-            return _nop
+        return open_reader(obj)
 
-    times_ns = metadata.get('times_ns')
-    if times_ns is not None:
-        lookup("utime")(path, ns=times_ns, follow_symlinks=follow_symlinks)
-    # We must copy extended attributes before the file is (potentially)
-    # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
-    xattrs = metadata.get('xattrs')
-    if xattrs is not None:
-        for attr, value in xattrs:
-            try:
-                os.setxattr(path, attr, value, follow_symlinks=follow_symlinks)
-            except OSError as e:
-                if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                    raise
-    mode = metadata.get('mode')
-    if mode is not None:
+
+def _open_writer(obj, mode):
+    cls = type(obj)
+    try:
+        open_writer = cls.__open_writer__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for writing") from None
+    else:
+        return open_writer(obj, mode)
+
+
+def _open_updater(obj, mode):
+    cls = type(obj)
+    try:
+        open_updater = cls.__open_updater__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for updating") from None
+    else:
+        return open_updater(obj, mode)
+
+
+def vfsopen(obj, mode='r', buffering=-1, encoding=None, errors=None,
+            newline=None):
+    """
+    Open the file pointed to by this path and return a file object, as
+    the built-in open() function does.
+
+    Unlike the built-in open() function, this function additionally accepts
+    'openable' objects, which are objects with any of these special methods:
+
+        __open_reader__()
+        __open_writer__(mode)
+        __open_updater__(mode)
+
+    '__open_reader__' is called for 'r' mode; '__open_writer__' for 'a', 'w'
+    and 'x' modes; and '__open_updater__' for 'r+' and 'w+' modes. If text
+    mode is requested, the result is wrapped in an io.TextIOWrapper object.
+    """
+    if buffering != -1:
+        raise ValueError("buffer size can't be customized")
+    text = 'b' not in mode
+    if text:
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = text_encoding(encoding)
+    try:
+        return open(obj, mode, buffering, encoding, errors, newline)
+    except TypeError:
+        pass
+    if not text:
+        if encoding is not None:
+            raise ValueError("binary mode doesn't take an encoding argument")
+        if errors is not None:
+            raise ValueError("binary mode doesn't take an errors argument")
+        if newline is not None:
+            raise ValueError("binary mode doesn't take a newline argument")
+    mode = ''.join(sorted(c for c in mode if c not in 'bt'))
+    if mode == 'r':
+        stream = _open_reader(obj)
+    elif mode in ('a', 'w', 'x'):
+        stream = _open_writer(obj, mode)
+    elif mode in ('+r', '+w'):
+        stream = _open_updater(obj, mode[1])
+    else:
+        raise ValueError(f'invalid mode: {mode}')
+    if text:
+        stream = TextIOWrapper(stream, encoding, errors, newline)
+    return stream
+
+
+def vfspath(obj):
+    """
+    Return the string representation of a virtual path object.
+    """
+    cls = type(obj)
+    try:
+        vfspath_method = cls.__vfspath__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"expected JoinablePath object, not {cls_name}") from None
+    else:
+        return vfspath_method(obj)
+
+
+def ensure_distinct_paths(source, target):
+    """
+    Raise OSError(EINVAL) if the other path is within this path.
+    """
+    # Note: there is no straightforward, foolproof algorithm to determine
+    # if one directory is within another (a particularly perverse example
+    # would be a single network share mounted in one location via NFS, and
+    # in another location via CIFS), so we simply checks whether the
+    # other path is lexically equal to, or within, this path.
+    if source == target:
+        err = OSError(EINVAL, "Source and target are the same path")
+    elif source in target.parents:
+        err = OSError(EINVAL, "Source path is a parent of target path")
+    else:
+        return
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
+    raise err
+
+
+def ensure_different_files(source, target):
+    """
+    Raise OSError(EINVAL) if both paths refer to the same file.
+    """
+    try:
+        source_file_id = source.info._file_id
+        target_file_id = target.info._file_id
+    except AttributeError:
+        if source != target:
+            return
+    else:
         try:
-            lookup("chmod")(path, mode, follow_symlinks=follow_symlinks)
-        except NotImplementedError:
-            # if we got a NotImplementedError, it's because
-            #   * follow_symlinks=False,
-            #   * lchown() is unavailable, and
-            #   * either
-            #       * fchownat() is unavailable or
-            #       * fchownat() doesn't implement AT_SYMLINK_NOFOLLOW.
-            #         (it returned ENOSUP.)
-            # therefore we're out of options--we simply cannot chown the
-            # symlink.  give up, suppress the error.
-            # (which is what shutil always did in this circumstance.)
-            pass
-    flags = metadata.get('flags')
-    if flags is not None:
-        try:
-            lookup("chflags")(path, flags, follow_symlinks=follow_symlinks)
-        except OSError as why:
-            if why.errno not in (EOPNOTSUPP, ENOTSUP):
-                raise
+            if source_file_id() != target_file_id():
+                return
+        except (OSError, ValueError):
+            return
+    err = OSError(EINVAL, "Source and target are the same file")
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
+    raise err

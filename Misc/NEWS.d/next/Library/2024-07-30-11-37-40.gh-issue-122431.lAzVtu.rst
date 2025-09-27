@@ -1,1 +1,0 @@
-:func:`readline.append_history_file` now raises a :exc:`ValueError` when given a negative value.

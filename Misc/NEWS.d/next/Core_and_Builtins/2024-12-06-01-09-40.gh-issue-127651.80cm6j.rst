@@ -1,1 +1,0 @@
-When raising :exc:`ImportError` for missing symbols in ``from`` imports, use ``__file__`` in the error message if ``__spec__.origin`` is not a location

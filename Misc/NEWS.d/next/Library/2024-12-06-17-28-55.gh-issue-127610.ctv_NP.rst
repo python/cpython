@@ -1,3 +1,0 @@
-Added validation for more than one var-positional or
-var-keyword parameters in :class:`inspect.Signature`.
-Patch by Maxim Ageev.

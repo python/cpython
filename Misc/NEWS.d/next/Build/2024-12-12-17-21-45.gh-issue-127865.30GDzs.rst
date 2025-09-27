@@ -1,1 +1,0 @@
-Fix build failure on systems without thread-locals support.

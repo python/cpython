@@ -20,7 +20,7 @@ class PathTests:
         target = resources.files(self.data) / 'utf-8.file'
         with resources.as_file(target) as path:
             self.assertIsInstance(path, pathlib.Path)
-            self.assertTrue(path.name.endswith("utf-8.file"), repr(path))
+            self.assertEndsWith(path.name, "utf-8.file")
             self.assertEqual('Hello, UTF-8 world!\n', path.read_text(encoding='utf-8'))
 
 

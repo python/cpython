@@ -1,4 +1,0 @@
-Add a marking phase to the GC. All objects that can be transitively reached
-from builtin modules or the stacks are marked as reachable before cycle
-detection. This reduces the amount of work done by the GC by approximately
-half.

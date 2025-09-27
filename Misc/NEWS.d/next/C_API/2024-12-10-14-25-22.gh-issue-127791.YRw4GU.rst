@@ -1,2 +1,0 @@
-Fix loss of callbacks after more than one call to
-:c:func:`PyUnstable_AtExit`.

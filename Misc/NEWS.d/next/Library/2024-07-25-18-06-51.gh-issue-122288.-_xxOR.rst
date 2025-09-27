@@ -1,2 +1,0 @@
-Improve the performances of :func:`fnmatch.translate` by a factor 1.7. Patch
-by Bénédikt Tran.

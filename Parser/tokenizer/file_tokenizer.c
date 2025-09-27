@@ -1,8 +1,9 @@
 #include "Python.h"
-#include "pycore_call.h"
-#include "pycore_import.h"
-#include "pycore_fileutils.h"
-#include "errcode.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // _Py_UniversalNewlineFgetsWithSize()
+#include "pycore_runtime.h"       // _Py_ID()
+
+#include "errcode.h"              // E_NOMEM
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // lseek(), read()
@@ -12,6 +13,7 @@
 #include "../lexer/state.h"
 #include "../lexer/lexer.h"
 #include "../lexer/buffer.h"
+
 
 static int
 tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {
@@ -158,7 +160,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         return 0;
     }
 
-    open = _PyImport_GetModuleAttrString("io", "open");
+    open = PyImport_ImportModuleAttrString("io", "open");
     if (open == NULL) {
         return 0;
     }
@@ -273,7 +275,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         return 0;
     }
 
-    if (tok->tok_mode_stack_index && !_PyLexer_update_fstring_expr(tok, 0)) {
+    if (tok->tok_mode_stack_index && !_PyLexer_update_ftstring_expr(tok, 0)) {
         return 0;
     }
     return 1;
@@ -320,7 +322,7 @@ tok_underflow_file(struct tok_state *tok) {
         tok->implicit_newline = 1;
     }
 
-    if (tok->tok_mode_stack_index && !_PyLexer_update_fstring_expr(tok, 0)) {
+    if (tok->tok_mode_stack_index && !_PyLexer_update_ftstring_expr(tok, 0)) {
         return 0;
     }
 

@@ -1,2 +1,0 @@
-Detect recursive calls in ctypes ``_as_parameter_`` handling.
-Patch by Victor Stinner.

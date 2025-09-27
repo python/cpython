@@ -11,6 +11,7 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 import os
+import socket
 try:
     import ssl
 except ImportError:
@@ -108,7 +109,7 @@ class urlopen_FileTests(unittest.TestCase):
         finally:
             f.close()
         self.pathname = os_helper.TESTFN
-        self.quoted_pathname = urllib.parse.quote(self.pathname)
+        self.quoted_pathname = urllib.parse.quote(os.fsencode(self.pathname))
         self.returned_obj = urllib.request.urlopen("file:%s" % self.quoted_pathname)
 
     def tearDown(self):
@@ -120,9 +121,7 @@ class urlopen_FileTests(unittest.TestCase):
         # Make sure object returned by urlopen() has the specified methods
         for attr in ("read", "readline", "readlines", "fileno",
                      "close", "info", "geturl", "getcode", "__iter__"):
-            self.assertTrue(hasattr(self.returned_obj, attr),
-                         "object returned by urlopen() lacks %s attribute" %
-                         attr)
+            self.assertHasAttr(self.returned_obj, attr)
 
     def test_read(self):
         self.assertEqual(self.text, self.returned_obj.read())
@@ -181,6 +180,16 @@ class urlopen_FileTests(unittest.TestCase):
 
     def test_relativelocalfile(self):
         self.assertRaises(ValueError,urllib.request.urlopen,'./' + self.pathname)
+
+    def test_remote_authority(self):
+        # Test for GH-90812.
+        url = 'file://pythontest.net/foo/bar'
+        with self.assertRaises(urllib.error.URLError) as e:
+            urllib.request.urlopen(url)
+        if os.name == 'nt':
+            self.assertEqual(e.exception.filename, r'\\pythontest.net\foo\bar')
+        else:
+            self.assertEqual(e.exception.reason, 'file:// scheme is supported only on localhost')
 
 
 class ProxyTests(unittest.TestCase):
@@ -419,7 +428,9 @@ Connection: close
 Content-Type: text/html; charset=iso-8859-1
 ''', mock_close=True)
         try:
-            self.assertRaises(OSError, urllib.request.urlopen, "http://python.org/")
+            with self.assertRaises(urllib.error.HTTPError) as cm:
+                urllib.request.urlopen("http://python.org/")
+            cm.exception.close()
         finally:
             self.unfakehttp()
 
@@ -434,8 +445,9 @@ Content-Type: text/html; charset=iso-8859-1
 ''', mock_close=True)
         try:
             msg = "Redirection to url 'file:"
-            with self.assertRaisesRegex(urllib.error.HTTPError, msg):
+            with self.assertRaisesRegex(urllib.error.HTTPError, msg) as cm:
                 urllib.request.urlopen("http://python.org/")
+            cm.exception.close()
         finally:
             self.unfakehttp()
 
@@ -448,8 +460,9 @@ Location: file://guidocomputer.athome.com:/python/license
 Connection: close
 ''', mock_close=True)
             try:
-                self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen,
-                    "http://something")
+                with self.assertRaises(urllib.error.HTTPError) as cm:
+                    urllib.request.urlopen("http://something")
+                cm.exception.close()
             finally:
                 self.unfakehttp()
 
@@ -471,7 +484,7 @@ Connection: close
 
     def test_file_notexists(self):
         fd, tmp_file = tempfile.mkstemp()
-        tmp_file_canon_url = 'file:' + urllib.request.pathname2url(tmp_file)
+        tmp_file_canon_url = urllib.request.pathname2url(tmp_file, add_scheme=True)
         parsed = urllib.parse.urlsplit(tmp_file_canon_url)
         tmp_fileurl = parsed._replace(netloc='localhost').geturl()
         try:
@@ -529,18 +542,17 @@ class urlopen_DataTests(unittest.TestCase):
             "QOjdAAAAAXNSR0IArs4c6QAAAA9JREFUCNdj%0AYGBg%2BP//PwAGAQL%2BCm8 "
             "vHgAAAABJRU5ErkJggg%3D%3D%0A%20")
 
-        self.text_url_resp = urllib.request.urlopen(self.text_url)
-        self.text_url_base64_resp = urllib.request.urlopen(
-            self.text_url_base64)
-        self.image_url_resp = urllib.request.urlopen(self.image_url)
+        self.text_url_resp = self.enterContext(
+            urllib.request.urlopen(self.text_url))
+        self.text_url_base64_resp = self.enterContext(
+            urllib.request.urlopen(self.text_url_base64))
+        self.image_url_resp = self.enterContext(urllib.request.urlopen(self.image_url))
 
     def test_interface(self):
         # Make sure object returned by urlopen() has the specified methods
         for attr in ("read", "readline", "readlines",
                      "close", "info", "geturl", "getcode", "__iter__"):
-            self.assertTrue(hasattr(self.text_url_resp, attr),
-                         "object returned by urlopen() lacks %s attribute" %
-                         attr)
+            self.assertHasAttr(self.text_url_resp, attr)
 
     def test_info(self):
         self.assertIsInstance(self.text_url_resp.info(), email.message.Message)
@@ -548,8 +560,10 @@ class urlopen_DataTests(unittest.TestCase):
             [('text/plain', ''), ('charset', 'ISO-8859-1')])
         self.assertEqual(self.image_url_resp.info()['content-length'],
             str(len(self.image)))
-        self.assertEqual(urllib.request.urlopen("data:,").info().get_params(),
+        r = urllib.request.urlopen("data:,")
+        self.assertEqual(r.info().get_params(),
             [('text/plain', ''), ('charset', 'US-ASCII')])
+        r.close()
 
     def test_geturl(self):
         self.assertEqual(self.text_url_resp.geturl(), self.text_url)
@@ -612,7 +626,7 @@ class urlretrieve_FileTests(unittest.TestCase):
 
     def constructLocalFileUrl(self, filePath):
         filePath = os.path.abspath(filePath)
-        return "file:" + urllib.request.pathname2url(filePath)
+        return urllib.request.pathname2url(filePath, add_scheme=True)
 
     def createNewTempFile(self, data=b""):
         """Creates a new temporary file containing the specified data,
@@ -1417,6 +1431,32 @@ class Pathname_Tests(unittest.TestCase):
                          "url2pathname() failed; %s != %s" %
                          (expect, result))
 
+    def test_pathname2url(self):
+        # Test cases common to Windows and POSIX.
+        fn = urllib.request.pathname2url
+        sep = os.path.sep
+        self.assertEqual(fn(''), '')
+        self.assertEqual(fn(sep), '///')
+        self.assertEqual(fn('a'), 'a')
+        self.assertEqual(fn(f'a{sep}b.c'), 'a/b.c')
+        self.assertEqual(fn(f'{sep}a{sep}b.c'), '///a/b.c')
+        self.assertEqual(fn(f'{sep}a{sep}b%#c'), '///a/b%25%23c')
+
+    def test_pathname2url_add_scheme(self):
+        sep = os.path.sep
+        subtests = [
+            ('', 'file:'),
+            (sep, 'file:///'),
+            ('a', 'file:a'),
+            (f'a{sep}b.c', 'file:a/b.c'),
+            (f'{sep}a{sep}b.c', 'file:///a/b.c'),
+            (f'{sep}a{sep}b%#c', 'file:///a/b%25%23c'),
+        ]
+        for path, expected_url in subtests:
+            with self.subTest(path=path):
+                self.assertEqual(
+                    urllib.request.pathname2url(path, add_scheme=True), expected_url)
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
     def test_pathname2url_win(self):
@@ -1459,12 +1499,9 @@ class Pathname_Tests(unittest.TestCase):
                      'test specific to POSIX pathnames')
     def test_pathname2url_posix(self):
         fn = urllib.request.pathname2url
-        self.assertEqual(fn('/'), '///')
-        self.assertEqual(fn('/a/b.c'), '///a/b.c')
         self.assertEqual(fn('//a/b.c'), '////a/b.c')
         self.assertEqual(fn('///a/b.c'), '/////a/b.c')
         self.assertEqual(fn('////a/b.c'), '//////a/b.c')
-        self.assertEqual(fn('/a/b%#c'), '///a/b%25%23c')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_pathname2url_nonascii(self):
@@ -1473,11 +1510,90 @@ class Pathname_Tests(unittest.TestCase):
         url = urllib.parse.quote(os_helper.FS_NONASCII, encoding=encoding, errors=errors)
         self.assertEqual(urllib.request.pathname2url(os_helper.FS_NONASCII), url)
 
+    def test_url2pathname(self):
+        # Test cases common to Windows and POSIX.
+        fn = urllib.request.url2pathname
+        sep = os.path.sep
+        self.assertEqual(fn(''), '')
+        self.assertEqual(fn('/'), f'{sep}')
+        self.assertEqual(fn('///'), f'{sep}')
+        self.assertEqual(fn('////'), f'{sep}{sep}')
+        self.assertEqual(fn('foo'), 'foo')
+        self.assertEqual(fn('foo/bar'), f'foo{sep}bar')
+        self.assertEqual(fn('/foo/bar'), f'{sep}foo{sep}bar')
+        self.assertEqual(fn('//localhost/foo/bar'), f'{sep}foo{sep}bar')
+        self.assertEqual(fn('///foo/bar'), f'{sep}foo{sep}bar')
+        self.assertEqual(fn('////foo/bar'), f'{sep}{sep}foo{sep}bar')
+        self.assertEqual(fn('data:blah'), 'data:blah')
+        self.assertEqual(fn('data://blah'), f'data:{sep}{sep}blah')
+        self.assertEqual(fn('foo?bar'), 'foo')
+        self.assertEqual(fn('foo#bar'), 'foo')
+        self.assertEqual(fn('foo?bar=baz'), 'foo')
+        self.assertEqual(fn('foo?bar#baz'), 'foo')
+        self.assertEqual(fn('foo%3Fbar'), 'foo?bar')
+        self.assertEqual(fn('foo%23bar'), 'foo#bar')
+        self.assertEqual(fn('foo%3Fbar%3Dbaz'), 'foo?bar=baz')
+        self.assertEqual(fn('foo%3Fbar%23baz'), 'foo?bar#baz')
+
+    def test_url2pathname_require_scheme(self):
+        sep = os.path.sep
+        subtests = [
+            ('file:', ''),
+            ('FILE:', ''),
+            ('FiLe:', ''),
+            ('file:/', f'{sep}'),
+            ('file:///', f'{sep}'),
+            ('file:////', f'{sep}{sep}'),
+            ('file:foo', 'foo'),
+            ('file:foo/bar', f'foo{sep}bar'),
+            ('file:/foo/bar', f'{sep}foo{sep}bar'),
+            ('file://localhost/foo/bar', f'{sep}foo{sep}bar'),
+            ('file:///foo/bar', f'{sep}foo{sep}bar'),
+            ('file:////foo/bar', f'{sep}{sep}foo{sep}bar'),
+            ('file:data:blah', 'data:blah'),
+            ('file:data://blah', f'data:{sep}{sep}blah'),
+        ]
+        for url, expected_path in subtests:
+            with self.subTest(url=url):
+                self.assertEqual(
+                    urllib.request.url2pathname(url, require_scheme=True),
+                    expected_path)
+
+    def test_url2pathname_require_scheme_errors(self):
+        subtests = [
+            '',
+            ':',
+            'foo',
+            'http:foo',
+            'localfile:foo',
+            'data:foo',
+            'data:file:foo',
+            'data:file://foo',
+        ]
+        for url in subtests:
+            with self.subTest(url=url):
+                self.assertRaises(
+                    urllib.error.URLError,
+                    urllib.request.url2pathname,
+                    url, require_scheme=True)
+
+    @unittest.skipIf(support.is_emscripten, "Fixed by https://github.com/emscripten-core/emscripten/pull/24593")
+    def test_url2pathname_resolve_host(self):
+        fn = urllib.request.url2pathname
+        sep = os.path.sep
+        self.assertEqual(fn('//127.0.0.1/foo/bar', resolve_host=True), f'{sep}foo{sep}bar')
+        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), f'{sep}foo{sep}bar')
+        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar', resolve_host=True), f'{sep}foo{sep}bar')
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
     def test_url2pathname_win(self):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/C:/'), 'C:\\')
+        self.assertEqual(fn('//C:'), 'C:')
+        self.assertEqual(fn('//C:/'), 'C:\\')
+        self.assertEqual(fn('//C:\\'), 'C:\\')
+        self.assertEqual(fn('//C:80/'), 'C:80\\')
         self.assertEqual(fn("///C|"), 'C:')
         self.assertEqual(fn("///C:"), 'C:')
         self.assertEqual(fn('///C:/'), 'C:\\')
@@ -1495,12 +1611,15 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('/C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('///C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn("///C|/foo/bar/spam.foo"), 'C:\\foo\\bar\\spam.foo')
-        # Non-ASCII drive letter
-        self.assertRaises(IOError, fn, "///\u00e8|/")
+        # Colons in URI
+        self.assertEqual(fn('///\u00e8|/'), '\u00e8:\\')
+        self.assertEqual(fn('//host/share/spam.txt:eggs'), '\\\\host\\share\\spam.txt:eggs')
+        self.assertEqual(fn('///c:/spam.txt:eggs'), 'c:\\spam.txt:eggs')
         # UNC paths
         self.assertEqual(fn('//server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('////server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('/////server/path/to/file'), '\\\\server\\path\\to\\file')
+        self.assertEqual(fn('//127.0.0.1/path/to/file'), '\\\\127.0.0.1\\path\\to\\file')
         # Localhost paths
         self.assertEqual(fn('//localhost/C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('//localhost/C|/path/to/file'), 'C:\\path\\to\\file')
@@ -1520,11 +1639,12 @@ class Pathname_Tests(unittest.TestCase):
                      'test specific to POSIX pathnames')
     def test_url2pathname_posix(self):
         fn = urllib.request.url2pathname
-        self.assertEqual(fn('/foo/bar'), '/foo/bar')
-        self.assertEqual(fn('//foo/bar'), '//foo/bar')
-        self.assertEqual(fn('///foo/bar'), '/foo/bar')
-        self.assertEqual(fn('////foo/bar'), '//foo/bar')
-        self.assertEqual(fn('//localhost/foo/bar'), '/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//localhost:/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//:80/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//:/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//c:80/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//127.0.0.1/foo/bar')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_url2pathname_nonascii(self):
