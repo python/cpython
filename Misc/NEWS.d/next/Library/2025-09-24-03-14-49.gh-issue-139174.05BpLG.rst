@@ -1,0 +1,5 @@
+Add :class:`pathlib.Info` type, which queries and caches path metadata for
+local filesystem paths. This type is used by the :attr:`pathlib.Path.info`
+attribute, which consequently gains a :meth:`~pathlib.Info.stat` method;
+this method returns an :class:`os.stat_result` object with low-level details
+about the path.

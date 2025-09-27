@@ -13,6 +13,7 @@ in this chapter is:
 .. toctree::
 
    pathlib.rst
+   pathlib.types.rst
    os.path.rst
    stat.rst
    filecmp.rst
