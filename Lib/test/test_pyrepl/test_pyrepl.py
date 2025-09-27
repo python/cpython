@@ -68,7 +68,7 @@ class ReplTestCase(TestCase):
         try:
             return self._run_repl(
                 repl_input,
-                env=env,
+                env=os.environ.copy() if env is None else env,
                 cmdline_args=cmdline_args,
                 cwd=cwd,
                 skip=skip,
@@ -83,7 +83,7 @@ class ReplTestCase(TestCase):
         self,
         repl_input: str | list[str],
         *,
-        env: dict | None,
+        env: dict[str, str],
         cmdline_args: list[str] | None,
         cwd: str,
         skip: bool,
@@ -93,11 +93,14 @@ class ReplTestCase(TestCase):
         assert pty
         master_fd, slave_fd = pty.openpty()
         cmd = [sys.executable, "-i", "-u"]
-        if env is None:
-            cmd.append("-I")
-        elif "PYTHON_HISTORY" not in env:
+        if "PYTHON_HISTORY" not in env:
             env["PYTHON_HISTORY"] = os.path.join(cwd, ".regrtest_history")
         if cmdline_args is not None:
+            if "PYTHON_HISTORY" in env:
+                self.assertNotIn(
+                    "-I", cmdline_args,
+                    "PYTHON_HISTORY will be ignored by -I"
+                )
             cmd.extend(cmdline_args)
 
         try:
@@ -118,7 +121,7 @@ class ReplTestCase(TestCase):
             cwd=cwd,
             text=True,
             close_fds=True,
-            env=env if env else os.environ,
+            env=env,
         )
         os.close(slave_fd)
         if isinstance(repl_input, list):
