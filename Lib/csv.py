@@ -81,8 +81,6 @@ __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "unregister_dialect", "DictReader", "DictWriter",
            "unix_dialect"]
 
-__version__ = "1.0"
-
 
 class Dialect:
     """Describe a CSV dialect.
@@ -511,3 +509,12 @@ class Sniffer:
                     hasHeader -= 1
 
         return hasHeader > 0
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
