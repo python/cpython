@@ -504,7 +504,8 @@ class ZipAppCmdlineTest(unittest.TestCase):
 
         args = [
             str(source),
-            '--include', 'pkg,data/*.txt',
+            '--include', 'pkg/**',
+            '--include', 'data/*.txt',
             '--include', 'data/keep.bin',
         ]
         zipapp.main(args)
@@ -515,7 +516,6 @@ class ZipAppCmdlineTest(unittest.TestCase):
             # did not include root files
             self.assertNotIn('__main__.py', names)
             # from "pkg"
-            self.assertIn('pkg/', names)
             self.assertIn('pkg/x.py', names)
             self.assertIn('pkg/y.txt', names)
             # from "data/*.txt"
@@ -537,7 +537,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [
             str(source),
             '--include', '*.py',
-            '--exclude', 'foo',
+            '--exclude', 'foo/**',
         ]
         zipapp.main(args)
 
@@ -551,42 +551,6 @@ class ZipAppCmdlineTest(unittest.TestCase):
             self.assertNotIn('foo/b.py', names)
             # bar/c.py remains
             self.assertIn('bar/c.py', names)
-
-    def test_cmdline_normalization_and_dir_implies_subtree(self):
-        source = self.tmpdir / 'norm'
-        source.mkdir()
-        self._make_tree(source, [
-            '__main__.py',
-            'a/b/c.txt',
-            'a/d/e.py',
-            'x/y/z.py',
-        ])
-
-        # Use Windows-style backslashes and a leading './'
-        # 'a\\b' should imply both 'a/b' and 'a/b/**'
-        args = [
-            str(source),
-            '--include', r'.\a\b',
-            '--include', r'a\d',         # also directory → subtree
-            '--exclude', '**/*.py',      # exclude all *.py after include
-        ]
-        zipapp.main(args)
-
-        target = source.with_suffix('.pyz')
-        with zipfile.ZipFile(target, 'r') as z:
-            names = set(z.namelist())
-            # did not include root files
-            self.assertNotIn('__main__.py', names)
-            # from a/b subtree, c.txt should be present
-            self.assertIn('a/b/', names)
-            self.assertIn('a/b/c.txt', names)
-            # from a/d subtree, e.py would match include but then be excluded by **/*.py
-            self.assertIn('a/d/', names)
-            self.assertNotIn('a/d/e.py', names)
-            # x/y/z.py not included at all (not in includes)
-            self.assertNotIn('x/', names)
-            self.assertNotIn('x/y/', names)
-            self.assertNotIn('x/y/z.py', names)
 
 
 if __name__ == "__main__":

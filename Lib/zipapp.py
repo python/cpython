@@ -181,60 +181,43 @@ def get_interpreter(archive):
 
 def _normalize_patterns(values: Iterable[str] | None) -> list[str]:
     """
-    Split comma-separated items, strip whitespace, drop empties.
-    If a token has no glob metacharacters, treat it as a directory prefix:
-    expand 'foo' into ['foo', 'foo/**'] (after normalizing slashes).
+    Return patterns exactly as provided by the CLI (no comma splitting).
+    Each item is stripped of surrounding whitespace; empty items are dropped.
     """
     if not values:
         return []
-
-    def has_glob(s: str) -> bool:
-        return any(ch in s for ch in "*?[]")
-
     out: list[str] = []
     for v in values:
-        for raw in (p.strip() for p in v.split(',')):
-            if not raw:
-                continue
-            # normalize user input to POSIX-like form (match against rel.as_posix())
-            tok = raw.replace('\\', '/').lstrip('./').rstrip('/')
-            if not tok:
-                continue
-            if has_glob(tok):
-                out.append(tok)
-            else:
-                # directory name implies subtree
-                out.append(tok)
-                out.append(f"{tok}/**")
+        v = v.strip()
+        if v:
+            out.append(v)
     return out
 
 def _make_glob_filter(
     includes: Iterable[str] | None,
-    excludes: Iterable[str] | None
+    excludes: Iterable[str] | None,
 ) -> Callable[[pathlib.Path], bool]:
     """
-    Build a filter(relative_path: Path) -> bool applying include first, then exclude.
-    - Path argument is relative to source_root
-    - Patterns are matched against POSIX-style relative paths
-    - If includes is empty, defaults to ["**"] (include all)
-    """
-    inc = _normalize_patterns(includes)
-    exc = _normalize_patterns(excludes)
-    if not inc:
-        inc = ["**"]
+    Build a filter(relative_path: Path) -> bool applying includes first, then excludes.
 
-    def matches_any(patterns: list[str], rel: pathlib.Path) -> bool:
-        posix = rel.as_posix()
-        # pathlib.Path.match uses glob semantics with ** (recursive)
-        return any(rel.match(pat) or pathlib.PurePosixPath(posix).match(pat)
-                   for pat in patterns)
+    Semantics:
+      - Patterns are standard glob patterns as implemented by PurePath.match.
+      - If 'includes' is empty, all files/dirs are initially eligible.
+      - If any exclude pattern matches, the path is rejected.
+      - Matching respects the current platform's path flavor (separators, case).
+    """
+    inc = _normalize_patterns(values=includes)
+    exc = _normalize_patterns(values=excludes)
+
+    if not inc and not exc:
+        return None
 
     def _filter(rel: pathlib.Path) -> bool:
-        # Always work on files and directories; we'll add both. If a directory
-        # is excluded, its children still get visited by rglob('*') but will fail here.
-        if not matches_any(inc, rel):
+        # If includes were provided, at least one must match.
+        if inc and not any(rel.match(pat) for pat in inc):
             return False
-        if exc and matches_any(exc, rel):
+        # Any exclude match removes the path.
+        if exc and any(rel.match(pat) for pat in exc):
             return False
         return True
 
@@ -268,10 +251,13 @@ def main(args=None):
             help="Source directory (or existing archive).")
     parser.add_argument('--include', action='extend', nargs='+', default=None,
             help=("Glob pattern(s) of files/dirs to include (relative to SOURCE). "
-                  "Repeat or use commas. Defaults to '**' (everything)."))
+                  "Repeat the flag for multiple patterns. "
+                  "To include a directory and its contents, use 'foo/**'."))
     parser.add_argument('--exclude', action='extend', nargs='+', default=None,
             help=("Glob pattern(s) of files/dirs to exclude (relative to SOURCE). "
-                  "Repeat or use commas. Applied after --include."))
+                  "Repeat the flag for multiple patterns. "
+                  "To exclude a directory and its contents, use 'foo/**'. "
+                  "Applied after --include."))
 
     args = parser.parse_args(args)
 
@@ -293,8 +279,11 @@ def main(args=None):
     # build a filter from include and exclude flags
     filter_fn = None
     src_path = pathlib.Path(args.source)
-    if src_path.exists() and src_path.is_dir():
-        filter_fn = _make_glob_filter(args.include, args.exclude)
+    if src_path.exists() and src_path.is_dir() and (args.include or args.exclude):
+        filter_fn = _make_glob_filter(
+            includes=args.include,
+            excludes=args.exclude
+        )
 
     create_archive(args.source, args.output,
                    interpreter=args.python, main=args.main,
