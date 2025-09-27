@@ -1260,7 +1260,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       This bit indicates that instances of the class have a :attr:`~object.__dict__`
       attribute, and that the space for the dictionary is managed by the VM.
 
-      If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
+      If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` must also be set.
 
       The type traverse function must call :c:func:`PyObject_VisitManagedDict`
       and its clear function must call :c:func:`PyObject_ClearManagedDict`.
@@ -1277,6 +1277,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       This bit indicates that instances of the class should be weakly
       referenceable.
+
+      If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` must also be set.
 
       .. versionadded:: 3.12
 
