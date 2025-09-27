@@ -6,6 +6,7 @@ repos:
         name: Run Ruff (lint) on Doc/
         args: [--exit-non-zero-on-fix]
         files: ^Doc/
+        exclude: ^Doc/howto/multiple-interpreters-run-examples.py
       - id: ruff
         name: Run Ruff (lint) on Lib/test/
         args: [--exit-non-zero-on-fix]
@@ -30,6 +31,7 @@ repos:
         name: Run Ruff (format) on Doc/
         args: [--check]
         files: ^Doc/
+        exclude: ^Doc/howto/multiple-interpreters-run-examples.py
       - id: ruff-format
         name: Run Ruff (format) on Tools/build/check_warnings.py
         args: [--check, --config=Tools/build/.ruff.toml]
