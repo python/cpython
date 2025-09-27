@@ -4,7 +4,7 @@ import sys
 import io
 from textwrap import dedent
 
-from test.support import captured_stdout
+from test.support import captured_stdout, force_not_colorized
 from test.support import captured_stderr
 
 # timeit's default number of iterations.
@@ -219,16 +219,12 @@ class TestTimeit(unittest.TestCase):
                 timer=FakeTimer())
         self.assertEqual(delta_times, DEFAULT_REPEAT * [0.0])
 
+    @force_not_colorized
     def assert_exc_string(self, exc_string, expected_exc_name):
         exc_lines = exc_string.splitlines()
         self.assertGreater(len(exc_lines), 2)
         self.assertStartsWith(exc_lines[0], 'Traceback')
-        # Remove ANSI color codes from the last line before checking
-        import re
-        last_line = exc_lines[-1]
-        # Remove ANSI escape sequences
-        clean_last_line = re.sub(r'\x1b\[[0-9;]*m', '', last_line)
-        self.assertStartsWith(clean_last_line, expected_exc_name)
+        self.assertStartsWith(exc_lines[-1], expected_exc_name)
 
     def test_print_exc(self):
         s = io.StringIO()
