@@ -1,0 +1,3 @@
+In :mod:`annotationlib`, improve evaluation of forward references to
+nonlocal variables that are not yet defined when the annotations are
+initially evaluated.
