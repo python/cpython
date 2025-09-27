@@ -352,12 +352,11 @@ class EnsureSafeUserHistory(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if history_file := _site_gethistoryfile():
-            if os.path.exists(history_file):
-                cls.__history_file = history_file
-                cls.__history_stat = _file_signature(history_file)
-        else:
-            cls.__history_file = cls.__history_stat = None
+        cls.__history_file = cls.__history_stat = None
+        history_file = _site_gethistoryfile()
+        if os.path.exists(history_file):
+            cls.__history_file = history_file
+            cls.__history_stat = _file_signature(history_file)
 
     def tearDown(self):
         super().tearDown()
