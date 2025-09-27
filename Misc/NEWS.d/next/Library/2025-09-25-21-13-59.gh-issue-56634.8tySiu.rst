@@ -1,0 +1,2 @@
+Gettext now raises descriptive ``ValueError``\s instead of ``IndexError``\s for
+incorrect ``.mo`` files metadata.
