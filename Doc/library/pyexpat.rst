@@ -257,6 +257,11 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
+   .. note::
+
+      Activation thresholds below 4 MiB are known to break support for DITA 1.3
+      payload and are hence not recommended.
+
    .. versionadded:: next
 
 .. method:: xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification(max_factor, /)

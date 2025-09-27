@@ -417,7 +417,14 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThresho
 "\n"
 "Sets the number of output bytes needed to activate protection against billion laughs attacks.\n"
 "\n"
-"By default, parser objects have a protection activation threshold of 8 MiB.");
+"The number of output bytes includes amplification from entity expansion\n"
+"and reading DTD files.\n"
+"\n"
+"Parser objects usually have a protection activation threshold of 8 MiB,\n"
+"but the actual default value depends on the underlying Expat library.\n"
+"\n"
+"Activation thresholds below 4 MiB are known to break support for DITA 1.3\n"
+"payload and are hence not recommended.");
 
 #define PYEXPAT_XMLPARSER_SETBILLIONLAUGHSATTACKPROTECTIONACTIVATIONTHRESHOLD_METHODDEF    \
     {"SetBillionLaughsAttackProtectionActivationThreshold", _PyCFunction_CAST(pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold__doc__},
@@ -482,7 +489,8 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplificat
 "in the middle of parsing even with benign files in practice. In particular,\n"
 "the activation threshold should be carefully chosen to avoid false positives.\n"
 "\n"
-"By default, parser objects have a maximum amplification factor of 100.");
+"Parser objects usually have a maximum amplification factor of 100,\n"
+"but the actual default value depends on the underlying Expat library.");
 
 #define PYEXPAT_XMLPARSER_SETBILLIONLAUGHSATTACKPROTECTIONMAXIMUMAMPLIFICATION_METHODDEF    \
     {"SetBillionLaughsAttackProtectionMaximumAmplification", _PyCFunction_CAST(pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification__doc__},
@@ -543,7 +551,8 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerActivationThreshold__doc__,
 "\n"
 "Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.\n"
 "\n"
-"By default, parser objects have an allocation activation threshold of 64 MiB.");
+"Parser objects usually have an allocation activation threshold of 64 MiB,\n"
+"but the actual default value depends on the underlying Expat library.");
 
 #define PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF    \
     {"SetAllocTrackerActivationThreshold", _PyCFunction_CAST(pyexpat_xmlparser_SetAllocTrackerActivationThreshold), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetAllocTrackerActivationThreshold__doc__},
@@ -603,11 +612,12 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__,
 "hierarchy.\n"
 "\n"
 "The \'max_factor\' value must be a non-NaN floating point value greater than\n"
-"or equal to 1.0. Amplification factors greater than 100 can be observed\n"
+"or equal to 1.0. Amplification factors greater than 100.0 can be observed\n"
 "near the start of parsing even with benign files in practice. In particular,\n"
 "the activation threshold should be carefully chosen to avoid false positives.\n"
 "\n"
-"By default, parser objects have a maximum amplification factor of 100.");
+"Parser objects usually have a maximum amplification factor of 100,\n"
+"but the actual default value depends on the underlying Expat library.");
 
 #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF    \
     {"SetAllocTrackerMaximumAmplification", _PyCFunction_CAST(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__},
@@ -820,4 +830,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF) */
-/*[clinic end generated code: output=97bf658042d38f83 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=81101a16a409daf6 input=a9049054013a1b77]*/

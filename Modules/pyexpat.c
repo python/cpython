@@ -1230,15 +1230,21 @@ pyexpat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold
 
 Sets the number of output bytes needed to activate protection against billion laughs attacks.
 
+The number of output bytes includes amplification from entity expansion
+and reading DTD files.
+
 Parser objects usually have a protection activation threshold of 8 MiB,
 but the actual default value depends on the underlying Expat library.
+
+Activation thresholds below 4 MiB are known to break support for DITA 1.3
+payload and are hence not recommended.
 [clinic start generated code]*/
 
 static PyObject *
 pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold_impl(xmlparseobject *self,
                                                                            PyTypeObject *cls,
                                                                            unsigned long long threshold)
-/*[clinic end generated code: output=0c082342f1c78114 input=a420a76f682ffc76]*/
+/*[clinic end generated code: output=0c082342f1c78114 input=fa2f91f26b62a42a]*/
 {
     return set_activation_threshold(
         self, cls, threshold,
@@ -1277,7 +1283,7 @@ static PyObject *
 pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification_impl(xmlparseobject *self,
                                                                             PyTypeObject *cls,
                                                                             float max_factor)
-/*[clinic end generated code: output=c590439eadf463fa input=c5bae55c9b25d045]*/
+/*[clinic end generated code: output=c590439eadf463fa input=cc1e97c1fd2bd950]*/
 {
     return set_maximum_amplification(
         self, cls, max_factor,
@@ -1306,7 +1312,7 @@ static PyObject *
 pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
                                                           PyTypeObject *cls,
                                                           unsigned long long threshold)
-/*[clinic end generated code: output=bed7e93207ba08c5 input=54182cd71ad69978]*/
+/*[clinic end generated code: output=bed7e93207ba08c5 input=b7a7a3e3d054286a]*/
 {
     return set_activation_threshold(
         self, cls, threshold,
@@ -1345,7 +1351,7 @@ static PyObject *
 pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            PyTypeObject *cls,
                                                            float max_factor)
-/*[clinic end generated code: output=6e44bd48c9b112a0 input=aac2029e96e80b03]*/
+/*[clinic end generated code: output=6e44bd48c9b112a0 input=c6af7ccb76ae5c6b]*/
 {
     return set_maximum_amplification(
         self, cls, max_factor,
