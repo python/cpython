@@ -709,7 +709,7 @@ directories.
 .. nonce: ek38d_
 .. section: Library
 
-Add :func:`os.set_blocking()` support for VxWorks RTOS.
+Add :func:`os.set_blocking` support for VxWorks RTOS.
 
 ..
 

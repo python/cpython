@@ -13,14 +13,12 @@ packaging<25
 Pygments<3
 requests<3
 snowballstemmer<3
-# keep lower-bounds until Sphinx 8.1 is released
-# https://github.com/sphinx-doc/sphinx/pull/12756
-sphinxcontrib-applehelp>=1.0.7,<3
-sphinxcontrib-devhelp>=1.0.6,<3
-sphinxcontrib-htmlhelp>=2.0.6,<3
-sphinxcontrib-jsmath>=1.0.1,<2
-sphinxcontrib-qthelp>=1.0.6,<3
-sphinxcontrib-serializinghtml>=1.1.9,<3
+sphinxcontrib-applehelp<3
+sphinxcontrib-devhelp<3
+sphinxcontrib-htmlhelp<3
+sphinxcontrib-jsmath<2
+sphinxcontrib-qthelp<3
+sphinxcontrib-serializinghtml<3
 
 # Direct dependencies of Jinja2 (Jinja is a dependency of Sphinx, see above)
 MarkupSafe<3

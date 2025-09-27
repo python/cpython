@@ -267,7 +267,7 @@ let's fetch information about a project from `PyPI <https://pypi.org>`_::
    >>> import json
    >>> import pprint
    >>> from urllib.request import urlopen
-   >>> with urlopen('https://pypi.org/pypi/sampleproject/json') as resp:
+   >>> with urlopen('https://pypi.org/pypi/sampleproject/1.2.0/json') as resp:
    ...     project_info = json.load(resp)['info']
 
 In its basic form, :func:`~pprint.pp` shows the whole object::

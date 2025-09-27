@@ -1,4 +1,0 @@
-Improve :exc:`SyntaxError` messages for invalid expressions in a type
-parameters bound, a type parameter constraint tuple or a default type
-parameter.
-Patch by Bénédikt Tran.

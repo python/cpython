@@ -1,0 +1,4 @@
+In :mod:`http.client`, a new *max_response_headers* keyword-only parameter has been
+added to :class:`~http.client.HTTPConnection` and :class:`~http.client.HTTPSConnection`
+constructors. This parameter sets the maximum number of allowed response headers,
+helping to prevent denial-of-service attacks.

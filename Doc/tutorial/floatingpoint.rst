@@ -230,7 +230,7 @@ accumulate to the point where they affect the final total:
    >>> sum([0.1] * 10) == 1.0
    True
 
-The :func:`math.fsum()` goes further and tracks all of the "lost digits"
+The :func:`math.fsum` goes further and tracks all of the "lost digits"
 as values are added onto a running total so that the result has only a
 single rounding.  This is slower than :func:`sum` but will be more
 accurate in uncommon cases where large magnitude inputs mostly cancel

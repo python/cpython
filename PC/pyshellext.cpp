@@ -68,8 +68,6 @@ HRESULT FilenameListCchLengthW(LPCWSTR pszSource, size_t cchMax, size_t *pcchLen
 
 HRESULT FilenameListCchCopyA(STRSAFE_LPSTR pszDest, size_t cchDest, LPCSTR pszSource, LPCSTR pszSeparator) {
     HRESULT hr = S_OK;
-    size_t count = 0;
-    size_t length = 0;
 
     while (pszSource[0]) {
         STRSAFE_LPSTR newDest;
@@ -95,8 +93,6 @@ HRESULT FilenameListCchCopyA(STRSAFE_LPSTR pszDest, size_t cchDest, LPCSTR pszSo
 
 HRESULT FilenameListCchCopyW(STRSAFE_LPWSTR pszDest, size_t cchDest, LPCWSTR pszSource, LPCWSTR pszSeparator) {
     HRESULT hr = S_OK;
-    size_t count = 0;
-    size_t length = 0;
 
     while (pszSource[0]) {
         STRSAFE_LPWSTR newDest;
@@ -498,7 +494,6 @@ STDAPI DllCanUnloadNow() {
 
 STDAPI DllRegisterServer() {
     LONG res;
-    SECURITY_ATTRIBUTES secattr = { sizeof(SECURITY_ATTRIBUTES), NULL, FALSE };
     LPSECURITY_ATTRIBUTES psecattr = NULL;
     HKEY key, ipsKey;
     WCHAR modname[MAX_PATH];

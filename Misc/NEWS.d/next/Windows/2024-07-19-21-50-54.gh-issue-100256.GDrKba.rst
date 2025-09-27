@@ -1,1 +1,0 @@
-:mod:`mimetypes` no longer fails when it encounters an inaccessible registry key.

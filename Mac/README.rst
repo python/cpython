@@ -200,6 +200,16 @@ a ``python3.x-32`` binary and use the value of ``sys.executable`` as the
 Likewise, use ``python3.x-intel64`` to force execution in ``x86_64`` mode
 with ``universal2`` binaries.
 
+3. How do I specify binary universal wheels
+-------------------------------------------
+
+Binary wheels can also be universal. The platform tag name used to identify
+universal binary wheels differs from the naming scheme used when configuring a
+universal build with ``--with-universal-archs``. See the Python Packaging User
+Guide for details on the `packaging platform compatibility tags used on macOS
+<https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#macos>`_.
+
+
 Building and using a framework-based Python on macOS
 ====================================================
 

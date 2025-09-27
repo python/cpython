@@ -47,9 +47,11 @@ the information :func:`init` sets up.
    The optional *strict* argument is a flag specifying whether the list of known MIME types
    is limited to only the official types `registered with IANA
    <https://www.iana.org/assignments/media-types/media-types.xhtml>`_.
-   When *strict* is ``True`` (the default), only the IANA types are supported; when
-   *strict* is ``False``, some additional non-standard but commonly used MIME types
-   are also recognized.
+   However, the behavior of this module also depends on the underlying operating
+   system. Only file types recognized by the OS or explicitly registered with
+   Python's internal database can be identified. When *strict* is ``True`` (the
+   default), only the IANA types are supported; when *strict* is ``False``, some
+   additional non-standard but commonly used MIME types are also recognized.
 
    .. versionchanged:: 3.8
       Added support for *url* being a :term:`path-like object`.
@@ -189,7 +191,7 @@ An example usage of the module::
 
 .. _mimetypes-objects:
 
-MimeTypes Objects
+MimeTypes objects
 -----------------
 
 The :class:`MimeTypes` class may be useful for applications which may want more
@@ -299,9 +301,108 @@ than one MIME-type database; it provides an interface similar to the one of the
 
    .. method:: MimeTypes.add_type(type, ext, strict=True)
 
-      Add a mapping from the MIME type *type* to the extension *ext*. When the
+      Add a mapping from the MIME type *type* to the extension *ext*.
+      Valid extensions start with a '.' or are empty. When the
       extension is already known, the new type will replace the old one. When the type
       is already known the extension will be added to the list of known extensions.
 
       When *strict* is ``True`` (the default), the mapping will be added to the
       official MIME types, otherwise to the non-standard ones.
+
+      .. deprecated-removed:: 3.14 3.16
+         Invalid, undotted extensions will raise a
+         :exc:`ValueError` in Python 3.16.
+
+
+.. _mimetypes-cli:
+
+Command-line usage
+------------------
+
+The :mod:`!mimetypes` module can be executed as a script from the command line.
+
+.. code-block:: sh
+
+   python -m mimetypes [-h] [-e] [-l] type [type ...]
+
+The following options are accepted:
+
+.. program:: mimetypes
+
+.. cmdoption:: -h
+               --help
+
+   Show the help message and exit.
+
+.. cmdoption:: -e
+               --extension
+
+   Guess extension instead of type.
+
+.. cmdoption:: -l
+               --lenient
+
+   Additionally search for some common, but non-standard types.
+
+By default the script converts MIME types to file extensions.
+However, if ``--extension`` is specified,
+it converts file extensions to MIME types.
+
+For each ``type`` entry, the script writes a line into the standard output
+stream. If an unknown type occurs, it writes an error message into the
+standard error stream and exits with the return code ``1``.
+
+
+.. mimetypes-cli-example:
+
+Command-line example
+--------------------
+
+Here are some examples of typical usage of the :mod:`!mimetypes` command-line
+interface:
+
+.. code-block:: console
+
+   $ # get a MIME type by a file name
+   $ python -m mimetypes filename.png
+   type: image/png encoding: None
+
+   $ # get a MIME type by a URL
+   $ python -m mimetypes https://example.com/filename.txt
+   type: text/plain encoding: None
+
+   $ # get a complex MIME type
+   $ python -m mimetypes filename.tar.gz
+   type: application/x-tar encoding: gzip
+
+   $ # get a MIME type for a rare file extension
+   $ python -m mimetypes filename.pict
+   error: unknown extension of filename.pict
+
+   $ # now look in the extended database built into Python
+   $ python -m mimetypes --lenient filename.pict
+   type: image/pict encoding: None
+
+   $ # get a file extension by a MIME type
+   $ python -m mimetypes --extension text/javascript
+   .js
+
+   $ # get a file extension by a rare MIME type
+   $ python -m mimetypes --extension text/xul
+   error: unknown type text/xul
+
+   $ # now look in the extended database again
+   $ python -m mimetypes --extension --lenient text/xul
+   .xul
+
+   $ # try to feed an unknown file extension
+   $ python -m mimetypes filename.sh filename.nc filename.xxx filename.txt
+   type: application/x-sh encoding: None
+   type: application/x-netcdf encoding: None
+   error: unknown extension of filename.xxx
+
+   $ # try to feed an unknown MIME type
+   $ python -m mimetypes --extension audio/aac audio/opus audio/future audio/x-wav
+   .aac
+   .opus
+   error: unknown type audio/future

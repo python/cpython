@@ -1,0 +1,2 @@
+Fix :exc:`UnboundLocalError` in :func:`email.message.Message.get_payload` when
+the payload to decode is a :class:`bytes` object. Patch by Kliment Lamonov.

@@ -88,7 +88,7 @@ class FutureTest(unittest.TestCase):
         """
         self.assertSyntaxError(
             code, lineno=2,
-            message='future feature rested_snopes is not defined',
+            message='future feature rested_snopes is not defined', offset=24,
         )
 
     def test_future_import_not_on_top(self):
@@ -137,19 +137,19 @@ class FutureTest(unittest.TestCase):
         code = """
             from __future__ import *
         """
-        self.assertSyntaxError(code, message='future feature * is not defined')
+        self.assertSyntaxError(code, message='future feature * is not defined', offset=24)
 
     def test_future_import_braces(self):
         code = """
             from __future__ import braces
         """
         # Congrats, you found an easter egg!
-        self.assertSyntaxError(code, message='not a chance')
+        self.assertSyntaxError(code, message='not a chance', offset=24)
 
         code = """
             from __future__ import nested_scopes, braces
         """
-        self.assertSyntaxError(code, message='not a chance')
+        self.assertSyntaxError(code, message='not a chance', offset=39)
 
     def test_module_with_future_import_not_on_top(self):
         with self.assertRaises(SyntaxError) as cm:
@@ -422,6 +422,11 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('(((a)))', 'a')
         eq('(((a, b)))', '(a, b)')
         eq("1 + 2 + 3")
+        eq("t''")
+        eq("t'{a    +  b}'")
+        eq("t'{a!s}'")
+        eq("t'{a:b}'")
+        eq("t'{a:b=}'")
 
     def test_fstring_debug_annotations(self):
         # f-strings with '=' don't round trip very well, so set the expected

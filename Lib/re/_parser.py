@@ -49,7 +49,8 @@ CATEGORIES = {
     r"\S": (IN, [(CATEGORY, CATEGORY_NOT_SPACE)]),
     r"\w": (IN, [(CATEGORY, CATEGORY_WORD)]),
     r"\W": (IN, [(CATEGORY, CATEGORY_NOT_WORD)]),
-    r"\Z": (AT, AT_END_STRING), # end of string
+    r"\z": (AT, AT_END_STRING), # end of string
+    r"\Z": (AT, AT_END_STRING), # end of string (obsolete)
 }
 
 FLAGS = {
