@@ -4771,6 +4771,100 @@ class OffsetValidationTests(unittest.TestCase):
         # padding: 255 bytes
         + tarfile.NUL * 255
     )
+    invalid_gnu_sparse_header = (
+        # name: 100 bytes
+        tarfile.NUL * tarfile.LENGTH_NAME
+        # mode, null terminator: 8 bytes
+        + b"0000755" + tarfile.NUL
+        # uid: 8 bytes
+        + b"0000000" + tarfile.NUL
+        # gid: 8 bytes
+        + b"0000000" + tarfile.NUL
+        # size, space: 12 bytes
+        + b"00000000010" + SPACE
+        # mtime, space: 12 bytes
+        + b"00000000000" + SPACE
+        # chksum: 8 bytes
+        + b" 022014" + tarfile.NUL
+        # type: 1 byte (GNU sparse)
+        + tarfile.GNUTYPE_SPARSE
+        # linkname: 100 bytes
+        + tarfile.NUL * tarfile.LENGTH_LINK
+        # magic: GNU format (8 bytes)
+        + tarfile.GNU_MAGIC
+        # uname: 32 bytes
+        + tarfile.NUL * 32
+        # gname: 32 bytes
+        + tarfile.NUL * 32
+        # devmajor: 8 bytes
+        + tarfile.NUL * 8
+        # devminor: 8 bytes
+        + tarfile.NUL * 8
+        # prefix: 41 bytes
+        + tarfile.NUL * 41
+        # sparse entry 1: offset=-1, numbytes=-1
+        + b"\xff" * 12 + b"\xff" * 12
+        # other 3 sparse entries zero-filled
+        + tarfile.NUL * (24 * 3)
+        # isextended: 1 byte (0 or 1)
+        + b"\x00"
+        # origsize: 12 bytes
+        + tarfile.NUL * 12
+        # padding: 17 bytes
+        + tarfile.NUL * 17
+    )
+    invalid_gnu_sparse_extended = (
+        # name: 100 bytes
+        tarfile.NUL * tarfile.LENGTH_NAME
+        # mode, null terminator: 8 bytes
+        + b"0000755" + tarfile.NUL
+        # uid: 8 bytes
+        + b"0000000" + tarfile.NUL
+        # gid: 8 bytes
+        + b"0000000" + tarfile.NUL
+        # size, space: 12 bytes
+        + b"00000000010" + SPACE
+        # mtime, space: 12 bytes
+        + b"00000000000" + SPACE
+        # chksum: 8 bytes
+        + b" 006447" + tarfile.NUL
+        # type: 1 byte (GNU sparse)
+        + tarfile.GNUTYPE_SPARSE
+        # linkname: 100 bytes
+        + tarfile.NUL * tarfile.LENGTH_LINK
+        # magic: GNU format (8 bytes)
+        + tarfile.GNU_MAGIC
+        # uname: 32 bytes
+        + tarfile.NUL * 32
+        # gname: 32 bytes
+        + tarfile.NUL * 32
+        # devmajor: 8 bytes
+        + tarfile.NUL * 8
+        # devminor: 8 bytes
+        + tarfile.NUL * 8
+        # prefix: 41 bytes
+        + tarfile.NUL * 41
+        # sparse map entries: up to 4 * 24 bytes
+        # entry 1: offset=1, numbytes=1
+        + b"\x80" + b"\x00" * 10 + b"\x01" + b"\x80" + b"\x00" * 10 + b"\x01"
+        # Remaining 3 entries zero-filled
+        + tarfile.NUL * (24 * 3)
+        # isextended: 1 byte (0 or 1)
+        + b"\x01"
+        # origsize: 12 bytes
+        + tarfile.NUL * 12
+        # padding: 17 bytes
+        + tarfile.NUL * 17
+    ) + (
+        # sparse entry 1: 24 bytes
+        b"\xff" * 12 + b"\xff" * 12
+        # Remaining 20 entries zero-filled: 480 bytes
+        + tarfile.NUL * (24 * 20)
+        # isextended: 1 byte (0 or 1)
+        + b"\x00"
+        # padding: 7 bytes
+        + tarfile.NUL * 7
+    )
     valid_gnu_header = tarfile.TarInfo("filename").tobuf(tarfile.GNU_FORMAT)
     data_block = b"\xff" * tarfile.BLOCKSIZE
 
@@ -4796,6 +4890,8 @@ class OffsetValidationTests(unittest.TestCase):
             ("posix", self.invalid_posix_header),
             ("gnu", self.invalid_gnu_header),
             ("v7", self.invalid_v7_header),
+            ("gnu_sparse", self.invalid_gnu_sparse_header),
+            ("gnu_sparse_extension", self.invalid_gnu_sparse_extended)
         ):
             with self.subTest(format=tar_format):
                 self._write_buffer(invalid_header)
