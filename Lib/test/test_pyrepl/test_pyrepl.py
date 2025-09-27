@@ -16,6 +16,7 @@ from test.support import force_not_colorized, make_clean_env, Py_DEBUG
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
+from test.support.script_helper import EnsureSafeUserHistory
 
 from .support import (
     FakeConsole,
@@ -45,7 +46,7 @@ except ImportError:
     pty = None
 
 
-class ReplTestCase(TestCase):
+class ReplTestCase(EnsureSafeUserHistory, TestCase):
     def setUp(self):
         if not has_subprocess_support:
             raise SkipTest("test module requires subprocess")
@@ -97,10 +98,11 @@ class ReplTestCase(TestCase):
             env["PYTHON_HISTORY"] = os.path.join(cwd, ".regrtest_history")
         if cmdline_args is not None:
             if "PYTHON_HISTORY" in env:
-                self.assertNotIn(
-                    "-I", cmdline_args,
-                    "PYTHON_HISTORY will be ignored by -I"
-                )
+                for bad_option in ('-I', '-E'):
+                    self.assertNotIn(
+                        bad_option, cmdline_args,
+                        f"PYTHON_HISTORY will be ignored by {bad_option}"
+                    )
             cmd.extend(cmdline_args)
 
         try:

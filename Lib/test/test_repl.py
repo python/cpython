@@ -14,7 +14,7 @@ from test.support import (
     SuppressCrashReport,
     SHORT_TIMEOUT,
 )
-from test.support.script_helper import kill_python
+from test.support.script_helper import kill_python, EnsureSafeUserHistory
 from test.support.import_helper import import_module
 
 try:
@@ -71,7 +71,7 @@ def run_on_interactive_mode(source):
 
 
 @support.force_not_colorized_test_class
-class TestInteractiveInterpreter(unittest.TestCase):
+class TestInteractiveInterpreter(EnsureSafeUserHistory, unittest.TestCase):
 
     @cpython_only
     # Python built with Py_TRACE_REFS fail with a fatal error in
@@ -303,42 +303,44 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
     @unittest.skipUnless(pty, "requires pty")
     def test_asyncio_repl_is_ok(self):
-        m, s = pty.openpty()
-        cmd = [sys.executable, "-I", "-m", "asyncio"]
-        env = os.environ.copy()
-        proc = subprocess.Popen(
-            cmd,
-            stdin=s,
-            stdout=s,
-            stderr=s,
-            text=True,
-            close_fds=True,
-            env=env,
-        )
-        os.close(s)
-        os.write(m, b"await asyncio.sleep(0)\n")
-        os.write(m, b"exit()\n")
-        output = []
-        while select.select([m], [], [], SHORT_TIMEOUT)[0]:
-            try:
-                data = os.read(m, 1024).decode("utf-8")
-                if not data:
+        with os_helper.temp_dir() as tmpdir:
+            m, s = pty.openpty()
+            cmd = [sys.executable, "-m", "asyncio"]
+            env = os.environ.copy()
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
+            proc = subprocess.Popen(
+                cmd,
+                stdin=s,
+                stdout=s,
+                stderr=s,
+                text=True,
+                close_fds=True,
+                env=env,
+            )
+            os.close(s)
+            os.write(m, b"await asyncio.sleep(0)\n")
+            os.write(m, b"exit()\n")
+            output = []
+            while select.select([m], [], [], SHORT_TIMEOUT)[0]:
+                try:
+                    data = os.read(m, 1024).decode("utf-8")
+                    if not data:
+                        break
+                except OSError:
                     break
-            except OSError:
-                break
-            output.append(data)
-        os.close(m)
-        try:
-            exit_code = proc.wait(timeout=SHORT_TIMEOUT)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            exit_code = proc.wait()
+                output.append(data)
+            os.close(m)
+            try:
+                exit_code = proc.wait(timeout=SHORT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                exit_code = proc.wait()
 
-        self.assertEqual(exit_code, 0, "".join(output))
+            self.assertEqual(exit_code, 0, "".join(output))
 
 
 @support.force_not_colorized_test_class
-class TestInteractiveModeSyntaxErrors(unittest.TestCase):
+class TestInteractiveModeSyntaxErrors(EnsureSafeUserHistory, unittest.TestCase):
 
     def test_interactive_syntax_error_correct_line(self):
         output = run_on_interactive_mode(dedent("""\
@@ -356,7 +358,7 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
         self.assertEqual(traceback_lines, expected_lines)
 
 
-class TestAsyncioREPL(unittest.TestCase):
+class TestAsyncioREPL(EnsureSafeUserHistory, unittest.TestCase):
     def test_multiple_statements_fail_early(self):
         user_input = "1 / 0; print(f'afterwards: {1+1}')"
         p = spawn_repl("-m", "asyncio")
