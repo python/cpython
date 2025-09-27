@@ -553,7 +553,16 @@ class IocpProactor:
         ov.AcceptEx(listener.fileno(), conn.fileno())
 
         def finish_accept(trans, key, ov):
-            ov.getresult()
+            try:
+                ov.getresult()
+            except OSError as exc:
+                # If ERROR_NETNAME_DELETED or ERROR_OPERATION_ABORTED occur,
+                # do not close the serving socket.
+                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+                                    _overlapped.ERROR_OPERATION_ABORTED):
+                    conn.close()
+                    raise ConnectionResetError(*exc.args)
+                raise
             # Use SO_UPDATE_ACCEPT_CONTEXT so getsockname() etc work.
             buf = struct.pack('@P', listener.fileno())
             conn.setsockopt(socket.SOL_SOCKET,
