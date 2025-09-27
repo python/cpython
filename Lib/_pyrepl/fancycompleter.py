@@ -100,7 +100,6 @@ class Completer(rlcompleter.Completer):
             noprefix = '__'
         else:
             noprefix = None
-        words = sorted(words)
         while True:
             for word in words:
                 if (
@@ -131,6 +130,7 @@ class Completer(rlcompleter.Completer):
         if prefix and prefix != attr:
             return [f'{expr}.{prefix}']  # autocomplete prefix
 
+        names.sort()
         if self.use_colors:
             return self.colorize_matches(names, values)
 
