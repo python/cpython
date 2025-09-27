@@ -44,24 +44,6 @@ characters... have fun!
 """
 
 
-def withpythonimplementation(testfunc):
-    def newtest(self):
-        # Test default implementation
-        testfunc(self)
-        # Test Python implementation
-        if quopri.b2a_qp is not None or quopri.a2b_qp is not None:
-            oldencode = quopri.b2a_qp
-            olddecode = quopri.a2b_qp
-            try:
-                quopri.b2a_qp = None
-                quopri.a2b_qp = None
-                testfunc(self)
-            finally:
-                quopri.b2a_qp = oldencode
-                quopri.a2b_qp = olddecode
-    newtest.__name__ = testfunc.__name__
-    return newtest
-
 class QuopriTestCase(unittest.TestCase):
     # Each entry is a tuple of (plaintext, encoded string).  These strings are
     # used in the "quotetabs=0" tests.
@@ -127,29 +109,24 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         (b'hello_world', b'hello=5Fworld'),
         )
 
-    @withpythonimplementation
     def test_encodestring(self):
         for p, e in self.STRINGS:
             self.assertEqual(quopri.encodestring(p), e)
 
-    @withpythonimplementation
     def test_decodestring(self):
         for p, e in self.STRINGS:
             self.assertEqual(quopri.decodestring(e), p)
 
-    @withpythonimplementation
     def test_decodestring_double_equals(self):
         # Issue 21511 - Ensure that byte string is compared to byte string
         # instead of int byte value
         decoded_value, encoded_value = (b"123=four", b"123==four")
         self.assertEqual(quopri.decodestring(encoded_value), decoded_value)
 
-    @withpythonimplementation
     def test_idempotent_string(self):
         for p, e in self.STRINGS:
             self.assertEqual(quopri.decodestring(quopri.encodestring(e)), e)
 
-    @withpythonimplementation
     def test_encode(self):
         for p, e in self.STRINGS:
             infp = io.BytesIO(p)
@@ -157,7 +134,6 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
             quopri.encode(infp, outfp, quotetabs=False)
             self.assertEqual(outfp.getvalue(), e)
 
-    @withpythonimplementation
     def test_decode(self):
         for p, e in self.STRINGS:
             infp = io.BytesIO(e)
@@ -165,18 +141,15 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
             quopri.decode(infp, outfp)
             self.assertEqual(outfp.getvalue(), p)
 
-    @withpythonimplementation
     def test_embedded_ws(self):
         for p, e in self.ESTRINGS:
             self.assertEqual(quopri.encodestring(p, quotetabs=True), e)
             self.assertEqual(quopri.decodestring(e), p)
 
-    @withpythonimplementation
     def test_encode_header(self):
         for p, e in self.HSTRINGS:
             self.assertEqual(quopri.encodestring(p, header=True), e)
 
-    @withpythonimplementation
     def test_decode_header(self):
         for p, e in self.HSTRINGS:
             self.assertEqual(quopri.decodestring(e, header=True), p)
