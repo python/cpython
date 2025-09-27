@@ -150,7 +150,7 @@ class Timer:
         The optional file argument directs where the traceback is
         sent; it defaults to sys.stderr.
         """
-        import linecache, traceback
+        import linecache, traceback, _colorize, sys
         if self.src is not None:
             linecache.cache[dummy_src_name] = (len(self.src),
                                                None,
@@ -158,7 +158,8 @@ class Timer:
                                                dummy_src_name)
         # else the source is already stored somewhere else
 
-        traceback.print_exc(file=file)
+        traceback.print_exception(sys.exception(), file=file,
+                                 colorize=_colorize.can_colorize(file=file))
 
     def timeit(self, number=default_number):
         """Time 'number' executions of the main statement.
