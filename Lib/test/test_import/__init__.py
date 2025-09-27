@@ -1187,6 +1187,7 @@ except ImportError as e:
 
     @unittest.skipIf(sys.platform == 'win32', 'Cannot delete cwd on Windows')
     @unittest.skipIf(sys.platform == 'sunos5', 'Cannot delete cwd on Solaris/Illumos')
+    @unittest.skipIf(sys.platform.startswith('aix'), 'Cannot delete cwd on AIX')
     def test_script_shadowing_stdlib_cwd_failure(self):
         with os_helper.temp_dir() as tmp:
             subtmp = os.path.join(tmp, "subtmp")
