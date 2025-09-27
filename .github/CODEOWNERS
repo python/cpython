@@ -293,6 +293,9 @@ Lib/concurrent/futures/interpreter.py  @ericsnowcurrently
 **/*Android*                  @mhsmith @freakboy3742
 **/*android*                  @mhsmith @freakboy3742
 
+# Apple
+/Apple                        @freakboy3742
+
 # iOS (but not termios)
 **/iOS*                       @freakboy3742
 **/ios*                       @freakboy3742
