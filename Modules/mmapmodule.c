@@ -91,6 +91,16 @@ my_getpagesize(void)
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
+#define DEFINE_AND_FORWARD_TO_LOCK_HELD(fn_name)           \
+    static PyObject* fn_name(PyObject *op, PyObject *args) \
+    {                                                      \
+        PyObject *result = NULL;                           \
+        Py_BEGIN_CRITICAL_SECTION(op);                     \
+        result = fn_name##_lock_held(op, args);            \
+        Py_END_CRITICAL_SECTION();                         \
+        return result;                                     \
+    }
+
 typedef enum
 {
     ACCESS_DEFAULT,
@@ -166,7 +176,7 @@ mmap_object_dealloc(PyObject *op)
 }
 
 static PyObject *
-mmap_close_method(PyObject *op, PyObject *Py_UNUSED(ignored))
+mmap_close_method_lock_held(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     mmap_object *self = mmap_object_CAST(op);
     if (self->exports > 0) {
@@ -217,6 +227,8 @@ mmap_close_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 
     Py_RETURN_NONE;
 }
+
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_close_method);
 
 #ifdef MS_WINDOWS
 #define CHECK_VALID(err)                                                \
@@ -473,7 +485,7 @@ _safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes)
 }
 
 static PyObject *
-mmap_read_byte_method(PyObject *op, PyObject *Py_UNUSED(ignored))
+mmap_read_byte_method_lock_held(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
@@ -489,8 +501,10 @@ mmap_read_byte_method(PyObject *op, PyObject *Py_UNUSED(ignored))
     return PyLong_FromLong((unsigned char) dest);
 }
 
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_read_byte_method);
+
 static PyObject *
-mmap_read_line_method(PyObject *op, PyObject *Py_UNUSED(ignored))
+mmap_read_line_method_lock_held(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t remaining;
     char *start, *eol;
@@ -519,8 +533,10 @@ mmap_read_line_method(PyObject *op, PyObject *Py_UNUSED(ignored))
     return result;
 }
 
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_read_line_method);
+
 static PyObject *
-mmap_read_method(PyObject *op, PyObject *args)
+mmap_read_method_lock_held(PyObject *op, PyObject *args)
 {
     Py_ssize_t num_bytes = PY_SSIZE_T_MAX, remaining;
     mmap_object *self = mmap_object_CAST(op);
@@ -543,11 +559,14 @@ mmap_read_method(PyObject *op, PyObject *args)
     return result;
 }
 
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_read_method);
+
 static PyObject *
-mmap_gfind(mmap_object *self,
+mmap_gfind_lock_held(PyObject *op,
            PyObject *args,
            int reverse)
 {
+    mmap_object *self = mmap_object_CAST(op);
     Py_ssize_t start = self->pos;
     Py_ssize_t end = self->size;
     Py_buffer view;
@@ -610,15 +629,21 @@ mmap_gfind(mmap_object *self,
 static PyObject *
 mmap_find_method(PyObject *op, PyObject *args)
 {
-    mmap_object *self = mmap_object_CAST(op);
-    return mmap_gfind(self, args, 0);
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result =  mmap_gfind_lock_held(op, args, 0);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
 mmap_rfind_method(PyObject *op, PyObject *args)
 {
-    mmap_object *self = mmap_object_CAST(op);
-    return mmap_gfind(self, args, 1);
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result =  mmap_gfind_lock_held(op, args, 1);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static int
@@ -655,7 +680,7 @@ is_resizeable(mmap_object *self)
 
 
 static PyObject *
-mmap_write_method(PyObject *op, PyObject *args)
+mmap_write_method_lock_held(PyObject *op, PyObject *args)
 {
     Py_buffer data;
     mmap_object *self = mmap_object_CAST(op);
@@ -688,8 +713,10 @@ mmap_write_method(PyObject *op, PyObject *args)
     return result;
 }
 
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_write_method);
+
 static PyObject *
-mmap_write_byte_method(PyObject *op, PyObject *args)
+mmap_write_byte_method_lock_held(PyObject *op, PyObject *args)
 {
     char value;
     mmap_object *self = mmap_object_CAST(op);
@@ -714,8 +741,10 @@ mmap_write_byte_method(PyObject *op, PyObject *args)
     Py_RETURN_NONE;
 }
 
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_write_byte_method);
+
 static PyObject *
-mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
+mmap_size_method_lock_held(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
@@ -761,6 +790,8 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
     }
 }
 
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_size_method);
+
 /* This assumes that you want the entire file mapped,
  / and when recreating the map will make the new file
  / have the new size
@@ -772,7 +803,7 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 
 #if defined(MS_WINDOWS) || defined(HAVE_MREMAP)
 static PyObject *
-mmap_resize_method(PyObject *op, PyObject *args)
+mmap_resize_method_lock_held(PyObject *op, PyObject *args)
 {
     Py_ssize_t new_size;
     mmap_object *self = mmap_object_CAST(op);
@@ -919,18 +950,22 @@ mmap_resize_method(PyObject *op, PyObject *args)
 #endif /* UNIX */
     }
 }
+
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_resize_method);
 #endif /* MS_WINDOWS || HAVE_MREMAP */
 
 static PyObject *
-mmap_tell_method(PyObject *op, PyObject *Py_UNUSED(ignored))
+mmap_tell_method_lock_held(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
     return PyLong_FromSize_t(self->pos);
 }
 
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_tell_method);
+
 static PyObject *
-mmap_flush_method(PyObject *op, PyObject *args)
+mmap_flush_method_lock_held(PyObject *op, PyObject *args)
 {
     Py_ssize_t offset = 0;
     mmap_object *self = mmap_object_CAST(op);
@@ -965,8 +1000,10 @@ mmap_flush_method(PyObject *op, PyObject *args)
 #endif
 }
 
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_flush_method);
+
 static PyObject *
-mmap_seek_method(PyObject *op, PyObject *args)
+mmap_seek_method_lock_held(PyObject *op, PyObject *args)
 {
     Py_ssize_t dist;
     mmap_object *self = mmap_object_CAST(op);
@@ -1005,6 +1042,8 @@ mmap_seek_method(PyObject *op, PyObject *args)
     return NULL;
 }
 
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_seek_method);
+
 static PyObject *
 mmap_seekable_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
@@ -1012,7 +1051,7 @@ mmap_seekable_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-mmap_move_method(PyObject *op, PyObject *args)
+mmap_move_method_lock_held(PyObject *op, PyObject *args)
 {
     Py_ssize_t dest, src, cnt;
     mmap_object *self = mmap_object_CAST(op);
@@ -1040,15 +1079,21 @@ mmap_move_method(PyObject *op, PyObject *args)
     }
 }
 
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_move_method);
+
 static PyObject *
 mmap_closed_get(PyObject *op, void *Py_UNUSED(closure))
 {
     mmap_object *self = mmap_object_CAST(op);
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
 #ifdef MS_WINDOWS
-    return PyBool_FromLong(self->map_handle == NULL ? 1 : 0);
+    result = PyBool_FromLong(self->map_handle == NULL ? 1 : 0);
 #elif defined(UNIX)
-    return PyBool_FromLong(self->data == NULL ? 1 : 0);
+    result = PyBool_FromLong(self->data == NULL ? 1 : 0);
 #endif
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
@@ -1067,7 +1112,7 @@ mmap__exit__method(PyObject *op, PyObject *Py_UNUSED(args))
 }
 
 static PyObject *
-mmap__repr__method(PyObject *op)
+mmap__repr__method_lock_held(PyObject *op)
 {
     mmap_object *mobj = mmap_object_CAST(op);
 
@@ -1111,6 +1156,16 @@ mmap__repr__method(PyObject *op)
     }
 }
 
+static PyObject *
+mmap__repr__method(PyObject *op)
+{
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = mmap__repr__method_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 #ifdef MS_WINDOWS
 static PyObject *
 mmap__sizeof__method(PyObject *op, PyObject *Py_UNUSED(dummy))
@@ -1126,7 +1181,7 @@ mmap__sizeof__method(PyObject *op, PyObject *Py_UNUSED(dummy))
 
 #if defined(MS_WINDOWS) && defined(Py_DEBUG)
 static PyObject *
-mmap_protect_method(PyObject *op, PyObject *args) {
+mmap_protect_method_lock_held(PyObject *op, PyObject *args) {
     DWORD flNewProtect, flOldProtect;
     Py_ssize_t start, length;
     mmap_object *self = mmap_object_CAST(op);
@@ -1146,11 +1201,13 @@ mmap_protect_method(PyObject *op, PyObject *args) {
 
     Py_RETURN_NONE;
 }
+
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_protect_method);
 #endif
 
 #ifdef HAVE_MADVISE
 static PyObject *
-mmap_madvise_method(PyObject *op, PyObject *args)
+mmap_madvise_method_lock_held(PyObject *op, PyObject *args)
 {
     int option;
     Py_ssize_t start = 0, length;
@@ -1188,6 +1245,8 @@ mmap_madvise_method(PyObject *op, PyObject *args)
 
     Py_RETURN_NONE;
 }
+
+DEFINE_AND_FORWARD_TO_LOCK_HELD(mmap_madvise_method);
 #endif // HAVE_MADVISE
 
 static struct PyMemberDef mmap_object_members[] = {
@@ -1236,7 +1295,7 @@ static PyGetSetDef mmap_object_getset[] = {
 /* Functions for treating an mmap'ed file as a buffer */
 
 static int
-mmap_buffer_getbuf(PyObject *op, Py_buffer *view, int flags)
+mmap_buffer_getbuf_lock_held(PyObject *op, Py_buffer *view, int flags)
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(-1);
@@ -1247,23 +1306,45 @@ mmap_buffer_getbuf(PyObject *op, Py_buffer *view, int flags)
     return 0;
 }
 
+static int
+mmap_buffer_getbuf(PyObject *op, Py_buffer *view, int flags)
+{
+    int result = -1;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = mmap_buffer_getbuf_lock_held(op, view, flags);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static void
 mmap_buffer_releasebuf(PyObject *op, Py_buffer *Py_UNUSED(view))
 {
     mmap_object *self = mmap_object_CAST(op);
+    Py_BEGIN_CRITICAL_SECTION(self);
     self->exports--;
+    Py_END_CRITICAL_SECTION();
 }
 
 static Py_ssize_t
-mmap_length(PyObject *op)
+mmap_length_lock_held(PyObject *op)
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(-1);
     return self->size;
 }
 
+static Py_ssize_t
+mmap_length(PyObject *op)
+{
+    Py_ssize_t result = -1;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = mmap_length_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static PyObject *
-mmap_item(PyObject *op, Py_ssize_t i)
+mmap_item_lock_held(PyObject *op, Py_ssize_t i)
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
@@ -1280,7 +1361,16 @@ mmap_item(PyObject *op, Py_ssize_t i)
 }
 
 static PyObject *
-mmap_subscript(PyObject *op, PyObject *item)
+mmap_item(PyObject *op, Py_ssize_t i) {
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = mmap_item_lock_held(op, i);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+static PyObject *
+mmap_subscript_lock_held(PyObject *op, PyObject *item)
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
@@ -1342,8 +1432,18 @@ mmap_subscript(PyObject *op, PyObject *item)
     }
 }
 
+static PyObject *
+mmap_subscript(PyObject *op, PyObject *item)
+{
+    PyObject *result = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = mmap_subscript_lock_held(op, item);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 static int
-mmap_ass_item(PyObject *op, Py_ssize_t i, PyObject *v)
+mmap_ass_item_lock_held(PyObject *op, Py_ssize_t i, PyObject *v)
 {
     const char *buf;
     mmap_object *self = mmap_object_CAST(op);
@@ -1374,7 +1474,17 @@ mmap_ass_item(PyObject *op, Py_ssize_t i, PyObject *v)
 }
 
 static int
-mmap_ass_subscript(PyObject *op, PyObject *item, PyObject *value)
+mmap_ass_item(PyObject *op, Py_ssize_t i, PyObject *v)
+{
+    int result = -1;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = mmap_ass_item_lock_held(op, i, v);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+static int
+mmap_ass_subscript_lock_held(PyObject *op, PyObject *item, PyObject *value)
 {
     mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(-1);
@@ -1468,6 +1578,16 @@ mmap_ass_subscript(PyObject *op, PyObject *item, PyObject *value)
                         "mmap indices must be integer");
         return -1;
     }
+}
+
+static int
+mmap_ass_subscript(PyObject *op, PyObject *item, PyObject *value)
+{
+    int result = -1;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = mmap_ass_subscript_lock_held(op, item, value);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
