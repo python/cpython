@@ -303,6 +303,7 @@ class LogRecord(object):
         ct = time.time_ns()
         self.name = name
         self.msg = msg
+        self.message = None
         #
         # The following statement allows passing of a dictionary as a sole
         # argument, so that you can do something like
@@ -395,10 +396,13 @@ class LogRecord(object):
         Return the message for this LogRecord after merging any user-supplied
         arguments with the message.
         """
-        msg = str(self.msg)
-        if self.args:
-            msg = msg % self.args
-        return msg
+        if self.message is None:
+            msg = str(self.msg)
+            if self.args:
+                msg = msg % self.args
+            self.message = msg
+
+        return self.message
 
 #
 #   Determine which class to use when instantiating log records.
@@ -709,6 +713,8 @@ class Formatter(object):
         called to format the event time. If there is exception information,
         it is formatted using formatException() and appended to the message.
         """
+        # note: LogRecord.getMessage() will set record.message already but
+        #       custom LogRecord objects may not so it's assigned here anyway
         record.message = record.getMessage()
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)
