@@ -922,6 +922,10 @@ class Action(_AttributeHolder):
     def __call__(self, parser, namespace, values, option_string=None):
         raise NotImplementedError('.__call__() not defined')
 
+    def _check_compatibility(self, container):
+        """Check whether the action is compatible with the container."""
+        pass
+
 
 class BooleanOptionalAction(Action):
     def __init__(self,
@@ -959,6 +963,10 @@ class BooleanOptionalAction(Action):
 
     def format_usage(self):
         return ' | '.join(self.option_strings)
+
+    def _check_compatibility(self, container):
+        if '-' not in container.prefix_chars:
+            raise ValueError("BooleanOptionalAction requires '-' in prefix_chars.")
 
 
 class _StoreAction(Action):
@@ -1541,6 +1549,9 @@ class _ActionsContainer(object):
         # consume arguments
         if not action.option_strings and action.nargs == 0:
             raise ValueError(f'action {action_name!r} is not valid for positional arguments')
+
+        # raise an error if the action is not compatible with the parser
+        action._check_compatibility(self)
 
         # raise an error if the action type is not callable
         type_func = self._registry_get('type', action.type, action.type)
