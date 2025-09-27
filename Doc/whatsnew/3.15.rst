@@ -294,6 +294,14 @@ New modules
 Improved modules
 ================
 
+collections
+-----------
+
+* Added :meth:`!collections.Counter.__xor__` and
+  :meth:`!collections.Counter.__ixor__` to compute the symmetric difference
+  between :class:`~collections.Counter` objects.
+  (Contributed by Raymond Hettinger in :gh:`138682`.)
+
 collections.abc
 ---------------
 
@@ -543,6 +551,16 @@ unittest
 * :func:`unittest.TestCase.assertLogs` will now accept a formatter
   to control how messages are formatted.
   (Contributed by Garry Cairns in :gh:`134567`.)
+
+
+xml.parsers.expat
+-----------------
+
+* Add :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerActivationThreshold`
+  and :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerMaximumAmplification`
+  to :ref:`xmlparser <xmlparser-objects>` objects to prevent use of
+  disproportional amounts of dynamic memory from within an Expat parser.
+  (Contributed by Bénédikt Tran in :gh:`90949`.)
 
 
 zlib
