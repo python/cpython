@@ -240,21 +240,54 @@ fits in memory::
    >>> with open('myapp.pyz', 'wb') as f:
    >>>     f.write(temp.getvalue())
 
-To filter an allow-list or deny-list of files in the directory being zipped, make use
-of :option:`--exclude` and/or :option:`--include` with glob-style patterns.
+To filter which files go into the archive, use :option:`--include` or
+:option:`--exclude` with standard glob patterns (as implemented by
+:class:`pathlib.PurePath.match`).
+
+Including only specific files:
 
 .. code-block:: shell-session
 
    $ ls myapp
-   __main__.py helper.py   notthis.py
+   __main__.py  helper.py  data.txt
 
-   $ python -m zipapp myapp -o myapp.pyz --include "help*" --include "not*" --exclude "n*"
+   # Keep only Python sources; anything not matched is implicitly excluded
+   $ python -m zipapp myapp -o myapp.pyz --include "*.py"
    $ unzip myapp.pyz -d extracted_myapp
    Archive:  myapp.pyz
-    extracting: extracted_myapp/helper.py
+    extracting: extracted_myapp/__main__.py  
+    extracting: extracted_myapp/helper.py 
 
-   $ ls extracted_myapp
-   helper.py
+Excluding a subtree or file type:
+
+.. code-block:: shell-session
+
+   $ ls -R myapp
+   myapp:
+   __main__.py  helper.py  tests/  build/
+
+   myapp/tests:
+   test_helper.py
+
+   myapp/build:
+   scratch.txt
+
+   # Add everything except the tests/ directory items and *.pyc files
+   $ python -m zipapp myapp -o myapp.pyz --exclude "tests/**" --exclude "*.pyc"
+   $ unzip myapp.pyz -d extracted_myapp
+   Archive:  myapp.pyz
+    extracting: extracted_myapp/__main__.py  
+      creating: extracted_myapp/build/
+    extracting: extracted_myapp/build/scratch.txt  
+    extracting: extracted_myapp/helper.py  
+      creating: extracted_myapp/tests/
+
+.. note::
+
+   * Patterns follow :class:`pathlib.PurePath.match`. To match all of a
+     directory contents, use ``dir/**``.
+   * Path separator handling is platform-specific. On POSIX, backslashes are
+     literals (``\`` does not act as a separator).
 
 
 .. _zipapp-specifying-the-interpreter:
