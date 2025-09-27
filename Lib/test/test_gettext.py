@@ -38,6 +38,27 @@ cyBmaWNoZXJvcyAoY29udGV4dCkAYmFjb24Ad2luayB3aW5rIChpbiAibXkgY29udGV4dCIpAHdp
 bmsgd2luayAoaW4gIm15IG90aGVyIGNvbnRleHQiKQB3aW5rIHdpbmsA
 '''
 
+GNU_TSTRINGS_MO_DATA = b'''\
+3hIElQAAAAAJAAAAHAAAAGQAAAANAAAArAAAAAAAAADgAAAAGQAAAOEAAAASAAAA+wAAAA0AAAAO
+AQAAPQAAABwBAABFAAAAWgEAABYAAACgAQAAFAAAALcBAAAWAAAAzAEAAB8BAADjAQAAGQAAAAMD
+AAASAAAAHQMAAA0AAAAwAwAANgAAAD4DAAA+AAAAdQMAAAwAAAC0AwAAGwAAAMEDAAAWAAAA3QMA
+AAEAAAAFAAAAAAAAAAYAAAAAAAAABwAAAAkAAAAEAAAACAAAAAIAAAAAAAAAAwAAAAAAAAAASGVs
+bG8ge3VzZXJfX25hbWVfX3RpdGxlfQBIZWxsbyB7dXNlcl9fbmFtZX0ASGVsbG8ge3doZXJlfQBU
+aGVyZSBpcyB7bn0gZ3JlZW4gc25lawBUaGVyZSBhcmUge259IGNvbG9yZnVsIHNuZWtzOiB7Y29s
+b3J9AGVuZ3Jpc2gEVGhlcmUgaXMge259IGdyZWVuIHNuZWsAVGhlcmUgYXJlIHtufSBjb2xvcmZ1
+bCBzbmVrczoge2NvbG9yfQBub3J0aGVybgRIZWxsbyB7d2hlcmV9AHt7YnJhY2V9fSBmb3Ige3do
+YXR9AHt7e2JyYWNlfX19IGZvciB7d2hhdH0AUHJvamVjdC1JZC1WZXJzaW9uOiBQQUNLQUdFIFZF
+UlNJT04KUE8tUmV2aXNpb24tRGF0ZTogWUVBUi1NTy1EQSBITzpNSStaT05FCkxhc3QtVHJhbnNs
+YXRvcjogRlVMTCBOQU1FIDxFTUFJTEBBRERSRVNTPgpMYW5ndWFnZS1UZWFtOiBMQU5HVUFHRSA8
+TExAbGkub3JnPgpMYW5ndWFnZTogCk1JTUUtVmVyc2lvbjogMS4wCkNvbnRlbnQtVHlwZTogdGV4
+dC9wbGFpbjsgY2hhcnNldD1VVEYtOApDb250ZW50LVRyYW5zZmVyLUVuY29kaW5nOiA4Yml0Ckdl
+bmVyYXRlZC1CeTogcHlnZXR0ZXh0LnB5IDEuNQoASGFsbG8ge3VzZXJfX25hbWVfX3RpdGxlfQBI
+YWxsbyB7dXNlcl9fbmFtZX0ASGFsbG8ge3doZXJlfQBEYSBpc3Qge259IGdlbGJlIFNuZWsARGEg
+c2luZCB7bn0gYnVudGUgU25la3M6IHtjb2xvcn0ARGEgaXN0IHtufSBnZWxiZSBTY2huZWNrZQBE
+YSBzaW5kIHtufSBidW50ZSBTY2huZWNrZW46IHtjb2xvcn0ATW9pbiB7d2hlcmV9AHt7YmVyZWl0
+bWFjaGVufX0gYXVmIHt3aGF0fQB7e3ticmFjZX19fSBhdWYge3doYXR9AA==
+'''
+
 # .mo file with an invalid magic number
 GNU_MO_DATA_BAD_MAGIC_NUMBER = base64.b64encode(b'ABCD')
 
@@ -156,6 +177,7 @@ bGUKR2VuZXJhdGVkLUJ5OiBweWdldHRleHQucHkgMS4zCgA=
 
 LOCALEDIR = os.path.join('xx', 'LC_MESSAGES')
 MOFILE = os.path.join(LOCALEDIR, 'gettext.mo')
+TSTRINGS_MOFILE = os.path.join(LOCALEDIR, 'gettext_tstrings.mo')
 MOFILE_BAD_MAGIC_NUMBER = os.path.join(LOCALEDIR, 'gettext_bad_magic_number.mo')
 MOFILE_BAD_MAJOR_VERSION = os.path.join(LOCALEDIR, 'gettext_bad_major_version.mo')
 MOFILE_BAD_MINOR_VERSION = os.path.join(LOCALEDIR, 'gettext_bad_minor_version.mo')
@@ -179,6 +201,8 @@ class GettextBaseTest(unittest.TestCase):
             os.makedirs(LOCALEDIR)
         with open(MOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA))
+        with open(TSTRINGS_MOFILE, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_TSTRINGS_MO_DATA))
         with open(MOFILE_BAD_MAGIC_NUMBER, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MAGIC_NUMBER))
         with open(MOFILE_BAD_MAJOR_VERSION, 'wb') as fp:
@@ -727,6 +751,169 @@ class UnicodeTranslationsPluralTest(GettextBaseTest):
         eq(t, "Hay %s ficheros (context)")
 
 
+class TemplateStringsTestsMixin:
+    def setup_tstrings_test(self, *, expect_translations=False):
+        # We use this weird naming of the gettext functions here to allow
+        # easy extraction of the .po file using pygettext; see the comment
+        # next to the po file content near the bottom of this file on how
+        # to regenerate it.
+        self.gettexT = self.t.gettext
+        self.ngettexT = self.t.ngettext
+        self.pgettexT = self.t.pgettext
+        self.npgettexT = self.t.npgettext
+        if expect_translations:
+            self.strings = {
+                '_': 'Hallo world',
+                '_unt': 'Hallo Scrooge',
+                '_un': 'Hallo scrooge',
+                '_undict': 'Hallo dOnAlD',
+                '_br1': '{bereitmachen} auf impact',
+                '_br2': '{}{} auf impact',
+                'p': 'Moin world',
+                'n1': 'Da ist 1 gelbe Snek',
+                'n2': 'Da sind 42 bunte Sneks: rainbow',
+                'np1': 'Da ist 1 gelbe Schnecke',
+                'np2': 'Da sind 42 bunte Schnecken: rainbow',
+            }
+        else:
+            self.strings = {
+                '_': 'Hello world',
+                '_unt': 'Hello Scrooge',
+                '_un': 'Hello scrooge',
+                '_undict': 'Hello dOnAlD',
+                '_br1': '{brace} for impact',
+                '_br2': '{}{} for impact',
+                'p': 'Hello world',
+                'n1': 'There is 1 green snek',
+                'n2': 'There are 42 colorful sneks: rainbow',
+                'np1': 'There is 1 green snek',
+                'np2': 'There are 42 colorful sneks: rainbow',
+            }
+
+    def test_gettext(self):
+        eq = self.assertEqual
+        where = 'world'
+        class _User:
+            name = 'scrooge'
+            def __getitem__(self, key):
+                if key == 'name':
+                    return 'dOnAlD'
+        user = _User()
+        eq(self.gettexT(t'Hello {where}'), self.strings['_'])
+        eq(self.gettexT(t'Hello {user.name.title()}'), self.strings['_unt'])
+        eq(self.gettexT(t'Hello {user.name}'), self.strings['_un'])
+        eq(self.gettexT(t'Hello {user["name"]}'), self.strings['_undict'])
+
+    def test_gettext_braces(self):
+        eq = self.assertEqual
+        what = 'impact'
+        brace = '}{'
+        eq(self.gettexT(t'{{brace}} for {what}'), self.strings['_br1'])
+        eq(self.gettexT(t'{{{brace}}} for {what}'), self.strings['_br2'])
+
+    def test_pgettext(self):
+        eq = self.assertEqual
+        where = 'world'
+        t = self.pgettexT('northern', t'Hello {where}')
+        eq(t, self.strings['p'])
+
+    def test_ngettext(self):
+        eq = self.assertEqual
+        color = 'rainbow'
+        n = 1
+        t = self.ngettexT(
+            t'There is {n} green snek',
+            t'There are {n} colorful sneks: {color}',
+            n,
+        )
+        eq(t, self.strings['n1'])
+        n = 42
+        t = self.ngettexT(
+            t'There is {n} green snek',
+            t'There are {n} colorful sneks: {color}',
+            n,
+        )
+        eq(t, self.strings['n2'])
+
+    def test_npgettext(self):
+        eq = self.assertEqual
+        color = 'rainbow'
+        n = 1
+        t = self.npgettexT(
+            'engrish',
+            t'There is {n} green snek',
+            t'There are {n} colorful sneks: {color}',
+            n,
+        )
+        eq(t, self.strings['np1'])
+        n = 42
+        t = self.npgettexT(
+            'engrish',
+            t'There is {n} green snek',
+            t'There are {n} colorful sneks: {color}',
+            n,
+        )
+        eq(t, self.strings['np2'])
+
+
+class TemplateStrNullTranslationsTest(
+    TemplateStringsTestsMixin, unittest.TestCase
+):
+    """Test that NullTranslations works with t-strings."""
+    def setUp(self):
+        self.t = gettext.NullTranslations()
+        self.setup_tstrings_test(expect_translations=False)
+
+
+class TemplateStrGNUTranslationsTest(
+    TemplateStringsTestsMixin, GettextBaseTest
+):
+    """Test that GNUTranslations works with t-strings.
+
+    In this test case we have translations for all our strings.
+    """
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        with open(TSTRINGS_MOFILE, 'rb') as fp:
+            self.t = gettext.GNUTranslations(fp)
+        self.setup_tstrings_test(expect_translations=True)
+
+
+class TemplateStrGNUTranslationsMissingTest(
+    TemplateStringsTestsMixin, GettextBaseTest
+):
+    """Test that GNUTranslations works with t-strings.
+
+    In this test case there are no translations, so we expect the original
+    strings to be used.
+    """
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        with open(TSTRINGS_MOFILE, 'rb') as fp:
+            self.t = gettext.GNUTranslations(fp)
+            self.t._catalog.clear()
+        self.setup_tstrings_test(expect_translations=False)
+
+
+class TemplateStrGNUTranslationsFallbackTest(
+    TemplateStringsTestsMixin, GettextBaseTest
+):
+    """Test that GNUTranslations works with t-strings and a fallback.
+
+    In this test case there are no translations, but we have a fallback to
+    a GNUTranslations object which has all the translations, so the translated
+    strings should be used.
+    """
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        with open(TSTRINGS_MOFILE, 'rb') as fp:
+            self.t = gettext.GNUTranslations(fp)
+            self.t._catalog.clear()
+            fp.seek(0)
+            self.t.add_fallback(gettext.GNUTranslations(fp))
+        self.setup_tstrings_test(expect_translations=True)
+
+
 class WeirdMetadataTest(GettextBaseTest):
     def setUp(self):
         GettextBaseTest.setUp(self)
@@ -1083,4 +1270,66 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "#-#-#-#-#  messages.po (EdX Studio)  #-#-#-#-#\n"
 "Content-Type: text/plain; charset=UTF-8\n"
+'''
+
+# Here's the .po file used to created the GNU_TMO_DATA above.
+# It was extracted using pygettext:
+# ./Tools/i18n/pygettext.py -o /tmp/gettext_tstrings.pot -K -k gettexT \
+# -k ngettexT:1,2 -k pgettexT:1c,2 -k npgettexT:1c,2,3 Lib/test/test_gettext.py
+# then updated w/ the translations using `msgmerge`:
+# msgmerge -U /tmp/gettext_tstrings.po /tmp/gettext_tstrings.pot
+# and then compiled using `msgfmt`:
+# msgfmt /tmp/gettext_tstrings.po -o - | base64
+
+rb'''
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2025-08-02 22:10+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+#: Lib/test/test_gettext.py:798
+msgid "Hello {where}"
+msgstr "Hallo {where}"
+
+#: Lib/test/test_gettext.py:799
+msgid "Hello {user__name__title}"
+msgstr "Hallo {user__name__title}"
+
+#: Lib/test/test_gettext.py:800 Lib/test/test_gettext.py:801
+msgid "Hello {user__name}"
+msgstr "Hallo {user__name}"
+
+#: Lib/test/test_gettext.py:807
+msgid "{{brace}} for {what}"
+msgstr "{{bereitmachen}} auf {what}"
+
+#: Lib/test/test_gettext.py:808
+msgid "{{{brace}}} for {what}"
+msgstr "{{{brace}}} auf {what}"
+
+#: Lib/test/test_gettext.py:813
+msgctxt "northern"
+msgid "Hello {where}"
+msgstr "Moin {where}"
+
+#: Lib/test/test_gettext.py:820 Lib/test/test_gettext.py:827
+msgid "There is {n} green snek"
+msgid_plural "There are {n} colorful sneks: {color}"
+msgstr[0] "Da ist {n} gelbe Snek"
+msgstr[1] "Da sind {n} bunte Sneks: {color}"
+
+#: Lib/test/test_gettext.py:838 Lib/test/test_gettext.py:846
+msgctxt "engrish"
+msgid "There is {n} green snek"
+msgid_plural "There are {n} colorful sneks: {color}"
+msgstr[0] "Da ist {n} gelbe Schnecke"
+msgstr[1] "Da sind {n} bunte Schnecken: {color}"
 '''
