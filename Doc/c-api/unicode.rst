@@ -307,6 +307,74 @@ These APIs can be used for fast direct character conversions:
    possible.  This function does not raise exceptions.
 
 
+.. c:function:: Py_ssize_t PyUCS4_ToLower(const Py_UCS4 *str, Py_ssize_t str_size, Py_UCS4 *buffer, Py_ssize_t buf_size)
+
+   Convert *str* characters to lower case, store result in *buffer*, which should be
+   able to hold as many characters needed for *str* to be lower cased, and
+   return the number of characters stored. If at some point a buffer overflow
+   is detected, an :exc:`ValueError` is raised and ``-1`` is returned.
+
+   *str_size*, *buf_size* and the result are number of UCS-4 characters.
+
+   In Unicode 16.0, any character can be lowercased into a buffer of *buf_size* ``2``.
+   See also :c:macro:`PyUCS4_CASE_CONVERSION_BUFFER_SIZE`.
+
+   .. versionadded:: next
+
+
+.. c:function:: Py_ssize_t PyUCS4_ToUpper(const Py_UCS4 *str, Py_ssize_t str_size, Py_UCS4 *buffer, Py_ssize_t buf_size)
+
+   Convert *str* characters to upper case, store result in *buffer*, which should be
+   able to hold as many characters needed for *str* to be upper cased, and
+   return the number of characters stored. If at some point a buffer overflow
+   is detected, an :exc:`ValueError` is raised and ``-1`` is returned.
+
+   *str_size*, *buf_size* and the result are number of UCS-4 characters.
+
+   In Unicode 16.0, any character can be uppercased into a buffer of *buf_size* ``3``.
+   See also :c:macro:`PyUCS4_CASE_CONVERSION_BUFFER_SIZE`.
+
+   .. versionadded:: next
+
+
+.. c:function:: Py_ssize_t PyUCS4_ToTitle(const Py_UCS4 *str, Py_ssize_t str_size, Py_UCS4 *buffer, Py_ssize_t buf_size)
+
+   Convert *str* characters to title case, store result in *buffer*, which should be
+   able to hold as many characters needed for *str* to be title cased, and
+   return the number of characters stored. If at some point a buffer overflow
+   is detected, an :exc:`ValueError` is raised and ``-1`` is returned.
+
+   *str_size*, *buf_size* and the result are number of UCS-4 characters.
+
+   In Unicode 16.0, any character can be titlecased into a buffer of *buf_size* ``3``.
+   See also :c:macro:`PyUCS4_CASE_CONVERSION_BUFFER_SIZE`.
+
+   .. versionadded:: next
+
+
+.. c:function:: Py_ssize_t PyUCS4_ToFolded(const Py_UCS4 *str, Py_ssize_t str_size, Py_UCS4 *buffer, Py_ssize_t buf_size)
+
+   Foldcase *str* characters, store result in *buffer*, which should be
+   able to hold as many characters needed for *str* to be foldcased, and
+   return the number of characters stored. If at some point a buffer overflow
+   is detected, an :exc:`ValueError` is raised and ``-1`` is returned.
+
+   *str_size*, *buf_size* and the result are number of UCS-4 characters.
+
+   In Unicode 16.0, any character can be foldcased into a buffer of *buf_size* ``3``.
+   See also :c:macro:`PyUCS4_CASE_CONVERSION_BUFFER_SIZE`.
+
+   .. versionadded:: next
+
+.. c:macro:: PyUCS4_CASE_CONVERSION_BUFFER_SIZE
+
+   The minimum buffer size needed for any call to :c:func:`PyUCS4_ToLower`,
+   :c:func:`PyUCS4_ToUpper`, :c:func:`PyUCS4_ToTitle`, or
+   :c:func:`PyUCS4_ToFolded`. That is, ``3`` for Unicode 16.0.
+
+.. versionadded:: next
+
+
 These APIs can be used to work with surrogates:
 
 .. c:function:: int Py_UNICODE_IS_SURROGATE(Py_UCS4 ch)
