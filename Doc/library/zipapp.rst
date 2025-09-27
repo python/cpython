@@ -94,15 +94,26 @@ The following options are understood:
    this case, any other options are ignored and SOURCE must be an archive, not a
    directory.
 
-.. option:: --include
+.. option:: --include pattern
 
-   Accept glob-patterns filtering for files to be allowed in output archive. This will run
-   first if :option:`--exclude` is also used.
+   Include only files and directories that match the given glob pattern(s).
+   Patterns use standard globbing as implemented by :class:`pathlib.PurePath.match`.
 
-.. option:: --exclude
+   .. note::
 
-   Accept glob-patterns filtering files to be denied inclusion in output archive. This will
-   run second if :option:`--include` is also used.
+      If this option is not specified, all files in the given directory are
+      included by default (subject to any :option:`--exclude` patterns).
+
+.. option:: --exclude pattern
+
+   Exclude files and directories that match the given glob pattern(s).
+   Patterns use standard globbing as implemented by :class:`pathlib.PurePath.match`.
+
+   .. note::
+
+      If both :option:`--include` and :option:`--exclude` are specified, the set of
+      files to be included is picked first. Then any to be excluded are removed from
+      that set. The order of the options does not affect how they are processed.
 
 
 .. option:: -h, --help
@@ -255,8 +266,8 @@ Including only specific files:
    $ python -m zipapp myapp -o myapp.pyz --include "*.py"
    $ unzip myapp.pyz -d extracted_myapp
    Archive:  myapp.pyz
-    extracting: extracted_myapp/__main__.py  
-    extracting: extracted_myapp/helper.py 
+    extracting: extracted_myapp/__main__.py
+    extracting: extracted_myapp/helper.py
 
 Excluding a subtree or file type:
 
@@ -276,10 +287,10 @@ Excluding a subtree or file type:
    $ python -m zipapp myapp -o myapp.pyz --exclude "tests/**" --exclude "*.pyc"
    $ unzip myapp.pyz -d extracted_myapp
    Archive:  myapp.pyz
-    extracting: extracted_myapp/__main__.py  
+    extracting: extracted_myapp/__main__.py
       creating: extracted_myapp/build/
-    extracting: extracted_myapp/build/scratch.txt  
-    extracting: extracted_myapp/helper.py  
+    extracting: extracted_myapp/build/scratch.txt
+    extracting: extracted_myapp/helper.py
       creating: extracted_myapp/tests/
 
 .. note::
