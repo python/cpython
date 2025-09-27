@@ -588,6 +588,14 @@ module_name
 Deprecated
 ==========
 
+ast
+---
+
+* Creating instances of abstract AST nodes (such as :class:`ast.AST`
+  or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.19.
+  (Contributed by Brian Schubert in :gh:`116021`.)
+
+
 CLI
 ---
 
@@ -598,6 +606,7 @@ CLI
   for these cases; use a type checker instead.
 
   (Contributed by Nikita Sobolev in :gh:`136355`.)
+
 
 hashlib
 -------
