@@ -1485,6 +1485,38 @@ class DottedPrettyPrinter(pprint.PrettyPrinter):
             return pprint.PrettyPrinter.format(
                 self, object, context, maxlevels, level)
 
+# Issue 132855
+SENTINAL = object()
+class _hashable:
+    def __hash__(self):
+        return 1
+
+HASHABLE_SENTINAL = _hashable()
+class CustomPrettyPrinter(pprint.PrettyPrinter):
+    def format(self, obj, context, maxlevels, level):
+        if obj is SENTINAL:
+            return "SENTINAL", True, False
+        elif obj is HASHABLE_SENTINAL:
+            return "HASHABLE_SENTINAL", True, False
+        else:
+            return super().format(obj, context, maxlevels, level)
+
+class CustomPrettyPrinterTest(unittest.TestCase):
+    def test_custom_printer(self):
+        # Test that the custom printer works as expected
+        obj = SENTINAL
+        formatted = CustomPrettyPrinter().pformat(obj)
+        self.assertEqual(formatted, "SENTINAL")
+
+        obj = HASHABLE_SENTINAL
+        formatted = CustomPrettyPrinter().pformat(obj)
+        self.assertEqual(formatted, "HASHABLE_SENTINAL")
+
+        # Test that the default printer works as expected
+        obj = object()
+        formatted = pprint.pformat(obj)
+        self.assertNotEqual(formatted, "SENTINAL")
+        self.assertNotEqual(formatted, "HASHABLE_SENTINAL")
 
 if __name__ == "__main__":
     unittest.main()
