@@ -395,7 +395,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         target = self.tmpdir / 'source.pyz'
         zipapp.create_archive(source, target)
         return target
-    
+
     def _make_tree(self, root: pathlib.Path, files: list[str]) -> None:
         for rel in files:
             p = root / rel
@@ -474,7 +474,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [
             str(source),
             '--include', '*.py',
-            '--include', 'foo', 
+            '--include', 'foo',
             '--exclude', '**/*.pyc']
         zipapp.main(args)
 

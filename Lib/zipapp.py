@@ -178,7 +178,7 @@ def get_interpreter(archive):
     with _maybe_open(archive, 'rb') as f:
         if f.read(2) == b'#!':
             return f.readline().strip().decode(shebang_encoding)
-        
+
 def _normalize_patterns(values: Iterable[str] | None) -> list[str]:
     """
     Split comma-separated items, strip whitespace, drop empties.
@@ -187,7 +187,7 @@ def _normalize_patterns(values: Iterable[str] | None) -> list[str]:
     """
     if not values:
         return []
-    
+
     def has_glob(s: str) -> bool:
         return any(ch in s for ch in "*?[]")
 
@@ -289,7 +289,7 @@ def main(args=None):
             raise SystemExit("In-place editing of archives is not supported")
         if args.main:
             raise SystemExit("Cannot change the main function when copying")
-        
+
     # build a filter from include and exclude flags
     filter_fn = None
     src_path = pathlib.Path(args.source)
