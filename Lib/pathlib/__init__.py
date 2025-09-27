@@ -1382,13 +1382,19 @@ class Path(PurePath):
         _copy_from_file_fallback = _copy_from_file
         def _copy_from_file(self, source, preserve_metadata=False):
             try:
-                source = os.fspath(source)
+                source_path = os.fspath(source)
             except TypeError:
-                pass
-            else:
-                copyfile2(source, str(self))
+                self._copy_from_file_fallback(source, preserve_metadata)
                 return
-            self._copy_from_file_fallback(source, preserve_metadata)
+            try:
+                copyfile2(source_path, str(self))
+            except OSError as exc:
+                # On Windows, OSError from file operations is guaranteed to have winerror attribute
+                if exc.winerror in (5, 1314):
+                    # ERROR_ACCESS_DENIED (5) or ERROR_PRIVILEGE_NOT_HELD (1314)
+                    self._copy_from_file_fallback(source, preserve_metadata)
+                    return
+                raise
 
     if os.name == 'nt':
         # If a directory-symlink is copied *before* its target, then
