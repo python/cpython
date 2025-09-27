@@ -678,8 +678,11 @@ class Regrtest:
 
         cmd_text = shlex.join(cmd)
         try:
-            print(f"+ {cmd_text}", flush=True)
+            # Android and iOS run tests in embedded mode.
+            if not cmd[0]:
+                raise ValueError("No Python executable is present")
 
+            print(f"+ {cmd_text}", flush=True)
             if hasattr(os, 'execv') and not MS_WINDOWS:
                 os.execv(cmd[0], cmd)
                 # On success, execv() do no return.
