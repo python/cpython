@@ -251,8 +251,9 @@ class UnixConsole(Console):
         if not self.__gone_tall:
             while len(self.screen) < min(len(screen), self.height):
                 self.__hide_cursor()
-                self.__move(0, len(self.screen) - 1)
-                self.__write("\n")
+                if len(self.screen):
+                    self.__move(0, len(self.screen) - 1)
+                    self.__write("\n")
                 self.posxy = 0, len(self.screen)
                 self.screen.append("")
         else:
