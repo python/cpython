@@ -672,11 +672,6 @@ struct _Py_interp_cached_objects {
 
     /* object.__reduce__ */
     PyObject *objreduce;
-#ifndef Py_GIL_DISABLED
-    /* resolve_slotdups() */
-    PyObject *type_slots_pname;
-    pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
-#endif
 
     /* TypeVar and related types */
     PyTypeObject *generic_type;

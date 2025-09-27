@@ -836,6 +836,10 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     interp->callable_cache.object__getattribute__ = object__getattribute__;
 
+    if (_PyType_InitSlotDefs(interp) < 0) {
+        return _PyStatus_ERR("failed to init slotdefs");
+    }
+
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
