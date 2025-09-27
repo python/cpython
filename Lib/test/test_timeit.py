@@ -223,7 +223,12 @@ class TestTimeit(unittest.TestCase):
         exc_lines = exc_string.splitlines()
         self.assertGreater(len(exc_lines), 2)
         self.assertStartsWith(exc_lines[0], 'Traceback')
-        self.assertStartsWith(exc_lines[-1], expected_exc_name)
+        # Remove ANSI color codes from the last line before checking
+        import re
+        last_line = exc_lines[-1]
+        # Remove ANSI escape sequences
+        clean_last_line = re.sub(r'\x1b\[[0-9;]*m', '', last_line)
+        self.assertStartsWith(clean_last_line, expected_exc_name)
 
     def test_print_exc(self):
         s = io.StringIO()
