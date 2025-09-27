@@ -882,13 +882,6 @@ static PyMethodDef Compressor_methods[] = {
     {NULL}
 };
 
-static int
-Compressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 PyDoc_STRVAR(Compressor_doc,
 "LZMACompressor(format=FORMAT_XZ, check=-1, preset=None, filters=None)\n"
 "\n"
@@ -922,7 +915,6 @@ static PyType_Slot lzma_compressor_type_slots[] = {
     {Py_tp_methods, Compressor_methods},
     {Py_tp_new, Compressor_new},
     {Py_tp_doc, (char *)Compressor_doc},
-    {Py_tp_traverse, Compressor_traverse},
     {0, 0}
 };
 
@@ -1325,13 +1317,6 @@ Decompressor_dealloc(PyObject *op)
     Py_DECREF(tp);
 }
 
-static int
-Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyMethodDef Decompressor_methods[] = {
     _LZMA_LZMADECOMPRESSOR_DECOMPRESS_METHODDEF
     {NULL}
@@ -1366,7 +1351,6 @@ static PyType_Slot lzma_decompressor_type_slots[] = {
     {Py_tp_methods, Decompressor_methods},
     {Py_tp_new, _lzma_LZMADecompressor},
     {Py_tp_doc, (char *)_lzma_LZMADecompressor__doc__},
-    {Py_tp_traverse, Decompressor_traverse},
     {Py_tp_members, Decompressor_members},
     {0, 0}
 };
