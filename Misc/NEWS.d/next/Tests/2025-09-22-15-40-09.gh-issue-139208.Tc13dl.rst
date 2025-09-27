@@ -1,0 +1,2 @@
+Fix regrtest ``--fast-ci --verbose``: don't ignore the ``--verbose`` option
+anymore. Patch by Victor Stinner.
