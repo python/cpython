@@ -1,0 +1,2 @@
+Prevent altering the content of the :envvar:`PYTHON_HISTORY` file after
+running REPL tests. Patch by Bénédikt Tran.
