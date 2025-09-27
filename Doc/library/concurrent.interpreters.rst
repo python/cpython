@@ -227,10 +227,25 @@ This module defines the following functions:
    Initialize a new (idle) Python interpreter
    and return a :class:`Interpreter` object for it.
 
-.. function:: create_queue()
+.. function:: create_queue(maxsize=0, *, unbounditems=UNBOUND)
 
    Initialize a new cross-interpreter queue and return a :class:`Queue`
    object for it.
+
+   *maxsize* is an integer that sets the upperbound limit on the number of
+   items that can be placed in the queue. Insertion will be blocked once this
+   size has been reached, until queue items are consumed. If *maxsize* is
+   less than or equal to zero, the queue size is infinite.
+
+   *unbounditems* controls the behavior when the interpreter that put an
+   item into the queue is destroyed. It can be one of:
+
+   * :const:`UNBOUND_ERROR` - raise :exc:`ItemInterpreterDestroyed` when
+     getting an item from a destroyed interpreter
+   * :const:`UNBOUND_REMOVE` - automatically remove items when their
+     original interpreter is destroyed
+   * :const:`UNBOUND` - return :const:`UNBOUND` in place of the original
+     item (default)
 
 
 Interpreter objects
@@ -271,7 +286,7 @@ Interpreter objects
       Some objects are actually shared and some are copied efficiently,
       but most are copied via :mod:`pickle`.  See :ref:`interp-object-sharing`.
 
-   .. method:: exec(code, /, dedent=True)
+   .. method:: exec(code, /)
 
       Run the given source code in the interpreter (in the current thread).
 
@@ -335,17 +350,42 @@ Communicating Between Interpreters
       The queue's ID.
 
 
-.. exception:: QueueEmptyError
+   .. method:: put(obj, block=True, timeout=None, *, unbounditems=None)
+
+      Add the object *obj* to the queue.
+
+      This method behaves like :meth:`queue.Queue.put`, with the additional
+      *unbounditems* parameter. See :func:`create_queue` for details on
+      the *unbounditems* parameter and its behavior.
+
+
+   .. method:: put_nowait(obj, *, unbounditems=None)
+
+      Add the object *obj* to the queue without blocking.
+
+      This method behaves like :meth:`queue.Queue.put_nowait`, with the
+      additional *unbounditems* parameter. See :func:`create_queue` for
+      details on the *unbounditems* parameter and its behavior.
+
+
+.. exception:: QueueEmpty
 
    This exception, a subclass of :exc:`queue.Empty`, is raised from
    :meth:`!Queue.get` and :meth:`!Queue.get_nowait` when the queue
    is empty.
 
-.. exception:: QueueFullError
+.. exception:: QueueFull
 
    This exception, a subclass of :exc:`queue.Full`, is raised from
    :meth:`!Queue.put` and :meth:`!Queue.put_nowait` when the queue
    is full.
+
+
+.. exception:: ItemInterpreterDestroyed
+
+   This exception is raised by :meth:`!Queue.get` and :meth:`!Queue.get_nowait`
+   when the original interpreter that put an item into the queue has been
+   destroyed and the queue was created with ``unbounditems=UNBOUND_ERROR``.
 
 
 Basic usage
