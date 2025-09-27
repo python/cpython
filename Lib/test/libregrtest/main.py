@@ -646,15 +646,20 @@ class Regrtest:
         return (environ, keep_environ)
 
     def _add_ci_python_opts(self, python_opts, keep_environ):
-        # --fast-ci and --slow-ci add options to Python:
-        # "-u -W default -bb -E"
+        # --fast-ci and --slow-ci add options to Python.
+        #
+        # Some platforms cannot change options after startup, so if these
+        # options are changed, also update the copies in:
+        #  * cpython/Android/android.py
+        #  * buildmaster-config/master/custom/factories.py
 
-        # Unbuffered stdout and stderr
-        if not sys.stdout.write_through:
+        # Unbuffered stdout and stderr. This isn't helpful on Android, because
+        # it would cause lines to be split into multiple log messages.
+        if not sys.stdout.write_through and sys.platform != "android":
             python_opts.append('-u')
 
         # Add warnings filter 'error'
-        if 'default' not in sys.warnoptions:
+        if 'error' not in sys.warnoptions:
             python_opts.extend(('-W', 'error'))
 
         # Error on bytes/str comparison
@@ -673,8 +678,11 @@ class Regrtest:
 
         cmd_text = shlex.join(cmd)
         try:
-            print(f"+ {cmd_text}", flush=True)
+            # Android and iOS run tests in embedded mode.
+            if not cmd[0]:
+                raise ValueError("No Python executable is present")
 
+            print(f"+ {cmd_text}", flush=True)
             if hasattr(os, 'execv') and not MS_WINDOWS:
                 os.execv(cmd[0], cmd)
                 # On success, execv() do no return.
