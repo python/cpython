@@ -1,11 +1,12 @@
 import contextlib
 import os
 import pathlib
-import re
 import shutil
 import stat
 import sys
 import zipfile
+
+from collections.abc import Iterable, Callable
 
 __all__ = ['ZipAppError', 'create_archive', 'get_interpreter']
 
@@ -75,8 +76,7 @@ def _copy_archive(archive, new_archive, interpreter=None):
 
 
 def create_archive(source, target=None, interpreter=None, main=None,
-                   filter=None, compressed=False, include_pattern=None,
-                   exclude_pattern=None):
+                   filter=None, compressed=False):
     """Create an application archive from SOURCE.
 
     The SOURCE can be the name of a directory, or a filename or a file-like
@@ -178,7 +178,67 @@ def get_interpreter(archive):
     with _maybe_open(archive, 'rb') as f:
         if f.read(2) == b'#!':
             return f.readline().strip().decode(shebang_encoding)
+        
+def _normalize_patterns(values: Iterable[str] | None) -> list[str]:
+    """
+    Split comma-separated items, strip whitespace, drop empties.
+    If a token has no glob metacharacters, treat it as a directory prefix:
+    expand 'foo' into ['foo', 'foo/**'] (after normalizing slashes).
+    """
+    if not values:
+        return []
+    
+    def has_glob(s: str) -> bool:
+        return any(ch in s for ch in "*?[]")
 
+    out: list[str] = []
+    for v in values:
+        for raw in (p.strip() for p in v.split(',')):
+            if not raw:
+                continue
+            # normalize user input to POSIX-like form (match against rel.as_posix())
+            tok = raw.replace('\\', '/').lstrip('./').rstrip('/')
+            if not tok:
+                continue
+            if has_glob(tok):
+                out.append(tok)
+            else:
+                # directory name implies subtree
+                out.append(tok)
+                out.append(f"{tok}/**")
+    return out
+
+def _make_glob_filter(
+    includes: Iterable[str] | None,
+    excludes: Iterable[str] | None
+) -> Callable[[pathlib.Path], bool]:
+    """
+    Build a filter(relative_path: Path) -> bool applying include first, then exclude.
+    - Path argument is relative to source_root
+    - Patterns are matched against POSIX-style relative paths
+    - If includes is empty, defaults to ["**"] (include all)
+    """
+    inc = _normalize_patterns(includes)
+    exc = _normalize_patterns(excludes)
+    if not inc:
+        inc = ["**"]
+
+    def matches_any(patterns: list[str], rel: pathlib.Path) -> bool:
+        posix = rel.as_posix()
+        # pathlib.Path.match uses glob semantics with ** (recursive)
+        return any(rel.match(pat) or pathlib.PurePosixPath(posix).match(pat)
+                   for pat in patterns)
+
+    def _filter(rel: pathlib.Path) -> bool:
+        # Always work on files and directories; we'll add both. If a directory
+        # is excluded, its children still get visited by rglob('*') but will fail here.
+        if not matches_any(inc, rel):
+            return False
+        if exc and matches_any(exc, rel):
+            return False
+        return True
+
+    return _filter
 
 def main(args=None):
     """Run the zipapp command line interface.
@@ -204,19 +264,14 @@ def main(args=None):
                  "Files are stored uncompressed by default.")
     parser.add_argument('--info', default=False, action='store_true',
             help="Display the interpreter from the archive.")
-    parser.add_argument('--include-pattern', default=None,
-            help=(
-                    "Accept a regex filtering for files to be allowed in output"
-                    " archive. This will run first if `--exclude-pattern` is also used."
-                ))
-    parser.add_argument('--exclude-pattern', default=None,
-            help=(
-                    "Accept a regex filtering files to be denied inclusion in output"
-                    " archive. This will run second if `--include-pattern` is also used."
-                    " Usage example: `python -m zipapp myapp -o myapp.pyz --exclude-pattern='.*notthis.*'`"
-                ))
     parser.add_argument('source',
             help="Source directory (or existing archive).")
+    parser.add_argument('--include', action='extend', nargs='+', default=None,
+            help=("Glob pattern(s) of files/dirs to include (relative to SOURCE). "
+                  "Repeat or use commas. Defaults to '**' (everything)."))
+    parser.add_argument('--exclude', action='extend', nargs='+', default=None,
+            help=("Glob pattern(s) of files/dirs to exclude (relative to SOURCE). "
+                  "Repeat or use commas. Applied after --include."))
 
     args = parser.parse_args(args)
 
@@ -234,14 +289,17 @@ def main(args=None):
             raise SystemExit("In-place editing of archives is not supported")
         if args.main:
             raise SystemExit("Cannot change the main function when copying")
-
-    include_pattern = re.compile(args.include_pattern) if args.include_pattern else None
-    exclude_pattern = re.compile(args.exclude_pattern) if args.exclude_pattern else None
+        
+    # build a filter from include and exclude flags
+    filter_fn = None
+    src_path = pathlib.Path(args.source)
+    if src_path.exists() and src_path.is_dir():
+        filter_fn = _make_glob_filter(args.include, args.exclude)
 
     create_archive(args.source, args.output,
                    interpreter=args.python, main=args.main,
-                   compressed=args.compress, include_pattern=include_pattern,
-                   exclude_pattern=exclude_pattern)
+                   compressed=args.compress,
+                   filter=filter_fn)
 
 
 if __name__ == '__main__':

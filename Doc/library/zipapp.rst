@@ -94,15 +94,15 @@ The following options are understood:
    this case, any other options are ignored and SOURCE must be an archive, not a
    directory.
 
-.. option:: --include-pattern
+.. option:: --include
 
-   Accept a regex filtering for files to be allowed in output archive. This will run
-   first if :option:`--exclude-pattern` is also used.
+   Accept glob-like filtering for files to be allowed in output archive. This will run
+   first if :option:`--exclude` is also used.
 
-.. option:: --exclude-pattern
+.. option:: --exclude
 
-   Accept a regex filtering files to be denied inclusion in output archive. This will
-   run second if :option:`--include-pattern` is also used.
+   Accept glob-like filtering files to be denied inclusion in output archive. This will
+   run second if :option:`--include` is also used.
 
 
 .. option:: -h, --help
@@ -241,21 +241,20 @@ fits in memory::
    >>>     f.write(temp.getvalue())
 
 To filter an allow-list or deny-list of files in the directory being zipped, make use
-of :option:`--exclude-pattern` and/or :option:`--include-pattern`.
+of :option:`--exclude` and/or :option:`--include` with glob-style patterns.
 
 .. code-block:: shell-session
 
    $ ls myapp
    __main__.py helper.py   notthis.py
 
-   $ python -m zipapp myapp -o myapp.pyz --exclude-pattern='.*notthis.*'
+   $ python -m zipapp myapp -o myapp.pyz --include "help*" --include "not*" --exclude "n*"
    $ unzip myapp.pyz -d extracted_myapp
    Archive:  myapp.pyz
-    extracting: extracted_myapp/__main__.py
     extracting: extracted_myapp/helper.py
 
    $ ls extracted_myapp
-   __main__.py helper.py
+   helper.py
 
 
 .. _zipapp-specifying-the-interpreter:
