@@ -94,6 +94,17 @@ The following options are understood:
    this case, any other options are ignored and SOURCE must be an archive, not a
    directory.
 
+.. option:: --include
+
+   Accept glob-patterns filtering for files to be allowed in output archive. This will run
+   first if :option:`--exclude` is also used.
+
+.. option:: --exclude
+
+   Accept glob-patterns filtering files to be denied inclusion in output archive. This will
+   run second if :option:`--include` is also used.
+
+
 .. option:: -h, --help
 
    Print a short usage message and exit.
@@ -228,6 +239,22 @@ fits in memory::
    >>> zipapp.create_archive('myapp.pyz', temp, '/usr/bin/python2')
    >>> with open('myapp.pyz', 'wb') as f:
    >>>     f.write(temp.getvalue())
+
+To filter an allow-list or deny-list of files in the directory being zipped, make use
+of :option:`--exclude` and/or :option:`--include` with glob-style patterns.
+
+.. code-block:: shell-session
+
+   $ ls myapp
+   __main__.py helper.py   notthis.py
+
+   $ python -m zipapp myapp -o myapp.pyz --include "help*" --include "not*" --exclude "n*"
+   $ unzip myapp.pyz -d extracted_myapp
+   Archive:  myapp.pyz
+    extracting: extracted_myapp/helper.py
+
+   $ ls extracted_myapp
+   helper.py
 
 
 .. _zipapp-specifying-the-interpreter:
