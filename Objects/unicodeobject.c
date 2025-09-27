@@ -14318,7 +14318,7 @@ unicode_getnewargs(PyObject *v, PyObject *Py_UNUSED(ignored))
 }
 
 /*
-This function searchs the longest common leading whitespace
+This function searches the longest common leading whitespace
 of all lines in the [src, end).
 It returns the length of the common leading whitespace and sets `output` to
 point to the beginning of the common leading whitespace if length > 0.
@@ -14340,7 +14340,7 @@ search_longest_common_leading_whitespace(
 
         // scan the whole line
         while (iter < end && *iter != '\n') {
-            if (!leading_whitespace_end && *iter != ' ' && *iter != '\t') {
+            if (!leading_whitespace_end && !Py_ISSPACE(Py_CHARMASK(*iter))) {
                 /* `iter` points to the first non-whitespace character
                    in this line */
                 if (iter == line_start) {
@@ -14399,7 +14399,7 @@ search_longest_common_leading_whitespace(
 
 /* Dedent a string.
    Behaviour is expected to be an exact match of `textwrap.dedent`.
-   Return a new reference on success, NULL with exception set on error.
+   Return a new reference on success, NULL with an exception set on error.
    */
 PyObject *
 _PyUnicode_Dedent(PyObject *unicode)
@@ -14422,10 +14422,6 @@ _PyUnicode_Dedent(PyObject *unicode)
     Py_ssize_t whitespace_len = search_longest_common_leading_whitespace(
         src, end, &whitespace_start);
 
-    if (whitespace_len == 0) {
-        return Py_NewRef(unicode);
-    }
-
     // now we should trigger a dedent
     char *dest = PyMem_Malloc(src_len);
     if (!dest) {
@@ -14440,7 +14436,7 @@ _PyUnicode_Dedent(PyObject *unicode)
 
         // iterate over a line to find the end of a line
         while (iter < end && *iter != '\n') {
-            if (in_leading_space && *iter != ' ' && *iter != '\t') {
+            if (in_leading_space && !Py_ISSPACE(Py_CHARMASK(*iter))) {
                 in_leading_space = false;
             }
             ++iter;
@@ -14450,8 +14446,10 @@ _PyUnicode_Dedent(PyObject *unicode)
         bool append_newline = iter < end;
 
         // if this line has all white space, write '\n' and continue
-        if (in_leading_space && append_newline) {
-            *dest_iter++ = '\n';
+        if (in_leading_space) {
+            if (append_newline) {
+                *dest_iter++ = '\n';
+            }
             continue;
         }
 
