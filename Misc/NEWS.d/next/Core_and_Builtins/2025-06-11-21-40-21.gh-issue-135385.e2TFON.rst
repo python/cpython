@@ -1,0 +1,2 @@
+Fix a memory regression for classes that have both :attr:`~object.__slots__` and
+:attr:`~object.__dict__`.
