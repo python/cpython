@@ -1,1 +1,1 @@
-Make timeit error traceback can with corlor
+:mod:`timeit`: colorize error tracebacks.
