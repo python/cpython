@@ -1,0 +1,1 @@
+Move test_posix into a new test_os package. Patch by Victor Stinner.
