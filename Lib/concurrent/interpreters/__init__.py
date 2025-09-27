@@ -10,8 +10,8 @@ from _interpreters import (
     is_shareable,
 )
 from ._queues import (
-    create as create_queue,
-    Queue, QueueEmpty, QueueFull,
+    create as create_queue, ItemInterpreterDestroyed,
+    Queue, QueueEmpty, QueueFull, UNBOUND, UNBOUND_ERROR, UNBOUND_REMOVE,
 )
 
 
@@ -19,8 +19,9 @@ __all__ = [
     'get_current', 'get_main', 'create', 'list_all', 'is_shareable',
     'Interpreter',
     'InterpreterError', 'InterpreterNotFoundError', 'ExecutionFailed',
-    'NotShareableError',
+    'NotShareableError', 'ItemInterpreterDestroyed',
     'create_queue', 'Queue', 'QueueEmpty', 'QueueFull',
+    'UNBOUND', 'UNBOUND_ERROR', 'UNBOUND_REMOVE',
 ]
 
 
