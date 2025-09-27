@@ -265,7 +265,7 @@ class Sniffer:
         # _csv.reader won't accept a quotechar of ''
         dialect.quotechar = quotechar or '"'
         dialect.skipinitialspace = skipinitialspace
-
+        dialect.quoting = self._guess_quoting(sample, dialect)
         return dialect
 
 
@@ -448,6 +448,66 @@ class Sniffer:
                             data[0].count("%c " % delim))
         return (delim, skipinitialspace)
 
+    def _guess_quoting(self, data, dialect):
+        """
+        Looks for the quoting rules that are used in the data setting the most conservative quoting rule.
+        """
+        lines = data.split(dialect.lineterminator)
+        if len(lines) == 1:
+            lines = data.split("\n")
+        policies = []
+        for line in lines[:5]:
+            elems = line.split(dialect.delimiter)
+            num_quoted_elems = 0
+            num_float_elems = 0
+            num_none_elems = 0
+            for elem in elems:
+                if not elem:
+                    continue
+                if elem[0] == dialect.quotechar:
+                    num_quoted_elems += 1
+                elem = elem.strip(dialect.quotechar)
+                if dialect.doublequote:
+                    if elem[0] == dialect.quotechar:
+                        elem = elem.strip(dialect.quotechar)
+                    elif elem[0] == '"':
+                        elem = elem.strip('"')
+                    else:
+                        elem = elem.strip("'")
+                try:
+                    float(elem)
+                    num_float_elems += 1
+                    is_float = True
+                except ValueError:
+                    is_float = False
+                if elem == "None":
+                    num_none_elems += 1
+            max_quote_policy = QUOTE_NONE
+            if num_quoted_elems == len(elems):
+                max_quote_policy = QUOTE_ALL
+            elif num_quoted_elems == len(elems) - num_none_elems:
+                max_quote_policy = QUOTE_NOTNULL
+            elif num_quoted_elems == len(elems) - num_float_elems:
+                max_quote_policy = QUOTE_NONNUMERIC
+            elif num_quoted_elems == len(elems) - num_none_elems - num_float_elems:
+                max_quote_policy = QUOTE_STRINGS
+            elif num_quoted_elems > 0:
+                max_quote_policy = QUOTE_MINIMAL
+            policies.append(max_quote_policy)
+        return self._determine_quote_priority(policies)
+
+    def _determine_quote_priority(self, quote_policies):
+        priority_order = {
+            QUOTE_ALL: 50,
+            QUOTE_NOTNULL: 40,
+            QUOTE_NONNUMERIC: 30,
+            QUOTE_STRINGS: 20,
+            QUOTE_MINIMAL: 10,
+            QUOTE_NONE: 0
+        }
+        reverse_priority_order = {v: k for k, v in priority_order.items()}
+        max_priority = map(lambda e:priority_order.get(e, 0), quote_policies)
+        return reverse_priority_order[max(max_priority)]
 
     def has_header(self, sample):
         # Creates a dictionary of types of data in each column. If any
