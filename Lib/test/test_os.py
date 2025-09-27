@@ -3575,9 +3575,11 @@ class PidTests(unittest.TestCase):
         self.assertEqual(os.waitstatus_to_exitcode(status), exitcode)
         self.assertEqual(pid2, pid)
 
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_waitpid(self):
         self.check_waitpid(code='pass', exitcode=0)
 
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_waitstatus_to_exitcode(self):
         exitcode = 23
         code = f'import sys; sys.exit({exitcode})'
@@ -3609,6 +3611,7 @@ class PidTests(unittest.TestCase):
 
     # Skip the test on Windows
     @unittest.skipUnless(hasattr(signal, 'SIGKILL'), 'need signal.SIGKILL')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_waitstatus_to_exitcode_kill(self):
         code = f'import time; time.sleep({support.LONG_TIMEOUT})'
         signum = signal.SIGKILL
@@ -3661,6 +3664,7 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnl')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnl(self):
         program, args = self.create_args()
         exitcode = os.spawnl(os.P_WAIT, program, *args)
@@ -3668,6 +3672,7 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnle')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnle(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnle(os.P_WAIT, program, *args, self.env)
@@ -3675,6 +3680,7 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnlp')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnlp(self):
         program, args = self.create_args()
         exitcode = os.spawnlp(os.P_WAIT, program, *args)
@@ -3682,6 +3688,7 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnlpe')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnlpe(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnlpe(os.P_WAIT, program, *args, self.env)
@@ -3689,6 +3696,7 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnv')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnv(self):
         program, args = self.create_args()
         exitcode = os.spawnv(os.P_WAIT, program, args)
@@ -3700,6 +3708,7 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnve')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnve(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnve(os.P_WAIT, program, args, self.env)
@@ -3707,6 +3716,7 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnvp')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnvp(self):
         program, args = self.create_args()
         exitcode = os.spawnvp(os.P_WAIT, program, args)
@@ -3714,6 +3724,7 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnvpe')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnvpe(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnvpe(os.P_WAIT, program, args, self.env)
@@ -3721,6 +3732,7 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnv')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_nowait(self):
         program, args = self.create_args()
         pid = os.spawnv(os.P_NOWAIT, program, args)
@@ -3728,6 +3740,7 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnve')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnve_bytes(self):
         # Test bytes handling in parse_arglist and parse_envlist (#28114)
         program, args = self.create_args(with_env=True, use_bytes=True)
@@ -3816,11 +3829,13 @@ class SpawnTests(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnve')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnve_invalid_env(self):
         self._test_invalid_env(os.spawnve)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnvpe')
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_spawnvpe_invalid_env(self):
         self._test_invalid_env(os.spawnvpe)
 
@@ -4944,6 +4959,7 @@ class PseudoterminalTests(unittest.TestCase):
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.spawnl()")
     @support.requires_subprocess()
+    @support.run_in_subprocess(if_=sys.platform=='darwin')
     def test_pipe_spawnl(self):
         # gh-77046: On Windows, os.pipe() file descriptors must be created with
         # _O_NOINHERIT to make them non-inheritable. UCRT has no public API to
