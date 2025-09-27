@@ -656,16 +656,15 @@ def request_path(request):
     return path
 
 def request_port(request):
-    host = request.host
-    i = host.find(':')
-    if i >= 0:
-        port = host[i+1:]
-        try:
-            int(port)
-        except ValueError:
-            _debug("nonnumeric port: '%s'", port)
-            return None
+    match = cut_port_re.search(request.host)
+    if match:
+        port = match[0].removeprefix(':')
     else:
+        i = request.host.rfind(':')
+        if (i >= 0
+            and not ']' in request.host[i+1:]
+            and not request.host.startswith('[')): # to prevent IPv6 addresses
+                _debug("nonnumeric port: '%s'", request.host[i+1:])
         port = DEFAULT_HTTP_PORT
     return port
 
@@ -1075,11 +1074,7 @@ class DefaultCookiePolicy(CookiePolicy):
 
     def set_ok_port(self, cookie, request):
         if cookie.port_specified:
-            req_port = request_port(request)
-            if req_port is None:
-                req_port = "80"
-            else:
-                req_port = str(req_port)
+            req_port = str(request_port(request))
             for p in cookie.port.split(","):
                 try:
                     int(p)
@@ -1148,8 +1143,6 @@ class DefaultCookiePolicy(CookiePolicy):
     def return_ok_port(self, cookie, request):
         if cookie.port:
             req_port = request_port(request)
-            if req_port is None:
-                req_port = "80"
             for p in cookie.port.split(","):
                 if p == req_port:
                     break
