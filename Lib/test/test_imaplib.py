@@ -372,7 +372,11 @@ class NewIMAPTestsMixin:
                 self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
             def cmd_APPEND(self, tag, args):
                 self._send_textline('+')
-                self.server.response = yield
+                self.server.response = args
+                literal = yield
+                self.server.response.append(literal)
+                literal = yield
+                self.server.response.append(literal)
                 self._send_tagged(tag, 'OK', 'okay')
         client, server = self._setup(UTF8AppendServer)
         self.assertEqual(client._encoding, 'ascii')
@@ -383,10 +387,13 @@ class NewIMAPTestsMixin:
         self.assertEqual(code, 'OK')
         self.assertEqual(client._encoding, 'utf-8')
         msg_string = 'Subject: üñí©öðé'
-        typ, data = client.append(None, None, None, msg_string.encode('utf-8'))
+        typ, data = client.append(
+            None, None, None, (msg_string + '\n').encode('utf-8'))
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.response,
-            ('UTF8 (%s)\r\n' % msg_string).encode('utf-8'))
+            ['INBOX', 'UTF8',
+             '(~{25}', ('%s\r\n' % msg_string).encode('utf-8'),
+             b')\r\n' ])
 
     def test_search_disallows_charset_in_utf8_mode(self):
         class UTF8Server(SimpleIMAPHandler):
@@ -881,7 +888,11 @@ class ThreadedNetworkedTests(unittest.TestCase):
         class UTF8AppendServer(self.UTF8Server):
             def cmd_APPEND(self, tag, args):
                 self._send_textline('+')
-                self.server.response = yield
+                self.server.response = args
+                literal = yield
+                self.server.response.append(literal)
+                literal = yield
+                self.server.response.append(literal)
                 self._send_tagged(tag, 'OK', 'okay')
 
         with self.reaped_pair(UTF8AppendServer) as (server, client):
@@ -895,12 +906,12 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertEqual(client._encoding, 'utf-8')
             msg_string = 'Subject: üñí©öðé'
             typ, data = client.append(
-                None, None, None, msg_string.encode('utf-8'))
+                None, None, None, (msg_string + '\n').encode('utf-8'))
             self.assertEqual(typ, 'OK')
-            self.assertEqual(
-                server.response,
-                ('UTF8 (%s)\r\n' % msg_string).encode('utf-8')
-            )
+            self.assertEqual(server.response,
+                ['INBOX', 'UTF8',
+                 '(~{25}', ('%s\r\n' % msg_string).encode('utf-8'),
+                 b')\r\n' ])
 
     # XXX also need a test that makes sure that the Literal and Untagged_status
     # regexes uses unicode in UTF8 mode instead of the default ASCII.

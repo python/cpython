@@ -497,8 +497,6 @@ class IMAP4:
         else:
             date_time = None
         literal = MapCRLF.sub(CRLF, message)
-        if self.utf8_enabled:
-            literal = b'UTF8 (' + literal + b')'
         self.literal = literal
         return self._simple_command(name, mailbox, flags, date_time)
 
@@ -1119,7 +1117,11 @@ class IMAP4:
                 literator = literal
             else:
                 literator = None
-                data = data + bytes(' {%s}' % len(literal), self._encoding)
+                if self.utf8_enabled:
+                    data = data + bytes(' UTF8 (~{%s}' % len(literal), self._encoding)
+                    literal = literal + b')'
+                else:
+                    data = data + bytes(' {%s}' % len(literal), self._encoding)
 
         if __debug__:
             if self.debug >= 4:
