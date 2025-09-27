@@ -352,6 +352,7 @@ class EnsureSafeUserHistory(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         cls.__history_file = cls.__history_stat = None
         history_file = _site_gethistoryfile()
         if os.path.exists(history_file):
@@ -359,15 +360,14 @@ class EnsureSafeUserHistory(unittest.TestCase):
             cls.__history_stat = _file_signature(history_file)
 
     def tearDown(self):
+        if self.__history_file is not None:
+            self.assertTrue(
+                os.path.exists(self.__history_file),
+                f"PYTHON_HISTORY file ({self.__history_file!r}) was deleted"
+            )
+            self.assertEqual(
+                self.__history_stat,
+                _file_signature(self.__history_file),
+                f"PYTHON_HISTORY file ({self.__history_file!r}) was altered"
+            )
         super().tearDown()
-        if self.__history_file is None:
-            return
-        self.assertTrue(
-            os.path.exists(self.__history_file),
-            f"PYTHON_HISTORY file ({self.__history_file!r}) was deleted"
-        )
-        self.assertEqual(
-            self.__history_stat,
-            _file_signature(self.__history_file),
-            f"PYTHON_HISTORY file ({self.__history_file!r}) was altered"
-        )
