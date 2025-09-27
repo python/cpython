@@ -100,6 +100,12 @@ class Completer(rlcompleter.Completer):
             noprefix = '__'
         else:
             noprefix = None
+
+        # sort the words now to make sure to return completions in
+        # alphabetical order. It's easier to do it now, else we would need to
+        # sort 'names' later but make sure that 'values' in kept in sync,
+        # which is annoying.
+        words = sorted(words)
         while True:
             for word in words:
                 if (
@@ -130,7 +136,6 @@ class Completer(rlcompleter.Completer):
         if prefix and prefix != attr:
             return [f'{expr}.{prefix}']  # autocomplete prefix
 
-        names.sort()
         if self.use_colors:
             return self.colorize_matches(names, values)
 
