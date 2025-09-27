@@ -839,8 +839,7 @@ geometry
    For example: ``fred["geometry"] = "200x100"``.
 
 justify
-   Legal values are the strings: ``"left"``, ``"center"``, ``"right"``, and
-   ``"fill"``.
+   Legal values are the strings: ``"left"``, ``"center"``, and ``"right"``.
 
 region
    This is a string with four space-delimited elements, each of which is a legal
