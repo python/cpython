@@ -96,12 +96,12 @@ The following options are understood:
 
 .. option:: --include
 
-   Accept glob-like filtering for files to be allowed in output archive. This will run
+   Accept glob-patterns filtering for files to be allowed in output archive. This will run
    first if :option:`--exclude` is also used.
 
 .. option:: --exclude
 
-   Accept glob-like filtering files to be denied inclusion in output archive. This will
+   Accept glob-patterns filtering files to be denied inclusion in output archive. This will
    run second if :option:`--include` is also used.
 
 
