@@ -803,8 +803,8 @@ New features
   (Contributed by Victor Stinner in :gh:`129813`.)
 
 
-Limited C API changes
----------------------
+Changed C APIs
+--------------
 
 * If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` and :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
   flags are set then :c:macro:`Py_TPFLAGS_HAVE_GC` must be set too.
