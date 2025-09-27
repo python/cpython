@@ -1612,7 +1612,7 @@ Cursor objects
       value from one :meth:`fetchmany` call to the next.
 
       .. versionchanged:: next
-         Reject negative *size* values by rasing :exc:`ValueError`.
+         Negative *size* values are rejected by raising :exc:`ValueError`.
 
    .. method:: fetchall()
 
@@ -1642,7 +1642,7 @@ Cursor objects
       The default value is 1 which means a single row would be fetched per call.
 
       .. versionchanged:: next
-         Reject negative values by rasing :exc:`ValueError`.
+         Negative values are rejected by raising :exc:`ValueError`.
 
    .. attribute:: connection
 
