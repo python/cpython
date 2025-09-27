@@ -407,7 +407,7 @@ Speedup pasting in ``PyREPL`` on Windows. Fix by Chris Eibl.
 .. nonce: 6zoyp5
 .. section: Library
 
-Fix copying of :class:`typing.Union` objects containing objects that do not
+Fix copying of :data:`typing.Union` objects containing objects that do not
 support the ``|`` operator.
 
 ..

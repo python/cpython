@@ -284,10 +284,12 @@ class ForwardRef:
         ))
 
     def __or__(self, other):
-        return types.UnionType[self, other]
+        import typing
+        return typing.Union[self, other]
 
     def __ror__(self, other):
-        return types.UnionType[other, self]
+        import typing
+        return typing.Union[other, self]
 
     def __repr__(self):
         extra = []
