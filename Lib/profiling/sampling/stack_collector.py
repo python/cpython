@@ -5,8 +5,10 @@ import importlib.resources
 import json
 import linecache
 import os
+import platform
+import time
 
-from .collector import Collector
+from .collector import Collector, THREAD_STATE_RUNNING
 from .string_table import StringTable
 
 
