@@ -1230,7 +1230,8 @@ pyexpat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold
 
 Sets the number of output bytes needed to activate protection against billion laughs attacks.
 
-By default, parser objects have a protection activation threshold of 8 MiB.
+Parser objects usually have a protection activation threshold of 8 MiB,
+but the actual default value depends on the underlying Expat library.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1268,14 +1269,15 @@ or equal to 1.0. Amplification factors greater than 30,000 can be observed
 in the middle of parsing even with benign files in practice. In particular,
 the activation threshold should be carefully chosen to avoid false positives.
 
-By default, parser objects have a maximum amplification factor of 100.0.
+Parser objects usually have a maximum amplification factor of 100,
+but the actual default value depends on the underlying Expat library.
 [clinic start generated code]*/
 
 static PyObject *
 pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification_impl(xmlparseobject *self,
                                                                             PyTypeObject *cls,
                                                                             float max_factor)
-/*[clinic end generated code: output=c590439eadf463fa input=aec034366805f6c7]*/
+/*[clinic end generated code: output=c590439eadf463fa input=c5bae55c9b25d045]*/
 {
     return set_maximum_amplification(
         self, cls, max_factor,
@@ -1296,7 +1298,8 @@ pyexpat.xmlparser.SetAllocTrackerActivationThreshold
 
 Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.
 
-By default, parser objects have an allocation activation threshold of 64 MiB.
+Parser objects usually have an allocation activation threshold of 64 MiB,
+but the actual default value depends on the underlying Expat library.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1334,14 +1337,15 @@ or equal to 1.0. Amplification factors greater than 100.0 can be observed
 near the start of parsing even with benign files in practice. In particular,
 the activation threshold should be carefully chosen to avoid false positives.
 
-By default, parser objects have a maximum amplification factor of 100.0.
+Parser objects usually have a maximum amplification factor of 100,
+but the actual default value depends on the underlying Expat library.
 [clinic start generated code]*/
 
 static PyObject *
 pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            PyTypeObject *cls,
                                                            float max_factor)
-/*[clinic end generated code: output=6e44bd48c9b112a0 input=3544abf9dd7ae055]*/
+/*[clinic end generated code: output=6e44bd48c9b112a0 input=aac2029e96e80b03]*/
 {
     return set_maximum_amplification(
         self, cls, max_factor,

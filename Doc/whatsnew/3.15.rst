@@ -564,7 +564,8 @@ xml.parsers.expat
 
 * Add :meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold`
   and :meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification`
-  to :ref:`xmlparser <xmlparser-objects>` objects to tune `billion laughs`_ attacks protection.
+  to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
+  `billion laughs`_ attacks.
   (Contributed by Bénédikt Tran in :gh:`90949`.)
 
   .. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack

@@ -409,7 +409,7 @@ exit:
 
 #endif /* (XML_COMBINED_VERSION >= 19505) */
 
-#if (XML_COMBINED_VERSION >= 20402)
+#if (XML_COMBINED_VERSION >= 20400)
 
 PyDoc_STRVAR(pyexpat_xmlparser_SetBillionLaughsAttackProtectionActivationThreshold__doc__,
 "SetBillionLaughsAttackProtectionActivationThreshold($self, threshold, /)\n"
@@ -461,9 +461,9 @@ exit:
     return return_value;
 }
 
-#endif /* (XML_COMBINED_VERSION >= 20402) */
+#endif /* (XML_COMBINED_VERSION >= 20400) */
 
-#if (XML_COMBINED_VERSION >= 20402)
+#if (XML_COMBINED_VERSION >= 20400)
 
 PyDoc_STRVAR(pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification__doc__,
 "SetBillionLaughsAttackProtectionMaximumAmplification($self, max_factor,\n"
@@ -482,7 +482,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplificat
 "in the middle of parsing even with benign files in practice. In particular,\n"
 "the activation threshold should be carefully chosen to avoid false positives.\n"
 "\n"
-"By default, parser objects have a maximum amplification factor of 100.0.");
+"By default, parser objects have a maximum amplification factor of 100.");
 
 #define PYEXPAT_XMLPARSER_SETBILLIONLAUGHSATTACKPROTECTIONMAXIMUMAMPLIFICATION_METHODDEF    \
     {"SetBillionLaughsAttackProtectionMaximumAmplification", _PyCFunction_CAST(pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetBillionLaughsAttackProtectionMaximumAmplification__doc__},
@@ -533,7 +533,7 @@ exit:
     return return_value;
 }
 
-#endif /* (XML_COMBINED_VERSION >= 20402) */
+#endif /* (XML_COMBINED_VERSION >= 20400) */
 
 #if (XML_COMBINED_VERSION >= 20702)
 
@@ -603,11 +603,11 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__,
 "hierarchy.\n"
 "\n"
 "The \'max_factor\' value must be a non-NaN floating point value greater than\n"
-"or equal to 1.0. Amplification factors greater than 100.0 can be observed\n"
+"or equal to 1.0. Amplification factors greater than 100 can be observed\n"
 "near the start of parsing even with benign files in practice. In particular,\n"
 "the activation threshold should be carefully chosen to avoid false positives.\n"
 "\n"
-"By default, parser objects have a maximum amplification factor of 100.0.");
+"By default, parser objects have a maximum amplification factor of 100.");
 
 #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF    \
     {"SetAllocTrackerMaximumAmplification", _PyCFunction_CAST(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__},
@@ -820,4 +820,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF) */
-/*[clinic end generated code: output=f4677d6fb447c9cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=97bf658042d38f83 input=a9049054013a1b77]*/
