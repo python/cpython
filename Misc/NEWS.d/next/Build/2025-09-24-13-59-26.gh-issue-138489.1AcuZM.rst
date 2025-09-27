@@ -1,0 +1,6 @@
+When cross-compiling for WASI by ``build_wasm`` or ``build_emscripten``, the
+``build-details.json`` step is now included in the build process, just like
+with native builds.
+
+This fixes the ``libinstall`` task which requires the ``build-details.json``
+file during the process.
