@@ -1185,6 +1185,7 @@ Special attributes
    single: __module__ (class attribute)
    single: __dict__ (class attribute)
    single: __bases__ (class attribute)
+   single: __base__ (class attribute)
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
    single: __annotate__ (class attribute)
@@ -1218,6 +1219,16 @@ Special attributes
      - A :class:`tuple` containing the class's bases.
        In most cases, for a class defined as ``class X(A, B, C)``,
        ``X.__bases__`` will be exactly equal to ``(A, B, C)``.
+
+   * - .. attribute:: type.__base__
+     - The base class that determines the instance layout. This attribute
+       identifies the single base class in the inheritance chain that is
+       responsible for the memory layout of instances, corresponding to
+       :c:member:`~PyTypeObject.tp_base` at the C level.
+
+       .. impl-detail::
+          Note that behavior of the ``__base__`` attribute is dependent on the
+          :term:`CPython` implementation.
 
    * - .. attribute:: type.__doc__
      - The class's documentation string, or ``None`` if undefined.
