@@ -411,6 +411,12 @@ class QueryTestCase(unittest.TestCase):
         'third': 3}]"""
         self.assertEqual(pprint.pformat(o, indent=4, width=41), expected)
 
+        expected = "[   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],\n" \
+                   "    {   'first': 1,\n        'second': 2,\n        'third': 3}]\n"
+        stream = io.StringIO()
+        pprint.pprint(o, stream=stream, indent=4, width=41)
+        self.assertEqual(stream.getvalue(), expected)
+
     def test_width(self):
         expected = """\
 [[[[[[1, 2, 3],
@@ -449,9 +455,37 @@ class QueryTestCase(unittest.TestCase):
      '1 '
      '2']]]]]""")
 
+        expected = "[[[[[[1, 2, 3],\n     '1 2']]]],\n {1: [1, 2, 3],\n  2: [12, 34]},\n "\
+                   "'abc def ghi',\n ('ab cd ef',),\n set2({1, 23}),\n [[[[[1, 2, 3],\n     " \
+                   "'1 2']]]]]\n"
+        stream = io.StringIO()
+        pprint.pprint(o, stream=stream, width=15)
+        self.assertEqual(stream.getvalue(), expected)
+        stream = io.StringIO()
+        pprint.pprint(o, stream=stream, width=16)
+        stream = io.StringIO()
+        pprint.pprint(o, stream=stream, width=25)
+        self.assertEqual(stream.getvalue(), expected)
+        stream = io.StringIO()
+        pprint.pprint(o, stream=stream, width=14)
+        expected = "[[[[[[1,\n      2,\n      3],\n     '1 '\n     '2']]]],\n {1: [1,\n      " \
+                   "2,\n      3],\n  2: [12,\n      34]},\n 'abc def '\n 'ghi',\n ('ab cd '\n  " \
+                   "'ef',),\n set2({1,\n       23}),\n [[[[[1,\n      2,\n      3],\n     " \
+                   "'1 '\n     '2']]]]]\n"
+
+        self.assertEqual(stream.getvalue(), expected)
+
     def test_integer(self):
         self.assertEqual(pprint.pformat(1234567), '1234567')
         self.assertEqual(pprint.pformat(1234567, underscore_numbers=True), '1_234_567')
+
+        stream = io.StringIO()
+        pprint.pprint(1234567, stream=stream)
+        self.assertEqual(stream.getvalue(), '1234567\n')
+
+        stream = io.StringIO()
+        pprint.pprint(1234567, stream=stream, underscore_numbers=True)
+        self.assertEqual(stream.getvalue(), '1_234_567\n')
 
         class Temperature(int):
             def __new__(cls, celsius_degrees):
@@ -460,6 +494,10 @@ class QueryTestCase(unittest.TestCase):
                 kelvin_degrees = self + 273.15
                 return f"{kelvin_degrees:.2f}°K"
         self.assertEqual(pprint.pformat(Temperature(1000)), '1273.15°K')
+
+        stream = io.StringIO()
+        pprint.pprint(Temperature(1000), stream=stream)
+        self.assertEqual(stream.getvalue(), '1273.15°K\n')
 
     def test_sorted_dict(self):
         # Starting in Python 2.5, pprint sorts dict displays by key regardless
@@ -481,9 +519,20 @@ class QueryTestCase(unittest.TestCase):
 
     def test_sort_dict(self):
         d = dict.fromkeys('cba')
-        self.assertEqual(pprint.pformat(d, sort_dicts=False), "{'c': None, 'b': None, 'a': None}")
+
+        expected_unsorted = "{'c': None, 'b': None, 'a': None}"
+        expected_unsorted_list = "[{'c': None, 'b': None, 'a': None}, {'c': None, 'b': None, 'a': None}]"
+        self.assertEqual(pprint.pformat(d, sort_dicts=False), expected_unsorted)
         self.assertEqual(pprint.pformat([d, d], sort_dicts=False),
-            "[{'c': None, 'b': None, 'a': None}, {'c': None, 'b': None, 'a': None}]")
+            expected_unsorted_list)
+
+        stream = io.StringIO()
+        pprint.pprint(d, stream=stream, sort_dicts=False)
+        self.assertEqual(stream.getvalue(), expected_unsorted + "\n")
+
+        stream = io.StringIO()
+        pprint.pprint([d, d], stream=stream, sort_dicts=False)
+        self.assertEqual(stream.getvalue(), expected_unsorted_list + "\n")
 
     def test_ordered_dict(self):
         d = collections.OrderedDict()
@@ -995,12 +1044,42 @@ frozenset2({0,
         self.assertEqual(pprint.pformat(nested_dict), repr(nested_dict))
         self.assertEqual(pprint.pformat(nested_list), repr(nested_list))
 
+        stream = io.StringIO()
+        pprint.pprint(nested_tuple, stream=stream)
+        expected = f"{repr(nested_tuple)}\n"
+        self.assertEqual(stream.getvalue(), expected)
+
+        stream = io.StringIO()
+        pprint.pprint(nested_dict, stream=stream)
+        expected = f"{repr(nested_dict)}\n"
+        self.assertEqual(stream.getvalue(), expected)
+
+        stream = io.StringIO()
+        pprint.pprint(nested_list, stream=stream)
+        expected = f"{repr(nested_list)}\n"
+        self.assertEqual(stream.getvalue(), expected)
+
         lv1_tuple = '(1, (...))'
         lv1_dict = '{1: {...}}'
         lv1_list = '[1, [...]]'
         self.assertEqual(pprint.pformat(nested_tuple, depth=1), lv1_tuple)
         self.assertEqual(pprint.pformat(nested_dict, depth=1), lv1_dict)
         self.assertEqual(pprint.pformat(nested_list, depth=1), lv1_list)
+
+        stream = io.StringIO()
+        pprint.pprint(nested_tuple, stream=stream, depth=1)
+        expected = lv1_tuple + "\n"
+        self.assertEqual(stream.getvalue(), expected)
+
+        stream = io.StringIO()
+        pprint.pprint(nested_dict, stream=stream, depth=1)
+        expected = lv1_dict + "\n"
+        self.assertEqual(stream.getvalue(), expected)
+
+        stream = io.StringIO()
+        pprint.pprint(nested_list, stream=stream, depth=1)
+        expected = lv1_list + "\n"
+        self.assertEqual(stream.getvalue(), expected)
 
     def test_sort_unorderable_values(self):
         # Issue 3976:  sorted pprints fail for unorderable values.
@@ -1121,6 +1200,11 @@ frozenset2({0,
  [], [0], [0, 1], [0, 1, 2], [0, 1, 2, 3],
  [0, 1, 2, 3, 4]]"""
         self.assertEqual(pprint.pformat(o, width=47, compact=True), expected)
+
+        stream = io.StringIO()
+        pprint.pprint(o, stream=stream, width=47, compact=True)
+        expected_pprint = expected + "\n"
+        self.assertEqual(stream.getvalue(), expected_pprint)
 
     def test_compact_width(self):
         levels = 20
