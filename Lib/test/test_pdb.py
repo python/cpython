@@ -17,14 +17,14 @@ import zipapp
 import zipfile
 
 from asyncio.events import _set_event_loop_policy
-from contextlib import ExitStack, redirect_stdout
+from contextlib import ExitStack, redirect_stdout, redirect_stderr
 from io import StringIO
 from test import support
 from test.support import has_socket_support, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from test.support.script_helper import kill_python
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 SKIP_CORO_TESTS = False
 
@@ -4539,6 +4539,18 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    def test_nested_breakpoint_calls(self):
+        # gh-138641 pdb.set_trace() called when already in the debugger
+        mock_frame = Mock()
+        mock_frame.f_code.co_name = 'interaction'
+        mock_frame.f_code.co_filename = '/path/to/pdb.py'
+        mock_frame.f_back = None
+        captured_stderr = io.StringIO()
+        with redirect_stderr(captured_stderr):
+            with patch('sys._getframe', return_value=mock_frame):
+                pdb.set_trace()
+        stderr_content = captured_stderr.getvalue()
+        self.assertIn("Nested breakpoint calls are not supported", stderr_content)
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
