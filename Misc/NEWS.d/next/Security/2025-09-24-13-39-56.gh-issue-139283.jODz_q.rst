@@ -1,0 +1,4 @@
+:mod:`sqlite3`: correctly handle maximum number of rows to fetch in
+:meth:`Cursor.fetchmany <sqlite3.Cursor.fetchmany>` and reject negative
+values for :attr:`Cursor.arraysize <sqlite3.Cursor.arraysize>`. Patch by
+Bénédikt Tran.
