@@ -575,6 +575,11 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
         self.assertEqual(addr, copy.copy(addr))
         self.assertEqual(addr, copy.deepcopy(addr))
 
+    def test_ipv6_interface_scope_id(self):
+        addr = ipaddress.IPv6Address("fe80::%10")
+        addr_with_prefix = ipaddress.IPv6Interface((addr, 64))
+        self.assertEqual(addr_with_prefix.ip, ipaddress.IPv6Address("fe80::%10"))
+
 
 class NetmaskTestMixin_v4(CommonTestMixin_v4):
     """Input validation on interfaces and networks is very similar"""
