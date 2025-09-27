@@ -1229,13 +1229,17 @@ codegen_type_param_bound_or_default(compiler *c, expr_ty e,
 }
 
 static int
-codegen_type_params(compiler *c, asdl_type_param_seq *type_params)
+codegen_type_params(compiler *c, asdl_type_param_seq *type_params, PyObject *name)
 {
     if (!type_params) {
         return SUCCESS;
     }
     Py_ssize_t n = asdl_seq_LEN(type_params);
     bool seen_default = false;
+    PyObject *qualname = _PyCompile_PeekQualname(c, name);
+    if (qualname == NULL) {
+        return ERROR;
+    }
 
     for (Py_ssize_t i = 0; i < n; i++) {
         type_param_ty typeparam = asdl_seq_GET(type_params, i);
@@ -1312,8 +1316,14 @@ codegen_type_params(compiler *c, asdl_type_param_seq *type_params)
             RETURN_IF_ERROR(codegen_nameop(c, loc, typeparam->v.ParamSpec.name, Store));
             break;
         }
+        RETURN_IF_ERROR(codegen_nameop(c, loc, &_Py_ID(__name__), Load));
+        ADDOP_LOAD_CONST(c, loc, qualname);
+        ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromSsize_t(i));
+        ADDOP_I(c, loc, BUILD_TUPLE, 3);
+        ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_OWNER);
     }
     ADDOP_I(c, LOC(asdl_seq_GET(type_params, 0)), BUILD_TUPLE, n);
+    Py_DECREF(qualname);
     return SUCCESS;
 }
 
@@ -1462,7 +1472,7 @@ codegen_function(compiler *c, stmt_ty s, int is_async)
                                       (void *)type_params, firstlineno, NULL, &umd);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params, name));
         for (int i = 0; i < num_typeparam_args; i++) {
             ADDOP_I_IN_SCOPE(c, loc, LOAD_FAST, i);
         }
@@ -1654,7 +1664,7 @@ codegen_class(compiler *c, stmt_ty s)
                                       (void *)type_params, firstlineno, s->v.ClassDef.name, NULL);
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params, s->v.ClassDef.name));
         _Py_DECLARE_STR(type_params, ".type_params");
         RETURN_IF_ERROR_IN_SCOPE(c, codegen_nameop(c, loc, &_Py_STR(type_params), Store));
     }
@@ -1751,7 +1761,7 @@ codegen_typealias(compiler *c, stmt_ty s)
         Py_DECREF(type_params_name);
         RETURN_IF_ERROR(ret);
         ADDOP_LOAD_CONST_IN_SCOPE(c, loc, name);
-        RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params));
+        RETURN_IF_ERROR_IN_SCOPE(c, codegen_type_params(c, type_params, name));
     }
     else {
         ADDOP_LOAD_CONST(c, loc, name);
