@@ -4,10 +4,11 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import unittest
 from functools import partial
 from test.support import os_helper, force_not_colorized_test_class
-from test.support import script_helper
+from test.support import script_helper, threading_helper
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
@@ -317,23 +318,16 @@ class TestConsole(TestCase):
             console.prepare()  # needed to call restore()
             console.restore()  # this should succeed
 
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_restore_in_thread(self, _os_write):
-        # for gh-139391
-        import threading
+        # gh-139391: ensure that console.restore() silently suppresses
+        # exceptions when calling signal.signal() from a non-main thread.
         console = unix_console([])
         console.old_sigwinch = signal.SIG_DFL
-        exception_caught = []
-        def thread_target():
-            try:
-                console.restore()
-            except Exception as e:
-                exception_caught.append(e)
-        thread = threading.Thread(target=thread_target)
+        thread = threading.Thread(target=console.restore)
         thread.start()
-        thread.join()
-        # gh-139391: should not raise any exception when called from non-main thread
-        self.assertEqual(len(exception_caught), 0,
-                        "restore() should not raise any exception in non-main thread")
+        thread.join()  # this should not raise
 
 
 @unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
