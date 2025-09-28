@@ -317,6 +317,24 @@ class TestConsole(TestCase):
             console.prepare()  # needed to call restore()
             console.restore()  # this should succeed
 
+    def test_restore_in_thread(self, _os_write):
+        # for gh-139391
+        import threading
+        console = unix_console([])
+        console.old_sigwinch = signal.SIG_DFL
+        exception_caught = []
+        def thread_target():
+            try:
+                console.restore()
+            except ValueError as e:
+                if "signal only works in main thread" in str(e):
+                    exception_caught.append(e)
+        thread = threading.Thread(target=thread_target)
+        thread.start()
+        thread.join()
+        self.assertEqual(len(exception_caught), 0,
+                        "restore() should not raise ValueError in non-main thread")
+
 
 @unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
 class TestUnixConsoleEIOHandling(TestCase):

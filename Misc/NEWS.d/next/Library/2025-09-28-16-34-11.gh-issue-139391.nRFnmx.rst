@@ -1,0 +1,2 @@
+Fix crash in PyREPL asyncio mode when using Ctrl+Z (suspend) followed by
+``fg`` (resume).

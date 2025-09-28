@@ -390,7 +390,15 @@ class UnixConsole(Console):
             os.write(self.output_fd, b"\033[?7h")
 
         if hasattr(self, "old_sigwinch"):
-            signal.signal(signal.SIGWINCH, self.old_sigwinch)
+            # Only restore signal handler if we're in the main thread
+            # signal.signal() only works in the main thread of the main interpreter
+            try:
+                signal.signal(signal.SIGWINCH, self.old_sigwinch)
+            except ValueError:
+                # This can happen when called from a non-main thread
+                # (e.g., asyncio REPL). In this case, we skip signal restoration
+                # to avoid the "signal only works in main thread" error.
+                pass
             del self.old_sigwinch
 
     def push_char(self, char: int | bytes) -> None:
