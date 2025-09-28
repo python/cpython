@@ -225,7 +225,6 @@ class TestTimeit(unittest.TestCase):
         self.assertStartsWith(exc_lines[0], 'Traceback')
         self.assertStartsWith(exc_lines[-1], expected_exc_name)
 
-    @force_not_colorized
     def test_print_exc(self):
         s = io.StringIO()
         t = timeit.Timer("1/0")

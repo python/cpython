@@ -531,8 +531,8 @@ tarfile
 timeit
 ------
 
-* The command-line interface now colorize error tracebacks
-  by default. This can be controlled by
+* The command-line interface now colorizes error tracebacks
+  by default. This can be controlled with
   :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Yi Hong in :gh:`139374`.)
 
