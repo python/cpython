@@ -155,7 +155,7 @@ class Timer:
         usage. When used from the command line, this is automatically
         set based on terminal capabilities.
         """
-        import linecache, traceback, sys
+        import linecache, traceback
         if self.src is not None:
             linecache.cache[dummy_src_name] = (len(self.src),
                                                None,
