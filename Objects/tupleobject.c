@@ -134,14 +134,14 @@ PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
     return 0;
 }
 
-void
+int
 _PyTuple_MaybeUntrack(PyObject *op)
 {
     PyTupleObject *t;
     Py_ssize_t i, n;
 
     if (!PyTuple_CheckExact(op) || !_PyObject_GC_IS_TRACKED(op))
-        return;
+        return 0;
     t = (PyTupleObject *) op;
     n = Py_SIZE(t);
     for (i = 0; i < n; i++) {
@@ -151,9 +151,10 @@ _PyTuple_MaybeUntrack(PyObject *op)
            them yet. */
         if (!elt ||
             _PyObject_GC_MAY_BE_TRACKED(elt))
-            return;
+            return 0;
     }
     _PyObject_GC_UNTRACK(op);
+    return 1;
 }
 
 PyObject *
