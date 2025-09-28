@@ -57,12 +57,12 @@ ONLY build in a `build/` subdirectory that you create at the repo root.
 * let `BUILD_DIR=REPO_ROOT/build`
 * Setup: `cd BUILD_DIR && ../configure --with-pydebug`
 * `make -C BUILD_DIR -j $(nproc)` will rebuild
-* Check what OS you are running on. Let `BUILT_PY=BUILD_DIR/python` or `BUILD_DIR/python.exe` on macOS.
+* Check what OS you are running on. Let `BUILT_PY=BUILD_DIR/python` or `BUILD_DIR/python.exe` on macOS (.exe is used to avoid a case insensitive fs name conflict)
 * If you are on Windows, ask the user how to build.
 
 ## Running our built Python and tests
 
-* ALWAYS use sub-agents when running tests
+* ALWAYS use sub-agents when running builds or tests
 * NEVER use `pytest`. CPython tests are `unittest` based.
 * use `BUILT_PY` to run the interpreter we've built
 * Individual test files can be run directly using `BUILT_PY Lib/test/test_csv.py`
@@ -71,7 +71,14 @@ ONLY build in a `build/` subdirectory that you create at the repo root.
 * `make -C BUILD_DIR clinic` will regenerate argument clinic generated code. Do this after you've edited a corresponding input .c file in a way that changes a C extension module function signature or docstring
 * `make -C BUILD_DIR test` will run the entire test suite. Do that sparingly. Focus on specific tests first and ask before running the entire test suite.
 * Some tests are packages rather than a single .py file. These require `load_tests()` logic in their `test_package/__init__.py` file in order to work via `BUILT_PY -m test` commands.
-* To collect Python code coverage from part of the test suite, use `BUILD_PY -m test -j $(nproc) --coverage test_name --coveragedir .claude/coverage_dir/`; this uses a `trace` based mechanism as implemented using libregrtest.
+* To collect Python code coverage from part of the test suite, use `BUILT_PY -m test -j $(nproc) --coverage test_name --coveragedir .claude/coverage_dir/`; this uses a `trace` based mechanism as implemented using libregrtest.
+
+## Common workflows
+
+* After editing C code: `make -C BUILD_DIR && BUILT_PY -m test relevant_tests`
+* After editing stdlib Python: `BUILT_PY -m test relevant_tests --match specific_test_name_glob` (no rebuild needed)
+* After editing .rst documentation: `make -C BUILD_DIR/Doc check`
+* Before committing: `make -C BUILD_DIR patchcheck && pre-commit run --all-files`
 
 ### Debugging
 
@@ -80,11 +87,4 @@ ONLY build in a `build/` subdirectory that you create at the repo root.
 ## Scratch space
 
 * NEVER create throw away idea exploration files in the top directory of the repo. Use a `.claude/sandbox/` directory for those. They will never be committed.
-
-## Linting
-
-* `pre-commit run --all-files`
-* Run these steps from the repo root:
- * `make -C BUILD_DIR patchcheck` should be made to pass before committing.
- * For public documentation changes `make -C Doc check`
 
