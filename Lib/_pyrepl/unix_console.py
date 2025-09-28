@@ -399,7 +399,7 @@ class UnixConsole(Console):
                     # from a non-main thread on a non-Windows platform. Otherwise,
                     # we need to re-raise it as its cause could be different.
                     if threading.current_thread() is threading.main_thread():
-                            raise e
+                        raise e
             del self.old_sigwinch
 
     def push_char(self, char: int | bytes) -> None:
