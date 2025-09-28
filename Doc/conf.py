@@ -548,6 +548,11 @@ extlinks_detect_hardcoded_links = True
 refcount_file = 'data/refcounts.dat'
 stable_abi_file = 'data/stable_abi.dat'
 
+# Options for notfound.extension
+# ------------------------------
+if not os.getenv("READTHEDOCS"):  # RTD uses different URLs patterns
+    notfound_urls_prefix = '/3/'
+
 # Options for sphinxext-opengraph
 # -------------------------------
 
