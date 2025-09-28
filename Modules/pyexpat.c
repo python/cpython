@@ -72,11 +72,11 @@ pyexpat_get_state(PyObject *module)
 
 /* Declarations for objects of type xmlparser */
 
-typedef struct xmlparseobject_ {
+typedef struct xmlparseobject {
     PyObject_HEAD
 
     XML_Parser itself;
-    struct xmlparseobject_ * parent;
+    struct xmlparseobject * parent;
     int ordered_attributes;     /* Return attributes as a list. */
     int specified_attributes;   /* Report only specified attributes. */
     int in_callback;            /* Is a callback active? */
