@@ -6,7 +6,7 @@ import threading
 import time
 import unittest
 
-from test.support import import_helper, skip_if_sanitizer
+from test.support import import_helper
 
 _channels = import_helper.import_module('_interpchannels')
 from concurrent.interpreters import _crossinterp
