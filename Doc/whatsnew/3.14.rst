@@ -2804,7 +2804,7 @@ CPython bytecode changes
   opcode with the ``NB_SUBSCR`` oparg.
   (Contributed by Irit Katriel in :gh:`100239`.)
 
-* Add the :opcode:`BUILD_INTERPOLATION` & :opcode:`BUILD_TEMPLATE`
+* Add the :opcode:`BUILD_INTERPOLATION` and :opcode:`BUILD_TEMPLATE`
   opcodes to construct new :class:`~string.templatelib.Interpolation`
   and :class:`~string.templatelib.Template` instances, respectively.
   (Contributed by Lysandros Nikolaou and others in :gh:`132661`;
@@ -2818,12 +2818,12 @@ CPython bytecode changes
   :opcode:`LOAD_COMMON_CONSTANT` and add support for loading
   :exc:`NotImplementedError`.
 
-* Add the :opcode:`LOAD_FAST_BORROW` & :opcode:`LOAD_FAST_BORROW_LOAD_FAST_BORROW`
+* Add the :opcode:`LOAD_FAST_BORROW` and :opcode:`LOAD_FAST_BORROW_LOAD_FAST_BORROW`
   opcodes to reduce reference counting overhead when the interpreter can prove
   that the reference in the frame outlives the reference loaded onto the stack.
   (Contributed by Matt Page in :gh:`130704`.)
 
-* Add the :opcode:`LOAD_SMALL_INT`  opcode, which pushes a small integer
+* Add the :opcode:`LOAD_SMALL_INT` opcode, which pushes a small integer
   equal to the ``oparg`` to the stack.
   The :opcode:`!RETURN_CONST` opcode is removed as it is no longer used.
   (Contributed by Mark Shannon in :gh:`125837`.)
@@ -2850,7 +2850,7 @@ Pseudo-instructions
   accessed from the inline cache.
   (Contributed by Irit Katriel in :gh:`100239`.)
 
-* Add three specialisations for :opcode:`CALL_KW`;
+* Add three specializations for :opcode:`CALL_KW`;
   :opcode:`!CALL_KW_PY` for calls to Python functions,
   :opcode:`!CALL_KW_BOUND_METHOD` for calls to bound methods, and
   :opcode:`!CALL_KW_NON_PY` for all other calls.
