@@ -2845,7 +2845,7 @@ Pseudo-instructions
   :ref:`deferred evaluation of annotations <whatsnew314-pep649>`.
   (Contributed by Jelle Zijlstra in :gh:`130907`.)
 
-* Add the :opcode:`BINARY_OP_EXTEND` pseudo instruction,
+* Add the :opcode:`!BINARY_OP_EXTEND` pseudo instruction,
   which executes a pair of functions (guard and specialization functions)
   accessed from the inline cache.
   (Contributed by Irit Katriel in :gh:`100239`.)
@@ -2861,7 +2861,7 @@ Pseudo-instructions
   Replaced by the sequence ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
   (Contributed by Irit Katriel in :gh:`124285`.)
 
-* Add the :opcode:`LOAD_CONST_MORTAL` pseudo instruction.
+* Add the :opcode:`!LOAD_CONST_MORTAL` pseudo instruction.
   (Contributed by Mark Shannon in :gh:`128685`.)
 
 * Add the :opcode:`!LOAD_CONST_IMMORTAL` pseudo instruction,
