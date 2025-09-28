@@ -265,9 +265,9 @@ def main(args=None, *, _wrap_timer=None):
     """
     if args is None:
         args = sys.argv[1:]
-    import getopt
     import _colorize
-    colorize_errors = _colorize.can_colorize()
+    import getopt
+    colorize = _colorize.can_colorize()
 
     try:
         opts, args = getopt.getopt(args, "n:u:s:r:pvh",
@@ -335,7 +335,7 @@ def main(args=None, *, _wrap_timer=None):
         try:
             number, _ = t.autorange(callback)
         except:
-            t.print_exc(colorize=colorize_errors)
+            t.print_exc(colorize=colorize)
             return 1
 
         if verbose:
@@ -344,7 +344,7 @@ def main(args=None, *, _wrap_timer=None):
     try:
         raw_timings = t.repeat(repeat, number)
     except:
-        t.print_exc(colorize=colorize_errors)
+        t.print_exc(colorize=colorize)
         return 1
 
     def format_time(dt):
