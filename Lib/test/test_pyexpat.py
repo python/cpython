@@ -773,7 +773,7 @@ class ForeignDTDTests(unittest.TestCase):
 
 class ParentParserLifetimeTest(unittest.TestCase):
     """
-    Subparser make use of the parent XML_Parser inside of Expat.
+    Subparsers make use of their parent XML_Parser inside of Expat.
     As a result, parent parsers need to outlive subparsers.
     Regression test for issue 139400
     """
