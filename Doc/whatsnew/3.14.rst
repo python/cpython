@@ -2800,8 +2800,8 @@ Deprecated
 CPython bytecode changes
 ========================
 
-* Replaced the opcode :opcode:`!BINARY_SUBSCR` by :opcode:`BINARY_OP`
-  with oparg ``NB_SUBSCR``.
+* Replaced the opcode :opcode:`!BINARY_SUBSCR` by the :opcode:`BINARY_OP`
+  opcode with the ``NB_SUBSCR`` oparg.
   (Contributed by Irit Katriel in :gh:`100239`.)
 
 * Add the :opcode:`BUILD_INTERPOLATION` & :opcode:`BUILD_TEMPLATE`
