@@ -2023,6 +2023,19 @@ class LWPCookieTests(unittest.TestCase):
             # we didn't have session cookies in the first place
         self.assertNotEqual(counter["session_before"], 0)
 
+    def test_mozilla_cookiejar_loaderror_on_malformed_file(self):
+        # Malformed cookie file should raise LoadError
+        filename = os_helper.TESTFN
+        with open(filename, "w") as f:
+            f.write("# Netscape HTTP Cookie File\ninvalid_line\n")
+        jar = MozillaCookieJar(filename)
+        try:
+            with self.assertRaisesRegex(LoadError, "invalid fields in Netscape format cookies file"):
+                jar.load()
+        finally:
+            os_helper.unlink(filename)
+    
+
 
 if __name__ == "__main__":
     unittest.main()
