@@ -1,0 +1,3 @@
+Make sure that parent Expat parsers are only garbage-collected once they are
+no longer being referenced by subparsers.
+(Bugfix contributed by Sebastian Pipping)
