@@ -99,21 +99,17 @@ The following options are understood:
    Include only files and directories that match the given glob pattern(s).
    Patterns use standard globbing as implemented by :class:`pathlib.PurePath.match`.
 
-   .. note::
-
-      If this option is not specified, all files in the given directory are
-      included by default (subject to any :option:`--exclude` patterns).
+   If this option is not specified, all files in the given directory are included by
+   default (subject to any :option:`--exclude` patterns).
 
 .. option:: --exclude pattern
 
    Exclude files and directories that match the given glob pattern(s).
    Patterns use standard globbing as implemented by :class:`pathlib.PurePath.match`.
 
-   .. note::
-
-      If both :option:`--include` and :option:`--exclude` are specified, the set of
-      files to be included is picked first. Then any to be excluded are removed from
-      that set. The order of the options does not affect how they are processed.
+   If both :option:`--include` and :option:`--exclude` are specified, the set of
+   files to be included is picked first. Then any to be excluded are removed from
+   that set. The order of the options does not affect how they are processed.
 
 
 .. option:: -h, --help
@@ -297,8 +293,6 @@ Excluding a subtree or file type:
 
    * Patterns follow :class:`pathlib.PurePath.match`. To match all of a
      directory contents, use ``dir/**``.
-   * Path separator handling is platform-specific. On POSIX, backslashes are
-     literals (``\`` does not act as a separator).
 
 
 .. _zipapp-specifying-the-interpreter:
