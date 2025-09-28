@@ -179,20 +179,6 @@ def get_interpreter(archive):
         if f.read(2) == b'#!':
             return f.readline().strip().decode(shebang_encoding)
 
-def _normalize_patterns(values: Iterable[str] | None) -> list[str]:
-    """
-    Return patterns exactly as provided by the CLI (no comma splitting).
-    Each item is stripped of surrounding whitespace; empty items are dropped.
-    """
-    if not values:
-        return []
-    out: list[str] = []
-    for v in values:
-        v = v.strip()
-        if v:
-            out.append(v)
-    return out
-
 def _make_glob_filter(
     includes: Iterable[str] | None,
     excludes: Iterable[str] | None,
@@ -204,13 +190,24 @@ def _make_glob_filter(
       - Patterns are standard glob patterns as implemented by PurePath.match.
       - If 'includes' is empty, all files/dirs are initially eligible.
       - If any exclude pattern matches, the path is rejected.
-      - Matching respects the current platform's path flavor (separators, case).
     """
+
+    def _normalize_patterns(values: Iterable[str] | None) -> list[str]:
+        """
+        Return patterns exactly as provided by the CLI (no comma splitting).
+        Each item is stripped of surrounding whitespace; empty items are dropped.
+        """
+        if not values:
+            return []
+        out: list[str] = []
+        for v in values:
+            v = v.strip()
+            if v:
+                out.append(v)
+        return out
+
     inc = _normalize_patterns(values=includes)
     exc = _normalize_patterns(values=excludes)
-
-    if not inc and not exc:
-        return None
 
     def _filter(rel: pathlib.Path) -> bool:
         # If includes were provided, at least one must match.
