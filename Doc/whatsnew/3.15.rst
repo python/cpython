@@ -528,6 +528,14 @@ tarfile
   (Contributed by Christoph Walcher in :gh:`57911`.)
 
 
+timeit
+------
+
+* Error tracebacks are now colourised by default. This can be controlled by
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Yi Hong in :gh:`139374`.)
+
+
 types
 ------
 

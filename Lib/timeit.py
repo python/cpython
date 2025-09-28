@@ -149,8 +149,13 @@ class Timer:
 
         The optional file argument directs where the traceback is
         sent; it defaults to sys.stderr.
+
+        The optional colorize keyword argument controls whether the
+        traceback is colorized; it defaults to False for programmatic
+        usage. When used from the command line, this is automatically
+        set based on terminal capabilities.
         """
-        import _colorize, linecache, traceback, sys
+        import linecache, traceback, sys
         if self.src is not None:
             linecache.cache[dummy_src_name] = (len(self.src),
                                                None,
@@ -158,8 +163,7 @@ class Timer:
                                                dummy_src_name)
         # else the source is already stored somewhere else
 
-        if 'colorize' not in kwargs:
-            kwargs['colorize'] = _colorize.can_colorize(file=file)
+        kwargs['colorize'] = kwargs.get('colorize', False)
 
         traceback.print_exc(file=file, **kwargs)
 
@@ -263,6 +267,7 @@ def main(args=None, *, _wrap_timer=None):
     if args is None:
         args = sys.argv[1:]
     import getopt
+    import _colorize
     try:
         opts, args = getopt.getopt(args, "n:u:s:r:pvh",
                                    ["number=", "setup=", "repeat=",
@@ -329,7 +334,8 @@ def main(args=None, *, _wrap_timer=None):
         try:
             number, _ = t.autorange(callback)
         except:
-            t.print_exc()
+            colorize = _colorize.can_colorize()
+            t.print_exc(colorize=colorize)
             return 1
 
         if verbose:
@@ -338,7 +344,8 @@ def main(args=None, *, _wrap_timer=None):
     try:
         raw_timings = t.repeat(repeat, number)
     except:
-        t.print_exc()
+        colorize = _colorize.can_colorize()
+        t.print_exc(colorize=colorize)
         return 1
 
     def format_time(dt):
