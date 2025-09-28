@@ -300,7 +300,7 @@ static inline bool
 PyStackRef_IsValid(_PyStackRef ref)
 {
     /* Invalid values are ERROR and NULL */
-    return (ref.bits & Py_TAG_BITS) >= Py_INT_TAG;
+    return ref.bits >= Py_INT_TAG;
 }
 
 static inline bool
