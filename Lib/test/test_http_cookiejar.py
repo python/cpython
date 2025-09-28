@@ -2027,13 +2027,12 @@ class LWPCookieTests(unittest.TestCase):
         # Malformed cookie file should raise LoadError
         filename = os_helper.TESTFN
         with open(filename, "w") as f:
-            f.write("# Netscape HTTP Cookie File\ninvalid_line\n")
+            f.write("# Netscape HTTP Cookie File\n")
+            f.write("malformed line\n")
+        self.addCleanup(os_helper.unlink, filename)
         jar = MozillaCookieJar(filename)
-        try:
-            with self.assertRaisesRegex(LoadError, "invalid fields in Netscape format cookies file"):
-                jar.load()
-        finally:
-            os_helper.unlink(filename)
+        err = "invalid fields in Netscape format cookies file"
+        self.assertRaisesRegex(LoadError, err, jar.load)
     
 
 if __name__ == "__main__":
