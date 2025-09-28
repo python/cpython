@@ -365,7 +365,6 @@ class ChannelIDTests(TestBase):
         #self.assertIsNot(got, obj)
 
 
-# @skip_if_sanitizer('gh-129824: race on _waiting_release', thread=True)
 class ChannelTests(TestBase):
 
     def test_create_cid(self):
