@@ -2117,7 +2117,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_len_known_length(self):
-        # Make sure that len(t) is optimized for a tuple of length 2048.
+        # Make sure that len(t) is not optimized for a tuple of length 2048.
         # See https://github.com/python/cpython/issues/139393.
         self.assertLess(_PY_NSMALLPOSINTS, 2048)
 
