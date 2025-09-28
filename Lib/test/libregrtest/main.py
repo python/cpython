@@ -2,6 +2,7 @@ import os
 import random
 import re
 import shlex
+import stat
 import sys
 import sysconfig
 import time
@@ -159,6 +160,14 @@ class Regrtest:
         self.single_test_run: bool = ns.single
         self.next_single_test: TestName | None = None
         self.next_single_filename: StrPath | None = None
+
+        history_file = os.path.join(os.path.expanduser('~'), '.python_history')
+        self.__history_file = history_file
+        if os.path.exists(history_file):
+            st = os.stat(history_file)
+            self.__history_stat = (stat.S_IFMT(st.st_mode), st.st_size)
+        else:
+            self.__history_stat = None
 
     def log(self, line: str = '') -> None:
         self.logger.log(line)
@@ -391,6 +400,16 @@ class Regrtest:
             result.covered_lines = list(tracer.counts)
         else:
             result = run_single_test(test_name, runtests)
+
+        if self.__history_stat is None:
+            if os.path.exists(self.__history_file):
+                raise AssertionError(f"{test_name}: created history file")
+        else:
+            if not os.path.exists(self.__history_file):
+                raise AssertionError(f"{test_name}: deleted history file")
+            st = os.stat(self.__history_file)
+            if self.__history_stat != (stat.S_IFMT(st.st_mode), st.st_size):
+                raise AssertionError(f"{test_name}: altered history file")
 
         self.results.accumulate_result(result, runtests)
 
