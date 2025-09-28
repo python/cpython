@@ -4,8 +4,9 @@ import sys
 import io
 from textwrap import dedent
 
-from test.support import captured_stdout, force_not_colorized
-from test.support import captured_stderr
+from test.support import (
+    captured_stdout, captured_stderr, force_not_colorized,
+)
 
 # timeit's default number of iterations.
 DEFAULT_NUMBER = 1000000
