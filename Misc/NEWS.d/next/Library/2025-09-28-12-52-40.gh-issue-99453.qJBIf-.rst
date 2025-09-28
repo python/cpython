@@ -1,0 +1,2 @@
+**http.cookiejar**: Netscape/Mozilla cookie files with malformed lines now
+raise :exc:`LoadError` instead of an uncaught :exc:`ValueError`.
