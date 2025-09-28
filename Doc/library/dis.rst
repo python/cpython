@@ -585,6 +585,22 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    generate line tracing events.
 
 
+.. opcode:: NOT_TAKEN
+
+   Do nothing code.
+   Used by the interpreter to record :monitoring-event:`BRANCH_LEFT`
+   and :monitoring-event:`BRANCH_RIGHT` events for :mod:`sys.monitoring`.
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: POP_ITER
+
+   Removes the iterator from the top of the stack.
+
+   .. versionadded:: 3.14
+
+
 .. opcode:: POP_TOP
 
    Removes the top-of-stack item::
