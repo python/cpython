@@ -1549,9 +1549,7 @@ xmlparse_dealloc(PyObject *op)
         XML_ParserFree(self->itself);
     }
     self->itself = NULL;
-    if (self->parent != NULL) {
-        Py_CLEAR(self->parent);
-    }
+    Py_CLEAR(self->parent);
 
     if (self->handlers != NULL) {
         PyMem_Free(self->handlers);
