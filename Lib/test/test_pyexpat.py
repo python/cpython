@@ -771,6 +771,21 @@ class ForeignDTDTests(unittest.TestCase):
         self.assertEqual(handler_call_args, [("bar", "baz")])
 
 
+class ParentParserLifetimeTest(unittest.TestCase):
+    """
+    Subparser make use of the parent XML_Parser inside of Expat.
+    As a result, parent parsers need to outlive subparsers.
+    Regression test for issue 139400
+    """
+    def test_parent_parser_outlives_its_subparsers(self):
+        parser = expat.ParserCreate()
+        subparser = parser.ExternalEntityParserCreate(None)
+
+        # Now try to cause garbage collection of the parent parser
+        # while it's still being referenced by a related subparser
+        del parser
+
+
 class ReparseDeferralTest(unittest.TestCase):
     def test_getter_setter_round_trip(self):
         parser = expat.ParserCreate()
