@@ -2036,6 +2036,5 @@ class LWPCookieTests(unittest.TestCase):
             os_helper.unlink(filename)
     
 
-
 if __name__ == "__main__":
     unittest.main()
