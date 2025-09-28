@@ -164,7 +164,6 @@ class Timer:
         # else the source is already stored somewhere else
 
         kwargs['colorize'] = kwargs.get('colorize', False)
-
         traceback.print_exc(file=file, **kwargs)
 
     def timeit(self, number=default_number):
