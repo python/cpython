@@ -775,7 +775,8 @@ class ParentParserLifetimeTest(unittest.TestCase):
     """
     Subparsers make use of their parent XML_Parser inside of Expat.
     As a result, parent parsers need to outlive subparsers.
-    Regression test for issue 139400
+
+    See https://github.com/python/cpython/issues/139400.
     """
     def test_parent_parser_outlives_its_subparsers(self):
         parser = expat.ParserCreate()
