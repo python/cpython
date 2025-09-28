@@ -157,12 +157,18 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
          uint8_t width)
 {
     assert(loc_start + width <= 32);
+    uint32_t temp_val;
+    // Use memcpy to safely read the value, avoiding potential alignment
+    // issues and strict aliasing violations.
+    memcpy(&temp_val, loc, sizeof(temp_val));
     // Clear the bits we're about to patch:
-    *loc &= ~(((1ULL << width) - 1) << loc_start);
-    assert(get_bits(*loc, loc_start, width) == 0);
+    temp_val &= ~(((1ULL << width) - 1) << loc_start);
+    assert(get_bits(temp_val, loc_start, width) == 0);
     // Patch the bits:
-    *loc |= get_bits(value, value_start, width) << loc_start;
-    assert(get_bits(*loc, loc_start, width) == get_bits(value, value_start, width));
+    temp_val |= get_bits(value, value_start, width) << loc_start;
+    assert(get_bits(temp_val, loc_start, width) == get_bits(value, value_start, width));
+    // Safely write the modified value back to memory.
+    memcpy(loc, &temp_val, sizeof(temp_val));
 }
 
 // See https://developer.arm.com/documentation/ddi0602/2023-09/Base-Instructions
