@@ -34,6 +34,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime_structs.h" // _PY_NSMALLPOSINTS
 #include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -2573,6 +2574,10 @@ module_exec(PyObject *module)
 
     if (PyModule_Add(module, "SHARED_KEYS_MAX_SIZE",
                         PyLong_FromLong(SHARED_KEYS_MAX_SIZE)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_AddIntMacro(module, _PY_NSMALLPOSINTS) < 0) {
         return 1;
     }
 
