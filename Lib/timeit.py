@@ -335,8 +335,7 @@ def main(args=None, *, _wrap_timer=None):
         try:
             number, _ = t.autorange(callback)
         except:
-            colorize = _colorize.can_colorize()
-            t.print_exc(colorize=colorize)
+            t.print_exc(colorize=colorize_errors)
             return 1
 
         if verbose:
@@ -345,8 +344,7 @@ def main(args=None, *, _wrap_timer=None):
     try:
         raw_timings = t.repeat(repeat, number)
     except:
-        colorize = _colorize.can_colorize()
-        t.print_exc(colorize=colorize)
+        t.print_exc(colorize=colorize_errors)
         return 1
 
     def format_time(dt):
