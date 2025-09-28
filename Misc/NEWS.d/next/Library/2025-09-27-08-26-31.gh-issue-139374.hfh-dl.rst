@@ -1,1 +1,1 @@
-:mod:`timeit`: colorize error tracebacks.
+:mod:`timeit`: Add color to error tracebacks.
