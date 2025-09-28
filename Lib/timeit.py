@@ -263,10 +263,10 @@ def main(args=None, *, _wrap_timer=None):
     is not None, it must be a callable that accepts a timer function
     and returns another timer function (used for unit testing).
     """
+    import getopt
     if args is None:
         args = sys.argv[1:]
     import _colorize
-    import getopt
     colorize = _colorize.can_colorize()
 
     try:
