@@ -2033,7 +2033,7 @@ class LWPCookieTests(unittest.TestCase):
         jar = MozillaCookieJar(filename)
         err = "invalid fields in Netscape format cookies file"
         self.assertRaisesRegex(LoadError, err, jar.load)
-    
+
 
 if __name__ == "__main__":
     unittest.main()
