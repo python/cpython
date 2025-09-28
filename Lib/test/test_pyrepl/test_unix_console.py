@@ -326,14 +326,14 @@ class TestConsole(TestCase):
         def thread_target():
             try:
                 console.restore()
-            except ValueError as e:
-                if "signal only works in main thread" in str(e):
-                    exception_caught.append(e)
+            except Exception as e:
+                exception_caught.append(e)
         thread = threading.Thread(target=thread_target)
         thread.start()
         thread.join()
+        # gh-139391: should not raise any exception when called from non-main thread
         self.assertEqual(len(exception_caught), 0,
-                        "restore() should not raise ValueError in non-main thread")
+                        "restore() should not raise any exception in non-main thread")
 
 
 @unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
