@@ -943,9 +943,8 @@ For further information on how to build Python, see
     Clang/LLVM 19, which causes the normal interpreter to be slower. We were unaware of this bug,
     resulting in inaccurate results. We sincerely apologize for
     communicating results that were only accurate for LLVM v19.1.x and v20.1.0. In the meantime,
-    the bug has been fixed in LLVM v20.1.1 and for the upcoming v21.1, but it will remain
-    unfixed for LLVM v19.1.x and v20.1.0. Thus
-    any benchmarks with those versions of LLVM may produce inaccurate numbers.
+    the bug has been fixed in LLVM v20.1.1 and v21.1, but it will remain unfixed for LLVM v19.1.x
+    and v20.1.0. Thus any benchmarks with those versions of LLVM may produce inaccurate numbers.
     (Thanks to Nelson Elhage for bringing this to light.)
 
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
@@ -2231,9 +2230,9 @@ zipfile
   as used by :func:`ZipFile.writestr <zipfile.ZipFile.writestr>`.
   (Contributed by Bénédikt Tran in :gh:`123424`.)
 
-* :meth:`zipfile.ZipFile.writestr` now respects ``SOURCE_DATE_EPOCH`` that
-  distributions can set centrally and have build tools consume this in order
-  to produce reproducible output.
+* :meth:`zipfile.ZipFile.writestr` now respects :envvar:`SOURCE_DATE_EPOCH`
+  environment variable that distributions can set centrally and have build
+  tools consume this in order to produce reproducible output.
   (Contributed by Jiahao Li in :gh:`91279`.)
 
 
