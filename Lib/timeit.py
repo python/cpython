@@ -267,6 +267,8 @@ def main(args=None, *, _wrap_timer=None):
         args = sys.argv[1:]
     import getopt
     import _colorize
+    colorize_errors = _colorize.can_colorize()
+
     try:
         opts, args = getopt.getopt(args, "n:u:s:r:pvh",
                                    ["number=", "setup=", "repeat=",
