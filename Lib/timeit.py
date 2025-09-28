@@ -133,7 +133,7 @@ class Timer:
         exec(code, global_ns, local_ns)
         self.inner = local_ns["inner"]
 
-    def print_exc(self, file=None):
+    def print_exc(self, file=None, **kwargs):
         """Helper to print a traceback from the timed code.
 
         Typical use:
@@ -158,8 +158,10 @@ class Timer:
                                                dummy_src_name)
         # else the source is already stored somewhere else
 
-        traceback.print_exception(sys.exception(), file=file,
-                                 colorize=_colorize.can_colorize(file=file))
+        if 'colorize' not in kwargs:
+            kwargs['colorize'] = _colorize.can_colorize(file=file)
+
+        traceback.print_exc(file=file, **kwargs)
 
     def timeit(self, number=default_number):
         """Time 'number' executions of the main statement.
