@@ -175,12 +175,18 @@ PyTuple_Pack(Py_ssize_t n, ...)
         return NULL;
     }
     items = result->ob_item;
+    bool track = false;
     for (i = 0; i < n; i++) {
         o = va_arg(vargs, PyObject *);
         items[i] = Py_NewRef(o);
+        if (!track && _PyObject_GC_MAY_BE_TRACKED(items[i])) {
+            track = true;
+        }
     }
     va_end(vargs);
-    _PyObject_GC_TRACK(result);
+    if (track) {
+        _PyObject_GC_TRACK(result);
+    }
     return (PyObject *)result;
 }
 
