@@ -1964,11 +1964,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
    ``SETUP_CLEANUP`` or ``SETUP_WITH``.
 
 
-.. opcode:: LOAD_CONST_IMMORTAL (consti)
-
-   Works as :opcode:`LOAD_CONST`, but is more efficient for immortal objects.
-
-
 .. opcode:: JUMP
             JUMP_NO_INTERRUPT
 
