@@ -330,10 +330,10 @@ def run_test_script(script):
 
 _site_gethistoryfile = site.gethistoryfile
 def _gethistoryfile():
-    """Patch site.gethistoryfile() to ignore -I for PYTHON_HISTORY.
+    """Patch site.gethistoryfile() to ignore -I/-E for PYTHON_HISTORY.
 
-    The -I option is necessary for test_no_memory() but using it
-    forbids using a custom PYTHON_HISTORY.
+    Some tests (e.g, test_repl.test_no_memory) require -I/-E,
+    but those options forbid using a custom PYTHON_HISTORY.
     """
     history = os.environ.get("PYTHON_HISTORY")
     return history or os.path.join(os.path.expanduser('~'), '.python_history')
@@ -351,16 +351,22 @@ def _file_signature(file):
 class EnsureSafeUserHistory(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.__history_file = cls.__history_stat = None
-        history_file = _site_gethistoryfile()
+    def __history_setup_check(cls):
+        # Ensure that the system-wide history file is not altered by tests.
+        history_file = os.path.join(os.path.expanduser('~'), '.python_history')
+        cls.__history_file = history_file
         if os.path.exists(history_file):
-            cls.__history_file = history_file
             cls.__history_stat = _file_signature(history_file)
+        else:
+            cls.__history_stat = None
 
-    def tearDown(self):
-        if self.__history_file is not None:
+    def __history_teardown_check(self):
+        if self.__history_stat is None:
+            self.assertFalse(
+                os.path.exists(self.__history_file),
+                f"PYTHON_HISTORY file ({self.__history_file!r}) was created"
+            )
+        else:
             self.assertTrue(
                 os.path.exists(self.__history_file),
                 f"PYTHON_HISTORY file ({self.__history_file!r}) was deleted"
@@ -370,4 +376,12 @@ class EnsureSafeUserHistory(unittest.TestCase):
                 _file_signature(self.__history_file),
                 f"PYTHON_HISTORY file ({self.__history_file!r}) was altered"
             )
+
+    @classmethod
+    def setUpClass(cls):
+        cls.__history_setup_check()
+        super().setUpClass()
+
+    def tearDown(self):
         super().tearDown()
+        self.__history_teardown_check()
