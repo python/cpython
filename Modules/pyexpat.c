@@ -1550,8 +1550,7 @@ xmlparse_dealloc(PyObject *op)
     }
     self->itself = NULL;
     if (self->parent != NULL) {
-        Py_DECREF(self->parent);
-        self->parent = NULL;
+        Py_CLEAR(self->parent);
     }
 
     if (self->handlers != NULL) {
