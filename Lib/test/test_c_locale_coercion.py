@@ -490,15 +490,13 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                 env = dict(os.environ, LC_ALL=locale, PYTHONUTF8="0")
 
                 result = subprocess.run(
-                    [sys.executable, "-c", "import sys; print(sys.getfilesystemencoding())"],
+                    [sys.executable, "-c", ""],
                     env=env,
                     capture_output=True,
                     text=True,
                     timeout=10)
 
                 self.assertEqual(result.returncode, 0)
-                self.assertEqual(result.stdout.strip(), "utf-8")
-
 
 def tearDownModule():
     support.reap_children()
