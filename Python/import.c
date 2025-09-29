@@ -4256,10 +4256,9 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     PyObject *mod = PyImport_GetModule(abs_name);
     bool already_exists = mod != NULL;
     Py_XDECREF(mod);
-    //if (mod != NULL) {
-    //    Py_DECREF(abs_name);
-    //    return mod;
-    //}
+    if (mod != NULL) {
+        return PyImport_ImportModuleLevelObject(name, globals, locals, fromlist, level);
+    }
 
     // Check if the filter disables the lazy import
     PyObject *filter = LAZY_IMPORTS_FILTER(interp);
