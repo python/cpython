@@ -16455,9 +16455,9 @@ config_get_codec_name(wchar_t **config_encoding)
 
     PyObject *name_obj = NULL;
     PyObject *codec = _PyCodec_Lookup(encoding);
+    PyMem_RawFree(encoding);
 
     if (!codec) {  // Fallback to UTF-8 if the codec is not found
-        PyMem_RawFree(encoding);
         PyErr_Clear();
 
         wchar_t *utf8_encoding = _PyMem_RawWcsdup(L"utf-8");
@@ -16470,8 +16470,6 @@ config_get_codec_name(wchar_t **config_encoding)
         *config_encoding = utf8_encoding;
         return 0;
     }
-
-    PyMem_RawFree(encoding);
 
     name_obj = PyObject_GetAttrString(codec, "name");
     Py_CLEAR(codec);
