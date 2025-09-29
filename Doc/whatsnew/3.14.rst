@@ -2870,7 +2870,7 @@ Pseudo-instructions
   (Contributed by Mark Shannon in :gh:`125837`.)
 
 * Add the :opcode:`NOT_TAKEN` pseudo instruction, used by :mod:`sys.monitoring`
-  to record branch events (i.e. :monitoring-event:`BRANCH_LEFT`).
+  to record branch events (such as :monitoring-event:`BRANCH_LEFT`).
   (Contributed by Mark Shannon in :gh:`122548`.)
 
 
