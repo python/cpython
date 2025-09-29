@@ -293,6 +293,9 @@ General Options
 
 .. option:: --disable-gil
 
+   .. c:macro:: Py_GIL_DISABLED
+      :no-typesetting:
+
    Enables support for running Python without the :term:`global interpreter
    lock` (GIL): free threading build.
 
@@ -802,6 +805,9 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
+   To improve ASan detection capabilities you may also want to combine this
+   with :option:`--without-pymalloc` to disable the specialized small-object
+   allocator whose allocations are not tracked by ASan.
 
    .. versionadded:: 3.6
 
@@ -863,9 +869,9 @@ Libraries options
    .. versionchanged:: 3.13
       Default to using the installed ``mpdecimal`` library.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
       A copy of the ``mpdecimal`` library sources will no longer be distributed
-      with Python 3.15.
+      with Python 3.16.
 
    .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 

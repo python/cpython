@@ -458,7 +458,7 @@ Some smaller changes made to the core Python language are:
   :class:`~collections.defaultdict`, :class:`~shelve.Shelf`,
   :class:`~configparser.ConfigParser`, or :mod:`dbm`.  It is also useful with
   custom :class:`dict` subclasses that normalize keys before look-up or that
-  supply a :meth:`__missing__` method for unknown keys::
+  supply a :meth:`~object.__missing__` method for unknown keys::
 
     >>> import shelve
     >>> d = shelve.open('tmp.shl')

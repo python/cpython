@@ -1756,7 +1756,7 @@ Add support for macOS multi-arch builds with the JIT enabled
 .. nonce: q9fvyM
 .. section: Core and Builtins
 
-PyREPL now supports syntax highlighing. Contributed by Łukasz Langa.
+PyREPL now supports syntax highlighting. Contributed by Łukasz Langa.
 
 ..
 
@@ -1797,7 +1797,7 @@ non-``None`` ``closure``. Patch by Bartosz Sławecki.
 .. nonce: Uj7lyY
 .. section: Core and Builtins
 
-Fix a bug that was allowing newlines inconsitently in format specifiers for
+Fix a bug that was allowing newlines inconsistently in format specifiers for
 single-quoted f-strings. Patch by Pablo Galindo.
 
 ..
@@ -2012,7 +2012,7 @@ interpreter.
 .. nonce: ofI5Fl
 .. section: C API
 
-Add support of nullable arguments in :c:func:`PyArg_Parse` and similar
+[Reverted in :gh:`136991`] Add support of nullable arguments in :c:func:`PyArg_Parse` and similar
 functions. Adding ``?`` after any format unit makes ``None`` be accepted as
 a value.
 

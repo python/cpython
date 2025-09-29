@@ -44,7 +44,7 @@ VERSION = "3.3"
 #   * Doc/library/stdtypes.rst, and
 #   * Doc/library/unicodedata.rst
 #   * Doc/reference/lexical_analysis.rst (three occurrences)
-UNIDATA_VERSION = "16.0.0"
+UNIDATA_VERSION = "17.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -104,13 +104,14 @@ cjk_ranges = [
     ('3400', '4DBF'),    # CJK Ideograph Extension A CJK
     ('4E00', '9FFF'),    # CJK Ideograph
     ('20000', '2A6DF'),  # CJK Ideograph Extension B
-    ('2A700', '2B739'),  # CJK Ideograph Extension C
+    ('2A700', '2B73F'),  # CJK Ideograph Extension C
     ('2B740', '2B81D'),  # CJK Ideograph Extension D
-    ('2B820', '2CEA1'),  # CJK Ideograph Extension E
+    ('2B820', '2CEAD'),  # CJK Ideograph Extension E
     ('2CEB0', '2EBE0'),  # CJK Ideograph Extension F
     ('2EBF0', '2EE5D'),  # CJK Ideograph Extension I
     ('30000', '3134A'),  # CJK Ideograph Extension G
     ('31350', '323AF'),  # CJK Ideograph Extension H
+    ('323B0', '33479'),  # CJK Ideograph Extension J
 ]
 
 

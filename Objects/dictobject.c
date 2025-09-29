@@ -1581,31 +1581,46 @@ read_failed:
     return ix;
 }
 
+static Py_ssize_t
+lookup_threadsafe_unicode(PyDictKeysObject *dk, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
+{
+    assert(dk->dk_kind == DICT_KEYS_UNICODE);
+    assert(PyUnicode_CheckExact(key));
+
+    Py_ssize_t ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
+    if (ix == DKIX_EMPTY) {
+        *value_addr = PyStackRef_NULL;
+        return ix;
+    }
+    else if (ix >= 0) {
+        PyObject **addr_of_value = &DK_UNICODE_ENTRIES(dk)[ix].me_value;
+        PyObject *value = _Py_atomic_load_ptr(addr_of_value);
+        if (value == NULL) {
+            *value_addr = PyStackRef_NULL;
+            return DKIX_EMPTY;
+        }
+        if (_PyObject_HasDeferredRefcount(value)) {
+            *value_addr =  (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
+            return ix;
+        }
+        if (_Py_TryIncrefCompare(addr_of_value, value)) {
+            *value_addr = PyStackRef_FromPyObjectSteal(value);
+            return ix;
+        }
+        return DKIX_KEY_CHANGED;
+    }
+    assert(ix == DKIX_KEY_CHANGED);
+    return ix;
+}
+
 Py_ssize_t
 _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr)
 {
     PyDictKeysObject *dk = _Py_atomic_load_ptr(&mp->ma_keys);
     if (dk->dk_kind == DICT_KEYS_UNICODE && PyUnicode_CheckExact(key)) {
-        Py_ssize_t ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
-        if (ix == DKIX_EMPTY) {
-            *value_addr = PyStackRef_NULL;
+        Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, value_addr);
+        if (ix != DKIX_KEY_CHANGED) {
             return ix;
-        }
-        else if (ix >= 0) {
-            PyObject **addr_of_value = &DK_UNICODE_ENTRIES(dk)[ix].me_value;
-            PyObject *value = _Py_atomic_load_ptr(addr_of_value);
-            if (value == NULL) {
-                *value_addr = PyStackRef_NULL;
-                return DKIX_EMPTY;
-            }
-            if (_PyObject_HasDeferredRefcount(value)) {
-                *value_addr =  (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
-                return ix;
-            }
-            if (_Py_TryIncrefCompare(addr_of_value, value)) {
-                *value_addr = PyStackRef_FromPyObjectSteal(value);
-                return ix;
-            }
         }
     }
 
@@ -1645,6 +1660,46 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
 }
 
 #endif
+
+// Looks up the unicode key `key` in the dictionary. Note that `*method` may
+// already contain a valid value! See _PyObject_GetMethodStackRef().
+int
+_PyDict_GetMethodStackRef(PyDictObject *mp, PyObject *key, _PyStackRef *method)
+{
+    assert(PyUnicode_CheckExact(key));
+    Py_hash_t hash = hash_unicode_key(key);
+
+#ifdef Py_GIL_DISABLED
+    PyDictKeysObject *dk = _Py_atomic_load_ptr_acquire(&mp->ma_keys);
+    if (dk->dk_kind == DICT_KEYS_UNICODE) {
+        _PyStackRef ref;
+        Py_ssize_t ix = lookup_threadsafe_unicode(dk, key, hash, &ref);
+        if (ix >= 0) {
+            assert(!PyStackRef_IsNull(ref));
+            PyStackRef_XSETREF(*method, ref);
+            return 1;
+        }
+        else if (ix == DKIX_EMPTY) {
+            return 0;
+        }
+        assert(ix == DKIX_KEY_CHANGED);
+    }
+#endif
+
+    PyObject *obj;
+    Py_INCREF(mp);
+    Py_ssize_t ix = _Py_dict_lookup_threadsafe(mp, key, hash, &obj);
+    Py_DECREF(mp);
+    if (ix == DKIX_ERROR) {
+        PyStackRef_CLEAR(*method);
+        return -1;
+    }
+    else if (ix >= 0 && obj != NULL) {
+        PyStackRef_XSETREF(*method, PyStackRef_FromPyObjectSteal(obj));
+        return 1;
+    }
+    return 0;  // not found
+}
 
 int
 _PyDict_HasOnlyStringKeys(PyObject *dict)
@@ -4490,6 +4545,7 @@ dict_clear_impl(PyDictObject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
 dict.pop
 
     key: object
@@ -4504,7 +4560,7 @@ raise a KeyError.
 
 static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=3abb47b89f24c21c input=e221baa01044c44c]*/
+/*[clinic end generated code: output=3abb47b89f24c21c input=d409c7eb2de67e38]*/
 {
     return dict_pop_default((PyObject*)self, key, default_value);
 }
@@ -6927,6 +6983,7 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
         PyErr_Format(PyExc_AttributeError,
                         "'%.100s' object has no attribute '%U'",
                         Py_TYPE(obj)->tp_name, name);
+        (void)_PyObject_SetAttributeErrorContext(obj, name);
         return -1;
     }
 
