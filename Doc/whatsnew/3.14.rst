@@ -2800,8 +2800,78 @@ Deprecated
 CPython bytecode changes
 ========================
 
-* Replaced the opcode ``BINARY_SUBSCR`` by :opcode:`BINARY_OP` with oparg ``NB_SUBSCR``.
+* Replaced the opcode :opcode:`!BINARY_SUBSCR` by the :opcode:`BINARY_OP`
+  opcode with the ``NB_SUBSCR`` oparg.
   (Contributed by Irit Katriel in :gh:`100239`.)
+
+* Add the :opcode:`BUILD_INTERPOLATION` and :opcode:`BUILD_TEMPLATE`
+  opcodes to construct new :class:`~string.templatelib.Interpolation`
+  and :class:`~string.templatelib.Template` instances, respectively.
+  (Contributed by Lysandros Nikolaou and others in :gh:`132661`;
+  see also :ref:`PEP 750: Template strings <whatsnew314-pep750>`).
+
+* Remove the :opcode:`!BUILD_CONST_KEY_MAP` opcode.
+  Use :opcode:`BUILD_MAP` instead.
+  (Contributed by Mark Shannon in :gh:`122160`.)
+
+* Replace the :opcode:`!LOAD_ASSERTION_ERROR` opcode with
+  :opcode:`LOAD_COMMON_CONSTANT` and add support for loading
+  :exc:`NotImplementedError`.
+
+* Add the :opcode:`LOAD_FAST_BORROW` and :opcode:`LOAD_FAST_BORROW_LOAD_FAST_BORROW`
+  opcodes to reduce reference counting overhead when the interpreter can prove
+  that the reference in the frame outlives the reference loaded onto the stack.
+  (Contributed by Matt Page in :gh:`130704`.)
+
+* Add the :opcode:`LOAD_SMALL_INT` opcode, which pushes a small integer
+  equal to the ``oparg`` to the stack.
+  The :opcode:`!RETURN_CONST` opcode is removed as it is no longer used.
+  (Contributed by Mark Shannon in :gh:`125837`.)
+
+* Add the new :opcode:`LOAD_SPECIAL` instruction.
+  Generate code for :keyword:`with` and :keyword:`async with` statements
+  using the new instruction.
+  Removed the :opcode:`!BEFORE_WITH` and :opcode:`!BEFORE_ASYNC_WITH` instructions.
+  (Contributed by Mark Shannon in :gh:`120507`.)
+
+* Add the :opcode:`POP_ITER` opcode to support 'virtual' iterators.
+  (Contributed by Mark Shannon in :gh:`132554`.)
+
+Pseudo-instructions
+-------------------
+
+* Add the :opcode:`!ANNOTATIONS_PLACEHOLDER` pseudo instruction
+  to support partially executed module-level annotations with
+  :ref:`deferred evaluation of annotations <whatsnew314-pep649>`.
+  (Contributed by Jelle Zijlstra in :gh:`130907`.)
+
+* Add the :opcode:`!BINARY_OP_EXTEND` pseudo instruction,
+  which executes a pair of functions (guard and specialization functions)
+  accessed from the inline cache.
+  (Contributed by Irit Katriel in :gh:`100239`.)
+
+* Add three specializations for :opcode:`CALL_KW`;
+  :opcode:`!CALL_KW_PY` for calls to Python functions,
+  :opcode:`!CALL_KW_BOUND_METHOD` for calls to bound methods, and
+  :opcode:`!CALL_KW_NON_PY` for all other calls.
+  (Contributed by Mark Shannon in :gh:`118093`.)
+
+* Add the :opcode:`JUMP_IF_TRUE` and :opcode:`JUMP_IF_FALSE` pseudo instructions,
+  conditional jumps which do not impact the stack.
+  Replaced by the sequence ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
+  (Contributed by Irit Katriel in :gh:`124285`.)
+
+* Add the :opcode:`!LOAD_CONST_MORTAL` pseudo instruction.
+  (Contributed by Mark Shannon in :gh:`128685`.)
+
+* Add the :opcode:`LOAD_CONST_IMMORTAL` pseudo instruction,
+  which does the same as :opcode:`!LOAD_CONST`, but is more efficient
+  for immortal objects.
+  (Contributed by Mark Shannon in :gh:`125837`.)
+
+* Add the :opcode:`NOT_TAKEN` pseudo instruction, used by :mod:`sys.monitoring`
+  to record branch events (such as :monitoring-event:`BRANCH_LEFT`).
+  (Contributed by Mark Shannon in :gh:`122548`.)
 
 
 C API changes
