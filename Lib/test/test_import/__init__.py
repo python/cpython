@@ -2662,6 +2662,50 @@ class LazyImportTests(unittest.TestCase):
 
         self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
 
+    def test_lazy_try_except(self):
+        with self.assertRaises(SyntaxError):
+            import test.test_import.data.lazy_imports.lazy_try_except
+
+    def test_lazy_try_except_from(self):
+        with self.assertRaises(SyntaxError):
+            import test.test_import.data.lazy_imports.lazy_try_except_from
+
+    def test_lazy_try_except_from_star(self):
+        with self.assertRaises(SyntaxError):
+            import test.test_import.data.lazy_imports.lazy_try_except_from_star
+
+    def test_try_except_eager(self):
+        importlib.set_lazy_imports(True)
+        try:
+            import test.test_import.data.lazy_imports.try_except_eager
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+    
+    def test_try_except_eager_from(self):
+        importlib.set_lazy_imports(True)
+        try:
+            import test.test_import.data.lazy_imports.try_except_eager_from
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_lazy_import_func(self):
+        with self.assertRaises(SyntaxError):
+            import test.test_import.data.lazy_imports.lazy_import_func
+
+    def test_eager_import_func(self):
+        importlib.set_lazy_imports(True)
+        try:
+            import test.test_import.data.lazy_imports.eager_import_func
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        f = test.test_import.data.lazy_imports.eager_import_func.f
+        self.assertEqual(type(f()), type(sys))
+
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
     """A representation of a single-phase init module for testing.

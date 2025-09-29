@@ -4118,16 +4118,8 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     }
 
     PyInterpreterState *interp = tstate->interp;
-
-    // Don't return early if we have a fromlist - we need to handle the import properly
-    // to ensure submodules are loaded
-    if (fromlist == NULL || fromlist == Py_None) {
-        PyObject *mod = PyImport_GetModule(abs_name);
-        if (mod != NULL) {
-            Py_DECREF(abs_name);
-            return mod;
-        }
-    }
+    _PyInterpreterFrame *frame = _PyEval_GetFrame();
+    assert(frame->f_globals == frame->f_locals); // should only be called in global scope
 
     // Check if the filter disables the lazy import
     PyObject *filter = LAZY_IMPORTS_FILTER(interp);

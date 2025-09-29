@@ -2853,6 +2853,18 @@ codegen_import_as(compiler *c, location loc,
 }
 
 static int
+codegen_validate_lazy_import(compiler *c, location loc)
+{
+    if (_PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE) {
+        return _PyCompile_Error(c, loc, "lazy imports only allowed in module scope");
+    } else if (_PyCompile_TopFBlock(c)) {
+        return _PyCompile_Error(c, loc, "cannot lazy import in a nested scope");
+    }
+
+    return SUCCESS;
+}
+
+static int
 codegen_import(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
@@ -2873,11 +2885,15 @@ codegen_import(compiler *c, stmt_ty s)
         ADDOP_LOAD_CONST(c, loc, zero);
         ADDOP_LOAD_CONST(c, loc, Py_None);
         if (s->v.Import.is_lazy) {
-            // TODO: SyntaxError when not in module scope
+            RETURN_IF_ERROR(codegen_validate_lazy_import(c, loc));
             ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 1);
         } else {
-            // TODO: If in try/except, set 2nd bit
-            ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 0);
+            if (_PyCompile_TopFBlock(c) || _PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE) {
+                // force eager import in try/except block
+                ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 2);
+            } else {
+                ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 0);
+            }
         }
 
         if (alias->asname) {
@@ -2929,11 +2945,23 @@ codegen_from_import(compiler *c, stmt_ty s)
         from = s->v.ImportFrom.module;
     }
     if (s->v.ImportFrom.is_lazy) {
-        // TODO: SyntaxError when not in module scope
+        alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, 0);
+        if (PyUnicode_READ_CHAR(alias->name, 0) == '*') {
+            return _PyCompile_Error(c, LOC(s), "cannot lazy import *");
+        }
+        RETURN_IF_ERROR(codegen_validate_lazy_import(c, LOC(s)));
         ADDOP_NAME_CUSTOM(c, LOC(s), IMPORT_NAME, from, names, 2, 1);
     } else {
-        ADDOP_NAME_CUSTOM(c, LOC(s), IMPORT_NAME, from, names, 2, 0);
+        alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, 0);
+        if (_PyCompile_TopFBlock(c) || _PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE ||
+            PyUnicode_READ_CHAR(alias->name, 0) == '*') {
+            // forced non-lazy import due to try/except or import *
+            ADDOP_NAME_CUSTOM(c, LOC(s), IMPORT_NAME, from, names, 2, 2);
+        } else {
+            ADDOP_NAME_CUSTOM(c, LOC(s), IMPORT_NAME, from, names, 2, 0);
+        }
     }
+    
     for (Py_ssize_t i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
         identifier store_name;
