@@ -1298,27 +1298,25 @@ pysqlite_cursor_close_impl(pysqlite_Cursor *self)
 }
 
 /*[clinic input]
-@critical_section
 @getter
 _sqlite3.Cursor.arraysize
 [clinic start generated code]*/
 
 static PyObject *
 _sqlite3_Cursor_arraysize_get_impl(pysqlite_Cursor *self)
-/*[clinic end generated code: output=e0919d97175e6c50 input=e0e184c319955cbc]*/
+/*[clinic end generated code: output=e0919d97175e6c50 input=3278f8d3ecbd90e3]*/
 {
     return PyLong_FromUInt32(self->arraysize);
 }
 
 /*[clinic input]
-@critical_section
 @setter
 _sqlite3.Cursor.arraysize
 [clinic start generated code]*/
 
 static int
 _sqlite3_Cursor_arraysize_set_impl(pysqlite_Cursor *self, PyObject *value)
-/*[clinic end generated code: output=af59a6b09f8cce6e input=9bb20fe894cda495]*/
+/*[clinic end generated code: output=af59a6b09f8cce6e input=ace48cb114e26060]*/
 {
     return PyLong_AsUInt32(value, &self->arraysize);
 }

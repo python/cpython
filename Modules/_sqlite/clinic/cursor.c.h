@@ -6,7 +6,6 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_UInt32_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
@@ -347,13 +346,7 @@ _sqlite3_Cursor_arraysize_get_impl(pysqlite_Cursor *self);
 static PyObject *
 _sqlite3_Cursor_arraysize_get(PyObject *self, void *Py_UNUSED(context))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _sqlite3_Cursor_arraysize_get_impl((pysqlite_Cursor *)self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _sqlite3_Cursor_arraysize_get_impl((pysqlite_Cursor *)self);
 }
 
 #if !defined(_sqlite3_Cursor_arraysize_DOCSTR)
@@ -374,10 +367,8 @@ _sqlite3_Cursor_arraysize_set(PyObject *self, PyObject *value, void *Py_UNUSED(c
 {
     int return_value;
 
-    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _sqlite3_Cursor_arraysize_set_impl((pysqlite_Cursor *)self, value);
-    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-/*[clinic end generated code: output=481f794ea87df34a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a0e3ebba9e4d0ece input=a9049054013a1b77]*/
