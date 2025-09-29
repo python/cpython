@@ -1,10 +1,14 @@
+# Purpose
+
+* These brief instructions help LLM agents navigate working in the cpython repo.
+* **Humans** are always responsible for changes being proposed and must pre-review all agentic work before turning it into a PR.
+
 # Context
 
 You are in the CPython repo helping work on the implementation of the Python
 language runtime and standard library itself.
 
 Use the `gh` tool to get information about an issue or PR in the repo.
-Including using the GraphQL API via `gh` when appropriate.
 
 Source files in this repo can be very long.  Check their size to consider if
 you really need to read the entire thing.
@@ -79,10 +83,6 @@ ONLY build in a `build/` subdirectory that you create at the repo root.
 * After editing stdlib Python: `BUILT_PY -m test relevant_tests --match specific_test_name_glob` (no rebuild needed)
 * After editing .rst documentation: `make -C BUILD_DIR/Doc check`
 * Before committing: `make -C BUILD_DIR patchcheck && pre-commit run --all-files`
-
-### Debugging
-
-* For interactive debugging (pdb, lldb, or gdb) or when working on an interactive feature such as the REPL: control a tmux session to drive that.
 
 ## Scratch space
 
