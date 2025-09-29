@@ -2706,6 +2706,15 @@ class LazyImportTests(unittest.TestCase):
         f = test.test_import.data.lazy_imports.eager_import_func.f
         self.assertEqual(type(f()), type(sys))
 
+    def test_lazy_import_pkg(self):
+        try:
+            import test.test_import.data.lazy_imports.lazy_import_pkg
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.pkg" in sys.modules)
+        self.assertTrue("test.test_import.data.lazy_imports.pkg.bar" in sys.modules)
+
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
     """A representation of a single-phase init module for testing.

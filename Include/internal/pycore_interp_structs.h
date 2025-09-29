@@ -317,6 +317,7 @@ struct _import_state {
     int lazy_imports_mode;
     PyObject *lazy_imports_filter;
     PyObject *lazy_importing_modules;
+    PyObject *lazy_modules;
     /* The global import lock. */
     _PyRecursiveMutex lock;
     /* diagnostic info in PyImport_ImportModuleLevelObject() */
