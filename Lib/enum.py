@@ -773,31 +773,37 @@ class EnumType(type):
         super().__delattr__(attr)
 
     def __dir__(cls):
-    interesting = set([
-        '__class__', '__contains__', '__doc__', '__getitem__',
-        '__iter__', '__len__', '__members__', '__module__',
-        '__name__', '__qualname__',
-    ] + cls._member_names_)
+        interesting = set([
+                '__class__', '__contains__', '__doc__', '__getitem__',
+                '__iter__', '__len__', '__members__', '__module__',
+                '__name__', '__qualname__',
+                ]
+                + cls._member_names_
+                )
 
-    if cls._new_member_ is not object.__new__:
-        interesting.add('__new__')
-    if cls.__init_subclass__ is not object.__init_subclass__:
-        interesting.add('__init_subclass__')
+        if cls._new_member_ is not object.__new__:
+            interesting.add('__new__')
+        if cls.__init_subclass__ is not object.__init_subclass__:
+            interesting.add('__init_subclass__')
 
-    # SGP: Include documented public _sunder_ helpers defined on the Enum class.
-    # SGP: This makes them discoverable via dir(Enum) so rlcompleter can surface
-    # SGP: them in REPL completions. (rlcompleter drives dotted-name completion
-    # SGP: from dir(); _add_alias_/_add_value_alias_ are supported _sunder_ APIs.)
-    for _n in ("_add_alias_", "_add_value_alias_"):
-        if _n in cls.__dict__:
-            interesting.add(_n)
+        # SGP: Include documented public _sunder_ helpers defined on the Enum class.
+        # SGP: This makes them discoverable via dir(Enum) so rlcompleter can surface
+        # SGP: them in REPL completions. (rlcompleter drives dotted-name completion
+        # SGP: from dir(); _add_alias_/_add_value_alias_ are supported _sunder_ APIs.)
+        for _n in ("_add_alias_", "_add_value_alias_"):
+            if _n in cls.__dict__:
+                interesting.add(_n)
 
-    if cls._member_type_ is object:
-        return sorted(interesting)
-    else:
-        # return whatever mixed-in data type has
-        # SGP: union the mixin's dir() with 'interesting'
-        return sorted(set(dir(cls._member_type_)) | interesting)
+        if cls._member_type_ is object:
+            return sorted(interesting)
+        else:
+            # return whatever mixed-in data type has
+            # SGP: union the mixin's dir() with 'interesting'
+            return sorted(set(dir(cls._member_type_)) | interesting)
+    
+    
+
+    
 
     def __getitem__(cls, name):
         """
