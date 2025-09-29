@@ -39,9 +39,7 @@ def status(message: str, modal: bool = False, info: Optional[Callable] = None):
             else:
                 print("yes" if result else "NO")
             return result
-
         return call_fxn
-
     return decorated_fxn
 
 
