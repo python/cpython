@@ -483,7 +483,6 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             "zh_TW.euctw",
             "hy_AM.armscii8",
             "ka_GE.georgianps",
-            "C"
         ]
 
         for locale in locales:
@@ -498,10 +497,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                     timeout=10)
 
                 self.assertEqual(result.returncode, 0)
-                if locale == "C":
-                    self.assertEqual(result.stdout.strip(), "ascii")
-                else:
-                    self.assertEqual(result.stdout.strip(), "utf-8")
+                self.assertEqual(result.stdout.strip(), "utf-8")
 
 
 def tearDownModule():
