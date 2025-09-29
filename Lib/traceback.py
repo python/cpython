@@ -234,7 +234,7 @@ def _safe_string(value, what, func=str):
 
 # --
 
-def print_exc(limit=None, file=None, chain=True, *, **kwargs):
+def print_exc(limit=None, file=None, chain=True, **kwargs):
     """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
     print_exception(sys.exception(), limit=limit, file=file, chain=chain, **kwargs)
 
