@@ -20,14 +20,6 @@ Python in one of various formats, follow one of links in this table.</p>
 
 <table class="docutils">
   <tr><th>Format</th><th>Packed as .zip</th><th>Packed as .tar.bz2</th></tr>
-  <tr><td>PDF (US-Letter paper size)</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-pdf-letter.zip">Download</a> (ca. 13 MiB)</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-pdf-letter.tar.bz2">Download</a> (ca. 13 MiB)</td>
-  </tr>
-  <tr><td>PDF (A4 paper size)</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-pdf-a4.zip">Download</a> (ca. 13 MiB)</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-pdf-a4.tar.bz2">Download</a> (ca. 13 MiB)</td>
-  </tr>
   <tr><td>HTML</td>
     <td><a href="{{ dlbase }}/python-{{ release }}-docs-html.zip">Download</a> (ca. 9 MiB)</td>
     <td><a href="{{ dlbase }}/python-{{ release }}-docs-html.tar.bz2">Download</a> (ca. 6 MiB)</td>
@@ -47,6 +39,19 @@ Python in one of various formats, follow one of links in this table.</p>
 <p>HTML Help (<code>.chm</code>) files are made available in the "Windows" section
 on the <a href="https://www.python.org/downloads/release/python-{{ release.replace('.', '') }}/">Python
 download page</a>.</p>
+
+<p>
+We no longer provide updates to the pre-built PDFs of the documentation.
+The previously-built archives are still available and may be of use:
+<a href="{{ dlbase }}/python-{{ release }}-docs-pdf-a4.zip">A4 PDF (.zip archive)</a>;
+<a href="{{ dlbase }}/python-{{ release }}-docs-pdf-a4.tar.bz2">A4 PDF (.tar.bz2 archive)</a>;
+<a href="{{ dlbase }}/python-{{ release }}-docs-pdf-letter.zip">US Letter PDF (.zip archive)</a>;
+<a href="{{ dlbase }}/python-{{ release }}-docs-pdf-letter.tar.bz2">US Letter PDF (.tar.bz2 archive)</a>.
+To build a PDF archive, follow the instructions in the
+<a href="https://devguide.python.org/documentation/start-documenting/#building-the-documentation">Developer's Guide</a>
+and run <code>make dist-pdf</code> in the <code>Doc/</code> directory of a copy of the CPython repository.
+</p>
+
 
 
 <h2>Unpacking</h2>
