@@ -1046,6 +1046,13 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         if (PyLazyImport_CheckExact(attr)) {
             PyObject *new_value = _PyImport_LoadLazyImportTstate(PyThreadState_GET(), attr);
             if (new_value == NULL) {
+                if (suppress && PyErr_ExceptionMatches(PyExc_ImportCycleError)) {
+                    // ImportCycleError is raised when a lazy object tries to import itself.
+                    // In this case, the error should not propagate to the caller and
+                    // instead treated as if the attribute doesn't exist.
+                    PyErr_Clear();
+                }
+
                 return NULL;
             } else if (PyDict_SetItem(m->md_dict, name, new_value) < 0) {
                 Py_DECREF(new_value);

@@ -3710,6 +3710,33 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 
     PyLazyImportObject *lz = (PyLazyImportObject *)lazy_import;
 
+    // Check if we are already importing this module, if so, then we want to return an error
+    // that indicates we've hit a cycle which will indicate the value isn't yet available.
+    PyInterpreterState *interp = tstate->interp;
+    PyObject *importing = interp->imports.lazy_importing_modules;
+    if (importing == NULL) {
+        importing = interp->imports.lazy_importing_modules = PySet_New(NULL);
+        if (importing == NULL) {
+            return NULL;
+        }
+    }
+
+    int is_loading = PySet_Contains(importing, lazy_import);
+    if (is_loading < 0 ) {
+        return NULL;
+    } else if (is_loading == 1) {
+        PyObject *name = _PyLazyImport_GetName(lazy_import);
+        PyObject *errmsg = PyUnicode_FromFormat("cannot import name %R "
+                                                "(most likely due to a circular import)",
+                                                name);
+        PyErr_SetImportErrorSubclass(PyExc_ImportCycleError, errmsg, lz->lz_from, NULL);
+        Py_XDECREF(errmsg);
+        Py_XDECREF(name);
+        return NULL;
+    } else if (PySet_Add(importing, lazy_import) < 0) {
+        goto error;
+    }
+
     Py_ssize_t dot = -1;
     int full = 0;
     if (lz->lz_attr != NULL) {
@@ -3738,10 +3765,6 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 
     PyObject *globals = PyEval_GetGlobals();
 
-    // Increment counter to prevent recursive lazy import creation
-    PyInterpreterState *interp = tstate->interp;
-    interp->imports.lazy_import_resolution_depth++;
-
     if (full) {
         obj = _PyEval_ImportNameWithImport(tstate,
                                    lz->lz_import_func,
@@ -3753,7 +3776,6 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     } else {
         PyObject *name = PyUnicode_Substring(lz->lz_from, 0, dot);
         if (name == NULL) {
-            interp->imports.lazy_import_resolution_depth--;
             goto error;
         }
         obj = _PyEval_ImportNameWithImport(tstate,
@@ -3765,9 +3787,6 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
                                    _PyLong_GetZero());
         Py_DECREF(name);
     }
-
-    // Decrement counter
-    interp->imports.lazy_import_resolution_depth--;
 
     if (obj == NULL) {
         goto error;
@@ -3860,6 +3879,11 @@ error:
     }
 
 ok:
+    if (PySet_Discard(importing, lazy_import) < 0) {
+        Py_DECREF(obj);
+        obj = NULL;
+    }
+
     Py_XDECREF(fromlist);
     return obj;
 }
@@ -3950,8 +3974,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         goto error;
     }
 
-    // Only check __lazy_modules__ if we're not already resolving a lazy import
-    if (interp->imports.lazy_import_resolution_depth == 0 && globals != NULL &&
+    if (globals != NULL &&
         PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__), &lazy_modules) < 0) {
         goto error;
     }
@@ -3974,7 +3997,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         goto error;
     }
 
-    if (interp->imports.lazy_import_resolution_depth == 0 && lazy_modules != NULL) {
+    if (lazy_modules != NULL) {
         // Check and see if the module is opting in w/o syntax for backwards compatibility
         // with older Python versions.
         int contains = PySequence_Contains(lazy_modules, name);
