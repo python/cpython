@@ -2,27 +2,27 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.13.2
     hooks:
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Doc/
         args: [--exit-non-zero-on-fix]
         files: ^Doc/
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Lib/test/
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Tools/build/
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Tools/i18n/
         args: [--exit-non-zero-on-fix, --config=Tools/i18n/.ruff.toml]
         files: ^Tools/i18n/
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Tools/peg_generator/
         args: [--exit-non-zero-on-fix, --config=Tools/peg_generator/.ruff.toml]
         files: ^Tools/peg_generator/
