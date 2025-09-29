@@ -215,6 +215,88 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("t''")
         self.check_ast_roundtrip('t""')
         self.check_ast_roundtrip("t'{(lambda x: x)}'")
+        self.check_ast_roundtrip("t'{t'{x}'}'")
+
+    def test_tstring_with_nonsensical_str_field(self):
+        # `value` suggests that the original code is `t'{test1}`, but `str` suggests otherwise
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    values=[
+                        ast.Interpolation(
+                            value=ast.Name(id="test1", ctx=ast.Load()), str="test2", conversion=-1
+                        )
+                    ]
+                )
+            ),
+            "t'{test2}'",
+        )
+
+    def test_tstring_with_none_str_field(self):
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    [ast.Interpolation(value=ast.Name(id="test1"), str=None, conversion=-1)]
+                )
+            ),
+            "t'{test1}'",
+        )
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    [
+                        ast.Interpolation(
+                            value=ast.Lambda(
+                                args=ast.arguments(args=[ast.arg(arg="x")]),
+                                body=ast.Name(id="x"),
+                            ),
+                            str=None,
+                            conversion=-1,
+                        )
+                    ]
+                )
+            ),
+            "t'{(lambda x: x)}'",
+        )
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    values=[
+                        ast.Interpolation(
+                            value=ast.TemplateStr(
+                                # `str` field kept here
+                                [ast.Interpolation(value=ast.Name(id="x"), str="y", conversion=-1)]
+                            ),
+                            str=None,
+                            conversion=-1,
+                        )
+                    ]
+                )
+            ),
+            '''t"{t'{y}'}"''',
+        )
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    values=[
+                        ast.Interpolation(
+                            value=ast.TemplateStr(
+                                [ast.Interpolation(value=ast.Name(id="x"), str=None, conversion=-1)]
+                            ),
+                            str=None,
+                            conversion=-1,
+                        )
+                    ]
+                )
+            ),
+            '''t"{t'{x}'}"''',
+        )
+        self.assertEqual(
+            ast.unparse(ast.TemplateStr(
+                [ast.Interpolation(value=ast.Constant(value="foo"), str=None, conversion=114)]
+            )),
+            '''t"{'foo'!r}"''',
+        )
 
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
