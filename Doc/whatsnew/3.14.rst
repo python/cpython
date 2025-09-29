@@ -2864,7 +2864,7 @@ Pseudo-instructions
 * Add the :opcode:`!LOAD_CONST_MORTAL` pseudo instruction.
   (Contributed by Mark Shannon in :gh:`128685`.)
 
-* Add the :opcode:`!LOAD_CONST_IMMORTAL` pseudo instruction,
+* Add the :opcode:`LOAD_CONST_IMMORTAL` pseudo instruction,
   which does the same as :opcode:`!LOAD_CONST`, but is more efficient
   for immortal objects.
   (Contributed by Mark Shannon in :gh:`125837`.)
