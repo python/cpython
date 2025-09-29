@@ -213,6 +213,12 @@ def _fastcopy_sendfile(fsrc, fdst):
                 _USE_CP_SENDFILE = False
                 raise _GiveupOnFastCopy(err)
 
+            if err.errno == errno.ENODATA:
+                # In rare cases sendfile() on Linux Lsture call
+                # returns ENODATA.
+                _USE_CP_SENDFILE = False
+                raise _GiveupOnFastCopy(err)
+
             if err.errno == errno.ENOSPC:  # filesystem is full
                 raise err from None
 
