@@ -410,11 +410,11 @@ Python's execution model does not operate in a vacuum.  It runs on
 a host machine and through that host's runtime environment, including
 its operating system (OS), if there is one.  When a program runs,
 the conceptual layers of how it runs on the host look something
-like this::
+like this:
 
-   **host machine**
-     **process** (global resources)
-       **thread** (runs machine code)
+   | **host machine**
+   |   **process** (global resources)
+   |     **thread** (runs machine code)
 
 Each process represents a program running on the host.  Think of each
 process itself as the data part of its program.  Think of the process'
@@ -469,14 +469,14 @@ Python Runtime Model
 --------------------
 
 The same conceptual layers apply to each Python program, with some
-extra data layers specific to Python::
+extra data layers specific to Python:
 
-   **host machine**
-     **process** (global resources)
-       globl runtime (*state*)
-         interpreter (*state*)
-           **thread** (runs "C-API" and Python bytecode)
-             thread *state*
+   | **host machine**
+   |   **process** (global resources)
+   |     globl runtime (*state*)
+   |       interpreter (*state*)
+   |         **thread** (runs "C-API" and Python bytecode)
+   |           thread *state*
 
 At the conceptual level: when a Python program starts, it looks exactly
 like that diagram, with one of each.  The runtime may grow to include
