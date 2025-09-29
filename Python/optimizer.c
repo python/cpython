@@ -737,12 +737,10 @@ translate_bytecode_to_trace(
                 ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
                 break;
 
-            // VVVVVV  ПРЕДЛАГАЕМОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ  VVVVVV
             case LOAD_GLOBAL:
                 _Py_BloomFilter_Add(dependencies, frame->f_globals);
                 _Py_BloomFilter_Add(dependencies, frame->f_builtins);
                 _Py_FALLTHROUGH;
-            // ^^^^^^  КОНЕЦ ИСПРАВЛЕНИЯ  ^^^^^^
 
             default:
             {
