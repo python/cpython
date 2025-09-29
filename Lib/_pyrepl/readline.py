@@ -434,7 +434,6 @@ class _ReadlineWrapper:
                 return False
             with open(filename, "rb") as f:
                 return f.readline().startswith(_EDITLINE_BYTES_MARKER)
-            return False
         return filename.readline().startswith(_EDITLINE_BYTES_MARKER)
 
     def read_history_file(self, filename: str = gethistoryfile()) -> None:
