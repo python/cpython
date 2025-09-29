@@ -332,12 +332,14 @@ class TestCollation(unittest.TestCase):
         self.assertLess(locale.strcoll('a', 'b'), 0)
         self.assertEqual(locale.strcoll('a', 'a'), 0)
         self.assertGreater(locale.strcoll('b', 'a'), 0)
+        self.assertLess(locale.strcoll('A', 'B'), 0)
         # embedded null character
         self.assertRaises(ValueError, locale.strcoll, 'a\0', 'a')
         self.assertRaises(ValueError, locale.strcoll, 'a', 'a\0')
 
     def test_strxfrm(self):
         self.assertLess(locale.strxfrm('a'), locale.strxfrm('b'))
+        self.assertLess(locale.strxfrm('A'), locale.strxfrm('B'))
         # embedded null character
         self.assertRaises(ValueError, locale.strxfrm, 'a\0')
 
@@ -351,8 +353,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
         enc = codecs.lookup(locale.getencoding() or 'ascii').name
         if enc not in ('utf-8', 'iso8859-1', 'cp1252'):
             raise unittest.SkipTest('encoding not suitable')
-        if enc != 'iso8859-1' and (sys.platform == 'darwin' or is_android or
-                                   sys.platform.startswith('freebsd')):
+        if enc != 'iso8859-1' and (sys.platform == 'darwin' or is_android):
             raise unittest.SkipTest('wcscoll/wcsxfrm have known bugs')
         BaseLocalizedTest.setUp(self)
 
@@ -363,6 +364,10 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strcoll_with_diacritic(self):
         self.assertLess(locale.strcoll('à', 'b'), 0)
+        self.assertLess(locale.strcoll('À', 'B'), 0)
+        self.assertLess(locale.strcoll('å', 'b'), 0)
+        self.assertLess(locale.strcoll('\xc5', 'B'), 0)
+        self.assertLess(locale.strcoll('\u212b', 'B'), 0)
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
@@ -371,6 +376,28 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
+        self.assertLess(locale.strxfrm('À'), locale.strxfrm('B'))
+        self.assertLess(locale.strxfrm('å'), locale.strxfrm('b'))
+        # gh-130567: Should not fail with OSError EINVAL.
+        self.assertLess(locale.strxfrm('\xc5'), locale.strxfrm('B'))
+        self.assertLess(locale.strxfrm('\u212b'), locale.strxfrm('B'))
+
+    def test_strxfrm_strcoll_consistency(self):
+        enc = codecs.lookup(locale.getencoding() or 'ascii').name
+        if enc != 'utf-8':
+            self.skipTest('strcoll() and strxfrm() can be inconsistent on non-UTF-8 locale')
+        def check(a, b):
+            r = locale.strcoll(a, b)
+            if r < 0:
+                self.assertLess(locale.strxfrm(a), locale.strxfrm(b))
+            elif r > 0:
+                self.assertGreater(locale.strxfrm(a), locale.strxfrm(b))
+            else:
+                self.assertEqual(locale.strxfrm(a), locale.strxfrm(b))
+        check('à', 'À')
+        check('å', '\xc5')  # 'Å' U+00C5 LATIN CAPITAL LETTER A WITH RING ABOVE
+        check('å', '\u212b')  # 'Å' U+212B ANGSTROM SIGN
+        check('\xc5', '\u212b')
 
 
 class NormalizeTest(unittest.TestCase):
