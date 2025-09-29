@@ -28,7 +28,6 @@ import select
 import signal
 import struct
 import termios
-import threading
 import time
 import types
 import platform
