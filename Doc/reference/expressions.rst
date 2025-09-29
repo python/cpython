@@ -1938,7 +1938,7 @@ Conditional expressions
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    expression: `conditional_expression` | `lambda_expr`
 
-A conditional expressions (sometimes called a "ternary operator") is an
+A conditional expression (sometimes called a "ternary operator") is an
 alternative to the if-else statement. As it is an expression, it returns a value
 and can appear as a sub-expression.
 
