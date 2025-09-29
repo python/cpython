@@ -97,11 +97,9 @@ def clear_cache():
     _byte_quoter_factory.cache_clear()
 
 # Helpers for bytes handling
-# For 3.2, we deliberately require applications that
-# handle improperly quoted URLs to do their own
-# decoding and encoding. If valid use cases are
-# presented, we may relax this by using latin-1
-# decoding internally for 3.3
+# We deliberately require applications that
+# handle improperly quoted URLs to do their
+# own decoding and encoding.
 _implicit_encoding = 'ascii'
 _implicit_errors = 'strict'
 
