@@ -397,6 +397,7 @@ class UnixConsole(Console):
                 # We can silence the ValueError if signal.signal() raised it
                 # from a non-main thread on a non-Windows platform. Otherwise,
                 # we need to re-raise it as its cause could be different.
+                import threading
                 if threading.current_thread() is threading.main_thread():
                     raise e
             del self.old_sigwinch
