@@ -365,8 +365,9 @@ Literals
    * ``str`` is a constant containing the text of the interpolation expression.
 
      If ``str`` is set to ``None``, then ``value`` is used to generate code
-when calling :func:`ast.unparse`. This no longer guarantees that the generated
-code is identical to the original and is intended for code generation.
+     when calling :func:`ast.unparse`. This no longer guarantees that the
+     generated code is identical to the original and is intended for code
+     generation.
    * ``conversion`` is an integer:
 
      * -1: no conversion
