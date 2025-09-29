@@ -163,11 +163,10 @@ class Regrtest:
 
         history_file = os.path.join(os.path.expanduser('~'), '.python_history')
         self.__history_file = history_file
+        self.__history_stat: tuple[int, int] | None = None
         if os.path.exists(history_file):
             st = os.stat(history_file)
             self.__history_stat = (stat.S_IFMT(st.st_mode), st.st_size)
-        else:
-            self.__history_stat = None
 
     def log(self, line: str = '') -> None:
         self.logger.log(line)
