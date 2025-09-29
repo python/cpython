@@ -232,8 +232,6 @@ class PtyTest(unittest.TestCase):
             os._exit(4)
         else:
             flags = fcntl.fcntl(master_fd, fcntl.F_GETFD)
-            cloexec_set = bool(flags & fcntl.FD_CLOEXEC)
-            flags = fcntl.fcntl(master_fd, fcntl.F_GETFD)
             self.assertTrue(flags & fcntl.FD_CLOEXEC)
             debug("Waiting for child (%d) to finish." % pid)
             # In verbose mode, we have to consume the debug output from the
