@@ -42,16 +42,17 @@ _LIBC = frozenset({
     "glibc",
     "musl",
 })
-_EXTRAS = frozenset({
+_THREADING = frozenset({
     # POSIX platforms with pthreads
     "pthreads",
-    # SSL backends
+})
+_SSL_BACKENDS = frozenset({
     "OpenSSL",
     "AWS-LC",
     "LibreSSL",
     "BoringSSL",
 })
-KNOWN_PLATFORMS = _PLATFORMS | _LIBC | _EXTRAS
+KNOWN_PLATFORMS = _PLATFORMS | _LIBC | _THREADING | _SSL_BACKENDS
 
 
 class Availability(SphinxDirective):
