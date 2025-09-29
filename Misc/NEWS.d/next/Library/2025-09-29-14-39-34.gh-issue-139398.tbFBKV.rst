@@ -1,0 +1,1 @@
+dir(Enum) now includes public _sunder_ helpers (_add_alias_, _add_value_alias_) for better REPL completion. (gh-139398)
