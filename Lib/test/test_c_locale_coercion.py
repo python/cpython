@@ -478,6 +478,31 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                              text=True)
         self.assertEqual(cmd.stdout.rstrip(), loc)
 
+    def test_unsupported_locale_fallback_to_utf8(self):
+        locales = [
+            "zh_TW.euctw",
+            "hy_AM.armscii8",
+            "ka_GE.georgianps",
+            "C"
+        ]
+
+        for locale in locales:
+            with self.subTest(locale=locale):
+                env = dict(os.environ, LC_ALL=locale, PYTHONUTF8="0")
+
+                result = subprocess.run(
+                    [sys.executable, "-c", "import sys; print(sys.getfilesystemencoding())"],
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=10)
+
+                self.assertEqual(result.returncode, 0)
+                if locale == "C":
+                    self.assertEqual(result.stdout.strip(), "ascii")
+                else:
+                    self.assertEqual(result.stdout.strip(), "utf-8")
+
 
 def tearDownModule():
     support.reap_children()

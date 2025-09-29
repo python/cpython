@@ -1,0 +1,1 @@
+Fallback to UTF-8 if an unsupported locale is provided.
