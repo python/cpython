@@ -206,16 +206,12 @@ def _fastcopy_sendfile(fsrc, fdst):
             err.filename = fsrc.name
             err.filename2 = fdst.name
 
-            if err.errno == errno.ENOTSOCK:
-                # sendfile() on this platform (probably Linux < 2.6.33)
-                # does not support copies between regular files (only
-                # sockets).
-                _USE_CP_SENDFILE = False
-                raise _GiveupOnFastCopy(err)
-
-            if err.errno == errno.ENODATA:
-                # In rare cases sendfile() on Linux Lsture call
-                # returns ENODATA.
+            if err.errno in (errno.ENOTSOCK, errno.ENODATA):
+                # ENOTSOCK: sendfile() on this platform (probably
+                # Linux < 2.6.33) does not support copies between
+                # regular files (only sockets).
+                # ENODATA: In rare cases sendfile() on Linux Lustre call
+                # returns ENODATA
                 _USE_CP_SENDFILE = False
                 raise _GiveupOnFastCopy(err)
 
