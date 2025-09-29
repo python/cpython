@@ -563,10 +563,10 @@ Each thread state, over its lifetime, is always tied to exactly one
 interpreter and exactly one host thread.  It will only ever be used in
 that thread and with that interpreter.
 
-In the other direction, a host thread may have many Python thread states
-tied to it, for different interpreters or even the same interpreter.
-However, for any given host thread, only one of the thread states
-tied to it can be used by the thread at a time.
+Multiple thread states may be tied to the same host thread, whether for
+different interpreters or even the same interpreter.  However, for any
+given host thread, only one of the thread states tied to it can be used
+by the thread at a time.
 
 Thread states are isolated and independent from one another and don't
 share any data, except for possibly sharing an interpreter and objects
