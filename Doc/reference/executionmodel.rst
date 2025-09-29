@@ -509,12 +509,12 @@ stays consistent over its lifetime, particularly when used with
 multiple host threads.
 
 The global runtime, at the conceptual level, is just a set of
-interpreters.  While they are otherwise isolated and independent from
-one another, they may share some data or other resources.  The runtime
-is responsible for managing these global resources safely.  The actual
-nature and management of these resources is implementation-specific.
-Ultimately, the external utility of the global runtime is limited
-to managing interpreters.
+interpreters.  While those interpreters are otherwise isolated and
+independent from one another, they may share some data or other
+resources.  The runtime is responsible for managing these global
+resources safely.  The actual nature and management of these resources
+is implementation-specific.  Ultimately, the external utility of the
+global runtime is limited to managing interpreters.
 
 In contrast, an "interpreter" is conceptually what we would normally
 think of as the (full-featured) "Python runtime".  When machine code
