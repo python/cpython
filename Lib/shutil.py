@@ -210,8 +210,9 @@ def _fastcopy_sendfile(fsrc, fdst):
                 # ENOTSOCK: sendfile() on this platform (probably
                 # Linux < 2.6.33) does not support copies between
                 # regular files (only sockets).
-                # ENODATA: In rare cases sendfile() on Linux Lustre call
-                # returns ENODATA
+                #
+                # ENODATA: In rare cases, sendfile() on Linux Lustre
+                # returns ENODATA.
                 _USE_CP_SENDFILE = False
                 raise _GiveupOnFastCopy(err)
 
