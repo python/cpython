@@ -559,7 +559,7 @@ AC_ARG_ENABLE([framework],
 	yes)
 		case $ac_sys_system in
 			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=iOS/Frameworks/\$\(MULTIARCH\) ;;
+			iOS)    enableval=Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) AC_MSG_ERROR([Unknown platform for framework build])
 		esac
 	esac
@@ -666,9 +666,9 @@ AC_ARG_ENABLE([framework],
 
 				prefix=$PYTHONFRAMEWORKPREFIX
 				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
-				RESSRCDIR=iOS/Resources
+				RESSRCDIR=Apple/iOS/Resources
 
-				AC_CONFIG_FILES([iOS/Resources/Info.plist])
+				AC_CONFIG_FILES([Apple/iOS/Resources/Info.plist])
 				;;
 			*)
 				AC_MSG_ERROR([Unknown platform for framework build])
