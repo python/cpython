@@ -47,7 +47,6 @@ repos:
     hooks:
       - id: remove-tabs
         types: [python]
-        exclude: ^Tools/c-analyzer/cpython/_parser.py
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
