@@ -84,18 +84,12 @@ repos:
     hooks:
       - id: zizmor
 
-  - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v1.0.0
-    hooks:
-      - id: sphinx-lint
-        args: [--enable=default-role]
-        files: ^Doc/|^Misc/NEWS.d/
-
   - repo: https://github.com/oxipng/oxipng
     rev: v9.1.5
     hooks:
       - id: oxipng
         args: [--strip=safe, --alpha]
+        # Exclude all existing pngs
         exclude: |
           (?x)^(
               Android/testbed/app/src/main/res/drawable-xxhdpi/ic_launcher\.png|
@@ -116,6 +110,13 @@ repos:
               PC/icons/[^/]*\.png|
               Tools/msi/bundle/SideBar\.png|
           )$
+
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v1.0.0
+    hooks:
+      - id: sphinx-lint
+        args: [--enable=default-role]
+        files: ^Doc/|^Misc/NEWS.d/
 
   - repo: local
     hooks:
