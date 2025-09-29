@@ -473,10 +473,10 @@ extra data layers specific to Python:
 
    | **host machine**
    |   **process** (global resources)
-   |     globl runtime (*state*)
-   |       interpreter (*state*)
-   |         **thread** (runs "C-API" and Python bytecode)
-   |           thread *state*
+   |     Python global runtime (*state*)
+   |       Python interpreter (*state*)
+   |         **thread** (runs Python bytecode and "C-API")
+   |           Python thread *state*
 
 At the conceptual level: when a Python program starts, it looks exactly
 like that diagram, with one of each.  The runtime may grow to include
