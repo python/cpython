@@ -429,6 +429,7 @@ class _ReadlineWrapper:
 
     @staticmethod
     def _analyze_history_file(filename: str | IO[bytes]) -> tuple[bool, str]:
+        is_editline = False
         if isinstance(filename, str):
             if not os.path.exists(filename):
                 return False, "utf-8"
