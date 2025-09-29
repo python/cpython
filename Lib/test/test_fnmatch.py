@@ -152,7 +152,7 @@ class FnmatchTestCase(unittest.TestCase):
             check(c, '[!-b]', c not in '-b')
             check(c, '[-]', c in '-')
             check(c, '[!-]', c not in '-')
-        # Upper bound is less that lower bound: error in RE.
+        # Upper bound is less than lower bound: error in RE.
         for c in tescases:
             check(c, '[d-b]', False)
             check(c, '[!d-b]', True)
