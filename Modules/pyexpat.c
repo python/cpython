@@ -72,11 +72,11 @@ pyexpat_get_state(PyObject *module)
 
 /* Declarations for objects of type xmlparser */
 
-typedef struct xmlparseobject {
+typedef struct {
     PyObject_HEAD
 
     XML_Parser itself;
-    struct xmlparseobject *parent;
+    PyObject *parent;           /* Parent xmlparseobject (for ref counting) */
     int ordered_attributes;     /* Return attributes as a list. */
     int specified_attributes;   /* Report only specified attributes. */
     int in_callback;            /* Is a callback active? */
@@ -1080,7 +1080,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->ns_prefixes = self->ns_prefixes;
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
                                                         encoding);
-    new_parser->parent = self;
+    new_parser->parent = (PyObject *)self;
     new_parser->handlers = 0;
     new_parser->intern = Py_XNewRef(self->intern);
 
