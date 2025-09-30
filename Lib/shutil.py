@@ -207,9 +207,9 @@ def _fastcopy_sendfile(fsrc, fdst):
             err.filename2 = fdst.name
 
             if err.errno == errno.ENOTSOCK:
-                # ENOTSOCK: sendfile() on this platform (probably
-                # Linux < 2.6.33) does not support copies between
-                # regular files (only sockets).
+                # sendfile() on this platform (probably Linux < 2.6.33)
+                # does not support copies between regular files (only
+                # sockets).
                 _USE_CP_SENDFILE = False
                 raise _GiveupOnFastCopy(err)
 
@@ -227,7 +227,7 @@ def _fastcopy_sendfile(fsrc, fdst):
                     # back on POSIX read/write method
                     os.lseek(infd, dstpos, os.SEEK_SET)
 
-                raise _GiveupOnFastCopy(err)            
+                raise _GiveupOnFastCopy(err)
 
             if err.errno == errno.ENOSPC:  # filesystem is full
                 raise err from None
