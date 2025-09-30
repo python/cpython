@@ -76,7 +76,15 @@ typedef struct {
     PyObject_HEAD
 
     XML_Parser itself;
-    PyObject *parent;           /* Parent xmlparseobject (for ref counting) */
+    /*
+     * Strong reference to a parent `xmlparseobject` if this parser
+     * is a child parser. Set to NULL if this parser is a root parser.
+     * This is needed to keep the parent parser alive as long as it has
+     * at least one child parser.
+     *
+     * See https://github.com/python/cpython/issues/139400 for details.
+     */
+    PyObject *parent;
     int ordered_attributes;     /* Return attributes as a list. */
     int specified_attributes;   /* Report only specified attributes. */
     int in_callback;            /* Is a callback active? */
