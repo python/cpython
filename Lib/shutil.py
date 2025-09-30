@@ -224,7 +224,8 @@ def _fastcopy_sendfile(fsrc, fdst):
                     # sendfile in a mode that does not update the
                     # input fd position when reading. Hence seek the
                     # input fd to the correct position before falling
-                    # back on POSIX read/write method
+                    # back on POSIX read/write method. Since sendfile
+                    # requires mmapable infd, it should also be seekable
                     os.lseek(infd, dstpos, os.SEEK_SET)
 
                 raise _GiveupOnFastCopy(err)
