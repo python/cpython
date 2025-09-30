@@ -529,7 +529,9 @@ into Python in the context of a specific interpreter.
 
    In an ideal world, "Python runtime" would refer to what we currently
    call "interpreter".  However, it's been called "interpreter" at least
-   since introduced in 1997 (CPython:a027efa5b).
+   since introduced in 1997 (`CPython:a027efa5b`_).
+
+   .. _CPython:a027efa5b: https://github.com/python/cpython/commit/a027efa5b
 
 Each interpreter completely encapsulates all of the non-process-global,
 non-thread-specific state needed for the Python runtime to work.
