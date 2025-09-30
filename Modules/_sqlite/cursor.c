@@ -1316,12 +1316,12 @@ static PyMethodDef cursor_methods[] = {
 
 static struct PyMemberDef cursor_members[] =
 {
-    {"connection", _Py_T_OBJECT, offsetof(pysqlite_Cursor, connection), Py_READONLY},
-    {"description", _Py_T_OBJECT, offsetof(pysqlite_Cursor, description), Py_READONLY},
+    {"connection", Py_T_OBJECT_EX, offsetof(pysqlite_Cursor, connection), Py_READONLY},
+    {"description", Py_T_OBJECT_EX, offsetof(pysqlite_Cursor, description), Py_READONLY},
     {"arraysize", Py_T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
-    {"lastrowid", _Py_T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), Py_READONLY},
+    {"lastrowid", Py_T_OBJECT_EX, offsetof(pysqlite_Cursor, lastrowid), Py_READONLY},
     {"rowcount", Py_T_LONG, offsetof(pysqlite_Cursor, rowcount), Py_READONLY},
-    {"row_factory", _Py_T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
+    {"row_factory", Py_T_OBJECT_EX, offsetof(pysqlite_Cursor, row_factory), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), Py_READONLY},
     {NULL}
 };
