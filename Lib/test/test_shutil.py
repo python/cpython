@@ -3399,8 +3399,6 @@ class TestZeroCopySendfile(_ZeroCopyFileLinuxTest, unittest.TestCase):
         shutil._USE_CP_SENDFILE = True
         assert flag
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
-        
-            
 
 @unittest.skipUnless(shutil._USE_CP_COPY_FILE_RANGE, "os.copy_file_range() not supported")
 class TestZeroCopyCopyFileRange(_ZeroCopyFileLinuxTest, unittest.TestCase):
