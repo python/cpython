@@ -223,7 +223,7 @@ def _fastcopy_sendfile(fsrc, fdst):
                     # input fd to the correct position before falling
                     # back on POSIX read/write method
                     os.lseek(infd, dstpos, os.SEEK_SET)
-                    
+
                 raise _GiveupOnFastCopy(err)
 
             if err.errno == errno.ENOSPC:  # filesystem is full

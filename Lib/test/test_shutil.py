@@ -3365,6 +3365,42 @@ class TestZeroCopySendfile(_ZeroCopyFileLinuxTest, unittest.TestCase):
         finally:
             shutil._USE_CP_SENDFILE = True
 
+    def test_exception_on_enodata_call(self):
+        # Test logic when sendfile(2) call returns ENODATA error on
+        # the not-first call on the file and we need to fall back to
+        # traditional POSIX while preserving the position of where we
+        # got to in writing
+        def syscall(*args, **kwargs):
+            if not flag:
+                flag.append(None)
+                return orig_syscall(*args, **kwargs)
+            else:
+                raise OSError(errno.ENODATA, "yo")
+
+        flag = []
+        orig_syscall = eval(self.PATCHPOINT)
+        # Reduce block size so that multiple syscalls are needed
+        mock = unittest.mock.Mock()
+        mock.st_size = 65536 + 1
+        with unittest.mock.patch('os.fstat', return_value=mock) as m:
+            with unittest.mock.patch(self.PATCHPOINT, create=True,
+                                     side_effect=syscall) as m2:
+                with self.get_files() as (src, dst):
+                    with self.assertRaises(_GiveupOnFastCopy) as cm:
+                        self.zerocopy_fun(src, dst)
+
+            # Reset flag so that second syscall fails again
+            flag = []
+            with unittest.mock.patch(self.PATCHPOINT, create=True,
+                                     side_effect=syscall) as m2:                        
+                shutil._USE_CP_SENDFILE = True
+                shutil.copyfile(TESTFN, TESTFN2)
+                assert m2.called
+        shutil._USE_CP_SENDFILE = True
+        assert flag
+        self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+        
+            
 
 @unittest.skipUnless(shutil._USE_CP_COPY_FILE_RANGE, "os.copy_file_range() not supported")
 class TestZeroCopyCopyFileRange(_ZeroCopyFileLinuxTest, unittest.TestCase):
