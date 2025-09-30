@@ -1090,16 +1090,81 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(output, expected)
 
     def test_hardcoded_stdlib_submodules_not_proposed_if_local_import(self):
-        with tempfile.TemporaryDirectory() as _dir:
+        with (tempfile.TemporaryDirectory() as _dir,
+              patch.object(sys, "modules", {})):  # hide imported module
             dir = pathlib.Path(_dir)
             (dir / "collections").mkdir()
             (dir / "collections" / "__init__.py").touch()
             (dir / "collections" / "foo.py").touch()
-            with patch.object(sys, "path", [dir, *sys.path]):
+            with patch.object(sys, "path", [_dir, *sys.path]):
                 events = code_to_events("import collections.\t\n")
                 reader = self.prepare_reader(events, namespace={})
                 output = reader.readline()
                 self.assertEqual(output, "import collections.foo")
+
+    def test_already_imported_stdlib_module_no_other_suggestions(self):
+        with (tempfile.TemporaryDirectory() as _dir,
+              patch.object(sys, "path", [_dir, *sys.path])):
+            dir = pathlib.Path(_dir)
+            (dir / "collections").mkdir()
+            (dir / "collections" / "__init__.py").touch()
+            (dir / "collections" / "foo.py").touch()
+
+            # collections found in dir, but was already imported
+            # from stdlib at startup -> suggest stdlib submodules only
+            events = code_to_events("import collections.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import collections.abc")
+
+    def test_already_imported_custom_module_no_other_suggestions(self):
+        with (tempfile.TemporaryDirectory() as _dir1,
+              tempfile.TemporaryDirectory() as _dir2,
+              patch.object(sys, "path", [_dir2, _dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            (dir1 / "mymodule").mkdir()
+            (dir1 / "mymodule" / "__init__.py").touch()
+            (dir1 / "mymodule" / "foo.py").touch()
+            importlib.import_module("mymodule")
+
+            dir2 = pathlib.Path(_dir2)
+            (dir2 / "mymodule").mkdir()
+            (dir2 / "mymodule" / "__init__.py").touch()
+            (dir2 / "mymodule" / "bar.py").touch()
+            # mymodule found in dir2 before dir1, but it was already imported
+            # from dir1 -> suggest dir1 submodules only
+            events = code_to_events("import mymodule.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import mymodule.foo")
+
+            del sys.modules["mymodule"]
+            # mymodule not imported anymore -> suggest dir2 submodules
+            events = code_to_events("import mymodule.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import mymodule.bar")
+
+    def test_already_imported_custom_file_no_suggestions(self):
+        # Same as before, but mymodule from dir1 has no submodules
+        # -> propose nothing
+        with (tempfile.TemporaryDirectory() as _dir1,
+              tempfile.TemporaryDirectory() as _dir2,
+              patch.object(sys, "path", [_dir2, _dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            (dir1 / "mymodule").mkdir()
+            (dir1 / "mymodule.py").touch()
+            importlib.import_module("mymodule")
+
+            dir2 = pathlib.Path(_dir2)
+            (dir2 / "mymodule").mkdir()
+            (dir2 / "mymodule" / "__init__.py").touch()
+            (dir2 / "mymodule" / "bar.py").touch()
+            events = code_to_events("import mymodule.\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            self.assertEqual(output, "import mymodule.")
+            del sys.modules["mymodule"]
 
     def test_get_path_and_prefix(self):
         cases = (

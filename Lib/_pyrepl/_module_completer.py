@@ -107,7 +107,25 @@ class ModuleCompleter:
             if path is None:
                 return []
 
-        modules: Iterable[pkgutil.ModuleInfo] = self.global_cache
+        modules: Iterable[pkgutil.ModuleInfo]
+        imported_module = sys.modules.get(path.split('.')[0])
+        if imported_module:
+            # Module already imported: only look for its submodules,
+            # even if a module with the same name would be higher in path
+            imported_path = (imported_module.__spec__
+                             and imported_module.__spec__.origin)
+            if imported_path:
+                if os.path.basename(imported_path) == "__init__.py":  # package
+                    imported_path = os.path.dirname(imported_path)
+                import_location = os.path.dirname(imported_path)
+                modules = list(pkgutil.iter_modules([import_location]))
+            else:
+                # Module already imported but without spec/origin:
+                # propose no suggestions
+                modules = []
+        else:
+            modules = self.global_cache
+
         is_stdlib_import: bool | None = None
         for segment in path.split('.'):
             modules = [mod_info for mod_info in modules
