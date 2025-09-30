@@ -1312,6 +1312,8 @@ concurrent.futures
   in :pep:`734`.
   (Contributed by Eric Snow in :gh:`124548`.)
 
+.. _whatsnew314-concurrent-futures-start-method:
+
 * On Unix platforms other than macOS, :ref:`'forkserver'
   <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
   method <multiprocessing-start-methods>` for
@@ -1744,6 +1746,8 @@ mimetypes
 
 multiprocessing
 ---------------
+
+.. _whatsnew314-multiprocessing-start-method:
 
 * On Unix platforms other than macOS, :ref:`'forkserver'
   <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
@@ -3209,6 +3213,20 @@ that may require changes to your code.
 
 Changes in the Python API
 -------------------------
+
+* On Unix platforms other than macOS, *forkserver* is now the default
+  :ref:`start method <multiprocessing-start-methods>` for :mod:`multiprocessing`
+  and :class:`~concurrent.futures.ProcessPoolExecutor`, instead of *fork*.
+
+  See :ref:`(1) <whatsnew314-concurrent-futures-start-method>` and
+  :ref:`(2) <whatsnew314-multiprocessing-start-method>` for details.
+
+  If you encounter :exc:`NameError`\s or pickling errors coming out of
+  :mod:`multiprocessing` or :mod:`concurrent.futures`, see the
+  :ref:`forkserver restrictions <multiprocessing-programming-forkserver>`.
+
+  This change does not affect Windows or macOS, where :ref:`'spawn'
+  <multiprocessing-start-method-spawn>` remains the default start method.
 
 * :class:`functools.partial` is now a method descriptor.
   Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
