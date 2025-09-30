@@ -576,9 +576,10 @@ Once a program is running, new Python threads can be created using the
 :mod:`threading` module (on platforms and Python implementations that
 support threads).  Additional processes can be created using the
 :mod:`os`, :mod:`subprocess`, and :mod:`multiprocessing` modules.
-You can run coroutines (async) in the main thread using :mod:`asyncio`.
 Interpreters can be created and used with the
-:mod:`~concurrent.interpreters` module.
+:mod:`~concurrent.interpreters` module.  Coroutines (async) can
+be run using :mod:`asyncio` in each interpreter, typically only
+in a single thread (often the main thread).
 
 
 .. rubric:: Footnotes
