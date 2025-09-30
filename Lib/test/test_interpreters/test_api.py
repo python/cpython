@@ -819,6 +819,43 @@ class TestInterpreterClose(TestBase):
 
 class TestInterpreterPrepareMain(TestBase):
 
+    def test_main(self):
+        interp0 = interpreters.get_main()
+        if interp0 is interpreters.get_current():
+            import __main__ as mainmod
+            mainns = vars(mainmod)
+            self.assertNotIn('prepare_main_spam', mainns)
+
+            with self.subTest('in current'):
+                try:
+                    with self.assertRaisesRegex(InterpreterError, 'running'):
+                        interp0.prepare_main(prepare_main_spam='spam!!!')
+                finally:
+                    mainns.pop('prepare_main_spam', None)
+            self.assertNotIn('prepare_main_spam', mainns)
+
+            with self.subTest('in other'):
+                interp = interpreters.create()
+                try:
+                    with self.assertRaisesRegex(ExecutionFailed, 'running'):
+                        interp.exec(dedent("""
+                            from concurrent import interpreters
+                            interp0 = interpreters.get_main()
+                            interp0.prepare_main(prepare_main_spam='spam!!!')
+                            """))
+                    self.assertNotIn('prepare_main_spam', mainns)
+                finally:
+                    mainns.pop('prepare_main_spam', None)
+            self.assertNotIn('prepare_main_spam', mainns)
+        else:
+            with self.subTest('in other'):
+                interp = interpreters.create()
+                interp.exec(dedent("""
+                    from concurrent import interpreters
+                    interp0 = interpreters.get_main()
+                    interp0.prepare_main(prepare_main_spam='spam!!!')
+                    """))
+
     def test_empty(self):
         interp = interpreters.create()
         with self.assertRaises(ValueError):
@@ -906,6 +943,11 @@ class TestInterpreterExec(TestBase):
         interp = interpreters.create()
         with self.assertRaises(ExecutionFailed):
             interp.exec('raise Exception')
+
+    def test_main(self):
+        interp = interpreters.get_main()
+        with self.assertRaisesRegex(InterpreterError, 'running'):
+            interp.exec('print("spam")')
 
     @force_not_colorized
     def test_display_preserved_exception(self):
@@ -1255,6 +1297,11 @@ class TestInterpreterCall(TestBase):
             return
         self.assertIs(type(exc1), type(exc2))
         self.assertEqual(exc1.args, exc2.args)
+
+    def test_main(self):
+        interp = interpreters.get_main()
+        with self.assertRaisesRegex(InterpreterError, 'running'):
+            interp.call(call_func_noop)
 
     def test_stateless_funcs(self):
         interp = interpreters.create()
@@ -2347,7 +2394,8 @@ class LowLevelTests(TestBase):
 
         with self.subTest('main'):
             interpid, *_ = _interpreters.get_main()
-            check(interpid, True)
+            running = _interpreters.is_running(interpid)
+            self.assertTrue(running)
 
         with self.subTest('from C-API (running __main__)'):
             with self.interpreter_from_capi() as interpid:
