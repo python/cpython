@@ -1,0 +1,2 @@
+Fix :func:`tokenize.detect_encoding` for non-ASCII coding. Patch by Victor
+Stinner.
