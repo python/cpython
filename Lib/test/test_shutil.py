@@ -3395,7 +3395,7 @@ class TestZeroCopySendfile(_ZeroCopyFileLinuxTest, unittest.TestCase):
                                      side_effect=syscall) as m2:
                 shutil._USE_CP_SENDFILE = True
                 shutil.copyfile(TESTFN, TESTFN2)
-                assert m2.called
+                m2.assert_called()
         shutil._USE_CP_SENDFILE = True
         assert flag
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
