@@ -36,7 +36,7 @@ static int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
    the GIL held from PyMem_RawFree(). It cannot acquire the lock because it
    would introduce a deadlock in _PyThreadState_DeleteCurrent(). */
 #define tables_lock _PyRuntime.tracemalloc.tables_lock
-#define TABLES_LOCK() PyMutex_LockFlags(&tables_lock, _Py_LOCK_DONT_DETACH)
+#define TABLES_LOCK() PyMutex_Lock(&tables_lock)
 #define TABLES_UNLOCK() PyMutex_Unlock(&tables_lock)
 
 

@@ -1,5 +1,9 @@
     .text
+#if defined(__APPLE__)
+    .globl	__Py_trampoline_func_start
+#else
     .globl	_Py_trampoline_func_start
+#endif
 # The following assembly is equivalent to:
 # PyObject *
 # trampoline(PyThreadState *ts, _PyInterpreterFrame *f,
@@ -7,7 +11,11 @@
 # {
 #     return evaluator(ts, f, throwflag);
 # }
+#if defined(__APPLE__)
+__Py_trampoline_func_start:
+#else
 _Py_trampoline_func_start:
+#endif
 #ifdef __x86_64__
 #if defined(__CET__) && (__CET__ & 1)
     endbr64
@@ -35,9 +43,14 @@ _Py_trampoline_func_start:
     addi    sp,sp,16
     jr      ra
 #endif
+#if defined(__APPLE__)
+    .globl	__Py_trampoline_func_end
+__Py_trampoline_func_end:
+#else
     .globl	_Py_trampoline_func_end
 _Py_trampoline_func_end:
     .section        .note.GNU-stack,"",@progbits
+#endif
 # Note for indicating the assembly code supports CET
 #if defined(__x86_64__) && defined(__CET__) && (__CET__ & 1)
     .section    .note.gnu.property,"a"

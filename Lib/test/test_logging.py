@@ -730,6 +730,7 @@ class HandlerTest(BaseTest):
     # based on os.fork existing because that is what users and this test use.
     # This helps ensure that when fork exists (the important concept) that the
     # register_at_fork mechanism is also present and used.
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     @threading_helper.requires_working_threading()
     @skip_if_asan_fork
@@ -4045,6 +4046,7 @@ class ConfigDictTest(BaseTest):
                 self._apply_simple_queue_listener_configuration(qspec)
                 manager.assert_not_called()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     @support.requires_subprocess()
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
@@ -4067,6 +4069,7 @@ class ConfigDictTest(BaseTest):
                 with self.assertRaises(ValueError):
                     self._apply_simple_queue_listener_configuration(qspec)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     @support.requires_subprocess()
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
@@ -4107,6 +4110,7 @@ class ConfigDictTest(BaseTest):
         # log a message (this creates a record put in the queue)
         logging.getLogger().info(message_to_log)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     @support.requires_subprocess()
     def test_multiprocessing_queues(self):
@@ -5337,6 +5341,7 @@ class LogRecordTest(BaseTest):
         else:
             return results
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     def test_multiprocessing(self):
         support.skip_if_broken_multiprocessing_synchronize()
@@ -7229,6 +7234,16 @@ class MiscTestCase(unittest.TestCase):
             'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
             'threading', 'logAsyncioTasks'}
         support.check__all__(self, logging, not_exported=not_exported)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__and__date__(self):
+        msg = "is deprecated and slated for removal in Python 3.20"
+        for attr in ("__version__", "__date__"):
+            with self.subTest(attr=attr):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(logging, attr)
+                self.assertEqual(cm.filename, __file__)
 
 
 # Set the locale to the platform-dependent default.  I have no idea

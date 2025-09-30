@@ -12,7 +12,10 @@ import unittest
 from test import support
 
 
-SOURCE = os.path.join(os.path.dirname(__file__), 'extension.c')
+SOURCES = [
+    os.path.join(os.path.dirname(__file__), 'extension.c'),
+    os.path.join(os.path.dirname(__file__), 'create_moduledef.c'),
+]
 SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 
 
@@ -35,17 +38,22 @@ class BaseTests:
     def test_build(self):
         self.check_build('_test_cext')
 
-    def check_build(self, extension_name, std=None, limited=False):
+    def check_build(self, extension_name, std=None, limited=False,
+                    opaque_pyobject=False):
         venv_dir = 'env'
         with support.setup_venv_with_pip_setuptools(venv_dir) as python_exe:
             self._check_build(extension_name, python_exe,
-                              std=std, limited=limited)
+                              std=std, limited=limited,
+                              opaque_pyobject=opaque_pyobject)
 
-    def _check_build(self, extension_name, python_exe, std, limited):
+    def _check_build(self, extension_name, python_exe, std, limited,
+                     opaque_pyobject):
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         shutil.copy(SETUP, os.path.join(pkg_dir, os.path.basename(SETUP)))
-        shutil.copy(SOURCE, os.path.join(pkg_dir, os.path.basename(SOURCE)))
+        for source in SOURCES:
+            dest = os.path.join(pkg_dir, os.path.basename(source))
+            shutil.copy(source, dest)
 
         def run_cmd(operation, cmd):
             env = os.environ.copy()
@@ -53,6 +61,8 @@ class BaseTests:
                 env['CPYTHON_TEST_STD'] = std
             if limited:
                 env['CPYTHON_TEST_LIMITED'] = '1'
+            if opaque_pyobject:
+                env['CPYTHON_TEST_OPAQUE_PYOBJECT'] = '1'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
             env['TEST_INTERNAL_C_API'] = str(int(self.TEST_INTERNAL_C_API))
             if support.verbose:
@@ -106,6 +116,11 @@ class TestPublicCAPI(BaseTests, unittest.TestCase):
 
     def test_build_c11(self):
         self.check_build('_test_c11_cext', std='c11')
+
+    def test_build_opaque_pyobject(self):
+        # Test with _Py_OPAQUE_PYOBJECT
+        self.check_build('_test_limited_opaque_cext', limited=True,
+                         opaque_pyobject=True)
 
     @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c99")
     def test_build_c99(self):

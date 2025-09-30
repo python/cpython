@@ -75,6 +75,7 @@ The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug
    arguments of the ``p`` command.
 
 
+.. _pdb-cli:
 .. program:: pdb
 
 You can also invoke :mod:`pdb` from the command line to debug other scripts.  For

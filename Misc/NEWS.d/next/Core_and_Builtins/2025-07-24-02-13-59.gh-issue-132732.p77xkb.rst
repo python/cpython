@@ -1,0 +1,1 @@
+Optimize constant comparison for ``_COMPARE_OP_INT``, ``_COMPARE_OP_FLOAT`` and ``_COMPARE_OP_STR`` in JIT builds

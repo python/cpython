@@ -59,7 +59,10 @@ def main():
     std = os.environ.get("CPYTHON_TEST_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
+    opaque_pyobject = bool(os.environ.get("CPYTHON_TEST_OPAQUE_PYOBJECT", ""))
     internal = bool(int(os.environ.get("TEST_INTERNAL_C_API", "0")))
+
+    sources = [SOURCE]
 
     if not internal:
         cflags = list(PUBLIC_CFLAGS)
@@ -93,6 +96,11 @@ def main():
         version = sys.hexversion
         cflags.append(f'-DPy_LIMITED_API={version:#x}')
 
+    # Define _Py_OPAQUE_PYOBJECT macro
+    if opaque_pyobject:
+        cflags.append(f'-D_Py_OPAQUE_PYOBJECT')
+        sources.append('create_moduledef.c')
+
     if internal:
         cflags.append('-DTEST_INTERNAL_C_API=1')
 
@@ -120,7 +128,7 @@ def main():
 
     ext = Extension(
         module_name,
-        sources=[SOURCE],
+        sources=sources,
         extra_compile_args=cflags,
         include_dirs=include_dirs,
         library_dirs=library_dirs)

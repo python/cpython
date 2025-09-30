@@ -226,6 +226,8 @@ set_do_lookup(PySetObject *so, setentry *table, size_t mask, PyObject *key,
     int probes;
     int status;
 
+    int frozenset = PyFrozenSet_CheckExact(so);
+
     while (1) {
         entry = &table[i];
         probes = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
@@ -2176,6 +2178,7 @@ set_symmetric_difference_update_set(PySetObject *so, PySetObject *other)
 }
 
 /*[clinic input]
+@permit_long_summary
 set.symmetric_difference_update
     so: setobject
     other: object
@@ -2186,7 +2189,7 @@ Update the set, keeping only elements found in either set, but not in both.
 
 static PyObject *
 set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=79f80b4ee5da66c1 input=a50acf0365e1f0a5]*/
+/*[clinic end generated code: output=79f80b4ee5da66c1 input=86a3dddac9bfb15e]*/
 {
     if (Py_Is((PyObject *)so, other)) {
         return set_clear((PyObject *)so, NULL);
@@ -2429,6 +2432,8 @@ set_add_impl(PySetObject *so, PyObject *key)
 int
 _PySet_Contains(PySetObject *so, PyObject *key)
 {
+    assert(so);
+
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
