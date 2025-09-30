@@ -226,8 +226,6 @@ set_do_lookup(PySetObject *so, setentry *table, size_t mask, PyObject *key,
     int probes;
     int status;
 
-    int frozenset = PyFrozenSet_CheckExact(so);
-
     while (1) {
         entry = &table[i];
         probes = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
