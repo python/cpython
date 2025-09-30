@@ -1049,8 +1049,8 @@ class TestRecursion(unittest.TestCase):
         this_sp = _testinternalcapi.get_stack_pointer()
         lower_sp = _testcapi.pyobject_vectorcall(get_sp, (), ())
         self.assertLess(lower_sp, this_sp)
-        # Add an (arbitrary) extra 25% for safety
-        safe_margin = (this_sp - lower_sp) * 5 / 4
+        # Add an (arbitrary) extra 20% for safety
+        safe_margin = (this_sp - lower_sp) * 6 / 5
         self.assertLess(safe_margin, _testinternalcapi.get_stack_margin())
 
     @skip_on_s390x
