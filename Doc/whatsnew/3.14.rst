@@ -2702,7 +2702,7 @@ New Deprecations
 
     For example, to use :class:`asyncio.SelectorEventLoop` on Windows:
 
-    .. code:: python
+    .. code-block:: python
 
        import asyncio
 
