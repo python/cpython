@@ -226,7 +226,7 @@ unicode_case_operation(PyObject *str,
                        int buf_too_small)
 {
     if (!PyUnicode_Check(str)) {
-        PyErr_Format(PyExc_TypeError, "expect str type, got %T", str);
+        PyErr_Format(PyExc_TypeError, "expected type str, got %T", str);
         return NULL;
     }
     Py_ssize_t len = PyUnicode_GET_LENGTH(str);
