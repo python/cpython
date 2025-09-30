@@ -94,7 +94,7 @@ and improvements in user-friendliness and correctness.
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
 * :ref:`PEP 784: Adding Zstandard to the standard library <whatsnew314-pep784>`
 * :ref:`A new type of interpreter <whatsnew314-tail-call>`
-* :ref:`Syntax highlighting in PyREPL <whatsnew314-pyrepl-highlighting>`,
+* :ref:`Syntax highlighting in the default interactive shell <whatsnew314-pyrepl-highlighting>`,
   and color output in :ref:`unittest <whatsnew314-color-unittest>`,
   :ref:`argparse <whatsnew314-color-argparse>`,
   :ref:`json <whatsnew314-color-json>` and
@@ -1033,7 +1033,8 @@ Platform support
   :pep:`tier 3 <11#tier-3>`. As a part of this effort, more than 25 bugs in
   `Emscripten libc`__ were fixed. Emscripten now includes support
   for :mod:`ctypes`, :mod:`termios`, and :mod:`fcntl`, as well as
-  experimental support for :ref:`PyREPL <tut-interactive>`.
+  experimental support for the new :ref:`default interactive shell
+  <tut-interactive>`.
 
   (Contributed by R. Hood Chatham in :gh:`127146`, :gh:`127683`, and :gh:`136931`.)
 
@@ -1180,8 +1181,8 @@ The behavior of :func:`!gc.collect` changes slightly:
 (Contributed by Mark Shannon in :gh:`108362`.)
 
 
-Interactive shell (PyREPL)
---------------------------
+Default interactive shell
+-------------------------
 
 .. _whatsnew314-pyrepl-highlighting:
 
@@ -1894,8 +1895,8 @@ pdb
   (Contributed by Tian Gao in :gh:`132576`.)
 
 * Source code displayed in :mod:`pdb` will be syntax-highlighted. This feature
-  can be controlled using the same methods as PyREPL, in addition to the newly
-  added ``colorize`` argument of :class:`pdb.Pdb`.
+  can be controlled using the same methods as the default :term:`interactive`
+  shell, in addition to the newly added ``colorize`` argument of :class:`pdb.Pdb`.
   (Contributed by Tian Gao and Łukasz Langa in :gh:`133355`.)
 
 
