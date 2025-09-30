@@ -3390,7 +3390,7 @@ class TestZeroCopySendfile(_ZeroCopyFileLinuxTest, unittest.TestCase):
                         self.zerocopy_fun(src, dst)
 
             # Reset flag so that second syscall fails again
-            flag = []
+            flag.clear()
             with unittest.mock.patch(self.PATCHPOINT, create=True,
                                      side_effect=syscall) as m2:
                 shutil._USE_CP_SENDFILE = True
