@@ -65,11 +65,8 @@ Notes on availability
   *Availability: Linux >= 3.17 with glibc >= 2.27* requires both Linux 3.17 or
   newer and glibc 2.27 or newer.
 
-* "Availability" notes may also be used to indicate requirements on how Python
-  was built. For instance, "Availability: OpenSSL >= 3.5" note means that the
-  feature is available if Python has been built with OpenSSL 3.5 or later,
-  while "Availability: not AWS-LC" note means that the feature is not available
-  if Python has been built with AWS-LC instead of OpenSSL.
+* A particular library dependency with an optional minimal ``major.minor``
+  version constraint is indicated by *Availability: library >= major.minor*.
 
 
 .. _wasm-availability:
