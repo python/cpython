@@ -1115,7 +1115,9 @@ class TestCAPI(unittest.TestCase):
     @threading_helper.requires_working_threading()
     # gh-128679: Test crash on a debug build (especially on FreeBSD).
     @unittest.skipIf(support.Py_DEBUG, 'need release build')
-    @support.skip_if_sanitizer('gh-131566: race when setting allocator', thread=True)
+    @support.skip_if_sanitizer(
+        'gh-131566, gh-139116: race when setting allocator/tracer',
+        thread=True, address=True)
     def test_tracemalloc_track_race(self):
         # gh-128679: Test fix for tracemalloc.stop() race condition
         _testcapi.tracemalloc_track_race()
