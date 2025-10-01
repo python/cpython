@@ -3405,7 +3405,9 @@ EventHook(void)
         PyErr_SetRaisedException(excInCmd);
         excInCmd = NULL;
         PyErr_Print();
+#ifndef MS_WINDOWS
         if (!stdin_ready) Tcl_DeleteFileHandler(tfile);
+#endif
     }
     PyEval_SaveThread();
     return 0;
