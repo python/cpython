@@ -1,0 +1,2 @@
+Fix import of the :mod:`zoneinfo` module if the C implementation of the
+:mod:`datetime` module is not available.
