@@ -2660,25 +2660,34 @@ urllib
 Deprecated
 ==========
 
+New deprecations
+----------------
+
+* Passing a complex number as the *real* or *imag* argument in the
+  :func:`complex` constructor is now deprecated;
+  complex numbers should only be passed as a single positional argument.
+  (Contributed by Serhiy Storchaka in :gh:`109218`.)
+
 * :mod:`argparse`:
 
-  * Passing the undocumented keyword argument *prefix_chars* to
-    :meth:`~argparse.ArgumentParser.add_argument_group` is now
-    deprecated.
+  * Passing the undocumented keyword argument *prefix_chars* to the
+    :meth:`~argparse.ArgumentParser.add_argument_group` method is now deprecated.
     (Contributed by Savannah Ostrowski in :gh:`125563`.)
+
   * Deprecated the :class:`argparse.FileType` type converter.
-    Anything with resource management should be done downstream after the
-    arguments are parsed.
+    Anything relating to resource management should be handled
+    downstream, after the arguments have been parsed.
     (Contributed by Serhiy Storchaka in :gh:`58032`.)
 
 * :mod:`asyncio`:
 
-  * :func:`!asyncio.iscoroutinefunction` is deprecated
+  * The :func:`!asyncio.iscoroutinefunction` is now deprecated
     and will be removed in Python 3.16;
     use :func:`inspect.iscoroutinefunction` instead.
     (Contributed by Jiahao Li and Kumar Aditya in :gh:`122875`.)
 
-  * :mod:`asyncio` policy system is deprecated and will be removed in Python 3.16.
+  * The :mod:`asyncio` policy system is deprecated
+    and will be removed in Python 3.16.
     In particular, the following classes and functions are deprecated:
 
     * :class:`asyncio.AbstractEventLoopPolicy`
@@ -2689,99 +2698,102 @@ Deprecated
     * :func:`asyncio.set_event_loop_policy`
 
     Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
-    *loop_factory* to use the desired event loop implementation.
+    the *loop_factory* argument to use the desired event loop implementation.
 
-    For example, to use :class:`asyncio.SelectorEventLoop` on Windows::
+    For example, to use :class:`asyncio.SelectorEventLoop` on Windows:
 
-      import asyncio
+    .. code-block:: python
 
-      async def main():
-          ...
+       import asyncio
 
-      asyncio.run(main(), loop_factory=asyncio.SelectorEventLoop)
+       async def main():
+           ...
+
+       asyncio.run(main(), loop_factory=asyncio.SelectorEventLoop)
 
     (Contributed by Kumar Aditya in :gh:`127949`.)
 
-* :mod:`builtins`:
-  Passing a complex number as the *real* or *imag* argument in the
-  :func:`complex` constructor is now deprecated; it should only be passed
-  as a single positional argument.
-  (Contributed by Serhiy Storchaka in :gh:`109218`.)
-
 * :mod:`codecs`:
-  :func:`codecs.open` is now deprecated. Use :func:`open` instead.
+  The :func:`codecs.open` function is now deprecated,
+  and will be removed in a future version of Python.
+  Use :func:`open` instead.
   (Contributed by Inada Naoki in :gh:`133036`.)
 
 * :mod:`ctypes`:
 
   * On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
-    MSVC-compatible default memory layout is deprecated in favor of setting
-    :attr:`.Structure._layout_` to ``'ms'``.
+    MSVC-compatible default memory layout is now deprecated in favor of setting
+    :attr:`.Structure._layout_` to ``'ms'``, and will be removed in Python 3.19.
     (Contributed by Petr Viktorin in :gh:`131747`.)
 
-  * Calling :func:`ctypes.POINTER` on a string is deprecated.
-    Use :ref:`ctypes-incomplete-types` for self-referential structures.
+  * Calling :func:`ctypes.POINTER` on a string is now deprecated.
+    Use :ref:`incomplete types <ctypes-incomplete-types>`
+    for self-referential structures.
     Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
     See :func:`ctypes.POINTER` for updated implementation details.
     (Contributed by Sergey Myrianov in :gh:`100926`.)
 
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
-  or *sequence* as keyword arguments is now deprecated.
+  or *sequence* as keyword arguments is now deprecated;
+  the parameters will be made positional-only in Python 3.16.
   (Contributed by Kirill Podoprigora in :gh:`121676`.)
 
 * :mod:`logging`:
-  Support for custom logging handlers with the *strm* argument is deprecated
-  and scheduled for removal in Python 3.16. Define handlers with the *stream*
-  argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
+  Support for custom logging handlers with the *strm* argument
+  is now deprecated and scheduled for removal in Python 3.16.
+  Define handlers with the *stream* argument instead.
+  (Contributed by Mariusz Felisiak in :gh:`115032`.)
 
 * :mod:`mimetypes`:
-  Valid extensions start with a '.' or are empty for
+  Valid extensions are either empty or must start with '.' for
   :meth:`mimetypes.MimeTypes.add_type`.
   Undotted extensions are deprecated and will
   raise a :exc:`ValueError` in Python 3.16.
   (Contributed by Hugo van Kemenade in :gh:`75223`.)
 
-* :mod:`!nturl2path`: This module is now deprecated. Call
-  :func:`urllib.request.url2pathname` and :func:`~urllib.request.pathname2url`
-  instead.
+* :mod:`!nturl2path`:
+  This module is now deprecated. Call :func:`urllib.request.url2pathname`
+  and :func:`~urllib.request.pathname2url` instead.
   (Contributed by Barney Gale in :gh:`125866`.)
 
 * :mod:`os`:
-  :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
-  :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
-  write new code.  The :mod:`subprocess` module is recommended instead.
+  The :func:`os.popen` and :func:`os.spawn* <os.spawnl>` functions
+  are now :term:`soft deprecated`.
+  They should no longer be used to write new code.
+  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
 
 * :mod:`pathlib`:
-  :meth:`!pathlib.PurePath.as_uri` is deprecated and will be removed in Python
-  3.19. Use :meth:`pathlib.Path.as_uri` instead.
+  :meth:`!pathlib.PurePath.as_uri` is now deprecated
+  and scheduled for removal in Python 3.19.
+  Use :meth:`pathlib.Path.as_uri` instead.
   (Contributed by Barney Gale in :gh:`123599`.)
 
 * :mod:`pdb`:
   The undocumented ``pdb.Pdb.curframe_locals`` attribute is now a deprecated
-  read-only property. The low overhead dynamic frame locals access added in
-  Python 3.13 by PEP 667 means the frame locals cache reference previously
-  stored in this attribute is no longer needed. Derived debuggers should access
+  read-only property, which will be removed in a future version of Python.
+  The low overhead dynamic frame locals access added in Python 3.13 by :pep:`667`
+  means the frame locals cache reference previously stored in this attribute
+  is no longer needed. Derived debuggers should access
   ``pdb.Pdb.curframe.f_locals`` directly in Python 3.13 and later versions.
   (Contributed by Tian Gao in :gh:`124369` and :gh:`125951`.)
 
 * :mod:`symtable`:
-  Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
+  Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest,
+  scheduled for removal in Python 3.16.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
 
 * :mod:`tkinter`:
   The :class:`!tkinter.Variable` methods :meth:`!trace_variable`,
   :meth:`!trace_vdelete` and :meth:`!trace_vinfo` are now deprecated.
-  Use :meth:`!trace_add`, :meth:`!trace_remove` and :meth:`!trace_info`
-  instead.
+  Use :meth:`!trace_add`, :meth:`!trace_remove` and :meth:`!trace_info` instead.
   (Contributed by Serhiy Storchaka in :gh:`120220`.)
 
 * :mod:`urllib.parse`:
   Accepting objects with false values (like ``0`` and ``[]``) except empty
-  strings, byte-like objects and ``None`` in :mod:`urllib.parse` functions
-  :func:`~urllib.parse.parse_qsl` and :func:`~urllib.parse.parse_qs` is now
-  deprecated.
+  strings, bytes-like objects and ``None`` in :func:`~urllib.parse.parse_qsl`
+  and :func:`~urllib.parse.parse_qs` is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`116897`.)
 
 .. Add deprecations above alphabetically, not here at the end.
