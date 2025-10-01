@@ -417,7 +417,7 @@ class OutputTestCase(unittest.TestCase):
         self.check_htmlcalendar_encoding('utf-8', 'utf-8')
 
     def test_output_htmlcalendar_encoding_default(self):
-        self.check_htmlcalendar_encoding(None, sys.getdefaultencoding())
+        self.check_htmlcalendar_encoding(None, 'utf-8')
 
     def test_yeardatescalendar(self):
         def shrink(cal):
@@ -987,6 +987,7 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertCLIFails(*args)
         self.assertCmdFails(*args)
 
+    @support.force_not_colorized
     def test_help(self):
         stdout = self.run_cmd_ok('-h')
         self.assertIn(b'usage:', stdout)
@@ -1097,7 +1098,7 @@ class CommandLineTestCase(unittest.TestCase):
             output = run('--type', 'text', '2004')
             self.assertEqual(output, conv(result_2004_text))
             output = run('--type', 'html', '2004')
-            self.assertEqual(output[:6], b'<?xml ')
+            self.assertStartsWith(output, b'<?xml ')
             self.assertIn(b'<title>Calendar for 2004</title>', output)
 
     def test_html_output_current_year(self):

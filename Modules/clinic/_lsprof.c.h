@@ -82,6 +82,39 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_lsprof_Profiler__pythrow_callback__doc__,
+"_pythrow_callback($self, code, instruction_offset, exception, /)\n"
+"--\n"
+"\n");
+
+#define _LSPROF_PROFILER__PYTHROW_CALLBACK_METHODDEF    \
+    {"_pythrow_callback", _PyCFunction_CAST(_lsprof_Profiler__pythrow_callback), METH_FASTCALL, _lsprof_Profiler__pythrow_callback__doc__},
+
+static PyObject *
+_lsprof_Profiler__pythrow_callback_impl(ProfilerObject *self, PyObject *code,
+                                        PyObject *instruction_offset,
+                                        PyObject *exception);
+
+static PyObject *
+_lsprof_Profiler__pythrow_callback(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *code;
+    PyObject *instruction_offset;
+    PyObject *exception;
+
+    if (!_PyArg_CheckPositional("_pythrow_callback", nargs, 3, 3)) {
+        goto exit;
+    }
+    code = args[0];
+    instruction_offset = args[1];
+    exception = args[2];
+    return_value = _lsprof_Profiler__pythrow_callback_impl((ProfilerObject *)self, code, instruction_offset, exception);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_lsprof_Profiler__pyreturn_callback__doc__,
 "_pyreturn_callback($self, code, instruction_offset, retval, /)\n"
 "--\n"
@@ -411,4 +444,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fe231309776df7a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9e46985561166c37 input=a9049054013a1b77]*/

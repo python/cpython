@@ -295,9 +295,21 @@ _PyLong_AsMode_t(PyObject *op)
     unsigned long value;
     mode_t mode;
 
-    value = PyLong_AsUnsignedLong(op);
-    if ((value == (unsigned long)-1) && PyErr_Occurred())
+    if (PyLong_Check(op)) {
+        value = PyLong_AsUnsignedLong(op);
+    }
+    else {
+        op = PyNumber_Index(op);
+        if (op == NULL) {
+            return (mode_t)-1;
+        }
+        value = PyLong_AsUnsignedLong(op);
+        Py_DECREF(op);
+    }
+
+    if ((value == (unsigned long)-1) && PyErr_Occurred()) {
         return (mode_t)-1;
+    }
 
     mode = (mode_t)value;
     if ((unsigned long)mode != value) {

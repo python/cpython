@@ -154,15 +154,15 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
 .. productionlist:: python-grammar
-   for_stmt: "for" `target_list` "in" `starred_list` ":" `suite`
+   for_stmt: "for" `target_list` "in" `starred_expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
-The ``starred_list`` expression is evaluated once; it should yield an
-:term:`iterable` object.  An :term:`iterator` is created for that iterable.
-The first item provided
-by the iterator is then assigned to the target list using the standard
-rules for assignments (see :ref:`assignment`), and the suite is executed.  This
-repeats for each item provided by the iterator.  When the iterator is exhausted,
+The :token:`~python-grammar:starred_expression_list` expression is evaluated
+once; it should yield an :term:`iterable` object. An :term:`iterator` is
+created for that iterable. The first item provided by the iterator is then
+assigned to the target list using the standard rules for assignments
+(see :ref:`assignment`), and the suite is executed. This repeats for each
+item provided by the iterator. When the iterator is exhausted,
 the suite in the :keyword:`!else` clause,
 if present, is executed, and the loop terminates.
 
@@ -1885,7 +1885,7 @@ expressions. The presence of annotations does not change the runtime semantics o
 the code, except if some mechanism is used that introspects and uses the annotations
 (such as :mod:`dataclasses` or :func:`functools.singledispatch`).
 
-By default, annotations are lazily evaluated in a :ref:`annotation scope <annotation-scopes>`.
+By default, annotations are lazily evaluated in an :ref:`annotation scope <annotation-scopes>`.
 This means that they are not evaluated when the code containing the annotation is evaluated.
 Instead, the interpreter saves information that can be used to evaluate the annotation later
 if requested. The :mod:`annotationlib` module provides tools for evaluating annotations.
@@ -1897,6 +1897,12 @@ all annotations are instead stored as strings::
    >>> def f(param: annotation): ...
    >>> f.__annotations__
    {'param': 'annotation'}
+
+This future statement will be deprecated and removed in a future version of Python,
+but not before Python 3.13 reaches its end of life (see :pep:`749`).
+When it is used, introspection tools like
+:func:`annotationlib.get_annotations` and :func:`typing.get_type_hints` are
+less likely to be able to resolve annotations at runtime.
 
 
 .. rubric:: Footnotes

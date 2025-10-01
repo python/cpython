@@ -32,6 +32,13 @@ try:
 except ImportError:
     _LZMA_SUPPORTED = False
 
+try:
+    from compression import zstd
+    del zstd
+    _ZSTD_SUPPORTED = True
+except ImportError:
+    _ZSTD_SUPPORTED = False
+
 _WINDOWS = os.name == 'nt'
 posix = nt = None
 if os.name == 'posix':
@@ -1006,6 +1013,8 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
         tar_compression = 'bz2'
     elif _LZMA_SUPPORTED and compress == 'xz':
         tar_compression = 'xz'
+    elif _ZSTD_SUPPORTED and compress == 'zst':
+        tar_compression = 'zst'
     else:
         raise ValueError("bad value for 'compress', or compression format not "
                          "supported : {0}".format(compress))
@@ -1134,6 +1143,10 @@ if _LZMA_SUPPORTED:
     _ARCHIVE_FORMATS['xztar'] = (_make_tarball, [('compress', 'xz')],
                                 "xz'ed tar-file")
 
+if _ZSTD_SUPPORTED:
+    _ARCHIVE_FORMATS['zstdtar'] = (_make_tarball, [('compress', 'zst')],
+                                  "zstd'ed tar-file")
+
 def get_archive_formats():
     """Returns a list of supported formats for archiving and unarchiving.
 
@@ -1174,7 +1187,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
 
     'base_name' is the name of the file to create, minus any format-specific
     extension; 'format' is the archive format: one of "zip", "tar", "gztar",
-    "bztar", or "xztar".  Or any other registered format.
+    "bztar", "zstdtar", or "xztar".  Or any other registered format.
 
     'root_dir' is a directory that will be the root directory of the
     archive; ie. we typically chdir into 'root_dir' before creating the
@@ -1358,6 +1371,10 @@ if _BZ2_SUPPORTED:
 if _LZMA_SUPPORTED:
     _UNPACK_FORMATS['xztar'] = (['.tar.xz', '.txz'], _unpack_tarfile, [],
                                 "xz'ed tar-file")
+
+if _ZSTD_SUPPORTED:
+    _UNPACK_FORMATS['zstdtar'] = (['.tar.zst', '.tzst'], _unpack_tarfile, [],
+                                  "zstd'ed tar-file")
 
 def _find_unpack_format(filename):
     for name, info in _UNPACK_FORMATS.items():

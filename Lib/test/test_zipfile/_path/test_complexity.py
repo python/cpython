@@ -8,9 +8,7 @@ import zipfile
 
 from ._functools import compose
 from ._itertools import consume
-
 from ._support import import_or_skip
-
 
 big_o = import_or_skip('big_o')
 pytest = import_or_skip('pytest')

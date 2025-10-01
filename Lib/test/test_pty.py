@@ -20,7 +20,6 @@ import select
 import signal
 import socket
 import io # readline
-import warnings
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
 TEST_STRING_2 = b"For my pet fish, Eric.\n"

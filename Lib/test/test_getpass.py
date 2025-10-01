@@ -161,6 +161,45 @@ class UnixGetpassTest(unittest.TestCase):
             self.assertIn('Warning', stderr.getvalue())
             self.assertIn('Password:', stderr.getvalue())
 
+    def test_echo_char_replaces_input_with_asterisks(self):
+        mock_result = '*************'
+        with mock.patch('os.open') as os_open, \
+                mock.patch('io.FileIO'), \
+                mock.patch('io.TextIOWrapper') as textio, \
+                mock.patch('termios.tcgetattr'), \
+                mock.patch('termios.tcsetattr'), \
+                mock.patch('getpass._raw_input') as mock_input:
+            os_open.return_value = 3
+            mock_input.return_value = mock_result
+
+            result = getpass.unix_getpass(echo_char='*')
+            mock_input.assert_called_once_with('Password: ', textio(),
+                                               input=textio(), echo_char='*')
+            self.assertEqual(result, mock_result)
+
+    def test_raw_input_with_echo_char(self):
+        passwd = 'my1pa$$word!'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        with mock.patch('sys.stdin', mock_input), \
+                mock.patch('sys.stdout', mock_output):
+            result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                        '*')
+        self.assertEqual(result, passwd)
+        self.assertEqual('Password: ************', mock_output.getvalue())
+
+    def test_control_chars_with_echo_char(self):
+        passwd = 'pass\twd\b'
+        expect_result = 'pass\tw'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        with mock.patch('sys.stdin', mock_input), \
+                mock.patch('sys.stdout', mock_output):
+            result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                        '*')
+        self.assertEqual(result, expect_result)
+        self.assertEqual('Password: *******\x08 \x08', mock_output.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

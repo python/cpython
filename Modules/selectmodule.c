@@ -1922,14 +1922,27 @@ kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    if (PyLong_Check(pfd)) {
-        self->e.ident = PyLong_AsSize_t(pfd);
+    if (PyIndex_Check(pfd)) {
+        Py_ssize_t bytes = PyLong_AsNativeBytes(pfd,
+                &self->e.ident, sizeof(self->e.ident),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_REJECT_NEGATIVE |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (bytes < 0) {
+            return -1;
+        }
+        if ((size_t)bytes > sizeof(self->e.ident)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "Python int too large for C kqueue event identifier");
+            return -1;
+        }
     }
     else {
         self->e.ident = PyObject_AsFileDescriptor(pfd);
-    }
-    if (PyErr_Occurred()) {
-        return -1;
+        if (PyErr_Occurred()) {
+            return -1;
+        }
     }
     return 0;
 }

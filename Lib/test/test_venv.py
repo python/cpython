@@ -774,7 +774,7 @@ class BasicTest(BaseTest):
         with open(script_path, 'rb') as script:
             for i, line in enumerate(script, 1):
                 error_message = f"CR LF found in line {i}"
-                self.assertFalse(line.endswith(b'\r\n'), error_message)
+                self.assertNotEndsWith(line, b'\r\n', error_message)
 
     @requireVenvCreate
     def test_scm_ignore_files_git(self):
@@ -978,7 +978,7 @@ class EnsurePipTest(BaseTest):
         self.assertEqual(err, "")
         out = out.decode("latin-1") # Force to text, prevent decoding errors
         expected_version = "pip {}".format(ensurepip.version())
-        self.assertEqual(out[:len(expected_version)], expected_version)
+        self.assertStartsWith(out, expected_version)
         env_dir = os.fsencode(self.env_dir).decode("latin-1")
         self.assertIn(env_dir, out)
 
@@ -1008,7 +1008,7 @@ class EnsurePipTest(BaseTest):
                      err, flags=re.MULTILINE)
         # Ignore warning about missing optional module:
         try:
-            import ssl
+            import ssl  # noqa: F401
         except ImportError:
             err = re.sub(
                 "^WARNING: Disabling truststore since ssl support is missing$",

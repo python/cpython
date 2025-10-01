@@ -25,6 +25,7 @@ extern int _PyRun_InteractiveLoopObject(
     PyObject *filename,
     PyCompilerFlags *flags);
 
+extern int _PyObject_SupportedAsScript(PyObject *);
 extern const char* _Py_SourceAsString(
     PyObject *cmd,
     const char *funcname,

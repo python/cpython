@@ -1185,7 +1185,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     }
 
     /* Check we have been asked for a real text encoding */
-    codec_info = _PyCodec_LookupTextEncoding(encoding, "codecs.open()");
+    codec_info = _PyCodec_LookupTextEncoding(encoding, NULL);
     if (codec_info == NULL) {
         Py_CLEAR(self->encoding);
         goto error;
@@ -1324,8 +1324,7 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
     }
 
     // Create new encoder & decoder
-    PyObject *codec_info = _PyCodec_LookupTextEncoding(
-        c_encoding, "codecs.open()");
+    PyObject *codec_info = _PyCodec_LookupTextEncoding(c_encoding, NULL);
     if (codec_info == NULL) {
         Py_DECREF(encoding);
         Py_DECREF(errors);
@@ -1579,6 +1578,8 @@ _io_TextIOWrapper_detach_impl(textio *self)
 static int
 _textiowrapper_writeflush(textio *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
     if (self->pending_bytes == NULL)
         return 0;
 
@@ -3174,8 +3175,9 @@ _io_TextIOWrapper_close_impl(textio *self)
 }
 
 static PyObject *
-textiowrapper_iternext(PyObject *op)
+textiowrapper_iternext_lock_held(PyObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyObject *line;
     textio *self = textio_CAST(op);
 
@@ -3209,6 +3211,16 @@ textiowrapper_iternext(PyObject *op)
     }
 
     return line;
+}
+
+static PyObject *
+textiowrapper_iternext(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = textiowrapper_iternext_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 /*[clinic input]
@@ -3367,8 +3379,7 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_TELL_METHODDEF
     _IO_TEXTIOWRAPPER_TRUNCATE_METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL, NULL}
 };
 

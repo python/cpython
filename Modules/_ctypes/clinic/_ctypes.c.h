@@ -31,6 +31,48 @@ _ctypes_CType_Type___sizeof__(PyObject *self, PyTypeObject *cls, PyObject *const
     return _ctypes_CType_Type___sizeof___impl(self, cls);
 }
 
+#if !defined(_ctypes_CType_Type___pointer_type___DOCSTR)
+#  define _ctypes_CType_Type___pointer_type___DOCSTR NULL
+#endif
+#if defined(_CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF)
+#  undef _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF
+#  define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, (setter)_ctypes_CType_Type___pointer_type___set, _ctypes_CType_Type___pointer_type___DOCSTR},
+#else
+#  define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, NULL, _ctypes_CType_Type___pointer_type___DOCSTR},
+#endif
+
+static PyObject *
+_ctypes_CType_Type___pointer_type___get_impl(PyObject *self);
+
+static PyObject *
+_ctypes_CType_Type___pointer_type___get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _ctypes_CType_Type___pointer_type___get_impl(self);
+}
+
+#if !defined(_ctypes_CType_Type___pointer_type___DOCSTR)
+#  define _ctypes_CType_Type___pointer_type___DOCSTR NULL
+#endif
+#if defined(_CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF)
+#  undef _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF
+#  define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, (setter)_ctypes_CType_Type___pointer_type___set, _ctypes_CType_Type___pointer_type___DOCSTR},
+#else
+#  define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", NULL, (setter)_ctypes_CType_Type___pointer_type___set, NULL},
+#endif
+
+static int
+_ctypes_CType_Type___pointer_type___set_impl(PyObject *self, PyObject *value);
+
+static int
+_ctypes_CType_Type___pointer_type___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    return_value = _ctypes_CType_Type___pointer_type___set_impl(self, value);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(CDataType_from_address__doc__,
 "from_address($self, value, /)\n"
 "--\n"
@@ -1000,4 +1042,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=9fb75bf7e9a17df2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=536c9bcf4e05913e input=a9049054013a1b77]*/

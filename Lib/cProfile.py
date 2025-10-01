@@ -6,6 +6,7 @@ __all__ = ["run", "runctx", "Profile"]
 
 import _lsprof
 import importlib.machinery
+import importlib.util
 import io
 import profile as _pyprofile
 
@@ -173,13 +174,22 @@ def main():
                 code = compile(fp.read(), progname, 'exec')
             spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
                                                   origin=progname)
-            globs = {
+            module = importlib.util.module_from_spec(spec)
+            # Set __main__ so that importing __main__ in the profiled code will
+            # return the same namespace that the code is executing under.
+            sys.modules['__main__'] = module
+            # Ensure that we're using the same __dict__ instance as the module
+            # for the global variables so that updates to globals are reflected
+            # in the module's namespace.
+            globs = module.__dict__
+            globs.update({
                 '__spec__': spec,
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,
                 '__cached__': None,
-            }
+            })
+
         try:
             runctx(code, globs, None, options.outfile, options.sort)
         except BrokenPipeError as exc:

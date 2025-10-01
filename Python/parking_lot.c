@@ -112,17 +112,27 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
         }
     }
 
-    // NOTE: we wait on the sigint event even in non-main threads to match the
-    // behavior of the other platforms. Non-main threads will ignore the
-    // Py_PARK_INTR result.
-    HANDLE sigint_event = _PyOS_SigintEvent();
-    HANDLE handles[2] = { sema->platform_sem, sigint_event };
-    DWORD count = sigint_event != NULL ? 2 : 1;
+    HANDLE handles[2] = { sema->platform_sem, NULL };
+    HANDLE sigint_event = NULL;
+    DWORD count = 1;
+    if (_Py_IsMainThread()) {
+        // gh-135099: Wait on the SIGINT event only in the main thread. Other
+        // threads would ignore the result anyways, and accessing
+        // `_PyOS_SigintEvent()` from non-main threads may race with
+        // interpreter shutdown, which closes the event handle. Note that
+        // non-main interpreters will ignore the result.
+        sigint_event = _PyOS_SigintEvent();
+        if (sigint_event != NULL) {
+            handles[1] = sigint_event;
+            count = 2;
+        }
+    }
     wait = WaitForMultipleObjects(count, handles, FALSE, millis);
     if (wait == WAIT_OBJECT_0) {
         res = Py_PARK_OK;
     }
     else if (wait == WAIT_OBJECT_0 + 1) {
+        assert(sigint_event != NULL);
         ResetEvent(sigint_event);
         res = Py_PARK_INTR;
     }

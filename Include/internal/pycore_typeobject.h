@@ -134,7 +134,6 @@ extern int _PyType_AddMethod(PyTypeObject *, PyMethodDef *);
 extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
                                       unsigned long flags);
 
-extern unsigned int _PyType_GetVersionForCurrentState(PyTypeObject *tp);
 PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
 PyTypeObject *_PyType_LookupByVersion(unsigned int version);
 
@@ -149,7 +148,7 @@ typedef int (*_py_validate_type)(PyTypeObject *);
 extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
 extern int _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version);
 
-// Precalculates count of non-unique slots and fills wrapperbase::name_count.
+// Precalculates count of non-unique slots and fills wrapperbase.name_count.
 extern int _PyType_InitSlotDefs(PyInterpreterState *interp);
 
 #ifdef __cplusplus

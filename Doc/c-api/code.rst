@@ -182,7 +182,7 @@ bound into a function.
    Type of a code object watcher callback function.
 
    If *event* is ``PY_CODE_EVENT_CREATE``, then the callback is invoked
-   after `co` has been fully initialized. Otherwise, the callback is invoked
+   after *co* has been fully initialized. Otherwise, the callback is invoked
    before the destruction of *co* takes place, so the prior state of *co*
    can be inspected.
 

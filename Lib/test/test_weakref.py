@@ -432,7 +432,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(proxy.foo, 2,
                      "proxy does not reflect attribute modification")
         del o.foo
-        self.assertFalse(hasattr(proxy, 'foo'),
+        self.assertNotHasAttr(proxy, 'foo',
                      "proxy does not reflect attribute removal")
 
         proxy.foo = 1
@@ -442,7 +442,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(o.foo, 2,
             "object does not reflect attribute modification via proxy")
         del proxy.foo
-        self.assertFalse(hasattr(o, 'foo'),
+        self.assertNotHasAttr(o, 'foo',
                      "object does not reflect attribute removal via proxy")
 
     def test_proxy_deletion(self):
@@ -1108,7 +1108,7 @@ class SubclassableWeakrefTestCase(TestBase):
         self.assertEqual(r.slot1, "abc")
         self.assertEqual(r.slot2, "def")
         self.assertEqual(r.meth(), "abcdef")
-        self.assertFalse(hasattr(r, "__dict__"))
+        self.assertNotHasAttr(r, "__dict__")
 
     def test_subclass_refs_with_cycle(self):
         """Confirm https://bugs.python.org/issue3100 is fixed."""

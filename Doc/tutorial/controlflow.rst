@@ -999,7 +999,8 @@ scope::
    43
 
 The above example uses a lambda expression to return a function.  Another use
-is to pass a small function as an argument::
+is to pass a small function as an argument.  For instance, :meth:`list.sort`
+takes a sorting key function *key* which can be a lambda function::
 
    >>> pairs = [(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')]
    >>> pairs.sort(key=lambda pair: pair[1])
@@ -1055,7 +1056,7 @@ Here is an example of a multi-line docstring::
    >>> print(my_function.__doc__)
    Do nothing, but document it.
 
-       No, really, it doesn't do anything.
+   No, really, it doesn't do anything.
 
 
 .. _tut-annotations:

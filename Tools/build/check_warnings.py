@@ -83,17 +83,13 @@ def extract_warnings_from_compiler_output(
     for i, line in enumerate(compiler_output.splitlines(), start=1):
         if match := compiled_regex.match(line):
             try:
-                compiler_warnings.append(
-                    {
-                        "file": match.group("file").removeprefix(path_prefix),
-                        "line": match.group("line"),
-                        "column": match.group("column"),
-                        "message": match.group("message"),
-                        "option": match.group("option")
-                        .lstrip("[")
-                        .rstrip("]"),
-                    }
-                )
+                compiler_warnings.append({
+                    "file": match.group("file").removeprefix(path_prefix),
+                    "line": match.group("line"),
+                    "column": match.group("column"),
+                    "message": match.group("message"),
+                    "option": match.group("option").lstrip("[").rstrip("]"),
+                })
             except AttributeError:
                 print(
                     f"Error parsing compiler output. "
@@ -151,7 +147,6 @@ def get_unexpected_warnings(
     """
     unexpected_warnings = {}
     for file in files_with_warnings.keys():
-
         rule = is_file_ignored(file, ignore_rules)
 
         if rule:
@@ -201,13 +196,11 @@ def get_unexpected_improvements(
             if rule.file_path not in files_with_warnings.keys():
                 unexpected_improvements.append((rule.file_path, rule.count, 0))
             elif len(files_with_warnings[rule.file_path]) < rule.count:
-                unexpected_improvements.append(
-                    (
-                        rule.file_path,
-                        rule.count,
-                        len(files_with_warnings[rule.file_path]),
-                    )
-                )
+                unexpected_improvements.append((
+                    rule.file_path,
+                    rule.count,
+                    len(files_with_warnings[rule.file_path]),
+                ))
 
     if unexpected_improvements:
         print("Unexpected improvements:")

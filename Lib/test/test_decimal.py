@@ -28,7 +28,6 @@ import logging
 import math
 import os, sys
 import operator
-import warnings
 import pickle, copy
 import unittest
 import numbers
@@ -982,6 +981,7 @@ class FormatTest:
             ('.0f', '0e-2', '0'),
             ('.0f', '3.14159265', '3'),
             ('.1f', '3.14159265', '3.1'),
+            ('.01f', '3.14159265', '3.1'), # leading zero in precision
             ('.4f', '3.14159265', '3.1416'),
             ('.6f', '3.14159265', '3.141593'),
             ('.7f', '3.14159265', '3.1415926'), # round-half-even!
@@ -1067,6 +1067,7 @@ class FormatTest:
             ('8,', '123456', ' 123,456'),
             ('08,', '123456', '0,123,456'), # special case: extra 0 needed
             ('+08,', '123456', '+123,456'), # but not if there's a sign
+            ('008,', '123456', '0,123,456'), # leading zero in width
             (' 08,', '123456', ' 123,456'),
             ('08,', '-123456', '-123,456'),
             ('+09,', '123456', '+0,123,456'),
@@ -4399,6 +4400,51 @@ class CContextSubclassing(ContextSubclassing, unittest.TestCase):
 class PyContextSubclassing(ContextSubclassing, unittest.TestCase):
     decimal = P
 
+class IEEEContexts:
+
+    def test_ieee_context(self):
+        # issue 8786: Add support for IEEE 754 contexts to decimal module.
+        IEEEContext = self.decimal.IEEEContext
+
+        def assert_rest(self, context):
+            self.assertEqual(context.clamp, 1)
+            assert_signals(self, context, 'traps', [])
+            assert_signals(self, context, 'flags', [])
+
+        c = IEEEContext(32)
+        self.assertEqual(c.prec, 7)
+        self.assertEqual(c.Emax, 96)
+        self.assertEqual(c.Emin, -95)
+        assert_rest(self, c)
+
+        c = IEEEContext(64)
+        self.assertEqual(c.prec, 16)
+        self.assertEqual(c.Emax, 384)
+        self.assertEqual(c.Emin, -383)
+        assert_rest(self, c)
+
+        c = IEEEContext(128)
+        self.assertEqual(c.prec, 34)
+        self.assertEqual(c.Emax, 6144)
+        self.assertEqual(c.Emin, -6143)
+        assert_rest(self, c)
+
+        # Invalid values
+        self.assertRaises(ValueError, IEEEContext, -1)
+        self.assertRaises(ValueError, IEEEContext, 123)
+        self.assertRaises(ValueError, IEEEContext, 1024)
+
+    def test_constants(self):
+        # IEEEContext
+        IEEE_CONTEXT_MAX_BITS = self.decimal.IEEE_CONTEXT_MAX_BITS
+        self.assertIn(IEEE_CONTEXT_MAX_BITS, {256, 512})
+
+@requires_cdecimal
+class CIEEEContexts(IEEEContexts, unittest.TestCase):
+    decimal = C
+class PyIEEEContexts(IEEEContexts, unittest.TestCase):
+    decimal = P
+
 @skip_if_extra_functionality
 @requires_cdecimal
 class CheckAttributes(unittest.TestCase):
@@ -4410,6 +4456,7 @@ class CheckAttributes(unittest.TestCase):
         self.assertEqual(C.MAX_EMAX, P.MAX_EMAX)
         self.assertEqual(C.MIN_EMIN, P.MIN_EMIN)
         self.assertEqual(C.MIN_ETINY, P.MIN_ETINY)
+        self.assertEqual(C.IEEE_CONTEXT_MAX_BITS, P.IEEE_CONTEXT_MAX_BITS)
 
         self.assertTrue(C.HAVE_THREADS is True or C.HAVE_THREADS is False)
         self.assertTrue(P.HAVE_THREADS is True or P.HAVE_THREADS is False)
@@ -4894,42 +4941,6 @@ class CFunctionality(unittest.TestCase):
     """Extra functionality in _decimal"""
 
     @requires_extra_functionality
-    def test_c_ieee_context(self):
-        # issue 8786: Add support for IEEE 754 contexts to decimal module.
-        IEEEContext = C.IEEEContext
-        DECIMAL32 = C.DECIMAL32
-        DECIMAL64 = C.DECIMAL64
-        DECIMAL128 = C.DECIMAL128
-
-        def assert_rest(self, context):
-            self.assertEqual(context.clamp, 1)
-            assert_signals(self, context, 'traps', [])
-            assert_signals(self, context, 'flags', [])
-
-        c = IEEEContext(DECIMAL32)
-        self.assertEqual(c.prec, 7)
-        self.assertEqual(c.Emax, 96)
-        self.assertEqual(c.Emin, -95)
-        assert_rest(self, c)
-
-        c = IEEEContext(DECIMAL64)
-        self.assertEqual(c.prec, 16)
-        self.assertEqual(c.Emax, 384)
-        self.assertEqual(c.Emin, -383)
-        assert_rest(self, c)
-
-        c = IEEEContext(DECIMAL128)
-        self.assertEqual(c.prec, 34)
-        self.assertEqual(c.Emax, 6144)
-        self.assertEqual(c.Emin, -6143)
-        assert_rest(self, c)
-
-        # Invalid values
-        self.assertRaises(OverflowError, IEEEContext, 2**63)
-        self.assertRaises(ValueError, IEEEContext, -1)
-        self.assertRaises(ValueError, IEEEContext, 1024)
-
-    @requires_extra_functionality
     def test_c_context(self):
         Context = C.Context
 
@@ -4948,12 +4959,6 @@ class CFunctionality(unittest.TestCase):
             C.DecFloatOperation, C.DecOverflow, C.DecRounded,
             C.DecSubnormal, C.DecUnderflow
         )
-
-        # IEEEContext
-        self.assertEqual(C.DECIMAL32, 32)
-        self.assertEqual(C.DECIMAL64, 64)
-        self.assertEqual(C.DECIMAL128, 128)
-        self.assertEqual(C.IEEE_CONTEXT_MAX_BITS, 512)
 
         # Conditions
         for i, v in enumerate(cond):

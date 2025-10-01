@@ -1325,7 +1325,7 @@ variable.
 .. nonce: d75n8U
 .. section: Core and Builtins
 
-Adapt :func:`reversed` for use in the free-theading build. The
+Adapt :func:`reversed` for use in the free-threading build. The
 :func:`reversed` is still not thread-safe in the sense that concurrent
 iterations may see the same object, but they will not corrupt the
 interpreter state.

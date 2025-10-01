@@ -371,7 +371,7 @@ def _setoption(arg):
     if message:
         message = re.escape(message)
     if module:
-        module = re.escape(module) + r'\Z'
+        module = re.escape(module) + r'\z'
     if lineno:
         try:
             lineno = int(lineno)

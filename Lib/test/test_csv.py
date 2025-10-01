@@ -10,7 +10,8 @@ import csv
 import gc
 import pickle
 from test import support
-from test.support import import_helper, check_disallow_instantiation
+from test.support import cpython_only, import_helper, check_disallow_instantiation
+from test.support.import_helper import ensure_lazy_imports
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
@@ -1121,19 +1122,22 @@ class TestDialectValidity(unittest.TestCase):
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"quotechar" must be a 1-character string')
+                         '"quotechar" must be a unicode character or None, '
+                         'not a string of length 0')
 
         mydialect.quotechar = "''"
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"quotechar" must be a 1-character string')
+                         '"quotechar" must be a unicode character or None, '
+                         'not a string of length 2')
 
         mydialect.quotechar = 4
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"quotechar" must be string or None, not int')
+                         '"quotechar" must be a unicode character or None, '
+                         'not int')
 
     def test_delimiter(self):
         class mydialect(csv.Dialect):
@@ -1150,31 +1154,32 @@ class TestDialectValidity(unittest.TestCase):
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"delimiter" must be a 1-character string')
+                         '"delimiter" must be a unicode character, '
+                         'not a string of length 3')
 
         mydialect.delimiter = ""
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"delimiter" must be a 1-character string')
+                         '"delimiter" must be a unicode character, not a string of length 0')
 
         mydialect.delimiter = b","
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"delimiter" must be string, not bytes')
+                         '"delimiter" must be a unicode character, not bytes')
 
         mydialect.delimiter = 4
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"delimiter" must be string, not int')
+                         '"delimiter" must be a unicode character, not int')
 
         mydialect.delimiter = None
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"delimiter" must be string, not NoneType')
+                         '"delimiter" must be a unicode character, not NoneType')
 
     def test_escapechar(self):
         class mydialect(csv.Dialect):
@@ -1188,20 +1193,32 @@ class TestDialectValidity(unittest.TestCase):
         self.assertEqual(d.escapechar, "\\")
 
         mydialect.escapechar = ""
-        with self.assertRaisesRegex(csv.Error, '"escapechar" must be a 1-character string'):
+        with self.assertRaises(csv.Error) as cm:
             mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"escapechar" must be a unicode character or None, '
+                         'not a string of length 0')
 
         mydialect.escapechar = "**"
-        with self.assertRaisesRegex(csv.Error, '"escapechar" must be a 1-character string'):
+        with self.assertRaises(csv.Error) as cm:
             mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"escapechar" must be a unicode character or None, '
+                         'not a string of length 2')
 
         mydialect.escapechar = b"*"
-        with self.assertRaisesRegex(csv.Error, '"escapechar" must be string or None, not bytes'):
+        with self.assertRaises(csv.Error) as cm:
             mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"escapechar" must be a unicode character or None, '
+                         'not bytes')
 
         mydialect.escapechar = 4
-        with self.assertRaisesRegex(csv.Error, '"escapechar" must be string or None, not int'):
+        with self.assertRaises(csv.Error) as cm:
             mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"escapechar" must be a unicode character or None, '
+                         'not int')
 
     def test_lineterminator(self):
         class mydialect(csv.Dialect):
@@ -1222,7 +1239,13 @@ class TestDialectValidity(unittest.TestCase):
         with self.assertRaises(csv.Error) as cm:
             mydialect()
         self.assertEqual(str(cm.exception),
-                         '"lineterminator" must be a string')
+                         '"lineterminator" must be a string, not int')
+
+        mydialect.lineterminator = None
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"lineterminator" must be a string, not NoneType')
 
     def test_invalid_chars(self):
         def create_invalid(field_name, value, **kwargs):
@@ -1564,6 +1587,10 @@ class KeyOrderingTest(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, csv, ('csv', '_csv'))
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("csv", {"re"})
 
     def test_subclassable(self):
         # issue 44089

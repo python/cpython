@@ -364,6 +364,12 @@ eval_tests = [
   "f'{a:.2f}'",
   "f'{a!r}'",
   "f'foo({a})'",
+  # TemplateStr and Interpolation
+  "t'{a}'",
+  "t'{a:.2f}'",
+  "t'{a!r}'",
+  "t'{a!r:.2f}'",
+  "t'foo({a})'",
 ]
 
 
@@ -597,5 +603,10 @@ eval_results = [
 ('Expression', ('JoinedStr', (1, 0, 1, 10), [('FormattedValue', (1, 2, 1, 9), ('Name', (1, 3, 1, 4), 'a', ('Load',)), -1, ('JoinedStr', (1, 4, 1, 8), [('Constant', (1, 5, 1, 8), '.2f', None)]))])),
 ('Expression', ('JoinedStr', (1, 0, 1, 8), [('FormattedValue', (1, 2, 1, 7), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 114, None)])),
 ('Expression', ('JoinedStr', (1, 0, 1, 11), [('Constant', (1, 2, 1, 6), 'foo(', None), ('FormattedValue', (1, 6, 1, 9), ('Name', (1, 7, 1, 8), 'a', ('Load',)), -1, None), ('Constant', (1, 9, 1, 10), ')', None)])),
+('Expression', ('TemplateStr', (1, 0, 1, 6), [('Interpolation', (1, 2, 1, 5), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 'a', -1, None)])),
+('Expression', ('TemplateStr', (1, 0, 1, 10), [('Interpolation', (1, 2, 1, 9), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 'a', -1, ('JoinedStr', (1, 4, 1, 8), [('Constant', (1, 5, 1, 8), '.2f', None)]))])),
+('Expression', ('TemplateStr', (1, 0, 1, 8), [('Interpolation', (1, 2, 1, 7), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 'a', 114, None)])),
+('Expression', ('TemplateStr', (1, 0, 1, 12), [('Interpolation', (1, 2, 1, 11), ('Name', (1, 3, 1, 4), 'a', ('Load',)), 'a', 114, ('JoinedStr', (1, 6, 1, 10), [('Constant', (1, 7, 1, 10), '.2f', None)]))])),
+('Expression', ('TemplateStr', (1, 0, 1, 11), [('Constant', (1, 2, 1, 6), 'foo(', None), ('Interpolation', (1, 6, 1, 9), ('Name', (1, 7, 1, 8), 'a', ('Load',)), 'a', -1, None), ('Constant', (1, 9, 1, 10), ')', None)])),
 ]
 main()

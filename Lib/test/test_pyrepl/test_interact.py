@@ -113,7 +113,7 @@ class TestSimpleInteract(unittest.TestCase):
         r = """
     def f(x, x): ...
              ^
-SyntaxError: duplicate argument 'x' in function definition"""
+SyntaxError: duplicate parameter 'x' in function definition"""
         self.assertIn(r, f.getvalue())
 
     def test_runsource_shows_syntax_error_for_failed_compilation(self):

@@ -9,6 +9,9 @@
 # }
 _Py_trampoline_func_start:
 #ifdef __x86_64__
+#if defined(__CET__) && (__CET__ & 1)
+    endbr64
+#endif
     sub    $8, %rsp
     call    *%rcx
     add    $8, %rsp
@@ -34,3 +37,22 @@ _Py_trampoline_func_start:
     .globl	_Py_trampoline_func_end
 _Py_trampoline_func_end:
     .section        .note.GNU-stack,"",@progbits
+# Note for indicating the assembly code supports CET
+#if defined(__x86_64__) && defined(__CET__) && (__CET__ & 1)
+    .section    .note.gnu.property,"a"
+    .align 8
+    .long    1f - 0f
+    .long    4f - 1f
+    .long    5
+0:
+    .string  "GNU"
+1:
+    .align 8
+    .long    0xc0000002
+    .long    3f - 2f
+2:
+    .long    0x3
+3:
+    .align 8
+4:
+#endif // __x86_64__

@@ -661,6 +661,11 @@ iomodule_exec(PyObject *m)
         "UnsupportedOperation", PyExc_OSError, PyExc_ValueError);
     if (state->unsupported_operation == NULL)
         return -1;
+    if (PyObject_SetAttrString(state->unsupported_operation,
+                               "__module__", &_Py_ID(io)) < 0)
+    {
+        return -1;
+    }
     if (PyModule_AddObjectRef(m, "UnsupportedOperation",
                               state->unsupported_operation) < 0)
     {

@@ -142,6 +142,7 @@ class Regrtest:
             self.random_seed = random.getrandbits(32)
         else:
             self.random_seed = ns.random_seed
+        self.prioritize_tests: tuple[str, ...] = tuple(ns.prioritize)
 
         self.parallel_threads = ns.parallel_threads
 
@@ -236,6 +237,16 @@ class Regrtest:
         random.seed(self.random_seed)
         if self.randomize:
             random.shuffle(selected)
+
+        for priority_test in reversed(self.prioritize_tests):
+            try:
+                selected.remove(priority_test)
+            except ValueError:
+                print(f"warning: --prioritize={priority_test} used"
+                        f" but test not actually selected")
+                continue
+            else:
+                selected.insert(0, priority_test)
 
         return (tuple(selected), tests)
 
@@ -532,8 +543,6 @@ class Regrtest:
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
 
-        setup_process()
-
         if (runtests.hunt_refleak is not None) and (not self.num_workers):
             # gh-109739: WindowsLoadTracker thread interferes with refleak check
             use_load_tracker = False
@@ -710,10 +719,7 @@ class Regrtest:
         self._execute_python(cmd, environ)
 
     def _init(self):
-        # Set sys.stdout encoder error handler to backslashreplace,
-        # similar to sys.stderr error handler, to avoid UnicodeEncodeError
-        # when printing a traceback or any other non-encodable character.
-        sys.stdout.reconfigure(errors="backslashreplace")
+        setup_process()
 
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)

@@ -6,7 +6,6 @@
 #include "pycore_import.h"        // _PyImport_SwapPackageContext()
 #include "pycore_importdl.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
-#include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_runtime.h"       // _Py_ID()
 

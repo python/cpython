@@ -405,6 +405,8 @@ aliases = {
     'iso_8859_8'         : 'iso8859_8',
     'iso_8859_8_1988'    : 'iso8859_8',
     'iso_ir_138'         : 'iso8859_8',
+    'iso_8859_8_i'       : 'iso8859_8',
+    'iso_8859_8_e'       : 'iso8859_8',
 
     # iso8859_9 codec
     'csisolatin5'        : 'iso8859_9',

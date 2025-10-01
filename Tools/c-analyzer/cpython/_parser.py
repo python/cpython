@@ -323,7 +323,7 @@ MAX_SIZES = {
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
     _abs('Modules/expat/expat.h'): (10_000, 400),
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
-    _abs('Objects/typeobject.c'): (35_000, 200),
+    _abs('Objects/typeobject.c'): (380_000, 13_000),
     _abs('Python/compile.c'): (20_000, 500),
     _abs('Python/optimizer.c'): (100_000, 5_000),
     _abs('Python/parking_lot.c'): (40_000, 1000),

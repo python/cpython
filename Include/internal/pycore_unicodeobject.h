@@ -139,14 +139,18 @@ extern PyObject* _PyUnicode_DecodeUnicodeEscapeStateful(
 // Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
 // chars.
 // Export for test_peg_generator.
-PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal2(
     const char *string,     /* Unicode-Escape encoded string */
     Py_ssize_t length,      /* size of string */
     const char *errors,     /* error handling */
     Py_ssize_t *consumed,   /* bytes consumed */
-    const char **first_invalid_escape); /* on return, points to first
-                                           invalid escaped char in
-                                           string. */
+    int *first_invalid_escape_char, /* on return, if not -1, contain the first
+                                       invalid escaped char (<= 0xff) or invalid
+                                       octal escape (> 0xff) in string. */
+    const char **first_invalid_escape_ptr); /* on return, if not NULL, may
+                                        point to the first invalid escaped
+                                        char in string.
+                                        May be NULL if errors is not NULL. */
 
 /* --- Raw-Unicode-Escape Codecs ---------------------------------------------- */
 
@@ -246,6 +250,12 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
     PyObject *thousands_sep,
     Py_UCS4 *maxchar,
     int forward);
+
+/* Dedent a string.
+   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Return a new reference on success, NULL with exception set on error.
+   */
+extern PyObject* _PyUnicode_Dedent(PyObject *unicode);
 
 /* --- Misc functions ----------------------------------------------------- */
 

@@ -1033,7 +1033,7 @@ retrieve the spec information.
 .. nonce: s3vKql
 .. section: Library
 
-:mod:`argparse` vim supports abbreviated single-dash long options separated
+:mod:`argparse` supports abbreviated single-dash long options separated
 by ``=`` from its value.
 
 ..

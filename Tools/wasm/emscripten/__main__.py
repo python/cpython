@@ -248,10 +248,10 @@ def configure_emscripten_python(context, working_dir):
 
             # Macs come with FreeBSD coreutils which doesn't have the -s option
             # so feature detect and work around it.
-            if which grealpath > /dev/null; then
+            if which grealpath > /dev/null 2>&1; then
                 # It has brew installed gnu core utils, use that
                 REALPATH="grealpath -s"
-            elif which realpath > /dev/null && realpath --version > /dev/null 2> /dev/null && realpath --version | grep GNU > /dev/null; then
+            elif which realpath > /dev/null 2>&1 && realpath --version > /dev/null 2>&1 && realpath --version | grep GNU > /dev/null 2>&1; then
                 # realpath points to GNU realpath so use it.
                 REALPATH="realpath -s"
             else

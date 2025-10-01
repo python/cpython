@@ -1,2 +1,0 @@
-If ``zoneinfo._common.load_tzdata`` is given a package without a resource a
-``ZoneInfoNotFoundError`` is raised rather than a :exc:`IsADirectoryError`.

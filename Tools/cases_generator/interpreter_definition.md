@@ -81,7 +81,7 @@ and a piece of C code describing its semantics:
     (definition | family | pseudo)+
 
   definition:
-    "inst" "(" NAME ["," stack_effect] ")" "{" C-code "}"
+    "inst" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "op" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
@@ -184,7 +184,7 @@ part of the DSL.
 Those include:
 
 * `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
-* `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
+* `ERROR_IF(cond)`. Jump to error handler if `cond` is true.
 * `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
 * `SYNC_SP()`. Synchronizes the physical stack pointer with the stack effects.
 * `INSTRUCTION_SIZE`. Replaced with the size of the instruction which is equal
@@ -209,7 +209,7 @@ These requirements result in the following constraints on the use of
 2. Before the first `ERROR_IF`, all input values must be `DECREF`ed,
    and no objects may be allocated or `INCREF`ed, with the exception
    of attempting to create an object and checking for success using
-   `ERROR_IF(result == NULL, label)`. (TODO: Unclear what to do with
+   `ERROR_IF(result == NULL)`. (TODO: Unclear what to do with
    intermediate results.)
 3. No `DEOPT_IF` may follow an `ERROR_IF` in the same block.
 
@@ -221,14 +221,14 @@ two idioms are valid:
 
 - Use `goto error`.
 - Use a block containing the appropriate `DECREF` calls ending in
-  `ERROR_IF(true, error)`.
+  `ERROR_IF(true)`.
 
 An example of the latter would be:
 ```cc
     res = PyObject_Add(left, right);
     if (res == NULL) {
         DECREF_INPUTS();
-        ERROR_IF(true, error);
+        ERROR_IF(true);
     }
 ```
 
@@ -346,7 +346,7 @@ For explanations see "Generating the interpreter" below.
 ```C
     inst ( BUILD_TUPLE, (items[oparg] -- tuple) ) {
         tuple = _PyTuple_FromArraySteal(items, oparg);
-        ERROR_IF(tuple == NULL, error);
+        ERROR_IF(tuple == NULL);
     }
 ```
 ```C

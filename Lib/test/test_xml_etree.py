@@ -225,8 +225,7 @@ class ElementTreeTest(unittest.TestCase):
             self.assertTrue(ET.iselement(element), msg="not an element")
             direlem = dir(element)
             for attr in 'tag', 'attrib', 'text', 'tail':
-                self.assertTrue(hasattr(element, attr),
-                        msg='no %s member' % attr)
+                self.assertHasAttr(element, attr)
                 self.assertIn(attr, direlem,
                         msg='no %s visible by dir' % attr)
 
@@ -251,7 +250,7 @@ class ElementTreeTest(unittest.TestCase):
         # Make sure all standard element methods exist.
 
         def check_method(method):
-            self.assertTrue(hasattr(method, '__call__'),
+            self.assertHasAttr(method, '__call__',
                     msg="%s not callable" % method)
 
         check_method(element.append)
@@ -2959,6 +2958,50 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         self.assertRaises(AttributeError, b.end, 'tag')
         del b
         gc_collect()
+
+    def test_deepcopy_clear(self):
+        # Prevent crashes when __deepcopy__() clears the children list.
+        # See https://github.com/python/cpython/issues/133009.
+        class X(ET.Element):
+            def __deepcopy__(self, memo):
+                root.clear()
+                return self
+
+        root = ET.Element('a')
+        evil = X('x')
+        root.extend([evil, ET.Element('y')])
+        if is_python_implementation():
+            # Mutating a list over which we iterate raises an error.
+            self.assertRaises(RuntimeError, copy.deepcopy, root)
+        else:
+            c = copy.deepcopy(root)
+            # In the C implementation, we can still copy the evil element.
+            self.assertListEqual(list(c), [evil])
+
+    def test_deepcopy_grow(self):
+        # Prevent crashes when __deepcopy__() mutates the children list.
+        # See https://github.com/python/cpython/issues/133009.
+        a = ET.Element('a')
+        b = ET.Element('b')
+        c = ET.Element('c')
+
+        class X(ET.Element):
+            def __deepcopy__(self, memo):
+                root.append(a)
+                root.append(b)
+                return self
+
+        root = ET.Element('top')
+        evil1, evil2 = X('1'), X('2')
+        root.extend([evil1, c, evil2])
+        children = list(copy.deepcopy(root))
+        # mock deep copies
+        self.assertIs(children[0], evil1)
+        self.assertIs(children[2], evil2)
+        # true deep copies
+        self.assertEqual(children[1].tag, c.tag)
+        self.assertEqual([c.tag for c in children[3:]],
+                         [a.tag, b.tag, a.tag, b.tag])
 
 
 class MutationDeleteElementPath(str):
