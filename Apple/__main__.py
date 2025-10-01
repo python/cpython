@@ -316,7 +316,7 @@ def unpack_deps(
     for name_ver in [
         "BZip2-1.0.8-2",
         "libFFI-3.4.7-2",
-        "OpenSSL-3.0.16-2",
+        "OpenSSL-3.0.17-1",
         "XZ-5.6.4-2",
         "mpdecimal-4.0.0-2",
         "zstd-1.5.7-1",
@@ -577,6 +577,7 @@ def create_xcframework(platform: str) -> str:
 
     # Extract the package version from the merged framework
     version = package_version(package_path / "Python.xcframework")
+    version_tag = ".".join(version.split(".")[:2])
 
     # On non-macOS platforms, each framework in XCframework only contains the
     # headers, libPython, plus an Info.plist. Other resources like the standard
@@ -646,6 +647,23 @@ def create_xcframework(platform: str) -> str:
                 host_framework / "Headers/pyconfig.h",
                 slice_framework / f"Headers/pyconfig-{arch}.h",
             )
+
+            # Apple identifies certain libraries as "security risks"; if you
+            # statically link those libraries into a Framework, you become
+            # responsible for providing a privacy manifest for that framework.
+            xcprivacy_file = {
+                "OpenSSL": subdir(host_triple) / "prefix/share/OpenSSL.xcprivacy"
+            }
+            print(f"   - {multiarch} xcprivacy files")
+            for module, lib in [
+                ("_hashlib", "OpenSSL"),
+                ("_ssl", "OpenSSL"),
+            ]:
+                shutil.copy(
+                    xcprivacy_file[lib],
+                    slice_path
+                    / f"lib-{arch}/python{version_tag}/lib-dynload/{module}.xcprivacy",
+                )
 
     print(" - build tools")
     shutil.copytree(
