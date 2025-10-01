@@ -18,7 +18,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
 from test.support import MISSING_C_DOCSTRINGS
-from test.support.os_helper import EnvironmentVarGuard
+from test.support.os_helper import EnvironmentVarGuard, FakePath
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import TZPATH_TEST_LOCK, ZoneInfoTestBase
 from test.support.import_helper import import_module, CleanImport
@@ -1783,6 +1783,7 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
             ("/usr/share/zoneinfo", "../relative/path",),
             ("path/to/somewhere", "../relative/path",),
             ("/usr/share/zoneinfo", "path/to/somewhere", "../relative/path",),
+            (FakePath("path/to/somewhere"),)
         ]
         for input_paths in bad_values:
             with self.subTest(input_paths=input_paths):
@@ -1794,6 +1795,9 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
             "/etc/zoneinfo:/usr/share/zoneinfo",
             b"/etc/zoneinfo:/usr/share/zoneinfo",
             0,
+            (b"/bytes/path", "/valid/path"),
+            (FakePath(b"/bytes/path"),),
+            (0,),
         ]
 
         for bad_value in bad_values:
@@ -1804,6 +1808,7 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
     def test_tzpath_attribute(self):
         tzpath_0 = [f"{DRIVE}/one", f"{DRIVE}/two"]
         tzpath_1 = [f"{DRIVE}/three"]
+        tzpath_pathlike = (FakePath(f"{DRIVE}/usr/share/zoneinfo"),)
 
         with self.tzpath_context(tzpath_0):
             query_0 = self.module.TZPATH
@@ -1811,8 +1816,12 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
         with self.tzpath_context(tzpath_1):
             query_1 = self.module.TZPATH
 
+        with self.tzpath_context(tzpath_pathlike):
+            query_pathlike = self.module.TZPATH
+
         self.assertSequenceEqual(tzpath_0, query_0)
         self.assertSequenceEqual(tzpath_1, query_1)
+        self.assertSequenceEqual(tuple([os.fspath(p) for p in tzpath_pathlike]), query_pathlike)
 
 
 class CTzPathTest(TzPathTest):
