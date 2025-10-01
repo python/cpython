@@ -745,8 +745,9 @@ class _Environ(MutableMapping):
     def clear(self):
         while self._data:
             for key in list(self._data):
+                unsetenv(key)
                 try:
-                    del self[key]
+                    del self._data[key]
                 except KeyError:
                     pass
 
