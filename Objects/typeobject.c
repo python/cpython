@@ -11695,6 +11695,7 @@ update_all_slots(PyTypeObject* type)
     }
     return 0;
 }
+
 #endif
 
 int
