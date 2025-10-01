@@ -188,6 +188,568 @@ the modern themed widget set and API::
       child widget names as the keys and the child instance objects as the
       values.
 
+   Methods inheritted from :class:`Misc` parent class (some methods ommited):
+
+   .. method:: destroy()
+
+      Destroy this and all descendants widgets. This will
+      end the application of this Tcl interpreter.
+
+   .. method:: after(ms, func=None, *args)
+
+      Call function once after given time.
+
+      MS specifies the time in milliseconds. FUNC gives the
+      function which shall be called. Additional parameters
+      are given as parameters to the function call.  Return
+      identifier to cancel scheduling with :meth:`~Tk.after_cancel`.
+
+   .. method:: after_idle(func, *args)
+
+      Call FUNC once if the Tcl main loop has no event to
+      process.
+
+      Return an identifier to cancel the scheduling with
+      :meth:`~Tk.after_cancel`.
+
+   .. method:: after_cancel(id)
+
+      Cancel scheduling of function identified with ID.
+
+      Identifier returned by :meth:`~Tk.after` or :meth:`~Tk.after_idle` must be
+      given as first parameter.
+
+   .. method:: bell(displayof=0)
+
+      Ring a display's bell.
+
+   .. method:: clipboard_get(**kw)
+
+      Retrieve data from the clipboard on window's display.
+
+      The window keyword defaults to the root window of the Tkinter
+      application.
+
+      The type keyword specifies the form in which the data is
+      to be returned and should be an atom name such as STRING
+      or FILE_NAME.  Type defaults to STRING, except on X11, where the default
+      is to try UTF8_STRING and fall back to STRING.
+
+      This command is equivalent to:
+
+      selection_get(CLIPBOARD)
+
+      .. FIXME: Create link to :meth:`selection_get` with the parameter CLIPBOARD
+
+   .. method:: clipboard_clear(**kw)
+
+      Clear the data in the Tk clipboard.
+
+      A widget specified for the optional displayof keyword
+      argument specifies the target display.
+
+   .. method:: clipboard_append(string, **kw)
+
+      Append STRING to the Tk clipboard.
+
+      A widget specified at the optional displayof keyword
+      argument specifies the target display. The clipboard
+      can be retrieved with :meth:`~Tk.selection_get`.
+
+   .. method:: grab_current()
+
+      Return widget which has currently the grab in this application
+      or None.
+
+   .. method:: grab_release(self)
+
+      Release grab for this widget if currently set.
+
+   .. method:: grab_set()
+
+      Set grab for this widget.
+
+      A grab directs all events to this and descendant
+      widgets in the application.
+
+   .. method:: grab_set_global()
+
+      Set global grab for this widget.
+
+      A global grab directs all events to this and
+      descendant widgets on the display. Use with caution -
+      other applications do not get events anymore.
+
+   .. method:: grab_status()
+
+      Return None, "local" or "global" if this widget has
+      no, a local or a global grab.
+
+   .. method:: selection_clear(**kw)
+
+      Clear the current X selection.
+
+   .. method:: selection_get(**kw)
+
+      Return the contents of the current X selection.
+
+      A keyword parameter selection specifies the name of
+      the selection and defaults to PRIMARY.  A keyword
+      parameter displayof specifies a widget on the display
+      to use. A keyword parameter type specifies the form of data to be
+      fetched, defaulting to STRING except on X11, where UTF8_STRING is tried
+      before STRING.
+
+   .. method:: selection_handle(command, **kw)
+
+      Specify a function COMMAND to call if the X
+      selection owned by this widget is queried by another
+      application.
+
+      This function must return the contents of the
+      selection. The function will be called with the
+      arguments OFFSET and LENGTH which allows the chunking
+      of very long selections. The following keyword
+      parameters can be provided:
+      selection - name of the selection (default PRIMARY),
+      type - type of the selection (e.g. STRING, FILE_NAME).
+
+   .. method:: selection_own(**kw)
+
+      Become owner of X selection.
+
+      A keyword parameter selection specifies the name of
+      the selection (default PRIMARY).
+
+   .. method:: selection_own_get(**kw)
+
+      Return owner of X selection.
+
+      The following keyword parameter can
+      be provided:
+      selection - name of the selection (default PRIMARY),
+      type - type of the selection (e.g. STRING, FILE_NAME).
+
+   .. method:: lower(belowThis=None)
+
+      Lower this widget in the stacking order.
+
+   .. method:: tkraise(aboveThis=None)
+
+      Raise this widget in the stacking order.
+
+   .. method:: winfo_children()
+
+      Return a list of all widgets which are children of this widget.
+
+   .. method:: winfo_exists()
+
+      Return true if this widget exists.
+
+   .. method:: winfo_geometry()
+
+      Return geometry string for this widget in the form "widthxheight+X+Y".
+
+   .. method:: winfo_height()
+
+      Return height of this widget.
+
+   .. method:: winfo_width()
+
+      Return width of this widget.
+
+   .. method:: winfo_id()
+
+      Return identifier ID for this widget.
+
+   .. method:: winfo_name()
+
+      Return the name of this widget
+
+   .. method:: winfo_parent()
+
+      Return the name of the parent of this widget.
+
+   .. method:: winfo_pointerx()
+
+      Return the x coordinate of the pointer on the root window.
+
+   .. method:: winfo_pointerxy()
+
+      Return a tuple of x and y coordinates of the pointer on the root window.
+
+   .. method:: winfo_pointery()
+
+      Return the y coordinate of the pointer on the root window.
+
+   .. method:: winfo_rootx()
+
+      Return x coordinate of upper left corner of this widget on the
+      root window.
+
+   .. method:: winfo_rooty()
+
+      Return y coordinate of upper left corner of this widget on the
+      root window.
+
+   .. method:: winfo_screen()
+
+      Return the screen name of this widget.
+
+   .. method:: winfo_screenheight()
+
+      Return the number of pixels of the height of the screen of this widget
+      in pixel.
+
+   .. method:: winfo_screenwidth()
+
+      Return the number of pixels of the width of the screen of
+      this widget in pixel.
+
+   .. method:: winfo_toplevel()
+
+      Return the toplevel widget of this widget.
+
+   .. method:: winfo_viewable()
+
+      Return true if the widget and all its higher ancestors are mapped.
+
+   .. method:: winfo_x()
+
+      Return the x coordinate of the upper left corner of this widget
+      in the parent.
+
+   .. method:: winfo_y()
+
+      Return the y coordinate of the upper left corner of this widget
+      in the parent.
+
+   .. method:: update()
+
+      Enter event loop until all pending events have been processed by Tcl.
+
+   .. method:: update_idletasks()
+
+      Enter event loop until all idle callbacks have been called. This
+      will update the display of windows but not process events caused by
+      the user.
+
+   .. method:: bindtags(tagList=None)
+
+      Set or get the list of bindtags for this widget.
+
+      With no argument return the list of all bindtags associated with
+      this widget. With a list of strings as argument the bindtags are
+      set to this list. The bindtags determine in which order events are
+      processed (see bind).
+
+   .. method:: bind(sequence=None, func=None, add=None)
+
+      Bind to this widget at event SEQUENCE a call to function FUNC.
+
+      SEQUENCE is a string of concatenated event
+      patterns. An event pattern is of the form
+      <MODIFIER-MODIFIER-TYPE-DETAIL> where MODIFIER is one
+      of Control, Mod2, M2, Shift, Mod3, M3, Lock, Mod4, M4,
+      Button1, B1, Mod5, M5 Button2, B2, Meta, M, Button3,
+      B3, Alt, Button4, B4, Double, Button5, B5 Triple,
+      Mod1, M1. TYPE is one of Activate, Enter, Map,
+      ButtonPress, Button, Expose, Motion, ButtonRelease
+      FocusIn, MouseWheel, Circulate, FocusOut, Property,
+      Colormap, Gravity Reparent, Configure, KeyPress, Key,
+      Unmap, Deactivate, KeyRelease Visibility, Destroy,
+      Leave and DETAIL is the button number for ButtonPress,
+      ButtonRelease and DETAIL is the Keysym for KeyPress and
+      KeyRelease. Examples are
+      <Control-Button-1> for pressing Control and mouse button 1 or
+      <Alt-A> for pressing A and the Alt key (KeyPress can be omitted).
+      An event pattern can also be a virtual event of the form
+      <<AString>> where AString can be arbitrary. This
+      event can be generated by event_generate.
+      If events are concatenated they must appear shortly
+      after each other.
+
+      FUNC will be called if the event sequence occurs with an
+      instance of Event as argument. If the return value of FUNC is
+      "break" no further bound function is invoked.
+
+      An additional boolean parameter ADD specifies whether FUNC will
+      be called additionally to the other bound function or whether
+      it will replace the previous function.
+
+      Bind will return an identifier to allow deletion of the bound function with
+      unbind without memory leak.
+
+      If FUNC or SEQUENCE is omitted the bound function or list
+      of bound events are returned.
+
+   .. method:: unbind(sequence, funcid=None)
+
+      Unbind for this widget for event SEQUENCE  the
+      function identified with FUNCID.
+
+   .. method:: bind_all(sequence=None, func=None, add=None)
+
+      Bind to all widgets at an event SEQUENCE a call to function FUNC.
+      An additional boolean parameter ADD specifies whether FUNC will
+      be called additionally to the other bound function or whether
+      it will replace the previous function. See bind for the return value.
+
+   .. method:: unbind_all(sequence)
+
+      Unbind for all widgets for event SEQUENCE all functions.
+
+   .. method:: mainloop(n=0)
+
+      Call the mainloop of Tk.
+
+   .. method:: quit()
+
+      Quit the Tcl interpreter. All widgets will be destroyed.
+
+   .. method:: nametowidget(name)
+
+      Return the Tkinter instance of a widget identified by
+      its Tcl name NAME.
+
+   .. method:: configure(cnf=None, **kw)
+
+      Configure resources of a widget.
+
+      The values for resources are specified as keyword
+      arguments. To get an overview about
+      the allowed keyword arguments call the method keys.
+
+   .. method:: event_add(virtual, *sequences)
+
+      Bind a virtual event VIRTUAL (of the form <<Name>>)
+      to an event SEQUENCE such that the virtual event is triggered
+      whenever SEQUENCE occurs.
+
+   .. method:: event_delete(virtual, *sequences)
+
+      Unbind a virtual event VIRTUAL from SEQUENCE.
+
+   .. method:: event_generate(sequence, **kw)
+
+      Generate an event SEQUENCE. Additional
+      keyword arguments specify parameter of the event
+      (e.g. x, y, rootx, rooty).
+
+   .. method:: event_info(virtual=None)
+
+      Return a list of all virtual events or the information
+      about the SEQUENCE bound to the virtual event VIRTUAL.
+
+   Methods inheritted from :class:`WM` parent class:
+
+   .. method:: aspect(minNumer=None, minDenom=None, maxNumer=None, maxDenom=None)
+
+      Instruct the window manager to set the aspect ratio (width/height)
+      of this widget to be between MINNUMER/MINDENOM and MAXNUMER/MAXDENOM. Return a tuple
+      of the actual values if no argument is given.
+
+   .. method:: attributes(*args)
+
+      This subcommand returns or sets platform specific attributes
+
+      The first form returns a list of the platform specific flags and
+      their values. The second form returns the value for the specific
+      option. The third form sets one or more of the values. The values
+      are as follows:
+
+      On Windows, -disabled gets or sets whether the window is in a
+      disabled state. -toolwindow gets or sets the style of the window
+      to toolwindow (as defined in the MSDN). -topmost gets or sets
+      whether this is a topmost window (displays above all other
+      windows).
+
+      On Macintosh, XXXXX
+
+      On Unix, there are currently no special attribute values.
+
+   .. method:: client(name=None)
+
+      Store NAME in WM_CLIENT_MACHINE property of this widget. Return
+      current value.
+
+   .. method:: colormapwindows(*wlist)
+
+      Store list of window names (WLIST) into WM_COLORMAPWINDOWS property
+      of this widget. This list contains windows whose colormaps differ from their
+      parents. Return current list of widgets if WLIST is empty.
+
+   .. method:: command(value=None)
+
+      Store VALUE in WM_COMMAND property. It is the command
+      which shall be used to invoke the application. Return current
+      command if VALUE is None.
+
+   .. method:: deiconify()
+
+      Store VALUE in WM_COMMAND property. It is the command
+      which shall be used to invoke the application. Return current
+      command if VALUE is None.
+
+   .. method:: focusmodel(model=None)
+
+      Set focus model to MODEL. "active" means that this widget will claim
+      the focus itself, "passive" means that the window manager shall give
+      the focus. Return current focus model if MODEL is None.
+
+   .. method:: forget(window)
+
+      The window will be unmapped from the screen and will no longer
+      be managed by wm. toplevel windows will be treated like frame
+      windows once they are no longer managed by wm, however, the menu
+      option configuration will be remembered and the menus will return
+      once the widget is managed again.
+
+   .. method:: frame()
+
+      Return identifier for decorative frame of this widget if present.
+
+   .. method:: geometry(newGeometry=None)
+
+      Set geometry to NEWGEOMETRY of the form =widthxheight+x+y. Return
+      current value if None is given.
+
+   .. method:: grid(baseWidth=None, baseHeight=None, widthInc=None, heightInc=None)
+
+      Instruct the window manager that this widget shall only be
+      resized on grid boundaries. WIDTHINC and HEIGHTINC are the width and
+      height of a grid unit in pixels. BASEWIDTH and BASEHEIGHT are the
+      number of grid units requested in Tk_GeometryRequest.
+
+   .. method:: group(pathName=None)
+
+      Set the group leader widgets for related widgets to PATHNAME. Return
+      the group leader of this widget if None is given.
+
+   .. method:: iconbitmap(bitmap=None, default=None)
+
+      Set bitmap for the iconified widget to BITMAP. Return
+      the bitmap if None is given.
+
+      Under Windows, the DEFAULT parameter can be used to set the icon
+      for the widget and any descendents that don't have an icon set
+      explicitly.  DEFAULT can be the relative path to a .ico file
+      (example: root.iconbitmap(default='myicon.ico') ).  See Tk
+      documentation for more information.
+
+   .. method:: iconify()
+
+      Display widget as icon.
+
+   .. method:: iconmask(bitmap=None)
+
+      Set mask for the icon bitmap of this widget. Return the
+      mask if None is given.
+
+   .. method:: iconname(newName=None)
+
+      Set the name of the icon for this widget. Return the name if
+      None is given.
+
+   .. method:: iconphoto(defualt=False, *args)
+
+      Sets the titlebar icon for this window based on the named photo
+      images passed through args. If default is True, this is applied to
+      all future created toplevels as well.
+
+      The data in the images is taken as a snapshot at the time of
+      invocation. If the images are later changed, this is not reflected
+      to the titlebar icons. Multiple images are accepted to allow
+      different images sizes to be provided. The window manager may scale
+      provided icons to an appropriate size.
+
+      On Windows, the images are packed into a Windows icon structure.
+      This will override an icon specified to wm_iconbitmap, and vice
+      versa.
+
+      On X, the images are arranged into the _NET_WM_ICON X property,
+      which most modern window managers support. An icon specified by
+      wm_iconbitmap may exist simultaneously.
+
+      On Macintosh, this currently does nothing.
+
+      .. versionadded:: Tk 8.5
+
+   .. method:: iconposition(x=None, y=None)
+
+      Set the position of the icon of this widget to X and Y. Return
+      a tuple of the current values of X and X if None is given.
+
+   .. method:: iconwindow(pathName=None)
+
+      Set widget PATHNAME to be displayed instead of icon. Return the current
+      value if None is given.
+
+   .. method:: manage(widget)
+
+      The widget specified will become a stand alone top-level window.
+      The window will be decorated with the window managers title bar,
+      etc.
+
+   .. method:: maxsize(width=None, height=None)
+
+      Set max WIDTH and HEIGHT for this widget. If the window is gridded
+      the values are given in grid units. Return the current values if None
+      is given.
+
+   .. method:: minsize(width=None, height=None)
+
+      Set min WIDTH and HEIGHT for this widget. If the window is gridded
+      the values are given in grid units. Return the current values if None
+      is given.
+
+   .. method:: overrideredirect(boolean=None)
+
+      Instruct the window manager to ignore this widget
+      if BOOLEAN is given with 1. Return the current value if None
+      is given.
+
+   .. method:: positionfrom(who=None)
+
+      Instruct the window manager that the position of this widget shall
+      be defined by the user if WHO is "user", and by its own policy if WHO is
+      "program".
+
+   .. method:: protocol(name=None, func=None)
+
+      Bind function FUNC to command NAME for this widget.
+      Return the function bound to NAME if None is given. NAME could be
+      e.g. "WM_SAVE_YOURSELF" or "WM_DELETE_WINDOW".
+
+   .. method:: resizable(widht=None, height=None)
+
+      Instruct the window manager whether this width can be resized
+      in WIDTH or HEIGHT. Both values are boolean values.
+
+   .. method:: sizefrom(who=None)
+
+      Instruct the window manager that the size of this widget shall
+      be defined by the user if WHO is "user", and by its own policy if WHO is
+      "program".
+
+   .. method:: state(newstate=None)
+
+      Query or set the state of this widget as one of normal, icon,
+      iconic (see :meth:`~Tk.iconwindow`), withdrawn, or zoomed (Windows only).
+
+   .. method:: title(string=None)
+
+      Set the title of this widget.
+
+   .. method:: transient(master=None)
+
+      Instruct the window manager that this widget is transient
+      with regard to widget MASTER.
+
+   .. method:: withdraw()
+
+      Withdraw this widget from the screen such that it is unmapped
+      and forgotten by the window manager. Re-draw it with :meth:`~Tk.deiconify`.
 
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)
 
