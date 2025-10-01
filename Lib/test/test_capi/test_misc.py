@@ -1981,7 +1981,6 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
     @threading_helper.requires_working_threading()
-    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     @requires_subinterpreters
     def test_pending_call_creates_thread_subinterpreter(self):
         # For better isolation, run the entire test in a different subprocess.
