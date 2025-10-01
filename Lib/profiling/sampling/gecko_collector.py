@@ -1,9 +1,20 @@
+import itertools
 import json
 import os
 import platform
+import sys
+import threading
 import time
 
-from .collector import Collector, THREAD_STATE_RUNNING
+from .collector import Collector
+try:
+    from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED
+except ImportError:
+    # Fallback if module not available (shouldn't happen in normal use)
+    THREAD_STATUS_HAS_GIL = (1 << 0)
+    THREAD_STATUS_ON_CPU = (1 << 1)
+    THREAD_STATUS_UNKNOWN = (1 << 2)
+    THREAD_STATUS_GIL_REQUESTED = (1 << 3)
 
 
 # Categories matching Firefox Profiler expectations
@@ -11,14 +22,20 @@ GECKO_CATEGORIES = [
     {"name": "Other", "color": "grey", "subcategories": ["Other"]},
     {"name": "Python", "color": "yellow", "subcategories": ["Other"]},
     {"name": "Native", "color": "blue", "subcategories": ["Other"]},
-    {"name": "Idle", "color": "transparent", "subcategories": ["Other"]},
+    {"name": "GC", "color": "orange", "subcategories": ["Other"]},
+    {"name": "GIL", "color": "green", "subcategories": ["Other"]},
+    {"name": "CPU", "color": "purple", "subcategories": ["Other"]},
+    {"name": "Code Type", "color": "red", "subcategories": ["Other"]},
 ]
 
 # Category indices
 CATEGORY_OTHER = 0
 CATEGORY_PYTHON = 1
 CATEGORY_NATIVE = 2
-CATEGORY_IDLE = 3
+CATEGORY_GC = 3
+CATEGORY_GIL = 4
+CATEGORY_CPU = 5
+CATEGORY_CODE_TYPE = 6
 
 # Subcategory indices
 DEFAULT_SUBCATEGORY = 0
@@ -58,6 +75,18 @@ class GeckoCollector(Collector):
         self.last_sample_time = 0
         self.interval = 1.0  # Will be calculated from actual sampling
 
+        # State tracking for interval markers (tid -> start_time)
+        self.has_gil_start = {}           # Thread has the GIL
+        self.no_gil_start = {}            # Thread doesn't have the GIL
+        self.on_cpu_start = {}            # Thread is running on CPU
+        self.off_cpu_start = {}           # Thread is off CPU
+        self.python_code_start = {}       # Thread running Python code (has GIL)
+        self.native_code_start = {}       # Thread running native code (on CPU without GIL)
+        self.gil_wait_start = {}          # Thread waiting for GIL
+
+        # GC event tracking: track if we're currently in a GC
+        self.potential_gc_start = None
+
     def collect(self, stack_frames):
         """Collect a sample from stack frames."""
         current_time = (time.time() * 1000) - self.start_time
@@ -69,18 +98,16 @@ class GeckoCollector(Collector):
             ) / self.sample_count
         self.last_sample_time = current_time
 
+        # GC Event Detection and process threads
+        gc_collecting = False
+
         for interpreter_info in stack_frames:
             for thread_info in interpreter_info.threads:
-                if (
-                    self.skip_idle
-                    and thread_info.status != THREAD_STATE_RUNNING
-                ):
-                    continue
+                # Track GC status
+                if thread_info.gc_collecting:
+                    gc_collecting = True
 
                 frames = thread_info.frame_info
-                if not frames:
-                    continue
-
                 tid = thread_info.thread_id
 
                 # Initialize thread if needed
@@ -88,6 +115,98 @@ class GeckoCollector(Collector):
                     self.threads[tid] = self._create_thread(tid)
 
                 thread_data = self.threads[tid]
+
+                # Decode status flags
+                status_flags = thread_info.status
+                has_gil = bool(status_flags & THREAD_STATUS_HAS_GIL)
+                on_cpu = bool(status_flags & THREAD_STATUS_ON_CPU)
+                unknown = bool(status_flags & THREAD_STATUS_UNKNOWN)
+                gil_requested = bool(status_flags & THREAD_STATUS_GIL_REQUESTED)
+
+                # Track GIL possession (interval marker: "Has GIL" / "No GIL")
+                if has_gil:
+                    if tid not in self.has_gil_start:
+                        self.has_gil_start[tid] = current_time
+                    # End "No GIL" if it was running
+                    if tid in self.no_gil_start:
+                        start_time = self.no_gil_start[tid]
+                        self._add_marker(tid, "No GIL", start_time, current_time, CATEGORY_GIL)
+                        del self.no_gil_start[tid]
+                else:
+                    if tid not in self.no_gil_start:
+                        self.no_gil_start[tid] = current_time
+                    # End "Has GIL" if it was running
+                    if tid in self.has_gil_start:
+                        start_time = self.has_gil_start[tid]
+                        self._add_marker(tid, "Has GIL", start_time, current_time, CATEGORY_GIL)
+                        del self.has_gil_start[tid]
+
+                # Track "On CPU" / "Off CPU" state
+                if on_cpu:
+                    if tid not in self.on_cpu_start:
+                        self.on_cpu_start[tid] = current_time
+                    # End "Off CPU" if it was running
+                    if tid in self.off_cpu_start:
+                        start_time = self.off_cpu_start[tid]
+                        self._add_marker(tid, "Off CPU", start_time, current_time, CATEGORY_CPU)
+                        del self.off_cpu_start[tid]
+                else:
+                    if tid not in self.off_cpu_start:
+                        self.off_cpu_start[tid] = current_time
+                    # End "On CPU" if it was running
+                    if tid in self.on_cpu_start:
+                        start_time = self.on_cpu_start[tid]
+                        self._add_marker(tid, "On CPU", start_time, current_time, CATEGORY_CPU)
+                        del self.on_cpu_start[tid]
+
+                # Track "Python Code" (has GIL) / "Native Code" (on CPU without GIL)
+                if has_gil:
+                    if tid not in self.python_code_start:
+                        self.python_code_start[tid] = current_time
+                    # End "Native Code" if it was running
+                    if tid in self.native_code_start:
+                        start_time = self.native_code_start[tid]
+                        self._add_marker(tid, "Native Code", start_time, current_time, CATEGORY_CODE_TYPE)
+                        del self.native_code_start[tid]
+                elif on_cpu:
+                    # Native code: on CPU without GIL
+                    if tid not in self.native_code_start:
+                        self.native_code_start[tid] = current_time
+                    # End "Python Code" if it was running
+                    if tid in self.python_code_start:
+                        start_time = self.python_code_start[tid]
+                        self._add_marker(tid, "Python Code", start_time, current_time, CATEGORY_CODE_TYPE)
+                        del self.python_code_start[tid]
+                else:
+                    # Neither has GIL nor on CPU - end both if running
+                    if tid in self.python_code_start:
+                        start_time = self.python_code_start[tid]
+                        self._add_marker(tid, "Python Code", start_time, current_time, CATEGORY_CODE_TYPE)
+                        del self.python_code_start[tid]
+                    if tid in self.native_code_start:
+                        start_time = self.native_code_start[tid]
+                        self._add_marker(tid, "Native Code", start_time, current_time, CATEGORY_CODE_TYPE)
+                        del self.native_code_start[tid]
+
+                # Track "Waiting for GIL" intervals
+                if gil_requested:
+                    if tid not in self.gil_wait_start:
+                        self.gil_wait_start[tid] = current_time
+                else:
+                    if tid in self.gil_wait_start:
+                        start_time = self.gil_wait_start[tid]
+                        self._add_marker(tid, "Waiting for GIL", start_time, current_time, CATEGORY_GIL)
+                        del self.gil_wait_start[tid]
+
+                # Categorize: idle if neither has GIL nor on CPU
+                is_idle = not has_gil and not on_cpu
+
+                # Skip idle threads if skip_idle is enabled
+                if self.skip_idle and is_idle:
+                    continue
+
+                if not frames:
+                    continue
 
                 # Process the stack
                 stack_index = self._process_stack(thread_data, frames)
@@ -98,11 +217,21 @@ class GeckoCollector(Collector):
                 samples["time"].append(current_time)
                 samples["eventDelay"].append(None)
 
+        # Handle GC event markers after processing all threads
+        if gc_collecting:
+            if self.potential_gc_start is None:
+                # Start of GC
+                self.potential_gc_start = current_time
+        else:
+            # End of GC
+            if self.potential_gc_start is not None:
+                self._add_gc_marker(self.potential_gc_start, current_time)
+            self.potential_gc_start = None
+
         self.sample_count += 1
 
     def _create_thread(self, tid):
         """Create a new thread structure with processed profile format."""
-        import threading
 
         # Determine if this is the main thread
         try:
@@ -181,7 +310,7 @@ class GeckoCollector(Collector):
                 "functionSize": [],
                 "length": 0,
             },
-            # Markers - processed format
+            # Markers - processed format (arrays)
             "markers": {
                 "data": [],
                 "name": [],
@@ -214,6 +343,36 @@ class GeckoCollector(Collector):
         self.global_strings.append(s)
         self.global_string_map[s] = idx
         return idx
+
+    def _add_marker(self, tid, name, start_time, end_time, category):
+        """Add an interval marker for a specific thread."""
+        if tid not in self.threads:
+            return
+
+        thread_data = self.threads[tid]
+        duration = end_time - start_time
+
+        name_idx = self._intern_string(name)
+        markers = thread_data["markers"]
+        markers["name"].append(name_idx)
+        markers["startTime"].append(start_time)
+        markers["endTime"].append(end_time)
+        markers["phase"].append(1)  # 1 = interval marker
+        markers["category"].append(category)
+        markers["data"].append({
+            "type": name.replace(" ", ""),
+            "duration": duration,
+            "tid": tid
+        })
+
+    def _add_gc_marker(self, start_time, end_time):
+        """Add a GC Collecting event marker to the main thread (or first thread we see)."""
+        if not self.threads:
+            return
+
+        # Add GC marker to the first thread (typically the main thread)
+        first_tid = next(iter(self.threads))
+        self._add_marker(first_tid, "GC Collecting", start_time, end_time, CATEGORY_GC)
 
     def _process_stack(self, thread_data, frames):
         """Process a stack and return the stack index."""
@@ -383,15 +542,87 @@ class GeckoCollector(Collector):
         frame_cache[frame_key] = frame_idx
         return frame_idx
 
+    def _finalize_markers(self):
+        """Close any open markers at the end of profiling."""
+        end_time = self.last_sample_time
+
+        # Close all open markers for each thread
+        for tid in list(self.has_gil_start.keys()):
+            start_time = self.has_gil_start[tid]
+            self._add_marker(tid, "Has GIL", start_time, end_time, CATEGORY_GIL)
+            del self.has_gil_start[tid]
+
+        for tid in list(self.no_gil_start.keys()):
+            start_time = self.no_gil_start[tid]
+            self._add_marker(tid, "No GIL", start_time, end_time, CATEGORY_GIL)
+            del self.no_gil_start[tid]
+
+        for tid in list(self.on_cpu_start.keys()):
+            start_time = self.on_cpu_start[tid]
+            self._add_marker(tid, "On CPU", start_time, end_time, CATEGORY_CPU)
+            del self.on_cpu_start[tid]
+
+        for tid in list(self.off_cpu_start.keys()):
+            start_time = self.off_cpu_start[tid]
+            self._add_marker(tid, "Off CPU", start_time, end_time, CATEGORY_CPU)
+            del self.off_cpu_start[tid]
+
+        for tid in list(self.python_code_start.keys()):
+            start_time = self.python_code_start[tid]
+            self._add_marker(tid, "Python Code", start_time, end_time, CATEGORY_CODE_TYPE)
+            del self.python_code_start[tid]
+
+        for tid in list(self.native_code_start.keys()):
+            start_time = self.native_code_start[tid]
+            self._add_marker(tid, "Native Code", start_time, end_time, CATEGORY_CODE_TYPE)
+            del self.native_code_start[tid]
+
+        for tid in list(self.gil_wait_start.keys()):
+            start_time = self.gil_wait_start[tid]
+            self._add_marker(tid, "Waiting for GIL", start_time, end_time, CATEGORY_GIL)
+            del self.gil_wait_start[tid]
+
+        # Close any open GC marker
+        if self.potential_gc_start is not None:
+            self._add_gc_marker(self.potential_gc_start, end_time)
+            self.potential_gc_start = None
+
     def export(self, filename):
         """Export the profile to a Gecko JSON file."""
+
         if self.sample_count > 0 and self.last_sample_time > 0:
             self.interval = self.last_sample_time / self.sample_count
 
-        profile = self._build_profile()
+        # Spinner for progress indication
+        spinner = itertools.cycle(['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'])
+        stop_spinner = threading.Event()
 
-        with open(filename, "w") as f:
-            json.dump(profile, f, separators=(",", ":"))
+        def spin():
+            message = 'Building Gecko profile...'
+            while not stop_spinner.is_set():
+                sys.stderr.write(f'\r{next(spinner)} {message}')
+                sys.stderr.flush()
+                time.sleep(0.1)
+            # Clear the spinner line
+            sys.stderr.write('\r' + ' ' * (len(message) + 3) + '\r')
+            sys.stderr.flush()
+
+        spinner_thread = threading.Thread(target=spin, daemon=True)
+        spinner_thread.start()
+
+        try:
+            # Finalize any open markers before building profile
+            self._finalize_markers()
+
+            profile = self._build_profile()
+
+            with open(filename, "w") as f:
+                json.dump(profile, f, separators=(",", ":"))
+        finally:
+            stop_spinner.set()
+            spinner_thread.join(timeout=1.0)
+            # Small delay to ensure the clear happens
+            time.sleep(0.01)
 
         print(f"Gecko profile written to {filename}")
         print(
@@ -416,6 +647,7 @@ class GeckoCollector(Collector):
             frame_table["length"] = len(frame_table["func"])
             func_table["length"] = len(func_table["name"])
             resource_table["length"] = len(resource_table["name"])
+            thread_data["markers"]["length"] = len(thread_data["markers"]["name"])
 
             # Clean up internal caches
             del thread_data["_stackCache"]

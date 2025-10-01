@@ -11,6 +11,7 @@
  * HEADERS AND INCLUDES
  * ============================================================================ */
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stddef.h>
@@ -81,6 +82,8 @@ typedef enum _WIN32_THREADSTATE {
 #define SIZEOF_TYPE_OBJ sizeof(PyTypeObject)
 #define SIZEOF_UNICODE_OBJ sizeof(PyUnicodeObject)
 #define SIZEOF_LONG_OBJ sizeof(PyLongObject)
+#define SIZEOF_GC_RUNTIME_STATE sizeof(struct _gc_runtime_state)
+#define SIZEOF_INTERPRETER_STATE sizeof(PyInterpreterState)
 
 // Calculate the minimum buffer size needed to read interpreter state fields
 // We need to read code_object_generation and potentially tlbc_generation
@@ -178,8 +181,9 @@ static PyStructSequence_Desc CoroInfo_desc = {
 // ThreadInfo structseq type - replaces 2-tuple (thread_id, frame_info)
 static PyStructSequence_Field ThreadInfo_fields[] = {
     {"thread_id", "Thread ID"},
-    {"status", "Thread status"},
+    {"status", "Thread status (flags: HAS_GIL, ON_CPU, UNKNOWN or legacy enum)"},
     {"frame_info", "Frame information"},
+    {"gc_collecting", "Whether GC is collecting (interpreter-level)"},
     {NULL}
 };
 
@@ -187,7 +191,7 @@ static PyStructSequence_Desc ThreadInfo_desc = {
     "_remote_debugging.ThreadInfo",
     "Information about a thread",
     ThreadInfo_fields,
-    2
+    3
 };
 
 // InterpreterInfo structseq type - replaces 2-tuple (interpreter_id, thread_list)
@@ -247,8 +251,15 @@ enum _ThreadState {
 enum _ProfilingMode {
     PROFILING_MODE_WALL = 0,
     PROFILING_MODE_CPU = 1,
-    PROFILING_MODE_GIL = 2
+    PROFILING_MODE_GIL = 2,
+    PROFILING_MODE_ALL = 3  // Combines GIL + CPU checks
 };
+
+// Thread status flags (can be combined)
+#define THREAD_STATUS_HAS_GIL        (1 << 0)  // Thread has the GIL
+#define THREAD_STATUS_ON_CPU         (1 << 1)  // Thread is running on CPU
+#define THREAD_STATUS_UNKNOWN        (1 << 2)  // Status could not be determined
+#define THREAD_STATUS_GIL_REQUESTED  (1 << 3)  // Thread is waiting for the GIL
 
 typedef struct {
     PyObject_HEAD
@@ -2650,28 +2661,74 @@ unwind_stack_for_thread(
 
     long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
 
-    // Calculate thread status based on mode
-    int status = THREAD_STATE_UNKNOWN;
-    if (unwinder->mode == PROFILING_MODE_CPU) {
-        long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
-        status = get_thread_status(unwinder, tid, pthread_id);
-        if (status == -1) {
-            PyErr_Print();
-            PyErr_SetString(PyExc_RuntimeError, "Failed to get thread status");
-            goto error;
-        }
-    } else if (unwinder->mode == PROFILING_MODE_GIL) {
-#ifdef Py_GIL_DISABLED
-        // All threads are considered running in free threading builds if they have a thread state attached
-        int active = GET_MEMBER(_thread_status, ts, unwinder->debug_offsets.thread_state.status).active;
-        status = active ? THREAD_STATE_RUNNING : THREAD_STATE_GIL_WAIT;
-#else
-        status = (*current_tstate == gil_holder_tstate) ? THREAD_STATE_RUNNING : THREAD_STATE_GIL_WAIT;
-#endif
-    } else {
-        // PROFILING_MODE_WALL - all threads are considered running
-        status = THREAD_STATE_RUNNING;
+    // Read GC collecting state from the interpreter (before any skip checks)
+    uintptr_t interp_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.interp);
+
+    // Read the GC runtime state from the interpreter state
+    uintptr_t gc_addr = interp_addr + unwinder->debug_offsets.interpreter_state.gc;
+    char gc_state[SIZEOF_GC_RUNTIME_STATE];
+    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, gc_addr, unwinder->debug_offsets.gc.size, gc_state) < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read GC state");
+        goto error;
     }
+
+    int gc_collecting = GET_MEMBER(int, gc_state, unwinder->debug_offsets.gc.collecting);
+
+    // Calculate thread status using flags (always)
+    int status_flags = 0;
+
+    // Check GIL status
+    int has_gil = 0;
+    int gil_requested = 0;
+#ifdef Py_GIL_DISABLED
+    int active = GET_MEMBER(_thread_status, ts, unwinder->debug_offsets.thread_state.status).active;
+    has_gil = active;
+#else
+    // Read holds_gil directly from thread state
+    has_gil = GET_MEMBER(int, ts, unwinder->debug_offsets.thread_state.holds_gil);
+
+    // Check if thread is actively requesting the GIL
+    if (unwinder->debug_offsets.thread_state.gil_requested != 0) {
+        gil_requested = GET_MEMBER(int, ts, unwinder->debug_offsets.thread_state.gil_requested);
+    }
+
+    // Set GIL_REQUESTED flag if thread is waiting
+    if (!has_gil && gil_requested) {
+        status_flags |= THREAD_STATUS_GIL_REQUESTED;
+    }
+#endif
+    if (has_gil) {
+        status_flags |= THREAD_STATUS_HAS_GIL;
+    }
+
+    // Assert that we never have both HAS_GIL and GIL_REQUESTED set at the same time
+    // This would indicate a race condition in the GIL state tracking
+    assert(!(has_gil && gil_requested));
+
+    // Check CPU status
+    long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
+    int cpu_status = get_thread_status(unwinder, tid, pthread_id);
+    if (cpu_status == -1) {
+        status_flags |= THREAD_STATUS_UNKNOWN;
+    } else if (cpu_status == THREAD_STATE_RUNNING) {
+        status_flags |= THREAD_STATUS_ON_CPU;
+    }
+
+    // Determine if we should skip based on mode
+    int status = THREAD_STATE_RUNNING;  // Default for skip logic
+    if (unwinder->mode == PROFILING_MODE_CPU) {
+        status = cpu_status;
+    } else if (unwinder->mode == PROFILING_MODE_GIL) {
+        status = has_gil ? THREAD_STATE_RUNNING : THREAD_STATE_GIL_WAIT;
+    } else if (unwinder->mode == PROFILING_MODE_ALL) {
+        // In ALL mode, considered running if has GIL or on CPU
+        if (has_gil || (status_flags & THREAD_STATUS_ON_CPU)) {
+            status = THREAD_STATE_RUNNING;
+        } else {
+            status = THREAD_STATE_IDLE;
+        }
+    }
+    // PROFILING_MODE_WALL defaults to THREAD_STATE_RUNNING
 
     // Check if we should skip this thread based on mode
     int should_skip = 0;
@@ -2719,16 +2776,26 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    PyObject *py_status = PyLong_FromLong(status);
+    // Always use status_flags
+    PyObject *py_status = PyLong_FromLong(status_flags);
     if (py_status == NULL) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread status");
         goto error;
     }
+
+    PyObject *py_gc_collecting = PyBool_FromLong(gc_collecting);
+    if (py_gc_collecting == NULL) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create gc_collecting");
+        Py_DECREF(py_status);
+        goto error;
+    }
     PyErr_Print();
 
+    // In PROFILING_MODE_ALL, py_status contains flags, otherwise it contains legacy enum
     PyStructSequence_SetItem(result, 0, thread_id);
     PyStructSequence_SetItem(result, 1, py_status);  // Steals reference
     PyStructSequence_SetItem(result, 2, frame_info); // Steals reference
+    PyStructSequence_SetItem(result, 3, py_gc_collecting); // Steals reference
 
     cleanup_stack_chunks(&chunks);
     return result;
@@ -3401,6 +3468,21 @@ _remote_debugging_exec(PyObject *m)
     if (rc < 0) {
         return -1;
     }
+
+    // Add thread status flag constants
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_HAS_GIL", THREAD_STATUS_HAS_GIL) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_ON_CPU", THREAD_STATUS_ON_CPU) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_UNKNOWN", THREAD_STATUS_UNKNOWN) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_GIL_REQUESTED", THREAD_STATUS_GIL_REQUESTED) < 0) {
+        return -1;
+    }
+
     if (RemoteDebugging_InitState(st) < 0) {
         return -1;
     }
