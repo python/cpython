@@ -72,6 +72,19 @@ static const _PyStackRef PyStackRef_ERROR = { .index = 2 };
 
 #define INITIAL_STACKREF_INDEX 10
 
+static inline _PyStackRef
+PyStackRef_Wrap(void *ptr)
+{
+    assert(ptr != NULL);
+    return (_PyStackRef){ .index = (uint64_t)ptr };
+}
+
+static inline void *
+PyStackRef_Unwrap(_PyStackRef ref)
+{
+    return (void *)(ref.index);
+}
+
 static inline int
 PyStackRef_IsNull(_PyStackRef ref)
 {
@@ -151,6 +164,7 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj, const char *filename, int linenumbe
 static inline _PyStackRef
 _PyStackRef_FromPyObjectBorrow(PyObject *obj, const char *filename, int linenumber)
 {
+    Py_INCREF(obj);
     return _Py_stackref_create(obj, filename, linenumber);
 }
 #define PyStackRef_FromPyObjectBorrow(obj) _PyStackRef_FromPyObjectBorrow(_PyObject_CAST(obj), __FILE__, __LINE__)
