@@ -11,7 +11,7 @@ sphinx~=8.2.0
 
 blurb
 
-sphinxext-opengraph~=0.10.0
+sphinxext-opengraph~=0.12.0
 sphinx-notfound-page~=1.0.0
 
 # The theme used by the documentation is stored separately, so we need

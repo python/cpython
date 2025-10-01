@@ -277,7 +277,7 @@ be an instance of a subclass.
    The explicit cast to ``CustomObject *`` above is needed because we defined
    ``Custom_dealloc`` to take a ``PyObject *`` argument, as the ``tp_dealloc``
    function pointer expects to receive a ``PyObject *`` argument.
-   By assigning to the the ``tp_dealloc`` slot of a type, we declare
+   By assigning to the ``tp_dealloc`` slot of a type, we declare
    that it can only be called with instances of our ``CustomObject``
    class, so the cast to ``(CustomObject *)`` is safe.
    This is object-oriented polymorphism, in C!

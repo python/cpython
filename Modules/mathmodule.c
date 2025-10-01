@@ -1214,6 +1214,40 @@ math_floor(PyObject *module, PyObject *number)
     return PyLong_FromDouble(floor(x));
 }
 
+/*[clinic input]
+math.fmax -> double
+
+    x: double
+    y: double
+    /
+
+Return the larger of two floating-point arguments.
+[clinic start generated code]*/
+
+static double
+math_fmax_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=00692358d312fee2 input=021596c027336ffe]*/
+{
+    return fmax(x, y);
+}
+
+/*[clinic input]
+math.fmin -> double
+
+    x: double
+    y: double
+    /
+
+Return the smaller of two floating-point arguments.
+[clinic start generated code]*/
+
+static double
+math_fmin_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=3d5b7826bd292dd9 input=d12e64ccc33f878a]*/
+{
+    return fmin(x, y);
+}
+
 FUNC1AD(gamma, m_tgamma,
       "gamma($module, x, /)\n--\n\n"
       "Gamma function at x.",
@@ -1233,6 +1267,23 @@ FUNC2(remainder, m_remainder,
       "Return x - n*y where n*y is the closest integer multiple of y.\n"
       "In the case where x is exactly halfway between two multiples of\n"
       "y, the nearest even value of n is used. The result is always exact.")
+
+/*[clinic input]
+math.signbit
+
+    x: double
+    /
+
+Return True if the sign of x is negative and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+math_signbit_impl(PyObject *module, double x)
+/*[clinic end generated code: output=20c5f20156a9b871 input=3d3493fbcb5bdb3e]*/
+{
+    return PyBool_FromLong(signbit(x));
+}
+
 FUNC1D(sin, sin, 0,
       "sin($module, x, /)\n--\n\n"
       "Return the sine of x (measured in radians).",
@@ -3148,7 +3199,7 @@ static PyObject *
 math_issubnormal_impl(PyObject *module, double x)
 /*[clinic end generated code: output=4e76ac98ddcae761 input=9a20aba7107d0d95]*/
 {
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#if !defined(_MSC_VER) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
     return PyBool_FromLong(issubnormal(x));
 #else
     return PyBool_FromLong(isfinite(x) && x && !isnormal(x));
@@ -3755,6 +3806,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 math.perm
 
     n: object
@@ -3775,7 +3827,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=e021a25469653e23 input=5311c5a00f359b53]*/
+/*[clinic end generated code: output=e021a25469653e23 input=9d54b8e13c0a3683]*/
 {
     PyObject *result = NULL;
     int overflow, cmp;
@@ -3848,6 +3900,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 math.comb
 
     n: object
@@ -3870,7 +3923,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=bd2cec8d854f3493 input=9a05315af2518709]*/
+/*[clinic end generated code: output=bd2cec8d854f3493 input=7ad3c763d442d64c]*/
 {
     PyObject *result = NULL, *temp;
     int overflow, cmp;
@@ -3967,6 +4020,7 @@ error:
 
 
 /*[clinic input]
+@permit_long_docstring_body
 math.nextafter
 
     x: double
@@ -3985,7 +4039,7 @@ Raises ValueError if steps is negative.
 
 static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
-/*[clinic end generated code: output=cc6511f02afc099e input=7f2a5842112af2b4]*/
+/*[clinic end generated code: output=cc6511f02afc099e input=cc8f0dad1b27a8a4]*/
 {
 #if defined(_AIX)
     if (x == y) {
@@ -4175,7 +4229,9 @@ static PyMethodDef math_methods[] = {
     MATH_FACTORIAL_METHODDEF
     MATH_FLOOR_METHODDEF
     MATH_FMA_METHODDEF
+    MATH_FMAX_METHODDEF
     MATH_FMOD_METHODDEF
+    MATH_FMIN_METHODDEF
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
@@ -4199,6 +4255,7 @@ static PyMethodDef math_methods[] = {
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
     {"remainder",       _PyCFunction_CAST(math_remainder), METH_FASTCALL,  math_remainder_doc},
+    MATH_SIGNBIT_METHODDEF
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
     {"sqrt",            math_sqrt,      METH_O,         math_sqrt_doc},

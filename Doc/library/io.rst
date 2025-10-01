@@ -719,6 +719,9 @@ than raw I/O does.
    The optional argument *initial_bytes* is a :term:`bytes-like object` that
    contains initial data.
 
+   Methods may be used from multiple threads without external locking in
+   :term:`free threading` builds.
+
    :class:`BytesIO` provides or overrides these methods in addition to those
    from :class:`BufferedIOBase` and :class:`IOBase`:
 

@@ -1452,7 +1452,6 @@ class ZipFile:
         self._lock = threading.RLock()
         self._seekable = True
         self._writing = False
-        self._data_offset = None
 
         try:
             if mode == 'r':
@@ -1463,7 +1462,6 @@ class ZipFile:
                 self._didModify = True
                 try:
                     self.start_dir = self.fp.tell()
-                    self._data_offset = self.start_dir
                 except (AttributeError, OSError):
                     self.fp = _Tellable(self.fp)
                     self.start_dir = 0
@@ -1488,7 +1486,6 @@ class ZipFile:
                     # even if no files are added to the archive
                     self._didModify = True
                     self.start_dir = self.fp.tell()
-                    self._data_offset = self.start_dir
             else:
                 raise ValueError("Mode must be 'r', 'w', 'x', or 'a'")
         except:
@@ -1534,10 +1531,6 @@ class ZipFile:
 
         # self.start_dir:  Position of start of central directory
         self.start_dir = offset_cd + concat
-
-        # store the offset to the beginning of data for the
-        # .data_offset property
-        self._data_offset = concat
 
         if self.start_dir < 0:
             raise BadZipFile("Bad offset for central directory")
@@ -1598,12 +1591,6 @@ class ZipFile:
                                      key=lambda zinfo: zinfo.header_offset)):
             zinfo._end_offset = end_offset
             end_offset = zinfo.header_offset
-
-    @property
-    def data_offset(self):
-        """The offset to the start of zip data in the file or None if
-        unavailable."""
-        return self._data_offset
 
     def namelist(self):
         """Return a list of file names in the archive."""

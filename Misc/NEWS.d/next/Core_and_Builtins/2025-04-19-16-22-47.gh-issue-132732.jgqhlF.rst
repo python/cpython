@@ -1,0 +1,1 @@
+Automatically constant evaluate bytecode operations marked as pure in the JIT optimizer.

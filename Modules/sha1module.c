@@ -8,13 +8,13 @@
    Andrew Kuchling (amk@amk.ca)
    Greg Stein (gstein@lyra.org)
    Trevor Perrin (trevp@trevp.net)
+   Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
 
    Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
    Licensed to PSF under a Contributor Agreement.
 
 */
 
-/* SHA1 objects */
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
@@ -24,18 +24,14 @@
 #include "pycore_strhex.h"        // _Py_strhex()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
-/*[clinic input]
-module _sha1
-class SHA1Type "SHA1object *" "&PyType_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3dc9a20d1becb759]*/
+#include "_hacl/Hacl_Hash_SHA1.h"
 
 /* The SHA1 block size and message digest sizes, in bytes */
 
 #define SHA1_BLOCKSIZE    64
 #define SHA1_DIGESTSIZE   20
 
-#include "_hacl/Hacl_Hash_SHA1.h"
+// --- Module objects ---------------------------------------------------------
 
 typedef struct {
     HASHLIB_OBJECT_HEAD
@@ -44,8 +40,7 @@ typedef struct {
 
 #define _SHA1object_CAST(op)    ((SHA1object *)(op))
 
-#include "clinic/sha1module.c.h"
-
+// --- Module state -----------------------------------------------------------
 
 typedef struct {
     PyTypeObject* sha1_type;
@@ -58,6 +53,18 @@ sha1_get_state(PyObject *module)
     assert(state != NULL);
     return (SHA1State *)state;
 }
+
+// --- Module clinic configuration --------------------------------------------
+
+/*[clinic input]
+module _sha1
+class SHA1Type "SHA1object *" "&PyType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3dc9a20d1becb759]*/
+
+#include "clinic/sha1module.c.h"
+
+// --- SHA-1 object interface configuration -----------------------------------
 
 static SHA1object *
 newSHA1object(SHA1State *st)
@@ -74,13 +81,6 @@ newSHA1object(SHA1State *st)
 
 
 /* Internal methods for a hash object */
-static int
-SHA1_traverse(PyObject *ptr, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(ptr));
-    return 0;
-}
-
 static void
 SHA1_dealloc(PyObject *op)
 {
@@ -240,7 +240,7 @@ static PyType_Slot sha1_type_slots[] = {
     {Py_tp_dealloc, SHA1_dealloc},
     {Py_tp_methods, SHA1_methods},
     {Py_tp_getset, SHA1_getseters},
-    {Py_tp_traverse, SHA1_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0,0}
 };
 

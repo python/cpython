@@ -4913,11 +4913,11 @@ Allow tuples of length 20 in the freelist to be reused.
 .. nonce: lYKYYP
 .. section: Core and Builtins
 
-:exc:`ValueError` messages for :meth:`!list.index`, :meth:`!range.index`,
+:exc:`ValueError` messages for :meth:`list.index`, :meth:`range.index`,
 :meth:`!deque.index`, :meth:`!deque.remove` and :meth:`!ShareableList.index`
 no longer contain the repr of the searched value (which can be arbitrary
-large) and are consistent with error messages for other :meth:`!index` and
-:meth:`!remove` methods.
+large) and are consistent with error messages for other :meth:`~sequence.index` and
+:meth:`~sequence.remove` methods.
 
 ..
 
@@ -5604,7 +5604,7 @@ Using :data:`NotImplemented` in a boolean context now raises
 .. nonce: wNMKVd
 .. section: Core and Builtins
 
-Fix race condition in free-threaded build where :meth:`!list.extend` could
+Fix race condition in free-threaded build where :meth:`list.extend` could
 expose uninitialised memory to concurrent readers.
 
 ..
