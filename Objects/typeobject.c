@@ -11311,7 +11311,7 @@ static pytype_slotdef slotdefs[] = {
 
 /* Stores the number of times where slotdefs has elements with same name.
    This counter precalculated by _PyType_InitSlotDefs when main
-   interprepter starts. */
+   interpreter starts. */
 static uint8_t slotdefs_name_counts[Py_ARRAY_LENGTH(slotdefs)];
 
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
@@ -11700,7 +11700,7 @@ update_all_slots(PyTypeObject* type)
 int
 _PyType_InitSlotDefs(PyInterpreterState *interp)
 {
-    if (interp != interp->runtime->interpreters.main) {
+    if (!_Py_IsMainInterpreter(interp)) {
         return 0;
     }
     PyObject *bytearray = NULL;
