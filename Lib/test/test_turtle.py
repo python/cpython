@@ -82,7 +82,8 @@ def setUp(test):
 
     # mock mainloop in order doenst be necessary the tester close the window
     # on mainloop() and exitonclick()
-    turtle.TurtleScreenBase.mainloop = turtle.mainloop = lambda self: None
+    turtle.TurtleScreenBase.mainloop = lambda self: None
+    turtle.mainloop = lambda: None
 
 
 def load_tests(loader, tests, ignore):
