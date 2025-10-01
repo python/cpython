@@ -545,7 +545,7 @@ mmap_mmap___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 #if (defined(MS_WINDOWS) && defined(Py_DEBUG))
 
 PyDoc_STRVAR(mmap_mmap__protect__doc__,
-"_protect($self, flNewProtect, start, end, /)\n"
+"_protect($self, flNewProtect, start, length, /)\n"
 "--\n"
 "\n");
 
@@ -554,7 +554,7 @@ PyDoc_STRVAR(mmap_mmap__protect__doc__,
 
 static PyObject *
 mmap_mmap__protect_impl(mmap_object *self, unsigned int flNewProtect,
-                        Py_ssize_t start, Py_ssize_t end);
+                        Py_ssize_t start, Py_ssize_t length);
 
 static PyObject *
 mmap_mmap__protect(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
@@ -562,7 +562,7 @@ mmap_mmap__protect(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     unsigned int flNewProtect;
     Py_ssize_t start;
-    Py_ssize_t end;
+    Py_ssize_t length;
 
     if (!_PyArg_CheckPositional("_protect", nargs, 3, 3)) {
         goto exit;
@@ -605,10 +605,10 @@ mmap_mmap__protect(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         if (ival == -1 && PyErr_Occurred()) {
             goto exit;
         }
-        end = ival;
+        length = ival;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = mmap_mmap__protect_impl((mmap_object *)self, flNewProtect, start, end);
+    return_value = mmap_mmap__protect_impl((mmap_object *)self, flNewProtect, start, length);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -668,4 +668,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=6af04d6644f6dfb0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f2bbd1cba452c773 input=a9049054013a1b77]*/

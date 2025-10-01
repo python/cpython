@@ -1249,17 +1249,16 @@ mmap.mmap._protect
 
     flNewProtect: unsigned_int(bitwise=True)
     start: Py_ssize_t
-    end: Py_ssize_t
+    length: Py_ssize_t
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 mmap_mmap__protect_impl(mmap_object *self, unsigned int flNewProtect,
-                        Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=126138a77e74e532 input=85b4fe22b2bf086f]*/
-static PyObject *
-mmap_protect_method_lock_held(PyObject *op, PyObject *args) {
+                        Py_ssize_t start, Py_ssize_t length)
+/*[clinic end generated code: output=a87271a34d1ad6cf input=9170498c5e1482da]*/
+{
     DWORD flOldProtect;
 
     CHECK_VALID(NULL);
