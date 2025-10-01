@@ -1,3 +1,4 @@
+import ctypes
 import os
 import queue
 import sys
@@ -105,6 +106,23 @@ class ProcessPoolExecutorTest(ExecutorTest):
                 sys.excepthook(*sys.exc_info())
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
+
+    @staticmethod
+    def _segfault():
+        ctypes.string_at(0)
+
+    def test_traceback_when_child_process_segfaults(self):
+        # gh-139462 enhancement - BrokenProcessPool exceptions
+        # should describe which process terminated.
+        future = self.executor.submit(self._segfault)
+        with self.assertRaises(Exception) as cm:
+            future.result()
+
+        bpe = cm.exception
+        self.assertIs(type(bpe), BrokenProcessPool)
+        cause = bpe.__cause__
+        self.assertIs(type(cause), futures.process._RemoteTraceback)
+        self.assertIn("terminated abruptly with exit code", cause.tb)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @hashlib_helper.requires_hashdigest('md5')

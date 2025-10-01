@@ -477,6 +477,15 @@ class _ExecutorManagerThread(threading.Thread):
         if cause is not None:
             bpe.__cause__ = _RemoteTraceback(
                 f"\n'''\n{''.join(cause)}'''")
+        else:
+            # No cause known, so try to report some helpful info about
+            # which process(es) terminated and with what exit code
+            errors = []
+            for p in self.processes.values():
+                if p.exitcode:  # Report any nonzero exit codes
+                    errors.append(f"Process {p.pid} terminated abruptly with exit code {p.exitcode}")
+            if errors:
+                bpe.__cause__ = _RemoteTraceback("\n".join(errors))
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
