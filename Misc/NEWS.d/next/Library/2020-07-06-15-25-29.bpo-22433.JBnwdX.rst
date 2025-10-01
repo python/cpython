@@ -1,0 +1,2 @@
+Fixed handling of "--foo='bar baz'" as non-positional argument with
+:mod:`argparse`.
