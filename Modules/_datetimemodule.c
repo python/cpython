@@ -1960,7 +1960,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         i++;
         /* A % has been seen and ch is the character after it. */
         PyObject *replacement = NULL;
-
         if (ch == 'z') {
             /* %z -> +HHMM */
             if (zreplacement == NULL) {
@@ -2104,8 +2103,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     Py_XDECREF(zreplacement);
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
-    Py_XDECREF(strftime);
     Py_XDECREF(dash_replacement);
+    Py_XDECREF(strftime);
     return result;
 
  Error:
