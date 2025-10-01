@@ -3379,14 +3379,16 @@ class TestZeroCopySendfile(_ZeroCopyFileLinuxTest, unittest.TestCase):
         flag = []
         orig_syscall = eval(self.PATCHPOINT)
         # Reduce block size so that multiple syscalls are needed
-        mock = unittest.mock.Mock()
-        mock.st_size = 65536 + 1
-        with unittest.mock.patch('os.fstat', return_value=mock) as m:
-            with unittest.mock.patch(self.PATCHPOINT, create=True,
-                                     side_effect=syscall) as m2:
-                with self.get_files() as (src, dst):
-                    with self.assertRaises(_GiveupOnFastCopy) as cm:
-                        self.zerocopy_fun(src, dst)
+        fstat_mock = unittest.mock.Mock()
+        fstat_mock.st_size = 65536 + 1
+        with unittest.mock.patch('os.fstat', return_value=fstat_mock):
+            with (
+                unittest.mock.patch(self.PATCHPOINT, create=True,
+                                    side_effect=syscall),
+                self.get_files() as (src, dst)
+            ):
+                self.assertRaises(_GiveupOnFastCopy,
+                                  self.zerocopy_fun, src, dst)
 
             # Reset flag so that second syscall fails again
             flag.clear()
@@ -3396,8 +3398,9 @@ class TestZeroCopySendfile(_ZeroCopyFileLinuxTest, unittest.TestCase):
                 shutil.copyfile(TESTFN, TESTFN2)
                 m2.assert_called()
         shutil._USE_CP_SENDFILE = True
-        assert flag
+        self.assertEqual(flag, [None])
         self.assertEqual(read_file(TESTFN2, binary=True), self.FILEDATA)
+
 
 @unittest.skipUnless(shutil._USE_CP_COPY_FILE_RANGE, "os.copy_file_range() not supported")
 class TestZeroCopyCopyFileRange(_ZeroCopyFileLinuxTest, unittest.TestCase):
