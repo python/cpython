@@ -10,7 +10,7 @@ tkinter = import_helper.import_module("tkinter")
 
 
 @unittest.skipUnless(support.has_subprocess_support, "test requires subprocess")
-@unittest.skipIf(sys.platform == "win32", "test not supported on Windows")
+@unittest.skipIf(sys.platform == "win32", "test is not supported on Windows")
 class TkVwaitMainloopStdinTest(unittest.TestCase):
 
     def run_child(self):
