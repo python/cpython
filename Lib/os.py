@@ -742,6 +742,14 @@ class _Environ(MutableMapping):
         )
         return f"environ({{{formatted_items}}})"
 
+    def clear(self):
+        while self._data:
+            for key in list(self._data):
+                try:
+                    del self[key]
+                except KeyError:
+                    pass
+
     def copy(self):
         return dict(self)
 
