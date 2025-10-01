@@ -61,6 +61,13 @@ or as base classes.
 
 .. class:: XMLGenerator(out=None, encoding='iso-8859-1', short_empty_elements=False)
 
+   .. warning::
+      :class:`~xml.sax.handler.XMLGenerator` does not validate element or
+      attribute names. Callers must ensure that names passed to APIs conform
+      to `XML name rules <https://www.w3.org/TR/xml/#NT-Name>`__ if passing
+      untrusted input. Character data and attribute values are escaped,
+      but not validated.
+
    This class implements the :class:`~xml.sax.handler.ContentHandler` interface
    by writing SAX
    events back into an XML document. In other words, using an :class:`XMLGenerator`
