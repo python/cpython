@@ -3371,11 +3371,10 @@ class TestZeroCopySendfile(_ZeroCopyFileLinuxTest, unittest.TestCase):
         # traditional POSIX while preserving the position of where we
         # got to in writing
         def syscall(*args, **kwargs):
-            if not flag:
-                flag.append(None)
-                return orig_syscall(*args, **kwargs)
-            else:
+            if flag:
                 raise OSError(errno.ENODATA, "yo")
+            flag.append(None) 
+            return eval(self.PATCHPOINT)(*args, **kwargs)
 
         flag = []
         orig_syscall = eval(self.PATCHPOINT)
