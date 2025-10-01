@@ -4001,10 +4001,18 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     if (lazy_modules != NULL) {
         // Check and see if the module is opting in w/o syntax for backwards compatibility
         // with older Python versions.
-        int contains = PySequence_Contains(lazy_modules, name);
+        int contains = PySequence_Contains(lazy_modules, abs_name);
         if (contains < 0) {
             goto error;
         } else if (contains == 1) {
+            // Don't create lazy import if we're already resolving a lazy import
+            if (interp->imports.lazy_importing_modules != NULL &&
+                PySet_GET_SIZE(interp->imports.lazy_importing_modules) > 0) {
+                contains = 0;  // Skip lazy import creation
+            }
+        }
+
+        if (contains == 1) {
             _PyInterpreterFrame *frame = _PyEval_GetFrame();
             if (frame == NULL) {
                 PyErr_SetString(PyExc_RuntimeError, "no current frame");
