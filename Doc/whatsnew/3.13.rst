@@ -834,7 +834,7 @@ dbm
   (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 * Allow removing all items from the database through
-  the new :meth:`.gdbm.clear` and :meth:`.ndbm.clear` methods.
+  the new :meth:`!clear` methods of the GDBM and NDBM database objects.
   (Contributed by Donghee Na in :gh:`107122`.)
 
 
