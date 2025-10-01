@@ -1676,6 +1676,7 @@ extern "C" {
     INIT_ID(default), \
     INIT_ID(defaultaction), \
     INIT_ID(delete), \
+    INIT_ID(denominator), \
     INIT_ID(depth), \
     INIT_ID(desired_access), \
     INIT_ID(detect_types), \
@@ -1918,6 +1919,7 @@ extern "C" {
     INIT_ID(nt), \
     INIT_ID(null), \
     INIT_ID(number), \
+    INIT_ID(numerator), \
     INIT_ID(obj), \
     INIT_ID(object), \
     INIT_ID(offset), \

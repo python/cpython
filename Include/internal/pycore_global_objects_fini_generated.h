@@ -1678,6 +1678,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(default));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(defaultaction));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(delete));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(denominator));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(depth));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(desired_access));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(detect_types));
@@ -1920,6 +1921,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(nt));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(null));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(number));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(numerator));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(obj));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(object));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(offset));

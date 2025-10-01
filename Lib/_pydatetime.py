@@ -1857,14 +1857,28 @@ class datetime(date):
 
         A timezone info object may be passed in as well.
         """
-        frac, t = _math.modf(t)
-        us = round(frac * 1e6)
-        if us >= 1000000:
+        if isinstance(t, float):
+            frac, t = _math.modf(t)
+            us = round(frac * 1e6)
+        else:
+            try:
+                try:
+                    n, d = t.as_integer_ratio()
+                except AttributeError:
+                    n = t.numerator
+                    d = t.denumerator
+            except AttributeError:
+                frac, t = _math.modf(t)
+                us = round(frac * 1e6)
+            else:
+                t, n = divmod(n, d)
+                us = _divide_and_round(n * 1_000_000, d)
+        if us >= 1_000_000:
             t += 1
-            us -= 1000000
+            us -= 1_000_000
         elif us < 0:
             t -= 1
-            us += 1000000
+            us += 1_000_000
 
         converter = _time.gmtime if utc else _time.localtime
         y, m, d, hh, mm, ss, weekday, jday, dst = converter(t)
