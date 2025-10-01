@@ -61,13 +61,6 @@ or as base classes.
 
 .. class:: XMLGenerator(out=None, encoding='iso-8859-1', short_empty_elements=False)
 
-   .. warning::
-      :class:`!XMLGenerator` does not validate element or
-      attribute names. Callers must ensure that names passed to APIs conform
-      to `XML name rules <https://www.w3.org/TR/xml/#NT-Name>`__ if passing
-      untrusted input. Character data and attribute values are escaped,
-      but not validated.
-
    This class implements the :class:`~xml.sax.handler.ContentHandler` interface
    by writing SAX
    events back into an XML document. In other words, using an :class:`XMLGenerator`
@@ -77,6 +70,13 @@ or as base classes.
    *short_empty_elements* controls the formatting of elements that contain no
    content:  if ``False`` (the default) they are emitted as a pair of start/end
    tags, if set to ``True`` they are emitted as a single self-closed tag.
+
+   .. warning::
+      :class:`!XMLGenerator` does not validate element or
+      attribute names. Callers must ensure that names passed to APIs conform
+      to `XML name rules <https://www.w3.org/TR/xml/#NT-Name>`__ if passing
+      untrusted input. Character data and attribute values are escaped,
+      but not validated.
 
    .. versionchanged:: 3.2
       Added the *short_empty_elements* parameter.
