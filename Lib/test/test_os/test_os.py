@@ -7,7 +7,6 @@ import codecs
 import contextlib
 import decimal
 import errno
-import fnmatch
 import fractions
 import itertools
 import locale
@@ -31,7 +30,6 @@ import unittest
 import uuid
 import warnings
 from test import support
-from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import infinite_recursion
