@@ -2772,6 +2772,63 @@ close_and_release:
     return 0;
 }
 
+/*[clinic input]
+sys.set_lazy_imports_filter
+
+    filter: object
+
+Set the lazy imports filter callback.
+
+The filter is a callable which disables lazy imports when they
+would otherwise be enabled. Returns True if the import is still enabled
+or False to disable it. The callable is called with:
+
+(importing_module_name, imported_module_name, [fromlist])
+
+Pass None to clear the filter.
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_lazy_imports_filter_impl(PyObject *module, PyObject *filter)
+/*[clinic end generated code: output=10251d49469c278c input=2eb48786bdd4ee42]*/
+{
+    PyObject *current_filter = NULL;
+    if (filter == Py_None) {
+        current_filter = NULL;
+    }
+    else if (!PyCallable_Check(filter)) {
+        PyErr_SetString(PyExc_TypeError, "filter must be callable or None");
+        return NULL;
+    }
+    else {
+        current_filter = filter;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    Py_XSETREF(interp->imports.lazy_imports_filter, Py_XNewRef(current_filter));
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.get_lazy_imports_filter
+
+Get the current lazy imports filter callback.
+
+Returns the filter callable or None if no filter is set.
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_lazy_imports_filter_impl(PyObject *module)
+/*[clinic end generated code: output=3bf73022892165af input=cf1e07cb8e203c94]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *filter = interp->imports.lazy_imports_filter;
+    if (filter == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(filter);
+}
+
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
@@ -2837,6 +2894,8 @@ static PyMethodDef sys_methods[] = {
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS_GET_LAZY_IMPORTS_FILTER_METHODDEF
+    SYS_SET_LAZY_IMPORTS_FILTER_METHODDEF
     SYS__BASEREPL_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
