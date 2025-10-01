@@ -130,12 +130,15 @@ class ModuleCompleter:
         for segment in path.split('.'):
             modules = [mod_info for mod_info in modules
                        if mod_info.ispkg and mod_info.name == segment]
+            print(f"{segment=}, {modules=}")  # TEMPORARY -- debugging tests on windows
             if is_stdlib_import is None:
                 # Top-level import decide if we import from stdlib or not
                 is_stdlib_import = all(
                     self._is_stdlib_module(mod_info) for mod_info in modules
                 )
             modules = self.iter_submodules(modules)
+            modules = list(modules)  # TEMPORARY -- debugging tests on windows
+        print(f"segment=last, {modules=}")  # TEMPORARY -- debugging tests on windows
 
         module_names = [module.name for module in modules]
         if is_stdlib_import:

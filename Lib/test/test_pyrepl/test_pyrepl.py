@@ -1139,6 +1139,7 @@ class TestPyReplModuleCompleter(TestCase):
             self.assertEqual(output, "import mymodule.foo")
 
             del sys.modules["mymodule"]
+            print(f"{dir1=}, {dir2=}")  # TEMPORARY -- debugging tests on windows
             # mymodule not imported anymore -> suggest dir2 submodules
             events = code_to_events("import mymodule.\t\n")
             reader = self.prepare_reader(events, namespace={})
