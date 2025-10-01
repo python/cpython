@@ -297,13 +297,13 @@ class Reader:
         if self.last_refresh_cache.valid(self):
             offset, num_common_lines = self.last_refresh_cache.get_cached_location(self)
 
-        screen = self.last_refresh_cache.screen
+        screen = self.last_refresh_cache.screen.copy()
         del screen[num_common_lines:]
 
-        screeninfo = self.last_refresh_cache.screeninfo
+        screeninfo = self.last_refresh_cache.screeninfo.copy()
         del screeninfo[num_common_lines:]
 
-        last_refresh_line_end_offsets = self.last_refresh_cache.line_end_offsets
+        last_refresh_line_end_offsets = self.last_refresh_cache.line_end_offsets.copy()
         del last_refresh_line_end_offsets[num_common_lines:]
 
         pos = self.pos
