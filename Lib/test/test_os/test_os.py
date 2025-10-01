@@ -4125,7 +4125,7 @@ class OSErrorTests(unittest.TestCase):
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
         create_file(filename)
-        self.assertRaises(OSError, os.mkdir, filename)
+        self.assertRaises(FileExistsError, os.mkdir, filename)
 
 
 class CPUCountTests(unittest.TestCase):
