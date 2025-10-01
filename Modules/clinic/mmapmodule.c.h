@@ -340,38 +340,59 @@ mmap_mmap_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(mmap_mmap_flush__doc__,
-"flush([offset, size])");
+"flush($self, offset=0, size=-1, /)\n"
+"--\n"
+"\n");
 
 #define MMAP_MMAP_FLUSH_METHODDEF    \
-    {"flush", (PyCFunction)mmap_mmap_flush, METH_VARARGS, mmap_mmap_flush__doc__},
+    {"flush", _PyCFunction_CAST(mmap_mmap_flush), METH_FASTCALL, mmap_mmap_flush__doc__},
 
 static PyObject *
-mmap_mmap_flush_impl(mmap_object *self, int group_right_1, Py_ssize_t offset,
-                     Py_ssize_t size);
+mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size);
 
 static PyObject *
-mmap_mmap_flush(PyObject *self, PyObject *args)
+mmap_mmap_flush(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int group_right_1 = 0;
     Py_ssize_t offset = 0;
-    Py_ssize_t size = 0;
+    Py_ssize_t size = -1;
 
-    switch (PyTuple_GET_SIZE(args)) {
-        case 0:
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "nn:flush", &offset, &size)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "mmap.mmap.flush requires 0 to 2 arguments");
-            goto exit;
+    if (!_PyArg_CheckPositional("flush", nargs, 0, 2)) {
+        goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        offset = ival;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
+    }
+skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = mmap_mmap_flush_impl((mmap_object *)self, group_right_1, offset, size);
+    return_value = mmap_mmap_flush_impl((mmap_object *)self, offset, size);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -647,4 +668,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=712475834981dd16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6af04d6644f6dfb0 input=a9049054013a1b77]*/

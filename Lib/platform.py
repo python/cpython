@@ -110,8 +110,6 @@ __copyright__ = """
 
 """
 
-__version__ = '1.1.0'
-
 import collections
 import os
 import re
@@ -1434,6 +1432,15 @@ def _main(args: list[str] | None = None):
     aliased = args.aliased and ('nonaliased' not in args.args)
 
     print(platform(aliased, terse))
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == "__main__":
