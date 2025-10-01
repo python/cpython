@@ -3373,7 +3373,7 @@ class TestZeroCopySendfile(_ZeroCopyFileLinuxTest, unittest.TestCase):
         def syscall(*args, **kwargs):
             if flag:
                 raise OSError(errno.ENODATA, "yo")
-            flag.append(None) 
+            flag.append(None)
             return eval(self.PATCHPOINT)(*args, **kwargs)
 
         flag = []
