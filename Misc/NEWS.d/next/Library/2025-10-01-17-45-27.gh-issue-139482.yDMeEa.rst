@@ -1,0 +1,2 @@
+Make os.environ.clear() more efficient (linear complexity instead of quadratic)
+
