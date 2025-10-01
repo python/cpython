@@ -3397,7 +3397,7 @@ def _main():
             else:
                 print('Line: {}'.format(lineno))
 
-        print('\n')
+        print()
     else:
         print(getsource(obj))
 

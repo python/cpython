@@ -100,7 +100,6 @@ import _colorize
 import _pyrepl.utils
 
 from contextlib import ExitStack, closing, contextmanager
-from rlcompleter import Completer
 from types import CodeType
 from warnings import deprecated
 
@@ -364,6 +363,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
         except ImportError:
             pass
+
         self.allow_kbdint = False
         self.nosigint = nosigint
         # Consider these characters as part of the command so when the users type
@@ -1092,6 +1092,31 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
 
+    @property
+    def rlcompleter(self):
+        """Return the `Completer` class from `rlcompleter`, while avoiding the
+        side effects of changing the completer from `import rlcompleter`.
+
+        This is a compromise between GH-138860 and GH-139289. If GH-139289 is
+        fixed, then we don't need this and we can just `import rlcompleter` in
+        `Pdb.__init__`.
+        """
+        if not hasattr(self, "_rlcompleter"):
+            try:
+                import readline
+            except ImportError:
+                # readline is not available, just get the Completer
+                from rlcompleter import Completer
+                self._rlcompleter = Completer
+            else:
+                # importing rlcompleter could have side effect of changing
+                # the current completer, we need to restore it
+                prev_completer = readline.get_completer()
+                from rlcompleter import Completer
+                self._rlcompleter = Completer
+                readline.set_completer(prev_completer)
+        return self._rlcompleter
+
     def completenames(self, text, line, begidx, endidx):
         # Overwrite completenames() of cmd so for the command completion,
         # if no current command matches, check for expressions as well
@@ -1186,10 +1211,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
             return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
 
-        # Use rlcompleter to do the completion
         state = 0
         matches = []
-        completer = Completer(self.curframe.f_globals | self.curframe.f_locals)
+        completer = self.rlcompleter(self.curframe.f_globals | self.curframe.f_locals)
         while (match := completer.complete(text, state)) is not None:
             matches.append(match)
             state += 1
@@ -1204,8 +1228,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
 
         try:
+            completer = self.rlcompleter(ns)
             old_completer = readline.get_completer()
-            completer = Completer(ns)
             readline.set_completer(completer.complete)
             yield
         finally:

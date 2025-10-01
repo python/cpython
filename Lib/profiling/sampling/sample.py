@@ -754,7 +754,7 @@ def main():
         "--mode",
         choices=["wall", "cpu", "gil"],
         default="wall",
-        help="Sampling mode: wall (all threads), cpu (only CPU-running threads), gil (only GIL-holding threads)",
+        help="Sampling mode: wall (all threads), cpu (only CPU-running threads), gil (only GIL-holding threads) (default: wall)",
     )
 
     # Output format selection

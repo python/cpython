@@ -478,11 +478,11 @@ The :mod:`signal` module defines the following functions:
    .. versionadded:: 3.3
 
 
-.. function:: setitimer(which, seconds, interval=0.0)
+.. function:: setitimer(which, seconds, interval=0)
 
    Sets given interval timer (one of :const:`signal.ITIMER_REAL`,
    :const:`signal.ITIMER_VIRTUAL` or :const:`signal.ITIMER_PROF`) specified
-   by *which* to fire after *seconds* (float is accepted, different from
+   by *which* to fire after *seconds* (rounded up to microseconds, different from
    :func:`alarm`) and after that every *interval* seconds (if *interval*
    is non-zero). The interval timer specified by *which* can be cleared by
    setting *seconds* to zero.
@@ -493,12 +493,17 @@ The :mod:`signal` module defines the following functions:
    :const:`signal.ITIMER_VIRTUAL` sends :const:`SIGVTALRM`,
    and :const:`signal.ITIMER_PROF` will deliver :const:`SIGPROF`.
 
-   The old values are returned as a tuple: (delay, interval).
+   The old values are returned as a two-tuple of floats:
+   (``delay``, ``interval``).
 
    Attempting to pass an invalid interval timer will cause an
    :exc:`ItimerError`.
 
    .. availability:: Unix.
+
+   .. versionchanged:: next
+      Accepts any real numbers as *seconds* and *interval*, not only integers
+      or floats.
 
 
 .. function:: getitimer(which)
@@ -675,6 +680,9 @@ The :mod:`signal` module defines the following functions:
       The function is now retried with the recomputed *timeout* if interrupted
       by a signal not in *sigset* and the signal handler does not raise an
       exception (see :pep:`475` for the rationale).
+
+   .. versionchanged:: next
+      Accepts any real number as *timeout*, not only integer or float.
 
 
 .. _signal-example:

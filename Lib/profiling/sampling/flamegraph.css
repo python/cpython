@@ -227,6 +227,65 @@ body {
   background: #ffcd02;
 }
 
+.thread-filter-wrapper {
+  display: none;
+  align-items: center;
+  margin-left: 16px;
+  background: white;
+  border-radius: 6px;
+  padding: 4px 8px 4px 12px;
+  border: 2px solid #3776ab;
+  transition: all 0.2s ease;
+}
+
+.thread-filter-wrapper:hover {
+  border-color: #2d5aa0;
+  box-shadow: 0 2px 6px rgba(55, 118, 171, 0.2);
+}
+
+.thread-filter-label {
+  color: #3776ab;
+  font-size: 14px;
+  font-weight: 600;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.thread-filter-select {
+  background: transparent;
+  color: #2e3338;
+  border: none;
+  padding: 4px 24px 4px 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 120px;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233776ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 16px;
+}
+
+.thread-filter-select:focus {
+  outline: none;
+}
+
+.thread-filter-select:hover {
+  color: #3776ab;
+}
+
+.thread-filter-select option {
+  padding: 8px;
+  background: white;
+  color: #2e3338;
+  font-weight: normal;
+}
+
 #chart {
   width: 100%;
   height: calc(100vh - 160px);

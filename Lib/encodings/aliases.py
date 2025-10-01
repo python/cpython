@@ -17,7 +17,7 @@
 """
 aliases = {
 
-    # Please keep this list sorted alphabetically by value !
+    # Please keep this list sorted alphabetically by value!
 
     # ascii codec
     '646'                : 'ascii',
@@ -553,6 +553,9 @@ aliases = {
     'utf8_ucs2'          : 'utf_8',
     'utf8_ucs4'          : 'utf_8',
     'cp65001'            : 'utf_8',
+
+    # utf_8_sig codec
+    'utf8_sig'           : 'utf_8_sig',
 
     # uu_codec codec
     'uu'                 : 'uu_codec',

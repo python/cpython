@@ -279,8 +279,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func")])])]
         collector.collect(test_frames)
         self.assertEqual(len(collector.stack_counter), 1)
-        ((path,), count), = collector.stack_counter.items()
-        self.assertEqual(path, ("file.py", 10, "func"))
+        ((path, thread_id), count), = collector.stack_counter.items()
+        self.assertEqual(path, (("file.py", 10, "func"),))
+        self.assertEqual(thread_id, 1)
         self.assertEqual(count, 1)
 
         # Test with very deep stack
@@ -289,10 +290,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector = CollapsedStackCollector()
         collector.collect(test_frames)
         # One aggregated path with 100 frames (reversed)
-        (path_tuple,), = (collector.stack_counter.keys(),)
+        ((path_tuple, thread_id),), = (collector.stack_counter.keys(),)
         self.assertEqual(len(path_tuple), 100)
         self.assertEqual(path_tuple[0], ("file99.py", 99, "func99"))
         self.assertEqual(path_tuple[-1], ("file0.py", 0, "func0"))
+        self.assertEqual(thread_id, 1)
 
     def test_pstats_collector_basic(self):
         """Test basic PstatsCollector functionality."""
@@ -394,9 +396,10 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Should store one reversed path
         self.assertEqual(len(collector.stack_counter), 1)
-        (path, count), = collector.stack_counter.items()
+        ((path, thread_id), count), = collector.stack_counter.items()
         expected_tree = (("file.py", 20, "func2"), ("file.py", 10, "func1"))
         self.assertEqual(path, expected_tree)
+        self.assertEqual(thread_id, 1)
         self.assertEqual(count, 1)
 
     def test_collapsed_stack_collector_export(self):
@@ -426,9 +429,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         lines = content.strip().split("\n")
         self.assertEqual(len(lines), 2)  # Two unique stacks
 
-        # Check collapsed format: file:func:line;file:func:line count
-        stack1_expected = "file.py:func2:20;file.py:func1:10 2"
-        stack2_expected = "other.py:other_func:5 1"
+        # Check collapsed format: tid:X;file:func:line;file:func:line count
+        stack1_expected = "tid:1;file.py:func2:20;file.py:func1:10 2"
+        stack2_expected = "tid:1;other.py:other_func:5 1"
 
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
@@ -1517,7 +1520,8 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
         self.assertEqual(len(collector.stack_counter), 2)
 
         # First path should be longer (deeper recursion) than the second
-        paths = list(collector.stack_counter.keys())
+        path_tuples = list(collector.stack_counter.keys())
+        paths = [p[0] for p in path_tuples]  # Extract just the call paths
         lengths = [len(p) for p in paths]
         self.assertNotEqual(lengths[0], lengths[1])
 
@@ -1530,7 +1534,7 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
 
         def total_occurrences(func):
             total = 0
-            for path, count in collector.stack_counter.items():
+            for (path, thread_id), count in collector.stack_counter.items():
                 total += sum(1 for f in path if f == func) * count
             return total
 

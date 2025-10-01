@@ -671,7 +671,7 @@ _codecs_utf_7_encode_impl(PyObject *module, PyObject *str,
                           const char *errors)
 /*[clinic end generated code: output=0feda21ffc921bc8 input=2546dbbb3fa53114]*/
 {
-    return codec_tuple(_PyUnicode_EncodeUTF7(str, 0, 0, errors),
+    return codec_tuple(_PyUnicode_EncodeUTF7(str, errors),
                        PyUnicode_GET_LENGTH(str));
 }
 

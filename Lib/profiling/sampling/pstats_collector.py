@@ -41,7 +41,7 @@ class PstatsCollector(Collector):
             self.callers[callee][caller] += 1
 
     def collect(self, stack_frames):
-        for frames in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
+        for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
             self._process_frames(frames)
 
     def export(self, filename):

@@ -262,7 +262,7 @@ A file descriptor is either a socket or file object, or a small integer
 gotten from a fileno() method call on one of those.
 
 The optional 4th argument specifies a timeout in seconds; it may be
-a floating-point number to specify fractions of seconds.  If it is absent
+a non-integer to specify fractions of seconds.  If it is absent
 or None, the call will never time out.
 
 The return value is a tuple of three lists corresponding to the first three
@@ -277,7 +277,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=df20779a9c2f5c1e]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=b0403de75cd11cc1]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -305,8 +305,9 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
                                       _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "timeout must be a float or None");
+                PyErr_Format(PyExc_TypeError,
+                             "timeout must be a real number or None, not %T",
+                             timeout_obj);
             }
             return NULL;
         }
@@ -632,8 +633,9 @@ select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
                                            _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "timeout must be an integer or None");
+                PyErr_Format(PyExc_TypeError,
+                             "timeout must be a real number or None, not %T",
+                             timeout_obj);
             }
             return NULL;
         }
@@ -974,8 +976,9 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
         if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
                                            _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "timeout must be an integer or None");
+                PyErr_Format(PyExc_TypeError,
+                             "timeout must be a real number or None, not %T",
+                             timeout_obj);
             }
             return NULL;
         }
@@ -1565,7 +1568,7 @@ select_epoll_unregister_impl(pyEpoll_Object *self, int fd)
 select.epoll.poll
 
     timeout as timeout_obj: object = None
-      the maximum time to wait in seconds (as float);
+      the maximum time to wait in seconds (with fractions);
       a timeout of None or -1 makes poll wait indefinitely
     maxevents: int = -1
       the maximum number of events returned; -1 means no limit
@@ -1579,7 +1582,7 @@ as a list of (fd, events) 2-tuples.
 static PyObject *
 select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
                        int maxevents)
-/*[clinic end generated code: output=e02d121a20246c6c input=33d34a5ea430fd5b]*/
+/*[clinic end generated code: output=e02d121a20246c6c input=deafa7f04a60ebe0]*/
 {
     int nfds, i;
     PyObject *elist = NULL, *etuple = NULL;
@@ -1595,8 +1598,9 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
         if (_PyTime_FromSecondsObject(&timeout, timeout_obj,
                                       _PyTime_ROUND_TIMEOUT) < 0) {
             if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "timeout must be an integer or None");
+                PyErr_Format(PyExc_TypeError,
+                             "timeout must be a real number or None, not %T",
+                             timeout_obj);
             }
             return NULL;
         }
@@ -2291,7 +2295,7 @@ select.kqueue.control
         The maximum number of events that the kernel will return.
     timeout as otimeout: object = None
         The maximum time to wait in seconds, or else None to wait forever.
-        This accepts floats for smaller timeouts, too.
+        This accepts non-integers for smaller timeouts, too.
     /
 
 Calls the kernel kevent function.
@@ -2300,7 +2304,7 @@ Calls the kernel kevent function.
 static PyObject *
 select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
                            int maxevents, PyObject *otimeout)
-/*[clinic end generated code: output=81324ff5130db7ae input=59c4e30811209c47]*/
+/*[clinic end generated code: output=81324ff5130db7ae input=be969d2bc6f84205]*/
 {
     int gotevents = 0;
     int nchanges = 0;
@@ -2331,9 +2335,8 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
         if (_PyTime_FromSecondsObject(&timeout,
                                       otimeout, _PyTime_ROUND_TIMEOUT) < 0) {
             PyErr_Format(PyExc_TypeError,
-                "timeout argument must be a number "
-                "or None, got %.200s",
-                _PyType_Name(Py_TYPE(otimeout)));
+                         "timeout must be a real number or None, not %T",
+                         otimeout);
             return NULL;
         }
 

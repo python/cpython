@@ -1611,6 +1611,9 @@ Cursor objects
       If the *size* parameter is used, then it is best for it to retain the same
       value from one :meth:`fetchmany` call to the next.
 
+      .. versionchanged:: next
+         Negative *size* values are rejected by raising :exc:`ValueError`.
+
    .. method:: fetchall()
 
       Return all (remaining) rows of a query result as a :class:`list`.
@@ -1637,6 +1640,9 @@ Cursor objects
 
       Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
       The default value is 1 which means a single row would be fetched per call.
+
+      .. versionchanged:: next
+         Negative values are rejected by raising :exc:`ValueError`.
 
    .. attribute:: connection
 

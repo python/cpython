@@ -19,6 +19,7 @@
    Copyright (c) 2023      Hanno Böck <hanno@gentoo.org>
    Copyright (c) 2023      Sony Corporation / Snild Dolkow <snild@sony.com>
    Copyright (c) 2024      Taichi Haradaguchi <20001722@ymail.ne.jp>
+   Copyright (c) 2025      Matthew Fernandez <matthew.fernandez@gmail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -276,7 +277,7 @@ XML_ParserCreate_MM(const XML_Char *encoding,
 
 /* Prepare a parser object to be reused.  This is particularly
    valuable when memory allocation overhead is disproportionately high,
-   such as when a large number of small documnents need to be parsed.
+   such as when a large number of small documents need to be parsed.
    All handlers are cleared from the parser, except for the
    unknownEncodingHandler. The parser's external state is re-initialized
    except for the values of ns and ns_triplets.
@@ -1081,7 +1082,7 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
 */
 #  define XML_MAJOR_VERSION 2
 #  define XML_MINOR_VERSION 7
-#  define XML_MICRO_VERSION 2
+#  define XML_MICRO_VERSION 3
 
 #  ifdef __cplusplus
 }

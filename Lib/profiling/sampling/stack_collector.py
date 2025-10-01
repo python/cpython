@@ -15,12 +15,12 @@ class StackTraceCollector(Collector):
         self.skip_idle = skip_idle
 
     def collect(self, stack_frames, skip_idle=False):
-        for frames in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
+        for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
             if not frames:
                 continue
-            self.process_frames(frames)
+            self.process_frames(frames, thread_id)
 
-    def process_frames(self, frames):
+    def process_frames(self, frames, thread_id):
         pass
 
 
@@ -29,17 +29,17 @@ class CollapsedStackCollector(StackTraceCollector):
         super().__init__(*args, **kwargs)
         self.stack_counter = collections.Counter()
 
-    def process_frames(self, frames):
+    def process_frames(self, frames, thread_id):
         call_tree = tuple(reversed(frames))
-        self.stack_counter[call_tree] += 1
+        self.stack_counter[(call_tree, thread_id)] += 1
 
     def export(self, filename):
         lines = []
-        for call_tree, count in self.stack_counter.items():
+        for (call_tree, thread_id), count in self.stack_counter.items():
             stack_str = ";".join(
                 f"{os.path.basename(f[0])}:{f[2]}:{f[1]}" for f in call_tree
             )
-            lines.append((stack_str, count))
+            lines.append((f"tid:{thread_id};{stack_str}", count))
 
         lines.sort(key=lambda x: (-x[1], x[0]))
 
@@ -53,10 +53,11 @@ class FlamegraphCollector(StackTraceCollector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stats = {}
-        self._root = {"samples": 0, "children": {}}
+        self._root = {"samples": 0, "children": {}, "threads": set()}
         self._total_samples = 0
         self._func_intern = {}
         self._string_table = StringTable()
+        self._all_threads = set()
 
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None):
         """Set profiling statistics to include in flamegraph data."""
@@ -111,6 +112,7 @@ class FlamegraphCollector(StackTraceCollector):
                 "name": self._string_table.intern("No Data"),
                 "value": 0,
                 "children": [],
+                "threads": [],
                 "strings": self._string_table.get_strings()
             }
 
@@ -133,6 +135,7 @@ class FlamegraphCollector(StackTraceCollector):
                     "filename": filename_idx,
                     "lineno": func[1],
                     "funcname": funcname_idx,
+                    "threads": sorted(list(node.get("threads", set()))),
                 }
 
                 source = self._get_source_lines(func)
@@ -172,6 +175,7 @@ class FlamegraphCollector(StackTraceCollector):
             new_name = f"Program Root: {old_name}"
             main_child["name"] = self._string_table.intern(new_name)
             main_child["stats"] = self.stats
+            main_child["threads"] = sorted(list(self._all_threads))
             main_child["strings"] = self._string_table.get_strings()
             return main_child
 
@@ -180,14 +184,17 @@ class FlamegraphCollector(StackTraceCollector):
             "value": total_samples,
             "children": root_children,
             "stats": self.stats,
+            "threads": sorted(list(self._all_threads)),
             "strings": self._string_table.get_strings()
         }
 
-    def process_frames(self, frames):
+    def process_frames(self, frames, thread_id):
         # Reverse to root->leaf
         call_tree = reversed(frames)
         self._root["samples"] += 1
         self._total_samples += 1
+        self._root["threads"].add(thread_id)
+        self._all_threads.add(thread_id)
 
         current = self._root
         for func in call_tree:
@@ -195,9 +202,10 @@ class FlamegraphCollector(StackTraceCollector):
             children = current["children"]
             node = children.get(func)
             if node is None:
-                node = {"samples": 0, "children": {}}
+                node = {"samples": 0, "children": {}, "threads": set()}
                 children[func] = node
             node["samples"] += 1
+            node["threads"].add(thread_id)
             current = node
 
     def _get_source_lines(self, func):
