@@ -110,7 +110,7 @@ class ModuleCompleter:
         modules: Iterable[pkgutil.ModuleInfo]
         imported_module = sys.modules.get(path.split('.')[0])
         if imported_module:
-            # Module already imported: only look for its submodules,
+            # Module already imported: only look in its location,
             # even if a module with the same name would be higher in path
             imported_path = (imported_module.__spec__
                              and imported_module.__spec__.origin)
@@ -122,7 +122,7 @@ class ModuleCompleter:
             else:
                 # Module already imported but without spec/origin:
                 # propose no suggestions
-                modules = []
+                return []
         else:
             modules = self.global_cache
 
