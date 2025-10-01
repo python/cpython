@@ -1995,7 +1995,7 @@ class SubinterpreterTest(unittest.TestCase):
 
         def output():
             time.sleep(1)
-            print("x")
+            print("x", end="")
 
         def callback():
             threading.Thread(target=output).start()
@@ -2016,7 +2016,7 @@ class SubinterpreterTest(unittest.TestCase):
         """
         rc, out, err = assert_python_ok('-c', source)
         self.assertEqual(rc, 0)
-        self.assertEqual(out, b"x\n")
+        self.assertEqual(out, b"x")
         self.assertEqual(err, b"")
 
 
