@@ -3197,9 +3197,6 @@ class SpawnTests(unittest.TestCase):
         self._test_invalid_env(os.spawnvpe)
 
 
-# The introduction of this TestCase caused at least two different errors on
-# *nix buildbots. Temporarily skip this to let the buildbots move along.
-@unittest.skip("Skip due to platform/environment differences on *NIX buildbots")
 @unittest.skipUnless(hasattr(os, 'getlogin'), "test needs os.getlogin")
 class LoginTests(unittest.TestCase):
     def test_getlogin(self):
