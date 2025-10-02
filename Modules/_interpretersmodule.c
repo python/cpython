@@ -755,6 +755,11 @@ resolve_interp(PyObject *idobj, int restricted, int reqready, const char *op)
         }
     }
 
+    if (_Py_IsMainInterpreter(interp)) {
+        assert(_PyInterpreterState_IsReady(interp));
+        return interp;
+    }
+
     if (reqready && !_PyInterpreterState_IsReady(interp)) {
         if (idobj == NULL) {
             PyErr_Format(PyExc_InterpreterError,
