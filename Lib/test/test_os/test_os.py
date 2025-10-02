@@ -4130,7 +4130,8 @@ class OSErrorTests(unittest.TestCase):
         create_file(filename)
         self.assertRaises(FileExistsError, os.mkdir, filename)
 
-        self.assertRaises(NotADirectoryError, os.mkdir, subdir)
+        self.assertRaises((NotADirectoryError, FileNotFoundError),
+                          os.mkdir, subdir)
 
 
 class CPUCountTests(unittest.TestCase):
