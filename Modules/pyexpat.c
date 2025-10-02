@@ -1,4 +1,9 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "pycore_runtime.h"         // _Py_ID()
 #include <ctype.h>
 
 #include <stdbool.h>
