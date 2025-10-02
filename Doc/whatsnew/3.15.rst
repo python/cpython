@@ -279,6 +279,11 @@ Other language changes
   and ends with a forward slash (``/``).
   (Contributed by Serhiy Storchaka in :gh:`134716`.)
 
+* Functions that take timestamp or timeout arguments now accept any real
+  numbers (such as :class:`~decimal.Decimal` and :class:`~fractions.Fraction`),
+  not only integers or floats, although this does not improve precision.
+  (Contributed by Serhiy Storchaka in :gh:`67795`.)
+
 
 New modules
 ===========
@@ -288,6 +293,14 @@ New modules
 
 Improved modules
 ================
+
+collections
+-----------
+
+* Added :meth:`!collections.Counter.__xor__` and
+  :meth:`!collections.Counter.__ixor__` to compute the symmetric difference
+  between :class:`~collections.Counter` objects.
+  (Contributed by Raymond Hettinger in :gh:`138682`.)
 
 collections.abc
 ---------------
@@ -315,10 +328,6 @@ dbm
   which allow to recover unused free space previously occupied by deleted entries.
   (Contributed by Andrea Oliveri in :gh:`134004`.)
 
-* Add the ``'m'`` flag for :func:`dbm.gnu.open` which allows to disable
-  the use of :manpage:`mmap(2)`.
-  This may harm performance, but improve crash tolerance.
-  (Contributed by Serhiy Storchaka in :gh:`66234`.)
 
 
 difflib
@@ -527,6 +536,15 @@ tarfile
   (Contributed by Christoph Walcher in :gh:`57911`.)
 
 
+timeit
+------
+
+* The command-line interface now colorizes error tracebacks
+  by default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Yi Hong in :gh:`139374`.)
+
+
 types
 ------
 
@@ -542,6 +560,24 @@ unittest
 * :func:`unittest.TestCase.assertLogs` will now accept a formatter
   to control how messages are formatted.
   (Contributed by Garry Cairns in :gh:`134567`.)
+
+
+xml.parsers.expat
+-----------------
+
+* Add :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerActivationThreshold`
+  and :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerMaximumAmplification`
+  to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
+  disproportional amounts of dynamic memory usage from within an Expat parser.
+  (Contributed by Bénédikt Tran in :gh:`90949`.)
+
+* Add :meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold`
+  and :meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification`
+  to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
+  `billion laughs`_ attacks.
+  (Contributed by Bénédikt Tran in :gh:`90949`.)
+
+  .. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
 
 
 zlib
@@ -595,8 +631,41 @@ hashlib
 
   (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+__version__
+-----------
+
+* The ``__version__`` attribute has been deprecated in these standard library
+  modules and will be removed in Python 3.20.
+  Use :py:data:`sys.version_info` instead.
+
+  - :mod:`argparse`
+  - :mod:`csv`
+  - :mod:`!ctypes.macholib`
+  - :mod:`ipaddress`
+  - :mod:`json`
+  - :mod:`logging` (``__date__`` also deprecated)
+  - :mod:`optparse`
+  - :mod:`pickle`
+  - :mod:`platform`
+  - :mod:`re`
+  - :mod:`socketserver`
+  - :mod:`tabnanny`
+  - :mod:`tkinter.font`
+  - :mod:`tkinter.ttk`
+
+  (Contributed by Hugo van Kemenade in :gh:`76007`.)
 
 .. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
 
 Removed
 =======
@@ -866,6 +935,11 @@ Removed C APIs
 
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
   of :c:func:`PyImport_ImportModule`.
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+* :c:func:`!PyWeakref_GetObject` and :c:macro:`!PyWeakref_GET_OBJECT`:
+  use :c:func:`PyWeakref_GetRef` instead. The |pythoncapi_compat_project|
+  can be used to get :c:func:`!PyWeakref_GetRef` on Python 3.12 and older.
   (Contributed by Bénédikt Tran in :gh:`133644`.)
 
 * Remove deprecated :c:func:`!PySys_ResetWarnOptions`.
