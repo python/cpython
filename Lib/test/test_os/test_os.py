@@ -4083,6 +4083,7 @@ class OSErrorTests(unittest.TestCase):
             (self.filenames, os.listdir,),
             (self.filenames, os.rename, "dst"),
             (self.filenames, os.replace, "dst"),
+            (self.filenames, os.utime, None),
         ]
         if os_helper.can_chmod():
             funcs.append((self.filenames, os.chmod, 0o777))
@@ -4122,6 +4123,19 @@ class OSErrorTests(unittest.TestCase):
                     pass
                 else:
                     self.fail(f"No exception thrown by {func}")
+
+    def test_mkdir(self):
+        filename = os_helper.TESTFN
+        subdir = os.path.join(filename, 'subdir')
+        self.assertRaises(FileNotFoundError, os.mkdir, subdir)
+
+        self.addCleanup(os_helper.unlink, filename)
+        create_file(filename)
+        self.assertRaises(FileExistsError, os.mkdir, filename)
+
+        self.assertRaises((NotADirectoryError, FileNotFoundError),
+                          os.mkdir, subdir)
+
 
 class CPUCountTests(unittest.TestCase):
     def check_cpu_count(self, cpus):
