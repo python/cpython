@@ -4123,9 +4123,14 @@ class OSErrorTests(unittest.TestCase):
 
     def test_mkdir(self):
         filename = os_helper.TESTFN
+        subdir = os.path.join(filename, 'subdir')
+        self.assertRaises(FileNotFoundError, os.mkdir, subdir)
+
         self.addCleanup(os_helper.unlink, filename)
         create_file(filename)
         self.assertRaises(FileExistsError, os.mkdir, filename)
+
+        self.assertRaises(NotADirectoryError, os.mkdir, subdir)
 
 
 class CPUCountTests(unittest.TestCase):
