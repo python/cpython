@@ -96,7 +96,6 @@ class TestSupport(unittest.TestCase):
                         self.test_get_attribute)
         self.assertRaises(unittest.SkipTest, support.get_attribute, self, "foo")
 
-    @unittest.skip("failing buildbots")
     def test_get_original_stdout(self):
         self.assertEqual(support.get_original_stdout(), sys.stdout)
 
