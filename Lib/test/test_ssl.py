@@ -4346,8 +4346,9 @@ class ThreadedTests(unittest.TestCase):
         client_context.set_client_sigalgs("rsa_pss_rsae_sha256")
         server_context.set_client_sigalgs("rsa_pss_rsae_sha384")
 
-        # Some systems return ConnectionResetError on handshake failures
-        with self.assertRaises((ssl.SSLError, ConnectionResetError)):
+        # gh-139504: Some systems return ConnectionResetError
+        # or BrokenPipeError on handshake failures
+        with self.assertRaises((ssl.SSLError, ConnectionResetError, BrokenPipeError)):
             server_params_test(client_context, server_context,
                                chatty=True, connectionchatty=True,
                                sni_name=hostname)
