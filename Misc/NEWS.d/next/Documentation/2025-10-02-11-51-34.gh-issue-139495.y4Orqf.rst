@@ -1,2 +1,2 @@
-Fix :func:`hashlib.file_digest()` versionchanged description of
+Fix :func:`hashlib.file_digest` versionchanged description of
 :exc:`BlockingIOError`
