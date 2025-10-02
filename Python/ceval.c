@@ -2986,10 +2986,81 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
     return 1;
 }
 
+int
+check_lazy_import_comatibility(PyThreadState *tstate, PyObject *lazy_modules,
+                               PyObject *builtins, PyObject *globals, PyObject *locals,
+                               PyObject *name, PyObject *fromlist, PyObject *level,
+                               PyObject **mod)
+{
+    int ilevel = PyLong_AsInt(level);
+    if (ilevel == -1 && _PyErr_Occurred(tstate)) {
+        return -1;
+    }
+
+    PyObject *abs_name = _PyImport_GetAbsName(tstate, name, globals, ilevel);
+    if (abs_name == NULL) {
+        return -1;
+    }
+
+    int contains = PySequence_Contains(lazy_modules, abs_name);
+    Py_DECREF(abs_name);
+    if (contains < 0) {
+        return -1;
+    } else if (contains == 0) {
+        *mod = NULL;
+        return 0;
+    }
+
+    _PyInterpreterFrame *frame = _PyEval_GetFrame();
+    if (frame == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no current frame");
+        return -1;
+    }
+
+    PyObject *import_func;
+    if (PyMapping_GetOptionalItem(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
+        return -1;
+    }
+
+    if (import_func == NULL) {
+        _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
+        return -1;
+    }
+
+    PyObject *final_mod = _PyImport_LazyImportModuleLevelObject(tstate, name, import_func, globals,
+                                                        locals, fromlist, ilevel);
+    Py_DECREF(import_func);
+    if (final_mod == NULL) {
+        return -1;
+    }
+    *mod = final_mod;
+    return 0;
+}
+
 PyObject *
 _PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals, PyObject *locals,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
+    // Check if this module should be imported lazily due to the compatbility mode support via
+    // __lazy_modules__.
+    PyObject *lazy_modules;
+    if (globals != NULL &&
+        PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__), &lazy_modules) < 0) {
+        return NULL;
+    }
+
+    PyObject *res;
+    if (lazy_modules != NULL) {
+        int lazy = check_lazy_import_comatibility(tstate, lazy_modules, builtins, globals,
+                                                  locals, name, fromlist, level, &res);
+        Py_DECREF(lazy_modules);
+        if (lazy < 0) {
+            return NULL;
+        } else if (res != NULL) {
+            return res;
+        }
+    }
+
     PyObject *import_func;
     if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__import__), &import_func) < 0) {
         return NULL;
@@ -2999,7 +3070,7 @@ _PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
         return NULL;
     }
 
-    PyObject *res = _PyEval_ImportNameWithImport(tstate, import_func, globals, locals, name, fromlist, level);
+    res = _PyEval_ImportNameWithImport(tstate, import_func, globals, locals, name, fromlist, level);
     Py_DECREF(import_func);
     return res;
 }

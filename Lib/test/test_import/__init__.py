@@ -2622,6 +2622,14 @@ class LazyImportTests(unittest.TestCase):
 
         self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
 
+    def test_compatibility_mode_used(self):
+        try:
+            import test.test_import.data.lazy_imports.basic_compatibility_mode_used
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
     def test_compatibility_mode_relative(self):
         try:
             import test.test_import.data.lazy_imports.basic_compatibility_mode_relative

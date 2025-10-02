@@ -34,6 +34,8 @@ extern int _PyImport_FixupBuiltin(
 extern PyObject *
 _PyImport_ResolveName(PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
 extern PyObject *
+_PyImport_GetAbsName(PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
+extern PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import);
 extern PyObject *
 _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate, PyObject *name, PyObject *builtins, PyObject *globals,

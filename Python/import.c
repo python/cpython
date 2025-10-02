@@ -3957,6 +3957,13 @@ get_abs_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
 }
 
 PyObject *
+_PyImport_GetAbsName(PyThreadState *tstate, PyObject *name, PyObject *globals, int level)
+{
+    return get_abs_name(tstate, name, globals, level);
+}
+
+
+PyObject *
 PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                  PyObject *locals, PyObject *fromlist,
                                  int level)
@@ -3972,11 +3979,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
 
     if (name == NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError, "Empty module name");
-        goto error;
-    }
-
-    if (globals != NULL &&
-        PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__), &lazy_modules) < 0) {
         goto error;
     }
 
@@ -3996,44 +3998,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     abs_name = get_abs_name(tstate, name, globals, level);
     if (abs_name == NULL) {
         goto error;
-    }
-
-    if (lazy_modules != NULL) {
-        // Check and see if the module is opting in w/o syntax for backwards compatibility
-        // with older Python versions.
-        int contains = PySequence_Contains(lazy_modules, abs_name);
-        if (contains < 0) {
-            goto error;
-        } else if (contains == 1) {
-            // Don't create lazy import if we're already resolving a lazy import
-            if (interp->imports.lazy_importing_modules != NULL &&
-                PySet_GET_SIZE(interp->imports.lazy_importing_modules) > 0) {
-                contains = 0;  // Skip lazy import creation
-            }
-        }
-
-        if (contains == 1) {
-            _PyInterpreterFrame *frame = _PyEval_GetFrame();
-            if (frame == NULL) {
-                PyErr_SetString(PyExc_RuntimeError, "no current frame");
-                goto error;
-            }
-
-            PyObject *import_func;
-            if (PyMapping_GetOptionalItem(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
-                return NULL;
-            }
-
-            if (import_func == NULL) {
-                _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
-                return NULL;
-            }
-
-            final_mod = _PyImport_LazyImportModuleLevelObject(tstate, name, import_func, globals,
-                                                              locals, fromlist, level);
-            Py_DECREF(import_func);
-            goto error;
-        }
     }
 
     mod = import_get_module(tstate, abs_name);
@@ -4219,7 +4183,6 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *import_
                 goto done;
             }
             if (PyDict_CheckExact(parent_dict) && !PyDict_Contains(parent_dict, child)) {
-                printf("!!! Adding lazy onto %s %s\n", PyUnicode_AsUTF8(parent), PyUnicode_AsUTF8(child));
                 PyObject *lazy_module_attr = _PyLazyImport_New(import_func, parent, child);
                 if (lazy_module_attr == NULL) {
                     goto done;
@@ -5344,7 +5307,6 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *child_module,
         Py_hash_t hash;
         while (_PySet_NextEntry(lazy_submodules, &pos, &attr_name, &hash)) {
             if (PyDict_Contains(child_dict, attr_name)) {
-                printf("!!!!!!!! Not replacing %s\n", PyUnicode_AsUTF8(attr_name));
                 continue;
             }
             PyObject *builtins = _PyEval_GetBuiltins(tstate);
