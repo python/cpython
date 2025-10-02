@@ -717,18 +717,18 @@ class TestInterpreterClose(TestBase):
         with self.subTest('running __main__ (from self)'):
             with self.interpreter_from_capi() as interpid:
                 with self.assertRaisesRegex(ExecutionFailed,
-                                            'InterpreterError.*unrecognized'):
+                                            'InterpreterError.*not supported'):
                     self.run_from_capi(interpid, script, main=True)
 
         with self.subTest('running, but not __main__ (from self)'):
             with self.assertRaisesRegex(ExecutionFailed,
-                                        'InterpreterError.*unrecognized'):
+                                        'InterpreterError.*not supported'):
                 self.run_temp_from_capi(script)
 
         with self.subTest('running __main__ (from other)'):
             with self.interpreter_obj_from_capi() as (interp, interpid):
                 with self.running_from_capi(interpid, main=True):
-                    with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                    with self.assertRaisesRegex(InterpreterError, 'not supported'):
                         interp.close()
                     # Make sure it wssn't closed.
                     self.assertTrue(
@@ -741,7 +741,7 @@ class TestInterpreterClose(TestBase):
         with self.subTest('running, but not __main__ (from other)'):
             with self.interpreter_obj_from_capi() as (interp, interpid):
                 with self.running_from_capi(interpid, main=False):
-                    with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                    with self.assertRaisesRegex(InterpreterError, 'not supported'):
                         interp.close()
                     # Make sure it wssn't closed.
                     self.assertTrue(
@@ -749,7 +749,7 @@ class TestInterpreterClose(TestBase):
 
         with self.subTest('not running (from other)'):
             with self.interpreter_obj_from_capi() as (interp, interpid):
-                with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                with self.assertRaisesRegex(InterpreterError, 'not supported'):
                     interp.close()
                 self.assertTrue(
                     self.interp_exists(interpid))
@@ -920,7 +920,7 @@ class TestInterpreterPrepareMain(TestBase):
     @requires_test_modules
     def test_created_with_capi(self):
         with self.interpreter_obj_from_capi() as (interp, interpid):
-            with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+            with self.assertRaisesRegex(InterpreterError, 'not supported'):
                 interp.prepare_main({'spam': True})
             with self.assertRaisesRegex(ExecutionFailed, 'NameError'):
                 self.run_from_capi(interpid, 'assert spam is True')
@@ -1098,7 +1098,7 @@ class TestInterpreterExec(TestBase):
 
     def test_created_with_capi(self):
         with self.interpreter_obj_from_capi() as (interp, _):
-            with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+            with self.assertRaisesRegex(InterpreterError, 'not supported'):
                 interp.exec('raise Exception("it worked!")')
 
     def test_list_comprehension(self):
@@ -2271,7 +2271,7 @@ class LowLevelTests(TestBase):
 
         with self.subTest('from C-API'):
             interpid = _testinternalcapi.create_interpreter()
-            with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+            with self.assertRaisesRegex(InterpreterError, 'not supported'):
                 _interpreters.destroy(interpid, restrict=True)
             self.assertTrue(
                 self.interp_exists(interpid))
@@ -2315,7 +2315,7 @@ class LowLevelTests(TestBase):
         with self.subTest('from C-API'):
             orig = _interpreters.new_config('isolated')
             with self.interpreter_from_capi(orig) as interpid:
-                with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                with self.assertRaisesRegex(InterpreterError, 'not supported'):
                     _interpreters.get_config(interpid, restrict=True)
                 config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, orig)
@@ -2376,7 +2376,7 @@ class LowLevelTests(TestBase):
 
     def test_is_running(self):
         def check(interpid, expected):
-            with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+            with self.assertRaisesRegex(InterpreterError, 'not supported'):
                 _interpreters.is_running(interpid, restrict=True)
             running = _interpreters.is_running(interpid)
             self.assertIs(running, expected)
@@ -2442,7 +2442,7 @@ class LowLevelTests(TestBase):
 
         with self.subTest('from C-API'):
             with self.interpreter_from_capi() as interpid:
-                with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                with self.assertRaisesRegex(InterpreterError, 'not supported'):
                     _interpreters.exec(interpid, 'raise Exception("it worked!")',
                                        restrict=True)
                 exc = _interpreters.exec(interpid, 'raise Exception("it worked!")')
@@ -2521,7 +2521,7 @@ class LowLevelTests(TestBase):
 
         with self.subTest('from C-API'):
             with self.interpreter_from_capi() as interpid:
-                with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
+                with self.assertRaisesRegex(InterpreterError, 'not supported'):
                     _interpreters.set___main___attrs(interpid, {'spam': True},
                                                      restrict=True)
                 _interpreters.set___main___attrs(interpid, {'spam': True})

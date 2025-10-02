@@ -775,11 +775,11 @@ resolve_interp(PyObject *idobj, int restricted, int reqready, const char *op)
     if (restricted && get_whence(interp) != _PyInterpreterState_WHENCE_STDLIB) {
         if (idobj == NULL) {
             PyErr_Format(PyExc_InterpreterError,
-                         "cannot %s unrecognized current interpreter", op);
+                         "cannot %s current interpreter (not supported)", op);
         }
         else {
             PyErr_Format(PyExc_InterpreterError,
-                         "cannot %s unrecognized interpreter %R", op, idobj);
+                         "cannot %s interpreter %R (not supported)", op, idobj);
         }
         return NULL;
     }
