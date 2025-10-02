@@ -202,7 +202,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Cirrus and macos-14 are M1, macos-15 is default GHA Intel.
+        # Cirrus and macos-14 are M1, macos-15-intel is default GHA Intel.
         # macOS 13 only runs tests against the GIL-enabled CPython.
         # Cirrus used for upstream, macos-14 for forks.
         os:
