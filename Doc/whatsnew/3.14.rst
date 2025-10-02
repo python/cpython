@@ -1146,8 +1146,8 @@ Command line and environment
 
 .. _whatsnew314-finally-syntaxwarning:
 
-Control flow in :keyword:`finally` blocks
------------------------------------------
+PEP 765: Control flow in :keyword:`finally` blocks
+--------------------------------------------------
 
 The compiler now emits a :exc:`SyntaxWarning` when a :keyword:`return`,
 :keyword:`break`, or :keyword:`continue` statement have the effect of
