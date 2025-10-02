@@ -1,0 +1,4 @@
+:mod:`codecs` text streams now split lines only with ``'\r'``, ``'\n'`` and
+``'\r\n'`` as :mod:`io` text streams in :term:`universal newlines` mode.
+Previously they split lines using Unicode line terminators as in
+:meth:`str.splitlines`.
