@@ -1,4 +1,3 @@
-import ctypes
 import os
 import queue
 import sys
@@ -108,21 +107,25 @@ class ProcessPoolExecutorTest(ExecutorTest):
                       f1.getvalue())
 
     @staticmethod
-    def _segfault():
-        ctypes.string_at(0)
+    def _terminate_abruptly_with_exit_code(exit_code):
+        os._exit(exit_code)
 
-    def test_traceback_when_child_process_segfaults(self):
+    def test_traceback_when_child_process_terminates_abruptly(self):
         # gh-139462 enhancement - BrokenProcessPool exceptions
         # should describe which process terminated.
-        future = self.executor.submit(self._segfault)
-        with self.assertRaises(Exception) as cm:
+        exit_code = 99
+        future = self.executor.submit(
+            self._terminate_abruptly_with_exit_code,
+            exit_code
+        )
+        with self.assertRaises(BrokenProcessPool) as bpe:
             future.result()
 
-        bpe = cm.exception
-        self.assertIs(type(bpe), BrokenProcessPool)
-        cause = bpe.__cause__
-        self.assertIs(type(cause), futures.process._RemoteTraceback)
-        self.assertIn("terminated abruptly with exit code", cause.tb)
+        cause = bpe.exception.__cause__
+        self.assertIsInstance(cause, futures.process._RemoteTraceback)
+        self.assertIn(
+            f"terminated abruptly with exit code {exit_code}", cause.tb
+        )
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @hashlib_helper.requires_hashdigest('md5')
