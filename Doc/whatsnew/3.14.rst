@@ -2668,7 +2668,7 @@ urllib
 Deprecated
 ==========
 
-New Deprecations
+New deprecations
 ----------------
 
 * Passing a complex number as the *real* or *imag* argument in the
