@@ -778,6 +778,7 @@ class ParentParserLifetimeTest(unittest.TestCase):
 
     See https://github.com/python/cpython/issues/139400.
     """
+
     def test_parent_parser_outlives_its_subparsers(self):
         parser = expat.ParserCreate()
         subparser = parser.ExternalEntityParserCreate(None)
