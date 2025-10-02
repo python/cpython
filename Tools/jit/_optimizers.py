@@ -39,6 +39,41 @@ _X86_BRANCHES = {
 # Update with all of the inverted branches, too:
 _X86_BRANCHES |= {v: k for k, v in _X86_BRANCHES.items() if v}
 
+_AARCH64_COND_CODES = {
+    # https://developer.arm.com/documentation/dui0801/b/CJAJIHAD?lang=en
+    "eq": "ne",
+    "ne": "eq",
+    "lt": "ge",
+    "ge": "lt",
+    "gt": "le",
+    "le": "gt",
+    "vs": "vc",
+    "vc": "vs",
+    "mi": "pl",
+    "pl": "mi",
+    "cs": "cc",
+    "cc": "cs",
+    "hs": "lo",
+    "lo": "hs",
+    "hi": "ls",
+    "ls": "hi",
+}
+# Branches are either b.{cond} or bc.{cond}
+_AARCH64_BRANCHES = {
+    "b." + cond: ("b." + inverse if inverse else None)
+    for (cond, inverse) in _AARCH64_COND_CODES.items()
+} | {
+    "bc." + cond: ("bc." + inverse if inverse else None)
+    for (cond, inverse) in _AARCH64_COND_CODES.items()
+}
+# And four compare and branch instructions
+_AARCH64_BRANCHES |= {
+    "cbz": "cbnz",
+    "cbnz": "cbz",
+    "tbz": "tbnz",
+    "tbnz": "tbz",
+}
+
 
 @dataclasses.dataclass
 class _Block:
@@ -286,8 +321,15 @@ class Optimizer:
 class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
     """aarch64-apple-darwin/aarch64-pc-windows-msvc/aarch64-unknown-linux-gnu"""
 
+    _branches = _AARCH64_BRANCHES
+    _re_branch = re.compile(
+        rf"\s*(?P<instruction>{'|'.join(_AARCH64_BRANCHES)})\s+(.+,\s+)*(?P<target>[\w.]+)"
+    )
+
     # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
+    # https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/RET--Return-from-subroutine-
+    _re_return = re.compile(r"\s*ret\b")
 
 
 class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
