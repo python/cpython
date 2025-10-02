@@ -395,10 +395,23 @@ class Attr(Node):
     def _get_name(self):
         return self._name
 
-    def _set_name(self, value):
-        self._name = value
+    def _set_name(self, name, namespaceURI=EMPTY_NAMESPACE):
+        is_id = self._is_id
+
         if self.ownerElement is not None:
-            _clear_id_cache(self.ownerElement)
+            self.ownerElement.removeAttributeNode(self)
+
+        prefix, localName = _parseName(namespaceURI, name, self.nodeType)
+
+        self._name = name
+        self._prefix = prefix
+        self._localName = localName
+        self.namespaceURI = namespaceURI
+
+        if self.ownerElement is not None:
+            self.ownerElement.setAttributeNode(self)
+            if is_id:
+                self.ownerElement.setIdAttributeNode(self)
 
     nodeName = name = property(_get_name, _set_name)
 
@@ -1853,44 +1866,19 @@ class Document(Node, DocumentLS):
         if n.nodeType not in (Node.ELEMENT_NODE, Node.ATTRIBUTE_NODE):
             raise xml.dom.NotSupportedErr(
                 "renameNode() only applies to element and attribute nodes")
-        if namespaceURI != EMPTY_NAMESPACE:
-            if ':' in name:
-                prefix, localName = name.split(':', 1)
-                if (  prefix == "xmlns"
-                      and namespaceURI != xml.dom.XMLNS_NAMESPACE):
-                    raise xml.dom.NamespaceErr(
-                        "illegal use of 'xmlns' prefix")
-            else:
-                if (  name == "xmlns"
-                      and namespaceURI != xml.dom.XMLNS_NAMESPACE
-                      and n.nodeType == Node.ATTRIBUTE_NODE):
-                    raise xml.dom.NamespaceErr(
-                        "illegal use of the 'xmlns' attribute")
-                prefix = None
-                localName = name
-        else:
-            prefix = None
-            localName = None
-        if n.nodeType == Node.ATTRIBUTE_NODE:
-            element = n.ownerElement
-            if element is not None:
-                is_id = n._is_id
-                element.removeAttributeNode(n)
-        else:
-            element = None
-        n.prefix = prefix
-        n._localName = localName
-        n.namespaceURI = namespaceURI
-        n.nodeName = name
+
+        prefix, localName = _parseName(namespaceURI, name, n.nodeType)
+
         if n.nodeType == Node.ELEMENT_NODE:
+            n.prefix = prefix
+            n._localName = localName
+            n.namespaceURI = namespaceURI
+            n.nodeName = name
             n.tagName = name
         else:
             # attribute node
-            n.name = name
-            if element is not None:
-                element.setAttributeNode(n)
-                if is_id:
-                    element.setIdAttributeNode(n)
+            n._set_name(name, namespaceURI)
+
         # It's not clear from a semantic perspective whether we should
         # call the user data handlers for the NODE_RENAMED event since
         # we're re-using the existing node.  The draft spec has been
@@ -1900,6 +1888,28 @@ class Document(Node, DocumentLS):
 
 defproperty(Document, "documentElement",
             doc="Top-level element of this document.")
+
+
+def _parseName(namespaceURI, name, nodeType):
+    if namespaceURI == EMPTY_NAMESPACE:
+        return None, None
+
+    if ':' in name:
+        prefix, localName = name.split(':', 1)
+        if (  prefix == "xmlns"
+              and namespaceURI != xml.dom.XMLNS_NAMESPACE):
+            raise xml.dom.NamespaceErr(
+                "illegal use of 'xmlns' prefix")
+    else:
+        if (  name == "xmlns"
+              and namespaceURI != xml.dom.XMLNS_NAMESPACE
+              and nodeType == Node.ATTRIBUTE_NODE):
+            raise xml.dom.NamespaceErr(
+                "illegal use of the 'xmlns' attribute")
+        prefix = None
+        localName = name
+
+    return prefix, localName
 
 
 def _clone_node(node, deep, newOwnerDocument):
