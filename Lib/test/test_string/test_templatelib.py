@@ -1,7 +1,7 @@
 import pickle
 import unittest
 from collections.abc import Iterator, Iterable
-from string.templatelib import Template, Interpolation
+from string.templatelib import Template, Interpolation, convert
 
 from test.test_string._support import TStringBaseCase, fstring
 
@@ -167,6 +167,26 @@ class TemplateIterTests(unittest.TestCase):
         self.assertIsInstance(next(template_iter), Interpolation)
         self.assertRaises(StopIteration, next, template_iter)
         self.assertRaises(StopIteration, next, template_iter)
+
+
+class TestFunctions(unittest.TestCase):
+    def test_convert(self):
+        from fractions import Fraction
+
+        for obj in ('Café', None, 3.14, Fraction(1, 2)):
+            with self.subTest(f'{obj=}'):
+                self.assertEqual(convert(obj, None), obj)
+                self.assertEqual(convert(obj, 's'), str(obj))
+                self.assertEqual(convert(obj, 'r'), repr(obj))
+                self.assertEqual(convert(obj, 'a'), ascii(obj))
+
+                # Invalid conversion specifier
+                with self.assertRaises(ValueError):
+                    convert(obj, 'z')
+                with self.assertRaises(ValueError):
+                    convert(obj, 1)
+                with self.assertRaises(ValueError):
+                    convert(obj, object())
 
 
 if __name__ == '__main__':

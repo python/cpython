@@ -333,6 +333,8 @@ Registering callback functions
    it is unregistered and returned.
    Otherwise :func:`register_callback` returns ``None``.
 
+   .. audit-event:: sys.monitoring.register_callback func sys.monitoring.register_callback
+
 Functions can be unregistered by calling
 ``sys.monitoring.register_callback(tool_id, event, None)``.
 
@@ -342,8 +344,6 @@ Callbacks are called only once regardless if the event is turned on both
 globally and locally. As such, if an event could be turned on for both global
 and local events by your code then the callback needs to be written to handle
 either trigger.
-
-Registering or unregistering a callback function will generate a :func:`sys.audit` event.
 
 
 Callback function arguments

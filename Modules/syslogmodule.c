@@ -298,7 +298,13 @@ syslog_setlogmask_impl(PyObject *module, long maskpri)
         return -1;
     }
 
-    return setlogmask(maskpri);
+    static PyMutex setlogmask_mutex = {0};
+    PyMutex_Lock(&setlogmask_mutex);
+    // Linux man page (3): setlogmask() is MT-Unsafe race:LogMask.
+    long previous_mask = setlogmask(maskpri);
+    PyMutex_Unlock(&setlogmask_mutex);
+
+    return previous_mask;
 }
 
 /*[clinic input]

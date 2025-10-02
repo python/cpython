@@ -224,6 +224,7 @@ wait_event(HANDLE event, DWORD timeout)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 _wmi.exec_query
 
     query: unicode
@@ -236,7 +237,7 @@ by null characters.
 
 static PyObject *
 _wmi_exec_query_impl(PyObject *module, PyObject *query)
-/*[clinic end generated code: output=a62303d5bb5e003f input=48d2d0a1e1a7e3c2]*/
+/*[clinic end generated code: output=a62303d5bb5e003f input=621f5c50c56d06d0]*/
 
 /*[clinic end generated code]*/
 {

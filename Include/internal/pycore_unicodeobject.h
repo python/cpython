@@ -82,12 +82,16 @@ extern int _PyUnicode_FormatAdvancedWriter(
     Py_ssize_t start,
     Py_ssize_t end);
 
+/* PyUnicodeWriter_Format, with va_list instead of `...` */
+extern int _PyUnicodeWriter_FormatV(
+    PyUnicodeWriter *writer,
+    const char *format,
+    va_list vargs);
+
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
 extern PyObject* _PyUnicode_EncodeUTF7(
     PyObject *unicode,          /* Unicode object */
-    int base64SetO,             /* Encode RFC2152 Set O characters in base64 */
-    int base64WhiteSpace,       /* Encode whitespace (sp, ht, nl, cr) in base64 */
     const char *errors);        /* error handling */
 
 /* --- UTF-8 Codecs ------------------------------------------------------- */
