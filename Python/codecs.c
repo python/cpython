@@ -101,20 +101,20 @@ normalizestring(const char *string)
         return NULL;
     }
 
-    encoding = PyMem_Malloc(len + 1);
-    if (encoding == NULL) {
+    p = PyMem_Malloc(len + 1);
+    if (p == NULL)
         return PyErr_NoMemory();
+    for (i = 0; i < len; i++) {
+        char ch = string[i];
+        if (ch == ' ')
+            ch = '-';
+        else
+            ch = Py_TOLOWER(Py_CHARMASK(ch));
+        p[i] = ch;
     }
-
-    if (!_Py_normalize_encoding(string, encoding, len + 1, 1))
-    {
-        PyErr_SetString(PyExc_RuntimeError, "_Py_normalize_encoding() failed");
-        PyMem_Free(encoding);
-        return NULL;
-    }
-
-    v = PyUnicode_FromString(encoding);
-    PyMem_Free(encoding);
+    p[i] = '\0';
+    v = PyUnicode_FromString(p);
+    PyMem_Free(p);
     return v;
 }
 
