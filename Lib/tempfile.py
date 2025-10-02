@@ -73,6 +73,12 @@ template = "tmp"
 _once_lock = _allocate_lock()
 
 
+if _os.altsep is None:
+    _path_separators = (_os.sep,)
+else:
+    _path_separators = (_os.sep, _os.altsep)
+
+
 def _exists(fn):
     try:
         _os.lstat(fn)
@@ -121,6 +127,12 @@ def _sanitize_params(prefix, suffix, dir):
             prefix = template
         else:
             prefix = _os.fsencode(template)
+    if output_type is str:
+        if any(sep in prefix for sep in _path_separators):
+            raise ValueError("Prefix contains system separator character")
+    else:
+        if any(_os.fsencode(sep) in prefix for sep in _path_separators):
+            raise ValueError("Prefix contains system separator character")
     if dir is None:
         if output_type is str:
             dir = gettempdir()
