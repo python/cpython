@@ -89,7 +89,7 @@ InsertThousandsGrouping_fill(_PyUnicodeWriter *writer, Py_ssize_t *buffer_pos,
         }
         int kind = PyUnicode_KIND(writer->buffer);
         void *data = PyUnicode_DATA(writer->buffer);
-        unicode_fill(kind, data, '0', *buffer_pos, n_zeros);
+        _PyUnicode_Fill(kind, data, '0', *buffer_pos, n_zeros);
         if (forward) {
             *buffer_pos += n_zeros;
         }

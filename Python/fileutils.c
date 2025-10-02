@@ -50,7 +50,7 @@ extern int winerror_to_errno(int);
 int _Py_open_cloexec_works = -1;
 #endif
 
-// The value must be the same in unicodeobject.c.
+// The value must be the same in pycore_unicodeobject.h.
 #define MAX_UNICODE 0x10ffff
 
 // mbstowcs() and mbrtowc() errors
