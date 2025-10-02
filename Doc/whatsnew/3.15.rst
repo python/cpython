@@ -283,6 +283,15 @@ New modules
 Improved modules
 ================
 
+concurrent.futures
+---
+
+* Improved error reporting when a child process in a
+  :class:`concurrent.futures.ProcessPoolExecutor` terminates abruptly.
+  The resulting traceback will now tell you the process
+  id and exit code of the terminated process.
+  (Contributed by Jonathan Berg in :gh:`139486`.)
+
 dbm
 ---
 
