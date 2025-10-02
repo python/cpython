@@ -3200,7 +3200,13 @@ class SpawnTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'getlogin'), "test needs os.getlogin")
 class LoginTests(unittest.TestCase):
     def test_getlogin(self):
-        user_name = os.getlogin()
+        try:
+            user_name = os.getlogin()
+        except OSError as exc:
+            if exc.errno == errno.ENOTTY:
+                self.skipTest(str(exc))
+            else:
+                raise
         self.assertNotEqual(len(user_name), 0)
 
 
