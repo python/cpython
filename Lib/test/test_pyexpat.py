@@ -779,13 +779,38 @@ class ParentParserLifetimeTest(unittest.TestCase):
     See https://github.com/python/cpython/issues/139400.
     """
 
-    def test_parent_parser_outlives_its_subparsers(self):
+    def test_parent_parser_outlives_its_subparsers__single(self):
         parser = expat.ParserCreate()
         subparser = parser.ExternalEntityParserCreate(None)
 
         # Now try to cause garbage collection of the parent parser
         # while it's still being referenced by a related subparser
         del parser
+
+    def test_parent_parser_outlives_its_subparsers__multiple(self):
+        parser = expat.ParserCreate()
+        subparser_one = parser.ExternalEntityParserCreate(None)
+        subparser_two = parser.ExternalEntityParserCreate(None)
+
+        # Now try to cause garbage collection of the parent parser
+        # while it's still being referenced by a related subparser
+        del parser
+
+    def test_parent_parser_outlives_its_subparsers__chain(self):
+        parser = expat.ParserCreate()
+        subparser = parser.ExternalEntityParserCreate(None)
+        subsubparser = subparser.ExternalEntityParserCreate(None)
+
+        # Now try to cause garbage collection of the parent parsers
+        # while they are still being referenced by a related subparser
+        del parser
+        del subparser
+
+    def test_cycle(self):
+        parser = expat.ParserCreate()
+        subparser = parser.ExternalEntityParserCreate(None)
+        parser.StartElementHandler = lambda _1, _2: subparser
+        parser.Parse('<doc/>', True)
 
 
 class ReparseDeferralTest(unittest.TestCase):
