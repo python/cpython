@@ -11423,7 +11423,7 @@ static pytype_slotdef slotdefs[] = {
 };
 
 /* Stores the number of times where slotdefs has elements with same name.
-   This counter precalculated by _PyType_InitSlotDefs when main
+   This counter precalculated by _PyType_InitSlotDefs() when the main
    interpreter starts. */
 static uint8_t slotdefs_name_counts[Py_ARRAY_LENGTH(slotdefs)];
 
@@ -11595,9 +11595,14 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
         }
         if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
-            void **tptr = NULL;
-            if (slotdefs_name_counts[(p - slotdefs) / sizeof(pytype_slotdef)] == 1)
+            void **tptr;
+            size_t index = (p - slotdefs) / sizeof(slotdef[0]);
+            if (slotdefs_name_counts[index] == 1) {
                 tptr = slotptr(type, p->offset);
+            }
+            else {
+                tptr = NULL;
+            }
 
             if (tptr == NULL || tptr == ptr)
                 generic = p->function;
@@ -11866,8 +11871,7 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
     while (PyDict_Next(cache, &pos, &key, &value)) {
         uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(value);
         uint8_t n = data[0];
-        uint8_t i = 0;
-        for(; i < n; i++) {
+        for(uint8_t i = 0; i < n; i++) {
             uint8_t idx = data[i + 1];
             slotdefs_name_counts[idx] = n;
         }
