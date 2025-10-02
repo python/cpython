@@ -914,6 +914,15 @@ class AttackProtectionTestBase(abc.ABC):
         setter = functools.partial(self.set_activation_threshold, subparser)
         self.assert_root_parser_failure(setter, 12345)
 
+        # NOTE: This is a workaround for issue
+        #       https://github.com/python/cpython/issues/139400
+        #       that can be dropped once pull request
+        #       https://github.com/python/cpython/pull/139403
+        #       has been merged.
+        del setter
+        del subparser
+        del parser
+
     @abc.abstractmethod
     def test_set_maximum_amplification__amplification_exceeded(self):
         """Test when the amplification factor is exceeded."""
@@ -947,6 +956,15 @@ class AttackProtectionTestBase(abc.ABC):
         subparser = parser.ExternalEntityParserCreate(None)
         setter = functools.partial(self.set_maximum_amplification, subparser)
         self.assert_root_parser_failure(setter, 123.45)
+
+        # NOTE: This is a workaround for issue
+        #       https://github.com/python/cpython/issues/139400
+        #       that can be dropped once pull request
+        #       https://github.com/python/cpython/pull/139403
+        #       has been merged.
+        del setter
+        del subparser
+        del parser
 
 
 @unittest.skipIf(expat.version_info < (2, 7, 2), "requires Expat >= 2.7.2")
