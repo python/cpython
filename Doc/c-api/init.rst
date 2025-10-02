@@ -1382,6 +1382,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    This is not a replacement for :c:func:`PyModule_GetState()`, which
    extensions should use to store interpreter-specific state information.
 
+   The returned dictionary is borrowed from the interpreter and is valid until
+   interpreter shutdown.
+
    .. versionadded:: 3.8
 
 
