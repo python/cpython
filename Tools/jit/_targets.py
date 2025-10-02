@@ -234,7 +234,7 @@ class _Target(typing.Generic[_S, _R]):
             warning = f"JIT support for {self.triple} is still experimental!"
             request = "Please report any issues you encounter.".center(len(warning))
             if self.llvm_version != _llvm._LLVM_VERSION:
-                request = f"Warning! Building with a LLVM version other than {_llvm._LLVM_VERSION} is not supported."
+                request = f"Warning! Building with an LLVM version other than {_llvm._LLVM_VERSION} is not supported."
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest()}\n"
