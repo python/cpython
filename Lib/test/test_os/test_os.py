@@ -1548,7 +1548,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.reload_environ()
         self.assertEqual(os.getenv("test_env1"), "some_value1")
         self.assertEqual(os.getenv("test_env2"), "some_value2")
-        
+
         # Test that os.clear() clears both os.environ and os.environb
         os.environ.clear()
 
