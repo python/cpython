@@ -1140,6 +1140,8 @@ class TestPyReplModuleCompleter(TestCase):
 
             del sys.modules["mymodule"]
             print(f"{dir1=}, {dir2=}")  # TEMPORARY -- debugging tests on windows
+            print(f"{[p.relative_to(dir1) for p in dir1.glob("**")]=}")  # TEMPORARY -- debugging tests on windows
+            print(f"{[p.relative_to(dir2) for p in dir2.glob("**")]=}")  # TEMPORARY -- debugging tests on windows
             # mymodule not imported anymore -> suggest dir2 submodules
             events = code_to_events("import mymodule.\t\n")
             reader = self.prepare_reader(events, namespace={})
