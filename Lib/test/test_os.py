@@ -1504,6 +1504,76 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             self.assertNotIn(b'test_env', os.environb)
             self.assertNotIn('test_env', os.environ)
 
+    def test_clear_empties_environ(self):
+        os.environ["test_key_to_clear1"] = "test_value_to_clear1"
+        os.environ["test_key_to_clear2"] = "test_value_to_clear2"
+        os.environ["test_key_to_clear3"] = "test_value_to_clear3"
+
+        # test the environ.clear() removes the 
+        os.environ.clear()
+
+        self.assertEqual(os.environ, {})
+        if os.supports_bytes_environ:
+            self.assertEqual(os.environb, {})
+
+        # repeated calls should be idempotent
+        os.environ.clear()
+
+        self.assertEqual(os.environ, {})
+        if os.supports_bytes_environ:
+            self.assertEqual(os.environb, {})
+
+    @unittest.skipUnless(os.supports_bytes_environ, "os.environb required for this test.")
+    def test_clear_empties_environb(self):
+        os.environb[b"test_key_to_clear1"] = b"test_value_to_clear1"
+        os.environb[b"test_key_to_clear2"] = b"test_value_to_clear2"
+        os.environb[b"test_key_to_clear3"] = b"test_value_to_clear3"
+
+        # test the environ.clear() removes the 
+        os.environb.clear()
+
+        self.assertEqual(os.environ, {})
+        self.assertEqual(os.environb, {})
+
+        # repeated calls should be idempotent
+        os.environb.clear()
+
+        self.assertEqual(os.environ, {})
+        self.assertEqual(os.environb, {})
+
+    def test_clear_empties_process_environment(self):
+        # Determine if on the current platform os.unsetenv()
+        # updates process environment.
+        os.environ['to_remove'] = 'value'
+        os.unsetenv('to_remove')
+        os.reload_environ()
+        if 'to_remove' in os.environ:
+            self.skipTest("os.unsetenv() doesn't update the process environment on this platform.")
+
+        # Set up two environment variables to be cleared
+        os.environ["test_env1"] = "some_value1"
+        os.environ["test_env2"] = "some_value2"
+
+        # Ensure the variables were persisted on process level.
+        os.reload_environ()
+        self.assertEqual(os.getenv("test_env1"), "some_value1")
+        self.assertEqual(os.getenv("test_env2"), "some_value2")
+        
+        # Test that os.clear() clears both os.environ and os.environb
+        os.environ.clear()
+
+        self.assertEqual(os.environ, {})
+        if os.supports_bytes_environ:
+            self.assertEqual(os.environb, {})
+
+        # Test that os.clear() also clears the process environment,
+        # so that after os.reload_environ() environ and environb are still empty.
+        os.reload_environ()
+        self.assertEqual(os.environ, {})
+        if os.supports_bytes_environ:
+            self.assertEqual(os.environb, {})
+
+
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
     is_fwalk = False
