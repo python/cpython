@@ -1077,7 +1077,7 @@ Other language changes
 Built-ins
 ---------
 
-* The :func:`bytes.fromhex` and :func:`bytearray.fromhex` methods now accept
+* The :meth:`bytes.fromhex` and :meth:`bytearray.fromhex` methods now accept
   ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
   (Contributed by Daniel Pope in :gh:`129349`.)
 
