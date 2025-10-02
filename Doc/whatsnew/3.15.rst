@@ -677,7 +677,7 @@ __version__
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 Removed
-======
+=======
 
 ctypes
 ------
