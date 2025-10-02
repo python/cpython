@@ -225,8 +225,7 @@ import_stmt[stmt_ty](memo):
 # -----------------
 
 import_name[stmt_ty]:
-    | 'import' a=dotted_as_names { _PyAST_Import(a, 0, EXTRA) }
-    | "lazy" 'import' a=dotted_as_names { _PyAST_Import(a, 1, EXTRA) }
+    | lazy="lazy"? 'import' a=dotted_as_names { _PyAST_Import(a, lazy ? 1 : 0, EXTRA) }
 
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from[stmt_ty]:
