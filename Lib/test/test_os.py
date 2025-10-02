@@ -1509,14 +1509,14 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environ["test_key_to_clear2"] = "test_value_to_clear2"
         os.environ["test_key_to_clear3"] = "test_value_to_clear3"
 
-        # test the environ.clear() removes the 
+        # Test environ.clear() removes the environment variables
         os.environ.clear()
 
         self.assertEqual(os.environ, {})
         if os.supports_bytes_environ:
             self.assertEqual(os.environb, {})
 
-        # repeated calls should be idempotent
+        # Repeated calls should be idempotent
         os.environ.clear()
 
         self.assertEqual(os.environ, {})
@@ -1529,13 +1529,13 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         os.environb[b"test_key_to_clear2"] = b"test_value_to_clear2"
         os.environb[b"test_key_to_clear3"] = b"test_value_to_clear3"
 
-        # test the environ.clear() removes the 
+        # Test environ.clear() removes the environment variables
         os.environb.clear()
 
         self.assertEqual(os.environ, {})
         self.assertEqual(os.environb, {})
 
-        # repeated calls should be idempotent
+        # Repeated calls should be idempotent
         os.environb.clear()
 
         self.assertEqual(os.environ, {})
