@@ -208,7 +208,7 @@ jobs:
         os:
         - ghcr.io/cirruslabs/macos-runner:sonoma
         - macos-14
-        - macos-15
+        - macos-15-intel
         is-fork:  # only used for the exclusion trick
         - ${{ github.repository_owner != 'python' }}
         free-threading:
