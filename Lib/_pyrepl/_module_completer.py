@@ -217,8 +217,10 @@ class ModuleCompleter:
         """Global module cache"""
         if not self._global_cache or self._curr_sys_path != sys.path:
             self._curr_sys_path = sys.path[:]
-            # print('getting packages')
+            print('getting packages')  # TEMPORARY -- debugging tests on windows
             self._global_cache = list(pkgutil.iter_modules())
+            mymods = [p for p in self._global_cache if p.name == "mymodule"]  # TEMPORARY -- debugging tests on windows
+            print("modules:", mymods, list(self.iter_submodules(mymods)))  # TEMPORARY -- debugging tests on windows
         return self._global_cache
 
 
