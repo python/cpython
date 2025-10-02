@@ -297,11 +297,9 @@ class Reader:
         if self.last_refresh_cache.valid(self):
             offset, num_common_lines = self.last_refresh_cache.get_cached_location(self)
 
-        screen = self.last_refresh_cache.screen.copy()
-        del screen[num_common_lines:]
-
-        screeninfo = self.last_refresh_cache.screeninfo.copy()
-        del screeninfo[num_common_lines:]
+        # Use slicing instead of del to avoid modifying the cached lists.
+        screen = self.last_refresh_cache.screen[:num_common_lines]
+        screeninfo = self.last_refresh_cache.screeninfo[:num_common_lines]
 
         pos = self.pos
         pos -= offset
