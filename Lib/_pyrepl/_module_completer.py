@@ -228,8 +228,8 @@ class ModuleCompleter:
                 spec = mymod.module_finder.find_spec(mymod.name, None)
                 print("found spec:", spec)
                 mymod.module_finder.invalidate_caches()
-                spec = mymod.module_finder.find_spec(mymod.name, None)
-                print("found spec after invalidate:", spec)
+                not_cached_spec = mymod.module_finder.find_spec(mymod.name, None)
+                print("found spec after invalidate:", not_cached_spec)
                 if spec:
                     print("1")
                     assert spec.submodule_search_locations and len(spec.submodule_search_locations) == 1
