@@ -442,7 +442,6 @@ checked_divmod(PyObject *a, PyObject *b)
 static PyObject *
 divide_and_round(PyObject *numerator, PyObject *denominator, _PyTime_round_t round)
 {
-    PyObject *divmod, *result;
     if (round == _PyTime_ROUND_UP) {
         int isneg = PyObject_RichCompareBool(numerator, _PyLong_GetZero(), Py_LT);
         if (isneg < 0) {
@@ -450,10 +449,13 @@ divide_and_round(PyObject *numerator, PyObject *denominator, _PyTime_round_t rou
         }
         round = isneg ? _PyTime_ROUND_FLOOR : _PyTime_ROUND_CEILING;
     }
+
     if (round == _PyTime_ROUND_FLOOR) {
         return PyNumber_FloorDivide(numerator, denominator);
     }
-    else if (round == _PyTime_ROUND_CEILING) {
+
+    PyObject *divmod, *result;
+    if (round == _PyTime_ROUND_CEILING) {
         divmod = checked_divmod(numerator, denominator);
         if (divmod == NULL) {
             return NULL;
