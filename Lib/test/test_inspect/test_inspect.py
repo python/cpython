@@ -30,6 +30,7 @@ import warnings
 import weakref
 import inspect
 import sys
+import unittest
 
 
 try:
@@ -6247,23 +6248,27 @@ class TestRepl(unittest.TestCase):
         expected = "The source is: <<<def f():\n    print(0)\n    return 1 + 2\n>>>"
         self.assertIn(expected, output)
 
-
-
-
-if __name__ == "__main__":
-    unittest.main()
-
-def test_getframeinfo_with_exceptiongroup():
-    code = """
+class TestInspect(unittest.TestCase):
+    def test_getframeinfo_with_exceptiongroup(self):
+        code = """
 try:
     1/0
 except* Exception:
     raise
 """
-    try:
-        exec(code)
-    except:
-        tb = sys.exc_info()[2]
-        while tb:
-            info = inspect.getframeinfo(tb.tb_frame)
-            tb = tb.tb_next
+        with self.assertRaises(TypeError):  # expect the bug to raise TypeError
+            try:
+                exec(code)
+            except:
+                tb = sys.exc_info()[2]
+                while tb:
+                    info = inspect.getframeinfo(tb.tb_frame)
+                    tb = tb.tb_next
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+
+if __name__ == "__main__":
+    unittest.main()
