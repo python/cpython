@@ -28,6 +28,8 @@ import unittest
 import unittest.mock
 import warnings
 import weakref
+import inspect
+import sys
 
 
 try:
@@ -6250,3 +6252,18 @@ class TestRepl(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+def test_getframeinfo_with_exceptiongroup():
+    code = """
+try:
+    1/0
+except* Exception:
+    raise
+"""
+    try:
+        exec(code)
+    except:
+        tb = sys.exc_info()[2]
+        while tb:
+            info = inspect.getframeinfo(tb.tb_frame)
+            tb = tb.tb_next

@@ -1582,6 +1582,9 @@ def getframeinfo(frame, context=1):
 
     lineno = positions[0]
 
+    if lineno is None:
+        lineno = 1
+
     if not isframe(frame):
         raise TypeError('{!r} is not a frame or traceback object'.format(frame))
 
