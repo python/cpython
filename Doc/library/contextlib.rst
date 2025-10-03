@@ -356,6 +356,12 @@ Functions and classes provided:
         with redirect_stdout(sys.stderr):
             help(pow)
 
+   To discard or suppress the output of :func:`help` without collecting the data::
+
+        with open(os.devnull, 'w') as devnull:
+            with redirect_stdout(devnull):
+                help(pow)
+
    Note that the global side effect on :data:`sys.stdout` means that this
    context manager is not suitable for use in library code and most threaded
    applications. It also has no effect on the output of subprocesses.
