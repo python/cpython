@@ -2230,9 +2230,9 @@ zipfile
   as used by :func:`ZipFile.writestr <zipfile.ZipFile.writestr>`.
   (Contributed by Bénédikt Tran in :gh:`123424`.)
 
-* :meth:`zipfile.ZipFile.writestr` now respects :envvar:`SOURCE_DATE_EPOCH`
-  environment variable that distributions can set centrally and have build
-  tools consume this in order to produce reproducible output.
+* :meth:`zipfile.ZipFile.writestr` now respects ``SOURCE_DATE_EPOCH`` that 
+   distributions can set centrally and have build tools consume this in order 
+   to produce reproducible output.
   (Contributed by Jiahao Li in :gh:`91279`.)
 
 
