@@ -1309,8 +1309,8 @@ asyncio
 * There are two new utility functions for
   introspecting and printing a program's call graph:
   :func:`~asyncio.capture_call_graph` and :func:`~asyncio.print_call_graph`.
-  See :ref:`<Asyncio introspection capabilities>
-  whatsnew314-asyncio-introspection` for more details.
+  See :ref:`Asyncio introspection capabilities
+  <whatsnew314-asyncio-introspection>` for more details.
   (Contributed by Yury Selivanov, Pablo Galindo Salgado, and Łukasz Langa
   in :gh:`91048`.)
 
