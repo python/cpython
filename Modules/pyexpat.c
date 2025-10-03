@@ -4,8 +4,6 @@
 #include <stdbool.h>
 #include "structmember.h"         // PyMemberDef
 #include "frameobject.h"
-#include <stddef.h>               // offsetof()
-
 #include "expat_config.h"
 #include "expat.h"
 
