@@ -363,6 +363,13 @@ pytime_double_to_denominator(double d, time_t *sec, long *numerator,
 }
 
 
+/* Convert a number to a fraction representation.
+ *
+ * Set *ratio to a 2-tuple (numerator, denominator) and return 1 on success.
+ * Return 0 if the number has neither the as_integer_ratio() method nor
+ * the numerator and denominator attributes.
+ * Return -1 on error.
+ */
 static int
 maybe_as_integer_ratio(PyObject *number, PyObject **ratio)
 {
@@ -416,6 +423,7 @@ maybe_as_integer_ratio(PyObject *number, PyObject **ratio)
     return *ratio ? 1 : -1;
 }
 
+/* PyNumber_Divmod() that always returns a 2-tuple. */
 static PyObject *
 checked_divmod(PyObject *a, PyObject *b)
 {
@@ -439,6 +447,8 @@ checked_divmod(PyObject *a, PyObject *b)
     return result;
 }
 
+/* Calculate numerator / denominator rounded to integer using
+ * the specified rounding mode. */
 static PyObject *
 divide_and_round(PyObject *numerator, PyObject *denominator, _PyTime_round_t round)
 {
@@ -483,6 +493,8 @@ divide_and_round(PyObject *numerator, PyObject *denominator, _PyTime_round_t rou
     return result;
 }
 
+/* Calculate scale * numerator / denominator rounded to integer using
+ * the specified rounding mode. */
 static PyObject *
 multiply_divide_and_round(long scale, PyObject *numerator, PyObject *denominator,
                           _PyTime_round_t round)
