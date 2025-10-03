@@ -732,6 +732,14 @@ class _Environ(MutableMapping):
         for key in keys:
             yield self.decodekey(key)
 
+    def clear(self):
+        # linear complexity removal of keys, see gh-139482
+        for key in list(self):
+            try:
+                del self[key]
+            except KeyError:
+                pass
+
     def __len__(self):
         return len(self._data)
 
