@@ -68,10 +68,13 @@ class TestUtils(TestCase):
             ("obj.list", [(".", "op")]),
             ("obj.match", [(".", "op")]),
             ("b. \\\n format", [(".", "op")]),
+            ("lazy", []),
+            ("lazy()", [('(', 'op'), (')', 'op')]),
             # highlights
             ("set", [("set", "builtin")]),
             ("list", [("list", "builtin")]),
             ("    \n dict", [("dict", "builtin")]),
+            ("    lazy import", [("lazy", "soft_keyword"), ("import", "keyword")]),
         ]
         for code, expected_highlights in cases:
             with self.subTest(code=code):
