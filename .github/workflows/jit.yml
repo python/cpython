@@ -82,7 +82,7 @@ jobs:
             compiler: msvc
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
-            runner: macos-13
+            runner: macos-15-intel
             compiler: clang
           - target: aarch64-apple-darwin/clang
             architecture: aarch64
@@ -128,7 +128,7 @@ jobs:
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
 
-      - name: Native macOS
+      - name: macOS
         if: runner.os == 'macOS'
         run: |
           brew update
