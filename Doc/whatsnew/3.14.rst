@@ -89,12 +89,12 @@ and improvements in user-friendliness and correctness.
 * :ref:`PEP 750: Template strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-no-more-pgp>`
-* :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
+* :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-finally-syntaxwarning>`
 * :ref:`Free-threaded mode improvements <whatsnew314-free-threaded-cpython>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
 * :ref:`PEP 784: Adding Zstandard to the standard library <whatsnew314-pep784>`
 * :ref:`A new type of interpreter <whatsnew314-tail-call>`
-* :ref:`Syntax highlighting in PyREPL <whatsnew314-pyrepl-highlighting>`,
+* :ref:`Syntax highlighting in the default interactive shell <whatsnew314-pyrepl-highlighting>`,
   and color output in :ref:`unittest <whatsnew314-color-unittest>`,
   :ref:`argparse <whatsnew314-color-argparse>`,
   :ref:`json <whatsnew314-color-json>` and
@@ -102,25 +102,6 @@ and improvements in user-friendliness and correctness.
 * :ref:`Binary releases for the experimental just-in-time compiler <whatsnew314-jit-compiler>`
 
 
-Incompatible changes
-====================
-
-On platforms other than macOS and Windows, the default :ref:`start
-method <multiprocessing-start-methods>` for :mod:`multiprocessing`
-and :class:`~concurrent.futures.ProcessPoolExecutor` switches from
-*fork* to *forkserver*.
-
-See :ref:`(1) <whatsnew314-concurrent-futures-start-method>` and
-:ref:`(2) <whatsnew314-multiprocessing-start-method>` for details.
-
-If you encounter :exc:`NameError`\s or pickling errors coming out of
-:mod:`multiprocessing` or :mod:`concurrent.futures`, see the
-:ref:`forkserver restrictions <multiprocessing-programming-forkserver>`.
-
-The interpreter avoids some reference count modifications internally when
-it's safe to do so. This can lead to different values returned from
-:func:`sys.getrefcount` and :c:func:`Py_REFCNT` compared to previous versions
-of Python.  See :ref:`below <whatsnew314-refcount>` for details.
 
 New features
 ============
@@ -751,6 +732,12 @@ Improved error messages
          ~^^^
      TypeError: cannot use 'list' as a dict key (unhashable type: 'list')
 
+* Improved error message when an object supporting the synchronous
+  context manager protocol is entered using :keyword:`async with`
+  instead of :keyword:`with`,
+  and vice versa for the asynchronous context manager protocol.
+  (Contributed by Bénédikt Tran in :gh:`128398`.)
+
 
 .. _whatsnew314-pep741:
 
@@ -996,26 +983,6 @@ affects other modules that use context variables, such as the :mod:`decimal`
 context manager.
 
 
-.. _whatsnew314-pyrepl-highlighting:
-
-Syntax highlighting in PyREPL
------------------------------
-
-The default :term:`interactive` shell now highlights Python syntax as you
-type.  The feature is enabled by default unless the
-:envvar:`PYTHON_BASIC_REPL` environment is set or any color-disabling
-environment variables are used. See :ref:`using-on-controlling-color` for
-details.
-
-The default color theme for syntax highlighting strives for good contrast
-and uses exclusively the 4-bit VGA standard ANSI color codes for maximum
-compatibility. The theme can be customized using an experimental API
-``_colorize.set_theme()``.  This can be called interactively, as well as
-in the :envvar:`PYTHONSTARTUP` script.
-
-(Contributed by Łukasz Langa in :gh:`131507`.)
-
-
 .. _whatsnew314-jit-compiler:
 
 Binary releases for the experimental just-in-time compiler
@@ -1058,6 +1025,138 @@ free-threaded build and false for the GIL-enabled build.
 
 (Contributed by Neil Schemenauer and Kumar Aditya in :gh:`130010`.)
 
+
+Platform support
+================
+
+* :pep:`776`: Emscripten is now an officially supported platform at
+  :pep:`tier 3 <11#tier-3>`. As a part of this effort, more than 25 bugs in
+  `Emscripten libc`__ were fixed. Emscripten now includes support
+  for :mod:`ctypes`, :mod:`termios`, and :mod:`fcntl`, as well as
+  experimental support for the new :ref:`default interactive shell
+  <tut-interactive>`.
+
+  (Contributed by R. Hood Chatham in :gh:`127146`, :gh:`127683`, and :gh:`136931`.)
+
+  __ https://emscripten.org/docs/porting/emscripten-runtime-environment.html
+
+* iOS and macOS apps can now be configured to redirect ``stdout`` and
+  ``stderr`` content to the system log.
+  (Contributed by Russell Keith-Magee in :gh:`127592`.)
+
+* The iOS testbed is now able to stream test output while the test is running.
+  The testbed can also be used to run the test suite of projects other than
+  CPython itself.
+  (Contributed by Russell Keith-Magee in :gh:`127592`.)
+
+
+Other language changes
+======================
+
+* All Windows code pages are now supported as 'cpXXX' codecs on Windows.
+  (Contributed by Serhiy Storchaka in :gh:`123803`.)
+
+* Implement mixed-mode arithmetic rules combining real and complex numbers
+  as specified by the C standard since C99.
+  (Contributed by Sergey B Kirpichev in :gh:`69639`.)
+
+* More syntax errors are now detected regardless of optimisation and
+  the :option:`-O` command-line option.
+  This includes writes to ``__debug__``, incorrect use of :keyword:`await`,
+  and asynchronous comprehensions outside asynchronous functions.
+  For example, ``python -O -c 'assert (__debug__ := 1)'``
+  or ``python -O -c 'assert await 1'`` now produce :exc:`SyntaxError`\ s.
+  (Contributed by Irit Katriel and Jelle Zijlstra in :gh:`122245` & :gh:`121637`.)
+
+* When subclassing a pure C type, the C slots for the new type
+  are no longer replaced with a wrapped version on class creation
+  if they are not explicitly overridden in the subclass.
+  (Contributed by Tomasz Pytel in :gh:`132284`.)
+
+
+Built-ins
+---------
+
+* The :meth:`bytes.fromhex` and :meth:`bytearray.fromhex` methods now accept
+  ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
+  (Contributed by Daniel Pope in :gh:`129349`.)
+
+* Add class methods :meth:`float.from_number` and :meth:`complex.from_number`
+  to convert a number to :class:`float` or :class:`complex` type correspondingly.
+  They raise a :exc:`TypeError` if the argument is not a real number.
+  (Contributed by Serhiy Storchaka in :gh:`84978`.)
+
+* Support underscore and comma as thousands separators in the fractional part
+  for floating-point presentation types of the new-style string formatting
+  (with :func:`format` or :ref:`f-strings`).
+  (Contributed by Sergey B Kirpichev in :gh:`87790`.)
+
+* The :func:`int` function no longer delegates to :meth:`~object.__trunc__`.
+  Classes that want to support conversion to :func:`!int` must implement
+  either :meth:`~object.__int__` or :meth:`~object.__index__`.
+  (Contributed by Mark Dickinson in :gh:`119743`.)
+
+* The :func:`map` function now has an optional keyword-only *strict* flag
+  like :func:`zip` to check that all the iterables are of equal length.
+  (Contributed by Wannes Boeykens in :gh:`119793`.)
+
+* The :class:`memoryview` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`126012`.)
+
+* Using :data:`NotImplemented` in a boolean context
+  will now raise a :exc:`TypeError`.
+  This has raised a :exc:`DeprecationWarning` since Python 3.9.
+  (Contributed by Jelle Zijlstra in :gh:`118767`.)
+
+* Three-argument :func:`pow` now tries calling :meth:`~object.__rpow__`
+  if necessary.
+  Previously it was only called in two-argument :func:`!pow`
+  and the binary power operator.
+  (Contributed by Serhiy Storchaka in :gh:`130104`.)
+
+* :class:`super` objects are now :mod:`copyable <copy>` and :mod:`pickleable
+  <pickle>`.
+  (Contributed by Serhiy Storchaka in :gh:`125767`.)
+
+
+Command line and environment
+----------------------------
+
+* The import time flag can now track modules that are already loaded ('cached'),
+  via the new :option:`-X importtime=2 <-X>`.
+  When such a module is imported, the ``self`` and ``cumulative`` times
+  are replaced by the string ``cached``.
+
+  Values above ``2`` for ``-X importtime`` are now reserved for future use.
+
+  (Contributed by Noah Kim and Adam Turner in :gh:`118655`.)
+
+* The command-line option :option:`-c` now automatically dedents its code
+  argument before execution. The auto-dedentation behavior mirrors
+  :func:`textwrap.dedent`.
+  (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
+
+* :option:`!-J` is no longer a reserved flag for Jython_,
+  and now has no special meaning.
+  (Contributed by Adam Turner in :gh:`133336`.)
+
+  .. _Jython: https://www.jython.org/
+
+
+.. _whatsnew314-finally-syntaxwarning:
+
+PEP 765: Control flow in :keyword:`finally` blocks
+--------------------------------------------------
+
+The compiler now emits a :exc:`SyntaxWarning` when a :keyword:`return`,
+:keyword:`break`, or :keyword:`continue` statement have the effect of
+leaving a :keyword:`finally` block.
+This change is specified in :pep:`765`.
+
+(Contributed by Irit Katriel in :gh:`130080`.)
+
+
 .. _whatsnew314-incremental-gc:
 
 Incremental garbage collection
@@ -1081,148 +1180,33 @@ The behavior of :func:`!gc.collect` changes slightly:
 
 (Contributed by Mark Shannon in :gh:`108362`.)
 
-Platform support
-================
 
-* :pep:`776`: Emscripten is now an officially supported platform at
-  :pep:`tier 3 <11#tier-3>`. As a part of this effort, more than 25 bugs in
-  `Emscripten libc`__ were fixed. Emscripten now includes support
-  for :mod:`ctypes`, :mod:`termios`, and :mod:`fcntl`, as well as
-  experimental support for :ref:`PyREPL <tut-interactive>`.
+Default interactive shell
+-------------------------
 
-  (Contributed by R. Hood Chatham in :gh:`127146`, :gh:`127683`, and :gh:`136931`.)
+.. _whatsnew314-pyrepl-highlighting:
 
-  __ https://emscripten.org/docs/porting/emscripten-runtime-environment.html
+* The default :term:`interactive` shell now highlights Python syntax.
+  The feature is enabled by default, save if :envvar:`PYTHON_BASIC_REPL`
+  or any other environment variable that disables colour is set.
+  See :ref:`using-on-controlling-color` for details.
 
-Other language changes
-======================
+  The default color theme for syntax highlighting strives for good contrast
+  and exclusively uses the 4-bit VGA standard ANSI color codes for maximum
+  compatibility. The theme can be customized using an experimental API
+  :func:`!_colorize.set_theme`.
+  This can be called interactively or in the :envvar:`PYTHONSTARTUP` script.
+  Note that this function has no stability guarantees,
+  and may change or be removed.
 
-* The default :term:`interactive` shell now supports import autocompletion.
-  This means that typing ``import foo`` and pressing ``<tab>`` will suggest
-  modules starting with ``foo``. Similarly, typing ``from foo import b`` will
-  suggest submodules of ``foo`` starting with ``b``. Note that autocompletion
-  of module attributes is not currently supported.
+  (Contributed by Łukasz Langa in :gh:`131507`.)
+
+* The default :term:`interactive` shell now supports import auto-completion.
+  This means that typing ``import co`` and pressing :kbd:`<Tab>` will suggest
+  modules starting with ``co``. Similarly, typing ``from concurrent import i``
+  will suggest submodules of ``concurrent`` starting with ``i``.
+  Note that autocompletion of module attributes is not currently supported.
   (Contributed by Tomas Roun in :gh:`69605`.)
-
-* The :func:`map` built-in now has an optional keyword-only *strict* flag
-  like :func:`zip` to check that all the iterables are of equal length.
-  (Contributed by Wannes Boeykens in :gh:`119793`.)
-
-* Incorrect usage of :keyword:`await` and asynchronous comprehensions
-  is now detected even if the code is optimized away by the :option:`-O`
-  command-line option. For example, ``python -O -c 'assert await 1'``
-  now produces a :exc:`SyntaxError`. (Contributed by Jelle Zijlstra in :gh:`121637`.)
-
-* Writes to ``__debug__`` are now detected even if the code is optimized
-  away by the :option:`-O` command-line option. For example,
-  ``python -O -c 'assert (__debug__ := 1)'`` now produces a
-  :exc:`SyntaxError`. (Contributed by Irit Katriel in :gh:`122245`.)
-
-* Add class methods :meth:`float.from_number` and :meth:`complex.from_number`
-  to convert a number to :class:`float` or :class:`complex` type correspondingly.
-  They raise an error if the argument is a string.
-  (Contributed by Serhiy Storchaka in :gh:`84978`.)
-
-* Implement mixed-mode arithmetic rules combining real and complex numbers as
-  specified by C standards since C99.
-  (Contributed by Sergey B Kirpichev in :gh:`69639`.)
-
-* All Windows code pages are now supported as "cpXXX" codecs on Windows.
-  (Contributed by Serhiy Storchaka in :gh:`123803`.)
-
-* :class:`super` objects are now :mod:`pickleable <pickle>` and
-  :mod:`copyable <copy>`.
-  (Contributed by Serhiy Storchaka in :gh:`125767`.)
-
-* The :class:`memoryview` type now supports subscription,
-  making it a :term:`generic type`.
-  (Contributed by Brian Schubert in :gh:`126012`.)
-
-* Support underscore and comma as thousands separators in the fractional part
-  for floating-point presentation types of the new-style string formatting
-  (with :func:`format` or :ref:`f-strings`).
-  (Contributed by Sergey B Kirpichev in :gh:`87790`.)
-
-* The :func:`bytes.fromhex` and :func:`bytearray.fromhex` methods now accept
-  ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
-  (Contributed by Daniel Pope in :gh:`129349`.)
-
-* Support ``\z`` as a synonym for ``\Z`` in :mod:`regular expressions <re>`.
-  It is interpreted unambiguously in many other regular expression engines,
-  unlike ``\Z``, which has subtly different behavior.
-  (Contributed by Serhiy Storchaka in :gh:`133306`.)
-
-* ``\B`` in :mod:`regular expression <re>` now matches the empty input string.
-  Now it is always the opposite of ``\b``.
-  (Contributed by Serhiy Storchaka in :gh:`124130`.)
-
-* iOS and macOS apps can now be configured to redirect ``stdout`` and
-  ``stderr`` content to the system log. (Contributed by Russell Keith-Magee in
-  :gh:`127592`.)
-
-* The iOS testbed is now able to stream test output while the test is running.
-  The testbed can also be used to run the test suite of projects other than
-  CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
-
-* Three-argument :func:`pow` now tries calling :meth:`~object.__rpow__` if
-  necessary. Previously it was only called in two-argument :func:`!pow` and the
-  binary power operator.
-  (Contributed by Serhiy Storchaka in :gh:`130104`.)
-
-* Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
-  code from the `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
-  This implementation is used as a fallback when the OpenSSL implementation
-  of HMAC is not available.
-  (Contributed by Bénédikt Tran in :gh:`99108`.)
-
-* The import time flag can now track modules that are already loaded ('cached'),
-  via the new :option:`-X importtime=2 <-X>`.
-  When such a module is imported, the ``self`` and ``cumulative`` times
-  are replaced by the string ``cached``.
-  Values above ``2`` for ``-X importtime`` are now reserved for future use.
-  (Contributed by Noah Kim and Adam Turner in :gh:`118655`.)
-
-* When subclassing from a pure C type, the C slots for the new type are no
-  longer replaced with a wrapped version on class creation if they are not
-  explicitly overridden in the subclass.
-  (Contributed by Tomasz Pytel in :gh:`132329`.)
-
-* The command-line option :option:`-c` now automatically dedents its code
-  argument before execution. The auto-dedentation behavior mirrors
-  :func:`textwrap.dedent`.
-  (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
-
-* Improve error message when an object supporting the synchronous
-  context manager protocol is entered using :keyword:`async
-  with` instead of :keyword:`with`.
-  And vice versa with the asynchronous context manager protocol.
-  (Contributed by Bénédikt Tran in :gh:`128398`.)
-
-* :option:`!-J` is no longer a reserved flag for Jython_,
-  and now has no special meaning.
-  (Contributed by Adam Turner in :gh:`133336`.)
-
-  .. _Jython: https://www.jython.org/
-
-* The :func:`int` built-in no longer delegates to :meth:`~object.__trunc__`.
-  Classes that want to support conversion to :func:`!int` must implement
-  either :meth:`~object.__int__` or :meth:`~object.__index__`.
-  (Contributed by Mark Dickinson in :gh:`119743`.)
-
-* Using :data:`NotImplemented` in a boolean context
-  will now raise a :exc:`TypeError`.
-  This has raised a :exc:`DeprecationWarning` since Python 3.9.
-  (Contributed by Jelle Zijlstra in :gh:`118767`.)
-
-
-.. _whatsnew314-pep765:
-
-PEP 765: Disallow ``return``/``break``/``continue`` that exit a ``finally`` block
----------------------------------------------------------------------------------
-
-The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`, :keyword:`break` or
-:keyword:`continue` statement appears where it exits a :keyword:`finally` block.
-This change is specified in :pep:`765`.
 
 
 New modules
@@ -1331,11 +1315,13 @@ concurrent.futures
 
 .. _whatsnew314-concurrent-futures-start-method:
 
-* The default :class:`~concurrent.futures.ProcessPoolExecutor`
-  :ref:`start method <multiprocessing-start-methods>` changed
-  from :ref:`fork <multiprocessing-start-method-fork>` to :ref:`forkserver
-  <multiprocessing-start-method-forkserver>` on platforms other than macOS and
-  Windows where it was already :ref:`spawn <multiprocessing-start-method-spawn>`.
+* On Unix platforms other than macOS, :ref:`'forkserver'
+  <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
+  method <multiprocessing-start-methods>` for
+  :class:`~concurrent.futures.ProcessPoolExecutor`
+  (replacing :ref:`'fork' <multiprocessing-start-method-fork>`).
+  This change does not affect Windows or macOS, where :ref:`'spawn'
+  <multiprocessing-start-method-spawn>` remains the default start method.
 
   If the threading incompatible *fork* method is required, you must explicitly
   request it by supplying a multiprocessing context *mp_context* to
@@ -1575,6 +1561,8 @@ hmac
 
 * Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
   code from the `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
+  This implementation is used as a fallback when the OpenSSL implementation
+  of HMAC is not available.
   (Contributed by Bénédikt Tran in :gh:`99108`.)
 
 
@@ -1762,10 +1750,12 @@ multiprocessing
 
 .. _whatsnew314-multiprocessing-start-method:
 
-* The default :ref:`start method <multiprocessing-start-methods>` changed
-  from :ref:`fork <multiprocessing-start-method-fork>` to :ref:`forkserver
-  <multiprocessing-start-method-forkserver>` on platforms other than macOS and
-  Windows where it was already :ref:`spawn <multiprocessing-start-method-spawn>`.
+* On Unix platforms other than macOS, :ref:`'forkserver'
+  <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
+  method <multiprocessing-start-methods>`
+  (replacing :ref:`'fork' <multiprocessing-start-method-fork>`).
+  This change does not affect Windows or macOS, where :ref:`'spawn'
+  <multiprocessing-start-method-spawn>` remains the default start method.
 
   If the threading incompatible *fork* method is required, you must explicitly
   request it via a context from :func:`multiprocessing.get_context` (preferred)
@@ -1905,8 +1895,8 @@ pdb
   (Contributed by Tian Gao in :gh:`132576`.)
 
 * Source code displayed in :mod:`pdb` will be syntax-highlighted. This feature
-  can be controlled using the same methods as PyREPL, in addition to the newly
-  added ``colorize`` argument of :class:`pdb.Pdb`.
+  can be controlled using the same methods as the default :term:`interactive`
+  shell, in addition to the newly added ``colorize`` argument of :class:`pdb.Pdb`.
   (Contributed by Tian Gao and Łukasz Langa in :gh:`133355`.)
 
 
@@ -1934,6 +1924,19 @@ pydoc
 * :term:`Annotations <annotation>` in help output are now usually
   displayed in a format closer to that in the original source.
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
+
+
+re
+--
+
+* Support ``\z`` as a synonym for ``\Z`` in :mod:`regular expressions <re>`.
+  It is interpreted unambiguously in many other regular expression engines,
+  unlike ``\Z``, which has subtly different behavior.
+  (Contributed by Serhiy Storchaka in :gh:`133306`.)
+
+* ``\B`` in :mod:`regular expression <re>` now matches the empty input string.
+  Now it is always the opposite of ``\b``.
+  (Contributed by Serhiy Storchaka in :gh:`124130`.)
 
 
 socket
@@ -2252,6 +2255,11 @@ Optimizations
 
   (Contributed by Adam Turner, Bénédikt Tran, Chris Markiewicz, Eli Schwartz,
   Hugo van Kemenade, Jelle Zijlstra, and others in :gh:`118761`.)
+
+* The interpreter avoids some reference count modifications internally when
+  it's safe to do so. This can lead to different values returned from
+  :func:`sys.getrefcount` and :c:func:`Py_REFCNT` compared to previous versions
+  of Python.  See :ref:`below <whatsnew314-refcount>` for details.
 
 
 asyncio
@@ -3216,6 +3224,20 @@ that may require changes to your code.
 
 Changes in the Python API
 -------------------------
+
+* On Unix platforms other than macOS, *forkserver* is now the default
+  :ref:`start method <multiprocessing-start-methods>` for :mod:`multiprocessing`
+  and :class:`~concurrent.futures.ProcessPoolExecutor`, instead of *fork*.
+
+  See :ref:`(1) <whatsnew314-concurrent-futures-start-method>` and
+  :ref:`(2) <whatsnew314-multiprocessing-start-method>` for details.
+
+  If you encounter :exc:`NameError`\s or pickling errors coming out of
+  :mod:`multiprocessing` or :mod:`concurrent.futures`, see the
+  :ref:`forkserver restrictions <multiprocessing-programming-forkserver>`.
+
+  This change does not affect Windows or macOS, where :ref:`'spawn'
+  <multiprocessing-start-method-spawn>` remains the default start method.
 
 * :class:`functools.partial` is now a method descriptor.
   Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
