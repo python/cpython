@@ -1,0 +1,1 @@
+gh-139531: Fix TypeError in inspect.getframeinfo when lineno is None #139535
