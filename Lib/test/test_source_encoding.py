@@ -516,7 +516,8 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
         err = res.err.rstrip()
         self.assertRegex(err.splitlines()[-1], b'SyntaxError: ' + expected)
         if lineno is not ...:
-            self.assertIn(f', line {lineno}\n'.encode(), err)
+            self.assertIn(f', line {lineno}\n'.encode(),
+                          err.replace(os.linesep.encode(), b'\n'))
             line = src.splitlines()[lineno-1].decode(errors='replace')
             if lineno == 1:
                 line = line.removeprefix('\ufeff')
