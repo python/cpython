@@ -141,22 +141,26 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
     }
 
     new = PyObject_New(PyByteArrayObject, &PyByteArray_Type);
-    if (new == NULL)
+    if (new == NULL) {
         return NULL;
+    }
 
     if (size == 0) {
+        new->ob_bytes_object = NULL;
         new->ob_bytes = NULL;
         alloc = 0;
     }
     else {
         alloc = size + 1;
-        new->ob_bytes = PyMem_Malloc(alloc);
+        new->ob_bytes_object = PyBytes_FromStringAndSize(NULL, alloc);
+        new->ob_bytes = PyBytes_AsString(new->ob_bytes_object);
         if (new->ob_bytes == NULL) {
             Py_DECREF(new);
             return PyErr_NoMemory();
         }
-        if (bytes != NULL && size > 0)
+        if (bytes != NULL && size > 0) {
             memcpy(new->ob_bytes, bytes, size);
+        }
         new->ob_bytes[size] = '\0';  /* Trailing null byte */
     }
     Py_SET_SIZE(new, size);
@@ -189,7 +193,6 @@ static int
 bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-    void *sval;
     PyByteArrayObject *obj = ((PyByteArrayObject *)self);
     /* All computations are done unsigned to avoid integer overflows
        (see issue #22335). */
@@ -244,25 +247,28 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         return -1;
     }
 
+    /* re-align data to the start of the allocation. */
     if (logical_offset > 0) {
-        sval = PyMem_Malloc(alloc);
-        if (sval == NULL) {
-            PyErr_NoMemory();
+        memmove(obj->ob_bytes, obj->ob_start,
+                Py_MIN(requested_size, Py_SIZE(self)));
+    }
+
+    if (obj->ob_bytes_object == NULL) {
+        obj->ob_bytes_object = PyBytes_FromStringAndSize(NULL, alloc);
+        if (obj->ob_bytes_object == NULL) {
             return -1;
         }
-        memcpy(sval, PyByteArray_AS_STRING(self),
-               Py_MIN((size_t)requested_size, (size_t)Py_SIZE(self)));
-        PyMem_Free(obj->ob_bytes);
     }
     else {
-        sval = PyMem_Realloc(obj->ob_bytes, alloc);
-        if (sval == NULL) {
-            PyErr_NoMemory();
+        if (_PyBytes_Resize(&obj->ob_bytes_object, alloc) == -1) {
+            Py_SET_SIZE(self, 0);
+            obj->ob_bytes = obj->ob_start = NULL;
+            FT_ATOMIC_STORE_SSIZE_RELAXED(obj->ob_alloc, 0);
             return -1;
         }
     }
 
-    obj->ob_bytes = obj->ob_start = sval;
+    obj->ob_bytes = obj->ob_start = PyBytes_AS_STRING(obj->ob_bytes_object);
     Py_SET_SIZE(self, size);
     FT_ATOMIC_STORE_SSIZE_RELAXED(obj->ob_alloc, alloc);
     obj->ob_bytes[size] = '\0'; /* Trailing null byte */
@@ -1169,9 +1175,7 @@ bytearray_dealloc(PyObject *op)
                         "deallocated bytearray object has exported buffers");
         PyErr_Print();
     }
-    if (self->ob_bytes != 0) {
-        PyMem_Free(self->ob_bytes);
-    }
+    Py_CLEAR(self->ob_bytes_object);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
