@@ -219,7 +219,7 @@ jobs:
           is-fork: true
         - os: macos-14
           is-fork: false
-        - os: macos-15
+        - os: macos-15-intel
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
