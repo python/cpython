@@ -86,15 +86,18 @@ decode_str(const char *input, int single, struct tok_state *tok, int preserve_cr
     /* need to check line 1 and 2 separately since check_coding_spec
        assumes a single line as input */
     if (newl[0]) {
+        tok->lineno = 1;
         if (!_PyTokenizer_check_coding_spec(str, newl[0] - str, tok, buf_setreadl)) {
             return NULL;
         }
         if (tok->enc == NULL && tok->decoding_state != STATE_NORMAL && newl[1]) {
+            tok->lineno = 2;
             if (!_PyTokenizer_check_coding_spec(newl[0]+1, newl[1] - newl[0],
                                    tok, buf_setreadl))
                 return NULL;
         }
     }
+    tok->lineno = 0;
     if (tok->enc != NULL) {
         assert(utf8 == NULL);
         utf8 = _PyTokenizer_translate_into_utf8(str, tok->enc);

@@ -293,6 +293,21 @@ class AbstractSourceEncodingTest:
                b'print(ascii("\xc3\xa4"))\n')
         self.check_script_output(src, br"'\xe4'")
 
+    def test_utf8_bom_and_non_utf8_first_coding_line(self):
+        src = (b'\xef\xbb\xbf#coding:iso-8859-15\n'
+               b'raise RuntimeError\n')
+        self.check_script_error(src,
+                br"encoding problem: iso-8859-15 with BOM",
+                lineno=1)
+
+    def test_utf8_bom_and_non_utf8_second_coding_line(self):
+        src = (b'\xef\xbb\xbf#first\n'
+               b'#coding:iso-8859-15\n'
+               b'raise RuntimeError\n')
+        self.check_script_error(src,
+                br"encoding problem: iso-8859-15 with BOM",
+                lineno=2)
+
     def test_non_utf8_shebang(self):
         src = (b'#!/home/\xa4/bin/python\n'
                b'#coding:iso-8859-15\n'
@@ -308,45 +323,50 @@ class AbstractSourceEncodingTest:
     def test_non_utf8_shebang_error(self):
         src = (b'#!/home/\xa4/bin/python\n'
                b'raise RuntimeError\n')
-        self.check_script_error(src, br"Non-UTF-8 code starting with .* on line 1")
+        self.check_script_error(src, br"Non-UTF-8 code starting with .* on line 1",
+                                lineno=1)
 
     def test_non_utf8_second_line_error(self):
-        src = (b'#\n'
-               b'#\xa4\n'
+        src = (b'#first\n'
+               b'#second\xa4\n'
                b'raise RuntimeError\n')
         self.check_script_error(src,
-                br"Non-UTF-8 code starting with .* on line 2")
+                br"Non-UTF-8 code starting with .* on line 2",
+                lineno=2)
 
     def test_non_utf8_third_line_error(self):
-        src = (b'#\n'
-               b'#\n'
-               b'#\xa4\n'
+        src = (b'#first\n'
+               b'#second\n'
+               b'#third\xa4\n'
                b'raise RuntimeError\n')
         self.check_script_error(src,
-                br"Non-UTF-8 code starting with .* on line 3")
+                br"Non-UTF-8 code starting with .* on line 3",
+                lineno=3)
 
     def test_utf8_bom_non_utf8_third_line_error(self):
-        src = (b'\xef\xbb\xbf#\n'
-               b'#\n'
-               b'#\xa4\n'
+        src = (b'\xef\xbb\xbf#first\n'
+               b'#second\n'
+               b'#third\xa4\n'
                b'raise RuntimeError\n')
         self.check_script_error(src,
                 br"Non-UTF-8 code starting with .* on line 3|"
-                br"'utf-8' codec can't decode byte")
+                br"'utf-8' codec can't decode byte",
+                lineno=3)
 
     def test_utf_8_non_utf8_third_line_error(self):
         src = (b'#coding: utf-8\n'
-               b'#\n'
-               b'#\xa4\n'
+               b'#second\n'
+               b'#third\xa4\n'
                b'raise RuntimeError\n')
         self.check_script_error(src,
                 br"Non-UTF-8 code starting with .* on line 3|"
-                br"'utf-8' codec can't decode byte")
+                br"'utf-8' codec can't decode byte",
+                lineno=3)
 
     def test_utf8_non_utf8_third_line_error(self):
         src = (b'#coding: utf8\n'
-               b'#\n'
-               b'#\xa4\n'
+               b'#second\n'
+               b'#third\xa4\n'
                b'raise RuntimeError\n')
         self.check_script_error(src,
                 br"'utf-8' codec can't decode byte|"
@@ -461,9 +481,17 @@ class BytesSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
         out = stdout.getvalue().encode('latin1')
         self.assertEqual(out.rstrip(), expected)
 
-    def check_script_error(self, src, expected):
-        with self.assertRaisesRegex(SyntaxError, expected.decode()) as cm:
+    def check_script_error(self, src, expected, lineno=...):
+        with self.assertRaises(SyntaxError) as cm:
             exec(src)
+        exc = cm.exception
+        self.assertRegex(str(exc), expected.decode())
+        if lineno is not ...:
+            self.assertEqual(exc.lineno, lineno)
+            line = src.splitlines()[lineno-1].decode(errors='replace')
+            if lineno == 1:
+                line = line.removeprefix('\ufeff')
+            self.assertEqual(line, exc.text)
 
 
 class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
@@ -476,13 +504,21 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
             res = script_helper.assert_python_ok(fn)
         self.assertEqual(res.out.rstrip(), expected)
 
-    def check_script_error(self, src, expected):
+    def check_script_error(self, src, expected, lineno=...):
         with tempfile.TemporaryDirectory() as tmpd:
             fn = os.path.join(tmpd, 'test.py')
             with open(fn, 'wb') as fp:
                 fp.write(src)
             res = script_helper.assert_python_failure(fn)
-        self.assertRegex(res.err.rstrip().splitlines()[-1], b'SyntaxError.*?' + expected)
+        err = res.err.rstrip()
+        self.assertRegex(err.splitlines()[-1], b'SyntaxError.*?' + expected)
+        if lineno is not ...:
+            self.assertIn(f', line {lineno}\n'.encode(), err)
+            line = src.splitlines()[lineno-1].decode(errors='replace')
+            if lineno == 1:
+                line = line.removeprefix('\ufeff')
+            self.assertIn(line.encode(), err)
+
 
 
 if __name__ == "__main__":
