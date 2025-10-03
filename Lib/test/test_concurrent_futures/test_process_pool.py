@@ -106,20 +106,14 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
 
-    @staticmethod
-    def _terminate_abruptly_with_exit_code(exit_code):
-        os._exit(exit_code)
-
     def test_traceback_when_child_process_terminates_abruptly(self):
         # gh-139462 enhancement - BrokenProcessPool exceptions
         # should describe which process terminated.
         exit_code = 99
-        future = self.executor.submit(
-            self._terminate_abruptly_with_exit_code,
-            exit_code
-        )
-        with self.assertRaises(BrokenProcessPool) as bpe:
-            future.result()
+        with self.executor_type(max_workers=1) as executor:
+            future = executor.submit(os._exit, exit_code)
+            with self.assertRaises(BrokenProcessPool) as bpe:
+                future.result()
 
         cause = bpe.exception.__cause__
         self.assertIsInstance(cause, futures.process._RemoteTraceback)
