@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from test.support import script_helper, captured_stdout, requires_subprocess, requires_resource
+from test import support
+from test.support import script_helper
 from test.support.os_helper import TESTFN, unlink, rmtree
 from test.support.import_helper import unload
 import importlib
@@ -64,7 +65,7 @@ class MiscSourceEncodingTest(unittest.TestCase):
         # two bytes in common with the UTF-8 BOM
         self.assertRaises(SyntaxError, eval, b'\xef\xbb\x20')
 
-    @requires_subprocess()
+    @support.requires_subprocess()
     def test_20731(self):
         sub = subprocess.Popen([sys.executable,
                         os.path.join(os.path.dirname(__file__),
@@ -270,13 +271,13 @@ class AbstractSourceEncodingTest:
     def test_first_utf8_coding_line_error(self):
         src = (b'#coding:ascii \xc3\xa4\n'
                b'raise RuntimeError\n')
-        self.check_script_error(src, br"'ascii' codec can't decode byte")
+        self.check_script_error(src, br"(\(unicode error\) )?'ascii' codec can't decode byte")
 
     def test_second_utf8_coding_line_error(self):
         src = (b'#!/usr/bin/python\n'
                b'#coding:ascii \xc3\xa4\n'
                b'raise RuntimeError\n')
-        self.check_script_error(src, br"'ascii' codec can't decode byte")
+        self.check_script_error(src, br"(\(unicode error\) )?'ascii' codec can't decode byte")
 
     def test_utf8_bom(self):
         src = (b'\xef\xbb\xbfprint(ascii("\xc3\xa4"))\n')
@@ -318,7 +319,7 @@ class AbstractSourceEncodingTest:
         src = (b'#!/home/\xc3\xa4/bin/python\n'
                b'#coding:ascii\n'
                b'raise RuntimeError\n')
-        self.check_script_error(src, br"'ascii' codec can't decode byte")
+        self.check_script_error(src, br"(\(unicode error\) )?'ascii' codec can't decode byte")
 
     def test_non_utf8_shebang_error(self):
         src = (b'#!/home/\xa4/bin/python\n'
@@ -407,7 +408,7 @@ class AbstractSourceEncodingTest:
 class UTF8ValidatorTest(unittest.TestCase):
     @unittest.skipIf(not sys.platform.startswith("linux"),
                      "Too slow to run on non-Linux platforms")
-    @requires_resource('cpu')
+    @support.requires_resource('cpu')
     def test_invalid_utf8(self):
         # This is a port of test_utf8_decode_invalid_sequences in
         # test_unicode.py to exercise the separate utf8 validator in
@@ -473,10 +474,11 @@ class UTF8ValidatorTest(unittest.TestCase):
             check(b'\xF4'+cb+b'\xBF\xBF')
 
 
+@support.force_not_colorized_test_class
 class BytesSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
 
     def check_script_output(self, src, expected):
-        with captured_stdout() as stdout:
+        with support.captured_stdout() as stdout:
             exec(src)
         out = stdout.getvalue().encode('latin1')
         self.assertEqual(out.rstrip(), expected)
@@ -494,6 +496,7 @@ class BytesSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
             self.assertEqual(line, exc.text)
 
 
+@support.force_not_colorized_test_class
 class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
 
     def check_script_output(self, src, expected):
@@ -511,7 +514,7 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
                 fp.write(src)
             res = script_helper.assert_python_failure(fn)
         err = res.err.rstrip()
-        self.assertRegex(err.splitlines()[-1], b'SyntaxError.*?' + expected)
+        self.assertRegex(err.splitlines()[-1], b'SyntaxError: ' + expected)
         if lineno is not ...:
             self.assertIn(f', line {lineno}\n'.encode(), err)
             line = src.splitlines()[lineno-1].decode(errors='replace')
