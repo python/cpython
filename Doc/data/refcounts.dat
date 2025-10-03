@@ -1141,6 +1141,9 @@ PyInterpreterState_Clear:PyInterpreterState*:interp::
 PyInterpreterState_Delete:void:::
 PyInterpreterState_Delete:PyInterpreterState*:interp::
 
+PyInterpreterState_GetDict:PyObject*::0:
+PyInterpreterState_GetDict:PyInterpreterState*:interp::
+
 PyInterpreterState_GetID:int64_t:::
 PyInterpreterState_GetID:PyInterpreterState*:interp::
 

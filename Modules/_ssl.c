@@ -5793,7 +5793,6 @@ memory_bio_dealloc(PyObject *op)
 {
     PySSLMemoryBIO *self = PySSLMemoryBIO_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
     (void)BIO_free(self->bio);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -5957,15 +5956,13 @@ static PyType_Slot PySSLMemoryBIO_slots[] = {
     {Py_tp_getset, memory_bio_getsetlist},
     {Py_tp_new, _ssl_MemoryBIO},
     {Py_tp_dealloc, memory_bio_dealloc},
-    {Py_tp_traverse, _PyObject_VisitType},
     {0, 0},
 };
 
 static PyType_Spec PySSLMemoryBIO_spec = {
     .name = "_ssl.MemoryBIO",
     .basicsize = sizeof(PySSLMemoryBIO),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
-              Py_TPFLAGS_HAVE_GC),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = PySSLMemoryBIO_slots,
 };
 

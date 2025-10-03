@@ -11422,6 +11422,11 @@ static pytype_slotdef slotdefs[] = {
     {NULL}
 };
 
+/* Stores the number of times where slotdefs has elements with same name.
+   This counter precalculated by _PyType_InitSlotDefs() when the main
+   interpreter starts. */
+static uint8_t slotdefs_name_counts[Py_ARRAY_LENGTH(slotdefs)];
+
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
    the offset to the type pointer, since it takes care to indirect through the
@@ -11462,61 +11467,6 @@ slotptr(PyTypeObject *type, int ioffset)
     if (ptr != NULL)
         ptr += offset;
     return (void **)ptr;
-}
-
-/* Return a slot pointer for a given name, but ONLY if the attribute has
-   exactly one slot function.  The name must be an interned string. */
-static void **
-resolve_slotdups(PyTypeObject *type, PyObject *name)
-{
-    /* XXX Maybe this could be optimized more -- but is it worth it? */
-
-#ifdef Py_GIL_DISABLED
-    pytype_slotdef *ptrs[MAX_EQUIV];
-    pytype_slotdef **pp = ptrs;
-    /* Collect all slotdefs that match name into ptrs. */
-    for (pytype_slotdef *p = slotdefs; p->name_strobj; p++) {
-        if (p->name_strobj == name)
-            *pp++ = p;
-    }
-    *pp = NULL;
-#else
-    /* pname and ptrs act as a little cache */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-#define pname _Py_INTERP_CACHED_OBJECT(interp, type_slots_pname)
-#define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
-    pytype_slotdef *p, **pp;
-
-    if (pname != name) {
-        /* Collect all slotdefs that match name into ptrs. */
-        pname = name;
-        pp = ptrs;
-        for (p = slotdefs; p->name_strobj; p++) {
-            if (p->name_strobj == name)
-                *pp++ = p;
-        }
-        *pp = NULL;
-    }
-#endif
-
-    /* Look in all slots of the type matching the name. If exactly one of these
-       has a filled-in slot, return a pointer to that slot.
-       Otherwise, return NULL. */
-    void **res, **ptr;
-    res = NULL;
-    for (pp = ptrs; *pp; pp++) {
-        ptr = slotptr(type, (*pp)->offset);
-        if (ptr == NULL || *ptr == NULL)
-            continue;
-        if (res != NULL)
-            return NULL;
-        res = ptr;
-    }
-#ifndef Py_GIL_DISABLED
-#undef pname
-#undef ptrs
-#endif
-    return res;
 }
 
 // Return true if "name" corresponds to at least one slot definition.  This is
@@ -11645,7 +11595,15 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
         }
         if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
-            void **tptr = resolve_slotdups(type, p->name_strobj);
+            void **tptr;
+            size_t index = (p - slotdefs) / sizeof(slotdefs[0]);
+            if (slotdefs_name_counts[index] == 1) {
+                tptr = slotptr(type, p->offset);
+            }
+            else {
+                tptr = NULL;
+            }
+
             if (tptr == NULL || tptr == ptr)
                 generic = p->function;
             d = (PyWrapperDescrObject *)descr;
@@ -11857,6 +11815,76 @@ update_all_slots(PyTypeObject* type)
 }
 
 #endif
+
+int
+_PyType_InitSlotDefs(PyInterpreterState *interp)
+{
+    if (!_Py_IsMainInterpreter(interp)) {
+        return 0;
+    }
+    PyObject *bytearray = NULL;
+    PyObject *cache = PyDict_New();
+    if (!cache) {
+        return -1;
+    }
+
+    pytype_slotdef *p;
+    Py_ssize_t idx = 0;
+    for (p = slotdefs; p->name_strobj; p++, idx++) {
+        assert(idx < 255);
+
+        if (PyDict_GetItemRef(cache, p->name_strobj, &bytearray) < 0) {
+            goto error;
+        }
+
+        if (!bytearray) {
+            Py_ssize_t size = sizeof(uint8_t) * (1 + MAX_EQUIV);
+            bytearray = PyByteArray_FromStringAndSize(NULL, size);
+            if (!bytearray) {
+                goto error;
+            }
+
+            uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(bytearray);
+            data[0] = 0;
+
+            if (PyDict_SetItem(cache, p->name_strobj, bytearray) < 0) {
+                goto error;
+            }
+        }
+
+        assert(PyByteArray_CheckExact(bytearray));
+        uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(bytearray);
+
+        data[0] += 1;
+        assert(data[0] < MAX_EQUIV);
+
+        data[data[0]] = (uint8_t)idx;
+
+        Py_CLEAR(bytearray);
+    }
+
+    memset(slotdefs_name_counts, 0, sizeof(slotdefs_name_counts));
+
+    Py_ssize_t pos = 0;
+    PyObject *key = NULL;
+    PyObject *value = NULL;
+    while (PyDict_Next(cache, &pos, &key, &value)) {
+        uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(value);
+        uint8_t n = data[0];
+        for (uint8_t i = 0; i < n; i++) {
+            uint8_t idx = data[i + 1];
+            slotdefs_name_counts[idx] = n;
+        }
+    }
+
+    Py_DECREF(cache);
+    return 0;
+
+error:
+    Py_XDECREF(bytearray);
+    Py_DECREF(cache);
+    return -1;
+}
 
 
 PyObject *
