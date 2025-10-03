@@ -28,8 +28,6 @@ import unittest
 import unittest.mock
 import warnings
 import weakref
-import inspect
-import sys
 import unittest
 
 
