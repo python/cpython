@@ -6,6 +6,7 @@ import subprocess
 import sys
 import unittest
 from functools import partial
+from test import support
 from test.support import os_helper, force_not_colorized_test_class
 from test.support import script_helper
 
@@ -359,7 +360,8 @@ class TestUnixConsoleEIOHandling(TestCase):
             self.fail("Child process failed to start properly")
 
         os.kill(proc.pid, signal.SIGUSR1)
-        _, err = proc.communicate(timeout=5)  # sleep for pty to settle
+        # sleep for pty to settle
+        _, err = proc.communicate(timeout=support.SHORT_TIMEOUT)
         self.assertEqual(
             proc.returncode,
             1,
