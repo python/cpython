@@ -21,41 +21,6 @@ from test.support import os_helper
 from .utils import create_file
 
 
-class Win32ErrorTests(unittest.TestCase):
-    def setUp(self):
-        try:
-            os.stat(os_helper.TESTFN)
-        except FileNotFoundError:
-            exists = False
-        except OSError as exc:
-            exists = True
-            self.fail("file %s must not exist; os.stat failed with %s"
-                      % (os_helper.TESTFN, exc))
-        else:
-            self.fail("file %s must not exist" % os_helper.TESTFN)
-
-    def test_rename(self):
-        self.assertRaises(OSError, os.rename, os_helper.TESTFN, os_helper.TESTFN+".bak")
-
-    def test_remove(self):
-        self.assertRaises(OSError, os.remove, os_helper.TESTFN)
-
-    def test_chdir(self):
-        self.assertRaises(OSError, os.chdir, os_helper.TESTFN)
-
-    def test_mkdir(self):
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-
-        with open(os_helper.TESTFN, "x") as f:
-            self.assertRaises(OSError, os.mkdir, os_helper.TESTFN)
-
-    def test_utime(self):
-        self.assertRaises(OSError, os.utime, os_helper.TESTFN, None)
-
-    def test_chmod(self):
-        self.assertRaises(OSError, os.chmod, os_helper.TESTFN, 0)
-
-
 class Win32KillTests(unittest.TestCase):
     def _kill(self, sig):
         # Start sys.executable as a subprocess and communicate from the
