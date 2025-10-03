@@ -471,6 +471,9 @@ static int check_cursor(pysqlite_Cursor* cur)
         return 0;
     }
 
+    assert(cur->connection != NULL);
+    assert(cur->connection->state != NULL);
+
     if (cur->closed) {
         PyErr_SetString(cur->connection->state->ProgrammingError,
                         "Cannot operate on a closed cursor.");
@@ -567,43 +570,40 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
     switch (paramtype) {
         case TYPE_LONG: {
             sqlite_int64 value = _pysqlite_long_as_int64(parameter);
-            if (value == -1 && PyErr_Occurred())
-                rc = -1;
-            else
-                rc = sqlite3_bind_int64(self->st, pos, value);
+            rc = (value == -1 && PyErr_Occurred())
+                ? SQLITE_ERROR
+                : sqlite3_bind_int64(self->st, pos, value);
             break;
         }
         case TYPE_FLOAT: {
             double value = PyFloat_AsDouble(parameter);
-            if (value == -1 && PyErr_Occurred()) {
-                rc = -1;
-            }
-            else {
-                rc = sqlite3_bind_double(self->st, pos, value);
-            }
+            rc = (value == -1 && PyErr_Occurred())
+                ? SQLITE_ERROR
+                : sqlite3_bind_double(self->st, pos, value);
             break;
         }
         case TYPE_UNICODE:
             string = PyUnicode_AsUTF8AndSize(parameter, &buflen);
-            if (string == NULL)
-                return -1;
+            if (string == NULL) {
+                return SQLITE_ERROR;
+            }
             if (buflen > INT_MAX) {
                 PyErr_SetString(PyExc_OverflowError,
                                 "string longer than INT_MAX bytes");
-                return -1;
+                return SQLITE_ERROR;
             }
             rc = sqlite3_bind_text(self->st, pos, string, (int)buflen, SQLITE_TRANSIENT);
             break;
         case TYPE_BUFFER: {
             Py_buffer view;
             if (PyObject_GetBuffer(parameter, &view, PyBUF_SIMPLE) != 0) {
-                return -1;
+                return SQLITE_ERROR;
             }
             if (view.len > INT_MAX) {
                 PyErr_SetString(PyExc_OverflowError,
                                 "BLOB longer than INT_MAX bytes");
                 PyBuffer_Release(&view);
-                return -1;
+                return SQLITE_ERROR;
             }
             rc = sqlite3_bind_blob(self->st, pos, view.buf, (int)view.len, SQLITE_TRANSIENT);
             PyBuffer_Release(&view);
@@ -613,7 +613,7 @@ bind_param(pysqlite_state *state, pysqlite_Statement *self, int pos,
             PyErr_Format(state->ProgrammingError,
                     "Error binding parameter %d: type '%s' is not supported",
                     pos, Py_TYPE(parameter)->tp_name);
-            rc = -1;
+            rc = SQLITE_ERROR;
     }
 
 final:
@@ -733,14 +733,17 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             }
 
             binding_name++; /* skip first char (the colon) */
-            PyObject *current_param;
-            (void)PyMapping_GetOptionalItemString(parameters, binding_name, &current_param);
-            if (!current_param) {
-                if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_LookupError)) {
-                    PyErr_Format(state->ProgrammingError,
-                                 "You did not supply a value for binding "
-                                 "parameter :%s.", binding_name);
-                }
+            PyObject *current_param = NULL;
+            int found = PyMapping_GetOptionalItemString(parameters,
+                                                        binding_name,
+                                                        &current_param);
+            if (found == -1) {
+                return;
+            }
+            else if (found == 0) {
+                PyErr_Format(state->ProgrammingError,
+                             "You did not supply a value for binding "
+                             "parameter :%s.", binding_name);
                 return;
             }
 

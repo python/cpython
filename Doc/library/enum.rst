@@ -315,6 +315,7 @@ Data Types
       Returns ``['__class__', '__doc__', '__module__', 'name', 'value']`` and
       any public methods defined on *self.__class__*::
 
+         >>> from enum import Enum
          >>> from datetime import date
          >>> class Weekday(Enum):
          ...     MONDAY = 1
@@ -341,7 +342,7 @@ Data Types
       A *staticmethod* that is used to determine the next value returned by
       :class:`auto`::
 
-         >>> from enum import auto
+         >>> from enum import auto, Enum
          >>> class PowersOfThree(Enum):
          ...     @staticmethod
          ...     def _generate_next_value_(name, start, count, last_values):
@@ -373,7 +374,7 @@ Data Types
       A *classmethod* for looking up values not found in *cls*.  By default it
       does nothing, but can be overridden to implement custom search behavior::
 
-         >>> from enum import StrEnum
+         >>> from enum import auto, StrEnum
          >>> class Build(StrEnum):
          ...     DEBUG = auto()
          ...     OPTIMIZED = auto()
@@ -412,6 +413,7 @@ Data Types
       Returns the string used for *repr()* calls.  By default, returns the
       *Enum* name, member name, and value, but can be overridden::
 
+         >>> from enum import auto, Enum
          >>> class OtherStyle(Enum):
          ...     ALTERNATE = auto()
          ...     OTHER = auto()
@@ -428,6 +430,7 @@ Data Types
       Returns the string used for *str()* calls.  By default, returns the
       *Enum* name and member name, but can be overridden::
 
+         >>> from enum import auto, Enum
          >>> class OtherStyle(Enum):
          ...     ALTERNATE = auto()
          ...     OTHER = auto()
@@ -443,6 +446,7 @@ Data Types
       Returns the string used for *format()* and *f-string* calls.  By default,
       returns :meth:`__str__` return value, but can be overridden::
 
+         >>> from enum import auto, Enum
          >>> class OtherStyle(Enum):
          ...     ALTERNATE = auto()
          ...     OTHER = auto()

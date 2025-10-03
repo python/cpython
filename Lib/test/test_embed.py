@@ -1232,21 +1232,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_dont_configure_locale", {}, preconfig,
                                api=API_PYTHON)
 
-    @unittest.skip('as of 3.11 this test no longer works because '
-                   'path calculations do not occur on read')
-    def test_init_read_set(self):
-        config = {
-            'program_name': './init_read_set',
-            'executable': 'my_executable',
-            'base_executable': 'my_executable',
-        }
-        def modify_path(path):
-            path.insert(1, "test_path_insert1")
-            path.append("test_path_append")
-        self.check_all_configs("test_init_read_set", config,
-                               api=API_PYTHON,
-                               modify_path_cb=modify_path)
-
     def test_init_sys_add(self):
         config = {
             'faulthandler': 1,

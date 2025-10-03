@@ -96,9 +96,13 @@ class TestSupport(unittest.TestCase):
                         self.test_get_attribute)
         self.assertRaises(unittest.SkipTest, support.get_attribute, self, "foo")
 
-    @unittest.skip("failing buildbots")
     def test_get_original_stdout(self):
-        self.assertEqual(support.get_original_stdout(), sys.stdout)
+        if isinstance(sys.stdout, io.StringIO):
+            # gh-55258: When --junit-xml is used, stdout is a StringIO:
+            # use sys.__stdout__ in this case.
+            self.assertEqual(support.get_original_stdout(), sys.__stdout__)
+        else:
+            self.assertEqual(support.get_original_stdout(), sys.stdout)
 
     def test_unload(self):
         import sched  # noqa: F401

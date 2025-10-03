@@ -13,6 +13,7 @@ from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
+from .gecko_collector import GeckoCollector
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 
@@ -631,6 +632,9 @@ def sample(
         case "flamegraph":
             collector = FlamegraphCollector(skip_idle=skip_idle)
             filename = filename or f"flamegraph.{pid}.html"
+        case "gecko":
+            collector = GeckoCollector(skip_idle=skip_idle)
+            filename = filename or f"gecko.{pid}.json"
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
 
@@ -675,10 +679,13 @@ def _validate_collapsed_format_args(args, parser):
 
 def wait_for_process_and_sample(pid, sort_value, args):
     """Sample the process immediately since it has already signaled readiness."""
-    # Set default collapsed filename with subprocess PID if not already set
+    # Set default filename with subprocess PID if not already set
     filename = args.outfile
-    if not filename and args.format == "collapsed":
-        filename = f"collapsed.{pid}.txt"
+    if not filename:
+        if args.format == "collapsed":
+            filename = f"collapsed.{pid}.txt"
+        elif args.format == "gecko":
+            filename = f"gecko.{pid}.json"
 
     mode = _parse_mode(args.mode)
 
@@ -782,6 +789,13 @@ def main():
         dest="format",
         help="Generate HTML flamegraph visualization",
     )
+    output_format.add_argument(
+        "--gecko",
+        action="store_const",
+        const="gecko",
+        dest="format",
+        help="Generate Gecko format for Firefox Profiler",
+    )
 
     output_group.add_argument(
         "-o",
@@ -860,7 +874,7 @@ def main():
     args = parser.parse_args()
 
     # Validate format-specific arguments
-    if args.format == "collapsed":
+    if args.format in ("collapsed", "gecko"):
         _validate_collapsed_format_args(args, parser)
 
     sort_value = args.sort if args.sort is not None else 2
