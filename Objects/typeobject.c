@@ -11871,7 +11871,7 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
     while (PyDict_Next(cache, &pos, &key, &value)) {
         uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(value);
         uint8_t n = data[0];
-        for(uint8_t i = 0; i < n; i++) {
+        for (uint8_t i = 0; i < n; i++) {
             uint8_t idx = data[i + 1];
             slotdefs_name_counts[idx] = n;
         }
