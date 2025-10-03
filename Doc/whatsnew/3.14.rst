@@ -2063,6 +2063,15 @@ sys
 * Raise :exc:`DeprecationWarning` for :func:`sys._clear_type_cache`. This
   function was deprecated in Python 3.13 but it didn't raise a runtime warning.
 
+* Add :func:`sys.remote_exec` to implement the new external debugger interface.
+  See :ref:`PEP 768 <whatsnew314-pep768>` for details.
+  (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic
+  in :gh:`131591`.)
+
+* Add the :data:`sys._jit` namespace, containing utilities for introspecting
+  just-in-time compilation.
+  (Contributed by Brandt Bucher in :gh:`133231`.)
+
 
 sys.monitoring
 --------------
