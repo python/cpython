@@ -448,6 +448,23 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(mmap_mmap_seekable__doc__,
+"seekable($self, /)\n"
+"--\n"
+"\n");
+
+#define MMAP_MMAP_SEEKABLE_METHODDEF    \
+    {"seekable", (PyCFunction)mmap_mmap_seekable, METH_NOARGS, mmap_mmap_seekable__doc__},
+
+static PyObject *
+mmap_mmap_seekable_impl(mmap_object *self);
+
+static PyObject *
+mmap_mmap_seekable(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return mmap_mmap_seekable_impl((mmap_object *)self);
+}
+
 PyDoc_STRVAR(mmap_mmap_move__doc__,
 "move($self, dest, src, count, /)\n"
 "--\n"
@@ -509,6 +526,63 @@ mmap_mmap_move(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = mmap_mmap_move_impl((mmap_object *)self, dest, src, cnt);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(mmap_mmap___enter____doc__,
+"__enter__($self, /)\n"
+"--\n"
+"\n");
+
+#define MMAP_MMAP___ENTER___METHODDEF    \
+    {"__enter__", (PyCFunction)mmap_mmap___enter__, METH_NOARGS, mmap_mmap___enter____doc__},
+
+static PyObject *
+mmap_mmap___enter___impl(mmap_object *self);
+
+static PyObject *
+mmap_mmap___enter__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = mmap_mmap___enter___impl((mmap_object *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(mmap_mmap___exit____doc__,
+"__exit__($self, exc_type, exc_value, traceback, /)\n"
+"--\n"
+"\n");
+
+#define MMAP_MMAP___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(mmap_mmap___exit__), METH_FASTCALL, mmap_mmap___exit____doc__},
+
+static PyObject *
+mmap_mmap___exit___impl(mmap_object *self, PyObject *exc_type,
+                        PyObject *exc_value, PyObject *traceback);
+
+static PyObject *
+mmap_mmap___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *exc_type;
+    PyObject *exc_value;
+    PyObject *traceback;
+
+    if (!_PyArg_CheckPositional("__exit__", nargs, 3, 3)) {
+        goto exit;
+    }
+    exc_type = args[0];
+    exc_value = args[1];
+    traceback = args[2];
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = mmap_mmap___exit___impl((mmap_object *)self, exc_type, exc_value, traceback);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -668,4 +742,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=f2bbd1cba452c773 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=32a1121886e2fcd3 input=a9049054013a1b77]*/

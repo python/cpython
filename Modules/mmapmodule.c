@@ -1088,8 +1088,14 @@ mmap_mmap_seek_impl(mmap_object *self, Py_ssize_t dist, int how)
     return NULL;
 }
 
+/*[clinic input]
+mmap.mmap.seekable
+
+[clinic start generated code]*/
+
 static PyObject *
-mmap_seekable_method(PyObject *op, PyObject *Py_UNUSED(ignored))
+mmap_mmap_seekable_impl(mmap_object *self)
+/*[clinic end generated code: output=6311dc3ea300fa38 input=5132505f6e259001]*/
 {
     Py_RETURN_TRUE;
 }
@@ -1148,24 +1154,38 @@ mmap_closed_get(PyObject *op, void *Py_UNUSED(closure))
     return result;
 }
 
+/*[clinic input]
+@critical_section
+mmap.mmap.__enter__
+
+[clinic start generated code]*/
+
 static PyObject *
-mmap__enter__method(PyObject *op, PyObject *Py_UNUSED(ignored))
+mmap_mmap___enter___impl(mmap_object *self)
+/*[clinic end generated code: output=92cfc59f4c4e2d26 input=a446541fbfe0b890]*/
 {
-    mmap_object *self = mmap_object_CAST(op);
     CHECK_VALID(NULL);
 
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+@critical_section
+mmap.mmap.__exit__
+
+    exc_type: object
+    exc_value: object
+    traceback: object
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-mmap__exit__method(PyObject *op, PyObject *Py_UNUSED(args))
+mmap_mmap___exit___impl(mmap_object *self, PyObject *exc_type,
+                        PyObject *exc_value, PyObject *traceback)
+/*[clinic end generated code: output=bec7e3e319c1f07e input=5f28e91cf752bc64]*/
 {
-    mmap_object *self = mmap_object_CAST(op);
-    PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    result = mmap_mmap_close_impl(self);
-    Py_END_CRITICAL_SECTION();
-    return result;
+    return mmap_mmap_close_impl(self);
 }
 
 static PyObject *
@@ -1341,13 +1361,13 @@ static struct PyMethodDef mmap_object_methods[] = {
     MMAP_MMAP_READLINE_METHODDEF
     MMAP_MMAP_RESIZE_METHODDEF
     MMAP_MMAP_SEEK_METHODDEF
-    {"seekable",        mmap_seekable_method,     METH_NOARGS},
+    MMAP_MMAP_SEEKABLE_METHODDEF
     MMAP_MMAP_SIZE_METHODDEF
     MMAP_MMAP_TELL_METHODDEF
     MMAP_MMAP_WRITE_METHODDEF
     MMAP_MMAP_WRITE_BYTE_METHODDEF
-    {"__enter__",       mmap__enter__method,      METH_NOARGS},
-    {"__exit__",        mmap__exit__method,       METH_VARARGS},
+    MMAP_MMAP___ENTER___METHODDEF
+    MMAP_MMAP___EXIT___METHODDEF
     MMAP_MMAP___SIZEOF___METHODDEF
     MMAP_MMAP__PROTECT_METHODDEF
     {NULL,         NULL}       /* sentinel */
