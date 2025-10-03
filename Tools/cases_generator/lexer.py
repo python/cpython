@@ -367,6 +367,3 @@ if __name__ == "__main__":
 
     dedent = int(sys.argv[3])
     print(to_text(tokenize(src), dedent))
-
-    # for tkn in tokenize(src, filename=filename):
-    #     print(tkn)
