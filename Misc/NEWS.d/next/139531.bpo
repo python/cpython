@@ -1,1 +1,0 @@
-bpo-139531: Fixed TypeError in inspect.getframeinfo when lineno is None in exception groups.
