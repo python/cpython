@@ -220,11 +220,16 @@ class ModuleCompleter:
             print('getting packages/')  # TEMPORARY -- debugging tests on windows
             self._global_cache = list(pkgutil.iter_modules())
             # === BEGIN TEMPORARY -- debugging tests on windows ===
-            print(f"\n\n{self._global_cache=}\n\n")
             mymod = next((p for p in self._global_cache if p.name == "mymodule"), None)  
             if mymod:
                 print("0a", mymod)
+                import glob
+                print("files on finder path:", glob.glob("**", root_dir=mymod.module_finder.path, recursive=True))
                 spec = mymod.module_finder.find_spec(mymod.name, None)
+                print("found spec:", spec)
+                mymod.module_finder.invalidate_caches()
+                spec = mymod.module_finder.find_spec(mymod.name, None)
+                print("found spec after invalidate:", spec)
                 if spec:
                     print("1")
                     assert spec.submodule_search_locations and len(spec.submodule_search_locations) == 1
