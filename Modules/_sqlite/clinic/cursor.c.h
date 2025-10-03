@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_long.h"          // _PyLong_Size_t_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 static int
@@ -181,7 +182,7 @@ PyDoc_STRVAR(pysqlite_cursor_fetchmany__doc__,
     {"fetchmany", _PyCFunction_CAST(pysqlite_cursor_fetchmany), METH_FASTCALL|METH_KEYWORDS, pysqlite_cursor_fetchmany__doc__},
 
 static PyObject *
-pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows);
+pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, size_t maxrows);
 
 static PyObject *
 pysqlite_cursor_fetchmany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -214,7 +215,7 @@ pysqlite_cursor_fetchmany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize
     #undef KWTUPLE
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    int maxrows = self->arraysize;
+    size_t maxrows = ((pysqlite_Cursor *)self)->arraysize;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
     if (!args) {
@@ -223,8 +224,7 @@ pysqlite_cursor_fetchmany(pysqlite_Cursor *self, PyObject *const *args, Py_ssize
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    maxrows = PyLong_AsInt(args[0]);
-    if (maxrows == -1 && PyErr_Occurred()) {
+    if (!_PyLong_Size_t_Converter(args[0], &maxrows)) {
         goto exit;
     }
 skip_optional_pos:
@@ -313,4 +313,46 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=a8ce095c3c80cf65 input=a9049054013a1b77]*/
+
+#if !defined(_sqlite3_Cursor_arraysize_DOCSTR)
+#  define _sqlite3_Cursor_arraysize_DOCSTR NULL
+#endif
+#if defined(_SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF)
+#  undef _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF
+#  define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", (getter)_sqlite3_Cursor_arraysize_get, (setter)_sqlite3_Cursor_arraysize_set, _sqlite3_Cursor_arraysize_DOCSTR},
+#else
+#  define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", (getter)_sqlite3_Cursor_arraysize_get, NULL, _sqlite3_Cursor_arraysize_DOCSTR},
+#endif
+
+static PyObject *
+_sqlite3_Cursor_arraysize_get_impl(pysqlite_Cursor *self);
+
+static PyObject *
+_sqlite3_Cursor_arraysize_get(pysqlite_Cursor *self, void *Py_UNUSED(context))
+{
+    return _sqlite3_Cursor_arraysize_get_impl(self);
+}
+
+#if !defined(_sqlite3_Cursor_arraysize_DOCSTR)
+#  define _sqlite3_Cursor_arraysize_DOCSTR NULL
+#endif
+#if defined(_SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF)
+#  undef _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF
+#  define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", (getter)_sqlite3_Cursor_arraysize_get, (setter)_sqlite3_Cursor_arraysize_set, _sqlite3_Cursor_arraysize_DOCSTR},
+#else
+#  define _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF {"arraysize", NULL, (setter)_sqlite3_Cursor_arraysize_set, NULL},
+#endif
+
+static int
+_sqlite3_Cursor_arraysize_set_impl(pysqlite_Cursor *self, PyObject *value);
+
+static int
+_sqlite3_Cursor_arraysize_set(pysqlite_Cursor *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    return_value = _sqlite3_Cursor_arraysize_set_impl(self, value);
+
+    return return_value;
+}
+/*[clinic end generated code: output=332c298249ae57b0 input=a9049054013a1b77]*/
