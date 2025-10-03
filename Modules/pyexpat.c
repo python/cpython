@@ -54,6 +54,7 @@ enum HandlerTypes {
 typedef struct {
     PyTypeObject *xml_parse_type;
     PyObject *error;
+    PyObject *str_code;
 } pyexpat_state;
 
 static inline pyexpat_state*
@@ -107,13 +108,11 @@ struct HandlerInfo {
 static struct HandlerInfo handler_info[64];
 
 static int
-set_xml_error_attr_code(PyObject *err, enum XML_Error code)
+set_xml_error_attr_code(pyexpat_state *state, PyObject *err, enum XML_Error code)
 {
-    PyObject *py_id_code = PyUnicode_InternFromString("code");
     PyObject *v = PyLong_FromLong((long)code);
-    int ok = v != NULL && PyObject_SetAttr(err, py_id_code, v) != -1;
+    int ok = v != NULL && PyObject_SetAttr(err, state->str_code, v) != -1;
     Py_XDECREF(v);
-    Py_XDECREF(py_id_code);
     return ok;
 }
 
@@ -153,7 +152,7 @@ set_xml_error(pyexpat_state *state,
     Py_DECREF(arg);
     if (
         res != NULL
-        && set_xml_error_attr_code(res, code)
+        && set_xml_error_attr_code(state, res, code)
         && set_xml_error_attr_location(res, "lineno", lineno)
         && set_xml_error_attr_location(res, "offset", column)
     ) {
@@ -2061,6 +2060,11 @@ pyexpat_exec(PyObject *mod)
         return -1;
     }
 
+    state->str_code = PyUnicode_InternFromString("code");
+    if (state->str_code == NULL) {
+        return -1;
+    }
+
     /* Add some symbolic constants to the module */
 
     if (PyModule_AddObjectRef(mod, "error", state->error) < 0) {
@@ -2196,6 +2200,7 @@ pyexpat_clear(PyObject *module)
     pyexpat_state *state = pyexpat_get_state(module);
     Py_CLEAR(state->xml_parse_type);
     Py_CLEAR(state->error);
+    Py_CLEAR(state->str_code);
     return 0;
 }
 
