@@ -1451,6 +1451,58 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
         self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
 
+    def test_take_bytes(self):
+        ba = bytearray(b'ab')
+        self.assertEqual(ba.take_bytes(), b'ab')
+        self.assertEqual(len(ba), 0)
+        self.assertEqual(ba, bytearray(b''))
+
+        # Positive and negative slicing.
+        ba = bytearray(b'abcdef')
+        self.assertEqual(ba.take_bytes(1), b'a')
+        self.assertEqual(ba, bytearray(b'bcdef'))
+        self.assertEqual(len(ba), 5)
+        self.assertEqual(ba.take_bytes(-5), b'')
+        self.assertEqual(ba, bytearray(b'bcdef'))
+        self.assertEqual(len(ba), 5)
+        self.assertEqual(ba.take_bytes(-3), b'bc')
+        self.assertEqual(ba, bytearray(b'def'))
+        self.assertEqual(len(ba), 3)
+        self.assertEqual(ba.take_bytes(3), b'def')
+        self.assertEqual(ba, bytearray(b''))
+        self.assertEqual(len(ba), 0)
+
+        # Take nothing from emptiness.
+        self.assertEqual(ba.take_bytes(0), b'')
+        self.assertEqual(ba.take_bytes(), b'')
+        self.assertEqual(ba.take_bytes(None), b'')
+
+        # Out of bounds, bad take value.
+        self.assertRaises(IndexError, ba.take_bytes, -1)
+        self.assertRaises(TypeError, ba.take_bytes, 3.14)
+        ba = bytearray(b'abcdef')
+        self.assertRaises(IndexError, ba.take_bytes, 7)
+
+        # Offset between physical and logical start (ob_bytes != ob_start).
+        ba = bytearray(b'abcde')
+        del ba[:2]
+        self.assertEqual(ba, bytearray(b'cde'))
+        self.assertEqual(ba.take_bytes(), b'cde')
+
+        # Overallocation at end.
+        ba = bytearray(b'abcde')
+        del ba[-2:]
+        self.assertEqual(ba, bytearray(b'abc'))
+        self.assertEqual(ba.take_bytes(), b'abc')
+        ba = bytearray(b'abcde')
+        ba.resize(4)
+        self.assertEqual(ba.take_bytes(), b'abcd')
+
+        # Take of a bytearray with references should fail.
+        ba = bytearray(b'abc')
+        with memoryview(ba) as mv:
+            self.assertRaises(BufferError, ba.take_bytes)
+        self.assertEqual(ba.take_bytes(), b'abc')
 
     def test_setitem(self):
         def setitem_as_mapping(b, i, val):
