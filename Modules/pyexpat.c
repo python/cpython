@@ -8,8 +8,6 @@
 
 #include <stdbool.h>
 #include "structmember.h"         // PyMemberDef
-#include <stddef.h>               // offsetof()
-
 #include "expat_config.h"
 #include "expat.h"
 
