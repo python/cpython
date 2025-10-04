@@ -22,6 +22,10 @@ Pending removal in Python 3.17
     See :pep:`PEP 688 <688#current-options>` for more details.
     (Contributed by Shantanu Jain in :gh:`91896`.)
 
+* :mod:`token`:
+
+  - The :func:`token.ISTERMINAL`, :func:`token.ISNONTERMINAL` and
+    :func:`token.ISEOF` tokens.
 
 * :mod:`typing`:
 
