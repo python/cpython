@@ -1,0 +1,1 @@
+Fix :func:`inspect.getfile` error message for custom module objects.
