@@ -1,0 +1,3 @@
+On GCC-compatible compilers, check at configure time that ``-std=c11``
+works. This way you don't hit an "invalid option" error at make time on old
+compilers.
