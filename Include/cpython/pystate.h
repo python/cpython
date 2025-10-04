@@ -286,41 +286,42 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
 
 typedef uintptr_t PyInterpreterLock;
 
-PyAPI_FUNC(int) PyInterpreterLock_FromCurrent(PyInterpreterLock *ref);
-PyAPI_FUNC(PyInterpreterLock) PyInterpreterLock_Copy(PyInterpreterLock ref);
-PyAPI_FUNC(int) PyUnstable_InterpreterView_FromDefault(PyInterpreterLock *ref);
-PyAPI_FUNC(void) PyInterpreterLock_Release(PyInterpreterLock ref);
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterLock_GetInterpreter(PyInterpreterLock ref);
+PyAPI_FUNC(PyInterpreterLock) PyInterpreterLock_FromCurrent(void);
+PyAPI_FUNC(PyInterpreterLock) PyInterpreterLock_Copy(PyInterpreterLock lock);
+PyAPI_FUNC(void) PyInterpreterLock_Release(PyInterpreterLock lock);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterLock_GetInterpreter(PyInterpreterLock lock);
+PyAPI_FUNC(PyInterpreterLock) PyInterpreterLock_FromView(PyInterpreterView view);
 
-#define PyInterpreterLock_Release(ref) do {    \
-    PyInterpreterLock_Release(ref);            \
-    ref = 0;                                \
+#define PyInterpreterLock_Release(lock) do {    \
+    PyInterpreterLock_Release(lock);            \
+    ref = 0;                                    \
 } while (0)
 
-/* Weak interpreter references */
+/* Interpreter views */
 
 typedef struct _PyInterpreterView {
     int64_t id;
     Py_ssize_t refcount;
 } _PyInterpreterView;
 
-typedef _PyInterpreterView *PyInterpreterView;
+typedef uintptr_t PyInterpreterView;
 
-PyAPI_FUNC(int) PyInterpreterView_FromCurrent(PyInterpreterView *ptr);
-PyAPI_FUNC(PyInterpreterView) PyInterpreterView_Copy(PyInterpreterView wref);
-PyAPI_FUNC(int) PyInterpreterLock_FromView(PyInterpreterView wref, PyInterpreterLock *strong_ptr);
-PyAPI_FUNC(void) PyInterpreterView_Close(PyInterpreterView wref);
+PyAPI_FUNC(PyInterpreterView) PyInterpreterView_FromCurrent(void);
+PyAPI_FUNC(PyInterpreterView) PyInterpreterView_Copy(PyInterpreterView view);
+PyAPI_FUNC(void) PyInterpreterView_Close(PyInterpreterView view);
+PyAPI_FUNC(PyInterpreterView) PyUnstable_InterpreterView_FromDefault(void);
 
-#define PyInterpreterView_Close(ref) do {    \
-    PyInterpreterView_Close(ref);            \
-    ref = 0;                                    \
+
+#define PyInterpreterView_Close(view) do {    \
+    PyInterpreterView_Close(view);            \
+    ref = 0;                                  \
 } while (0)
 
 
-/* Thread references */
+/* Thread views */
 
 typedef uintptr_t PyThreadView;
 
-PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterLock interp_ref, PyThreadView *thread_ref);
+PyAPI_FUNC(PyThreadView) PyThreadState_Ensure(PyInterpreterLock lock);
 
 PyAPI_FUNC(void) PyThreadState_Release(PyThreadView thread_ref);

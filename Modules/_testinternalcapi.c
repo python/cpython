@@ -2424,18 +2424,18 @@ static PyObject *
 test_interp_refcount(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    assert(_PyInterpreterState_Refcount(interp) == 0);
+    assert(_PyInterpreterState_LockCountdown(interp) == 0);
     PyInterpreterLock refs[NUM_REFS];
     for (int i = 0; i < NUM_REFS; ++i) {
         int res = PyInterpreterLock_FromCurrent(&refs[i]);
         (void)res;
         assert(res == 0);
-        assert(_PyInterpreterState_Refcount(interp) == i + 1);
+        assert(_PyInterpreterState_LockCountdown(interp) == i + 1);
     }
 
     for (int i = 0; i < NUM_REFS; ++i) {
         PyInterpreterLock_Release(refs[i]);
-        assert(_PyInterpreterState_Refcount(interp) == (NUM_REFS - i - 1));
+        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_REFS - i - 1));
     }
 
     Py_RETURN_NONE;
@@ -2449,7 +2449,7 @@ test_interp_weakref_incref(PyObject *self, PyObject *unused)
     if (PyInterpreterView_FromCurrent(&wref) < 0) {
         return NULL;
     }
-    assert(_PyInterpreterState_Refcount(interp) == 0);
+    assert(_PyInterpreterState_LockCountdown(interp) == 0);
 
     PyInterpreterLock refs[NUM_REFS];
 
@@ -2458,12 +2458,12 @@ test_interp_weakref_incref(PyObject *self, PyObject *unused)
         (void)res;
         assert(res == 0);
         assert(PyInterpreterLock_GetInterpreter(refs[i]) == interp);
-        assert(_PyInterpreterState_Refcount(interp) == i + 1);
+        assert(_PyInterpreterState_LockCountdown(interp) == i + 1);
     }
 
     for (int i = 0; i < NUM_REFS; ++i) {
         PyInterpreterLock_Release(refs[i]);
-        assert(_PyInterpreterState_Refcount(interp) == (NUM_REFS - i - 1));
+        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_REFS - i - 1));
     }
 
     PyInterpreterView_Close(wref);
