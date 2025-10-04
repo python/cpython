@@ -584,6 +584,14 @@ class RangeTest(unittest.TestCase):
             check(0, -1)
             check(-1, -3, -1)
 
+        for test in (range(5), range(0), range(1, 10, 2), range(10, 0, -1)):
+            with self.subTest(test=test):
+                self.assertIs(test, test[:])
+
+                if len(test) > 1:
+                    self.assertIsNot(test, test[1:])
+                    self.assertIsNot(test, test[:-1])
+
     def test_contains(self):
         r = range(10)
         self.assertIn(0, r)

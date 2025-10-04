@@ -409,6 +409,10 @@ compute_slice(rangeobject *r, PyObject *_slice)
     PyObject *substart = NULL, *substop = NULL, *substep = NULL;
     int error;
 
+    if (slice->start == Py_None && slice->stop == Py_None && slice->step == Py_None) {
+        return Py_NewRef(r);
+    }
+
     error = _PySlice_GetLongIndices(slice, r->length, &start, &stop, &step);
     if (error == -1)
         return NULL;
