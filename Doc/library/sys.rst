@@ -694,15 +694,15 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    A :term:`named tuple` holding information about the float type. It
    contains low level information about the precision and internal
    representation.  The values correspond to the various floating-point
-   constants defined in the standard header file :file:`float.h` for the 'C'
-   programming language; see section 5.2.4.2.2 of the 1999 ISO/IEC C standard
+   constants defined by C implementation and in the standard header file :file:`float.h` for the 'C'
+   programming language; see Annex F and section 5.2.4.2.2 of the 1999 ISO/IEC C standard
    [C99]_, 'Characteristics of floating types', for details.
 
    .. list-table:: Attributes of the :data:`!float_info` :term:`named tuple`
       :header-rows: 1
 
       * - attribute
-        - float.h macro
+        - C macro
         - explanation
 
       * - .. attribute:: float_info.epsilon
@@ -770,6 +770,15 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
           All other values for :c:macro:`!FLT_ROUNDS` characterize
           implementation-defined rounding behavior.
+
+      * - .. attribute:: float_info.stdc_iec_559
+        - :c:macro:`!__STDC_IEC_559__`
+        - A boolean, indicating support the IEC 60559 floating-point
+          standard (the Annex F of C99).  If enabled, the
+          :class:`float` type characteristics matches the IEC
+          60559 double format and exceptional cases for
+          the :mod:`math` functions follow to the section F.10
+          of the C99 standard.
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
    ``s`` is any string representing a decimal number with at most
