@@ -1,0 +1,1 @@
+Make concurrent iterations over :class:`itertools.chain` safe under :term:`free threading`.

@@ -1,0 +1,1 @@
+Optimize _CALL_LEN in the JIT when the length is known. Patch by Tomas Roun

@@ -32,7 +32,6 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
 from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
 import _osx_support
-import _sysconfig
 
 
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
@@ -352,6 +351,13 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
                                            '-dynamic -DNDEBUG -g -O3' % arch)
 
             self.assertEqual(get_platform(), 'macosx-10.4-%s' % arch)
+
+        for macver in range(11, 16):
+            _osx_support._remove_original_values(get_config_vars())
+            get_config_vars()['CFLAGS'] = ('-fno-strict-overflow -Wsign-compare -Wunreachable-code'
+                                        '-arch arm64 -fno-common -dynamic -DNDEBUG -g -O3 -Wall')
+            get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = f"{macver}.0"
+            self.assertEqual(get_platform(), 'macosx-%d.0-arm64' % macver)
 
         # linux debian sarge
         os.name = 'posix'
@@ -709,11 +715,11 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase'}
         # Keys dependent on Python being run from the prefix targetted when building (different on relocatable installs)
         if sysconfig._installation_is_relocated():
-            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase'}
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase', 'srcdir'}
 
         for key in ignore_keys:
-            json_config_vars.pop(key)
-            system_config_vars.pop(key)
+            json_config_vars.pop(key, None)
+            system_config_vars.pop(key, None)
 
         self.assertEqual(system_config_vars, json_config_vars)
 

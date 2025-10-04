@@ -69,8 +69,8 @@ support.
 
    Yield :term:`finder` objects for the given module name.
 
-   If fullname contains a ``'.'``, the finders will be for the package
-   containing fullname, otherwise they will be all registered top level
+   If *fullname* contains a ``'.'``, the finders will be for the package
+   containing *fullname*, otherwise they will be all registered top level
    finders (i.e. those on both :data:`sys.meta_path` and :data:`sys.path_hooks`).
 
    If the named module is in a package, that package is imported as a side

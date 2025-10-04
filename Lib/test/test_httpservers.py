@@ -21,6 +21,7 @@ import email.utils
 import html
 import http, http.client
 import urllib.parse
+import urllib.request
 import tempfile
 import time
 import datetime
@@ -33,6 +34,8 @@ from test import support
 from test.support import (
     is_apple, import_helper, os_helper, threading_helper
 )
+from test.support.script_helper import kill_python, spawn_python
+from test.support.socket_helper import find_unused_port
 
 try:
     import ssl
@@ -1450,6 +1453,73 @@ class CommandLineTestCase(unittest.TestCase):
             self.invoke_httpd('--unknown-flag', stdout=stdout, stderr=stderr)
         self.assertEqual(stdout.getvalue(), '')
         self.assertIn('error', stderr.getvalue())
+
+
+class CommandLineRunTimeTestCase(unittest.TestCase):
+    served_data = os.urandom(32)
+    served_filename = 'served_filename'
+    tls_cert = certdata_file('ssl_cert.pem')
+    tls_key = certdata_file('ssl_key.pem')
+    tls_password = b'somepass'
+    tls_password_file = 'ssl_key_password'
+
+    def setUp(self):
+        super().setUp()
+        server_dir_context = os_helper.temp_cwd()
+        server_dir = self.enterContext(server_dir_context)
+        with open(self.served_filename, 'wb') as f:
+            f.write(self.served_data)
+        with open(self.tls_password_file, 'wb') as f:
+            f.write(self.tls_password)
+
+    def fetch_file(self, path, context=None):
+        req = urllib.request.Request(path, method='GET')
+        with urllib.request.urlopen(req, context=context) as res:
+            return res.read()
+
+    def parse_cli_output(self, output):
+        match = re.search(r'Serving (HTTP|HTTPS) on (.+) port (\d+)', output)
+        if match is None:
+            return None, None, None
+        return match.group(1).lower(), match.group(2), int(match.group(3))
+
+    def wait_for_server(self, proc, protocol, bind, port):
+        """Check that the server has been successfully started."""
+        line = proc.stdout.readline().strip()
+        if support.verbose:
+            print()
+            print('python -m http.server: ', line)
+        return self.parse_cli_output(line) == (protocol, bind, port)
+
+    def test_http_client(self):
+        bind, port = '127.0.0.1', find_unused_port()
+        proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
+                            bufsize=1, text=True)
+        self.addCleanup(kill_python, proc)
+        self.addCleanup(proc.terminate)
+        self.assertTrue(self.wait_for_server(proc, 'http', bind, port))
+        res = self.fetch_file(f'http://{bind}:{port}/{self.served_filename}')
+        self.assertEqual(res, self.served_data)
+
+    @unittest.skipIf(ssl is None, "requires ssl")
+    def test_https_client(self):
+        context = ssl.create_default_context()
+        # allow self-signed certificates
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+
+        bind, port = '127.0.0.1', find_unused_port()
+        proc = spawn_python('-u', '-m', 'http.server', str(port), '-b', bind,
+                            '--tls-cert', self.tls_cert,
+                            '--tls-key', self.tls_key,
+                            '--tls-password-file', self.tls_password_file,
+                            bufsize=1, text=True)
+        self.addCleanup(kill_python, proc)
+        self.addCleanup(proc.terminate)
+        self.assertTrue(self.wait_for_server(proc, 'https', bind, port))
+        url = f'https://{bind}:{port}/{self.served_filename}'
+        res = self.fetch_file(url, context=context)
+        self.assertEqual(res, self.served_data)
 
 
 def setUpModule():

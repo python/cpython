@@ -318,6 +318,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             self.assertRaises(RecursionError, isinstance, 1, X())
 
     @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_infinite_recursion_via_bases_tuple(self):
         """Regression test for bpo-30570."""
         class Failure(object):
@@ -328,6 +329,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
                 issubclass(Failure(), int)
 
     @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_infinite_cycle_in_bases(self):
         """Regression test for bpo-30570."""
         class X:

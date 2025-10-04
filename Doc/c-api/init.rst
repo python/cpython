@@ -41,7 +41,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyObject_SetArenaAllocator`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
-  * :c:func:`PySys_ResetWarnOptions`
   * the configuration functions covered in :ref:`init-config`
 
 * Informative functions:
@@ -492,17 +491,8 @@ Initializing and finalizing the interpreter
    strings other than those passed in (however, the contents of the strings
    pointed to by the argument list are not modified).
 
-   The return value will be ``0`` if the interpreter exits normally (i.e.,
-   without an exception), ``1`` if the interpreter exits due to an exception,
-   or ``2`` if the argument list does not represent a valid Python command
-   line.
-
-   Note that if an otherwise unhandled :exc:`SystemExit` is raised, this
-   function will not return ``1``, but exit the process, as long as
-   ``Py_InspectFlag`` is not set. If ``Py_InspectFlag`` is set, execution will
-   drop into the interactive Python prompt, at which point a second otherwise
-   unhandled :exc:`SystemExit` will still exit the process, while any other
-   means of exiting will set the return value as described above.
+   The return value is ``2`` if the argument list does not represent a valid
+   Python command line, and otherwise the same as :c:func:`Py_RunMain`.
 
    In terms of the CPython runtime configuration APIs documented in the
    :ref:`runtime configuration <init-config>` section (and without accounting
@@ -539,23 +529,18 @@ Initializing and finalizing the interpreter
 
    If :c:member:`PyConfig.inspect` is not set (the default), the return value
    will be ``0`` if the interpreter exits normally (that is, without raising
-   an exception), or ``1`` if the interpreter exits due to an exception. If an
-   otherwise unhandled :exc:`SystemExit` is raised, the function will immediately
-   exit the process instead of returning ``1``.
+   an exception), the exit status of an unhandled :exc:`SystemExit`, or ``1``
+   for any other unhandled exception.
 
    If :c:member:`PyConfig.inspect` is set (such as when the :option:`-i` option
    is used), rather than returning when the interpreter exits, execution will
    instead resume in an interactive Python prompt (REPL) using the ``__main__``
    module's global namespace. If the interpreter exited with an exception, it
    is immediately raised in the REPL session. The function return value is
-   then determined by the way the *REPL session* terminates: returning ``0``
-   if the session terminates without raising an unhandled exception, exiting
-   immediately for an unhandled :exc:`SystemExit`, and returning ``1`` for
-   any other unhandled exception.
+   then determined by the way the *REPL session* terminates: ``0``, ``1``, or
+   the status of a :exc:`SystemExit`, as specified above.
 
-   This function always finalizes the Python interpreter regardless of whether
-   it returns a value or immediately exits the process due to an unhandled
-   :exc:`SystemExit` exception.
+   This function always finalizes the Python interpreter before it returns.
 
    See :ref:`Python Configuration <init-python-config>` for an example of a
    customized Python that always runs in isolated mode using
@@ -1034,6 +1019,12 @@ code, or when embedding the Python interpreter:
    interpreter lock is also shared by all threads, regardless of to which
    interpreter they belong.
 
+   .. versionchanged:: 3.12
+
+      :pep:`684` introduced the possibility
+      of a :ref:`per-interpreter GIL <per-interpreter-gil>`.
+      See :c:func:`Py_NewInterpreterFromConfig`.
+
 
 .. c:type:: PyThreadState
 
@@ -1264,7 +1255,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
    Reset all information in an interpreter state object.  There must be
-   an :term:`attached thread state` for the the interpreter.
+   an :term:`attached thread state` for the interpreter.
 
    .. audit-event:: cpython.PyInterpreterState_Clear "" c.PyInterpreterState_Clear
 
@@ -1390,6 +1381,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    This is not a replacement for :c:func:`PyModule_GetState()`, which
    extensions should use to store interpreter-specific state information.
+
+   The returned dictionary is borrowed from the interpreter and is valid until
+   interpreter shutdown.
 
    .. versionadded:: 3.8
 
@@ -1725,6 +1719,8 @@ function. You can create and destroy them using the following functions:
    haven't been explicitly destroyed at that point.
 
 
+.. _per-interpreter-gil:
+
 A Per-Interpreter GIL
 ---------------------
 
@@ -1736,7 +1732,7 @@ being blocked by other interpreters or blocking any others.  Thus a
 single Python process can truly take advantage of multiple CPU cores
 when running Python code.  The isolation also encourages a different
 approach to concurrency than that of just using threads.
-(See :pep:`554`.)
+(See :pep:`554` and :pep:`684`.)
 
 Using an isolated interpreter requires vigilance in preserving that
 isolation.  That especially means not sharing any objects or mutable
@@ -1840,6 +1836,10 @@ pointer and a void pointer argument.
       now scheduled to be called from the subinterpreter, rather than being
       called from the main interpreter. Each subinterpreter now has its own
       list of scheduled calls.
+
+   .. versionchanged:: 3.12
+      This function now always schedules *func* to be run in the main
+      interpreter.
 
 .. _profiling:
 
@@ -2017,6 +2017,11 @@ Reference tracing
    is set to :c:data:`PyRefTracer_DESTROY`). The **data** argument is the opaque pointer
    that was provided when :c:func:`PyRefTracer_SetTracer` was called.
 
+   If a new tracing function is registered replacing the current a call to the
+   trace function will be made with the object set to **NULL** and **event** set to
+   :c:data:`PyRefTracer_TRACKER_REMOVED`. This will happen just before the new
+   function is registered.
+
 .. versionadded:: 3.13
 
 .. c:var:: int PyRefTracer_CREATE
@@ -2028,6 +2033,13 @@ Reference tracing
 
    The value for the *event* parameter to :c:type:`PyRefTracer` functions when a Python
    object has been destroyed.
+
+.. c:var:: int PyRefTracer_TRACKER_REMOVED
+
+   The value for the *event* parameter to :c:type:`PyRefTracer` functions when the
+   current tracer is about to be replaced by a new one.
+
+   .. versionadded:: 3.14
 
 .. c:function:: int PyRefTracer_SetTracer(PyRefTracer tracer, void *data)
 
@@ -2043,6 +2055,10 @@ Reference tracing
    every time the tracer function is called.
 
    There must be an :term:`attached thread state` when calling this function.
+
+   If another tracer function was already registered, the old function will be
+   called with **event** set to :c:data:`PyRefTracer_TRACKER_REMOVED` just before
+   the new function is registered.
 
 .. versionadded:: 3.13
 
@@ -2291,6 +2307,18 @@ The C-API provides a basic mutual exclusion lock.
 
    .. versionadded:: 3.13
 
+.. c:function:: int PyMutex_IsLocked(PyMutex *m)
+
+   Returns non-zero if the mutex *m* is currently locked, zero otherwise.
+
+   .. note::
+
+      This function is intended for use in assertions and debugging only and
+      should not be used to make concurrency control decisions, as the lock
+      state may change immediately after the check.
+
+   .. versionadded:: 3.14
+
 .. _python-critical-section-api:
 
 Python Critical Section API
@@ -2301,12 +2329,26 @@ per-object locks for :term:`free-threaded <free threading>` CPython.  They are
 intended to replace reliance on the :term:`global interpreter lock`, and are
 no-ops in versions of Python with the global interpreter lock.
 
+Critical sections are intended to be used for custom types implemented
+in C-API extensions. They should generally not be used with built-in types like
+:class:`list` and :class:`dict` because their public C-APIs
+already use critical sections internally, with the notable
+exception of :c:func:`PyDict_Next`, which requires critical section
+to be acquired externally.
+
 Critical sections avoid deadlocks by implicitly suspending active critical
-sections and releasing the locks during calls to :c:func:`PyEval_SaveThread`.
-When :c:func:`PyEval_RestoreThread` is called, the most recent critical section
-is resumed, and its locks reacquired.  This means the critical section API
-provides weaker guarantees than traditional locks -- they are useful because
-their behavior is similar to the :term:`GIL`.
+sections, hence, they do not provide exclusive access such as provided by
+traditional locks like :c:type:`PyMutex`.  When a critical section is started,
+the per-object lock for the object is acquired. If the code executed inside the
+critical section calls C-API functions then it can suspend the critical section thereby
+releasing the per-object lock, so other threads can acquire the per-object lock
+for the same object.
+
+Variants that accept :c:type:`PyMutex` pointers rather than Python objects are also
+available. Use these variants to start a critical section in a situation where
+there is no :c:type:`PyObject` -- for example, when working with a C type that
+does not extend or wrap :c:type:`PyObject` but still needs to call into the C
+API in a manner that might lead to deadlocks.
 
 The functions and structs used by the macros are exposed for cases
 where C macros are not available. They should only be used as in the
@@ -2353,6 +2395,23 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    .. versionadded:: 3.13
 
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION_MUTEX(m)
+
+   Locks the mutex *m* and begins a critical section.
+
+   In the free-threaded build, this macro expands to::
+
+     {
+          PyCriticalSection _py_cs;
+          PyCriticalSection_BeginMutex(&_py_cs, m)
+
+   Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION`, there is no cast for
+   the argument of the macro - it must be a :c:type:`PyMutex` pointer.
+
+   On the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.14
+
 .. c:macro:: Py_END_CRITICAL_SECTION()
 
    Ends the critical section and releases the per-object lock.
@@ -2381,6 +2440,23 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
    In the default build, this macro expands to ``{``.
 
    .. versionadded:: 3.13
+
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION2_MUTEX(m1, m2)
+
+   Locks the mutexes *m1* and *m2* and begins a critical section.
+
+   In the free-threaded build, this macro expands to::
+
+     {
+          PyCriticalSection2 _py_cs2;
+          PyCriticalSection2_BeginMutex(&_py_cs2, m1, m2)
+
+   Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION2`, there is no cast for
+   the arguments of the macro - they must be :c:type:`PyMutex` pointers.
+
+   On the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.14
 
 .. c:macro:: Py_END_CRITICAL_SECTION2()
 

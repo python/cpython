@@ -45,15 +45,15 @@ provides backports of these new features to older versions of Python.
 
 .. seealso::
 
-   `"Typing cheat sheet" <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_
+   `Typing cheat sheet <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_
        A quick overview of type hints (hosted at the mypy docs)
 
-   "Type System Reference" section of `the mypy docs <https://mypy.readthedocs.io/en/stable/index.html>`_
+   Type System Reference section of `the mypy docs <https://mypy.readthedocs.io/en/stable/index.html>`_
       The Python typing system is standardised via PEPs, so this reference
       should broadly apply to most Python type checkers. (Some parts may still
       be specific to mypy.)
 
-   `"Static Typing with Python" <https://typing.python.org/en/latest/>`_
+   `Static Typing with Python <https://typing.python.org/en/latest/>`_
       Type-checker-agnostic documentation written by the community detailing
       type system features, useful typing related tools and typing best
       practices.
@@ -64,7 +64,7 @@ Specification for the Python Type System
 ========================================
 
 The canonical, up-to-date specification of the Python type system can be
-found at `"Specification for the Python type system" <https://typing.python.org/en/latest/spec/index.html>`_.
+found at `Specification for the Python type system <https://typing.python.org/en/latest/spec/index.html>`_.
 
 .. _type-aliases:
 
@@ -230,9 +230,11 @@ For example:
 
    callback: Callable[[str], Awaitable[None]] = on_update
 
+.. index:: single: ...; ellipsis literal
+
 The subscription syntax must always be used with exactly two values: the
 argument list and the return type.  The argument list must be a list of types,
-a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis. The return type must
+a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis (``...``). The return type must
 be a single type.
 
 If a literal ellipsis ``...`` is given as the argument list, it indicates that
@@ -375,8 +377,11 @@ accepts *any number* of type arguments::
    # but ``z`` has been assigned to a tuple of length 3
    z: tuple[int] = (1, 2, 3)
 
+.. index:: single: ...; ellipsis literal
+
 To denote a tuple which could be of *any* length, and in which all elements are
-of the same type ``T``, use ``tuple[T, ...]``. To denote an empty tuple, use
+of the same type ``T``, use the literal ellipsis ``...``: ``tuple[T, ...]``.
+To denote an empty tuple, use
 ``tuple[()]``. Using plain ``tuple`` as an annotation is equivalent to using
 ``tuple[Any, ...]``::
 
@@ -1161,6 +1166,8 @@ These can be used as types in annotations. They all support subscription using
 .. data:: Concatenate
 
    Special form for annotating higher-order functions.
+
+   .. index:: single: ...; ellipsis literal
 
    ``Concatenate`` can be used in conjunction with :ref:`Callable <annotating-callables>` and
    :class:`ParamSpec` to annotate a higher-order callable which adds, removes,
@@ -2428,19 +2435,6 @@ types.
       Using :func:`super` (and the ``__class__`` :term:`closure variable`) in methods of ``NamedTuple`` subclasses
       is unsupported and causes a :class:`TypeError`.
 
-   .. deprecated-removed:: 3.13 3.15
-      The undocumented keyword argument syntax for creating NamedTuple classes
-      (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed
-      in 3.15. Use the class-based syntax or the functional syntax instead.
-
-   .. deprecated-removed:: 3.13 3.15
-      When using the functional syntax to create a NamedTuple class, failing to
-      pass a value to the 'fields' parameter (``NT = NamedTuple("NT")``) is
-      deprecated. Passing ``None`` to the 'fields' parameter
-      (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
-      disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
-      use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
-
 .. class:: NewType(name, tp)
 
    Helper class to create low-overhead :ref:`distinct types <distinct>`.
@@ -2573,7 +2567,7 @@ types.
       at runtime as soon as the class has been created. Monkey-patching
       attributes onto a runtime-checkable protocol will still work, but will
       have no impact on :func:`isinstance` checks comparing objects to the
-      protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
+      protocol. See :ref:`What's new in Python 3.12 <whatsnew-typing-py312>`
       for more details.
 
 
@@ -2816,13 +2810,6 @@ types.
    .. versionchanged:: 3.13
       Support for the :data:`ReadOnly` qualifier was added.
 
-   .. deprecated-removed:: 3.13 3.15
-      When using the functional syntax to create a TypedDict class, failing to
-      pass a value to the 'fields' parameter (``TD = TypedDict("TD")``) is
-      deprecated. Passing ``None`` to the 'fields' parameter
-      (``TD = TypedDict("TD", None)``) is also deprecated. Both will be
-      disallowed in Python 3.15. To create a TypedDict class with 0 fields,
-      use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
 
 Protocols
 ---------
@@ -3357,8 +3344,13 @@ Introspection helpers
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
 
-   See also :func:`inspect.get_annotations`, a lower-level function that
+   See also :func:`annotationlib.get_annotations`, a lower-level function that
    returns annotations more directly.
+
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
 
    .. note::
 
@@ -3500,20 +3492,16 @@ Introspection helpers
    Evaluate an :class:`annotationlib.ForwardRef` as a :term:`type hint`.
 
    This is similar to calling :meth:`annotationlib.ForwardRef.evaluate`,
-   but unlike that method, :func:`!evaluate_forward_ref` also:
-
-   * Recursively evaluates forward references nested within the type hint.
-   * Raises :exc:`TypeError` when it encounters certain objects that are
-     not valid type hints.
-   * Replaces type hints that evaluate to :const:`!None` with
-     :class:`types.NoneType`.
-   * Supports the :attr:`~annotationlib.Format.FORWARDREF` and
-     :attr:`~annotationlib.Format.STRING` formats.
+   but unlike that method, :func:`!evaluate_forward_ref` also
+   recursively evaluates forward references nested within the type hint.
 
    See the documentation for :meth:`annotationlib.ForwardRef.evaluate` for
-   the meaning of the *owner*, *globals*, *locals*, and *type_params* parameters.
-   *format* specifies the format of the annotation and is a member of
-   the :class:`annotationlib.Format` enum.
+   the meaning of the *owner*, *globals*, *locals*, *type_params*, and *format* parameters.
+
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
 
    .. versionadded:: 3.14
 
@@ -3539,28 +3527,32 @@ Constant
 .. data:: TYPE_CHECKING
 
    A special constant that is assumed to be ``True`` by 3rd party static
-   type checkers. It is ``False`` at runtime.
+   type checkers. It's ``False`` at runtime.
+
+   A module which is expensive to import, and which only contain types
+   used for typing annotations, can be safely imported inside an
+   ``if TYPE_CHECKING:`` block.  This prevents the module from actually
+   being imported at runtime; annotations aren't eagerly evaluated
+   (see :pep:`649`) so using undefined symbols in annotations is
+   harmless--as long as you don't later examine them.
+   Your static type analysis tool will set ``TYPE_CHECKING`` to
+   ``True`` during static type analysis, which means the module will
+   be imported and the types will be checked properly during such analysis.
 
    Usage::
 
       if TYPE_CHECKING:
           import expensive_mod
 
-      def fun(arg: 'expensive_mod.SomeType') -> None:
+      def fun(arg: expensive_mod.SomeType) -> None:
           local_var: expensive_mod.AnotherType = other_fun()
 
-   The first type annotation must be enclosed in quotes, making it a
-   "forward reference", to hide the ``expensive_mod`` reference from the
-   interpreter runtime.  Type annotations for local variables are not
-   evaluated, so the second annotation does not need to be enclosed in quotes.
-
-   .. note::
-
-      If ``from __future__ import annotations`` is used,
-      annotations are not evaluated at function definition time.
-      Instead, they are stored as strings in ``__annotations__``.
-      This makes it unnecessary to use quotes around the annotation
-      (see :pep:`563`).
+   If you occasionally need to examine type annotations at runtime
+   which may contain undefined symbols, use
+   :meth:`annotationlib.get_annotations` with a ``format`` parameter
+   of :attr:`annotationlib.Format.STRING` or
+   :attr:`annotationlib.Format.FORWARDREF` to safely retrieve the
+   annotations without raising :exc:`NameError`.
 
    .. versionadded:: 3.5.2
 
@@ -3775,6 +3767,28 @@ Aliases to container ABCs in :mod:`collections.abc`
    .. deprecated:: 3.9
       :class:`collections.abc.Set` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: ByteString(Sequence[int])
+
+   Deprecated alias to :class:`collections.abc.ByteString`.
+
+   Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+   implements the :ref:`buffer protocol <bufferobjects>` at runtime. For use in
+   type annotations, either use :class:`~collections.abc.Buffer` or a union
+   that explicitly specifies the types your code supports (e.g.,
+   ``bytes | bytearray | memoryview``).
+
+   :class:`!ByteString` was originally intended to be an abstract class that
+   would serve as a supertype of both :class:`bytes` and :class:`bytearray`.
+   However, since the ABC never had any methods, knowing that an object was an
+   instance of :class:`!ByteString` never actually told you anything useful
+   about the object. Other common buffer types such as :class:`memoryview` were
+   also never understood as subtypes of :class:`!ByteString` (either at runtime
+   or by static type checkers).
+
+   See :pep:`PEP 688 <688#current-options>` for more details.
+
+   .. deprecated-removed:: 3.9 3.17
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
@@ -4069,6 +4083,10 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.9
      - Undecided (see :ref:`deprecated-aliases` for more information)
      - :pep:`585`
+   * - :class:`typing.ByteString`
+     - 3.9
+     - 3.17
+     - :gh:`91896`
    * - :data:`typing.Text`
      - 3.11
      - Undecided

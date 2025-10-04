@@ -5796,7 +5796,7 @@ ast_repr_list(PyObject *list, int depth)
 
     for (Py_ssize_t i = 0; i < Py_MIN(length, 2); i++) {
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
@@ -5820,7 +5820,7 @@ ast_repr_list(PyObject *list, int depth)
         }
 
         if (i == 0 && length > 2) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ...", 5) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ...", 5) < 0) {
                 goto error;
             }
         }
@@ -5924,7 +5924,7 @@ ast_repr_max_depth(AST_object *self, int depth)
         }
 
         if (i > 0) {
-            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                 Py_DECREF(name);
                 Py_DECREF(value_repr);
                 goto error;
