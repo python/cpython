@@ -10,6 +10,7 @@
 
 .. seealso::
 
+   * :ref:`T-strings tutorial <tut-t-strings>`
    * :ref:`Format strings <f-strings>`
    * :ref:`Template string literal (t-string) syntax <t-strings>`
    * :pep:`750`
