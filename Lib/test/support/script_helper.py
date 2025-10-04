@@ -3,11 +3,15 @@
 
 import collections
 import importlib
+import site
+import stat
 import sys
 import os
 import os.path
 import subprocess
 import py_compile
+import unittest
+import unittest.mock as mock
 
 from importlib.util import source_from_cache
 from test import support
@@ -322,3 +326,62 @@ def run_test_script(script):
             raise AssertionError(f"{name} failed")
     else:
         assert_python_ok("-u", script, "-v")
+
+
+_site_gethistoryfile = site.gethistoryfile
+def _gethistoryfile():
+    """Patch site.gethistoryfile() to ignore -I/-E for PYTHON_HISTORY.
+
+    Some tests (e.g, test_repl.test_no_memory) require -I/-E,
+    but those options forbid using a custom PYTHON_HISTORY.
+    """
+    history = os.environ.get("PYTHON_HISTORY")
+    return history or os.path.join(os.path.expanduser('~'), '.python_history')
+
+
+def patch_gethistoryfile(sitemodule=site):
+    return mock.patch.object(sitemodule, "gethistoryfile", _gethistoryfile)
+
+
+def _file_signature(file):
+    st = os.stat(file)
+    return (stat.S_IFMT(st.st_mode), st.st_size)
+
+
+class EnsureSafeUserHistory(unittest.TestCase):
+
+    @classmethod
+    def __history_setup_check(cls):
+        # Ensure that the system-wide history file is not altered by tests.
+        history_file = os.path.join(os.path.expanduser('~'), '.python_history')
+        cls.__history_file = history_file
+        if os.path.exists(history_file):
+            cls.__history_stat = _file_signature(history_file)
+        else:
+            cls.__history_stat = None
+
+    def __history_teardown_check(self):
+        if self.__history_stat is None:
+            self.assertFalse(
+                os.path.exists(self.__history_file),
+                f"PYTHON_HISTORY file ({self.__history_file!r}) was created"
+            )
+        else:
+            self.assertTrue(
+                os.path.exists(self.__history_file),
+                f"PYTHON_HISTORY file ({self.__history_file!r}) was deleted"
+            )
+            self.assertEqual(
+                self.__history_stat,
+                _file_signature(self.__history_file),
+                f"PYTHON_HISTORY file ({self.__history_file!r}) was altered"
+            )
+
+    @classmethod
+    def setUpClass(cls):
+        cls.__history_setup_check()
+        super().setUpClass()
+
+    def tearDown(self):
+        super().tearDown()
+        self.__history_teardown_check()

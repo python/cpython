@@ -16,6 +16,7 @@ from test.support import force_not_colorized, make_clean_env, Py_DEBUG
 from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
+from test.support.script_helper import EnsureSafeUserHistory
 
 from .support import (
     FakeConsole,
@@ -45,7 +46,7 @@ except ImportError:
     pty = None
 
 
-class ReplTestCase(TestCase):
+class ReplTestCase(EnsureSafeUserHistory, TestCase):
     def setUp(self):
         if not has_subprocess_support:
             raise SkipTest("test module requires subprocess")
@@ -68,7 +69,7 @@ class ReplTestCase(TestCase):
         try:
             return self._run_repl(
                 repl_input,
-                env=env,
+                env=os.environ.copy() if env is None else env,
                 cmdline_args=cmdline_args,
                 cwd=cwd,
                 skip=skip,
@@ -83,7 +84,7 @@ class ReplTestCase(TestCase):
         self,
         repl_input: str | list[str],
         *,
-        env: dict | None,
+        env: dict[str, str],
         cmdline_args: list[str] | None,
         cwd: str,
         skip: bool,
@@ -93,11 +94,15 @@ class ReplTestCase(TestCase):
         assert pty
         master_fd, slave_fd = pty.openpty()
         cmd = [sys.executable, "-i", "-u"]
-        if env is None:
-            cmd.append("-I")
-        elif "PYTHON_HISTORY" not in env:
+        if "PYTHON_HISTORY" not in env:
             env["PYTHON_HISTORY"] = os.path.join(cwd, ".regrtest_history")
         if cmdline_args is not None:
+            if "PYTHON_HISTORY" in env:
+                for bad_option in ('-I', '-E'):
+                    self.assertNotIn(
+                        bad_option, cmdline_args,
+                        f"PYTHON_HISTORY will be ignored by {bad_option}"
+                    )
             cmd.extend(cmdline_args)
 
         try:
@@ -118,7 +123,7 @@ class ReplTestCase(TestCase):
             cwd=cwd,
             text=True,
             close_fds=True,
-            env=env if env else os.environ,
+            env=env,
         )
         os.close(slave_fd)
         if isinstance(repl_input, list):
