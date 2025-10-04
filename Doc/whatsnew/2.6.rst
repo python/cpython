@@ -307,7 +307,7 @@ The :mod:`threading` module's locks and condition variables  also support the
 The lock is acquired before the block is executed and always released once  the
 block is complete.
 
-The :func:`decimal.localcontext` function in the :mod:`decimal` module makes
+The :func:`~decimal.localcontext` function in the :mod:`decimal` module makes
 it easy to save and restore the current decimal context, which encapsulates
 the desired precision and rounding characteristics for computations::
 
@@ -378,7 +378,7 @@ be to let the user write code like this::
 
 The transaction should be committed if the code in the block runs flawlessly or
 rolled back if there's an exception. Here's the basic interface for
-``DatabaseConnection`` that I'll assume::
+:class:`!DatabaseConnection` that I'll assume::
 
    class DatabaseConnection:
        # Database interface
@@ -627,7 +627,8 @@ Two other classes, :class:`~multiprocessing.pool.Pool` and
 processes, and requests can then be distributed to the workers by calling
 :meth:`~multiprocessing.pool.Pool.apply` or
 :meth:`~multiprocessing.pool.Pool.apply_async` to add a single request, and
-:meth:`map` or :meth:`~multiprocessing.pool.Pool.map_async` to add a number of
+:meth:`~multiprocessing.pool.Pool.map` or
+:meth:`~multiprocessing.pool.Pool.map_async` to add a number of
 requests.  The following code uses a :class:`~multiprocessing.pool.Pool` to
 spread requests across 5 worker processes and retrieve a list of results::
 
@@ -831,7 +832,7 @@ documentation for a :ref:`complete list <formatstrings>`; here's a sample:
       format, followed by a percent sign.
 ===== ========================================================================
 
-Classes and types can define a ``__format__`` method to control how they're
+Classes and types can define a :meth:`~object.__format__` method to control how they're
 formatted.  It receives a single argument, the format specifier::
 
    def __format__(self, format_spec):
@@ -841,7 +842,7 @@ formatted.  It receives a single argument, the format specifier::
            return str(self)
 
 There's also a :func:`format` builtin that will format a single
-value.  It calls the type's ``__format__`` method with the
+value.  It calls the type's :meth:`~object.__format__` method with the
 provided specifier::
 
     >>> format(75.6564, '.2f')
@@ -1036,8 +1037,8 @@ PEP 3116: New I/O Library
 
 Python's built-in file objects support a number of methods, but
 file-like objects don't necessarily support all of them.  Objects that
-imitate files usually support :meth:`~io.TextIOBase.read` and
-:meth:`~io.TextIOBase.write`, but they may not support :meth:`readline`,
+imitate files usually support :meth:`!read` and
+:meth:`!write`, but they may not support :meth:`!readline`,
 for example.  Python 3.0 introduces a layered I/O library in the :mod:`io`
 module that separates buffering and text-handling features from the
 fundamental read and write operations.
@@ -1265,16 +1266,16 @@ metaclass in a class definition::
             ...
 
 
-In the ``Drawable`` ABC above, the ``draw_doubled`` method
+In the :class:`!Drawable` ABC above, the :meth:`!draw_doubled` method
 renders the object at twice its size and can be implemented in terms
-of other methods described in ``Drawable``.  Classes implementing
+of other methods described in :class:`!Drawable`.  Classes implementing
 this ABC therefore don't need to provide their own implementation
-of ``draw_doubled``, though they can do so.  An implementation
-of ``draw`` is necessary, though; the ABC can't provide
+of :meth:`!draw_doubled`, though they can do so.  An implementation
+of :meth:`!draw` is necessary, though; the ABC can't provide
 a useful generic implementation.
 
-You can apply the :func:`~abc.abstractmethod` decorator to methods such as
-``draw`` that must be implemented; Python will then raise an
+You can apply the :deco:`~abc.abstractmethod` decorator to methods such as
+:meth:`!draw` that must be implemented; Python will then raise an
 exception for classes that don't define the method.
 Note that the exception is only raised when you actually
 try to create an instance of a subclass lacking the method::
