@@ -1187,7 +1187,8 @@ with sub-interpreters:
    made on the main thread.  This is mainly a helper/diagnostic function.
 
    .. note::
-      This function does not account for :term:`thread states <thread state>` created
+      This function may return non-``NULL`` even when the :term:`thread state`
+      is detached.
       by something other than :c:func:`PyGILState_Ensure` (such as :c:func:`PyThreadState_New`).
       Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
       for most cases.
