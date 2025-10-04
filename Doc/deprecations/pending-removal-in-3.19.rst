@@ -1,6 +1,11 @@
 Pending removal in Python 3.19
 ------------------------------
 
+* :mod:`ast`:
+
+  * Creating instances of abstract AST nodes (such as :class:`ast.AST`
+    or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.19.
+
 * :mod:`ctypes`:
 
   * Implicitly switching to the MSVC-compatible struct layout by setting
