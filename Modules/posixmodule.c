@@ -9059,6 +9059,9 @@ os_forkpty_impl(PyObject *module)
     } else {
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
+        /* set O_CLOEXEC on master_fd */
+        if (_Py_set_inheritable(master_fd, 0, NULL) < 0)
+            goto error;
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
         if (warn_about_fork_with_threads("forkpty") < 0)
             return NULL;
@@ -9066,7 +9069,12 @@ os_forkpty_impl(PyObject *module)
     if (pid == -1) {
         return posix_error();
     }
+
     return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
+error:
+    if (master_fd != -1)
+        close(master_fd);
+    return NULL;
 }
 #endif /* HAVE_FORKPTY */
 

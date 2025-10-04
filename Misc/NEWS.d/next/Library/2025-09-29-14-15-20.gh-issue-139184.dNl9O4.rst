@@ -1,0 +1,1 @@
+Set O_CLOEXEC for master_fd when call os.forkpty
