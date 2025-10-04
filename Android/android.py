@@ -547,6 +547,17 @@ async def gradle_task(context):
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
 
+    if context.ci_mode:
+        context.args[0:0] = [
+            # See _add_ci_python_opts in libregrtest/main.py.
+            "-W", "error", "-bb", "-E",
+
+            # Randomization is disabled because order-dependent failures are
+            # much less likely to pass on a rerun in single-process mode.
+            "-m", "test",
+            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize"
+        ]
+
     if not any(arg in context.args for arg in ["-c", "-m"]):
         context.args[0:0] = ["-m", "test"]
 
@@ -733,18 +744,11 @@ def ci(context):
 
             # Prove the package is self-contained by using it to run the tests.
             shutil.unpack_archive(package_path, temp_dir)
-
-            launcher_args = ["--managed", "maxVersion", "-v"]
-            test_args = [
-                # See _add_ci_python_opts in libregrtest/main.py.
-                "-W", "error", "-bb", "-E",
-
-                # Randomization is disabled because order-dependent failures are
-                # much less likely to pass on a rerun in single-process mode.
-                "-m", "test", "--fast-ci", "--single-process", "--no-randomize"
+            launcher_args = [
+                "--managed", "maxVersion", "-v", f"--{context.ci_mode}-ci"
             ]
             run(
-                ["./android.py", "test", *launcher_args, "--", *test_args],
+                ["./android.py", "test", *launcher_args],
                 cwd=temp_dir
             )
             print("::endgroup::")
@@ -838,6 +842,16 @@ def parse_args():
         subcommand.add_argument(
             "-g", action="store_true", default=False, dest="debug",
             help="Include debug information in package")
+
+    # CI arguments
+    for subcommand in [test, ci]:
+        group = subcommand.add_mutually_exclusive_group(required=subcommand is ci)
+        group.add_argument(
+            "--fast-ci", action="store_const", dest="ci_mode", const="fast",
+            help="Add test arguments for GitHub Actions")
+        group.add_argument(
+            "--slow-ci", action="store_const", dest="ci_mode", const="slow",
+            help="Add test arguments for buildbots")
 
     return parser.parse_args()
 

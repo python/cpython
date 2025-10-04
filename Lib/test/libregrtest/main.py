@@ -648,10 +648,9 @@ class Regrtest:
     def _add_ci_python_opts(self, python_opts, keep_environ):
         # --fast-ci and --slow-ci add options to Python.
         #
-        # Some platforms cannot change options after startup, so if these
-        # options are changed, also update the copies in:
-        #  * cpython/Android/android.py
-        #  * buildmaster-config/master/custom/factories.py
+        # Some platforms run tests in embedded mode and cannot change options
+        # after startup, so if this function changes, consider also updating:
+        #  * gradle_task in Android/android.py
 
         # Unbuffered stdout and stderr. This isn't helpful on Android, because
         # it would cause lines to be split into multiple log messages.
@@ -678,7 +677,8 @@ class Regrtest:
 
         cmd_text = shlex.join(cmd)
         try:
-            # Android and iOS run tests in embedded mode.
+            # Android and iOS run tests in embedded mode. To update their
+            # Python options, see the comment in _add_ci_python_opts.
             if not cmd[0]:
                 raise ValueError("No Python executable is present")
 
