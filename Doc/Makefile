@@ -184,7 +184,7 @@ venv:
 	fi
 
 .PHONY: dist-no-html
-dist-no-html: dist-text dist-pdf dist-epub dist-texinfo
+dist-no-html: dist-text dist-epub dist-texinfo
 
 .PHONY: dist
 dist:
