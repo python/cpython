@@ -1,0 +1,2 @@
+Literals using the ``\N{name}`` escape syntax can now construct CJK
+ideographs and Hangul syllables using case-insensitive names.
