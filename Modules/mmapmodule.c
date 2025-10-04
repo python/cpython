@@ -930,13 +930,16 @@ mmap_tell_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-mmap_flush_method(PyObject *op, PyObject *args)
+mmap_flush_method(PyObject *op, PyObject *args, PyObject *kwargs)
 {
     Py_ssize_t offset = 0;
     Py_ssize_t size = -1;
+    int flags = MS_SYNC;
     mmap_object *self = mmap_object_CAST(op);
+    static char *kwlist[] = {"offset", "size", "flags", NULL};
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|nn:flush", &offset, &size)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|nn$i:flush", kwlist,
+                                     &offset, &size, &flags)) {
         return NULL;
     }
     if (size == -1) {
@@ -957,8 +960,7 @@ mmap_flush_method(PyObject *op, PyObject *args)
     }
     Py_RETURN_NONE;
 #elif defined(UNIX)
-    /* XXX flags for msync? */
-    if (-1 == msync(self->data + offset, size, MS_SYNC)) {
+    if (-1 == msync(self->data + offset, size, flags)) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -1203,7 +1205,7 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"close",           mmap_close_method,        METH_NOARGS},
     {"find",            mmap_find_method,         METH_VARARGS},
     {"rfind",           mmap_rfind_method,        METH_VARARGS},
-    {"flush",           mmap_flush_method,        METH_VARARGS},
+    {"flush",           _PyCFunction_CAST(mmap_flush_method), METH_VARARGS | METH_KEYWORDS},
 #ifdef HAVE_MADVISE
     {"madvise",         mmap_madvise_method,      METH_VARARGS},
 #endif
@@ -2046,6 +2048,16 @@ mmap_exec(PyObject *module)
     ADD_INT_MACRO(module, ACCESS_READ);
     ADD_INT_MACRO(module, ACCESS_WRITE);
     ADD_INT_MACRO(module, ACCESS_COPY);
+
+#ifdef MS_INVALIDATE
+    ADD_INT_MACRO(module, MS_INVALIDATE);
+#endif
+#ifdef MS_ASYNC
+    ADD_INT_MACRO(module, MS_ASYNC);
+#endif
+#ifdef MS_SYNC
+    ADD_INT_MACRO(module, MS_SYNC);
+#endif
 
 #ifdef HAVE_MADVISE
     // Conventional advice values
