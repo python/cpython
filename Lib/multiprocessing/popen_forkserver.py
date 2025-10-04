@@ -1,5 +1,6 @@
 import io
 import os
+import threading
 
 from .context import reduction, set_spawning_popen
 if not reduction.HAVE_SEND_HANDLE:
@@ -32,6 +33,7 @@ class Popen(popen_fork.Popen):
 
     def __init__(self, process_obj):
         self._fds = []
+        self._lock = threading.Lock()
         super().__init__(process_obj)
 
     def duplicate_for_child(self, fd):
@@ -64,11 +66,14 @@ class Popen(popen_fork.Popen):
             timeout = 0 if flag == os.WNOHANG else None
             if not wait([self.sentinel], timeout):
                 return None
-            try:
-                self.returncode = forkserver.read_signed(self.sentinel)
-            except (OSError, EOFError):
-                # This should not happen usually, but perhaps the forkserver
-                # process itself got killed
-                self.returncode = 255
+
+            with self._lock:
+                if self.returncode is None:
+                    try:
+                        self.returncode = forkserver.read_signed(self.sentinel)
+                    except (OSError, EOFError):
+                        # This should not happen usually, but perhaps the
+                        # forkserver process itself got killed
+                        self.returncode = 255
 
         return self.returncode
