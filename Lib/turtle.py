@@ -799,8 +799,9 @@ class TurtleScreenBase(object):
         (No subprocess) - for interactive use of turtle graphics.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.mainloop()
-
         """
         self.cv.tk.mainloop()
 
@@ -814,8 +815,9 @@ class TurtleScreenBase(object):
         If the dialog is canceled, return None.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.textinput("NIM", "Name of first player:")
-
         """
         return simpledialog.askstring(title, prompt, parent=self.cv)
 
@@ -834,8 +836,10 @@ class TurtleScreenBase(object):
         If the dialog is canceled,  return None.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen  = turtle.Screen()
         >>> screen.numinput("Poker", "Your stakes:", 1000, minval=10, maxval=10000)
-
+        1000.0
         """
         return simpledialog.askfloat(title, prompt, initialvalue=default,
                                      minvalue=minval, maxvalue=maxval,
@@ -1001,6 +1005,8 @@ class TurtleScreen(TurtleScreenBase):
         no backgroundimage, no eventbindings and tracing on.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen  = turtle.Screen()
         >>> screen.clear()
 
         Note: this method is not available as function.
@@ -1073,6 +1079,8 @@ class TurtleScreen(TurtleScreenBase):
         distorted. (see Screen.mode())
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.setworldcoordinates(-10,-0.5,50,1.5)
         >>> for _ in range(36):
         ...     left(10)
@@ -1119,6 +1127,8 @@ class TurtleScreen(TurtleScreenBase):
         --or: register_shape("tri", ((0,0), (10,10), (-10,10)))
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen  = turtle.Screen()
         >>> screen.register_shape("triangle", ((5,-3),(0,5),(-5,-3)))
 
         """
@@ -1178,6 +1188,8 @@ class TurtleScreen(TurtleScreenBase):
         r, g, b values of colortriples have to be in range 0..cmode.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen  = turtle.Screen()
         >>> screen.colormode()
         1.0
         >>> screen.colormode(255)
@@ -1196,6 +1208,8 @@ class TurtleScreen(TurtleScreenBase):
         No argument.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen  = turtle.Screen()
         >>> screen.reset()
         """
         for turtle in self._turtles:
@@ -1206,6 +1220,8 @@ class TurtleScreen(TurtleScreenBase):
         """Return the list of turtles on the screen.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.turtles()
         [<turtle.Turtle object at 0x00E11FB0>]
         """
@@ -1218,6 +1234,8 @@ class TurtleScreen(TurtleScreenBase):
         in the range 0..colormode or a 3-tuple of such numbers.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.bgcolor("orange")
         >>> screen.bgcolor()
         'orange'
@@ -1246,6 +1264,8 @@ class TurtleScreen(TurtleScreenBase):
         Second arguments sets delay value (see RawTurtle.delay())
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.tracer(8, 25)
         >>> dist = 2
         >>> for i in range(200):
@@ -1269,6 +1289,8 @@ class TurtleScreen(TurtleScreenBase):
         delay -- positive integer
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen  = turtle.Screen()
         >>> screen.delay(15)
         >>> screen.delay()
         15
@@ -1287,6 +1309,8 @@ class TurtleScreen(TurtleScreenBase):
 
         Example (for a TurtleScreen instance named screen
         and a Turtle instance named turtle):
+        >>> import turtle
+        >>> screen  = turtle.Screen()
         >>> with screen.no_animation():
         ...    turtle.circle(50)
         """
@@ -1321,6 +1345,8 @@ class TurtleScreen(TurtleScreenBase):
         """ Return the width of the turtle window.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.window_width()
         640
         """
@@ -1330,6 +1356,8 @@ class TurtleScreen(TurtleScreenBase):
         """ Return the height of the turtle window.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.window_height()
         480
         """
@@ -1341,6 +1369,8 @@ class TurtleScreen(TurtleScreenBase):
         No argument.
 
         Example (for a Screen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> cv = screen.getcanvas()
         >>> cv
         <turtle.ScrolledCanvas instance at 0x010742D8>
@@ -1353,6 +1383,8 @@ class TurtleScreen(TurtleScreenBase):
         No argument.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.getshapes()
         ['arrow', 'blank', 'circle', ... , 'turtle']
         """
@@ -1367,7 +1399,8 @@ class TurtleScreen(TurtleScreenBase):
         btn -- the number of the mouse-button, defaults to 1
 
         Example (for a TurtleScreen instance named screen)
-
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.onclick(goto)
         >>> # Subsequently clicking into the TurtleScreen will
         >>> # make the turtle move to the clicked point.
@@ -1386,7 +1419,8 @@ class TurtleScreen(TurtleScreenBase):
         must have focus. (See method listen.)
 
         Example (for a TurtleScreen instance named screen):
-
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> def f():
         ...     fd(50)
         ...     lt(60)
@@ -1418,7 +1452,8 @@ class TurtleScreen(TurtleScreenBase):
 
         Example (for a TurtleScreen instance named screen
         and a Turtle instance named turtle):
-
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> def f():
         ...     fd(50)
         ...     lt(60)
@@ -1445,6 +1480,8 @@ class TurtleScreen(TurtleScreenBase):
         to be able to pass listen to the onclick method.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.listen()
         """
         self._listen()
@@ -1457,7 +1494,8 @@ class TurtleScreen(TurtleScreenBase):
         t -- a number >= 0
 
         Example (for a TurtleScreen instance named screen):
-
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> running = True
         >>> def f():
         ...     if running:
@@ -1481,6 +1519,8 @@ class TurtleScreen(TurtleScreenBase):
         If picname is None, return the filename of the current backgroundimage.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.bgpic()
         'nopic'
         >>> screen.bgpic("landscape.gif")
@@ -1508,6 +1548,8 @@ class TurtleScreen(TurtleScreenBase):
         of a drawing, which were outside the canvas before!)
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> turtle.screensize(2000,1500)
         >>> # e.g. to search for an erroneously escaped turtle ;-)
         """
@@ -1524,6 +1566,8 @@ class TurtleScreen(TurtleScreenBase):
         overwrite -- boolean, if true, then existing files will be overwritten
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.save('my_drawing.eps')
         """
         filename = Path(filename)
@@ -1617,6 +1661,7 @@ class TNavigator(object):
         360 degrees.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.left(90)
         >>> turtle.heading()
         90
@@ -1636,8 +1681,10 @@ class TNavigator(object):
         No arguments.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
+        >>> turtle.setheading(90)
         >>> turtle.heading()
-        90
+        90.0
         >>> turtle.radians()
         >>> turtle.heading()
         1.5707963267948966
@@ -1677,8 +1724,9 @@ class TNavigator(object):
         the turtle is headed.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.position()
-        (0.00, 0.00)
+        (0.00,0.00)
         >>> turtle.forward(25)
         >>> turtle.position()
         (25.00,0.00)
@@ -1700,11 +1748,12 @@ class TNavigator(object):
         turtle is headed. Do not change the turtle's heading.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.position()
-        (0.00, 0.00)
+        (0.00,0.00)
         >>> turtle.backward(30)
         >>> turtle.position()
-        (-30.00, 0.00)
+        (-30.00,0.00)
         """
         self._go(-distance)
 
@@ -1721,8 +1770,8 @@ class TNavigator(object):
         Angle orientation depends on mode. (See this.)
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.heading()
-        22.0
+        >>> import turtle
+        >>> turtle.setheading(22)
         >>> turtle.right(45)
         >>> turtle.heading()
         337.0
@@ -1742,6 +1791,7 @@ class TNavigator(object):
         Angle orientation depends on mode. (See this.)
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.heading()
         22.0
         >>> turtle.left(45)
@@ -1758,8 +1808,12 @@ class TNavigator(object):
         No arguments.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.pos()
-        (0.00, 240.00)
+        (0.00,0.00)
+        >>> turtle.goto(13, 49)
+        >>> turtle.pos()
+        (13.00,49.00)
         """
         return self._position
 
@@ -1769,11 +1823,11 @@ class TNavigator(object):
         No arguments.
 
         Example (for a Turtle instance named turtle):
-        >>> reset()
+        >>> import turtle
         >>> turtle.left(60)
         >>> turtle.forward(100)
         >>> print(turtle.xcor())
-        50.0
+        50.000000000000014
         """
         return self._position[0]
 
@@ -1783,11 +1837,11 @@ class TNavigator(object):
         No arguments.
 
         Example (for a Turtle instance named turtle):
-        >>> reset()
+        >>> import turtle
         >>> turtle.left(60)
         >>> turtle.forward(100)
-        >>> print(turtle.ycor())
-        86.6025403784
+        >>> turtle.ycor()
+        86.60254037844386
         """
         return self._position[1]
 
@@ -1809,9 +1863,10 @@ class TNavigator(object):
         a line will be drawn. The turtle's orientation does not change.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> tp = turtle.pos()
         >>> tp
-        (0.00, 0.00)
+        (0.00,0.00)
         >>> turtle.setpos(60,30)
         >>> turtle.pos()
         (60.00,30.00)
@@ -1836,6 +1891,7 @@ class TNavigator(object):
         heading to its start-orientation (which depends on mode).
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.home()
         """
         self.goto(0, 0)
@@ -1851,11 +1907,12 @@ class TNavigator(object):
         unchanged.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.position()
-        (0.00, 240.00)
+        (0.00,0.00)
         >>> turtle.setx(10)
         >>> turtle.position()
-        (10.00, 240.00)
+        (10.00,0.00)
         """
         self._goto(Vec2D(x, self._position[1]))
 
@@ -1869,11 +1926,12 @@ class TNavigator(object):
         unchanged.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.position()
-        (0.00, 40.00)
+        (0.00,0.00)
         >>> turtle.sety(-10)
         >>> turtle.position()
-        (0.00, -10.00)
+        (0.00,-10.00)
         """
         self._goto(Vec2D(self._position[0], y))
 
@@ -1890,8 +1948,9 @@ class TNavigator(object):
         --or: distance(mypen)        # where mypen is another turtle
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.pos()
-        (0.00, 0.00)
+        (0.00,0.00)
         >>> turtle.distance(30,40)
         50.0
         >>> pen = Turtle()
@@ -1926,8 +1985,10 @@ class TNavigator(object):
         modes - "standard" or "logo")
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
+        >>> turtle.goto(10, 10)
         >>> turtle.pos()
-        (10.00, 10.00)
+        (10.00,10.00)
         >>> turtle.towards(0,0)
         225.0
         """
@@ -1950,6 +2011,7 @@ class TNavigator(object):
         No arguments.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.left(67)
         >>> turtle.heading()
         67.0
@@ -1978,9 +2040,10 @@ class TNavigator(object):
          270 - south             270 - west
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.setheading(90)
         >>> turtle.heading()
-        90
+        90.0
         """
         angle = (to_angle - self.heading())*self._angleOrient
         full = self._fullcircle
@@ -2014,6 +2077,7 @@ class TNavigator(object):
         --or: circle(radius, steps=6)         # 6-sided polygon
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.circle(50)
         >>> turtle.circle(120, 180)  # semicircle
         """
@@ -2111,6 +2175,7 @@ class TPen(object):
 
 
         Examples (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.resizemode("noresize")
         >>> turtle.resizemode()
         'noresize'
@@ -2135,6 +2200,7 @@ class TPen(object):
         is returned.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.pensize()
         1
         >>> turtle.pensize(10)   # from here on lines of width 10 are drawn
@@ -2152,6 +2218,7 @@ class TPen(object):
         No argument
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.penup()
         """
         if not self._drawing:
@@ -2166,6 +2233,7 @@ class TPen(object):
         No argument.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.pendown()
         """
         if self._drawing:
@@ -2178,6 +2246,7 @@ class TPen(object):
         No argument.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.penup()
         >>> turtle.isdown()
         False
@@ -2212,6 +2281,7 @@ class TPen(object):
         and likewise left/right make the turtle turn instantly.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.speed(3)
         """
         speeds = {'fastest':0, 'fast':10, 'normal':6, 'slow':3, 'slowest':1 }
@@ -2249,6 +2319,7 @@ class TPen(object):
         For more info see: pencolor, fillcolor
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.color('red', 'green')
         >>> turtle.color()
         ('red', 'green')
@@ -2294,7 +2365,9 @@ class TPen(object):
         with the newly set pencolor.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.pencolor('brown')
+        >>> turtle.colormode(1.0)
         >>> tup = (0.2, 0.8, 0.55)
         >>> turtle.pencolor(tup)
         >>> turtle.pencolor()
@@ -2331,6 +2404,7 @@ class TPen(object):
         with the newly set fillcolor.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.fillcolor('violet')
         >>> col = turtle.pencolor()
         >>> turtle.fillcolor(col)
@@ -2361,6 +2435,7 @@ class TPen(object):
         No argument.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.hideturtle()
         >>> turtle.showturtle()
         """
@@ -2378,6 +2453,7 @@ class TPen(object):
         the turtle speeds up the drawing observably.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.hideturtle()
         """
         self.pen(shown=False)
@@ -2388,6 +2464,7 @@ class TPen(object):
         No argument.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.hideturtle()
         >>> print(turtle.isvisible())
         False
@@ -2423,6 +2500,7 @@ class TPen(object):
 
 
         Examples (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.pen(fillcolor="black", pencolor="red", pensize=10)
         >>> turtle.pen()
         {'pensize': 10, 'shown': True, 'resizemode': 'auto', 'outline': 1,
@@ -2435,8 +2513,8 @@ class TPen(object):
         {'pensize': 10, 'shown': True, 'resizemode': 'auto', 'outline': 1,
         'pencolor': 'yellow', 'pendown': False, 'fillcolor': '',
         'stretchfactor': (1,1), 'speed': 3, 'shearfactor': 0.0}
-        >>> p.pen(penstate, fillcolor="green")
-        >>> p.pen()
+        >>> turtle.pen(penstate, fillcolor="green")
+        >>> turtle.pen()
         {'pensize': 10, 'shown': True, 'resizemode': 'auto', 'outline': 1,
         'pencolor': 'red', 'pendown': True, 'fillcolor': 'green',
         'stretchfactor': (1,1), 'speed': 3, 'shearfactor': 0.0}
@@ -2626,10 +2704,9 @@ class RawTurtle(TPen, TNavigator):
         and set variables to the default values.
 
         Example (for a Turtle instance named turtle):
-        >>> turtle.position()
-        (0.00,-22.00)
-        >>> turtle.heading()
-        100.0
+        >>> import turtle
+        >>> turtle.goto(0, -22)
+        >>> turtle.setheading(100)
         >>> turtle.reset()
         >>> turtle.position()
         (0.00,0.00)
@@ -2654,6 +2731,7 @@ class RawTurtle(TPen, TNavigator):
         If size is None, no undobuffer is present.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.setundobuffer(42)
         """
         if size is None or size <= 0:
@@ -2698,6 +2776,7 @@ class RawTurtle(TPen, TNavigator):
         turtles are not affected.
 
         Examples (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.clear()
         """
         self._clear()
@@ -2741,6 +2820,7 @@ class RawTurtle(TPen, TNavigator):
         Second arguments sets delay value (see RawTurtle.delay())
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.tracer(8, 25)
         >>> dist = 2
         >>> for i in range(200):
@@ -2793,6 +2873,7 @@ class RawTurtle(TPen, TNavigator):
         teleporting act as a fill barrier like in goto(x, y).
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> tp = turtle.pos()
         >>> tp
         (0.00,0.00)
@@ -2873,6 +2954,7 @@ class RawTurtle(TPen, TNavigator):
         To learn about how to deal with shapes see Screen-method register_shape.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.shape()
         'arrow'
         >>> turtle.shape("turtle")
@@ -2903,6 +2985,7 @@ class RawTurtle(TPen, TNavigator):
         outline determines the width of the shapes's outline.
 
         Examples (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.resizemode("user")
         >>> turtle.shapesize(5, 5, 12)
         >>> turtle.shapesize(outline=8)
@@ -2939,6 +3022,7 @@ class RawTurtle(TPen, TNavigator):
         heading of the turtle are sheared.
 
         Examples (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.shape("circle")
         >>> turtle.shapesize(5,2)
         >>> turtle.shearfactor(0.5)
@@ -2962,6 +3046,7 @@ class RawTurtle(TPen, TNavigator):
         turtle (its direction of movement).
 
         Examples (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.shape("circle")
         >>> turtle.shapesize(5, 2)
         >>> turtle.tiltangle()
@@ -2995,6 +3080,7 @@ class RawTurtle(TPen, TNavigator):
         but do NOT change the turtle's heading (direction of movement).
 
         Examples (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.shape("circle")
         >>> turtle.shapesize(5,2)
         >>> turtle.tilt(30)
@@ -3018,6 +3104,7 @@ class RawTurtle(TPen, TNavigator):
         given matrix.
 
         Examples (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.shape("square")
         >>> turtle.shapesize(4,2)
         >>> turtle.shearfactor(-0.5)
@@ -3062,6 +3149,7 @@ class RawTurtle(TPen, TNavigator):
         No argument.
 
         Examples (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.shape("square")
         >>> turtle.shapetransform(4, -1, 0, 2)
         >>> turtle.get_shapepoly()
@@ -3136,6 +3224,7 @@ class RawTurtle(TPen, TNavigator):
         used to delete it by calling clearstamp(stamp_id).
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.color("blue")
         >>> turtle.stamp()
         13
@@ -3200,6 +3289,7 @@ class RawTurtle(TPen, TNavigator):
         stampid - an integer, must be return value of previous stamp() call.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.color("blue")
         >>> astamp = turtle.stamp()
         >>> turtle.fd(50)
@@ -3219,6 +3309,7 @@ class RawTurtle(TPen, TNavigator):
         else if n < 0 delete last n stamps.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> for i in range(8):
         ...     turtle.stamp(); turtle.fd(30)
         ...
@@ -3394,6 +3485,7 @@ class RawTurtle(TPen, TNavigator):
         No argument.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.begin_fill()
         >>> if turtle.filling():
         ...     turtle.pensize(5)
@@ -3410,6 +3502,7 @@ class RawTurtle(TPen, TNavigator):
         begin_fill() and end_fill().
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.color("black", "red")
         >>> with turtle.fill():
         ...     turtle.circle(60)
@@ -3426,6 +3519,7 @@ class RawTurtle(TPen, TNavigator):
         No argument.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.color("black", "red")
         >>> turtle.begin_fill()
         >>> turtle.circle(60)
@@ -3446,6 +3540,7 @@ class RawTurtle(TPen, TNavigator):
         No argument.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.color("black", "red")
         >>> turtle.begin_fill()
         >>> turtle.circle(60)
@@ -3471,6 +3566,7 @@ class RawTurtle(TPen, TNavigator):
         If size is not given, the maximum of pensize+4 and 2*pensize is used.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.dot()
         >>> turtle.fd(50); turtle.dot(20, "blue"); turtle.fd(50)
         """
@@ -3530,6 +3626,7 @@ class RawTurtle(TPen, TNavigator):
         of the text. By default, move is False.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.write('Home = ', True, align="center")
         >>> turtle.write((0,0), True)
         """
@@ -3552,8 +3649,9 @@ class RawTurtle(TPen, TNavigator):
 
         Example (for a Turtle instance named turtle) where we create a
         triangle as the polygon and move the turtle 100 steps forward:
+        >>> import turtle
         >>> with turtle.poly():
-        ...     for side in range(3)
+        ...     for side in range(3):
         ...         turtle.forward(50)
         ...         turtle.right(60)
         >>> turtle.forward(100)
@@ -3573,6 +3671,7 @@ class RawTurtle(TPen, TNavigator):
         is first point of polygon.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.begin_poly()
         """
         self._poly = [self._position]
@@ -3587,6 +3686,7 @@ class RawTurtle(TPen, TNavigator):
         last point of polygon. This will be connected with the first point.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.end_poly()
         """
         self._creatingPoly = False
@@ -3597,6 +3697,7 @@ class RawTurtle(TPen, TNavigator):
         No argument.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> p = turtle.get_poly()
         >>> turtle.register_shape("myFavouriteShape", p)
         """
@@ -3613,6 +3714,7 @@ class RawTurtle(TPen, TNavigator):
         So TurtleScreen-methods can be called for that object.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> ts = turtle.getscreen()
         >>> ts
         <turtle.TurtleScreen object at 0x0106B770>
@@ -3707,6 +3809,7 @@ class RawTurtle(TPen, TNavigator):
         mouse-click event on that turtle.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> turtle.ondrag(turtle.goto)
 
         Subsequently clicking and dragging a Turtle will move it
@@ -3758,8 +3861,10 @@ class RawTurtle(TPen, TNavigator):
         the undobuffer.
 
         Example (for a Turtle instance named turtle):
+        >>> import turtle
         >>> for i in range(4):
-        ...     turtle.fd(50); turtle.lt(80)
+        ...     turtle.fd(50)
+        ...     turtle.lt(80)
         ...
         >>> for i in range(8):
         ...     turtle.undo()
@@ -3831,7 +3936,9 @@ class _Screen(TurtleScreen):
           Default, starty=None is to center window vertically.
 
         Examples (for a Screen instance named screen):
-        >>> screen.setup (width=200, height=200, startx=0, starty=0)
+        >>> import turtle
+        >>> screen  = turtle.Screen()
+        >>> screen.setup(width=200, height=200, startx=0, starty=0)
 
         sets window to 200x200 pixels, in upper left of screen
 
@@ -3865,6 +3972,8 @@ class _Screen(TurtleScreen):
         objects.
 
         Example (for a Screen instance named screen):
+        >>> import turtle
+        >>> screen  = turtle.Screen()
         >>> screen.title("Welcome to the turtle-zoo!")
         """
         if _Screen._root is not None:
@@ -3885,6 +3994,8 @@ class _Screen(TurtleScreen):
         """Shut the turtlegraphics window.
 
         Example (for a TurtleScreen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.bye()
         """
         self._destroy()
@@ -3905,6 +4016,8 @@ class _Screen(TurtleScreen):
         TurtleScreen instances.
 
         Example (for a Screen instance named screen):
+        >>> import turtle
+        >>> screen = turtle.Screen()
         >>> screen.exitonclick()
 
         """
