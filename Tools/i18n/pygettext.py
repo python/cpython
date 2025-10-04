@@ -96,7 +96,7 @@ Options:
     -o filename
     --output=filename
         Rename the default output file from messages.pot to filename.  If
-        filename is `-' then the output is sent to standard out.
+        filename is '-' then the output is sent to standard out.
 
     -p dir
     --output-dir=dir
@@ -110,7 +110,7 @@ Options:
         Solaris  # File: filename, line: line-number
         GNU      #: filename:line
 
-        The style name is case insensitive.  GNU style is the default.
+        The style name is case-insensitive.  GNU style is the default.
 
     -v
     --verbose
@@ -131,15 +131,18 @@ Options:
         appear on a line by itself in the file.
 
     -X filename
-    --no-docstrings=filename
+    --exclude-docstrings=
+        This is only useful in conjunction with the -D option above.
         Specify a file that contains a list of files (one per line) that
-        should not have their docstrings extracted.  This is only useful in
-        conjunction with the -D option above.
+        should not have their docstrings extracted. fnmatch-style patterns are
+        supported.
 
-If `inputfile' is -, standard input is read.
+
+If 'inputfile' is -, standard input is read.
 """
 
 import ast
+import fnmatch
 import getopt
 import glob
 import importlib.machinery
@@ -188,7 +191,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise we
+        # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise, we
         # escape any character outside the 32..126 range.
         escape = escape_ascii
     else:
@@ -483,7 +486,8 @@ class GettextVisitor(ast.NodeVisitor):
 
     def _extract_docstring(self, node):
         if (not self.options.docstrings or
-            self.options.nodocstrings.get(self.filename)):
+            any(fnmatch.fnmatch(self.filename, pattern)
+                for pattern in self.options.nodocstrings)):
             return
 
         docstring = ast.get_docstring(node)
@@ -692,7 +696,7 @@ def main():
              'help', 'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
-             'docstrings', 'no-docstrings',
+             'docstrings', 'exclude-docstrings=',
              ])
     except getopt.error as msg:
         usage(1, msg)
@@ -714,7 +718,7 @@ def main():
         width = 78
         excludefilename = ''
         docstrings = 0
-        nodocstrings = {}
+        nodocstrings = set()
         comment_tags = set()
 
     options = Options()
@@ -766,16 +770,11 @@ def main():
                 usage(1, f'--width argument must be an integer: {arg}')
         elif opt in ('-x', '--exclude-file'):
             options.excludefilename = arg
-        elif opt in ('-X', '--no-docstrings'):
-            fp = open(arg)
-            try:
-                while 1:
-                    line = fp.readline()
-                    if not line:
-                        break
-                    options.nodocstrings[line[:-1]] = 1
-            finally:
-                fp.close()
+        elif opt in ('-X', '--exclude-docstrings'):
+            with open(arg) as nodocstrings_file:
+                for line in nodocstrings_file:
+                    line = line.strip()
+                    options.nodocstrings.add(line)
 
     options.comment_tags = tuple(options.comment_tags)
 
