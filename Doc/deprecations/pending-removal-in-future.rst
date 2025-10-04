@@ -15,7 +15,6 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`builtins`:
 
-  * ``bool(NotImplemented)``.
   * Generators: ``throw(type, exc, tb)`` and ``athrow(type, exc, tb)``
     signature is deprecated: use ``throw(exc)`` and ``athrow(exc)`` instead,
     the single argument signature.
