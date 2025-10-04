@@ -5225,7 +5225,7 @@ class BasicSocketPairTest(SocketPairTest):
 
     def _check_defaults(self, sock):
         self.assertIsInstance(sock, socket.socket)
-        if hasattr(socket, 'AF_UNIX'):
+        if sys.platform != 'win32' and hasattr(socket, 'AF_UNIX'):
             self.assertEqual(sock.family, socket.AF_UNIX)
         else:
             self.assertEqual(sock.family, socket.AF_INET)
@@ -6282,9 +6282,16 @@ class TestUnixDomain(unittest.TestCase):
             else:
                 raise
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows will raise Error if is not bound')
     def testUnbound(self):
         # Issue #30205 (note getsockname() can return None on OS X)
         self.assertIn(self.sock.getsockname(), ('', None))
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'Windows-specific behavior')
+    def test_unbound_on_windows(self):
+        self.assertRaisesRegex(OSError, 'WinError 10022', self.sock.getsockname)
 
     def testStrAddr(self):
         # Test binding to and retrieving a normal string pathname.
@@ -6300,6 +6307,8 @@ class TestUnixDomain(unittest.TestCase):
         self.addCleanup(os_helper.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'surrogateescape file path is not supported on Windows')
     def testSurrogateescapeBind(self):
         # Test binding to a valid non-ASCII pathname, with the
         # non-ASCII bytes supplied using surrogateescape encoding.
@@ -6309,6 +6318,9 @@ class TestUnixDomain(unittest.TestCase):
         self.addCleanup(os_helper.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows have a bug which can\'t unlink sock file with '
+                     'TESTFN_UNENCODABLE in it\'s name')
     def testUnencodableAddr(self):
         # Test binding to a pathname that cannot be encoded in the
         # file system encoding.
@@ -6321,9 +6333,17 @@ class TestUnixDomain(unittest.TestCase):
 
     @unittest.skipIf(sys.platform in ('linux', 'android'),
                      'Linux behavior is tested by TestLinuxAbstractNamespace')
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows allow bind on empty path')
     def testEmptyAddress(self):
         # Test that binding empty address fails.
         self.assertRaises(OSError, self.sock.bind, "")
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'Windows-specified behavior')
+    def test_empty_address_on_windows(self):
+        self.sock.bind('')
+        self.assertEqual(self.sock.getsockname(), '')
 
 
 class BufferIOTest(SocketConnectedTest):
