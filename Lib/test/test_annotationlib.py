@@ -7,7 +7,7 @@ import collections
 import functools
 import itertools
 import pickle
-from string.templatelib import Template
+from string.templatelib import Template, Interpolation
 import typing
 import unittest
 from annotationlib import (
@@ -282,6 +282,7 @@ class TestStringFormat(unittest.TestCase):
             a: t"a{b}c{d}e{f}g",
             b: t"{a:{1}}",
             c: t"{a | b * c}",
+            gh138558: t"{ 0}",
         ): pass
 
         annos = get_annotations(f, format=Format.STRING)
@@ -293,6 +294,7 @@ class TestStringFormat(unittest.TestCase):
             # interpolations in the format spec are eagerly evaluated so we can't recover the source
             "b": "t'{a:1}'",
             "c": "t'{a | b * c}'",
+            "gh138558": "t'{ 0}'",
         })
 
         def g(
@@ -1350,6 +1352,24 @@ class TestTypeRepr(unittest.TestCase):
         self.assertEqual(type_repr("1"), "'1'")
         self.assertEqual(type_repr(Format.VALUE), repr(Format.VALUE))
         self.assertEqual(type_repr(MyClass()), "my repr")
+        # gh138558 tests
+        self.assertEqual(type_repr(t'''{ 0
+            & 1
+            | 2
+        }'''), 't"""{ 0\n            & 1\n            | 2}"""')
+        self.assertEqual(
+            type_repr(Template("hi", Interpolation(42, "42"))), "t'hi{42}'"
+        )
+        self.assertEqual(
+            type_repr(Template("hi", Interpolation(42))),
+            "Template('hi', Interpolation(42, '', None, ''))",
+        )
+        self.assertEqual(
+            type_repr(Template("hi", Interpolation(42, "   "))),
+            "Template('hi', Interpolation(42, '   ', None, ''))",
+        )
+        # gh138558: perhaps in the future, we can improve this behavior:
+        self.assertEqual(type_repr(Template(Interpolation(42, "99"))), "t'{99}'")
 
 
 class TestAnnotationsToString(unittest.TestCase):
