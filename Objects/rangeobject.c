@@ -413,6 +413,13 @@ compute_slice(rangeobject *r, PyObject *_slice)
     if (error == -1)
         return NULL;
 
+    if (start == _PyLong_GetZero()
+        && step == _PyLong_GetOne()
+        && (slice->stop == Py_None || PyObject_RichCompareBool(stop, r->length, Py_EQ) == 1))
+    {
+        return Py_NewRef(r);
+    }
+
     substep = PyNumber_Multiply(r->step, step);
     if (substep == NULL) goto fail;
     Py_CLEAR(step);
