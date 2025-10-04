@@ -333,7 +333,7 @@ def _get_path(userbase):
     if sys.platform == 'darwin' and sys._framework:
         return f'{userbase}/lib/{implementation_lower}/site-packages'
 
-    return f'{userbase}/lib/python{version[0]}.{version[1]}{abi_thread}/site-packages'
+    return f'{userbase}/lib/{implementation_lower}{version[0]}.{version[1]}{abi_thread}/site-packages'
 
 
 def getuserbase():
