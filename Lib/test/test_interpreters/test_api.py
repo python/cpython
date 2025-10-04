@@ -1968,6 +1968,7 @@ class LowLevelTests(TestBase):
                 allow_threads=True,
                 allow_daemon_threads=False,
                 check_multi_interp_extensions=True,
+                can_handle_signals=True,
                 gil='own',
             ),
             'legacy': types.SimpleNamespace(
@@ -1977,6 +1978,7 @@ class LowLevelTests(TestBase):
                 allow_threads=True,
                 allow_daemon_threads=True,
                 check_multi_interp_extensions=bool(Py_GIL_DISABLED),
+                can_handle_signals=False,
                 gil='shared',
             ),
             'empty': types.SimpleNamespace(
@@ -1986,6 +1988,7 @@ class LowLevelTests(TestBase):
                 allow_threads=False,
                 allow_daemon_threads=False,
                 check_multi_interp_extensions=False,
+                can_handle_signals=False,
                 gil='default',
             ),
         }
@@ -2247,6 +2250,7 @@ class LowLevelTests(TestBase):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
+            expected.can_handle_signals = True
             if Py_GIL_DISABLED:
                 expected.check_multi_interp_extensions = False
             interpid, *_ = _interpreters.get_main()
@@ -2482,6 +2486,94 @@ class LowLevelTests(TestBase):
                     'assert spam is True',
                 )
             self.assertEqual(rc, 0)
+
+
+class SignalTests(TestBase):
+    @support.requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', 'SIGINT not supported on windows')
+    def test_interpreter_handles_signals(self):
+        import subprocess
+        import sys
+        import signal
+
+        interp_source = """if True:
+        import time
+
+        print('x', end='', flush=True)
+        time.sleep(10)
+        print("should never happen", flush=True)
+        """
+
+        source = f"""if True:
+        from concurrent import interpreters
+
+        interp = interpreters.create()
+        interp.exec('''{interp_source}''')
+        """
+
+        proc = subprocess.Popen([sys.executable, '-c', source],
+                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, close_fds=True)
+        self.assertEqual(proc.stdout.read(1), b'x')
+        proc.send_signal(signal.SIGINT)
+        stdout, stderr = proc.communicate(timeout=5)
+        self.assertEqual(stdout, b"")
+        self.assertIn(b"KeyboardInterrupt", stderr)
+
+    @support.requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', 'SIGINT not supported on windows')
+    def test_legacy_interpreter_does_not_handle_signals(self):
+        import subprocess
+        import sys
+        import signal
+
+        interp_source = """if True:
+        import time
+
+        print('x', end='', flush=True)
+        time.sleep(1)
+        print('inquisition', end='', flush=True)
+        """
+
+        source = f"""if True:
+        import _interpreters
+
+        config = _interpreters.new_config("legacy")
+        interp = _interpreters.create(config)
+        res = _interpreters.run_string(interp, '''{interp_source}''')
+        assert res is None
+        """
+
+        proc = subprocess.Popen([sys.executable, '-c', source],
+                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, close_fds=True)
+        self.assertEqual(proc.stdout.read(1), b'x')
+        proc.send_signal(signal.SIGINT)
+        with self.assertRaises(subprocess.TimeoutExpired):
+            stdout, stderr = proc.communicate(timeout=0.5)
+        stdout, stderr = proc.communicate()
+        self.assertEqual(stdout, b"inquisition")
+        self.assertIn(b"KeyboardInterrupt", stderr)
+        self.assertNotIn(b"AssertionError", stderr)
+
+    @unittest.skipIf(os.name == 'nt', 'SIGUSR1 not supported')
+    def test_signal_module_in_subinterpreters(self):
+        read, write = self.pipe()
+        interp = interpreters.create()
+        interp.exec(f"""if True:
+        import signal
+        import os
+
+        def sig(signum, stack):
+            signame = signal.Signals(signum).name
+            assert signame == "SIGUSR1"
+            os.write({write}, b'x')
+
+        signal.signal(signal.SIGUSR1, sig)
+        signal.raise_signal(signal.SIGUSR1)
+        """)
+        self.assertEqual(os.read(read, 1), b'x')
+
 
 
 if __name__ == '__main__':

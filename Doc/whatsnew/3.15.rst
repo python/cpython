@@ -832,7 +832,7 @@ New features
 * Add API for checking an extension module's ABI compatibility:
   :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
   and :c:data:`Py_mod_abi`.
-  (Contributed by Petr Viktorin in :gh:`137210`.)
+  (Contributed by Petr Viktorin in :gh:`137210`)
 
 * Implement :pep:`782`, the :ref:`PyBytesWriter API <pybyteswriter>`.
   Add functions:
@@ -851,6 +851,11 @@ New features
   * :c:func:`PyBytesWriter_WriteBytes`
 
   (Contributed by Victor Stinner in :gh:`129813`.)
+
+* Subinterpreters now have the option to handle signals through the
+  :c:member:`PyInterpreterConfig.can_handle_signals` setting. Only
+  subinterpreters running in the main thread will be able to handle
+  signals.
 
 
 Porting to Python 3.15
