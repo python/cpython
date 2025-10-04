@@ -293,7 +293,7 @@ PyStackRef_Unwrap(_PyStackRef ref)
 static inline bool
 PyStackRef_IsError(_PyStackRef ref)
 {
-    return (ref.bits & Py_TAG_BITS) == Py_TAG_INVALID;
+    return ref.bits == Py_TAG_INVALID;
 }
 
 static inline bool
