@@ -1899,8 +1899,8 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_thread_state_ensure(self):
         self.run_embedded_interpreter("test_thread_state_ensure")
 
-    def test_main_interpreter_ref(self):
-        self.run_embedded_interpreter("test_main_interpreter_ref")
+    def test_main_interpreter_view(self):
+        self.run_embedded_interpreter("test_main_interpreter_view")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):

@@ -3310,6 +3310,11 @@ PyUnstable_InterpreterView_FromDefault(void)
     return (PyInterpreterView)view;
 }
 
+// This is a bit of a hack -- since 0 is reserved for failure, we need
+// to have our own sentinel for when we want to indicate that no prior
+// thread state was attached.
+static int NO_TSTATE_SENTINEL = 0;
+
 PyThreadView
 PyThreadState_Ensure(PyInterpreterLock lock)
 {
@@ -3318,7 +3323,7 @@ PyThreadState_Ensure(PyInterpreterLock lock)
     if (attached_tstate != NULL && attached_tstate->interp == interp) {
         /* Yay! We already have an attached thread state that matches. */
         ++attached_tstate->ensure.counter;
-        return 0;
+        return (PyThreadView)&NO_TSTATE_SENTINEL;
     }
 
     PyThreadState *detached_gilstate = gilstate_get();
@@ -3327,13 +3332,13 @@ PyThreadState_Ensure(PyInterpreterLock lock)
         assert(attached_tstate == NULL);
         ++detached_gilstate->ensure.counter;
         _PyThreadState_Attach(detached_gilstate);
-        return 0;
+        return (PyThreadView)&NO_TSTATE_SENTINEL;
     }
 
     PyThreadState *fresh_tstate = _PyThreadState_NewBound(interp,
                                                           _PyThreadState_WHENCE_GILSTATE);
     if (fresh_tstate == NULL) {
-        return -1;
+        return 0;
     }
     fresh_tstate->ensure.counter = 1;
     fresh_tstate->ensure.delete_on_release = 1;
@@ -3344,7 +3349,7 @@ PyThreadState_Ensure(PyInterpreterLock lock)
         _PyThreadState_Attach(fresh_tstate);
     }
 
-    return 0;
+    return (PyThreadView)&NO_TSTATE_SENTINEL;
 }
 
 void
@@ -3357,7 +3362,13 @@ PyThreadState_Release(PyThreadView thread_view)
         Py_FatalError("PyThreadState_Release() called more times than PyThreadState_Ensure()");
     }
     // The thread view might be NULL
-    PyThreadState *to_restore = (PyThreadState *)thread_view;
+    PyThreadState *to_restore;
+    if (thread_view == (PyThreadView)&NO_TSTATE_SENTINEL) {
+        to_restore = NULL;
+    }
+    else {
+        to_restore = (PyThreadState *)thread_view;
+    }
     if (remaining == 0) {
         if (tstate->ensure.delete_on_release) {
             PyThreadState_Clear(tstate);

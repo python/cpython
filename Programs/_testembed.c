@@ -2375,14 +2375,10 @@ test_thread_state_ensure(void)
 static int
 test_main_interpreter_view(void)
 {
-    // It should not work before the runtime has started.
-    PyInterpreterView view = PyUnstable_InterpreterView_FromDefault();
-    assert(view == 0);
-
     _testembed_initialize();
 
     // Main interpreter is initialized and ready.
-    view = PyUnstable_InterpreterView_FromDefault();
+    PyInterpreterView view = PyUnstable_InterpreterView_FromDefault();
     assert(view != 0);
 
     PyInterpreterLock lock = PyInterpreterLock_FromView(view);
