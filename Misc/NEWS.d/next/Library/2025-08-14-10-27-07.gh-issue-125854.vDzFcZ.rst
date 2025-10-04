@@ -1,0 +1,1 @@
+Improve error messages for invalid category in :func:`warnings.warn`.

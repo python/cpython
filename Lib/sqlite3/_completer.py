@@ -6,6 +6,8 @@ try:
 except ImportError:
     SQLITE_KEYWORDS = ()
 
+CLI_COMMANDS = ('.quit', '.help', '.version')
+
 _completion_matches = []
 
 
@@ -15,7 +17,13 @@ def _complete(con, text, state):
     if state == 0:
         text_upper = text.upper()
         text_lower = text.lower()
-        _completion_matches = [c + " " for c in SQLITE_KEYWORDS if c.startswith(text_upper)]
+
+        if text.startswith('.'):
+            _completion_matches = [c + ' ' for c in CLI_COMMANDS if c.startswith(text)]
+        else:
+            text_upper = text.upper()
+            _completion_matches = [c + ' ' for c in SQLITE_KEYWORDS if c.startswith(text_upper)]
+
         cursor = con.cursor()
         schemata = tuple(row[1] for row
                          in cursor.execute("PRAGMA database_list"))

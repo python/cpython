@@ -257,6 +257,11 @@ class Completion(unittest.TestCase):
         self.assertIn(b"SELECT", output)
         self.assertIn(b"(1,)", output)
 
+        # .commands are completed without changing case
+        input_ = b".ver\t\n.quit\n"
+        output = self.write_input(input_)
+        self.assertIn(b".version", output)
+
     def test_complete_table_indexes_triggers_views(self):
         input_ = textwrap.dedent("""\
             CREATE TABLE _table (id);

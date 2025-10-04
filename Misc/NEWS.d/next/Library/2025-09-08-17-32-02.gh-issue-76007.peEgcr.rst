@@ -1,0 +1,2 @@
+Deprecate ``__version__`` from a number of standard library modules. Patch
+by Hugo van Kemenade.

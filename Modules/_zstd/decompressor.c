@@ -468,6 +468,7 @@ error:
 
 
 /*[clinic input]
+@permit_long_docstring_body
 @classmethod
 _zstd.ZstdDecompressor.__new__ as _zstd_ZstdDecompressor_new
     zstd_dict: object = None
@@ -484,7 +485,7 @@ function instead.
 static PyObject *
 _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
                                 PyObject *options)
-/*[clinic end generated code: output=590ca65c1102ff4a input=213daa57e3ea4062]*/
+/*[clinic end generated code: output=590ca65c1102ff4a input=ed8891edfd14cdaa]*/
 {
     ZstdDecompressor* self = PyObject_GC_New(ZstdDecompressor, type);
     if (self == NULL) {
@@ -569,6 +570,7 @@ ZstdDecompressor_dealloc(PyObject *ob)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @getter
 _zstd.ZstdDecompressor.unused_data
 
@@ -580,7 +582,7 @@ decompressed, unused input data after the frame. Otherwise this will be b''.
 
 static PyObject *
 _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
-/*[clinic end generated code: output=f3a20940f11b6b09 input=54d41ecd681a3444]*/
+/*[clinic end generated code: output=f3a20940f11b6b09 input=37c2c531ab56f914]*/
 {
     PyObject *ret;
 
@@ -609,6 +611,8 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 _zstd.ZstdDecompressor.decompress
 
     data: Py_buffer
@@ -638,7 +642,7 @@ static PyObject *
 _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
                                        Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=a4302b3c940dbec6 input=6463dfdf98091caa]*/
+/*[clinic end generated code: output=a4302b3c940dbec6 input=e5c905a774df1553]*/
 {
     PyObject *ret;
     /* Thread-safe code */
