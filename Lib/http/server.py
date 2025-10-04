@@ -302,6 +302,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         error response has already been sent back.
 
         """
+        is_http_0_9 = False
         self.command = None  # set in case of error on the first line
         self.request_version = version = self.default_request_version
         self.close_connection = True
@@ -359,6 +360,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     HTTPStatus.BAD_REQUEST,
                     "Bad HTTP/0.9 request type (%r)" % command)
                 return False
+            is_http_0_9 = True
         self.command, self.path = command, path
 
         # gh-87389: The purpose of replacing '//' with '/' is to protect
@@ -369,22 +371,26 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             self.path = '/' + self.path.lstrip('/')  # Reduce to a single /
 
         # Examine the headers and look for a Connection directive.
-        try:
-            self.headers = http.client.parse_headers(self.rfile,
-                                                     _class=self.MessageClass)
-        except http.client.LineTooLong as err:
-            self.send_error(
-                HTTPStatus.REQUEST_HEADER_FIELDS_TOO_LARGE,
-                "Line too long",
-                str(err))
-            return False
-        except http.client.HTTPException as err:
-            self.send_error(
-                HTTPStatus.REQUEST_HEADER_FIELDS_TOO_LARGE,
-                "Too many headers",
-                str(err)
-            )
-            return False
+        # For HTTP/0.9, headers are not expected at all.
+        if is_http_0_9:
+            self.headers = {}
+        else:
+            try:
+                self.headers = http.client.parse_headers(self.rfile,
+                                                         _class=self.MessageClass)
+            except http.client.LineTooLong as err:
+                self.send_error(
+                    HTTPStatus.REQUEST_HEADER_FIELDS_TOO_LARGE,
+                    "Line too long",
+                    str(err))
+                return False
+            except http.client.HTTPException as err:
+                self.send_error(
+                    HTTPStatus.REQUEST_HEADER_FIELDS_TOO_LARGE,
+                    "Too many headers",
+                    str(err)
+                )
+                return False
 
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':
