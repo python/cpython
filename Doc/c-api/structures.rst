@@ -658,6 +658,7 @@ using e.g. :keyword:`del` or :py:func:`delattr`.
 ================================ ============================= ======================
 Macro name                       C type                        Python type
 ================================ ============================= ======================
+.. c:macro:: Py_T_INTEGER(type)  *type* (INT)                  :py:class:`int`
 .. c:macro:: Py_T_BYTE           :c:expr:`char`                :py:class:`int`
 .. c:macro:: Py_T_SHORT          :c:expr:`short`               :py:class:`int`
 .. c:macro:: Py_T_INT            :c:expr:`int`                 :py:class:`int`
@@ -673,18 +674,21 @@ Macro name                       C type                        Python type
 .. c:macro:: Py_T_DOUBLE         :c:expr:`double`              :py:class:`float`
 .. c:macro:: Py_T_BOOL           :c:expr:`char`                :py:class:`bool`
                                  (written as 0 or 1)
-.. c:macro:: Py_T_STRING         :c:expr:`const char *` (*)    :py:class:`str` (RO)
-.. c:macro:: Py_T_STRING_INPLACE :c:expr:`const char[]` (*)    :py:class:`str` (RO)
-.. c:macro:: Py_T_CHAR           :c:expr:`char` (0-127)        :py:class:`str` (**)
+.. c:macro:: Py_T_STRING         :c:expr:`const char *` (STR)  :py:class:`str` (RO)
+.. c:macro:: Py_T_STRING_INPLACE :c:expr:`const char[]` (STR)  :py:class:`str` (RO)
+.. c:macro:: Py_T_CHAR           :c:expr:`char` (0-127)        :py:class:`str` (CH)
 .. c:macro:: Py_T_OBJECT_EX      :c:expr:`PyObject *`          :py:class:`object` (D)
 ================================ ============================= ======================
 
-   (*): Zero-terminated, UTF8-encoded C string.
+   (INT): Macro :c:macro:`Py_T_INTEGER(type) <Py_T_INTEGER>` represents an arbitrary
+   C integer type *type*.
+
+   (STR): Zero-terminated, UTF8-encoded C string.
    With :c:macro:`!Py_T_STRING` the C representation is a pointer;
    with :c:macro:`!Py_T_STRING_INPLACE` the string is stored directly
    in the structure.
 
-   (**): String of length 1. Only ASCII is accepted.
+   (CH): String of length 1. Only ASCII is accepted.
 
    (RO): Implies :c:macro:`Py_READONLY`.
 
@@ -729,6 +733,10 @@ Macro name                       C type                        Python type
    .. c:macro:: T_NONE
 
       Always ``None``. Must be used with :c:macro:`Py_READONLY`.
+
+.. versionadded:: next
+   Added :c:macro:`Py_T_INTEGER()`.
+
 
 Defining Getters and Setters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
