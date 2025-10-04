@@ -1050,8 +1050,8 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError(f'data argument must be a bytes-like object, '
-                            f'not {type(data).__name__!r}')
+            raise TypeError(f'data argument must be a bytes, bytearray, or memoryview '
+                            f'object, not {type(data).__name__!r}')
         if self._eof:
             raise RuntimeError('Cannot call write() after write_eof()')
         if self._empty_waiter is not None:
