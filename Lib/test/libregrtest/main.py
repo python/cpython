@@ -657,8 +657,12 @@ class Regrtest:
         if not sys.stdout.write_through and sys.platform != "android":
             python_opts.append('-u')
 
-        # Add warnings filter 'error'
-        if 'error' not in sys.warnoptions:
+        # Add warnings filter 'error', unless the user specified a different
+        # filter. Ignore BytesWarning since it's controlled by '-b' below.
+        if not [
+            opt for opt in sys.warnoptions
+            if not opt.endswith("::BytesWarning")
+        ]:
             python_opts.extend(('-W', 'error'))
 
         # Error on bytes/str comparison
