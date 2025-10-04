@@ -341,7 +341,8 @@ Functions
    does include time elapsed during sleep. The clock is the same for all
    processes. The reference
    point of the returned value is undefined, so that only the difference between
-   the results of two calls is valid.
+   the results of two calls is valid. This counter, like :func:`monotonic`, cannot
+   go backwards.
 
    .. impl-detail::
 
