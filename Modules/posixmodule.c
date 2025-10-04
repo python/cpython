@@ -6678,7 +6678,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
         if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
             PyErr_SetString(PyExc_TypeError,
                          "utime: 'times' must be either"
-                         " a tuple of two ints or None");
+                         " a tuple of two numbers or None");
             return NULL;
         }
         utime.now = 0;
@@ -9605,7 +9605,7 @@ os_getlogin_impl(PyObject *module)
     int err = getlogin_r(name, sizeof(name));
     if (err) {
         int old_errno = errno;
-        errno = -err;
+        errno = err;
         posix_error();
         errno = old_errno;
     }
