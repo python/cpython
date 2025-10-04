@@ -934,7 +934,7 @@ mmap_flush_method(PyObject *op, PyObject *args, PyObject *kwargs)
 {
     Py_ssize_t offset = 0;
     Py_ssize_t size = -1;
-    int flags = MS_SYNC;
+    int flags = 0;
     mmap_object *self = mmap_object_CAST(op);
     static char *kwlist[] = {"offset", "size", "flags", NULL};
     CHECK_VALID(NULL);
@@ -960,6 +960,9 @@ mmap_flush_method(PyObject *op, PyObject *args, PyObject *kwargs)
     }
     Py_RETURN_NONE;
 #elif defined(UNIX)
+    if (flags == 0) {
+        flags = MS_SYNC;
+    }
     if (-1 == msync(self->data + offset, size, flags)) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
