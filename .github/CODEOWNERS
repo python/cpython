@@ -16,6 +16,10 @@ configure*                    @erlend-aasland @corona10
 Makefile.pre.in               @erlend-aasland
 Modules/Setup*                @erlend-aasland
 
+# generate-build-details
+Tools/build/generate-build-details.py   @FFY00
+Lib/test/test_build_details.py          @FFY00
+
 # argparse
 **/*argparse*                 @savannahostrowski
 
