@@ -1346,7 +1346,8 @@ class TestDetectEncoding(TestCase):
 
     def test_no_bom_no_encoding_cookie(self):
         lines = (
-            b'# something\n',
+            b'#!/home/\xc3\xa4/bin/python\n',
+            b'# something \xe2\x82\xac\n',
             b'print(something)\n',
             b'do_something(else)\n'
         )
@@ -1354,16 +1355,54 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(encoding, 'utf-8')
         self.assertEqual(consumed_lines, list(lines[:2]))
 
+    def test_no_bom_no_encoding_cookie_first_line_error(self):
+        lines = (
+            b'#!/home/\xa4/bin/python\n\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_no_bom_no_encoding_cookie_second_line_error(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'# something \xe2\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
     def test_bom_no_cookie(self):
         lines = (
-            b'\xef\xbb\xbf# something\n',
+            b'\xef\xbb\xbf#!/home/\xc3\xa4/bin/python\n',
             b'print(something)\n',
             b'do_something(else)\n'
         )
         encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
         self.assertEqual(encoding, 'utf-8-sig')
         self.assertEqual(consumed_lines,
-                         [b'# something\n', b'print(something)\n'])
+                         [b'#!/home/\xc3\xa4/bin/python\n', b'print(something)\n'])
+
+    def test_bom_no_cookie_first_line_error(self):
+        lines = (
+            b'\xef\xbb\xbf#!/home/\xa4/bin/python\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_bom_no_cookie_second_line_error(self):
+        lines = (
+            b'\xef\xbb\xbf#!/usr/bin/python\n',
+            b'# something \xe2\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
 
     def test_cookie_first_line_no_bom(self):
         lines = (
@@ -1439,17 +1478,6 @@ class TestDetectEncoding(TestCase):
         expected = [b"print('\xc2\xa3')\n"]
         self.assertEqual(consumed_lines, expected)
 
-    def test_cookie_second_line_commented_first_line(self):
-        lines = (
-            b"#print('\xc2\xa3')\n",
-            b'# vim: set fileencoding=iso8859-15 :\n',
-            b"print('\xe2\x82\xac')\n"
-        )
-        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
-        self.assertEqual(encoding, 'iso8859-15')
-        expected = [b"#print('\xc2\xa3')\n", b'# vim: set fileencoding=iso8859-15 :\n']
-        self.assertEqual(consumed_lines, expected)
-
     def test_cookie_second_line_empty_first_line(self):
         lines = (
             b'\n',
@@ -1460,6 +1488,48 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(encoding, 'iso8859-15')
         expected = [b'\n', b'# vim: set fileencoding=iso8859-15 :\n']
         self.assertEqual(consumed_lines, expected)
+
+    def test_cookie_third_line(self):
+        lines = (
+            b'#!/home/\xc3\xa4/bin/python\n',
+            b'# something\n',
+            b'# vim: set fileencoding=ascii :\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'utf-8')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_double_coding_line(self):
+        # If the first line matches the second line is ignored.
+        lines = (
+            b'#coding:iso8859-15\n',
+            b'#coding:latin1\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso8859-15')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_double_coding_same_line(self):
+        lines = (
+            b'#coding:iso8859-15 coding:latin1\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso8859-15')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_double_coding_utf8(self):
+        lines = (
+            b'#coding:utf-8\n',
+            b'#coding:latin1\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'utf-8')
+        self.assertEqual(consumed_lines, list(lines[:1]))
 
     def test_latin1_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.
@@ -1484,7 +1554,6 @@ class TestDetectEncoding(TestCase):
             )
         readline = self.get_readline(lines)
         self.assertRaises(SyntaxError, tokenize.detect_encoding, readline)
-
 
     def test_utf8_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.
