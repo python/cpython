@@ -987,24 +987,24 @@ New modules
 
 * :mod:`annotationlib`:
   For introspecting :term:`annotations <annotation>`.
-  See :ref:`PEP 749 <whatsnew314-pep649>` for more details.
+  See :ref:`PEP 749 <whatsnew314-deferred-annotations>` for more details.
   (Contributed by Jelle Zijlstra in :gh:`119180`.)
 
 * :mod:`compression` (including :mod:`compression.zstd`):
   A package for compression-related modules,
   including a new module to support the Zstandard compression format.
-  See :ref:`PEP 784 <whatsnew314-pep784>` for more details.
+  See :ref:`PEP 784 <whatsnew314-zstandard>` for more details.
   (Contributed by Emma Harper Smith, Adam Turner, Gregory P. Smith, Tomas Roun,
   Victor Stinner, and Rogdham in :gh:`132983`.)
 
 * :mod:`concurrent.interpreters`:
   Support for multiple interpreters in the standard library.
-  See :ref:`PEP 734 <whatsnew314-pep734>` for more details.
+  See :ref:`PEP 734 <whatsnew314-multiple-interpreters>` for more details.
   (Contributed by Eric Snow in :gh:`134939`.)
 
 * :mod:`string.templatelib`:
   Support for template string literals (t-strings).
-  See :ref:`PEP 750 <whatsnew314-pep750>` for more details.
+  See :ref:`PEP 750 <whatsnew314-template-string-literals>` for more details.
   (Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
   Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
   and Pablo Galindo Salgado in :gh:`132661`.)
@@ -1110,7 +1110,7 @@ concurrent.futures
   asynchronously.
 
   This is separate from the new :mod:`~concurrent.interpreters` module
-  introduced by :ref:`PEP 734 <whatsnew314-pep734>`.
+  introduced by :ref:`PEP 734 <whatsnew314-multiple-interpreters>`.
   (Contributed by Eric Snow in :gh:`124548`.)
 
 .. _whatsnew314-concurrent-futures-start-method:
@@ -1852,7 +1852,7 @@ sys
   function was deprecated in Python 3.13 but it didn't raise a runtime warning.
 
 * Add :func:`sys.remote_exec` to implement the new external debugger interface.
-  See :ref:`PEP 768 <whatsnew314-pep768>` for details.
+  See :ref:`PEP 768 <whatsnew314-remote-debugging>` for details.
   (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic
   in :gh:`131591`.)
 
