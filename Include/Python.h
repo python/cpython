@@ -16,6 +16,7 @@
 
 
 // Include standard header files
+// When changing these files, remember to update Doc/extending/extending.rst.
 #include <assert.h>               // assert()
 #include <inttypes.h>             // uintptr_t
 #include <limits.h>               // INT_MAX
