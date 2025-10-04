@@ -1493,11 +1493,6 @@ def get_local_part(value):
             local_part.defects.append(errors.ObsoleteHeaderDefect(
                 "local-part is not a dot-atom (contains CFWS)"))
         local_part[0] = obs_local_part
-    try:
-        local_part.value.encode('ascii')
-    except UnicodeEncodeError:
-        local_part.defects.append(errors.NonASCIILocalPartDefect(
-                "local-part contains non-ASCII characters)"))
     return local_part, value
 
 def get_obs_local_part(value):
