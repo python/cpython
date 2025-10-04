@@ -209,7 +209,10 @@ _Py_LegacyLocaleDetected(int warn)
      *                 we may also want to check for that explicitly.
      */
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-    return ctype_loc != NULL && strcmp(ctype_loc, "C") == 0;
+    if (ctype_loc == NULL) {
+        return 0;
+    }
+    return (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0);
 #else
     /* Windows uses code pages instead of locales, so no locale is legacy */
     return 0;
@@ -832,6 +835,10 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
     interp->callable_cache.object__getattribute__ = object__getattribute__;
+
+    if (_PyType_InitSlotDefs(interp) < 0) {
+        return _PyStatus_ERR("failed to init slotdefs");
+    }
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
@@ -2419,17 +2426,16 @@ new_interpreter(PyThreadState **tstate_p,
        interpreters: disable PyGILState_Check(). */
     runtime->gilstate.check_enabled = 0;
 
-    PyInterpreterState *interp = PyInterpreterState_New();
-    if (interp == NULL) {
-        *tstate_p = NULL;
-        return _PyStatus_OK();
-    }
-    _PyInterpreterState_SetWhence(interp, whence);
-    interp->_ready = 1;
-
     // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();
     PyThreadState *tstate = NULL;
+    PyInterpreterState *interp;
+    status = _PyInterpreterState_New(save_tstate, &interp);
+    if (interp == NULL) {
+        goto error;
+    }
+    _PyInterpreterState_SetWhence(interp, whence);
+    interp->_ready = 1;
 
     /* From this point until the init_interp_create_gil() call,
        we must not do anything that requires that the GIL be held
@@ -2506,7 +2512,7 @@ error:
     *tstate_p = NULL;
     if (tstate != NULL) {
         Py_EndInterpreter(tstate);
-    } else {
+    } else if (interp != NULL) {
         PyInterpreterState_Delete(interp);
     }
     if (save_tstate != NULL) {

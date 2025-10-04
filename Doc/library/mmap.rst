@@ -229,6 +229,12 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          on error under Windows.  A zero value was returned on success; an
          exception was raised on error under Unix.
 
+      .. versionchanged:: next
+         Allow specifying *offset* without *size*. Previously, both *offset*
+         and *size* parameters were required together. Now *offset* can be
+         specified alone, and the flush operation will extend from *offset*
+         to the end of the mmap.
+
 
    .. method:: madvise(option[, start[, length]])
 
