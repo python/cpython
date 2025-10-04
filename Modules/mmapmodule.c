@@ -448,7 +448,8 @@ _safe_PyBytes_ReverseFind(Py_ssize_t *out, mmap_object *self,
 }
 
 PyObject *
-_safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes) {
+_safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes)
+{
     if (num_bytes == 1) {
         char dest;
         if (safe_byte_copy(&dest, start) < 0) {
@@ -459,14 +460,15 @@ _safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes) {
         }
     }
     else {
-        PyObject *result = PyBytes_FromStringAndSize(NULL, num_bytes);
-        if (result == NULL) {
+        PyBytesWriter *writer = PyBytesWriter_Create(num_bytes);
+        if (writer == NULL) {
             return NULL;
         }
-        if (safe_memcpy(PyBytes_AS_STRING(result), start, num_bytes) < 0) {
-            Py_CLEAR(result);
+        if (safe_memcpy(PyBytesWriter_GetData(writer), start, num_bytes) < 0) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
         }
-        return result;
+        return PyBytesWriter_Finish(writer);
     }
 }
 
@@ -931,11 +933,15 @@ static PyObject *
 mmap_flush_method(PyObject *op, PyObject *args)
 {
     Py_ssize_t offset = 0;
+    Py_ssize_t size = -1;
     mmap_object *self = mmap_object_CAST(op);
-    Py_ssize_t size = self->size;
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|nn:flush", &offset, &size))
+    if (!PyArg_ParseTuple(args, "|nn:flush", &offset, &size)) {
         return NULL;
+    }
+    if (size == -1) {
+        size = self->size - offset;
+    }
     if (size < 0 || offset < 0 || self->size - offset < size) {
         PyErr_SetString(PyExc_ValueError, "flush values out of range");
         return NULL;
