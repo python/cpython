@@ -753,18 +753,20 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 * and is much faster than a more complex approach that
 * would untrack all relevant tuples.
 */
-static void
+static Py_ssize_t
 untrack_tuples(PyGC_Head *head)
 {
+    Py_ssize_t untracked = 0;
     PyGC_Head *gc = GC_NEXT(head);
     while (gc != head) {
         PyObject *op = FROM_GC(gc);
         PyGC_Head *next = GC_NEXT(gc);
         if (PyTuple_CheckExact(op)) {
-            _PyTuple_MaybeUntrack(op);
+            untracked += _PyTuple_MaybeUntrack(op);
         }
         gc = next;
     }
+    return untracked;
 }
 
 /* Return true if object has a pre-PEP 442 finalization method. */
@@ -1376,7 +1378,7 @@ gc_collect_young(PyThreadState *tstate,
     validate_spaces(gcstate);
     PyGC_Head *young = &gcstate->young.head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
-    untrack_tuples(young);
+    stats->untracked_tuples += untrack_tuples(young);
     GC_STAT_ADD(0, collections, 1);
 
     PyGC_Head survivors;
@@ -1654,7 +1656,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     GC_STAT_ADD(1, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
     gcstate->work_to_do += assess_work_to_do(gcstate);
-    untrack_tuples(&gcstate->young.head);
+    stats->untracked_tuples += untrack_tuples(&gcstate->young.head);
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
         GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
@@ -1716,7 +1718,7 @@ gc_collect_full(PyThreadState *tstate,
     PyGC_Head *young = &gcstate->young.head;
     PyGC_Head *pending = &gcstate->old[gcstate->visited_space^1].head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
-    untrack_tuples(young);
+    stats->untracked_tuples += untrack_tuples(young);
     /* merge all generations into visited */
     gc_list_merge(young, pending);
     gc_list_validate_space(pending, 1-gcstate->visited_space);
@@ -1756,7 +1758,7 @@ gc_collect_region(PyThreadState *tstate,
     gc_list_init(&unreachable);
     deduce_unreachable(from, &unreachable);
     validate_consistent_old_space(from);
-    untrack_tuples(from);
+    stats->untracked_tuples += untrack_tuples(from);
 
   /* Move reachable objects to next generation. */
     validate_consistent_old_space(to);
@@ -2098,11 +2100,21 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         default:
             Py_UNREACHABLE();
     }
+    gcstate->generation_stats[generation].untracked_tuples += stats.untracked_tuples;
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(stats.uncollectable + stats.collected);
     }
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(gcstate, "stop", generation, &stats);
+    }
+    else {
+        FILE *out = stderr;
+        for (int i = 0; i < NUM_GENERATIONS; i++) {
+            fprintf(out, "GC[%d] collections     : %zd\n", i, gcstate->generation_stats[i].collections);
+            fprintf(out, "GC[%d] collected       : %zd\n", i, gcstate->generation_stats[i].collected);
+            fprintf(out, "GC[%d] uncollectable   : %zd\n", i, gcstate->generation_stats[i].uncollectable);
+            fprintf(out, "GC[%d] untracked_tuples: %zd\n", i, gcstate->generation_stats[i].untracked_tuples);
+        }
     }
     _PyErr_SetRaisedException(tstate, exc);
     GC_STAT_ADD(generation, objects_collected, stats.collected);

@@ -181,6 +181,7 @@ struct gc_collection_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    Py_ssize_t untracked_tuples;
 };
 
 /* Running stats per generation */
@@ -191,6 +192,7 @@ struct gc_generation_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    Py_ssize_t untracked_tuples;
 };
 
 enum _GCPhase {
