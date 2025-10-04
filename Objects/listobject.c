@@ -1886,6 +1886,175 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     return -1;
 }
 
+static int
+abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, int adapt)
+{
+    Py_ssize_t k; /* for IFLT macro expansion */
+    PyObject ** const a = ss->keys;
+    PyObject ** const v = ss->values;
+    const bool has_values = v != NULL;
+    PyObject *pivot;
+
+    assert(0 <= ok && ok <= n && 1 <= n && n <= MAX_MINRUN);
+    /* assert a[:ok] is sorted */
+    if (! ok)
+        ++ok;
+
+    Py_ssize_t M, L, R;
+    Py_ssize_t nsorted = ok;
+    Py_ssize_t mu = ok >> 1;
+    Py_ssize_t std = mu;
+    Py_ssize_t nbad = 0;    // badness of fit
+
+    if (adapt) {
+        for (; ok < n; ++ok) {
+            pivot = a[ok];
+
+            // NOTE: If abinarysort is actually working, there will be gains
+            //       And this is a relatively small insurance against adversity
+            //       However, subject to be removed if not helpful in practice
+            if (std < (ok >> 2)) {
+                IFLT(pivot, a[mu]) {
+                    L = 0;
+                    R = mu;
+                    if (L < R) {
+                        std += !std;
+                        M = R - std;
+                        if (M < L)
+                            M = L;
+                        IFLT(pivot, a[M]) {
+                            R = M;
+                            if (L < R) {
+                                M = R - std;
+                                if (M < L)
+                                    M = L;
+                                IFLT(pivot, a[M])
+                                    R = M;
+                                else
+                                    L = M + 1;
+                            }
+                        }
+                        else {
+                            L = M + 1;
+                        }
+                    }
+                }
+                else {
+                    L = mu + 1;
+                    R = ok;
+                    if (L < R) {
+                        M = L + std;
+                        if (M >= R)
+                            M = R - 1;
+                        IFLT(pivot, a[M]) {
+                            R = M;
+                        }
+                        else {
+                            L = M + 1;
+                            if (L < R) {
+                                M = L + std;
+                                if (M >= R)
+                                    M = R - 1;
+                                IFLT(pivot, a[M])
+                                    R = M;
+                                else
+                                    L = M + 1;
+                            }
+                        }
+                    }
+                }
+                // Binary Insertion
+                while (L < R) {
+                    M = (L + R) >> 1;
+                    IFLT(pivot, a[M])
+                        R = M;
+                    else
+                        L = M + 1;
+                }
+            }
+            else {
+                // Binary Insertion
+                M = ok >> 1;
+                IFLT(pivot, a[M]) {
+                    L = 0;
+                    R = M;
+                }
+                else {
+                    L = M + 1;
+                    R = ok;
+                }
+                while (L < R) {
+                    M = (L + R) >> 1;
+                    IFLT(pivot, a[M])
+                        R = M;
+                    else
+                        L = M + 1;
+                }
+            }
+
+            for (M = ok; M > L; --M)
+                a[M] = a[M - 1];
+            a[L] = pivot;
+            if (has_values) {
+                pivot = v[ok];
+                for (M = ok; M > L; --M)
+                    v[M] = v[M - 1];
+                v[L] = pivot;
+            }
+
+            // Update Adaptive runvars
+            std = labs(L - mu);
+            nbad += std;
+            mu = L;
+        }
+    }
+    else {
+        for (; ok < n; ++ok) {
+            pivot = a[ok];
+
+            // Binary Insertion
+            M = ok >> 1;
+            IFLT(pivot, a[M]) {
+                L = 0;
+                R = M;
+            }
+            else {
+                L = M + 1;
+                R = ok;
+            }
+            while (L < R) {
+                M = (L + R) >> 1;
+                IFLT(pivot, a[M])
+                    R = M;
+                else
+                    L = M + 1;
+            }
+
+            for (M = ok; M > L; --M)
+                a[M] = a[M - 1];
+            a[L] = pivot;
+            if (has_values) {
+                pivot = v[ok];
+                for (M = ok; M > L; --M)
+                    v[M] = v[M - 1];
+                v[L] = pivot;
+            }
+
+            // Update Adaptive runvars
+            std = labs(L - mu);
+            nbad += std;
+            mu = L;
+        }
+    }
+
+    // Return Adaptivity measure (max 1000)
+    // This is: 1000 * nbad / sum(range(nsorted:n))
+    return nbad * 2000 / ((n + 2 * nsorted - 1) * n);
+
+ fail:
+    return -1;
+}
+
 static void
 sortslice_reverse(sortslice *s, Py_ssize_t n)
 {
@@ -3074,36 +3243,97 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     /* March over the array once, left to right, finding natural runs,
      * and extending short natural runs to minrun elements.
      */
-    do {
-        Py_ssize_t n;
+    // NOTE: Could turn on based on minlen or comparison type
+    int binary_adapt = ms.listlen >= 100;
+    if (!binary_adapt) {
+        do {
+            Py_ssize_t n;
 
-        /* Identify next run. */
-        n = count_run(&ms, &lo, nremaining);
-        if (n < 0)
-            goto fail;
-        /* If short, extend to min(minrun, nremaining). */
-        minrun = minrun_next(&ms);
-        if (n < minrun) {
-            const Py_ssize_t force = nremaining <= minrun ?
-                              nremaining : minrun;
-            if (binarysort(&ms, &lo, force, n) < 0)
+            /* Identify next run. */
+            n = count_run(&ms, &lo, nremaining);
+            if (n < 0)
                 goto fail;
-            n = force;
-        }
-        /* Maybe merge pending runs. */
-        assert(ms.n == 0 || ms.pending[ms.n -1].base.keys +
-                            ms.pending[ms.n-1].len == lo.keys);
-        if (found_new_run(&ms, n) < 0)
-            goto fail;
-        /* Push new run on stack. */
-        assert(ms.n < MAX_MERGE_PENDING);
-        ms.pending[ms.n].base = lo;
-        ms.pending[ms.n].len = n;
-        ++ms.n;
-        /* Advance to find next run. */
-        sortslice_advance(&lo, n);
-        nremaining -= n;
-    } while (nremaining);
+            /* If short, extend to min(minrun, nremaining). */
+            minrun = minrun_next(&ms);
+            if (n < minrun) {
+                const Py_ssize_t force = nremaining <= minrun ?
+                                  nremaining : minrun;
+                if (binarysort(&ms, &lo, force, n) < 0)
+                    goto fail;
+                n = force;
+            }
+            /* Maybe merge pending runs. */
+            assert(ms.n == 0 || ms.pending[ms.n -1].base.keys +
+                                ms.pending[ms.n-1].len == lo.keys);
+            if (found_new_run(&ms, n) < 0)
+                goto fail;
+            /* Push new run on stack. */
+            assert(ms.n < MAX_MERGE_PENDING);
+            ms.pending[ms.n].base = lo;
+            ms.pending[ms.n].len = n;
+            ++ms.n;
+            /* Advance to find next run. */
+            sortslice_advance(&lo, n);
+            nremaining -= n;
+        } while (nremaining);
+    }
+    else {
+        int adapt = 0;  // do not run binarysort adaptivity on 1st run
+        int cs = 0;     // but do check goodness of adaptive fit
+        int cd = 1;
+        int abinret;
+        do {
+            Py_ssize_t n;
+
+            /* Identify next run. */
+            n = count_run(&ms, &lo, nremaining);
+            if (n < 0)
+                goto fail;
+            /* If short, extend to min(minrun, nremaining). */
+            minrun = minrun_next(&ms);
+            if (n < minrun) {
+                const Py_ssize_t force = nremaining <= minrun ?
+                                  nremaining : minrun;
+                if (cs) {
+                    if (binarysort(&ms, &lo, force, n) < 0)
+                        goto fail;
+                    cs -= 1;
+                }
+                else {
+                    abinret = abinarysort(&ms, &lo, force, n, adapt);
+                    if (abinret < 0)
+                        goto fail;
+                    adapt = abinret < 250;
+                    if (adapt)
+                        cd = 1;
+                    else if (cd >= 9)
+                        cs = cd = 11;
+                    else
+                        cs = cd = cd + 2;
+                }
+                n = force;
+            }
+            else {
+                // After long monotonic run start adapting immediately
+                adapt = 1;
+                cs = 0;
+                cd = 1;
+            }
+            /* Maybe merge pending runs. */
+            assert(ms.n == 0 || ms.pending[ms.n -1].base.keys +
+                                ms.pending[ms.n-1].len == lo.keys);
+            if (found_new_run(&ms, n) < 0)
+                goto fail;
+            /* Push new run on stack. */
+            assert(ms.n < MAX_MERGE_PENDING);
+            ms.pending[ms.n].base = lo;
+            ms.pending[ms.n].len = n;
+            ++ms.n;
+            /* Advance to find next run. */
+            sortslice_advance(&lo, n);
+            nremaining -= n;
+        } while (nremaining);
+    }
 
     if (merge_force_collapse(&ms) < 0)
         goto fail;
