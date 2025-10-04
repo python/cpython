@@ -426,10 +426,11 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* wraps into a TextIOWrapper */
     wrapper = PyObject_CallFunction((PyObject *)state->PyTextIOWrapper_Type,
-                                    "OsssO",
+                                    "OsssOO",
                                     buffer,
                                     encoding, errors, newline,
-                                    line_buffering ? Py_True : Py_False);
+                                    line_buffering ? Py_True : Py_False,
+                                    (buffering && !line_buffering) ? Py_True : Py_False);
     if (wrapper == NULL)
         goto error;
     result = wrapper;

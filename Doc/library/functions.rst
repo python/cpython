@@ -1392,15 +1392,52 @@ are always available.  They are listed here in alphabetical order.
       files; all the processing is done by Python itself, and is therefore
       platform-independent.
 
-   *buffering* is an optional integer used to set the buffering policy.  Pass 0
-   to switch buffering off (only allowed in binary mode), 1 to select line
-   buffering (only usable when writing in text mode), and an integer > 1 to indicate the size
-   in bytes of a fixed-size chunk buffer. Note that specifying a buffer size this
-   way applies for binary buffered I/O, but ``TextIOWrapper`` (i.e., files opened
-   with ``mode='r+'``) would have another buffering. To disable buffering in
-   ``TextIOWrapper``, consider using the ``write_through`` flag for
-   :func:`io.TextIOWrapper.reconfigure`. When no *buffering* argument is
-   given, the default buffering policy works as follows:
+   .. _open-buffering-parameter:
+
+   *buffering* is an optional integer used to set the buffering policy. It has
+   different behavior for text and binary modes, and both have a distinct
+   :ref:`default behavior <default-buffering-policy>`.
+
+   In binary mode:
+   * < 0 selects the default buffering scheme for bytes I/O.
+   * 0 disables buffering entirely.
+   * 1 selects the default buffering scheme and prints a warning. This is
+     a relic from Python 2, when line buffering was always supported.
+   * > 1 creates a buffer of the given size and uses it to group together read
+     and write calls to the underlying I/O handle.
+
+   In text mode:
+   * < 0 selects the default buffering scheme for text I/O.
+   * 0 raises :exc:`ValueError`, because encoding or decoding text requires
+     a buffer.
+   * 1 selects line buffering, which is further parameterized by the
+     :ref:`*newline* <open-newline-parameter>` argument.
+   * > 1 will allocate a bytes buffer of the given size and return
+     a ``TextIOWrapper``. This wrapped stream will internally forward read and
+     write operations to the allocated bytes buffer, resulting in grouped calls
+     to the underlying I/O handle like the binary version.
+
+     .. versionchanged:: 3.15
+
+       This would previously return a ``TextIOWrapper`` *without* the
+       ``write_through`` flag enabled, which results in multiple layers of
+       buffering that destructively interfere with each other.
+
+       :func:`io.TextIOWrapper.reconfigure` can be used to enable
+       ``write_through`` post-hoc on earlier versions, but the
+       the text-wrapped stream can also be opened in a separate step from the
+       buffered I/O stream it wraps to avoid this ambiguity::
+
+        >>> with open("file.txt", "wb", buffering=10) as outb, \
+        ...      io.TextIOWrapper(outb, write_through=True) as out:
+        ...           out.write('heya')
+        ...
+
+   .. _default-buffering-policy:
+
+   When no *buffering* argument is given, or equivalently if *buffering* is < 1,
+   the default buffering policy is triggered. The default buffering policy works
+   as follows:
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer
      is ``max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)``
@@ -1408,8 +1445,9 @@ are always available.  They are listed here in alphabetical order.
      On most systems, the buffer will typically be 128 kilobytes long.
 
    * "Interactive" text files (files for which :meth:`~io.IOBase.isatty`
-     returns ``True``) use line buffering.  Other text files use the policy
-     described above for binary files.
+     returns ``True``) use line buffering. Other text files will allocate
+     an internal buffer using the same default size heuristic as the binary
+     default policy.
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
