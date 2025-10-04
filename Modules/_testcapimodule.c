@@ -2566,17 +2566,17 @@ static void
 test_interp_locks_common(void)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyInterpreterLock ref = PyInterpreterLock_FromCurrent();
-    assert(ref != 0);
-    assert(PyInterpreterLock_GetInterpreter(ref) == interp);
+    PyInterpreterLock lock = PyInterpreterLock_FromCurrent();
+    assert(lock != 0);
+    assert(PyInterpreterLock_GetInterpreter(lock) == interp);
 
-    PyInterpreterLock ref_2 = PyInterpreterLock_Copy(ref);
-    assert(ref_2 != 0);
-    assert(PyInterpreterLock_GetInterpreter(ref_2) == interp);
+    PyInterpreterLock lock_2 = PyInterpreterLock_Copy(lock);
+    assert(lock_2 != 0);
+    assert(PyInterpreterLock_GetInterpreter(lock_2) == interp);
 
     // We can close the references in any order
-    PyInterpreterLock_Release(ref);
-    PyInterpreterLock_Release(ref_2);
+    PyInterpreterLock_Release(lock_2);
+    PyInterpreterLock_Release(lock);
 }
 
 static PyObject *

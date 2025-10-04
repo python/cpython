@@ -2577,8 +2577,8 @@ static PyMethodDef module_functions[] = {
 #ifdef __EMSCRIPTEN__
     {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
 #endif
-    {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
     {"simple_pending_call", simple_pending_call, METH_O},
+    {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
     {"test_interp_lock_countdown", test_interp_lock_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {NULL, NULL} /* sentinel */
