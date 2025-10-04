@@ -1765,7 +1765,7 @@ decref_interpreter(PyInterpreterState *interp)
     _PyRWMutex_RUnlock(&interp->references.lock);
     if (old <= 0) {
         Py_FatalError("interpreter has negative reference count, likely due"
-                      " to an extra PyInterpreterRef_Close()");
+                      " to an extra PyInterpreterLock_Release()");
     }
 }
 
@@ -2783,17 +2783,17 @@ PyGILState_Ensure(void)
 
     PyThreadState *tcur = gilstate_get();
     int has_gil;
-    PyInterpreterRef ref;
+    PyInterpreterLock ref;
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
         // XXX Use PyInterpreterState_EnsureThreadState()?
-        if (PyUnstable_GetDefaultInterpreterRef(&ref) < 0) {
+        if (PyUnstable_InterpreterView_FromDefault(&ref) < 0) {
             // The main interpreter has finished, so we don't have
             // any intepreter to make a thread state for. Hang the
             // thread to act as failure.
             PyThread_hang_thread();
         }
-        tcur = new_threadstate(PyInterpreterRef_GetInterpreter(ref),
+        tcur = new_threadstate(PyInterpreterLock_GetInterpreter(ref),
                                _PyThreadState_WHENCE_GILSTATE);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
@@ -2806,7 +2806,7 @@ PyGILState_Ensure(void)
         assert(tcur->gilstate_counter == 1);
         tcur->gilstate_counter = 0;
         has_gil = 0; /* new thread state is never current */
-        PyInterpreterRef_Close(ref);
+        PyInterpreterLock_Release(ref);
     }
     else {
         has_gil = holds_gil(tcur);
@@ -3159,7 +3159,7 @@ _PyInterpreterState_Refcount(PyInterpreterState *interp)
 }
 
 static int
-try_acquire_strong_ref(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
+try_acquire_strong_ref(PyInterpreterState *interp, PyInterpreterLock *strong_ptr)
 {
     _PyRWMutex_RLock(&interp->references.lock);
     if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
@@ -3169,24 +3169,24 @@ try_acquire_strong_ref(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
     }
     _Py_atomic_add_ssize(&interp->references.refcount, 1);
     _PyRWMutex_RUnlock(&interp->references.lock);
-    *strong_ptr = (PyInterpreterRef)interp;
+    *strong_ptr = (PyInterpreterLock)interp;
     return 0;
 }
 
 
 static PyInterpreterState *
-ref_as_interp(PyInterpreterRef ref)
+ref_as_interp(PyInterpreterLock ref)
 {
     PyInterpreterState *interp = (PyInterpreterState *)ref;
     if (interp == NULL) {
-        Py_FatalError("Got a null interpreter reference, likely due to use after PyInterpreterRef_Close()");
+        Py_FatalError("Got a null interpreter reference, likely due to use after PyInterpreterLock_Release()");
     }
 
     return interp;
 }
 
 int
-PyInterpreterRef_FromCurrent(PyInterpreterRef *ref)
+PyInterpreterLock_FromCurrent(PyInterpreterLock *ref)
 {
     assert(ref != NULL);
     PyInterpreterState *interp = PyInterpreterState_Get();
@@ -3198,11 +3198,11 @@ PyInterpreterRef_FromCurrent(PyInterpreterRef *ref)
     return 0;
 }
 
-PyInterpreterRef
-PyInterpreterRef_Dup(PyInterpreterRef ref)
+PyInterpreterLock
+PyInterpreterLock_Copy(PyInterpreterLock ref)
 {
     PyInterpreterState *interp = ref_as_interp(ref);
-    PyInterpreterRef new_ref;
+    PyInterpreterLock new_ref;
     int res = try_acquire_strong_ref(interp, &new_ref);
     (void)res;
     // We already hold a strong reference, so it shouldn't be possible
@@ -3212,72 +3212,72 @@ PyInterpreterRef_Dup(PyInterpreterRef ref)
     return new_ref;
 }
 
-#undef PyInterpreterRef_Close
+#undef PyInterpreterLock_Release
 void
-PyInterpreterRef_Close(PyInterpreterRef ref)
+PyInterpreterLock_Release(PyInterpreterLock ref)
 {
     PyInterpreterState *interp = ref_as_interp(ref);
     decref_interpreter(interp);
 }
 
 PyInterpreterState *
-PyInterpreterRef_GetInterpreter(PyInterpreterRef ref)
+PyInterpreterLock_GetInterpreter(PyInterpreterLock ref)
 {
     PyInterpreterState *interp = ref_as_interp(ref);
     return interp;
 }
 
 int
-PyInterpreterWeakRef_FromCurrent(PyInterpreterWeakRef *wref_ptr)
+PyInterpreterView_FromCurrent(PyInterpreterView *wref_ptr)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    /* PyInterpreterWeakRef_Close() can be called without an attached thread
+    /* PyInterpreterView_Close() can be called without an attached thread
        state, so we have to use the raw allocator. */
-    _PyInterpreterWeakRef *wref = PyMem_RawMalloc(sizeof(_PyInterpreterWeakRef));
+    _PyInterpreterView *wref = PyMem_RawMalloc(sizeof(_PyInterpreterView));
     if (wref == NULL) {
         PyErr_NoMemory();
         return -1;
     }
     wref->refcount = 1;
     wref->id = interp->id;
-    *wref_ptr = (PyInterpreterWeakRef)wref;
+    *wref_ptr = (PyInterpreterView)wref;
     return 0;
 }
 
-static _PyInterpreterWeakRef *
-wref_handle_as_ptr(PyInterpreterWeakRef wref_handle)
+static _PyInterpreterView *
+wref_handle_as_ptr(PyInterpreterView wref_handle)
 {
-    _PyInterpreterWeakRef *wref = (_PyInterpreterWeakRef *)wref_handle;
+    _PyInterpreterView *wref = (_PyInterpreterView *)wref_handle;
     if (wref == NULL) {
-        Py_FatalError("Got a null weak interpreter reference, likely due to use after PyInterpreterWeakRef_Close()");
+        Py_FatalError("Got a null weak interpreter reference, likely due to use after PyInterpreterView_Close()");
     }
 
     return wref;
 }
 
-PyInterpreterWeakRef
-PyInterpreterWeakRef_Dup(PyInterpreterWeakRef wref_handle)
+PyInterpreterView
+PyInterpreterView_Copy(PyInterpreterView wref_handle)
 {
-    _PyInterpreterWeakRef *wref = wref_handle_as_ptr(wref_handle);
+    _PyInterpreterView *wref = wref_handle_as_ptr(wref_handle);
     ++wref->refcount;
     return wref;
 }
 
-#undef PyInterpreterWeakRef_Close
+#undef PyInterpreterView_Close
 void
-PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref_handle)
+PyInterpreterView_Close(PyInterpreterView wref_handle)
 {
-    _PyInterpreterWeakRef *wref = wref_handle_as_ptr(wref_handle);
+    _PyInterpreterView *wref = wref_handle_as_ptr(wref_handle);
     if (--wref->refcount == 0) {
         PyMem_RawFree(wref);
     }
 }
 
 int
-PyInterpreterWeakRef_Promote(PyInterpreterWeakRef wref_handle, PyInterpreterRef *strong_ptr)
+PyInterpreterLock_FromView(PyInterpreterView wref_handle, PyInterpreterLock *strong_ptr)
 {
     assert(strong_ptr != NULL);
-    _PyInterpreterWeakRef *wref = wref_handle_as_ptr(wref_handle);
+    _PyInterpreterView *wref = wref_handle_as_ptr(wref_handle);
     int64_t interp_id = wref->id;
     /* Interpreters cannot be deleted while we hold the runtime lock. */
     _PyRuntimeState *runtime = &_PyRuntime;
@@ -3295,7 +3295,7 @@ PyInterpreterWeakRef_Promote(PyInterpreterWeakRef wref_handle, PyInterpreterRef 
 }
 
 int
-PyUnstable_GetDefaultInterpreterRef(PyInterpreterRef *strong_ptr)
+PyUnstable_InterpreterView_FromDefault(PyInterpreterLock *strong_ptr)
 {
     assert(strong_ptr != NULL);
     _PyRuntimeState *runtime = &_PyRuntime;
@@ -3313,7 +3313,7 @@ PyUnstable_GetDefaultInterpreterRef(PyInterpreterRef *strong_ptr)
 }
 
 int
-PyThreadState_Ensure(PyInterpreterRef interp_ref, PyThreadRef *thread_ref)
+PyThreadState_Ensure(PyInterpreterLock interp_ref, PyThreadView *thread_ref)
 {
     PyInterpreterState *interp = ref_as_interp(interp_ref);
     PyThreadState *attached_tstate = current_fast_get();
@@ -3342,7 +3342,7 @@ PyThreadState_Ensure(PyInterpreterRef interp_ref, PyThreadRef *thread_ref)
     fresh_tstate->ensure.delete_on_release = 1;
 
     if (attached_tstate != NULL) {
-        *thread_ref = (PyThreadRef)PyThreadState_Swap(fresh_tstate);
+        *thread_ref = (PyThreadView)PyThreadState_Swap(fresh_tstate);
     } else {
         _PyThreadState_Attach(fresh_tstate);
     }
@@ -3351,7 +3351,7 @@ PyThreadState_Ensure(PyInterpreterRef interp_ref, PyThreadRef *thread_ref)
 }
 
 void
-PyThreadState_Release(PyThreadRef thread_ref)
+PyThreadState_Release(PyThreadView thread_ref)
 {
     PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);

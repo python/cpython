@@ -2291,7 +2291,7 @@ const char *THREAD_CODE = \
     "fib(10)";
 
 typedef struct {
-    PyInterpreterRef ref;
+    PyInterpreterLock ref;
     int done;
 } ThreadData;
 
@@ -2299,7 +2299,7 @@ static void
 do_tstate_ensure(void *arg)
 {
     ThreadData *data = (ThreadData *)arg;
-    PyThreadRef refs[4];
+    PyThreadView refs[4];
     int res = PyThreadState_Ensure(data->ref, &refs[0]);
     assert(res == 0);
     PyThreadState_Ensure(data->ref, &refs[1]);
@@ -2313,7 +2313,7 @@ do_tstate_ensure(void *arg)
     PyThreadState_Release(refs[1]);
     assert(res == 0);
     PyThreadState_Release(refs[0]);
-    PyInterpreterRef_Close(data->ref);
+    PyInterpreterLock_Release(data->ref);
     data->done = 1;
 }
 
@@ -2323,14 +2323,14 @@ test_thread_state_ensure(void)
     _testembed_initialize();
     PyThread_handle_t handle;
     PyThread_ident_t ident;
-    PyInterpreterRef ref;
-    if (PyInterpreterRef_FromCurrent(&ref) < 0) {
+    PyInterpreterLock ref;
+    if (PyInterpreterLock_FromCurrent(&ref) < 0) {
         return -1;
     };
     ThreadData data = { ref };
     if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
                                        &ident, &handle) < 0) {
-        PyInterpreterRef_Close(ref);
+        PyInterpreterLock_Release(ref);
         return -1;
     }
     // We hold a strong interpreter reference, so we don't
@@ -2372,23 +2372,23 @@ static int
 test_main_interpreter_ref(void)
 {
     // It should not work before the runtime has started.
-    PyInterpreterRef ref;
-    int res = PyUnstable_GetDefaultInterpreterRef(&ref);
+    PyInterpreterLock ref;
+    int res = PyUnstable_InterpreterView_FromDefault(&ref);
     (void)res;
     assert(res == -1);
 
     _testembed_initialize();
 
     // Main interpreter is initialized and ready.
-    res = PyUnstable_GetDefaultInterpreterRef(&ref);
+    res = PyUnstable_InterpreterView_FromDefault(&ref);
     assert(res == 0);
-    assert(PyInterpreterRef_GetInterpreter(ref) == PyInterpreterState_Main());
-    PyInterpreterRef_Close(ref);
+    assert(PyInterpreterLock_GetInterpreter(ref) == PyInterpreterState_Main());
+    PyInterpreterLock_Release(ref);
 
     Py_Finalize();
 
     // Main interpreter is dead, we can no longer acquire references to it.
-    res = PyUnstable_GetDefaultInterpreterRef(&ref);
+    res = PyUnstable_InterpreterView_FromDefault(&ref);
     assert(res == -1);
     return 0;
 }
