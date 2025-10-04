@@ -228,6 +228,10 @@ def _make_lazycache_entry(filename, module_globals):
         loader = getattr(spec, 'loader', None)
         if loader is None:
             loader = module_globals.get('__loader__')
+        mod_file = module_globals.get('__file__')
+        import importlib._bootstrap_external
+        if isinstance(loader, importlib._bootstrap_external.SourceFileLoader) and (not mod_file or (not mod_file.endswith(filename) and not mod_file.endswith('.pyc'))):
+            return False
         get_source = getattr(loader, 'get_source', None)
 
         if name and get_source:
