@@ -411,6 +411,288 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
 
 .. _socket-unix-constants:
 
+Socket level options
+''''''''''''''''''''
+
+These constants are passed to :meth:`socket.setsockopt` and :meth:`socket.getsockopt`
+with a level of :const:`SOL_SOCKET` to set and get socket settings. Their availability
+and behavior is dependent upon the underlying OS. Basic descriptions of each option are
+documented below but your OS's documentation will be far more reliable. The following
+table serves a basic compatibility guide.
+
+Unless otherwise noted, these options are available on Linux versions >= 2.3,
+FreeBSD >= 2 and Windows >= 2000.
+
+=======================  ===========  ===========  ================
+Socket Option            Linux        FreeBSD      Windows
+=======================  ===========  ===========  ================
+**SO_DEBUG**             ✓            ✓            ✓ [1]_
+**SO_ACCEPTCONN**        ✓            ✓            ✓
+**SO_REUSEADDR**         ✓            ✓            ✓
+**SO_EXCLUSIVEADDRUSE**                            ✓
+**SO_KEEPALIVE**         ✓            ✓            ✓
+**SO_DONTROUTE**         ✓            ✓            ✓ [1]_
+**SO_BROADCAST**         ✓            ✓            ✓
+**SO_USELOOPBACK**                    ✓            ✓ >= Vista [1]_
+**SO_LINGER**            ✓            ✓            ✓
+**SO_OOBINLINE**         ✓            ✓            ✓
+**SO_REUSEPORT**         ✓ >= 3.9     ✓
+**SO_SNDBUF**            ✓            ✓            ✓
+**SO_RCVBUF**            ✓            ✓            ✓
+**SO_SNDLOWAT**          ✓            ✓            ✓ [1]_
+**SO_RCVLOWAT**          ✓            ✓            ✓ [1]_
+**SO_SNDTIMEO**          ✓            ✓            ✓
+**SO_RCVTIMEO**          ✓            ✓            ✓
+**SO_ERROR**             ✓            ✓            ✓
+**SO_TYPE**              ✓            ✓            ✓
+**SO_SETFIB**                         ✓ >= 7.1
+**SO_PASSCRED**          ✓
+**SO_PEERCRED**          ✓
+**SO_PASSSEC**           ✓ >= 2.6.2
+**SO_PEERSEC**           ✓ >= 2.6.2
+**SO_BINDTODEVICE**      ✓
+**SO_PRIORITY**          ✓
+**SO_MARK**              ✓ >= 2.6.25
+**SO_DOMAIN**            ✓ >= 2.6.32
+**SO_PROTOCOL**          ✓ >= 2.6.32  ✓ >= 8.3
+=======================  ===========  ===========  ================
+
+.. [1] On Windows these options exist purely for compatibility
+       and are `not functional <https://msdn.microsoft.com/en-us/library/windows/desktop/ms740532(v=vs.85).aspx>`_.
+
+.. data:: SOL_SOCKET
+
+   This is the level parameter passed to :meth:`socket.setsockopt`
+   and :meth:`socket.getsockopt` to change socket level parameters.
+
+   For example, this is how to change a socket's sending buffer size. ::
+
+      >>> s.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+      16384
+      >>> s.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 2048)
+      >>> s.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+      2048
+
+.. data:: SO_DEBUG
+
+   Setting this option to 1 on a socket causes it to print out debugging
+   information into the kernel log. (Viewable with dmesg)
+
+..   Availability: Linux, Windows `(non functional) <https://msdn.microsoft.com/en-us/library/windows/desktop/ms740532(v=vs.85).aspx>`_
+
+.. data:: SO_ACCEPTCONN
+
+   Returns 1 if the socket is marked to accept connections with
+   :meth:`socket.listen`. This option is read only.
+
+..   Availability: Linux, Windows
+
+.. data:: SO_REUSEADDR
+
+   Allows a socket to be able to bind to an address that was previously
+   bound to. When a socket shuts down, whether by virtue of the program
+   exiting or an explicit call to shut it down, it takes the OS some time
+   to terminate existing connections and perform the proper shut down
+   procedure. ``SO_REUSEADDR`` allows bypassing of this behavior and permits
+   another socket to be able to bind to the address.
+
+..   Availability: Linux, Windows
+
+.. data:: SO_EXCLUSIVEADDRUSE
+
+   Allows overriding ``SO_REUSEADDR`` behavior for exclusive access to an
+   address and port for high availability services.
+
+   .. seealso::
+
+      `Microsoft's documentation <https://msdn.microsoft.com/en-us/library/windows/desktop/cc150667(v=vs.85).aspx>`_
+      on this option.
+
+..   Availability: Windows
+
+.. data:: SO_KEEPALIVE
+
+   Set to 1 to enable sending of keep-alive packets on certain types of
+   sockets.
+
+..   Availability: Linux, Windows
+
+.. data:: SO_DONTROUTE
+
+   Indicates that packets sent through this socket should be routed
+   through the interface it is bound to.
+
+..   Availability: Linux, Windows `(non functional) <https://msdn.microsoft.com/en-us/library/windows/desktop/ms740532(v=vs.85).aspx>`_
+
+.. data:: SO_BROADCAST
+
+   This option may be set to 1 to enable broadcasting messages, if
+   supported by the protocol. Note that IPV6 (:const:`AF_INET6`) does
+   not support broadcasting.
+
+..   Availability: Linux, Windows >= Vista.
+
+.. data:: SO_USELOOPBACK
+
+..   Availability: FreeBSD, Windows >= Vista `(non functional) <https://msdn.microsoft.com/en-us/library/windows/desktop/ms740532(v=vs.85).aspx>`_
+
+.. data:: SO_LINGER
+
+   When a socket is set to linger, a call to :meth:`~socket.close` or
+   :meth:`~socket.shutdown` will not return until all queued messages
+   for the socket have been successfully sent or the linger timeout
+   is reached. If the socket is closed due to the program exiting, it
+   will linger in the background.
+
+   The value for this option is a struct on most operating systems.
+   Consult your OS documentation for the struct's details.
+
+..   Availability: Linux, Windows
+
+.. data:: SO_OOBINLINE
+
+   Allows receiving of out of band data in the normal stream.
+
+   .. seealso::
+
+      `Out-of-band data <https://www.ibm.com/support/knowledgecenter/en/ssw_i5_54/rzab6/coobd.htm>`_
+      for an in depth explanation.
+
+..   Availability: Linux, Windows
+
+.. data:: SO_REUSEPORT
+
+..   Availability: Linux >= 3.9 (for TCP/UDP)
+
+.. data:: SO_SNDBUF
+          SO_RCVBUF
+
+   Sets the size of the sending and receiving buffers for this socket in
+   bytes. Most operating systems impose an upper limit on the size of
+   these buffers.
+
+..   Availability: Linux, Windows
+
+.. data::
+          SO_RCVLOWAT
+          SO_SNDLOWAT
+
+   ``SO_RCVLOWAT`` sets the minimum number of bytes that must be present in
+   the socket's internal receive buffer before they are returned by a
+   read call. ``SO_SNDLOWAT`` similiary sets the minimum bytes before data is
+   sent from the send buffer to the socket protocol.
+
+   SO_SNDLOWAT is read-only on Linux and SO_RCVLOWAT is read-only on
+   Linux versions below 2.4.
+
+..   Availability: Linux, Windows `(non functional) <https://msdn.microsoft.com/en-us/library/windows/desktop/ms740532(v=vs.85).aspx>`_
+
+.. data:: SO_RCVTIMEO
+          SO_SNDTIMEO
+
+   Specifies the amount of time send and receive calls for this socket will
+   block before timing out. The default timeout of zero means that operations
+   will never time out.
+
+   This is independent of :meth:`~socket.settimeout`.
+
+   On Linux this is a `struct timeval`, on Windows this is an integer.
+
+..   Availability: Linux, Windows
+
+.. data:: SO_ERROR
+
+   Gets and resets the pending socket error.
+
+..   Availability: Linux, Windows
+
+.. data:: SO_TYPE
+
+   Gets the type of the socket. This type corresponds to the type as
+   defined in the :func:`socket.socket` function. Examples include
+   :const:`SOCK_STREAM` and :const:`SOCK_DGRAM`.
+
+..   Availability: Linux, Windows
+
+.. data:: SO_SETFIB
+
+   Sets the FIB (routing table) for the socket.
+
+   Availability: FreeBSD >= 7.1
+
+   .. versionadded:: 3.1
+
+.. data:: SO_PASSCRED
+          SO_PEERCRED
+
+   Allows for the passing of SCM credentials over unix sockets. These
+   are passed as ancillary messages which can be received using :func:`~socket.recvmsg`
+
+   .. versionadded:: 3.3
+
+..   Availability: Linux
+
+.. data:: SO_PASSSEC
+          SO_PEERSEC
+
+   Allows for the passing of security contexts over unix sockets.
+
+   .. versionadded:: 3.6
+
+..   Availability: Linux >= 2.6.2
+
+.. data:: SO_BINDTODEVICE
+
+   Binds a socket to a particular network interface device like "eth0",
+   When bound, only packets received from that particular device are
+   processsed by the socket.
+
+   .. versionadded:: 3.3
+
+..   Availability: Linux
+
+.. data:: SO_PRIORITY
+
+   Sets the protocol-defined priority for each packet sent on this socket.
+   Packets with higher priority may be processed first depending on the
+   queueing mechanism of the network interface.
+
+   .. versionadded:: 3.4
+
+..   Availability: Linux
+
+.. data:: SO_MARK
+
+   Sets the mark on each packet sent through this socket. This may be used
+   for routing or packet filtering.
+
+   .. versionadded:: 3.5
+
+..   Availability: Linux >= 2.6.25
+
+.. data:: SO_DOMAIN
+          SO_PROTOCOL
+
+   Passing ``SO_DOMAIN`` to :meth:`~socket.getsockopt` allows for the retrival
+   of the ``family`` value as defined in the :func:`socket.socket` function.
+   ``SO_PROTOCOL`` returns the ``proto`` value. The protocol value can be the
+   exact protocol used such as ``IPPROTO_TCP`` even if 0 was passed in to specify
+   the default protocol.
+
+   Both these options are read only.
+
+   The value returned for the ``family`` is an integer which is the value of
+   the constants above like :const:`AF_INET`. In order to get the const name
+   value back you can use the AddressFamily enum. ::
+
+      >>> family = s.getsockopt(socket.SOL_SOCKET, socket.SO_DOMAIN)
+      >>> socket.AddressFamily(family)
+      <AddressFamily.AF_INET: 2>
+
+   Availability: Linux >= 2.6.32.
+
+   .. versionadded:: 3.6
+
 .. data:: SO_*
           SOMAXCONN
           MSG_*
