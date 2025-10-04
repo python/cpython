@@ -1126,9 +1126,16 @@ with sub-interpreters:
 
 .. c:type:: PyGILState_STATE
 
-   A handle to the thread state when :c:func:`PyGILState_Ensure` was
-   called, and must be passed to :c:func:`PyGILState_Release` to ensure Python
-   is left in the same state.
+   The type of the value returned by :c:func:`PyGILState_Ensure` and passed to
+   :c:func:`PyGILState_Release`.
+
+   .. c:enumerator:: PyGILState_LOCKED
+
+      The GIL was already held when :c:func:`PyGILState_Ensure` was called.
+
+   .. c:enumerator:: PyGILState_UNLOCKED
+
+      The GIL was not held when :c:func:`PyGILState_Ensure` was called.
 
 .. c:function:: PyGILState_STATE PyGILState_Ensure()
 
