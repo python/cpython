@@ -1087,6 +1087,24 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         attachments = msg.iter_attachments()
         self.assertEqual(list(attachments), [])
 
+    def test_mime_parameter_folding_no_infinite_loop(self):
+        msg = self._make_message()
+        msg.add_attachment(
+            b"test content",
+            maintype="text",
+            subtype="plain",
+            filename="test.txt"
+        )
+        maxlen = 78 # Standard RFC line length
+        extra_chrome = "utf-8''" # charset + encoding info
+        section = 0
+        min_name_len = maxlen - 3 - len(str(section)) - 3 - len(extra_chrome)
+        long_param_name = "a" * min_name_len
+        long_param_value = "b" * 100
+        msg.set_param(long_param_name, long_param_value)
+        result = msg.as_string()
+        self.assertIsInstance(result, str)
+        self.assertIn(long_param_name, result)
 
 if __name__ == '__main__':
     unittest.main()
