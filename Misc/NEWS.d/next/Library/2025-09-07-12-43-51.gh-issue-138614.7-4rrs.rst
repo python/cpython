@@ -1,2 +1,0 @@
-:mod:`site`: correctly synchronize the ``purelib`` installation scheme with
-the one defined in :mod:`sysconfig`.
