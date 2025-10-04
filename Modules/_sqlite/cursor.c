@@ -1159,35 +1159,31 @@ pysqlite_cursor_fetchone_impl(pysqlite_Cursor *self)
 /*[clinic input]
 _sqlite3.Cursor.fetchmany as pysqlite_cursor_fetchmany
 
-    size as maxrows: int(c_default='((pysqlite_Cursor *)self)->arraysize') = 1
+    size as maxrows: uint32(c_default='((pysqlite_Cursor *)self)->arraysize') = 1
         The default value is set by the Cursor.arraysize attribute.
 
 Fetches several rows from the resultset.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows)
-/*[clinic end generated code: output=a8ef31fea64d0906 input=035dbe44a1005bf2]*/
+pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, uint32_t maxrows)
+/*[clinic end generated code: output=3325f2b477c71baf input=a509c412aa70b27e]*/
 {
     PyObject* row;
     PyObject* list;
-    int counter = 0;
 
     list = PyList_New(0);
     if (!list) {
         return NULL;
     }
 
-    while ((row = pysqlite_cursor_iternext((PyObject *)self))) {
-        if (PyList_Append(list, row) < 0) {
-            Py_DECREF(row);
-            break;
-        }
+    while (maxrows > 0 && (row = pysqlite_cursor_iternext((PyObject *)self))) {
+        int rc = PyList_Append(list, row);
         Py_DECREF(row);
-
-        if (++counter == maxrows) {
+        if (rc < 0) {
             break;
         }
+        maxrows--;
     }
 
     if (PyErr_Occurred()) {
@@ -1301,6 +1297,30 @@ pysqlite_cursor_close_impl(pysqlite_Cursor *self)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+@getter
+_sqlite3.Cursor.arraysize
+[clinic start generated code]*/
+
+static PyObject *
+_sqlite3_Cursor_arraysize_get_impl(pysqlite_Cursor *self)
+/*[clinic end generated code: output=e0919d97175e6c50 input=3278f8d3ecbd90e3]*/
+{
+    return PyLong_FromUInt32(self->arraysize);
+}
+
+/*[clinic input]
+@setter
+_sqlite3.Cursor.arraysize
+[clinic start generated code]*/
+
+static int
+_sqlite3_Cursor_arraysize_set_impl(pysqlite_Cursor *self, PyObject *value)
+/*[clinic end generated code: output=af59a6b09f8cce6e input=ace48cb114e26060]*/
+{
+    return PyLong_AsUInt32(value, &self->arraysize);
+}
+
 static PyMethodDef cursor_methods[] = {
     PYSQLITE_CURSOR_CLOSE_METHODDEF
     PYSQLITE_CURSOR_EXECUTEMANY_METHODDEF
@@ -1318,12 +1338,16 @@ static struct PyMemberDef cursor_members[] =
 {
     {"connection", _Py_T_OBJECT, offsetof(pysqlite_Cursor, connection), Py_READONLY},
     {"description", _Py_T_OBJECT, offsetof(pysqlite_Cursor, description), Py_READONLY},
-    {"arraysize", Py_T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
     {"lastrowid", _Py_T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), Py_READONLY},
     {"rowcount", Py_T_LONG, offsetof(pysqlite_Cursor, rowcount), Py_READONLY},
     {"row_factory", _Py_T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), Py_READONLY},
     {NULL}
+};
+
+static struct PyGetSetDef cursor_getsets[] = {
+    _SQLITE3_CURSOR_ARRAYSIZE_GETSETDEF
+    {NULL},
 };
 
 static const char cursor_doc[] =
@@ -1336,6 +1360,7 @@ static PyType_Slot cursor_slots[] = {
     {Py_tp_iternext, pysqlite_cursor_iternext},
     {Py_tp_methods, cursor_methods},
     {Py_tp_members, cursor_members},
+    {Py_tp_getset, cursor_getsets},
     {Py_tp_init, pysqlite_cursor_init},
     {Py_tp_traverse, cursor_traverse},
     {Py_tp_clear, cursor_clear},
