@@ -1192,7 +1192,7 @@ with sub-interpreters:
       Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
       for most cases.
 
-   .. seealso:: :c:func:`PyThreadState_Get``
+   .. seealso:: :c:func:`PyThreadState_Get`
 
 .. c:function:: int PyGILState_Check()
 
