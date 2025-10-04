@@ -1314,12 +1314,8 @@ interp_look_up_id(_PyRuntimeState *runtime, int64_t requested_id)
     return NULL;
 }
 
-/* Return the interpreter state with the given ID.
-
-   Fail with RuntimeError if the interpreter is not found. */
-
-PyInterpreterState *
-_PyInterpreterState_LookUpID(int64_t requested_id)
+static PyInterpreterState *
+_PyInterpreterState_LookUpIDNoErr(int64_t requested_id)
 {
     PyInterpreterState *interp = NULL;
     if (requested_id >= 0) {
@@ -1328,6 +1324,18 @@ _PyInterpreterState_LookUpID(int64_t requested_id)
         interp = interp_look_up_id(runtime, requested_id);
         HEAD_UNLOCK(runtime);
     }
+    return interp;
+}
+
+/* Return the interpreter state with the given ID.
+
+   Fail with RuntimeError if the interpreter is not found. */
+
+PyInterpreterState *
+_PyInterpreterState_LookUpID(int64_t requested_id)
+{
+    assert(_PyThreadState_GET() != NULL);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDNoErr(requested_id);
     if (interp == NULL && !PyErr_Occurred()) {
         PyErr_Format(PyExc_InterpreterNotFoundError,
                      "unrecognized interpreter ID %lld", requested_id);
@@ -1540,7 +1548,6 @@ new_threadstate(PyInterpreterState *interp, int whence)
         return NULL;
     }
 #endif
-
     /* We serialize concurrent creation to protect global state. */
     HEAD_LOCK(interp->runtime);
 
@@ -2753,33 +2760,38 @@ PyGILState_Check(void)
     return (tstate == tcur);
 }
 
+static PyInterpreterLock
+get_main_interp_lock(void)
+{
+    PyInterpreterView view = PyUnstable_InterpreterView_FromDefault();
+    if (view == 0) {
+        return 0;
+    }
+
+    return PyInterpreterLock_FromView(view);
+}
+
 PyGILState_STATE
 PyGILState_Ensure(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-
     /* Note that we do not auto-init Python here - apart from
        potential races with 2 threads auto-initializing, pep-311
        spells out other issues.  Embedders are expected to have
        called Py_Initialize(). */
-
-    /* Ensure that _PyEval_InitThreads() and _PyGILState_Init() have been
-       called by Py_Initialize()
-
-       TODO: This isn't thread-safe. There's no protection here against
-       concurrent finalization of the interpreter; it's simply a guard
-       for *after* the interpreter has finalized.
-     */
-    if (!_PyEval_ThreadsInitialized() || runtime->gilstate.autoInterpreterState == NULL) {
-        PyThread_hang_thread();
-    }
 
     PyThreadState *tcur = gilstate_get();
     int has_gil;
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
         // XXX Use PyInterpreterState_EnsureThreadState()?
-        tcur = new_threadstate(runtime->gilstate.autoInterpreterState,
+        PyInterpreterLock lock = get_main_interp_lock();
+        if (lock == 0) {
+            // The main interpreter has finished, so we don't have
+            // any intepreter to make a thread state for. Hang the
+            // thread to act as failure.
+            PyThread_hang_thread();
+        }
+        tcur = new_threadstate(PyInterpreterLock_GetInterpreter(lock),
                                _PyThreadState_WHENCE_GILSTATE);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
@@ -2792,12 +2804,14 @@ PyGILState_Ensure(void)
         assert(tcur->gilstate_counter == 1);
         tcur->gilstate_counter = 0;
         has_gil = 0; /* new thread state is never current */
+        PyInterpreterLock_Release(lock);
     }
     else {
         has_gil = holds_gil(tcur);
     }
 
     if (!has_gil) {
+        // XXX Do we need to protect this against finalization?
         PyEval_RestoreThread(tcur);
     }
 
@@ -3133,4 +3147,237 @@ _Py_GetMainConfig(void)
         return NULL;
     }
     return _PyInterpreterState_GetConfig(interp);
+}
+
+Py_ssize_t
+_PyInterpreterState_LockCountdown(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    return _Py_atomic_load_ssize_relaxed(&interp->finalization_locks.countdown);
+}
+
+static PyInterpreterLock
+try_acquire_interp_lock(PyInterpreterState *interp)
+{
+    _PyRWMutex_RLock(&interp->finalization_locks.lock);
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
+        _PyRWMutex_RUnlock(&interp->finalization_locks.lock);
+        return (PyInterpreterLock)interp;
+    }
+    _Py_atomic_add_ssize(&interp->finalization_locks.countdown, 1);
+    _PyRWMutex_RUnlock(&interp->finalization_locks.lock);
+    return (PyInterpreterLock)interp;
+}
+
+static PyInterpreterState *
+lock_as_interp(PyInterpreterLock lock)
+{
+    PyInterpreterState *interp = (PyInterpreterState *)lock;
+    if (interp == NULL) {
+        Py_FatalError("Got a null interpreter lock, likely due to"
+                       " use after PyInterpreterLock_Release()");
+    }
+
+    return interp;
+}
+
+PyInterpreterLock
+PyInterpreterLock_FromCurrent(void)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterLock lock = try_acquire_interp_lock(interp);
+    if (lock == 0) {
+        PyErr_SetString(PyExc_PythonFinalizationError,
+                        "cannot acquire finalization lock anymore");
+        return 0;
+    }
+    return lock;
+}
+
+PyInterpreterLock
+PyInterpreterLock_Copy(PyInterpreterLock lock)
+{
+    PyInterpreterState *interp = lock_as_interp(lock);
+    PyInterpreterLock new_lock = try_acquire_interp_lock(interp);
+    // We already hold a lock, so it shouldn't be possible
+    // for the interpreter to be at a point where locks don't work anymore
+    assert(new_lock != 0);
+    return new_lock;
+}
+
+#undef PyInterpreterLock_Release
+void
+PyInterpreterLock_Release(PyInterpreterLock lock)
+{
+    PyInterpreterState *interp = lock_as_interp(lock);
+    assert(interp != NULL);
+    _PyRWMutex_RLock(&interp->finalization_locks.lock);
+    Py_ssize_t old = _Py_atomic_add_ssize(&interp->finalization_locks.countdown, -1);
+    _PyRWMutex_RUnlock(&interp->finalization_locks.lock);
+    if (old <= 0) {
+        Py_FatalError("interpreter has negative lock count, likely due"
+                      " to an extra PyInterpreterLock_Release() call");
+    }
+}
+
+PyInterpreterState *
+PyInterpreterLock_GetInterpreter(PyInterpreterLock lock)
+{
+    PyInterpreterState *interp = lock_as_interp(lock);
+    return interp;
+}
+
+PyInterpreterView
+PyInterpreterView_FromCurrent(void)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    /* PyInterpreterView_Close() can be called without an attached thread
+       state, so we have to use the raw allocator. */
+    _PyInterpreterView *view = PyMem_RawMalloc(sizeof(_PyInterpreterView));
+    if (view == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    view->refcount = 1;
+    view->id = interp->id;
+    return (PyInterpreterView)view;
+}
+
+static _PyInterpreterView *
+view_as_ptr(PyInterpreterView view_handle)
+{
+    _PyInterpreterView *view = (_PyInterpreterView *)view_handle;
+    if (view == NULL) {
+        Py_FatalError("Got a null interpreter view, likely due to use after "
+                      "PyInterpreterView_Close()");
+    }
+
+    return view;
+}
+
+PyInterpreterView
+PyInterpreterView_Copy(PyInterpreterView view_handle)
+{
+    _PyInterpreterView *view = view_as_ptr(view_handle);
+    ++view->refcount;
+    return view_handle;
+}
+
+#undef PyInterpreterView_Close
+void
+PyInterpreterView_Close(PyInterpreterView view_handle)
+{
+    _PyInterpreterView *view = view_as_ptr(view_handle);
+    if (--view->refcount == 0) {
+        PyMem_RawFree(view);
+    }
+}
+
+PyInterpreterLock
+PyInterpreterLock_FromView(PyInterpreterView view_handle)
+{
+    _PyInterpreterView *view = view_as_ptr(view_handle);
+    int64_t interp_id = view->id;
+    /* Interpreters cannot be deleted while we hold the runtime lock. */
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyInterpreterState *interp = interp_look_up_id(runtime, interp_id);
+    if (interp == NULL) {
+        HEAD_UNLOCK(runtime);
+        return 0;
+    }
+
+    PyInterpreterLock lock = try_acquire_interp_lock(interp);
+    HEAD_UNLOCK(runtime);
+    return lock;
+}
+
+PyInterpreterView
+PyUnstable_InterpreterView_FromDefault(void)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    _PyInterpreterView *view = PyMem_RawMalloc(sizeof(_PyInterpreterView));
+
+    if (view == NULL) {
+        return 0;
+    }
+
+    HEAD_LOCK(runtime);
+    view->id = runtime->_main_interpreter.id;
+    view->refcount = 1;
+    HEAD_UNLOCK(runtime);
+
+    return (PyInterpreterView)view;
+}
+
+// This is a bit of a hack -- since 0 is reserved for failure, we need
+// to have our own sentinel for when we want to indicate that no prior
+// thread state was attached.
+static int NO_TSTATE_SENTINEL = 0;
+
+PyThreadView
+PyThreadState_Ensure(PyInterpreterLock lock)
+{
+    PyInterpreterState *interp = lock_as_interp(lock);
+    PyThreadState *attached_tstate = current_fast_get();
+    if (attached_tstate != NULL && attached_tstate->interp == interp) {
+        /* Yay! We already have an attached thread state that matches. */
+        ++attached_tstate->ensure.counter;
+        return (PyThreadView)&NO_TSTATE_SENTINEL;
+    }
+
+    PyThreadState *detached_gilstate = gilstate_get();
+    if (detached_gilstate != NULL && detached_gilstate->interp == interp) {
+        /* There's a detached thread state that works. */
+        assert(attached_tstate == NULL);
+        ++detached_gilstate->ensure.counter;
+        _PyThreadState_Attach(detached_gilstate);
+        return (PyThreadView)&NO_TSTATE_SENTINEL;
+    }
+
+    PyThreadState *fresh_tstate = _PyThreadState_NewBound(interp,
+                                                          _PyThreadState_WHENCE_GILSTATE);
+    if (fresh_tstate == NULL) {
+        return 0;
+    }
+    fresh_tstate->ensure.counter = 1;
+    fresh_tstate->ensure.delete_on_release = 1;
+
+    if (attached_tstate != NULL) {
+        return (PyThreadView)PyThreadState_Swap(fresh_tstate);
+    } else {
+        _PyThreadState_Attach(fresh_tstate);
+    }
+
+    return (PyThreadView)&NO_TSTATE_SENTINEL;
+}
+
+void
+PyThreadState_Release(PyThreadView thread_view)
+{
+    PyThreadState *tstate = current_fast_get();
+    _Py_EnsureTstateNotNULL(tstate);
+    Py_ssize_t remaining = --tstate->ensure.counter;
+    if (remaining < 0) {
+        Py_FatalError("PyThreadState_Release() called more times than PyThreadState_Ensure()");
+    }
+    // The thread view might be NULL
+    PyThreadState *to_restore;
+    if (thread_view == (PyThreadView)&NO_TSTATE_SENTINEL) {
+        to_restore = NULL;
+    }
+    else {
+        to_restore = (PyThreadState *)thread_view;
+    }
+    if (remaining == 0) {
+        if (tstate->ensure.delete_on_release) {
+            PyThreadState_Clear(tstate);
+            PyThreadState_Swap(to_restore);
+            PyThreadState_Delete(tstate);
+        } else {
+            PyThreadState_Swap(to_restore);
+        }
+    }
+
+    return;
 }
