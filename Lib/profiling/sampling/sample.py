@@ -21,6 +21,7 @@ _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 PROFILING_MODE_WALL = 0
 PROFILING_MODE_CPU = 1
 PROFILING_MODE_GIL = 2
+PROFILING_MODE_ALL = 3  # Combines GIL + CPU checks
 
 
 def _parse_mode(mode_string):
@@ -136,18 +137,20 @@ def _run_with_sync(original_cmd):
 
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, skip_non_matching_threads=True):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, mode=mode
+                self.pid, all_threads=self.all_threads, mode=mode,
+                skip_non_matching_threads=skip_non_matching_threads
             )
         else:
             only_active_threads = bool(self.all_threads)
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=only_active_threads, mode=mode
+                self.pid, only_active_thread=only_active_threads, mode=mode,
+                skip_non_matching_threads=skip_non_matching_threads
             )
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
@@ -614,13 +617,20 @@ def sample(
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
 ):
+    # PROFILING_MODE_ALL implies no skipping at all
+    if mode == PROFILING_MODE_ALL:
+        skip_non_matching_threads = False
+        skip_idle = False
+    else:
+        # Determine skip settings based on output format and mode
+        skip_non_matching_threads = output_format != "gecko"
+        skip_idle = mode != PROFILING_MODE_WALL
+
     profiler = SampleProfiler(
-        pid, sample_interval_usec, all_threads=all_threads, mode=mode
+        pid, sample_interval_usec, all_threads=all_threads, mode=mode,
+        skip_non_matching_threads=skip_non_matching_threads
     )
     profiler.realtime_stats = realtime_stats
-
-    # Determine skip_idle for collector compatibility
-    skip_idle = mode != PROFILING_MODE_WALL
 
     collector = None
     match output_format:
@@ -633,7 +643,8 @@ def sample(
             collector = FlamegraphCollector(skip_idle=skip_idle)
             filename = filename or f"flamegraph.{pid}.html"
         case "gecko":
-            collector = GeckoCollector(skip_idle=skip_idle)
+            # Gecko format never skips idle threads to show full thread states
+            collector = GeckoCollector(skip_idle=False)
             filename = filename or f"gecko.{pid}.json"
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
@@ -877,6 +888,10 @@ def main():
     if args.format in ("collapsed", "gecko"):
         _validate_collapsed_format_args(args, parser)
 
+    # Validate that --mode is not used with --gecko
+    if args.format == "gecko" and args.mode != "wall":
+        parser.error("--mode option is incompatible with --gecko format. Gecko format automatically uses ALL mode (GIL + CPU analysis).")
+
     sort_value = args.sort if args.sort is not None else 2
 
     if args.module is not None and not args.module:
@@ -895,7 +910,11 @@ def main():
     elif target_count > 1:
         parser.error("only one target type can be specified: -p/--pid, -m/--module, or script")
 
-    mode = _parse_mode(args.mode)
+    # Use PROFILING_MODE_ALL for gecko format, otherwise parse user's choice
+    if args.format == "gecko":
+        mode = PROFILING_MODE_ALL
+    else:
+        mode = _parse_mode(args.mode)
 
     if args.pid:
         sample(
