@@ -184,10 +184,16 @@ def make_build_python(context):
     run(["make", "-j", str(os.cpu_count())])
 
 
+# To create new builds of these dependencies, usually all that's necessary is to
+# push a tag to the cpython-android-source-deps repository, and GitHub Actions
+# will do the rest.
+#
+# If you're a member of the Python core team, and you'd like to be able to push
+# these tags yourself, please contact Malcolm Smith or Russell Keith-Magee.
 def unpack_deps(host, prefix_dir):
     os.chdir(prefix_dir)
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
-    for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.0.15-4",
+    for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.0.18-0",
                      "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-1"]:
         filename = f"{name_ver}-{host}.tar.gz"
         download(f"{deps_url}/{name_ver}/{filename}")
