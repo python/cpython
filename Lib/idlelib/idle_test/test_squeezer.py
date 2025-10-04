@@ -1,5 +1,6 @@
 "Test squeezer, coverage 95%"
 
+import sys
 from textwrap import dedent
 from tkinter import Text, Tk
 import unittest
@@ -22,8 +23,11 @@ def get_test_tk_root(test_instance):
     requires('gui')
     root = Tk()
     root.withdraw()
+    patcher = patch("idlelib.macosx._idle_root", new=root)
+    patcher.start()
 
     def cleanup_root():
+        patcher.stop()
         root.update_idletasks()
         root.destroy()
     test_instance.addCleanup(cleanup_root)
@@ -170,27 +174,28 @@ class SqueezerTest(unittest.TestCase):
 
     def test_write_stdout(self):
         """Test Squeezer's overriding of the EditorWindow's write() method."""
-        editwin = self.make_mock_editor_window()
+        with patch("idlelib.macosx._tk_type", new="cocoa" if sys.platform == "darwin" else "other"):
+            editwin = self.make_mock_editor_window()
 
-        for text in ['', 'TEXT']:
-            editwin.write = orig_write = Mock(return_value=SENTINEL_VALUE)
-            squeezer = self.make_squeezer_instance(editwin)
-            squeezer.auto_squeeze_min_lines = 50
+            for text in ['', 'TEXT']:
+                editwin.write = orig_write = Mock(return_value=SENTINEL_VALUE)
+                squeezer = self.make_squeezer_instance(editwin)
+                squeezer.auto_squeeze_min_lines = 50
 
-            self.assertEqual(squeezer.editwin.write(text, "stdout"),
-                             SENTINEL_VALUE)
-            self.assertEqual(orig_write.call_count, 1)
-            orig_write.assert_called_with(text, "stdout")
-            self.assertEqual(len(squeezer.expandingbuttons), 0)
+                self.assertEqual(squeezer.editwin.write(text, "stdout"),
+                                 SENTINEL_VALUE)
+                self.assertEqual(orig_write.call_count, 1)
+                orig_write.assert_called_with(text, "stdout")
+                self.assertEqual(len(squeezer.expandingbuttons), 0)
 
-        for text in ['LONG TEXT' * 1000, 'MANY_LINES\n' * 100]:
-            editwin.write = orig_write = Mock(return_value=SENTINEL_VALUE)
-            squeezer = self.make_squeezer_instance(editwin)
-            squeezer.auto_squeeze_min_lines = 50
+            for text in ['LONG TEXT' * 1000, 'MANY_LINES\n' * 100]:
+                editwin.write = orig_write = Mock(return_value=SENTINEL_VALUE)
+                squeezer = self.make_squeezer_instance(editwin)
+                squeezer.auto_squeeze_min_lines = 50
 
-            self.assertEqual(squeezer.editwin.write(text, "stdout"), None)
-            self.assertEqual(orig_write.call_count, 0)
-            self.assertEqual(len(squeezer.expandingbuttons), 1)
+                self.assertEqual(squeezer.editwin.write(text, "stdout"), None)
+                self.assertEqual(orig_write.call_count, 0)
+                self.assertEqual(len(squeezer.expandingbuttons), 1)
 
     def test_auto_squeeze(self):
         """Test that the auto-squeezing creates an ExpandingButton properly."""
