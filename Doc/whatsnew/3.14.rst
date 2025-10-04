@@ -1596,9 +1596,9 @@ heapq
 * The :mod:`!heapq` module has improved support for working with max-heaps,
   via the following new functions:
 
-  * :func:`~heapq.heapify_max`,
-  * :func:`~heapq.heappush_max`,
-  * :func:`~heapq.heappop_max`,
+  * :func:`~heapq.heapify_max`
+  * :func:`~heapq.heappush_max`
+  * :func:`~heapq.heappop_max`
   * :func:`~heapq.heapreplace_max`
   * :func:`~heapq.heappushpop_max`
 
@@ -2171,7 +2171,7 @@ typing
     Previously, running ``Union[int, str]`` multiple times would return
     the same object (``Union[int, str] is Union[int, str]`` would be ``True``),
     but now it will return two different objects.
-    Users should use ``==`` to compare unions for equality, not ``is``.
+    Use ``==`` to compare unions for equality, not ``is``.
     New-style unions have never been cached this way.
     This change could increase memory usage for some programs that use
     a large number of unions created by subscripting ``typing.Union``.
