@@ -2280,67 +2280,6 @@ test_get_incomplete_frame(void)
     return result;
 }
 
-const char *THREAD_CODE = \
-    "import time\n"
-    "time.sleep(0.2)\n"
-    "def fib(n):\n"
-    "  if n <= 1:\n"
-    "    return n\n"
-    "  else:\n"
-    "    return fib(n - 1) + fib(n - 2)\n"
-    "fib(10)";
-
-typedef struct {
-    PyInterpreterLock ref;
-    int done;
-} ThreadData;
-
-static void
-do_tstate_ensure(void *arg)
-{
-    ThreadData *data = (ThreadData *)arg;
-    PyThreadView refs[4];
-    int res = PyThreadState_Ensure(data->ref, &refs[0]);
-    assert(res == 0);
-    PyThreadState_Ensure(data->ref, &refs[1]);
-    PyThreadState_Ensure(data->ref, &refs[2]);
-    PyGILState_STATE gstate = PyGILState_Ensure();
-    PyThreadState_Ensure(data->ref, &refs[3]);
-    res = PyRun_SimpleString(THREAD_CODE);
-    PyThreadState_Release(refs[3]);
-    PyGILState_Release(gstate);
-    PyThreadState_Release(refs[2]);
-    PyThreadState_Release(refs[1]);
-    assert(res == 0);
-    PyThreadState_Release(refs[0]);
-    PyInterpreterLock_Release(data->ref);
-    data->done = 1;
-}
-
-static int
-test_thread_state_ensure(void)
-{
-    _testembed_initialize();
-    PyThread_handle_t handle;
-    PyThread_ident_t ident;
-    PyInterpreterLock ref;
-    if (PyInterpreterLock_FromCurrent(&ref) < 0) {
-        return -1;
-    };
-    ThreadData data = { ref };
-    if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
-                                       &ident, &handle) < 0) {
-        PyInterpreterLock_Release(ref);
-        return -1;
-    }
-    // We hold a strong interpreter reference, so we don't
-    // have to worry about the interpreter shutting down before
-    // we finalize.
-    Py_Finalize();
-    assert(data.done == 1);
-    return 0;
-}
-
 static void
 do_gilstate_ensure(void *event_ptr)
 {
@@ -2368,28 +2307,96 @@ test_gilstate_after_finalization(void)
     return PyThread_detach_thread(handle);
 }
 
+
+const char *THREAD_CODE = \
+    "import time\n"
+    "time.sleep(0.2)\n"
+    "def fib(n):\n"
+    "  if n <= 1:\n"
+    "    return n\n"
+    "  else:\n"
+    "    return fib(n - 1) + fib(n - 2)\n"
+    "fib(10)";
+
+typedef struct {
+    PyInterpreterLock lock;
+    int done;
+} ThreadData;
+
+static void
+do_tstate_ensure(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyThreadView refs[4];
+    refs[0] = PyThreadState_Ensure(data->lock);
+    refs[1] = PyThreadState_Ensure(data->lock);
+    refs[2] = PyThreadState_Ensure(data->lock);
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    refs[3] = PyThreadState_Ensure(data->lock);
+    assert(refs[0] != 0);
+    assert(refs[1] != 0);
+    assert(refs[2] != 0);
+    assert(refs[3] != 0);
+    int res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    PyThreadState_Release(refs[3]);
+    PyGILState_Release(gstate);
+    PyThreadState_Release(refs[2]);
+    PyThreadState_Release(refs[1]);
+    PyThreadState_Release(refs[0]);
+    PyInterpreterLock_Release(data->lock);
+    data->done = 1;
+}
+
 static int
-test_main_interpreter_ref(void)
+test_thread_state_ensure(void)
+{
+    _testembed_initialize();
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyInterpreterLock ref = PyInterpreterLock_FromCurrent();
+    if (ref == 0) {
+        return -1;
+    };
+    ThreadData data = { ref };
+    if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterLock_Release(ref);
+        return -1;
+    }
+    // We hold a strong interpreter reference, so we don't
+    // have to worry about the interpreter shutting down before
+    // we finalize.
+    Py_Finalize();
+    assert(data.done == 1);
+    return 0;
+}
+
+static int
+test_main_interpreter_view(void)
 {
     // It should not work before the runtime has started.
-    PyInterpreterLock ref;
-    int res = PyUnstable_InterpreterView_FromDefault(&ref);
-    (void)res;
-    assert(res == -1);
+    PyInterpreterView view = PyUnstable_InterpreterView_FromDefault();
+    assert(view == 0);
 
     _testembed_initialize();
 
     // Main interpreter is initialized and ready.
-    res = PyUnstable_InterpreterView_FromDefault(&ref);
-    assert(res == 0);
-    assert(PyInterpreterLock_GetInterpreter(ref) == PyInterpreterState_Main());
-    PyInterpreterLock_Release(ref);
+    view = PyUnstable_InterpreterView_FromDefault();
+    assert(view != 0);
+
+    PyInterpreterLock lock = PyInterpreterLock_FromView(view);
+    assert(lock != 0);
+    PyInterpreterLock_Release(lock);
 
     Py_Finalize();
 
-    // Main interpreter is dead, we can no longer acquire references to it.
-    res = PyUnstable_InterpreterView_FromDefault(&ref);
-    assert(res == -1);
+    // We shouldn't be able to get locks for the interpreter now
+    lock = PyInterpreterLock_FromView(view);
+    assert(lock == 0);
+
+    PyInterpreterView_Close(view);
+
     return 0;
 }
 
@@ -2481,9 +2488,9 @@ static struct TestCase TestCases[] = {
     {"test_frozenmain", test_frozenmain},
 #endif
     {"test_get_incomplete_frame", test_get_incomplete_frame},
-    {"test_thread_state_ensure", test_thread_state_ensure},
     {"test_gilstate_after_finalization", test_gilstate_after_finalization},
-    {"test_main_interpreter_ref", test_main_interpreter_ref},
+    {"test_thread_state_ensure", test_thread_state_ensure},
+    {"test_main_interpreter_view", test_main_interpreter_view},
     {NULL, NULL}
 };
 

@@ -2418,59 +2418,57 @@ set_vectorcall_nop(PyObject *self, PyObject *func)
     Py_RETURN_NONE;
 }
 
-#define NUM_REFS 100
+#define NUM_LOCKS 100
 
 static PyObject *
-test_interp_refcount(PyObject *self, PyObject *unused)
+test_interp_lock_countdown(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     assert(_PyInterpreterState_LockCountdown(interp) == 0);
-    PyInterpreterLock refs[NUM_REFS];
-    for (int i = 0; i < NUM_REFS; ++i) {
-        int res = PyInterpreterLock_FromCurrent(&refs[i]);
-        (void)res;
-        assert(res == 0);
+    PyInterpreterLock locks[NUM_LOCKS];
+    for (int i = 0; i < NUM_LOCKS; ++i) {
+        locks[i] = PyInterpreterLock_FromCurrent();
+        assert(locks[i] != 0);
         assert(_PyInterpreterState_LockCountdown(interp) == i + 1);
     }
 
-    for (int i = 0; i < NUM_REFS; ++i) {
-        PyInterpreterLock_Release(refs[i]);
-        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_REFS - i - 1));
+    for (int i = 0; i < NUM_LOCKS; ++i) {
+        PyInterpreterLock_Release(locks[i]);
+        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_LOCKS - i - 1));
     }
 
     Py_RETURN_NONE;
 }
 
 static PyObject *
-test_interp_weakref_incref(PyObject *self, PyObject *unused)
+test_interp_view_countdown(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyInterpreterView wref;
-    if (PyInterpreterView_FromCurrent(&wref) < 0) {
+    PyInterpreterView view = PyInterpreterView_FromCurrent();
+    if (view == 0) {
         return NULL;
     }
     assert(_PyInterpreterState_LockCountdown(interp) == 0);
 
-    PyInterpreterLock refs[NUM_REFS];
+    PyInterpreterLock locks[NUM_LOCKS];
 
-    for (int i = 0; i < NUM_REFS; ++i) {
-        int res = PyInterpreterLock_FromView(wref, &refs[i]);
-        (void)res;
-        assert(res == 0);
-        assert(PyInterpreterLock_GetInterpreter(refs[i]) == interp);
+    for (int i = 0; i < NUM_LOCKS; ++i) {
+        locks[i] = PyInterpreterLock_FromView(view);
+        assert(locks[i] != 0);
+        assert(PyInterpreterLock_GetInterpreter(locks[i]) == interp);
         assert(_PyInterpreterState_LockCountdown(interp) == i + 1);
     }
 
-    for (int i = 0; i < NUM_REFS; ++i) {
-        PyInterpreterLock_Release(refs[i]);
-        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_REFS - i - 1));
+    for (int i = 0; i < NUM_LOCKS; ++i) {
+        PyInterpreterLock_Release(locks[i]);
+        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_LOCKS - i - 1));
     }
 
-    PyInterpreterView_Close(wref);
+    PyInterpreterView_Close(view);
     Py_RETURN_NONE;
 }
 
-#undef NUM_REFS
+#undef NUM_LOCKS
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -2581,8 +2579,8 @@ static PyMethodDef module_functions[] = {
 #endif
     {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
     {"simple_pending_call", simple_pending_call, METH_O},
-    {"test_interp_refcount", test_interp_refcount, METH_NOARGS},
-    {"test_interp_weakref_incref", test_interp_weakref_incref, METH_NOARGS},
+    {"test_interp_lock_countdown", test_interp_lock_countdown, METH_NOARGS},
+    {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

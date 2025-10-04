@@ -282,9 +282,11 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
 
-/* Strong interpreter references */
+/* Interpreter locks */
 
 typedef uintptr_t PyInterpreterLock;
+typedef uintptr_t PyInterpreterView;
+
 
 PyAPI_FUNC(PyInterpreterLock) PyInterpreterLock_FromCurrent(void);
 PyAPI_FUNC(PyInterpreterLock) PyInterpreterLock_Copy(PyInterpreterLock lock);
@@ -294,7 +296,7 @@ PyAPI_FUNC(PyInterpreterLock) PyInterpreterLock_FromView(PyInterpreterView view)
 
 #define PyInterpreterLock_Release(lock) do {    \
     PyInterpreterLock_Release(lock);            \
-    ref = 0;                                    \
+    lock = 0;                                   \
 } while (0)
 
 /* Interpreter views */
@@ -304,8 +306,6 @@ typedef struct _PyInterpreterView {
     Py_ssize_t refcount;
 } _PyInterpreterView;
 
-typedef uintptr_t PyInterpreterView;
-
 PyAPI_FUNC(PyInterpreterView) PyInterpreterView_FromCurrent(void);
 PyAPI_FUNC(PyInterpreterView) PyInterpreterView_Copy(PyInterpreterView view);
 PyAPI_FUNC(void) PyInterpreterView_Close(PyInterpreterView view);
@@ -314,7 +314,7 @@ PyAPI_FUNC(PyInterpreterView) PyUnstable_InterpreterView_FromDefault(void);
 
 #define PyInterpreterView_Close(view) do {    \
     PyInterpreterView_Close(view);            \
-    ref = 0;                                  \
+    view = 0;                                 \
 } while (0)
 
 

@@ -2562,24 +2562,16 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
-static PyInterpreterLock
-get_strong_ref(void)
-{
-    PyInterpreterLock ref;
-    if (PyInterpreterLock_FromCurrent(&ref) < 0) {
-        Py_FatalError("strong reference should not have failed");
-    }
-    return ref;
-}
-
 static void
-test_interp_ref_common(void)
+test_interp_locks_common(void)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    PyInterpreterLock ref = get_strong_ref();
+    PyInterpreterLock ref = PyInterpreterLock_FromCurrent();
+    assert(ref != 0);
     assert(PyInterpreterLock_GetInterpreter(ref) == interp);
 
     PyInterpreterLock ref_2 = PyInterpreterLock_Copy(ref);
+    assert(ref_2 != 0);
     assert(PyInterpreterLock_GetInterpreter(ref_2) == interp);
 
     // We can close the references in any order
@@ -2588,15 +2580,15 @@ test_interp_ref_common(void)
 }
 
 static PyObject *
-test_interpreter_refs(PyObject *self, PyObject *unused)
+test_interpreter_locks(PyObject *self, PyObject *unused)
 {
     // Test the main interpreter
-    test_interp_ref_common();
+    test_interp_locks_common();
 
     // Test a (legacy) subinterpreter
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     PyThreadState *interp_tstate = Py_NewInterpreter();
-    test_interp_ref_common();
+    test_interp_locks_common();
     Py_EndInterpreter(interp_tstate);
 
     // Test an isolated subinterpreter
@@ -2612,7 +2604,7 @@ test_interpreter_refs(PyObject *self, PyObject *unused)
         return NULL;
     }
 
-    test_interp_ref_common();
+    test_interp_locks_common();
     Py_EndInterpreter(isolated_interp_tstate);
     PyThreadState_Swap(save_tstate);
     Py_RETURN_NONE;
@@ -2621,21 +2613,25 @@ test_interpreter_refs(PyObject *self, PyObject *unused)
 static PyObject *
 test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
 {
-    PyInterpreterLock ref = get_strong_ref();
+    PyInterpreterLock lock = PyInterpreterLock_FromCurrent();
+    if (lock == 0) {
+        return NULL;
+    }
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     assert(PyGILState_GetThisThreadState() == save_tstate);
-    PyThreadView refs[10];
+    PyThreadView thread_views[10];
 
     for (int i = 0; i < 10; ++i) {
         // Test reactivation of the detached tstate.
-        if (PyThreadState_Ensure(ref, &refs[i]) < 0) {
-            PyInterpreterLock_Release(ref);
+        thread_views[i] = PyThreadState_Ensure(lock);
+        if (thread_views[i] == 0) {
+            PyInterpreterLock_Release(lock);
             return PyErr_NoMemory();
         }
 
         // No new thread state should've been created.
         assert(PyThreadState_Get() == save_tstate);
-        PyThreadState_Release(refs[i]);
+        PyThreadState_Release(thread_views[i]);
     }
 
     assert(PyThreadState_GetUnchecked() == NULL);
@@ -2644,10 +2640,11 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
     // If the (detached) gilstate matches the interpreter, then it shouldn't
     // create a new thread state.
     for (int i = 0; i < 10; ++i) {
-        if (PyThreadState_Ensure(ref, &refs[i]) < 0) {
+        thread_views[i] = PyThreadState_Ensure(lock);
+        if (thread_views[i] == 0) {
             // This will technically leak other thread states, but it doesn't
             // matter because this is a test.
-            PyInterpreterLock_Release(ref);
+            PyInterpreterLock_Release(lock);
             return PyErr_NoMemory();
         }
 
@@ -2656,11 +2653,11 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
 
     for (int i = 0; i < 10; ++i) {
         assert(PyThreadState_Get() == save_tstate);
-        PyThreadState_Release(refs[i]);
+        PyThreadState_Release(thread_views[i]);
     }
 
     assert(PyThreadState_GetUnchecked() == NULL);
-    PyInterpreterLock_Release(ref);
+    PyInterpreterLock_Release(lock);
     PyThreadState_Swap(save_tstate);
     Py_RETURN_NONE;
 }
@@ -2668,11 +2665,11 @@ test_thread_state_ensure_nested(PyObject *self, PyObject *unused)
 static PyObject *
 test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
 {
-    PyInterpreterLock ref = get_strong_ref();
+    PyInterpreterLock lock = PyInterpreterLock_FromCurrent();
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
     PyThreadState *interp_tstate = Py_NewInterpreter();
     if (interp_tstate == NULL) {
-        PyInterpreterLock_Release(ref);
+        PyInterpreterLock_Release(lock);
         return PyErr_NoMemory();
     }
 
@@ -2689,76 +2686,66 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
        interp = interpreters.create()
        interp.exec(some_func)
        */
-    PyThreadView thread_ref;
-    PyThreadView other_thread_ref;
-    if (PyThreadState_Ensure(ref, &thread_ref) < 0) {
-        PyInterpreterLock_Release(ref);
+    PyThreadView thread_view = PyThreadState_Ensure(lock);
+    if (thread_view == 0) {
+        PyInterpreterLock_Release(lock);
         return PyErr_NoMemory();
     }
 
     PyThreadState *ensured_tstate = PyThreadState_Get();
     assert(ensured_tstate != save_tstate);
-    assert(PyInterpreterState_Get() == PyInterpreterLock_GetInterpreter(ref));
+    assert(PyInterpreterState_Get() == PyInterpreterLock_GetInterpreter(lock));
     assert(PyGILState_GetThisThreadState() == ensured_tstate);
 
     // Now though, we should reactivate the thread state
-    if (PyThreadState_Ensure(ref, &other_thread_ref) < 0) {
-        PyInterpreterLock_Release(ref);
+    PyThreadView other_thread_view = PyThreadState_Ensure(lock);
+    if (other_thread_view == 0) {
+        PyThreadState_Release(thread_view);
+        PyInterpreterLock_Release(lock);
         return PyErr_NoMemory();
     }
 
     assert(PyThreadState_Get() == ensured_tstate);
-    PyThreadState_Release(other_thread_ref);
+    PyThreadState_Release(other_thread_view);
 
     // Ensure that we're restoring the prior thread state
-    PyThreadState_Release(thread_ref);
+    PyThreadState_Release(thread_view);
     assert(PyThreadState_Get() == interp_tstate);
     assert(PyGILState_GetThisThreadState() == interp_tstate);
 
     PyThreadState_Swap(interp_tstate);
     Py_EndInterpreter(interp_tstate);
 
-    PyInterpreterLock_Release(ref);
+    PyInterpreterLock_Release(lock);
     PyThreadState_Swap(save_tstate);
     Py_RETURN_NONE;
 }
 
 static PyObject *
-test_weak_interpreter_ref_after_shutdown(PyObject *self, PyObject *unused)
+test_interp_view_after_shutdown(PyObject *self, PyObject *unused)
 {
     PyThreadState *save_tstate = PyThreadState_Swap(NULL);
-    PyInterpreterView wref;
     PyThreadState *interp_tstate = Py_NewInterpreter();
     if (interp_tstate == NULL) {
         return PyErr_NoMemory();
     }
 
-    int res = PyInterpreterView_FromCurrent(&wref);
-    (void)res;
-    assert(res == 0);
+    PyInterpreterView view = PyInterpreterView_FromCurrent();
+    if (view == 0) {
+        return PyErr_NoMemory();
+    }
 
-    // As a sanity check, ensure that the weakref actually works
-    PyInterpreterLock ref;
-    res = PyInterpreterLock_FromView(wref, &ref);
-    assert(res == 0);
-    PyInterpreterLock_Release(ref);
+    // As a sanity check, ensure that the view actually works
+    PyInterpreterLock lock = PyInterpreterLock_FromView(view);
+    PyInterpreterLock_Release(lock);
 
-    // Now, destroy the interpreter and try to acquire a weak reference.
+    // Now, destroy the interpreter and try to acquire a lock from a view.
     // It should fail.
     Py_EndInterpreter(interp_tstate);
-    res = PyInterpreterLock_FromView(wref, &ref);
-    assert(res == -1);
+    lock = PyInterpreterLock_FromView(view);
+    assert(lock == 0);
 
     PyThreadState_Swap(save_tstate);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-foo(PyObject *self, PyObject *foo)
-{
-    PyInterpreterLock ref;
-    PyInterpreterLock_FromCurrent(&ref);
-    PyInterpreterLock_Release(ref);
     Py_RETURN_NONE;
 }
 
@@ -2856,11 +2843,10 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
-    {"test_interpreter_refs", test_interpreter_refs, METH_NOARGS},
+    {"test_interpreter_lock", test_interpreter_locks, METH_NOARGS},
     {"test_thread_state_ensure_nested", test_thread_state_ensure_nested, METH_NOARGS},
     {"test_thread_state_ensure_crossinterp", test_thread_state_ensure_crossinterp, METH_NOARGS},
-    {"test_weak_interpreter_ref_after_shutdown", test_weak_interpreter_ref_after_shutdown, METH_NOARGS},
-    {"foo", foo, METH_NOARGS},
+    {"test_interp_view_after_shutdown", test_interp_view_after_shutdown, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
