@@ -1,0 +1,1 @@
+``importlib.resources.files(package)`` raises an error with a clearer message when ``package.__spec__`` is ``None``
