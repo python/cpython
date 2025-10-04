@@ -1,0 +1,2 @@
+Fix a failure in multiprocessing resource_tracker when SharedMemory names contain colons.
+Patch by Rani Pinchuk.
