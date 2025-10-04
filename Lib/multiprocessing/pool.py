@@ -776,12 +776,22 @@ class ApplyResult(object):
     def _set(self, i, obj):
         self._success, self._value = obj
         if self._callback and self._success:
-            self._callback(self._value)
+            self._handle_exceptions(self._callback, self._value)
         if self._error_callback and not self._success:
-            self._error_callback(self._value)
+            self._handle_exceptions(self._error_callback, self._value)
         self._event.set()
         del self._cache[self._job]
         self._pool = None
+
+    @staticmethod
+    def _handle_exceptions(callback, args):
+        try:
+            return callback(args)
+        except Exception as e:
+            args = threading.ExceptHookArgs([type(e), e, e.__traceback__,
+                                             threading.current_thread()])
+            threading.excepthook(args)
+            del args
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
@@ -813,7 +823,7 @@ class MapResult(ApplyResult):
             self._value[i*self._chunksize:(i+1)*self._chunksize] = result
             if self._number_left == 0:
                 if self._callback:
-                    self._callback(self._value)
+                    self._handle_exceptions(self._callback, self._value)
                 del self._cache[self._job]
                 self._event.set()
                 self._pool = None
@@ -825,7 +835,7 @@ class MapResult(ApplyResult):
             if self._number_left == 0:
                 # only consider the result ready once all jobs are done
                 if self._error_callback:
-                    self._error_callback(self._value)
+                    self._handle_exceptions(self._error_callback, self._value)
                 del self._cache[self._job]
                 self._event.set()
                 self._pool = None
