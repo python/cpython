@@ -149,6 +149,7 @@ import sys
 import time
 import tokenize
 from dataclasses import dataclass, field
+from gettext import _NameTooComplexError, _template_node_to_format
 from io import BytesIO
 from operator import itemgetter
 
@@ -537,6 +538,12 @@ class GettextVisitor(ast.NodeVisitor):
         msg_data = {}
         for arg_type, position in spec.items():
             arg = node.args[position]
+            if self._is_template_str(arg):
+                try:
+                    msg_data[arg_type] = _template_node_to_format(arg)
+                except _NameTooComplexError as exc:
+                    return str(exc)
+                continue
             if not self._is_string_const(arg):
                 return (f'Expected a string constant for argument '
                         f'{position + 1}, got {ast.unparse(arg)}')
@@ -625,6 +632,9 @@ class GettextVisitor(ast.NodeVisitor):
 
     def _is_string_const(self, node):
         return isinstance(node, ast.Constant) and isinstance(node.value, str)
+
+    def _is_template_str(self, node):
+        return isinstance(node, ast.TemplateStr)
 
 def write_pot_file(messages, options, fp):
     timestamp = time.strftime('%Y-%m-%d %H:%M%z')
