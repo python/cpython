@@ -327,10 +327,12 @@ Functions and classes provided:
 .. function:: redirect_stdout(new_target)
 
    Context manager for temporarily redirecting :data:`sys.stdout` to
-   another file or file-like object.
+   another :term:`file object`.
 
    This tool adds flexibility to existing functions or classes whose output
-   is hardwired to stdout.
+   is hardwired to :data:`sys.stdout`. This does not modify underlying file
+   objects or file descriptors. It sets the global :data:`sys.stdout` to the
+   provided value and at context exit sets it to the previous value.
 
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
    You can capture that output in a string by redirecting the output to an
@@ -354,6 +356,12 @@ Functions and classes provided:
         with redirect_stdout(sys.stderr):
             help(pow)
 
+   To discard or suppress the output of :func:`help` without collecting the data::
+
+        with open(os.devnull, 'w') as devnull:
+            with redirect_stdout(devnull):
+                help(pow)
+
    Note that the global side effect on :data:`sys.stdout` means that this
    context manager is not suitable for use in library code and most threaded
    applications. It also has no effect on the output of subprocesses.
@@ -366,8 +374,9 @@ Functions and classes provided:
 
 .. function:: redirect_stderr(new_target)
 
-   Similar to :func:`~contextlib.redirect_stdout` but redirecting
-   :data:`sys.stderr` to another file or file-like object.
+   Similar to :func:`~contextlib.redirect_stdout` but redirecting the global
+   :data:`sys.stderr` to another value, typically a :term:`file object`
+   returned from :func:`open`.
 
    This context manager is :ref:`reentrant <reentrant-cms>`.
 
