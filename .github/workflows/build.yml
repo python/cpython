@@ -249,13 +249,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
+        # Cirrus and macos-14 are M1, macos-15-intel is default GHA Intel.
         # macOS 13 only runs tests against the GIL-enabled CPython.
         # Cirrus used for upstream, macos-14 for forks.
         os:
         - ghcr.io/cirruslabs/macos-runner:sonoma
         - macos-14
-        - macos-13
+        - macos-15-intel
         is-fork:  # only used for the exclusion trick
         - ${{ github.repository_owner != 'python' }}
         free-threading:
@@ -266,7 +266,7 @@ jobs:
           is-fork: true
         - os: macos-14
           is-fork: false
-        - os: macos-13
+        - os: macos-15-intel
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
