@@ -1189,7 +1189,6 @@ with sub-interpreters:
    .. note::
       This function may return non-``NULL`` even when the :term:`thread state`
       is detached.
-      by something other than :c:func:`PyGILState_Ensure` (such as :c:func:`PyThreadState_New`).
       Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
       for most cases.
 
