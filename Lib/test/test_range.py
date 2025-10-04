@@ -584,11 +584,14 @@ class RangeTest(unittest.TestCase):
             check(0, -1)
             check(-1, -3, -1)
 
-        for test in (range(5), range(0), range(1, 10, 2), range(10, 0, -1)):
+        for test in (range(5), range(0), range(1, 10, 2), range(10, 0, -1), range(-1, 200, 1)):
             with self.subTest(test=test):
                 self.assertIs(test, test[:])
+                self.assertIs(test, test[:len(test):])
+                self.assertIs(test, test[0:len(test):1])
 
                 if len(test) > 1:
+                    self.assertIsNot(test, test[1:len(test):2])
                     self.assertIsNot(test, test[1:])
                     self.assertIsNot(test, test[:-1])
 

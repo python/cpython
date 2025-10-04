@@ -1,2 +1,2 @@
-:func:`range` slicing with ``[:]`` no longer creates a copy, it now returns
-the same object, consistent with :func:`copy.copy`.
+:func:`range` slicing with ``[:]`` and ``[:len(r):]`` no longer creates a copy,
+it now returns the same object, consistent with :func:`copy.copy`.

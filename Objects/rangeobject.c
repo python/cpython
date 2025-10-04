@@ -409,13 +409,16 @@ compute_slice(rangeobject *r, PyObject *_slice)
     PyObject *substart = NULL, *substop = NULL, *substep = NULL;
     int error;
 
-    if (slice->start == Py_None && slice->stop == Py_None && slice->step == Py_None) {
-        return Py_NewRef(r);
-    }
-
     error = _PySlice_GetLongIndices(slice, r->length, &start, &stop, &step);
     if (error == -1)
         return NULL;
+
+    if (start == _PyLong_GetZero()
+        && step == _PyLong_GetOne()
+        && (slice->stop == Py_None || PyObject_RichCompareBool(stop, r->length, Py_EQ) == 1))
+    {
+        return Py_NewRef(r);
+    }
 
     substep = PyNumber_Multiply(r->step, step);
     if (substep == NULL) goto fail;
