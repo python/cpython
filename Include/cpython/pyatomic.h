@@ -87,6 +87,8 @@
 #  error "this header file must not be included directly"
 #endif
 
+#include <assert.h>
+
 // --- _Py_atomic_add --------------------------------------------------------
 // Atomically adds `value` to `obj` and returns the previous value
 
@@ -543,6 +545,63 @@ _Py_atomic_load_uint32_acquire(const uint32_t *obj);
 
 static inline Py_ssize_t
 _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
+
+
+// --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
+
+static inline void *
+_Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
+{
+    void **dest_, **src_, **end;
+
+    assert(((uintptr_t)dest & (uintptr_t)(sizeof (void *) - 1)) == 0);
+    assert(((uintptr_t)src & (uintptr_t)(sizeof (void *) - 1)) == 0);
+    assert(n % (size_t)sizeof(void *) == 0);
+
+    if (dest != src) {
+        dest_ = (void **)dest;
+        src_ = (void **)src;
+        end = dest_ + n / sizeof(void *);
+
+        for (; dest_ != end; dest_++, src_++) {
+            _Py_atomic_store_ptr_relaxed(dest_, *src_);
+        }
+    }
+
+    return dest;
+}
+
+static inline void *
+_Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
+{
+    void **dest_, **src_, **end;
+
+    assert(((uintptr_t)dest & (uintptr_t)(sizeof (void *) - 1)) == 0);
+    assert(((uintptr_t)src & (uintptr_t)(sizeof (void *) - 1)) == 0);
+    assert(n % (size_t)sizeof(void *) == 0);
+
+    if (dest < src || dest >= (void *)((char *)src + n)) {
+        dest_ = (void **)dest;
+        src_ = (void **)src;
+        end = dest_ + n / sizeof(void *);
+
+        for (; dest_ != end; dest_++, src_++) {
+            _Py_atomic_store_ptr_relaxed(dest_, *src_);
+        }
+    }
+    else if (dest > src) {
+        n = n / sizeof(void *) - 1;
+        dest_ = (void **)dest + n;
+        src_ = (void **)src + n;
+        end = (void **)dest - 1;
+
+        for (; dest_ != end; dest_--, src_--) {
+            _Py_atomic_store_ptr_relaxed(dest_, *src_);
+        }
+    }
+
+    return dest;
+}
 
 
 
