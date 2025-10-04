@@ -62,7 +62,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._closing = False  # Set when close() called.
         self._called_connection_lost = False
         self._eof_written = False
-        if self._server is not None:
+        if self._server is not None and self._server.is_serving():
             self._server._attach(self)
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
