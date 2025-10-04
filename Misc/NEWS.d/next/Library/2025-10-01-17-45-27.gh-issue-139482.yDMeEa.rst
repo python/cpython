@@ -1,0 +1,2 @@
+Ensure that :data:`os.environ.clear() <os.environ>`
+has linear complexity instead of quadratic complexity.
