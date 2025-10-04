@@ -127,6 +127,20 @@ class TestType(TestCase):
         obj.__class__ = ClassB
 
 
+    def test_name_change(self):
+        class Foo:
+            pass
+
+        def writer():
+            for _ in range(1000):
+                Foo.__name__ = 'Bar'
+
+        def reader():
+            for _ in range(1000):
+                Foo.__name__
+
+        self.run_one(writer, reader)
+
     def run_one(self, writer_func, reader_func):
         barrier = threading.Barrier(NTHREADS)
 
