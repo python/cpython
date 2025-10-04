@@ -733,6 +733,31 @@ PyAPI_FUNC(int) _PyUnicode_IsAlpha(
     Py_UCS4 ch       /* Unicode character */
     );
 
+PyAPI_FUNC(Py_ssize_t) PyUCS4_ToLower(
+    const Py_UCS4 *str,    /* Unicode string */
+    Py_ssize_t str_size,   /* Unicode string size (UCS-4 characters) */
+    Py_UCS4 *buf,          /* Output buffer */
+    Py_ssize_t buf_size);  /* Buffer size (UCS-4 characters) */
+
+PyAPI_FUNC(Py_ssize_t) PyUCS4_ToUpper(
+    const Py_UCS4 *str,    /* Unicode string */
+    Py_ssize_t str_size,   /* Unicode string size (UCS-4 characters) */
+    Py_UCS4 *buf,          /* Output buffer */
+    Py_ssize_t buf_size);  /* Buffer size (UCS-4 characters) */
+
+PyAPI_FUNC(Py_ssize_t) PyUCS4_ToTitle(
+    const Py_UCS4 *str,    /* Unicode string */
+    Py_ssize_t str_size,   /* Unicode string size (UCS-4 characters) */
+    Py_UCS4 *buf,          /* Output buffer */
+    Py_ssize_t buf_size);  /* Buffer size (UCS-4 characters) */
+
+PyAPI_FUNC(Py_ssize_t) PyUCS4_ToFolded(
+    const Py_UCS4 *str,    /* Unicode string */
+    Py_ssize_t str_size,   /* Unicode string size (UCS-4 characters) */
+    Py_UCS4 *buf,          /* Output buffer */
+    Py_ssize_t buf_size);  /* Buffer size (UCS-4 characters) */
+
+
 // Helper array used by Py_UNICODE_ISSPACE().
 PyAPI_DATA(const unsigned char) _Py_ascii_whitespace[];
 
@@ -766,6 +791,8 @@ static inline int Py_UNICODE_ISSPACE(Py_UCS4 ch) {
 #define Py_UNICODE_TONUMERIC(ch) _PyUnicode_ToNumeric(ch)
 
 #define Py_UNICODE_ISALPHA(ch) _PyUnicode_IsAlpha(ch)
+
+#define PyUCS4_CASE_CONVERSION_BUFFER_SIZE 3
 
 static inline int Py_UNICODE_ISALNUM(Py_UCS4 ch) {
    return (Py_UNICODE_ISALPHA(ch)

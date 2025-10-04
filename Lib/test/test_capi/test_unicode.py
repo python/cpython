@@ -1,5 +1,6 @@
 import unittest
 import sys
+import string
 from test import support
 from test.support import threading_helper
 
@@ -1752,6 +1753,66 @@ class CAPITest(unittest.TestCase):
         {obj: obj}
         # impl detail: ASCII string hashes are equal to bytes ones
         self.assertEqual(unicode_GET_CACHED_HASH(obj), hash(content_bytes))
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_tolower(self):
+        from _testcapi import unicode_tolower
+
+        self.assertEqual(unicode_tolower(string.ascii_uppercase),
+                         string.ascii_lowercase)
+
+        # Test unicode character
+        self.assertEqual(unicode_tolower("Č"), "č")
+        self.assertEqual(unicode_tolower("Σ"), "σ")
+        self.assertEqual(unicode_tolower("ABCΣ"), "abcσ")
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_toupper(self):
+        from _testcapi import unicode_toupper, unicode_toupper_buffer_too_small
+
+        self.assertEqual(unicode_toupper(string.ascii_lowercase),
+                         string.ascii_uppercase)
+
+        # Test unicode character
+        self.assertEqual(unicode_toupper("č"), "Č")
+        self.assertEqual(unicode_toupper("ß"), "SS")
+        self.assertEqual(unicode_toupper("ΐ"), "Ϊ́")
+        self.assertEqual(unicode_toupper("abcß"), "ABCSS")
+
+        # Test unicode character with smaller buffer
+        with self.assertRaisesRegex(ValueError, "output buffer is too small"):
+            unicode_toupper_buffer_too_small("ß")
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_totitle(self):
+        from _testcapi import unicode_totitle
+
+        self.assertEqual(unicode_totitle("t"), "T")
+
+        # Test unicode character
+        self.assertEqual(unicode_totitle("ł"), "Ł")
+        self.assertEqual(unicode_totitle("ß"), "Ss")
+        self.assertEqual(unicode_totitle("ΐ"), "Ϊ́")
+        self.assertEqual(unicode_totitle("abcß"), "ABCSs")
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_tofolded(self):
+        from _testcapi import unicode_tofolded
+
+        self.assertEqual(unicode_tofolded("T"), "t")
+
+        # Test unicode character
+        self.assertEqual(unicode_tofolded("Ł"), "ł")
+        self.assertEqual(unicode_tofolded("Σ"), "σ")
+        self.assertEqual(unicode_tofolded("abcΣ"), "abcσ")
+        self.assertEqual(unicode_tofolded("ABCσ"), "abcσ")
+
+        # Test case-ignorable character
+        self.assertEqual(unicode_tofolded("👍"), "👍")
 
 
 class PyUnicodeWriterTest(unittest.TestCase):
