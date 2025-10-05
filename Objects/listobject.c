@@ -1828,47 +1828,20 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             v[M + 1] = vpivot;
     }
 #else // binary insertion sort
-    Py_ssize_t L, R;
-    for (; ok < n; ++ok) {
-        /* set L to where a[ok] belongs */
-        L = 0;
-        R = ok;
+
+    // Known: a[ok] < a[ok - 1]
+    if (ok < n) {
+        Py_ssize_t L = 0;
+        Py_ssize_t R = ok - 1;
         pivot = a[ok];
-        /* Slice invariants. vacuously true at the start:
-         * all a[0:L]  <= pivot
-         * all a[L:R]     unknown
-         * all a[R:ok]  > pivot
-         */
-        assert(L < R);
         do {
-            /* don't do silly ;-) things to prevent overflow when finding
-               the midpoint; L and R are very far from filling a Py_ssize_t */
             M = (L + R) >> 1;
-#if 1 // straightforward, but highly unpredictable branch on random data
             IFLT(pivot, a[M])
                 R = M;
             else
                 L = M + 1;
-#else
-            /* Try to get compiler to generate conditional move instructions
-               instead. Works fine, but leaving it disabled for now because
-               it's not yielding consistently faster sorts. Needs more
-               investigation. More computation in the inner loop adds its own
-               costs, which can be significant when compares are fast. */
-            k = ISLT(pivot, a[M]);
-            if (k < 0)
-                goto fail;
-            Py_ssize_t Mp1 = M + 1;
-            R = k ? M : R;
-            L = k ? L : Mp1;
-#endif
         } while (L < R);
         assert(L == R);
-        /* a[:L] holds all elements from a[:ok] <= pivot now, so pivot belongs
-           at index L. Slide a[L:ok] to the right a slot to make room for it.
-           Caution: using memmove is much slower under MSVC 5; we're not
-           usually moving many slots. Years later: under Visual Studio 2022,
-           memmove seems just slightly slower than doing it "by hand". */
         for (M = ok; M > L; --M)
             a[M] = a[M - 1];
         a[L] = pivot;
@@ -1877,6 +1850,69 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             for (M = ok; M > L; --M)
                 v[M] = v[M - 1];
             v[L] = pivot;
+        }
+
+        // Update Adaptive runvars
+        Py_ssize_t std = ok >> 1;
+        Py_ssize_t mu = L;
+        ++ok;
+
+        for (; ok < n; ++ok) {
+            /* set L to where a[ok] belongs */
+            L = 0;
+            R = ok;
+            pivot = a[ok];
+            /* Slice invariants. vacuously true at the start:
+             * all a[0:L]  <= pivot
+             * all a[L:R]     unknown
+             * all a[R:ok]  > pivot
+             */
+            assert(L < R);
+            M = (L + R) >> 1;
+            // M = std < (ok >> 2) ? mu : (L + R) >> 1;
+            do {
+                /* don't do silly ;-) things to prevent overflow when finding
+                   the midpoint; L and R are very far from filling a Py_ssize_t */
+
+#if 1 // straightforward, but highly unpredictable branch on random data
+                IFLT(pivot, a[M])
+                    R = M;
+                else
+                    L = M + 1;
+                M = (L + R) >> 1;
+#else
+                /* Try to get compiler to generate conditional move instructions
+                   instead. Works fine, but leaving it disabled for now because
+                   it's not yielding consistently faster sorts. Needs more
+                   investigation. More computation in the inner loop adds its own
+                   costs, which can be significant when compares are fast. */
+                k = ISLT(pivot, a[M]);
+                if (k < 0)
+                    goto fail;
+                Py_ssize_t Mp1 = M + 1;
+                R = k ? M : R;
+                L = k ? L : Mp1;
+#endif
+            } while (L < R);
+            assert(L == R);
+            /* a[:L] holds all elements from a[:ok] <= pivot now, so pivot belongs
+               at index L. Slide a[L:ok] to the right a slot to make room for it.
+               Caution: using memmove is much slower under MSVC 5; we're not
+               usually moving many slots. Years later: under Visual Studio 2022,
+               memmove seems just slightly slower than doing it "by hand". */
+            for (M = ok; M > L; --M)
+                a[M] = a[M - 1];
+            a[L] = pivot;
+            if (has_values) {
+                pivot = v[ok];
+                for (M = ok; M > L; --M)
+                    v[M] = v[M - 1];
+                v[L] = pivot;
+            }
+
+            // Update Adaptive runvars
+            std = labs(L - mu);
+            mu = L;
         }
     }
 #endif // pick binary or regular insertion sort
