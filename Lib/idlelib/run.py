@@ -249,6 +249,8 @@ def print_exception():
     sys.last_type, sys.last_value, sys.last_traceback = excinfo
     sys.last_exc = val
     seen = set()
+    exclude = ("run.py", "rpc.py", "threading.py", "queue.py",
+               "debugger_r.py", "bdb.py")
 
     def print_exc_group(typ, exc, tb, prefix=""):
         prefix2 = prefix or "  "
@@ -287,9 +289,7 @@ def print_exception():
     def print_exc(typ, exc, tb, prefix=""):
         seen.add(id(exc))
         context = exc.__context__
-        cause = exc.__cause__
-        exclude = ("run.py", "rpc.py", "threading.py", "queue.py",
-                   "debugger_r.py", "bdb.py")
+        cause = exc.__cause__        
         prifix2 = f"{prefix}| " if prefix else "" 
         if cause is not None and id(cause) not in seen:
             print_exc(type(cause), cause, cause.__traceback__, prefix)            
