@@ -31,8 +31,8 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
 .. note::
 
    Support for other implementations of ``libssl`` such as AWS-LC, BoringSSL,
-   or LibreSSL, may be assumed but not guaranteed. When a feature is known to
-   be unavailable for a sepcific backend, it will be explicitly mentioned in
+   or LibreSSL may be assumed but not guaranteed. When a feature is known to
+   be unavailable for a specific backend, it will be explicitly mentioned in
    an :ref:`Availability <availability>` note as *Availability: not <backend>*.
 
 .. warning::
