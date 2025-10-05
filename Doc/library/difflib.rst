@@ -229,12 +229,13 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    (or ``None``):
 
    *linejunk*: A function that accepts a single string argument, and returns
-   true if the string is junk, or false if not. The default is ``None``. There
-   is also a module-level function :func:`IS_LINE_JUNK`, which filters out lines
-   without visible characters, except for at most one pound character (``'#'``)
-   -- however the underlying :class:`SequenceMatcher` class does a dynamic
-   analysis of which lines are so frequent as to constitute noise, and this
-   usually works better than using this function.
+    true if the string is junk, or false if not. The default is ``None``. There
+    is also a module-level function :func:`IS_LINE_JUNK`, which filters out
+    lines without visible characters, or containing one occurrence of the
+    pound, or hash symbol (``'#'``) -- however the underlying
+    :class:`SequenceMatcher` class does a dynamic analysis of which lines are
+    so frequent as to constitute noise, and this usually works better than
+    using this function.
 
    *charjunk*: A function that accepts a character (a string of length 1), and
    returns if the character is junk, or false if not. The default is module-level
