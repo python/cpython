@@ -1,8 +1,9 @@
+
 ****************************
   What's new in Python 3.14
 ****************************
 
-:Editor: Hugo van Kemenade
+:Editors: Adam Turner and Hugo van Kemenade
 
 .. Rules for maintenance:
 
@@ -45,40 +46,47 @@
    when researching a change.
 
 This article explains the new features in Python 3.14, compared to 3.13.
-
+Python 3.14 will be released on 7 October 2025.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
 
    :pep:`745` -- Python 3.14 release schedule
 
-.. note::
 
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.14 moves towards release,
-   so it's worth checking back even after reading earlier versions.
-
-
-Summary -- release highlights
+Summary -- Release highlights
 =============================
 
 .. This section singles out the most important changes in Python 3.14.
    Brevity is key.
 
-Python 3.14 will be the latest stable release of the Python
-programming language, with a mix of changes to the language, the
-implementation and the standard library.
+Python 3.14 will be the latest stable release of the Python programming
+language, with a mix of changes to the language, the implementation,
+and the standard library.
+The biggest changes include :ref:`template string literals
+<whatsnew314-template-string-literals>`,
+:ref:`deferred evaluation of annotations <whatsnew314-deferred-annotations>`,
+and support for :ref:`subinterpreters <whatsnew314-multiple-interpreters>` in
+the standard library.
 
-The biggest changes to the implementation include template strings (:pep:`750`),
-deferred evaluation of annotations (:pep:`649`),
-and a new type of interpreter that uses tail calls.
-
-The library changes include the addition of a new :mod:`!annotationlib` module
-for introspecting and wrapping annotations (:pep:`749`),
-a new :mod:`!compression.zstd` module for Zstandard support (:pep:`784`),
-plus syntax highlighting in the REPL,
+The library changes include significantly improved capabilities for
+:ref:`introspection in asyncio <whatsnew314-asyncio-introspection>`,
+:ref:`support for Zstandard <whatsnew314-zstandard>` via a new
+:mod:`compression.zstd` module, syntax highlighting in the REPL,
 as well as the usual deprecations and removals,
 and improvements in user-friendliness and correctness.
+
+This article doesn't attempt to provide a complete specification
+of all new features, but instead gives a convenient overview.
+For full details refer to the documentation,
+such as the :ref:`Library Reference <library-index>`
+and :ref:`Language Reference <reference-index>`.
+To understand the complete implementation and design rationale for a change,
+refer to the PEP for a particular new feature;
+but note that PEPs usually are not kept up-to-date
+once a feature has been fully implemented.
+See `Porting to Python 3.14`_ for guidance on upgrading from
+earlier versions of Python.
 
 --------------
 
@@ -100,6 +108,7 @@ Interpreter improvements:
 * :ref:`A new type of interpreter <whatsnew314-tail-call-interpreter>`
 * :ref:`Free-threaded mode improvements <whatsnew314-free-threaded-cpython>`
 * :ref:`Improved error messages <whatsnew314-improved-error-messages>`
+* :ref:`Incremental garbage collection <whatsnew314-incremental-gc>`
 
 Significant improvements in the standard library:
 
@@ -124,7 +133,8 @@ Release changes:
 
 * :pep:`779`: :ref:`Free-threaded Python is officially supported
   <whatsnew314-free-threaded-now-supported>`
-* :pep:`761`: :ref:`Discontinuation of PGP signatures <whatsnew314-no-more-pgp>`
+* :pep:`761`: :ref:`PGP signatures have been discontinued for official releases
+  <whatsnew314-no-more-pgp>`
 * :ref:`Windows and macOS binary releases now support the experimental
   just-in-time compiler <whatsnew314-jit-compiler>`
 * :ref:`Binary releases for Android are now provided <whatsnew314-build-changes>`
@@ -2440,6 +2450,7 @@ asyncio
          blocking_code()
          runner.run(operation_two())
 
+
 email
 -----
 
@@ -2728,6 +2739,7 @@ CPython bytecode changes
 
 * Add the :opcode:`POP_ITER` opcode to support 'virtual' iterators.
   (Contributed by Mark Shannon in :gh:`132554`.)
+
 
 Pseudo-instructions
 -------------------
