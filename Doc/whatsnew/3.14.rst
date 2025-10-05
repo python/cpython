@@ -130,7 +130,7 @@ Release changes:
 * :ref:`Binary releases for Android are now provided <whatsnew314-build-changes>`
 
 
-New Features
+New features
 ============
 
 .. _whatsnew314-deferred-annotations:
