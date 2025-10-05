@@ -1,2 +1,2 @@
-Improve :exc:`SyntaxError` message for using ``case`` with regular
-expressions.
+Improve :exc:`SyntaxError` message for using ``case``
+with invalid patterns.
