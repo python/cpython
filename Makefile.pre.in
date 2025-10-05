@@ -2682,6 +2682,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \
 		test/test_multiprocessing_spawn \
+		test/test_os \
 		test/test_pathlib \
 		test/test_pathlib/support \
 		test/test_peg_generator \

@@ -230,7 +230,7 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     }
     frame->lineno = (unsigned int)lineno;
 
-    PyObject *filename = filename = _PyFrame_GetCode(pyframe)->co_filename;
+    PyObject *filename = _PyFrame_GetCode(pyframe)->co_filename;
     if (filename == NULL) {
 #ifdef TRACE_DEBUG
         tracemalloc_error("failed to get the filename of the code object");

@@ -128,15 +128,12 @@ class ModuleCompleter:
         for segment in path.split('.'):
             modules = [mod_info for mod_info in modules
                        if mod_info.ispkg and mod_info.name == segment]
-            print(f"{segment=}, {modules=}")  # TEMPORARY -- debugging tests on windows
             if is_stdlib_import is None:
                 # Top-level import decide if we import from stdlib or not
                 is_stdlib_import = all(
                     self._is_stdlib_module(mod_info) for mod_info in modules
                 )
             modules = self.iter_submodules(modules)
-            modules = list(modules)  # TEMPORARY -- debugging tests on windows
-        print(f"segment=last, {modules=}")  # TEMPORARY -- debugging tests on windows
 
         module_names = [module.name for module in modules]
         if is_stdlib_import:
@@ -215,67 +212,7 @@ class ModuleCompleter:
         """Global module cache"""
         if not self._global_cache or self._curr_sys_path != sys.path:
             self._curr_sys_path = sys.path[:]
-            print('getting packages/')  # TEMPORARY -- debugging tests on windows
             self._global_cache = list(pkgutil.iter_modules())
-            # === BEGIN TEMPORARY -- debugging tests on windows ===
-            print(f"\n\n{self._global_cache=}\n\n")
-            mymod = next((p for p in self._global_cache if p.name == "mymodule"), None)  
-            if mymod:
-                print("0a", mymod)
-                spec = mymod.module_finder.find_spec(mymod.name, None)
-                if spec:
-                    print("1")
-                    assert spec.submodule_search_locations and len(spec.submodule_search_locations) == 1
-                    print("2")
-                    importer = pkgutil.get_importer(spec.submodule_search_locations[0])
-                    print("3")
-                    assert importer and isinstance(importer, FileFinder)
-                    print("4")
-                    if importer.path is None or not os.path.isdir(importer.path):
-                        print("4a")
-                        return
-                    yielded = {}
-                    import inspect
-                    try:
-                        filenames = os.listdir(importer.path)
-                    except OSError:
-                        # ignore unreadable directories like import does
-                        print("4b")
-                        filenames = []
-                    print("4c", filenames)
-                    filenames.sort()  # handle packages before same-named modules
-                    submods = []
-                    for fn in filenames:
-                        print("4d", fn)
-                        modname = inspect.getmodulename(fn)
-                        print("4e", modname)
-                        if modname=='__init__' or modname in yielded:
-                            print("4f", modname)
-                            continue
-                        path = os.path.join(importer.path, fn)
-                        ispkg = False
-                        if not modname and os.path.isdir(path) and '.' not in fn:
-                            print("4g")
-                            modname = fn
-                            try:
-                                dircontents = os.listdir(path)
-                            except OSError:
-                                # ignore unreadable directories like import does
-                                dircontents = []
-                            for fn in dircontents:
-                                subname = inspect.getmodulename(fn)
-                                if subname=='__init__':
-                                    ispkg = True
-                                    break
-                            else:
-                                continue    # not a package
-                        if modname and '.' not in modname:
-                            print("4h")
-                            yielded[modname] = 1
-                            submods.append((importer, modname, ispkg))
-                        print("4i")
-                    print("module:", mymod, submods)  
-            # === END TEMPORARY ===
         return self._global_cache
 
 

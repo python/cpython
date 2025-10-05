@@ -3,6 +3,7 @@ import io
 import itertools
 import os
 import pathlib
+import pkgutil
 import re
 import rlcompleter
 import select
@@ -1131,6 +1132,8 @@ class TestPyReplModuleCompleter(TestCase):
             (dir2 / "mymodule").mkdir()
             (dir2 / "mymodule" / "__init__.py").touch()
             (dir2 / "mymodule" / "bar.py").touch()
+            # Purge FileFinder cache after adding files
+            pkgutil.get_importer(_dir2).invalidate_caches()
             # mymodule found in dir2 before dir1, but it was already imported
             # from dir1 -> suggest dir1 submodules only
             events = code_to_events("import mymodule.\t\n")
@@ -1139,9 +1142,6 @@ class TestPyReplModuleCompleter(TestCase):
             self.assertEqual(output, "import mymodule.foo")
 
             del sys.modules["mymodule"]
-            print(f"{dir1=}, {dir2=}")  # TEMPORARY -- debugging tests on windows
-            print(f"{[p.relative_to(dir1) for p in dir1.glob("**")]=}")  # TEMPORARY -- debugging tests on windows
-            print(f"{[p.relative_to(dir2) for p in dir2.glob("**")]=}")  # TEMPORARY -- debugging tests on windows
             # mymodule not imported anymore -> suggest dir2 submodules
             events = code_to_events("import mymodule.\t\n")
             reader = self.prepare_reader(events, namespace={})
