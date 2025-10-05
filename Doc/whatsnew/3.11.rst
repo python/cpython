@@ -686,8 +686,8 @@ enum
 * Added the :func:`~enum.member` and :func:`~enum.nonmember` decorators,
   to ensure the decorated object is/is not converted to an enum member.
 
-* Added the :func:`~enum.property` decorator,
-  which works like :func:`property` except for enums.
+* Added the :deco:`~enum.property` decorator,
+  which works like :deco:`property` except for enums.
   Use this instead of :func:`types.DynamicClassAttribute`.
 
 * Added the :func:`~enum.global_enum` enum decorator,

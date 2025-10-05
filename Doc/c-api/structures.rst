@@ -419,8 +419,8 @@ method.
 
    The method will be passed the type object as the first parameter rather
    than an instance of the type.  This is used to create *class methods*,
-   similar to what is created when using the :func:`classmethod` built-in
-   function.
+   similar to what is created when using the :deco:`classmethod` built-in
+   decorator.
 
 
 .. c:macro:: METH_STATIC
@@ -429,7 +429,7 @@ method.
 
    The method will be passed ``NULL`` as the first parameter rather than an
    instance of the type.  This is used to create *static methods*, similar to
-   what is created when using the :func:`staticmethod` built-in function.
+   what is created when using the :deco:`staticmethod` built-in decorator.
 
 One other constant controls whether a method is loaded in place of another
 definition with the same method name.

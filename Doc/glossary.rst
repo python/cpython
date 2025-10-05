@@ -366,7 +366,7 @@ Glossary
    decorator
       A function returning another function, usually applied as a function
       transformation using the ``@wrapper`` syntax.  Common examples for
-      decorators are :func:`classmethod` and :func:`staticmethod`.
+      decorators are :deco:`classmethod` and :deco:`staticmethod`.
 
       The decorator syntax is merely syntactic sugar, the following two
       function definitions are semantically equivalent::

@@ -756,7 +756,7 @@ functools
 ---------
 
 * The :mod:`functools` module includes a new decorator for caching function
-  calls.  :func:`functools.lru_cache` can save repeated queries to an external
+  calls.  :deco:`functools.lru_cache` can save repeated queries to an external
   resource whenever the results are expected to be the same.
 
   For example, adding a caching decorator to a database query function can save
@@ -1097,11 +1097,11 @@ logarithm of the gamma function:
 abc
 ---
 
-The :mod:`abc` module now supports :func:`~abc.abstractclassmethod` and
-:func:`~abc.abstractstaticmethod`.
+The :mod:`abc` module now supports :deco:`~abc.abstractclassmethod` and
+:deco:`~abc.abstractstaticmethod`.
 
 These tools make it possible to define an :term:`abstract base class` that
-requires a particular :func:`classmethod` or :func:`staticmethod` to be
+requires a particular :deco:`classmethod` or :deco:`staticmethod` to be
 implemented::
 
     class Temperature(metaclass=abc.ABCMeta):

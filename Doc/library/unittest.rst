@@ -768,7 +768,7 @@ Test cases
 
       A class method called before tests in an individual class are run.
       ``setUpClass`` is called with the class as the only argument
-      and must be decorated as a :func:`classmethod`::
+      and must be decorated as a :deco:`classmethod`::
 
         @classmethod
         def setUpClass(cls):
@@ -783,7 +783,7 @@ Test cases
 
       A class method called after tests in an individual class have run.
       ``tearDownClass`` is called with the class as the only argument
-      and must be decorated as a :meth:`classmethod`::
+      and must be decorated as a :deco:`classmethod`::
 
         @classmethod
         def tearDownClass(cls):
