@@ -1224,6 +1224,7 @@ newxmlparseobject(const char *encoding, const char *namespace_separator, PyObjec
     return (PyObject*)self;
 }
 
+
 static void
 xmlparse_dealloc(xmlparseobject *self)
 {
