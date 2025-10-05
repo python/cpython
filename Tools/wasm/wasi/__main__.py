@@ -382,7 +382,7 @@ def main():
     subcommands = parser.add_subparsers(dest="subcommand")
     build = subcommands.add_parser("build", help="Build everything")
     configure_build = subcommands.add_parser(
-        "configure-build-python", help="Run `configure` for the " "build Python"
+        "configure-build-python", help="Run `configure` for the build Python"
     )
     make_build = subcommands.add_parser(
         "make-build-python", help="Run `make` for the build Python"
