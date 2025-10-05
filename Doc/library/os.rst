@@ -216,8 +216,8 @@ process and user.
 
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
-   :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
-   called.
+   :data:`os.environ`, and when one of the :meth:`~dict.pop` or
+   :meth:`~dict.clear` methods is called.
 
    .. seealso::
 
