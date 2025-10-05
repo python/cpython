@@ -1041,7 +1041,7 @@ find and load modules.
 
       Concrete implementation of :meth:`importlib.abc.SourceLoader.set_data`.
 
-   .. method:: load_module(name=None)
+   .. method:: load_module(fullname=None)
 
       Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
       specifying the name of the module to load is optional.
@@ -1084,7 +1084,7 @@ find and load modules.
       Returns ``None`` as bytecode files have no source when this loader is
       used.
 
-   .. method:: load_module(name=None)
+   .. method:: load_module(fullname=None)
 
    Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
    specifying the name of the module to load is optional.
