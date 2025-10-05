@@ -198,12 +198,14 @@ set_error(pyexpat_state *state, xmlparseobject *self, enum XML_Error code)
     return NULL;
 }
 
+#if XML_COMBINED_VERSION >= 20400
 static PyObject *
 set_invalid_arg(pyexpat_state *state, xmlparseobject *self, const char *errmsg)
 {
     SET_XML_ERROR(state, self, XML_ERROR_INVALID_ARGUMENT, errmsg);
     return NULL;
 }
+#endif
 
 #undef SET_XML_ERROR
 
