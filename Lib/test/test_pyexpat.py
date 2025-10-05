@@ -784,7 +784,7 @@ class ParentParserLifetimeTest(unittest.TestCase):
         subparser = parser.ExternalEntityParserCreate(None)
 
         # Now try to cause garbage collection of the parent parser
-        # while it's still being referenced by a related subparser
+        # while it's still being referenced by a related subparser.
         del parser
 
     def test_parent_parser_outlives_its_subparsers__multiple(self):
@@ -793,7 +793,7 @@ class ParentParserLifetimeTest(unittest.TestCase):
         subparser_two = parser.ExternalEntityParserCreate(None)
 
         # Now try to cause garbage collection of the parent parser
-        # while it's still being referenced by a related subparser
+        # while it's still being referenced by a related subparser.
         del parser
 
     def test_parent_parser_outlives_its_subparsers__chain(self):
@@ -802,7 +802,7 @@ class ParentParserLifetimeTest(unittest.TestCase):
         subsubparser = subparser.ExternalEntityParserCreate(None)
 
         # Now try to cause garbage collection of the parent parsers
-        # while they are still being referenced by a related subparser
+        # while they are still being referenced by a related subparser.
         del parser
         del subparser
 
