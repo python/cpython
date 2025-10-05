@@ -1183,7 +1183,7 @@ pysqlite_cursor_iternext(PyObject *op)
         if (self->statement->is_dml) {
             self->rowcount = (long)sqlite3_changes(self->connection->db);
         }
-        int rc = stmt_reset(self->statement);
+        rc = stmt_reset(self->statement);
         Py_CLEAR(self->statement);
         if (rc != SQLITE_OK) {
             goto reset_failure;
@@ -1191,10 +1191,10 @@ pysqlite_cursor_iternext(PyObject *op)
     }
     else if (rc != SQLITE_ROW) {
         rc = set_error_from_db(self->connection->state, self->connection->db);
-        int reset_ok = stmt_reset(self->statement);
+        int reset_rc = stmt_reset(self->statement);
         Py_CLEAR(self->statement);
         Py_DECREF(row);
-        if (rc == SQLITE_OK && reset_ok != SQLITE_OK) {
+        if (rc == SQLITE_OK && reset_rc != SQLITE_OK) {
             goto reset_failure;
         }
         return NULL;
