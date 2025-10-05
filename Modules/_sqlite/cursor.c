@@ -80,7 +80,7 @@ cursor_sqlite3_internal_error(pysqlite_Cursor *cursor,
         _PyErr_ChainExceptions1(exc);
     }
     else {
-        // assert(!PyErr_Occurred());
+        assert(!PyErr_Occurred());
         PyErr_SetString(state->InternalError, error_message);
    }
 }
