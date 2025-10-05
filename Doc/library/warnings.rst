@@ -480,13 +480,26 @@ Available Functions
 .. function:: warn_explicit(message, category, filename, lineno, module=None, registry=None, module_globals=None, source=None)
 
    This is a low-level interface to the functionality of :func:`warn`, passing in
-   explicitly the message, category, filename and line number, and optionally the
-   module name and the registry (which should be the ``__warningregistry__``
-   dictionary of the module).  The module name defaults to the filename with
-   ``.py`` stripped; if no registry is passed, the warning is never suppressed.
+   explicitly the message, category, filename and line number, and optionally
+   other arguments.
    *message* must be a string and *category* a subclass of :exc:`Warning` or
    *message* may be a :exc:`Warning` instance, in which case *category* will be
    ignored.
+
+   *module*, if supplied, should be the module name.
+   If no module is passed, the module regular expression in
+   :ref:`warnings filter <warning-filter>` will be tested against the filename
+   with ``/__init__.py`` and ``.py`` (and ``.pyw`` on Windows) stripped and
+   against the module names constructed from the path components starting
+   from all parent directories.
+   For example, when filename is ``'/path/to/package/module.py'``, it will
+   be tested against ``'/path/to/package/module'``,
+   ``'path.to.package.module'``, ``'to.package.module'``
+   ``'package.module'`` and ``'module'``.
+
+   *registry*, if supplied, should be the ``__warningregistry__`` dictionary
+   of the module.
+   If no registry is passed, each warning is treated as the first occurrence.
 
    *module_globals*, if supplied, should be the global namespace in use by the code
    for which the warning is issued.  (This argument is used to support displaying
@@ -498,6 +511,11 @@ Available Functions
 
    .. versionchanged:: 3.6
       Add the *source* parameter.
+
+   .. versionchanged:: next
+      If no module is passed, test the filter regular expression against
+      module names created from the path, not only the path itself;
+      strip also ``.pyw`` (on Windows) and ``/__init__.py``.
 
 
 .. function:: showwarning(message, category, filename, lineno, file=None, line=None)
