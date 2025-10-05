@@ -114,15 +114,13 @@ class ModuleCompleter:
             # even if a module with the same name would be higher in path
             imported_path = (imported_module.__spec__
                              and imported_module.__spec__.origin)
-            if imported_path:
-                if os.path.basename(imported_path) == "__init__.py":  # package
-                    imported_path = os.path.dirname(imported_path)
-                import_location = os.path.dirname(imported_path)
-                modules = list(pkgutil.iter_modules([import_location]))
-            else:
-                # Module already imported but without spec/origin:
-                # propose no suggestions
+            if not imported_path:
+                # Module imported but no spec/origin: propose no suggestions
                 return []
+            if os.path.basename(imported_path) == "__init__.py":  # package
+                imported_path = os.path.dirname(imported_path)
+            import_location = os.path.dirname(imported_path)
+            modules = list(pkgutil.iter_modules([import_location]))
         else:
             modules = self.global_cache
 
