@@ -3,7 +3,6 @@
 
 import abc
 import functools
-import gc
 import os
 import re
 import sys
