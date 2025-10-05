@@ -811,10 +811,10 @@ class ParentParserLifetimeTest(unittest.TestCase):
         parser = expat.ParserCreate()
         subparser = parser.ExternalEntityParserCreate(None)
 
-        # Hack a cycle onto it; note that parsing now would not work.
+        # This hacks a cycle onto it; note that parsing now would not work.
         parser.CharacterDataHandler = subparser
 
-        # Self-test that the cycle is real
+        # This self-tests that the cycle is real.
         self.assertIn(parser, gc.get_referents(subparser))
         self.assertIn(subparser, gc.get_referents(parser))
 
