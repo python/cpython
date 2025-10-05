@@ -3132,7 +3132,7 @@ JIT_DEPS = \
 jit_stencils.h @JIT_STENCILS_H@: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
-Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h @JIT_STENCILS_H@
+Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
