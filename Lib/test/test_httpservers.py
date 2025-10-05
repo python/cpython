@@ -391,12 +391,13 @@ class HTTP09ServerTestCase(BaseTestCase):
         res = self.sock.recv(1024)
         self.assertEqual(res, b"OK: here is /foo.html\r\n")
 
-        self.sock.send(b'GET /bar.html\r\n')
-        res = self.sock.recv(1024)
-        # The server will not parse more input as it closed the connection.
-        # Note that the socket connection itself is still opened since the
-        # client is responsible for also closing it on their side.
-        self.assertEqual(res, b'')
+        # Ignore errors if the connection is already closed,
+        # as this is the expected behavior of HTTP/0.9.
+        with contextlib.suppress(OSError):
+            self.sock.send(b'GET /bar.html\r\n')
+            res = self.sock.recv(1024)
+            # The server should not process our request.
+            self.assertEqual(res, b'')
 
 
 def certdata_file(*path):
