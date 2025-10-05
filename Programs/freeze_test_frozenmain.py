@@ -24,7 +24,7 @@ def dump(fp, filename, name):
 
     with tokenize.open(filename) as source_fp:
         source = source_fp.read()
-        code = compile(source, code_filename, 'exec')
+        code = compile(source, code_filename, 'exec', module=name)
 
     data = marshal.dumps(code)
     writecode(fp, name, data)

@@ -177,7 +177,7 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
             source_code = f.read()
 
         # Compile and execute the script
-        code = compile(source_code, script_path, 'exec')
+        code = compile(source_code, script_path, 'exec', module='__main__')
         exec(code, {'__name__': '__main__', '__file__': script_path})
     except FileNotFoundError as e:
         raise TargetError(f"Script file not found: {script_path}") from e
