@@ -376,10 +376,27 @@ class HTTP09ServerTestCase(BaseTestCase):
         self.sock = self.enterContext(self.sock)
         self.sock.connect((self.HOST, self.PORT))
 
-    def test_http_0_9_server(self):
+    def test_simple_get(self):
         self.sock.send(b'GET /index.html\r\n')
         res = self.sock.recv(1024)
         self.assertEqual(res, b"OK: here is /index.html\r\n")
+
+    def test_invalid_request(self):
+        self.sock.send(b'POST /index.html\r\n')
+        res = self.sock.recv(1024)
+        self.assertIn(b"Bad HTTP/0.9 request type ('POST')", res)
+
+    def test_single_request(self):
+        self.sock.send(b'GET /foo.html\r\n')
+        res = self.sock.recv(1024)
+        self.assertEqual(res, b"OK: here is /foo.html\r\n")
+
+        self.sock.send(b'GET /bar.html\r\n')
+        res = self.sock.recv(1024)
+        # The server will not parse more input as it closed the connection.
+        # Note that the socket connection itself is still opened since the
+        # client is responsible for also closing it on their side.
+        self.assertEqual(res, b'')
 
 
 def certdata_file(*path):
