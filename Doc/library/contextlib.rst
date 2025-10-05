@@ -88,7 +88,7 @@ Functions and classes provided:
    the exception has been handled, and execution will resume with the statement
    immediately following the :keyword:`!with` statement.
 
-   :func:`contextmanager` uses :class:`ContextDecorator` so the context managers
+   :deco:`contextmanager` uses :class:`ContextDecorator` so the context managers
    it creates can be used as decorators as well as in :keyword:`with` statements.
    When used as a decorator, a new generator instance is implicitly created on
    each function call (this allows the otherwise "one-shot" context managers

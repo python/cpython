@@ -2557,13 +2557,12 @@ always override a redefinition in an
 instance dictionary.  In contrast, non-data descriptors can be overridden by
 instances.
 
-Python methods (including those decorated with
-:func:`@staticmethod <staticmethod>` and :func:`@classmethod <classmethod>`) are
-implemented as non-data descriptors.  Accordingly, instances can redefine and
+Python methods (including those decorated with :deco:`staticmethod` and :deco:`classmethod`)
+are implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
 
-The :func:`property` function is implemented as a data descriptor. Accordingly,
+The :deco:`property` decorator is implemented as a data descriptor. Accordingly,
 instances cannot override the behavior of a property.
 
 
