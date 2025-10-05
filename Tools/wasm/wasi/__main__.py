@@ -396,7 +396,7 @@ def main():
     )
     make_host = subcommands.add_parser("make-host", help="Run `make` for the host/WASI")
     subcommands.add_parser(
-        "clean", help="Delete files and directories " "created by this script"
+        "clean", help="Delete files and directories created by this script"
     )
     for subcommand in build, configure_build, make_build, configure_host, make_host:
         subcommand.add_argument(
