@@ -904,7 +904,7 @@ class SourceLoaderGetSourceTests:
         mock = self.SourceOnlyLoaderMock('mod.file')
         source = "x = 42\r\ny = -13\r\n"
         mock.source = source.encode('utf-8')
-        expect = io.IncrementalNewlineDecoder(None, True).decode(source)
+        expect = io.StringIO(source, newline=None).getvalue()
         self.assertEqual(mock.get_source(name), expect)
 
 
