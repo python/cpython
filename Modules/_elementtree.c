@@ -4214,8 +4214,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
                 (XML_ProcessingInstructionHandler) expat_pi_handler
                 );
         } else {
-            Py_DECREF(events_seq);
             PyErr_Format(PyExc_ValueError, "unknown event '%s'", event_name);
+            Py_DECREF(events_seq);
             return NULL;
         }
     }

@@ -1,5 +1,52 @@
 const EMBEDDED_DATA = {{FLAMEGRAPH_DATA}};
 
+// Global string table for resolving string indices
+let stringTable = [];
+let originalData = null;
+let currentThreadFilter = 'all';
+
+// Function to resolve string indices to actual strings
+function resolveString(index) {
+    if (typeof index === 'number' && index >= 0 && index < stringTable.length) {
+        return stringTable[index];
+    }
+    // Fallback for non-indexed strings or invalid indices
+    return String(index);
+}
+
+// Function to recursively resolve all string indices in flamegraph data
+function resolveStringIndices(node) {
+    if (!node) return node;
+
+    // Create a copy to avoid mutating the original
+    const resolved = { ...node };
+
+    // Resolve string fields
+    if (typeof resolved.name === 'number') {
+        resolved.name = resolveString(resolved.name);
+    }
+    if (typeof resolved.filename === 'number') {
+        resolved.filename = resolveString(resolved.filename);
+    }
+    if (typeof resolved.funcname === 'number') {
+        resolved.funcname = resolveString(resolved.funcname);
+    }
+
+    // Resolve source lines if present
+    if (Array.isArray(resolved.source)) {
+        resolved.source = resolved.source.map(index =>
+            typeof index === 'number' ? resolveString(index) : index
+        );
+    }
+
+    // Recursively resolve children
+    if (Array.isArray(resolved.children)) {
+        resolved.children = resolved.children.map(child => resolveStringIndices(child));
+    }
+
+    return resolved;
+}
+
 // Python color palette - cold to hot
 const pythonColors = [
   "#fff4bf", // Coldest - light yellow (<1%)
@@ -42,6 +89,8 @@ function createPythonTooltip(data) {
         .style("font-weight", "400")
         .style("line-height", "1.5")
         .style("max-width", "500px")
+        .style("word-wrap", "break-word")
+        .style("overflow-wrap", "break-word")
         .style("font-family", "'Source Sans Pro', sans-serif")
         .style("opacity", 0);
     }
@@ -61,7 +110,7 @@ function createPythonTooltip(data) {
             `<div style="font-family: 'SF Mono', 'Monaco', 'Consolas', ` +
             `monospace; font-size: 12px; color: ${
               line.startsWith("→") ? "#3776ab" : "#5a6c7d"
-            }; white-space: pre; line-height: 1.4; padding: 2px 0;">${line
+            }; white-space: pre-wrap; word-break: break-all; overflow-wrap: break-word; line-height: 1.4; padding: 2px 0;">${line
               .replace(/&/g, "&amp;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;")}</div>`,
@@ -77,7 +126,7 @@ function createPythonTooltip(data) {
           </div>
           <div style="background: #f8f9fa; border: 1px solid #e9ecef;
                       border-radius: 6px; padding: 12px; max-height: 150px;
-                      overflow-y: auto;">
+                      overflow-y: auto; overflow-x: hidden;">
             ${sourceLines}
           </div>
         </div>`;
@@ -92,22 +141,26 @@ function createPythonTooltip(data) {
           </div>
           <div style="background: #f8f9fa; border: 1px solid #e9ecef;
                       border-radius: 6px; padding: 12px; max-height: 150px;
-                      overflow-y: auto; font-family: monospace; font-size: 11px;">
+                      overflow-y: auto; overflow-x: hidden; font-family: monospace; font-size: 11px; word-break: break-all; overflow-wrap: break-word;">
             ${JSON.stringify(source, null, 2)}
           </div>
         </div>`;
     }
 
+    // Resolve strings for display
+    const funcname = resolveString(d.data.funcname) || resolveString(d.data.name);
+    const filename = resolveString(d.data.filename) || "";
+
     const tooltipHTML = `
       <div>
         <div style="color: #3776ab; font-weight: 600; font-size: 16px;
-                    margin-bottom: 8px; line-height: 1.3;">
-          ${d.data.funcname || d.data.name}
+                    margin-bottom: 8px; line-height: 1.3; word-break: break-word; overflow-wrap: break-word;">
+          ${funcname}
         </div>
         <div style="color: #5a6c7d; font-size: 13px; margin-bottom: 12px;
                     font-family: monospace; background: #f8f9fa;
-                    padding: 4px 8px; border-radius: 4px;">
-          ${d.data.filename || ""}${d.data.lineno ? ":" + d.data.lineno : ""}
+                    padding: 4px 8px; border-radius: 4px; word-break: break-all; overflow-wrap: break-word;">
+          ${filename}${d.data.lineno ? ":" + d.data.lineno : ""}
         </div>
         <div style="display: grid; grid-template-columns: auto 1fr;
                     gap: 8px 16px; font-size: 14px;">
@@ -255,9 +308,9 @@ function updateSearchHighlight(searchTerm, searchInput) {
     let matchCount = 0;
     d3.selectAll("#chart rect").each(function (d) {
       if (d && d.data) {
-        const name = d.data.name || "";
-        const funcname = d.data.funcname || "";
-        const filename = d.data.filename || "";
+        const name = resolveString(d.data.name) || "";
+        const funcname = resolveString(d.data.funcname) || "";
+        const filename = resolveString(d.data.filename) || "";
         const term = searchTerm.toLowerCase();
         const matches =
           name.toLowerCase().includes(term) ||
@@ -315,12 +368,26 @@ function handleResize(chart, data) {
 
 function initFlamegraph() {
   ensureLibraryLoaded();
-  const tooltip = createPythonTooltip(EMBEDDED_DATA);
-  const chart = createFlamegraph(tooltip, EMBEDDED_DATA.value);
-  renderFlamegraph(chart, EMBEDDED_DATA);
+
+  // Extract string table if present and resolve string indices
+  let processedData = EMBEDDED_DATA;
+  if (EMBEDDED_DATA.strings) {
+    stringTable = EMBEDDED_DATA.strings;
+    processedData = resolveStringIndices(EMBEDDED_DATA);
+  }
+
+  // Store original data for filtering
+  originalData = processedData;
+
+  // Initialize thread filter dropdown
+  initThreadFilter(processedData);
+
+  const tooltip = createPythonTooltip(processedData);
+  const chart = createFlamegraph(tooltip, processedData.value);
+  renderFlamegraph(chart, processedData);
   attachPanelControls();
   initSearchHandlers();
-  handleResize(chart, EMBEDDED_DATA);
+  handleResize(chart, processedData);
 }
 
 if (document.readyState === "loading") {
@@ -336,7 +403,26 @@ function populateStats(data) {
   const functionMap = new Map();
 
   function collectFunctions(node) {
-    if (node.filename && node.funcname) {
+    if (!node) return;
+
+    let filename = typeof node.filename === 'number' ? resolveString(node.filename) : node.filename;
+    let funcname = typeof node.funcname === 'number' ? resolveString(node.funcname) : node.funcname;
+
+    if (!filename || !funcname) {
+      const nameStr = typeof node.name === 'number' ? resolveString(node.name) : node.name;
+      if (nameStr?.includes('(')) {
+        const match = nameStr.match(/^(.+?)\s*\((.+?):(\d+)\)$/);
+        if (match) {
+          funcname = funcname || match[1];
+          filename = filename || match[2];
+        }
+      }
+    }
+
+    filename = filename || 'unknown';
+    funcname = funcname || 'unknown';
+
+    if (filename !== 'unknown' && funcname !== 'unknown' && node.value > 0) {
       // Calculate direct samples (this node's value minus children's values)
       let childrenValue = 0;
       if (node.children) {
@@ -345,7 +431,7 @@ function populateStats(data) {
       const directSamples = Math.max(0, node.value - childrenValue);
 
       // Use file:line:funcname as key to ensure uniqueness
-      const funcKey = `${node.filename}:${node.lineno || '?'}:${node.funcname}`;
+      const funcKey = `${filename}:${node.lineno || '?'}:${funcname}`;
 
       if (functionMap.has(funcKey)) {
         const existing = functionMap.get(funcKey);
@@ -353,15 +439,15 @@ function populateStats(data) {
         existing.directPercent = (existing.directSamples / totalSamples) * 100;
         // Keep the most representative file/line (the one with more samples)
         if (directSamples > existing.maxSingleSamples) {
-          existing.filename = node.filename;
+          existing.filename = filename;
           existing.lineno = node.lineno || '?';
           existing.maxSingleSamples = directSamples;
         }
       } else {
         functionMap.set(funcKey, {
-          filename: node.filename,
+          filename: filename,
           lineno: node.lineno || '?',
-          funcname: node.funcname,
+          funcname: funcname,
           directSamples,
           directPercent: (directSamples / totalSamples) * 100,
           maxSingleSamples: directSamples
@@ -385,15 +471,17 @@ function populateStats(data) {
   // Populate the 3 cards
   for (let i = 0; i < 3; i++) {
     const num = i + 1;
-    if (i < hotSpots.length) {
+    if (i < hotSpots.length && hotSpots[i]) {
       const hotspot = hotSpots[i];
-      const basename = hotspot.filename.split('/').pop();
-      let funcDisplay = hotspot.funcname;
+      const filename = hotspot.filename || 'unknown';
+      const basename = filename !== 'unknown' ? filename.split('/').pop() : 'unknown';
+      const lineno = hotspot.lineno ?? '?';
+      let funcDisplay = hotspot.funcname || 'unknown';
       if (funcDisplay.length > 35) {
         funcDisplay = funcDisplay.substring(0, 32) + '...';
       }
 
-      document.getElementById(`hotspot-file-${num}`).textContent = `${basename}:${hotspot.lineno}`;
+      document.getElementById(`hotspot-file-${num}`).textContent = `${basename}:${lineno}`;
       document.getElementById(`hotspot-func-${num}`).textContent = funcDisplay;
       document.getElementById(`hotspot-detail-${num}`).textContent = `${hotspot.directPercent.toFixed(1)}% samples (${hotspot.directSamples.toLocaleString()})`;
     } else {
@@ -441,5 +529,104 @@ function clearSearch() {
       window.flamegraphChart.clear();
     }
   }
+}
+
+function initThreadFilter(data) {
+  const threadFilter = document.getElementById('thread-filter');
+  const threadWrapper = document.querySelector('.thread-filter-wrapper');
+
+  if (!threadFilter || !data.threads) {
+    return;
+  }
+
+  // Clear existing options except "All Threads"
+  threadFilter.innerHTML = '<option value="all">All Threads</option>';
+
+  // Add thread options
+  const threads = data.threads || [];
+  threads.forEach(threadId => {
+    const option = document.createElement('option');
+    option.value = threadId;
+    option.textContent = `Thread ${threadId}`;
+    threadFilter.appendChild(option);
+  });
+
+  // Show filter if more than one thread
+  if (threads.length > 1 && threadWrapper) {
+    threadWrapper.style.display = 'inline-flex';
+  }
+}
+
+function filterByThread() {
+  const threadFilter = document.getElementById('thread-filter');
+  if (!threadFilter || !originalData) return;
+
+  const selectedThread = threadFilter.value;
+  currentThreadFilter = selectedThread;
+
+  let filteredData;
+  if (selectedThread === 'all') {
+    // Show all data
+    filteredData = originalData;
+  } else {
+    // Filter data by thread
+    const threadId = parseInt(selectedThread);
+    filteredData = filterDataByThread(originalData, threadId);
+
+    if (filteredData.strings) {
+      stringTable = filteredData.strings;
+      filteredData = resolveStringIndices(filteredData);
+    }
+  }
+
+  // Re-render flamegraph with filtered data
+  const tooltip = createPythonTooltip(filteredData);
+  const chart = createFlamegraph(tooltip, filteredData.value);
+  renderFlamegraph(chart, filteredData);
+}
+
+function filterDataByThread(data, threadId) {
+  function filterNode(node) {
+    if (!node.threads || !node.threads.includes(threadId)) {
+      return null;
+    }
+
+    const filteredNode = {
+      ...node,
+      children: []
+    };
+
+    if (node.children && Array.isArray(node.children)) {
+      filteredNode.children = node.children
+        .map(child => filterNode(child))
+        .filter(child => child !== null);
+    }
+
+    return filteredNode;
+  }
+
+  const filteredRoot = {
+    ...data,
+    children: []
+  };
+
+  if (data.children && Array.isArray(data.children)) {
+    filteredRoot.children = data.children
+      .map(child => filterNode(child))
+      .filter(child => child !== null);
+  }
+
+  function recalculateValue(node) {
+    if (!node.children || node.children.length === 0) {
+      return node.value || 0;
+    }
+    const childrenValue = node.children.reduce((sum, child) => sum + recalculateValue(child), 0);
+    node.value = Math.max(node.value || 0, childrenValue);
+    return node.value;
+  }
+
+  recalculateValue(filteredRoot);
+
+  return filteredRoot;
 }
 

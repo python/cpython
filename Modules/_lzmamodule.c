@@ -882,13 +882,6 @@ static PyMethodDef Compressor_methods[] = {
     {NULL}
 };
 
-static int
-Compressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 PyDoc_STRVAR(Compressor_doc,
 "LZMACompressor(format=FORMAT_XZ, check=-1, preset=None, filters=None)\n"
 "\n"
@@ -922,7 +915,6 @@ static PyType_Slot lzma_compressor_type_slots[] = {
     {Py_tp_methods, Compressor_methods},
     {Py_tp_new, Compressor_new},
     {Py_tp_doc, (char *)Compressor_doc},
-    {Py_tp_traverse, Compressor_traverse},
     {0, 0}
 };
 
@@ -1263,10 +1255,7 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
     self->needs_input = 1;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
-    if (self->unused_data == NULL) {
-        goto error;
-    }
+    Py_XSETREF(self->unused_data, Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
 
     switch (format) {
         case FORMAT_AUTO:
@@ -1328,13 +1317,6 @@ Decompressor_dealloc(PyObject *op)
     Py_DECREF(tp);
 }
 
-static int
-Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyMethodDef Decompressor_methods[] = {
     _LZMA_LZMADECOMPRESSOR_DECOMPRESS_METHODDEF
     {NULL}
@@ -1369,7 +1351,6 @@ static PyType_Slot lzma_decompressor_type_slots[] = {
     {Py_tp_methods, Decompressor_methods},
     {Py_tp_new, _lzma_LZMADecompressor},
     {Py_tp_doc, (char *)_lzma_LZMADecompressor__doc__},
-    {Py_tp_traverse, Decompressor_traverse},
     {Py_tp_members, Decompressor_members},
     {0, 0}
 };
@@ -1445,7 +1426,7 @@ _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter)
 {
     lzma_ret lzret;
     uint32_t encoded_size;
-    PyObject *result = NULL;
+    PyBytesWriter *writer = NULL;
     _lzma_state *state = get_lzma_state(module);
     assert(state != NULL);
 
@@ -1453,20 +1434,20 @@ _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter)
     if (catch_lzma_error(state, lzret))
         goto error;
 
-    result = PyBytes_FromStringAndSize(NULL, encoded_size);
-    if (result == NULL)
+    writer = PyBytesWriter_Create(encoded_size);
+    if (writer == NULL) {
         goto error;
+    }
 
-    lzret = lzma_properties_encode(
-            &filter, (uint8_t *)PyBytes_AS_STRING(result));
+    lzret = lzma_properties_encode(&filter, PyBytesWriter_GetData(writer));
     if (catch_lzma_error(state, lzret)) {
         goto error;
     }
 
-    return result;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_XDECREF(result);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
