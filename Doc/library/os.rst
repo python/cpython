@@ -2606,10 +2606,10 @@ features:
 
    Create a filesystem node (file, device special file or named pipe) named
    *path*. *mode* specifies both the permissions to use and the type of node
-   to be created, being combined (bitwise OR) with one of ``stat.S_IFREG``,
-   ``stat.S_IFCHR``, ``stat.S_IFBLK``, and ``stat.S_IFIFO`` (those constants are
-   available in :mod:`stat`).  For ``stat.S_IFCHR`` and ``stat.S_IFBLK``,
-   *device* defines the newly created device special file (probably using
+   to be created, being combined (bitwise OR) with one of :const:`stat.S_IFREG`,
+   :const:`stat.S_IFCHR`, :const:`stat.S_IFBLK`, and :const:`stat.S_IFIFO`.
+   For :const:`stat.S_IFCHR` and :const:`stat.S_IFBLK`, *device* defines the
+   newly created device special file (probably using
    :func:`os.makedev`), otherwise it is ignored.
 
    This function can also support :ref:`paths relative to directory descriptors
@@ -2627,13 +2627,13 @@ features:
 .. function:: major(device, /)
 
    Extract the device major number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
+   :attr:`stat_result.st_dev` or :attr:`stat_result.st_rdev`).
 
 
 .. function:: minor(device, /)
 
    Extract the device minor number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
+   :attr:`stat_result.st_dev` or :attr:`stat_result.st_rdev`).
 
 
 .. function:: makedev(major, minor, /)
@@ -3364,8 +3364,8 @@ features:
 
    .. versionchanged:: 3.8
       On Windows, the :attr:`st_mode` member now identifies special
-      files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
-      as appropriate.
+      files as :const:`~stat.S_IFCHR`, :const:`~stat.S_IFIFO` or
+      :const:`~stat.S_IFBLK` as appropriate.
 
    .. versionchanged:: 3.12
       On Windows, :attr:`st_ctime` is deprecated. Eventually, it will
