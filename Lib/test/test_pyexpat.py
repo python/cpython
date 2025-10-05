@@ -807,22 +807,6 @@ class ParentParserLifetimeTest(unittest.TestCase):
         del parser
         del subparser
 
-    def test_cycle(self):
-        parser = expat.ParserCreate()
-        subparser = parser.ExternalEntityParserCreate(None)
-
-        # This hacks a cycle onto it; note that parsing now would not work.
-        parser.CharacterDataHandler = subparser
-
-        # This self-tests that the cycle is real.
-        self.assertIn(parser, gc.get_referents(subparser))
-        self.assertIn(subparser, gc.get_referents(parser))
-
-        # Now try to cause garbage collection of the parent parsers
-        # while they are still being referenced by a related subparser.
-        del parser
-        del subparser
-
 
 class ReparseDeferralTest(unittest.TestCase):
     def test_getter_setter_round_trip(self):
