@@ -282,12 +282,10 @@ def print_exception():
                     print(f"{prefix}| Exception Group Traceback (most recent call last):", file=efile)
                 tbe = traceback.extract_tb(tb)
                 cleanup_traceback(tbe, exclude)
+                prefix2 = prefix or "  "
                 for line in traceback.format_list(tbe):
                     for subline in line.rstrip().splitlines():
-                        if not prefix:
-                            print(f"  | {subline}", file=efile)
-                        else:
-                            print(f"{prefix}| {subline}", file=efile)
+                        print(f"{prefix2}| {subline}", file=efile)
             lines = get_message_lines(typ, exc, tb)
             for line in lines:
                 if not prefix:

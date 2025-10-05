@@ -1,1 +1,1 @@
-Add the support with BaseExceptionGroup in IDLE
+Support rendering :exc:`BaseExceptionGroup` in IDLE.
