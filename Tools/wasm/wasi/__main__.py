@@ -178,7 +178,7 @@ def make_build_python(context, working_dir):
     cmd = [
         binary,
         "-c",
-        "import sys; " "print(f'{sys.version_info.major}.{sys.version_info.minor}')",
+        "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')",
     ]
     version = subprocess.check_output(cmd, encoding="utf-8").strip()
 
