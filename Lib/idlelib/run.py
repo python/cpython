@@ -260,7 +260,7 @@ def print_exception():
             else:
                 print(f"{prefix}| Exception Group Traceback (most recent call last):", file=efile)
             tbe = traceback.extract_tb(tb)
-            cleanup_traceback(tbe, exclude)                
+            cleanup_traceback(tbe, exclude)
             for line in traceback.format_list(tbe):
                 for subline in line.rstrip().splitlines():
                     print(f"{prefix2}| {subline}", file=efile)
