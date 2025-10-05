@@ -42,6 +42,13 @@ repos:
         name: Run Black on Tools/jit/
         files: ^Tools/jit/
 
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 25.9.0
+    hooks:
+      - id: black
+        name: Run Black on wasm/wasi/
+        files: ^Tools/wasm/wasi/
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
     hooks:
