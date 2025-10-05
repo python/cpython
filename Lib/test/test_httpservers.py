@@ -395,7 +395,6 @@ class HTTP09ServerTestCase(BaseTestCase):
         # as this is the expected behavior of HTTP/0.9.
         with contextlib.suppress(OSError):
             self.sock.send(b'GET /bar.html\r\n')
-        with contextlib.suppress(OSError):
             res = self.sock.recv(1024)
             # The server should not process our request.
             self.assertEqual(res, b'')
