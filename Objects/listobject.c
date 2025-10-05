@@ -1834,6 +1834,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
         Py_ssize_t L = 0;
         Py_ssize_t R = ok - 1;
         pivot = a[ok];
+        assert(L < R);
         do {
             M = (L + R) >> 1;
             IFLT(pivot, a[M])
@@ -1853,8 +1854,8 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
         }
 
         // Update Adaptive runvars
-        Py_ssize_t std = ok >> 1;
-        Py_ssize_t mu = L;
+        // Py_ssize_t std = ok >> 1;
+        // Py_ssize_t mu = L;
         ++ok;
 
         for (; ok < n; ++ok) {
@@ -1868,18 +1869,16 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
              * all a[R:ok]  > pivot
              */
             assert(L < R);
-            M = (L + R) >> 1;
-            // M = std < (ok >> 2) ? mu : (L + R) >> 1;
             do {
                 /* don't do silly ;-) things to prevent overflow when finding
                    the midpoint; L and R are very far from filling a Py_ssize_t */
 
 #if 1 // straightforward, but highly unpredictable branch on random data
+                M = (L + R) >> 1;
                 IFLT(pivot, a[M])
                     R = M;
                 else
                     L = M + 1;
-                M = (L + R) >> 1;
 #else
                 /* Try to get compiler to generate conditional move instructions
                    instead. Works fine, but leaving it disabled for now because
@@ -1911,8 +1910,9 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             }
 
             // Update Adaptive runvars
-            std = labs(L - mu);
-            mu = L;
+            // std += labs(L - mu);
+            // std /= 2;
+            // mu = L;
         }
     }
 #endif // pick binary or regular insertion sort
