@@ -1,0 +1,1 @@
+Make :meth:`tempfile.SpooledTemporaryFile.truncate()` to return new file size.
