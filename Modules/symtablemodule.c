@@ -16,14 +16,17 @@ _symtable.symtable
     filename:  object(converter='PyUnicode_FSDecoder')
     startstr:  str
     /
+    *
+    module as modname: object = None
 
 Return symbol and scope dictionaries used internally by compiler.
 [clinic start generated code]*/
 
 static PyObject *
 _symtable_symtable_impl(PyObject *module, PyObject *source,
-                        PyObject *filename, const char *startstr)
-/*[clinic end generated code: output=59eb0d5fc7285ac4 input=9dd8a50c0c36a4d7]*/
+                        PyObject *filename, const char *startstr,
+                        PyObject *modname)
+/*[clinic end generated code: output=235ec5a87a9ce178 input=6f3c14cc01a3f27f]*/
 {
     struct symtable *st;
     PyObject *t;
@@ -51,7 +54,18 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
         Py_XDECREF(source_copy);
         return NULL;
     }
-    st = _Py_SymtableStringObjectFlags(str, filename, start, &cf);
+    if (modname == Py_None) {
+        modname = NULL;
+    }
+    else if (!PyUnicode_Check(modname)) {
+        PyErr_Format(PyExc_TypeError,
+                     "symtable() argument 'module' must be str or None, not %T",
+                     modname);
+        Py_DECREF(filename);
+        Py_XDECREF(source_copy);
+        return NULL;
+    }
+    st = _Py_SymtableStringObjectFlags(str, filename, start, &cf, modname);
     Py_DECREF(filename);
     Py_XDECREF(source_copy);
     if (st == NULL) {
