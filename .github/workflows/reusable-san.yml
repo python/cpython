@@ -34,11 +34,6 @@ jobs:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.sanitizer }}-${{ inputs.config_hash }}
     - name: Install dependencies
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
