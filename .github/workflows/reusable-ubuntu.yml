@@ -25,7 +25,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
     env:
-      OPENSSL_VER: 3.0.15
+      OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:
