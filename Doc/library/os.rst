@@ -430,8 +430,8 @@ process and user.
       associated with the effective user id of the process; the group access
       list may change over the lifetime of the process, it is not affected by
       calls to :func:`setgroups`, and its length is not limited to 16.  The
-      deployment target value, :const:`MACOSX_DEPLOYMENT_TARGET`, can be
-      obtained with :func:`sysconfig.get_config_var`.
+      deployment target value can be obtained with
+      ``sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')``.
 
 
 .. function:: getlogin()
