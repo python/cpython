@@ -113,10 +113,6 @@ jobs:
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
         run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-      - name: Configure ccache action
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          save: false
       - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
@@ -301,10 +297,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
     - name: Configure CPython
       run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl="$OPENSSL_DIR"
     - name: Build CPython
@@ -362,10 +354,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
     - name: Configure CPython
       run: |
         ./configure CFLAGS="-fdiagnostics-format=json" \
@@ -449,10 +437,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
@@ -571,11 +555,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
     - name: Configure CPython
       run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
     - name: Build CPython
