@@ -4285,10 +4285,10 @@ to be ignored.
 
 .. function:: abort()
 
-   Generate a :const:`SIGABRT` signal to the current process.  On Unix, the default
+   Generate a :const:`~signal.SIGABRT` signal to the current process.  On Unix, the default
    behavior is to produce a core dump; on Windows, the process immediately returns
    an exit code of ``3``.  Be aware that calling this function will not call the
-   Python signal handler registered for :const:`SIGABRT` with
+   Python signal handler registered for :const:`~signal.SIGABRT` with
    :func:`signal.signal`.
 
 
