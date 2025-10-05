@@ -320,7 +320,7 @@ jobs:
         # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
         # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
         # supported by important vendors such as AWS-LC.
-        openssl_ver: [1.1.1w, 3.0.17, 3.2.5, 3.3.4, 3.4.2, 3.5.2]
+        openssl_ver: [1.1.1w, 3.0.18, 3.2.6, 3.3.5, 3.4.3, 3.5.4]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -410,7 +410,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     env:
-      OPENSSL_VER: 3.0.16
+      OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -530,7 +530,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.0.16
+      OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
