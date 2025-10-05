@@ -1546,9 +1546,8 @@ xmlparse_clear(PyObject *op)
     clear_handlers(self, 0);
     Py_CLEAR(self->intern);
     // NOTE: We cannot call Py_CLEAR(self->parent) prior to calling
-    //       XML_ParserFree(self->itself) or a subparser (created via
-    //       XML_ExternalEntityParserCreate could lose its parent XML_Parser
-    //       while still making use of it internally.
+    //       XML_ParserFree(self->itself), or a subparser could lose its parent
+    //       XML_Parser while still making use of it internally.
     //       https://github.com/python/cpython/issues/139400
     return 0;
 }
