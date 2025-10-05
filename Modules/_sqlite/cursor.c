@@ -1367,12 +1367,18 @@ pysqlite_cursor_close_impl(pysqlite_Cursor *self)
         return NULL;
     }
 
-    if (self->statement && stmt_reset(self->statement) != SQLITE_OK) {
-        cursor_cannot_reset_stmt_error(self, 0);
-        return NULL;
+    if (self->statement) {
+        int rc = stmt_reset(self->statement);
+        // Force self->statement to be NULL even if stmt_reset() may have
+        // failed to avoid a possible double-free if someone calls close()
+        // twice as a leak here would be better than a double-free.
+        Py_CLEAR(self->statement);
+        if (rc != SQLITE_OK) {
+            cursor_cannot_reset_stmt_error(self, 0);
+            return NULL;
+        }
     }
 
-    Py_CLEAR(self->statement);
     self->closed = 1;
 
     Py_RETURN_NONE;
