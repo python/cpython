@@ -250,82 +250,63 @@ def print_exception():
     sys.last_exc = val
     seen = set()
 
+    def print_exc_group(typ, exc, tb, prefix=""):
+        prefix2 = prefix or "  "
+        if tb:
+            if not prefix:
+                print("  + Exception Group Traceback (most recent call last):", file=efile)
+            else:
+                print(f"{prefix}| Exception Group Traceback (most recent call last):", file=efile)
+            tbe = traceback.extract_tb(tb)
+            cleanup_traceback(tbe, exclude)
+                
+            for line in traceback.format_list(tbe):
+                for subline in line.rstrip().splitlines():
+                    print(f"{prefix2}| {subline}", file=efile)
+        lines = get_message_lines(typ, exc, tb)
+        for line in lines:            
+            print(f"{prefix2}| {line}", end="", file=efile)
+        for i, sub in enumerate(exc.exceptions, 1):
+            if i == 1:
+                first_line_pre = "+-"
+            else:
+                first_line_pre = "  "                
+            print(f"{prefix2}{first_line_pre}+---------------- {i} ----------------", file=efile)
+            if id(sub) not in seen:
+                if not prefix:
+                    print_exc(type(sub), sub, sub.__traceback__, "    ")
+                else:
+                    print_exc(type(sub), sub, sub.__traceback__, prefix + "  ")
+                need_print_underline = not isinstance(sub, BaseExceptionGroup)
+            else:                
+                print(f"{prefix2}  | <exception {type(sub).__name__} has printed>")
+                need_print_underline = True
+            if need_print_underline:
+                print(f"{prefix2}  +------------------------------------", file=efile)
+
     def print_exc(typ, exc, tb, prefix=""):
         seen.add(id(exc))
         context = exc.__context__
         cause = exc.__cause__
         exclude = ("run.py", "rpc.py", "threading.py", "queue.py",
                    "debugger_r.py", "bdb.py")
+        prifix2 = f"{prefix}| " if prefix else "" 
         if cause is not None and id(cause) not in seen:
-            print_exc(type(cause), cause, cause.__traceback__, prefix)
-            if prefix:
-                print(f"{prefix}|\n{prefix}| The above exception was the direct cause "
-                      f"of the following exception:\n{prefix}|", file=efile)
-            else:
-                print("\nThe above exception was the direct cause "
-                      "of the following exception:\n", file=efile)
+            print_exc(type(cause), cause, cause.__traceback__, prefix)            
+            print(f"{prefix2}\n{prefix2}The above exception was the direct cause "
+                  f"of the following exception:\n{prefix2}", file=efile)
         elif (context is not None and
               not exc.__suppress_context__ and
               id(context) not in seen):
             print_exc(type(context), context, context.__traceback__, prefix)
-            if prefix:
-                print(f"{prefix}|\n{prefix}| During handling of the above exception, "
-                      f"another exception occurred:\n{prefix}|", file=efile)
-            else:
-                print("\nDuring handling of the above exception, "
-                      "another exception occurred:\n", file=efile)
+            
+            print(f"{prefix2}\n{prefix2}During handling of the above exception, "
+                  f"another exception occurred:\n{prefix2}", file=efile)
         if isinstance(exc, BaseExceptionGroup):
-            if tb:
-                if not prefix:
-                    print("  + Exception Group Traceback (most recent call last):", file=efile)
-                else:
-                    print(f"{prefix}| Exception Group Traceback (most recent call last):", file=efile)
-                tbe = traceback.extract_tb(tb)
-                cleanup_traceback(tbe, exclude)
-                prefix2 = prefix or "  "
-                for line in traceback.format_list(tbe):
-                    for subline in line.rstrip().splitlines():
-                        print(f"{prefix2}| {subline}", file=efile)
-            lines = get_message_lines(typ, exc, tb)
-            for line in lines:
-                if not prefix:
-                    print(f"  | {line}", end="", file=efile)
-                else:
-                    print(f"{prefix}| {line}", end="", file=efile)
-
-            for i, sub in enumerate(exc.exceptions, 1):
-                if i == 1:
-                    first_line_pre = "+-"
-                else:
-                    first_line_pre = "  "
-                if not prefix:
-                    print(f"  {first_line_pre}+---------------- {i} ----------------", file=efile)
-                else:
-                    print(f"{prefix}{first_line_pre}+---------------- {i} ----------------", file=efile)
-                if id(sub) not in seen:
-                    if not prefix:
-                        print_exc(type(sub), sub, sub.__traceback__, "    ")
-                    else:
-                        print_exc(type(sub), sub, sub.__traceback__, prefix + "  ")
-                    need_print_underline = not isinstance(sub, BaseExceptionGroup)
-                else:
-                    if not prefix:
-                        print("f    | <exception {type(sub).__name__} has printed>")
-                    else:
-                        print(f"{prefix}  | <exception {type(sub).__name__} has printed>")
-                    need_print_underline = True
-                if need_print_underline:
-                    if not prefix:
-                        print("    +------------------------------------", file=efile)
-                    else:
-                        print(f"  {prefix}+------------------------------------", file=efile)
-
+            print_exc_group(typ, exc, tb, prefix=prefix)
         else:
-            if tb:
-                if prefix:
-                    print(f"{prefix}| Traceback (most recent call last):", file=efile)
-                else:
-                    print("Traceback (most recent call last):", file=efile)
+            if tb:                
+                print(f"{prefix2}Traceback (most recent call last):", file=efile)                
                 tbe = traceback.extract_tb(tb)
                 cleanup_traceback(tbe, exclude)
                 if prefix:
@@ -336,10 +317,7 @@ def print_exception():
                     traceback.print_list(tbe, file=efile)
             lines = get_message_lines(typ, exc, tb)
             for line in lines:
-                if prefix:
-                    print(f"{prefix}| {line}", end="", file=efile)
-                else:
-                    print(line, end='', file=efile)
+                print(f"{prefix2}{line}", end="", file=efile)
 
     print_exc(typ, val, tb)
 
