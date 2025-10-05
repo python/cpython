@@ -3,6 +3,7 @@
 
 import abc
 import functools
+import gc
 import os
 import re
 import sys
@@ -809,8 +810,18 @@ class ParentParserLifetimeTest(unittest.TestCase):
     def test_cycle(self):
         parser = expat.ParserCreate()
         subparser = parser.ExternalEntityParserCreate(None)
-        parser.StartElementHandler = lambda _1, _2: subparser
-        parser.Parse('<doc/>', True)
+
+        # Hack a cycle onto it; note that parsing now would not work.
+        parser.CharacterDataHandler = subparser
+
+        # Self-test that the cycle is real
+        self.assertIn(parser, gc.get_referents(subparser))
+        self.assertIn(subparser, gc.get_referents(parser))
+
+        # Now try to cause garbage collection of the parent parsers
+        # while they are still being referenced by a related subparser.
+        del parser
+        del subparser
 
 
 class ReparseDeferralTest(unittest.TestCase):
