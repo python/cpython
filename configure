@@ -9499,7 +9499,7 @@ fi
 
 else case e in #(
   e) with_strict_overflow=no
-      STRICT_OVERFLOW_CFLAGS=""
+   STRICT_OVERFLOW_CFLAGS=""
    NO_STRICT_OVERFLOW_CFLAGS="-fno-strict-overflow"
  ;;
 esac
