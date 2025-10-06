@@ -937,18 +937,18 @@ The compiler now emits a :exc:`SyntaxWarning` when a :keyword:`return`,
 leaving a :keyword:`finally` block.
 This change is specified in :pep:`765`.
 
-For use cases where this change is inconvenient (such as those where the
-warnings are redundant due to code linting), syntax warnings specifically
-may be switched off via the :ref:`warning filter <warning-filter>`, using the
-clause ``ignore::SyntaxWarning``. This can also be specified in combination
+In situations where this change is inconvenient (such as those where the
+warnings are redundant due to code linting), the :ref:`warning filter
+<warning-filter>` can be used to turn off all syntax warnings, by using the
+``ignore::SyntaxWarning`` filter. This can be specified in combination
 with a filter that converts other warnings to errors (for example, passing
 ``-Werror -Wignore::SyntaxWarning`` as CLI options, or setting
 ``PYTHONWARNINGS=error,ignore::SyntaxWarning``).
 
-Note that applying such a filter at runtime (rather than via the interpreter's
-startup configuration) will only suppress the warning in code that is compiled
-*after* the filter is adjusted. Code that is compiled prior to the filter
-adjustment (for example, when a module is imported) will still emit the warning.
+Note that applying such a filter at runtime, using the :mod:`warnings` module
+will only suppress the warning in code that is compiled *after* the filter is
+adjusted. Code that is compiled prior to the filter adjustment (for example,
+when a module is imported) will still emit the syntax warning.
 
 (Contributed by Irit Katriel in :gh:`130080`.)
 
