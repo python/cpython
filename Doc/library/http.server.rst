@@ -556,6 +556,14 @@ The following options are accepted:
 
    .. versionadded:: 3.14
 
+.. option:: -H, --header <header> <value>
+
+   Specify an additional custom HTTP Response Header to send on successful HTTP
+   200 responses. Can be used multiple times to send additional custom response
+   headers.
+
+   .. versionadded:: next
+
 
 .. _http.server-security:
 
