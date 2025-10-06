@@ -2789,9 +2789,8 @@ unwind_stack_for_thread(
         Py_DECREF(py_status);
         goto error;
     }
-    PyErr_Print();
 
-    // In PROFILING_MODE_ALL, py_status contains flags, otherwise it contains legacy enum
+    // py_status contains status flags (bitfield)
     PyStructSequence_SetItem(result, 0, thread_id);
     PyStructSequence_SetItem(result, 1, py_status);  // Steals reference
     PyStructSequence_SetItem(result, 2, frame_info); // Steals reference
