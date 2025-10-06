@@ -1,0 +1,5 @@
+Fix swallowing some syntax warnings in different modules if they
+accidentally have the same message and are emitted from the same line.
+:func:`ast.parse` no longer emits syntax warnings for
+``return``/``break``/``continue`` in ``finally`` (see :pep:`765`) -- they are
+only emitted during compilation.
