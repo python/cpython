@@ -4261,8 +4261,14 @@ class TestSignatureObject(unittest.TestCase):
 
             self.assertEqual(self.signature(C, follow_wrapped=False),
                              varargs_signature)
-            self.assertEqual(self.signature(C.__new__, follow_wrapped=False),
-                             varargs_signature)
+            if support.MISSING_C_DOCSTRINGS:
+                self.assertRaisesRegex(
+                    ValueError, "no signature found",
+                    self.signature, C.__new__, follow_wrapped=False,
+                )
+            else:
+                self.assertEqual(self.signature(C.__new__, follow_wrapped=False),
+                                varargs_signature)
 
     def test_signature_on_class_with_wrapped_new(self):
         with self.subTest('FunctionType'):
