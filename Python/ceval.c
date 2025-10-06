@@ -369,7 +369,8 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #if defined(__s390x__)
 #  define Py_C_STACK_SIZE 320000
 #elif defined(_WIN32)
-   // Don't define Py_C_STACK_SIZE, ask the O/S
+   // Normally unused; we ask the O/S
+#  define Py_C_STACK_SIZE 4000000
 #elif defined(__ANDROID__)
 #  define Py_C_STACK_SIZE 1200000
 #elif defined(__sparc__)
