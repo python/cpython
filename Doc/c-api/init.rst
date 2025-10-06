@@ -1353,6 +1353,32 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.11
 
 
+.. c:function:: int PyUnstable_ThreadState_SetStack(PyThreadState *tstate, void *stack_start_addr, size_t stack_size)
+
+   Set the stack start address and stack size of a Python thread state.
+
+   *stack_size* must be greater than ``0``.
+
+   On success, return ``0``.
+   On failure, set an exception and return ``-1``.
+
+   .. seealso::
+      The :c:func:`PyUnstable_ThreadState_ResetStack` function.
+
+   .. versionadded:: next
+
+
+.. c:function:: void PyUnstable_ThreadState_ResetStack(PyThreadState *tstate)
+
+   Reset the stack start address and stack size of a Python thread state to
+   the operating system defaults.
+
+   .. seealso::
+      The :c:func:`PyUnstable_ThreadState_SetStack` function.
+
+   .. versionadded:: next
+
+
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
 
    Get the current interpreter.

@@ -2994,6 +2994,11 @@ New features in the C API
   as arguments to C API functions.
   (Contributed by Sam Gross in :gh:`133164`.)
 
+* Add :c:func:`PyUnstable_ThreadState_SetStack` and
+  :c:func:`PyUnstable_ThreadState_ResetStack` functions to set the stack base
+  address and stack size of a Python thread state.
+  (Contributed by Victor Stinner in :gh:`139653`.)
+
 
 Limited C API changes
 ---------------------
