@@ -722,6 +722,24 @@ class NetworkTestCase_v4(BaseTestCase, NetmaskTestMixin_v4):
             ipaddress.IPv6Network('::1/128').subnet_of(
                 ipaddress.IPv4Network('10.0.0.0/30'))
 
+    def test_reverse_pointer(self):
+        self.assertEqual(self.factory('0.0.0.0/0').reverse_pointer,
+                         'in-addr.arpa')
+        self.assertEqual(self.factory('127.0.0.0/8').reverse_pointer,
+                         '127.in-addr.arpa')
+        self.assertEqual(self.factory('127.12.0.0/16').reverse_pointer,
+                         '12.127.in-addr.arpa')
+        self.assertEqual(self.factory('127.12.34.0/24').reverse_pointer,
+                         '34.12.127.in-addr.arpa')
+        self.assertEqual(self.factory('127.12.34.56/32').reverse_pointer,
+                         '56.34.12.127.in-addr.arpa')
+
+        with self.assertRaises(ipaddress.NetmaskValueError):
+            self.factory('127.0.0.0/12').reverse_pointer
+
+        with self.assertRaises(ipaddress.NetmaskValueError):
+            self.factory('127.23.0.0/17').reverse_pointer
+
 
 class NetmaskTestMixin_v6(CommonTestMixin_v6):
     """Input validation on interfaces and networks is very similar"""
@@ -878,6 +896,24 @@ class NetworkTestCase_v6(BaseTestCase, NetmaskTestMixin_v6):
             self.factory('2000:aaa::/48').supernet_of(
                 self.factory('2000:aaa::/56')))
 
+    def test_reverse_pointer(self):
+        self.assertEqual(self.factory('::/0').reverse_pointer, 'ip6.arpa')
+        self.assertEqual(self.factory('2000::/4').reverse_pointer, '2.ip6.arpa')
+        self.assertEqual(self.factory('2000::/8').reverse_pointer,
+                         '0.2.ip6.arpa')
+        self.assertEqual(self.factory('2001:db8::/32').reverse_pointer,
+                         '8.b.d.0.1.0.0.2.ip6.arpa')
+        self.assertEqual(self.factory('2001:db8:1234:5678::/64').reverse_pointer,
+                         '8.7.6.5.4.3.2.1.8.b.d.0.1.0.0.2.ip6.arpa')
+        self.assertEqual(self.factory('2001:db8::1/128').reverse_pointer,
+                         '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0' +
+                         '.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa')
+
+        with self.assertRaises(ipaddress.NetmaskValueError):
+            self.factory('2000::/7').reverse_pointer
+
+        with self.assertRaises(ipaddress.NetmaskValueError):
+            self.factory('2001:db8::10/127').reverse_pointer
 
 class FactoryFunctionErrors(BaseTestCase):
 
