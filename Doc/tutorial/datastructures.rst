@@ -514,7 +514,7 @@ extracting the value given the key.  It is also possible to delete a key:value
 pair with ``del``. If you store using a key that is already in use, the old
 value associated with that key is forgotten.
 
-Extracting value for a non-existent key by subscripting (``d[key]``) raises
+Extracting a value for a non-existent key by subscripting (``d[key]``) raises a
 :exc:`KeyError`. To avoid getting this error when trying to access a possibly
 non-existent key, use the :meth:`~dict.get` method instead, which returns
 ``None`` (or a specified default value) if the key is not in the dictionary.
