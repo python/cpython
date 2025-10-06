@@ -590,7 +590,7 @@ Available Functions
    The deprecation message passed to the decorator is saved in the
    ``__deprecated__`` attribute on the decorated object.
    If applied to an overload, the decorator
-   must be after the :func:`@overload <typing.overload>` decorator
+   must be after the :deco:`~typing.overload` decorator
    for the attribute to exist on the overload as returned by
    :func:`typing.get_overloads`.
 
