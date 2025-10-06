@@ -375,9 +375,7 @@ instantiation, of which this module provides three different variants:
       The *directory* parameter accepts a :term:`path-like object`.
 
    .. versionchanged:: next
-      Added *response_headers*, which accepts an optional iterable of
-      name/value pairs of HTTP headers to add to each successful HTTP status 200
-      response. All other status code responses will not include these headers.
+      Added *response_headers*.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
@@ -400,6 +398,13 @@ instantiation, of which this module provides three different variants:
       .. versionchanged:: 3.9
          This dictionary is no longer filled with the default system mappings,
          but only contains overrides.
+
+   .. attribute:: response_headers
+
+      A sequence of ``(name, value)`` pairs containing user specified custom
+      HTTP response headers to add to each successful HTTP status 200 response.
+      All other status code responses will not include these headers.
+
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
@@ -433,8 +438,8 @@ instantiation, of which this module provides three different variants:
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
 
-      The instance attribute ``response_headers`` is used as an iterable of
-      name/value pairs to set user specified custom response headers.
+      The instance attribute ``response_headers`` is a sequence of
+      ``(name, value)`` pairs containing user specified custom response headers.
 
       Then follows a blank line signifying the end of the headers, and then the
       contents of the file are output.
@@ -444,9 +449,6 @@ instantiation, of which this module provides three different variants:
 
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
-
-      .. versionchanged:: next
-         Support ``response_headers`` as an instance argument.
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
