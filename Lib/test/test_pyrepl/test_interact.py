@@ -293,7 +293,7 @@ class TestWarnings(unittest.TestCase):
         """)
 
         with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("default")
+            warnings.simplefilter("always")
             console.runsource(code)
 
         count = sum("'return' in a 'finally' block" in str(w.message)
