@@ -2883,7 +2883,7 @@ disabled by default.
 
    >>> client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
    >>> client_context.minimum_version = ssl.TLSVersion.TLSv1_3
-   >>> client_context.maximum_version = ssl.TLSVersion.TLSv1_3
+   >>> client_context.maximum_version = ssl.TLSVersion.MAXIMUM_SUPPORTED
 
 
 The SSL context created above will only allow TLSv1.3 and later (if
