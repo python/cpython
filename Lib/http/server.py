@@ -997,7 +997,6 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
-
     """
     with _make_server(
         HandlerClass=HandlerClass, ServerClass=ServerClass,
