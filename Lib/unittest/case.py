@@ -49,6 +49,7 @@ class _Outcome(object):
         self.result_supports_subtests = hasattr(result, "addSubTest")
         self.success = True
         self.expectedFailure = None
+        self.debug = False
 
     @contextlib.contextmanager
     def testPartExecutor(self, test_case, subTest=False):
@@ -64,23 +65,105 @@ class _Outcome(object):
         except _ShouldStop:
             pass
         except:
-            exc_info = sys.exc_info()
             if self.expecting_failure:
-                self.expectedFailure = exc_info
+                self.expectedFailure = sys.exc_info()
             else:
                 self.success = False
                 if subTest:
-                    self.result.addSubTest(test_case.test_case, test_case, exc_info)
+                    self.result.addSubTest(test_case.test_case, test_case, sys.exc_info())
                 else:
-                    _addError(self.result, test_case, exc_info)
-            # explicitly break a reference cycle:
-            # exc_info -> frame -> exc_info
-            exc_info = None
+                    _addError(self.result, test_case, sys.exc_info())
+                if self.debug:
+                    _handle_debug_exception(self.debug)
         else:
             if subTest and self.success:
                 self.result.addSubTest(test_case.test_case, test_case, None)
         finally:
             self.success = self.success and old_success
+
+class _AutoDelRunner(object):
+    next = None
+
+    def __init__(self, func):
+        self.func = func
+
+    def __call__(self):
+        if self.func:
+            try: self.func()
+            except:
+                print("Exception ignored in:", self.func, file=sys.stderr)
+                traceback.print_exc()
+            self.func = None
+        if self.next:
+            self.next()
+
+    def suppress(self):
+        """
+        Suppress (automatic) execution
+        """
+        self.func = None
+        if self.next:
+            self.next.suppress()
+
+    def __del__(self):
+        self()
+
+def _attach_pm_teardown(pm_teardown, exc, result=None):
+    new = _AutoDelRunner(pm_teardown)
+    new.result = result  # expose partial result post-mortem
+    a = getattr(exc, 'pm_teardown', None)
+    if a is None:
+        exc.pm_teardown = new
+        return new
+    else:
+        while a.next:
+            a = a.next
+        a.next = new
+        # only the top error handler frame and exception need to hold a ref
+        return None
+
+def _load_debugger(name):
+    if name == 'pdb':
+        name = 'pdb.Pdb'  # allows to detect user quit
+    mod, fr = name, None
+    if "." in mod:
+        mod, fr = mod.rsplit('.', 1)
+    deb = __import__(mod, fromlist=fr and (fr,) or ())
+    if fr:
+        deb = getattr(deb, fr)
+    return deb
+
+class DebuggerQuit(KeyboardInterrupt):
+    pass
+
+def _handle_debug_exception(debug, exc_info=None, on_crash=None):
+    if isinstance(debug, str):
+        # --pm=pdb : Run pdb or custom pm debugger inline and continue
+        deb = _load_debugger(debug)
+        if exc_info is None:
+            exc_info = sys.exc_info()
+        traceback.print_exception(*exc_info)
+        if isinstance(deb, type):
+            deb = deb()
+            deb.reset()
+            deb.interaction(None, exc_info[2])
+        else:
+            deb = deb.post_mortem(exc_info[2])
+        if getattr(deb, '_user_requested_quit', False):
+            if on_crash:
+                on_crash()
+            raise DebuggerQuit("Debugger user quit")
+    elif debug == True:
+        # --debug : Terminate the test run with original exception
+        if on_crash:
+            on_crash()
+        if exc_info is None:
+            raise
+        else:
+            try:
+                raise exc_info[1]
+            finally:
+                del exc_info
 
 
 def _addSkip(result, test_case, reason):
@@ -639,9 +722,26 @@ class TestCase(object):
         else:
             stopTestRun = None
 
+        testMethod = getattr(self, self._testMethodName)
+        outcome = _Outcome(result)
+        debug = getattr(result, '_debug', False)
+        if debug:
+            if isinstance(debug, tuple) and debug[0] == "trace":
+                deb = _load_debugger(debug[1])
+                if isinstance(deb, type):
+                    deb = deb()
+                testMethod_org = testMethod
+                @functools.wraps(testMethod_org)
+                def trace_wrapper(*args, **kwargs):
+                    deb.runcall(testMethod_org, *args, **kwargs)
+                    if getattr(deb, '_user_requested_quit', False):
+                        raise DebuggerQuit("Debugger user quit")
+                testMethod = trace_wrapper
+            else:
+                outcome.debug = debug
+
         result.startTest(self)
         try:
-            testMethod = getattr(self, self._testMethodName)
             if (getattr(self.__class__, "__unittest_skip__", False) or
                 getattr(testMethod, "__unittest_skip__", False)):
                 # If the class or method was skipped.
@@ -654,20 +754,25 @@ class TestCase(object):
                 getattr(self, "__unittest_expecting_failure__", False) or
                 getattr(testMethod, "__unittest_expecting_failure__", False)
             )
+
             outcome = _Outcome(result)
             start_time = time.perf_counter()
+            pm_state = 'c'
             try:
                 self._outcome = outcome
 
                 with outcome.testPartExecutor(self):
                     self._callSetUp()
                 if outcome.success:
+                    pm_state = 'tc'
                     outcome.expecting_failure = expecting_failure
                     with outcome.testPartExecutor(self):
                         self._callTestMethod(testMethod)
                     outcome.expecting_failure = False
                     with outcome.testPartExecutor(self):
+                        pm_state = 'c'
                         self._callTearDown()
+
                 self.doCleanups()
                 self._addDuration(result, (time.perf_counter() - start_time))
 
@@ -680,6 +785,17 @@ class TestCase(object):
                     else:
                         result.addSuccess(self)
                 return result
+            except BaseException as e:
+                def pm_teardown_case():
+                    try:
+                        if 't' in pm_state:
+                            self._callTearDown()
+                    finally:
+                        # doCleanups() pops from a LIFO and may continue upon break
+                        self.doCleanups()
+                # delayed post-mortem teardown
+                auto_pm_teardown = _attach_pm_teardown(pm_teardown_case, e, result)  # noqa
+                raise
             finally:
                 # explicitly break reference cycle:
                 # outcome.expectedFailure -> frame -> outcome -> outcome.expectedFailure

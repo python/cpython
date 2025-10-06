@@ -222,6 +222,29 @@ Command-line options
 
    See `Signal Handling`_ for the functions that provide this functionality.
 
+.. option:: --debug
+
+   On test fail or error the test run terminates immediately with original
+   exception, similar to normal script execution. Useful for seamless external
+   post-mortem handling. Delayed teardowns are run automatically when the raised
+   exception and traceback are recycled; or explicitely before when
+   ``exception.pm_teardown()`` -- a method added to the exception -- is called.
+
+.. option:: --pdb
+
+   Runs :func:`pdb.post_mortem` upon each error. Short for ``--pm=pdb``
+
+.. option:: --pm=<debugger>
+
+   Run custom post-mortem debugger (module or class) upon each error using its
+   ``post_mortem()`` function or method.
+   Examples: ``--pm=pywin.debugger``, ``--pm=IPython.terminal.debugger.Pdb``
+
+.. option:: --trace
+
+   Break at the beginning of each test using :mod:`pdb` or the debugger set by
+   :option:`--pm` via its ``runcall()`` function or method.
+
 .. option:: -f, --failfast
 
    Stop the test run on the first error or failure.
@@ -261,6 +284,9 @@ Command-line options
 
 .. versionadded:: 3.12
    The command-line option ``--durations``.
+
+.. versionadded:: 3.14
+   The command-line options ``--debug``, ``--pdb`` and ``--pm``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
@@ -2333,7 +2359,8 @@ Loading and running tests
 
 .. function:: main(module='__main__', defaultTest=None, argv=None, testRunner=None, \
                    testLoader=unittest.defaultTestLoader, exit=True, verbosity=1, \
-                   failfast=None, catchbreak=None, buffer=None, warnings=None)
+                   failfast=None, catchbreak=None, buffer=None, warnings=None, \
+                   debug=False)
 
    A command-line program that loads a set of tests from *module* and runs them;
    this is primarily for making test modules conveniently executable.
@@ -2385,6 +2412,12 @@ Loading and running tests
    Calling ``main`` returns an object with the ``result`` attribute that contains
    the result of the tests run as a :class:`unittest.TestResult`.
 
+   When *debug* is ``True`` (corresponding to :option:`!--debug`) execution terminates
+   with original exception upon the first error. When *debug* is the name of a
+   debugger module or class - for example ":mod:`pdb`" - then post-mortem debugging is
+   run upon each error.
+
+
    .. versionchanged:: 3.1
       The *exit* parameter was added.
 
@@ -2395,6 +2428,9 @@ Loading and running tests
    .. versionchanged:: 3.4
       The *defaultTest* parameter was changed to also accept an iterable of
       test names.
+
+   .. versionchanged:: 3.12
+      The *debug* parameter was added.
 
 
 .. _load_tests-protocol:

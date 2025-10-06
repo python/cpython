@@ -4,6 +4,7 @@ import sys
 
 from . import case
 from . import util
+from . import result
 
 __unittest = True
 
@@ -100,36 +101,66 @@ class TestSuite(BaseTestSuite):
     """
 
     def run(self, result, debug=False):
+        if debug:
+            result._debug = debug
         topLevel = False
         if getattr(result, '_testRunEntered', False) is False:
             result._testRunEntered = topLevel = True
 
-        for index, test in enumerate(self):
-            if result.shouldStop:
-                break
+        result._pm_state = 'CM'
+        try:
+            for index, test in enumerate(self):
+                if result.shouldStop:
+                    break
 
-            if _isnotsuite(test):
-                self._tearDownPreviousClass(test, result)
-                self._handleModuleFixture(test, result)
-                self._handleClassSetUp(test, result)
-                result._previousTestClass = test.__class__
+                if _isnotsuite(test):
+                    result._pm_state = 'M'
+                    self._tearDownPreviousClass(test, result)
+                    result._pm_state = ''
+                    self._handleModuleFixture(test, result)
+                    result._pm_state = 'M'
+                    result._previousTCM = test.__class__  # ClassSetUp may fail
+                    self._handleClassSetUp(test, result)
+                    result._pm_state = 'CM'
+                    result._previousTestClass = test.__class__
 
-                if (getattr(test.__class__, '_classSetupFailed', False) or
-                    getattr(result, '_moduleSetUpFailed', False)):
-                    continue
+                    if (getattr(test.__class__, '_classSetupFailed', False) or
+                        getattr(result, '_moduleSetUpFailed', False)):
+                        continue
 
-            if not debug:
                 test(result)
-            else:
-                test.debug()
 
-            if self._cleanup:
-                self._removeTestAtIndex(index)
+                if self._cleanup:
+                    self._removeTestAtIndex(index)
 
-        if topLevel:
-            self._tearDownPreviousClass(None, result)
-            self._handleModuleTearDown(result)
-            result._testRunEntered = False
+            if topLevel:
+                result._pm_state = 'M'
+                self._tearDownPreviousClass(None, result)
+                result._pm_state = ''
+                self._handleModuleTearDown(result)
+                result._testRunEntered = False
+        except BaseException as e:
+            def pm_teardown():
+                if topLevel:
+                    result._debug = None
+                    if 'C' in result._pm_state:
+                        self._tearDownPreviousClass(None, result)
+                    elif getattr(result, '_previousTCM', None):
+                        result._previousTestClass = result._previousTCM
+                    previousClass = getattr(result, '_previousTestClass', None)
+                    doClassCleanups = getattr(previousClass, 'doClassCleanups', None)
+                    if doClassCleanups is not None:
+                        # LIFO, safe to repeat / continue upon brake
+                        doClassCleanups()
+                    if 'M' in result._pm_state:
+                        self._handleModuleTearDown(result)
+                    case.doModuleCleanups()  # LIFO
+                    result._pm_state = ''
+                    result._testRunEntered = False
+            # delayed post-mortem teardown
+            auto_pm_teardown = case._attach_pm_teardown(pm_teardown, e, result)  # noqa
+            raise
+
         return result
 
     def debug(self):
@@ -183,6 +214,8 @@ class TestSuite(BaseTestSuite):
                                 result, exc_info[1], 'setUpClass', className,
                                 info=exc_info)
             finally:
+                exc_info = None  # break ref cycle
+                currentClass.tearDown_exceptions = None
                 _call_if_exists(result, '_restoreStdout')
 
     def _get_previous_module(self, result):
@@ -238,7 +271,10 @@ class TestSuite(BaseTestSuite):
     def _createClassOrModuleLevelException(self, result, exc, method_name,
                                            parent, info=None):
         errorName = f'{method_name} ({parent})'
-        self._addClassOrModuleLevelException(result, exc, errorName, info)
+        try:
+            self._addClassOrModuleLevelException(result, exc, errorName, info)
+        finally:
+            del exc, info
 
     def _addClassOrModuleLevelException(self, result, exc, errorName,
                                         info=None):
@@ -251,6 +287,11 @@ class TestSuite(BaseTestSuite):
                 result.addError(error, (type(exc), exc, exc.__traceback__))
             else:
                 result.addError(error, info)
+            if getattr(result, '_debug', False):
+                try:
+                    case._handle_debug_exception(result._debug, info)
+                finally:
+                    del exception, info  # break ref cycle
 
     def _handleModuleTearDown(self, result):
         previousModule = self._get_previous_module(result)
@@ -334,6 +375,8 @@ class TestSuite(BaseTestSuite):
                                                             className,
                                                             info=exc_info)
         finally:
+            exc_info = None  # break ref cycle
+            previousClass.tearDown_exceptions = None
             _call_if_exists(result, '_restoreStdout')
 
 
@@ -384,8 +427,5 @@ def _isnotsuite(test):
     return False
 
 
-class _DebugResult(object):
+class _DebugResult(result.TestResult):
     "Used by the TestSuite to hold previous class when running in debug."
-    _previousTestClass = None
-    _moduleSetUpFailed = False
-    shouldStop = False
