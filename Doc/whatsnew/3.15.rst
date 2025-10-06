@@ -116,7 +116,7 @@ http.server
   :class:`SimpleHTTPRequestHandler` to support custom headers in HTTP responses.
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
-* Added a ``--header`` flag to the :program:`python -m http.server`
+* Added a ``-H`` or ``--header`` flag to the :program:`python -m http.server`
   command-line interface to support custom headers in HTTP responses.
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
