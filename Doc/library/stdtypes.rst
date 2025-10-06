@@ -5544,6 +5544,7 @@ list is non-exhaustive.
 * :class:`collections.abc.MutableMapping`
 * :class:`collections.abc.Sequence`
 * :class:`collections.abc.MutableSequence`
+* :class:`collections.abc.ByteString`
 * :class:`collections.abc.MappingView`
 * :class:`collections.abc.KeysView`
 * :class:`collections.abc.ItemsView`
