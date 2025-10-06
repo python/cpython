@@ -369,16 +369,15 @@ instantiation, of which this module provides three different variants:
    mapping the directory structure to HTTP requests.
 
    .. versionchanged:: 3.7
-      Added the *directory* keyword argument.
+      Added the *directory* parameter.
 
    .. versionchanged:: 3.9
-      The *directory* keyword argument accepts a :term:`path-like object`.
+      The *directory* parameter accepts a :term:`path-like object`.
 
    .. versionchanged:: next
-      Added a *response_headers* keyword argument, which accepts an optional
-      iterable of name/value pairs of HTTP headers to add to each successful
-      HTTP status 200 response. All other status code responses will not include
-      these headers.
+      Added *response_headers*, which accepts an optional iterable of
+      name/value pairs of HTTP headers to add to each successful HTTP status 200
+      response. All other status code responses will not include these headers.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
