@@ -12,10 +12,12 @@ import datetime
 import dis
 import os
 import re
+import tokenize
 import types
 import decimal
 import unittest
 import warnings
+from io import BytesIO
 from test import support
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
@@ -1858,6 +1860,12 @@ print(f'''{{
 
         # Test multiple format specs in same raw f-string
         self.assertEqual(rf"{UnchangedFormat():\xFF} {UnchangedFormat():\n}", '\\xFF \\n')
+
+    def test_gh139516(self):
+        # gh-139516
+        # The '\n' is explicit to ensure no trailing whitespace which would invalidate the test.
+        # Must use tokenize instead of compile so that source is parsed by line which exposes the bug.
+        list(tokenize.tokenize(BytesIO('''f"{f(a=lambda: 'à'\n)}"'''.encode()).readline))
 
 
 if __name__ == '__main__':
