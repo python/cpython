@@ -466,9 +466,9 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
 
 
 class CustomHeaderSimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
-    custom_headers = None
-    def __init__(self, *args, directory=None, response_headers=None, **kwargs):
-        super().__init__(*args, response_headers=self.custom_headers, **kwargs)
+    extra_response_headers = None
+    def __init__(self, *args, directory=None, extra_response_headers=None, **kwargs):
+        super().__init__(*args, extra_response_headers=self.extra_response_headers, **kwargs)
 
 
 class SimpleHTTPServerTestCase(BaseTestCase):
@@ -829,8 +829,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertEqual(response.getheader("Location"),
                          self.tempdir_name + "/?hi=1")
 
-    def test_custom_headers_list_dir(self):
-        with mock.patch.object(self.request_handler, 'custom_headers', new=[
+    def test_extra_headers_list_dir(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', new=[
             ('X-Test1', 'test1'),
             ('X-Test2', 'test2'),
         ]):
@@ -838,8 +838,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             self.assertEqual(response.getheader("X-Test1"), 'test1')
             self.assertEqual(response.getheader("X-Test2"), 'test2')
 
-    def test_custom_headers_get_file(self):
-        with mock.patch.object(self.request_handler, 'custom_headers', new=[
+    def test_extra_response_headers_get_file(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', new=[
             ('Set-Cookie', 'test1=value1'),
             ('Set-Cookie', 'test2=value2'),
             ('X-Test1', 'value3'),
@@ -1491,7 +1491,7 @@ class CommandLineTestCase(unittest.TestCase):
 
     @mock.patch('http.server._make_server', wraps=server._make_server)
     @mock.patch.object(HTTPServer, 'serve_forever')
-    def test_response_headers_arg(self, _, mock_make_server):
+    def test_extra_response_headers_arg(self, _, mock_make_server):
         server._main(
             ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2', '8080']
         )
@@ -1508,11 +1508,11 @@ class CommandLineTestCase(unittest.TestCase):
         ) as mock_handler_init:
             mock_handler_init.return_value = None
             # finish_request instantiates a request handler class,
-            # ensure response_headers are passed to it
+            # ensure extra_response_headers are passed to it
             httpd.finish_request(mock.Mock(), '127.0.0.1')
             mock_handler_init.assert_called_once_with(
                 mock.ANY, mock.ANY, mock.ANY, directory=mock.ANY,
-                response_headers=[
+                extra_response_headers=[
                     ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2']
                 ]
             )

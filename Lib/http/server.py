@@ -692,11 +692,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.xz': 'application/x-xz',
     }
 
-    def __init__(self, *args, directory=None, response_headers=None, **kwargs):
+    def __init__(self, *args, directory=None, extra_response_headers=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
         self.directory = os.fspath(directory)
-        self.response_headers = response_headers
+        self.extra_response_headers = extra_response_headers
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -714,11 +714,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if f:
             f.close()
 
-    def send_custom_response_headers(self):
-        """Send the headers stored in self.response_headers"""
-        # User specified response_headers
-        if self.response_headers is not None:
-            for header, value in self.response_headers:
+    def _send_extra_response_headers(self):
+        """Send the headers stored in self.extra_response_headers"""
+        if self.extra_response_headers is not None:
+            for header, value in self.extra_response_headers:
                 self.send_header(header, value)
 
     def send_head(self):
@@ -803,7 +802,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
-            self.send_custom_response_headers()
+            self._send_extra_response_headers()
             self.end_headers()
             return f
         except:
@@ -868,7 +867,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", "text/html; charset=%s" % enc)
         self.send_header("Content-Length", str(len(encoded)))
-        self.send_custom_response_headers()
+        self._send_extra_response_headers()
         self.end_headers()
         return f
 
@@ -1076,7 +1075,7 @@ def _main(args=None):
         def finish_request(self, request, client_address):
             self.RequestHandlerClass(request, client_address, self,
                                      directory=args.directory,
-                                     response_headers=args.header)
+                                     extra_response_headers=args.header)
 
     class HTTPDualStackServer(DualStackServerMixin, ThreadingHTTPServer):
         pass
