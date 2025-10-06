@@ -375,8 +375,7 @@ Functions and classes provided:
 .. function:: redirect_stderr(new_target)
 
    Similar to :func:`~contextlib.redirect_stdout` but redirecting the global
-   :data:`sys.stderr` to another value, typically a :term:`file object`
-   returned from :func:`open`.
+   :data:`sys.stderr` to another value, typically a :term:`file object`.
 
    This context manager is :ref:`reentrant <reentrant-cms>`.
 
