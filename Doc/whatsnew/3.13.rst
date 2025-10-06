@@ -1569,8 +1569,6 @@ and are now removed:
 
   * :pypi:`bcrypt`:
     Modern password hashing for your software and your servers.
-  * :pypi:`passlib`:
-    Comprehensive password hashing framework supporting over 30 schemes.
   * :pypi:`argon2-cffi`:
     The secure Argon2 password hashing algorithm.
   * :pypi:`legacycrypt`:
