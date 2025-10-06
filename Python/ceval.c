@@ -442,6 +442,7 @@ int pthread_attr_destroy(pthread_attr_t *a)
 void
 _Py_InitializeRecursionLimits(PyThreadState *tstate)
 {
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
 #ifdef WIN32
     ULONG_PTR low, high;
@@ -458,8 +459,8 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _tstate->c_stack_top = (uintptr_t)stack_addr;
     _tstate->c_stack_hard_limit = _tstate->c_stack_top - stack_size;
     _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES;
-#else
-    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+#else  // other platform
+    _tstate->c_stack_top = 0;
 /// XXX musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size
 /// (on alpine at least) is much smaller than expected and imposes undue limits
 /// compared to the old stack size estimation.  (We assume musl is not glibc.)
@@ -477,22 +478,31 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     if (err == 0) {
         uintptr_t base = ((uintptr_t)stack_addr) + guard_size;
         _tstate->c_stack_top = base + stack_size;
-#ifdef _Py_THREAD_SANITIZER
+#   ifdef _Py_THREAD_SANITIZER
         // Thread sanitizer crashes if we use a bit more than half the stack.
         _tstate->c_stack_soft_limit = base + (stack_size / 2);
-#else
+#   else
         _tstate->c_stack_soft_limit = base + _PyOS_STACK_MARGIN_BYTES * 2;
-#endif
+#   endif
         _tstate->c_stack_hard_limit = base + _PyOS_STACK_MARGIN_BYTES;
-        assert(_tstate->c_stack_soft_limit < here_addr);
-        assert(here_addr < _tstate->c_stack_top);
+    }
+#  endif // musl
+#endif  // platform-specific code
+
+    /* Check that we currently are inside the discovered stack.
+     * gh-139653: Boost's make_fcontext (and presumably other stack-switching
+     * mechanisms) may be incompatible with platform API.
+     */
+    if (_tstate->c_stack_top
+        && _tstate->c_stack_soft_limit < here_addr
+        && here_addr < _tstate->c_stack_top
+    ) {
         return;
     }
-#  endif
+    // Generic fallback
     _tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
     _tstate->c_stack_soft_limit = _tstate->c_stack_top - Py_C_STACK_SIZE;
     _tstate->c_stack_hard_limit = _tstate->c_stack_top - (Py_C_STACK_SIZE + _PyOS_STACK_MARGIN_BYTES);
-#endif
 }
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
