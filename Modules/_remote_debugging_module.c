@@ -2714,27 +2714,17 @@ unwind_stack_for_thread(
         status_flags |= THREAD_STATUS_ON_CPU;
     }
 
-    // Determine if we should skip based on mode
-    int status = THREAD_STATE_RUNNING;  // Default for skip logic
-    if (unwinder->mode == PROFILING_MODE_CPU) {
-        status = cpu_status;
-    } else if (unwinder->mode == PROFILING_MODE_GIL) {
-        status = has_gil ? THREAD_STATE_RUNNING : THREAD_STATE_GIL_WAIT;
-    } else if (unwinder->mode == PROFILING_MODE_ALL) {
-        // In ALL mode, considered running if has GIL or on CPU
-        if (has_gil || (status_flags & THREAD_STATUS_ON_CPU)) {
-            status = THREAD_STATE_RUNNING;
-        } else {
-            status = THREAD_STATE_IDLE;
-        }
-    }
-    // PROFILING_MODE_WALL defaults to THREAD_STATE_RUNNING
-
     // Check if we should skip this thread based on mode
     int should_skip = 0;
-    if (unwinder->skip_non_matching_threads && status != THREAD_STATE_RUNNING &&
-        (unwinder->mode == PROFILING_MODE_CPU || unwinder->mode == PROFILING_MODE_GIL)) {
-        should_skip = 1;
+    if (unwinder->skip_non_matching_threads) {
+        if (unwinder->mode == PROFILING_MODE_CPU) {
+            // Skip if not on CPU
+            should_skip = !(status_flags & THREAD_STATUS_ON_CPU);
+        } else if (unwinder->mode == PROFILING_MODE_GIL) {
+            // Skip if doesn't have GIL
+            should_skip = !(status_flags & THREAD_STATUS_HAS_GIL);
+        }
+        // PROFILING_MODE_WALL and PROFILING_MODE_ALL never skip
     }
 
     if (should_skip) {
@@ -2789,9 +2779,8 @@ unwind_stack_for_thread(
         Py_DECREF(py_status);
         goto error;
     }
-    PyErr_Print();
 
-    // In PROFILING_MODE_ALL, py_status contains flags, otherwise it contains legacy enum
+    // py_status contains status flags (bitfield)
     PyStructSequence_SetItem(result, 0, thread_id);
     PyStructSequence_SetItem(result, 1, py_status);  // Steals reference
     PyStructSequence_SetItem(result, 2, frame_info); // Steals reference
