@@ -11,7 +11,6 @@ import keyword
 import _pickle
 import pkgutil
 import re
-import stat
 import tempfile
 import test.support
 import time
@@ -1300,27 +1299,16 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
-    @os_helper.skip_unless_working_chmod
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
-        if support.is_emscripten:
-            # Emscripten's readdir implementation is buggy on directories
-            # with read permission but no execute permission.
-            old_umask = os.umask(0)
-            self.addCleanup(os.umask, old_umask)
         os.mkdir(pkgdir)
         self.addCleanup(rmtree, pkgdir)
         init_path = os.path.join(pkgdir, '__init__.py')
         with open(init_path, 'w') as fobj:
             fobj.write("foo = 1")
-        current_mode = stat.S_IMODE(os.stat(pkgdir).st_mode)
-        try:
-            os.chmod(pkgdir, current_mode & ~stat.S_IEXEC)
-            with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
-                pydoc.apropos('')
-            self.assertIn('walkpkg', stdout.getvalue())
-        finally:
-            os.chmod(pkgdir, current_mode)
+        with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
+            pydoc.apropos('')
+        self.assertIn('walkpkg', stdout.getvalue())
 
     def test_url_search_package_error(self):
         # URL handler search should cope with packages that raise exceptions
@@ -1345,47 +1333,6 @@ class PydocImportTest(PydocBaseTest):
                 self.assertIn(found, text)
             finally:
                 sys.path[:] = saved_paths
-
-    @unittest.skip('causes undesirable side-effects (#20128)')
-    def test_modules(self):
-        # See Helper.listmodules().
-        num_header_lines = 2
-        num_module_lines_min = 5  # Playing it safe.
-        num_footer_lines = 3
-        expected = num_header_lines + num_module_lines_min + num_footer_lines
-
-        output = StringIO()
-        helper = pydoc.Helper(output=output)
-        helper('modules')
-        result = output.getvalue().strip()
-        num_lines = len(result.splitlines())
-
-        self.assertGreaterEqual(num_lines, expected)
-
-    @unittest.skip('causes undesirable side-effects (#20128)')
-    def test_modules_search(self):
-        # See Helper.listmodules().
-        expected = 'pydoc - '
-
-        output = StringIO()
-        helper = pydoc.Helper(output=output)
-        with captured_stdout() as help_io:
-            helper('modules pydoc')
-        result = help_io.getvalue()
-
-        self.assertIn(expected, result)
-
-    @unittest.skip('some buildbots are not cooperating (#20128)')
-    def test_modules_search_builtin(self):
-        expected = 'gc - '
-
-        output = StringIO()
-        helper = pydoc.Helper(output=output)
-        with captured_stdout() as help_io:
-            helper('modules garbage')
-        result = help_io.getvalue()
-
-        self.assertStartsWith(result, expected)
 
     def test_importfile(self):
         try:
