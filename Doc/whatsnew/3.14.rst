@@ -939,13 +939,13 @@ This change is specified in :pep:`765`.
 
 In situations where this change is inconvenient (such as those where the
 warnings are redundant due to code linting), the :ref:`warning filter
-<warning-filter>` can be used to turn off all syntax warnings, by using the
-``ignore::SyntaxWarning`` filter. This can be specified in combination
+<warning-filter>` can be used to turn off all syntax warnings by adding
+``ignore::SyntaxWarning`` as a filter. This can be specified in combination
 with a filter that converts other warnings to errors (for example, passing
 ``-Werror -Wignore::SyntaxWarning`` as CLI options, or setting
 ``PYTHONWARNINGS=error,ignore::SyntaxWarning``).
 
-Note that applying such a filter at runtime, using the :mod:`warnings` module
+Note that applying such a filter at runtime using the :mod:`warnings` module
 will only suppress the warning in code that is compiled *after* the filter is
 adjusted. Code that is compiled prior to the filter adjustment (for example,
 when a module is imported) will still emit the syntax warning.
