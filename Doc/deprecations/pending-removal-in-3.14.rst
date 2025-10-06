@@ -38,6 +38,10 @@ Pending Removal in Python 3.14
     is no current event loop set and it decides to create one.
     (Contributed by Serhiy Storchaka and Guido van Rossum in :gh:`100160`.)
 
+* :mod:`builtins`: ``bool(NotImplemented)`` now emits a :exc:`DeprecationWarning`
+  and will raise a :exc:`TypeError` in Python 3.14.
+  (Contributed by Jelle Zijlstra in :gh:`118767`.)
+
 * :mod:`email`: Deprecated the *isdst* parameter in :func:`email.utils.localtime`.
   (Contributed by Alan Williams in :gh:`72346`.)
 
