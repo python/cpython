@@ -156,9 +156,9 @@ class netrc:
         if _can_security_check() and default_netrc:
             for entry in self.hosts.values():
                 if entry[0] != "anonymous":
-                    # Raises on security issue
+                    # Raises on security issue; once passed once can exit.
                     self._security_check(fp)
-                    break
+                    return
 
     def _security_check(self, fp):
         prop = os.fstat(fp.fileno())
