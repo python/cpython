@@ -467,8 +467,10 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
 
 class CustomHeaderSimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
     extra_response_headers = None
-    def __init__(self, *args, directory=None, extra_response_headers=None, **kwargs):
-        super().__init__(*args, extra_response_headers=self.extra_response_headers, **kwargs)
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('extra_response_headers', self.extra_response_headers)
+        super().__init__(*args, **kwargs)
 
 
 class SimpleHTTPServerTestCase(BaseTestCase):
