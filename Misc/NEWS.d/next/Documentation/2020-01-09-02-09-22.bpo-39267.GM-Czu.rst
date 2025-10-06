@@ -1,0 +1,2 @@
+Fix :meth:`__missing__` documentation. It is implemented only by
+:class:`dict` and not being used by :meth:`dict.get`. Patch by Bar Harel.
