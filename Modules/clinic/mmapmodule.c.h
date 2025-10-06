@@ -5,7 +5,6 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(mmap_mmap_close__doc__,
 "close($self, /)\n"
@@ -112,7 +111,7 @@ exit:
 }
 
 PyDoc_STRVAR(mmap_mmap_find__doc__,
-"find($self, /, *args)\n"
+"find($self, view, start=None, end=None, /)\n"
 "--\n"
 "\n");
 
@@ -120,31 +119,47 @@ PyDoc_STRVAR(mmap_mmap_find__doc__,
     {"find", _PyCFunction_CAST(mmap_mmap_find), METH_FASTCALL, mmap_mmap_find__doc__},
 
 static PyObject *
-mmap_mmap_find_impl(mmap_object *self, PyObject *args);
+mmap_mmap_find_impl(mmap_object *self, Py_buffer *view, PyObject *start,
+                    PyObject *end);
 
 static PyObject *
 mmap_mmap_find(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    Py_buffer view = {NULL, NULL};
+    PyObject *start = Py_None;
+    PyObject *end = Py_None;
 
-    __clinic_args = _PyTuple_FromArray(args, nargs);
-    if (__clinic_args == NULL) {
+    if (!_PyArg_CheckPositional("find", nargs, 1, 3)) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &view, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    start = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    end = args[2];
+skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = mmap_mmap_find_impl((mmap_object *)self, __clinic_args);
+    return_value = mmap_mmap_find_impl((mmap_object *)self, &view, start, end);
     Py_END_CRITICAL_SECTION();
 
 exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
+    /* Cleanup for view */
+    if (view.obj) {
+       PyBuffer_Release(&view);
+    }
 
     return return_value;
 }
 
 PyDoc_STRVAR(mmap_mmap_rfind__doc__,
-"rfind($self, /, *args)\n"
+"rfind($self, view, start=None, end=None, /)\n"
 "--\n"
 "\n");
 
@@ -152,25 +167,41 @@ PyDoc_STRVAR(mmap_mmap_rfind__doc__,
     {"rfind", _PyCFunction_CAST(mmap_mmap_rfind), METH_FASTCALL, mmap_mmap_rfind__doc__},
 
 static PyObject *
-mmap_mmap_rfind_impl(mmap_object *self, PyObject *args);
+mmap_mmap_rfind_impl(mmap_object *self, Py_buffer *view, PyObject *start,
+                     PyObject *end);
 
 static PyObject *
 mmap_mmap_rfind(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    Py_buffer view = {NULL, NULL};
+    PyObject *start = Py_None;
+    PyObject *end = Py_None;
 
-    __clinic_args = _PyTuple_FromArray(args, nargs);
-    if (__clinic_args == NULL) {
+    if (!_PyArg_CheckPositional("rfind", nargs, 1, 3)) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &view, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    start = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    end = args[2];
+skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = mmap_mmap_rfind_impl((mmap_object *)self, __clinic_args);
+    return_value = mmap_mmap_rfind_impl((mmap_object *)self, &view, start, end);
     Py_END_CRITICAL_SECTION();
 
 exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
+    /* Cleanup for view */
+    if (view.obj) {
+       PyBuffer_Release(&view);
+    }
 
     return return_value;
 }
@@ -694,7 +725,7 @@ exit:
 #if defined(HAVE_MADVISE)
 
 PyDoc_STRVAR(mmap_mmap_madvise__doc__,
-"madvise($self, /, *args)\n"
+"madvise($self, option, start=0, length=None, /)\n"
 "--\n"
 "\n");
 
@@ -702,26 +733,49 @@ PyDoc_STRVAR(mmap_mmap_madvise__doc__,
     {"madvise", _PyCFunction_CAST(mmap_mmap_madvise), METH_FASTCALL, mmap_mmap_madvise__doc__},
 
 static PyObject *
-mmap_mmap_madvise_impl(mmap_object *self, PyObject *args);
+mmap_mmap_madvise_impl(mmap_object *self, int option, Py_ssize_t start,
+                       PyObject *length_obj);
 
 static PyObject *
 mmap_mmap_madvise(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    int option;
+    Py_ssize_t start = 0;
+    PyObject *length_obj = Py_None;
 
-    __clinic_args = _PyTuple_FromArray(args, nargs);
-    if (__clinic_args == NULL) {
+    if (!_PyArg_CheckPositional("madvise", nargs, 1, 3)) {
         goto exit;
     }
+    option = PyLong_AsInt(args[0]);
+    if (option == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        start = ival;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    length_obj = args[2];
+skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = mmap_mmap_madvise_impl((mmap_object *)self, __clinic_args);
+    return_value = mmap_mmap_madvise_impl((mmap_object *)self, option, start, length_obj);
     Py_END_CRITICAL_SECTION();
 
 exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
-
     return return_value;
 }
 
@@ -742,4 +796,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=32a1121886e2fcd3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=381f6cf4986ac867 input=a9049054013a1b77]*/

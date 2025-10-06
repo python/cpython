@@ -137,6 +137,24 @@ typedef struct {
 
 #include "clinic/mmapmodule.c.h"
 
+
+/* Return a Py_ssize_t from the object arg. This conversion logic is similar
+   to what AC uses for `Py_ssize_t` arguments.
+
+   Returns -1 on error. Use PyErr_Occurred() to disambiguate.
+*/
+static Py_ssize_t
+_As_Py_ssize_t(PyObject *arg) {
+    assert(arg != NULL);
+    Py_ssize_t ival = -1;
+    PyObject *iobj = _PyNumber_Index(arg);
+    if (iobj != NULL) {
+        ival = PyLong_AsSsize_t(iobj);
+        Py_DECREF(iobj);
+    }
+    return ival;
+}
+
 static void
 mmap_object_dealloc(PyObject *op)
 {
@@ -576,95 +594,105 @@ mmap_mmap_read_impl(mmap_object *self, Py_ssize_t num_bytes)
 }
 
 static PyObject *
-mmap_gfind_lock_held(mmap_object *self, PyObject *args, int reverse)
+mmap_gfind_lock_held(mmap_object *self, Py_buffer *view, PyObject *start_obj,
+                    PyObject *end_obj, int reverse)
 {
     Py_ssize_t start = self->pos;
     Py_ssize_t end = self->size;
-    Py_buffer view;
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, reverse ? "y*|nn:rfind" : "y*|nn:find",
-                          &view, &start, &end)) {
-        return NULL;
-    }
-    else {
-        if (start < 0)
-            start += self->size;
-        if (start < 0)
-            start = 0;
-        else if (start > self->size)
-            start = self->size;
-
-        if (end < 0)
-            end += self->size;
-        if (end < 0)
-            end = 0;
-        else if (end > self->size)
-            end = self->size;
-
-        Py_ssize_t index;
-        PyObject *result;
-        CHECK_VALID_OR_RELEASE(NULL, view);
-        if (end < start) {
-            result = PyLong_FromSsize_t(-1);
+    if (start_obj != Py_None) {
+        start = _As_Py_ssize_t(start_obj);
+        if (start == -1 && PyErr_Occurred()) {
+            return NULL;
         }
-        else if (reverse) {
-            assert(0 <= start && start <= end && end <= self->size);
-            if (_safe_PyBytes_ReverseFind(&index, self,
-                self->data + start, end - start,
-                view.buf, view.len, start) < 0)
-            {
-                result = NULL;
+
+        if (end_obj != Py_None) {
+            end = _As_Py_ssize_t(end_obj);
+            if (end == -1 && PyErr_Occurred()) {
+                return NULL;
             }
-            else {
-                result = PyLong_FromSsize_t(index);
-            }
+        }
+    }
+
+    if (start < 0)
+        start += self->size;
+    if (start < 0)
+        start = 0;
+    else if (start > self->size)
+        start = self->size;
+
+    if (end < 0)
+        end += self->size;
+    if (end < 0)
+        end = 0;
+    else if (end > self->size)
+        end = self->size;
+
+    Py_ssize_t index;
+    PyObject *result;
+    CHECK_VALID(NULL);
+    if (end < start) {
+        result = PyLong_FromSsize_t(-1);
+    }
+    else if (reverse) {
+        assert(0 <= start && start <= end && end <= self->size);
+        if (_safe_PyBytes_ReverseFind(&index, self,
+            self->data + start, end - start,
+            view->buf, view->len, start) < 0)
+        {
+            result = NULL;
         }
         else {
-            assert(0 <= start && start <= end && end <= self->size);
-            if (_safe_PyBytes_Find(&index, self,
-                self->data + start, end - start,
-                view.buf, view.len, start) < 0)
-            {
-                result = NULL;
-            }
-            else {
-                result = PyLong_FromSsize_t(index);
-            }
+            result = PyLong_FromSsize_t(index);
         }
-        PyBuffer_Release(&view);
-        return result;
     }
+    else {
+        assert(0 <= start && start <= end && end <= self->size);
+        if (_safe_PyBytes_Find(&index, self,
+            self->data + start, end - start,
+            view->buf, view->len, start) < 0)
+        {
+            result = NULL;
+        }
+        else {
+            result = PyLong_FromSsize_t(index);
+        }
+    }
+    return result;
 }
 
 /*[clinic input]
 @critical_section
 mmap.mmap.find
 
-  *args: tuple
+  view: Py_buffer
+  start: object = None
+  end: object = None
+  /
 
 [clinic start generated code]*/
 
 static PyObject *
-mmap_mmap_find_impl(mmap_object *self, PyObject *args)
-/*[clinic end generated code: output=6e0dfd51873d7263 input=dc56119de60c458f]*/
+mmap_mmap_find_impl(mmap_object *self, Py_buffer *view, PyObject *start,
+                    PyObject *end)
+/*[clinic end generated code: output=ef8878a322f00192 input=0135504494b52c2b]*/
 {
-    return mmap_gfind_lock_held(self, args, 0);
+    return mmap_gfind_lock_held(self, view, start, end, 0);
 }
 
 /*[clinic input]
 @critical_section
-mmap.mmap.rfind
-
-  *args: tuple
+mmap.mmap.rfind = mmap.mmap.find
 
 [clinic start generated code]*/
 
 static PyObject *
-mmap_mmap_rfind_impl(mmap_object *self, PyObject *args)
-/*[clinic end generated code: output=a8dbff2d7090cf2c input=ab496c4db0a37948]*/
+mmap_mmap_rfind_impl(mmap_object *self, Py_buffer *view, PyObject *start,
+                     PyObject *end)
+/*[clinic end generated code: output=73b918940d67c2b8 input=8aecdd1f70c06c62]*/
 {
-    return mmap_gfind_lock_held(self, args, 1);
+    return mmap_gfind_lock_held(self, view, start, end, 1);
 }
 
 static int
@@ -1299,22 +1327,28 @@ mmap_mmap__protect_impl(mmap_object *self, unsigned int flNewProtect,
 @critical_section
 mmap.mmap.madvise
 
-  *args: tuple
+  option: int
+  start: Py_ssize_t = 0
+  length as length_obj: object = None
+  /
 
 [clinic start generated code]*/
 
 static PyObject *
-mmap_mmap_madvise_impl(mmap_object *self, PyObject *args)
-/*[clinic end generated code: output=237b3c0176f65b4f input=14e3ccbd25a38f22]*/
+mmap_mmap_madvise_impl(mmap_object *self, int option, Py_ssize_t start,
+                       PyObject *length_obj)
+/*[clinic end generated code: output=816be656f08c0e3c input=2d37f7a4c87f1053]*/
 {
-    int option;
-    Py_ssize_t start = 0, length;
+    Py_ssize_t length;
 
     CHECK_VALID(NULL);
-    length = self->size;
-
-    if (!PyArg_ParseTuple(args, "i|nn:madvise", &option, &start, &length)) {
-        return NULL;
+    if (length_obj == Py_None) {
+        length = self->size;
+    } else {
+        length = _As_Py_ssize_t(length_obj);
+        if (length == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
     }
 
     if (start < 0 || start >= self->size) {
