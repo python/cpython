@@ -282,6 +282,22 @@ class TestBase:
         with self.assertRaises(AttributeError):
             del e.errors
 
+    def test_null_terminator(self):
+        # see gh-101828
+        if any(enc in self.encoding for enc in ('shift', 'euc_jis')):
+            text = "バルーンフルーツ"
+        else:
+            text = "Spam"
+        encode_w_null = (text + "\0").encode(self.encoding)
+        encode_plus_null = text.encode(self.encoding) + "\0".encode(self.encoding)
+        self.assertTrue(encode_w_null.endswith(b'\x00'))
+        self.assertEqual(encode_w_null, encode_plus_null)
+
+        encode_w_null_2 = (text + "\0" + text + "\0").encode(self.encoding)
+        encode_plus_null_2 = encode_plus_null + encode_plus_null
+        self.assertEqual(encode_w_null_2.count(b'\x00'), 2)
+        self.assertEqual(encode_w_null_2, encode_plus_null_2)
+
 
 class TestBase_Mapping(unittest.TestCase):
     pass_enctest = []
