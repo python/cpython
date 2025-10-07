@@ -161,9 +161,11 @@ Module contents
      :class:`object`, this means it will fall back to id-based hashing).
 
    - *frozen*: If true (the default is ``False``), assigning to fields will
-     generate an exception.  This emulates read-only frozen instances.  If
-     :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class, then
-     :exc:`TypeError` is raised.  See the discussion below.
+     generate an exception.  This emulates read-only frozen instances.
+     See the :ref:`discussion <dataclasses-frozen>` below.
+
+     If :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class
+     and *frozen* is true, then :exc:`TypeError` is raised.
 
    - *match_args*: If true (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
@@ -437,7 +439,7 @@ Module contents
    function is used.
 
    This function is not strictly required, because any Python
-   mechanism for creating a new class with :attr:`!__annotations__` can
+   mechanism for creating a new class with :attr:`~object.__annotations__` can
    then apply the :func:`@dataclass <dataclass>` function to convert that class to
    a dataclass.  This function is provided as a convenience.  For
    example::
