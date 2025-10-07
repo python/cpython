@@ -653,7 +653,7 @@
                 new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
                 new_frame->localsplus[0] = container;
                 new_frame->localsplus[1] = sub;
-                frame->return_offset = 6 ;
+                frame->return_offset = 6u ;
             }
             // _PUSH_FRAME
             {
@@ -1586,7 +1586,7 @@
                     if (new_frame == NULL) {
                         JUMP_TO_LABEL(error);
                     }
-                    frame->return_offset = 4 ;
+                    frame->return_offset = 4u ;
                     DISPATCH_INLINED(new_frame);
                 }
                 STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
@@ -2641,7 +2641,7 @@
                         if (new_frame == NULL) {
                             JUMP_TO_LABEL(error);
                         }
-                        assert( 1 == 1);
+                        assert( 1u == 1);
                         frame->return_offset = 1;
                         DISPATCH_INLINED(new_frame);
                     }
@@ -2922,8 +2922,8 @@
                     if (new_frame == NULL) {
                         JUMP_TO_LABEL(error);
                     }
-                    assert( 4 == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
-                    frame->return_offset = 4 ;
+                    assert( 4u == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
+                    frame->return_offset = 4u ;
                     DISPATCH_INLINED(new_frame);
                 }
                 STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
@@ -5821,7 +5821,7 @@
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 gen_frame->previous = frame;
-                frame->return_offset = (uint16_t)( 2 + oparg);
+                frame->return_offset = (uint16_t)( 2u + oparg);
             }
             // _PUSH_FRAME
             {
@@ -6460,7 +6460,7 @@
                     if (new_frame == NULL) {
                         JUMP_TO_LABEL(error);
                     }
-                    frame->return_offset = 4 ;
+                    frame->return_offset = 4u ;
                     DISPATCH_INLINED(new_frame);
                 }
                 STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
@@ -6681,7 +6681,7 @@
                         if (new_frame == NULL) {
                             JUMP_TO_LABEL(error);
                         }
-                        assert( 1 == 1);
+                        assert( 1u == 1);
                         frame->return_offset = 1;
                         DISPATCH_INLINED(new_frame);
                     }
@@ -6832,8 +6832,8 @@
                     if (new_frame == NULL) {
                         JUMP_TO_LABEL(error);
                     }
-                    assert( 4 == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
-                    frame->return_offset = 4 ;
+                    assert( 4u == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
+                    frame->return_offset = 4u ;
                     DISPATCH_INLINED(new_frame);
                 }
                 STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
@@ -7504,7 +7504,13 @@
             }
             // _MAYBE_INSTRUMENT
             {
-                if (tstate->tracing == 0) {
+                #ifdef Py_GIL_DISABLED
+
+                int check_instrumentation = 1;
+                #else
+                int check_instrumentation = (tstate->tracing == 0);
+                #endif
+                if (check_instrumentation) {
                     uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
                     uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
                     if (code_version != global_version) {
@@ -8231,7 +8237,7 @@
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             new_frame->localsplus[1] = PyStackRef_FromPyObjectNew(name);
-            frame->return_offset = 10 ;
+            frame->return_offset = 10u ;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -10480,7 +10486,13 @@
             }
             // _MAYBE_INSTRUMENT
             {
-                if (tstate->tracing == 0) {
+                #ifdef Py_GIL_DISABLED
+
+                int check_instrumentation = 1;
+                #else
+                int check_instrumentation = (tstate->tracing == 0);
+                #endif
+                if (check_instrumentation) {
                     uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
                     uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
                     if (code_version != global_version) {
@@ -10678,8 +10690,8 @@
                     gen->gi_frame_state = FRAME_EXECUTING;
                     gen->gi_exc_state.previous_item = tstate->exc_info;
                     tstate->exc_info = &gen->gi_exc_state;
-                    assert( 2 + oparg <= UINT16_MAX);
-                    frame->return_offset = (uint16_t)( 2 + oparg);
+                    assert( 2u + oparg <= UINT16_MAX);
+                    frame->return_offset = (uint16_t)( 2u + oparg);
                     assert(gen_frame->previous == NULL);
                     gen_frame->previous = frame;
                     DISPATCH_INLINED(gen_frame);
@@ -10779,8 +10791,8 @@
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
-                assert( 2 + oparg <= UINT16_MAX);
-                frame->return_offset = (uint16_t)( 2 + oparg);
+                assert( 2u + oparg <= UINT16_MAX);
+                frame->return_offset = (uint16_t)( 2u + oparg);
                 gen_frame->previous = frame;
             }
             // _PUSH_FRAME
