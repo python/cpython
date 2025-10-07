@@ -141,6 +141,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_needs_classdict = 0;
     ste->ste_has_conditional_annotations = 0;
     ste->ste_in_conditional_block = 0;
+    ste->ste_in_try_block = 0;
+    ste->ste_in_with_block = 0;
     ste->ste_in_unevaluated_annotation = 0;
     ste->ste_annotation_block = NULL;
 
