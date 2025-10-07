@@ -449,8 +449,8 @@ depending on platform and architecture.
 The baseline is Python 3.14 built with Clang 19, without this new interpreter.
 
 This interpreter currently only works with Clang 19 and newer
-on x86-64 and AArch64 architectures. However, a future release
-of GCC is expected will support this as well.
+on x86-64 and AArch64 architectures.
+However, a future release of GCC is expected to support this as well.
 
 This feature is opt-in for now. Enabling profile-guided optimization is highly
 recommendeded when using the new interpreter as it is the only configuration
