@@ -831,7 +831,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.assertEqual(response.getheader("Location"),
                          self.tempdir_name + "/?hi=1")
 
-    def test_extra_headers_list_dir(self):
+    def test_extra_response_headers_list_dir(self):
         with mock.patch.object(self.request_handler, 'extra_response_headers', new=[
             ('X-Test1', 'test1'),
             ('X-Test2', 'test2'),
