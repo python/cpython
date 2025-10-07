@@ -36,7 +36,7 @@ repos:
         files: ^Tools/build/check_warnings.py
       - id: ruff-format
         name: Run Ruff (format) on Tools/wasm/wasi/
-        args: [--check, --config=Tools/wasm/wasi/.ruff.toml]
+        args: [--check]
         files: ^Tools/wasm/wasi/
 
   - repo: https://github.com/psf/black-pre-commit-mirror
