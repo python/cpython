@@ -3093,8 +3093,8 @@ def _fold_mime_parameters(part, lines, maxlen, encoding):
                 if len(encoded_value) <= maxchars:
                     break
                 splitpoint -= 1
-            # If we still can't fit, force a minimal split
-            if splitpoint <= 1:
+            else:
+                # If we still can't fit, force a minimal split
                 splitpoint = 1
                 partial = value[:splitpoint]
                 encoded_value = urllib.parse.quote(
