@@ -628,10 +628,10 @@ to indicate that an ending quote ends the literal.
    STRING:          [`stringprefix`] (`stringcontent`)
    stringprefix:    <("r" | "u" | "b" | "br" | "rb"), case-insensitive>
    stringcontent:
-      | "'" ( !"'" `stringitem`)* "'"
-      | '"' ( !'"' `stringitem`)* '"'
       | "'''" ( !"'''" `longstringitem`)* "'''"
       | '"""' ( !'"""' `longstringitem`)* '"""'
+      | "'" ( !"'" `stringitem`)* "'"
+      | '"' ( !'"' `stringitem`)* '"'
    stringitem:      `stringchar` | `stringescapeseq`
    stringchar:      <any `source_character`, except backslash and newline>
    longstringitem:  `stringitem` | newline
