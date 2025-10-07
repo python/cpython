@@ -287,6 +287,10 @@ class CAPITest(unittest.TestCase):
         copy = tuple_fromarray(tup)
         self.assertEqual(copy, tup)
 
+        tup = ()
+        copy = tuple_fromarray(tup)
+        self.assertIs(copy, tup)
+
 
 if __name__ == "__main__":
     unittest.main()
