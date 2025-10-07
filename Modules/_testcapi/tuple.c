@@ -108,40 +108,26 @@ static PyObject *
 tuple_fromarray(PyObject* Py_UNUSED(module), PyObject *args)
 {
     PyObject *src;
-    if (!PyArg_ParseTuple(args, "O!", &PyTuple_Type, &src)) {
+    Py_ssize_t size = -1;
+    if (!PyArg_ParseTuple(args, "O|n", &src, &size)) {
+        return NULL;
+    }
+    if (src != Py_None && !PyTuple_Check(src)) {
+        PyErr_SetString(PyExc_TypeError, "expect a tuple");
         return NULL;
     }
 
-    Py_ssize_t size = PyTuple_GET_SIZE(src);
-    PyObject **array = PyMem_Malloc(size * sizeof(PyObject**));
-    if (array == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+    PyObject **items;
+    if (src != Py_None) {
+        items = &PyTuple_GET_ITEM(src, 0);
+        if (size < 0) {
+            size = PyTuple_GET_SIZE(src);
+        }
     }
-    for (Py_ssize_t i = 0; i < size; i++) {
-        array[i] = Py_NewRef(PyTuple_GET_ITEM(src, i));
+    else {
+        items = NULL;
     }
-
-    PyObject *tuple = PyTuple_FromArray(array, size);
-    if (tuple == NULL) {
-        goto done;
-    }
-
-    for (Py_ssize_t i = 0; i < size; i++) {
-        // check that the array is not modified
-        assert(array[i] == PyTuple_GET_ITEM(src, i));
-
-        // check that the array was copied properly
-        assert(PyTuple_GET_ITEM(tuple, i) == array[i]);
-    }
-
-done:
-    for (Py_ssize_t i = 0; i < size; i++) {
-        Py_DECREF(array[i]);
-    }
-    PyMem_Free(array);
-
-    return tuple;
+    return PyTuple_FromArray(items, size);
 }
 
 

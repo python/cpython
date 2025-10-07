@@ -42,8 +42,10 @@ Tuple Objects
    Create a tuple of *size* items and copy references from *array* to the new
    tuple.
 
-   * Return a new reference on success.
-   * Set an exception and return ``NULL`` on error.
+   *array* can be NULL if *size* is ``0``.
+
+   On success, return a new reference.
+   On error, set an exception and return ``NULL``.
 
    .. versionadded:: next
 
