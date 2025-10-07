@@ -251,6 +251,7 @@ statements: a ``try`` statement's ``else`` clause runs when no exception
 occurs, and a loop's ``else`` clause runs when no ``break`` occurs. For more on
 the ``try`` statement and exceptions, see :ref:`tut-handling`.
 
+.. index:: single: ...; ellipsis literal
 .. _tut-pass:
 
 :keyword:`!pass` Statements
@@ -276,6 +277,12 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
    >>> def initlog(*args):
    ...     pass   # Remember to implement this!
    ...
+
+For this last case, many people use the ellipsis literal :code:`...` instead of
+:code:`pass`. This use has no special meaning to Python, and is not part of
+the language definition (you could use any constant expression here), but
+:code:`...` is used conventionally as a placeholder body as well.
+See :ref:`bltin-ellipsis-object`.
 
 
 .. _tut-match:
