@@ -8,7 +8,6 @@
 #include "pycore_codecs.h"        // _PyCodec_Fini()
 #include "pycore_critical_section.h" // _PyCriticalSection_Resume()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
-#include "pycore_emscripten_trampoline.h" // _Py_EmscriptenTrampoline_Init()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
@@ -433,11 +432,6 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->main_thread = PyThread_get_thread_ident();
 
     runtime->unicode_state.ids.next_index = unicode_next_index;
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    _Py_EmscriptenTrampoline_Init(runtime);
-#endif
-
     runtime->_initialized = 1;
 }
 
@@ -909,7 +903,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     _Py_ClearExecutorDeletionList(interp);
 #endif
     _PyAST_Fini(interp);
-    _PyWarnings_Fini(interp);
     _PyAtExit_Fini(interp);
 
     // All Python types must be destroyed before the last GC collection. Python
@@ -920,6 +913,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     _PyGC_CollectNoFail(tstate);
     _PyGC_Fini(interp);
 
+    // Finalize warnings after last gc so that any finalizers can
+    // access warnings state
+    _PyWarnings_Fini(interp);
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
        which requires sysdict and builtins. */
