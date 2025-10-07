@@ -492,6 +492,9 @@
     <ClInclude Include="..\Include\cpython\tupleobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\sliceobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\traceback.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
