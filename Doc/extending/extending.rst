@@ -214,7 +214,7 @@ and initialize it by calling :c:func:`PyErr_NewException` in the module's
 
    SpamError = PyErr_NewException("spam.error", NULL, NULL);
 
-Since :c:data:`!SpamError` is a global variable, it will be overwitten every time
+Since :c:data:`!SpamError` is a global variable, it will be overwritten every time
 the module is reinitialized, when the :c:data:`Py_mod_exec` function is called.
 
 For now, let's avoid the issue: we will block repeated initialization by raising an
@@ -401,7 +401,7 @@ A pointer to the module definition must be returned via :c:func:`PyModuleDef_Ini
 so that the import machinery can create the module and store it in ``sys.modules``.
 
 When embedding Python, the :c:func:`!PyInit_spam` function is not called
-automatically unless there's an entry in the :c:data:`PyImport_Inittab` table.
+automatically unless there's an entry in the :c:data:`!PyImport_Inittab` table.
 To add the module to the initialization table, use :c:func:`PyImport_AppendInittab`,
 optionally followed by an import of the module::
 
@@ -1059,7 +1059,14 @@ references to all its items, so when item 1 is replaced, it has to dispose of
 the original item 1.  Now let's suppose the original item 1 was an instance of a
 user-defined class, and let's further suppose that the class defined a
 :meth:`!__del__` method.  If this class instance has a reference count of 1,
-disposing of it will call its :meth:`!__del__` method.
+disposing of it will call its :meth:`!__del__` method. Internally,
+:c:func:`PyList_SetItem` calls :c:func:`Py_DECREF` on the replaced item,
+which invokes replaced item's corresponding
+:c:member:`~PyTypeObject.tp_dealloc` function. During
+deallocation, :c:member:`~PyTypeObject.tp_dealloc` calls
+:c:member:`~PyTypeObject.tp_finalize`, which is mapped to the
+:meth:`!__del__` method for class instances (see :pep:`442`). This entire
+sequence happens synchronously within the :c:func:`PyList_SetItem` call.
 
 Since it is written in Python, the :meth:`!__del__` method can execute arbitrary
 Python code.  Could it perhaps do something to invalidate the reference to

@@ -8,7 +8,7 @@
 .github/**                    @ezio-melotti @hugovk @AA-Turner
 
 # pre-commit
-.pre-commit-config.yaml       @hugovk @AlexWaygood
+.pre-commit-config.yaml       @hugovk
 .ruff.toml                    @hugovk @AlexWaygood @AA-Turner
 
 # Build system
@@ -292,6 +292,9 @@ Lib/concurrent/futures/interpreter.py  @ericsnowcurrently
 # Android
 **/*Android*                  @mhsmith @freakboy3742
 **/*android*                  @mhsmith @freakboy3742
+
+# Apple
+/Apple                        @freakboy3742
 
 # iOS (but not termios)
 **/iOS*                       @freakboy3742
