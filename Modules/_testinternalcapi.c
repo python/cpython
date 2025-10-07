@@ -2424,6 +2424,8 @@ stackref_to_tuple(_PyStackRef ref, PyObject *op)
 {
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
     int flags = ref.index & Py_TAG_BITS;
+#elif defined(Py_GIL_DISABLED)
+    int flags = 0;
 #else
     int flags = ref.bits & Py_TAG_BITS;
 #endif
