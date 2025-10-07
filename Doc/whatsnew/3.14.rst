@@ -46,7 +46,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.14, compared to 3.13.
-Python 3.14 will be released on 7 October 2025.
+Python 3.14 was released on 7 October 2025.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
@@ -60,7 +60,7 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.14.
    Brevity is key.
 
-Python 3.14 will be the latest stable release of the Python programming
+Python 3.14 is the latest stable release of the Python programming
 language, with a mix of changes to the language, the implementation,
 and the standard library.
 The biggest changes include :ref:`template string literals
@@ -936,6 +936,19 @@ The compiler now emits a :exc:`SyntaxWarning` when a :keyword:`return`,
 :keyword:`break`, or :keyword:`continue` statement have the effect of
 leaving a :keyword:`finally` block.
 This change is specified in :pep:`765`.
+
+In situations where this change is inconvenient (such as those where the
+warnings are redundant due to code linting), the :ref:`warning filter
+<warning-filter>` can be used to turn off all syntax warnings by adding
+``ignore::SyntaxWarning`` as a filter. This can be specified in combination
+with a filter that converts other warnings to errors (for example, passing
+``-Werror -Wignore::SyntaxWarning`` as CLI options, or setting
+``PYTHONWARNINGS=error,ignore::SyntaxWarning``).
+
+Note that applying such a filter at runtime using the :mod:`warnings` module
+will only suppress the warning in code that is compiled *after* the filter is
+adjusted. Code that is compiled prior to the filter adjustment (for example,
+when a module is imported) will still emit the syntax warning.
 
 (Contributed by Irit Katriel in :gh:`130080`.)
 
@@ -3068,7 +3081,7 @@ Deprecated C APIs
 
 .. _whatsnew314-build-changes:
 
-Build Changes
+Build changes
 =============
 
 * :pep:`776`: Emscripten is now an officially supported platform at
