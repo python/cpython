@@ -35,6 +35,7 @@
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_structs.h" // _PY_NSMALLPOSINTS
+#include "pycore_stackref.h"      // PyStackRef_FunctionCheck()
 #include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -2418,6 +2419,95 @@ set_vectorcall_nop(PyObject *self, PyObject *func)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+stackref_to_tuple(_PyStackRef ref, PyObject *op)
+{
+    int flags = ref.bits & Py_TAG_BITS;
+    return Py_BuildValue("(Ii)", Py_REFCNT(op), flags);
+}
+
+static PyObject *
+stackref_from_object_new(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
+    PyObject *obj = stackref_to_tuple(ref, op);
+    PyStackRef_CLOSE(ref);
+    return obj;
+}
+
+static PyObject *
+stackref_from_object_new2(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
+    PyObject *obj = stackref_to_tuple(ref, op);
+    PyObject *op2 = PyStackRef_AsPyObjectSteal(ref);
+    Py_DECREF(op2);
+    return obj;
+}
+
+static PyObject *
+stackref_from_object_steal_with_incref(PyObject *self, PyObject *op)
+{
+    Py_INCREF(op);
+    _PyStackRef ref = PyStackRef_FromPyObjectSteal(op);
+    PyObject *obj = stackref_to_tuple(ref, op);
+    PyStackRef_CLOSE(ref);
+    return obj;
+}
+
+static PyObject *
+stackref_make_heap_safe(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
+    _PyStackRef ref2 = PyStackRef_MakeHeapSafe(ref);
+    PyObject *obj = stackref_to_tuple(ref2, op);
+    PyStackRef_CLOSE(ref2);
+    return obj;
+}
+
+static PyObject *
+stackref_make_heap_safe_with_borrow(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
+    _PyStackRef ref2 = PyStackRef_Borrow(ref);
+    _PyStackRef ref3 = PyStackRef_MakeHeapSafe(ref2);
+    PyStackRef_CLOSE(ref);
+    PyObject *obj = stackref_to_tuple(ref3, op);
+    PyStackRef_CLOSE(ref3);
+    return obj;
+}
+
+static PyObject *
+stackref_strong_reference(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
+    PyObject *op2 = PyStackRef_AsPyObjectSteal(ref);
+    _PyStackRef ref2 = PyStackRef_FromPyObjectSteal(op2);
+    PyObject *obj = stackref_to_tuple(ref2, op);
+    PyStackRef_CLOSE(ref2);
+    return obj;
+}
+
+static PyObject *
+stackref_from_object_borrow(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
+    PyObject *obj = stackref_to_tuple(ref, op);
+    PyStackRef_CLOSE(ref);
+    return obj;
+}
+
+static PyObject *
+stackref_dup_borrowed_with_close(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
+    _PyStackRef ref2 = PyStackRef_DUP(ref);
+    PyStackRef_XCLOSE(ref);
+    PyObject *obj = stackref_to_tuple(ref2, op);
+    PyStackRef_XCLOSE(ref2);
+    return obj;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2527,6 +2617,14 @@ static PyMethodDef module_functions[] = {
 #endif
     {"simple_pending_call", simple_pending_call, METH_O},
     {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
+    {"stackref_from_object_new", stackref_from_object_new, METH_O},
+    {"stackref_from_object_new2", stackref_from_object_new2, METH_O},
+    {"stackref_from_object_steal_with_incref", stackref_from_object_steal_with_incref, METH_O},
+    {"stackref_make_heap_safe", stackref_make_heap_safe, METH_O},
+    {"stackref_make_heap_safe_with_borrow", stackref_make_heap_safe_with_borrow, METH_O},
+    {"stackref_strong_reference", stackref_strong_reference, METH_O},
+    {"stackref_from_object_borrow", stackref_from_object_borrow, METH_O},
+    {"stackref_dup_borrowed_with_close", stackref_dup_borrowed_with_close, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
