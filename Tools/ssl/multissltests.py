@@ -48,11 +48,11 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "3.0.16",
-    "3.2.5",
-    "3.3.4",
-    "3.4.2",
-    "3.5.2",
+    "3.0.18",
+    "3.2.6",
+    "3.3.5",
+    "3.4.3",
+    "3.5.4",
     # See make_ssl_data.py for notes on adding a new version.
 ]
 

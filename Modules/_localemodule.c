@@ -87,6 +87,41 @@ copy_grouping(const char* s)
     return result;
 }
 
+#if defined(MS_WINDOWS)
+
+// 16 is the number of elements in the szCodePage field
+// of the __crt_locale_strings structure.
+#define MAX_CP_LEN 15
+
+static int
+check_locale_name(const char *locale, const char *end)
+{
+    size_t len = end ? (size_t)(end - locale) : strlen(locale);
+    const char *dot = memchr(locale, '.', len);
+    if (dot && locale + len - dot - 1 > MAX_CP_LEN) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+check_locale_name_all(const char *locale)
+{
+    const char *start = locale;
+    while (1) {
+        const char *end = strchr(start, ';');
+        if (check_locale_name(start, end) < 0) {
+            return -1;
+        }
+        if (end == NULL) {
+            break;
+        }
+        start = end + 1;
+    }
+    return 0;
+}
+#endif
+
 /*[clinic input]
 _locale.setlocale
 
@@ -110,6 +145,18 @@ _locale_setlocale_impl(PyObject *module, int category, const char *locale)
         PyErr_SetString(get_locale_state(module)->Error,
                         "invalid locale category");
         return NULL;
+    }
+    if (locale) {
+        if ((category == LC_ALL
+             ? check_locale_name_all(locale)
+             : check_locale_name(locale, NULL)) < 0)
+        {
+            /* Debug assertion failure on Windows.
+             * _Py_BEGIN_SUPPRESS_IPH/_Py_END_SUPPRESS_IPH do not help. */
+            PyErr_SetString(get_locale_state(module)->Error,
+                "unsupported locale setting");
+            return NULL;
+        }
     }
 #endif
 
@@ -410,7 +457,9 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
 
     /* assume no change in size, first */
     n1 = n1 + 1;
-    buf = PyMem_New(wchar_t, n1);
+    /* Yet another +1 is needed to work around a platform bug in wcsxfrm()
+     * on macOS. See gh-130567. */
+    buf = PyMem_New(wchar_t, n1+1);
     if (!buf) {
         PyErr_NoMemory();
         goto exit;

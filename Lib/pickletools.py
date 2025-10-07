@@ -348,7 +348,7 @@ def read_stringnl(f, decode=True, stripquotes=True, *, encoding='latin-1'):
         for q in (b'"', b"'"):
             if data.startswith(q):
                 if not data.endswith(q):
-                    raise ValueError("strinq quote %r not found at both "
+                    raise ValueError("string quote %r not found at both "
                                      "ends of %r" % (q, data))
                 data = data[1:-1]
                 break
