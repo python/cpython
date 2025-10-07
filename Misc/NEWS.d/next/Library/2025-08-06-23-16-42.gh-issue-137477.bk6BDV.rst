@@ -1,0 +1,2 @@
+Fix :func:`!inspect.getblock`, :func:`inspect.getsourcelines` and
+:func:`inspect.getsource` for generator expressions.
