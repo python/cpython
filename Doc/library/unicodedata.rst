@@ -123,7 +123,7 @@ following functions:
    Returns the canonical combining class assigned to the character *chr*
    as integer. Returns ``0`` if no combining class is defined.
    See the `Canonical Combining Class Values section of the Unicode Character
-   Database <www.unicode.org/reports/tr44/tr44-34.html#Canonical_Combining_Class_Values>`_
+   Database <https://www.unicode.org/reports/tr44/tr44-34.html#Canonical_Combining_Class_Values>`_
    for more information.
 
 

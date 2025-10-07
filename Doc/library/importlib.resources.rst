@@ -16,11 +16,12 @@ within *packages*.
 "Resources" are file-like resources associated with a module or package in
 Python. The resources may be contained directly in a package, within a
 subdirectory contained in that package, or adjacent to modules outside a
-package. Resources may be text or binary. As a result, Python module sources
-(.py) of a package and compilation artifacts (pycache) are technically
-de-facto resources of that package. In practice, however, resources are
-primarily those non-Python artifacts exposed specifically by the package
-author.
+package. Resources may be text or binary. As a result, a package's Python
+module sources (.py), compilation artifacts (pycache), and installation
+artifacts (like :func:`reserved filenames <os.path.isreserved>`
+in directories) are technically de-facto resources of that package.
+In practice, however, resources are primarily those non-Python artifacts
+exposed specifically by the package author.
 
 Resources can be opened or read in either binary or text mode.
 
