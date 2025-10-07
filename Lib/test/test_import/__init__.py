@@ -2558,6 +2558,26 @@ class LazyImportTests(unittest.TestCase):
 
         self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
 
+    def test_basic_unused_use_externally(self):
+        try:
+            from test.test_import.data.lazy_imports import basic_unused
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+        x = basic_unused.test.test_import.data.lazy_imports.basic2
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_basic_from_unused_use_externally(self):
+        try:
+            from test.test_import.data.lazy_imports import basic_from_unused
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+        x = basic_from_unused.basic2
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
     def test_basic_unused_dir(self):
         try:
             import test.test_import.data.lazy_imports.basic_unused
