@@ -2,6 +2,7 @@
 
 import contextlib
 import io
+import json
 import marshal
 import os
 import shutil
@@ -17,6 +18,7 @@ from profiling.sampling.stack_collector import (
     CollapsedStackCollector,
     FlamegraphCollector,
 )
+from profiling.sampling.gecko_collector import GeckoCollector
 
 from test.support.os_helper import unlink
 from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
@@ -279,8 +281,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func")])])]
         collector.collect(test_frames)
         self.assertEqual(len(collector.stack_counter), 1)
-        ((path,), count), = collector.stack_counter.items()
-        self.assertEqual(path, ("file.py", 10, "func"))
+        ((path, thread_id), count), = collector.stack_counter.items()
+        self.assertEqual(path, (("file.py", 10, "func"),))
+        self.assertEqual(thread_id, 1)
         self.assertEqual(count, 1)
 
         # Test with very deep stack
@@ -289,10 +292,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector = CollapsedStackCollector()
         collector.collect(test_frames)
         # One aggregated path with 100 frames (reversed)
-        (path_tuple,), = (collector.stack_counter.keys(),)
+        ((path_tuple, thread_id),), = (collector.stack_counter.keys(),)
         self.assertEqual(len(path_tuple), 100)
         self.assertEqual(path_tuple[0], ("file99.py", 99, "func99"))
         self.assertEqual(path_tuple[-1], ("file0.py", 0, "func0"))
+        self.assertEqual(thread_id, 1)
 
     def test_pstats_collector_basic(self):
         """Test basic PstatsCollector functionality."""
@@ -394,9 +398,10 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Should store one reversed path
         self.assertEqual(len(collector.stack_counter), 1)
-        (path, count), = collector.stack_counter.items()
+        ((path, thread_id), count), = collector.stack_counter.items()
         expected_tree = (("file.py", 20, "func2"), ("file.py", 10, "func1"))
         self.assertEqual(path, expected_tree)
+        self.assertEqual(thread_id, 1)
         self.assertEqual(count, 1)
 
     def test_collapsed_stack_collector_export(self):
@@ -426,9 +431,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         lines = content.strip().split("\n")
         self.assertEqual(len(lines), 2)  # Two unique stacks
 
-        # Check collapsed format: file:func:line;file:func:line count
-        stack1_expected = "file.py:func2:20;file.py:func1:10 2"
-        stack2_expected = "other.py:other_func:5 1"
+        # Check collapsed format: tid:X;file:func:line;file:func:line count
+        stack1_expected = "tid:1;file.py:func2:20;file.py:func1:10 2"
+        stack2_expected = "tid:1;other.py:other_func:5 1"
 
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
@@ -523,6 +528,142 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"name":', content)
         self.assertIn('"value":', content)
         self.assertIn('"children":', content)
+
+    def test_gecko_collector_basic(self):
+        """Test basic GeckoCollector functionality."""
+        collector = GeckoCollector()
+
+        # Test empty state
+        self.assertEqual(len(collector.threads), 0)
+        self.assertEqual(collector.sample_count, 0)
+        self.assertEqual(len(collector.global_strings), 1)  # "(root)"
+
+        # Test collecting sample data
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [("file.py", 10, "func1"), ("file.py", 20, "func2")],
+                )]
+            )
+        ]
+        collector.collect(test_frames)
+
+        # Should have recorded one thread and one sample
+        self.assertEqual(len(collector.threads), 1)
+        self.assertEqual(collector.sample_count, 1)
+        self.assertIn(1, collector.threads)
+
+        profile_data = collector._build_profile()
+
+        # Verify profile structure
+        self.assertIn("meta", profile_data)
+        self.assertIn("threads", profile_data)
+        self.assertIn("shared", profile_data)
+
+        # Check shared string table
+        shared = profile_data["shared"]
+        self.assertIn("stringArray", shared)
+        string_array = shared["stringArray"]
+        self.assertGreater(len(string_array), 0)
+
+        # Should contain our functions in the string array
+        self.assertIn("func1", string_array)
+        self.assertIn("func2", string_array)
+
+        # Check thread data structure
+        threads = profile_data["threads"]
+        self.assertEqual(len(threads), 1)
+        thread_data = threads[0]
+
+        # Verify thread structure
+        self.assertIn("samples", thread_data)
+        self.assertIn("funcTable", thread_data)
+        self.assertIn("frameTable", thread_data)
+        self.assertIn("stackTable", thread_data)
+
+        # Verify samples
+        samples = thread_data["samples"]
+        self.assertEqual(len(samples["stack"]), 1)
+        self.assertEqual(len(samples["time"]), 1)
+        self.assertEqual(samples["length"], 1)
+
+        # Verify function table structure and content
+        func_table = thread_data["funcTable"]
+        self.assertIn("name", func_table)
+        self.assertIn("fileName", func_table)
+        self.assertIn("lineNumber", func_table)
+        self.assertEqual(func_table["length"], 2)  # Should have 2 functions
+
+        # Verify actual function content through string array indices
+        func_names = []
+        for idx in func_table["name"]:
+            func_name = string_array[idx] if isinstance(idx, int) and 0 <= idx < len(string_array) else str(idx)
+            func_names.append(func_name)
+
+        self.assertIn("func1", func_names, f"func1 not found in {func_names}")
+        self.assertIn("func2", func_names, f"func2 not found in {func_names}")
+
+        # Verify frame table
+        frame_table = thread_data["frameTable"]
+        self.assertEqual(frame_table["length"], 2)  # Should have frames for both functions
+        self.assertEqual(len(frame_table["func"]), 2)
+
+        # Verify stack structure
+        stack_table = thread_data["stackTable"]
+        self.assertGreater(stack_table["length"], 0)
+        self.assertGreater(len(stack_table["frame"]), 0)
+
+    def test_gecko_collector_export(self):
+        """Test Gecko profile export functionality."""
+        gecko_out = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
+        self.addCleanup(close_and_unlink, gecko_out)
+
+        collector = GeckoCollector()
+
+        test_frames1 = [
+            MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])])
+        ]
+        test_frames2 = [
+            MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])])
+        ]  # Same stack
+        test_frames3 = [MockInterpreterInfo(0, [MockThreadInfo(1, [("other.py", 5, "other_func")])])]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        # Export gecko profile
+        with (captured_stdout(), captured_stderr()):
+            collector.export(gecko_out.name)
+
+        # Verify file was created and contains valid data
+        self.assertTrue(os.path.exists(gecko_out.name))
+        self.assertGreater(os.path.getsize(gecko_out.name), 0)
+
+        # Check file contains valid JSON
+        with open(gecko_out.name, "r") as f:
+            profile_data = json.load(f)
+
+        # Should be valid Gecko profile format
+        self.assertIn("meta", profile_data)
+        self.assertIn("threads", profile_data)
+        self.assertIn("shared", profile_data)
+
+        # Check meta information
+        self.assertIn("categories", profile_data["meta"])
+        self.assertIn("interval", profile_data["meta"])
+
+        # Check shared string table
+        self.assertIn("stringArray", profile_data["shared"])
+        self.assertGreater(len(profile_data["shared"]["stringArray"]), 0)
+
+        # Should contain our functions
+        string_array = profile_data["shared"]["stringArray"]
+        self.assertIn("func1", string_array)
+        self.assertIn("func2", string_array)
+        self.assertIn("other_func", string_array)
 
     def test_pstats_collector_export(self):
         collector = PstatsCollector(
@@ -1517,7 +1658,8 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
         self.assertEqual(len(collector.stack_counter), 2)
 
         # First path should be longer (deeper recursion) than the second
-        paths = list(collector.stack_counter.keys())
+        path_tuples = list(collector.stack_counter.keys())
+        paths = [p[0] for p in path_tuples]  # Extract just the call paths
         lengths = [len(p) for p in paths]
         self.assertNotEqual(lengths[0], lengths[1])
 
@@ -1530,7 +1672,7 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
 
         def total_occurrences(func):
             total = 0
-            for path, count in collector.stack_counter.items():
+            for (path, thread_id), count in collector.stack_counter.items():
                 total += sum(1 for f in path if f == func) * count
             return total
 
@@ -1915,7 +2057,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
     def test_valid_output_formats(self):
         """Test that all valid output formats are accepted."""
-        valid_formats = ["pstats", "collapsed", "flamegraph"]
+        valid_formats = ["pstats", "collapsed", "flamegraph", "gecko"]
 
         tempdir = tempfile.TemporaryDirectory(delete=False)
         self.addCleanup(shutil.rmtree, tempdir.name)
