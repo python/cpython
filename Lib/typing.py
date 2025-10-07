@@ -65,6 +65,7 @@ __all__ = [
 
     # ABCs (from collections.abc).
     'AbstractSet',  # collections.abc.Set.
+    'ByteString',
     'Container',
     'ContextManager',
     'Hashable',
@@ -171,16 +172,16 @@ class _LazyAnnotationLib:
 _lazy_annotationlib = _LazyAnnotationLib()
 
 
-def _type_convert(arg, module=None, *, allow_special_forms=False):
+def _type_convert(arg, module=None, *, allow_special_forms=False, owner=None):
     """For converting None to type(None), and strings to ForwardRef."""
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return _make_forward_ref(arg, module=module, is_class=allow_special_forms)
+        return _make_forward_ref(arg, module=module, is_class=allow_special_forms, owner=owner)
     return arg
 
 
-def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=False):
+def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=False, owner=None):
     """Check that the argument is a type, and return it (internal helper).
 
     As a special case, accept None and return type(None) instead. Also wrap strings
@@ -198,7 +199,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
         if is_argument:
             invalid_generic_forms += (Final,)
 
-    arg = _type_convert(arg, module=module, allow_special_forms=allow_special_forms)
+    arg = _type_convert(arg, module=module, allow_special_forms=allow_special_forms, owner=owner)
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
@@ -430,7 +431,7 @@ _sentinel = _Sentinel()
 
 
 def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset(),
-               format=None, owner=None, parent_fwdref=None):
+               format=None, owner=None, parent_fwdref=None, prefer_fwd_module=False):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
@@ -443,8 +444,20 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
     if isinstance(t, _lazy_annotationlib.ForwardRef):
         # If the forward_ref has __forward_module__ set, evaluate() infers the globals
         # from the module, and it will probably pick better than the globals we have here.
-        if t.__forward_module__ is not None:
+        # We do this only for calls from get_type_hints() (which opts in through the
+        # prefer_fwd_module flag), so that the default behavior remains more straightforward.
+        if prefer_fwd_module and t.__forward_module__ is not None:
             globalns = None
+            # If there are type params on the owner, we need to add them back, because
+            # annotationlib won't.
+            if owner_type_params := getattr(owner, "__type_params__", None):
+                globalns = getattr(
+                    sys.modules.get(t.__forward_module__, None), "__dict__", None
+                )
+                if globalns is not None:
+                    globalns = dict(globalns)
+                    for type_param in owner_type_params:
+                        globalns[type_param.__name__] = type_param
         return evaluate_forward_ref(t, globals=globalns, locals=localns,
                                     type_params=type_params, owner=owner,
                                     _recursive_guard=recursive_guard, format=format)
@@ -465,7 +478,7 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
         ev_args = tuple(
             _eval_type(
                 a, globalns, localns, type_params, recursive_guard=recursive_guard,
-                format=format, owner=owner,
+                format=format, owner=owner, prefer_fwd_module=prefer_fwd_module,
             )
             for a in t.__args__
         )
@@ -1570,6 +1583,21 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
         return Union[left, self]
 
 
+class _DeprecatedGenericAlias(_SpecialGenericAlias, _root=True):
+    def __init__(
+        self, origin, nparams, *, removal_version, inst=True, name=None
+    ):
+        super().__init__(origin, nparams, inst=inst, name=name)
+        self._removal_version = removal_version
+
+    def __instancecheck__(self, inst):
+        import warnings
+        warnings._deprecated(
+            f"{self.__module__}.{self._name}", remove=self._removal_version
+        )
+        return super().__instancecheck__(inst)
+
+
 class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __repr__(self):
         assert self._name == 'Callable'
@@ -2347,7 +2375,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 if isinstance(value, str):
                     value = _make_forward_ref(value, is_argument=False, is_class=True)
                 value = _eval_type(value, base_globals, base_locals, (),
-                                   format=format, owner=obj)
+                                   format=format, owner=obj, prefer_fwd_module=True)
                 if value is None:
                     value = type(None)
                 hints[name] = value
@@ -2392,7 +2420,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
-        value = _eval_type(value, globalns, localns, (), format=format, owner=obj)
+        value = _eval_type(value, globalns, localns, (), format=format, owner=obj, prefer_fwd_module=True)
         if value is None:
             value = type(None)
         hints[name] = value
@@ -2755,6 +2783,9 @@ Mapping = _alias(collections.abc.Mapping, 2)
 MutableMapping = _alias(collections.abc.MutableMapping, 2)
 Sequence = _alias(collections.abc.Sequence, 1)
 MutableSequence = _alias(collections.abc.MutableSequence, 1)
+ByteString = _DeprecatedGenericAlias(
+    collections.abc.ByteString, 0, removal_version=(3, 17)  # Not generic.
+)
 # Tuple accepts variable number of parameters.
 Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
 Tuple.__doc__ = \
@@ -3128,7 +3159,7 @@ class _TypedDictMeta(type):
             own_annotations = {}
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
         own_checked_annotations = {
-            n: _type_check(tp, msg, module=tp_dict.__module__)
+            n: _type_check(tp, msg, owner=tp_dict, module=tp_dict.__module__)
             for n, tp in own_annotations.items()
         }
         required_keys = set()
