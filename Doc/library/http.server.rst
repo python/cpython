@@ -362,7 +362,8 @@ instantiation, of which this module provides three different variants:
          delays, it now always returns the IP address.
 
 
-.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None, extra_response_headers=None)
+.. class:: SimpleHTTPRequestHandler(request, client_address, server, \
+                                    *, directory=None, extra_response_headers=None)
 
    This class serves files from the directory *directory* and below,
    or the current directory if *directory* is not provided, directly
