@@ -2425,9 +2425,8 @@ check_threadstate_set_stack(PyThreadState *tstate, void *start, size_t size)
     assert(!PyErr_Occurred());
 
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
-    assert(ts->c_stack_hard_limit == (uintptr_t)start + _PyOS_STACK_MARGIN_BYTES);
     assert(ts->c_stack_top == (uintptr_t)start + size);
-    assert(ts->c_stack_soft_limit >= ts->c_stack_hard_limit);
+    assert(ts->c_stack_hard_limit <= ts->c_stack_soft_limit);
     assert(ts->c_stack_soft_limit < ts->c_stack_top);
 }
 
@@ -2443,12 +2442,13 @@ test_threadstate_set_stack(PyObject *self, PyObject *Py_UNUSED(args))
     size_t init_top = ts->c_stack_init_top;
 
     // Test the minimum stack size
-    size_t size = _PyOS_STACK_MARGIN_BYTES * 3;
+    size_t size = _PyOS_MIN_STACK_SIZE;
     void *start = (void*)(_Py_get_machine_stack_pointer() - size);
     check_threadstate_set_stack(tstate, start, size);
 
     // Test a larger size
     size = 7654321;
+    assert(size > _PyOS_MIN_STACK_SIZE);
     start = (void*)(_Py_get_machine_stack_pointer() - size);
     check_threadstate_set_stack(tstate, start, size);
 

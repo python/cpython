@@ -487,7 +487,7 @@ tstate_set_stack(PyThreadState *tstate,
                  uintptr_t base, uintptr_t top)
 {
     assert(base < top);
-    assert((top - base) >= (_PyOS_STACK_MARGIN_BYTES * 3));
+    assert((top - base) >= _PyOS_MIN_STACK_SIZE);
 
 #ifdef _Py_THREAD_SANITIZER
     // Thread sanitizer crashes if we use more than half the stack.
@@ -533,10 +533,10 @@ int
 PyUnstable_ThreadState_SetStack(PyThreadState *tstate,
                                 void *stack_start_addr, size_t stack_size)
 {
-    if (stack_size < (_PyOS_STACK_MARGIN_BYTES * 3)) {
+    if (stack_size < _PyOS_MIN_STACK_SIZE) {
         PyErr_Format(PyExc_ValueError,
                      "stack_size must be at least %zu bytes",
-                     _PyOS_STACK_MARGIN_BYTES * 3);
+                     _PyOS_MIN_STACK_SIZE);
         return -1;
     }
 
