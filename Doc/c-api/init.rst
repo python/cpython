@@ -1193,7 +1193,7 @@ code, or when embedding the Python interpreter:
       created by Python.  Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.8
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
@@ -1256,7 +1256,7 @@ with sub-interpreters:
       created by Python.  Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.8
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
@@ -1477,6 +1477,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    This is not a replacement for :c:func:`PyModule_GetState()`, which
    extensions should use to store interpreter-specific state information.
 
+   The returned dictionary is borrowed from the interpreter and is valid until
+   interpreter shutdown.
+
    .. versionadded:: 3.8
 
 
@@ -1560,7 +1563,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
       and terminate the current thread if called while the interpreter is finalizing.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.8
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
@@ -1943,6 +1946,10 @@ pointer and a void pointer argument.
       now scheduled to be called from the subinterpreter, rather than being
       called from the main interpreter. Each subinterpreter now has its own
       list of scheduled calls.
+
+   .. versionchanged:: 3.12
+      This function now always schedules *func* to be run in the main
+      interpreter.
 
 .. _profiling:
 

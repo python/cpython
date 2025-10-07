@@ -2034,6 +2034,8 @@ New Deprecations
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 CPython Bytecode Changes
@@ -2848,7 +2850,7 @@ tarfile
 -------
 
 * :func:`~tarfile.data_filter` now normalizes symbolic link targets in order to
-  avoid path traversal attacks.Add commentMore actions
+  avoid path traversal attacks.
   (Contributed by Petr Viktorin in :gh:`127987` and :cve:`2025-4138`.)
 * :func:`~tarfile.TarFile.extractall` now skips fixing up directory attributes
   when a directory was removed or replaced by another kind of file.

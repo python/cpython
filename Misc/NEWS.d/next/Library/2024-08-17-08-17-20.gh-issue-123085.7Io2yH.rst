@@ -1,3 +1,0 @@
-In a bare call to :func:`importlib.resources.files`, ensure the caller's
-frame is properly detected when ``importlib.resources`` is itself available
-as a compiled module only (no source).
