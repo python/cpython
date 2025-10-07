@@ -284,10 +284,11 @@ class TestBase:
 
     def test_null_terminator(self):
         # see gh-101828
-        if any(enc in self.encoding for enc in ('shift', 'euc_jis')):
-            text = "バルーンフルーツ"
-        else:
-            text = "Spam"
+        text = "フルーツ"
+        try:
+            text.encode(self.encoding)
+        except UnicodeEncodeError:
+            text = "Python is cool"
         encode_w_null = (text + "\0").encode(self.encoding)
         encode_plus_null = text.encode(self.encoding) + "\0".encode(self.encoding)
         self.assertTrue(encode_w_null.endswith(b'\x00'))
