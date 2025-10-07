@@ -195,6 +195,31 @@ class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
 
 
 @threading_helper.requires_working_threading()
+class SetProfileAllThreadsMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
+    """Uses threading.setprofile_all_threads and repeatedly toggles instrumentation on and off"""
+
+    def setUp(self):
+        self.set = False
+        self.called = False
+
+    def after_test(self):
+        self.assertTrue(self.called)
+
+    def tearDown(self):
+        threading.setprofile_all_threads(None)
+
+    def trace_func(self, frame, event, arg):
+        self.called = True
+        return self.trace_func
+
+    def during_threads(self):
+        if self.set:
+            threading.setprofile_all_threads(self.trace_func)
+        else:
+            threading.setprofile_all_threads(None)
+        self.set = not self.set
+
+
 class SetProfileAllMultiThreaded(TestCase):
     def test_profile_all_threads(self):
         done = threading.Event()
@@ -420,6 +445,38 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
             yield
 
         self.observe_threads(noop, buf)
+
+    def test_trace_concurrent(self):
+        # Test calling a function concurrently from a tracing and a non-tracing
+        # thread
+        b = threading.Barrier(2)
+
+        def func():
+            for _ in range(100):
+                pass
+
+        def noop():
+            pass
+
+        def bg_thread():
+            b.wait()
+            func()  # this may instrument `func`
+
+        def tracefunc(frame, event, arg):
+            # These calls run under tracing can race with the background thread
+            for _ in range(10):
+                func()
+            return tracefunc
+
+        t = Thread(target=bg_thread)
+        t.start()
+        try:
+            sys.settrace(tracefunc)
+            b.wait()
+            noop()
+        finally:
+            sys.settrace(None)
+        t.join()
 
 
 if __name__ == "__main__":
