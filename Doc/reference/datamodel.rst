@@ -316,8 +316,9 @@ but ``a[-n-1]`` doesn't exit.
 .. index:: single: slicing
 
 Sequences also support slicing: ``a[start:stop]`` selects all items with index
-*i* such that ``start <= i < stop``. When used as an expression, a slice is a
-sequence of the same type. The comment above about negative indexes also applies
+*i* such that ``start <= i < stop``. When used as an expression, a slice should be
+a sequence of the same type, but must be a sequence behaving as one.
+The comment above about negative indexes also applies
 to negative slice positions.
 
 Some sequences also support "extended slicing" with a third *step* parameter:
