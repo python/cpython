@@ -10,10 +10,13 @@ from test import support
 
 class EventCollector(html.parser.HTMLParser):
 
-    def __init__(self, *args, **kw):
+    def __init__(self, *args, autocdata=False, **kw):
+        self.autocdata = autocdata
         self.events = []
         self.append = self.events.append
         html.parser.HTMLParser.__init__(self, *args, **kw)
+        if autocdata:
+            self._set_support_cdata(False)
 
     def get_events(self):
         # Normalize the list of events so that buffer artefacts don't
@@ -34,12 +37,16 @@ class EventCollector(html.parser.HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         self.append(("starttag", tag, attrs))
+        if self.autocdata and tag == 'svg':
+            self._set_support_cdata(True)
 
     def handle_startendtag(self, tag, attrs):
         self.append(("startendtag", tag, attrs))
 
     def handle_endtag(self, tag):
         self.append(("endtag", tag))
+        if self.autocdata and tag == 'svg':
+            self._set_support_cdata(False)
 
     # all other markup
 
@@ -767,10 +774,6 @@ text
             ('<!', [('comment', '')]),
             ('<!-', [('comment', '-')]),
             ('<![', [('comment', '[')]),
-            ('<![CDATA[', [('unknown decl', 'CDATA[')]),
-            ('<![CDATA[x', [('unknown decl', 'CDATA[x')]),
-            ('<![CDATA[x]', [('unknown decl', 'CDATA[x]')]),
-            ('<![CDATA[x]]', [('unknown decl', 'CDATA[x]]')]),
             ('<!DOCTYPE', [('decl', 'DOCTYPE')]),
             ('<!DOCTYPE ', [('decl', 'DOCTYPE ')]),
             ('<!DOCTYPE html', [('decl', 'DOCTYPE html')]),
@@ -782,6 +785,18 @@ text
         ]
         for html, expected in data:
             self._run_check(html, expected)
+
+    @support.subTests('content', ['', 'x', 'x]', 'x]]'])
+    def test_eof_in_cdata(self, content):
+        self._run_check('<![CDATA[' + content,
+                        [('unknown decl', 'CDATA[' + content)])
+        self._run_check('<![CDATA[' + content,
+                        [('comment', '[CDATA[' + content)],
+                        collector=EventCollector(autocdata=True))
+        self._run_check('<svg><text y="100"><![CDATA[' + content,
+                        [('starttag', 'svg', []),
+                         ('starttag', 'text', [('y', '100')]),
+                         ('unknown decl', 'CDATA[' + content)])
 
     def test_bogus_comments(self):
         html = ('<!ELEMENT br EMPTY>'
@@ -845,28 +860,53 @@ text
         ]
         self._run_check(html, expected)
 
-    def test_cdata_declarations(self):
-        # More tests should be added. See also "8.2.4.42. Markup
-        # declaration open state", "8.2.4.69. CDATA section state",
-        # and issue 32876
-        html = ('<![CDATA[just some plain text]]>')
-        expected = [('unknown decl', 'CDATA[just some plain text')]
-        self._run_check(html, expected)
-
-    def test_cdata_declarations_multiline(self):
-        html = ('<code><![CDATA['
-                '    if (a < b && a > b) {'
-                '        printf("[<marquee>How?</marquee>]");'
-                '    }'
-                ']]></code>')
+    @support.subTests('content', [
+        'just some plain text',
+        '<!-- not a comment -->',
+        '&not-an-entity-ref;',
+        "<not a='start tag'>",
+        '',
+        '[[I have many brackets]]',
+        'I have a > in the middle',
+        'I have a ]] in the middle',
+        '] ]>',
+        ']] >',
+        ('\n'
+         '    if (a < b && a > b) {\n'
+         '        printf("[<marquee>How?</marquee>]");\n'
+         '    }\n'),
+    ])
+    def test_cdata_section_content(self, content):
+        # See "13.2.5.42 Markup declaration open state",
+        # "13.2.5.69 CDATA section state", and issue bpo-32876.
+        html = f'<svg><text y="100"><![CDATA[{content}]]></text></svg>'
         expected = [
-            ('starttag', 'code', []),
-            ('unknown decl',
-             'CDATA[    if (a < b && a > b) {        '
-             'printf("[<marquee>How?</marquee>]");    }'),
-            ('endtag', 'code')
+            ('starttag', 'svg', []),
+            ('starttag', 'text', [('y', '100')]),
+            ('unknown decl', 'CDATA[' + content),
+            ('endtag', 'text'),
+            ('endtag', 'svg'),
         ]
         self._run_check(html, expected)
+        self._run_check(html, expected, collector=EventCollector(autocdata=True))
+
+    def test_cdata_section(self):
+        # See "13.2.5.42 Markup declaration open state".
+        html = ('<![CDATA[foo<br>bar]]>'
+                '<svg><text y="100"><![CDATA[foo<br>bar]]></text></svg>'
+                '<![CDATA[foo<br>bar]]>')
+        expected = [
+            ('comment', '[CDATA[foo<br'),
+            ('data', 'bar]]>'),
+            ('starttag', 'svg', []),
+            ('starttag', 'text', [('y', '100')]),
+            ('unknown decl', 'CDATA[foo<br>bar'),
+            ('endtag', 'text'),
+            ('endtag', 'svg'),
+            ('comment', '[CDATA[foo<br'),
+            ('data', 'bar]]>'),
+        ]
+        self._run_check(html, expected, collector=EventCollector(autocdata=True))
 
     def test_convert_charrefs_dropped_text(self):
         # #23144: make sure that all the events are triggered when
