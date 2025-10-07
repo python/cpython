@@ -250,10 +250,12 @@ def wasi_sdk_env(context):
     env["WASI_SDK_PATH"] = os.fsdecode(wasi_sdk_path)
     env["WASI_SYSROOT"] = os.fsdecode(sysroot)
 
-    env["PATH"] = os.pathsep.join([
-        os.fsdecode(wasi_sdk_path / "bin"),
-        os.environ["PATH"],
-    ])
+    env["PATH"] = os.pathsep.join(
+        [
+            os.fsdecode(wasi_sdk_path / "bin"),
+            os.environ["PATH"],
+        ]
+    )
 
     return env
 
