@@ -302,5 +302,30 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(tuples, [])
 
 
+class TupleWriterTest(unittest.TestCase):
+    def create_writer(self, size):
+        return _testcapi.PyTupleWriter(size)
+
+    def test_create(self):
+        # Test PyTupleWriter_Create()
+        writer = self.create_writer(0)
+        self.assertIs(writer.finish(), ())
+
+        writer = self.create_writer(123)
+        self.assertIs(writer.finish(), ())
+
+    def test_add(self):
+         # Test PyTupleWriter_Add()
+         writer = self.create_writer(3)
+         for ch in 'abc':
+             writer.add(ch)
+         self.assertEqual(writer.finish(), ('a', 'b', 'c'))
+
+         writer = self.create_writer(0)
+         for i in range(1024):
+             writer.add(i)
+         self.assertEqual(writer.finish(), tuple(range(1024)))
+
+
 if __name__ == "__main__":
     unittest.main()

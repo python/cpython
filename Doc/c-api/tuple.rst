@@ -142,6 +142,71 @@ Tuple Objects
    ``*p`` is destroyed.  On failure, returns ``-1`` and sets ``*p`` to ``NULL``, and
    raises :exc:`MemoryError` or :exc:`SystemError`.
 
+   .. deprecated:: 3.15
+      The function is :term:`soft deprecated`,
+      use the :ref:`PyTupleWriter API <pytuplewriter>` instead.
+
+
+.. _pytuplewriter:
+
+PyTupleWriter
+-------------
+
+The :c:type:`PyTupleWriter` API can be used to create a Python :class:`tuple`
+object.
+
+.. versionadded:: next
+
+.. c:type:: PyTupleWriter
+
+   A tuple writer instance.
+
+   The API is **not thread safe**: a writer should only be used by a single
+   thread at the same time.
+
+   The instance must be destroyed by :c:func:`PyTupleWriter_Finish` on
+   success, or :c:func:`PyTupleWriter_Discard` on error.
+
+
+.. c:function:: PyTupleWriter* PyTupleWriter_Create(Py_ssize_t size)
+
+   Create a :c:type:`PyTupleWriter` to add *size* items.
+
+   If *size* is greater than zero, preallocate *size* items. The caller is
+   responsible to add *size* items using :c:func:`PyTupleWriter_Add`.
+
+   On error, set an exception and return ``NULL``.
+
+   *size* must be positive or zero.
+
+
+.. c:function:: PyObject* PyTupleWriter_Finish(PyTupleWriter *writer)
+
+   Finish a :c:type:`PyTupleWriter` created by
+   :c:func:`PyTupleWriter_Create`.
+
+   On success, return a Python :class:`tuple` object.
+   On error, set an exception and return ``NULL``.
+
+   The writer instance is invalid after the call in any case.
+   No API can be called on the writer after :c:func:`PyTupleWriter_Finish`.
+
+.. c:function:: void PyTupleWriter_Discard(PyTupleWriter *writer)
+
+   Discard a :c:type:`PyTupleWriter` created by :c:func:`PyTupleWriter_Create`.
+
+   Do nothing if *writer* is ``NULL``.
+
+   The writer instance is invalid after the call.
+   No API can be called on the writer after :c:func:`PyTupleWriter_Discard`.
+
+.. c:function:: int PyTupleWriter_Add(PyTupleWriter *writer, PyObject *item)
+
+   Add an item to *writer*.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
 
 .. _struct-sequence-objects:
 

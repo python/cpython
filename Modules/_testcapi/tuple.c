@@ -131,6 +131,127 @@ tuple_fromarray(PyObject* Py_UNUSED(module), PyObject *args)
 }
 
 
+// --- PyTupleWriter type ---------------------------------------------------
+
+typedef struct {
+    PyObject_HEAD
+    PyTupleWriter *writer;
+} WriterObject;
+
+
+static PyObject *
+writer_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    WriterObject *self = (WriterObject *)type->tp_alloc(type, 0);
+    if (!self) {
+        return NULL;
+    }
+    self->writer = NULL;
+    return (PyObject*)self;
+}
+
+
+static int
+writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
+{
+    if (kwargs && PyDict_GET_SIZE(kwargs)) {
+        PyErr_Format(PyExc_TypeError,
+                     "PyTupleWriter() takes exactly no keyword arguments");
+        return -1;
+    }
+
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "n", &size)) {
+        return -1;
+    }
+
+    WriterObject *self = (WriterObject *)self_raw;
+    if (self->writer) {
+        PyTupleWriter_Discard(self->writer);
+    }
+    self->writer = PyTupleWriter_Create(size);
+    if (self->writer == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+
+static void
+writer_dealloc(PyObject *self_raw)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    PyTypeObject *tp = Py_TYPE(self);
+    if (self->writer) {
+        PyTupleWriter_Discard(self->writer);
+    }
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+
+static inline int
+writer_check(WriterObject *self)
+{
+    if (self->writer == NULL) {
+        PyErr_SetString(PyExc_ValueError, "operation on finished writer");
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject*
+writer_add(PyObject *self_raw, PyObject *item)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    if (PyTupleWriter_Add(self->writer, item) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyObject *tuple = PyTupleWriter_Finish(self->writer);
+    self->writer = NULL;
+    return tuple;
+}
+
+
+static PyMethodDef writer_methods[] = {
+    {"add", _PyCFunction_CAST(writer_add), METH_O},
+    {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
+    {NULL, NULL}  /* sentinel */
+};
+
+static PyType_Slot Writer_Type_slots[] = {
+    {Py_tp_new, writer_new},
+    {Py_tp_init, writer_init},
+    {Py_tp_dealloc, writer_dealloc},
+    {Py_tp_methods, writer_methods},
+    {0, 0},  /* sentinel */
+};
+
+static PyType_Spec Writer_spec = {
+    .name = "_testcapi.PyTupleWriter",
+    .basicsize = sizeof(WriterObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = Writer_Type_slots,
+};
+
+
 static PyMethodDef test_methods[] = {
     {"tuple_get_size", tuple_get_size, METH_O},
     {"tuple_get_item", tuple_get_item, METH_VARARGS},
@@ -147,6 +268,16 @@ _PyTestCapi_Init_Tuple(PyObject *m)
     if (PyModule_AddFunctions(m, test_methods) < 0) {
         return -1;
     }
+
+    PyTypeObject *writer_type = (PyTypeObject *)PyType_FromSpec(&Writer_spec);
+    if (writer_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, writer_type) < 0) {
+        Py_DECREF(writer_type);
+        return -1;
+    }
+    Py_DECREF(writer_type);
 
     return 0;
 }

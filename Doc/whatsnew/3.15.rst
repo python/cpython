@@ -855,6 +855,15 @@ New features
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
+* Add a :ref:`PyTupleWriter API <pytuplewriter>` to create :class:`tuple`:
+
+  * :c:func:`PyTupleWriter_Create`
+  * :c:func:`PyTupleWriter_Add`
+  * :c:func:`PyTupleWriter_Finish`
+  * :c:func:`PyTupleWriter_Discard`
+
+  (Contributed by Victor Stinner in :gh:`139888`.)
+
 
 Porting to Python 3.15
 ----------------------

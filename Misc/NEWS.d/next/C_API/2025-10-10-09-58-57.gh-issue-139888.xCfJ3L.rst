@@ -1,0 +1,2 @@
+The :c:func:`_PyTuple_Resize` function is now :term:`soft deprecated`, use
+the :ref:`PyTupleWriter API <pytuplewriter>` instead.
