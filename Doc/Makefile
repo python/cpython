@@ -154,10 +154,20 @@ venv:
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
 
+.PHONY: dist-no-html
+dist-no-html: dist-text dist-epub dist-texinfo
+
 dist:
 	rm -rf dist
 	mkdir -p dist
+	$(MAKE) dist-html
+	$(MAKE) dist-text
+	$(MAKE) dist-pdf
+	$(MAKE) dist-epub
+	$(MAKE) dist-texinfo
 
+.PHONY: dist-html
+dist-html:
 	# archive the HTML
 	make html
 	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
@@ -167,6 +177,8 @@ dist:
 	rm -r dist/python-$(DISTVERSION)-docs-html
 	rm dist/python-$(DISTVERSION)-docs-html.tar
 
+.PHONY: dist-text
+dist-text:
 	# archive the text build
 	make text
 	cp -pPR build/text dist/python-$(DISTVERSION)-docs-text
@@ -176,6 +188,8 @@ dist:
 	rm -r dist/python-$(DISTVERSION)-docs-text
 	rm dist/python-$(DISTVERSION)-docs-text.tar
 
+.PHONY: dist-pdf
+dist-pdf:
 	# archive the A4 latex
 	rm -rf build/latex
 	make latex PAPER=a4
@@ -192,11 +206,15 @@ dist:
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-letter.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-letter.tar.bz2
 
+.PHONY: dist-epub
+dist-epub:
 	# copy the epub build
 	rm -rf build/epub
 	make epub
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
 
+.PHONY: dist-texinfo
+dist-texinfo:
 	# archive the texinfo build
 	rm -rf build/texinfo
 	make texinfo
