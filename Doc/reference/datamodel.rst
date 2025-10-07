@@ -2558,7 +2558,7 @@ instance dictionary.  In contrast, non-data descriptors can be overridden by
 instances.
 
 Python methods (including those decorated with
-:func:`@staticmethod <staticmethod>` and :func:`@classmethod <classmethod>`) are
+:deco:`staticmethod` and :deco:`classmethod`) are
 implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
@@ -2991,7 +2991,7 @@ class method ``__class_getitem__()``.
 
    When defined on a class, ``__class_getitem__()`` is automatically a class
    method. As such, there is no need for it to be decorated with
-   :func:`@classmethod<classmethod>` when it is defined.
+   :deco:`classmethod` when it is defined.
 
 
 The purpose of *__class_getitem__*
@@ -3140,17 +3140,20 @@ objects.  The :mod:`collections.abc` module provides a
 :term:`abstract base class` to help create those methods from a base set of
 :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
 :meth:`~object.__delitem__`, and :meth:`!keys`.
-Mutable sequences should provide methods :meth:`~sequence.append`,
-:meth:`~sequence.count`, :meth:`~sequence.index`, :meth:`~sequence.extend`,
-:meth:`~sequence.insert`, :meth:`~sequence.pop`, :meth:`~sequence.remove`,
-:meth:`~sequence.reverse` and :meth:`!sort`,
+
+Mutable sequences should provide methods
+:meth:`~sequence.append`, :meth:`~sequence.clear`, :meth:`~sequence.count`,
+:meth:`~sequence.extend`, :meth:`~sequence.index`, :meth:`~sequence.insert`,
+:meth:`~sequence.pop`, :meth:`~sequence.remove`, and :meth:`~sequence.reverse`,
 like Python standard :class:`list` objects.
 Finally, sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
 :meth:`~object.__add__`, :meth:`~object.__radd__`, :meth:`~object.__iadd__`,
 :meth:`~object.__mul__`, :meth:`~object.__rmul__` and :meth:`~object.__imul__`
 described below; they should not define other numerical
-operators.  It is recommended that both mappings and sequences implement the
+operators.
+
+It is recommended that both mappings and sequences implement the
 :meth:`~object.__contains__` method to allow efficient use of the ``in``
 operator; for
 mappings, ``in`` should search the mapping's keys; for sequences, it should
