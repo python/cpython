@@ -1259,7 +1259,12 @@ static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
-    PyObject *dict = PyObject_GetAttr(self, &_Py_ID(__dict__));
+    PyObject *dict;
+    if (PyModule_CheckExact(self)) {
+        dict = Py_NewRef(((PyModuleObject *)self)->md_dict);
+    } else {
+        dict = PyObject_GetAttr(self, &_Py_ID(__dict__));
+    }
 
     if (dict != NULL) {
         if (PyDict_Check(dict)) {
