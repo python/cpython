@@ -193,7 +193,6 @@
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tracemalloc.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
-    <ClInclude Include="..\Include\cpython\unicode_formatter.h" />
     <ClInclude Include="..\Include\cpython\unicodeobject.h" />
     <ClInclude Include="..\Include\cpython\warnings.h" />
     <ClInclude Include="..\Include\cpython\weakrefobject.h" />
@@ -557,6 +556,7 @@
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\typevarobject.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
+    <ClCompile Include="..\Objects\unicode_formatter.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
