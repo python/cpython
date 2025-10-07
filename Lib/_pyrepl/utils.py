@@ -20,6 +20,7 @@ ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 IDENTIFIERS_AFTER = {"def", "class"}
+KEYWORD_CONSTANTS = {"True", "False", "None"}
 BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
 
 
@@ -196,12 +197,12 @@ def gen_colors_from_token_stream(
                     is_def_name = False
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "definition")
-                elif token.string in ("True", "False", "None"):
-                    span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "keyword_constant")
                 elif keyword.iskeyword(token.string):
+                    span_cls = "keyword"
+                    if token.string in KEYWORD_CONSTANTS:
+                        span_cls = "keyword_constant"
                     span = Span.from_token(token, line_lengths)
-                    yield ColorSpan(span, "keyword")
+                    yield ColorSpan(span, span_cls)
                     if token.string in IDENTIFIERS_AFTER:
                         is_def_name = True
                 elif (
