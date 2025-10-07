@@ -3729,6 +3729,7 @@ PyInitConfig_Free(PyInitConfig *config)
     }
 
     initconfig_free_config(&config->config);
+    PyMem_RawFree(config->inittab);
     free(config->err_msg);
     free(config);
 }
