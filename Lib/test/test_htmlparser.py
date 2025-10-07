@@ -791,7 +791,7 @@ text
         self._run_check('<![CDATA[' + content,
                         [('unknown decl', 'CDATA[' + content)])
         self._run_check('<![CDATA[' + content,
-                        [('comment', '![CDATA[' + content)],
+                        [('comment', '[CDATA[' + content)],
                         collector=EventCollector(autocdata=True))
         self._run_check('<svg><text y="100"><![CDATA[' + content,
                         [('starttag', 'svg', []),

@@ -830,7 +830,7 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 %4d           LOAD_GLOBAL              1 (list + NULL)
                LOAD_FAST_BORROW         0 (x)
                BUILD_TUPLE              1
-               LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
+               LOAD_CONST               %d (<code object <genexpr> at 0x..., file "%s", line %d>)
                MAKE_FUNCTION
                SET_FUNCTION_ATTRIBUTE   8 (closure)
                LOAD_DEREF               1 (y)
@@ -842,6 +842,7 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
        _h.__code__.co_firstlineno + 1,
        _h.__code__.co_firstlineno + 1,
        _h.__code__.co_firstlineno + 3,
+       1 if __debug__ else 0,
        __file__,
        _h.__code__.co_firstlineno + 3,
 )
@@ -1468,7 +1469,7 @@ Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  1
 Stack size:        \\d+
-Flags:             OPTIMIZED, NEWLOCALS, HAS_DOCSTRING
+Flags:             OPTIMIZED, NEWLOCALS(, HAS_DOCSTRING)?
 Constants:
    {code_info_consts}
 Names:
