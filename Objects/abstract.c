@@ -2206,8 +2206,7 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
     if (operation != PY_ITERSEARCH_INDEX)
         goto Done;
 
-    PyErr_SetString(PyExc_ValueError,
-                    "sequence.index(x): x not in sequence");
+    PyErr_SetString(PyExc_ValueError, "value not in sequence");
     /* fall into failure code */
 Fail:
     n = -1;

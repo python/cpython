@@ -1233,7 +1233,7 @@ array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "array.index(x): x not in array");
+    PyErr_SetString(PyExc_ValueError, "value not in array");
     return NULL;
 }
 
@@ -1285,7 +1285,7 @@ array_array_remove_impl(arrayobject *self, PyObject *v)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in array");
+    PyErr_SetString(PyExc_ValueError, "value not in array");
     return NULL;
 }
 
