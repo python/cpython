@@ -3324,6 +3324,14 @@
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
             }
+            // _CHECK_RECURSION_REMAINING
+            {
+                if (tstate->py_recursion_remaining <= 1) {
+                    UPDATE_MISS_STATS(CALL_KW);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
+                    JUMP_TO_PREDICTED(CALL_KW);
+                }
+            }
             // _PY_FRAME_KW
             {
                 kwnames = stack_pointer[-1];
@@ -7496,7 +7504,13 @@
             }
             // _MAYBE_INSTRUMENT
             {
-                if (tstate->tracing == 0) {
+                #ifdef Py_GIL_DISABLED
+
+                int check_instrumentation = 1;
+                #else
+                int check_instrumentation = (tstate->tracing == 0);
+                #endif
+                if (check_instrumentation) {
                     uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
                     uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
                     if (code_version != global_version) {
@@ -10472,7 +10486,13 @@
             }
             // _MAYBE_INSTRUMENT
             {
-                if (tstate->tracing == 0) {
+                #ifdef Py_GIL_DISABLED
+
+                int check_instrumentation = 1;
+                #else
+                int check_instrumentation = (tstate->tracing == 0);
+                #endif
+                if (check_instrumentation) {
                     uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
                     uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
                     if (code_version != global_version) {

@@ -1283,6 +1283,10 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     if '__slots__' in cls.__dict__:
         raise TypeError(f'{cls.__name__} already specifies __slots__')
 
+    # gh-102069: Remove existing __weakref__ descriptor.
+    # gh-135228: Make sure the original class can be garbage collected.
+    sys._clear_type_descriptors(cls)
+
     # Create a new dict for our new class.
     cls_dict = dict(cls.__dict__)
     field_names = tuple(f.name for f in fields(cls))
@@ -1299,12 +1303,6 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
         # Remove our attributes, if present. They'll still be
         #  available in _MARKER.
         cls_dict.pop(field_name, None)
-
-    # Remove __dict__ itself.
-    cls_dict.pop('__dict__', None)
-
-    # Clear existing `__weakref__` descriptor, it belongs to a previous type:
-    cls_dict.pop('__weakref__', None)  # gh-102069
 
     # And finally create the class.
     qualname = getattr(cls, '__qualname__', None)
