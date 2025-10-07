@@ -1357,8 +1357,6 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Set the stack start address and stack size of a Python thread state.
 
-   *stack_size* must be greater than ``0``.
-
    On success, return ``0``.
    On failure, set an exception and return ``-1``.
 
