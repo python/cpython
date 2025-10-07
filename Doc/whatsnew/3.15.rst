@@ -887,6 +887,17 @@ New features
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
+* Add a :ref:`PyTupleWriter API <pytuplewriter>` to create :class:`tuple`:
+
+  * :c:func:`PyTupleWriter_Init`
+  * :c:func:`PyTupleWriter_Add`
+  * :c:func:`PyTupleWriter_AddSteal`
+  * :c:func:`PyTupleWriter_AddArray`
+  * :c:func:`PyTupleWriter_Finish`
+  * :c:func:`PyTupleWriter_Discard`
+
+  (Contributed by Victor Stinner in :gh:`139888`.)
+
 
 Porting to Python 3.15
 ----------------------
@@ -1017,6 +1028,9 @@ Deprecated C APIs
   since 3.15 and will be removed in 3.17.
   (Contributed by Nikita Sobolev in :gh:`136355`.)
 
+* Deprecate the :c:func:`_PyTuple_Resize` function:
+  use the new :ref:`PyTupleWriter API <pytuplewriter>` instead.
+  (Contributed by Victor Stinner in :gh:`139888`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 

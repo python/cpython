@@ -302,5 +302,71 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(tuples, [])
 
 
+class TupleWriterTest(unittest.TestCase):
+    def create_writer(self, size):
+        return _testcapi.PyTupleWriter(size)
+
+    def test_create(self):
+        # Test PyTupleWriter_Init()
+        writer = self.create_writer(0)
+        self.assertIs(writer.finish(), ())
+
+        writer = self.create_writer(123)
+        self.assertIs(writer.finish(), ())
+
+        with self.assertRaises(SystemError):
+            self.create_writer(-2)
+
+    def check_add(self, name):
+         writer = self.create_writer(3)
+         add = getattr(writer, name)
+         for ch in 'abc':
+             add(ch)
+         self.assertEqual(writer.finish(), ('a', 'b', 'c'))
+
+         writer = self.create_writer(0)
+         add = getattr(writer, name)
+         for i in range(1024):
+             add(i)
+         self.assertEqual(writer.finish(), tuple(range(1024)))
+
+         writer = self.create_writer(1)
+         add = getattr(writer, name)
+         with self.assertRaises(SystemError):
+             add(NULL)
+
+    def test_add(self):
+         # Test PyTupleWriter_Add()
+         self.check_add('add')
+
+    def test_add_steal(self):
+         # Test PyTupleWriter_AddSteal()
+         self.check_add('add_steal')
+
+    def test_add_array(self):
+         writer = self.create_writer(0)
+         writer.add_array(('a', 'b', 'c'))
+         writer.add_array(('d', 'e'))
+         self.assertEqual(writer.finish(), ('a', 'b', 'c', 'd', 'e'))
+
+         writer = self.create_writer(0)
+         writer.add_array(tuple(range(1024)))
+         self.assertEqual(writer.finish(), tuple(range(1024)))
+
+    def test_discard(self):
+         # test the small_tuple buffer (16 items)
+         writer = self.create_writer(3)
+         writer.add(object())
+         writer.add(object())
+         # must not leak references
+         writer.discard()
+
+         # test the tuple code path (17 items or more)
+         writer = self.create_writer(1024)
+         writer.add_array(tuple(range(1024)))
+         # must not leak references
+         writer.discard()
+
+
 if __name__ == "__main__":
     unittest.main()

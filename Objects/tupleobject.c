@@ -71,8 +71,8 @@ tuple_get_empty(void)
     return (PyObject *)&_Py_SINGLETON(tuple_empty);
 }
 
-PyObject *
-PyTuple_New(Py_ssize_t size)
+static PyObject *
+_PyTuple_NewNoTrack(Py_ssize_t size)
 {
     PyTupleObject *op;
     if (size == 0) {
@@ -85,9 +85,24 @@ PyTuple_New(Py_ssize_t size)
     for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
     }
-    _PyObject_GC_TRACK(op);
     return (PyObject *) op;
 }
+
+
+PyObject *
+PyTuple_New(Py_ssize_t size)
+{
+    if (size == 0) {
+        return tuple_get_empty();
+    }
+    PyObject *op = _PyTuple_NewNoTrack(size);
+    if (op == NULL) {
+        return NULL;
+    }
+    _PyObject_GC_TRACK(op);
+    return op;
+}
+
 
 Py_ssize_t
 PyTuple_Size(PyObject *op)
@@ -913,8 +928,8 @@ PyTypeObject PyTuple_Type = {
    efficiently.  In any case, don't use this if the tuple may already be
    known to some other part of the code. */
 
-int
-_PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
+static int
+tuple_resize(PyObject **pv, Py_ssize_t newsize, int track)
 {
     PyTupleObject *v;
     PyTupleObject *sv;
@@ -946,7 +961,12 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         /* The empty tuple is statically allocated so we never
            resize it in-place. */
         Py_DECREF(v);
-        *pv = PyTuple_New(newsize);
+        if (track) {
+            *pv = PyTuple_New(newsize);
+        }
+        else {
+            *pv = _PyTuple_NewNoTrack(newsize);
+        }
         return *pv == NULL ? -1 : 0;
     }
 
@@ -972,13 +992,31 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     }
     _Py_NewReferenceNoTotal((PyObject *) sv);
     /* Zero out items added by growing */
-    if (newsize > oldsize)
+    if (newsize > oldsize) {
         memset(&sv->ob_item[oldsize], 0,
                sizeof(*sv->ob_item) * (newsize - oldsize));
+    }
     *pv = (PyObject *) sv;
-    _PyObject_GC_TRACK(sv);
+    if (track) {
+        _PyObject_GC_TRACK(sv);
+    }
     return 0;
 }
+
+
+static int
+_PyTuple_ResizeNoTrack(PyObject **pv, Py_ssize_t newsize)
+{
+    return tuple_resize(pv, newsize, 0);
+}
+
+
+int
+_PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
+{
+    return tuple_resize(pv, newsize, 1);
+}
+
 
 /*********************** Tuple Iterator **************************/
 
@@ -1180,4 +1218,233 @@ _PyTuple_DebugMallocStats(FILE *out)
         _PyDebugAllocatorStats(out, buf, _Py_FREELIST_SIZE(tuples[i]),
                                _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
+}
+
+
+// --- Public PyTupleWriter API ----------------------------------------------
+
+typedef struct _PyTupleWriter {
+    PyObject* small_tuple[16];
+    PyObject *tuple;
+    PyObject **items;
+    size_t size;
+    size_t allocated;
+} _PyTupleWriter;
+
+static_assert(sizeof(_PyTupleWriter) <= sizeof(PyTupleWriter),
+              "_PyTupleWriter structure is too big");
+
+
+static inline void
+tuplewriter_free(_PyTupleWriter *writer)
+{
+#ifdef Py_DEBUG
+    memset(writer, 0xff, sizeof(*writer));
+#endif
+}
+
+
+static int
+_PyTupleWriter_SetSize(_PyTupleWriter *writer, size_t size)
+{
+    assert(size >= 1);
+
+    size += (size >> 1);  // Over-allocate by 50%
+
+    if (size > (size_t)PY_SSIZE_T_MAX) {
+        /* Check for overflow */
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    if (writer->tuple != NULL) {
+        if (_PyTuple_ResizeNoTrack(&writer->tuple, (Py_ssize_t)size) < 0) {
+            return -1;
+        }
+    }
+    else {
+        writer->tuple = _PyTuple_NewNoTrack((Py_ssize_t)size);
+        if (writer->tuple == NULL) {
+            return -1;
+        }
+
+        if (writer->size > 0) {
+            memcpy(_PyTuple_ITEMS(writer->tuple),
+                   writer->small_tuple,
+                   writer->size * sizeof(writer->small_tuple[0]));
+        }
+    }
+    writer->items = _PyTuple_ITEMS(writer->tuple);
+    writer->allocated = size;
+    return 0;
+}
+
+
+int
+PyTupleWriter_Init(PyTupleWriter *writer_, Py_ssize_t size)
+{
+    _PyTupleWriter *writer = (_PyTupleWriter *)writer_;
+    if (size < 0) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    writer->size = 0;
+
+    if (size != 0) {
+        writer->tuple = _PyTuple_NewNoTrack(size);
+        if (writer->tuple == NULL) {
+            tuplewriter_free(writer);
+            return -1;
+        }
+        writer->items = _PyTuple_ITEMS(writer->tuple);
+        writer->allocated = size;
+    }
+    else {
+#ifdef Py_DEBUG
+        memset(writer->small_tuple, 0xff, sizeof(writer->small_tuple));
+#endif
+        writer->tuple = NULL;
+        writer->items = writer->small_tuple;
+        writer->allocated = Py_ARRAY_LENGTH(writer->small_tuple);
+    }
+    return 0;
+}
+
+
+int
+PyTupleWriter_Add(PyTupleWriter *writer_, PyObject *item)
+{
+    _PyTupleWriter *writer = (_PyTupleWriter *)writer_;
+    if (item == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_BadInternalCall();
+        }
+        return -1;
+    }
+
+    if (writer->size >= writer->allocated) {
+        if (_PyTupleWriter_SetSize(writer, writer->size + 1) < 0) {
+            return -1;
+        }
+    }
+
+    writer->items[writer->size] = Py_NewRef(item);
+    writer->size++;
+    return 0;
+}
+
+
+int
+PyTupleWriter_AddSteal(PyTupleWriter *writer_, PyObject *item)
+{
+    _PyTupleWriter *writer = (_PyTupleWriter *)writer_;
+    if (item == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_BadInternalCall();
+        }
+        return -1;
+    }
+
+    if (writer->size >= writer->allocated) {
+        if (_PyTupleWriter_SetSize(writer, writer->size + 1) < 0) {
+            Py_DECREF(item);
+            return -1;
+        }
+    }
+
+    writer->items[writer->size] = item;
+    writer->size++;
+    return 0;
+}
+
+
+int
+PyTupleWriter_AddArray(PyTupleWriter *writer_,
+                       PyObject *const *array, Py_ssize_t size)
+{
+    _PyTupleWriter *writer = (_PyTupleWriter *)writer_;
+    if (size < 0) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    if ((writer->size + (size_t)size) > writer->allocated) {
+        if (_PyTupleWriter_SetSize(writer,
+                                   writer->size + (size_t)size) < 0) {
+            return -1;
+        }
+    }
+
+    PyObject **items = &writer->items[writer->size];
+    for (Py_ssize_t i=0; i < size; i++) {
+        *items++ = Py_NewRef(*array++);
+    }
+    writer->size += size;
+    return 0;
+}
+
+
+PyObject**
+_PyTupleWriter_GetItems(PyTupleWriter *writer_, Py_ssize_t *size)
+{
+    _PyTupleWriter *writer = (_PyTupleWriter *)writer_;
+    *size = writer->size;
+    return writer->items;
+}
+
+
+void
+PyTupleWriter_Discard(PyTupleWriter *writer_)
+{
+    _PyTupleWriter *writer = (_PyTupleWriter *)writer_;
+    if (writer == NULL) {
+        return;
+    }
+
+    if (writer->tuple != NULL) {
+        Py_DECREF(writer->tuple);
+    }
+    else {
+        PyObject **items = writer->items;
+        for (size_t i=0; i < writer->size; i++) {
+            Py_DECREF(items[i]);
+        }
+    }
+
+    tuplewriter_free(writer);
+}
+
+
+PyObject*
+PyTupleWriter_Finish(PyTupleWriter *writer_)
+{
+    _PyTupleWriter *writer = (_PyTupleWriter *)writer_;
+    if (writer->size == 0) {
+        PyTupleWriter_Discard(writer_);
+        // return the empty tuple singleton
+        return PyTuple_New(0);
+    }
+
+    PyObject *result;
+    if (writer->tuple != NULL) {
+        if (writer->size != writer->allocated) {
+            if (_PyTuple_ResizeNoTrack(&writer->tuple,
+                                       (Py_ssize_t)writer->size) < 0) {
+                PyTupleWriter_Discard(writer_);
+                return NULL;
+            }
+        }
+
+        result = writer->tuple;
+        writer->tuple = NULL;
+        _PyObject_GC_TRACK(result);
+    }
+    else {
+        result = _PyTuple_FromArraySteal(writer->items,
+                                         (Py_ssize_t)writer->size);
+    }
+
+    tuplewriter_free(writer);
+    return result;
 }

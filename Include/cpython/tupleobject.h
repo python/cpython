@@ -12,7 +12,7 @@ typedef struct {
     PyObject *ob_item[1];
 } PyTupleObject;
 
-PyAPI_FUNC(int) _PyTuple_Resize(PyObject **, Py_ssize_t);
+_Py_DEPRECATED_EXTERNALLY(3.15) PyAPI_FUNC(int) _PyTuple_Resize(PyObject **, Py_ssize_t);
 
 /* Cast argument to PyTupleObject* type. */
 #define _PyTuple_CAST(op) \
@@ -42,3 +42,23 @@ PyTuple_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
 PyAPI_FUNC(PyObject*) PyTuple_FromArray(
     PyObject *const *array,
     Py_ssize_t size);
+
+// --- Public PyUnicodeWriter API --------------------------------------------
+
+typedef struct PyTupleWriter {
+    char _reserved[sizeof(Py_uintptr_t) * 20];
+} PyTupleWriter;
+
+PyAPI_FUNC(int) PyTupleWriter_Init(PyTupleWriter *writer, Py_ssize_t size);
+PyAPI_FUNC(int) PyTupleWriter_Add(
+    PyTupleWriter *writer,
+    PyObject *item);
+PyAPI_FUNC(int) PyTupleWriter_AddSteal(
+    PyTupleWriter *writer,
+    PyObject *item);
+PyAPI_FUNC(int) PyTupleWriter_AddArray(
+    PyTupleWriter *writer,
+    PyObject *const *array,
+    Py_ssize_t size);
+PyAPI_FUNC(PyObject*) PyTupleWriter_Finish(PyTupleWriter *writer);
+PyAPI_FUNC(void) PyTupleWriter_Discard(PyTupleWriter *writer);
