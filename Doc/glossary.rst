@@ -21,7 +21,9 @@ Glossary
         right delimiters (parentheses, square brackets, curly braces or triple
         quotes), or after specifying a decorator.
 
-      * The :const:`Ellipsis` built-in constant.
+      .. index:: single: ...; ellipsis literal
+
+      * The three dots form of the :ref:`Ellipsis <bltin-ellipsis-object>` object.
 
    abstract base class
       Abstract base classes complement :term:`duck-typing` by
@@ -107,7 +109,7 @@ Glossary
       statements.
 
    asynchronous generator iterator
-      An object created by a :term:`asynchronous generator` function.
+      An object created by an :term:`asynchronous generator` function.
 
       This is an :term:`asynchronous iterator` which when called using the
       :meth:`~object.__anext__` method returns an awaitable object which will execute
@@ -467,6 +469,7 @@ Glossary
       core and with user code.
 
    f-string
+   f-strings
       String literals prefixed with ``f`` or ``F`` are commonly called
       "f-strings" which is short for
       :ref:`formatted string literals <f-strings>`.  See also :pep:`498`.
@@ -1248,8 +1251,9 @@ Glossary
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
       :meth:`~object.__getitem__` and :meth:`~object.__len__`, adding
-      :meth:`!count`, :meth:`!index`, :meth:`~object.__contains__`, and
-      :meth:`~object.__reversed__`. Types that implement this expanded
+      :meth:`~sequence.count`, :meth:`~sequence.index`,
+      :meth:`~object.__contains__`, and :meth:`~object.__reversed__`.
+      Types that implement this expanded
       interface can be registered explicitly using
       :func:`~abc.ABCMeta.register`. For more documentation on sequence
       methods generally, see
@@ -1328,6 +1332,7 @@ Glossary
       See also :term:`borrowed reference`.
 
    t-string
+   t-strings
       String literals prefixed with ``t`` or ``T`` are commonly called
       "t-strings" which is short for
       :ref:`template string literals <t-strings>`.

@@ -1723,6 +1723,21 @@ class TestBooleanExpression(unittest.TestCase):
         self.assertIs(res, v[3])
         self.assertEqual([e.called for e in v], [1, 1, 0, 1, 0])
 
+    def test_exception(self):
+        # See gh-137288
+        class Foo:
+            def __bool__(self):
+                raise NotImplementedError()
+
+        a = Foo()
+        b = Foo()
+
+        with self.assertRaises(NotImplementedError):
+            bool(a)
+
+        with self.assertRaises(NotImplementedError):
+            c = a or b
+
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
     # Ensure that compiled code snippets have correct line and column numbers

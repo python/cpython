@@ -231,7 +231,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    *linejunk*: A function that accepts a single string argument, and returns
    true if the string is junk, or false if not. The default is ``None``. There
    is also a module-level function :func:`IS_LINE_JUNK`, which filters out lines
-   without visible characters, except for at most one pound character (``'#'``)
+   without visible characters, except for at most one hash character (``'#'``)
    -- however the underlying :class:`SequenceMatcher` class does a dynamic
    analysis of which lines are so frequent as to constitute noise, and this
    usually works better than using this function.
@@ -351,9 +351,9 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 .. seealso::
 
-   `Pattern Matching: The Gestalt Approach <https://www.drdobbs.com/database/pattern-matching-the-gestalt-approach/184407970>`_
+   `Pattern Matching: The Gestalt Approach <https://jacobfilipp.com/DrDobbs/articles/DDJ/1988/8807/8807c/8807c.htm>`_
       Discussion of a similar algorithm by John W. Ratcliff and D. E. Metzener. This
-      was published in `Dr. Dobb's Journal <https://www.drdobbs.com/>`_ in July, 1988.
+      was published in Dr. Dobb's Journal in July, 1988.
 
 
 .. _sequence-matcher:
