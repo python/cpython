@@ -521,6 +521,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Override Bdb methods
 
+    def stop_here(self, frame):
+        """Override bdb's stop_here to add message when skipping ignored modules."""
+        if self.skip and self.is_skipped_module(frame.f_globals.get('__name__', '')):
+            self.message('[... skipped 1 ignored module(s)]')
+            return False
+        return super().stop_here(frame)
+
     def user_call(self, frame, argument_list):
         """This method is called when there is the remote possibility
         that we ever need to stop in this function."""

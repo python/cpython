@@ -1811,6 +1811,7 @@ def test_pdb_skip_modules():
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()
     -> string.capwords('FOO')
     (Pdb) step
+    [... skipped 1 ignored module(s)]
     --Return--
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()->None
     -> string.capwords('FOO')
@@ -1884,6 +1885,7 @@ def test_pdb_skip_modules_with_callback():
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[0]>(5)skip_module()
     -> mod.foo_pony(callback)
     (Pdb) step
+    [... skipped 1 ignored module(s)]
     --Call--
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[0]>(2)callback()
     -> def callback():
@@ -1895,6 +1897,7 @@ def test_pdb_skip_modules_with_callback():
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[0]>(3)callback()->None
     -> return None
     (Pdb) step
+    [... skipped 1 ignored module(s)]
     --Return--
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[0]>(5)skip_module()->None
     -> mod.foo_pony(callback)
@@ -5131,6 +5134,56 @@ def test_ignore_module_navigation():
     'back at inner_func'
     (Pdb) continue
     'done'
+    """
+
+
+def test_ignore_module_stepping():
+    """Test that ignore_module works with step/next commands.
+
+    >>> def test_stepping():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     result = ignore_test_middle.middle_func(lambda: x + 1)
+    ...     y = result + 1
+    ...     return y
+
+    Test step command with ignored modules - should skip into ignored module
+    but show skip message:
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'ignore_module ignore_test_middle',
+    ...     'step',  # Step to the function call
+    ...     'step',  # Step into call - should skip middle_func
+    ...     'return',  # Return from lambda
+    ...     'step',  # Step to next line
+    ...     'p y',
+    ...     'continue',
+    ... ]):
+    ...     test_stepping()
+    > <doctest test.test_pdb.test_ignore_module_stepping[0]>(3)test_stepping()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) ignore_module ignore_test_middle
+    Ignoring module: ignore_test_middle
+    (Pdb) step
+    > <doctest test.test_pdb.test_ignore_module_stepping[0]>(4)test_stepping()
+    -> result = ignore_test_middle.middle_func(lambda: x + 1)
+    (Pdb) step
+    [... skipped 1 ignored module(s)]
+    --Call--
+    > <doctest test.test_pdb.test_ignore_module_stepping[0]>(4)<lambda>()
+    -> result = ignore_test_middle.middle_func(lambda: x + 1)
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_ignore_module_stepping[0]>(4)<lambda>()->2
+    -> result = ignore_test_middle.middle_func(lambda: x + 1)
+    (Pdb) step
+    [... skipped 1 ignored module(s)]
+    > <doctest test.test_pdb.test_ignore_module_stepping[0]>(5)test_stepping()
+    -> y = result + 1
+    (Pdb) p y
+    *** NameError: name 'y' is not defined
+    (Pdb) continue
+    3
     """
 
 
