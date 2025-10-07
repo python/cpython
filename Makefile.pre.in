@@ -1271,6 +1271,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pylock.h \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
+		$(srcdir)/Include/cpython/marshal.h \
 		$(srcdir)/Include/cpython/memoryobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
 		$(srcdir)/Include/cpython/modsupport.h \
