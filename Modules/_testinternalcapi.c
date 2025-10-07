@@ -2422,7 +2422,11 @@ set_vectorcall_nop(PyObject *self, PyObject *func)
 static PyObject *
 stackref_to_tuple(_PyStackRef ref, PyObject *op)
 {
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+    int flags = ref.index & Py_TAG_BITS;
+#else
     int flags = ref.bits & Py_TAG_BITS;
+#endif
     return Py_BuildValue("(Ii)", Py_REFCNT(op), flags);
 }
 
