@@ -80,7 +80,9 @@ The following warnings category classes are currently defined:
 |                                  | unless triggered by code in ``__main__``).    |
 +----------------------------------+-----------------------------------------------+
 | :exc:`SyntaxWarning`             | Base category for warnings about dubious      |
-|                                  | syntactic features.                           |
+|                                  | syntactic features (typically emitted when    |
+|                                  | compiling Python source code, and hence       |
+|                                  | may not be suppressed by runtime filters)     |
 +----------------------------------+-----------------------------------------------+
 | :exc:`RuntimeWarning`            | Base category for warnings about dubious      |
 |                                  | runtime features.                             |
@@ -458,7 +460,7 @@ Available Functions
           lower.one_way(**kw)
 
    This makes the warning refer to both the ``example.lower.one_way()`` and
-   ``package.higher.another_way()`` call sites only from calling code living
+   ``example.higher.another_way()`` call sites only from calling code living
    outside of ``example`` package.
 
    *source*, if supplied, is the destroyed object which emitted a

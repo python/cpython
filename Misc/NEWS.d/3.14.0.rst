@@ -1,0 +1,78 @@
+.. date: 2025-10-06-23-56-36
+.. gh-issue: 124111
+.. nonce: KOlBvs
+.. release date: 2025-10-07
+.. section: macOS
+
+Update macOS installer to use Tcl/Tk 8.6.17.
+
+..
+
+.. date: 2025-10-04-12-29-31
+.. gh-issue: 139573
+.. nonce: vVpHaP
+.. section: macOS
+
+Updated bundled version of OpenSSL to 3.0.18.
+
+..
+
+.. date: 2025-10-04-12-18-45
+.. gh-issue: 139573
+.. nonce: EO9kVB
+.. section: Windows
+
+Updated bundled version of OpenSSL to 3.0.18.
+
+..
+
+.. date: 2025-09-25-10-31-02
+.. gh-issue: 139330
+.. nonce: 5WWkY0
+.. section: Tools/Demos
+
+SBOM generation tool didn't cross-check the version and checksum values
+against the ``Modules/expat/refresh.sh`` script, leading to the values
+becoming out-of-date during routine updates.
+
+..
+
+.. date: 2025-08-28-06-22-26
+.. gh-issue: 132006
+.. nonce: eZQmc6
+.. section: Tools/Demos
+
+XCframeworks now include privacy manifests to satisfy Apple App Store
+submission requirements.
+
+..
+
+.. date: 2025-08-27-11-14-53
+.. gh-issue: 138171
+.. nonce: Suz8ob
+.. section: Tools/Demos
+
+A script for building an iOS XCframework was added. As part of this change,
+the top level ``iOS`` folder has been moved to be a subdirectory of the
+``Apple`` folder.
+
+..
+
+.. date: 2025-09-29-00-01-28
+.. gh-issue: 139400
+.. nonce: X2T-jO
+.. section: Security
+
+:mod:`xml.parsers.expat`: Make sure that parent Expat parsers are only
+garbage-collected once they are no longer referenced by subparsers created
+by :meth:`~xml.parsers.expat.xmlparser.ExternalEntityParserCreate`. Patch by
+Sebastian Pipping.
+
+..
+
+.. date: 2025-09-25-07-33-43
+.. gh-issue: 139312
+.. nonce: ygE8AC
+.. section: Library
+
+Upgrade bundled libexpat to 2.7.3

@@ -3324,6 +3324,14 @@
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
             }
+            // _CHECK_RECURSION_REMAINING
+            {
+                if (tstate->py_recursion_remaining <= 1) {
+                    UPDATE_MISS_STATS(CALL_KW);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
+                    JUMP_TO_PREDICTED(CALL_KW);
+                }
+            }
             // _PY_FRAME_KW
             {
                 kwnames = stack_pointer[-1];
