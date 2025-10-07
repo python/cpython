@@ -501,7 +501,6 @@ PYTHON_OBJS=	\
 		Python/pystrtod.o \
 		Python/pystrhex.o \
 		Python/dtoa.o \
-		Python/formatter_unicode.o \
 		Python/fileutils.o \
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
@@ -558,6 +557,7 @@ OBJECT_OBJS=	\
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
 		Objects/typevarobject.o \
+		Objects/unicode_formatter.o \
 		Objects/unicodeobject.o \
 		Objects/unicodectype.o \
 		Objects/unionobject.o \
@@ -2090,7 +2090,6 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/fastsearch.h \
 		$(srcdir)/Objects/stringlib/find.h \
 		$(srcdir)/Objects/stringlib/find_max_char.h \
-		$(srcdir)/Objects/stringlib/localeutil.h \
 		$(srcdir)/Objects/stringlib/partition.h \
 		$(srcdir)/Objects/stringlib/replace.h \
 		$(srcdir)/Objects/stringlib/repr.h \

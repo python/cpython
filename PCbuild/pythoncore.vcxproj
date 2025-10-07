@@ -193,6 +193,7 @@
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tracemalloc.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
+    <ClInclude Include="..\Include\cpython\unicode_formatter.h" />
     <ClInclude Include="..\Include\cpython\unicodeobject.h" />
     <ClInclude Include="..\Include\cpython\warnings.h" />
     <ClInclude Include="..\Include\cpython\weakrefobject.h" />
@@ -602,7 +603,6 @@
     <ClCompile Include="..\Python\errors.c" />
     <ClCompile Include="..\Python\fileutils.c" />
     <ClCompile Include="..\Python\flowgraph.c" />
-    <ClCompile Include="..\Python\formatter_unicode.c" />
     <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\frozen.c">
       <AdditionalIncludeDirectories>$(GeneratedFrozenModulesDir)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

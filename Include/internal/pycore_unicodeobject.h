@@ -11,6 +11,14 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
+
+extern void _PyUnicode_Fill(
+    int kind,
+    void *data,
+    Py_UCS4 value,
+    Py_ssize_t start,
+    Py_ssize_t length);
+
 /* --- Characters Type APIs ----------------------------------------------- */
 
 extern int _PyUnicode_IsXidStart(Py_UCS4 ch);
@@ -239,21 +247,6 @@ extern PyObject* _PyUnicode_XStrip(
     PyObject *sepobj
     );
 
-
-/* Using explicit passed-in values, insert the thousands grouping
-   into the string pointed to by buffer.  For the argument descriptions,
-   see Objects/stringlib/localeutil.h */
-extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
-    _PyUnicodeWriter *writer,
-    Py_ssize_t n_buffer,
-    PyObject *digits,
-    Py_ssize_t d_pos,
-    Py_ssize_t n_digits,
-    Py_ssize_t min_width,
-    const char *grouping,
-    PyObject *thousands_sep,
-    Py_UCS4 *maxchar,
-    int forward);
 
 /* Dedent a string.
    Behaviour is expected to be an exact match of `textwrap.dedent`.
