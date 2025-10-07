@@ -527,7 +527,8 @@ ZipFile Objects
       a :exc:`RuntimeError` was raised.
 
    .. versionchanged:: 3.14
-      Now respects :envvar:`SOURCE_DATE_EPOCH` environment variable.
+      Now respects the :envvar:`SOURCE_DATE_EPOCH` environment variable. If set, it uses this
+      value as the modification timestamp for the file written into the ZIP archive.
 
 .. method:: ZipFile.mkdir(zinfo_or_directory, mode=511)
 
