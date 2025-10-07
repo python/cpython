@@ -1799,6 +1799,9 @@ dummy_func(
             ERROR_IF(v_o == NULL);
             if (PyLazyImport_CheckExact(v_o)) {
                 PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                if (l_v != NULL && PyDict_SetItem(GLOBALS(), name, l_v) < 0) {
+                    JUMP_TO_LABEL(error);
+                }
                 Py_DECREF(v_o);
                 v_o = l_v;
                 ERROR_IF(v_o == NULL);

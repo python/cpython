@@ -9409,6 +9409,11 @@
             if (PyLazyImport_CheckExact(v_o)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (l_v != NULL && PyDict_SetItem(GLOBALS(), name, l_v) < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+                _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_DECREF(v_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 v_o = l_v;
