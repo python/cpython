@@ -1184,6 +1184,12 @@ code, or when embedding the Python interpreter:
    interpreter lock is also shared by all threads, regardless of to which
    interpreter they belong.
 
+   .. versionchanged:: 3.12
+
+      :pep:`684` introduced the possibility
+      of a :ref:`per-interpreter GIL <per-interpreter-gil>`.
+      See :c:func:`Py_NewInterpreterFromConfig`.
+
 
 .. c:type:: PyThreadState
 
@@ -1541,6 +1547,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    This is not a replacement for :c:func:`PyModule_GetState()`, which
    extensions should use to store interpreter-specific state information.
 
+   The returned dictionary is borrowed from the interpreter and is valid until
+   interpreter shutdown.
+
    .. versionadded:: 3.8
 
 
@@ -1875,6 +1884,8 @@ function. You can create and destroy them using the following functions:
    haven't been explicitly destroyed at that point.
 
 
+.. _per-interpreter-gil:
+
 A Per-Interpreter GIL
 ---------------------
 
@@ -1886,7 +1897,7 @@ being blocked by other interpreters or blocking any others.  Thus a
 single Python process can truly take advantage of multiple CPU cores
 when running Python code.  The isolation also encourages a different
 approach to concurrency than that of just using threads.
-(See :pep:`554`.)
+(See :pep:`554` and :pep:`684`.)
 
 Using an isolated interpreter requires vigilance in preserving that
 isolation.  That especially means not sharing any objects or mutable
@@ -1990,6 +2001,10 @@ pointer and a void pointer argument.
       now scheduled to be called from the subinterpreter, rather than being
       called from the main interpreter. Each subinterpreter now has its own
       list of scheduled calls.
+
+   .. versionchanged:: 3.12
+      This function now always schedules *func* to be run in the main
+      interpreter.
 
 .. _profiling:
 

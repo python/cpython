@@ -279,6 +279,7 @@ Known values:
     Python 3.14b1 3624 (Don't optimize LOAD_FAST when local is killed by DELETE_FAST)
     Python 3.14b3 3625 (Fix handling of opcodes that may leave operands on the stack when optimizing LOAD_FAST)
     Python 3.14rc2 3626 (Fix missing exception handlers in logical expression)
+    Python 3.14rc3 3627 (Fix miscompilation of some module-level annotations)
 
     Python 3.15 will start with 3650
 
@@ -291,7 +292,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3626
+#define PYC_MAGIC_NUMBER 3627
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \
