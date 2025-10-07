@@ -590,6 +590,7 @@ the items are surrounded by parentheses. For example::
       statement.
 
 .. _match:
+.. _case:
 
 The :keyword:`!match` statement
 ===============================
