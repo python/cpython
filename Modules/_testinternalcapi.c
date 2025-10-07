@@ -2440,22 +2440,13 @@ stackref_from_object_new(PyObject *self, PyObject *op)
 }
 
 static PyObject *
-stackref_from_object_new2(PyObject *self, PyObject *op)
-{
-    _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
-    PyObject *obj = stackref_to_tuple(ref, op);
-    PyObject *op2 = PyStackRef_AsPyObjectSteal(ref);
-    Py_DECREF(op2);
-    return obj;
-}
-
-static PyObject *
 stackref_from_object_steal_with_incref(PyObject *self, PyObject *op)
 {
     Py_INCREF(op);
     _PyStackRef ref = PyStackRef_FromPyObjectSteal(op);
     PyObject *obj = stackref_to_tuple(ref, op);
-    PyStackRef_CLOSE(ref);
+    PyObject *op2 = PyStackRef_AsPyObjectSteal(ref);
+    Py_DECREF(op2);
     return obj;
 }
 
@@ -2622,7 +2613,6 @@ static PyMethodDef module_functions[] = {
     {"simple_pending_call", simple_pending_call, METH_O},
     {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
     {"stackref_from_object_new", stackref_from_object_new, METH_O},
-    {"stackref_from_object_new2", stackref_from_object_new2, METH_O},
     {"stackref_from_object_steal_with_incref", stackref_from_object_steal_with_incref, METH_O},
     {"stackref_make_heap_safe", stackref_make_heap_safe, METH_O},
     {"stackref_make_heap_safe_with_borrow", stackref_make_heap_safe_with_borrow, METH_O},

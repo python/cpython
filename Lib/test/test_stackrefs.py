@@ -6,74 +6,50 @@ try:
 except ImportError:
     _testinternalcapi = None
 
-
-class StackRef:
-    def __init__(self, obj, flags):
-        self.obj = obj
-        self.flags = flags
-        self.refcount = sys.getrefcount(obj)
-
-    def __str__(self):
-        return f"StackRef(obj={self.obj}, flags={self.flags}, refcount={self.refcount})"
-
-    def __eq__(self, other):
-        return (
-            self.obj is other.obj
-            and self.flags == other.flags
-            and self.refcount == other.refcount
-        )
-
-    def __hash__(self):
-        return tuple.__hash__((self.obj, self.flags, self.refcount))
-
-
 @cpython_only
-class TestStackRef(unittest.TestCase):
+class TestDefinition(unittest.TestCase):
 
-    def test_equivalent(self):
+    def test_equivalence(self):
         def run_with_refcount_check(self, func, obj):
             refcount = sys.getrefcount(obj)
             res = func(obj)
             self.assertEqual(sys.getrefcount(obj), refcount)
             return res
 
-        def stackref_from_object_borrow(obj):
-            return _testinternalcapi.stackref_from_object_borrow(obj)
-
-        funcs = [
+        funcs_with_incref = [
             _testinternalcapi.stackref_from_object_new,
-            _testinternalcapi.stackref_from_object_new2,
             _testinternalcapi.stackref_from_object_steal_with_incref,
             _testinternalcapi.stackref_make_heap_safe,
             _testinternalcapi.stackref_make_heap_safe_with_borrow,
             _testinternalcapi.stackref_strong_reference,
         ]
 
-        funcs2 = [
+        funcs_with_borrow = [
             _testinternalcapi.stackref_from_object_borrow,
             _testinternalcapi.stackref_dup_borrowed_with_close,
         ]
 
-        for obj in (None, True, False, 42, '1'):
+        immortal_objs = (None, True, False, 42, '1')
+
+        for obj in immortal_objs:
             results = set()
-            for func in funcs + funcs2:
+            for func in funcs_with_incref + funcs_with_borrow:
                 res = run_with_refcount_check(self, func, obj)
-                #print(func.__name__, obj, res)
                 results.add(res)
             self.assertEqual(len(results), 1)
 
-        for obj in (5000, range(10)):
+        mortal_objs = (5000, 3+2j, range(10))
+
+        for obj in mortal_objs:
             results = set()
-            for func in funcs:
+            for func in funcs_with_incref:
                 res = run_with_refcount_check(self, func, obj)
-                #print(func.__name__, obj, res)
                 results.add(res)
             self.assertEqual(len(results), 1)
 
             results = set()
-            for func in funcs2:
+            for func in funcs_with_borrow:
                 res = run_with_refcount_check(self, func, obj)
-                #print(func.__name__, obj, res)
                 results.add(res)
             self.assertEqual(len(results), 1)
 
