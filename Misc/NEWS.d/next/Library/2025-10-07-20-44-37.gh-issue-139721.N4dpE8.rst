@@ -1,0 +1,5 @@
+Add ``ignore_module`` and ``unignore_module`` commands to :mod:`pdb` to
+allow skipping frames from specified modules during debugging. When a module
+is ignored, the debugger will automatically skip over its frames during
+step, next, continue, up, and down commands. Supports wildcard patterns via
+:mod:`fnmatch` for ignoring submodules.

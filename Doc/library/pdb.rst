@@ -438,10 +438,16 @@ can be overridden by the local file.
    Move the current frame *count* (default one) levels down in the stack trace
    (to a newer frame).
 
+   Frames from ignored modules will be skipped. Use :pdbcmd:`ignore_module` to
+   ignore modules and :pdbcmd:`unignore_module` to stop ignoring them.
+
 .. pdbcommand:: u(p) [count]
 
    Move the current frame *count* (default one) levels up in the stack trace (to
    an older frame).
+
+   Frames from ignored modules will be skipped. Use :pdbcmd:`ignore_module` to
+   ignore modules and :pdbcmd:`unignore_module` to stop ignoring them.
 
 .. pdbcommand:: b(reak) [([filename:]lineno | function) [, condition]]
 
@@ -717,6 +723,47 @@ can be overridden by the local file.
    .. versionchanged:: 3.13
       :pdbcmd:`interact` directs its output to the debugger's
       output channel rather than :data:`sys.stderr`.
+
+.. pdbcommand:: ignore_module [module_name]
+
+   Add a module to the list of modules to skip when stepping, continuing, or
+   navigating frames. When a module is ignored, the debugger will automatically
+   skip over frames from that module during :pdbcmd:`step`, :pdbcmd:`next`,
+   :pdbcmd:`continue`, :pdbcmd:`up`, and :pdbcmd:`down` commands.
+
+   Supports wildcard patterns using glob-style matching (via :mod:`fnmatch`).
+
+   Without *module_name*, list the currently ignored modules.
+
+   Examples::
+
+      (Pdb) ignore_module threading      # Skip threading module frames
+      (Pdb) ignore_module asyncio.*      # Skip all asyncio submodules
+      (Pdb) ignore_module *.tests        # Skip all test modules
+      (Pdb) ignore_module                # List currently ignored modules
+
+   Common use cases:
+
+   - Skip framework code (``django.*``, ``flask.*``, ``asyncio.*``)
+   - Skip standard library modules (``threading``, ``multiprocessing``, ``logging.*``)
+   - Skip test framework internals (``*pytest*``, ``unittest.*``)
+
+   .. versionadded:: 3.15
+
+.. pdbcommand:: unignore_module [module_name]
+
+   Remove a module from the list of modules to skip when stepping or navigating
+   frames. This will allow the debugger to step into frames from the specified
+   module again.
+
+   Without *module_name*, list the currently ignored modules.
+
+   Example::
+
+      (Pdb) unignore_module threading    # Stop ignoring threading module frames
+      (Pdb) unignore_module asyncio.*    # Remove the asyncio.* pattern
+
+   .. versionadded:: 3.15
 
 .. _debugger-aliases:
 

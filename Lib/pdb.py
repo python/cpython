@@ -1774,6 +1774,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Move the current frame count (default one) levels up in the
         stack trace (to an older frame).
+
+        Will skip frames from ignored modules.
         """
         if self.curindex == 0:
             self.error('Oldest frame')
@@ -1786,7 +1788,30 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if count < 0:
             newframe = 0
         else:
-            newframe = max(0, self.curindex - count)
+            # Skip over ignored modules
+            counter = 0
+            module_skipped = 0
+            for i in range(self.curindex - 1, -1, -1):
+                frame = self.stack[i][0]
+                should_skip_module = (self.skip and
+                    self.is_skipped_module(frame.f_globals.get('__name__', '')))
+
+                if should_skip_module:
+                    module_skipped += 1
+                    continue
+                counter += 1
+                if counter >= count:
+                    break
+            else:
+                # No valid frames found
+                self.error('All frames above are from ignored modules. '
+                          'Use "unignore_module" to allow stepping into them.')
+                return
+
+            newframe = i
+            if module_skipped:
+                self.message(f'[... skipped {module_skipped} frame(s) '
+                           'from ignored modules]')
         self._select_frame(newframe)
     do_u = do_up
 
@@ -1795,6 +1820,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Move the current frame count (default one) levels down in the
         stack trace (to a newer frame).
+
+        Will skip frames from ignored modules.
         """
         if self.curindex + 1 == len(self.stack):
             self.error('Newest frame')
@@ -1807,7 +1834,30 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if count < 0:
             newframe = len(self.stack) - 1
         else:
-            newframe = min(len(self.stack) - 1, self.curindex + count)
+            # Skip over ignored modules
+            counter = 0
+            module_skipped = 0
+            for i in range(self.curindex + 1, len(self.stack)):
+                frame = self.stack[i][0]
+                should_skip_module = (self.skip and
+                    self.is_skipped_module(frame.f_globals.get('__name__', '')))
+
+                if should_skip_module:
+                    module_skipped += 1
+                    continue
+                counter += 1
+                if counter >= count:
+                    break
+            else:
+                # No valid frames found
+                self.error('All frames below are from ignored modules. '
+                          'Use "unignore_module" to allow stepping into them.')
+                return
+
+            newframe = i
+            if module_skipped:
+                self.message(f'[... skipped {module_skipped} frame(s) '
+                           'from ignored modules]')
         self._select_frame(newframe)
     do_d = do_down
 
@@ -2326,6 +2376,69 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             console = _PdbInteractiveConsole(ns, message=self.message)
             console.interact(banner="*pdb interact start*",
                              exitmsg="*exit from pdb interact command*")
+
+    def _show_ignored_modules(self):
+        """Display currently ignored modules."""
+        if self.skip:
+            self.message(f'Currently ignored modules: {sorted(self.skip)}')
+        else:
+            self.message('No modules are currently ignored.')
+
+    def do_ignore_module(self, arg):
+        """ignore_module [module_name]
+
+        Add a module to the list of modules to skip when stepping,
+        continuing, or navigating frames. When a module is ignored,
+        the debugger will automatically skip over frames from that
+        module during step, next, continue, up, and down commands.
+
+        Supports wildcard patterns using glob-style matching:
+
+        Usage:
+            ignore_module threading     # Skip threading module frames
+            ignore_module asyncio.*     # Skip all asyncio submodules
+            ignore_module *.tests       # Skip all test modules
+            ignore_module               # List currently ignored modules
+        """
+        if self.skip is None:
+            self.skip = set()
+
+        module_name = arg.strip()
+
+        if not module_name:
+            self._show_ignored_modules()
+            return
+
+        self.skip.add(module_name)
+        self.message(f'Ignoring module: {module_name}')
+
+    def do_unignore_module(self, arg):
+        """unignore_module [module_name]
+
+        Remove a module from the list of modules to skip when stepping
+        or navigating frames. This will allow the debugger to step into
+        frames from the specified module.
+
+        Usage:
+            unignore_module threading   # Stop ignoring threading module frames
+            unignore_module asyncio.*   # Remove asyncio.* pattern
+            unignore_module             # List currently ignored modules
+        """
+        if self.skip is None:
+            self.skip = set()
+
+        module_name = arg.strip()
+
+        if not module_name:
+            self._show_ignored_modules()
+            return
+
+        try:
+            self.skip.remove(module_name)
+            self.message(f'No longer ignoring module: {module_name}')
+        except KeyError:
+            self.error(f'Module {module_name} is not currently ignored')
+            self._show_ignored_modules()
 
     def do_alias(self, arg):
         """alias [name [command]]
