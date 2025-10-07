@@ -1,11 +1,11 @@
 # Adapted from mypy (mypy/build.py) under the MIT license.
 
-from typing import *
+from collections.abc import Iterable, Iterator, Set
 
 
 def strongly_connected_components(
-    vertices: AbstractSet[str], edges: Dict[str, AbstractSet[str]]
-) -> Iterator[AbstractSet[str]]:
+    vertices: Set[str], edges: dict[str, Set[str]]
+) -> Iterator[Set[str]]:
     """Compute Strongly Connected Components of a directed graph.
 
     Args:
@@ -20,12 +20,12 @@ def strongly_connected_components(
 
     From https://code.activestate.com/recipes/578507-strongly-connected-components-of-a-directed-graph/.
     """
-    identified: Set[str] = set()
-    stack: List[str] = []
-    index: Dict[str, int] = {}
-    boundaries: List[int] = []
+    identified: set[str] = set()
+    stack: list[str] = []
+    index: dict[str, int] = {}
+    boundaries: list[int] = []
 
-    def dfs(v: str) -> Iterator[Set[str]]:
+    def dfs(v: str) -> Iterator[set[str]]:
         index[v] = len(stack)
         stack.append(v)
         boundaries.append(index[v])
@@ -50,8 +50,8 @@ def strongly_connected_components(
 
 
 def topsort(
-    data: Dict[AbstractSet[str], Set[AbstractSet[str]]]
-) -> Iterable[AbstractSet[AbstractSet[str]]]:
+    data: dict[Set[str], set[Set[str]]]
+) -> Iterable[Set[Set[str]]]:
     """Topological sort.
 
     Args:
@@ -94,12 +94,12 @@ def topsort(
             break
         yield ready
         data = {item: (dep - ready) for item, dep in data.items() if item not in ready}
-    assert not data, "A cyclic dependency exists amongst %r" % data
+    assert not data, f"A cyclic dependency exists amongst {data}"
 
 
 def find_cycles_in_scc(
-    graph: Dict[str, AbstractSet[str]], scc: AbstractSet[str], start: str
-) -> Iterable[List[str]]:
+    graph: dict[str, Set[str]], scc: Set[str], start: str
+) -> Iterable[list[str]]:
     """Find cycles in SCC emanating from start.
 
     Yields lists of the form ['A', 'B', 'C', 'A'], which means there's
@@ -117,7 +117,7 @@ def find_cycles_in_scc(
     assert start in graph
 
     # Recursive helper that yields cycles.
-    def dfs(node: str, path: List[str]) -> Iterator[List[str]]:
+    def dfs(node: str, path: list[str]) -> Iterator[list[str]]:
         if node in path:
             yield path + [node]
             return

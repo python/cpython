@@ -239,9 +239,11 @@ static const PyConfigSpec PYPRECONFIG_SPEC[] = {
 
 
 // Forward declarations
-static PyObject*
-config_get(const PyConfig *config, const PyConfigSpec *spec,
-           int use_sys);
+static PyObject* config_get(const PyConfig *config, const PyConfigSpec *spec,
+                            int use_sys);
+static void initconfig_free_wstr(wchar_t *member);
+static void initconfig_free_wstr_list(PyWideStringList *list);
+static void initconfig_free_config(const PyConfig *config);
 
 
 /* --- Command line options --------------------------------------- */
@@ -3725,6 +3727,9 @@ PyInitConfig_Free(PyInitConfig *config)
     if (config == NULL) {
         return;
     }
+
+    initconfig_free_config(&config->config);
+    PyMem_RawFree(config->inittab);
     free(config->err_msg);
     free(config);
 }
@@ -4093,13 +4098,51 @@ PyInitConfig_SetStr(PyInitConfig *config, const char *name, const char* value)
 }
 
 
+static void
+initconfig_free_wstr(wchar_t *member)
+{
+    if (member) {
+        free(member);
+    }
+}
+
+
+static void
+initconfig_free_wstr_list(PyWideStringList *list)
+{
+    for (Py_ssize_t i = 0; i < list->length; i++) {
+        free(list->items[i]);
+    }
+    free(list->items);
+}
+
+
+static void
+initconfig_free_config(const PyConfig *config)
+{
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        void *member = config_get_spec_member(config, spec);
+        if (spec->type == PyConfig_MEMBER_WSTR
+            || spec->type == PyConfig_MEMBER_WSTR_OPT)
+        {
+            wchar_t *wstr = *(wchar_t **)member;
+            initconfig_free_wstr(wstr);
+        }
+        else if (spec->type == PyConfig_MEMBER_WSTR_LIST) {
+            initconfig_free_wstr_list(member);
+        }
+    }
+}
+
+
 static int
-_PyWideStringList_FromUTF8(PyInitConfig *config, PyWideStringList *list,
-                           Py_ssize_t length, char * const *items)
+initconfig_set_str_list(PyInitConfig *config, PyWideStringList *list,
+                        Py_ssize_t length, char * const *items)
 {
     PyWideStringList wlist = _PyWideStringList_INIT;
     size_t size = sizeof(wchar_t*) * length;
-    wlist.items = (wchar_t **)PyMem_RawMalloc(size);
+    wlist.items = (wchar_t **)malloc(size);
     if (wlist.items == NULL) {
         config->status = _PyStatus_NO_MEMORY();
         return -1;
@@ -4108,14 +4151,14 @@ _PyWideStringList_FromUTF8(PyInitConfig *config, PyWideStringList *list,
     for (Py_ssize_t i = 0; i < length; i++) {
         wchar_t *arg = utf8_to_wstr(config, items[i]);
         if (arg == NULL) {
-            _PyWideStringList_Clear(&wlist);
+            initconfig_free_wstr_list(&wlist);
             return -1;
         }
         wlist.items[i] = arg;
         wlist.length++;
     }
 
-    _PyWideStringList_Clear(list);
+    initconfig_free_wstr_list(list);
     *list = wlist;
     return 0;
 }
@@ -4136,7 +4179,7 @@ PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
         return -1;
     }
     PyWideStringList *list = raw_member;
-    if (_PyWideStringList_FromUTF8(config, list, length, items) < 0) {
+    if (initconfig_set_str_list(config, list, length, items) < 0) {
         return -1;
     }
 
