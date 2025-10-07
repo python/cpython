@@ -104,12 +104,54 @@ _check_tuple_item_is_NULL(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
+static PyObject *
+tuple_fromarray(PyObject* Py_UNUSED(module), PyObject *args)
+{
+    PyObject *src;
+    if (!PyArg_ParseTuple(args, "O!", &PyTuple_Type, &src)) {
+        return NULL;
+    }
+
+    Py_ssize_t size = PyTuple_GET_SIZE(src);
+    PyObject **array = PyMem_Malloc(size * sizeof(PyObject**));
+    if (array == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < size; i++) {
+        array[i] = Py_NewRef(PyTuple_GET_ITEM(src, i));
+    }
+
+    PyObject *tuple = PyTuple_FromArray(array, size);
+    if (tuple == NULL) {
+        goto done;
+    }
+
+    for (Py_ssize_t i = 0; i < size; i++) {
+        // check that the array is not modified
+        assert(array[i] == PyTuple_GET_ITEM(src, i));
+
+        // check that the array was copied properly
+        assert(PyTuple_GET_ITEM(tuple, i) == array[i]);
+    }
+
+done:
+    for (Py_ssize_t i = 0; i < size; i++) {
+        Py_DECREF(array[i]);
+    }
+    PyMem_Free(array);
+
+    return tuple;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"tuple_get_size", tuple_get_size, METH_O},
     {"tuple_get_item", tuple_get_item, METH_VARARGS},
     {"tuple_set_item", tuple_set_item, METH_VARARGS},
     {"_tuple_resize", _tuple_resize, METH_VARARGS},
     {"_check_tuple_item_is_NULL", _check_tuple_item_is_NULL, METH_VARARGS},
+    {"tuple_fromarray", tuple_fromarray, METH_VARARGS},
     {NULL},
 };
 

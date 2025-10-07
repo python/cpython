@@ -37,6 +37,17 @@ Tuple Objects
    or ``NULL`` with an exception set on failure.
 
 
+.. c:function:: PyObject* PyTuple_FromArray(PyObject *const *array, Py_ssize_t size)
+
+   Create a tuple of *size* items and copy references from *array* to the new
+   tuple.
+
+   * Return a new reference on success.
+   * Set an exception and return ``NULL`` on error.
+
+   .. versionadded:: next
+
+
 .. c:function:: PyObject* PyTuple_Pack(Py_ssize_t n, ...)
 
    Return a new tuple object of size *n*,

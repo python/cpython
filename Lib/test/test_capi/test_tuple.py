@@ -279,6 +279,14 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(tuple(my_iter()), (TAG, *range(10)))
         self.assertEqual(tuples, [])
 
+    def test_tuple_fromarray(self):
+        # Test PyTuple_FromArray()
+        tuple_fromarray = _testcapi.tuple_fromarray
+
+        tup = tuple(object() for _ in range(5))
+        copy = tuple_fromarray(tup)
+        self.assertEqual(copy, tup)
+
 
 if __name__ == "__main__":
     unittest.main()
