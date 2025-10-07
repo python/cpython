@@ -217,7 +217,7 @@ has significant benefits:
 * they support a new (to Python), human-friendly concurrency model
 * true multi-core parallelism
 
-For some use cases, concurrency in software enables efficiency and
+For some use cases, concurrency in software improves efficiency and
 can simplify design, at a high level.
 At the same time, implementing and maintaining all but the simplest concurrency
 is often a struggle for the human brain.
@@ -225,9 +225,10 @@ That especially applies to plain threads (for example, :mod:`threading`),
 where all memory is shared between all threads.
 
 With multiple isolated interpreters, you can take advantage of a class
-of concurrency models, like CSP or the actor model, that have found
+of concurrency models, like Communicating Sequential Processes (CSP)
+or the actor model, that have found
 success in other programming languages, like Smalltalk, Erlang,
-Haskell, and Go. Think of multiple interpreters like threads
+Haskell, and Go. Think of multiple interpreters as threads
 but with opt-in sharing.
 
 Regarding multi-core parallelism: as of Python 3.12, interpreters
@@ -249,8 +250,8 @@ having the isolation of processes with the efficiency of threads.
 While the feature has been around for decades, multiple interpreters
 have not been used widely, due to low awareness and the lack of a
 standard library module. Consequently, they currently have several
-notable limitations, which will improve significantly now that the
-feature is finally going mainstream.
+notable limitations, which are expected to improve significantly now
+that the feature is going mainstream.
 
 Current limitations:
 
