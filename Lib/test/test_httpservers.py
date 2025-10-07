@@ -1513,7 +1513,8 @@ class CommandLineTestCase(unittest.TestCase):
             # ensure extra_response_headers are passed to it
             httpd.finish_request(mock.Mock(), '127.0.0.1')
             mock_handler_init.assert_called_once_with(
-                mock.ANY, mock.ANY, mock.ANY, directory=mock.ANY,
+                mock.ANY, mock.ANY, mock.ANY,
+                directory=mock.ANY,
                 extra_response_headers=[
                     ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2']
                 ]
