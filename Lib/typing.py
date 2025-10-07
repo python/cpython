@@ -141,6 +141,7 @@ __all__ = [
     'no_type_check',
     'no_type_check_decorator',
     'NoDefault',
+    'NoExtraItems',
     'NoReturn',
     'NotRequired',
     'overload',
@@ -3063,6 +3064,33 @@ def _namedtuple_mro_entries(bases):
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
+class _SingletonMeta(type):
+    def __setattr__(cls, attr, value):
+        # TypeError is consistent with the behavior of NoneType
+        raise TypeError(
+                f"cannot set {attr!r} attribute of immutable type {cls.__name__!r}"
+                )
+
+
+class _NoExtraItemsType(metaclass=_SingletonMeta):
+    """The type of the NoExtraItems singleton."""
+
+    __slots__ = ()
+
+    def __new__(cls):
+        return globals().get("NoExtraItems") or object.__new__(cls)
+
+    def __repr__(self):
+        return 'typing.NoExtraItems'
+
+    def __reduce__(self):
+        return 'NoExtraItems'
+
+NoExtraItems = _NoExtraItemsType()
+del _NoExtraItemsType
+del _SingletonMeta
+
+
 def _get_typeddict_qualifiers(annotation_type):
     while True:
         annotation_origin = get_origin(annotation_type)
@@ -3086,7 +3114,8 @@ def _get_typeddict_qualifiers(annotation_type):
 
 
 class _TypedDictMeta(type):
-    def __new__(cls, name, bases, ns, total=True):
+    def __new__(cls, name, bases, ns, total=True, closed=None,
+                extra_items=NoExtraItems):
         """Create a new typed dict class object.
 
         This method is called when TypedDict is subclassed,
@@ -3098,6 +3127,8 @@ class _TypedDictMeta(type):
             if type(base) is not _TypedDictMeta and base is not Generic:
                 raise TypeError('cannot inherit from both a TypedDict type '
                                 'and a non-TypedDict base class')
+        if closed is not None and extra_items is not NoExtraItems:
+            raise TypeError(f"Cannot combine closed={closed!r} and extra_items")
 
         if any(issubclass(b, Generic) for b in bases):
             generic_base = (Generic,)
@@ -3209,6 +3240,8 @@ class _TypedDictMeta(type):
         tp_dict.__readonly_keys__ = frozenset(readonly_keys)
         tp_dict.__mutable_keys__ = frozenset(mutable_keys)
         tp_dict.__total__ = total
+        tp_dict.__closed__ = closed
+        tp_dict.__extra_items__ = extra_items
         return tp_dict
 
     __call__ = dict  # static method
@@ -3220,7 +3253,8 @@ class _TypedDictMeta(type):
     __instancecheck__ = __subclasscheck__
 
 
-def TypedDict(typename, fields, /, *, total=True):
+def TypedDict(typename, fields, /, *, total=True, closed=None,
+              extra_items=NoExtraItems):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type such that a type checker will expect all
@@ -3274,6 +3308,32 @@ def TypedDict(typename, fields, /, *, total=True):
             id: ReadOnly[int]  # the "id" key must not be modified
             username: str      # the "username" key can be changed
 
+    The closed argument controls whether the TypedDict allows additional
+    non-required items during inheritance and assignability checks.
+    If closed=True, the TypedDict does not allow additional items::
+
+        Point2D = TypedDict('Point2D', {'x': int, 'y': int}, closed=True)
+        class Point3D(Point2D):
+            z: int  # Type checker error
+
+    Passing closed=False explicitly requests TypedDict's default open behavior.
+    If closed is not provided, the behavior is inherited from the superclass.
+    A type checker is only expected to support a literal False or True as the
+    value of the closed argument.
+
+    The extra_items argument can instead be used to specify the assignable type
+    of unknown non-required keys::
+
+        Point2D = TypedDict('Point2D', {'x': int, 'y': int}, extra_items=int)
+        class Point3D(Point2D):
+            z: int      # OK
+            label: str  # Type checker error
+
+    The extra_items argument is also inherited through subclassing. It is unset
+    by default, and it may not be used with the closed argument at the same
+    time.
+
+    See PEP 728 for more information about closed and extra_items.
     """
     ns = {'__annotations__': dict(fields)}
     module = _caller()
@@ -3281,7 +3341,8 @@ def TypedDict(typename, fields, /, *, total=True):
         # Setting correct module is necessary to make typed dict classes pickleable.
         ns['__module__'] = module
 
-    td = _TypedDictMeta(typename, (), ns, total=total)
+    td = _TypedDictMeta(typename, (), ns, total=total, closed=closed,
+                        extra_items=extra_items)
     td.__orig_bases__ = (TypedDict,)
     return td
 
