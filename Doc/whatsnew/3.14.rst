@@ -225,7 +225,7 @@ That especially applies to plain threads (for example, :mod:`threading`),
 where all memory is shared between all threads.
 
 With multiple isolated interpreters, you can take advantage of a class
-of concurrency models, like Communicating Sequential Processes
+of concurrency models, like Communicating Sequential Processes (CSP)
 or the actor model, that have found
 success in other programming languages, like Smalltalk, Erlang,
 Haskell, and Go. Think of multiple interpreters as threads
