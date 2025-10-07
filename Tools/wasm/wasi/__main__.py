@@ -18,7 +18,9 @@ import tempfile
 
 
 CHECKOUT = pathlib.Path(__file__).parent.parent.parent.parent
-assert (CHECKOUT / "configure").is_file(), "Please update the location of the file"
+assert (CHECKOUT / "configure").is_file(), (
+    "Please update the location of the file"
+)
 
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 # Build platform can also be found via `config.guess`.
@@ -45,7 +47,9 @@ def updated_env(updates={}):
     # https://reproducible-builds.org/docs/source-date-epoch/
     git_epoch_cmd = ["git", "log", "-1", "--pretty=%ct"]
     try:
-        epoch = subprocess.check_output(git_epoch_cmd, encoding="utf-8").strip()
+        epoch = subprocess.check_output(
+            git_epoch_cmd, encoding="utf-8"
+        ).strip()
         env_defaults["SOURCE_DATE_EPOCH"] = epoch
     except subprocess.CalledProcessError:
         pass  # Might be building from a tarball.
@@ -84,7 +88,11 @@ def subdir(working_dir, *, clean_ok=False):
                 terminal_width = int(tput_output.strip())
             print("⎯" * terminal_width)
             print("📁", working_dir)
-            if clean_ok and getattr(context, "clean", False) and working_dir.exists():
+            if (
+                clean_ok
+                and getattr(context, "clean", False)
+                and working_dir.exists()
+            ):
                 print("🚮 Deleting directory (--clean)...")
                 shutil.rmtree(working_dir)
 
@@ -134,7 +142,9 @@ def build_python_path():
     if not binary.is_file():
         binary = binary.with_suffix(".exe")
         if not binary.is_file():
-            raise FileNotFoundError("Unable to find `python(.exe)` in " f"{BUILD_DIR}")
+            raise FileNotFoundError(
+                f"Unable to find `python(.exe)` in {BUILD_DIR}"
+            )
 
     return binary
 
@@ -178,7 +188,8 @@ def make_build_python(context, working_dir):
     cmd = [
         binary,
         "-c",
-        "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')",
+        "import sys; "
+        "print(f'{sys.version_info.major}.{sys.version_info.minor}')",
     ]
     version = subprocess.check_output(cmd, encoding="utf-8").strip()
 
@@ -239,9 +250,10 @@ def wasi_sdk_env(context):
     env["WASI_SDK_PATH"] = os.fsdecode(wasi_sdk_path)
     env["WASI_SYSROOT"] = os.fsdecode(sysroot)
 
-    env["PATH"] = os.pathsep.join(
-        [os.fsdecode(wasi_sdk_path / "bin"), os.environ["PATH"]]
-    )
+    env["PATH"] = os.pathsep.join([
+        os.fsdecode(wasi_sdk_path / "bin"),
+        os.environ["PATH"],
+    ])
 
     return env
 
@@ -265,12 +277,14 @@ def configure_wasi_python(context, working_dir):
 
     python_build_dir = BUILD_DIR / "build"
     lib_dirs = list(python_build_dir.glob("lib.*"))
-    assert (
-        len(lib_dirs) == 1
-    ), f"Expected a single lib.* directory in {python_build_dir}"
+    assert len(lib_dirs) == 1, (
+        f"Expected a single lib.* directory in {python_build_dir}"
+    )
     lib_dir = os.fsdecode(lib_dirs[0])
     python_version = lib_dir.rpartition("-")[-1]
-    sysconfig_data_dir = f"{wasi_build_dir}/build/lib.wasi-wasm32-{python_version}"
+    sysconfig_data_dir = (
+        f"{wasi_build_dir}/build/lib.wasi-wasm32-{python_version}"
+    )
 
     # Use PYTHONPATH to include sysconfig data which must be anchored to the
     # WASI guest's `/` directory.
@@ -326,7 +340,9 @@ def configure_wasi_python(context, working_dir):
 def make_wasi_python(context, working_dir):
     """Run `make` for the WASI/host build."""
     call(
-        ["make", "--jobs", str(cpu_count()), "all"], env=updated_env(), context=context
+        ["make", "--jobs", str(cpu_count()), "all"],
+        env=updated_env(),
+        context=context,
     )
 
     exec_script = working_dir / "python.sh"
@@ -394,11 +410,19 @@ def main():
         "are inferred from the build "
         "Python)",
     )
-    make_host = subcommands.add_parser("make-host", help="Run `make` for the host/WASI")
+    make_host = subcommands.add_parser(
+        "make-host", help="Run `make` for the host/WASI"
+    )
     subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
-    for subcommand in build, configure_build, make_build, configure_host, make_host:
+    for subcommand in (
+        build,
+        configure_build,
+        make_build,
+        configure_host,
+        make_host,
+    ):
         subcommand.add_argument(
             "--quiet",
             action="store_true",
@@ -410,7 +434,7 @@ def main():
             "--logdir",
             type=pathlib.Path,
             default=default_logdir,
-            help="Directory to store log files; " f"defaults to {default_logdir}",
+            help=f"Directory to store log files; defaults to {default_logdir}",
         )
     for subcommand in configure_build, configure_host:
         subcommand.add_argument(

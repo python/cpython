@@ -34,6 +34,10 @@ repos:
         name: Run Ruff (format) on Tools/build/check_warnings.py
         args: [--check, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/check_warnings.py
+      - id: ruff-format
+        name: Run Ruff (format) on Tools/wasm/wasi/
+        args: [--check, --config=Tools/wasm/wasi/.ruff.toml]
+        files: ^Tools/wasm/wasi/
 
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 25.9.0
@@ -41,9 +45,6 @@ repos:
       - id: black
         name: Run Black on Tools/jit/
         files: ^Tools/jit/
-      - id: black
-        name: Run Black on Tools/wasm/wasi/
-        files: ^Tools/wasm/wasi/
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5
