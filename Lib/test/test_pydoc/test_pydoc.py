@@ -11,7 +11,6 @@ import keyword
 import _pickle
 import pkgutil
 import re
-import stat
 import tempfile
 import test.support
 import time
@@ -33,7 +32,7 @@ from test.support.script_helper import (assert_python_ok,
                                         assert_python_failure, spawn_python)
 from test.support import threading_helper
 from test.support import (reap_children, captured_stdout,
-                          captured_stderr, is_emscripten, is_wasi,
+                          captured_stderr, is_wasm32,
                           requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.test_pydoc import pydoc_mod
@@ -1300,27 +1299,16 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
-    @os_helper.skip_unless_working_chmod
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
-        if support.is_emscripten:
-            # Emscripten's readdir implementation is buggy on directories
-            # with read permission but no execute permission.
-            old_umask = os.umask(0)
-            self.addCleanup(os.umask, old_umask)
         os.mkdir(pkgdir)
         self.addCleanup(rmtree, pkgdir)
         init_path = os.path.join(pkgdir, '__init__.py')
         with open(init_path, 'w') as fobj:
             fobj.write("foo = 1")
-        current_mode = stat.S_IMODE(os.stat(pkgdir).st_mode)
-        try:
-            os.chmod(pkgdir, current_mode & ~stat.S_IEXEC)
-            with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
-                pydoc.apropos('')
-            self.assertIn('walkpkg', stdout.getvalue())
-        finally:
-            os.chmod(pkgdir, current_mode)
+        with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
+            pydoc.apropos('')
+        self.assertIn('walkpkg', stdout.getvalue())
 
     def test_url_search_package_error(self):
         # URL handler search should cope with packages that raise exceptions
@@ -2081,7 +2069,7 @@ class PydocFodderTest(unittest.TestCase):
 
 
 @unittest.skipIf(
-    is_emscripten or is_wasi,
+    is_wasm32,
     "Socket server not available on Emscripten/WASI."
 )
 class PydocServerTest(unittest.TestCase):
