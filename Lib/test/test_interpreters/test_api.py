@@ -11,6 +11,7 @@ from test import support
 from test.support import os_helper
 from test.support import script_helper
 from test.support import import_helper
+from test.support.script_helper import assert_python_ok
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_interpreters')
 from concurrent import interpreters
@@ -707,6 +708,68 @@ class TestInterpreterClose(TestBase):
                     self.interp_exists(interpid))
 
 
+    def test_remaining_threads(self):
+        r_interp, w_interp = self.pipe()
+
+        FINISHED = b'F'
+
+        # It's unlikely, but technically speaking, it's possible
+        # that the thread could've finished before interp.close() is
+        # reached, so this test might not properly exercise the case.
+        # However, it's quite unlikely and probably not worth bothering about.
+        interp = interpreters.create()
+        interp.exec(f"""if True:
+            import os
+            import threading
+            import time
+
+            def task():
+                time.sleep(1)
+                os.write({w_interp}, {FINISHED!r})
+
+            threads = (threading.Thread(target=task) for _ in range(3))
+            for t in threads:
+                t.start()
+            """)
+        interp.close()
+
+        self.assertEqual(os.read(r_interp, 1), FINISHED)
+
+    def test_remaining_daemon_threads(self):
+        # Daemon threads leak reference by nature, because they hang threads
+        # without allowing them to do cleanup (i.e., release refs).
+        # To prevent that from messing up the refleak hunter and whatnot, we
+        # run this in a subprocess.
+        code = '''if True:
+        import _interpreters
+        import types
+        interp = _interpreters.create(
+            types.SimpleNamespace(
+                use_main_obmalloc=False,
+                allow_fork=False,
+                allow_exec=False,
+                allow_threads=True,
+                allow_daemon_threads=True,
+                check_multi_interp_extensions=True,
+                gil='own',
+            )
+        )
+        _interpreters.exec(interp, f"""if True:
+            import threading
+            import time
+
+            def task():
+                time.sleep(3)
+
+            threads = (threading.Thread(target=task, daemon=True) for _ in range(3))
+            for t in threads:
+                t.start()
+            """)
+        _interpreters.destroy(interp)
+        '''
+        assert_python_ok('-c', code)
+
+
 class TestInterpreterPrepareMain(TestBase):
 
     def test_empty(self):
@@ -815,7 +878,10 @@ class TestInterpreterExec(TestBase):
                 spam.eggs()
 
             interp = interpreters.create()
-            interp.exec(script)
+            try:
+                interp.exec(script)
+            finally:
+                interp.close()
             """)
 
         stdout, stderr = self.assert_python_failure(scriptfile)
@@ -824,7 +890,7 @@ class TestInterpreterExec(TestBase):
         #      File "{interpreters.__file__}", line 179, in exec
         self.assertEqual(stderr, dedent(f"""\
             Traceback (most recent call last):
-              File "{scriptfile}", line 9, in <module>
+              File "{scriptfile}", line 10, in <module>
                 interp.exec(script)
                 ~~~~~~~~~~~^^^^^^^^
               {interpmod_line.strip()}
