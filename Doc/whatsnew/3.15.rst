@@ -562,6 +562,17 @@ unittest
   (Contributed by Garry Cairns in :gh:`134567`.)
 
 
+venv
+----
+
+* On POSIX platforms, platlib directories will be created if needed when
+  creating virtual environments, instead of using ``lib64 -> lib`` symlink.
+  This means purelib and platlib of virtual environments no longer share the
+  same ``lib`` directory on platforms where :data:`sys.platlibdir` is not
+  equal to ``lib``.
+  (Contributed by Rui Xi in :gh:`133951`.)
+
+
 xml.parsers.expat
 -----------------
 
