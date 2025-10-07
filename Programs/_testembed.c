@@ -360,8 +360,18 @@ static int test_pre_initialization_sys_options(void)
     size_t xoption_len = wcslen(static_xoption);
     wchar_t *dynamic_once_warnoption = \
              (wchar_t *) calloc(warnoption_len+1, sizeof(wchar_t));
+    if (dynamic_once_warnoption == NULL) {
+        error("out of memory allocating warnoption");
+        return 1;
+    }
     wchar_t *dynamic_xoption = \
              (wchar_t *) calloc(xoption_len+1, sizeof(wchar_t));
+    if (dynamic_xoption == NULL) {
+        free(dynamic_once_warnoption);
+        error("out of memory allocating xoption");
+        return 1;
+    }
+
     wcsncpy(dynamic_once_warnoption, static_warnoption, warnoption_len+1);
     wcsncpy(dynamic_xoption, static_xoption, xoption_len+1);
 

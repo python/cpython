@@ -1,0 +1,216 @@
+.. date: 2025-08-06-06-29-12
+.. gh-issue: 137450
+.. nonce: JZypb7
+.. release date: 2025-08-14
+.. section: macOS
+
+macOS installer shell path management improvements: separate the installer
+``Shell profile updater`` postinstall script from the ``Update Shell
+Profile.command`` to enable more robust error handling.
+
+..
+
+.. date: 2025-07-27-02-17-40
+.. gh-issue: 137134
+.. nonce: pjgITs
+.. section: macOS
+
+Update macOS installer to ship with SQLite version 3.50.4.
+
+..
+
+.. date: 2025-07-27-02-16-53
+.. gh-issue: 137134
+.. nonce: W0WpDF
+.. section: Windows
+
+Update Windows installer to ship with SQLite 3.50.4.
+
+..
+
+.. date: 2025-08-08-15-00-38
+.. gh-issue: 137426
+.. nonce: lW-Rk2
+.. section: Library
+
+Remove the code deprecation of ``importlib.abc.ResourceLoader``. It is
+documented as deprecated, but left for backwards compatibility with other
+classes in ``importlib.abc``.
+
+..
+
+.. date: 2025-07-31-10-31-56
+.. gh-issue: 137282
+.. nonce: GOCwIC
+.. section: Library
+
+Fix tab completion and :func:`dir` on :mod:`concurrent.futures`.
+
+..
+
+.. date: 2025-07-30-18-07-33
+.. gh-issue: 137257
+.. nonce: XBtzf2
+.. section: Library
+
+Bump the version of pip bundled in ensurepip to version 25.2
+
+..
+
+.. date: 2025-07-29-21-18-31
+.. gh-issue: 137226
+.. nonce: B_4lpu
+.. section: Library
+
+Fix behavior of :meth:`annotationlib.ForwardRef.evaluate` when the
+*type_params* parameter is passed and the name of a type param is also
+present in an enclosing scope.
+
+..
+
+.. date: 2025-07-25-09-21-56
+.. gh-issue: 130522
+.. nonce: Crwq68
+.. section: Library
+
+Fix unraisable :exc:`TypeError` raised during :term:`interpreter shutdown`
+in the :mod:`threading` module.
+
+..
+
+.. date: 2025-07-24-00-38-07
+.. gh-issue: 137059
+.. nonce: fr64oW
+.. section: Library
+
+Fix handling of file URLs with a Windows drive letter in the URL authority
+by :func:`urllib.request.url2pathname`. This fixes a regression in earlier
+pre-releases of Python 3.14.
+
+..
+
+.. date: 2025-07-23-00-35-29
+.. gh-issue: 130577
+.. nonce: c7EITy
+.. section: Library
+
+:mod:`tarfile` now validates archives to ensure member offsets are
+non-negative.  (Contributed by Alexander Enrique Urieles Nieto in
+:gh:`130577`.)
+
+..
+
+.. date: 2025-07-20-16-56-55
+.. gh-issue: 135228
+.. nonce: n_XIao
+.. section: Library
+
+When :mod:`dataclasses` replaces a class with a slotted dataclass, the
+original class can now be garbage collected again. Earlier changes in Python
+3.14 caused this class to always remain in existence together with the
+replacement class synthesized by :mod:`dataclasses`.
+
+..
+
+.. date: 2025-07-01-23-00-58
+.. gh-issue: 136155
+.. nonce: 4siQQO
+.. section: Documentation
+
+We are now checking for fatal errors in EPUB builds in CI.
+
+..
+
+.. date: 2025-08-06-15-39-54
+.. gh-issue: 137400
+.. nonce: xIw0zs
+.. section: Core and Builtins
+
+Fix a crash in the :term:`free threading` build when disabling profiling or
+tracing across all threads with :c:func:`PyEval_SetProfileAllThreads` or
+:c:func:`PyEval_SetTraceAllThreads` or their Python equivalents
+:func:`threading.settrace_all_threads` and
+:func:`threading.setprofile_all_threads`.
+
+..
+
+.. date: 2025-08-02-23-04-57
+.. gh-issue: 137314
+.. nonce: wjEdzD
+.. section: Core and Builtins
+
+Fixed a regression where raw f-strings incorrectly interpreted escape
+sequences in format specifications. Raw f-strings now properly preserve
+literal backslashes in format specs, matching the behavior from Python 3.11.
+For example, ``rf"{obj:\xFF}"`` now correctly produces ``'\\xFF'`` instead
+of ``'ÿ'``. Patch by Pablo Galindo.
+
+..
+
+.. date: 2025-08-02-10-27-53
+.. gh-issue: 137308
+.. nonce: at05p_
+.. section: Core and Builtins
+
+A standalone docstring in a node body is optimized as a :keyword:`pass`
+statement to ensure that the node's body is never empty. There was a
+:exc:`ValueError` in :func:`compile` otherwise.
+
+..
+
+.. date: 2025-08-01-18-54-31
+.. gh-issue: 137288
+.. nonce: FhE7ku
+.. section: Core and Builtins
+
+Fix bug where some bytecode instructions of a boolean expression are not
+associated with the correct exception handler.
+
+..
+
+.. date: 2025-07-28-19-11-34
+.. gh-issue: 134291
+.. nonce: IiB9Id
+.. section: Core and Builtins
+
+Remove some newer macOS API usage from the JIT compiler in order to restore
+compatibility with older OSX 10.15 deployment targets.
+
+..
+
+.. date: 2025-07-25-22-31-52
+.. gh-issue: 131338
+.. nonce: zJDCMp
+.. section: Core and Builtins
+
+Disable computed stack limit checks on non-glibc linux platforms to fix
+crashes on deep recursion.
+
+..
+
+.. date: 2025-07-24-17-30-58
+.. gh-issue: 136870
+.. nonce: ncx82J
+.. section: Core and Builtins
+
+Fix data races while de-instrumenting bytecode of code objects running
+concurrently in threads.
+
+..
+
+.. date: 2025-08-13-13-41-04
+.. gh-issue: 137573
+.. nonce: r6uwRf
+.. section: C API
+
+Mark ``_PyOptimizer_Optimize`` as :c:macro:`Py_NO_INLINE` to prevent stack
+overflow crashes on macOS.
+
+..
+
+.. date: 2025-08-13-12-10-12
+.. gh-issue: 132339
+.. nonce: 3Czz5y
+.. section: Build
+
+Add support for OpenSSL 3.5.

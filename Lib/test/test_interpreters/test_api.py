@@ -2204,6 +2204,16 @@ class LowLevelTests(TestBase):
             whence = eval(text)
             self.assertEqual(whence, _interpreters.WHENCE_LEGACY_CAPI)
 
+    def test_contextvars_missing(self):
+        script = f"""
+            import contextvars
+            print(getattr(contextvars.Token, "MISSING", "'doesn't exist'"))
+            """
+
+        orig = _interpreters.create()
+        text = self.run_and_capture(orig, script)
+        self.assertEqual(text.strip(), "<Token.MISSING>")
+
     def test_is_running(self):
         def check(interpid, expected):
             with self.assertRaisesRegex(InterpreterError, 'unrecognized'):

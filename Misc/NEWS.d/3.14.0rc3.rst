@@ -1,0 +1,295 @@
+.. date: 2025-09-15-15-34-29
+.. gh-issue: 138896
+.. nonce: lkiF_7
+.. release date: 2025-09-18
+.. section: Windows
+
+Fix error installing C runtime on non-updated Windows machines
+
+..
+
+.. date: 2025-08-21-14-04-50
+.. gh-issue: 137873
+.. nonce: qxffLt
+.. section: Tools/Demos
+
+The iOS test runner has been simplified, resolving some issues that have
+been observed using the runner in GitHub Actions and Azure Pipelines test
+environments.
+
+..
+
+.. date: 2025-06-18-13-34-55
+.. gh-issue: 135661
+.. nonce: NZlpWf
+.. section: Security
+
+Fix CDATA section parsing in :class:`html.parser.HTMLParser` according to
+the HTML5 standard: ``] ]>`` and ``]] >`` no longer end the CDATA section.
+Add private method ``_set_support_cdata()`` which can be used to specify how
+to parse ``<[CDATA[`` --- as a CDATA section in foreign content (SVG or
+MathML) or as a bogus comment in the HTML namespace.
+
+..
+
+.. date: 2025-09-16-19-05-29
+.. gh-issue: 138998
+.. nonce: URl0Y_
+.. section: Library
+
+Update bundled libexpat to 2.7.2
+
+..
+
+.. date: 2025-09-16-15-56-29
+.. gh-issue: 118803
+.. nonce: aOPtmL
+.. section: Library
+
+Add back :class:`collections.abc.ByteString` and :class:`typing.ByteString`.
+Both had been removed in prior alpha, beta and release candidates for Python
+3.14, but their removal has now been postponed to Python 3.17.
+
+..
+
+.. date: 2025-09-15-13-09-19
+.. gh-issue: 137226
+.. nonce: HH3_ik
+.. section: Library
+
+Fix :func:`typing.get_type_hints` calls on generic :class:`typing.TypedDict`
+classes defined with string annotations.
+
+..
+
+.. date: 2025-09-12-01-01-05
+.. gh-issue: 138804
+.. nonce: 46ZukT
+.. section: Library
+
+Raise :exc:`TypeError` instead of :exc:`AttributeError` when an argument of
+incorrect type is passed to :func:`shlex.quote`. This restores the behavior
+of the function prior to 3.14.
+
+..
+
+.. date: 2025-09-10-10-02-59
+.. gh-issue: 128636
+.. nonce: ldRKGZ
+.. section: Library
+
+Fix crash in PyREPL when os.environ is overwritten with an invalid value for
+mac
+
+..
+
+.. date: 2025-09-06-11-26-21
+.. gh-issue: 138514
+.. nonce: 66ltOb
+.. section: Library
+
+Raise :exc:`ValueError` when a multi-character string is passed to the
+*echo_char* parameter of :func:`getpass.getpass`. Patch by Benjamin Johnson.
+
+..
+
+.. date: 2025-09-05-07-50-18
+.. gh-issue: 138515
+.. nonce: E3M-pu
+.. section: Library
+
+:mod:`email` is added to Emscripten build.
+
+..
+
+.. date: 2025-09-05-05-53-43
+.. gh-issue: 99948
+.. nonce: KMSlG6
+.. section: Library
+
+:func:`ctypes.util.find_library` now works in Emscripten build.
+
+..
+
+.. date: 2025-08-30-10-58-15
+.. gh-issue: 138253
+.. nonce: 9Ehj-N
+.. section: Library
+
+Add the *block* parameter in the :meth:`!put` and :meth:`!get` methods of
+the :mod:`concurrent.interpreters` queues for compatibility with the
+:class:`queue.Queue` interface.
+
+..
+
+.. date: 2025-08-25-18-06-04
+.. gh-issue: 138133
+.. nonce: Zh9rGo
+.. section: Library
+
+Prevent infinite traceback loop when sending CTRL^C to Python through
+``strace``.
+
+..
+
+.. date: 2025-08-18-16-02-51
+.. gh-issue: 134869
+.. nonce: GnAjnU
+.. section: Library
+
+Fix an issue where pressing Ctrl+C during tab completion in the REPL would
+leave the autocompletion menu in a corrupted state.
+
+..
+
+.. date: 2025-08-16-18-11-41
+.. gh-issue: 90548
+.. nonce: q3aJUK
+.. section: Library
+
+Fix ``musl`` detection for :func:`platform.libc_ver` on Alpine Linux if
+compiled with --strip-all.
+
+..
+
+.. date: 2025-07-13-13-31-22
+.. gh-issue: 136134
+.. nonce: mh6VjS
+.. section: Library
+
+:meth:`!SMTP.auth_cram_md5` now raises an :exc:`~smtplib.SMTPException`
+instead of a :exc:`ValueError` if Python has been built without MD5 support.
+In particular, :class:`~smtplib.SMTP` clients will not attempt to use this
+method even if the remote server is assumed to support it. Patch by Bénédikt
+Tran.
+
+..
+
+.. date: 2025-07-13-11-20-05
+.. gh-issue: 136134
+.. nonce: xhh0Kq
+.. section: Library
+
+:meth:`IMAP4.login_cram_md5 <imaplib.IMAP4.login_cram_md5>` now raises an
+:exc:`IMAP4.error <imaplib.IMAP4.error>` if CRAM-MD5 authentication is not
+supported. Patch by Bénédikt Tran.
+
+..
+
+.. date: 2025-06-01-11-14-00
+.. gh-issue: 134953
+.. nonce: ashdfs
+.. section: Library
+
+Expand ``_colorize`` theme with ``keyword_constant`` and implement in
+:term:`repl`.
+
+..
+
+.. date: 2025-09-10-14-53-59
+.. gh-issue: 71810
+.. nonce: ppf0J-
+.. section: Core and Builtins
+
+Raise :exc:`OverflowError` for ``(-1).to_bytes()`` for signed conversions
+when bytes count is zero.  Patch by Sergey B Kirpichev.
+
+..
+
+.. date: 2025-09-05-01-19-04
+.. gh-issue: 138192
+.. nonce: erluq5
+.. section: Core and Builtins
+
+Fix :mod:`contextvars` initialization so that all subinterpreters are
+assigned the :attr:`~contextvars.Token.MISSING` value.
+
+..
+
+.. date: 2025-09-03-17-00-30
+.. gh-issue: 138479
+.. nonce: qUxgWs
+.. section: Core and Builtins
+
+Fix a crash when a generic object's ``__typing_subst__`` returns an object
+that isn't a :class:`tuple`.
+
+..
+
+.. date: 2025-09-02-09-10-06
+.. gh-issue: 138372
+.. nonce: h1Xk4-
+.. section: Core and Builtins
+
+Fix :exc:`SyntaxWarning` emitted for erroneous subscript expressions
+involving :ref:`template string literals <t-strings>`. Patch by Brian
+Schubert.
+
+..
+
+.. date: 2025-09-01-16-09-02
+.. gh-issue: 138318
+.. nonce: t-WEN5
+.. section: Core and Builtins
+
+The default REPL now avoids highlighting built-in names (for instance
+:class:`set` or :func:`format`) when they are used as attribute names (for
+instance in ``value.set`` or ``text.format``).
+
+..
+
+.. date: 2025-09-01-13-54-43
+.. gh-issue: 138349
+.. nonce: 0fGmAi
+.. section: Core and Builtins
+
+Fix crash in certain cases where a module contains both a module-level
+annotation and a comprehension.
+
+..
+
+.. date: 2025-08-22-11-39-40
+.. gh-issue: 137384
+.. nonce: j4b_in
+.. section: Core and Builtins
+
+Fix a crash when using the :mod:`warnings` module in a finalizer at
+shutdown. Patch by Kumar Aditya.
+
+..
+
+.. date: 2025-08-17-13-36-53
+.. gh-issue: 137883
+.. nonce: 55VDCN
+.. section: Core and Builtins
+
+Fix runaway recursion when calling a function with keyword arguments.
+
+..
+
+.. date: 2025-08-15-15-45-26
+.. gh-issue: 137079
+.. nonce: YEow69
+.. section: Core and Builtins
+
+Fix keyword typo recognition when parsing files. Patch by Pablo Galindo.
+
+..
+
+.. date: 2025-08-14-14-18-29
+.. gh-issue: 137728
+.. nonce: HdYS9R
+.. section: Core and Builtins
+
+Fix the JIT's handling of many local variables. This previously caused a
+segfault.
+
+..
+
+.. date: 2025-08-10-21-34-12
+.. gh-issue: 137576
+.. nonce: 0ZicS-
+.. section: Core and Builtins
+
+Fix for incorrect source code being shown in tracebacks from the Basic REPL
+when :envvar:`PYTHONSTARTUP` is given. Patch by Adam Hartz.

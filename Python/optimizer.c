@@ -109,7 +109,8 @@ uop_optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *instr,
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
  * If optimized, *executor_ptr contains a new reference to the executor
  */
-int
+// gh-137573: inlining this function causes stack overflows
+Py_NO_INLINE int
 _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
     _PyExecutorObject **executor_ptr, int chain_depth)
