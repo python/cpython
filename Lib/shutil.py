@@ -1064,6 +1064,7 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
 def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
                   logger=None, owner=None, group=None, root_dir=None):
     """Create a zip file. Returns the name of the zip file.
+    
     - `base_name` is used as the name for the zip file, with a suffix
       of '.zip'.
     - `base_dir` is the directory containing the files to be included
