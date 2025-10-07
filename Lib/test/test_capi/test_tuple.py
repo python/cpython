@@ -77,9 +77,9 @@ class CAPITest(unittest.TestCase):
         copy = tuple_fromarray(NULL, 0)
         self.assertIs(copy, ())
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(SystemError):
             tuple_fromarray(NULL, -1)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(SystemError):
             tuple_fromarray(NULL, PY_SSIZE_T_MIN)
         with self.assertRaises(MemoryError):
             tuple_fromarray(NULL, PY_SSIZE_T_MAX)

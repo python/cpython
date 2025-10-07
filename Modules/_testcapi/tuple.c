@@ -108,7 +108,7 @@ static PyObject *
 tuple_fromarray(PyObject* Py_UNUSED(module), PyObject *args)
 {
     PyObject *src;
-    Py_ssize_t size = -1;
+    Py_ssize_t size = UNINITIALIZED_SIZE;
     if (!PyArg_ParseTuple(args, "O|n", &src, &size)) {
         return NULL;
     }
@@ -120,7 +120,7 @@ tuple_fromarray(PyObject* Py_UNUSED(module), PyObject *args)
     PyObject **items;
     if (src != Py_None) {
         items = &PyTuple_GET_ITEM(src, 0);
-        if (size < 0) {
+        if (size == UNINITIALIZED_SIZE) {
             size = PyTuple_GET_SIZE(src);
         }
     }

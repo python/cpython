@@ -371,10 +371,6 @@ PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
     if (n == 0) {
         return tuple_get_empty();
     }
-    if (n < 0) {
-        PyErr_SetString(PyExc_ValueError, "size must be nonnegative");
-        return NULL;
-    }
 
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
