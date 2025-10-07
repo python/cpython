@@ -614,7 +614,7 @@ Connection objects
       supplied, this must be a :term:`callable` returning
       an instance of :class:`Cursor` or its subclasses.
 
-   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
+   .. method:: blobopen(table, column, rowid, /, *, readonly=False, name="main")
 
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
@@ -625,8 +625,8 @@ Connection objects
       :param str column:
           The name of the column where the blob is located.
 
-      :param str row:
-          The name of the row where the blob is located.
+      :param int rowid:
+          The row id where the blob is located.
 
       :param bool readonly:
           Set to ``True`` if the blob should be opened without write
@@ -1612,6 +1612,9 @@ Cursor objects
       If the *size* parameter is used, then it is best for it to retain the same
       value from one :meth:`fetchmany` call to the next.
 
+      .. versionchanged:: next
+         Negative *size* values are rejected by raising :exc:`ValueError`.
+
    .. method:: fetchall()
 
       Return all (remaining) rows of a query result as a :class:`list`.
@@ -1638,6 +1641,9 @@ Cursor objects
 
       Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
       The default value is 1 which means a single row would be fetched per call.
+
+      .. versionchanged:: next
+         Negative values are rejected by raising :exc:`ValueError`.
 
    .. attribute:: connection
 

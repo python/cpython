@@ -573,7 +573,7 @@ Decimal objects
       >>> Decimal(321).exp()
       Decimal('2.561702493119680037517373933E+139')
 
-   .. classmethod:: from_float(f)
+   .. classmethod:: from_float(f, /)
 
       Alternative constructor that only accepts instances of :class:`float` or
       :class:`int`.
@@ -600,7 +600,7 @@ Decimal objects
 
       .. versionadded:: 3.1
 
-   .. classmethod:: from_number(number)
+   .. classmethod:: from_number(number, /)
 
       Alternative constructor that only accepts instances of
       :class:`float`, :class:`int` or :class:`Decimal`, but not strings
@@ -991,7 +991,7 @@ Each thread has its own current context which is accessed or changed using the
    Return the current context for the active thread.
 
 
-.. function:: setcontext(c)
+.. function:: setcontext(c, /)
 
    Set the current context for the active thread to *c*.
 
@@ -1168,11 +1168,11 @@ In addition to the three supplied contexts, new contexts can be created with the
 
       Return a duplicate of the context.
 
-   .. method:: copy_decimal(num)
+   .. method:: copy_decimal(num, /)
 
       Return a copy of the Decimal instance num.
 
-   .. method:: create_decimal(num)
+   .. method:: create_decimal(num='0', /)
 
       Creates a new Decimal instance from *num* but using *self* as
       context. Unlike the :class:`Decimal` constructor, the context precision,
@@ -1196,7 +1196,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       If the argument is a string, no leading or trailing whitespace or
       underscores are permitted.
 
-   .. method:: create_decimal_from_float(f)
+   .. method:: create_decimal_from_float(f, /)
 
       Creates a new Decimal instance from a float *f* but rounding using *self*
       as the context.  Unlike the :meth:`Decimal.from_float` class method,
@@ -1234,222 +1234,222 @@ In addition to the three supplied contexts, new contexts can be created with the
    recounted here.
 
 
-   .. method:: abs(x)
+   .. method:: abs(x, /)
 
       Returns the absolute value of *x*.
 
 
-   .. method:: add(x, y)
+   .. method:: add(x, y, /)
 
       Return the sum of *x* and *y*.
 
 
-   .. method:: canonical(x)
+   .. method:: canonical(x, /)
 
       Returns the same Decimal object *x*.
 
 
-   .. method:: compare(x, y)
+   .. method:: compare(x, y, /)
 
       Compares *x* and *y* numerically.
 
 
-   .. method:: compare_signal(x, y)
+   .. method:: compare_signal(x, y, /)
 
       Compares the values of the two operands numerically.
 
 
-   .. method:: compare_total(x, y)
+   .. method:: compare_total(x, y, /)
 
       Compares two operands using their abstract representation.
 
 
-   .. method:: compare_total_mag(x, y)
+   .. method:: compare_total_mag(x, y, /)
 
       Compares two operands using their abstract representation, ignoring sign.
 
 
-   .. method:: copy_abs(x)
+   .. method:: copy_abs(x, /)
 
       Returns a copy of *x* with the sign set to 0.
 
 
-   .. method:: copy_negate(x)
+   .. method:: copy_negate(x, /)
 
       Returns a copy of *x* with the sign inverted.
 
 
-   .. method:: copy_sign(x, y)
+   .. method:: copy_sign(x, y, /)
 
       Copies the sign from *y* to *x*.
 
 
-   .. method:: divide(x, y)
+   .. method:: divide(x, y, /)
 
       Return *x* divided by *y*.
 
 
-   .. method:: divide_int(x, y)
+   .. method:: divide_int(x, y, /)
 
       Return *x* divided by *y*, truncated to an integer.
 
 
-   .. method:: divmod(x, y)
+   .. method:: divmod(x, y, /)
 
       Divides two numbers and returns the integer part of the result.
 
 
-   .. method:: exp(x)
+   .. method:: exp(x, /)
 
       Returns ``e ** x``.
 
 
-   .. method:: fma(x, y, z)
+   .. method:: fma(x, y, z, /)
 
       Returns *x* multiplied by *y*, plus *z*.
 
 
-   .. method:: is_canonical(x)
+   .. method:: is_canonical(x, /)
 
       Returns ``True`` if *x* is canonical; otherwise returns ``False``.
 
 
-   .. method:: is_finite(x)
+   .. method:: is_finite(x, /)
 
       Returns ``True`` if *x* is finite; otherwise returns ``False``.
 
 
-   .. method:: is_infinite(x)
+   .. method:: is_infinite(x, /)
 
       Returns ``True`` if *x* is infinite; otherwise returns ``False``.
 
 
-   .. method:: is_nan(x)
+   .. method:: is_nan(x, /)
 
       Returns ``True`` if *x* is a qNaN or sNaN; otherwise returns ``False``.
 
 
-   .. method:: is_normal(x)
+   .. method:: is_normal(x, /)
 
       Returns ``True`` if *x* is a normal number; otherwise returns ``False``.
 
 
-   .. method:: is_qnan(x)
+   .. method:: is_qnan(x, /)
 
       Returns ``True`` if *x* is a quiet NaN; otherwise returns ``False``.
 
 
-   .. method:: is_signed(x)
+   .. method:: is_signed(x, /)
 
       Returns ``True`` if *x* is negative; otherwise returns ``False``.
 
 
-   .. method:: is_snan(x)
+   .. method:: is_snan(x, /)
 
       Returns ``True`` if *x* is a signaling NaN; otherwise returns ``False``.
 
 
-   .. method:: is_subnormal(x)
+   .. method:: is_subnormal(x, /)
 
       Returns ``True`` if *x* is subnormal; otherwise returns ``False``.
 
 
-   .. method:: is_zero(x)
+   .. method:: is_zero(x, /)
 
       Returns ``True`` if *x* is a zero; otherwise returns ``False``.
 
 
-   .. method:: ln(x)
+   .. method:: ln(x, /)
 
       Returns the natural (base e) logarithm of *x*.
 
 
-   .. method:: log10(x)
+   .. method:: log10(x, /)
 
       Returns the base 10 logarithm of *x*.
 
 
-   .. method:: logb(x)
+   .. method:: logb(x, /)
 
        Returns the exponent of the magnitude of the operand's MSD.
 
 
-   .. method:: logical_and(x, y)
+   .. method:: logical_and(x, y, /)
 
       Applies the logical operation *and* between each operand's digits.
 
 
-   .. method:: logical_invert(x)
+   .. method:: logical_invert(x, /)
 
       Invert all the digits in *x*.
 
 
-   .. method:: logical_or(x, y)
+   .. method:: logical_or(x, y, /)
 
       Applies the logical operation *or* between each operand's digits.
 
 
-   .. method:: logical_xor(x, y)
+   .. method:: logical_xor(x, y, /)
 
       Applies the logical operation *xor* between each operand's digits.
 
 
-   .. method:: max(x, y)
+   .. method:: max(x, y, /)
 
       Compares two values numerically and returns the maximum.
 
 
-   .. method:: max_mag(x, y)
+   .. method:: max_mag(x, y, /)
 
       Compares the values numerically with their sign ignored.
 
 
-   .. method:: min(x, y)
+   .. method:: min(x, y, /)
 
       Compares two values numerically and returns the minimum.
 
 
-   .. method:: min_mag(x, y)
+   .. method:: min_mag(x, y, /)
 
       Compares the values numerically with their sign ignored.
 
 
-   .. method:: minus(x)
+   .. method:: minus(x, /)
 
       Minus corresponds to the unary prefix minus operator in Python.
 
 
-   .. method:: multiply(x, y)
+   .. method:: multiply(x, y, /)
 
       Return the product of *x* and *y*.
 
 
-   .. method:: next_minus(x)
+   .. method:: next_minus(x, /)
 
       Returns the largest representable number smaller than *x*.
 
 
-   .. method:: next_plus(x)
+   .. method:: next_plus(x, /)
 
       Returns the smallest representable number larger than *x*.
 
 
-   .. method:: next_toward(x, y)
+   .. method:: next_toward(x, y, /)
 
       Returns the number closest to *x*, in direction towards *y*.
 
 
-   .. method:: normalize(x)
+   .. method:: normalize(x, /)
 
       Reduces *x* to its simplest form.
 
 
-   .. method:: number_class(x)
+   .. method:: number_class(x, /)
 
       Returns an indication of the class of *x*.
 
 
-   .. method:: plus(x)
+   .. method:: plus(x, /)
 
       Plus corresponds to the unary prefix plus operator in Python.  This
       operation applies the context precision and rounding, so it is *not* an
@@ -1490,7 +1490,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       always exact.
 
 
-   .. method:: quantize(x, y)
+   .. method:: quantize(x, y, /)
 
       Returns a value equal to *x* (rounded), having the exponent of *y*.
 
@@ -1500,7 +1500,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       Just returns 10, as this is Decimal, :)
 
 
-   .. method:: remainder(x, y)
+   .. method:: remainder(x, y, /)
 
       Returns the remainder from integer division.
 
@@ -1508,43 +1508,43 @@ In addition to the three supplied contexts, new contexts can be created with the
       dividend.
 
 
-   .. method:: remainder_near(x, y)
+   .. method:: remainder_near(x, y, /)
 
       Returns ``x - y * n``, where *n* is the integer nearest the exact value
       of ``x / y`` (if the result is 0 then its sign will be the sign of *x*).
 
 
-   .. method:: rotate(x, y)
+   .. method:: rotate(x, y, /)
 
       Returns a rotated copy of *x*, *y* times.
 
 
-   .. method:: same_quantum(x, y)
+   .. method:: same_quantum(x, y, /)
 
       Returns ``True`` if the two operands have the same exponent.
 
 
-   .. method:: scaleb (x, y)
+   .. method:: scaleb (x, y, /)
 
       Returns the first operand after adding the second value its exp.
 
 
-   .. method:: shift(x, y)
+   .. method:: shift(x, y, /)
 
       Returns a shifted copy of *x*, *y* times.
 
 
-   .. method:: sqrt(x)
+   .. method:: sqrt(x, /)
 
       Square root of a non-negative number to context precision.
 
 
-   .. method:: subtract(x, y)
+   .. method:: subtract(x, y, /)
 
       Return the difference between *x* and *y*.
 
 
-   .. method:: to_eng_string(x)
+   .. method:: to_eng_string(x, /)
 
       Convert to a string, using engineering notation if an exponent is needed.
 
@@ -1553,12 +1553,12 @@ In addition to the three supplied contexts, new contexts can be created with the
       require the addition of either one or two trailing zeros.
 
 
-   .. method:: to_integral_exact(x)
+   .. method:: to_integral_exact(x, /)
 
       Rounds to an integer.
 
 
-   .. method:: to_sci_string(x)
+   .. method:: to_sci_string(x, /)
 
       Converts a number to a string using scientific notation.
 
