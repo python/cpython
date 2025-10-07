@@ -1296,6 +1296,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pythread.h \
 		$(srcdir)/Include/cpython/setobject.h \
 		$(srcdir)/Include/cpython/sliceobject.h \
+		$(srcdir)/Include/cpython/structseq.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tracemalloc.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
