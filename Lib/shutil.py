@@ -1074,6 +1074,11 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
     targets of the links included in the zip file. This matches the 
     default behaviour of command-line zip utilities on Linux/UNIX 
     systems.
+
+    Hard links to files are followed and the targets of the links 
+    included in the zip file. There is no de-duplication of multiple 
+    hard links to the same file that is provided by other formats, 
+    e.g. tar.
     """
     import zipfile  # late import for breaking circular dependency
 
