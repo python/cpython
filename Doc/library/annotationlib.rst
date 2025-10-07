@@ -46,6 +46,10 @@ and :func:`call_annotate_function`, as well as the
 :func:`call_evaluate_function` function for working with
 :term:`evaluate functions <evaluate function>`.
 
+.. caution::
+
+   Most functionality in this module can execute arbitrary code; see
+   :ref:`the security section <annotationlib-security>` for more information.
 
 .. seealso::
 
@@ -604,3 +608,23 @@ Below are a few examples of the behavior with unsupported expressions:
    >>> def ifexp(x: 1 if y else 0): ...
    >>> get_annotations(ifexp, format=Format.STRING)
    {'x': '1'}
+
+.. _annotationlib-security:
+
+Security implications of introspecting annotations
+--------------------------------------------------
+
+Much of the functionality in this module involves executing code related to annotations,
+which can then do arbitrary things. For example,
+:func:`get_annotations` may call an arbitrary :term:`annotate function`, and
+:meth:`ForwardRef.evaluate` may call :func:`eval` on an arbitrary string. Code contained
+in an annotation might make arbitrary system calls, enter an infinite loop, or perform any
+other operation. This is also true for any access of the :attr:`~object.__annotations__` attribute,
+and for various functions in the :mod:`typing` module that work with annotations, such as
+:func:`typing.get_type_hints`.
+
+Any security issue arising from this also applies immediately after importing
+code that may contain untrusted annotations: importing code can always cause arbitrary operations
+to be performed. However, it is unsafe to accept strings or other input from an untrusted source and
+pass them to any of the APIs for introspecting annotations, for example by editing an
+``__annotations__`` dictionary or directly creating a :class:`ForwardRef` object.
