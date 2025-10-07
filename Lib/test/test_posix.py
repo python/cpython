@@ -757,7 +757,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises((ValueError, OverflowError), posix.makedev, x, minor)
             self.assertRaises((ValueError, OverflowError), posix.makedev, major, x)
 
-        if sys.platform == 'linux':
+        if sys.platform == 'linux' and not support.linked_to_musl():
             NODEV = -1
             self.assertEqual(posix.major(NODEV), NODEV)
             self.assertEqual(posix.minor(NODEV), NODEV)
