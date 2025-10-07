@@ -3070,7 +3070,7 @@ Deprecated C APIs
 
 .. _whatsnew314-build-changes:
 
-Build Changes
+Build changes
 =============
 
 * :pep:`776`: Emscripten is now an officially supported platform at
