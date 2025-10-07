@@ -160,7 +160,7 @@ dump_item(_PyStackRef item)
         printf("<NULL>");
         return;
     }
-    if (PyStackRef_IsError(item)) {
+    if (PyStackRef_IsMalformed(item)) {
         printf("<INVALID>");
         return;
     }
