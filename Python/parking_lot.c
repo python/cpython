@@ -342,7 +342,19 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
     enqueue(bucket, addr, &wait);
     _PyRawMutex_Unlock(&bucket->mutex);
 
-    int res = _PySemaphore_Wait(&wait.sema, timeout_ns, detach);
+    PyThreadState *tstate = NULL;
+    if (detach) {
+        tstate = _PyThreadState_GET();
+        if (tstate && _PyThreadState_IsAttached(tstate)) {
+            // Only detach if we are attached
+            PyEval_ReleaseThread(tstate);
+        }
+        else {
+            tstate = NULL;
+        }
+    }
+
+    int res = _PySemaphore_Wait(&wait.sema, timeout_ns, 0);
     if (res == Py_PARK_OK) {
         goto done;
     }
@@ -354,7 +366,7 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
         // Another thread has started to unpark us. Wait until we process the
         // wakeup signal.
         do {
-            res = _PySemaphore_Wait(&wait.sema, -1, detach);
+            res = _PySemaphore_Wait(&wait.sema, -1, 0);
         } while (res != Py_PARK_OK);
         goto done;
     }
@@ -366,6 +378,9 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
 
 done:
     _PySemaphore_Destroy(&wait.sema);
+    if (tstate) {
+        PyEval_AcquireThread(tstate);
+    }
     return res;
 
 }
