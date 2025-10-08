@@ -1636,6 +1636,33 @@ class TestArchives(BaseTest, unittest.TestCase):
             create_file((root_dir, 'outer'), 'xxx')
         return root_dir, base_dir
 
+    def _create_files_symlinks(self, base_dir="symlinks"):
+        # Create a test structure containing symbolic links.
+        root_dir = self.mkdtemp()
+        dist = os.path.join(root_dir, base_dir)
+        os.mkdir(dist)
+        create_file(
+            (dist, 'real_file1'),
+            'This is a real file.'
+            )
+        # Symbolic link to a file.
+        os.symlink(
+            os.path.join(dist, 'real_file1'),
+            os.path.join(dist, 'link_file1'),
+            )
+        os.mkdir(os.path.join(dist, 'sub'))
+        create_file(
+            (dist, 'sub', 'real_file2'),
+            'This is a real file too.'
+            )
+        # Symbolic link to a directory.
+        os.symlink(
+            os.path.join(dist, 'sub'),
+            os.path.join(dist, 'sub2'),
+            target_is_directory=True,
+            )
+        return root_dir, base_dir
+
     @support.requires_zlib()
     def test_make_tarfile(self):
         root_dir, base_dir = self._create_files()
