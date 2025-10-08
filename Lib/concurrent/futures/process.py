@@ -478,7 +478,10 @@ class _ExecutorManagerThread(threading.Thread):
         if cause is not None:
             cause_str = ''.join(cause)
         else:
-            # No cause known, synthesize from child process exitcodes
+            # No cause known, so report any processes that have
+            # terminated with nonzero exit codes, e.g. from a
+            # segfault. Multiple may terminate simultaneously,
+            # so include all of them in the traceback.
             errors = []
             for p in self.processes.values():
                 if p.exitcode is not None and p.exitcode != 0:
