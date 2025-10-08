@@ -2790,7 +2790,7 @@ class LazyImportTests(unittest.TestCase):
 
         g = test.test_import.data.lazy_imports.pkg.c.get_globals()
         self.assertEqual(type(g["x"]), int)
-        self.assertEqual(type(g["b"]), importlib.lazy_import)
+        self.assertEqual(type(g["b"]), types.LazyImportType)
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
     """A representation of a single-phase init module for testing.

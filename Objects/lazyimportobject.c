@@ -144,8 +144,8 @@ static PyMethodDef lazy_methods[] = {
 
 PyTypeObject PyLazyImport_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "lazy_import",                              /* tp_name */
-    sizeof(PyLazyImportObject),                       /* tp_basicsize */
+    "LazyImport",                               /* tp_name */
+    sizeof(PyLazyImportObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)lazy_import_dealloc,            /* tp_dealloc */
     0,                                          /* tp_print */

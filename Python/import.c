@@ -5377,11 +5377,6 @@ imp_module_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddObjectRef(module, "lazy_import",
-                              (PyObject *)&PyLazyImport_Type) < 0) {
-        return -1;
-    }
-
     return 0;
 }
 
