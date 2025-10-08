@@ -17,11 +17,7 @@ import zipfile
 
 # Mapping of binary dependency tag to GitHub release asset ID
 TAG_TO_ASSET_ID = {
-    'libffi-3.4.4': 280027073,
-    'openssl-bin-3.0.16.2': 280041244,
-    'tcltk-8.6.15.0': 280042163,
-    'nasm-2.11.06': 280042740,
-    'llvm-19.1.7.0': 280052497,
+    'llvm-20.1.8.0': 301710576,
 }
 
 
