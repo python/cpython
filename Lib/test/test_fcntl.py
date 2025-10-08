@@ -293,9 +293,17 @@ class TestFcntl(unittest.TestCase):
         self.f = open(TESTFN, 'wb+')
         fd = self.f.fileno()
 
-        result = fcntl.preallocate(fd, fcntl.F_ALLOCATECONTIG, fcntl.F_PEOFPOSMODE, 0, 1024)
+        result = fcntl.preallocate(fd, fcntl.F_ALLOCATECONTIG, fcntl.F_PEOFPOSMODE, 0, 128)
         self.assertIsInstance(result, int)
-        self.assertEqual(result, 1024)
+        self.assertEqual(result, 128)
+
+        result = fcntl.preallocate(fd, fcntl.F_ALLOCATEALL, fcntl.F_PEOFPOSMODE, 0, 256)
+        self.assertIsInstance(result, int)
+        self.assertEqual(result, 256)
+
+        result = fcntl.preallocate(fd, fcntl.F_ALLOCATEPERSIST, fcntl.F_PEOFPOSMODE, 0, 512)
+        self.assertIsInstance(result, int)
+        self.assertEqual(result, 512)
 
 
 if __name__ == '__main__':
