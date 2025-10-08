@@ -368,6 +368,9 @@ Functions
      doesn't have its own annotations dict, returns an empty dict.
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
+   * For :class:`functools.partial` and :class:`functools.partialmethod` objects,
+     only returns annotations for parameters that have not been bound by the
+     partial application, along with the return annotation if present.
 
    *eval_str* controls whether or not values of type :class:`!str` are
    replaced with the result of calling :func:`eval` on those values:
@@ -391,7 +394,8 @@ Functions
    * If *obj* is a callable, *globals* defaults to
      :attr:`obj.__globals__ <function.__globals__>`,
      although if *obj* is a wrapped function (using
-     :func:`functools.update_wrapper`) or a :class:`functools.partial` object,
+     :func:`functools.update_wrapper`), a :class:`functools.partial` object,
+     or a :class:`functools.partialmethod` object,
      it is unwrapped until a non-wrapped function is found.
 
    Calling :func:`!get_annotations` is best practice for accessing the
@@ -404,6 +408,19 @@ Functions
       ...     pass
       >>> get_annotations(f)
       {'a': <class 'int'>, 'b': <class 'str'>, 'return': <class 'float'>}
+
+   :func:`!get_annotations` also works with :class:`functools.partial` and
+   :class:`functools.partialmethod` objects, returning only the annotations
+   for parameters that have not been bound:
+
+   .. doctest::
+
+      >>> from functools import partial
+      >>> def add(a: int, b: int, c: int) -> int:
+      ...     return a + b + c
+      >>> add_10 = partial(add, 10)
+      >>> get_annotations(add_10)
+      {'b': <class 'int'>, 'c': <class 'int'>, 'return': <class 'int'>}
 
    .. versionadded:: 3.14
 
@@ -420,6 +437,63 @@ Functions
    objects that contain values that are commonly encountered in annotations.
 
    .. versionadded:: 3.14
+
+
+Using :func:`!get_annotations` with :mod:`functools` objects
+--------------------------------------------------------------
+
+:func:`get_annotations` has special support for :class:`functools.partial`
+and :class:`functools.partialmethod` objects. When called on these objects,
+it returns only the annotations for parameters that have not been bound by
+the partial application, along with the return annotation if present.
+
+For :class:`functools.partial` objects, positional arguments bind to parameters
+in order, and the annotations for those parameters are excluded from the result:
+
+.. doctest::
+
+   >>> from functools import partial
+   >>> def func(a: int, b: str, c: float) -> bool:
+   ...     return True
+   >>> partial_func = partial(func, 1)  # Binds 'a'
+   >>> get_annotations(partial_func)
+   {'b': <class 'str'>, 'c': <class 'float'>, 'return': <class 'bool'>}
+
+Keyword arguments in :class:`functools.partial` set default values but do not
+remove parameters from the signature, so their annotations are retained:
+
+.. doctest::
+
+   >>> partial_func_kw = partial(func, b="hello")  # Sets default for 'b'
+   >>> get_annotations(partial_func_kw)
+   {'a': <class 'int'>, 'b': <class 'str'>, 'c': <class 'float'>, 'return': <class 'bool'>}
+
+For :class:`functools.partialmethod` objects accessed through a class (unbound),
+the first parameter (usually ``self`` or ``cls``) is preserved, and subsequent
+parameters are handled similarly to :class:`functools.partial`:
+
+.. doctest::
+
+   >>> from functools import partialmethod
+   >>> class MyClass:
+   ...     def method(self, a: int, b: str) -> bool:
+   ...         return True
+   ...     partial_method = partialmethod(method, 1)  # Binds 'a'
+   >>> get_annotations(MyClass.partial_method)
+   {'b': <class 'str'>, 'return': <class 'bool'>}
+
+When a :class:`functools.partialmethod` is accessed through an instance (bound),
+it becomes a :class:`functools.partial` object and is handled accordingly:
+
+.. doctest::
+
+   >>> obj = MyClass()
+   >>> get_annotations(obj.partial_method)  # Same as above, 'self' is also bound
+   {'b': <class 'str'>, 'return': <class 'bool'>}
+
+This behavior ensures that :func:`get_annotations` returns annotations that
+accurately reflect the signature of the partial or partialmethod object, as
+determined by :func:`inspect.signature`.
 
 
 Recipes

@@ -1062,11 +1062,139 @@ def annotations_to_string(annotations):
     }
 
 
+def _get_annotations_for_partialmethod(partialmethod_obj, format):
+    """Get annotations for a functools.partialmethod object.
+
+    Returns annotations for the wrapped function, but only for parameters
+    that haven't been bound by the partial application. The first parameter
+    (usually 'self' or 'cls') is kept since partialmethod is unbound.
+    """
+    import inspect
+
+    # Get the wrapped function
+    func = partialmethod_obj.func
+
+    # Get annotations from the wrapped function
+    func_annotations = get_annotations(func, format=format)
+
+    if not func_annotations:
+        return {}
+
+    # For partialmethod, we need to simulate the signature calculation
+    # The first parameter (self/cls) should remain, but bound args should be removed
+    try:
+        # Get the function signature
+        func_sig = inspect.signature(func)
+        func_params = list(func_sig.parameters.keys())
+
+        if not func_params:
+            return func_annotations
+
+        # Calculate which parameters are bound by the partialmethod
+        partial_args = partialmethod_obj.args or ()
+        partial_keywords = partialmethod_obj.keywords or {}
+
+        # Build new annotations dict
+        new_annotations = {}
+
+        # Keep return annotation if present
+        if 'return' in func_annotations:
+            new_annotations['return'] = func_annotations['return']
+
+        # The first parameter (self/cls) is always kept for unbound partialmethod
+        first_param = func_params[0]
+        if first_param in func_annotations:
+            new_annotations[first_param] = func_annotations[first_param]
+
+        # For partialmethod, positional args bind to parameters AFTER the first one
+        # So if func is (self, a, b, c) and partialmethod.args=(1,)
+        # Then 'self' stays, 'a' is bound, 'b' and 'c' remain
+
+        remaining_params = func_params[1:]
+        num_positional_bound = len(partial_args)
+
+        for i, param_name in enumerate(remaining_params):
+            # Skip if this param is bound positionally
+            if i < num_positional_bound:
+                continue
+
+            # For keyword binding: keep the annotation (keyword sets default, doesn't remove param)
+            if param_name in partial_keywords:
+                if param_name in func_annotations:
+                    new_annotations[param_name] = func_annotations[param_name]
+                continue
+
+            # This parameter is not bound, keep its annotation
+            if param_name in func_annotations:
+                new_annotations[param_name] = func_annotations[param_name]
+
+        return new_annotations
+
+    except (ValueError, TypeError):
+        # If we can't process, return the original annotations
+        return func_annotations
+
+
+def _get_annotations_for_partial(partial_obj, format):
+    """Get annotations for a functools.partial object.
+
+    Returns annotations for the wrapped function, but only for parameters
+    that haven't been bound by the partial application.
+    """
+    import inspect
+
+    # Get the wrapped function
+    func = partial_obj.func
+
+    # Get annotations from the wrapped function
+    func_annotations = get_annotations(func, format=format)
+
+    if not func_annotations:
+        return {}
+
+    # Get the signature to determine which parameters are bound
+    try:
+        sig = inspect.signature(partial_obj)
+    except (ValueError, TypeError):
+        # If we can't get signature, return empty dict
+        return {}
+
+    # Build new annotations dict with only unbound parameters
+    new_annotations = {}
+
+    # Keep return annotation if present
+    if 'return' in func_annotations:
+        new_annotations['return'] = func_annotations['return']
+
+    # Only include annotations for parameters that still exist in partial's signature
+    for param_name in sig.parameters:
+        if param_name in func_annotations:
+            new_annotations[param_name] = func_annotations[param_name]
+
+    return new_annotations
+
+
 def _get_and_call_annotate(obj, format):
     """Get the __annotate__ function and call it.
 
     May not return a fresh dictionary.
     """
+    import functools
+
+    # Handle functools.partialmethod objects (unbound)
+    # Check for __partialmethod__ attribute first
+    try:
+        partialmethod = obj.__partialmethod__
+    except AttributeError:
+        pass
+    else:
+        if isinstance(partialmethod, functools.partialmethod):
+            return _get_annotations_for_partialmethod(partialmethod, format)
+
+    # Handle functools.partial objects
+    if isinstance(obj, functools.partial):
+        return _get_annotations_for_partial(obj, format)
+
     annotate = getattr(obj, "__annotate__", None)
     if annotate is not None:
         ann = call_annotate_function(annotate, format, owner=obj)
@@ -1084,6 +1212,21 @@ def _get_dunder_annotations(obj):
 
     Does not return a fresh dictionary.
     """
+    # Check for functools.partialmethod - skip __annotations__ and use __annotate__ path
+    import functools
+    try:
+        partialmethod = obj.__partialmethod__
+        if isinstance(partialmethod, functools.partialmethod):
+            # Return None to trigger _get_and_call_annotate
+            return None
+    except AttributeError:
+        pass
+
+    # Check for functools.partial - skip __annotations__ and use __annotate__ path
+    if isinstance(obj, functools.partial):
+        # Return None to trigger _get_and_call_annotate
+        return None
+
     # This special case is needed to support types defined under
     # from __future__ import annotations, where accessing the __annotations__
     # attribute directly might return annotations for the wrong class.
