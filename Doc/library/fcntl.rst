@@ -83,6 +83,13 @@ descriptor.
    On Linux >= 6.1, the :mod:`!fcntl` module exposes the ``F_DUPFD_QUERY``
    to query a file descriptor pointing to the same file.
 
+.. versionchanged:: next
+   On macOS, the :mod:`!fcntl` module exposes the ``F_PREALLOCATE``,
+   ``F_ALLOCATECONTIG``, ``F_ALLOCATEALL``, ``F_ALLOCATEPERSIST``,
+   ``F_PEOFPOSMODE``, and ``F_VOLPOSMODE`` constants for file preallocation
+   operations, and the :func:`preallocate` function to preallocate file
+   storage space.
+
 The module defines the following functions:
 
 
@@ -247,6 +254,47 @@ The module defines the following functions:
    default for *whence* is also 0.
 
    .. audit-event:: fcntl.lockf fd,cmd,len,start,whence fcntl.lockf
+
+
+.. function:: preallocate(fd, flags, posmode, offset, length, /)
+
+   Preallocate file storage space.
+
+   This is a wrapper around the ``F_PREALLOCATE`` fcntl command.
+
+   *fd* is the file descriptor of the file to preallocate space for.
+   *flags* specifies the allocation behavior and can be one of:
+
+   .. data:: F_ALLOCATECONTIG
+
+      Allocate contiguous space.
+
+   .. data:: F_ALLOCATEALL
+
+      Allocate all requested space or none at all.
+
+   .. data:: F_ALLOCATEPERSIST
+
+      Do not deallocate space on close.
+
+   *posmode* specifies the positioning mode and can be one of:
+
+   .. data:: F_PEOFPOSMODE
+
+      Allocate space relative to the end of the file.
+
+   .. data:: F_VOLPOSMODE
+
+      Allocate space relative to the volume start.
+
+   *offset* is the starting offset for the allocation.
+   *length* is the number of bytes to allocate.
+
+   Returns the number of bytes actually allocated.
+
+   .. availability:: macOS.
+
+   .. audit-event:: fcntl.preallocate fd,flags,posmode,offset,length fcntl.preallocate
 
 Examples (all on a SVR4 compliant system)::
 
