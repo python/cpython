@@ -580,6 +580,14 @@ xml.parsers.expat
   .. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
 
 
+xml.sax.utils
+-------------
+
+* Add the :func:`~xml.sax.utils.is_valid_name` function, which allows to check
+  whether a string can be used as an element or attribute name in XML.
+  (Contributed by Serhiy Storchaka in :gh:`139489`.)
+
+
 zlib
 ----
 
