@@ -35,7 +35,6 @@ Doc/library/smtplib.rst
 Doc/library/socket.rst
 Doc/library/ssl.rst
 Doc/library/stdtypes.rst
-Doc/library/subprocess.rst
 Doc/library/termios.rst
 Doc/library/test.rst
 Doc/library/tkinter.rst
