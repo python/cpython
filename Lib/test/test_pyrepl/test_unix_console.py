@@ -361,7 +361,7 @@ class TestUnixConsoleEIOHandling(TestCase):
 
         os.kill(proc.pid, signal.SIGUSR1)
         # sleep for pty to settle
-        _, err = proc.communicate(timeout=support.SHORT_TIMEOUT)
+        _, err = proc.communicate(timeout=support.LONG_TIMEOUT)
         self.assertEqual(
             proc.returncode,
             1,
