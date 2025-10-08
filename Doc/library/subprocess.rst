@@ -648,8 +648,11 @@ functions.
    .. note::
 
       If specified, *env* must provide any variables required for the program to
-      execute.  On Windows, in order to run a `side-by-side assembly`_ the
-      specified *env* **must** include a valid :envvar:`SystemRoot`.
+      execute.  On Windows, in order to run a `side-by-side assembly`_, or a
+      Python program using the :mod:`socket` module (or another module that
+      depends on it, such as :mod:`asyncio`), the specified *env* **must**
+      include a valid :envvar:`!SystemRoot`; omitting it may emit a
+      :exc:`RuntimeWarning`.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
