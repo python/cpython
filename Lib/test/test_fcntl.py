@@ -288,6 +288,15 @@ class TestFcntl(unittest.TestCase):
         with self.assertRaises(OSError):
             fcntl.fcntl(fd, fcntl.F_DUPFD, b'\0' * 2048)
 
+    @unittest.skipUnless(hasattr(fcntl, 'preallocate'), 'need fcntl.preallocate')
+    def test_preallocate(self):
+        self.f = open(TESTFN, 'wb+')
+        fd = self.f.fileno()
+
+        result = fcntl.preallocate(fd, fcntl.F_ALLOCATECONTIG, fcntl.F_PEOFPOSMODE, 0, 1024)
+        self.assertIsInstance(result, int)
+        self.assertEqual(result, 1024)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -266,13 +266,15 @@ exit:
     return return_value;
 }
 
+#if defined(F_PREALLOCATE)
+
 PyDoc_STRVAR(fcntl_preallocate__doc__,
 "preallocate($module, fd, flags, posmode, offset, length, /)\n"
 "--\n"
 "\n"
 "Preallocate file storage space.\n"
 "\n"
-"This is a wrapper around the F_PREALLOCATE fcntl command on macOS.");
+"This is a wrapper around the F_PREALLOCATE fcntl command.");
 
 #define FCNTL_PREALLOCATE_METHODDEF    \
     {"preallocate", _PyCFunction_CAST(fcntl_preallocate), METH_FASTCALL, fcntl_preallocate__doc__},
@@ -319,4 +321,10 @@ fcntl_preallocate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=98ef6f68541bdd50 input=a9049054013a1b77]*/
+
+#endif /* defined(F_PREALLOCATE) */
+
+#ifndef FCNTL_PREALLOCATE_METHODDEF
+    #define FCNTL_PREALLOCATE_METHODDEF
+#endif /* !defined(FCNTL_PREALLOCATE_METHODDEF) */
+/*[clinic end generated code: output=2415a3c483423cf9 input=a9049054013a1b77]*/

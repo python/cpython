@@ -503,6 +503,8 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
 }
 
 
+#ifdef F_PREALLOCATE
+
 /*[clinic input]
 fcntl.preallocate
 
@@ -521,9 +523,8 @@ This is a wrapper around the F_PREALLOCATE fcntl command.
 static PyObject *
 fcntl_preallocate_impl(PyObject *module, int fd, int flags, int posmode,
                        long offset, long length)
-/*[clinic end generated code: output=4934b8a4dc1f5dc1 input=b8e76ad8be51da32]*/
+/*[clinic end generated code: output=4934b8a4dc1f5dc1 input=4c1a9d46551420ed]*/
 {
-#ifdef F_PREALLOCATE
     int ret;
     int async_err = 0;
 
@@ -550,11 +551,9 @@ fcntl_preallocate_impl(PyObject *module, int fd, int flags, int posmode,
     }
 
     return PyLong_FromLong((long)fstore.fst_bytesalloc);
-#else
-    PyErr_SetString(PyExc_OSError, "F_PREALLOCATE not supported on this platform");
-    return NULL;
-#endif
 }
+
+#endif /* F_PREALLOCATE */
 
 /* List of functions */
 
@@ -753,6 +752,12 @@ all_ins(PyObject* m)
 #endif
 #ifdef F_ALLOCATEPERSIST
     if (PyModule_AddIntMacro(m, F_ALLOCATEPERSIST)) return -1;
+#endif
+#ifdef F_PEOFPOSMODE
+    if (PyModule_AddIntMacro(m, F_PEOFPOSMODE)) return -1;
+#endif
+#ifdef F_VOLPOSMODE
+    if (PyModule_AddIntMacro(m, F_VOLPOSMODE)) return -1;
 #endif
 
 /* FreeBSD specifics */
