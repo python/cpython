@@ -2097,10 +2097,6 @@ code_returns_only_none(PyCodeObject *co)
     int len = (int)Py_SIZE(co);
     assert(len > 0);
 
-    // The last instruction either returns or raises.  We can take advantage
-    // of that for a quick exit.
-    _Py_CODEUNIT final = _Py_GetBaseCodeUnit(co, len-1);
-
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
     int none_index = 0;
@@ -2113,29 +2109,22 @@ code_returns_only_none(PyCodeObject *co)
         // None wasn't there, which means there was no implicit return,
         // "return", or "return None".
 
-        // That means there must be
-        // an explicit return (non-None), or it only raises.
+        // The last instruction mostly either returns or raises.
+        // We can take advantage of that for a quick exit.
+        _Py_CODEUNIT final = _Py_GetBaseCodeUnit(co, len-1);
         if (IS_RETURN_OPCODE(final.op.code)) {
             // It was an explicit return (non-None).
             return 0;
         }
-        // It must end with a raise then.  We still have to walk the
-        // bytecode to see if there's any explicit return (non-None).
-        assert(IS_RAISE_OPCODE(final.op.code));
-        for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
-            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
-            if (IS_RETURN_OPCODE(inst.op.code)) {
-                // We alraedy know it isn't returning None.
-                return 0;
-            }
-        }
-        // It must only raise.
+
+        none_index = -1;
     }
-    else {
-        // Walk the bytecode, looking for RETURN_VALUE.
-        for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
-            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
-            if (IS_RETURN_OPCODE(inst.op.code)) {
+
+    // Walk the bytecode, looking for RETURN_VALUE.
+    for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+        if (IS_RETURN_OPCODE(inst.op.code)) {
+            if (none_index >= 0) {
                 assert(i != 0);
                 // Ignore it if it returns None.
                 _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
@@ -2145,8 +2134,8 @@ code_returns_only_none(PyCodeObject *co)
                         continue;
                     }
                 }
-                return 0;
             }
+            return 0;
         }
     }
     return 1;
