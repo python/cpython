@@ -265,4 +265,58 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9773e44da302dc7c input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(fcntl_preallocate__doc__,
+"preallocate($module, fd, flags, posmode, offset, length, /)\n"
+"--\n"
+"\n"
+"Preallocate file storage space.\n"
+"\n"
+"This is a wrapper around the F_PREALLOCATE fcntl command on macOS.");
+
+#define FCNTL_PREALLOCATE_METHODDEF    \
+    {"preallocate", _PyCFunction_CAST(fcntl_preallocate), METH_FASTCALL, fcntl_preallocate__doc__},
+
+static PyObject *
+fcntl_preallocate_impl(PyObject *module, int fd, int flags, int posmode,
+                       long offset, long length);
+
+static PyObject *
+fcntl_preallocate(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int flags;
+    int posmode;
+    long offset;
+    long length;
+
+    if (!_PyArg_CheckPositional("preallocate", nargs, 5, 5)) {
+        goto exit;
+    }
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
+        goto exit;
+    }
+    flags = PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    posmode = PyLong_AsInt(args[2]);
+    if (posmode == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    offset = PyLong_AsLong(args[3]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    length = PyLong_AsLong(args[4]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = fcntl_preallocate_impl(module, fd, flags, posmode, offset, length);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=98ef6f68541bdd50 input=a9049054013a1b77]*/

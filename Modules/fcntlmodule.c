@@ -502,6 +502,60 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
     Py_RETURN_NONE;
 }
 
+
+/*[clinic input]
+fcntl.preallocate
+
+    fd: fildes
+    flags: int
+    posmode: int
+    offset: long
+    length: long
+    /
+
+Preallocate file storage space.
+
+This is a wrapper around the F_PREALLOCATE fcntl command.
+[clinic start generated code]*/
+
+static PyObject *
+fcntl_preallocate_impl(PyObject *module, int fd, int flags, int posmode,
+                       long offset, long length)
+/*[clinic end generated code: output=4934b8a4dc1f5dc1 input=b8e76ad8be51da32]*/
+{
+#ifdef F_PREALLOCATE
+    int ret;
+    int async_err = 0;
+
+    if (PySys_Audit("fcntl.preallocate", "iiill", fd, flags, posmode, offset, length) < 0) {
+        return NULL;
+    }
+
+    struct fstore fstore = {
+        .fst_flags = (unsigned int)flags,
+        .fst_posmode = posmode,
+        .fst_offset = (off_t)offset,
+        .fst_length = (off_t)length,
+        .fst_bytesalloc = 0
+    };
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = fcntl(fd, F_PREALLOCATE, &fstore);
+        Py_END_ALLOW_THREADS
+    } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (ret < 0) {
+        return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+    }
+
+    return PyLong_FromLong((long)fstore.fst_bytesalloc);
+#else
+    PyErr_SetString(PyExc_OSError, "F_PREALLOCATE not supported on this platform");
+    return NULL;
+#endif
+}
+
 /* List of functions */
 
 static PyMethodDef fcntl_methods[] = {
@@ -509,6 +563,7 @@ static PyMethodDef fcntl_methods[] = {
     FCNTL_IOCTL_METHODDEF
     FCNTL_FLOCK_METHODDEF
     FCNTL_LOCKF_METHODDEF
+    FCNTL_PREALLOCATE_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
@@ -686,6 +741,18 @@ all_ins(PyObject* m)
 #endif
 #ifdef F_NOCACHE
     if (PyModule_AddIntMacro(m, F_NOCACHE)) return -1;
+#endif
+#ifdef F_PREALLOCATE
+    if (PyModule_AddIntMacro(m, F_PREALLOCATE)) return -1;
+#endif
+#ifdef F_ALLOCATECONTIG
+    if (PyModule_AddIntMacro(m, F_ALLOCATECONTIG)) return -1;
+#endif
+#ifdef F_ALLOCATEALL
+    if (PyModule_AddIntMacro(m, F_ALLOCATEALL)) return -1;
+#endif
+#ifdef F_ALLOCATEPERSIST
+    if (PyModule_AddIntMacro(m, F_ALLOCATEPERSIST)) return -1;
 #endif
 
 /* FreeBSD specifics */
