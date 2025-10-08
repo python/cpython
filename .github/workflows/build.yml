@@ -402,9 +402,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Use the same runs-on configuration as build-macos and build-ubuntu.
           - arch: aarch64
-            runs-on: ${{ github.repository_owner == 'python' && 'ghcr.io/cirruslabs/macos-runner:sonoma' || 'macos-14' }}
+            runs-on: macos-14
           - arch: x86_64
             runs-on: ubuntu-24.04
 
