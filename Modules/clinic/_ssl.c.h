@@ -47,7 +47,7 @@ static PyObject *
 _ssl__test_decode_cert(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *path;
+    PyObject *path = NULL;
 
     if (!PyUnicode_FSConverter(arg, &path)) {
         goto exit;
@@ -55,6 +55,9 @@ _ssl__test_decode_cert(PyObject *module, PyObject *arg)
     return_value = _ssl__test_decode_cert_impl(module, path);
 
 exit:
+    /* Cleanup for path */
+    Py_XDECREF(path);
+
     return return_value;
 }
 
@@ -2867,4 +2870,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=8c4a1e44702afeb7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6849453c6b91db74 input=a9049054013a1b77]*/
