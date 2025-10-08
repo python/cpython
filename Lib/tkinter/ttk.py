@@ -1589,7 +1589,7 @@ class OptionMenu(Menubutton):
 
     def __init__(self, master, variable, default=None, *values, **kwargs):
         """Construct a themed OptionMenu widget with master as the parent,
-        the resource textvariable set to variable, the initially selected
+        the option textvariable set to variable, the initially selected
         value specified by the default parameter, the menu values given by
         *values and additional keywords.
 

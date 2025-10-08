@@ -2002,6 +2002,10 @@ pointer and a void pointer argument.
       called from the main interpreter. Each subinterpreter now has its own
       list of scheduled calls.
 
+   .. versionchanged:: 3.12
+      This function now always schedules *func* to be run in the main
+      interpreter.
+
 .. _profiling:
 
 Profiling and Tracing
