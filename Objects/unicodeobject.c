@@ -42,7 +42,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_bytes_methods.h" // _Py_bytes_lower()
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat()
-
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_critical_section.h" // Py_*_CRITICAL_SECTION_SEQUENCE_FAST
