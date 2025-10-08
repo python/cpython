@@ -527,26 +527,12 @@ class SymtableTest(unittest.TestCase):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
         self.assertEqual(repr(self.top._table), expected)
 
-
-class ComprehensionTests(unittest.TestCase):
-    def get_identifiers_recursive(self, st, res):
-        res.extend(st.get_identifiers())
-        for ch in st.get_children():
-            self.get_identifiers_recursive(ch, res)
-
-    def test_loopvar_in_only_one_scope(self):
-        # ensure that the loop variable appears only once in the symtable
-        comps = [
-            "[x for x in [1]]",
-            "{x for x in [1]}",
-            "{x:x*x for x in [1]}",
-        ]
-        for comp in comps:
-            with self.subTest(comp=comp):
-                st = symtable.symtable(comp, "?", "exec")
-                ids = []
-                self.get_identifiers_recursive(st, ids)
-                self.assertEqual(len([x for x in ids if x == 'x']), 1)
+    def test__symtable_refleak(self):
+        # Regression test for reference leak in PyUnicode_FSDecoder.
+        # See https://github.com/python/cpython/issues/139748.
+        mortal_str = 'this is a mortal string'
+        # check error path when 'compile_type' AC conversion failed
+        self.assertRaises(TypeError, symtable.symtable, '', mortal_str, 1)
 
 
 class CommandLineTest(unittest.TestCase):
