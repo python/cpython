@@ -1,0 +1,3 @@
+:mod:`netrc`: improve the error message when the security check for the
+ownership of the default configuration file ``~/.netrc`` fails. Patch by
+Bénédikt Tran.

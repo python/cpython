@@ -37,38 +37,52 @@ No feature description will ever be deleted from :mod:`__future__`. Since its
 introduction in Python 2.1 the following features have found their way into the
 language using this mechanism:
 
-+------------------+-------------+--------------+---------------------------------------------+
-| feature          | optional in | mandatory in | effect                                      |
-+==================+=============+==============+=============================================+
-| nested_scopes    | 2.1.0b1     | 2.2          | :pep:`227`:                                 |
-|                  |             |              | *Statically Nested Scopes*                  |
-+------------------+-------------+--------------+---------------------------------------------+
-| generators       | 2.2.0a1     | 2.3          | :pep:`255`:                                 |
-|                  |             |              | *Simple Generators*                         |
-+------------------+-------------+--------------+---------------------------------------------+
-| division         | 2.2.0a2     | 3.0          | :pep:`238`:                                 |
-|                  |             |              | *Changing the Division Operator*            |
-+------------------+-------------+--------------+---------------------------------------------+
-| absolute_import  | 2.5.0a1     | 3.0          | :pep:`328`:                                 |
-|                  |             |              | *Imports: Multi-Line and Absolute/Relative* |
-+------------------+-------------+--------------+---------------------------------------------+
-| with_statement   | 2.5.0a1     | 2.6          | :pep:`343`:                                 |
-|                  |             |              | *The "with" Statement*                      |
-+------------------+-------------+--------------+---------------------------------------------+
-| print_function   | 2.6.0a2     | 3.0          | :pep:`3105`:                                |
-|                  |             |              | *Make print a function*                     |
-+------------------+-------------+--------------+---------------------------------------------+
-| unicode_literals | 2.6.0a2     | 3.0          | :pep:`3112`:                                |
-|                  |             |              | *Bytes literals in Python 3000*             |
-+------------------+-------------+--------------+---------------------------------------------+
-| generator_stop   | 3.5.0b1     | 3.7          | :pep:`479`:                                 |
-|                  |             |              | *StopIteration handling inside generators*  |
-+------------------+-------------+--------------+---------------------------------------------+
-| annotations      | 3.7.0b1     | Never [1]_   | :pep:`563`:                                 |
-|                  |             |              | *Postponed evaluation of annotations*,      |
-|                  |             |              | :pep:`649`: *Deferred evaluation of         |
-|                  |             |              | annotations using descriptors*              |
-+------------------+-------------+--------------+---------------------------------------------+
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * feature
+     * optional in
+     * mandatory in
+     * effect
+   * * .. data:: nested_scopes
+     * 2.1.0b1
+     * 2.2
+     * :pep:`227`: *Statically Nested Scopes*
+   * * .. data:: generators
+     * 2.2.0a1
+     * 2.3
+     * :pep:`255`: *Simple Generators*
+   * * .. data:: division
+     * 2.2.0a2
+     * 3.0
+     * :pep:`238`: *Changing the Division Operator*
+   * * .. data:: absolute_import
+     * 2.5.0a1
+     * 3.0
+     * :pep:`328`: *Imports: Multi-Line and Absolute/Relative*
+   * * .. data:: with_statement
+     * 2.5.0a1
+     * 2.6
+     * :pep:`343`: *The “with” Statement*
+   * * .. data:: print_function
+     * 2.6.0a2
+     * 3.0
+     * :pep:`3105`: *Make print a function*
+   * * .. data:: unicode_literals
+     * 2.6.0a2
+     * 3.0
+     * :pep:`3112`: *Bytes literals in Python 3000*
+   * * .. data:: generator_stop
+     * 3.5.0b1
+     * 3.7
+     * :pep:`479`: *StopIteration handling inside generators*
+   * * .. data:: annotations
+     * 3.7.0b1
+     * Never [1]_
+     * :pep:`563`: *Postponed evaluation of annotations*,
+       :pep:`649`: *Deferred evaluation of annotations using descriptors*
 
 .. XXX Adding a new entry?  Remember to update simple_stmts.rst, too.
 

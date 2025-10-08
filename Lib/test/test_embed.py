@@ -543,7 +543,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'configure_locale': True,
         'coerce_c_locale': False,
         'coerce_c_locale_warn': False,
-        'utf8_mode': False,
+        'utf8_mode': True,
     }
     if MS_WINDOWS:
         PRE_CONFIG_COMPAT.update({
@@ -560,7 +560,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         configure_locale=False,
         isolated=True,
         use_environment=False,
-        utf8_mode=False,
+        utf8_mode=True,
         dev_mode=False,
         coerce_c_locale=False,
     )
@@ -804,12 +804,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             for key in ('filesystem_encoding', 'filesystem_errors',
                         'stdio_encoding', 'stdio_errors'):
                 expected[key] = self.IGNORE_CONFIG
-
-        if not expected_preconfig['configure_locale']:
-            # UTF-8 Mode depends on the locale. There is no easy way
-            # to guess if UTF-8 Mode will be enabled or not if the locale
-            # is not configured.
-            expected_preconfig['utf8_mode'] = self.IGNORE_CONFIG
 
         if expected_preconfig['utf8_mode'] == 1:
             if expected['filesystem_encoding'] is self.GET_DEFAULT_CONFIG:
@@ -1237,21 +1231,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_all_configs("test_init_dont_configure_locale", {}, preconfig,
                                api=API_PYTHON)
-
-    @unittest.skip('as of 3.11 this test no longer works because '
-                   'path calculations do not occur on read')
-    def test_init_read_set(self):
-        config = {
-            'program_name': './init_read_set',
-            'executable': 'my_executable',
-            'base_executable': 'my_executable',
-        }
-        def modify_path(path):
-            path.insert(1, "test_path_insert1")
-            path.append("test_path_append")
-        self.check_all_configs("test_init_read_set", config,
-                               api=API_PYTHON,
-                               modify_path_cb=modify_path)
 
     def test_init_sys_add(self):
         config = {
@@ -1913,6 +1892,10 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_get_incomplete_frame(self):
         self.run_embedded_interpreter("test_get_incomplete_frame")
+
+
+    def test_gilstate_after_finalization(self):
+        self.run_embedded_interpreter("test_gilstate_after_finalization")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):

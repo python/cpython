@@ -535,6 +535,9 @@ Other constructors, all class methods:
       :c:func:`localtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`localtime` failure.
 
+   .. versionchanged:: next
+      Accepts any real number as *timestamp*, not only integer or float.
+
 
 .. classmethod:: date.fromordinal(ordinal)
 
@@ -1020,6 +1023,10 @@ Other constructors, all class methods:
    .. versionchanged:: 3.6
       :meth:`fromtimestamp` may return instances with :attr:`.fold` set to 1.
 
+   .. versionchanged:: next
+      Accepts any real number as *timestamp*, not only integer or float.
+
+
 .. classmethod:: datetime.utcfromtimestamp(timestamp)
 
    Return the UTC :class:`.datetime` corresponding to the POSIX timestamp, with
@@ -1059,6 +1066,9 @@ Other constructors, all class methods:
    .. deprecated:: 3.12
 
       Use :meth:`datetime.fromtimestamp` with :const:`UTC` instead.
+
+   .. versionchanged:: next
+      Accepts any real number as *timestamp*, not only integer or float.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)
@@ -1502,11 +1512,11 @@ Instance methods:
    returned by :func:`time.time`.
 
    Naive :class:`.datetime` instances are assumed to represent local
-   time and this method relies on the platform C :c:func:`mktime`
-   function to perform the conversion. Since :class:`.datetime`
-   supports wider range of values than :c:func:`mktime` on many
-   platforms, this method may raise :exc:`OverflowError` or :exc:`OSError`
-   for times far in the past or far in the future.
+   time and this method relies on platform C functions to perform
+   the conversion. Since :class:`.datetime` supports a wider range of
+   values than the platform C functions on many platforms, this
+   method may raise :exc:`OverflowError` or :exc:`OSError` for times
+   far in the past or far in the future.
 
    For aware :class:`.datetime` instances, the return value is computed
    as::
@@ -1518,6 +1528,10 @@ Instance methods:
    .. versionchanged:: 3.6
       The :meth:`timestamp` method uses the :attr:`.fold` attribute to
       disambiguate the times during a repeated interval.
+
+   .. versionchanged:: 3.6
+      This method no longer relies on the platform C :c:func:`mktime`
+      function to perform conversions.
 
    .. note::
 
@@ -2379,7 +2393,7 @@ locations where different offsets are used in different days of the year or
 where historical changes have been made to civil time.
 
 
-.. class:: timezone(offset, name=None)
+.. class:: timezone(offset[, name])
 
   The *offset* argument must be specified as a :class:`timedelta`
   object representing the difference between the local time and UTC. It must
@@ -2625,7 +2639,10 @@ differences between platforms in handling of unsupported format specifiers.
    ``%G``, ``%u`` and ``%V`` were added.
 
 .. versionadded:: 3.12
-   ``%:z`` was added.
+   ``%:z`` was added for :meth:`~.datetime.strftime`
+
+.. versionadded:: next
+   ``%:z`` was added for :meth:`~.datetime.strptime`
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
@@ -2720,12 +2737,18 @@ Notes:
       When the ``%z`` directive is provided to the  :meth:`~.datetime.strptime` method,
       the UTC offsets can have a colon as a separator between hours, minutes
       and seconds.
-      For example, ``'+01:00:00'`` will be parsed as an offset of one hour.
-      In addition, providing ``'Z'`` is identical to ``'+00:00'``.
+      For example, both ``'+010000'`` and ``'+01:00:00'`` will be parsed as an offset
+      of one hour. In addition, providing ``'Z'`` is identical to ``'+00:00'``.
 
    ``%:z``
-      Behaves exactly as ``%z``, but has a colon separator added between
-      hours, minutes and seconds.
+      When used with :meth:`~.datetime.strftime`, behaves exactly as ``%z``,
+      except that a colon separator is added between hours, minutes and seconds.
+
+      When used with :meth:`~.datetime.strptime`, the UTC offset is *required*
+      to have a colon as a separator between hours, minutes and seconds.
+      For example, ``'+01:00:00'`` (but *not* ``'+010000'``) will be parsed as
+      an offset of one hour. In addition, providing ``'Z'`` is identical to
+      ``'+00:00'``.
 
    ``%Z``
       In :meth:`~.datetime.strftime`, ``%Z`` is replaced by an empty string if

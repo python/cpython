@@ -3,7 +3,7 @@
 : "${HOST:?}"  # GNU target triplet
 
 # You may also override the following:
-: "${api_level:=24}"  # Minimum Android API level the build will run on
+: "${ANDROID_API_LEVEL:=24}"  # Minimum Android API level the build will run on
 : "${PREFIX:-}"  # Path in which to find required libraries
 
 
@@ -24,7 +24,7 @@ fail() {
 # * https://android.googlesource.com/platform/ndk/+/ndk-rXX-release/docs/BuildSystemMaintainers.md
 #   where XX is the NDK version. Do a diff against the version you're upgrading from, e.g.:
 #   https://android.googlesource.com/platform/ndk/+/ndk-r25-release..ndk-r26-release/docs/BuildSystemMaintainers.md
-ndk_version=27.1.12297006
+ndk_version=27.3.13750724
 
 ndk=$ANDROID_HOME/ndk/$ndk_version
 if ! [ -e "$ndk" ]; then
@@ -43,7 +43,7 @@ fi
 toolchain=$(echo "$ndk"/toolchains/llvm/prebuilt/*)
 export AR="$toolchain/bin/llvm-ar"
 export AS="$toolchain/bin/llvm-as"
-export CC="$toolchain/bin/${clang_triplet}${api_level}-clang"
+export CC="$toolchain/bin/${clang_triplet}${ANDROID_API_LEVEL}-clang"
 export CXX="${CC}++"
 export LD="$toolchain/bin/ld"
 export NM="$toolchain/bin/llvm-nm"

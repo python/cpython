@@ -1,0 +1,2 @@
+Fix issues with :mod:`typing` when the C implementation of :mod:`abc` is not
+available.

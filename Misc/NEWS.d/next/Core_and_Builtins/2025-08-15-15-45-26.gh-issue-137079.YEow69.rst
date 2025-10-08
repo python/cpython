@@ -1,0 +1,1 @@
+Fix keyword typo recognition when parsing files. Patch by Pablo Galindo.

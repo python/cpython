@@ -1,0 +1,2 @@
+The :mod:`tarfile` module now handles :exc:`UnicodeEncodeError` in the same
+way as :exc:`OSError` when cannot extract a member.
