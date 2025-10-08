@@ -223,10 +223,14 @@ XMLParser Objects
    Calling ``SetReparseDeferralEnabled(True)`` allows re-enabling reparse
    deferral.
 
-   Note that :meth:`SetReparseDeferralEnabled` has been backported to some
-   prior releases of CPython as a security fix.  Check for availability of
-   :meth:`SetReparseDeferralEnabled` using :func:`hasattr` if used in code
-   running across a variety of Python versions.
+   .. note::
+
+      :meth:`SetReparseDeferralEnabled`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability of
+      :meth:`SetReparseDeferralEnabled`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
 
    .. versionadded:: 3.13
 
