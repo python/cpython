@@ -7098,7 +7098,7 @@ Returns a list of network interface information (index, name) tuples.");
 
 /*[clinic input]
 _socket.socket.if_nametoindex
-    oname: object(converter="PyUnicode_FSConverter")
+    oname: unicode_fs_encoded
     /
 
 Returns the interface index corresponding to the interface name if_name.
@@ -7106,7 +7106,7 @@ Returns the interface index corresponding to the interface name if_name.
 
 static PyObject *
 _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
-/*[clinic end generated code: output=f7fc00511a309a8e input=662688054482cd46]*/
+/*[clinic end generated code: output=f7fc00511a309a8e input=242c01253c533053]*/
 {
 #ifdef MS_WINDOWS
     NET_IFINDEX index;
