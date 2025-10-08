@@ -26,7 +26,7 @@ from collections.abc import Sized, Container, Callable, Collection
 from collections.abc import Set, MutableSet
 from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
 from collections.abc import Sequence, MutableSequence
-from collections.abc import Buffer
+from collections.abc import ByteString, Buffer
 
 
 class TestUserObjects(unittest.TestCase):
@@ -736,7 +736,7 @@ class ABCTestCase(unittest.TestCase):
             stubs = methodstubs.copy()
             del stubs[name]
             C = type('C', (abc,), stubs)
-            self.assertRaises(TypeError, C, name)
+            self.assertRaises(TypeError, C)
 
     def validate_isinstance(self, abc, name):
         stub = lambda s, *args: 0
@@ -963,7 +963,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
             async def __anext__(self):
                 raise StopAsyncIteration
         self.assertNotIsInstance(AnextOnly(), AsyncIterator)
-        self.validate_abstract_methods(AsyncIterator, '__anext__', '__aiter__')
+        self.validate_abstract_methods(AsyncIterator, '__anext__')
 
     def test_Iterable(self):
         # Check some non-iterables
@@ -1159,7 +1159,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
         for x in samples:
             self.assertIsInstance(x, Iterator)
             self.assertIsSubclass(type(x), Iterator)
-        self.validate_abstract_methods(Iterator, '__next__', '__iter__')
+        self.validate_abstract_methods(Iterator, '__next__')
 
         # Issue 10565
         class NextOnly:
@@ -1843,8 +1843,7 @@ class TestCollectionABCs(ABCTestCase):
         for sample in [dict]:
             self.assertIsInstance(sample(), Mapping)
             self.assertIsSubclass(sample, Mapping)
-        self.validate_abstract_methods(Mapping, '__contains__', '__iter__', '__len__',
-            '__getitem__')
+        self.validate_abstract_methods(Mapping, '__iter__', '__len__', '__getitem__')
         class MyMapping(Mapping):
             def __len__(self):
                 return 0
@@ -1859,7 +1858,7 @@ class TestCollectionABCs(ABCTestCase):
         for sample in [dict]:
             self.assertIsInstance(sample(), MutableMapping)
             self.assertIsSubclass(sample, MutableMapping)
-        self.validate_abstract_methods(MutableMapping, '__contains__', '__iter__', '__len__',
+        self.validate_abstract_methods(MutableMapping, '__iter__', '__len__',
             '__getitem__', '__setitem__', '__delitem__')
 
     def test_MutableMapping_subclass(self):
@@ -1898,8 +1897,7 @@ class TestCollectionABCs(ABCTestCase):
         self.assertIsInstance(memoryview(b""), Sequence)
         self.assertIsSubclass(memoryview, Sequence)
         self.assertIsSubclass(str, Sequence)
-        self.validate_abstract_methods(Sequence, '__contains__', '__iter__', '__len__',
-            '__getitem__')
+        self.validate_abstract_methods(Sequence, '__len__', '__getitem__')
 
     def test_Sequence_mixins(self):
         class SequenceSubclass(Sequence):
@@ -1936,6 +1934,28 @@ class TestCollectionABCs(ABCTestCase):
                         assert_index_same(
                             nativeseq, seqseq, (letter, start, stop))
 
+    def test_ByteString(self):
+        for sample in [bytes, bytearray]:
+            with self.assertWarns(DeprecationWarning):
+                self.assertIsInstance(sample(), ByteString)
+            self.assertTrue(issubclass(sample, ByteString))
+        for sample in [str, list, tuple]:
+            with self.assertWarns(DeprecationWarning):
+                self.assertNotIsInstance(sample(), ByteString)
+            self.assertFalse(issubclass(sample, ByteString))
+        with self.assertWarns(DeprecationWarning):
+            self.assertNotIsInstance(memoryview(b""), ByteString)
+        self.assertFalse(issubclass(memoryview, ByteString))
+        with self.assertWarns(DeprecationWarning):
+            self.validate_abstract_methods(ByteString, '__getitem__', '__len__')
+
+        with self.assertWarns(DeprecationWarning):
+            class X(ByteString): pass
+
+        with self.assertWarns(DeprecationWarning):
+            # No metaclass conflict
+            class Z(ByteString, Awaitable): pass
+
     def test_Buffer(self):
         for sample in [bytes, bytearray, memoryview]:
             self.assertIsInstance(sample(b"x"), Buffer)
@@ -1954,8 +1974,8 @@ class TestCollectionABCs(ABCTestCase):
             self.assertIsSubclass(sample, MutableSequence)
         self.assertIsSubclass(array.array, MutableSequence)
         self.assertNotIsSubclass(str, MutableSequence)
-        self.validate_abstract_methods(MutableSequence, '__contains__', '__iter__',
-            '__len__', '__getitem__', '__setitem__', '__delitem__', 'insert')
+        self.validate_abstract_methods(MutableSequence, '__len__', '__getitem__',
+                                       '__setitem__', '__delitem__', 'insert')
 
     def test_MutableSequence_mixins(self):
         # Test the mixins of MutableSequence by creating a minimal concrete
