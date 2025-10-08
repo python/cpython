@@ -1,0 +1,1 @@
+Add :func:`fcntl.preallocate` function and related constants for macOS.
