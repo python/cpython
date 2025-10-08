@@ -47,7 +47,6 @@ def make_pat():
                    name not in keyword.kwlist]
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
     comment = any("COMMENT", [r"#[^\n]*"])
-    # Added 't' prefix and other combinations to support Python 3.14 template strings (PEP 701)
     stringprefix = r"(?i:r|u|f|t|fr|rf|b|br|rb|rt|tr)?"
     sqstring = stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?"
     dqstring = stringprefix + r'"[^"\\\n]*(\\.[^"\\\n]*)*"?'
