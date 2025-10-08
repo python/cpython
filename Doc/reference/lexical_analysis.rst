@@ -12,11 +12,6 @@ A Python program is read by a *parser*.  Input to the parser is a stream of
 the *tokenizer*).
 This chapter describes how the lexical analyzer produces these tokens.
 
-.. note::
-
-   A ":dfn:`stream`" is a *sequence*, in the general sense of the word
-   (not necessarily a Python :term:`sequence object <sequence>`).
-
 The lexical analyzer determines the program text's :ref:`encoding <encodings>`
 (UTF-8 by default), and decodes the text into
 :ref:`source characters <lexical-source-character>`.
