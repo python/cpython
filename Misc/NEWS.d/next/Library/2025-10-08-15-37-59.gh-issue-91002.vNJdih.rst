@@ -1,0 +1,2 @@
+Support :class:`functools.partial` and :class:`functools.partialmethod`
+inspect in :func:`annotationlib.get_annotations`
