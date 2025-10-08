@@ -35,7 +35,7 @@ The :mod:`pty` module defines the following functions:
 
    The returned file descriptor *fd* is :ref:`non-inheritable <fd_inheritance>`.
    This means it will not be passed to child processes created by subsequent
-   :func:`os.fork` or :func:`os.exec*` calls.
+   :func:`os.fork` or :func:`os.exec\* <os.execl>` calls.
 
    .. warning:: On macOS the use of this function is unsafe when mixed with using
       higher-level system APIs, and that includes using :mod:`urllib.request`.
