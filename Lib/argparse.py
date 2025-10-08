@@ -280,7 +280,7 @@ class HelpFormatter(object):
         if action.help is not SUPPRESS:
 
             # find all invocations
-            get_invocation = self._format_action_invocation
+            get_invocation = lambda x: self._decolor(self._format_action_invocation(x))
             invocation_lengths = [len(get_invocation(action)) + self._current_indent]
             for subaction in self._iter_indented_subactions(action):
                 invocation_lengths.append(len(get_invocation(subaction)) + self._current_indent)

@@ -3137,17 +3137,6 @@ class dev_t_return_converter(unsigned_long_return_converter):
     conversion_fn = '_PyLong_FromDev'
     unsigned_cast = '(dev_t)'
 
-class FSConverter_converter(CConverter):
-    type = 'PyObject *'
-    converter = 'PyUnicode_FSConverter'
-    def converter_init(self):
-        if self.default is not unspecified:
-            fail("FSConverter_converter does not support default values")
-        self.c_default = 'NULL'
-
-    def cleanup(self):
-        return "Py_XDECREF(" + self.name + ");\n"
-
 class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
@@ -3211,7 +3200,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=8189d5ae78244626]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d2759f2332cd39b3]*/
 
 /*[clinic input]
 
@@ -6135,14 +6124,14 @@ os_system_impl(PyObject *module, const wchar_t *command)
 /*[clinic input]
 os.system -> long
 
-    command: FSConverter
+    command: unicode_fs_encoded
 
 Execute the command in a subshell.
 [clinic start generated code]*/
 
 static long
 os_system_impl(PyObject *module, PyObject *command)
-/*[clinic end generated code: output=290fc437dd4f33a0 input=86a58554ba6094af]*/
+/*[clinic end generated code: output=290fc437dd4f33a0 input=47c6f24b6dc92881]*/
 {
     long result;
     const char *bytes = PyBytes_AsString(command);
@@ -9328,7 +9317,7 @@ error:
 /*[clinic input]
 os.initgroups
 
-    username as oname: FSConverter
+    username as oname: unicode_fs_encoded
     gid: int
     /
 
@@ -9341,12 +9330,12 @@ group id.
 
 static PyObject *
 os_initgroups_impl(PyObject *module, PyObject *oname, int gid)
-/*[clinic end generated code: output=7f074d30a425fd3a input=df3d54331b0af204]*/
+/*[clinic end generated code: output=7f074d30a425fd3a input=984e60c7fed88cb4]*/
 #else
 /*[clinic input]
 os.initgroups
 
-    username as oname: FSConverter
+    username as oname: unicode_fs_encoded
     gid: gid_t
     /
 
@@ -9359,7 +9348,7 @@ group id.
 
 static PyObject *
 os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid)
-/*[clinic end generated code: output=59341244521a9e3f input=0cb91bdc59a4c564]*/
+/*[clinic end generated code: output=59341244521a9e3f input=17d8fbe2dea42ca4]*/
 #endif
 {
     const char *username = PyBytes_AS_STRING(oname);
@@ -9605,7 +9594,7 @@ os_getlogin_impl(PyObject *module)
     int err = getlogin_r(name, sizeof(name));
     if (err) {
         int old_errno = errno;
-        errno = -err;
+        errno = err;
         posix_error();
         errno = old_errno;
     }
@@ -13115,8 +13104,8 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic input]
 os.putenv
 
-    name: FSConverter
-    value: FSConverter
+    name: unicode_fs_encoded
+    value: unicode_fs_encoded
     /
 
 Change or add an environment variable.
@@ -13124,7 +13113,7 @@ Change or add an environment variable.
 
 static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
-/*[clinic end generated code: output=d29a567d6b2327d2 input=a97bc6152f688d31]*/
+/*[clinic end generated code: output=d29a567d6b2327d2 input=84fcd30f873c8c45]*/
 {
     const char *name_string = PyBytes_AS_STRING(name);
     const char *value_string = PyBytes_AS_STRING(value);
@@ -13167,7 +13156,7 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
 #else
 /*[clinic input]
 os.unsetenv
-    name: FSConverter
+    name: unicode_fs_encoded
     /
 
 Delete an environment variable.
@@ -13175,7 +13164,7 @@ Delete an environment variable.
 
 static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=54c4137ab1834f02 input=2bb5288a599c7107]*/
+/*[clinic end generated code: output=54c4137ab1834f02 input=78ff12e505ade80a]*/
 {
     if (PySys_Audit("os.unsetenv", "(O)", name) < 0) {
         return NULL;
@@ -15229,14 +15218,14 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
 /*[clinic input]
 os.memfd_create
 
-    name: FSConverter
+    name: unicode_fs_encoded
     flags: unsigned_int(bitwise=True, c_default="MFD_CLOEXEC") = MFD_CLOEXEC
 
 [clinic start generated code]*/
 
 static PyObject *
 os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
-/*[clinic end generated code: output=6681ede983bdb9a6 input=a42cfc199bcd56e9]*/
+/*[clinic end generated code: output=6681ede983bdb9a6 input=cd0eb092cfac474b]*/
 {
     int fd;
     const char *bytes = PyBytes_AS_STRING(name);
