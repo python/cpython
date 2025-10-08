@@ -144,7 +144,7 @@ Restrictions
   which can cause hard crashes when trying to read from the database.
 
 * :meth:`Shelf.reorganize` may not be available for all database packages and
-  may temporarely increase resource usage (especially disk space) when called.
+  may temporarily increase resource usage (especially disk space) when called.
   Additionally, it will never run automatically and instead needs to be called
   explicitly.
 

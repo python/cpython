@@ -94,6 +94,7 @@ __all__ = [
 
 import __future__
 import difflib
+import functools
 import inspect
 import linecache
 import os
@@ -1141,7 +1142,9 @@ class DocTestFinder:
         if inspect.ismethod(obj): obj = obj.__func__
         if isinstance(obj, property):
             obj = obj.fget
-        if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
+        if isinstance(obj, functools.cached_property):
+            obj = obj.func
+        if inspect.isroutine(obj) and getattr(obj, '__doc__', None):
             # We don't use `docstring` var here, because `obj` can be changed.
             obj = inspect.unwrap(obj)
             try:

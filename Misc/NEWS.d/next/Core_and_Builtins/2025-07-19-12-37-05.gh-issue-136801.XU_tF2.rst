@@ -1,1 +1,1 @@
-Fix PyREPL syntax highlightning on match cases after multi-line case. Contributed by Olga Matoula.
+Fix PyREPL syntax highlighting on match cases after multi-line case. Contributed by Olga Matoula.

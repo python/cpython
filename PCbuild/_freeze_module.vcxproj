@@ -106,6 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\atexitmodule.c" />
+    <ClCompile Include="..\Modules\_datetimemodule.c" />
     <ClCompile Include="..\Modules\faulthandler.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
     <ClCompile Include="..\Modules\getbuildinfo.c" />
