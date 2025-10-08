@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
+#include "pycore_lazyimportobject.h" // PyLazyImport_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // _PyNone_Type, _PyNotImplemented_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
@@ -35,6 +36,7 @@ _types_exec(PyObject *m)
     EXPORT_STATIC_TYPE("GetSetDescriptorType", PyGetSetDescr_Type);
     // LambdaType is the same as FunctionType
     EXPORT_STATIC_TYPE("LambdaType", PyFunction_Type);
+    EXPORT_STATIC_TYPE("LazyImportType", PyLazyImport_Type);
     EXPORT_STATIC_TYPE("MappingProxyType", PyDictProxy_Type);
     EXPORT_STATIC_TYPE("MemberDescriptorType", PyMemberDescr_Type);
     EXPORT_STATIC_TYPE("MethodDescriptorType", PyMethodDescr_Type);

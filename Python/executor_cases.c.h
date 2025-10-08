@@ -2461,17 +2461,18 @@
             if (PyLazyImport_CheckExact(v_o)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (l_v != NULL && PyDict_SetItem(GLOBALS(), name, l_v) < 0) {
-                    JUMP_TO_LABEL(error);
-                }
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_DECREF(v_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                v_o = l_v;
-                if (v_o == NULL) {
+                if (l_v == NULL) {
                     JUMP_TO_ERROR();
                 }
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+                v_o = l_v;
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
             stack_pointer[0] = v;
@@ -2495,18 +2496,21 @@
             if (PyLazyImport_CheckExact(res_o)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, res_o);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (l_v != NULL && PyDict_SetItem(GLOBALS(), name, l_v) < 0) {
-                    JUMP_TO_LABEL(error);
-                }
-                res_o = l_v;
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(res[0]);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (res_o == NULL) {
+                if (l_v == NULL) {
                     JUMP_TO_ERROR();
                 }
-                *res = PyStackRef_FromPyObjectSteal(res_o);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err < 0) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    Py_DECREF(l_v);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    JUMP_TO_LABEL(error);
+                }
+                *res = PyStackRef_FromPyObjectSteal(l_v);
             }
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

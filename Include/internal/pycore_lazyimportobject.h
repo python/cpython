@@ -13,7 +13,7 @@ PyAPI_DATA(PyTypeObject) PyLazyImport_Type;
 
 typedef struct {
     PyObject_HEAD
-    PyObject *lz_import_func;
+    PyObject *lz_builtins;
     PyObject *lz_from;
     PyObject *lz_attr;
     /* Frame information for the original import location */

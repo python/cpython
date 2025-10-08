@@ -8,6 +8,7 @@
 #include "pycore_dict.h"          // DICT_KEYS_UNICODE
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_interpframe.h"   // FRAME_SPECIALS_SIZE
+#include "pycore_lazyimportobject.h" // PyLazyImport_CheckExact
 #include "pycore_list.h"          // _PyListIterObject
 #include "pycore_long.h"          // _PyLong_IsNonNegativeCompact()
 #include "pycore_moduleobject.h"
@@ -541,6 +542,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD 22
 #define SPEC_FAIL_ATTR_CLASS_METHOD_OBJ 23
 #define SPEC_FAIL_ATTR_OBJECT_SLOT 24
+#define SPEC_FAIL_ATTR_MODULE_LAZY_VALUE 25
 
 #define SPEC_FAIL_ATTR_INSTANCE_ATTRIBUTE 26
 #define SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE 27
@@ -797,6 +799,14 @@ specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, P
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
+    PyObject *value = NULL;
+    if (PyDict_GetItemRef((PyObject *)dict, name, &value) < 0 ||
+        (value != NULL && PyLazyImport_CheckExact(value))) {
+        Py_XDECREF(value);
+        SPECIALIZATION_FAIL(SPEC_FAIL_ATTR_MODULE_LAZY_VALUE, SPEC_FAIL_OUT_OF_VERSIONS);
+        return -1;
+    }
+    Py_XDECREF(value);
     write_u32(cache->version, keys_version);
     cache->index = (uint16_t)index;
     specialize(instr, LOAD_ATTR_MODULE);
