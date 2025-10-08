@@ -180,7 +180,7 @@ class IsUniquelyReferencedTest(unittest.TestCase):
         self.assertTrue(_testcapi.is_uniquely_referenced(object()))
         self.assertTrue(_testcapi.is_uniquely_referenced([]))
         # Immortals
-        self.assertFalse(_testcapi.is_uniquely_referenced("spanish inquisition"))
+        self.assertFalse(_testcapi.is_uniquely_referenced(()))
         self.assertFalse(_testcapi.is_uniquely_referenced(42))
         # CRASHES is_uniquely_referenced(NULL)
 
@@ -221,6 +221,7 @@ class CAPITest(unittest.TestCase):
         """
         self.check_negative_refcount(code)
 
+    @support.requires_resource('cpu')
     def test_decref_delayed(self):
         # gh-130519: Test that _PyObject_XDecRefDelayed() and QSBR code path
         # handles destructors that are possibly re-entrant or trigger a GC.

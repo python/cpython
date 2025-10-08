@@ -2,6 +2,7 @@ from test import support
 from test.support import warnings_helper
 import decimal
 import enum
+import fractions
 import math
 import platform
 import sys
@@ -170,10 +171,12 @@ class TimeTestCase(unittest.TestCase):
         # Improved exception #81267
         with self.assertRaises(TypeError) as errmsg:
             time.sleep([])
-        self.assertIn("integer or float", str(errmsg.exception))
+        self.assertIn("real number", str(errmsg.exception))
 
     def test_sleep(self):
-        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2]:
+        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2,
+                      decimal.Decimal('0.02'),
+                      fractions.Fraction(1, 50)]:
             with self.subTest(value=value):
                 time.sleep(value)
 
@@ -761,17 +764,17 @@ class TestPytime(unittest.TestCase):
 
         # Get the localtime and examine it for the offset and zone.
         lt = time.localtime()
-        self.assertTrue(hasattr(lt, "tm_gmtoff"))
-        self.assertTrue(hasattr(lt, "tm_zone"))
+        self.assertHasAttr(lt, "tm_gmtoff")
+        self.assertHasAttr(lt, "tm_zone")
 
         # See if the offset and zone are similar to the module
         # attributes.
         if lt.tm_gmtoff is None:
-            self.assertTrue(not hasattr(time, "timezone"))
+            self.assertNotHasAttr(time, "timezone")
         else:
             self.assertEqual(lt.tm_gmtoff, -[time.timezone, time.altzone][lt.tm_isdst])
         if lt.tm_zone is None:
-            self.assertTrue(not hasattr(time, "tzname"))
+            self.assertNotHasAttr(time, "tzname")
         else:
             self.assertEqual(lt.tm_zone, time.tzname[lt.tm_isdst])
 
@@ -1184,11 +1187,11 @@ class TestTimeWeaklinking(unittest.TestCase):
 
         if mac_ver >= (10, 12):
             for name in clock_names:
-                self.assertTrue(hasattr(time, name), f"time.{name} is not available")
+                self.assertHasAttr(time, name)
 
         else:
             for name in clock_names:
-                self.assertFalse(hasattr(time, name), f"time.{name} is available")
+                self.assertNotHasAttr(time, name)
 
 
 if __name__ == "__main__":

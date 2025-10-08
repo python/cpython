@@ -438,5 +438,5 @@ def ensure_module_imported(name, *, clearnone=True):
     if sys.modules.get(name) is not None:
         mod = sys.modules[name]
     else:
-        mod, _, _ = _force_import(name, False, True, clearnone)
+        mod, _, _ = _ensure_module(name, False, True, clearnone)
     return mod

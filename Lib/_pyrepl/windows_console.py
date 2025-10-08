@@ -419,10 +419,7 @@ class WindowsConsole(Console):
 
         return info.srWindow.Bottom  # type: ignore[no-any-return]
 
-    def _read_input(self, block: bool = True) -> INPUT_RECORD | None:
-        if not block and not self.wait(timeout=0):
-            return None
-
+    def _read_input(self) -> INPUT_RECORD | None:
         rec = INPUT_RECORD()
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, 1, read):
@@ -431,14 +428,10 @@ class WindowsConsole(Console):
         return rec
 
     def _read_input_bulk(
-        self, block: bool, n: int
+        self, n: int
     ) -> tuple[ctypes.Array[INPUT_RECORD], int]:
         rec = (n * INPUT_RECORD)()
         read = DWORD()
-
-        if not block and not self.wait(timeout=0):
-            return rec, 0
-
         if not ReadConsoleInput(InHandle, rec, n, read):
             raise WinError(GetLastError())
 
@@ -449,8 +442,11 @@ class WindowsConsole(Console):
         and there is no event pending, otherwise waits for the
         completion of an event."""
 
+        if not block and not self.wait(timeout=0):
+            return None
+
         while self.event_queue.empty():
-            rec = self._read_input(block)
+            rec = self._read_input()
             if rec is None:
                 return None
 
@@ -551,12 +547,20 @@ class WindowsConsole(Console):
             if e2:
                 e.data += e2.data
 
-        recs, rec_count = self._read_input_bulk(False, 1024)
+        recs, rec_count = self._read_input_bulk(1024)
         for i in range(rec_count):
             rec = recs[i]
+            # In case of a legacy console, we do not only receive a keydown
+            # event, but also a keyup event - and for uppercase letters
+            # an additional SHIFT_PRESSED event.
             if rec and rec.EventType == KEY_EVENT:
                 key_event = rec.Event.KeyEvent
+                if not key_event.bKeyDown:
+                    continue
                 ch = key_event.uChar.UnicodeChar
+                if ch == "\x00":
+                    # ignore SHIFT_PRESSED and special keys
+                    continue
                 if ch == "\r":
                     ch += "\n"
                 e.data += ch

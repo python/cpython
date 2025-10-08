@@ -13,7 +13,7 @@ PyDoc_STRVAR(_zstd_train_dict__doc__,
 "train_dict($module, samples_bytes, samples_sizes, dict_size, /)\n"
 "--\n"
 "\n"
-"Internal function, train a zstd dictionary on sample data.\n"
+"Train a Zstandard dictionary on sample data.\n"
 "\n"
 "  samples_bytes\n"
 "    Concatenation of samples.\n"
@@ -73,7 +73,7 @@ PyDoc_STRVAR(_zstd_finalize_dict__doc__,
 "              dict_size, compression_level, /)\n"
 "--\n"
 "\n"
-"Internal function, finalize a zstd dictionary.\n"
+"Finalize a Zstandard dictionary.\n"
 "\n"
 "  custom_dict_bytes\n"
 "    Custom dictionary content.\n"
@@ -84,7 +84,7 @@ PyDoc_STRVAR(_zstd_finalize_dict__doc__,
 "  dict_size\n"
 "    The size of the dictionary.\n"
 "  compression_level\n"
-"    Optimize for a specific zstd compression level, 0 means default.");
+"    Optimize for a specific Zstandard compression level, 0 means default.");
 
 #define _ZSTD_FINALIZE_DICT_METHODDEF    \
     {"finalize_dict", _PyCFunction_CAST(_zstd_finalize_dict), METH_FASTCALL, _zstd_finalize_dict__doc__},
@@ -149,7 +149,7 @@ PyDoc_STRVAR(_zstd_get_param_bounds__doc__,
 "get_param_bounds($module, /, parameter, is_compress)\n"
 "--\n"
 "\n"
-"Internal function, get CompressionParameter/DecompressionParameter bounds.\n"
+"Get CompressionParameter/DecompressionParameter bounds.\n"
 "\n"
 "  parameter\n"
 "    The parameter to get bounds.\n"
@@ -220,13 +220,11 @@ PyDoc_STRVAR(_zstd_get_frame_size__doc__,
 "get_frame_size($module, /, frame_buffer)\n"
 "--\n"
 "\n"
-"Get the size of a zstd frame, including frame header and 4-byte checksum if it has one.\n"
+"Get the size of a Zstandard frame, including the header and optional checksum.\n"
 "\n"
 "  frame_buffer\n"
 "    A bytes-like object, it should start from the beginning of a frame,\n"
-"    and contains at least one complete frame.\n"
-"\n"
-"It will iterate all blocks\' headers within a frame, to accumulate the frame size.");
+"    and contains at least one complete frame.");
 
 #define _ZSTD_GET_FRAME_SIZE_METHODDEF    \
     {"get_frame_size", _PyCFunction_CAST(_zstd_get_frame_size), METH_FASTCALL|METH_KEYWORDS, _zstd_get_frame_size__doc__},
@@ -291,10 +289,10 @@ PyDoc_STRVAR(_zstd_get_frame_info__doc__,
 "get_frame_info($module, /, frame_buffer)\n"
 "--\n"
 "\n"
-"Internal function, get zstd frame infomation from a frame header.\n"
+"Get Zstandard frame infomation from a frame header.\n"
 "\n"
 "  frame_buffer\n"
-"    A bytes-like object, containing the header of a zstd frame.");
+"    A bytes-like object, containing the header of a Zstandard frame.");
 
 #define _ZSTD_GET_FRAME_INFO_METHODDEF    \
     {"get_frame_info", _PyCFunction_CAST(_zstd_get_frame_info), METH_FASTCALL|METH_KEYWORDS, _zstd_get_frame_info__doc__},
@@ -359,7 +357,7 @@ PyDoc_STRVAR(_zstd_set_parameter_types__doc__,
 "set_parameter_types($module, /, c_parameter_type, d_parameter_type)\n"
 "--\n"
 "\n"
-"Internal function, set CompressionParameter/DecompressionParameter types for validity check.\n"
+"Set CompressionParameter and DecompressionParameter types for validity check.\n"
 "\n"
 "  c_parameter_type\n"
 "    CompressionParameter IntEnum type object\n"
@@ -428,4 +426,4 @@ _zstd_set_parameter_types(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8445b658dcdcbb9c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=437b084f149e68e5 input=a9049054013a1b77]*/

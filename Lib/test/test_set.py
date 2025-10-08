@@ -237,7 +237,7 @@ class TestJointOps:
             if type(self.s) not in (set, frozenset):
                 self.assertEqual(self.s.x, dup.x)
                 self.assertEqual(self.s.z, dup.z)
-                self.assertFalse(hasattr(self.s, 'y'))
+                self.assertNotHasAttr(self.s, 'y')
                 del self.s.x, self.s.z
 
     def test_iterator_pickling(self):
@@ -876,8 +876,8 @@ class TestBasicOps:
 
     def check_repr_against_values(self):
         text = repr(self.set)
-        self.assertTrue(text.startswith('{'))
-        self.assertTrue(text.endswith('}'))
+        self.assertStartsWith(text, '{')
+        self.assertEndsWith(text, '}')
 
         result = text[1:-1].split(', ')
         result.sort()

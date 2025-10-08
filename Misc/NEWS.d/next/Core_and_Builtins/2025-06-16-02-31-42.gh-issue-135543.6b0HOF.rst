@@ -1,0 +1,2 @@
+Emit ``sys.remote_exec`` audit event when :func:`sys.remote_exec` is called
+and migrate ``remote_debugger_script`` to ``cpython.remote_debugger_script``.

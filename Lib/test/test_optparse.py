@@ -615,9 +615,9 @@ Options:
         self.parser.add_option(
             "-p", "--prob",
             help="blow up with probability PROB [default: %default]")
-        self.parser.set_defaults(prob=0.43)
+        self.parser.set_defaults(prob=0.25)
         expected_help = self.help_prefix + \
-            "  -p PROB, --prob=PROB  blow up with probability PROB [default: 0.43]\n"
+            "  -p PROB, --prob=PROB  blow up with probability PROB [default: 0.25]\n"
         self.assertHelp(self.parser, expected_help)
 
     def test_alt_expand(self):
@@ -1664,6 +1664,16 @@ class MiscTestCase(unittest.TestCase):
 class TestTranslations(TestTranslationsBase):
     def test_translations(self):
         self.assertMsgidsEqual(optparse)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(optparse, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == '__main__':
