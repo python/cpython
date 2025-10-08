@@ -312,11 +312,18 @@ def unpack_deps(
     On iOS, as a safety mechanism, any dynamic libraries will be purged from
     the unpacked dependencies.
     """
+    # To create new builds of these dependencies, usually all that's necessary
+    # is to push a tag to the cpython-apple-source-deps repository, and GitHub
+    # Actions will do the rest.
+    #
+    # If you're a member of the Python core team, and you'd like to be able to
+    # push these tags yourself, please contact Malcolm Smith or Russell
+    # Keith-Magee.
     deps_url = "https://github.com/beeware/cpython-apple-source-deps/releases/download"
     for name_ver in [
         "BZip2-1.0.8-2",
         "libFFI-3.4.7-2",
-        "OpenSSL-3.0.17-1",
+        "OpenSSL-3.0.18-1",
         "XZ-5.6.4-2",
         "mpdecimal-4.0.0-2",
         "zstd-1.5.7-1",
