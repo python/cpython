@@ -1094,12 +1094,9 @@ def _get_annotations_for_partialmethod(partialmethod_obj, format):
         partial_args = partialmethod_obj.args or ()
         partial_keywords = partialmethod_obj.keywords or {}
 
-        # Build new annotations dict
+        # Build new annotations dict in proper order
+        # (parameters first, then return)
         new_annotations = {}
-
-        # Keep return annotation if present
-        if 'return' in func_annotations:
-            new_annotations['return'] = func_annotations['return']
 
         # The first parameter (self/cls) is always kept for unbound partialmethod
         first_param = func_params[0]
@@ -1127,6 +1124,10 @@ def _get_annotations_for_partialmethod(partialmethod_obj, format):
             # This parameter is not bound, keep its annotation
             if param_name in func_annotations:
                 new_annotations[param_name] = func_annotations[param_name]
+
+        # Add return annotation at the end
+        if 'return' in func_annotations:
+            new_annotations['return'] = func_annotations['return']
 
         return new_annotations
 
@@ -1160,16 +1161,17 @@ def _get_annotations_for_partial(partial_obj, format):
         return {}
 
     # Build new annotations dict with only unbound parameters
+    # (parameters first, then return)
     new_annotations = {}
-
-    # Keep return annotation if present
-    if 'return' in func_annotations:
-        new_annotations['return'] = func_annotations['return']
 
     # Only include annotations for parameters that still exist in partial's signature
     for param_name in sig.parameters:
         if param_name in func_annotations:
             new_annotations[param_name] = func_annotations[param_name]
+
+    # Add return annotation at the end
+    if 'return' in func_annotations:
+        new_annotations['return'] = func_annotations['return']
 
     return new_annotations
 
