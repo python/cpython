@@ -204,7 +204,6 @@ jobs:
       matrix:
         # macos-14 is M1, macos-15-intel is default GHA Intel.
         # macos-15-intel only runs tests against the GIL-enabled CPython.
-        # macos-14 is for forks.
         os:
         - macos-14
         - macos-15-intel
