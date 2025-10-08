@@ -3706,6 +3706,7 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
     PyObject *obj = NULL;
     PyObject *fromlist = NULL;
+    PyObject *import_func = NULL;
     assert(lazy_import != NULL);
     assert(PyLazyImport_CheckExact(lazy_import));
 
@@ -3723,7 +3724,7 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     }
 
     int is_loading = PySet_Contains(importing, lazy_import);
-    if (is_loading < 0 ) {
+    if (is_loading < 0) {
         return NULL;
     } else if (is_loading == 1) {
         PyObject *name = _PyLazyImport_GetName(lazy_import);
@@ -3766,9 +3767,8 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 
     PyObject *globals = PyEval_GetGlobals();
 
-    PyObject *import_func;
     if (PyMapping_GetOptionalItem(lz->lz_builtins, &_Py_ID(__import__), &import_func) < 0) {
-        return NULL;
+        goto error;
     }
     if (full) {
         obj = _PyEval_ImportNameWithImport(tstate,
@@ -3781,7 +3781,6 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     } else {
         PyObject *name = PyUnicode_Substring(lz->lz_from, 0, dot);
         if (name == NULL) {
-            Py_DECREF(import_func);
             goto error;
         }
         obj = _PyEval_ImportNameWithImport(tstate,
@@ -3793,7 +3792,6 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
                                    _PyLong_GetZero());
         Py_DECREF(name);
     }
-    Py_DECREF(import_func);
     if (obj == NULL) {
         goto error;
     }
@@ -3891,6 +3889,7 @@ ok:
     }
 
     Py_XDECREF(fromlist);
+    Py_XDECREF(import_func);
     return obj;
 }
 
@@ -4226,7 +4225,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     }
 
     PyInterpreterState *interp = tstate->interp;
-    assert(frame->f_globals == frame->f_locals); // should only be called in global scope
+    assert(_PyEval_GetFrame()->f_globals == _PyEval_GetFrame()->f_locals); // should only be called in global scope
 
     // Check if the filter disables the lazy import
     PyObject *filter = LAZY_IMPORTS_FILTER(interp);
@@ -5312,7 +5311,7 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *child_module,
                 goto error;
             }
 
-            if (PyDict_SetItem(child_dict, attr_name, lazy_module_attr) < 0) {
+            if (_PyModule_ReplaceLazyValue(child_dict, attr_name, lazy_module_attr) < 0) {
                 Py_DECREF(lazy_module_attr);
                 goto error;
             }

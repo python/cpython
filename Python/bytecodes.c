@@ -1799,12 +1799,13 @@ dummy_func(
             ERROR_IF(v_o == NULL);
             if (PyLazyImport_CheckExact(v_o)) {
                 PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
-                if (l_v != NULL && PyDict_SetItem(GLOBALS(), name, l_v) < 0) {
+                Py_DECREF(v_o);
+                ERROR_IF(l_v == NULL);
+                int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
+                if (err < 0) {
                     JUMP_TO_LABEL(error);
                 }
-                Py_DECREF(v_o);
                 v_o = l_v;
-                ERROR_IF(v_o == NULL);
             }
 
             v = PyStackRef_FromPyObjectSteal(v_o);
@@ -1838,13 +1839,14 @@ dummy_func(
             PyObject *res_o = PyStackRef_AsPyObjectBorrow(*res);
             if (PyLazyImport_CheckExact(res_o)) {
                 PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, res_o);
-                if (l_v != NULL && PyDict_SetItem(GLOBALS(), name, l_v) < 0) {
+                PyStackRef_CLOSE(res[0]);
+                ERROR_IF(l_v == NULL);
+                int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
+                if (err < 0) {
+                    Py_DECREF(l_v);
                     JUMP_TO_LABEL(error);
                 }
-                res_o = l_v;
-                PyStackRef_CLOSE(res[0]);
-                ERROR_IF(res_o == NULL);
-                *res = PyStackRef_FromPyObjectSteal(res_o);
+                *res = PyStackRef_FromPyObjectSteal(l_v);
             }
         }
 

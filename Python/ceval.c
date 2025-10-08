@@ -3038,6 +3038,9 @@ check_lazy_import_comatibility(PyThreadState *tstate, PyObject *globals,
      // Check if this module should be imported lazily due to the compatbility mode support via
     // __lazy_modules__.
     PyObject *lazy_modules = NULL;
+    PyObject *abs_name = NULL;
+    int res = -1;
+
     if (globals != NULL &&
         PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__), &lazy_modules) < 0) {
         return -1;
@@ -3047,15 +3050,19 @@ check_lazy_import_comatibility(PyThreadState *tstate, PyObject *globals,
 
     int ilevel = PyLong_AsInt(level);
     if (ilevel == -1 && _PyErr_Occurred(tstate)) {
-        return -1;
+        goto error;
     }
 
-    PyObject *abs_name = _PyImport_GetAbsName(tstate, name, globals, ilevel);
+    abs_name = _PyImport_GetAbsName(tstate, name, globals, ilevel);
     if (abs_name == NULL) {
-        return -1;
+        goto error;
     }
 
-    return PySequence_Contains(lazy_modules, abs_name);
+    res = PySequence_Contains(lazy_modules, abs_name);
+error:
+    Py_XDECREF(abs_name);
+    Py_XDECREF(lazy_modules);
+    return res;
 }
 
 PyObject *
@@ -3302,8 +3309,10 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
             PyObject *mod_dict = PyModule_GetDict(mod);
             if (mod_dict != NULL) {
                 if (PyDict_GetItemRef(mod_dict, name, &ret) < 0) {
+                    Py_DECREF(mod);
                     return NULL;
                 } else if (ret != NULL) {
+                    Py_DECREF(mod);
                     return ret;
                 }
             }

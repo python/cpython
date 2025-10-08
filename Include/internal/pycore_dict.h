@@ -38,6 +38,7 @@ extern PyObject* _PyDict_GetItemIdWithError(PyObject *dp,
 extern int _PyDict_ContainsId(PyObject *, _Py_Identifier *);
 extern int _PyDict_SetItemId(PyObject *dp, _Py_Identifier *key, PyObject *item);
 extern int _PyDict_DelItemId(PyObject *mp, _Py_Identifier *key);
+extern void _PyDict_ClearKeysVersion(PyObject *mp);
 
 extern int _PyDict_Next(
     PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, Py_hash_t *hash);

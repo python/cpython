@@ -1036,6 +1036,23 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     return result;
 }
 
+int
+_PyModule_ReplaceLazyValue(PyObject *dict, PyObject *name, PyObject *value)
+{
+    // The adaptive interpreter uses the dictionary version to return the slot at
+    // a given index from the module. When replacing a value the version number doesn't
+    // change, so we need to atomically clear the version before replacing so that it
+    // doesn't return a lazy value.
+    int err;
+    Py_BEGIN_CRITICAL_SECTION(dict);
+
+    _PyDict_ClearKeysVersion(dict);
+    err = _PyDict_SetItem_LockHeld((PyDictObject *)dict, name, value);
+
+    Py_END_CRITICAL_SECTION();
+    return err;
+}
+
 PyObject*
 _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
@@ -1052,12 +1069,12 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
                     // instead treated as if the attribute doesn't exist.
                     PyErr_Clear();
                 }
-
-                return NULL;
-            } else if (PyDict_SetItem(m->md_dict, name, new_value) < 0) {
-                Py_DECREF(new_value);
                 Py_DECREF(attr);
                 return NULL;
+            }
+
+            if (_PyModule_ReplaceLazyValue(m->md_dict, name, new_value) < 0) {
+                Py_CLEAR(new_value);
             }
             Py_DECREF(attr);
             return new_value;
@@ -1490,7 +1507,7 @@ module_get_dict(PyObject *mod, void *Py_UNUSED(ignored))
                     if (new_value == NULL) {
                         return NULL;
                     }
-                    if (PyDict_SetItem(self->md_dict, key, new_value) < 0) {
+                    if (_PyModule_ReplaceLazyValue(self->md_dict, key, new_value) < 0) {
                         Py_DECREF(new_value);
                         return NULL;
                     }
