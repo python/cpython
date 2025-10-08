@@ -1792,6 +1792,7 @@ has_kwonlydefaults(asdl_arg_seq *kwonlyargs, asdl_expr_seq *kw_defaults)
 static int
 check_import_from(struct symtable *st, stmt_ty s)
 {
+//    return 1;
     assert(s->kind == ImportFrom_kind);
     _Py_SourceLocation fut = st->st_future->ff_location;
     if (s->v.ImportFrom.module && s->v.ImportFrom.level == 0 &&
@@ -1799,6 +1800,7 @@ check_import_from(struct symtable *st, stmt_ty s)
         ((s->lineno > fut.lineno) ||
          ((s->lineno == fut.end_lineno) && (s->col_offset > fut.end_col_offset))))
     {
+        abort();
         PyErr_SetString(PyExc_SyntaxError,
                         "from __future__ imports must occur "
                         "at the beginning of the file");
@@ -3137,7 +3139,7 @@ symtable_raise_if_not_coroutine(struct symtable *st, const char *msg, _Py_Source
 
 struct symtable *
 _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
-                              int start, PyCompilerFlags *flags)
+                              int start, PyCompilerFlags *flags, PyObject *module)
 {
     struct symtable *st;
     mod_ty mod;
@@ -3147,7 +3149,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     if (arena == NULL)
         return NULL;
 
-    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module);
     if (mod == NULL) {
         _PyArena_Free(arena);
         return NULL;

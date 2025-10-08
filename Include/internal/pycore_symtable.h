@@ -188,7 +188,8 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     const char *str,
     PyObject *filename,
     int start,
-    PyCompilerFlags *flags);
+    PyCompilerFlags *flags,
+    PyObject *module);
 
 int _PyFuture_FromAST(
     struct _mod * mod,

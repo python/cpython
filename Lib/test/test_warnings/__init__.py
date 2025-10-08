@@ -6,6 +6,7 @@ import inspect
 from io import StringIO
 import re
 import sys
+import tempfile
 import textwrap
 import types
 from typing import overload, get_overloads
@@ -16,6 +17,7 @@ from test.support import os_helper
 from test.support import warnings_helper
 from test.support import force_not_colorized
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.test_importlib.util import temporary_pycache_prefix
 
 from test.test_warnings.data import package_helper
 from test.test_warnings.data import stacklevel as warning_tests
@@ -2111,6 +2113,168 @@ class DeprecatedTests(PyPublicAPITests):
                 except ValueError:
                     deprecated_new_signature = None
                 self.assertEqual(original_new_signature, deprecated_new_signature)
+
+
+class SyntaxWarningTests(BaseTest):
+    def test_import(self):
+        module_re = r'test\.test_warnings\.data\.syntax_warnings\z'
+        import_helper.unload('test.test_warnings.data.syntax_warnings')
+        with (tempfile.TemporaryDirectory() as tmpdir,
+              temporary_pycache_prefix(tmpdir),
+              warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('always', module=module_re)
+            import test.test_warnings.data.syntax_warnings
+        filename = test.test_warnings.data.syntax_warnings.__file__
+        self.assertEqual(len(wlog), 6, wlog)
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+
+        import_helper.unload('test.test_warnings.data.syntax_warnings')
+        with (tempfile.TemporaryDirectory() as tmpdir,
+              temporary_pycache_prefix(tmpdir),
+              warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('ignore', module=module_re)
+            import test.test_warnings.data.syntax_warnings  # noqa: F401
+        self.assertEqual(wlog, [])
+
+        import_helper.unload('test.test_warnings.data.syntax_warnings')
+        with (tempfile.TemporaryDirectory() as tmpdir,
+              temporary_pycache_prefix(tmpdir),
+              warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('always', module=module_re)
+            import test.test_warnings.data.syntax_warnings  # noqa: F401
+        self.assertEqual(len(wlog), 6, wlog)
+
+    def test_exec(self):
+        filename = support.findfile('test_warnings/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with (warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('always', module=r'<string>\z')
+            exec(source, {})
+        self.assertEqual(len(wlog), 6, wlog)
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+
+        modname = os_helper.TESTFN + '.test'
+        with (warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('always', module=re.escape(modname) + r'\z')
+            exec(source, {'__name__': modname, '__file__': filename})
+        self.assertEqual(len(wlog), 6, wlog)
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+
+    def test_compile(self):
+        filename = support.findfile('test_warnings/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        module_re = re.escape(filename.removesuffix('.py')) + r'\z'
+        with (warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('always', module=module_re)
+            compile(source, filename, 'exec')
+        self.assertEqual(len(wlog), 6, wlog)
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+
+        modname = os_helper.TESTFN + '.test'
+        with (warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('always', module=re.escape(modname) + r'\z')
+            compile(source, filename, 'exec', module=modname)
+        self.assertEqual(len(wlog), 6, wlog)
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+
+    def test_symtable(self):
+        from symtable import symtable
+        filename = support.findfile('test_warnings/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        module_re = re.escape(filename.removesuffix('.py')) + r'\z'
+        with (warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('always', module=module_re)
+            symtable(source, filename, 'exec')
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+
+        modname = os_helper.TESTFN + '.test'
+        with (warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('always', module=re.escape(modname) + r'\z')
+            symtable(source, filename, 'exec', module=modname)
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+
+    def test_ast_parse(self):
+        from ast import parse
+        filename = support.findfile('test_warnings/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with (warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('always', module='<unknown>\z')
+            parse(source)
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<unknown>')
+            self.assertIs(wm.category, SyntaxWarning)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 21])
+
+        modname = os_helper.TESTFN + '.test'
+        with (warnings_state(self.module),
+              self.module.catch_warnings(record=True) as wlog):
+            self.module.simplefilter('error')
+            self.module.filterwarnings('always', module=re.escape(modname) + r'\z')
+            parse(source, filename, module=modname)
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 21])
+
+    def test_run(self):
+        filename = support.findfile('test_warnings/data/syntax_warnings.py')
+        rc, out, err = assert_python_ok('-Werror', '-Walways:::__main__', filename)
+        self.assertEqual(err.count(b': SyntaxWarning: '), 6)
+        rc, out, err = assert_python_ok('-Werror', '-Wignore:::__main__', filename)
+        self.assertEqual(err, b'')
+
+
+class CSyntaxWarningTests(SyntaxWarningTests, unittest.TestCase):
+    module = c_warnings
+
+
+class PySyntaxWarningTests(SyntaxWarningTests, unittest.TestCase):
+    module = py_warnings
 
 
 def setUpModule():
