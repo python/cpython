@@ -8,11 +8,12 @@
 #endif
 
 #include "Python.h"
-#include "pycore_pyerrors.h"        // _PyErr_SetLocaleString()
+#include "pycore_object.h"        // _PyObject_VisitType()
+#include "pycore_pyerrors.h"      // _PyErr_SetLocaleString()
 #include "gdbm.h"
 
 #include <fcntl.h>
-#include <stdlib.h>                 // free()
+#include <stdlib.h>               // free()
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -808,11 +809,6 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
                 iflags |= GDBM_NOLOCK;
                 break;
 #endif
-#ifdef GDBM_NOMMAP
-            case 'm':
-                iflags |= GDBM_NOMMAP;
-                break;
-#endif
             default:
                 PyErr_Format(state->gdbm_error,
                              "Flag '%c' is not supported.", (unsigned char)*flags);
@@ -845,9 +841,6 @@ static const char gdbmmodule_open_flags[] = "rwcn"
 #endif
 #ifdef GDBM_NOLOCK
                                      "u"
-#endif
-#ifdef GDBM_NOMMAP
-                                     "m"
 #endif
                                      ;
 
