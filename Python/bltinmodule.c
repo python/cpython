@@ -745,7 +745,7 @@ builtin_chr(PyObject *module, PyObject *i)
 compile as builtin_compile
 
     source: object
-    filename: object(converter="PyUnicode_FSDecoder")
+    filename: unicode_fs_decoded
     mode: str
     flags: int = 0
     dont_inherit: bool = False
@@ -771,7 +771,7 @@ static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
                      int optimize, int feature_version)
-/*[clinic end generated code: output=b0c09c84f116d3d7 input=cc78e20e7c7682ba]*/
+/*[clinic end generated code: output=b0c09c84f116d3d7 input=8f0069edbdac381b]*/
 {
     PyObject *source_copy;
     const char *str;
@@ -889,7 +889,6 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
 error:
     result = NULL;
 finally:
-    Py_DECREF(filename);
     return result;
 }
 
