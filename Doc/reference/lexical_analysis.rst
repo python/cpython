@@ -27,45 +27,45 @@ with links to sections that contain more information.
 .. list-table::
    :header-rows: 1
 
-   * * Character
-     * Next token (or other relevant documentation)
+   * - Character
+     - Next token (or other relevant documentation)
 
-   * * * space
+   * - * space
        * tab
        * formfeed
-     * * :ref:`Whitespace <whitespace>`
+     - * :ref:`Whitespace <whitespace>`
 
-   * * * CR, LF
-     * * :ref:`New line <line-structure>`
+   * - * CR, LF
+     - * :ref:`New line <line-structure>`
        * :ref:`Indentation <indentation>`
 
-   * * * backslash (``\``)
-     * * :ref:`Explicit line joining <explicit-joining>`
+   * - * backslash (``\``)
+     - * :ref:`Explicit line joining <explicit-joining>`
        * (Also significant in :ref:`string escape sequences <escape-sequences>`)
 
-   * * * hash (``#``)
-     * * :ref:`Comment <comments>`
+   * - * hash (``#``)
+     - * :ref:`Comment <comments>`
 
-   * * * quote (``'``, ``"``)
-     * * :ref:`String literal <strings>`
+   * - * quote (``'``, ``"``)
+     - * :ref:`String literal <strings>`
 
-   * * * ASCII letter (``a``-``z``, ``A``-``Z``)
+   * - * ASCII letter (``a``-``z``, ``A``-``Z``)
        * non-ASCII character
-     * * :ref:`Name <identifiers>`
+     - * :ref:`Name <identifiers>`
        * Prefixed :ref:`string or bytes literal <strings>`
 
-   * * * underscore (``_``)
-     * * :ref:`Name <identifiers>`
+   * - * underscore (``_``)
+     - * :ref:`Name <identifiers>`
        * (Can also be part of :ref:`numeric literals <numbers>`)
 
-   * * * number (``0``-``9``)
-     * * :ref:`Numeric literal <numbers>`
+   * - * number (``0``-``9``)
+     - * :ref:`Numeric literal <numbers>`
 
-   * * * dot (``.``)
-     * * :ref:`Numeric literal <numbers>`
+   * - * dot (``.``)
+     - * :ref:`Numeric literal <numbers>`
        * :ref:`Operator <operators>`
 
-   * * * question mark (``?``)
+   * - * question mark (``?``)
        * dollar (``$``)
        *
          .. (the following uses zero-width space characters to render
@@ -73,13 +73,13 @@ with links to sections that contain more information.
 
          backquote (``​`​``)
        * control character
-     * * Error (outside string literals and comments)
+     - * Error (outside string literals and comments)
 
-   * * * other printing character
-     * * :ref:`Operator or delimiter <operators>`
+   * - * other printing character
+     - * :ref:`Operator or delimiter <operators>`
 
-   * * * end of file
-     * * :ref:`End marker <endmarker-token>`
+   * - * end of file
+     - * :ref:`End marker <endmarker-token>`
 
 
 .. _line-structure:
