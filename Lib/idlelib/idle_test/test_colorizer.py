@@ -36,6 +36,7 @@ source = textwrap.dedent("""\
     # All valid prefixes for unicode and byte strings should be colored.
     r'x', u'x', R'x', U'x', f'x', F'x'
     fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'
+    tr'x', Tr'x', tR'x', TR'x', rt'x', rT'x', Rt'x', RT'x'
     b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'
     # Invalid combinations of legal characters should be half colored.
     ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'
