@@ -28,33 +28,49 @@ def _complete(con, text, state):
             schemata = tuple(row[1] for row
                              in cursor.execute("PRAGMA database_list"))
             # tables, indexes, triggers, and views
-            select_clauses = (f"SELECT name FROM \"{schema}\".sqlite_master"
-                              for schema in schemata)
-            tables = (row[0] for row
-                      in cursor.execute(" UNION ".join(select_clauses)))
-            _completion_matches.extend(c + " " for c in tables
-                                       if c.lower().startswith(text_lower))
+            select_clauses = (
+                f"""\
+                SELECT name || ' ' FROM \"{schema}\".sqlite_master
+                WHERE name LIKE REPLACE(:text, '_', '^_') || '%' ESCAPE '^'"""
+                for schema in schemata
+            )
+            _completion_matches.extend(
+                row[0]
+                for row in cursor.execute(
+                    " UNION ".join(select_clauses), {"text": text}
+                )
+            )
             # columns
             try:
-                select_clauses = (f"""\
-                    SELECT pti.name FROM "{schema}".sqlite_master AS sm
+                select_clauses = (
+                    f"""\
+                    SELECT pti.name || ' ' FROM "{schema}".sqlite_master AS sm
                     JOIN pragma_table_xinfo(sm.name,'{schema}') AS pti
-                    WHERE sm.type='table'""" for schema in schemata)
-                columns = (row[0] for row
-                           in cursor.execute(" UNION ".join(select_clauses)))
-                _completion_matches.extend(c + " " for c in columns
-                                           if c.lower().startswith(text_lower))
+                    WHERE sm.type='table' AND
+                    pti.name LIKE REPLACE(:text, '_', '^_') || '%' ESCAPE '^'"""
+                    for schema in schemata
+                )
+                _completion_matches.extend(
+                    row[0]
+                    for row in cursor.execute(
+                        " UNION ".join(select_clauses), {"text": text}
+                    )
+                )
             except OperationalError:
                 # skip on SQLite<3.16.0 where pragma table-valued function is not
                 # supported yet
                 pass
             # functions
             try:
-                funcs = (row[0] for row in cursor.execute("""\
-                        SELECT DISTINCT UPPER(name) FROM pragma_function_list()
-                        WHERE name NOT IN ('->', '->>')"""))
-                _completion_matches.extend(c + "(" for c in funcs
-                                           if c.startswith(text_upper))
+                _completion_matches.extend(
+                    row[0]
+                    for row in cursor.execute("""\
+                    SELECT DISTINCT UPPER(name) || '(' FROM pragma_function_list()
+                    WHERE name NOT IN ('->', '->>') AND
+                    name LIKE REPLACE(:text, '_', '^_') || '%' ESCAPE '^'""",
+                        {"text": text},
+                    )
+                )
             except OperationalError:
                 # skip on SQLite<3.30.0 where function_list is not supported yet
                 pass
