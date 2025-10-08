@@ -198,8 +198,9 @@ Format String Syntax
 The :meth:`str.format` method and the :class:`Formatter` class share the same
 syntax for format strings (although in the case of :class:`Formatter`,
 subclasses can define their own format string syntax).  The syntax is
-related to that of :ref:`formatted string literals <f-strings>`, but it is
-less sophisticated and, in particular, does not support arbitrary expressions.
+related to that of :ref:`formatted string literals <f-strings>` and
+:ref:`template string literals <t-strings>`, but it is less sophisticated
+and, in particular, does not support arbitrary expressions in interpolations.
 
 .. index::
    single: {} (curly brackets); in string formatting
@@ -264,6 +265,8 @@ Some simple format string examples::
    "Weight in tons {0.weight}"       # 'weight' attribute of first positional arg
    "Units destroyed: {players[0]}"   # First element of keyword argument 'players'.
 
+.. _formatstrings-conversion:
+
 The *conversion* field causes a type coercion before formatting.  Normally, the
 job of formatting a value is done by the :meth:`~object.__format__` method of the value
 itself.  However, in some cases it is desirable to force a type to be formatted
@@ -306,7 +309,7 @@ Format Specification Mini-Language
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented (see
-:ref:`formatstrings` and :ref:`f-strings`).
+:ref:`formatstrings`, :ref:`f-strings`, and :ref:`t-strings`).
 They can also be passed directly to the built-in
 :func:`format` function.  Each formattable type may define how the format
 specification is to be interpreted.
@@ -789,10 +792,22 @@ Nesting arguments and more complex examples::
 
 
 
-.. _template-strings:
+.. _template-strings-pep292:
 
-Template strings
-----------------
+Template strings ($-strings)
+----------------------------
+
+.. note::
+
+   The feature described here was introduced in Python 2.4;
+   a simple templating method based upon regular expressions.
+   It predates :meth:`str.format`, :ref:`formatted string literals <f-strings>`,
+   and :ref:`template string literals <template-strings>`.
+
+   It is unrelated to template string literals (t-strings),
+   which were introduced in Python 3.14.
+   These evaluate to  :class:`string.templatelib.Template` objects,
+   found in the :mod:`string.templatelib` module.
 
 Template strings provide simpler string substitutions as described in
 :pep:`292`.  A primary use case for template strings is for

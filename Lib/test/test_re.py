@@ -5,6 +5,7 @@ from test.support import (gc_collect, bigmemtest, _2G,
 import locale
 import re
 import string
+import sys
 import unittest
 import warnings
 from re import Scanner
@@ -2177,6 +2178,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
 
     @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -2214,6 +2217,8 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
     @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
@@ -3109,6 +3114,16 @@ class ExternalTests(unittest.TestCase):
                 with self.subTest('unicode-sensitive match'):
                     obj = re.compile(pattern, re.UNICODE)
                     self.assertTrue(obj.search(s))
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(re, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

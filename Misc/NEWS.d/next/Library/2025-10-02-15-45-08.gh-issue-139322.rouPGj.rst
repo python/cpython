@@ -1,0 +1,2 @@
+Fix :func:`os.getlogin` error handling: fix the error number. Patch by
+Victor Stinner.

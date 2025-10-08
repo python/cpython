@@ -1,0 +1,2 @@
+Fix support of escapable raw text mode (elements "textarea" and "title")
+in :class:`html.parser.HTMLParser`.

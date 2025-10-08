@@ -1,0 +1,2 @@
+Mark ``_PyOptimizer_Optimize`` as :c:macro:`Py_NO_INLINE` to
+prevent stack overflow crashes on macOS.
