@@ -431,7 +431,7 @@ process and user.
       list may change over the lifetime of the process, it is not affected by
       calls to :func:`setgroups`, and its length is not limited to 16.  The
       deployment target value can be obtained with
-      ``sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')``.
+      :func:`sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') <sysconfig.get_config_var>`.
 
 
 .. function:: getlogin()
@@ -2627,7 +2627,7 @@ features:
 .. function:: major(device, /)
 
    Extract the device major number from a raw device number (usually the
-   :attr:`stat_result.st_dev` or :attr:`stat_result.st_rdev`).
+   :attr:`~stat_result.st_dev` or :attr:`~stat_result.st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: minor(device, /)
