@@ -34,6 +34,10 @@ repos:
         name: Run Ruff (format) on Tools/build/check_warnings.py
         args: [--check, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/check_warnings.py
+      - id: ruff-format
+        name: Run Ruff (format) on Tools/wasm/
+        args: [--check, --config=Tools/wasm/.ruff.toml]
+        files: ^Tools/wasm/
 
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 25.9.0

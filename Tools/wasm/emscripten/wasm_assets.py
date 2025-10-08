@@ -27,7 +27,9 @@ WASM_LIB = pathlib.PurePath("lib")
 WASM_STDLIB_ZIP = (
     WASM_LIB / f"python{sys.version_info.major}{sys.version_info.minor}.zip"
 )
-WASM_STDLIB = WASM_LIB / f"python{sys.version_info.major}.{sys.version_info.minor}"
+WASM_STDLIB = (
+    WASM_LIB / f"python{sys.version_info.major}.{sys.version_info.minor}"
+)
 WASM_DYNLOAD = WASM_STDLIB / "lib-dynload"
 
 
