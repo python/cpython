@@ -545,6 +545,17 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_popstring({}, NULL)
         # CRASHES dict_popstring({"a": 1}, NULL)
 
+    def test_dict_newpresized(self):
+        # Test PyDict_NewPresized()
+        dict_newpresized = _testcapi.dict_newpresized
+        d = dict_newpresized(3)
+        d[1] = 'a'
+        d[2] = 'b'
+        d[3] = 'c'
+        self.assertEqual(len(d), 3)
+        d[4] = 'd'
+        self.assertEqual(len(d), 4)
+
 
 if __name__ == "__main__":
     unittest.main()

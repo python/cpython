@@ -1,0 +1,2 @@
+Add :c:func:`PyDict_NewPresized` function to create a new empty dictionary with
+at least *size* preallocated items. Patch by Victor Stinner.
