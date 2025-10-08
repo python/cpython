@@ -860,6 +860,10 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* Add :c:func:`PyDict_NewPresized` function to create a dictionary with
+  preallocated items.
+  (Contributed by Victor Stinner in :gh:`139772`.)
+
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
@@ -879,6 +883,8 @@ Porting to Python 3.15
   (Contributed by Serhiy Storchaka in :gh:`133595`.)
 
 * Private functions promoted to public C APIs:
+
+  * :c:func:`_PyDict_NewPresized`: use :c:func:`PyDict_NewPresized`.
 
   The |pythoncapi_compat_project| can be used to get most of these new
   functions on Python 3.14 and older.

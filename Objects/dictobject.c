@@ -2191,8 +2191,8 @@ dictresize(PyDictObject *mp,
     return 0;
 }
 
-static PyObject *
-dict_new_presized(Py_ssize_t minused, bool unicode)
+PyObject *
+PyDict_NewPresized(Py_ssize_t minused, int unicode_keys)
 {
     const uint8_t log2_max_presize = 17;
     const Py_ssize_t max_presize = ((Py_ssize_t)1) << log2_max_presize;
@@ -2213,17 +2213,12 @@ dict_new_presized(Py_ssize_t minused, bool unicode)
         log2_newsize = estimate_log2_keysize(minused);
     }
 
-    new_keys = new_keys_object(log2_newsize, unicode);
+    new_keys = new_keys_object(log2_newsize, unicode_keys);
     if (new_keys == NULL)
         return NULL;
     return new_dict(new_keys, NULL, 0, 0);
 }
 
-PyObject *
-_PyDict_NewPresized(Py_ssize_t minused)
-{
-    return dict_new_presized(minused, false);
-}
 
 PyObject *
 _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
@@ -2241,7 +2236,7 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
         ks += keys_offset;
     }
 
-    PyObject *dict = dict_new_presized(length, unicode);
+    PyObject *dict = PyDict_NewPresized(length, unicode);
     if (dict == NULL) {
         return NULL;
     }
