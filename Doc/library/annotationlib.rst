@@ -422,7 +422,7 @@ Functions
       >>> get_annotations(add_10)
       {'b': <class 'int'>, 'c': <class 'int'>, 'return': <class 'int'>}
 
-   .. versionadded:: 3.15q
+   .. versionadded:: 3.15
 
 .. function:: type_repr(value)
 
