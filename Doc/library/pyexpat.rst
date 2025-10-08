@@ -262,6 +262,15 @@ against some common XML vulnerabilities.
       Activation thresholds below 4 MiB are known to break support for DITA 1.3
       payload and are hence not recommended.
 
+   .. note::
+
+      :meth:`SetBillionLaughsAttackProtectionActivationThreshold`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability of
+      :meth:`SetBillionLaughsAttackProtectionActivationThreshold`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
+
    .. versionadded:: next
 
 .. method:: xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification(max_factor, /)
@@ -294,6 +303,15 @@ against some common XML vulnerabilities.
       that can be adjusted by :meth:`.SetBillionLaughsAttackProtectionActivationThreshold`
       is exceeded.
 
+   .. note::
+
+      :meth:`SetBillionLaughsAttackProtectionMaximumAmplification`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability of
+      :meth:`SetBillionLaughsAttackProtectionMaximumAmplification`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
+
    .. versionadded:: next
 
 .. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
@@ -308,6 +326,15 @@ against some common XML vulnerabilities.
    |xml-non-root-parser| parser.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
+
+   .. note::
+
+      :meth:`SetAllocTrackerActivationThreshold`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability of
+      :meth:`SetAllocTrackerActivationThreshold`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
 
    .. versionadded:: next
 
@@ -339,6 +366,15 @@ against some common XML vulnerabilities.
       The maximum amplification factor is only considered if the threshold
       that can be adjusted by :meth:`.SetAllocTrackerActivationThreshold`
       is exceeded.
+
+   .. note::
+
+      :meth:`SetAllocTrackerMaximumAmplification`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability of
+      :meth:`SetAllocTrackerMaximumAmplification`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
 
    .. versionadded:: next
 
