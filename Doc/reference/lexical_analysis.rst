@@ -22,11 +22,11 @@ The lexical analyzer determines the program text's :ref:`encoding <encodings>`
 :ref:`source characters <lexical-source-character>`.
 If the text cannot be decoded, a :exc:`SyntaxError` is raised.
 
-The lexical analyzer then generates a stream of tokens from the source
-characters.
-The type of each generated token, or other special behavior of the analyzer,
-generally depends on the first source character that hasn't yet been processed.
-The following table gives a quick summary of these characters,
+Next, the lexical analyzer uses the source characters to generate a stream of tokens.
+The type of a generated token generally depends on the next source character to
+be processed. Similarly, other special behavior of the analyzer depends on
+the first source character that hasn't yet been processed.
+The following table gives a quick summary of these source characters,
 with links to sections that contain more information.
 
 .. list-table::
