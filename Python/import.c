@@ -4221,15 +4221,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     }
 
     PyInterpreterState *interp = tstate->interp;
-    _PyInterpreterFrame *frame = _PyEval_GetFrame();
     assert(frame->f_globals == frame->f_locals); // should only be called in global scope
-
-    PyObject *mod = PyImport_GetModule(abs_name);
-    bool already_exists = mod != NULL;
-    Py_XDECREF(mod);
-    if (mod != NULL) {
-        return PyImport_ImportModuleLevelObject(name, globals, locals, fromlist, level);
-    }
 
     // Check if the filter disables the lazy import
     PyObject *filter = LAZY_IMPORTS_FILTER(interp);
@@ -4262,7 +4254,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     }
 
     PyObject *res = _PyLazyImport_New(import_func, abs_name, fromlist);
-    if (!already_exists && register_lazy_on_parent(tstate, abs_name, import_func) < 0) {
+    if (register_lazy_on_parent(tstate, abs_name, import_func) < 0) {
         Py_DECREF(res);
         res = NULL;
     }

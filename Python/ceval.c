@@ -3304,6 +3304,22 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     assert(name && PyUnicode_Check(name));
     PyObject *ret;
     PyLazyImportObject *d = (PyLazyImportObject *)v;
+    PyObject *mod = PyImport_GetModule(d->lz_from);
+    if (mod != NULL) {
+        // Check if the module already has the attribute, if so, resolve it eagerly.
+        if (PyModule_Check(mod)) {
+            PyObject *mod_dict = PyModule_GetDict(mod);
+            if (mod_dict != NULL) {
+                if (PyDict_GetItemRef(mod_dict, name, &ret) < 0) {
+                    return NULL;
+                } else if (ret != NULL) {
+                    return ret;
+                }
+            }
+        }
+        Py_DECREF(mod);
+    }
+
     if (d->lz_attr != NULL) {
         if (PyUnicode_Check(d->lz_attr)) {
             PyObject *from = PyUnicode_FromFormat("%U.%U", d->lz_from, d->lz_attr);

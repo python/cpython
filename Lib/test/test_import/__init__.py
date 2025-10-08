@@ -2558,6 +2558,26 @@ class LazyImportTests(unittest.TestCase):
 
         self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
 
+    def test_basic_unused_use_externally(self):
+        try:
+            from test.test_import.data.lazy_imports import basic_unused
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+        x = basic_unused.test.test_import.data.lazy_imports.basic2
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_basic_from_unused_use_externally(self):
+        try:
+            from test.test_import.data.lazy_imports import basic_from_unused
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+        x = basic_from_unused.basic2
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
     def test_basic_unused_dir(self):
         try:
             import test.test_import.data.lazy_imports.basic_unused
@@ -2758,6 +2778,19 @@ class LazyImportTests(unittest.TestCase):
         self.assertTrue("test.test_import.data.lazy_imports.pkg" in sys.modules)
         self.assertTrue("test.test_import.data.lazy_imports.pkg.bar" in sys.modules)
 
+    def test_lazy_import_pkg_cross_import(self):
+        try:
+            import test.test_import.data.lazy_imports.pkg.c
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.pkg" in sys.modules)
+        self.assertTrue("test.test_import.data.lazy_imports.pkg.c" in sys.modules)
+        self.assertFalse("test.test_import.data.lazy_imports.pkg.b" in sys.modules)
+
+        g = test.test_import.data.lazy_imports.pkg.c.get_globals()
+        self.assertEqual(type(g["x"]), int)
+        self.assertEqual(type(g["b"]), importlib.lazy_import)
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
     """A representation of a single-phase init module for testing.
