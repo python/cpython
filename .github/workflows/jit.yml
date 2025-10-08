@@ -128,7 +128,7 @@ jobs:
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
 
-      - name: macOS
+      - name: Native macOS
         if: runner.os == 'macOS'
         run: |
           brew update
