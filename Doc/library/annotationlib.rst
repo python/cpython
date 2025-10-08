@@ -326,8 +326,8 @@ Functions
 
    .. versionadded:: 3.14
 
-.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=False, format=Format.VALUE)
-
+`.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=False, format=Format.VALUE)
+`
    Compute the annotations dict for an object.
 
    *obj* may be a callable, class, module, or other object with
@@ -422,7 +422,7 @@ Functions
       >>> get_annotations(add_10)
       {'b': <class 'int'>, 'c': <class 'int'>, 'return': <class 'int'>}
 
-   .. versionadded:: 3.14
+   .. versionadded:: 3.15q
 
 .. function:: type_repr(value)
 
