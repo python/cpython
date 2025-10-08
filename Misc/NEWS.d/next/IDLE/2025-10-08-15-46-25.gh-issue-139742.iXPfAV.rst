@@ -1,0 +1,1 @@
+support t-string prefix in colorizer
