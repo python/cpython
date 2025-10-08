@@ -60,7 +60,7 @@ Summary -- Release Highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-Python 3.13 is the latest stable release of the Python programming
+Python 3.13 is a stable release of the Python programming
 language, with a mix of changes to the language, the implementation
 and the standard library.
 The biggest changes include a new `interactive interpreter
@@ -2025,6 +2025,10 @@ New Deprecations
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 

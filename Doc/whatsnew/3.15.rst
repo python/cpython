@@ -294,6 +294,14 @@ New modules
 Improved modules
 ================
 
+collections
+-----------
+
+* Added :meth:`!collections.Counter.__xor__` and
+  :meth:`!collections.Counter.__ixor__` to compute the symmetric difference
+  between :class:`~collections.Counter` objects.
+  (Contributed by Raymond Hettinger in :gh:`138682`.)
+
 collections.abc
 ---------------
 
@@ -528,6 +536,15 @@ tarfile
   (Contributed by Christoph Walcher in :gh:`57911`.)
 
 
+timeit
+------
+
+* The command-line interface now colorizes error tracebacks
+  by default. This can be controlled with
+  :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Yi Hong in :gh:`139374`.)
+
+
 types
 ------
 
@@ -543,6 +560,24 @@ unittest
 * :func:`unittest.TestCase.assertLogs` will now accept a formatter
   to control how messages are formatted.
   (Contributed by Garry Cairns in :gh:`134567`.)
+
+
+xml.parsers.expat
+-----------------
+
+* Add :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerActivationThreshold`
+  and :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerMaximumAmplification`
+  to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
+  disproportional amounts of dynamic memory usage from within an Expat parser.
+  (Contributed by Bénédikt Tran in :gh:`90949`.)
+
+* Add :meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionActivationThreshold`
+  and :meth:`~xml.parsers.expat.xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification`
+  to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
+  `billion laughs`_ attacks.
+  (Contributed by Bénédikt Tran in :gh:`90949`.)
+
+  .. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
 
 
 zlib
@@ -596,8 +631,41 @@ hashlib
 
   (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+__version__
+-----------
+
+* The ``__version__`` attribute has been deprecated in these standard library
+  modules and will be removed in Python 3.20.
+  Use :py:data:`sys.version_info` instead.
+
+  - :mod:`argparse`
+  - :mod:`csv`
+  - :mod:`!ctypes.macholib`
+  - :mod:`ipaddress`
+  - :mod:`json`
+  - :mod:`logging` (``__date__`` also deprecated)
+  - :mod:`optparse`
+  - :mod:`pickle`
+  - :mod:`platform`
+  - :mod:`re`
+  - :mod:`socketserver`
+  - :mod:`tabnanny`
+  - :mod:`tkinter.font`
+  - :mod:`tkinter.ttk`
+
+  (Contributed by Hugo van Kemenade in :gh:`76007`.)
 
 .. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
 
 Removed
 =======

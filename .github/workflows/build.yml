@@ -202,13 +202,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
+        # Cirrus and macos-14 are M1, macos-15-intel is default GHA Intel.
         # macOS 13 only runs tests against the GIL-enabled CPython.
         # Cirrus used for upstream, macos-14 for forks.
         os:
         - ghcr.io/cirruslabs/macos-runner:sonoma
         - macos-14
-        - macos-13
+        - macos-15-intel
         is-fork:  # only used for the exclusion trick
         - ${{ github.repository_owner != 'python' }}
         free-threading:
@@ -219,7 +219,7 @@ jobs:
           is-fork: true
         - os: macos-14
           is-fork: false
-        - os: macos-13
+        - os: macos-15-intel
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
@@ -273,7 +273,7 @@ jobs:
         # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
         # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
         # supported by important vendors such as AWS-LC.
-        openssl_ver: [1.1.1w, 3.0.17, 3.2.5, 3.3.4, 3.4.2, 3.5.2]
+        openssl_ver: [1.1.1w, 3.0.18, 3.2.6, 3.3.5, 3.4.3, 3.5.4]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -421,7 +421,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: ./Android/android.py ci ${{ matrix.arch }}-linux-android
+        run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-wasi:
     name: 'WASI'
@@ -438,7 +438,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     env:
-      OPENSSL_VER: 3.0.16
+      OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -558,7 +558,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.0.16
+      OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
