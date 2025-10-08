@@ -104,9 +104,7 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 
 */
 
-// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
-// The value must be the same in fileutils.c.
-#define MAX_UNICODE 0x10ffff
+#define MAX_UNICODE _Py_MAX_UNICODE
 
 #ifdef Py_DEBUG
 #  define _PyUnicode_CHECK(op) _PyUnicode_CheckConsistency(op, 0)
@@ -419,39 +417,6 @@ static void clear_global_interned_strings(void)
     do {                             \
         return unicode_get_empty();  \
     } while (0)
-
-static inline void
-unicode_fill(int kind, void *data, Py_UCS4 value,
-             Py_ssize_t start, Py_ssize_t length)
-{
-    assert(0 <= start);
-    switch (kind) {
-    case PyUnicode_1BYTE_KIND: {
-        assert(value <= 0xff);
-        Py_UCS1 ch = (unsigned char)value;
-        Py_UCS1 *to = (Py_UCS1 *)data + start;
-        memset(to, ch, length);
-        break;
-    }
-    case PyUnicode_2BYTE_KIND: {
-        assert(value <= 0xffff);
-        Py_UCS2 ch = (Py_UCS2)value;
-        Py_UCS2 *to = (Py_UCS2 *)data + start;
-        const Py_UCS2 *end = to + length;
-        for (; to < end; ++to) *to = ch;
-        break;
-    }
-    case PyUnicode_4BYTE_KIND: {
-        assert(value <= MAX_UNICODE);
-        Py_UCS4 ch = value;
-        Py_UCS4 * to = (Py_UCS4 *)data + start;
-        const Py_UCS4 *end = to + length;
-        for (; to < end; ++to) *to = ch;
-        break;
-    }
-    default: Py_UNREACHABLE();
-    }
-}
 
 
 /* Fast detection of the most frequent whitespace characters */
@@ -9735,142 +9700,6 @@ any_find_slice(PyObject* s1, PyObject* s2,
     return result;
 }
 
-/* _PyUnicode_InsertThousandsGrouping() helper functions */
-#include "stringlib/localeutil.h"
-
-/**
- * InsertThousandsGrouping:
- * @writer: Unicode writer.
- * @n_buffer: Number of characters in @buffer.
- * @digits: Digits we're reading from. If count is non-NULL, this is unused.
- * @d_pos: Start of digits string.
- * @n_digits: The number of digits in the string, in which we want
- *            to put the grouping chars.
- * @min_width: The minimum width of the digits in the output string.
- *             Output will be zero-padded on the left to fill.
- * @grouping: see definition in localeconv().
- * @thousands_sep: see definition in localeconv().
- *
- * There are 2 modes: counting and filling. If @writer is NULL,
- *  we are in counting mode, else filling mode.
- * If counting, the required buffer size is returned.
- * If filling, we know the buffer will be large enough, so we don't
- *  need to pass in the buffer size.
- * Inserts thousand grouping characters (as defined by grouping and
- *  thousands_sep) into @writer.
- *
- * Return value: -1 on error, number of characters otherwise.
- **/
-Py_ssize_t
-_PyUnicode_InsertThousandsGrouping(
-    _PyUnicodeWriter *writer,
-    Py_ssize_t n_buffer,
-    PyObject *digits,
-    Py_ssize_t d_pos,
-    Py_ssize_t n_digits,
-    Py_ssize_t min_width,
-    const char *grouping,
-    PyObject *thousands_sep,
-    Py_UCS4 *maxchar,
-    int forward)
-{
-    min_width = Py_MAX(0, min_width);
-    if (writer) {
-        assert(digits != NULL);
-        assert(maxchar == NULL);
-    }
-    else {
-        assert(digits == NULL);
-        assert(maxchar != NULL);
-    }
-    assert(0 <= d_pos);
-    assert(0 <= n_digits);
-    assert(grouping != NULL);
-
-    Py_ssize_t count = 0;
-    Py_ssize_t n_zeros;
-    int loop_broken = 0;
-    int use_separator = 0; /* First time through, don't append the
-                              separator. They only go between
-                              groups. */
-    Py_ssize_t buffer_pos;
-    Py_ssize_t digits_pos;
-    Py_ssize_t len;
-    Py_ssize_t n_chars;
-    Py_ssize_t remaining = n_digits; /* Number of chars remaining to
-                                        be looked at */
-    /* A generator that returns all of the grouping widths, until it
-       returns 0. */
-    GroupGenerator groupgen;
-    GroupGenerator_init(&groupgen, grouping);
-    const Py_ssize_t thousands_sep_len = PyUnicode_GET_LENGTH(thousands_sep);
-
-    /* if digits are not grouped, thousands separator
-       should be an empty string */
-    assert(!(grouping[0] == CHAR_MAX && thousands_sep_len != 0));
-
-    digits_pos = d_pos + (forward ? 0 : n_digits);
-    if (writer) {
-        buffer_pos = writer->pos + (forward ? 0 : n_buffer);
-        assert(buffer_pos <= PyUnicode_GET_LENGTH(writer->buffer));
-        assert(digits_pos <= PyUnicode_GET_LENGTH(digits));
-    }
-    else {
-        buffer_pos = forward ? 0 : n_buffer;
-    }
-
-    if (!writer) {
-        *maxchar = 127;
-    }
-
-    while ((len = GroupGenerator_next(&groupgen)) > 0) {
-        len = Py_MIN(len, Py_MAX(Py_MAX(remaining, min_width), 1));
-        n_zeros = Py_MAX(0, len - remaining);
-        n_chars = Py_MAX(0, Py_MIN(remaining, len));
-
-        /* Use n_zero zero's and n_chars chars */
-
-        /* Count only, don't do anything. */
-        count += (use_separator ? thousands_sep_len : 0) + n_zeros + n_chars;
-
-        /* Copy into the writer. */
-        InsertThousandsGrouping_fill(writer, &buffer_pos,
-                                     digits, &digits_pos,
-                                     n_chars, n_zeros,
-                                     use_separator ? thousands_sep : NULL,
-                                     thousands_sep_len, maxchar, forward);
-
-        /* Use a separator next time. */
-        use_separator = 1;
-
-        remaining -= n_chars;
-        min_width -= len;
-
-        if (remaining <= 0 && min_width <= 0) {
-            loop_broken = 1;
-            break;
-        }
-        min_width -= thousands_sep_len;
-    }
-    if (!loop_broken) {
-        /* We left the loop without using a break statement. */
-
-        len = Py_MAX(Py_MAX(remaining, min_width), 1);
-        n_zeros = Py_MAX(0, len - remaining);
-        n_chars = Py_MAX(0, Py_MIN(remaining, len));
-
-        /* Use n_zero zero's and n_chars chars */
-        count += (use_separator ? thousands_sep_len : 0) + n_zeros + n_chars;
-
-        /* Copy into the writer. */
-        InsertThousandsGrouping_fill(writer, &buffer_pos,
-                                     digits, &digits_pos,
-                                     n_chars, n_zeros,
-                                     use_separator ? thousands_sep : NULL,
-                                     thousands_sep_len, maxchar, forward);
-    }
-    return count;
-}
 
 Py_ssize_t
 PyUnicode_Count(PyObject *str,
@@ -10427,7 +10256,7 @@ _PyUnicode_FastFill(PyObject *unicode, Py_ssize_t start, Py_ssize_t length,
     assert(fill_char <= PyUnicode_MAX_CHAR_VALUE(unicode));
     assert(start >= 0);
     assert(start + length <= PyUnicode_GET_LENGTH(unicode));
-    unicode_fill(kind, data, fill_char, start, length);
+    _PyUnicode_Fill(kind, data, fill_char, start, length);
 }
 
 Py_ssize_t
@@ -10496,9 +10325,10 @@ pad(PyObject *self,
     kind = PyUnicode_KIND(u);
     data = PyUnicode_DATA(u);
     if (left)
-        unicode_fill(kind, data, fill, 0, left);
+        _PyUnicode_Fill(kind, data, fill, 0, left);
     if (right)
-        unicode_fill(kind, data, fill, left + _PyUnicode_LENGTH(self), right);
+        _PyUnicode_Fill(kind, data, fill,
+                        left + _PyUnicode_LENGTH(self), right);
     _PyUnicode_FastCopyCharacters(u, left, self, 0, _PyUnicode_LENGTH(self));
     assert(_PyUnicode_CheckConsistency(u, 1));
     return u;
@@ -11910,7 +11740,7 @@ unicode_expandtabs_impl(PyObject *self, int tabsize)
             if (tabsize > 0) {
                 incr = tabsize - (line_pos % tabsize);
                 line_pos += incr;
-                unicode_fill(kind, dest_data, ' ', j, incr);
+                _PyUnicode_Fill(kind, dest_data, ' ', j, incr);
                 j += incr;
             }
         }
@@ -15405,7 +15235,7 @@ unicode_format_arg_output(struct unicode_formatter_t *ctx,
     /* Pad left with the fill character if needed */
     if (arg->width > len && !(arg->flags & F_LJUST)) {
         sublen = arg->width - len;
-        unicode_fill(writer->kind, writer->data, fill, writer->pos, sublen);
+        _PyUnicode_Fill(writer->kind, writer->data, fill, writer->pos, sublen);
         writer->pos += sublen;
         arg->width = len;
     }
@@ -15437,7 +15267,7 @@ unicode_format_arg_output(struct unicode_formatter_t *ctx,
     /* Pad right with the fill character if needed */
     if (arg->width > len) {
         sublen = arg->width - len;
-        unicode_fill(writer->kind, writer->data, ' ', writer->pos, sublen);
+        _PyUnicode_Fill(writer->kind, writer->data, ' ', writer->pos, sublen);
         writer->pos += sublen;
     }
     return 0;
