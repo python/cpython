@@ -8,11 +8,12 @@
 #endif
 
 #include "Python.h"
-#include "pycore_pyerrors.h"        // _PyErr_SetLocaleString()
+#include "pycore_object.h"        // _PyObject_VisitType()
+#include "pycore_pyerrors.h"      // _PyErr_SetLocaleString()
 #include "gdbm.h"
 
 #include <fcntl.h>
-#include <stdlib.h>                 // free()
+#include <stdlib.h>               // free()
 #include <sys/stat.h>
 #include <sys/types.h>
 
