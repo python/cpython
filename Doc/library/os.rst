@@ -2633,7 +2633,7 @@ features:
 .. function:: minor(device, /)
 
    Extract the device minor number from a raw device number (usually the
-   :attr:`stat_result.st_dev` or :attr:`stat_result.st_rdev`).
+   :attr:`~stat_result.st_dev` or :attr:`~stat_result.st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: makedev(major, minor, /)
