@@ -33,8 +33,15 @@ The :mod:`pty` module defines the following functions:
    file descriptor connected to the child's controlling terminal (and also to the
    child's standard input and output).
 
+   The returned file descriptor *fd* is :ref:`non-inheritable <fd_inheritance>`.
+   This means it will not be passed to child processes created by subsequent
+   :func:`os.fork` or :func:`os.exec*` calls.
+
    .. warning:: On macOS the use of this function is unsafe when mixed with using
       higher-level system APIs, and that includes using :mod:`urllib.request`.
+
+   .. versionchanged:: 3.15
+      The returned file descriptor is now made non-inheritable.
 
 
 .. function:: openpty()

@@ -12,7 +12,6 @@ if is_android or is_apple_mobile or is_wasm32:
     raise unittest.SkipTest("pty is not available on this platform")
 
 import errno
-import fcntl
 import os
 import pty
 import tty
