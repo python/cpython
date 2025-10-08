@@ -1,2 +1,2 @@
-Add the :func:`~xml.sax.utils.is_valid_name` function, which allows to check
+Add the :func:`~xml.sax.saxutils.is_valid_name` function, which allows to check
 whether a string can be used as an element or attribute name in XML.
