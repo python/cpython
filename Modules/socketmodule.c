@@ -7115,7 +7115,6 @@ _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
 #endif
 
     index = if_nametoindex(PyBytes_AS_STRING(oname));
-    Py_DECREF(oname);
     if (index == 0) {
         /* if_nametoindex() doesn't set errno */
         PyErr_SetString(PyExc_OSError, "no interface with this name");
