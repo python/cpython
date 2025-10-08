@@ -20,3 +20,6 @@ select = [
     "W",       # pycodestyle
     "YTT",     # flake8-2020
 ]
+ignore = [
+    "E501",    # Line too long
+]
