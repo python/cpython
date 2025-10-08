@@ -202,7 +202,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-14 is M1, macos-15-intel is default GHA Intel.
+        # macos-14 is M1, macos-15-intel is Intel.
         # macos-15-intel only runs tests against the GIL-enabled CPython.
         os:
         - macos-14
