@@ -1251,7 +1251,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | iso8859_3       | iso-8859-3, latin3, L3         | Esperanto, Maltese             |
 +-----------------+--------------------------------+--------------------------------+
-| iso8859_4       | iso-8859-4, latin4, L4         | Baltic languages               |
+| iso8859_4       | iso-8859-4, latin4, L4         | Northern Europe                |
 +-----------------+--------------------------------+--------------------------------+
 | iso8859_5       | iso-8859-5, cyrillic           | Belarusian, Bulgarian,         |
 |                 |                                | Macedonian, Russian, Serbian   |
@@ -1481,6 +1481,36 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 
 .. versionchanged:: 3.4
    Restoration of the aliases for the binary transforms.
+
+
+.. _standalone-codec-functions:
+
+Standalone Codec Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following functions provide encoding and decoding functionality similar to codecs,
+but are not available as named codecs through :func:`codecs.encode` or :func:`codecs.decode`.
+They are used internally (for example, by :mod:`pickle`) and behave similarly to the
+``string_escape`` codec that was removed in Python 3.
+
+.. function:: codecs.escape_encode(input, errors=None)
+
+   Encode *input* using escape sequences. Similar to how :func:`repr` on bytes
+   produces escaped byte values.
+
+   *input* must be a :class:`bytes` object.
+
+   Returns a tuple ``(output, length)`` where *output* is a :class:`bytes`
+   object and *length* is the number of bytes consumed.
+
+.. function:: codecs.escape_decode(input, errors=None)
+
+   Decode *input* from escape sequences back to the original bytes.
+
+   *input* must be a :term:`bytes-like object`.
+
+   Returns a tuple ``(output, length)`` where *output* is a :class:`bytes`
+   object and *length* is the number of bytes consumed.
 
 
 .. _text-transforms:

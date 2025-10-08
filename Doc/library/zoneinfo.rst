@@ -299,7 +299,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
 1. ``ZoneInfo(key)``: When constructed with the primary constructor, a
    ``ZoneInfo`` object is serialized by key, and when deserialized, the
    deserializing process uses the primary and thus it is expected that these
-   are expected to be the same object as other references to the same time
+   are the same object as other references to the same time
    zone.  For example, if ``europe_berlin_pkl`` is a string containing a pickle
    constructed from ``ZoneInfo("Europe/Berlin")``, one would expect the
    following behavior:

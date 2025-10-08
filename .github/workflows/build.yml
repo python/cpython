@@ -393,7 +393,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: ./Android/android.py ci ${{ matrix.arch }}-linux-android
+        run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-wasi:
     name: 'WASI'
