@@ -1909,6 +1909,35 @@ class TestArchives(BaseTest, unittest.TestCase):
             names2 = zf.namelist()
         self.assertEqual(sorted(names), sorted(names2))
 
+    @os_helper.skip_unless_symlink
+    def test_make_zipfile_symlink_behaviour(self):
+        # Test that symbolic links are not preserved as links when 
+        # shutil.make_archive() is used to make a zip file.
+        root_dir, base_dir = self._create_files_symlinks()
+        name = os.path.join(root_dir, 'z')
+        archive = shutil.make_archive(
+            name, "zip", root_dir=root_dir, base_dir=base_dir
+            )
+        # Check we have a zip file.
+        self.assertTrue(zipfile.is_zipfile(archive))
+        with zipfile.ZipFile(archive) as zf:
+            extract_dir = os.path.join(root_dir, base_dir, 'extract')
+            zf.extractall(extract_dir)
+            # If directory symlink sub2 that points to sub1 was 
+            # preserved then sub2/real_file2 will not exist.
+            self.assertTrue(
+                os.path.exists(
+                    os.path.join(extract_dir, base_dir, 'sub2/real_file2')
+                    )
+                )
+            # If link_file1 was preserved then it will be a symbolic 
+            # link.
+            self.assertFalse(
+                os.path.islink(
+                    os.path.join(extract_dir, base_dir, 'link_file1')
+                    )
+                )
+
     @support.requires_zlib()
     @unittest.skipUnless(shutil.which('unzip'),
                          'Need the unzip command to run')
