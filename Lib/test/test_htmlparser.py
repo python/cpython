@@ -10,10 +10,13 @@ from test import support
 
 class EventCollector(html.parser.HTMLParser):
 
-    def __init__(self, *args, **kw):
+    def __init__(self, *args, autocdata=False, **kw):
+        self.autocdata = autocdata
         self.events = []
         self.append = self.events.append
         html.parser.HTMLParser.__init__(self, *args, **kw)
+        if autocdata:
+            self._set_support_cdata(False)
 
     def get_events(self):
         # Normalize the list of events so that buffer artefacts don't
@@ -34,12 +37,16 @@ class EventCollector(html.parser.HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         self.append(("starttag", tag, attrs))
+        if self.autocdata and tag == 'svg':
+            self._set_support_cdata(True)
 
     def handle_startendtag(self, tag, attrs):
         self.append(("startendtag", tag, attrs))
 
     def handle_endtag(self, tag):
         self.append(("endtag", tag))
+        if self.autocdata and tag == 'svg':
+            self._set_support_cdata(False)
 
     # all other markup
 
@@ -79,6 +86,13 @@ class EventCollectorCharrefs(EventCollector):
 
     def handle_entityref(self, data):
         self.fail('This should never be called with convert_charrefs=True')
+
+
+# The normal event collector normalizes the events in get_events,
+# so we override it to return the original list of events.
+class EventCollectorNoNormalize(EventCollector):
+    def get_events(self):
+        return self.events
 
 
 class TestCaseBase(unittest.TestCase):
@@ -265,8 +279,7 @@ text
             ("starttag", "foo:bar", [("one", "1"), ("two", "2")]),
             ("starttag_text", s)])
 
-    def test_cdata_content(self):
-        contents = [
+    @support.subTests('content', [
             '<!-- not a comment --> &not-an-entity-ref;',
             "<not a='start tag'>",
             '<a href="" /> <p> <span></span>',
@@ -279,70 +292,223 @@ text
              'src="http://www.example.org/r=\'+new '
              'Date().getTime()+\'"><\\/s\'+\'cript>\');\n//]]>'),
             '\n<!-- //\nvar foo = 3.14;\n// -->\n',
-            'foo = "</sty" + "le>";',
             '<!-- \u2603 -->',
-            # these two should be invalid according to the HTML 5 spec,
-            # section 8.1.2.2
-            #'foo = </\nscript>',
-            #'foo = </ script>',
-        ]
-        elements = ['script', 'style', 'SCRIPT', 'STYLE', 'Script', 'Style']
-        for content in contents:
-            for element in elements:
-                element_lower = element.lower()
-                s = '<{element}>{content}</{element}>'.format(element=element,
-                                                               content=content)
-                self._run_check(s, [("starttag", element_lower, []),
-                                    ("data", content),
-                                    ("endtag", element_lower)])
+            'foo = "</ script>"',
+            'foo = "</scripture>"',
+            'foo = "</script\v>"',
+            'foo = "</script\xa0>"',
+            'foo = "</ſcript>"',
+            'foo = "</scrıpt>"',
+        ])
+    def test_script_content(self, content):
+        s = f'<script>{content}</script>'
+        self._run_check(s, [("starttag", "script", []),
+                            ("data", content),
+                            ("endtag", "script")])
 
-    def test_cdata_with_closing_tags(self):
+    @support.subTests('content', [
+            'a::before { content: "<!-- not a comment -->"; }',
+            'a::before { content: "&not-an-entity-ref;"; }',
+            'a::before { content: "<not a=\'start tag\'>"; }',
+            'a::before { content: "\u2603"; }',
+            'a::before { content: "< /style>"; }',
+            'a::before { content: "</ style>"; }',
+            'a::before { content: "</styled>"; }',
+            'a::before { content: "</style\v>"; }',
+            'a::before { content: "</style\xa0>"; }',
+            'a::before { content: "</ſtyle>"; }',
+        ])
+    def test_style_content(self, content):
+        s = f'<style>{content}</style>'
+        self._run_check(s, [("starttag", "style", []),
+                            ("data", content),
+                            ("endtag", "style")])
+
+    @support.subTests('content', [
+            '<!-- not a comment -->',
+            "<not a='start tag'>",
+            '<![CDATA[not a cdata]]>',
+            '<!not a bogus comment>',
+            '</not a bogus comment>',
+            '\u2603',
+            '< /title>',
+            '</ title>',
+            '</titled>',
+            '</title\v>',
+            '</title\xa0>',
+            '</tıtle>',
+        ])
+    def test_title_content(self, content):
+        source = f"<title>{content}</title>"
+        self._run_check(source, [
+            ("starttag", "title", []),
+            ("data", content),
+            ("endtag", "title"),
+        ])
+
+    @support.subTests('content', [
+            '<!-- not a comment -->',
+            "<not a='start tag'>",
+            '<![CDATA[not a cdata]]>',
+            '<!not a bogus comment>',
+            '</not a bogus comment>',
+            '\u2603',
+            '< /textarea>',
+            '</ textarea>',
+            '</textareable>',
+            '</textarea\v>',
+            '</textarea\xa0>',
+        ])
+    def test_textarea_content(self, content):
+        source = f"<textarea>{content}</textarea>"
+        self._run_check(source, [
+            ("starttag", "textarea", []),
+            ("data", content),
+            ("endtag", "textarea"),
+        ])
+
+    @support.subTests('endtag', ['script', 'SCRIPT', 'script ', 'script\n',
+                                 'script/', 'script foo=bar', 'script foo=">"'])
+    def test_script_closing_tag(self, endtag):
         # see issue #13358
         # make sure that HTMLParser calls handle_data only once for each CDATA.
-        # The normal event collector normalizes  the events in get_events,
-        # so we override it to return the original list of events.
-        class Collector(EventCollector):
-            def get_events(self):
-                return self.events
-
         content = """<!-- not a comment --> &not-an-entity-ref;
                   <a href="" /> </p><p> <span></span></style>
                   '</script' + '>'"""
-        for element in [' script', 'script ', ' script ',
-                        '\nscript', 'script\n', '\nscript\n']:
-            element_lower = element.lower().strip()
-            s = '<script>{content}</{element}>'.format(element=element,
-                                                       content=content)
-            self._run_check(s, [("starttag", element_lower, []),
-                                ("data", content),
-                                ("endtag", element_lower)],
-                            collector=Collector(convert_charrefs=False))
+        s = f'<ScrIPt>{content}</{endtag}>'
+        self._run_check(s, [("starttag", "script", []),
+                            ("data", content),
+                            ("endtag", "script")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
 
-    def test_EOF_in_cdata(self):
-        content = """<!-- not a comment --> &not-an-entity-ref;
-                  <a href="" /> </p><p> <span></span></style>
-                  '</script' + '>'"""
-        s = f'<script>{content}'
-        self._run_check(s, [
-            ("starttag", 'script', []),
-            ("data", content)
-        ])
+    @support.subTests('endtag', ['style', 'STYLE', 'style ', 'style\n',
+                                 'style/', 'style foo=bar', 'style foo=">"'])
+    def test_style_closing_tag(self, endtag):
+        content = """
+            b::before { content: "<!-- not a comment -->"; }
+            p::before { content: "&not-an-entity-ref;"; }
+            a::before { content: "<i>"; }
+            a::after { content: "</i>"; }
+            """
+        s = f'<StyLE>{content}</{endtag}>'
+        self._run_check(s, [("starttag", "style", []),
+                            ("data", content),
+                            ("endtag", "style")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+
+    @support.subTests('endtag', ['title', 'TITLE', 'title ', 'title\n',
+                                 'title/', 'title foo=bar', 'title foo=">"'])
+    def test_title_closing_tag(self, endtag):
+        content = "<!-- not a comment --><i>Egg &amp; Spam</i>"
+        s = f'<TitLe>{content}</{endtag}>'
+        self._run_check(s, [("starttag", "title", []),
+                            ('data', '<!-- not a comment --><i>Egg & Spam</i>'),
+                            ("endtag", "title")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=True))
+        self._run_check(s, [("starttag", "title", []),
+                            ('data', '<!-- not a comment --><i>Egg '),
+                            ('entityref', 'amp'),
+                            ('data', ' Spam</i>'),
+                            ("endtag", "title")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+
+    @support.subTests('endtag', ['textarea', 'TEXTAREA', 'textarea ', 'textarea\n',
+                                 'textarea/', 'textarea foo=bar', 'textarea foo=">"'])
+    def test_textarea_closing_tag(self, endtag):
+        content = "<!-- not a comment --><i>Egg &amp; Spam</i>"
+        s = f'<TexTarEa>{content}</{endtag}>'
+        self._run_check(s, [("starttag", "textarea", []),
+                            ('data', '<!-- not a comment --><i>Egg & Spam</i>'),
+                            ("endtag", "textarea")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=True))
+        self._run_check(s, [("starttag", "textarea", []),
+                            ('data', '<!-- not a comment --><i>Egg '),
+                            ('entityref', 'amp'),
+                            ('data', ' Spam</i>'),
+                            ("endtag", "textarea")],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+
+    @support.subTests('tail,end', [
+        ('', False),
+        ('<', False),
+        ('</', False),
+        ('</s', False),
+        ('</script', False),
+        ('</script ', True),
+        ('</script foo=bar', True),
+        ('</script foo=">', True),
+    ])
+    def test_eof_in_script(self, tail, end):
+        content = "a = 123"
+        s = f'<ScrIPt>{content}{tail}'
+        self._run_check(s, [("starttag", "script", []),
+                            ("data", content if end else content + tail)],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+
+    @support.subTests('tail,end', [
+        ('', False),
+        ('<', False),
+        ('</', False),
+        ('</t', False),
+        ('</title', False),
+        ('</title ', True),
+        ('</title foo=bar', True),
+        ('</title foo=">', True),
+    ])
+    def test_eof_in_title(self, tail, end):
+        s = f'<TitLe>Egg &amp; Spam{tail}'
+        self._run_check(s, [("starttag", "title", []),
+                            ("data", "Egg & Spam" + ('' if end else tail))],
+                        collector=EventCollectorNoNormalize(convert_charrefs=True))
+        self._run_check(s, [("starttag", "title", []),
+                            ('data', 'Egg '),
+                            ('entityref', 'amp'),
+                            ('data', ' Spam' + ('' if end else tail))],
+                        collector=EventCollectorNoNormalize(convert_charrefs=False))
 
     def test_comments(self):
         html = ("<!-- I'm a valid comment -->"
                 '<!--me too!-->'
                 '<!------>'
+                '<!----->'
                 '<!---->'
+                # abrupt-closing-of-empty-comment
+                '<!--->'
+                '<!-->'
                 '<!----I have many hyphens---->'
                 '<!-- I have a > in the middle -->'
-                '<!-- and I have -- in the middle! -->')
+                '<!-- and I have -- in the middle! -->'
+                '<!--incorrectly-closed-comment--!>'
+                '<!----!>'
+                '<!----!-->'
+                '<!---- >-->'
+                '<!---!>-->'
+                '<!--!>-->'
+                # nested-comment
+                '<!-- <!-- nested --> -->'
+                '<!--<!-->'
+                '<!--<!--!>'
+        )
         expected = [('comment', " I'm a valid comment "),
                     ('comment', 'me too!'),
                     ('comment', '--'),
+                    ('comment', '-'),
+                    ('comment', ''),
+                    ('comment', ''),
                     ('comment', ''),
                     ('comment', '--I have many hyphens--'),
                     ('comment', ' I have a > in the middle '),
-                    ('comment', ' and I have -- in the middle! ')]
+                    ('comment', ' and I have -- in the middle! '),
+                    ('comment', 'incorrectly-closed-comment'),
+                    ('comment', ''),
+                    ('comment', '--!'),
+                    ('comment', '-- >'),
+                    ('comment', '-!>'),
+                    ('comment', '!>'),
+                    ('comment', ' <!-- nested '), ('data', ' -->'),
+                    ('comment', '<!'),
+                    ('comment', '<!'),
+        ]
         self._run_check(html, expected)
 
     def test_condcoms(self):
@@ -443,7 +609,7 @@ text
         self._run_check("</$>", [('comment', '$')])
         self._run_check("</", [('data', '</')])
         self._run_check("</a", [])
-        self._run_check("</ a>", [('endtag', 'a')])
+        self._run_check("</ a>", [('comment', ' a')])
         self._run_check("</ a", [('comment', ' a')])
         self._run_check("<a<a>", [('starttag', 'a<a', [])])
         self._run_check("</a<a>", [('endtag', 'a<a')])
@@ -491,6 +657,10 @@ text
         ]
         self._run_check(html, expected)
 
+    def test_slashes_in_endtag(self):
+        self._run_check('</a/>', [('endtag', 'a')])
+        self._run_check('</a foo="var"/>', [('endtag', 'a')])
+
     def test_declaration_junk_chars(self):
         self._run_check("<!DOCTYPE foo $ >", [('decl', 'DOCTYPE foo $ ')])
 
@@ -525,15 +695,11 @@ text
         self._run_check(html, expected)
 
     def test_broken_invalid_end_tag(self):
-        # This is technically wrong (the "> shouldn't be included in the 'data')
-        # but is probably not worth fixing it (in addition to all the cases of
-        # the previous test, it would require a full attribute parsing).
-        # see #13993
         html = '<b>This</b attr=">"> confuses the parser'
         expected = [('starttag', 'b', []),
                     ('data', 'This'),
                     ('endtag', 'b'),
-                    ('data', '"> confuses the parser')]
+                    ('data', ' confuses the parser')]
         self._run_check(html, expected)
 
     def test_correct_detection_of_start_tags(self):
@@ -608,10 +774,6 @@ text
             ('<!', [('comment', '')]),
             ('<!-', [('comment', '-')]),
             ('<![', [('comment', '[')]),
-            ('<![CDATA[', [('unknown decl', 'CDATA[')]),
-            ('<![CDATA[x', [('unknown decl', 'CDATA[x')]),
-            ('<![CDATA[x]', [('unknown decl', 'CDATA[x]')]),
-            ('<![CDATA[x]]', [('unknown decl', 'CDATA[x]]')]),
             ('<!DOCTYPE', [('decl', 'DOCTYPE')]),
             ('<!DOCTYPE ', [('decl', 'DOCTYPE ')]),
             ('<!DOCTYPE html', [('decl', 'DOCTYPE html')]),
@@ -623,6 +785,18 @@ text
         ]
         for html, expected in data:
             self._run_check(html, expected)
+
+    @support.subTests('content', ['', 'x', 'x]', 'x]]'])
+    def test_eof_in_cdata(self, content):
+        self._run_check('<![CDATA[' + content,
+                        [('unknown decl', 'CDATA[' + content)])
+        self._run_check('<![CDATA[' + content,
+                        [('comment', '[CDATA[' + content)],
+                        collector=EventCollector(autocdata=True))
+        self._run_check('<svg><text y="100"><![CDATA[' + content,
+                        [('starttag', 'svg', []),
+                         ('starttag', 'text', [('y', '100')]),
+                         ('unknown decl', 'CDATA[' + content)])
 
     def test_bogus_comments(self):
         html = ('<!ELEMENT br EMPTY>'
@@ -686,28 +860,53 @@ text
         ]
         self._run_check(html, expected)
 
-    def test_cdata_declarations(self):
-        # More tests should be added. See also "8.2.4.42. Markup
-        # declaration open state", "8.2.4.69. CDATA section state",
-        # and issue 32876
-        html = ('<![CDATA[just some plain text]]>')
-        expected = [('unknown decl', 'CDATA[just some plain text')]
-        self._run_check(html, expected)
-
-    def test_cdata_declarations_multiline(self):
-        html = ('<code><![CDATA['
-                '    if (a < b && a > b) {'
-                '        printf("[<marquee>How?</marquee>]");'
-                '    }'
-                ']]></code>')
+    @support.subTests('content', [
+        'just some plain text',
+        '<!-- not a comment -->',
+        '&not-an-entity-ref;',
+        "<not a='start tag'>",
+        '',
+        '[[I have many brackets]]',
+        'I have a > in the middle',
+        'I have a ]] in the middle',
+        '] ]>',
+        ']] >',
+        ('\n'
+         '    if (a < b && a > b) {\n'
+         '        printf("[<marquee>How?</marquee>]");\n'
+         '    }\n'),
+    ])
+    def test_cdata_section_content(self, content):
+        # See "13.2.5.42 Markup declaration open state",
+        # "13.2.5.69 CDATA section state", and issue bpo-32876.
+        html = f'<svg><text y="100"><![CDATA[{content}]]></text></svg>'
         expected = [
-            ('starttag', 'code', []),
-            ('unknown decl',
-             'CDATA[    if (a < b && a > b) {        '
-             'printf("[<marquee>How?</marquee>]");    }'),
-            ('endtag', 'code')
+            ('starttag', 'svg', []),
+            ('starttag', 'text', [('y', '100')]),
+            ('unknown decl', 'CDATA[' + content),
+            ('endtag', 'text'),
+            ('endtag', 'svg'),
         ]
         self._run_check(html, expected)
+        self._run_check(html, expected, collector=EventCollector(autocdata=True))
+
+    def test_cdata_section(self):
+        # See "13.2.5.42 Markup declaration open state".
+        html = ('<![CDATA[foo<br>bar]]>'
+                '<svg><text y="100"><![CDATA[foo<br>bar]]></text></svg>'
+                '<![CDATA[foo<br>bar]]>')
+        expected = [
+            ('comment', '[CDATA[foo<br'),
+            ('data', 'bar]]>'),
+            ('starttag', 'svg', []),
+            ('starttag', 'text', [('y', '100')]),
+            ('unknown decl', 'CDATA[foo<br>bar'),
+            ('endtag', 'text'),
+            ('endtag', 'svg'),
+            ('comment', '[CDATA[foo<br'),
+            ('data', 'bar]]>'),
+        ]
+        self._run_check(html, expected, collector=EventCollector(autocdata=True))
 
     def test_convert_charrefs_dropped_text(self):
         # #23144: make sure that all the events are triggered when
@@ -749,9 +948,15 @@ class AttributesTestCase(TestCaseBase):
           ("starttag", "a", [("b", "v"), ("c", "v"), ("d", "v"), ("e", None)])
         ]
         self._run_check("""<a b='v' c="v" d=v e>""", output)
-        self._run_check("""<a  b = 'v' c = "v" d = v e>""", output)
-        self._run_check("""<a\nb\n=\n'v'\nc\n=\n"v"\nd\n=\nv\ne>""", output)
-        self._run_check("""<a\tb\t=\t'v'\tc\t=\t"v"\td\t=\tv\te>""", output)
+        self._run_check("<a foo==bar>", [('starttag', 'a', [('foo', '=bar')])])
+        self._run_check("<a foo =bar>", [('starttag', 'a', [('foo', 'bar')])])
+        self._run_check("<a foo\t=bar>", [('starttag', 'a', [('foo', 'bar')])])
+        self._run_check("<a foo\v=bar>", [('starttag', 'a', [('foo\v', 'bar')])])
+        self._run_check("<a foo\xa0=bar>", [('starttag', 'a', [('foo\xa0', 'bar')])])
+        self._run_check("<a foo= bar>", [('starttag', 'a', [('foo', 'bar')])])
+        self._run_check("<a foo=\tbar>", [('starttag', 'a', [('foo', 'bar')])])
+        self._run_check("<a foo=\vbar>", [('starttag', 'a', [('foo', '\vbar')])])
+        self._run_check("<a foo=\xa0bar>", [('starttag', 'a', [('foo', '\xa0bar')])])
 
     def test_attr_values(self):
         self._run_check("""<a b='xxx\n\txxx' c="yyy\t\nyyy" d='\txyz\n'>""",
@@ -760,6 +965,10 @@ class AttributesTestCase(TestCaseBase):
                                             ("d", "\txyz\n")])])
         self._run_check("""<a b='' c="">""",
                         [("starttag", "a", [("b", ""), ("c", "")])])
+        self._run_check("<a b=\tx c=\ny>",
+                        [('starttag', 'a', [('b', 'x'), ('c', 'y')])])
+        self._run_check("<a b=\v c=\xa0>",
+                        [("starttag", "a", [("b", "\v"), ("c", "\xa0")])])
         # Regression test for SF patch #669683.
         self._run_check("<e a=rgb(1,2,3)>",
                         [("starttag", "e", [("a", "rgb(1,2,3)")])])
@@ -826,13 +1035,17 @@ class AttributesTestCase(TestCaseBase):
         )
         expected = [
             ('starttag', 'a', [('href', "test'style='color:red;bad1'")]),
-            ('data', 'test - bad1'), ('endtag', 'a'),
+            ('data', 'test - bad1'),
+            ('endtag', 'a'),
             ('starttag', 'a', [('href', "test'+style='color:red;ba2'")]),
-            ('data', 'test - bad2'), ('endtag', 'a'),
+            ('data', 'test - bad2'),
+            ('endtag', 'a'),
             ('starttag', 'a', [('href', "test'\xa0style='color:red;bad3'")]),
-            ('data', 'test - bad3'), ('endtag', 'a'),
+            ('data', 'test - bad3'),
+            ('endtag', 'a'),
             ('starttag', 'a', [('href', "test'\xa0style='color:red;bad4'")]),
-            ('data', 'test - bad4'), ('endtag', 'a')
+            ('data', 'test - bad4'),
+            ('endtag', 'a'),
         ]
         self._run_check(html, expected)
 

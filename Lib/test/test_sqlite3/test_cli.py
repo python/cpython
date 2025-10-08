@@ -138,7 +138,7 @@ class InteractiveSession(unittest.TestCase):
         self.assertEndsWith(out, self.PS1)
         self.assertEqual(out.count(self.PS1), 2)
         self.assertEqual(out.count(self.PS2), 0)
-        self.assertIn("Error", err)
+        self.assertIn('Error: unknown command: "', err)
         # test "unknown_command" is pointed out in the error message
         self.assertIn("unknown_command", err)
 
@@ -248,6 +248,11 @@ class Completion(unittest.TestCase):
         output = self.write_input(input_)
         self.assertIn(b"SELECT", output)
         self.assertIn(b"(1,)", output)
+
+        # .commands are completed without changing case
+        input_ = b".ver\t\n.quit\n"
+        output = self.write_input(input_)
+        self.assertIn(b".version", output)
 
     @unittest.skipIf(sys.platform.startswith("freebsd"),
                     "Two actual tabs are inserted when there are no matching"
