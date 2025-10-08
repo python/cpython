@@ -1073,8 +1073,8 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
     
     Symbolic links to files and directories are followed and the 
     targets of the links included in the zip file. This matches the 
-    default behaviour of command-line zip utilities on Linux/UNIX 
-    systems.
+    default behaviour of command-line zip utilities on
+    Linux/UNIX/Windows systems.
 
     Hard links to files are followed and the targets of the links 
     included in the zip file. There is no de-duplication of multiple 
