@@ -1109,11 +1109,11 @@ class TracebackException:
                 self._str += f". Did you mean: '{suggestion}'?"
         elif exc_type and issubclass(exc_type, ModuleNotFoundError):
             module_name = getattr(exc_value, "name", None)
-            if sys.flags.no_site and module_name not in sys.stdlib_module_names:
+            if module_name in sys.stdlib_module_names:
+                self._str = f"Standard library module '{module_name}' was not found"
+            elif sys.flags.no_site:
                 self._str += (". Site initialization is disabled, did you forget to "
                     + "add the site-packages directory to sys.path?")
-            elif module_name in sys.stdlib_module_names:
-                self._str = f"Standard library module '{module_name}' was not found"
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
