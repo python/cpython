@@ -96,7 +96,7 @@ extern void _Py_ext_module_loader_result_apply_error(
 
 /* The module init function. */
 typedef PyObject *(*PyModInitFunction)(void);
-typedef PyModuleDef_Slot *(*PyModExportFunction)(PyObject *spec);
+typedef PyModuleDef_Slot *(*PyModExportFunction)(void);
 #ifdef HAVE_DYNAMIC_LOADING
 // function changed signature, the "2" suffix helps avoid ABI issues
 extern int _PyImport_GetModInitFunc2(

@@ -1019,7 +1019,7 @@ PyInit__test_no_multiple_interpreter_slot(void)
 /* PyModExport_* hooks */
 
 PyMODEXPORT_FUNC
-PyModExport__test_from_modexport(PyObject *spec)
+PyModExport__test_from_modexport(void)
 {
     static PyModuleDef_Slot slots[] = {
         {Py_mod_name, "_test_from_modexport"},
@@ -1029,21 +1029,13 @@ PyModExport__test_from_modexport(PyObject *spec)
 }
 
 PyMODEXPORT_FUNC
-PyModExport__test_from_modexport_null(PyObject *spec)
+PyModExport__test_from_modexport_null(void)
 {
-    PyObject *exc;
-    if (PyObject_GetOptionalAttrString(spec, "_test_exception", &exc) < 0) {
-        return NULL;
-    }
-    if (exc) {
-        PyErr_SetObject((PyObject*)Py_TYPE(exc), exc);
-    }
-    Py_XDECREF(exc);
     return NULL;
 }
 
 PyMODINIT_FUNC
-PyModInit__test_from_modexport_null(PyObject *spec)
+PyModInit__test_from_modexport_null(void)
 {
     // This is not called as fallback for failed PyModExport_*
     assert(0);
@@ -1052,14 +1044,14 @@ PyModInit__test_from_modexport_null(PyObject *spec)
 }
 
 PyMODEXPORT_FUNC
-PyModExport__test_from_modexport_exception(PyObject *spec)
+PyModExport__test_from_modexport_exception(void)
 {
     PyErr_SetString(PyExc_ValueError, "failed as requested");
     return NULL;
 }
 
 PyMODINIT_FUNC
-PyModInit__test_from_modexport_exception(PyObject *spec)
+PyModInit__test_from_modexport_exception(void)
 {
     // This is not called as fallback for failed PyModExport_*
     assert(0);
@@ -1075,7 +1067,7 @@ modexport_create_string(PyObject *spec, PyObject *def)
 }
 
 PyMODEXPORT_FUNC
-PyModExport__test_from_modexport_create_nonmodule(PyObject *spec)
+PyModExport__test_from_modexport_create_nonmodule(void)
 {
     static PyModuleDef_Slot slots[] = {
         {Py_mod_name, "_test_from_modexport_create_nonmodule"},
@@ -1090,7 +1082,7 @@ static PyModuleDef_Slot modexport_empty_slots[] = {
 };
 
 PyMODEXPORT_FUNC
-PyModExport__test_from_modexport_empty_slots(PyObject *spec)
+PyModExport__test_from_modexport_empty_slots(void)
 {
     return modexport_empty_slots;
 }
@@ -1155,7 +1147,7 @@ modexport_smoke_free(PyObject *mod)
 }
 
 PyMODEXPORT_FUNC
-PyModExport__test_from_modexport_smoke(PyObject *spec)
+PyModExport__test_from_modexport_smoke(void)
 {
     static PyMethodDef methods[] = {
         {"get_state_int", modexport_smoke_get_state_int, METH_NOARGS},
