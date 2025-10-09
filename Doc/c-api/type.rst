@@ -306,6 +306,21 @@ Type Objects
 
    .. versionadded:: 3.14
 
+
+.. c:function:: int PyType_Lookup(PyTypeObject *type, PyObject *name, PyObject **attr)
+
+   Look for a type attribute through the type
+   :term:`MRO <method resolution order>`.
+
+   *name* must be a :class:`str`.
+
+   * If found, set *\*attr* to a strong reference and return ``1``.
+   * If not found, set *\*attr* to ``NULL`` and return ``0``.
+   * On error, set an exception and return ``-1``.
+
+   .. versionadded:: next
+
+
 .. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 
    Attempt to assign a version tag to the given type.

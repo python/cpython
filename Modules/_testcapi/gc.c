@@ -98,8 +98,14 @@ slot_tp_del(PyObject *self)
         PyErr_SetRaisedException(exc);
         return;
     }
+
     /* Execute __del__ method, if any. */
-    del = _PyType_LookupRef(Py_TYPE(self), tp_del);
+    if (PyType_Lookup(Py_TYPE(self), tp_del, &del) < 0) {
+        Py_DECREF(tp_del);
+        PyErr_FormatUnraisable("Exception ignored while deallocating");
+        PyErr_SetRaisedException(exc);
+        return;
+    }
     Py_DECREF(tp_del);
     if (del != NULL) {
         res = PyObject_CallOneArg(del, self);

@@ -6203,6 +6203,20 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 }
 
 int
+PyType_Lookup(PyTypeObject *type, PyObject *name, PyObject **attr)
+{
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError, "name must be a str, got %T", name);
+        *attr = NULL;
+        return -1;
+    }
+
+    assert(PyType_Check(type));
+    *attr = _PyType_LookupRefAndVersion(type, name, NULL);
+    return (*attr != NULL);
+}
+
+int
 _PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
                                    unsigned int tp_version)
 {

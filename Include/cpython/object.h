@@ -252,7 +252,7 @@ struct _specialization_cache {
     // by the specialization machinery, and are invalidated by PyType_Modified.
     // The rules for using them are as follows:
     // - If getitem is non-NULL, then it is the same Python function that
-    //   PyType_Lookup(cls, "__getitem__") would return.
+    //   _PyType_Lookup(cls, "__getitem__") would return.
     // - If getitem is NULL, then getitem_version is meaningless.
     // - If getitem->func_version == getitem_version, then getitem can be called
     //   with two positional arguments and no keyword arguments, and has neither
@@ -289,8 +289,16 @@ typedef struct _heaptypeobject {
 } PyHeapTypeObject;
 
 PyAPI_FUNC(const char *) _PyType_Name(PyTypeObject *);
-PyAPI_FUNC(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
-PyAPI_FUNC(PyObject *) _PyType_LookupRef(PyTypeObject *, PyObject *);
+PyAPI_FUNC(int) PyType_Lookup(
+    PyTypeObject *type,
+    PyObject *name,
+    PyObject **attr);
+_Py_DEPRECATED_EXTERNALLY(3.15) PyAPI_FUNC(PyObject *) _PyType_Lookup(
+    PyTypeObject *type,
+    PyObject *name);
+_Py_DEPRECATED_EXTERNALLY(3.15) PyAPI_FUNC(PyObject *) _PyType_LookupRef(
+    PyTypeObject *type,
+    PyObject *name);
 PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
