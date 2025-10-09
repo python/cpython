@@ -1037,7 +1037,7 @@ find and load modules.
 
    .. note::
 
-      :meth:`PathFinder.invalidate_caches` invalidates :class:`NamespacePath`s,
+      :meth:`PathFinder.invalidate_caches` invalidates :class:`NamespacePath`,
       forcing the path value to be recomputed next time it is accessed.
 
    .. versionadded:: next
