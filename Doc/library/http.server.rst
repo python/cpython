@@ -376,7 +376,7 @@ instantiation, of which this module provides three different variants:
       The *directory* parameter accepts a :term:`path-like object`.
 
    .. versionchanged:: next
-      Added *extra_response_headers*.
+      Added *extra_response_headers* parameter.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
