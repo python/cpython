@@ -1094,6 +1094,9 @@ class NamespacePath:
     recomputed, using *path_finder*. The initial value is set to *path*.
 
     For top-level modules, the parent module's path is sys.path.
+
+    *path_finder* should be a callable with the same signature as
+    MetaPathFinder.find_spec ((fullname, path, target=None) -> spec).
     """
 
     # When invalidate_caches() is called, this epoch is incremented
