@@ -5429,8 +5429,7 @@ dummy_func(
         tier2 op(_COLD_EXIT, ( -- )) {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            bool is_dynamic = exit->is_dynamic;
-            _Py_CODEUNIT *target = is_dynamic ? frame->instr_ptr : (_PyFrame_GetBytecode(frame) + exit->target);
+            _Py_CODEUNIT *target = (_PyFrame_GetBytecode(frame) + exit->target);
             _Py_BackoffCounter temperature = exit->temperature;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -5451,7 +5450,7 @@ dummy_func(
                 exit->temperature = initial_temperature_backoff_counter();
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
-                int chain_depth = is_dynamic ? 0 : current_executor->vm_data.chain_depth + 1;
+                int chain_depth = previous_executor->vm_data.chain_depth + 1;
                 _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), chain_depth, exit);
                 GOTO_TIER_ONE(target, 1);
             }
@@ -5461,9 +5460,13 @@ dummy_func(
             EXIT_IF(frame->instr_ptr != (_Py_CODEUNIT *)ip);
         }
 
+        // Note: this is different than _COLD_EXIT/_EXIT_TRACE, as it may lead to multiple executors
+        // from a single exit!
         tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
             _Py_CODEUNIT *target = frame->instr_ptr;
             _PyExitData *exit = (_PyExitData *)exit_p;
+            _Py_BackoffCounter temperature = exit->temperature;
+            tstate->jit_exit = exit;
 #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 2) {
@@ -5475,9 +5478,28 @@ dummy_func(
                     _PyOpcode_OpName[target->op.code]);
             }
 #endif
-            assert(exit->is_dynamic);
-            tstate->jit_exit = exit;
-            TIER2_TO_TIER2(exit->executor);
+            if (target->op.code == ENTER_EXECUTOR) {
+                PyCodeObject *code = _PyFrame_GetCode(frame);
+                _PyExecutorObject *executor = code->co_executors->executors[target->op.arg];
+                Py_INCREF(executor);
+                assert(tstate->jit_exit == exit);
+                exit->executor = executor;
+                TIER2_TO_TIER2(exit->executor);
+            }
+            else {
+                if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+                    GOTO_TIER_ONE(target, 0);
+                }
+                if (!backoff_counter_triggers(temperature)) {
+                    exit->temperature = advance_backoff_counter(temperature);
+                    GOTO_TIER_ONE(target, 0);
+                }
+                exit->temperature = initial_temperature_backoff_counter();
+                _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
+                assert(tstate->current_executor == (PyObject *)previous_executor);
+                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), 0, exit);
+                GOTO_TIER_ONE(target, 1);
+            }
         }
 
         label(pop_2_error) {

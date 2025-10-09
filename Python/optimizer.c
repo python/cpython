@@ -131,6 +131,11 @@ _PyOptimizer_Optimize(
     bool progress_needed = (chain_depth % MAX_CHAIN_DEPTH) == 0;
     PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_tracer_initial_code;
     _Py_CODEUNIT *start = tstate->interp->jit_tracer_initial_instr;
+    // A recursive trace might've cleared the values. In that case, bail.
+    if (code == NULL) {
+        interp->compiling = false;
+        return 0;
+    }
     if (progress_needed && !has_space_for_executor(code, start)) {
         interp->compiling = false;
         return 0;
@@ -868,6 +873,7 @@ _PyJIT_FinalizeTracing(PyThreadState *tstate)
     Py_CLEAR(tstate->interp->jit_tracer_initial_code);
     Py_CLEAR(tstate->interp->jit_tracer_initial_func);
     tstate->interp->jit_tracer_code_curr_size = 2;
+    tstate->interp->jit_tracer_code_max_size = UOP_MAX_TRACE_LENGTH - 1;
 }
 
 
@@ -1197,7 +1203,7 @@ uop_optimize(
     int curr_stackentries = tstate->interp->jit_tracer_initial_stack_depth;
     int length = interp->jit_tracer_code_curr_size;
     // Trace too short, don't bother.
-    if (length <= 4) {
+    if (length <= 5) {
         return 0;
     }
     assert(length > 0);

@@ -1049,6 +1049,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         return NULL;
     }
 
+    // We came in already tracing, this means a recursive trace in the form of
+    // Python -> C -> Python happened. We want to abandon the outer trace then.
+    if (IS_JIT_TRACING()) {
+        _PyJIT_FinalizeTracing(tstate);
+        tstate->interp->jit_is_tracing = false;
+    }
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
     _Py_CODEUNIT *next_instr;
@@ -1194,15 +1200,15 @@ tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
-        if (frame->lltrace >= 4) {
-            if (next_uop->opcode != _YIELD_VALUE &&
-            next_uop->opcode != _FOR_ITER_GEN_FRAME &&
-            next_uop->opcode != _PUSH_FRAME &&
-            next_uop->opcode != _PY_FRAME_KW &&
-            next_uop->opcode != _SAVE_RETURN_OFFSET &&
-            next_uop->opcode != _SAVE_RETURN_OFFSET) {
-                dump_stack(frame, stack_pointer);
-            }
+        if (frame->lltrace >= 2) {
+            // if (next_uop->opcode != _YIELD_VALUE &&
+            // next_uop->opcode != _FOR_ITER_GEN_FRAME &&
+            // next_uop->opcode != _PUSH_FRAME &&
+            // next_uop->opcode != _PY_FRAME_KW &&
+            // next_uop->opcode != _SAVE_RETURN_OFFSET &&
+            // next_uop->opcode != _SAVE_RETURN_OFFSET) {
+            //     dump_stack(frame, stack_pointer);
+            // }
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }
