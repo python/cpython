@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_interp_structs.h" // PyGC_Head
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_utils.h"         // _PyObject_ASSERT_FROM()
 
 
 /* Get an object's GC head */
