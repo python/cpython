@@ -818,9 +818,7 @@ parser.add_argument(
 
 # Don't list broken and experimental variants in help
 platforms_choices = [p.name for p in _profiles] + ["cleanall"]
-platforms_help = [p.name for p in _profiles if p.support_level] + [
-    "cleanall"
-]
+platforms_help = [p.name for p in _profiles if p.support_level] + ["cleanall"]
 parser.add_argument(
     "platform",
     metavar="PLATFORM",
