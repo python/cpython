@@ -1015,13 +1015,32 @@ find and load modules.
 
 .. class:: NamespacePath(name, path, path_finder)
 
-   Represents a namespace package's path.
+   Represents a :term:`namespace package`'s path (:attr:`module.__path__`).
 
-   It uses the module *name* to find its parent module, and from there it looks
-   up the parent's :attr:`module.__path__`.  When this changes, the module's own
-   path is recomputed, using *path_finder*. The initial value is set to *path*.
+   When its value is accessed, if necessary, it will be recomputed.
+   This keeps it in-sync with the global state (:attr:`sys.modules`).
+
+   The *name* argument is the name of the namespace module.
+
+   The *path* argument is the initial path value.
+
+   The *path_finder* argument is the callable used to recompute the path value.
+   It has the same signature as :meth:`MetaPathFinder.find_spec`.
+
+   When the parent's :attr:`module.__path__` attribute is updated, the path
+   value is recomputed.
+
+   If the parent module is missing from :data:`sys.modules`, then
+   :exc:`ModuleNotFoundError` will be raised.
 
    For top-level modules, the parent module's path is :data:`sys.path`.
+
+   .. note::
+
+      :meth:`PathFinder.invalidate_caches` invalidates :class:`NamespacePath`s,
+      forcing the path value to be recomputed next time it is accessed.
+
+   .. versionadded:: next
 
 
 .. class:: SourceFileLoader(fullname, path)
