@@ -402,7 +402,7 @@ instantiation, of which this module provides three different variants:
 
    .. attribute:: extra_response_headers
 
-      A sequence of ``(name, value)`` pairs containing user specified extra
+      A sequence of ``(name, value)`` pairs containing user-defined extra
       HTTP response headers to add to each successful HTTP status 200 response.
       All other status code responses will not include these headers.
 
@@ -440,7 +440,7 @@ instantiation, of which this module provides three different variants:
       ``'Last-Modified:'`` header with the file's modification time.
 
       The instance attribute ``extra_response_headers`` is a sequence of
-      ``(name, value)`` pairs containing user specified extra response headers.
+      ``(name, value)`` pairs containing user-defined extra response headers.
 
       Then follows a blank line signifying the end of the headers, and then the
       contents of the file are output.
