@@ -3310,7 +3310,7 @@ dummy_func(
 #endif
         }
 
-        op(_ITER_NEXT_LIST, (iter, null_or_index -- iter, null_or_index, next)) {
+        replaced op(_ITER_NEXT_LIST, (iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(PyList_CheckExact(list_o));
 #ifdef Py_GIL_DISABLED

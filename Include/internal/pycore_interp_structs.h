@@ -944,6 +944,7 @@ struct _is {
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     // JIT tracing state
+    bool jit_is_tracing;
     int jit_tracer_code_max_size;
     int jit_tracer_code_curr_size;
     _PyBloomFilter jit_tracer_dependencies;

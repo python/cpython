@@ -4463,42 +4463,7 @@
             break;
         }
 
-        case _ITER_NEXT_LIST: {
-            _PyStackRef null_or_index;
-            _PyStackRef iter;
-            _PyStackRef next;
-            oparg = CURRENT_OPARG();
-            null_or_index = stack_pointer[-1];
-            iter = stack_pointer[-2];
-            PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
-            assert(PyList_CheckExact(list_o));
-            #ifdef Py_GIL_DISABLED
-            assert(_Py_IsOwnedByCurrentThread(list_o) ||
-                  _PyObject_GC_IS_SHARED(list_o));
-            STAT_INC(FOR_ITER, hit);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int result = _PyList_GetItemRefNoLock((PyListObject *)list_o, PyStackRef_UntagInt(null_or_index), &next);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (result < 0) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (result == 0) {
-                null_or_index = PyStackRef_TagInt(-1);
-                stack_pointer[-1] = null_or_index;
-                TIER2_JUMPBY(oparg + 1);
-                break;
-            }
-            #else
-            next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(list_o, PyStackRef_UntagInt(null_or_index)));
-            #endif
-            null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
-            stack_pointer[-1] = null_or_index;
-            stack_pointer[0] = next;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
+        /* _ITER_NEXT_LIST is not a viable micro-op for tier 2 because it is replaced */
 
         case _ITER_NEXT_LIST_TIER_TWO: {
             _PyStackRef null_or_index;

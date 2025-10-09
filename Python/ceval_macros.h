@@ -136,9 +136,15 @@
     JUMP_TO_LABEL(label);
 
 #if _Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS
-#  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
-#  define ENTER_TRACING() DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
-#  define LEAVE_TRACING() DISPATCH_TABLE_VAR = DISPATCH_TABLE;
+#  define IS_JIT_TRACING() (tstate->interp->jit_is_tracing)
+#  define ENTER_TRACING() \
+    assert(!IS_JIT_TRACING()); \
+    DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE; \
+    tstate->interp->jit_is_tracing = true;
+#  define LEAVE_TRACING() \
+    assert(IS_JIT_TRACING()); \
+    DISPATCH_TABLE_VAR = DISPATCH_TABLE; \
+    tstate->interp->jit_is_tracing = false;
 #  define BAIL_TRACING_NO_DISPATCH() \
     LEAVE_TRACING(); \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
@@ -148,14 +154,6 @@
     if (_err < 0) { \
         JUMP_TO_LABEL(error); \
     }
-#  define BAIL_TRACING() \
-    BAIL_TRACING_NO_DISPATCH() \
-    DISPATCH();
-#  define RECORD_TRACE() do { \
-        if (add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
-            BAIL_TRACING(); \
-        } \
-    } while (0);
 #  define RECORD_TRACE_NO_DISPATCH() do { \
         if (add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
             BAIL_TRACING_NO_DISPATCH(); \
@@ -224,7 +222,7 @@ do { \
 #define TRACING_DISPATCH() \
     { \
         assert(frame->stackpointer == NULL); \
-        RECORD_TRACE(); \
+        RECORD_TRACE_NO_DISPATCH(); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
@@ -414,7 +412,6 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 
 #define TIER1_TO_TIER2(EXECUTOR)                        \
 do {                                                   \
-    LEAVE_TRACING(); \
     OPT_STAT_INC(traces_executed);                     \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
