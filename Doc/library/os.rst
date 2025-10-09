@@ -3544,9 +3544,9 @@ features:
 .. data:: AT_NO_AUTOMOUNT
 
    If the final component of a path is an automount point, operate on the
-   automount point instead of performing the automount.  (On Linux,
+   automount point instead of performing the automount.  On Linux,
    :func:`os.stat`, :func:`os.fstat` and :func:`os.lstat` always behave this
-   way.)
+   way.
 
    .. availability:: Linux.
 
