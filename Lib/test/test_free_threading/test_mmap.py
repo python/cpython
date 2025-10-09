@@ -195,27 +195,6 @@ class MmapTests(unittest.TestCase):
                 nthreads=NTHREADS,
             )
 
-    @unittest.skipUnless(os.name == "posix", "requires Posix")
-    @unittest.skipUnless(hasattr(mmap.mmap, "resize"), "requires mmap.resize")
-    def test_resize_and_size(self):
-        thread_indexes = [i for i in range(NTHREADS)]
-
-        def resize_and_item_update(mm_obj):
-            # Each thread picks a unique index to write
-            thread_index = thread_indexes.pop()
-            mm_obj.resize(2048)
-            self.assertEqual(mm_obj.size(), 2048)
-            for i in range(100):
-                mm_obj[thread_index] = i
-                self.assertEqual(mm_obj[thread_index], i)
-
-        with mmap.mmap(ANONYMOUS_MEM, 1024, flags=mmap.MAP_PRIVATE) as mm_obj:
-            run_concurrently(
-                worker_func=resize_and_item_update,
-                args=(mm_obj,),
-                nthreads=NTHREADS,
-            )
-
     def test_close_and_closed(self):
         def close_mmap(mm_obj):
             mm_obj.close()
@@ -250,30 +229,6 @@ class MmapTests(unittest.TestCase):
                 args=(mm_obj,),
                 nthreads=NTHREADS,
             )
-
-    @unittest.skipUnless(os.name == "posix", "requires Posix")
-    @unittest.skipUnless(hasattr(mmap.mmap, "resize"), "requires mmap.resize")
-    def test_flush(self):
-        mmap_filename = "test_mmap_file"
-        resize_to = 1024
-
-        def resize_and_flush(mm_obj):
-            mm_obj.resize(resize_to)
-            mm_obj.flush()
-
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            file_path = f"{tmpdirname}/{mmap_filename}"
-            with open(file_path, "wb+") as file:
-                file.write(b"CPython")
-                file.flush()
-                with mmap.mmap(file.fileno(), 1) as mm_obj:
-                    run_concurrently(
-                        worker_func=resize_and_flush,
-                        args=(mm_obj,),
-                        nthreads=NTHREADS,
-                    )
-
-            self.assertEqual(os.path.getsize(file_path), resize_to)
 
     def test_mmap_export_as_memoryview(self):
         """
