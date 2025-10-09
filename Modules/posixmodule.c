@@ -9062,6 +9062,7 @@ os_forkpty_impl(PyObject *module)
     if (pid == -1) {
         return posix_error();
     }
+
     return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
 }
 #endif /* HAVE_FORKPTY */
