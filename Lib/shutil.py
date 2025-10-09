@@ -1201,16 +1201,16 @@ def unregister_archive_format(name):
 
 def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
                  dry_run=0, owner=None, group=None, logger=None):
-    """Create an archive file (eg. zip or tar).
+    """Create an archive file (e.g. zip or tar).
 
     'base_name' is the name of the file to create, minus any format-specific
     extension; 'format' is the archive format: one of "zip", "tar", "gztar",
     "bztar", "xztar", or "zstdtar".  Or any other registered format.
 
     'root_dir' is a directory that will be the root directory of the
-    archive; ie. we typically chdir into 'root_dir' before creating the
+    archive; i.e. we typically chdir into 'root_dir' before creating the
     archive.  'base_dir' is the directory where we start archiving from;
-    ie. 'base_dir' will be the common prefix of all files and
+    i.e. 'base_dir' will be the common prefix of all files and
     directories in the archive.  'root_dir' and 'base_dir' both default
     to the current directory.  Returns the name of the archive file.
 
