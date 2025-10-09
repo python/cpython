@@ -225,10 +225,10 @@ XMLParser Objects
 
    .. note::
 
-      :meth:`SetReparseDeferralEnabled`
+      :meth:`!SetReparseDeferralEnabled`
       has been backported to some prior releases of CPython as a security fix.
       Check for availability of
-      :meth:`SetReparseDeferralEnabled`
+      :meth:`!SetReparseDeferralEnabled`
       using :func:`hasattr` if used in code running across a variety of Python
       versions.
 
@@ -268,10 +268,10 @@ against some common XML vulnerabilities.
 
    .. note::
 
-      :meth:`SetBillionLaughsAttackProtectionActivationThreshold`
+      :meth:`!SetBillionLaughsAttackProtectionActivationThreshold`
       has been backported to some prior releases of CPython as a security fix.
       Check for availability of
-      :meth:`SetBillionLaughsAttackProtectionActivationThreshold`
+      :meth:`!SetBillionLaughsAttackProtectionActivationThreshold`
       using :func:`hasattr` if used in code running across a variety of Python
       versions.
 
@@ -309,10 +309,10 @@ against some common XML vulnerabilities.
 
    .. note::
 
-      :meth:`SetBillionLaughsAttackProtectionMaximumAmplification`
+      :meth:`!SetBillionLaughsAttackProtectionMaximumAmplification`
       has been backported to some prior releases of CPython as a security fix.
       Check for availability of
-      :meth:`SetBillionLaughsAttackProtectionMaximumAmplification`
+      :meth:`!SetBillionLaughsAttackProtectionMaximumAmplification`
       using :func:`hasattr` if used in code running across a variety of Python
       versions.
 
@@ -333,10 +333,10 @@ against some common XML vulnerabilities.
 
    .. note::
 
-      :meth:`SetAllocTrackerActivationThreshold`
+      :meth:`!SetAllocTrackerActivationThreshold`
       has been backported to some prior releases of CPython as a security fix.
       Check for availability of
-      :meth:`SetAllocTrackerActivationThreshold`
+      :meth:`!SetAllocTrackerActivationThreshold`
       using :func:`hasattr` if used in code running across a variety of Python
       versions.
 
@@ -373,10 +373,10 @@ against some common XML vulnerabilities.
 
    .. note::
 
-      :meth:`SetAllocTrackerMaximumAmplification`
+      :meth:`!SetAllocTrackerMaximumAmplification`
       has been backported to some prior releases of CPython as a security fix.
       Check for availability of
-      :meth:`SetAllocTrackerMaximumAmplification`
+      :meth:`!SetAllocTrackerMaximumAmplification`
       using :func:`hasattr` if used in code running across a variety of Python
       versions.
 
