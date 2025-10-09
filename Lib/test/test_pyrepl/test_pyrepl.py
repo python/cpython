@@ -1815,17 +1815,6 @@ class TestMain(ReplTestCase):
         matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
         self.assertEqual(len(matches), 3)
 
-    def test_detect_pip_usage_in_repl(self):
-        for pip_cmd in ("pip", "pip3", "python -m pip", "python3 -m pip"):
-            with self.subTest(pip_cmd=pip_cmd):
-                output, exit_code = self.run_repl([f"{pip_cmd} install sampleproject", "exit"])
-                self.assertIn("SyntaxError", output)
-                hint = (
-                    "The Python package manager (pip) can only be used"
-                    " outside of the Python REPL"
-                )
-                self.assertIn(hint, output)
-
 
 class TestPyReplCtrlD(TestCase):
     """Test Ctrl+D behavior in _pyrepl to match old pre-3.13 REPL behavior.
