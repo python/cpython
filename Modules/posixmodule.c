@@ -9029,11 +9029,12 @@ Returns a tuple of (pid, master_fd).
 Like fork(), return pid of 0 to the child process,
 and pid of child to the parent process.
 To both, return fd of newly opened pseudo-terminal.
+The master_fd is non-inheritable.
 [clinic start generated code]*/
 
 static PyObject *
 os_forkpty_impl(PyObject *module)
-/*[clinic end generated code: output=60d0a5c7512e4087 input=f1f7f4bae3966010]*/
+/*[clinic end generated code: output=60d0a5c7512e4087 input=24765e0f33275b3b]*/
 {
     int master_fd = -1;
     pid_t pid;
