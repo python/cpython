@@ -1,0 +1,1 @@
+Optimize ``_UNARY_INVERT`` in JIT-compiled code.

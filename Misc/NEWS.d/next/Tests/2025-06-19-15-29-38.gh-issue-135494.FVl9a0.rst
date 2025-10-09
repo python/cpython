@@ -1,0 +1,2 @@
+Fix regrtest to support excluding tests from ``--pgo`` tests. Patch by
+Victor Stinner.

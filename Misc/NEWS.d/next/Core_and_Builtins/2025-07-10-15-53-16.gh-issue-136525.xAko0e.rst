@@ -1,0 +1,2 @@
+Fix issue where per-thread bytecode was not instrumented for newly created
+threads.

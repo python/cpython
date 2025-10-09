@@ -282,6 +282,10 @@ Type Objects
    and other places where a method's defining class cannot be passed using the
    :c:type:`PyCMethod` calling convention.
 
+   The returned reference is :term:`borrowed <borrowed reference>` from *type*,
+   and will be valid as long as you hold a reference to *type*.
+   Do not release it with :c:func:`Py_DECREF` or similar.
+
    .. versionadded:: 3.11
 
 .. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
