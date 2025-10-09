@@ -9062,8 +9062,8 @@ os_forkpty_impl(PyObject *module)
         PyOS_AfterFork_Parent();
         /* set O_CLOEXEC on master_fd */
         if (_Py_set_inheritable(master_fd, 0, NULL) < 0) {
-            close(master_fd);
-            return NULL;
+            PyErr_FormatUnraisable("Exception ignored when setting master_fd "
+                                   "non-inheritable in forkpty()");
         }
 
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
