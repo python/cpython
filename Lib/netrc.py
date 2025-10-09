@@ -7,6 +7,19 @@ import os, stat
 __all__ = ["netrc", "NetrcParseError"]
 
 
+def _can_security_check():
+    # On WASI, getuid() is indicated as a stub but it may also be missing.
+    return os.name == 'posix' and hasattr(os, 'getuid')
+
+
+def _getpwuid(uid):
+    try:
+        import pwd
+        return pwd.getpwuid(uid)[0]
+    except (ImportError, LookupError):
+        return f'uid {uid}'
+
+
 class NetrcParseError(Exception):
     """Exception raised on syntax errors in the .netrc file."""
     def __init__(self, msg, filename=None, lineno=None):
@@ -142,21 +155,15 @@ class netrc:
             self._security_check(fp, default_netrc, self.hosts[entryname][0])
 
     def _security_check(self, fp, default_netrc, login):
-        if os.name == 'posix' and default_netrc and login != "anonymous":
+        if _can_security_check() and default_netrc and login != "anonymous":
             prop = os.fstat(fp.fileno())
-            if prop.st_uid != os.getuid():
-                import pwd
-                try:
-                    fowner = pwd.getpwuid(prop.st_uid)[0]
-                except KeyError:
-                    fowner = 'uid %s' % prop.st_uid
-                try:
-                    user = pwd.getpwuid(os.getuid())[0]
-                except KeyError:
-                    user = 'uid %s' % os.getuid()
+            current_user_id = os.getuid()
+            if prop.st_uid != current_user_id:
+                fowner = _getpwuid(prop.st_uid)
+                user = _getpwuid(current_user_id)
                 raise NetrcParseError(
-                    (f"~/.netrc file owner ({fowner}, {user}) does not match"
-                     " current user"))
+                    f"~/.netrc file owner ({fowner}) does not match"
+                    f" current user ({user})")
             if (prop.st_mode & (stat.S_IRWXG | stat.S_IRWXO)):
                 raise NetrcParseError(
                     "~/.netrc access too permissive: access"

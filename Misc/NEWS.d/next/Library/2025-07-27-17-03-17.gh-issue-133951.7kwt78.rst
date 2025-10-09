@@ -1,0 +1,2 @@
+Remove lib64-lib symlink creation when creating new virtual environments in
+:mod:`venv` module

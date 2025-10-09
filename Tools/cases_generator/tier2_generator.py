@@ -91,7 +91,7 @@ class Tier2Emitter(Emitter):
         self.emit("}\n")
         return not always_true(first_tkn)
 
-    def exit_if(  # type: ignore[override]
+    def exit_if(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
@@ -110,6 +110,8 @@ class Tier2Emitter(Emitter):
         self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
         return not always_true(first_tkn)
+
+    periodic_if = deopt_if
 
     def oparg(
         self,

@@ -1,0 +1,2 @@
+Fix failure when importing a module from the root directory on unix-like
+platforms with sys.pycache_prefix set.

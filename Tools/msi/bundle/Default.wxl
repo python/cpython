@@ -92,7 +92,7 @@ Select Customize to review current options.</String>
   <String Id="PrecompileLabel">&amp;Precompile standard library</String>
   <String Id="Include_symbolsLabel">Download debugging &amp;symbols</String>
   <String Id="Include_debugLabel">Download debu&amp;g binaries (requires VS 2017 or later)</String>
-  <String Id="Include_freethreadedLabel">Download &amp;free-threaded binaries (experimental)</String>
+  <String Id="Include_freethreadedLabel">Download &amp;free-threaded binaries</String>
   
   <String Id="ProgressHeader">[ActionLikeInstallation] Progress</String>
   <String Id="ProgressLabel">[ActionLikeInstalling]:</String>

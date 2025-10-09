@@ -346,12 +346,12 @@ class FormatTest(unittest.TestCase):
         testcommon(b"%s", memoryview(b"abc"), b"abc")
         # %a will give the equivalent of
         # repr(some_obj).encode('ascii', 'backslashreplace')
-        testcommon(b"%a", 3.14, b"3.14")
+        testcommon(b"%a", 3.25, b"3.25")
         testcommon(b"%a", b"ghi", b"b'ghi'")
         testcommon(b"%a", "jkl", b"'jkl'")
         testcommon(b"%a", "\u0544", b"'\\u0544'")
         # %r is an alias for %a
-        testcommon(b"%r", 3.14, b"3.14")
+        testcommon(b"%r", 3.25, b"3.25")
         testcommon(b"%r", b"ghi", b"b'ghi'")
         testcommon(b"%r", "jkl", b"'jkl'")
         testcommon(b"%r", "\u0544", b"'\\u0544'")
@@ -407,19 +407,19 @@ class FormatTest(unittest.TestCase):
 
         self.assertEqual(format("abc", "\u2007<5"), "abc\u2007\u2007")
         self.assertEqual(format(123, "\u2007<5"), "123\u2007\u2007")
-        self.assertEqual(format(12.3, "\u2007<6"), "12.3\u2007\u2007")
+        self.assertEqual(format(12.5, "\u2007<6"), "12.5\u2007\u2007")
         self.assertEqual(format(0j, "\u2007<4"), "0j\u2007\u2007")
         self.assertEqual(format(1+2j, "\u2007<8"), "(1+2j)\u2007\u2007")
 
         self.assertEqual(format("abc", "\u2007>5"), "\u2007\u2007abc")
         self.assertEqual(format(123, "\u2007>5"), "\u2007\u2007123")
-        self.assertEqual(format(12.3, "\u2007>6"), "\u2007\u200712.3")
+        self.assertEqual(format(12.5, "\u2007>6"), "\u2007\u200712.5")
         self.assertEqual(format(1+2j, "\u2007>8"), "\u2007\u2007(1+2j)")
         self.assertEqual(format(0j, "\u2007>4"), "\u2007\u20070j")
 
         self.assertEqual(format("abc", "\u2007^5"), "\u2007abc\u2007")
         self.assertEqual(format(123, "\u2007^5"), "\u2007123\u2007")
-        self.assertEqual(format(12.3, "\u2007^6"), "\u200712.3\u2007")
+        self.assertEqual(format(12.5, "\u2007^6"), "\u200712.5\u2007")
         self.assertEqual(format(1+2j, "\u2007^8"), "\u2007(1+2j)\u2007")
         self.assertEqual(format(0j, "\u2007^4"), "\u20070j\u2007")
 

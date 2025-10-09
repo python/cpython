@@ -1787,6 +1787,7 @@ align_func(PyObject *self, PyObject *obj)
 
 
 /*[clinic input]
+@permit_long_summary
 @critical_section obj
 _ctypes.byref
     obj: object(subclass_of="clinic_state()->PyCData_Type")
@@ -1798,7 +1799,7 @@ Return a pointer lookalike to a C instance, only usable as function argument.
 
 static PyObject *
 _ctypes_byref_impl(PyObject *module, PyObject *obj, Py_ssize_t offset)
-/*[clinic end generated code: output=60dec5ed520c71de input=6ec02d95d15fbd56]*/
+/*[clinic end generated code: output=60dec5ed520c71de input=870076149a2de427]*/
 {
     ctypes_state *st = get_module_state(module);
 

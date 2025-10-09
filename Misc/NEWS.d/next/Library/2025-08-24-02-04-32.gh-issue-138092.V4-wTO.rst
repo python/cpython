@@ -1,0 +1,2 @@
+Fixed a bug in :meth:`mmap.mmap.flush` where calling with only an offset
+parameter would fail.

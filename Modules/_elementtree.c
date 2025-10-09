@@ -17,6 +17,7 @@
 
 #include "Python.h"
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include "expat.h"
@@ -690,8 +691,7 @@ element_dealloc(PyObject *op)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
 
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
 
     /* element_gc_clear clears all references and deallocates extra
     */
@@ -4214,8 +4214,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
                 (XML_ProcessingInstructionHandler) expat_pi_handler
                 );
         } else {
-            Py_DECREF(events_seq);
             PyErr_Format(PyExc_ValueError, "unknown event '%s'", event_name);
+            Py_DECREF(events_seq);
             return NULL;
         }
     }

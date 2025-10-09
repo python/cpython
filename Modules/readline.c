@@ -1020,6 +1020,7 @@ readline_insert_text_impl(PyObject *module, PyObject *string)
 /* Redisplay the line buffer */
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 readline.redisplay
 
@@ -1028,7 +1029,7 @@ Change what's displayed on the screen to reflect contents of the line buffer.
 
 static PyObject *
 readline_redisplay_impl(PyObject *module)
-/*[clinic end generated code: output=a8b9725827c3c34b input=5895fd014615ff58]*/
+/*[clinic end generated code: output=a8b9725827c3c34b input=fb6ce76959c6f0ec]*/
 {
     rl_redisplay();
     Py_RETURN_NONE;

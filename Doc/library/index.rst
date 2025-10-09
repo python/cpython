@@ -63,7 +63,6 @@ the `Python Package Index <https://pypi.org>`_.
    internet.rst
    mm.rst
    i18n.rst
-   frameworks.rst
    tk.rst
    development.rst
    debug.rst

@@ -13,10 +13,10 @@ from .support.zip_path import WritableZipPath, ZipPathGround
 
 if is_pypi:
     from pathlib_abc import _WritablePath
-    from pathlib_abc._os import magic_open
+    from pathlib_abc._os import vfsopen
 else:
     from pathlib.types import _WritablePath
-    from pathlib._os import magic_open
+    from pathlib._os import vfsopen
 
 
 class WriteTestBase:
@@ -31,10 +31,16 @@ class WriteTestBase:
 
     def test_open_w(self):
         p = self.root / 'fileA'
-        with magic_open(p, 'w', encoding='utf-8') as f:
+        with vfsopen(p, 'w', encoding='utf-8') as f:
             self.assertIsInstance(f, io.TextIOBase)
             f.write('this is file A\n')
         self.assertEqual(self.ground.readtext(p), 'this is file A\n')
+
+    def test_open_w_buffering_error(self):
+        p = self.root / 'fileA'
+        self.assertRaises(ValueError, vfsopen, p, 'w', buffering=0)
+        self.assertRaises(ValueError, vfsopen, p, 'w', buffering=1)
+        self.assertRaises(ValueError, vfsopen, p, 'w', buffering=1024)
 
     @unittest.skipIf(
         not getattr(sys.flags, 'warn_default_encoding', 0),
@@ -43,19 +49,19 @@ class WriteTestBase:
     def test_open_w_encoding_warning(self):
         p = self.root / 'fileA'
         with self.assertWarns(EncodingWarning) as wc:
-            with magic_open(p, 'w'):
+            with vfsopen(p, 'w'):
                 pass
         self.assertEqual(wc.filename, __file__)
 
     def test_open_wb(self):
         p = self.root / 'fileA'
-        with magic_open(p, 'wb') as f:
+        with vfsopen(p, 'wb') as f:
             #self.assertIsInstance(f, io.BufferedWriter)
             f.write(b'this is file A\n')
         self.assertEqual(self.ground.readbytes(p), b'this is file A\n')
-        self.assertRaises(ValueError, magic_open, p, 'wb', encoding='utf8')
-        self.assertRaises(ValueError, magic_open, p, 'wb', errors='strict')
-        self.assertRaises(ValueError, magic_open, p, 'wb', newline='')
+        self.assertRaises(ValueError, vfsopen, p, 'wb', encoding='utf8')
+        self.assertRaises(ValueError, vfsopen, p, 'wb', errors='strict')
+        self.assertRaises(ValueError, vfsopen, p, 'wb', newline='')
 
     def test_write_bytes(self):
         p = self.root / 'fileA'

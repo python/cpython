@@ -106,11 +106,14 @@ class Emitter:
     out: CWriter
     labels: dict[str, Label]
     _replacers: dict[str, ReplacementFunctionType]
+    cannot_escape: bool
 
-    def __init__(self, out: CWriter, labels: dict[str, Label]):
+    def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False):
         self._replacers = {
             "EXIT_IF": self.exit_if,
+            "AT_END_EXIT_IF": self.exit_if_after,
             "DEOPT_IF": self.deopt_if,
+            "HANDLE_PENDING_AND_DEOPT_IF": self.periodic_if,
             "ERROR_IF": self.error_if,
             "ERROR_NO_POP": self.error_no_pop,
             "DECREF_INPUTS": self.decref_inputs,
@@ -127,6 +130,7 @@ class Emitter:
         }
         self.out = out
         self.labels = labels
+        self.cannot_escape = cannot_escape
 
     def dispatch(
         self,
@@ -168,6 +172,29 @@ class Emitter:
         return not always_true(first_tkn)
 
     exit_if = deopt_if
+
+    def periodic_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        raise NotImplementedError("HANDLE_PENDING_AND_DEOPT_IF not support in tier 1")
+
+    def exit_if_after(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        storage.clear_inputs("in AT_END_EXIT_IF")
+        storage.flush(self.out)
+        storage.stack.clear(self.out)
+        return self.exit_if(tkn, tkn_iter, uop, storage, inst)
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         if offset > 0:
@@ -238,7 +265,8 @@ class Emitter:
         next(tkn_iter)
         self._print_storage("DECREF_INPUTS", storage)
         try:
-            storage.close_inputs(self.out)
+            if not self.cannot_escape:
+                storage.close_inputs(self.out)
         except StackError as ex:
             raise analysis_error(ex.args[0], tkn)
         except Exception as ex:
@@ -442,7 +470,7 @@ class Emitter:
         """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
         if uop.instruction_size is None:
             raise analysis_error("The INSTRUCTION_SIZE macro requires uop.instruction_size to be set", tkn)
-        self.out.emit(f" {uop.instruction_size} ")
+        self.out.emit(f" {uop.instruction_size}u ")
         return True
 
     def _print_storage(self, reason:str, storage: Storage) -> None:
@@ -476,7 +504,7 @@ class Emitter:
         reachable = True
         tkn = stmt.contents[-1]
         try:
-            if stmt in uop.properties.escaping_calls:
+            if stmt in uop.properties.escaping_calls and not self.cannot_escape:
                 escape = uop.properties.escaping_calls[stmt]
                 if escape.kills is not None:
                     self.stackref_kill(escape.kills, storage, True)
@@ -513,7 +541,7 @@ class Emitter:
                         self.out.emit(tkn)
                 else:
                     self.out.emit(tkn)
-            if stmt in uop.properties.escaping_calls:
+            if stmt in uop.properties.escaping_calls and not self.cannot_escape:
                 self.emit_reload(storage)
             return reachable, None, storage
         except StackError as ex:
@@ -689,6 +717,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_EVAL_BREAK_FLAG")
     if p.deopts:
         flags.append("HAS_DEOPT_FLAG")
+    if p.deopts_periodic:
+        flags.append("HAS_PERIODIC_FLAG")
     if p.side_exit:
         flags.append("HAS_EXIT_FLAG")
     if not p.infallible:

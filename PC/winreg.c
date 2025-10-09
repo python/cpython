@@ -49,7 +49,9 @@ PyDoc_STRVAR(module_doc,
 "ConnectRegistry() - Establishes a connection to a predefined registry handle\n"
 "                    on another computer.\n"
 "CreateKey() - Creates the specified key, or opens it if it already exists.\n"
+"CreateKeyEx() - Creates the specified key, or opens it if it already exists.\n"
 "DeleteKey() - Deletes the specified key.\n"
+"DeleteKeyEx() - Deletes the specified key.\n"
 "DeleteValue() - Removes a named value from the specified registry key.\n"
 "EnumKey() - Enumerates subkeys of the specified open registry key.\n"
 "EnumValue() - Enumerates values of the specified open registry key.\n"
@@ -69,6 +71,9 @@ PyDoc_STRVAR(module_doc,
 "SaveKey() - Saves the specified key, and all its subkeys a file.\n"
 "SetValue() - Associates a value with a specified key.\n"
 "SetValueEx() - Stores data in the value field of an open registry key.\n"
+"DisableReflectionKey() - Disables registry reflection for 32bit processes running on a 64bit OS.\n"
+"EnableReflectionKey() - Restores registry reflection for a key.\n"
+"QueryReflectionKey() - Determines the reflection state for a key.\n"
 "\n"
 "Special objects:\n"
 "\n"
@@ -154,13 +159,6 @@ PyHKEY_deallocFunc(PyObject *ob)
     PyObject_GC_UnTrack(ob);
     PyObject_GC_Del(ob);
     Py_DECREF(tp);
-}
-
-static int
-PyHKEY_traverseFunc(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
 }
 
 static int
@@ -364,7 +362,7 @@ static PyType_Slot pyhkey_type_slots[] = {
     {Py_tp_members, PyHKEY_memberlist},
     {Py_tp_methods, PyHKEY_methods},
     {Py_tp_doc, (char *)PyHKEY_doc},
-    {Py_tp_traverse, PyHKEY_traverseFunc},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_hash, PyHKEY_hashFunc},
     {Py_tp_str, PyHKEY_strFunc},
 
@@ -2022,6 +2020,45 @@ winreg_EnableReflectionKey_impl(PyObject *module, HKEY key)
 }
 
 /*[clinic input]
+winreg.DeleteTree
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(accept={str, NoneType}) = None
+        A string that names the subkey to delete. If None, deletes all subkeys
+        and values of the specified key.
+    /
+
+Deletes the specified key and all its subkeys and values recursively.
+
+This function deletes a key and all its descendants. If sub_key is None,
+all subkeys and values of the specified key are deleted.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_DeleteTree_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
+/*[clinic end generated code: output=c34395ee59290501 input=419ef9bb8b06e4bf]*/
+{
+    LONG rc;
+
+    if (PySys_Audit("winreg.DeleteTree", "nu",
+                    (Py_ssize_t)key, sub_key) < 0) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegDeleteTreeW(key, sub_key);
+    Py_END_ALLOW_THREADS
+
+    if (rc != ERROR_SUCCESS) {
+        PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteTreeW");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 winreg.QueryReflectionKey
 
     key: HKEY
@@ -2079,6 +2116,7 @@ static struct PyMethodDef winreg_methods[] = {
     WINREG_DELETEKEY_METHODDEF
     WINREG_DELETEKEYEX_METHODDEF
     WINREG_DELETEVALUE_METHODDEF
+    WINREG_DELETETREE_METHODDEF
     WINREG_DISABLEREFLECTIONKEY_METHODDEF
     WINREG_ENABLEREFLECTIONKEY_METHODDEF
     WINREG_ENUMKEY_METHODDEF

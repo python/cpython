@@ -24,12 +24,14 @@ the Unix :program:`ftp` program and other FTP clients.
    a :exc:`FileNotFoundError` exception will be raised.
    Parse errors will raise :exc:`NetrcParseError` with diagnostic
    information including the file name, line number, and terminating token.
+
    If no argument is specified on a POSIX system, the presence of passwords in
    the :file:`.netrc` file will raise a :exc:`NetrcParseError` if the file
    ownership or permissions are insecure (owned by a user other than the user
    running the process, or accessible for read or write by any other user).
    This implements security behavior equivalent to that of ftp and other
-   programs that use :file:`.netrc`.
+   programs that use :file:`.netrc`. Such security checks are not available
+   on platforms that do not support :func:`os.getuid`.
 
    .. versionchanged:: 3.4 Added the POSIX permission check.
 

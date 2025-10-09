@@ -304,6 +304,12 @@ clocks to track time.
    custom :class:`contextvars.Context` for the *callback* to run in.
    The current context is used when no *context* is provided.
 
+   .. note::
+
+      For performance, callbacks scheduled with :meth:`loop.call_later`
+      may run up to one clock-resolution early (see
+      ``time.get_clock_info('monotonic').resolution``).
+
    .. versionchanged:: 3.7
       The *context* keyword-only parameter was added. See :pep:`567`
       for more details.
@@ -323,6 +329,12 @@ clocks to track time.
 
    An instance of :class:`asyncio.TimerHandle` is returned which can
    be used to cancel the callback.
+
+   .. note::
+
+      For performance, callbacks scheduled with :meth:`loop.call_at`
+      may run up to one clock-resolution early (see
+      ``time.get_clock_info('monotonic').resolution``).
 
    .. versionchanged:: 3.7
       The *context* keyword-only parameter was added. See :pep:`567`
@@ -610,6 +622,12 @@ Opening network connections
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
      to bind the socket locally.  The *local_host* and *local_port*
      are looked up using :meth:`getaddrinfo`.
+
+     .. note::
+
+        On Windows, when using the proactor event loop with ``local_addr=None``,
+        an :exc:`OSError` with :attr:`!errno.WSAEINVAL` will be raised
+        when running it.
 
    * *remote_addr*, if given, is a ``(remote_host, remote_port)`` tuple used
      to connect the socket to a remote address.  The *remote_host* and

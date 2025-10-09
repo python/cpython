@@ -1,0 +1,1 @@
+Do a real lazy-import on :mod:`rlcompleter` in :mod:`pdb` and restore the existing completer after importing :mod:`rlcompleter`.

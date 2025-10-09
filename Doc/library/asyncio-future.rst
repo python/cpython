@@ -75,6 +75,7 @@ Future Functions
       Deprecation warning is emitted if *future* is not a Future-like object
       and *loop* is not specified and there is no running event loop.
 
+.. _asyncio-future-obj:
 
 Future Object
 =============

@@ -1864,6 +1864,62 @@ ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     return res;
 }
 
+static PyObject *
+ImportError_repr(PyObject *self)
+{
+    int hasargs = PyTuple_GET_SIZE(((PyBaseExceptionObject *)self)->args) != 0;
+    PyImportErrorObject *exc = PyImportErrorObject_CAST(self);
+    if (exc->name == NULL && exc->path == NULL) {
+        return BaseException_repr(self);
+    }
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+    PyObject *r = BaseException_repr(self);
+    if (r == NULL) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteSubstring(
+        writer, r, 0, PyUnicode_GET_LENGTH(r) - 1) < 0)
+    {
+        Py_DECREF(r);
+        goto error;
+    }
+    Py_DECREF(r);
+    if (exc->name) {
+        if (hasargs) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
+                goto error;
+            }
+        }
+        if (PyUnicodeWriter_Format(writer, "name=%R", exc->name) < 0) {
+            goto error;
+        }
+        hasargs = 1;
+    }
+    if (exc->path) {
+        if (hasargs) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
+                goto error;
+            }
+        }
+        if (PyUnicodeWriter_Format(writer, "path=%R", exc->path) < 0) {
+            goto error;
+        }
+    }
+
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+        goto error;
+    }
+
+    return PyUnicodeWriter_Finish(writer);
+
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
 static PyMemberDef ImportError_members[] = {
     {"msg", _Py_T_OBJECT, offsetof(PyImportErrorObject, msg), 0,
         PyDoc_STR("exception message")},
@@ -1881,12 +1937,26 @@ static PyMethodDef ImportError_methods[] = {
     {NULL}
 };
 
-ComplexExtendsException(PyExc_Exception, ImportError,
-                        ImportError, 0 /* new */,
-                        ImportError_methods, ImportError_members,
-                        0 /* getset */, ImportError_str,
-                        "Import can't find module, or can't find name in "
-                        "module.");
+static PyTypeObject _PyExc_ImportError = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "ImportError",
+    .tp_basicsize = sizeof(PyImportErrorObject),
+    .tp_dealloc = ImportError_dealloc,
+    .tp_repr = ImportError_repr,
+    .tp_str = ImportError_str,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .tp_doc = PyDoc_STR(
+        "Import can't find module, "
+        "or can't find name in module."),
+    .tp_traverse = ImportError_traverse,
+    .tp_clear = ImportError_clear,
+    .tp_methods = ImportError_methods,
+    .tp_members = ImportError_members,
+    .tp_base = &_PyExc_Exception,
+    .tp_dictoffset = offsetof(PyImportErrorObject, dict),
+    .tp_init = ImportError_init,
+};
+PyObject *PyExc_ImportError = (PyObject *)&_PyExc_ImportError;
 
 /*
  *    ModuleNotFoundError extends ImportError

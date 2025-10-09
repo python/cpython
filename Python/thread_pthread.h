@@ -30,6 +30,8 @@
 #   include <lwp.h>             /* _lwp_self() */
 #elif defined(__DragonFly__)
 #   include <sys/lwp.h>         /* lwp_gettid() */
+#elif defined(__sun__) && SIZEOF_LONG >= 8
+#   include <thread.h>
 #endif
 
 /* The POSIX spec requires that use of pthread_attr_setstacksize
@@ -399,6 +401,8 @@ PyThread_get_thread_native_id(void)
 #elif defined(__DragonFly__)
     lwpid_t native_id;
     native_id = lwp_gettid();
+#elif defined(__sun__) && SIZEOF_LONG >= 8
+    unsigned long native_id = (unsigned long)getpid() << 32 | thr_self();
 #endif
     return (unsigned long) native_id;
 }

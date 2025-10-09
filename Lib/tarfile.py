@@ -201,7 +201,6 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
     # base-256 representation. This allows values up to (256**(digits-1))-1.
     # A 0o200 byte indicates a positive number, a 0o377 byte a negative
     # number.
-    original_n = n
     n = int(n)
     if 0 <= n < 8 ** (digits - 1):
         s = bytes("%0*o" % (digits - 1, n), "ascii") + NUL
@@ -353,7 +352,7 @@ class _Stream:
             fileobj = _StreamProxy(fileobj)
             comptype = fileobj.getcomptype()
 
-        self.name     = name or ""
+        self.name     = os.fspath(name) if name is not None else ""
         self.mode     = mode
         self.comptype = comptype
         self.fileobj  = fileobj
@@ -1647,6 +1646,9 @@ class TarInfo(object):
         """Round up a byte count by BLOCKSIZE and return it,
            e.g. _block(834) => 1024.
         """
+        # Only non-negative offsets are allowed
+        if count < 0:
+            raise InvalidHeaderError("invalid offset")
         blocks, remainder = divmod(count, BLOCKSIZE)
         if remainder:
             blocks += 1
@@ -1927,7 +1929,7 @@ class TarFile(object):
             if "preset" in kwargs and comptype not in ("xz",):
                 raise ValueError("preset is only valid for w|xz mode")
 
-            compresslevel = kwargs.pop("compresslevel", 9)
+            compresslevel = kwargs.pop("compresslevel", 6)
             preset = kwargs.pop("preset", None)
             stream = _Stream(name, filemode, comptype, fileobj, bufsize,
                              compresslevel, preset)
@@ -1953,7 +1955,7 @@ class TarFile(object):
         return cls(name, mode, fileobj, **kwargs)
 
     @classmethod
-    def gzopen(cls, name, mode="r", fileobj=None, compresslevel=9, **kwargs):
+    def gzopen(cls, name, mode="r", fileobj=None, compresslevel=6, **kwargs):
         """Open gzip compressed tar archive name for reading or writing.
            Appending is not allowed.
         """
@@ -2716,10 +2718,19 @@ class TarFile(object):
                 if os.path.lexists(targetpath):
                     # Avoid FileExistsError on following os.symlink.
                     os.unlink(targetpath)
-                os.symlink(tarinfo.linkname, targetpath)
+                link_target = tarinfo.linkname
+                if os.name == "nt":
+                    # gh-57911: Posix-flavoured forward-slash path separators in
+                    # symlink targets aren't acknowledged by Windows, resulting
+                    # in corrupted links.
+                    link_target = link_target.replace("/", os.path.sep)
+                os.symlink(link_target, targetpath)
                 return
             else:
                 if os.path.exists(tarinfo._link_target):
+                    if os.path.lexists(targetpath):
+                        # Avoid FileExistsError on following os.link.
+                        os.unlink(targetpath)
                     os.link(tarinfo._link_target, targetpath)
                     return
         except symlink_exception:

@@ -664,7 +664,7 @@ for :func:`os.fcopyfile` available in macOs.
 .. nonce: l1p7CJ
 .. section: Library
 
-For :func:`@dataclass <dataclasses.dataclass>`, add *weakref_slot*.
+For :deco:`~dataclasses.dataclass`, add *weakref_slot*.
 The new parameter defaults to ``False``. If true, and if
 ``slots=True``, add a slot named ``"__weakref__"``, which will allow instances to be
 weakref'd. Contributed by Eric V. Smith

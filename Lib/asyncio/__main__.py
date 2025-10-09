@@ -64,7 +64,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback, context=self.context)
+        self.loop.call_soon_threadsafe(callback, context=self.context)
 
         try:
             return future.result()
@@ -113,6 +113,7 @@ class REPLThread(threading.Thread):
                     run_multiline_interactive_console,
                 )
                 try:
+                    sys.ps1 = ps1
                     run_multiline_interactive_console(console)
                 except SystemExit:
                     # expected via the `exit` and `quit` commands

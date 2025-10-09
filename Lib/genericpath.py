@@ -8,7 +8,8 @@ import stat
 
 __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
            'getsize', 'isdevdrive', 'isdir', 'isfile', 'isjunction', 'islink',
-           'lexists', 'samefile', 'sameopenfile', 'samestat', 'ALLOW_MISSING']
+           'lexists', 'samefile', 'sameopenfile', 'samestat',
+           'ALL_BUT_LAST', 'ALLOW_MISSING']
 
 
 # Does a path exist?
@@ -81,28 +82,28 @@ def isdevdrive(path):
     return False
 
 
-def getsize(filename):
+def getsize(filename, /):
     """Return the size of a file, reported by os.stat()."""
     return os.stat(filename).st_size
 
 
-def getmtime(filename):
+def getmtime(filename, /):
     """Return the last modification time of a file, reported by os.stat()."""
     return os.stat(filename).st_mtime
 
 
-def getatime(filename):
+def getatime(filename, /):
     """Return the last access time of a file, reported by os.stat()."""
     return os.stat(filename).st_atime
 
 
-def getctime(filename):
+def getctime(filename, /):
     """Return the metadata change time of a file, reported by os.stat()."""
     return os.stat(filename).st_ctime
 
 
 # Return the longest prefix of all list elements.
-def commonprefix(m):
+def commonprefix(m, /):
     "Given a list of pathnames, returns the longest common leading component"
     if not m: return ''
     # Some people pass in a list of pathname parts to operate in an OS-agnostic
@@ -120,14 +121,14 @@ def commonprefix(m):
 
 # Are two stat buffers (obtained from stat, fstat or lstat)
 # describing the same file?
-def samestat(s1, s2):
+def samestat(s1, s2, /):
     """Test whether two stat buffers reference the same file"""
     return (s1.st_ino == s2.st_ino and
             s1.st_dev == s2.st_dev)
 
 
 # Are two filenames really pointing to the same file?
-def samefile(f1, f2):
+def samefile(f1, f2, /):
     """Test whether two pathnames reference the same actual file or directory
 
     This is determined by the device number and i-node number and
@@ -190,7 +191,17 @@ def _check_arg_types(funcname, *args):
     if hasstr and hasbytes:
         raise TypeError("Can't mix strings and bytes in path components") from None
 
-# A singleton with a true boolean value.
+
+# Singletons with a true boolean value.
+
+@object.__new__
+class ALL_BUT_LAST:
+    """Special value for use in realpath()."""
+    def __repr__(self):
+        return 'os.path.ALL_BUT_LAST'
+    def __reduce__(self):
+        return self.__class__.__name__
+
 @object.__new__
 class ALLOW_MISSING:
     """Special value for use in realpath()."""

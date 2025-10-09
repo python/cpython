@@ -1,0 +1,1 @@
+Fix off-by-one read beyond the end of a string in string search.

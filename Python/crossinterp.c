@@ -2617,6 +2617,7 @@ _PyXI_Enter(_PyXI_session *session,
     // Convert the attrs for cross-interpreter use.
     _PyXI_namespace *sharedns = NULL;
     if (nsupdates != NULL) {
+        assert(PyDict_Check(nsupdates));
         Py_ssize_t len = PyDict_Size(nsupdates);
         if (len < 0) {
             if (result != NULL) {

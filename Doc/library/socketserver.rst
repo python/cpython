@@ -543,7 +543,7 @@ objects that simplify communication by providing the standard file interface)::
 
 The difference is that the ``readline()`` call in the second handler will call
 ``recv()`` multiple times until it encounters a newline character, while the
-the first handler had to use a ``recv()`` loop to accumulate data until a
+first handler had to use a ``recv()`` loop to accumulate data until a
 newline itself.  If it had just used a single ``recv()`` without the loop it
 would just have returned what has been received so far from the client.
 TCP is stream based: data arrives in the order it was sent, but there no

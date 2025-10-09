@@ -21,9 +21,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "connection.h"
 #include "statement.h"
 #include "util.h"
+
+#include "pycore_object.h"        // _PyObject_VisitType()
+
 
 #define _pysqlite_Statement_CAST(op)    ((pysqlite_Statement *)(op))
 
@@ -116,13 +123,6 @@ stmt_dealloc(PyObject *op)
     Py_DECREF(tp);
 }
 
-static int
-stmt_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 /*
  * Strip leading whitespace and comments from incoming SQL (null terminated C
  * string) and return a pointer to the first non-whitespace, non-comment
@@ -183,7 +183,7 @@ lstrip_sql(const char *sql)
 
 static PyType_Slot stmt_slots[] = {
     {Py_tp_dealloc, stmt_dealloc},
-    {Py_tp_traverse, stmt_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, NULL},
 };
 

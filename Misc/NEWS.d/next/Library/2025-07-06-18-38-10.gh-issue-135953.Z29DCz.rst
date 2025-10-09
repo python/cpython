@@ -1,0 +1,9 @@
+Implement a new high-frequency runtime profiler that leverages the existing
+remote debugging functionality to collect detailed execution statistics
+from running Python processes. This tool is exposed in the
+``profile.sample`` module and enables non-intrusive observation of
+production applications by attaching to already-running processes without
+requiring any code modifications, restarts, or special startup flags. The
+observer can perform extremely high-frequency sampling of stack traces and
+interpreter state, providing detailed runtime execution analysis of live
+applications.

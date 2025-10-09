@@ -40,3 +40,46 @@ _PyBytes_Join(PyObject *sep, PyObject *iterable)
 {
     return PyBytes_Join(sep, iterable);
 }
+
+
+// --- PyBytesWriter API -----------------------------------------------------
+
+typedef struct PyBytesWriter PyBytesWriter;
+
+PyAPI_FUNC(PyBytesWriter *) PyBytesWriter_Create(
+    Py_ssize_t size);
+PyAPI_FUNC(void) PyBytesWriter_Discard(
+    PyBytesWriter *writer);
+PyAPI_FUNC(PyObject*) PyBytesWriter_Finish(
+    PyBytesWriter *writer);
+PyAPI_FUNC(PyObject*) PyBytesWriter_FinishWithSize(
+    PyBytesWriter *writer,
+    Py_ssize_t size);
+PyAPI_FUNC(PyObject*) PyBytesWriter_FinishWithPointer(
+    PyBytesWriter *writer,
+    void *buf);
+
+PyAPI_FUNC(void*) PyBytesWriter_GetData(
+    PyBytesWriter *writer);
+PyAPI_FUNC(Py_ssize_t) PyBytesWriter_GetSize(
+    PyBytesWriter *writer);
+
+PyAPI_FUNC(int) PyBytesWriter_WriteBytes(
+    PyBytesWriter *writer,
+    const void *bytes,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyBytesWriter_Format(
+    PyBytesWriter *writer,
+    const char *format,
+    ...);
+
+PyAPI_FUNC(int) PyBytesWriter_Resize(
+    PyBytesWriter *writer,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyBytesWriter_Grow(
+    PyBytesWriter *writer,
+    Py_ssize_t size);
+PyAPI_FUNC(void*) PyBytesWriter_GrowAndUpdatePointer(
+    PyBytesWriter *writer,
+    Py_ssize_t size,
+    void *buf);

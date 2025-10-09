@@ -24,7 +24,7 @@ defined:
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'u'``   | wchar_t            | Unicode character | 2                     | \(1)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
-| ``'w'``   | Py_UCS4            | Unicode character | 4                     |       |
+| ``'w'``   | Py_UCS4            | Unicode character | 4                     | \(2)  |
 +-----------+--------------------+-------------------+-----------------------+-------+
 | ``'h'``   | signed short       | int               | 2                     |       |
 +-----------+--------------------+-------------------+-----------------------+-------+
@@ -59,6 +59,9 @@ Notes:
 
    .. deprecated-removed:: 3.3 3.16
       Please migrate to ``'w'`` typecode.
+
+(2)
+   .. versionadded:: 3.13
 
 
 The actual representation of values is determined by the machine architecture

@@ -511,12 +511,12 @@ _waiting_release(_waiting_t *waiting, int received)
     assert(!waiting->received);
 
     waiting->status = WAITING_RELEASING;
-    PyThread_release_lock(waiting->mutex);
     if (waiting->received != received) {
         assert(received == 1);
         waiting->received = received;
     }
     waiting->status = WAITING_RELEASED;
+    PyThread_release_lock(waiting->mutex);
 }
 
 static void
@@ -3614,8 +3614,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    (void)traverse_module_state(state, visit, arg);
-    return 0;
+    return traverse_module_state(state, visit, arg);
 }
 
 static int
@@ -3625,8 +3624,7 @@ module_clear(PyObject *mod)
     assert(state != NULL);
 
     // Now we clear the module state.
-    (void)clear_module_state(state);
-    return 0;
+    return clear_module_state(state);
 }
 
 static void

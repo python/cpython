@@ -1,0 +1,2 @@
+XCframeworks now include privacy manifests to satisfy Apple App Store
+submission requirements.

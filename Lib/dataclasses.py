@@ -1265,7 +1265,7 @@ def _create_slots(defined_fields, inherited_slots, field_names, weakref_slot):
         doc = getattr(defined_fields.get(slot), 'doc', None)
         if doc is not None:
             seen_docs = True
-        slots.update({slot: doc})
+        slots[slot] = doc
 
     # We only return dict if there's at least one doc member,
     # otherwise we return tuple, which is the old default format.
@@ -1300,10 +1300,9 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
         #  available in _MARKER.
         cls_dict.pop(field_name, None)
 
-    # Remove __dict__ itself.
+    # Remove __dict__ and `__weakref__` descriptors.
+    # They'll be added back if applicable.
     cls_dict.pop('__dict__', None)
-
-    # Clear existing `__weakref__` descriptor, it belongs to a previous type:
     cls_dict.pop('__weakref__', None)  # gh-102069
 
     # And finally create the class.

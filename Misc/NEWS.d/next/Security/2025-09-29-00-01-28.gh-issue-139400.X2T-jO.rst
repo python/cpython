@@ -1,0 +1,4 @@
+:mod:`xml.parsers.expat`: Make sure that parent Expat parsers are only
+garbage-collected once they are no longer referenced by subparsers created
+by :meth:`~xml.parsers.expat.xmlparser.ExternalEntityParserCreate`.
+Patch by Sebastian Pipping.

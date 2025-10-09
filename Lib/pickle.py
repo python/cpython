@@ -17,7 +17,6 @@ Functions:
 
 Misc variables:
 
-    __version__
     format_version
     compatible_formats
 

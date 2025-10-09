@@ -463,11 +463,11 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
         return -1;
     }
 
-    /* Bubble up the smaller child until hitting a leaf. */
+    /* Bubble up the larger child until hitting a leaf. */
     arr = _PyList_ITEMS(heap);
     limit = endpos >> 1;         /* smallest pos that has no child */
     while (pos < limit) {
-        /* Set childpos to index of smaller child.   */
+        /* Set childpos to index of larger child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
         if (childpos + 1 < endpos) {
             PyObject* a = arr[childpos + 1];
@@ -487,7 +487,7 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
                 return -1;
             }
         }
-        /* Move the smaller child up. */
+        /* Move the larger child up. */
         tmp1 = arr[childpos];
         tmp2 = arr[pos];
         FT_ATOMIC_STORE_PTR_RELAXED(arr[childpos], tmp2);

@@ -436,12 +436,37 @@ stmt_seq_remove_item(asdl_stmt_seq *stmts, Py_ssize_t idx)
 }
 
 static int
+remove_docstring(asdl_stmt_seq *stmts, Py_ssize_t idx, PyArena *ctx_)
+{
+    assert(_PyAST_GetDocString(stmts) != NULL);
+    // In case there's just the docstring in the body, replace it with `pass`
+    // keyword, so body won't be empty.
+    if (asdl_seq_LEN(stmts) == 1) {
+        stmt_ty docstring = (stmt_ty)asdl_seq_GET(stmts, 0);
+        stmt_ty pass = _PyAST_Pass(
+            docstring->lineno, docstring->col_offset,
+            // we know that `pass` always takes 4 chars and a single line,
+            // while docstring can span on multiple lines
+            docstring->lineno, docstring->col_offset + 4,
+            ctx_
+        );
+        if (pass == NULL) {
+            return 0;
+        }
+        asdl_seq_SET(stmts, 0, pass);
+        return 1;
+    }
+    // In case there are more than 1 body items, just remove the docstring.
+    return stmt_seq_remove_item(stmts, idx);
+}
+
+static int
 astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTPreprocessState *state)
 {
     int docstring = _PyAST_GetDocString(stmts) != NULL;
     if (docstring && (state->optimize >= 2)) {
         /* remove the docstring */
-        if (!stmt_seq_remove_item(stmts, 0)) {
+        if (!remove_docstring(stmts, 0, ctx_)) {
             return 0;
         }
         docstring = 0;

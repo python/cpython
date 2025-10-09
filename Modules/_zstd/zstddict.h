@@ -1,4 +1,4 @@
-/* Low level interface to the Zstandard algorthm & the zstd library. */
+/* Low level interface to the Zstandard algorithm & the zstd library. */
 
 #ifndef ZSTD_DICT_H
 #define ZSTD_DICT_H

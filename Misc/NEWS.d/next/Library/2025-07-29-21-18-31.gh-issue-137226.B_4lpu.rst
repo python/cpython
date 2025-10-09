@@ -1,0 +1,3 @@
+Fix behavior of :meth:`annotationlib.ForwardRef.evaluate` when the
+*type_params* parameter is passed and the name of a type param is also
+present in an enclosing scope.

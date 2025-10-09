@@ -51,7 +51,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    Hash function definition used by :c:func:`PyHash_GetFuncDef`.
 
-   .. c::member:: Py_hash_t (*const hash)(const void *, Py_ssize_t)
+   .. c:member:: Py_hash_t (*const hash)(const void *, Py_ssize_t)
 
       Hash function.
 

@@ -108,6 +108,7 @@
 #endif
 
 #include <limits.h> // ULONG_MAX
+#include <stddef.h> // size_t
 
 #if defined(_WIN32)                                                            \
     && (! defined(__USE_MINGW_ANSI_STDIO)                                      \
@@ -148,6 +149,16 @@
   100.0f
 #define EXPAT_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT    \
   8388608 // 8 MiB, 2^23
+
+#define EXPAT_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION_DEFAULT 100.0f
+#define EXPAT_ALLOC_TRACKER_ACTIVATION_THRESHOLD_DEFAULT                       \
+  67108864 // 64 MiB, 2^26
+
+// NOTE: If function expat_alloc was user facing, EXPAT_MALLOC_ALIGNMENT would
+//       have to take sizeof(long double) into account
+#define EXPAT_MALLOC_ALIGNMENT sizeof(long long) // largest parser (sub)member
+#define EXPAT_MALLOC_PADDING ((EXPAT_MALLOC_ALIGNMENT) - sizeof(size_t))
+
 /* NOTE END */
 
 #include "expat.h" // so we can use type XML_Parser below
@@ -171,6 +182,9 @@ extern
 #endif
     XML_Bool g_reparseDeferralEnabledDefault; // written ONLY in runtests.c
 #if defined(XML_TESTING)
+void *expat_malloc(XML_Parser parser, size_t size, int sourceLine);
+void expat_free(XML_Parser parser, void *ptr, int sourceLine);
+void *expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine);
 extern unsigned int g_bytesScanned; // used for testing only
 #endif
 

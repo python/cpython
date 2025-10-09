@@ -9,6 +9,8 @@
 
 #define INSIDE_FSTRING(tok) (tok->tok_mode_stack_index > 0)
 #define INSIDE_FSTRING_EXPR(tok) (tok->curly_bracket_expr_start_depth >= 0)
+#define INSIDE_FSTRING_EXPR_AT_TOP(tok) \
+    (tok->curly_bracket_depth - tok->curly_bracket_expr_start_depth == 1)
 
 enum decoding_state {
     STATE_INIT,

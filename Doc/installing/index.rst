@@ -188,7 +188,7 @@ switch::
    Once the Development & Deployment part of PPUG is fleshed out, some of
    those sections should be linked from new questions here (most notably,
    we should have a question about avoiding depending on PyPI that links to
-   https://packaging.python.org/en/latest/mirrors/)
+   https://packaging.python.org/en/latest/guides/index-mirrors-and-caches/)
 
 
 Common installation issues

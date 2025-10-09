@@ -237,7 +237,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.49.1, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.50.4, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
 
