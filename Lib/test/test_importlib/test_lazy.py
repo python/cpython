@@ -10,6 +10,9 @@ import unittest
 from test.support import threading_helper
 from test.test_importlib import util as test_util
 
+# Make sure sys.modules[util] is in sync with the import.
+# That is needed as other tests may reload util.
+sys.modules['importlib.util'] = util
 
 class CollectInit:
 
