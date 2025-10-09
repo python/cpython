@@ -2548,7 +2548,8 @@ class LazyImportTests(unittest.TestCase):
             if key.startswith('test.test_import.data.lazy_imports'):
                 del sys.modules[key]
 
-        importlib.set_lazy_imports(None, None)
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports(None)
 
     def test_basic_unused(self):
         try:
@@ -2738,7 +2739,7 @@ class LazyImportTests(unittest.TestCase):
             import test.test_import.data.lazy_imports.lazy_try_except_from_star
 
     def test_try_except_eager(self):
-        importlib.set_lazy_imports(True)
+        sys.set_lazy_imports(True)
         try:
             import test.test_import.data.lazy_imports.try_except_eager
         except ImportError as e:
@@ -2747,7 +2748,7 @@ class LazyImportTests(unittest.TestCase):
         self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
     
     def test_try_except_eager_from(self):
-        importlib.set_lazy_imports(True)
+        sys.set_lazy_imports(True)
         try:
             import test.test_import.data.lazy_imports.try_except_eager_from
         except ImportError as e:
@@ -2759,8 +2760,8 @@ class LazyImportTests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             import test.test_import.data.lazy_imports.lazy_import_func
 
-    def test_eager_import_func(self):
-        importlib.set_lazy_imports(True)
+    def test_eager_import_func(self):        
+        sys.set_lazy_imports(True)
         try:
             import test.test_import.data.lazy_imports.eager_import_func
         except ImportError as e:

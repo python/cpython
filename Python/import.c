@@ -15,6 +15,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // _Py_SetImmortal()
+#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pyhash.h"        // _Py_KeyedHash()
 #include "pycore_pylifecycle.h"
@@ -4228,7 +4229,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     assert(_PyEval_GetFrame()->f_globals == _PyEval_GetFrame()->f_locals); // should only be called in global scope
 
     // Check if the filter disables the lazy import
-    PyObject *filter = LAZY_IMPORTS_FILTER(interp);
+    PyObject *filter = FT_ATOMIC_LOAD_PTR_RELAXED(LAZY_IMPORTS_FILTER(interp));
     if (filter != NULL) {
         PyObject *modname;
         if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &modname) < 0) {
@@ -4608,9 +4609,8 @@ PyImport_ImportModuleAttrString(const char *modname, const char *attrname)
     return result;
 }
 
-
 int
-PyImport_SetLazyImports(PyImport_LazyImportsMode mode, PyObject *filter)
+PyImport_SetLazyImportsFilter(PyObject *filter)
 {
     if (filter == Py_None) {
         filter = NULL;
@@ -4621,17 +4621,39 @@ PyImport_SetLazyImports(PyImport_LazyImportsMode mode, PyObject *filter)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    LAZY_IMPORTS_MODE(interp) = mode;
+#ifdef Py_GIL_DISABLED
+    // exchange just in case another thread did same thing at same time
+    PyObject *old = _Py_atomic_exchange_ptr(&LAZY_IMPORTS_FILTER(interp), Py_XNewRef(filter));
+    Py_XDECREF(old);
+#else
     Py_XSETREF(LAZY_IMPORTS_FILTER(interp), Py_XNewRef(filter));
+#endif
+    return 0;
+}
+
+/* Gets the lazy imports filter. Returns a new reference. */
+PyObject *
+PyImport_GetLazyImportsFilter()
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return Py_XNewRef(FT_ATOMIC_LOAD_PTR_RELAXED(LAZY_IMPORTS_FILTER(interp)));
+}
+
+int
+PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    FT_ATOMIC_STORE_INT_RELAXED(LAZY_IMPORTS_MODE(interp), mode);
     return 0;
 }
 
 /* Checks if lazy imports is globally enabled or disabled. Return 1 when globally
  * forced on, 0 when globally forced off, or -1 when */
-PyImport_LazyImportsMode PyImport_LazyImportsEnabled(void)
+PyImport_LazyImportsMode
+PyImport_GetLazyImportsMode()
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return LAZY_IMPORTS_MODE(interp);
+    return FT_ATOMIC_LOAD_INT_RELAXED(LAZY_IMPORTS_MODE(interp));
 }
 
 /**************/
@@ -5224,51 +5246,6 @@ _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
 }
 
 /*[clinic input]
-_imp.set_lazy_imports
-
-    enabled: object = None
-    /
-    filter: object = NULL
-
-Programmatic API for enabling lazy imports at runtime.
-
-enabled can be:
-    None (lazy imports always respect keyword)
-    False (forced lazy imports off)
-    True (forced lazy imports on)
-
-filter is an optional callable which further disables lazy imports when they
-would otherwise be enabled. Returns True if the the import is still enabled
-or False to disable it. The callable is called with:
-
-(importing_module_name, imported_module_name, [fromlist])
-
-[clinic start generated code]*/
-
-static PyObject *
-_imp_set_lazy_imports_impl(PyObject *module, PyObject *enabled,
-                           PyObject *filter)
-/*[clinic end generated code: output=d8d5a848c041edc5 input=00b2334fae4345a3]*/
-{
-    PyImport_LazyImportsMode mode;
-    if (enabled == Py_None) {
-        mode = PyLazyImportsMode_Default;
-    } else if (enabled == Py_False) {
-        mode = PyLazyImportsMode_ForcedOff;
-    } else if (enabled == Py_True) {
-        mode = PyLazyImportsMode_ForcedOn;
-    } else {
-        PyErr_SetString(PyExc_ValueError, "expected None, True or False for enabled mode");
-        return NULL;
-    }
-
-    if (PyImport_SetLazyImports(mode, filter) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
 _imp._set_lazy_attributes
     child_module: object
     name: unicode
@@ -5352,7 +5329,6 @@ static PyMethodDef imp_methods[] = {
     _IMP_EXEC_BUILTIN_METHODDEF
     _IMP__FIX_CO_FILENAME_METHODDEF
     _IMP_SOURCE_HASH_METHODDEF
-    _IMP_SET_LAZY_IMPORTS_METHODDEF
     _IMP__SET_LAZY_ATTRIBUTES_METHODDEF
     {NULL, NULL}  /* sentinel */
 };

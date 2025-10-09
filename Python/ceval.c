@@ -3072,14 +3072,14 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *glob
 {
     PyObject *res = NULL;
     // Check if global policy overrides the local syntax
-    switch (PyImport_LazyImportsEnabled()) {
-        case PyLazyImportsMode_ForcedOff:
+    switch (PyImport_GetLazyImportsMode()) {
+        case PyImport_LAZY_NONE:
             lazy = 0;
             break;
-        case PyLazyImportsMode_ForcedOn:
+        case PyImport_LAZY_ALL:
             lazy = 1;
             break;
-        case PyLazyImportsMode_Default:
+        case PyImport_LAZY_NORMAL:
             break;
     }
 

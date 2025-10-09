@@ -1321,11 +1321,11 @@ init_interp_main(PyThreadState *tstate)
     if (config->lazy_imports != -1) {
         PyImport_LazyImportsMode lazy_mode;
         if (config->lazy_imports == 1) {
-            lazy_mode = PyLazyImportsMode_ForcedOn;
+            lazy_mode = PyImport_LAZY_ALL;
         } else {
-            lazy_mode = PyLazyImportsMode_ForcedOff;
+            lazy_mode = PyImport_LAZY_NONE;
         }
-        if (PyImport_SetLazyImports(lazy_mode, NULL) < 0) {
+        if (PyImport_SetLazyImportsMode(lazy_mode) < 0) {
             return _PyStatus_ERR("failed to set lazy imports mode");
         }
     }

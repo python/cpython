@@ -2792,20 +2792,10 @@ static PyObject *
 sys_set_lazy_imports_filter_impl(PyObject *module, PyObject *filter)
 /*[clinic end generated code: output=10251d49469c278c input=2eb48786bdd4ee42]*/
 {
-    PyObject *current_filter = NULL;
-    if (filter == Py_None) {
-        current_filter = NULL;
-    }
-    else if (!PyCallable_Check(filter)) {
-        PyErr_SetString(PyExc_TypeError, "filter must be callable or None");
+    if (PyImport_SetLazyImportsFilter(filter) < 0) {
         return NULL;
     }
-    else {
-        current_filter = filter;
-    }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    Py_XSETREF(interp->imports.lazy_imports_filter, Py_XNewRef(current_filter));
     Py_RETURN_NONE;
 }
 
@@ -2821,14 +2811,78 @@ static PyObject *
 sys_get_lazy_imports_filter_impl(PyObject *module)
 /*[clinic end generated code: output=3bf73022892165af input=cf1e07cb8e203c94]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *filter = interp->imports.lazy_imports_filter;
+    PyObject *filter = PyImport_GetLazyImportsFilter();
     if (filter == NULL) {
         Py_RETURN_NONE;
     }
-    return Py_NewRef(filter);
+    return filter;
 }
 
+/*[clinic input]
+sys.set_lazy_imports
+
+    enabled: object
+
+Sets the global lazy imports flag. 
+
+True sets all imports at the top level as potentially lazy.
+False disables lazy imports for any explicitly marked imports.
+None causes only explicitly marked imports as lazy.
+
+In addition to the mode lazy imports can be controlled via the filter
+provided to sys.set_lazy_imports_filter
+
+[clinic start generated code]*/
+
+static PyObject *
+sys_set_lazy_imports_impl(PyObject *module, PyObject *enabled)
+/*[clinic end generated code: output=d601640d3e2d70fb input=d351054b5884eae5]*/
+{
+    PyImport_LazyImportsMode mode;
+    if (enabled == Py_None) {
+        mode = PyImport_LAZY_NORMAL;
+    } else if (enabled == Py_False) {
+        mode = PyImport_LAZY_NONE;
+    } else if (enabled == Py_True) {
+        mode = PyImport_LAZY_ALL;
+    } else {
+        PyErr_SetString(PyExc_ValueError, "expected None, True or False for enabled mode");
+        return NULL;
+    }
+
+    if (PyImport_SetLazyImportsMode(mode)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.get_lazy_imports
+
+Gets the global lazy imports flag. 
+
+Returns True if all top level imports are potentially lazy.
+Returns False if all explicilty marked lazy imports are suppressed.
+Returns None if only explicitly marked imports are lazy.
+
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_lazy_imports_impl(PyObject *module)
+/*[clinic end generated code: output=4147dec48c51ae99 input=d7b25d814165c8ce]*/
+{
+    switch (PyImport_GetLazyImportsMode()) {
+        case PyImport_LAZY_NORMAL:
+            Py_RETURN_NONE;
+        case PyImport_LAZY_ALL:
+            Py_RETURN_TRUE;
+        case PyImport_LAZY_NONE:
+            Py_RETURN_FALSE;
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "unknown lazy imports mode");
+            return NULL;
+    }
+}
 
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
@@ -2894,6 +2948,8 @@ static PyMethodDef sys_methods[] = {
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
+    SYS_GET_LAZY_IMPORTS_METHODDEF
+    SYS_SET_LAZY_IMPORTS_METHODDEF
     SYS_GET_LAZY_IMPORTS_FILTER_METHODDEF
     SYS_SET_LAZY_IMPORTS_FILTER_METHODDEF
     SYS__BASEREPL_METHODDEF

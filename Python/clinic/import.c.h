@@ -622,88 +622,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_imp_set_lazy_imports__doc__,
-"set_lazy_imports($module, enabled=None, /, filter=<unrepresentable>)\n"
-"--\n"
-"\n"
-"Programmatic API for enabling lazy imports at runtime.\n"
-"\n"
-"enabled can be:\n"
-"    None (lazy imports always respect keyword)\n"
-"    False (forced lazy imports off)\n"
-"    True (forced lazy imports on)\n"
-"\n"
-"filter is an optional callable which further disables lazy imports when they\n"
-"would otherwise be enabled. Returns True if the the import is still enabled\n"
-"or False to disable it. The callable is called with:\n"
-"\n"
-"(importing_module_name, imported_module_name, [fromlist])");
-
-#define _IMP_SET_LAZY_IMPORTS_METHODDEF    \
-    {"set_lazy_imports", _PyCFunction_CAST(_imp_set_lazy_imports), METH_FASTCALL|METH_KEYWORDS, _imp_set_lazy_imports__doc__},
-
-static PyObject *
-_imp_set_lazy_imports_impl(PyObject *module, PyObject *enabled,
-                           PyObject *filter);
-
-static PyObject *
-_imp_set_lazy_imports(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(filter), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"", "filter", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "set_lazy_imports",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *enabled = Py_None;
-    PyObject *filter = NULL;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (nargs < 1) {
-        goto skip_optional_posonly;
-    }
-    noptargs--;
-    enabled = args[0];
-skip_optional_posonly:
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    filter = args[1];
-skip_optional_pos:
-    return_value = _imp_set_lazy_imports_impl(module, enabled, filter);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_imp__set_lazy_attributes__doc__,
 "_set_lazy_attributes($module, child_module, name, /)\n"
 "--\n"
@@ -746,4 +664,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=0b2b116cf3e431ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0fe31ade5e29e8d6 input=a9049054013a1b77]*/
