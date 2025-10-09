@@ -1165,7 +1165,8 @@ class NamespacePath:
         self._path.append(item)
 
 
-_NamespacePath = NamespacePath  # for backwards compatibility
+# For backwards-compatibility for anyone desperate enough to get at the class back in the day.
+_NamespacePath = NamespacePath
 
 
 # This class is actually exposed publicly in a namespace package's __loader__
