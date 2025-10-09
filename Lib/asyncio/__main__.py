@@ -74,7 +74,6 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             return
         except BaseException:
             if keyboard_interrupted:
-                # (pyrepl already handles and prints it)
                 if not CAN_USE_PYREPL:
                     self.write("\nKeyboardInterrupt\n")
             else:
