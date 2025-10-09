@@ -29,6 +29,7 @@ def _complete(con, text, state):
             schemata = tuple(row[1] for row
                              in cursor.execute("PRAGMA database_list"))
             # tables, indexes, triggers, and views
+            # escape '_' which can appear in attached database names
             select_clauses = (
                 f"""\
                 SELECT name || ' ' FROM \"{schema}\".sqlite_master
