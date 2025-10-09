@@ -47,7 +47,8 @@ class LZMAFile(_streams.BaseStream):
     """
 
     def __init__(self, filename=None, mode="r", *,
-                 format=None, check=-1, preset=None, filters=None):
+                 format=None, check=-1, preset=None, filters=None,
+                 mt_options=None):
         """Open an LZMA-compressed file in binary mode.
 
         filename can be either an actual file name (given as a str,
@@ -102,14 +103,18 @@ class LZMAFile(_streams.BaseStream):
                 raise ValueError("Cannot specify a preset compression "
                                  "level when opening a file for reading")
             if format is None:
-                format = FORMAT_AUTO
+                if mt_options is None:
+                    format = FORMAT_AUTO
+                else:
+                    format = FORMAT_XZ
             mode_code = _MODE_READ
         elif mode in ("w", "wb", "a", "ab", "x", "xb"):
             if format is None:
                 format = FORMAT_XZ
             mode_code = _MODE_WRITE
             self._compressor = LZMACompressor(format=format, check=check,
-                                              preset=preset, filters=filters)
+                                              preset=preset, filters=filters,
+                                              mt_options=mt_options)
             self._pos = 0
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
@@ -324,29 +329,33 @@ def open(filename, mode="rb", *,
         return binary_file
 
 
-def compress(data, format=FORMAT_XZ, check=-1, preset=None, filters=None):
+def compress(data, format=FORMAT_XZ, check=-1, preset=None, filters=None, *,
+             mt_options=None):
     """Compress a block of data.
 
     Refer to LZMACompressor's docstring for a description of the
-    optional arguments *format*, *check*, *preset* and *filters*.
+    optional arguments *format*, *check*, *preset*, *filters* and *mt_options*.
 
     For incremental compression, use an LZMACompressor instead.
     """
-    comp = LZMACompressor(format, check, preset, filters)
+    comp = LZMACompressor(format, check, preset, filters,
+                          mt_options=mt_options)
     return comp.compress(data) + comp.flush()
 
 
-def decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None):
+def decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None, *,
+               mt_options=None):
     """Decompress a block of data.
 
     Refer to LZMADecompressor's docstring for a description of the
-    optional arguments *format*, *check* and *filters*.
+    optional arguments *format*, *check*, *preset*, *filters* and *mt_options*.
 
     For incremental decompression, use an LZMADecompressor instead.
     """
     results = []
     while True:
-        decomp = LZMADecompressor(format, memlimit, filters)
+        decomp = LZMADecompressor(format, memlimit, filters,
+                                  mt_options=mt_options)
         try:
             res = decomp.decompress(data)
         except LZMAError:

@@ -1,0 +1,1 @@
+Support the MT (MultiThreaded) encoder and decoder in :mod:`lzma` module.
