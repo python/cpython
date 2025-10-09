@@ -1,1 +1,1 @@
-Decolor subparser ``prog`` in :meth:`argparse.ArgumentParser.add_subparsers()` to respect color environment variable changes after parser creation.
+Decolor subparser ``prog`` in :meth:`argparse.ArgumentParser.add_subparsers` to respect color environment variable changes after parser creation.
