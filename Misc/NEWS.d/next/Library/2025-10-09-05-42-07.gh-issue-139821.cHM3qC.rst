@@ -1,0 +1,1 @@
+Make ``tarfile.open`` correctly forward keyword arguments for zstd in stream mode.
