@@ -1637,7 +1637,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         return root_dir, base_dir
 
     def _create_files_symlinks(self, base_dir="symlinks"):
-        # Create a test structure containing symbolic links to files and 
+        # Create a test structure containing symbolic links to files and
         # directories.
         root_dir = self.mkdtemp()
         wd = os.path.join(root_dir, base_dir)
@@ -1916,8 +1916,8 @@ class TestArchives(BaseTest, unittest.TestCase):
     @os_helper.skip_unless_symlink
     def test_make_zipfile_symlink_behaviour(self):
         # Test that symbolic links for both file and directories are resolved
-        # to their targets when shutil.make_archive() is used to make a zip 
-        # file, to match default command-line zip behaviour in 
+        # to their targets when shutil.make_archive() is used to make a zip
+        # file, to match default command-line zip behaviour in
         # Linux/UNIX/Windows.
 
         # If this test is being skipped, it is because either the operating
@@ -1937,14 +1937,14 @@ class TestArchives(BaseTest, unittest.TestCase):
             extract_dir = os.path.join(root_dir, base_dir, 'extract')
             zf.extractall(extract_dir)
         try:
-            # If symbolic link sub2 that targets directory sub1 was 
+            # If symbolic link sub2 that targets directory sub1 was
             # preserved as a link then sub2/file2 will not exist.
             self.assertTrue(
                 os.path.exists(
                     os.path.join(extract_dir, base_dir, 'sub2/file2')
                     )
                 )
-            # If symbolic link link1 that targets file1 was preserved then 
+            # If symbolic link link1 that targets file1 was preserved then
             # it will be a symbolic link.
             self.assertFalse(
                 os.path.islink(

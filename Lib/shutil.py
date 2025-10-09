@@ -1071,14 +1071,14 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
       in the zip file. The zip file is created at the same level in the
       directory structure as `base_dir`.
     
-    Symbolic links to files and directories are followed and the 
-    targets of the links included in the zip file. This matches the 
+    Symbolic links to files and directories are followed and the
+    targets of the links included in the zip file. This matches the
     default behaviour of command-line zip utilities on
     Linux/UNIX/Windows systems.
 
-    Hard links to files are followed and the targets of the links 
-    included in the zip file. There is no de-duplication of multiple 
-    hard links to the same file that is provided by other formats, 
+    Hard links to files are followed and the targets of the links
+    included in the zip file. There is no de-duplication of multiple
+    hard links to the same file that is provided by other formats,
     e.g. tar.
 
     CAUTION: This function uses os.walk() to prepare the list of files to be
