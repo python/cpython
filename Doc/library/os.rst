@@ -216,8 +216,8 @@ process and user.
 
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
-   :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
-   called.
+   :data:`os.environ`, and when one of the :meth:`~dict.pop` or
+   :meth:`~dict.clear` methods is called.
 
    .. seealso::
 
@@ -430,8 +430,8 @@ process and user.
       associated with the effective user id of the process; the group access
       list may change over the lifetime of the process, it is not affected by
       calls to :func:`setgroups`, and its length is not limited to 16.  The
-      deployment target value, :const:`MACOSX_DEPLOYMENT_TARGET`, can be
-      obtained with :func:`sysconfig.get_config_var`.
+      deployment target value can be obtained with
+      :func:`sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') <sysconfig.get_config_var>`.
 
 
 .. function:: getlogin()
@@ -2606,10 +2606,10 @@ features:
 
    Create a filesystem node (file, device special file or named pipe) named
    *path*. *mode* specifies both the permissions to use and the type of node
-   to be created, being combined (bitwise OR) with one of ``stat.S_IFREG``,
-   ``stat.S_IFCHR``, ``stat.S_IFBLK``, and ``stat.S_IFIFO`` (those constants are
-   available in :mod:`stat`).  For ``stat.S_IFCHR`` and ``stat.S_IFBLK``,
-   *device* defines the newly created device special file (probably using
+   to be created, being combined (bitwise OR) with one of :const:`stat.S_IFREG`,
+   :const:`stat.S_IFCHR`, :const:`stat.S_IFBLK`, and :const:`stat.S_IFIFO`.
+   For :const:`stat.S_IFCHR` and :const:`stat.S_IFBLK`, *device* defines the
+   newly created device special file (probably using
    :func:`os.makedev`), otherwise it is ignored.
 
    This function can also support :ref:`paths relative to directory descriptors
@@ -2627,13 +2627,13 @@ features:
 .. function:: major(device, /)
 
    Extract the device major number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
+   :attr:`~stat_result.st_dev` or :attr:`~stat_result.st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: minor(device, /)
 
    Extract the device minor number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
+   :attr:`~stat_result.st_dev` or :attr:`~stat_result.st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: makedev(major, minor, /)
@@ -3364,8 +3364,8 @@ features:
 
    .. versionchanged:: 3.8
       On Windows, the :attr:`st_mode` member now identifies special
-      files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
-      as appropriate.
+      files as :const:`~stat.S_IFCHR`, :const:`~stat.S_IFIFO` or
+      :const:`~stat.S_IFBLK` as appropriate.
 
    .. versionchanged:: 3.12
       On Windows, :attr:`st_ctime` is deprecated. Eventually, it will
@@ -4285,10 +4285,10 @@ to be ignored.
 
 .. function:: abort()
 
-   Generate a :const:`SIGABRT` signal to the current process.  On Unix, the default
+   Generate a :const:`~signal.SIGABRT` signal to the current process.  On Unix, the default
    behavior is to produce a core dump; on Windows, the process immediately returns
    an exit code of ``3``.  Be aware that calling this function will not call the
-   Python signal handler registered for :const:`SIGABRT` with
+   Python signal handler registered for :const:`~signal.SIGABRT` with
    :func:`signal.signal`.
 
 

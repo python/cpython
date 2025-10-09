@@ -17,6 +17,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 #include <stdbool.h>

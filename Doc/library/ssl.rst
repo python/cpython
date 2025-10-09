@@ -354,9 +354,8 @@ Random generation
 .. function:: RAND_status()
 
    Return ``True`` if the SSL pseudo-random number generator has been seeded
-   with 'enough' randomness, and ``False`` otherwise.  You can use
-   :func:`ssl.RAND_egd` and :func:`ssl.RAND_add` to increase the randomness of
-   the pseudo-random number generator.
+   with 'enough' randomness, and ``False`` otherwise.  Use :func:`ssl.RAND_add`
+   to increase the randomness of the pseudo-random number generator.
 
 .. function:: RAND_add(bytes, entropy, /)
 

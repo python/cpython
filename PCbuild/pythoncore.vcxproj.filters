@@ -120,9 +120,6 @@
     <ClInclude Include="..\Include\listobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pylock.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\longobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -489,7 +486,13 @@
     <ClInclude Include="..\Include\cpython\pylifecycle.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\structseq.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\tupleobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\sliceobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\traceback.h">
@@ -1271,6 +1274,9 @@
     <ClCompile Include="..\Objects\unicodectype.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\unicode_formatter.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\unicodeobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
@@ -1377,9 +1383,6 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\flowgraph.c">
-      <Filter>Python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\formatter_unicode.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\frozen.c">
