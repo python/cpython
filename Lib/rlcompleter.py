@@ -191,7 +191,8 @@ class Completer:
                     if (value := getattr(thisobject, word, None)) is not None:
                         matches.append(self._callable_postfix(value, match))
                     else:
-                        matches.append(match)
+                        if hasattr(thisobject, word):
+                            matches.append(match)
             if matches or not noprefix:
                 break
             if noprefix == '_':
