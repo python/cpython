@@ -224,6 +224,28 @@ sys.modules[__name__].__class__ = ImmutableModule
         with self.assertRaises(AttributeError):
             del module.CONSTANT
 
+    def test_reload(self):
+        # Reloading a lazy module that hasn't been materialized is a no-op.
+        module = self.new_module()
+        sys.modules[TestingImporter.module_name] = module
+        self.assertIsInstance(module, util._LazyModule)
+
+        # Change the source code to add a new attribute
+        TestingImporter.source_code = 'attr = 42\nnew_attr = 123\n__name__ = {!r}'.format(TestingImporter.mutated_name)
+        self.assertIsInstance(module, util._LazyModule)
+
+        # Reload the module (should be a no-op since not materialized)
+        reloaded = importlib.reload(module)
+        self.assertIs(reloaded, module)
+        self.assertIsInstance(module, util._LazyModule)
+
+
+        # Access the new attribute (should trigger materialization, and new_attr should exist)
+        self.assertEqual(module.attr, 42)
+        self.assertNotIsInstance(module, util._LazyModule)
+        self.assertTrue(hasattr(module, 'new_attr'))
+        self.assertEqual(module.new_attr, 123)
+
 
 if __name__ == '__main__':
     unittest.main()
