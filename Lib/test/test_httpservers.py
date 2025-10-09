@@ -892,6 +892,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                                                 'test1=value1, test2=value2')
             self.assertEqual(response.getheader("X-Test1"), 'value3')
 
+
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, directory=None):
         request = mock.Mock()
