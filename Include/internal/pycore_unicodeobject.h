@@ -11,6 +11,44 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
+// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
+#define _Py_MAX_UNICODE 0x10ffff
+
+
+static inline void
+_PyUnicode_Fill(int kind, void *data, Py_UCS4 value,
+                Py_ssize_t start, Py_ssize_t length)
+{
+    assert(0 <= start);
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND: {
+        assert(value <= 0xff);
+        Py_UCS1 ch = (unsigned char)value;
+        Py_UCS1 *to = (Py_UCS1 *)data + start;
+        memset(to, ch, length);
+        break;
+    }
+    case PyUnicode_2BYTE_KIND: {
+        assert(value <= 0xffff);
+        Py_UCS2 ch = (Py_UCS2)value;
+        Py_UCS2 *to = (Py_UCS2 *)data + start;
+        const Py_UCS2 *end = to + length;
+        for (; to < end; ++to) *to = ch;
+        break;
+    }
+    case PyUnicode_4BYTE_KIND: {
+        assert(value <= _Py_MAX_UNICODE);
+        Py_UCS4 ch = value;
+        Py_UCS4 * to = (Py_UCS4 *)data + start;
+        const Py_UCS4 *end = to + length;
+        for (; to < end; ++to) *to = ch;
+        break;
+    }
+    default: Py_UNREACHABLE();
+    }
+}
+
+
 /* --- Characters Type APIs ----------------------------------------------- */
 
 extern int _PyUnicode_IsXidStart(Py_UCS4 ch);
@@ -239,21 +277,6 @@ extern PyObject* _PyUnicode_XStrip(
     PyObject *sepobj
     );
 
-
-/* Using explicit passed-in values, insert the thousands grouping
-   into the string pointed to by buffer.  For the argument descriptions,
-   see Objects/stringlib/localeutil.h */
-extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
-    _PyUnicodeWriter *writer,
-    Py_ssize_t n_buffer,
-    PyObject *digits,
-    Py_ssize_t d_pos,
-    Py_ssize_t n_digits,
-    Py_ssize_t min_width,
-    const char *grouping,
-    PyObject *thousands_sep,
-    Py_UCS4 *maxchar,
-    int forward);
 
 /* Dedent a string.
    Behaviour is expected to be an exact match of `textwrap.dedent`.

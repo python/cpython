@@ -46,7 +46,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.14, compared to 3.13.
-Python 3.14 will be released on 7 October 2025.
+Python 3.14 was released on 7 October 2025.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
@@ -60,7 +60,7 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.14.
    Brevity is key.
 
-Python 3.14 will be the latest stable release of the Python programming
+Python 3.14 is the latest stable release of the Python programming
 language, with a mix of changes to the language, the implementation,
 and the standard library.
 The biggest changes include :ref:`template string literals
@@ -217,7 +217,7 @@ has significant benefits:
 * they support a new (to Python), human-friendly concurrency model
 * true multi-core parallelism
 
-For some use cases, concurrency in software enables efficiency and
+For some use cases, concurrency in software improves efficiency and
 can simplify design, at a high level.
 At the same time, implementing and maintaining all but the simplest concurrency
 is often a struggle for the human brain.
@@ -225,9 +225,10 @@ That especially applies to plain threads (for example, :mod:`threading`),
 where all memory is shared between all threads.
 
 With multiple isolated interpreters, you can take advantage of a class
-of concurrency models, like CSP or the actor model, that have found
+of concurrency models, like Communicating Sequential Processes (CSP)
+or the actor model, that have found
 success in other programming languages, like Smalltalk, Erlang,
-Haskell, and Go. Think of multiple interpreters like threads
+Haskell, and Go. Think of multiple interpreters as threads
 but with opt-in sharing.
 
 Regarding multi-core parallelism: as of Python 3.12, interpreters
@@ -249,8 +250,8 @@ having the isolation of processes with the efficiency of threads.
 While the feature has been around for decades, multiple interpreters
 have not been used widely, due to low awareness and the lack of a
 standard library module. Consequently, they currently have several
-notable limitations, which will improve significantly now that the
-feature is finally going mainstream.
+notable limitations, which are expected to improve significantly now
+that the feature is going mainstream.
 
 Current limitations:
 
@@ -449,8 +450,8 @@ depending on platform and architecture.
 The baseline is Python 3.14 built with Clang 19, without this new interpreter.
 
 This interpreter currently only works with Clang 19 and newer
-on x86-64 and AArch64 architectures. However, a future release
-of GCC is expected will support this as well.
+on x86-64 and AArch64 architectures.
+However, a future release of GCC is expected to support this as well.
 
 This feature is opt-in for now. Enabling profile-guided optimization is highly
 recommendeded when using the new interpreter as it is the only configuration
@@ -936,6 +937,19 @@ The compiler now emits a :exc:`SyntaxWarning` when a :keyword:`return`,
 :keyword:`break`, or :keyword:`continue` statement have the effect of
 leaving a :keyword:`finally` block.
 This change is specified in :pep:`765`.
+
+In situations where this change is inconvenient (such as those where the
+warnings are redundant due to code linting), the :ref:`warning filter
+<warning-filter>` can be used to turn off all syntax warnings by adding
+``ignore::SyntaxWarning`` as a filter. This can be specified in combination
+with a filter that converts other warnings to errors (for example, passing
+``-Werror -Wignore::SyntaxWarning`` as CLI options, or setting
+``PYTHONWARNINGS=error,ignore::SyntaxWarning``).
+
+Note that applying such a filter at runtime using the :mod:`warnings` module
+will only suppress the warning in code that is compiled *after* the filter is
+adjusted. Code that is compiled prior to the filter adjustment (for example,
+when a module is imported) will still emit the syntax warning.
 
 (Contributed by Irit Katriel in :gh:`130080`.)
 
@@ -3070,7 +3084,7 @@ Deprecated C APIs
 
 .. _whatsnew314-build-changes:
 
-Build Changes
+Build changes
 =============
 
 * :pep:`776`: Emscripten is now an officially supported platform at

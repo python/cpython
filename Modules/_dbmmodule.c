@@ -8,6 +8,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 
 #include <sys/types.h>
 #include <sys/stat.h>

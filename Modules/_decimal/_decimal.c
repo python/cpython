@@ -30,9 +30,9 @@
 #endif
 
 #include <Python.h>
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_typeobject.h"
-#include "complexobject.h"
 
 #include <mpdecimal.h>
 
