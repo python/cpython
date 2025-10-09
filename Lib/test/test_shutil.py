@@ -1915,16 +1915,17 @@ class TestArchives(BaseTest, unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     def test_make_zipfile_symlink_behaviour(self):
-        """Test that symbolic links for both file and directories are resolved
-        to their targets when shutil.make_archive() is used to make a zip file,
-        to match default command-line zip behaviour on Linux/UNIX/Windows.
+        # Test that symbolic links for both file and directories are resolved
+        # to their targets when shutil.make_archive() is used to make a zip 
+        # file, to match default command-line zip behaviour in 
+        # Linux/UNIX/Windows.
 
-        If this test is being skipped, it is because either the operating
-        environment does not support symbolic links, or you do not have the
-        necessary permissions to create them. For Windows (10 and above) the
-        test must be invoked from an elevated command prompt or with
-        Developer Mode turned on.
-        """
+        # If this test is being skipped, it is because either the operating
+        # environment does not support symbolic links, or you do not have the
+        # necessary permissions to create them. For Windows (10 and above) the
+        # test must be invoked from an elevated command prompt or with
+        # Developer Mode turned on.
+        
         root_dir, base_dir = self._create_files_symlinks()
         name = os.path.join(root_dir, 'z')
         archive = shutil.make_archive(
@@ -1951,7 +1952,7 @@ class TestArchives(BaseTest, unittest.TestCase):
                     )
                 )
         finally:
-            # Clean up
+            # Clean up.
             shutil.rmtree(root_dir)
 
     @support.requires_zlib()
