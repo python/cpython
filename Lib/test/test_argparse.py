@@ -30,6 +30,7 @@ from test.support.i18n_helper import TestTranslationsBase, update_translation_sn
 from unittest import mock
 
 
+
 py = os.path.basename(sys.executable)
 
 
@@ -7355,6 +7356,28 @@ class TestColorized(TestCase):
                  {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
 
+
+class TestColorEnvironment(TestCase):
+    """Tests for color behavior with environment variable changes."""
+
+    def test_subparser_respects_no_color_environment(self):
+        # Cleanup to ensure environment is properly reset
+        self.addCleanup(os.environ.pop, 'FORCE_COLOR', None)
+        self.addCleanup(os.environ.pop, 'NO_COLOR', None)
+
+        # Create parser with FORCE_COLOR, capturing colored prog
+        os.environ['FORCE_COLOR'] = '1'
+        parser = argparse.ArgumentParser(prog='complex')
+        sub = parser.add_subparsers(dest='command')
+        demo_parser = sub.add_parser('demo')
+
+        # Switch to NO_COLOR environment
+        os.environ.pop('FORCE_COLOR', None)
+        os.environ['NO_COLOR'] = '1'
+
+        # Subparser help should have no color codes
+        help_text = demo_parser.format_help()
+        self.assertNotIn('\x1b[', help_text)
 
 class TestModule(unittest.TestCase):
     def test_deprecated__version__(self):

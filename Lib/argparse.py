@@ -1963,7 +1963,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             positionals = self._get_positional_actions()
             groups = self._mutually_exclusive_groups
             formatter.add_usage(None, positionals, groups, '')
-            kwargs['prog'] = formatter.format_help().strip()
+            kwargs['prog'] = formatter._decolor(formatter.format_help().strip())
 
         # create the parsers action and add it to the positionals list
         parsers_class = self._pop_action_class(kwargs, 'parsers')
