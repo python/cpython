@@ -243,7 +243,7 @@ The variables defined in the :mod:`signal` module are:
 
    .. availability:: Unix.
 
-.. data:: SIGQUIT 
+.. data:: SIGQUIT
 
    Terminal quit signal.
 
