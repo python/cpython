@@ -306,8 +306,6 @@ mmap_mmap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if (defined(MS_WINDOWS) || defined(HAVE_MREMAP))
-
 PyDoc_STRVAR(mmap_mmap_resize__doc__,
 "resize($self, newsize, /)\n"
 "--\n"
@@ -345,8 +343,6 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(MS_WINDOWS) || defined(HAVE_MREMAP)) */
-
 PyDoc_STRVAR(mmap_mmap_tell__doc__,
 "tell($self, /)\n"
 "--\n"
@@ -371,7 +367,7 @@ mmap_mmap_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(mmap_mmap_flush__doc__,
-"flush($self, offset=0, size=-1, /)\n"
+"flush($self, offset=0, size=None, /)\n"
 "--\n"
 "\n");
 
@@ -379,14 +375,15 @@ PyDoc_STRVAR(mmap_mmap_flush__doc__,
     {"flush", _PyCFunction_CAST(mmap_mmap_flush), METH_FASTCALL, mmap_mmap_flush__doc__},
 
 static PyObject *
-mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size);
+mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset,
+                     PyObject *size_obj);
 
 static PyObject *
 mmap_mmap_flush(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t offset = 0;
-    Py_ssize_t size = -1;
+    PyObject *size_obj = Py_None;
 
     if (!_PyArg_CheckPositional("flush", nargs, 0, 2)) {
         goto exit;
@@ -409,21 +406,10 @@ mmap_mmap_flush(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        size = ival;
-    }
+    size_obj = args[1];
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = mmap_mmap_flush_impl((mmap_object *)self, offset, size);
+    return_value = mmap_mmap_flush_impl((mmap_object *)self, offset, size_obj);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -672,21 +658,9 @@ mmap_mmap__protect(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("_protect", nargs, 3, 3)) {
         goto exit;
     }
-    {
-        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[0], &flNewProtect, sizeof(unsigned int),
-                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
-                Py_ASNATIVEBYTES_ALLOW_INDEX |
-                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
-        if (_bytes < 0) {
-            goto exit;
-        }
-        if ((size_t)_bytes > sizeof(unsigned int)) {
-            if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                "integer value out of range", 1) < 0)
-            {
-                goto exit;
-            }
-        }
+    flNewProtect = (unsigned int)PyLong_AsUnsignedLongMask(args[0]);
+    if (flNewProtect == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
     }
     {
         Py_ssize_t ival = -1;
@@ -781,10 +755,6 @@ exit:
 
 #endif /* defined(HAVE_MADVISE) */
 
-#ifndef MMAP_MMAP_RESIZE_METHODDEF
-    #define MMAP_MMAP_RESIZE_METHODDEF
-#endif /* !defined(MMAP_MMAP_RESIZE_METHODDEF) */
-
 #ifndef MMAP_MMAP___SIZEOF___METHODDEF
     #define MMAP_MMAP___SIZEOF___METHODDEF
 #endif /* !defined(MMAP_MMAP___SIZEOF___METHODDEF) */
@@ -796,4 +766,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=381f6cf4986ac867 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe4e2131abc1e971 input=a9049054013a1b77]*/

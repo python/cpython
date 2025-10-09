@@ -1022,17 +1022,25 @@ mmap_mmap_tell_impl(mmap_object *self)
 mmap.mmap.flush
 
     offset: Py_ssize_t = 0
-    size: Py_ssize_t = -1
+    size as size_obj: object = None
     /
 
 [clinic start generated code]*/
 
 static PyObject *
-mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size)
-/*[clinic end generated code: output=956ced67466149cf input=c50b893bc69520ec]*/
+mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset,
+                     PyObject *size_obj)
+/*[clinic end generated code: output=41a10c349ed1608a input=7e6bb8f9462f53e6]*/
 {
-    mmap_object *self = mmap_object_CAST(op);
+    Py_ssize_t size = self->size;
     CHECK_VALID(NULL);
+
+    if (size_obj != Py_None) {
+        size = _As_Py_ssize_t(size_obj);
+        if (size == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+    }
 
     if (size < 0 || offset < 0 || self->size - offset < size) {
         PyErr_SetString(PyExc_ValueError, "flush values out of range");
