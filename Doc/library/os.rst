@@ -4593,8 +4593,6 @@ written in Python, such as a mail server's external command delivery program.
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
 
    The returned file descriptor *fd* is :ref:`non-inheritable <fd_inheritance>`.
-   This means it will not be passed to child processes created by subsequent
-   :func:`fork` or :func:`exec\* <execl>` calls.
 
    .. audit-event:: os.forkpty "" os.forkpty
 
