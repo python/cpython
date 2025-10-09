@@ -100,25 +100,44 @@ class TestRlcompleter(unittest.TestCase):
                               if x.startswith('s')])
 
     def test_excessive_getattr(self):
-        """Ensure getattr() is invoked no more than once per attribute"""
+        """Ensure getattr() is invoked appropriately per attribute"""
 
         # note the special case for @property methods below; that is why
         # we use __dir__ and __getattr__ in class Foo to create a "magic"
         # class attribute 'bar'. This forces `getattr` to call __getattr__
         # (which is doesn't necessarily do).
-        class Foo:
+        # Test 1: Attribute returns None
+        class FooReturnsNone:
             calls = 0
-            bar = ''
+            bar = None
             def __getattribute__(self, name):
                 if name == 'bar':
                     self.calls += 1
                     return None
                 return super().__getattribute__(name)
 
-        f = Foo()
-        completer = rlcompleter.Completer(dict(f=f))
-        self.assertEqual(completer.complete('f.b', 0), 'f.bar')
-        self.assertEqual(f.calls, 1)
+        f1 = FooReturnsNone()
+        completer1 = rlcompleter.Completer(dict(f=f1))
+        self.assertEqual(completer1.complete('f.b', 0), 'f.bar')
+        # With the hasattr() check, getattr() is called twice:
+        # once in getattr(thisobject, word, None) and once in hasattr(thisobject, word)
+        self.assertEqual(f1.calls, 2)
+
+        # Test 2: Attribute returns non-None value
+        class FooReturnsValue:
+            calls = 0
+            bar = ''
+            def __getattribute__(self, name):
+                if name == 'bar':
+                    self.calls += 1
+                    return ''
+                return super().__getattribute__(name)
+
+        f2 = FooReturnsValue()
+        completer2 = rlcompleter.Completer(dict(f=f2))
+        self.assertEqual(completer2.complete('f.b', 0), 'f.bar')
+        # getattr() only called once in getattr(thisobject, word, None)
+        self.assertEqual(f2.calls, 1)
 
     def test_property_method_not_called(self):
         class Foo:
