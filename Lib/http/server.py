@@ -1007,8 +1007,8 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """
     with _make_server(
         HandlerClass=HandlerClass, ServerClass=ServerClass,
-        protocol=protocol, port=port, bind=bind, tls_cert=tls_cert,
-        tls_key=tls_key, tls_password=tls_password
+        protocol=protocol, port=port, bind=bind,
+        tls_cert=tls_cert, tls_key=tls_key, tls_password=tls_password
     ) as httpd:
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
