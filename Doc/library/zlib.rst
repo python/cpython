@@ -350,7 +350,7 @@ behavior:
 
 .. data:: MAX_WBITS
 
-   The maximum window buffer size.
+   The maximum window buffer size (power of 2).
 
 
 .. data:: DEF_MEM_LEVEL
