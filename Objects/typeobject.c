@@ -5768,7 +5768,7 @@ PyType_GetModuleState(PyTypeObject *type)
  * has the given token.
  */
 PyObject *
-borrow_module_by_token(PyTypeObject *type, void *token)
+borrow_module_by_token(PyTypeObject *type, const void *token)
 {
     assert(PyType_Check(type));
 
@@ -5833,7 +5833,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 }
 
 PyObject *
-PyType_GetModuleByToken(PyTypeObject *type, void *token)
+PyType_GetModuleByToken(PyTypeObject *type, const void *token)
 {
     return Py_XNewRef(borrow_module_by_token(type, token));
 }

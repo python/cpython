@@ -835,7 +835,7 @@ PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
 #endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
-PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *, void *);
+PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *, const void *);
 #endif
 
 #ifdef __cplusplus

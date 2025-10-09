@@ -120,7 +120,7 @@ PyAPI_FUNC(int) PyUnstable_Module_SetGIL(PyObject *module, void *gil);
 #endif
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
-PyAPI_FUNC(PyObject *) PyModule_FromSlotsAndSpec(PyModuleDef_Slot *,
+PyAPI_FUNC(PyObject *) PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *,
                                                  PyObject *spec);
 PyAPI_FUNC(int) PyModule_Exec(PyObject *mod);
 PyAPI_FUNC(int) PyModule_GetStateSize(PyObject *mod, Py_ssize_t *size_p);

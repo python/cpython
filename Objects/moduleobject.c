@@ -639,7 +639,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
 }
 
 PyObject *
-PyModule_FromSlotsAndSpec(PyModuleDef_Slot *slots, PyObject *spec)
+PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *slots, PyObject *spec)
 {
     if (!slots) {
         PyErr_Format(
@@ -648,7 +648,7 @@ PyModule_FromSlotsAndSpec(PyModuleDef_Slot *slots, PyObject *spec)
         return NULL;
     }
     // Fill in enough of a PyModuleDef to pass to common machinery
-    PyModuleDef def_like = {.m_slots = slots};
+    PyModuleDef def_like = {.m_slots = (PyModuleDef_Slot *)slots};
 
     return module_from_def_and_spec(&def_like, spec, PYTHON_API_VERSION,
                                     NULL);
