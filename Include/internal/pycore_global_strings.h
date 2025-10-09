@@ -427,6 +427,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(effective_ids)
         STRUCT_FOR_ID(element_factory)
         STRUCT_FOR_ID(emptyerror)
+        STRUCT_FOR_ID(enabled)
         STRUCT_FOR_ID(encode)
         STRUCT_FOR_ID(encoding)
         STRUCT_FOR_ID(end)

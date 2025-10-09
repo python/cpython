@@ -1907,6 +1907,93 @@ sys_get_lazy_imports_filter(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_get_lazy_imports_filter_impl(module);
 }
 
+PyDoc_STRVAR(sys_set_lazy_imports__doc__,
+"set_lazy_imports($module, /, enabled)\n"
+"--\n"
+"\n"
+"Sets the global lazy imports flag.\n"
+"\n"
+"True sets all imports at the top level as potentially lazy.\n"
+"False disables lazy imports for any explicitly marked imports.\n"
+"None causes only explicitly marked imports as lazy.\n"
+"\n"
+"In addition to the mode lazy imports can be controlled via the filter\n"
+"provided to sys.set_lazy_imports_filter");
+
+#define SYS_SET_LAZY_IMPORTS_METHODDEF    \
+    {"set_lazy_imports", _PyCFunction_CAST(sys_set_lazy_imports), METH_FASTCALL|METH_KEYWORDS, sys_set_lazy_imports__doc__},
+
+static PyObject *
+sys_set_lazy_imports_impl(PyObject *module, PyObject *enabled);
+
+static PyObject *
+sys_set_lazy_imports(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(enabled), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"enabled", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_lazy_imports",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *enabled;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    enabled = args[0];
+    return_value = sys_set_lazy_imports_impl(module, enabled);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys_get_lazy_imports__doc__,
+"get_lazy_imports($module, /)\n"
+"--\n"
+"\n"
+"Gets the global lazy imports flag.\n"
+"\n"
+"Returns True if all top level imports are potentially lazy.\n"
+"Returns False if all explicilty marked lazy imports are suppressed.\n"
+"Returns None if only explicitly marked imports are lazy.");
+
+#define SYS_GET_LAZY_IMPORTS_METHODDEF    \
+    {"get_lazy_imports", (PyCFunction)sys_get_lazy_imports, METH_NOARGS, sys_get_lazy_imports__doc__},
+
+static PyObject *
+sys_get_lazy_imports_impl(PyObject *module);
+
+static PyObject *
+sys_get_lazy_imports(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_get_lazy_imports_impl(module);
+}
+
 PyDoc_STRVAR(_jit_is_available__doc__,
 "is_available($module, /)\n"
 "--\n"
@@ -2034,4 +2121,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=64c56362026c8fcf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dd304e713c0d089f input=a9049054013a1b77]*/

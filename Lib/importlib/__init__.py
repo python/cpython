@@ -59,8 +59,6 @@ _unpack_uint32 = _bootstrap_external._unpack_uint32
 
 from ._bootstrap import __import__
 
-from _imp import set_lazy_imports
-
 
 def invalidate_caches():
     """Call the invalidate_caches() method on all meta path finders stored in

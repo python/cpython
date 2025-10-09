@@ -89,14 +89,16 @@ PyAPI_FUNC(int) PyImport_AppendInittab(
     );
 
 typedef enum  {
-    PyLazyImportsMode_Default,
-    PyLazyImportsMode_ForcedOff,
-    PyLazyImportsMode_ForcedOn,
+    PyImport_LAZY_NORMAL,
+    PyImport_LAZY_ALL,
+    PyImport_LAZY_NONE,
 } PyImport_LazyImportsMode;
 
-PyAPI_FUNC(int) PyImport_SetLazyImports(PyImport_LazyImportsMode mode, PyObject *filter);
+PyAPI_FUNC(int) PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode);
+PyAPI_FUNC(int) PyImport_SetLazyImportsFilter(PyObject *filter);
 
-PyAPI_FUNC(PyImport_LazyImportsMode) PyImport_LazyImportsEnabled(void);
+PyAPI_FUNC(PyImport_LazyImportsMode) PyImport_GetLazyImportsMode(void);
+PyAPI_FUNC(PyObject *) PyImport_GetLazyImportsFilter(void);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_IMPORT_H
