@@ -22,6 +22,7 @@ from test.support import (
     captured_stderr,
     force_not_colorized,
     force_not_colorized_test_class,
+    swap_attr,
 )
 from test.support import import_helper
 from test.support import os_helper
@@ -7128,9 +7129,8 @@ class TestColorized(TestCase):
     def setUp(self):
         super().setUp()
         # Ensure color even if ran with NO_COLOR=1
-        original_can_colorize = _colorize.can_colorize
-        _colorize.can_colorize = lambda *args, **kwargs: True
-        self.addCleanup(setattr, _colorize, 'can_colorize', original_can_colorize)
+        self.enterContext(swap_attr(_colorize, 'can_colorize',
+                                     lambda *args, **kwargs: True))
         self.theme = _colorize.get_theme(force_color=True).argparse
 
     def test_argparse_color(self):
