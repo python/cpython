@@ -1013,11 +1013,11 @@ class EditorWindow:
             # that doesn't match platform conventions.
             title = short + " - " + long + _py_version
         elif short:
-            title = short
+            title = short + _py_version
         elif long:
-            title = long
+            title = long + _py_version
         else:
-            title = "untitled"
+            title = "untitled" + _py_version
         icon = short or long or title
         if not self.get_saved():
             title = "*%s*" % title
