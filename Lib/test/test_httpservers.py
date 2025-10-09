@@ -870,7 +870,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                          self.tempdir_name + "/?hi=1")
 
     def test_extra_response_headers_list_dir(self):
-        with mock.patch.object(self.request_handler, 'extra_response_headers', new=[
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
             ('X-Test1', 'test1'),
             ('X-Test2', 'test2'),
         ]):
@@ -879,7 +879,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             self.assertEqual(response.getheader("X-Test2"), 'test2')
 
     def test_extra_response_headers_get_file(self):
-        with mock.patch.object(self.request_handler, 'extra_response_headers', new=[
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
             ('Set-Cookie', 'test1=value1'),
             ('Set-Cookie', 'test2=value2'),
             ('X-Test1', 'value3'),
