@@ -2833,6 +2833,8 @@ class ClinicExternalTest(TestCase):
             "uint64",
             "uint8",
             "unicode",
+            "unicode_fs_decoded",
+            "unicode_fs_encoded",
             "unsigned_char",
             "unsigned_int",
             "unsigned_long",
