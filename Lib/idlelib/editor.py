@@ -1013,11 +1013,14 @@ class EditorWindow:
             # that doesn't match platform conventions.
             title = short + " - " + long + _py_version
         elif short:
-            title = short + _py_version
+            if short == "IDLE Shell":
+                title = short + _py_version
+            else:
+                title = short
         elif long:
-            title = long + _py_version
+            title = long
         else:
-            title = "untitled" + _py_version
+            title = "untitled"
         icon = short or long or title
         if not self.get_saved():
             title = "*%s*" % title
