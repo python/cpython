@@ -367,6 +367,8 @@ behavior:
 
    Compression level ``0``.
 
+   .. versionadded:: 3.6
+
 
 .. data:: Z_BEST_SPEED
 
@@ -380,7 +382,7 @@ behavior:
 
 .. data:: Z_DEFAULT_COMPRESSION
 
-   Default compression level ``-1``.
+   Default compression level (``-1``).
 
 
 .. data:: Z_DEFAULT_STRATEGY
@@ -405,6 +407,8 @@ behavior:
    This constant is only available if Python was compiled with zlib
    1.2.0.1 or greater.
 
+   .. versionadded:: 3.6
+
 
 .. data:: Z_FIXED
 
@@ -413,10 +417,14 @@ behavior:
    This constant is only available if Python was compiled with zlib
    1.2.2.2 or greater.
 
+   .. versionadded:: 3.6
+
 
 .. data:: Z_NO_FLUSH
 
    Flush mode ``0``. No special flushing behavior.
+
+   .. versionadded:: 3.6
 
 
 .. data:: Z_PARTIAL_FLUSH
@@ -446,6 +454,8 @@ behavior:
    This constant is only available if Python was compiled with zlib
    1.2.2.2 or greater.
 
+   .. versionadded:: 3.6
+
 
 .. data:: Z_TREES
 
@@ -454,6 +464,8 @@ behavior:
 
    This constant is only available if Python was compiled with zlib
    1.2.3.4 or greater.
+
+   .. versionadded:: 3.6
 
 
 Information about the version of the zlib library in use is available through
