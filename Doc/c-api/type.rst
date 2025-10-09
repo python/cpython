@@ -320,6 +320,9 @@ Type Objects
 
    .. versionadded:: next
 
+   .. seealso::
+      The :c:func:`PyObject_GetOptionalAttr` function.
+
 
 .. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 

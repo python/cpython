@@ -167,6 +167,9 @@ Object Protocol
 
    .. versionadded:: 3.13
 
+   .. seealso::
+      The :c:func:`PyType_Lookup` function.
+
 
 .. c:function:: int PyObject_GetOptionalAttrString(PyObject *obj, const char *attr_name, PyObject **result);
 
