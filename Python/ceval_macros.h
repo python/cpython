@@ -133,6 +133,8 @@
 #define TRACING_JUMP_TO_LABEL(label) \
     RECORD_JUMP_TAKEN() \
     RECORD_TRACE_NO_DISPATCH() \
+    assert(!IS_JIT_TRACING()); \
+    RELOAD_TRACING(); \
     JUMP_TO_LABEL(label);
 
 #if _Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS
@@ -161,7 +163,7 @@
         JUMP_TO_LABEL(error); \
     }
 #  define RECORD_TRACE_NO_DISPATCH() do { \
-        if (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE && add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
+        if (IS_JIT_TRACING() && add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
             BAIL_TRACING_NO_DISPATCH(); \
         } \
     } while (0);

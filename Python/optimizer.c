@@ -468,7 +468,6 @@ is_for_iter_test[MAX_UOP_ID + 1] = {
     [_GUARD_NOT_EXHAUSTED_RANGE] = 1,
     [_GUARD_NOT_EXHAUSTED_LIST] = 1,
     [_GUARD_NOT_EXHAUSTED_TUPLE] = 1,
-    [_FOR_ITER_TIER_TWO] = 1,
 };
 
 static const uint16_t
@@ -586,18 +585,11 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     DPRINTF(2, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
 
+    if ((uint16_t)oparg != (uint64_t)oparg) {
+        goto unsupported;
+    }
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
     max_length -= 2;
-    if ((uint16_t)oparg != (uint64_t)oparg) {
-        // Back up over EXTENDED_ARGs
-        _PyUOpInstruction *curr = &trace[trace_length-1];
-        while (oparg > 0) {
-            oparg >>= 8;
-            trace_length--;
-        }
-        goto full;
-    }
-
 
     if (opcode == EXTENDED_ARG) {
         return 1;

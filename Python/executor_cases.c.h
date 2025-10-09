@@ -7528,7 +7528,6 @@
             _Py_CODEUNIT *target = frame->instr_ptr;
             _PyExitData *exit = (_PyExitData *)exit_p;
             _Py_BackoffCounter temperature = exit->temperature;
-            tstate->jit_exit = exit;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 2) {
@@ -7545,10 +7544,8 @@
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 _PyExecutorObject *executor = code->co_executors->executors[target->op.arg];
-                Py_INCREF(executor);
-                assert(tstate->jit_exit == exit);
-                exit->executor = executor;
-                TIER2_TO_TIER2(exit->executor);
+                tstate->jit_exit = NULL;
+                TIER2_TO_TIER2(executor);
             }
             else {
                 if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
@@ -7561,7 +7558,7 @@
                 exit->temperature = initial_temperature_backoff_counter();
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
-                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), 0, exit);
+                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), 0, NULL);
                 GOTO_TIER_ONE(target, 1);
             }
             break;
