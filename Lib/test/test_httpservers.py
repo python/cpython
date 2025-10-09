@@ -894,6 +894,14 @@ class SimpleHTTPServerTestCase(BaseTestCase):
                                                 'test1=value1, test2=value2')
             self.assertEqual(response.getheader("X-Test1"), 'value3')
 
+    def test_extra_response_headers_missing_on_404(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('X-Test1', 'value'),
+        ]):
+            response = self.request(self.base_url + '/missing.html')
+            self.assertEqual(response.status, 404)
+            self.assertEqual(response.getheader("X-Test1"), None)
+
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, directory=None):
