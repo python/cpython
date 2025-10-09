@@ -1,0 +1,1 @@
+Colorize t-string prefixes for template strings in IDLE, as done for f-string prefixes.

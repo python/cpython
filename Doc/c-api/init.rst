@@ -1113,7 +1113,7 @@ code, or when embedding the Python interpreter:
    This function is safe to call without an :term:`attached thread state`; it
    will simply return ``NULL`` indicating that there was no prior thread state.
 
-   .. seealso:
+   .. seealso::
       :c:func:`PyEval_ReleaseThread`
 
    .. note::
@@ -1123,6 +1123,19 @@ code, or when embedding the Python interpreter:
 
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
+
+.. c:type:: PyGILState_STATE
+
+   The type of the value returned by :c:func:`PyGILState_Ensure` and passed to
+   :c:func:`PyGILState_Release`.
+
+   .. c:enumerator:: PyGILState_LOCKED
+
+      The GIL was already held when :c:func:`PyGILState_Ensure` was called.
+
+   .. c:enumerator:: PyGILState_UNLOCKED
+
+      The GIL was not held when :c:func:`PyGILState_Ensure` was called.
 
 .. c:function:: PyGILState_STATE PyGILState_Ensure()
 
@@ -1174,12 +1187,12 @@ with sub-interpreters:
    made on the main thread.  This is mainly a helper/diagnostic function.
 
    .. note::
-      This function does not account for :term:`thread states <thread state>` created
-      by something other than :c:func:`PyGILState_Ensure` (such as :c:func:`PyThreadState_New`).
+      This function may return non-``NULL`` even when the :term:`thread state`
+      is detached.
       Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
       for most cases.
 
-   .. seealso: :c:func:`PyThreadState_Get``
+   .. seealso:: :c:func:`PyThreadState_Get`
 
 .. c:function:: int PyGILState_Check()
 
@@ -1278,11 +1291,11 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    must be :term:`attached <attached thread state>`
 
    .. versionchanged:: 3.9
-      This function now calls the :c:member:`PyThreadState.on_delete` callback.
+      This function now calls the :c:member:`!PyThreadState.on_delete` callback.
       Previously, that happened in :c:func:`PyThreadState_Delete`.
 
    .. versionchanged:: 3.13
-      The :c:member:`PyThreadState.on_delete` callback was removed.
+      The :c:member:`!PyThreadState.on_delete` callback was removed.
 
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
