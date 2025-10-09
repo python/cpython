@@ -299,6 +299,7 @@ PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
 
 PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 
+PyAPI_FUNC(int) PyObject_GetDictPtr(PyObject *obj, PyObject ***dict_ptr);
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
 PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);

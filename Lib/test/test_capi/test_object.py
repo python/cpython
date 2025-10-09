@@ -247,5 +247,24 @@ class CAPITest(unittest.TestCase):
 
         func(object())
 
+    def test_object_getdictptr(self):
+        object_getdictptr = _testcapi.object_getdictptr
+
+        class MyClass:
+            pass
+        obj = MyClass()
+        obj.attr = 123
+
+        dict1 = object_getdictptr(obj)
+        dict2 = obj.__dict__
+        self.assertIs(dict1, dict2)
+
+        class NoDict:
+            __slots__ = ()
+        obj = NoDict()
+
+        self.assertEqual(object_getdictptr(obj), AttributeError)
+
+
 if __name__ == "__main__":
     unittest.main()

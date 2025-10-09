@@ -485,6 +485,28 @@ is_uniquely_referenced(PyObject *self, PyObject *op)
 }
 
 
+static PyObject *
+object_getdictptr(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+
+    PyObject **dict_ptr = UNINITIALIZED_PTR;
+    switch (PyObject_GetDictPtr(obj, &dict_ptr)) {
+        case -1:
+            assert(dict_ptr == NULL);
+            return NULL;
+        case 0:
+            assert(dict_ptr == NULL);
+            return Py_NewRef(PyExc_AttributeError);
+        case 1:
+            return Py_NewRef(*dict_ptr);
+        default:
+            Py_FatalError("PyObject_GetDictPtr() returned invalid code");
+            Py_UNREACHABLE();
+    }
+}
+
+
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},
@@ -511,6 +533,7 @@ static PyMethodDef test_methods[] = {
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {"is_uniquely_referenced", is_uniquely_referenced, METH_O},
+    {"object_getdictptr", object_getdictptr, METH_O},
     {NULL},
 };
 
