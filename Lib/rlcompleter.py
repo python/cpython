@@ -192,6 +192,8 @@ class Completer:
                         matches.append(self._callable_postfix(value, match))
                     elif hasattr(thisobject, word):
                         matches.append(match)
+                    elif word in getattr(type(thisobject), '__slots__', ()):
+                        matches.append(match)
             if matches or not noprefix:
                 break
             if noprefix == '_':
