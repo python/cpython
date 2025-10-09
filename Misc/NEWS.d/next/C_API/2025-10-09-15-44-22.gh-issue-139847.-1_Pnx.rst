@@ -1,3 +1,3 @@
 Deprecate the private functions :c:func:`!_PyType_Lookup` and
-:c:func:`!_PyType_LookupRef`: use the new public :c:func:`PyType_LookupRef`
+:c:func:`!_PyType_LookupRef`: use the new public :c:func:`PyType_Lookup`
 function instead. Patch by Victor Stinner.
