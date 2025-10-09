@@ -1080,6 +1080,11 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0,
     included in the zip file. There is no de-duplication of multiple 
     hard links to the same file that is provided by other formats, 
     e.g. tar.
+
+    CAUTION: This function uses os.walk() to prepare the list of files to be
+    included in the zip file. os.walk() does not keep track of which
+    directories have already been visited. A symbolic link to a directory that
+    is a parent of itself will lead to infinite recursion.
     """
     import zipfile  # late import for breaking circular dependency
 
