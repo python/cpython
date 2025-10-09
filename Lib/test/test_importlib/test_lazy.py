@@ -195,7 +195,7 @@ class LazyLoaderTests(unittest.TestCase):
             sys.modules['json'] = module
             loader.exec_module(module)
 
-            # Trigger load with attribute lookup, ensure expected behavior
+            # Trigger load with attribute lookup, ensure expected behavior.
             test_load = module.loads('{}')
             self.assertEqual(test_load, {})
 
