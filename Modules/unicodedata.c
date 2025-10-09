@@ -17,6 +17,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 #include <stdbool.h>
@@ -1020,13 +1021,14 @@ is_unified_ideograph(Py_UCS4 code)
         (0x3400 <= code && code <= 0x4DBF)   || /* CJK Ideograph Extension A */
         (0x4E00 <= code && code <= 0x9FFF)   || /* CJK Ideograph */
         (0x20000 <= code && code <= 0x2A6DF) || /* CJK Ideograph Extension B */
-        (0x2A700 <= code && code <= 0x2B739) || /* CJK Ideograph Extension C */
+        (0x2A700 <= code && code <= 0x2B73F) || /* CJK Ideograph Extension C */
         (0x2B740 <= code && code <= 0x2B81D) || /* CJK Ideograph Extension D */
-        (0x2B820 <= code && code <= 0x2CEA1) || /* CJK Ideograph Extension E */
+        (0x2B820 <= code && code <= 0x2CEAD) || /* CJK Ideograph Extension E */
         (0x2CEB0 <= code && code <= 0x2EBE0) || /* CJK Ideograph Extension F */
         (0x2EBF0 <= code && code <= 0x2EE5D) || /* CJK Ideograph Extension I */
         (0x30000 <= code && code <= 0x3134A) || /* CJK Ideograph Extension G */
-        (0x31350 <= code && code <= 0x323AF);   /* CJK Ideograph Extension H */
+        (0x31350 <= code && code <= 0x323AF) || /* CJK Ideograph Extension H */
+        (0x323B0 <= code && code <= 0x33479);   /* CJK Ideograph Extension J */
 }
 
 /* macros used to determine if the given code point is in the PUA range that

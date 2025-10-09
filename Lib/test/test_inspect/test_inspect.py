@@ -1778,13 +1778,54 @@ class TestClassesAndFunctions(unittest.TestCase):
 
 class TestFormatAnnotation(unittest.TestCase):
     def test_typing_replacement(self):
-        from test.typinganndata.ann_module9 import ann, ann1
+        from test.typinganndata.ann_module9 import A, ann, ann1
         self.assertEqual(inspect.formatannotation(ann), 'List[str] | int')
         self.assertEqual(inspect.formatannotation(ann1), 'List[testModule.typing.A] | int')
+
+        self.assertEqual(inspect.formatannotation(A, 'testModule.typing'), 'A')
+        self.assertEqual(inspect.formatannotation(A, 'other'), 'testModule.typing.A')
+        self.assertEqual(
+            inspect.formatannotation(ann1, 'testModule.typing'),
+            'List[testModule.typing.A] | int',
+        )
 
     def test_forwardref(self):
         fwdref = ForwardRef('fwdref')
         self.assertEqual(inspect.formatannotation(fwdref), 'fwdref')
+
+    def test_formatannotationrelativeto(self):
+        from test.typinganndata.ann_module9 import A, ann1
+
+        # Builtin types:
+        self.assertEqual(
+            inspect.formatannotationrelativeto(object)(type),
+            'type',
+        )
+
+        # Custom types:
+        self.assertEqual(
+            inspect.formatannotationrelativeto(None)(A),
+            'testModule.typing.A',
+        )
+
+        class B: ...
+        B.__module__ = 'testModule.typing'
+
+        self.assertEqual(
+            inspect.formatannotationrelativeto(B)(A),
+            'A',
+        )
+
+        self.assertEqual(
+            inspect.formatannotationrelativeto(object)(A),
+            'testModule.typing.A',
+        )
+
+        # Not an instance of "type":
+        self.assertEqual(
+            inspect.formatannotationrelativeto(A)(ann1),
+            'List[testModule.typing.A] | int',
+        )
 
 
 class TestIsMethodDescriptor(unittest.TestCase):
@@ -4220,8 +4261,14 @@ class TestSignatureObject(unittest.TestCase):
 
             self.assertEqual(self.signature(C, follow_wrapped=False),
                              varargs_signature)
-            self.assertEqual(self.signature(C.__new__, follow_wrapped=False),
-                             varargs_signature)
+            if support.MISSING_C_DOCSTRINGS:
+                self.assertRaisesRegex(
+                    ValueError, "no signature found",
+                    self.signature, C.__new__, follow_wrapped=False,
+                )
+            else:
+                self.assertEqual(self.signature(C.__new__, follow_wrapped=False),
+                                varargs_signature)
 
     def test_signature_on_class_with_wrapped_new(self):
         with self.subTest('FunctionType'):

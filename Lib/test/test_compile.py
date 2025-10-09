@@ -651,6 +651,21 @@ class TestSpecifics(unittest.TestCase):
                 compile('pass', filename, 'exec')
         self.assertRaises(TypeError, compile, 'pass', list(b'file.py'), 'exec')
 
+    def test_compile_filename_refleak(self):
+        # Regression tests for reference leak in PyUnicode_FSDecoder.
+        # See https://github.com/python/cpython/issues/139748.
+        mortal_str = 'this is a mortal string'
+        # check error path when 'mode' AC conversion failed
+        self.assertRaises(TypeError, compile, b'', mortal_str, mode=1234)
+        # check error path when 'optimize' AC conversion failed
+        self.assertRaises(OverflowError, compile, b'', mortal_str,
+                          'exec', optimize=1 << 1000)
+        # check error path when 'dont_inherit' AC conversion failed
+        class EvilBool:
+            def __bool__(self): raise ValueError
+        self.assertRaises(ValueError, compile, b'', mortal_str,
+                          'exec', dont_inherit=EvilBool())
+
     @support.cpython_only
     def test_same_filename_used(self):
         s = """def f(): pass\ndef g(): pass"""
@@ -1614,6 +1629,17 @@ class TestSpecifics(unittest.TestCase):
         # See gh-109889
         def f():
             a if (1 if b else c) else d
+
+    def test_lineno_propagation_empty_blocks(self):
+        # Smoke test. See gh-138714.
+        def f():
+            while name:
+                try:
+                    break
+                except:
+                    pass
+            else:
+                1 if 1 else 1
 
     def test_global_declaration_in_except_used_in_else(self):
         # See gh-111123
