@@ -314,7 +314,7 @@ Type Objects
 
    *name* must be a :class:`str`.
 
-   * If found, set *\*attr* to a strong reference and return ``1``.
+   * If found, set *\*attr* to a :term:`strong reference` and return ``1``.
    * If not found, set *\*attr* to ``NULL`` and return ``0``.
    * On error, set an exception and return ``-1``.
 
