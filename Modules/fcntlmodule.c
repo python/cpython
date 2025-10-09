@@ -11,6 +11,13 @@
 #include <fcntl.h>                // fcntl()
 #include <string.h>               // memcpy()
 #include <sys/ioctl.h>            // ioctl()
+
+#ifdef F_PREALLOCATE
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#include <stddef.h>  /* for offsetof */
+#endif
 #ifdef HAVE_SYS_FILE_H
 #  include <sys/file.h>           // flock()
 #endif
@@ -502,6 +509,119 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
     Py_RETURN_NONE;
 }
 
+#ifdef F_PREALLOCATE
+
+typedef struct {
+    PyObject_HEAD
+    struct fstore fstore;
+} fstoreObject;
+
+static int
+fstore_init(fstoreObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {
+        "flags", "posmode", "offset", "length", NULL
+    };
+    int flags = 0;
+    int posmode = 0;
+    off_t offset = 0;
+    off_t length = 0;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iiLL", kwlist,
+                                     &flags, &posmode, &offset, &length)) {
+        return -1;
+    }
+
+    memset(&self->fstore, 0, sizeof(struct fstore));
+    self->fstore.fst_flags = flags;
+    self->fstore.fst_posmode = posmode;
+    self->fstore.fst_offset = offset;
+    self->fstore.fst_length = length;
+
+    return 0;
+}
+
+static Py_ssize_t
+fstore_getbuffer(fstoreObject *self, Py_buffer *view, int flags)
+{
+    return PyBuffer_FillInfo(view, (PyObject *)self, (void *)&self->fstore,
+                             sizeof(struct fstore), 1, flags);
+}
+
+static PyObject *
+fstore_frombytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"data", NULL};
+    PyObject *data_obj;
+    Py_buffer view;
+    fstoreObject *self;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", kwlist, &data_obj)) {
+        return NULL;
+    }
+
+    if (PyObject_GetBuffer(data_obj, &view, PyBUF_SIMPLE) < 0) {
+        return NULL;
+    }
+
+    if (view.len != sizeof(struct fstore)) {
+        PyBuffer_Release(&view);
+        PyErr_Format(PyExc_ValueError,
+                     "data must be exactly %zu bytes, got %zd bytes",
+                     sizeof(struct fstore), view.len);
+        return NULL;
+    }
+
+    self = (fstoreObject *)PyType_GenericNew(type, NULL, NULL);
+    if (self == NULL) {
+        PyBuffer_Release(&view);
+        return NULL;
+    }
+
+    memcpy(&self->fstore, view.buf, sizeof(struct fstore));
+    PyBuffer_Release(&view);
+
+    return (PyObject *)self;
+}
+
+static PyMethodDef fstore_methods[] = {
+    {"frombytes", (PyCFunction)fstore_frombytes, METH_VARARGS | METH_KEYWORDS | METH_CLASS,
+     "Create an fstore instance from bytes data."},
+    {NULL, NULL}
+};
+
+static PyMemberDef fstore_members[] = {
+    {"flags", Py_T_INT, offsetof(fstoreObject, fstore.fst_flags), 0,
+     "Allocation flags"},
+    {"posmode", Py_T_INT, offsetof(fstoreObject, fstore.fst_posmode), 0,
+     "Position mode"},
+    {"offset", Py_T_LONGLONG, offsetof(fstoreObject, fstore.fst_offset), 0,
+     "File offset"},
+    {"length", Py_T_LONGLONG, offsetof(fstoreObject, fstore.fst_length), 0,
+     "Length to allocate"},
+    {"bytesalloc", Py_T_LONGLONG, offsetof(fstoreObject, fstore.fst_bytesalloc), Py_READONLY,
+     "Number of bytes actually allocated"},
+    {NULL},
+};
+
+static PyType_Slot fstore_slots[] = {
+    {Py_tp_init, (initproc)fstore_init},
+    {Py_tp_members, fstore_members},
+    {Py_tp_methods, fstore_methods},
+    {Py_tp_doc, "fstore structure for F_PREALLOCATE"},
+    {Py_bf_getbuffer, (getbufferproc)fstore_getbuffer},
+    {0, NULL},
+};
+
+static PyType_Spec fstore_spec = {
+    .name = "fcntl.fstore",
+    .basicsize = sizeof(fstoreObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = fstore_slots,
+};
+
+#endif /* F_PREALLOCATE */
+
 /* List of functions */
 
 static PyMethodDef fcntl_methods[] = {
@@ -687,6 +807,24 @@ all_ins(PyObject* m)
 #ifdef F_NOCACHE
     if (PyModule_AddIntMacro(m, F_NOCACHE)) return -1;
 #endif
+#ifdef F_PREALLOCATE
+    if (PyModule_AddIntMacro(m, F_PREALLOCATE)) return -1;
+#endif
+#ifdef F_ALLOCATECONTIG
+    if (PyModule_AddIntMacro(m, F_ALLOCATECONTIG)) return -1;
+#endif
+#ifdef F_ALLOCATEALL
+    if (PyModule_AddIntMacro(m, F_ALLOCATEALL)) return -1;
+#endif
+#ifdef F_ALLOCATEPERSIST
+    if (PyModule_AddIntMacro(m, F_ALLOCATEPERSIST)) return -1;
+#endif
+#ifdef F_PEOFPOSMODE
+    if (PyModule_AddIntMacro(m, F_PEOFPOSMODE)) return -1;
+#endif
+#ifdef F_VOLPOSMODE
+    if (PyModule_AddIntMacro(m, F_VOLPOSMODE)) return -1;
+#endif
 
 /* FreeBSD specifics */
 #ifdef F_DUP2FD
@@ -808,6 +946,18 @@ fcntl_exec(PyObject *module)
     if (all_ins(module) < 0) {
         return -1;
     }
+
+#ifdef F_PREALLOCATE
+    PyObject *fstore_type = PyType_FromSpec(&fstore_spec);
+    if (fstore_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(module, "fstore", fstore_type) < 0) {
+        Py_DECREF(fstore_type);
+        return -1;
+    }
+#endif
+
     return 0;
 }
 
