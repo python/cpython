@@ -404,8 +404,7 @@ instantiation, of which this module provides three different variants:
 
       A sequence of ``(name, value)`` pairs containing user-defined extra
       HTTP response headers to add to each successful HTTP status 200 response.
-      All other status code responses will not include these headers.
-
+      These headers are not included in other status code responses.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
