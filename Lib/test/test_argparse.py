@@ -30,7 +30,6 @@ from test.support.i18n_helper import TestTranslationsBase, update_translation_sn
 from unittest import mock
 
 
-
 py = os.path.basename(sys.executable)
 
 
