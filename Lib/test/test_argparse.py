@@ -7128,7 +7128,9 @@ class TestColorized(TestCase):
     def setUp(self):
         super().setUp()
         # Ensure color even if ran with NO_COLOR=1
+        original_can_colorize = _colorize.can_colorize
         _colorize.can_colorize = lambda *args, **kwargs: True
+        self.addCleanup(setattr, _colorize, 'can_colorize', original_can_colorize)
         self.theme = _colorize.get_theme(force_color=True).argparse
 
     def test_argparse_color(self):
@@ -7355,28 +7357,17 @@ class TestColorized(TestCase):
                  {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
 
-
-class TestColorEnvironment(TestCase):
-    """Tests for color behavior with environment variable changes."""
-
-    def test_subparser_respects_no_color_environment(self):
-        # Cleanup to ensure environment is properly reset
-        self.addCleanup(os.environ.pop, 'FORCE_COLOR', None)
-        self.addCleanup(os.environ.pop, 'NO_COLOR', None)
-
-        # Create parser with FORCE_COLOR, capturing colored prog
-        os.environ['FORCE_COLOR'] = '1'
-        parser = argparse.ArgumentParser(prog='complex')
+    def test_subparser_prog_is_stored_without_color(self):
+        parser = argparse.ArgumentParser(prog='complex', color=True)
         sub = parser.add_subparsers(dest='command')
         demo_parser = sub.add_parser('demo')
 
-        # Switch to NO_COLOR environment
-        os.environ.pop('FORCE_COLOR', None)
-        os.environ['NO_COLOR'] = '1'
+        self.assertNotIn('\x1b[', demo_parser.prog)
 
-        # Subparser help should have no color codes
+        demo_parser.color = False
         help_text = demo_parser.format_help()
         self.assertNotIn('\x1b[', help_text)
+
 
 class TestModule(unittest.TestCase):
     def test_deprecated__version__(self):
