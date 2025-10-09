@@ -1,20 +1,28 @@
+import ctypes
 import unittest
-from ctypes import *
+from ctypes import Structure, POINTER, pointer, c_char_p
 
-################################################################
-#
-# The incomplete pointer example from the tutorial
-#
+# String-based "incomplete pointers" were implemented in ctypes 0.6.3 (2003, when
+# ctypes was an external project). They made obsolete by the current
+# incomplete *types* (setting `_fields_` late) in 0.9.5 (2005).
+# ctypes was added to Python 2.5 (2006), without any mention in docs.
 
-class MyTestCase(unittest.TestCase):
+# This tests incomplete pointer example from the old tutorial
+# (https://svn.python.org/projects/ctypes/tags/release_0_6_3/ctypes/docs/tutorial.stx)
+class TestSetPointerType(unittest.TestCase):
+    def tearDown(self):
+        ctypes._pointer_type_cache_fallback.clear()
 
     def test_incomplete_example(self):
-        lpcell = POINTER("cell")
+        with self.assertWarns(DeprecationWarning):
+            lpcell = POINTER("cell")
         class cell(Structure):
             _fields_ = [("name", c_char_p),
                         ("next", lpcell)]
 
-        SetPointerType(lpcell, cell)
+        lpcell.set_type(cell)
+
+        self.assertIs(POINTER(cell), lpcell)
 
         c1 = cell()
         c1.name = b"foo"
@@ -32,11 +40,16 @@ class MyTestCase(unittest.TestCase):
             p = p.next[0]
         self.assertEqual(result, [b"foo", b"bar"] * 4)
 
-        # to not leak references, we must clean _pointer_type_cache
-        from ctypes import _pointer_type_cache
-        del _pointer_type_cache[cell]
+    def test_deprecation(self):
+        with self.assertWarns(DeprecationWarning):
+            lpcell = POINTER("cell")
+        class cell(Structure):
+            _fields_ = [("name", c_char_p),
+                        ("next", lpcell)]
 
-################################################################
+        lpcell.set_type(cell)
+        self.assertIs(POINTER(cell), lpcell)
+
 
 if __name__ == '__main__':
     unittest.main()

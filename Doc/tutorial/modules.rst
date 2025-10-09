@@ -27,14 +27,16 @@ called :file:`fibo.py` in the current directory with the following contents::
 
    # Fibonacci numbers module
 
-   def fib(n):    # write Fibonacci series up to n
+   def fib(n):
+       """Write Fibonacci series up to n."""
        a, b = 0, 1
        while a < n:
            print(a, end=' ')
            a, b = b, a+b
        print()
 
-   def fib2(n):   # return Fibonacci series up to n
+   def fib2(n):
+       """Return Fibonacci series up to n."""
        result = []
        a, b = 0, 1
        while a < n:
@@ -183,7 +185,7 @@ The Module Search Path
 
 .. index:: triple: module; search; path
 
-When a module named :mod:`spam` is imported, the interpreter first searches for
+When a module named :mod:`!spam` is imported, the interpreter first searches for
 a built-in module with that name. These module names are listed in
 :data:`sys.builtin_module_names`. If not found, it then searches for a file
 named :file:`spam.py` in a list of directories given by the variable
@@ -264,7 +266,7 @@ Some tips for experts:
 Standard Modules
 ================
 
-.. index:: module: sys
+.. index:: pair: module; sys
 
 Python comes with a library of standard modules, described in a separate
 document, the Python Library Reference ("Library Reference" hereafter).  Some
@@ -345,7 +347,7 @@ Without arguments, :func:`dir` lists the names you have defined currently::
 
 Note that it lists all types of names: variables, modules, functions, etc.
 
-.. index:: module: builtins
+.. index:: pair: module; builtins
 
 :func:`dir` does not list the names of built-in functions and variables.  If you
 want a list of those, they are defined in the standard module
@@ -389,7 +391,7 @@ Packages
 ========
 
 Packages are a way of structuring Python's module namespace by using "dotted
-module names".  For example, the module name :mod:`A.B` designates a submodule
+module names".  For example, the module name :mod:`!A.B` designates a submodule
 named ``B`` in a package named ``A``.  Just like the use of modules saves the
 authors of different modules from having to worry about each other's global
 variable names, the use of dotted module names saves the authors of multi-module
@@ -437,8 +439,9 @@ When importing the package, Python searches through the directories on
 ``sys.path`` looking for the package subdirectory.
 
 The :file:`__init__.py` files are required to make Python treat directories
-containing the file as packages.  This prevents directories with a common name,
-such as ``string``, unintentionally hiding valid modules that occur later
+containing the file as packages (unless using a :term:`namespace package`, a
+relatively advanced feature). This prevents directories with a common name,
+such as ``string``, from unintentionally hiding valid modules that occur later
 on the module search path. In the simplest case, :file:`__init__.py` can just be
 an empty file, but it can also execute initialization code for the package or
 set the ``__all__`` variable, described later.
@@ -448,7 +451,7 @@ example::
 
    import sound.effects.echo
 
-This loads the submodule :mod:`sound.effects.echo`.  It must be referenced with
+This loads the submodule :mod:`!sound.effects.echo`.  It must be referenced with
 its full name. ::
 
    sound.effects.echo.echofilter(input, output, delay=0.7, atten=4)
@@ -457,7 +460,7 @@ An alternative way of importing the submodule is::
 
    from sound.effects import echo
 
-This also loads the submodule :mod:`echo`, and makes it available without its
+This also loads the submodule :mod:`!echo`, and makes it available without its
 package prefix, so it can be used as follows::
 
    echo.echofilter(input, output, delay=0.7, atten=4)
@@ -466,8 +469,8 @@ Yet another variation is to import the desired function or variable directly::
 
    from sound.effects.echo import echofilter
 
-Again, this loads the submodule :mod:`echo`, but this makes its function
-:func:`echofilter` directly available::
+Again, this loads the submodule :mod:`!echo`, but this makes its function
+:func:`!echofilter` directly available::
 
    echofilter(input, output, delay=0.7, atten=4)
 
@@ -510,11 +513,27 @@ code::
    __all__ = ["echo", "surround", "reverse"]
 
 This would mean that ``from sound.effects import *`` would import the three
-named submodules of the :mod:`sound.effects` package.
+named submodules of the :mod:`!sound.effects` package.
+
+Be aware that submodules might become shadowed by locally defined names. For
+example, if you added a ``reverse`` function to the
+:file:`sound/effects/__init__.py` file, the ``from sound.effects import *``
+would only import the two submodules ``echo`` and ``surround``, but *not* the
+``reverse`` submodule, because it is shadowed by the locally defined
+``reverse`` function::
+
+    __all__ = [
+        "echo",      # refers to the 'echo.py' file
+        "surround",  # refers to the 'surround.py' file
+        "reverse",   # !!! refers to the 'reverse' function now !!!
+    ]
+
+    def reverse(msg: str):  # <-- this name shadows the 'reverse.py' submodule
+        return msg[::-1]    #     in the case of a 'from sound.effects import *'
 
 If ``__all__`` is not defined, the statement ``from sound.effects import *``
-does *not* import all submodules from the package :mod:`sound.effects` into the
-current namespace; it only ensures that the package :mod:`sound.effects` has
+does *not* import all submodules from the package :mod:`!sound.effects` into the
+current namespace; it only ensures that the package :mod:`!sound.effects` has
 been imported (possibly running any initialization code in :file:`__init__.py`)
 and then imports whatever names are defined in the package.  This includes any
 names defined (and submodules explicitly loaded) by :file:`__init__.py`.  It
@@ -525,8 +544,8 @@ previous :keyword:`import` statements.  Consider this code::
    import sound.effects.surround
    from sound.effects import *
 
-In this example, the :mod:`echo` and :mod:`surround` modules are imported in the
-current namespace because they are defined in the :mod:`sound.effects` package
+In this example, the :mod:`!echo` and :mod:`!surround` modules are imported in the
+current namespace because they are defined in the :mod:`!sound.effects` package
 when the ``from...import`` statement is executed.  (This also works when
 ``__all__`` is defined.)
 
@@ -545,31 +564,32 @@ packages.
 Intra-package References
 ------------------------
 
-When packages are structured into subpackages (as with the :mod:`sound` package
+When packages are structured into subpackages (as with the :mod:`!sound` package
 in the example), you can use absolute imports to refer to submodules of siblings
-packages.  For example, if the module :mod:`sound.filters.vocoder` needs to use
-the :mod:`echo` module in the :mod:`sound.effects` package, it can use ``from
+packages.  For example, if the module :mod:`!sound.filters.vocoder` needs to use
+the :mod:`!echo` module in the :mod:`!sound.effects` package, it can use ``from
 sound.effects import echo``.
 
 You can also write relative imports, with the ``from module import name`` form
 of import statement.  These imports use leading dots to indicate the current and
-parent packages involved in the relative import.  From the :mod:`surround`
+parent packages involved in the relative import.  From the :mod:`!surround`
 module for example, you might use::
 
    from . import echo
    from .. import formats
    from ..filters import equalizer
 
-Note that relative imports are based on the name of the current module.  Since
-the name of the main module is always ``"__main__"``, modules intended for use
+Note that relative imports are based on the name of the current module's package.
+Since the main module does not have a package, modules intended for use
 as the main module of a Python application must always use absolute imports.
 
 
 Packages in Multiple Directories
 --------------------------------
 
-Packages support one more special attribute, :attr:`__path__`.  This is
-initialized to be a list containing the name of the directory holding the
+Packages support one more special attribute, :attr:`~module.__path__`.  This is
+initialized to be a :term:`sequence` of strings containing the name of the
+directory holding the
 package's :file:`__init__.py` before the code in that file is executed.  This
 variable can be modified; doing so affects future searches for modules and
 subpackages contained in the package.

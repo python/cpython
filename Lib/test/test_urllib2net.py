@@ -4,7 +4,6 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import ResourceDenied
-from test.test_urllib2 import sanepathname2url
 
 import os
 import socket
@@ -133,8 +132,11 @@ class OtherNetworkTests(unittest.TestCase):
     # XXX The rest of these tests aren't very good -- they don't check much.
     # They do sometimes catch some major disasters, though.
 
+    @support.requires_resource('walltime')
     def test_ftp(self):
+        # Testing the same URL twice exercises the caching in CacheFTPHandler
         urls = [
+            'ftp://www.pythontest.net/README',
             'ftp://www.pythontest.net/README',
             ('ftp://www.pythontest.net/non-existent-file',
              None, urllib.error.URLError),
@@ -148,7 +150,7 @@ class OtherNetworkTests(unittest.TestCase):
             f.write('hi there\n')
             f.close()
             urls = [
-                'file:' + sanepathname2url(os.path.abspath(TESTFN)),
+                urllib.request.pathname2url(os.path.abspath(TESTFN), add_scheme=True),
                 ('file:///nonsensename/etc/passwd', None,
                  urllib.error.URLError),
                 ]
@@ -194,6 +196,7 @@ class OtherNetworkTests(unittest.TestCase):
             self.assertEqual(res.geturl(),
                     "http://www.pythontest.net/index.html#frag")
 
+    @support.requires_resource('walltime')
     def test_redirect_url_withfrag(self):
         redirect_url_with_frag = "http://www.pythontest.net/redir/with_frag/"
         with socket_helper.transient_internet(redirect_url_with_frag):
@@ -214,27 +217,6 @@ class OtherNetworkTests(unittest.TestCase):
             request.add_header('User-Agent','Test-Agent')
             opener.open(request)
             self.assertEqual(request.get_header('User-agent'),'Test-Agent')
-
-    @unittest.skip('XXX: http://www.imdb.com is gone')
-    def test_sites_no_connection_close(self):
-        # Some sites do not send Connection: close header.
-        # Verify that those work properly. (#issue12576)
-
-        URL = 'http://www.imdb.com' # mangles Connection:close
-
-        with socket_helper.transient_internet(URL):
-            try:
-                with urllib.request.urlopen(URL) as res:
-                    pass
-            except ValueError:
-                self.fail("urlopen failed for site not sending \
-                           Connection:close")
-            else:
-                self.assertTrue(res)
-
-            req = urllib.request.urlopen(URL)
-            res = req.read()
-            self.assertTrue(res)
 
     def _test_urls(self, urls, handlers, retry=True):
         import time
@@ -332,6 +314,7 @@ class TimeoutTest(unittest.TestCase):
 
     FTP_HOST = 'ftp://www.pythontest.net/'
 
+    @support.requires_resource('walltime')
     def test_ftp_basic(self):
         self.assertIsNone(socket.getdefaulttimeout())
         with socket_helper.transient_internet(self.FTP_HOST, timeout=None):
@@ -350,6 +333,7 @@ class TimeoutTest(unittest.TestCase):
                 socket.setdefaulttimeout(None)
             self.assertEqual(u.fp.fp.raw._sock.gettimeout(), 60)
 
+    @support.requires_resource('walltime')
     def test_ftp_no_timeout(self):
         self.assertIsNone(socket.getdefaulttimeout())
         with socket_helper.transient_internet(self.FTP_HOST):
@@ -361,6 +345,7 @@ class TimeoutTest(unittest.TestCase):
                 socket.setdefaulttimeout(None)
             self.assertIsNone(u.fp.fp.raw._sock.gettimeout())
 
+    @support.requires_resource('walltime')
     def test_ftp_timeout(self):
         with socket_helper.transient_internet(self.FTP_HOST):
             u = _urlopen_with_retry(self.FTP_HOST, timeout=60)

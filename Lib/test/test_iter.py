@@ -5,11 +5,13 @@ import unittest
 from test.support import cpython_only
 from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
+from test.support import BrokenIter
 import pickle
 import collections.abc
 import functools
 import contextlib
 import builtins
+import traceback
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -302,7 +304,7 @@ class TestCase(unittest.TestCase):
             # listiter_reduce_general
             self.assertEqual(
                 run("reversed", orig["reversed"](list(range(8)))),
-                (iter, ([],))
+                (reversed, ([],))
             )
 
             for case in types:
@@ -347,6 +349,31 @@ class TestCase(unittest.TestCase):
             state[0] = i+1
             return i
         self.check_iterator(iter(spam, 20), list(range(10)), pickle=False)
+
+    def test_iter_function_concealing_reentrant_exhaustion(self):
+        # gh-101892: Test two-argument iter() with a function that
+        # exhausts its associated iterator but forgets to either return
+        # a sentinel value or raise StopIteration.
+        HAS_MORE = 1
+        NO_MORE = 2
+
+        def exhaust(iterator):
+            """Exhaust an iterator without raising StopIteration."""
+            list(iterator)
+
+        def spam():
+            # Touching the iterator with exhaust() below will call
+            # spam() once again so protect against recursion.
+            if spam.is_recursive_call:
+                return NO_MORE
+            spam.is_recursive_call = True
+            exhaust(spam.iterator)
+            return HAS_MORE
+
+        spam.is_recursive_call = False
+        spam.iterator = iter(spam, NO_MORE)
+        with self.assertRaises(StopIteration):
+            next(spam.iterator)
 
     # Test exception propagation through function iterator
     def test_exception_function(self):
@@ -1117,6 +1144,46 @@ class TestCase(unittest.TestCase):
         for typ in (DefaultIterClass, NoIterClass):
             self.assertRaises(TypeError, iter, typ())
         self.assertRaises(ZeroDivisionError, iter, BadIterableClass())
+
+    def test_exception_locations(self):
+        # The location of an exception raised from __init__ or
+        # __next__ should be the iterator expression
+
+        def init_raises():
+            try:
+                for x in BrokenIter(init_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
+        def next_raises():
+            try:
+                for x in BrokenIter(next_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
+        def iter_raises():
+            try:
+                for x in BrokenIter(iter_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
+                               (next_raises, "BrokenIter(next_raises=True)"),
+                               (iter_raises, "BrokenIter(iter_raises=True)"),
+                              ]:
+            with self.subTest(func):
+                exc = func()
+                f = traceback.extract_tb(exc.__traceback__)[0]
+                indent = 16
+                co = func.__code__
+                self.assertEqual(f.lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
+                                 expected)
+
 
 
 if __name__ == "__main__":

@@ -1,12 +1,9 @@
-#! /usr/bin/env python3
-
 """Base16, Base32, Base64 (RFC 3548), Base85 and Ascii85 data encodings"""
 
 # Modified 04-Oct-1995 by Jack Jansen to use binascii module
 # Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
 # Modified 22-May-2007 by Guido van Rossum to use bytes everywhere
 
-import re
 import struct
 import binascii
 
@@ -18,7 +15,7 @@ __all__ = [
     'b64encode', 'b64decode', 'b32encode', 'b32decode',
     'b32hexencode', 'b32hexdecode', 'b16encode', 'b16decode',
     # Base85 and Ascii85 encodings
-    'b85encode', 'b85decode', 'a85encode', 'a85decode',
+    'b85encode', 'b85decode', 'a85encode', 'a85decode', 'z85encode', 'z85decode',
     # Standard Base64 encoding
     'standard_b64encode', 'standard_b64decode',
     # Some common Base64 alternatives.  As referenced by RFC 3458, see thread
@@ -164,7 +161,6 @@ _b32tab2 = {}
 _b32rev = {}
 
 def _b32encode(alphabet, s):
-    global _b32tab2
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     if alphabet not in _b32tab2:
@@ -200,7 +196,6 @@ def _b32encode(alphabet, s):
     return bytes(encoded)
 
 def _b32decode(alphabet, s, casefold=False, map01=None):
-    global _b32rev
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     if alphabet not in _b32rev:
@@ -288,7 +283,7 @@ def b16decode(s, casefold=False):
     s = _bytes_from_decode_data(s)
     if casefold:
         s = s.upper()
-    if re.search(b'[^0-9A-F]', s):
+    if s.translate(None, delete=b'0123456789ABCDEF'):
         raise binascii.Error('Non-base16 digit found')
     return binascii.unhexlify(s)
 
@@ -334,7 +329,7 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
 
     wrapcol controls whether the output should have newline (b'\\n') characters
     added to it. If this is non-zero, each output line will be at most this
-    many characters long.
+    many characters long, excluding the trailing newline.
 
     pad controls whether the input is padded to a multiple of 4 before
     encoding. Note that the btoa implementation always pads.
@@ -499,6 +494,33 @@ def b85decode(b):
         result = result[:-padding]
     return result
 
+_z85alphabet = (b'0123456789abcdefghijklmnopqrstuvwxyz'
+                b'ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
+# Translating b85 valid but z85 invalid chars to b'\x00' is required
+# to prevent them from being decoded as b85 valid chars.
+_z85_b85_decode_diff = b';_`|~'
+_z85_decode_translation = bytes.maketrans(
+    _z85alphabet + _z85_b85_decode_diff,
+    _b85alphabet + b'\x00' * len(_z85_b85_decode_diff)
+)
+_z85_encode_translation = bytes.maketrans(_b85alphabet, _z85alphabet)
+
+def z85encode(s):
+    """Encode bytes-like object b in z85 format and return a bytes object."""
+    return b85encode(s).translate(_z85_encode_translation)
+
+def z85decode(s):
+    """Decode the z85-encoded bytes-like object or ASCII string b
+
+    The result is returned as a bytes object.
+    """
+    s = _bytes_from_decode_data(s)
+    s = s.translate(_z85_decode_translation)
+    try:
+        return b85decode(s)
+    except ValueError as e:
+        raise ValueError(e.args[0].replace('base85', 'z85')) from None
+
 # Legacy interface.  This code could be cleaned up since I don't believe
 # binascii has any line length limitations.  It just doesn't seem worth it
 # though.  The files should be opened in binary mode.
@@ -558,12 +580,12 @@ def decodebytes(s):
 def main():
     """Small main program"""
     import sys, getopt
-    usage = f"""usage: {sys.argv[0]} [-h|-d|-e|-u|-t] [file|-]
+    usage = f"""usage: {sys.argv[0]} [-h|-d|-e|-u] [file|-]
         -h: print this help message and exit
         -d, -u: decode
         -e: encode (default)"""
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hdeut')
+        opts, args = getopt.getopt(sys.argv[1:], 'hdeu')
     except getopt.error as msg:
         sys.stdout = sys.stderr
         print(msg)

@@ -1,1 +1,0 @@
-Cleanup Windows 7 specific special handling. Patch by Max Bachmann.

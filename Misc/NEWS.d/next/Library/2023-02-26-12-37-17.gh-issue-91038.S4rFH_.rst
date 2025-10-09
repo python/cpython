@@ -1,1 +1,0 @@
-:meth:`platform.platform` now has boolean default arguments.

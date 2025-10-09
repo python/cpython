@@ -3,7 +3,8 @@ import itertools
 import shlex
 import string
 import unittest
-from unittest import mock
+from test.support import cpython_only
+from test.support import import_helper
 
 
 # The original test data set was from shellwords, by Hartmut Goebel.
@@ -329,6 +330,7 @@ class ShlexTest(unittest.TestCase):
         unsafe = '"`$\\!' + unicode_sample
 
         self.assertEqual(shlex.quote(''), "''")
+        self.assertEqual(shlex.quote(None), "''")
         self.assertEqual(shlex.quote(safeunquoted), safeunquoted)
         self.assertEqual(shlex.quote('test file name'), "'test file name'")
         for u in unsafe:
@@ -337,6 +339,8 @@ class ShlexTest(unittest.TestCase):
         for u in unsafe:
             self.assertEqual(shlex.quote("test%s'name'" % u),
                              "'test%s'\"'\"'name'\"'\"''" % u)
+        self.assertRaises(TypeError, shlex.quote, 42)
+        self.assertRaises(TypeError, shlex.quote, b"abc")
 
     def testJoin(self):
         for split_command, command in [
@@ -363,6 +367,10 @@ class ShlexTest(unittest.TestCase):
         self.assertEqual(shlex_instance.punctuation_chars, punctuation_chars)
         with self.assertRaises(AttributeError):
             shlex_instance.punctuation_chars = False
+
+    @cpython_only
+    def test_lazy_imports(self):
+        import_helper.ensure_lazy_imports('shlex', {'collections', 're', 'os'})
 
 
 # Allow this test to be used with old shlex.py

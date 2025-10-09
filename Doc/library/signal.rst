@@ -1,5 +1,5 @@
-:mod:`signal` --- Set handlers for asynchronous events
-======================================================
+:mod:`!signal` --- Set handlers for asynchronous events
+=======================================================
 
 .. module:: signal
    :synopsis: Set handlers for asynchronous events.
@@ -26,9 +26,9 @@ explicitly reset (Python emulates the BSD style interface regardless of the
 underlying implementation), with the exception of the handler for
 :const:`SIGCHLD`, which follows the underlying implementation.
 
-On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, signals
-are emulated and therefore behave differently. Several functions and signals
-are not available on these platforms.
+On WebAssembly platforms, signals are emulated and therefore behave
+differently. Several functions and signals are not available on these
+platforms.
 
 Execution of Python signal handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -157,6 +157,8 @@ The variables defined in the :mod:`signal` module are:
 
    Alias to :data:`SIGCHLD`.
 
+   .. availability:: not macOS.
+
 .. data:: SIGCONT
 
    Continue the process if it is currently stopped
@@ -209,8 +211,8 @@ The variables defined in the :mod:`signal` module are:
 
 .. data:: SIGSTKFLT
 
-    Stack fault on coprocessor. The Linux kernel does not raise this signal: it
-    can only be raised in user space.
+   Stack fault on coprocessor. The Linux kernel does not raise this signal: it
+   can only be raised in user space.
 
    .. availability:: Linux.
 
@@ -409,7 +411,7 @@ The :mod:`signal` module defines the following functions:
 
    See the :manpage:`pidfd_send_signal(2)` man page for more information.
 
-   .. availability:: Linux >= 5.1
+   .. availability:: Linux >= 5.1, Android >= :func:`build-time <sys.getandroidapilevel>` API level 31
    .. versionadded:: 3.9
 
 
@@ -423,7 +425,7 @@ The :mod:`signal` module defines the following functions:
    signal to a particular Python thread would be to force a running system call
    to fail with :exc:`InterruptedError`.
 
-   Use :func:`threading.get_ident()` or the :attr:`~threading.Thread.ident`
+   Use :func:`threading.get_ident` or the :attr:`~threading.Thread.ident`
    attribute of :class:`threading.Thread` objects to get a suitable value
    for *thread_id*.
 
@@ -476,11 +478,11 @@ The :mod:`signal` module defines the following functions:
    .. versionadded:: 3.3
 
 
-.. function:: setitimer(which, seconds, interval=0.0)
+.. function:: setitimer(which, seconds, interval=0)
 
    Sets given interval timer (one of :const:`signal.ITIMER_REAL`,
    :const:`signal.ITIMER_VIRTUAL` or :const:`signal.ITIMER_PROF`) specified
-   by *which* to fire after *seconds* (float is accepted, different from
+   by *which* to fire after *seconds* (rounded up to microseconds, different from
    :func:`alarm`) and after that every *interval* seconds (if *interval*
    is non-zero). The interval timer specified by *which* can be cleared by
    setting *seconds* to zero.
@@ -491,12 +493,17 @@ The :mod:`signal` module defines the following functions:
    :const:`signal.ITIMER_VIRTUAL` sends :const:`SIGVTALRM`,
    and :const:`signal.ITIMER_PROF` will deliver :const:`SIGPROF`.
 
-   The old values are returned as a tuple: (delay, interval).
+   The old values are returned as a two-tuple of floats:
+   (``delay``, ``interval``).
 
    Attempting to pass an invalid interval timer will cause an
    :exc:`ItimerError`.
 
    .. availability:: Unix.
+
+   .. versionchanged:: next
+      Accepts any real numbers as *seconds* and *interval*, not only integers
+      or floats.
 
 
 .. function:: getitimer(which)
@@ -508,10 +515,12 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: set_wakeup_fd(fd, *, warn_on_full_buffer=True)
 
-   Set the wakeup file descriptor to *fd*.  When a signal is received, the
-   signal number is written as a single byte into the fd.  This can be used by
-   a library to wakeup a poll or select call, allowing the signal to be fully
-   processed.
+   Set the wakeup file descriptor to *fd*.  When a signal your program has
+   registered a signal handler for is received, the signal number is written as
+   a single byte into the fd.  If you haven't registered a signal handler for
+   the signals you care about, then nothing will be written to the wakeup fd.
+   This can be used by a library to wakeup a poll or select call, allowing the
+   signal to be fully processed.
 
    The old wakeup fd is returned (or -1 if file descriptor wakeup was not
    enabled).  If *fd* is -1, file descriptor wakeup is disabled.
@@ -562,7 +571,7 @@ The :mod:`signal` module defines the following functions:
 
    Note that installing a signal handler with :func:`signal` will reset the
    restart behaviour to interruptible by implicitly calling
-   :c:func:`siginterrupt` with a true *flag* value for the given signal.
+   :c:func:`!siginterrupt` with a true *flag* value for the given signal.
 
 
 .. function:: signal(signalnum, handler)
@@ -656,7 +665,7 @@ The :mod:`signal` module defines the following functions:
 .. function:: sigtimedwait(sigset, timeout)
 
    Like :func:`sigwaitinfo`, but takes an additional *timeout* argument
-   specifying a timeout. If *timeout* is specified as :const:`0`, a poll is
+   specifying a timeout. If *timeout* is specified as ``0``, a poll is
    performed. Returns :const:`None` if a timeout occurs.
 
    .. availability:: Unix.
@@ -671,6 +680,9 @@ The :mod:`signal` module defines the following functions:
       The function is now retried with the recomputed *timeout* if interrupted
       by a signal not in *sigset* and the signal handler does not raise an
       exception (see :pep:`475` for the rationale).
+
+   .. versionchanged:: next
+      Accepts any real number as *timeout*, not only integer or float.
 
 
 .. _signal-example:

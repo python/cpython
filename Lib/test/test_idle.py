@@ -3,14 +3,11 @@ from test.support.import_helper import import_module
 from test.support import check_sanitizer
 
 if check_sanitizer(address=True, memory=True):
-    raise unittest.SkipTest("Tests involvin libX11 can SEGFAULT on ASAN/MSAN builds")
+    # See gh-90791 for details
+    raise unittest.SkipTest("Tests involving libX11 can SEGFAULT on ASAN/MSAN builds")
 
-# Skip test_idle if _tkinter wasn't built, if tkinter is missing,
-# if tcl/tk is not the 8.5+ needed for ttk widgets,
-# or if idlelib is missing (not installed).
+# Skip test_idle if _tkinter, tkinter, or idlelib are missing.
 tk = import_module('tkinter')  # Also imports _tkinter.
-if tk.TkVersion < 8.5:
-    raise unittest.SkipTest("IDLE requires tk 8.5 or later.")
 idlelib = import_module('idlelib')
 
 # Before importing and executing more of idlelib,
@@ -19,7 +16,7 @@ idlelib.testing = True
 
 # Unittest.main and test.libregrtest.runtest.runtest_inner
 # call load_tests, when present here, to discover tests to run.
-from idlelib.idle_test import load_tests
+from idlelib.idle_test import load_tests  # noqa: F401
 
 if __name__ == '__main__':
     tk.NoDefaultRoot()

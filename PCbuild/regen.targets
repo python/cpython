@@ -13,8 +13,6 @@
     <_ASTOutputs Include="$(PySourcePath)Python\Python-ast.c">
       <Argument>-C</Argument>
     </_ASTOutputs>
-    <_OpcodeSources Include="$(PySourcePath)Tools\build\generate_opcode_h.py;$(PySourcePath)Lib\opcode.py" />
-    <_OpcodeOutputs Include="$(PySourcePath)Include\opcode.h;$(PySourcePath)Include\internal\pycore_opcode.h;$(PySourcePath)Python\opcode_targets.h" />
     <_TokenSources Include="$(PySourcePath)Grammar\Tokens" />
     <_TokenOutputs Include="$(PySourcePath)Doc\library\token-list.inc">
       <Format>rst</Format>
@@ -30,11 +28,24 @@
     </_TokenOutputs>
     <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
     <_KeywordOutputs Include="$(PySourcePath)Lib\keyword.py" />
+    <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
+    <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(PySourcePath)PC\pyconfig.h;$(PySourcePath)Tools\jit\**"/>
+    <!-- Need to explicitly enumerate these, since globbing doesn't work for missing outputs: -->
+    <_JITOutputs Include="$(GeneratedJitStencilsDir)jit_stencils.h"/>
+    <_JITOutputs Include="$(GeneratedJitStencilsDir)jit_stencils-aarch64-pc-windows-msvc.h" Condition="$(Platform) == 'ARM64'"/>
+    <_JITOutputs Include="$(GeneratedJitStencilsDir)jit_stencils-i686-pc-windows-msvc.h" Condition="$(Platform) == 'Win32'"/>
+    <_JITOutputs Include="$(GeneratedJitStencilsDir)jit_stencils-x86_64-pc-windows-msvc.h" Condition="$(Platform) == 'x64'"/>
+    <_CasesSources Include="$(PySourcePath)Python\bytecodes.c;$(PySourcePath)Python\optimizer_bytecodes.c;"/>
+    <_CasesOutputs Include="$(PySourcePath)Python\generated_cases.c.h;$(PySourcePath)Include\opcode_ids.h;$(PySourcePath)Include\internal\pycore_uop_ids.h;$(PySourcePath)Python\opcode_targets.h;$(PySourcePath)Include\internal\pycore_opcode_metadata.h;$(PySourcePath)Include\internal\pycore_uop_metadata.h;$(PySourcePath)Python\optimizer_cases.c.h;$(PySourcePath)Lib\_opcode_metadata.py"/>
+    <_SbomSources Include="$(PySourcePath)PCbuild\get_externals.bat" />
+    <_SbomOutputs Include="$(PySourcePath)Misc\externals.spdx.json;$(PySourcePath)Misc\sbom.spdx.json">
+      <Format>json</Format>
+    </_SbomOutputs>
   </ItemGroup>
 
   <Target Name="_TouchRegenSources" Condition="$(ForceRegen) == 'true'">
     <Message Text="Touching source files to force regeneration" Importance="high" />
-    <Touch Files="@(_PegenSources);@(_ASTSources);@(_OpcodeSources);@(_TokenSources);@(_KeywordOutputs)"
+    <Touch Files="@(_PegenSources);@(_ASTSources);@(_TokenSources);@(_KeywordOutputs);@(_CasesSources);@(_SbomSources)"
            AlwaysCreate="False" />
   </Target>
 
@@ -52,16 +63,6 @@
           DependsOnTargets="FindPythonForBuild">
     <Message Text="Regenerate @(_ASTOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
     <Exec Command="$(PythonForBuild) Parser\asdl_c.py Parser\Python.asdl @(_ASTOutputs->'%(Argument) &quot;%(Identity)&quot;',' ')"
-          WorkingDirectory="$(PySourcePath)" />
-  </Target>
-
-  <Target Name="_RegenOpcodes"
-          Inputs="@(_OpcodeSources)" Outputs="@(_OpcodeOutputs)"
-          DependsOnTargets="FindPythonForBuild">
-    <Message Text="Regenerate @(_OpcodeOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
-    <Exec Command="$(PythonForBuild) Tools\build\generate_opcode_h.py Lib\opcode.py Include\opcode.h Include\internal\pycore_opcode.h"
-          WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) Python\makeopcodetargets.py Python\opcode_targets.h"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 
@@ -89,9 +90,60 @@
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 
-  <Target Name="Regen"
+  <Target Name="_RegenCases"
+          Inputs="@(_CasesSources)" Outputs="@(_CasesOutputs)"
+          DependsOnTargets="FindPythonForBuild">
+    <Message Text="Regenerate cases" Importance="high" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\opcode_id_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\target_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\uop_id_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\py_metadata_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\tier1_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\tier2_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\optimizer_generator.py Python\optimizer_bytecodes.c Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\opcode_metadata_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\uop_metadata_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
+  <Target Name="_RegenJIT"
+          Condition="'$(UseJIT)' == 'true'"
+          DependsOnTargets="FindPythonForBuild"
+          Inputs="@(_JITSources)"
+          Outputs="@(_JITOutputs)">
+    <PropertyGroup>
+      <JITArgs Condition="$(Platform) == 'ARM64'">aarch64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'Win32'">i686-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
+    </PropertyGroup>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs) --output-dir "$(GeneratedJitStencilsDir)" --pyconfig-dir "$(PySourcePath)PC"'/>
+  </Target>
+  <Target Name="_CleanJIT" AfterTargets="Clean">
+    <Delete Files="@(_JITOutputs)"/>
+  </Target>
+
+  <Target Name="_RegenNoPGUpdate"
           Condition="$(Configuration) != 'PGUpdate'"
-          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenOpcodes;_RegenTokens;_RegenKeywords;_RegenGlobalObjects">
+          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenTokens;_RegenKeywords;_RegenGlobalObjects">
+  </Target>
+
+  <Target Name="_RegenSbom"
+          DependsOnTargets="FindPythonForBuild"
+          Inputs="@(_SbomSources)"
+          Outputs="@(_SbomOutputs)">
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\generate_sbom.py"'/>
+  </Target>
+
+  <Target Name="Regen" DependsOnTargets="_RegenNoPGUpdate;_RegenJIT;_RegenCases;_RegenSbom">
     <Message Text="Generated sources are up to date" Importance="high" />
   </Target>
 
@@ -104,20 +156,19 @@
     <_LicenseSources Include="$(PySourcePath)LICENSE;
                               $(PySourcePath)PC\crtlicense.txt;
                               $(bz2Dir)LICENSE;
-                              $(opensslOutDir)LICENSE;
-                              $(libffiDir)LICENSE;" />
+                              $(libffiDir)LICENSE;
+                              $(zstdDir)\LICENSE;" />
+    <_LicenseSources Include="$(opensslOutDir)LICENSE.txt" Condition="Exists('$(opensslOutDir)LICENSE.txt')" />
+    <_LicenseSources Include="$(opensslOutDir)LICENSE" Condition="!Exists('$(opensslOutDir)LICENSE.txt')" />
     <_LicenseSources Include="$(tcltkDir)tcllicense.terms;
-                              $(tcltkDir)tklicense.terms;
-                              $(tcltkDir)tixlicense.terms" Condition="$(IncludeTkinter)" />
+                              $(tcltkDir)tklicense.terms" Condition="$(IncludeTkinter)" />
   </ItemGroup>
 
   <Target Name="_RegenTestFrozenmain" Inputs="@(_TestFrozenSources)" Outputs="@(_TestFrozenOutputs)"
           Condition="($(Platform) == 'Win32' or $(Platform) == 'x64') and
                      $(Configuration) != 'PGInstrument' and $(Configuration) != 'PGUpdate'">
     <Message Text="Regenerate @(_TestFrozenOutputs->'%(Filename)%(Extension)', ' ')" Importance="high" />
-    <Exec Command='setlocal
-set PYTHONPATH=$(PySourcePath)Lib
-"$(PythonExe)" Programs\freeze_test_frozenmain.py Programs\test_frozenmain.h'
+    <Exec Command='setlocal%0D%0Aset PYTHONPATH=$(PySourcePath)Lib%0D%0A"$(PythonExe)" Programs\freeze_test_frozenmain.py Programs\test_frozenmain.h'
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 

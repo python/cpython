@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """The Tab Nanny despises ambiguous indentation.  She knows no mercy.
 
 tabnanny -- Detection of ambiguous indentation
@@ -18,8 +16,6 @@ releases; such changes may not be backward compatible.
 # XXX The API needs to undergo changes however; the current code is too
 # XXX script-like.  This will be addressed later.
 
-__version__ = "6"
-
 import os
 import sys
 import tokenize
@@ -35,6 +31,7 @@ def errprint(*args):
         sys.stderr.write(sep + str(arg))
         sep = " "
     sys.stderr.write("\n")
+    sys.exit(1)
 
 def main():
     import getopt
@@ -44,7 +41,6 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], "qv")
     except getopt.error as msg:
         errprint(msg)
-        return
     for o, a in opts:
         if o == '-q':
             filename_only = filename_only + 1
@@ -52,7 +48,6 @@ def main():
             verbose = verbose + 1
     if not args:
         errprint("Usage:", sys.argv[0], "[-v] file_or_directory ...")
-        return
     for arg in args:
         check(arg)
 
@@ -110,6 +105,10 @@ def check(file):
 
     except IndentationError as msg:
         errprint("%r: Indentation Error: %s" % (file, msg))
+        return
+
+    except SyntaxError as msg:
+        errprint("%r: Syntax Error: %s" % (file, msg))
         return
 
     except NannyNag as nag:
@@ -273,6 +272,12 @@ def format_witnesses(w):
     return prefix + " " + ', '.join(firsts)
 
 def process_tokens(tokens):
+    try:
+        _process_tokens(tokens)
+    except TabError as e:
+        raise NannyNag(e.lineno, e.msg, e.text)
+
+def _process_tokens(tokens):
     INDENT = tokenize.INDENT
     DEDENT = tokenize.DEDENT
     NEWLINE = tokenize.NEWLINE
@@ -325,6 +330,15 @@ def process_tokens(tokens):
                 witness = indents[-1].not_equal_witness(thisguy)
                 msg = "indent not equal e.g. " + format_witnesses(witness)
                 raise NannyNag(start[0], msg, line)
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "6"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == '__main__':

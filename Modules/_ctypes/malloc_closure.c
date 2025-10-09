@@ -1,16 +1,17 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+
 #include <Python.h>
 #include <ffi.h>
 #ifdef MS_WIN32
-#include <windows.h>
+#  include <windows.h>
 #else
-#include <sys/mman.h>
-#include <unistd.h>
-# if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
-#  define MAP_ANONYMOUS MAP_ANON
-# endif
+#  include <sys/mman.h>
+#  include <unistd.h>             // sysconf()
+#  if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
+#    define MAP_ANONYMOUS MAP_ANON
+#  endif
 #endif
 #include "ctypes.h"
 
@@ -25,6 +26,11 @@
 
 
 /******************************************************************/
+
+
+#ifdef Py_GIL_DISABLED
+static PyMutex malloc_closure_lock;
+#endif
 
 typedef union _tagITEM {
     ffi_closure closure;
@@ -109,9 +115,11 @@ void Py_ffi_closure_free(void *p)
     }
 #endif
 #endif
+    FT_MUTEX_LOCK(&malloc_closure_lock);
     ITEM *item = (ITEM *)p;
     item->next = free_list;
     free_list = item;
+    FT_MUTEX_UNLOCK(&malloc_closure_lock);
 }
 
 /* return one item from the free list, allocating more if needed */
@@ -130,11 +138,15 @@ void *Py_ffi_closure_alloc(size_t size, void** codeloc)
     }
 #endif
 #endif
+    FT_MUTEX_LOCK(&malloc_closure_lock);
     ITEM *item;
-    if (!free_list)
+    if (!free_list) {
         more_core();
-    if (!free_list)
+    }
+    if (!free_list) {
+        FT_MUTEX_UNLOCK(&malloc_closure_lock);
         return NULL;
+    }
     item = free_list;
     free_list = item->next;
 #ifdef _M_ARM
@@ -143,5 +155,6 @@ void *Py_ffi_closure_alloc(size_t size, void** codeloc)
 #else
     *codeloc = (void *)item;
 #endif
+    FT_MUTEX_UNLOCK(&malloc_closure_lock);
     return (void *)item;
 }

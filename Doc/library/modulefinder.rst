@@ -1,5 +1,5 @@
-:mod:`modulefinder` --- Find modules used by a script
-=====================================================
+:mod:`!modulefinder` --- Find modules used by a script
+======================================================
 
 .. module:: modulefinder
    :synopsis: Find modules used by a script.

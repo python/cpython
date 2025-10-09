@@ -2,20 +2,20 @@
 
 .. _floatobjects:
 
-Floating Point Objects
-----------------------
+Floating-Point Objects
+======================
 
-.. index:: object: floating point
+.. index:: pair: object; floating-point
 
 
 .. c:type:: PyFloatObject
 
-   This subtype of :c:type:`PyObject` represents a Python floating point object.
+   This subtype of :c:type:`PyObject` represents a Python floating-point object.
 
 
 .. c:var:: PyTypeObject PyFloat_Type
 
-   This instance of :c:type:`PyTypeObject` represents the Python floating point
+   This instance of :c:type:`PyTypeObject` represents the Python floating-point
    type.  This is the same object as :class:`float` in the Python layer.
 
 
@@ -45,14 +45,14 @@ Floating Point Objects
 .. c:function:: double PyFloat_AsDouble(PyObject *pyfloat)
 
    Return a C :c:expr:`double` representation of the contents of *pyfloat*.  If
-   *pyfloat* is not a Python floating point object but has a :meth:`__float__`
+   *pyfloat* is not a Python floating-point object but has a :meth:`~object.__float__`
    method, this method will first be called to convert *pyfloat* into a float.
-   If ``__float__()`` is not defined then it falls back to :meth:`__index__`.
+   If :meth:`!__float__` is not defined then it falls back to :meth:`~object.__index__`.
    This method returns ``-1.0`` upon failure, so one should call
    :c:func:`PyErr_Occurred` to check for errors.
 
    .. versionchanged:: 3.8
-      Use :meth:`__index__` if available.
+      Use :meth:`~object.__index__` if available.
 
 
 .. c:function:: double PyFloat_AS_DOUBLE(PyObject *pyfloat)
@@ -79,7 +79,7 @@ Floating Point Objects
 
 
 Pack and Unpack functions
-=========================
+-------------------------
 
 The pack and unpack functions provide an efficient platform-independent way to
 store floating-point values as byte strings. The Pack routines produce a bytes
@@ -96,6 +96,9 @@ NaNs (if such things exist on the platform) isn't handled correctly, and
 attempting to unpack a bytes string containing an IEEE INF or NaN will raise an
 exception.
 
+Note that NaNs type may not be preserved on IEEE platforms (silent NaN become
+quiet), for example on x86 systems in 32-bit mode.
+
 On non-IEEE platforms with more precision, or larger dynamic range, than IEEE
 754 supports, not all values can be packed; on non-IEEE platforms with less
 precision, or smaller dynamic range, not all values can be unpacked. What
@@ -104,12 +107,12 @@ happens in such cases is partly accidental (alas).
 .. versionadded:: 3.11
 
 Pack functions
---------------
+^^^^^^^^^^^^^^
 
 The pack routines write 2, 4 or 8 bytes, starting at *p*. *le* is an
 :c:expr:`int` argument, non-zero if you want the bytes string in little-endian
 format (exponent last, at ``p+1``, ``p+3``, or ``p+6`` ``p+7``), zero if you
-want big-endian format (exponent first, at *p*). The :c:data:`PY_BIG_ENDIAN`
+want big-endian format (exponent first, at *p*). The :c:macro:`PY_BIG_ENDIAN`
 constant can be used to use the native endian: it is equal to ``1`` on big
 endian processor, or ``0`` on little endian processor.
 
@@ -121,26 +124,26 @@ There are two problems on non-IEEE platforms:
 * What this does is undefined if *x* is a NaN or infinity.
 * ``-0.0`` and ``+0.0`` produce the same bytes string.
 
-.. c:function:: int PyFloat_Pack2(double x, unsigned char *p, int le)
+.. c:function:: int PyFloat_Pack2(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary16 half-precision format.
 
-.. c:function:: int PyFloat_Pack4(double x, unsigned char *p, int le)
+.. c:function:: int PyFloat_Pack4(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary32 single precision format.
 
-.. c:function:: int PyFloat_Pack8(double x, unsigned char *p, int le)
+.. c:function:: int PyFloat_Pack8(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary64 double precision format.
 
 
 Unpack functions
-----------------
+^^^^^^^^^^^^^^^^
 
 The unpack routines read 2, 4 or 8 bytes, starting at *p*.  *le* is an
 :c:expr:`int` argument, non-zero if the bytes string is in little-endian format
 (exponent last, at ``p+1``, ``p+3`` or ``p+6`` and ``p+7``), zero if big-endian
-(exponent first, at *p*). The :c:data:`PY_BIG_ENDIAN` constant can be used to
+(exponent first, at *p*). The :c:macro:`PY_BIG_ENDIAN` constant can be used to
 use the native endian: it is equal to ``1`` on big endian processor, or ``0``
 on little endian processor.
 
@@ -151,14 +154,14 @@ Return value: The unpacked double.  On error, this is ``-1.0`` and
 Note that on a non-IEEE platform this will refuse to unpack a bytes string that
 represents a NaN or infinity.
 
-.. c:function:: double PyFloat_Unpack2(const unsigned char *p, int le)
+.. c:function:: double PyFloat_Unpack2(const char *p, int le)
 
    Unpack the IEEE 754 binary16 half-precision format as a C double.
 
-.. c:function:: double PyFloat_Unpack4(const unsigned char *p, int le)
+.. c:function:: double PyFloat_Unpack4(const char *p, int le)
 
    Unpack the IEEE 754 binary32 single precision format as a C double.
 
-.. c:function:: double PyFloat_Unpack8(const unsigned char *p, int le)
+.. c:function:: double PyFloat_Unpack8(const char *p, int le)
 
    Unpack the IEEE 754 binary64 double precision format as a C double.

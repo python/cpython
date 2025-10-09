@@ -1,5 +1,5 @@
-:mod:`wsgiref` --- WSGI Utilities and Reference Implementation
-==============================================================
+:mod:`!wsgiref` --- WSGI Utilities and Reference Implementation
+===============================================================
 
 .. module:: wsgiref
    :synopsis: WSGI Utilities and Reference Implementation.
@@ -119,7 +119,8 @@ in type annotations.
    applications to set up dummy environments.  It should NOT be used by actual WSGI
    servers or applications, since the data is fake!
 
-   Example usage::
+   Example usage (see also :func:`~wsgiref.simple_server.demo_app`
+   for another example)::
 
       from wsgiref.util import setup_testing_defaults
       from wsgiref.simple_server import make_server
@@ -180,7 +181,7 @@ also provides these miscellaneous utilities:
           print(chunk)
 
    .. versionchanged:: 3.11
-      Support for :meth:`__getitem__` method has been removed.
+      Support for :meth:`~object.__getitem__` method has been removed.
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools
@@ -201,8 +202,9 @@ manipulation of WSGI response headers using a mapping-like interface.
    an empty list.
 
    :class:`Headers` objects support typical mapping operations including
-   :meth:`__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,
-   :meth:`__delitem__` and :meth:`__contains__`.  For each of
+   :meth:`~object.__getitem__`, :meth:`~dict.get`, :meth:`~object.__setitem__`,
+   :meth:`~dict.setdefault`,
+   :meth:`~object.__delitem__` and :meth:`~object.__contains__`.  For each of
    these methods, the key is the header name (treated case-insensitively), and the
    value is the first value associated with that header name.  Setting a header
    deletes any existing values for that header, then adds a new value at the end of
@@ -310,6 +312,8 @@ request.  (E.g., using the :func:`shift_path_info` function from
    in the *environ* parameter.  It's useful for verifying that a WSGI server (such
    as :mod:`wsgiref.simple_server`) is able to run a simple WSGI application
    correctly.
+
+   The *start_response* callable should follow the :class:`.StartResponse` protocol.
 
 
 .. class:: WSGIServer(server_address, RequestHandlerClass)
@@ -520,8 +524,10 @@ input, output, and error streams.
    want to subclass this instead of :class:`BaseCGIHandler`.
 
    This class is a subclass of :class:`BaseHandler`.  It overrides the
-   :meth:`__init__`, :meth:`get_stdin`, :meth:`get_stderr`, :meth:`add_cgi_vars`,
-   :meth:`_write`, and :meth:`_flush` methods to support explicitly setting the
+   :meth:`!__init__`, :meth:`~BaseHandler.get_stdin`,
+   :meth:`~BaseHandler.get_stderr`, :meth:`~BaseHandler.add_cgi_vars`,
+   :meth:`~BaseHandler._write`, and :meth:`~BaseHandler._flush` methods to
+   support explicitly setting the
    environment and streams via the constructor.  The supplied environment and
    streams are stored in the :attr:`stdin`, :attr:`stdout`, :attr:`stderr`, and
    :attr:`environ` attributes.
@@ -676,7 +682,9 @@ input, output, and error streams.
 
       This method can access the current error using ``sys.exception()``,
       and should pass that information to *start_response* when calling it (as
-      described in the "Error Handling" section of :pep:`3333`).
+      described in the "Error Handling" section of :pep:`3333`). In particular,
+      the *start_response* callable should follow the :class:`.StartResponse`
+      protocol.
 
       The default implementation just uses the :attr:`error_status`,
       :attr:`error_headers`, and :attr:`error_body` attributes to generate an output
@@ -778,10 +786,10 @@ in :pep:`3333`.
 .. versionadded:: 3.11
 
 
-.. class:: StartResponse()
+.. class:: StartResponse
 
-   A :class:`typing.Protocol` describing `start_response()
-   <https://peps.python.org/pep-3333/#the-start-response-callable>`_
+   A :class:`typing.Protocol` describing :pep:`start_response()
+   <3333#the-start-response-callable>`
    callables (:pep:`3333`).
 
 .. data:: WSGIEnvironment
@@ -794,18 +802,18 @@ in :pep:`3333`.
 
 .. class:: InputStream()
 
-   A :class:`typing.Protocol` describing a `WSGI Input Stream
-   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+   A :class:`typing.Protocol` describing a :pep:`WSGI Input Stream
+   <3333#input-and-error-streams>`.
 
 .. class:: ErrorStream()
 
-   A :class:`typing.Protocol` describing a `WSGI Error Stream
-   <https://peps.python.org/pep-3333/#input-and-error-streams>`_.
+   A :class:`typing.Protocol` describing a :pep:`WSGI Error Stream
+   <3333#input-and-error-streams>`.
 
 .. class:: FileWrapper()
 
-   A :class:`typing.Protocol` describing a `file wrapper
-   <https://peps.python.org/pep-3333/#optional-platform-specific-file-handling>`_.
+   A :class:`typing.Protocol` describing a :pep:`file wrapper
+   <3333#optional-platform-specific-file-handling>`.
    See :class:`wsgiref.util.FileWrapper` for a concrete implementation of this
    protocol.
 
@@ -813,7 +821,8 @@ in :pep:`3333`.
 Examples
 --------
 
-This is a working "Hello World" WSGI application::
+This is a working "Hello World" WSGI application, where the *start_response*
+callable should follow the :class:`.StartResponse` protocol::
 
    """
    Every WSGI application must have an application object - a callable
@@ -862,7 +871,7 @@ directory and port number (default: 8000) on the command line::
         fn = os.path.join(path, environ["PATH_INFO"][1:])
         if "." not in fn.split(os.path.sep)[-1]:
             fn = os.path.join(fn, "index.html")
-        mime_type = mimetypes.guess_type(fn)[0]
+        mime_type = mimetypes.guess_file_type(fn)[0]
 
         # Return 200 OK if file exists, otherwise 404 Not Found
         if os.path.exists(fn):

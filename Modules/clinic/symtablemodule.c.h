@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_symtable_symtable__doc__,
 "symtable($module, source, filename, startstr, /)\n"
@@ -26,7 +22,7 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *source;
-    PyObject *filename;
+    PyObject *filename = NULL;
     const char *startstr;
 
     if (!_PyArg_CheckPositional("symtable", nargs, 3, 3)) {
@@ -52,6 +48,9 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     return_value = _symtable_symtable_impl(module, source, filename, startstr);
 
 exit:
+    /* Cleanup for filename */
+    Py_XDECREF(filename);
+
     return return_value;
 }
-/*[clinic end generated code: output=07716ddbd6c7efe1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a8545d9a1efe837 input=a9049054013a1b77]*/

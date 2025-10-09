@@ -6,11 +6,12 @@ machinery = test_util.import_importlib('importlib.machinery')
 
 import os.path
 import sys
+from test import support
 from test.support import import_helper
 from test.support import os_helper
+import traceback
 import types
 import unittest
-import warnings
 
 
 class ImportModuleTests:
@@ -95,7 +96,8 @@ class ImportModuleTests:
 
 (Frozen_ImportModuleTests,
  Source_ImportModuleTests
- ) = test_util.test_both(ImportModuleTests, init=init)
+ ) = test_util.test_both(
+     ImportModuleTests, init=init, util=util, machinery=machinery)
 
 
 class FindLoaderTests:
@@ -103,29 +105,26 @@ class FindLoaderTests:
     FakeMetaFinder = None
 
     def test_sys_modules(self):
-        # If a module with __loader__ is in sys.modules, then return it.
+        # If a module with __spec__.loader is in sys.modules, then return it.
         name = 'some_mod'
         with test_util.uncache(name):
             module = types.ModuleType(name)
             loader = 'a loader!'
-            module.__loader__ = loader
+            module.__spec__ = self.machinery.ModuleSpec(name, loader)
             sys.modules[name] = module
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                found = self.init.find_loader(name)
-            self.assertEqual(loader, found)
+            spec = self.util.find_spec(name)
+            self.assertIsNotNone(spec)
+            self.assertEqual(spec.loader, loader)
 
     def test_sys_modules_loader_is_None(self):
-        # If sys.modules[name].__loader__ is None, raise ValueError.
+        # If sys.modules[name].__spec__.loader is None, raise ValueError.
         name = 'some_mod'
         with test_util.uncache(name):
             module = types.ModuleType(name)
             module.__loader__ = None
             sys.modules[name] = module
             with self.assertRaises(ValueError):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    self.init.find_loader(name)
+                self.util.find_spec(name)
 
     def test_sys_modules_loader_is_not_set(self):
         # Should raise ValueError
@@ -134,24 +133,20 @@ class FindLoaderTests:
         with test_util.uncache(name):
             module = types.ModuleType(name)
             try:
-                del module.__loader__
+                del module.__spec__.loader
             except AttributeError:
                 pass
             sys.modules[name] = module
             with self.assertRaises(ValueError):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    self.init.find_loader(name)
+                self.util.find_spec(name)
 
     def test_success(self):
         # Return the loader found on sys.meta_path.
         name = 'some_mod'
         with test_util.uncache(name):
             with test_util.import_state(meta_path=[self.FakeMetaFinder]):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    warnings.simplefilter('ignore', ImportWarning)
-                    self.assertEqual((name, None), self.init.find_loader(name))
+                spec = self.util.find_spec(name)
+                self.assertEqual((name, (name, None)), (spec.name, spec.loader))
 
     def test_success_path(self):
         # Searching on a path should work.
@@ -159,17 +154,12 @@ class FindLoaderTests:
         path = 'path to some place'
         with test_util.uncache(name):
             with test_util.import_state(meta_path=[self.FakeMetaFinder]):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    warnings.simplefilter('ignore', ImportWarning)
-                    self.assertEqual((name, path),
-                                     self.init.find_loader(name, path))
+                spec = self.util.find_spec(name, path)
+                self.assertEqual(name, spec.name)
 
     def test_nothing(self):
         # None is returned upon failure to find a loader.
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            self.assertIsNone(self.init.find_loader('nevergoingtofindthismodule'))
+        self.assertIsNone(self.util.find_spec('nevergoingtofindthismodule'))
 
 
 class FindLoaderPEP451Tests(FindLoaderTests):
@@ -182,20 +172,8 @@ class FindLoaderPEP451Tests(FindLoaderTests):
 
 (Frozen_FindLoaderPEP451Tests,
  Source_FindLoaderPEP451Tests
- ) = test_util.test_both(FindLoaderPEP451Tests, init=init)
-
-
-class FindLoaderPEP302Tests(FindLoaderTests):
-
-    class FakeMetaFinder:
-        @staticmethod
-        def find_module(name, path=None):
-            return name, path
-
-
-(Frozen_FindLoaderPEP302Tests,
- Source_FindLoaderPEP302Tests
- ) = test_util.test_both(FindLoaderPEP302Tests, init=init)
+ ) = test_util.test_both(
+     FindLoaderPEP451Tests, init=init, util=util, machinery=machinery)
 
 
 class ReloadTests:
@@ -377,10 +355,25 @@ class ReloadTests:
             with self.assertRaises(ModuleNotFoundError):
                 self.init.reload(module)
 
+    def test_reload_traceback_with_non_str(self):
+        # gh-125519
+        with support.captured_stdout() as stdout:
+            try:
+                self.init.reload("typing")
+            except TypeError as exc:
+                traceback.print_exception(exc, file=stdout)
+            else:
+                self.fail("Expected TypeError to be raised")
+        printed_traceback = stdout.getvalue()
+        self.assertIn("TypeError", printed_traceback)
+        self.assertNotIn("AttributeError", printed_traceback)
+        self.assertNotIn("module.__spec__.name", printed_traceback)
+
 
 (Frozen_ReloadTests,
  Source_ReloadTests
- ) = test_util.test_both(ReloadTests, init=init, util=util)
+ ) = test_util.test_both(
+     ReloadTests, init=init, util=util, machinery=machinery)
 
 
 class InvalidateCacheTests:
@@ -390,8 +383,6 @@ class InvalidateCacheTests:
         class InvalidatingNullFinder:
             def __init__(self, *ignored):
                 self.called = False
-            def find_module(self, *args):
-                return None
             def invalidate_caches(self):
                 self.called = True
 
@@ -416,7 +407,8 @@ class InvalidateCacheTests:
 
 (Frozen_InvalidateCacheTests,
  Source_InvalidateCacheTests
- ) = test_util.test_both(InvalidateCacheTests, init=init)
+ ) = test_util.test_both(
+     InvalidateCacheTests, init=init, util=util, machinery=machinery)
 
 
 class FrozenImportlibTests(unittest.TestCase):
@@ -438,8 +430,7 @@ class StartupTests:
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
                 with self.subTest(name=name):
-                    self.assertTrue(hasattr(module, '__loader__'),
-                                    '{!r} lacks a __loader__ attribute'.format(name))
+                    self.assertHasAttr(module, '__loader__')
                     if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__loader__, None)
                     elif self.machinery.FrozenImporter.find_spec(name):
@@ -449,7 +440,7 @@ class StartupTests:
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
                 with self.subTest(name=name):
-                    self.assertTrue(hasattr(module, '__spec__'))
+                    self.assertHasAttr(module, '__spec__')
                     if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__spec__, None)
                     elif self.machinery.FrozenImporter.find_spec(name):
@@ -459,6 +450,58 @@ class StartupTests:
 (Frozen_StartupTests,
  Source_StartupTests
  ) = test_util.test_both(StartupTests, machinery=machinery)
+
+
+class TestModuleAll(unittest.TestCase):
+    def test_machinery(self):
+        extra = (
+            # from importlib._bootstrap and importlib._bootstrap_external
+            'AppleFrameworkLoader',
+            'BYTECODE_SUFFIXES',
+            'BuiltinImporter',
+            'DEBUG_BYTECODE_SUFFIXES',
+            'EXTENSION_SUFFIXES',
+            'ExtensionFileLoader',
+            'FileFinder',
+            'FrozenImporter',
+            'ModuleSpec',
+            'NamespaceLoader',
+            'OPTIMIZED_BYTECODE_SUFFIXES',
+            'PathFinder',
+            'SOURCE_SUFFIXES',
+            'SourceFileLoader',
+            'SourcelessFileLoader',
+            'WindowsRegistryFinder',
+        )
+        support.check__all__(self, machinery['Source'], extra=extra)
+
+    def test_util(self):
+        extra = (
+            # from importlib.abc, importlib._bootstrap
+            # and importlib._bootstrap_external
+            'Loader',
+            'MAGIC_NUMBER',
+            'cache_from_source',
+            'decode_source',
+            'module_from_spec',
+            'source_from_cache',
+            'spec_from_file_location',
+            'spec_from_loader',
+        )
+        support.check__all__(self, util['Source'], extra=extra)
+
+
+class TestDeprecations(unittest.TestCase):
+    def test_machinery_deprecated_attributes(self):
+        from importlib import machinery
+        attributes = (
+            'DEBUG_BYTECODE_SUFFIXES',
+            'OPTIMIZED_BYTECODE_SUFFIXES',
+        )
+        for attr in attributes:
+            with self.subTest(attr=attr):
+                with self.assertWarns(DeprecationWarning):
+                    getattr(machinery, attr)
 
 
 if __name__ == '__main__':

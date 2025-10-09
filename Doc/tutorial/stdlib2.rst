@@ -279,7 +279,7 @@ applications include caching objects that are expensive to create::
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
        d['primary']                # entry was automatically removed
-     File "C:/python312/lib/weakref.py", line 46, in __getitem__
+     File "C:/python315/lib/weakref.py", line 46, in __getitem__
        o = self.data[key]()
    KeyError: 'primary'
 
@@ -293,7 +293,7 @@ Many data structure needs can be met with the built-in list type. However,
 sometimes there is a need for alternative implementations with different
 performance trade-offs.
 
-The :mod:`array` module provides an :class:`~array.array()` object that is like
+The :mod:`array` module provides an :class:`~array.array` object that is like
 a list that stores only homogeneous data and stores it more compactly.  The
 following example shows an array of numbers stored as two byte unsigned binary
 numbers (typecode ``"H"``) rather than the usual 16 bytes per entry for regular
@@ -306,7 +306,7 @@ lists of Python int objects::
    >>> a[1:3]
    array('H', [10, 700])
 
-The :mod:`collections` module provides a :class:`~collections.deque()` object
+The :mod:`collections` module provides a :class:`~collections.deque` object
 that is like a list with faster appends and pops from the left side but slower
 lookups in the middle. These objects are well suited for implementing queues
 and breadth first tree searches::
@@ -352,11 +352,11 @@ not want to run a full list sort::
 
 .. _tut-decimal-fp:
 
-Decimal Floating Point Arithmetic
+Decimal Floating-Point Arithmetic
 =================================
 
 The :mod:`decimal` module offers a :class:`~decimal.Decimal` datatype for
-decimal floating point arithmetic.  Compared to the built-in :class:`float`
+decimal floating-point arithmetic.  Compared to the built-in :class:`float`
 implementation of binary floating point, the class is especially helpful for
 
 * financial applications and other uses which require exact decimal

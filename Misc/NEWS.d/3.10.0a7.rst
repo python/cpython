@@ -4,7 +4,7 @@
 .. release date: 2021-04-05
 .. section: Security
 
-CVE-2021-3426: Remove the ``getfile`` feature of the :mod:`pydoc` module
+:cve:`2021-3426`: Remove the ``getfile`` feature of the :mod:`pydoc` module
 which could be abused to read arbitrary files on the disk (directory
 traversal vulnerability). Moreover, even source code of Python modules can
 contain sensitive data like passwords. Vulnerability reported by David
@@ -83,7 +83,7 @@ instruction dispatch a bit.
 .. nonce: PhaT-B
 .. section: Core and Builtins
 
-Fix reference leak in the :mod:`_hashopenssl` extension. Patch by Pablo
+Fix reference leak in the :mod:`!_hashopenssl` extension. Patch by Pablo
 Galindo.
 
 ..
@@ -113,7 +113,7 @@ in f-strings. Patch by Pablo Galindo.
 .. section: Core and Builtins
 
 Speed up calls to ``map()`` by using the :pep:`590` ``vectorcall`` calling
-convention. Patch by Dong-hee Na.
+convention. Patch by Donghee Na.
 
 ..
 
@@ -215,8 +215,8 @@ a non-Python signal handler.
 .. nonce: VouZjn
 .. section: Core and Builtins
 
-Add ``__match_args__`` to :c:type:`structsequence` based classes. Patch by
-Pablo Galindo.
+Add ``__match_args__`` to :ref:`struct sequence objects <struct-sequence-objects>`.
+Patch by Pablo Galindo.
 
 ..
 
@@ -240,7 +240,7 @@ of processes that don't use sigaltstack.
 .. section: Core and Builtins
 
 Speed up calls to ``filter()`` by using the :pep:`590` ``vectorcall``
-calling convention. Patch by Dong-hee Na.
+calling convention. Patch by Donghee Na.
 
 ..
 
@@ -261,7 +261,7 @@ the annotations _Py_NO_SANITIZE_ADDRESS, _Py_NO_SANITIZE_THREAD, and
 _Py_NO_SANITIZE_MEMORY. Those annotations are no longer needed.
 
 To disable the radix tree map, set a preprocessor flag as follows:
-`-DWITH_PYMALLOC_RADIX_TREE=0`.
+``-DWITH_PYMALLOC_RADIX_TREE=0``.
 
 Co-authored-by: Tim Peters <tim.peters@gmail.com>
 
@@ -274,7 +274,7 @@ Co-authored-by: Tim Peters <tim.peters@gmail.com>
 
 Only handle asynchronous exceptions and requests to drop the GIL when
 returning from a call or on the back edges of loops. Makes sure that
-:meth:`__exit__` is always called in with statements, even for interrupts.
+:meth:`~object.__exit__` is always called in with statements, even for interrupts.
 
 ..
 
@@ -654,7 +654,7 @@ support importlib.invalidate_caches(). Patch by Desmond Cheong.
 .. nonce: 3r0HFY
 .. section: Library
 
-Fail fast in :func:`shutil.move()` to avoid creating destination directories
+Fail fast in :func:`shutil.move` to avoid creating destination directories
 on failure.
 
 ..
@@ -664,11 +664,11 @@ on failure.
 .. nonce: f1dr_5
 .. section: Library
 
-Enum's `repr()` and `str()` have changed: `repr()` is now
-*EnumClass.MemberName* and `str()` is *MemberName*.  Additionally, stdlib
+Enum's ``repr()`` and ``str()`` have changed: ``repr()`` is now
+*EnumClass.MemberName* and ``str()`` is *MemberName*.  Additionally, stdlib
 Enum's whose contents are available as module attributes, such as
-`RegexFlag.IGNORECASE`, have their `repr()` as *module.name*, e.g.
-`re.IGNORECASE`.
+``RegexFlag.IGNORECASE``, have their ``repr()`` as *module.name*, e.g.
+``re.IGNORECASE``.
 
 ..
 
@@ -701,8 +701,8 @@ sessions in :mod:`pdb`'s interactive mode.
 When the :data:`tempfile.tempdir` global variable is set to a value of type
 bytes, it is now handled consistently.  Previously exceptions could be
 raised from some tempfile APIs when the directory did not already exist in
-this situation.  Also ensures that the :func:`tempfile.gettempdir()` and
-:func:`tempfile.gettempdirb()` functions *always* return ``str`` and
+this situation.  Also ensures that the :func:`tempfile.gettempdir` and
+:func:`tempfile.gettempdirb` functions *always* return ``str`` and
 ``bytes`` respectively.
 
 ..
@@ -713,9 +713,9 @@ this situation.  Also ensures that the :func:`tempfile.gettempdir()` and
 .. section: Library
 
 Expose ``X509_V_FLAG_ALLOW_PROXY_CERTS`` as
-:data:`~ssl.VERIFY_ALLOW_PROXY_CERTS` to allow proxy certificate validation
+:const:`~ssl.VERIFY_ALLOW_PROXY_CERTS` to allow proxy certificate validation
 as explained in
-https://www.openssl.org/docs/man1.1.1/man7/proxy-certificates.html.
+https://docs.openssl.org/1.1.1/man7/proxy-certificates/.
 
 ..
 

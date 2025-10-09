@@ -308,7 +308,7 @@ class XMLRPCTestCase(unittest.TestCase):
 
     def test_ssl_presence(self):
         try:
-            import ssl
+            import ssl  # noqa: F401
         except ImportError:
             has_ssl = False
         else:
@@ -504,9 +504,15 @@ class DateTimeTestCase(unittest.TestCase):
         self.assertEqual(str(t), time.strftime("%Y%m%dT%H:%M:%S", d))
 
     def test_datetime_datetime(self):
+        # naive (no tzinfo)
         d = datetime.datetime(2007,1,2,3,4,5)
         t = xmlrpclib.DateTime(d)
         self.assertEqual(str(t), '20070102T03:04:05')
+
+        # aware (with tzinfo): the timezone is ignored
+        d = datetime.datetime(2023, 6, 12, 13, 30, tzinfo=datetime.UTC)
+        t = xmlrpclib.DateTime(d)
+        self.assertEqual(str(t), '20230612T13:30:00')
 
     def test_repr(self):
         d = datetime.datetime(2007,1,2,3,4,5)
@@ -1031,38 +1037,47 @@ class MultiPathServerTestCase(BaseServerTestCase):
         self.assertEqual(p.add(6,8), 6+8)
         self.assertRaises(xmlrpclib.Fault, p.pow, 6, 8)
 
+    @support.requires_resource('walltime')
     def test_path3(self):
         p = xmlrpclib.ServerProxy(URL+"/is/broken")
         self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
 
+    @support.requires_resource('walltime')
     def test_invalid_path(self):
         p = xmlrpclib.ServerProxy(URL+"/invalid")
         self.assertRaises(xmlrpclib.Fault, p.add, 6, 8)
 
+    @support.requires_resource('walltime')
     def test_path_query_fragment(self):
         p = xmlrpclib.ServerProxy(URL+"/foo?k=v#frag")
         self.assertEqual(p.test(), "/foo?k=v#frag")
 
+    @support.requires_resource('walltime')
     def test_path_fragment(self):
         p = xmlrpclib.ServerProxy(URL+"/foo#frag")
         self.assertEqual(p.test(), "/foo#frag")
 
+    @support.requires_resource('walltime')
     def test_path_query(self):
         p = xmlrpclib.ServerProxy(URL+"/foo?k=v")
         self.assertEqual(p.test(), "/foo?k=v")
 
+    @support.requires_resource('walltime')
     def test_empty_path(self):
         p = xmlrpclib.ServerProxy(URL)
         self.assertEqual(p.test(), "/RPC2")
 
+    @support.requires_resource('walltime')
     def test_root_path(self):
         p = xmlrpclib.ServerProxy(URL + "/")
         self.assertEqual(p.test(), "/")
 
+    @support.requires_resource('walltime')
     def test_empty_path_query(self):
         p = xmlrpclib.ServerProxy(URL + "?k=v")
         self.assertEqual(p.test(), "?k=v")
 
+    @support.requires_resource('walltime')
     def test_empty_path_fragment(self):
         p = xmlrpclib.ServerProxy(URL + "#frag")
         self.assertEqual(p.test(), "#frag")

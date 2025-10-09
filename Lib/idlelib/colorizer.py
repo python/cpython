@@ -47,7 +47,7 @@ def make_pat():
                    name not in keyword.kwlist]
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
     comment = any("COMMENT", [r"#[^\n]*"])
-    stringprefix = r"(?i:r|u|f|fr|rf|b|br|rb)?"
+    stringprefix = r"(?i:r|u|f|fr|rf|b|br|rb|t|rt|tr)?"
     sqstring = stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?"
     dqstring = stringprefix + r'"[^"\\\n]*(\\.[^"\\\n]*)*"?'
     sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
@@ -310,7 +310,7 @@ class ColorDelegator(Delegator):
                     # crumb telling the next invocation to resume here
                     # in case update tells us to leave.
                     self.tag_add("TODO", next)
-                self.update()
+                self.update_idletasks()
                 if self.stop_colorizing:
                     if DEBUG: print("colorizing stopped")
                     return

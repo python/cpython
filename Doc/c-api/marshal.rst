@@ -13,11 +13,12 @@ binary mode.
 
 Numeric values are stored with the least significant byte first.
 
-The module supports two versions of the data format: version 0 is the
-historical version, version 1 shares interned strings in the file, and upon
-unmarshalling.  Version 2 uses a binary format for floating point numbers.
-``Py_MARSHAL_VERSION`` indicates the current file format (currently 2).
+The module supports several versions of the data format; see
+the :py:mod:`Python module documentation <marshal>` for details.
 
+.. c:macro:: Py_MARSHAL_VERSION
+
+   The current format version. See :py:data:`marshal.version`.
 
 .. c:function:: void PyMarshal_WriteLongToFile(long value, FILE *file, int version)
 
@@ -25,12 +26,16 @@ unmarshalling.  Version 2 uses a binary format for floating point numbers.
    the least-significant 32 bits of *value*; regardless of the size of the
    native :c:expr:`long` type.  *version* indicates the file format.
 
+   This function can fail, in which case it sets the error indicator.
+   Use :c:func:`PyErr_Occurred` to check for that.
 
 .. c:function:: void PyMarshal_WriteObjectToFile(PyObject *value, FILE *file, int version)
 
    Marshal a Python object, *value*, to *file*.
    *version* indicates the file format.
 
+   This function can fail, in which case it sets the error indicator.
+   Use :c:func:`PyErr_Occurred` to check for that.
 
 .. c:function:: PyObject* PyMarshal_WriteObjectToString(PyObject *value, int version)
 

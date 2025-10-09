@@ -1,24 +1,29 @@
 #include "Python.h"
-#include "pycore_initconfig.h"
 #include "pycore_fileutils.h"     // _Py_fstat_noraise()
+#include "pycore_initconfig.h"
+#include "pycore_pyhash.h"        // _Py_HashSecret_t
+#include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _PyRuntime
 
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // close()
+#endif
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <bcrypt.h>
 #else
-#  include <fcntl.h>
+#  include <fcntl.h>              // O_RDONLY
 #  ifdef HAVE_SYS_STAT_H
 #    include <sys/stat.h>
 #  endif
 #  ifdef HAVE_LINUX_RANDOM_H
-#    include <linux/random.h>
+#    include <linux/random.h>     // GRND_NONBLOCK
 #  endif
 #  if defined(HAVE_SYS_RANDOM_H) && (defined(HAVE_GETRANDOM) || defined(HAVE_GETENTROPY))
-#    include <sys/random.h>
+#    include <sys/random.h>       // getrandom()
 #  endif
 #  if !defined(HAVE_GETRANDOM) && defined(HAVE_GETRANDOM_SYSCALL)
-#    include <sys/syscall.h>
+#    include <sys/syscall.h>      // SYS_getrandom
 #  endif
 #endif
 
@@ -195,7 +200,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
 
    getentropy() is retried if it failed with EINTR: interrupted by a signal. */
 
-#if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
+#if defined(__APPLE__) && _Py__has_attribute(availability)
 static int
 py_getentropy(char *buffer, Py_ssize_t size, int raise)
         __attribute__((availability(macos,introduced=10.12)))
