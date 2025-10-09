@@ -875,6 +875,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             ('X-Test2', 'test2'),
         ]):
             response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
             self.assertEqual(response.getheader("X-Test1"), 'test1')
             self.assertEqual(response.getheader("X-Test2"), 'test2')
 
@@ -888,6 +889,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             with open(os.path.join(self.tempdir_name, 'index.html'), 'wb') as f:
                 f.write(data)
             response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
             self.assertEqual(response.getheader("Set-Cookie"),
                                                 'test1=value1, test2=value2')
             self.assertEqual(response.getheader("X-Test1"), 'value3')
