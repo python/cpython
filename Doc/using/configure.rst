@@ -63,7 +63,7 @@ To build optional modules:
   :mod:`zlib` module.
 
 * `zstd <https://facebook.github.io/zstd/>`_ 1.4.5 is the minimum version for
-  the :mod:`compression.ztsd` module.
+  the :mod:`compression.zstd` module.
 
 For a full list of dependencies required to build all modules and how to install
 them, see the
