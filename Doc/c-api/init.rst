@@ -1094,7 +1094,7 @@ acquire the :term:`GIL`.
 If any thread, other than the finalization thread, attempts to acquire the GIL
 during finalization, either explicitly via :c:func:`PyGILState_Ensure`,
 :c:macro:`Py_END_ALLOW_THREADS`, :c:func:`PyEval_AcquireThread`, or
-:c:func:`PyEval_AcquireLock`, or implicitly when the interpreter attempts to
+:c:func:`!PyEval_AcquireLock`, or implicitly when the interpreter attempts to
 reacquire it after having yielded it, the thread enters **a permanently blocked
 state** where it remains until the program exits.  In most cases this is
 harmless, but this can result in deadlock if a later stage of finalization
