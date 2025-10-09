@@ -852,6 +852,10 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* Add :c:type:`PyObject_GetDict` function to get the
+  :py:attr:`~object.__dict__` of an object.
+  (Contributed by Victor Stinner in :gh:`139852`.)
+
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
@@ -914,6 +918,10 @@ Deprecated C APIs
 * :c:member:`~PyConfig.bytes_warning` is deprecated
   since 3.15 and will be removed in 3.17.
   (Contributed by Nikita Sobolev in :gh:`136355`.)
+
+* Deprecate private :c:func:`_PyObject_GetDictPtr` function:
+  use public :c:func:`PyObject_GetDict` or :c:func:`PyObject_GetAttr` instead.
+  (Contributed by Victor Stinner in :gh:`139852`.)
 
 
 .. Add C API deprecations above alphabetically, not here at the end.

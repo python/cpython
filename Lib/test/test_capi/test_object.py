@@ -247,5 +247,50 @@ class CAPITest(unittest.TestCase):
 
         func(object())
 
+    def test_object_getdict(self):
+        # Test PyObject_GetDict()
+        object_getdict = _testcapi.object_getdict
+
+        class MyClass:
+            pass
+        obj = MyClass()
+        obj.attr = 123
+
+        dict1 = object_getdict(obj)
+        dict2 = obj.__dict__
+        self.assertIs(dict1, dict2)
+
+        class NoDict:
+            __slots__ = ()
+        obj = NoDict()
+
+        self.assertEqual(object_getdict(obj), AttributeError)
+
+        # CRASHES object_getdict(NULL)
+
+    def test_object_genericgetdict(self):
+        # Test PyObject_GenericGetDict()
+        object_genericgetdict = _testcapi.object_genericgetdict
+
+        class MyClass:
+            pass
+        obj = MyClass()
+        obj.attr = 123
+
+        dict1 = object_genericgetdict(obj)
+        dict2 = obj.__dict__
+        self.assertIs(dict1, dict2)
+
+        class NoDict:
+            __slots__ = ()
+        obj = NoDict()
+
+        with self.assertRaisesRegex(AttributeError,
+                                    "This object has no __dict__"):
+            object_genericgetdict(obj)
+
+        # CRASHES object_genericgetdict(NULL)
+
+
 if __name__ == "__main__":
     unittest.main()

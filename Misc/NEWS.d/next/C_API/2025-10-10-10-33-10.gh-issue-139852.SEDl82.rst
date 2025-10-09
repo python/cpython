@@ -1,0 +1,2 @@
+Deprecate private :c:func:`_PyObject_GetDictPtr` function: use public
+:c:func:`PyObject_GetDict` or :c:func:`PyObject_GetAttr` instead.
