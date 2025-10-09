@@ -1051,7 +1051,7 @@ def _main(args=None):
     parser.add_argument('-H', '--header', nargs=2, action='append',
                         metavar=('HEADER', 'VALUE'),
                         help='Add a custom response header '
-                             '(can be used multiple times)')
+                             '(can be specified multiple times)')
     args = parser.parse_args(args)
 
     if not args.tls_cert and args.tls_key:
