@@ -2109,7 +2109,7 @@ code_returns_only_none(PyCodeObject *co)
         // None wasn't there, which means there was no implicit return,
         // "return", or "return None".
 
-        // The last instruction mostly either returns or raises.
+        // The last instruction of a function often equals to "return X".
         // We can take advantage of that for a quick exit.
         _Py_CODEUNIT final = _Py_GetBaseCodeUnit(co, len-1);
         if (IS_RETURN_OPCODE(final.op.code)) {
@@ -2117,6 +2117,7 @@ code_returns_only_none(PyCodeObject *co)
             return 0;
         }
 
+        // There is no need of value checking in this case.
         none_index = -1;
     }
 
