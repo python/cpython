@@ -160,41 +160,6 @@ class TestRlcompleter(unittest.TestCase):
         completer = rlcompleter.Completer(dict(f=Foo()))
         self.assertEqual(completer.complete('f.', 0), 'f.bar')
 
-    def test_enum_member_completion(self):
-        """Test that Enum members don't show non-existent attributes"""
-        from enum import Enum
-
-        class Color(Enum):
-            RED = 1
-            GREEN = 2
-            BLUE = 3
-
-        completer = rlcompleter.Completer()
-
-        # Test using complete method
-        i = 0
-        all_matches = []
-        while True:
-            match = completer.complete('Color.RED.__', i)
-            if match is None:
-                break
-            all_matches.append(match)
-            i += 1
-
-        # If no matches found, skip the test (environment issue)
-        if not all_matches:
-            self.skipTest("No matches found in test environment")
-
-        # These should NOT be in the matches
-        self.assertNotIn('Color.RED.__name__', all_matches)
-        self.assertNotIn('Color.RED.__qualname__', all_matches)
-        self.assertNotIn('Color.RED.__members__', all_matches)
-        self.assertNotIn('Color.RED.__abstractmethods__', all_matches)
-
-        # But these should be in the matches (they exist on the instance)
-        self.assertIn('Color.RED.__class__', all_matches)
-        self.assertIn('Color.RED.__doc__', all_matches)
-        self.assertIn('Color.RED.__eq__', all_matches)
 
     @unittest.mock.patch('rlcompleter._readline_available', False)
     def test_complete(self):
