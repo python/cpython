@@ -605,6 +605,10 @@ _PyJIT_translate_single_bytecode_to_trace(
         return 1;
     }
 
+    if (opcode == JUMP_FORWARD) {
+        return 1;
+    }
+
     if (opcode == ENTER_EXECUTOR) {
         ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
         ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
@@ -623,7 +627,10 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     // Strange control-flow, unsupported opcode, etc.
     if (jump_taken ||
-        opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
+        opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO ||
+        frame->owner >= FRAME_OWNED_BY_INTERPRETER ||
+        // This can be supported, but requires a tracing shim frame.
+        opcode == CALL_ALLOC_AND_ENTER_INIT) {
     unsupported:
             {
                 // Rewind to previous instruction and replace with _EXIT_TRACE.
@@ -814,6 +821,7 @@ full:
     if (!is_terminator(&tstate->interp->jit_tracer_code_buffer[trace_length-1])) {
         // Undo the last few instructions.
         trace_length = tstate->interp->jit_tracer_code_curr_size;
+        max_length = tstate->interp->jit_tracer_code_max_size;
         // We previously reversed one.
         max_length += 1;
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);

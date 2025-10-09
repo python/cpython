@@ -5268,6 +5268,7 @@ dummy_func(
 
         tier2 op(_EXIT_TRACE, (exit_p/4 --)) {
             _PyExitData *exit = (_PyExitData *)exit_p;
+            assert(!exit->is_dynamic);
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
             _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
@@ -5281,7 +5282,6 @@ dummy_func(
             }
         #endif
             tstate->jit_exit = exit;
-            assert(!exit->is_dynamic);
             TIER2_TO_TIER2(exit->executor);
         }
 
@@ -5441,6 +5441,9 @@ dummy_func(
                 TIER2_TO_TIER2(exit->executor);
             }
             else {
+                if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+                    GOTO_TIER_ONE(target, 0);
+                }
                 if (!backoff_counter_triggers(temperature)) {
                     exit->temperature = advance_backoff_counter(temperature);
                     GOTO_TIER_ONE(target, 0);

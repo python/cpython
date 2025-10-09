@@ -138,13 +138,15 @@
 #if _Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS
 #  define IS_JIT_TRACING() (tstate->interp->jit_is_tracing)
 #  define ENTER_TRACING() \
-    assert(!IS_JIT_TRACING()); \
     DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE; \
     tstate->interp->jit_is_tracing = true;
 #  define LEAVE_TRACING() \
     assert(IS_JIT_TRACING()); \
     DISPATCH_TABLE_VAR = DISPATCH_TABLE; \
     tstate->interp->jit_is_tracing = false;
+// This handles recursive tracing over C calls.
+#  define RELOAD_TRACING() \
+    DISPATCH_TABLE_VAR = tstate->interp->jit_is_tracing ? TRACING_DISPATCH_TABLE : DISPATCH_TABLE;
 #  define BAIL_TRACING_NO_DISPATCH() \
     LEAVE_TRACING(); \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
@@ -155,7 +157,7 @@
         JUMP_TO_LABEL(error); \
     }
 #  define RECORD_TRACE_NO_DISPATCH() do { \
-        if (add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
+        if (tstate->interp->jit_is_tracing && add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
             BAIL_TRACING_NO_DISPATCH(); \
         } \
     } while (0);
@@ -222,6 +224,7 @@ do { \
 #define TRACING_DISPATCH() \
     { \
         assert(frame->stackpointer == NULL); \
+        RELOAD_TRACING(); \
         RECORD_TRACE_NO_DISPATCH(); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
