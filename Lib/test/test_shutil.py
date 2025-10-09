@@ -1637,28 +1637,32 @@ class TestArchives(BaseTest, unittest.TestCase):
         return root_dir, base_dir
 
     def _create_files_symlinks(self, base_dir="symlinks"):
-        # Create a test structure containing symbolic links.
+        # Create a test structure containing symbolic links to files and 
+        # directories.
         root_dir = self.mkdtemp()
-        dist = os.path.join(root_dir, base_dir)
-        os.mkdir(dist)
+        wd = os.path.join(root_dir, base_dir)
+        os.mkdir(wd)
+        # Create a regular file.
         create_file(
-            (dist, 'real_file1'),
-            'This is a real file.'
+            (wd, 'file1'),
+            'This is file1.'
             )
-        # Symbolic link to a file.
+        # Create a symbolic link to the file.
         os.symlink(
-            os.path.join(dist, 'real_file1'),
-            os.path.join(dist, 'link_file1'),
+            os.path.join(wd, 'file1'),
+            os.path.join(wd, 'link1'),
             )
-        os.mkdir(os.path.join(dist, 'sub'))
+        # Create a sub-directory.
+        os.mkdir(os.path.join(wd, 'sub'))
+        # Create a regular file in the sub-directory.
         create_file(
-            (dist, 'sub', 'real_file2'),
-            'This is a real file too.'
+            (wd, 'sub', 'file2'),
+            'This is a file2.'
             )
-        # Symbolic link to a directory.
+        # Create a symbolic link to the sub-directory.
         os.symlink(
-            os.path.join(dist, 'sub'),
-            os.path.join(dist, 'sub2'),
+            os.path.join(wd, 'sub'),
+            os.path.join(wd, 'sub2'),
             target_is_directory=True,
             )
         return root_dir, base_dir
@@ -1911,8 +1915,16 @@ class TestArchives(BaseTest, unittest.TestCase):
 
     @os_helper.skip_unless_symlink
     def test_make_zipfile_symlink_behaviour(self):
-        # Test that symbolic links are not preserved as links when 
-        # shutil.make_archive() is used to make a zip file.
+        """Test that symbolic links for both file and directories are resolved
+        to their targets when shutil.make_archive() is used to make a zip file,
+        to match default command-line zip behaviour on Linux/UNIX/Windows.
+
+        If this test is being skipped, it is because either the operating
+        environment does not support symbolic links, or you do not have the
+        necessary permissions to create them. For Windows (10 and above) the
+        test must be invoked from an elevated command prompt or with
+        Developer Mode turned on.
+        """
         root_dir, base_dir = self._create_files_symlinks()
         name = os.path.join(root_dir, 'z')
         archive = shutil.make_archive(
@@ -1923,20 +1935,24 @@ class TestArchives(BaseTest, unittest.TestCase):
         with zipfile.ZipFile(archive) as zf:
             extract_dir = os.path.join(root_dir, base_dir, 'extract')
             zf.extractall(extract_dir)
-            # If directory symlink sub2 that points to sub1 was 
-            # preserved then sub2/real_file2 will not exist.
+        try:
+            # If symbolic link sub2 that targets directory sub1 was 
+            # preserved as a link then sub2/file2 will not exist.
             self.assertTrue(
                 os.path.exists(
-                    os.path.join(extract_dir, base_dir, 'sub2/real_file2')
+                    os.path.join(extract_dir, base_dir, 'sub2/file2')
                     )
                 )
-            # If link_file1 was preserved then it will be a symbolic 
-            # link.
+            # If symbolic link link1 that targets file1 was preserved then 
+            # it will be a symbolic link.
             self.assertFalse(
                 os.path.islink(
-                    os.path.join(extract_dir, base_dir, 'link_file1')
+                    os.path.join(extract_dir, base_dir, 'link1')
                     )
                 )
+        finally:
+            # Clean up
+            shutil.rmtree(root_dir)
 
     @support.requires_zlib()
     @unittest.skipUnless(shutil.which('unzip'),
