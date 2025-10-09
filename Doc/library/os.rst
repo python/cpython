@@ -4610,7 +4610,7 @@ written in Python, such as a mail server's external command delivery program.
       threads, this now raises a :exc:`DeprecationWarning`. See the
       longer explanation on :func:`os.fork`.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       The returned file descriptor is now made non-inheritable.
 
    .. availability:: Unix, not WASI, not Android, not iOS.
