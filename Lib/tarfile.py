@@ -1933,7 +1933,7 @@ class TarFile(object):
                 for arg in ("level", "options", "zstd_dict"):
                     if arg in kwargs:
                         raise ValueError(
-                            f"{arg} is only valid for w:zst, x:zst and w|zst modes"
+                            f"{arg} is only valid for zstd compression"
                         )
 
             compresslevel = kwargs.pop("compresslevel", 6)
