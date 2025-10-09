@@ -15,14 +15,15 @@ def _complete(con, text, state):
     global _completion_matches
 
     if state == 0:
-        text_upper = text.upper()
-        text_lower = text.lower()
-
-        if text.startswith('.'):
-            _completion_matches = [c + ' ' for c in CLI_COMMANDS if c.startswith(text)]
+        if text.startswith("."):
+            _completion_matches = [
+                c + " " for c in CLI_COMMANDS if c.startswith(text)
+            ]
         else:
             text_upper = text.upper()
-            _completion_matches = [c + ' ' for c in SQLITE_KEYWORDS if c.startswith(text_upper)]
+            _completion_matches = [
+                c + " " for c in SQLITE_KEYWORDS if c.startswith(text_upper)
+            ]
 
             cursor = con.cursor()
             schemata = tuple(row[1] for row
@@ -57,24 +58,25 @@ def _complete(con, text, state):
                     )
                 )
             except OperationalError:
-                # skip on SQLite<3.16.0 where pragma table-valued function is not
-                # supported yet
+                # skip on SQLite<3.16.0 where pragma table-valued function is
+                # not supported yet
                 pass
             # functions
             try:
                 _completion_matches.extend(
-                    row[0]
-                    for row in cursor.execute("""\
-                    SELECT DISTINCT UPPER(name) || '(' FROM pragma_function_list()
+                    row[0] for row in cursor.execute("""\
+                    SELECT DISTINCT UPPER(name) || '('
+                    FROM pragma_function_list()
                     WHERE name NOT IN ('->', '->>') AND
                     name LIKE REPLACE(:text, '_', '^_') || '%' ESCAPE '^'""",
-                        {"text": text},
+                    {"text": text},
                     )
                 )
             except OperationalError:
                 # skip on SQLite<3.30.0 where function_list is not supported yet
                 pass
             # schemata
+            text_lower = text.lower()
             _completion_matches.extend(c for c in schemata
                                        if c.lower().startswith(text_lower))
             _completion_matches = sorted(set(_completion_matches))
