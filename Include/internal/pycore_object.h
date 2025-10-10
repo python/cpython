@@ -1031,7 +1031,8 @@ enum _PyAnnotateFormat {
     _Py_ANNOTATE_FORMAT_STRING = 4,
 };
 
-int _PyObject_SetDict(PyObject *obj, PyObject *value);
+extern int _PyObject_SetDict(PyObject *obj, PyObject *value);
+extern int _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 
 #ifndef Py_GIL_DISABLED
 static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
