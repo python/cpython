@@ -308,6 +308,9 @@ Object Protocol
    Similar to :c:func:`PyObject_GetDictPtr`, but ignore errors silently (return
    ``NULL`` without setting an exception).
 
+   .. deprecated:: 3.15
+      Use :c:func:`PyObject_GetDictPtr` instead.
+
 
 .. c:function:: PyObject* PyObject_RichCompare(PyObject *o1, PyObject *o2, int opid)
 

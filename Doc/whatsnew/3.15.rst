@@ -916,6 +916,10 @@ Deprecated C APIs
   since 3.15 and will be removed in 3.17.
   (Contributed by Nikita Sobolev in :gh:`136355`.)
 
+* Deprecate private :c:func:`_PyObject_GetDictPtr` function:
+  use public :c:func:`PyObject_GetDictPtr` instead.
+  (Contributed by Victor Stinner in :gh:`139852`.)
+
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
