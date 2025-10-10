@@ -24,12 +24,12 @@ Features and minimum versions required to build CPython:
 
 To build optional modules:
 
-* ``libbz2`` for the :mod:`bz2` module.
+* `libbz2 <https://sourceware.org/bzip2/>`_ for the :mod:`bz2` module.
 
 * `libb2 <https://github.com/BLAKE2/libb2>`_ (:ref:`BLAKE2 <hashlib-blake2>`),
    used by :mod:`hashlib` module.
 
-* `libedit <https://www.thrysoee.dk/editline/>`_ and
+* `libedit <https://www.thrysoee.dk/editline/>`_ or
   `libreadline <https://tiswww.case.edu/php/chet/readline/rltop.html>`_
   for the :mod:`readline` module.
 
@@ -42,10 +42,10 @@ To build optional modules:
   for the :mod:`decimal` module.
 
 * ``libncurses`` or ``libncursesw``,
-   for the :mod:`curses` module.
+  for the :mod:`curses` module.
 
 * ``libpanel`` or ``libpanelw``,
-   for the :mod:`curses.panel` module.
+  for the :mod:`curses.panel` module.
 
 * `libuuid <https://linux.die.net/man/3/libuuid>`_, for the :mod:`uuid` module.
 
