@@ -126,8 +126,9 @@ Believe me, real good tape sorts were quite spectacular to watch!
 From all times, sorting has always been a Great Art! :-)
 """
 
-__all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
-           'nlargest', 'nsmallest', 'heappushpop']
+__all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'heappushpop',
+           'heappush_max', 'heappop_max', 'heapify_max', 'heapreplace_max',
+           'heappushpop_max', 'nlargest', 'nsmallest', 'merge']
 
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
@@ -493,7 +494,7 @@ def nsmallest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key)[:n]
+            return sorted(iterable, key=key)
 
     # When key is none, use simpler decoration
     if key is None:
@@ -553,7 +554,7 @@ def nlargest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key, reverse=True)[:n]
+            return sorted(iterable, key=key, reverse=True)
 
     # When key is none, use simpler decoration
     if key is None:

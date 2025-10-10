@@ -1,0 +1,5 @@
+Add :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerActivationThreshold`
+and :meth:`~xml.parsers.expat.xmlparser.SetAllocTrackerMaximumAmplification`
+to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
+disproportional amounts of dynamic memory usage from within an Expat parser.
+Patch by Bénédikt Tran.

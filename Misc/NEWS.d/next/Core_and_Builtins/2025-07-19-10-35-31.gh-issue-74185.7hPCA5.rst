@@ -1,0 +1,4 @@
+The :meth:`~object.__repr__` of :class:`ImportError` and :class:`ModuleNotFoundError`
+now shows "name" and "path" as ``name=<name>`` and ``path=<path>`` if they were given
+as keyword arguments at construction time.
+Patch by Serhiy Storchaka, Oleg Iarygin, and Yoav Nir

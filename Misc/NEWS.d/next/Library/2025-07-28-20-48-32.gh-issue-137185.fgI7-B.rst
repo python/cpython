@@ -1,0 +1,2 @@
+Fix a potential async-signal-safety issue in :mod:`faulthandler` when
+printing C stack traces.
