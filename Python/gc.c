@@ -2101,6 +2101,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
             Py_UNREACHABLE();
     }
     gcstate->generation_stats[generation].untracked_tuples += stats.untracked_tuples;
+    gcstate->generation_stats[0].total_untracked_tuples += stats.untracked_tuples;
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(stats.uncollectable + stats.collected);
     }
@@ -2109,6 +2110,13 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     else {
         FILE *out = stderr;
+
+        fprintf(out, "GC[%d] total tuples    : %zd\n", 0, gcstate->generation_stats[0].total_tuples);
+        fprintf(out, "GC[%d] total untracked_tuples    : %zd\n", 0, gcstate->generation_stats[0].total_untracked_tuples);
+        for (int i = 0; i < 33; i++) {
+            fprintf(out, "GC[%d] by size %d  : %zd\n", 0, i, gcstate->generation_stats[0].tuples_by_size[i]);
+        }
+
         for (int i = 0; i < NUM_GENERATIONS; i++) {
             fprintf(out, "GC[%d] collections     : %zd\n", i, gcstate->generation_stats[i].collections);
             fprintf(out, "GC[%d] collected       : %zd\n", i, gcstate->generation_stats[i].collected);

@@ -22,6 +22,44 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 
 static inline int maybe_freelist_push(PyTupleObject *);
 
+static uint8_t
+_log2_int(Py_ssize_t size)
+{
+    if (size == 0) {
+        return 0;
+    }
+
+    const uint64_t b[] = {0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000, 0xFFFFFFFF00000000};
+    const uint64_t S[] = {1, 2, 4, 8, 16, 32};
+
+    int64_t v = size;
+    uint8_t r = 0; // result of log2(v) will go here
+    for (int i = 5; i >= 0; i--) // unroll for speed...
+    {
+        if (v & b[i])
+        {
+            v >>= S[i];
+            r |= S[i];
+        }
+    }
+
+#ifdef Py_DEBUG
+    uint8_t x = (uint8_t)log2((double)size);
+    assert(x == r);
+#endif
+
+    return r + 1;
+}
+
+static void
+_count_tuple(Py_ssize_t size)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->gc.generation_stats[0].total_tuples += 1;
+    uint8_t size_index = _log2_int(size);
+    interp->gc.generation_stats[0].tuples_by_size[size_index] += 1;
+}
+
 
 /* Allocate an uninitialized tuple object. Before making it public, following
    steps must be done:
@@ -46,6 +84,7 @@ tuple_alloc(Py_ssize_t size)
         PyTupleObject *op = _Py_FREELIST_POP(PyTupleObject, tuples[index]);
         if (op != NULL) {
             _PyTuple_RESET_HASH_CACHE(op);
+            _count_tuple(size);
             return op;
         }
     }
@@ -57,6 +96,7 @@ tuple_alloc(Py_ssize_t size)
     PyTupleObject *result = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
     if (result != NULL) {
         _PyTuple_RESET_HASH_CACHE(result);
+        _count_tuple(size);
     }
     return result;
 }
@@ -68,6 +108,7 @@ tuple_alloc(Py_ssize_t size)
 static inline PyObject *
 tuple_get_empty(void)
 {
+    _count_tuple(0);
     return (PyObject *)&_Py_SINGLETON(tuple_empty);
 }
 

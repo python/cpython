@@ -193,6 +193,9 @@ struct gc_generation_stats {
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
     Py_ssize_t untracked_tuples;
+    Py_ssize_t total_untracked_tuples;
+    Py_ssize_t total_tuples;
+    Py_ssize_t tuples_by_size[33];
 };
 
 enum _GCPhase {
