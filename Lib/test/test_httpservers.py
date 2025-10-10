@@ -1558,6 +1558,7 @@ class CommandLineTestCase(unittest.TestCase):
         # the spied call args, then calling _make_server with them.
         args, kwargs = mock_make_server.call_args
         httpd = server._make_server(*args, **kwargs)
+        self.addCleanup(httpd.server_close)
 
         # Ensure the RequestHandler class is passed the correct response
         # headers
