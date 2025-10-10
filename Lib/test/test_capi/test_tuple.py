@@ -348,6 +348,20 @@ class TupleWriterTest(unittest.TestCase):
          writer.add_array(tuple(range(1024)))
          self.assertEqual(writer.finish(), tuple(range(1024)))
 
+    def test_discard(self):
+         # test the small_tuple buffer (16 items)
+         writer = self.create_writer(3)
+         writer.add(object())
+         writer.add(object())
+         # must not leak references
+         writer.discard()
+
+         # test the tuple code path (17 items or more)
+         writer = self.create_writer(1024)
+         writer.add_array(tuple(range(1024)))
+         # must not leak references
+         writer.discard()
+
 
 if __name__ == "__main__":
     unittest.main()

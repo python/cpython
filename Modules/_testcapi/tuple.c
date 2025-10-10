@@ -270,11 +270,26 @@ writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject*
+writer_discard(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyTupleWriter_Discard(self->writer);
+    self->writer = NULL;
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef writer_methods[] = {
     {"add", _PyCFunction_CAST(writer_add), METH_O},
     {"add_steal", _PyCFunction_CAST(writer_add_steal), METH_O},
     {"add_array", _PyCFunction_CAST(writer_add_array), METH_VARARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
+    {"discard", _PyCFunction_CAST(writer_discard), METH_NOARGS},
     {NULL, NULL}  /* sentinel */
 };
 

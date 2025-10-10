@@ -1361,6 +1361,34 @@ PyTupleWriter_AddArray(PyTupleWriter *writer,
 }
 
 
+static inline void
+tuplewriter_free(PyTupleWriter *writer)
+{
+    _Py_FREELIST_FREE(tuple_writers, writer, PyMem_Free);
+}
+
+
+void
+PyTupleWriter_Discard(PyTupleWriter *writer)
+{
+    if (writer == NULL) {
+        return;
+    }
+
+    if (writer->tuple != NULL) {
+        Py_DECREF(writer->tuple);
+    }
+    else {
+        PyObject **items = writer->items;
+        for (size_t i=0; i < writer->size; i++) {
+            Py_DECREF(items[i]);
+        }
+    }
+
+    tuplewriter_free(writer);
+}
+
+
 PyObject*
 PyTupleWriter_Finish(PyTupleWriter *writer)
 {
@@ -1389,18 +1417,6 @@ PyTupleWriter_Finish(PyTupleWriter *writer)
                                          (Py_ssize_t)writer->size);
     }
 
-    PyTupleWriter_Discard(writer);
+    tuplewriter_free(writer);
     return result;
-}
-
-
-void
-PyTupleWriter_Discard(PyTupleWriter *writer)
-{
-    if (writer == NULL) {
-        return;
-    }
-
-    Py_XDECREF(writer->tuple);
-    _Py_FREELIST_FREE(tuple_writers, writer, PyMem_Free);
 }
