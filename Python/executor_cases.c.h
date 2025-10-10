@@ -7386,17 +7386,6 @@
             break;
         }
 
-        case _CHECK_FUNCTION: {
-            uint32_t func_version = (uint32_t)CURRENT_OPERAND0();
-            assert(PyStackRef_FunctionCheck(frame->f_funcobj));
-            PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-            if (func->func_version != func_version) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            break;
-        }
-
         case _START_EXECUTOR: {
             PyObject *executor = (PyObject *)CURRENT_OPERAND0();
             #ifndef _Py_JIT

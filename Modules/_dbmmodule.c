@@ -8,6 +8,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -450,10 +451,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
     }
     if (default_value == NULL) {
-        default_value = PyBytes_FromStringAndSize(NULL, 0);
-        if (default_value == NULL) {
-            return NULL;
-        }
+        default_value = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         val.dptr = NULL;
         val.dsize = 0;
     }
