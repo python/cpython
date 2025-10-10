@@ -285,6 +285,7 @@ def ismount(path):
     path = abspath(path)
     drive, root, rest = splitroot(path)
     if drive and drive[0] in seps:
+        # Share path is a mount point if it conforms to UNC.
         return not rest
     if root and not rest:
         # Drive root is a mount point if it exists.
