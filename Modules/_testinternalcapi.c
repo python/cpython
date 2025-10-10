@@ -2418,6 +2418,58 @@ set_vectorcall_nop(PyObject *self, PyObject *func)
     Py_RETURN_NONE;
 }
 
+#define NUM_LOCKS 100
+
+static PyObject *
+test_interp_lock_countdown(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    assert(_PyInterpreterState_LockCountdown(interp) == 0);
+    PyInterpreterLock locks[NUM_LOCKS];
+    for (int i = 0; i < NUM_LOCKS; ++i) {
+        locks[i] = PyInterpreterLock_FromCurrent();
+        assert(locks[i] != 0);
+        assert(_PyInterpreterState_LockCountdown(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_LOCKS; ++i) {
+        PyInterpreterLock_Release(locks[i]);
+        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_LOCKS - i - 1));
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_view_countdown(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterView view = PyInterpreterView_FromCurrent();
+    if (view == 0) {
+        return NULL;
+    }
+    assert(_PyInterpreterState_LockCountdown(interp) == 0);
+
+    PyInterpreterLock locks[NUM_LOCKS];
+
+    for (int i = 0; i < NUM_LOCKS; ++i) {
+        locks[i] = PyInterpreterLock_FromView(view);
+        assert(locks[i] != 0);
+        assert(PyInterpreterLock_GetInterpreter(locks[i]) == interp);
+        assert(_PyInterpreterState_LockCountdown(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_LOCKS; ++i) {
+        PyInterpreterLock_Release(locks[i]);
+        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_LOCKS - i - 1));
+    }
+
+    PyInterpreterView_Close(view);
+    Py_RETURN_NONE;
+}
+
+#undef NUM_LOCKS
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2527,6 +2579,8 @@ static PyMethodDef module_functions[] = {
 #endif
     {"simple_pending_call", simple_pending_call, METH_O},
     {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
+    {"test_interp_lock_countdown", test_interp_lock_countdown, METH_NOARGS},
+    {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

@@ -195,6 +195,9 @@ Python/import.c	-	pkgcontext	-
 Python/pystate.c	-	_Py_tss_tstate	-
 Python/pystate.c	-	_Py_tss_gilstate	-
 
+# Global sentinel that is fine to share across interpreters
+Python/pystate.c  - NO_TSTATE_SENTINEL -
+
 ##-----------------------
 ## should be const
 # XXX Make them const.
