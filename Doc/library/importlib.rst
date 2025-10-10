@@ -275,6 +275,16 @@ ABC hierarchy::
       .. versionchanged:: 3.4
          Returns ``None`` when called instead of :data:`NotImplemented`.
 
+   .. method:: discover(parent=None)
+
+      An optional method which searches for possible specs with given *parent*
+      module spec. If *parent* is *None*, :meth:`PathEntryFinder.discover` will
+      search for top-level modules.
+
+      Returns an iterable of possible specs.
+
+      .. versionadded:: next
+
 
 .. class:: PathEntryFinder
 
@@ -306,6 +316,16 @@ ABC hierarchy::
       cache used by the finder. Used by
       :meth:`importlib.machinery.PathFinder.invalidate_caches`
       when invalidating the caches of all cached finders.
+
+   .. method:: discover(parent=None)
+
+      An optional method which searches for possible specs with given *parent*
+      module spec. If *parent* is *None*, :meth:`PathEntryFinder.discover` will
+      search for top-level modules.
+
+      Returns an iterable of possible specs.
+
+      .. versionadded:: next
 
 
 .. class:: Loader
