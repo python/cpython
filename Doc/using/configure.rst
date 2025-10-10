@@ -22,15 +22,50 @@ Features and minimum versions required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.18 is the recommended
-  minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
+To build optional modules:
 
-* SQLite 3.15.2 for the :mod:`sqlite3` extension module.
+* `libbz2 <https://sourceware.org/bzip2/>`_ for the :mod:`bz2` module.
 
-* Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
+* `libb2 <https://github.com/BLAKE2/libb2>`_ (:ref:`BLAKE2 <hashlib-blake2>`),
+  used by :mod:`hashlib` module.
+
+* `libffi <https://sourceware.org/libffi/>`_ 3.3.0 is the recommended
+  minimum version for the :mod:`ctypes` module.
+
+* ``liblzma``, for the :mod:`lzma` module.
 
 * `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_ 2.5.0
   for the :mod:`decimal` module.
+
+* ``libncurses`` or ``libncursesw``,
+  for the :mod:`curses` module.
+
+* ``libpanel`` or ``libpanelw``,
+  for the :mod:`curses.panel` module.
+
+* `libreadline <https://tiswww.case.edu/php/chet/readline/rltop.html>`_ or
+  `libedit <https://www.thrysoee.dk/editline/>`_
+  for the :mod:`readline` module.
+
+* `libuuid <https://linux.die.net/man/3/libuuid>`_, for the :mod:`uuid` module.
+
+* `OpenSSL <https://www.openssl.org/>`_ 1.1.1 is the minimum version and
+  OpenSSL 3.0.18 is the recommended minimum version for the
+  :mod:`ssl` and :mod:`hashlib` extension modules.
+
+* `SQLite <https://sqlite.org/>`_ 3.15.2 for the :mod:`sqlite3` extension module.
+
+* `Tcl/Tk <https://www.tcl-lang.org/>`_ 8.5.12 for the :mod:`tkinter` module.
+
+* `zlib <https://www.zlib.net>`_ 1.1.4 is the reccomended minimum version for the
+  :mod:`zlib` module.
+
+* `zstd <https://facebook.github.io/zstd/>`_ 1.4.5 is the minimum version for
+  the :mod:`compression.zstd` module.
+
+For a full list of dependencies required to build all modules and how to install
+them, see the
+`devguide <https://devguide.python.org/getting-started/setup-building/#install-dependencies>`_.
 
 * Autoconf 2.72 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
