@@ -350,7 +350,9 @@ behavior:
 
 .. data:: MAX_WBITS
 
-   The maximum window buffer size (power of 2).
+   The maximum window size, expressed as a power of 2.
+   For example, if :const:`!MAX_WBITS` is ``15`` it results in a window size
+   of ``32 KiB``.
 
 
 .. data:: DEF_MEM_LEVEL
