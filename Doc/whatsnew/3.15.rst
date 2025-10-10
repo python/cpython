@@ -924,6 +924,9 @@ Deprecated C APIs
   since 3.15 and will be removed in 3.17.
   (Contributed by Nikita Sobolev in :gh:`136355`.)
 
+* Deprecate the :c:func:`_PyTuple_Resize` function:
+  use the new :ref:`PyTupleWriter API <pytuplewriter>` instead.
+  (Contributed by Victor Stinner in :gh:`139888`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
 

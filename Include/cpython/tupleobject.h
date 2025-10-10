@@ -12,7 +12,7 @@ typedef struct {
     PyObject *ob_item[1];
 } PyTupleObject;
 
-PyAPI_FUNC(int) _PyTuple_Resize(PyObject **, Py_ssize_t);
+_Py_DEPRECATED_EXTERNALLY(3.15) PyAPI_FUNC(int) _PyTuple_Resize(PyObject **, Py_ssize_t);
 
 /* Cast argument to PyTupleObject* type. */
 #define _PyTuple_CAST(op) \

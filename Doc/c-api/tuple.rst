@@ -143,8 +143,7 @@ Tuple Objects
    raises :exc:`MemoryError` or :exc:`SystemError`.
 
    .. deprecated:: 3.15
-      The function is :term:`soft deprecated`,
-      use the :ref:`PyTupleWriter API <pytuplewriter>` instead.
+      Use the :ref:`PyTupleWriter API <pytuplewriter>` instead.
 
 
 .. _pytuplewriter:

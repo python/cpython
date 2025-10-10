@@ -84,7 +84,10 @@ _tuple_resize(PyObject *Py_UNUSED(module), PyObject *args)
         NULLABLE(tup);
         Py_XINCREF(tup);
     }
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     int r = _PyTuple_Resize(&tup, newsize);
+    _Py_COMP_DIAG_POP
     if (r == -1) {
         assert(tup == NULL);
         return NULL;
