@@ -63,7 +63,6 @@ SETTINGS:
         written as two quotes
 """
 
-import re
 import types
 from _csv import Error, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
@@ -81,8 +80,6 @@ __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "register_dialect", "get_dialect", "list_dialects", "Sniffer",
            "unregister_dialect", "DictReader", "DictWriter",
            "unix_dialect"]
-
-__version__ = "1.0"
 
 
 class Dialect:
@@ -281,6 +278,7 @@ class Sniffer:
         If there is no quotechar the delimiter can't be determined
         this way.
         """
+        import re
 
         matches = []
         for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)', # ,".*?",
@@ -511,3 +509,12 @@ class Sniffer:
                     hasHeader -= 1
 
         return hasHeader > 0
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

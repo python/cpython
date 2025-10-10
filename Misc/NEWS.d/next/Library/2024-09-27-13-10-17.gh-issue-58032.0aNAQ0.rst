@@ -1,1 +1,0 @@
-Deprecate the :class:`argparse.FileType` type converter.

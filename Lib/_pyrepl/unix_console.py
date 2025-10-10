@@ -29,31 +29,41 @@ import signal
 import struct
 import termios
 import time
+import types
 import platform
 from fcntl import ioctl
 
-from . import curses
+from . import terminfo
 from .console import Console, Event
-from .fancy_termios import tcgetattr, tcsetattr
+from .fancy_termios import tcgetattr, tcsetattr, TermState
 from .trace import trace
 from .unix_eventqueue import EventQueue
 from .utils import wlen
 
+# declare posix optional to allow None assignment on other platforms
+posix: types.ModuleType | None
+try:
+    import posix
+except ImportError:
+    posix = None
 
 TYPE_CHECKING = False
 
 # types
 if TYPE_CHECKING:
-    from typing import IO, Literal, overload
+    from typing import AbstractSet, IO, Literal, overload, cast
 else:
     overload = lambda func: None
+    cast = lambda typ, val: val
 
 
 class InvalidTerminal(RuntimeError):
-    pass
+    def __init__(self, message: str) -> None:
+        super().__init__(errno.EIO, message)
 
 
-_error = (termios.error, curses.error, InvalidTerminal)
+_error = (termios.error, InvalidTerminal)
+_error_codes_to_ignore = frozenset([errno.EIO, errno.ENXIO, errno.EPERM])
 
 SIGWINCH_EVENT = "repaint"
 
@@ -118,12 +128,13 @@ except AttributeError:
 
         def register(self, fd, flag):
             self.fd = fd
+
         # note: The 'timeout' argument is received as *milliseconds*
         def poll(self, timeout: float | None = None) -> list[int]:
             if timeout is None:
                 r, w, e = select.select([self.fd], [], [])
             else:
-                r, w, e = select.select([self.fd], [], [], timeout/1000)
+                r, w, e = select.select([self.fd], [], [], timeout / 1000)
             return r
 
     poll = MinimalPoll  # type: ignore[assignment]
@@ -150,19 +161,28 @@ class UnixConsole(Console):
 
         self.pollob = poll()
         self.pollob.register(self.input_fd, select.POLLIN)
-        self.input_buffer = b""
-        self.input_buffer_pos = 0
-        curses.setupterm(term or None, self.output_fd)
+        self.terminfo = terminfo.TermInfo(term or None)
         self.term = term
+        self.is_apple_terminal = (
+            platform.system() == "Darwin"
+            and os.getenv("TERM_PROGRAM") == "Apple_Terminal"
+        )
+
+        try:
+            self.__input_fd_set(tcgetattr(self.input_fd), ignore=frozenset())
+        except _error as e:
+            raise RuntimeError(f"termios failure ({e.args[1]})")
 
         @overload
-        def _my_getstr(cap: str, optional: Literal[False] = False) -> bytes: ...
+        def _my_getstr(
+            cap: str, optional: Literal[False] = False
+        ) -> bytes: ...
 
         @overload
         def _my_getstr(cap: str, optional: bool) -> bytes | None: ...
 
         def _my_getstr(cap: str, optional: bool = False) -> bytes | None:
-            r = curses.tigetstr(cap)
+            r = self.terminfo.get(cap)
             if not optional and r is None:
                 raise InvalidTerminal(
                     f"terminal doesn't have the required {cap} capability"
@@ -196,26 +216,19 @@ class UnixConsole(Console):
 
         self.__setup_movement()
 
-        self.event_queue = EventQueue(self.input_fd, self.encoding)
+        self.event_queue = EventQueue(
+            self.input_fd, self.encoding, self.terminfo
+        )
         self.cursor_visible = 1
 
-    def more_in_buffer(self) -> bool:
-        return bool(
-            self.input_buffer
-            and self.input_buffer_pos < len(self.input_buffer)
-        )
+        signal.signal(signal.SIGCONT, self._sigcont_handler)
+
+    def _sigcont_handler(self, signum, frame):
+        self.restore()
+        self.prepare()
 
     def __read(self, n: int) -> bytes:
-        if not self.more_in_buffer():
-            self.input_buffer = os.read(self.input_fd, 10000)
-
-        ret = self.input_buffer[self.input_buffer_pos : self.input_buffer_pos + n]
-        self.input_buffer_pos += len(ret)
-        if self.input_buffer_pos >= len(self.input_buffer):
-            self.input_buffer = b""
-            self.input_buffer_pos = 0
-        return ret
-
+        return os.read(self.input_fd, n)
 
     def change_encoding(self, encoding: str) -> None:
         """
@@ -240,7 +253,7 @@ class UnixConsole(Console):
                 self.__hide_cursor()
                 self.__move(0, len(self.screen) - 1)
                 self.__write("\n")
-                self.__posxy = 0, len(self.screen)
+                self.posxy = 0, len(self.screen)
                 self.screen.append("")
         else:
             while len(self.screen) < len(screen):
@@ -250,7 +263,7 @@ class UnixConsole(Console):
             self.__gone_tall = 1
             self.__move = self.__move_tall
 
-        px, py = self.__posxy
+        px, py = self.posxy
         old_offset = offset = self.__offset
         height = self.height
 
@@ -271,7 +284,7 @@ class UnixConsole(Console):
         if old_offset > offset and self._ri:
             self.__hide_cursor()
             self.__write_code(self._cup, 0, 0)
-            self.__posxy = 0, old_offset
+            self.posxy = 0, old_offset
             for i in range(old_offset - offset):
                 self.__write_code(self._ri)
                 oldscr.pop(-1)
@@ -279,7 +292,7 @@ class UnixConsole(Console):
         elif old_offset < offset and self._ind:
             self.__hide_cursor()
             self.__write_code(self._cup, self.height - 1, 0)
-            self.__posxy = 0, old_offset + self.height - 1
+            self.posxy = 0, old_offset + self.height - 1
             for i in range(offset - old_offset):
                 self.__write_code(self._ind)
                 oldscr.pop(0)
@@ -299,7 +312,7 @@ class UnixConsole(Console):
         while y < len(oldscr):
             self.__hide_cursor()
             self.__move(0, y)
-            self.__posxy = 0, y
+            self.posxy = 0, y
             self.__write_code(self._el)
             y += 1
 
@@ -321,13 +334,15 @@ class UnixConsole(Console):
             self.event_queue.insert(Event("scroll", None))
         else:
             self.__move(x, y)
-            self.__posxy = x, y
+            self.posxy = x, y
             self.flushoutput()
 
     def prepare(self):
         """
         Prepare the console for input/output operations.
         """
+        self.__buffer = []
+
         self.__svtermstate = tcgetattr(self.input_fd)
         raw = self.__svtermstate.copy()
         raw.iflag &= ~(termios.INPCK | termios.ISTRIP | termios.IXON)
@@ -339,18 +354,16 @@ class UnixConsole(Console):
         raw.lflag |= termios.ISIG
         raw.cc[termios.VMIN] = 1
         raw.cc[termios.VTIME] = 0
-        tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
+        self.__input_fd_set(raw)
 
         # In macOS terminal we need to deactivate line wrap via ANSI escape code
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7l")
 
         self.screen = []
         self.height, self.width = self.getheightwidth()
 
-        self.__buffer = []
-
-        self.__posxy = 0, 0
+        self.posxy = 0, 0
         self.__gone_tall = 0
         self.__move = self.__move_short
         self.__offset = 0
@@ -371,13 +384,18 @@ class UnixConsole(Console):
         self.__disable_bracketed_paste()
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
-        tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
+        self.__input_fd_set(self.__svtermstate)
 
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7h")
 
         if hasattr(self, "old_sigwinch"):
-            signal.signal(signal.SIGWINCH, self.old_sigwinch)
+            try:
+                signal.signal(signal.SIGWINCH, self.old_sigwinch)
+            except ValueError as e:
+                import threading
+                if threading.current_thread() is threading.main_thread():
+                    raise e
             del self.old_sigwinch
 
     def push_char(self, char: int | bytes) -> None:
@@ -410,6 +428,8 @@ class UnixConsole(Console):
                             return self.event_queue.get()
                         else:
                             continue
+                    elif err.errno == errno.EIO:
+                        raise SystemExit(errno.EIO)
                     else:
                         raise
                 else:
@@ -422,7 +442,6 @@ class UnixConsole(Console):
         """
         return (
             not self.event_queue.empty()
-            or self.more_in_buffer()
             or bool(self.pollob.poll(timeout))
         )
 
@@ -449,10 +468,12 @@ class UnixConsole(Console):
             """
             try:
                 return int(os.environ["LINES"]), int(os.environ["COLUMNS"])
-            except KeyError:
-                height, width = struct.unpack(
-                    "hhhh", ioctl(self.input_fd, TIOCGWINSZ, b"\000" * 8)
-                )[0:2]
+            except (KeyError, TypeError, ValueError):
+                try:
+                    size = ioctl(self.input_fd, TIOCGWINSZ, b"\000" * 8)
+                except OSError:
+                    return 25, 80
+                height, width = struct.unpack("hhhh", size)[0:2]
                 if not height:
                     return 25, 80
                 return height, width
@@ -468,7 +489,7 @@ class UnixConsole(Console):
             """
             try:
                 return int(os.environ["LINES"]), int(os.environ["COLUMNS"])
-            except KeyError:
+            except (KeyError, TypeError, ValueError):
                 return 25, 80
 
     def forgetinput(self):
@@ -523,6 +544,7 @@ class UnixConsole(Console):
                 e.raw += e.raw
 
             amount = struct.unpack("i", ioctl(self.input_fd, FIONREAD, b"\0\0\0\0"))[0]
+            trace("getpending({a})", a=amount)
             raw = self.__read(amount)
             data = str(raw, self.encoding, "replace")
             e.data += data
@@ -559,16 +581,14 @@ class UnixConsole(Console):
         self.__write_code(self._clear)
         self.__gone_tall = 1
         self.__move = self.__move_tall
-        self.__posxy = 0, 0
+        self.posxy = 0, 0
         self.screen = []
 
     @property
     def input_hook(self):
-        try:
-            import posix
-        except ImportError:
-            return None
-        if posix._is_inputhook_installed():
+        # avoid inline imports here so the repl doesn't get flooded
+        # with import logging from -X importtime=2
+        if posix is not None and posix._is_inputhook_installed():
             return posix._inputhook
 
     def __enable_bracketed_paste(self) -> None:
@@ -600,14 +620,14 @@ class UnixConsole(Console):
         if self._dch1:
             self.dch1 = self._dch1
         elif self._dch:
-            self.dch1 = curses.tparm(self._dch, 1)
+            self.dch1 = terminfo.tparm(self._dch, 1)
         else:
             self.dch1 = None
 
         if self._ich1:
             self.ich1 = self._ich1
         elif self._ich:
-            self.ich1 = curses.tparm(self._ich, 1)
+            self.ich1 = terminfo.tparm(self._ich, 1)
         else:
             self.ich1 = None
 
@@ -644,8 +664,8 @@ class UnixConsole(Console):
         # if we need to insert a single character right after the first detected change
         if oldline[x_pos:] == newline[x_pos + 1 :] and self.ich1:
             if (
-                y == self.__posxy[1]
-                and x_coord > self.__posxy[0]
+                y == self.posxy[1]
+                and x_coord > self.posxy[0]
                 and oldline[px_pos:x_pos] == newline[px_pos + 1 : x_pos + 1]
             ):
                 x_pos = px_pos
@@ -654,7 +674,7 @@ class UnixConsole(Console):
             self.__move(x_coord, y)
             self.__write_code(self.ich1)
             self.__write(newline[x_pos])
-            self.__posxy = x_coord + character_width, y
+            self.posxy = x_coord + character_width, y
 
         # if it's a single character change in the middle of the line
         elif (
@@ -665,7 +685,7 @@ class UnixConsole(Console):
             character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write(newline[x_pos])
-            self.__posxy = x_coord + character_width, y
+            self.posxy = x_coord + character_width, y
 
         # if this is the last character to fit in the line and we edit in the middle of the line
         elif (
@@ -677,14 +697,14 @@ class UnixConsole(Console):
         ):
             self.__hide_cursor()
             self.__move(self.width - 2, y)
-            self.__posxy = self.width - 2, y
+            self.posxy = self.width - 2, y
             self.__write_code(self.dch1)
 
             character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write_code(self.ich1)
             self.__write(newline[x_pos])
-            self.__posxy = character_width + 1, y
+            self.posxy = character_width + 1, y
 
         else:
             self.__hide_cursor()
@@ -692,7 +712,7 @@ class UnixConsole(Console):
             if wlen(oldline) > wlen(newline):
                 self.__write_code(self._el)
             self.__write(newline[x_pos:])
-            self.__posxy = wlen(newline), y
+            self.posxy = wlen(newline), y
 
         if "\x1b" in newline:
             # ANSI escape characters are present, so we can't assume
@@ -704,39 +724,43 @@ class UnixConsole(Console):
         self.__buffer.append((text, 0))
 
     def __write_code(self, fmt, *args):
-        self.__buffer.append((curses.tparm(fmt, *args), 1))
+        self.__buffer.append((terminfo.tparm(fmt, *args), 1))
 
     def __maybe_write_code(self, fmt, *args):
         if fmt:
             self.__write_code(fmt, *args)
 
     def __move_y_cuu1_cud1(self, y):
-        dy = y - self.__posxy[1]
+        assert self._cud1 is not None
+        assert self._cuu1 is not None
+        dy = y - self.posxy[1]
         if dy > 0:
             self.__write_code(dy * self._cud1)
         elif dy < 0:
             self.__write_code((-dy) * self._cuu1)
 
     def __move_y_cuu_cud(self, y):
-        dy = y - self.__posxy[1]
+        dy = y - self.posxy[1]
         if dy > 0:
             self.__write_code(self._cud, dy)
         elif dy < 0:
             self.__write_code(self._cuu, -dy)
 
     def __move_x_hpa(self, x: int) -> None:
-        if x != self.__posxy[0]:
+        if x != self.posxy[0]:
             self.__write_code(self._hpa, x)
 
     def __move_x_cub1_cuf1(self, x: int) -> None:
-        dx = x - self.__posxy[0]
+        assert self._cuf1 is not None
+        assert self._cub1 is not None
+        dx = x - self.posxy[0]
         if dx > 0:
             self.__write_code(self._cuf1 * dx)
         elif dx < 0:
             self.__write_code(self._cub1 * (-dx))
 
     def __move_x_cub_cuf(self, x: int) -> None:
-        dx = x - self.__posxy[0]
+        dx = x - self.posxy[0]
         if dx > 0:
             self.__write_code(self._cuf, dx)
         elif dx < 0:
@@ -766,12 +790,12 @@ class UnixConsole(Console):
 
     def repaint(self):
         if not self.__gone_tall:
-            self.__posxy = 0, self.__posxy[1]
+            self.posxy = 0, self.posxy[1]
             self.__write("\r")
             ns = len(self.screen) * ["\000" * self.width]
             self.screen = ns
         else:
-            self.__posxy = 0, self.__offset
+            self.posxy = 0, self.__offset
             self.__move(0, self.__offset)
             ns = self.height * ["\000" * self.width]
             self.screen = ns
@@ -786,7 +810,7 @@ class UnixConsole(Console):
         # only if the bps is actually needed (which I'm
         # betting is pretty unlkely)
         bps = ratedict.get(self.__svtermstate.ospeed)
-        while 1:
+        while True:
             m = prog.search(fmt)
             if not m:
                 os.write(self.output_fd, fmt)
@@ -802,3 +826,17 @@ class UnixConsole(Console):
                 os.write(self.output_fd, self._pad * nchars)
             else:
                 time.sleep(float(delay) / 1000.0)
+
+    def __input_fd_set(
+        self,
+        state: TermState,
+        ignore: AbstractSet[int] = _error_codes_to_ignore,
+    ) -> bool:
+        try:
+            tcsetattr(self.input_fd, termios.TCSADRAIN, state)
+        except termios.error as te:
+            if te.args[0] not in ignore:
+                raise
+            return False
+        else:
+            return True

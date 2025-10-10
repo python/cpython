@@ -1,2 +1,0 @@
-Fix a crash when instantiating :class:`itertools.count` with an initial
-count of :data:`sys.maxsize` on debug builds. Patch by Bénédikt Tran.

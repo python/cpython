@@ -15,6 +15,7 @@ provoking a 2.0 failure under Linux.
 
 import tempfile
 
+from test import support
 from test.support import threading_helper
 import unittest
 import io
@@ -49,7 +50,8 @@ class TempFileGreedy(threading.Thread):
 
 
 class ThreadedTempFileTest(unittest.TestCase):
-    def test_main(self):
+    @support.bigmemtest(size=NUM_THREADS, memuse=60*2**20, dry_run=False)
+    def test_main(self, size):
         threads = [TempFileGreedy() for i in range(NUM_THREADS)]
         with threading_helper.start_threads(threads, startEvent.set):
             pass

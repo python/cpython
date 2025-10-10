@@ -8,10 +8,46 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"          // PyMutex
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "pycore_global_objects.h"  // _Py_SINGLETON
+
+// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
+#define _Py_MAX_UNICODE 0x10ffff
+
+
+static inline void
+_PyUnicode_Fill(int kind, void *data, Py_UCS4 value,
+                Py_ssize_t start, Py_ssize_t length)
+{
+    assert(0 <= start);
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND: {
+        assert(value <= 0xff);
+        Py_UCS1 ch = (unsigned char)value;
+        Py_UCS1 *to = (Py_UCS1 *)data + start;
+        memset(to, ch, length);
+        break;
+    }
+    case PyUnicode_2BYTE_KIND: {
+        assert(value <= 0xffff);
+        Py_UCS2 ch = (Py_UCS2)value;
+        Py_UCS2 *to = (Py_UCS2 *)data + start;
+        const Py_UCS2 *end = to + length;
+        for (; to < end; ++to) *to = ch;
+        break;
+    }
+    case PyUnicode_4BYTE_KIND: {
+        assert(value <= _Py_MAX_UNICODE);
+        Py_UCS4 ch = value;
+        Py_UCS4 * to = (Py_UCS4 *)data + start;
+        const Py_UCS4 *end = to + length;
+        for (; to < end; ++to) *to = ch;
+        break;
+    }
+    default: Py_UNREACHABLE();
+    }
+}
+
 
 /* --- Characters Type APIs ----------------------------------------------- */
 
@@ -84,12 +120,16 @@ extern int _PyUnicode_FormatAdvancedWriter(
     Py_ssize_t start,
     Py_ssize_t end);
 
+/* PyUnicodeWriter_Format, with va_list instead of `...` */
+extern int _PyUnicodeWriter_FormatV(
+    PyUnicodeWriter *writer,
+    const char *format,
+    va_list vargs);
+
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
 extern PyObject* _PyUnicode_EncodeUTF7(
     PyObject *unicode,          /* Unicode object */
-    int base64SetO,             /* Encode RFC2152 Set O characters in base64 */
-    int base64WhiteSpace,       /* Encode whitespace (sp, ht, nl, cr) in base64 */
     const char *errors);        /* error handling */
 
 /* --- UTF-8 Codecs ------------------------------------------------------- */
@@ -141,14 +181,18 @@ extern PyObject* _PyUnicode_DecodeUnicodeEscapeStateful(
 // Helper for PyUnicode_DecodeUnicodeEscape that detects invalid escape
 // chars.
 // Export for test_peg_generator.
-PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal(
+PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscapeInternal2(
     const char *string,     /* Unicode-Escape encoded string */
     Py_ssize_t length,      /* size of string */
     const char *errors,     /* error handling */
     Py_ssize_t *consumed,   /* bytes consumed */
-    const char **first_invalid_escape); /* on return, points to first
-                                           invalid escaped char in
-                                           string. */
+    int *first_invalid_escape_char, /* on return, if not -1, contain the first
+                                       invalid escaped char (<= 0xff) or invalid
+                                       octal escape (> 0xff) in string. */
+    const char **first_invalid_escape_ptr); /* on return, if not NULL, may
+                                        point to the first invalid escaped
+                                        char in string.
+                                        May be NULL if errors is not NULL. */
 
 /* --- Raw-Unicode-Escape Codecs ---------------------------------------------- */
 
@@ -234,19 +278,11 @@ extern PyObject* _PyUnicode_XStrip(
     );
 
 
-/* Using explicit passed-in values, insert the thousands grouping
-   into the string pointed to by buffer.  For the argument descriptions,
-   see Objects/stringlib/localeutil.h */
-extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
-    _PyUnicodeWriter *writer,
-    Py_ssize_t n_buffer,
-    PyObject *digits,
-    Py_ssize_t d_pos,
-    Py_ssize_t n_digits,
-    Py_ssize_t min_width,
-    const char *grouping,
-    PyObject *thousands_sep,
-    Py_UCS4 *maxchar);
+/* Dedent a string.
+   Behaviour is expected to be an exact match of `textwrap.dedent`.
+   Return a new reference on success, NULL with exception set on error.
+   */
+extern PyObject* _PyUnicode_Dedent(PyObject *unicode);
 
 /* --- Misc functions ----------------------------------------------------- */
 
@@ -285,40 +321,6 @@ PyAPI_FUNC(void) _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject *
 extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 
 /* --- Other API ---------------------------------------------------------- */
-
-struct _Py_unicode_runtime_ids {
-    PyMutex mutex;
-    // next_index value must be preserved when Py_Initialize()/Py_Finalize()
-    // is called multiple times: see _PyUnicode_FromId() implementation.
-    Py_ssize_t next_index;
-};
-
-struct _Py_unicode_runtime_state {
-    struct _Py_unicode_runtime_ids ids;
-};
-
-/* fs_codec.encoding is initialized to NULL.
-   Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
-struct _Py_unicode_fs_codec {
-    char *encoding;   // Filesystem encoding (encoded to UTF-8)
-    int utf8;         // encoding=="utf-8"?
-    char *errors;     // Filesystem errors (encoded to UTF-8)
-    _Py_error_handler error_handler;
-};
-
-struct _Py_unicode_ids {
-    Py_ssize_t size;
-    PyObject **array;
-};
-
-struct _Py_unicode_state {
-    struct _Py_unicode_fs_codec fs_codec;
-
-    _PyUnicode_Name_CAPI *ucnhash_capi;
-
-    // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
-    struct _Py_unicode_ids ids;
-};
 
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
