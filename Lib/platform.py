@@ -110,8 +110,6 @@ __copyright__ = """
 
 """
 
-__version__ = '1.1.0'
-
 import collections
 import os
 import re
@@ -199,6 +197,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         | (GLIBC_([0-9.]+))
         | (libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)
         | (musl-([0-9.]+))
+        | (libc.musl(?:-\w+)?.so(?:\.(\d[0-9.]*))?)
         """,
         re.ASCII | re.VERBOSE)
 
@@ -224,9 +223,10 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                     continue
                 if not m:
                     break
-            libcinit, glibc, glibcversion, so, threads, soversion, musl, muslversion = [
-                s.decode('latin1') if s is not None else s
-                for s in m.groups()]
+            decoded_groups = [s.decode('latin1') if s is not None else s
+                              for s in m.groups()]
+            (libcinit, glibc, glibcversion, so, threads, soversion,
+             musl, muslversion, musl_so, musl_sover) = decoded_groups
             if libcinit and not lib:
                 lib = 'libc'
             elif glibc:
@@ -246,6 +246,10 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                 lib = 'musl'
                 if not ver or V(muslversion) > V(ver):
                     ver = muslversion
+            elif musl_so:
+                lib = 'musl'
+                if musl_sover and (not ver or V(musl_sover) > V(ver)):
+                    ver = musl_sover
             pos = m.end()
     return lib, version if ver is None else ver
 
@@ -1428,6 +1432,15 @@ def _main(args: list[str] | None = None):
     aliased = args.aliased and ('nonaliased' not in args.args)
 
     print(platform(aliased, terse))
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == "__main__":

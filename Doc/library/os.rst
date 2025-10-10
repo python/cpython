@@ -216,8 +216,8 @@ process and user.
 
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
-   :data:`os.environ`, and when one of the :meth:`pop` or :meth:`clear` methods is
-   called.
+   :data:`os.environ`, and when one of the :meth:`~dict.pop` or
+   :meth:`~dict.clear` methods is called.
 
    .. seealso::
 
@@ -430,8 +430,8 @@ process and user.
       associated with the effective user id of the process; the group access
       list may change over the lifetime of the process, it is not affected by
       calls to :func:`setgroups`, and its length is not limited to 16.  The
-      deployment target value, :const:`MACOSX_DEPLOYMENT_TARGET`, can be
-      obtained with :func:`sysconfig.get_config_var`.
+      deployment target value can be obtained with
+      :func:`sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') <sysconfig.get_config_var>`.
 
 
 .. function:: getlogin()
@@ -1501,6 +1501,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    - :data:`RWF_HIPRI`
    - :data:`RWF_NOWAIT`
+   - :data:`RWF_DONTCACHE`
 
    Return the total number of bytes actually read which can be less than the
    total capacity of all the objects.
@@ -1546,6 +1547,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.7
 
 
+.. data:: RWF_DONTCACHE
+
+   Use uncached buffered IO.
+
+   .. availability:: Linux >= 6.14
+
+   .. versionadded:: next
+
+
 .. function:: ptsname(fd, /)
 
    Return the name of the slave pseudo-terminal device associated with the
@@ -1587,6 +1597,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_DSYNC`
    - :data:`RWF_SYNC`
    - :data:`RWF_APPEND`
+   - :data:`RWF_DONTCACHE`
 
    Return the total number of bytes actually written.
 
@@ -2006,8 +2017,8 @@ features:
   must be a string specifying a file path.  However, some functions now
   alternatively accept an open file descriptor for their *path* argument.
   The function will then operate on the file referred to by the descriptor.
-  (For POSIX systems, Python will call the variant of the function prefixed
-  with ``f`` (e.g. call ``fchdir`` instead of ``chdir``).)
+  For POSIX systems, Python will call the variant of the function prefixed
+  with ``f`` (e.g. call ``fchdir`` instead of ``chdir``).
 
   You can check whether or not *path* can be specified as a file descriptor
   for a particular function on your platform using :data:`os.supports_fd`.
@@ -2022,7 +2033,7 @@ features:
 * **paths relative to directory descriptors:** If *dir_fd* is not ``None``, it
   should be a file descriptor referring to a directory, and the path to operate
   on should be relative; path will then be relative to that directory.  If the
-  path is absolute, *dir_fd* is ignored.  (For POSIX systems, Python will call
+  path is absolute, *dir_fd* is ignored.  For POSIX systems, Python will call
   the variant of the function with an ``at`` suffix and possibly prefixed with
   ``f`` (e.g. call ``faccessat`` instead of ``access``).
 
@@ -2035,8 +2046,8 @@ features:
 * **not following symlinks:** If *follow_symlinks* is
   ``False``, and the last element of the path to operate on is a symbolic link,
   the function will operate on the symbolic link itself rather than the file
-  pointed to by the link.  (For POSIX systems, Python will call the ``l...``
-  variant of the function.)
+  pointed to by the link.  For POSIX systems, Python will call the ``l...``
+  variant of the function.
 
   You can check whether or not *follow_symlinks* is supported for a particular
   function on your platform using :data:`os.supports_follow_symlinks`.
@@ -2595,10 +2606,10 @@ features:
 
    Create a filesystem node (file, device special file or named pipe) named
    *path*. *mode* specifies both the permissions to use and the type of node
-   to be created, being combined (bitwise OR) with one of ``stat.S_IFREG``,
-   ``stat.S_IFCHR``, ``stat.S_IFBLK``, and ``stat.S_IFIFO`` (those constants are
-   available in :mod:`stat`).  For ``stat.S_IFCHR`` and ``stat.S_IFBLK``,
-   *device* defines the newly created device special file (probably using
+   to be created, being combined (bitwise OR) with one of :const:`stat.S_IFREG`,
+   :const:`stat.S_IFCHR`, :const:`stat.S_IFBLK`, and :const:`stat.S_IFIFO`.
+   For :const:`stat.S_IFCHR` and :const:`stat.S_IFBLK`, *device* defines the
+   newly created device special file (probably using
    :func:`os.makedev`), otherwise it is ignored.
 
    This function can also support :ref:`paths relative to directory descriptors
@@ -2616,18 +2627,25 @@ features:
 .. function:: major(device, /)
 
    Extract the device major number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
+   :attr:`~stat_result.st_dev` or :attr:`~stat_result.st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: minor(device, /)
 
    Extract the device minor number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
+   :attr:`~stat_result.st_dev` or :attr:`~stat_result.st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: makedev(major, minor, /)
 
    Compose a raw device number from the major and minor device numbers.
+
+
+.. data:: NODEV
+
+   Non-existent device.
+
+   .. versionadded:: next
 
 
 .. function:: pathconf(path, name)
@@ -3346,8 +3364,8 @@ features:
 
    .. versionchanged:: 3.8
       On Windows, the :attr:`st_mode` member now identifies special
-      files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
-      as appropriate.
+      files as :const:`~stat.S_IFCHR`, :const:`~stat.S_IFIFO` or
+      :const:`~stat.S_IFBLK` as appropriate.
 
    .. versionchanged:: 3.12
       On Windows, :attr:`st_ctime` is deprecated. Eventually, it will
@@ -3600,7 +3618,8 @@ features:
      where each member is an int expressing nanoseconds.
    - If *times* is not ``None``,
      it must be a 2-tuple of the form ``(atime, mtime)``
-     where each member is an int or float expressing seconds.
+     where each member is a real number expressing seconds,
+     rounded down to nanoseconds.
    - If *times* is ``None`` and *ns* is unspecified,
      this is equivalent to specifying ``ns=(atime_ns, mtime_ns)``
      where both times are the current time.
@@ -3626,6 +3645,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Accepts any real numbers as *times*, not only integers or floats.
 
 
 .. function:: walk(top, topdown=True, onerror=None, followlinks=False)
@@ -3757,9 +3779,9 @@ features:
 
       import os
       for root, dirs, files, rootfd in os.fwalk('python/Lib/xml'):
-          print(root, "consumes", end="")
+          print(root, "consumes", end=" ")
           print(sum([os.stat(name, dir_fd=rootfd).st_size for name in files]),
-                end="")
+                end=" ")
           print("bytes in", len(files), "non-directory files")
           if '__pycache__' in dirs:
               dirs.remove('__pycache__')  # don't visit __pycache__ directories
@@ -4032,7 +4054,7 @@ Naturally, they are all only available on Linux.
    the timer will fire when the timer's clock
    (set by *clockid* in :func:`timerfd_create`) reaches *initial* seconds.
 
-   The timer's interval is set by the *interval* :py:class:`float`.
+   The timer's interval is set by the *interval* real number.
    If *interval* is zero, the timer only fires once, on the initial expiration.
    If *interval* is greater than zero, the timer fires every time *interval*
    seconds have elapsed since the previous expiration.
@@ -4263,10 +4285,10 @@ to be ignored.
 
 .. function:: abort()
 
-   Generate a :const:`SIGABRT` signal to the current process.  On Unix, the default
+   Generate a :const:`~signal.SIGABRT` signal to the current process.  On Unix, the default
    behavior is to produce a core dump; on Windows, the process immediately returns
    an exit code of ``3``.  Be aware that calling this function will not call the
-   Python signal handler registered for :const:`SIGABRT` with
+   Python signal handler registered for :const:`~signal.SIGABRT` with
    :func:`signal.signal`.
 
 

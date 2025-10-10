@@ -22,6 +22,7 @@ from test.support import (
     captured_stderr,
     force_not_colorized,
     force_not_colorized_test_class,
+    swap_attr,
 )
 from test.support import import_helper
 from test.support import os_helper
@@ -7128,7 +7129,8 @@ class TestColorized(TestCase):
     def setUp(self):
         super().setUp()
         # Ensure color even if ran with NO_COLOR=1
-        _colorize.can_colorize = lambda *args, **kwargs: True
+        self.enterContext(swap_attr(_colorize, 'can_colorize',
+                                     lambda *args, **kwargs: True))
         self.theme = _colorize.get_theme(force_color=True).argparse
 
     def test_argparse_color(self):
@@ -7311,11 +7313,11 @@ class TestColorized(TestCase):
             {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
 
             {heading}positional arguments:{reset}
-                 {pos_b}spam{reset}               spam help
+                 {pos_b}spam{reset}           spam help
 
             {heading}options:{reset}
-                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
-                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+                 {short_b}-h{reset}, {long_b}--help{reset}     show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
 
     def test_custom_formatter_class(self):
@@ -7348,12 +7350,33 @@ class TestColorized(TestCase):
             {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
 
             {heading}positional arguments:{reset}
-                 {pos_b}spam{reset}               spam help
+                 {pos_b}spam{reset}           spam help
 
             {heading}options:{reset}
-                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
-                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+                 {short_b}-h{reset}, {long_b}--help{reset}     show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
+
+    def test_subparser_prog_is_stored_without_color(self):
+        parser = argparse.ArgumentParser(prog='complex', color=True)
+        sub = parser.add_subparsers(dest='command')
+        demo_parser = sub.add_parser('demo')
+
+        self.assertNotIn('\x1b[', demo_parser.prog)
+
+        demo_parser.color = False
+        help_text = demo_parser.format_help()
+        self.assertNotIn('\x1b[', help_text)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(argparse, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 def tearDownModule():
