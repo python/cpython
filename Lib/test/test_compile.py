@@ -651,6 +651,21 @@ class TestSpecifics(unittest.TestCase):
                 compile('pass', filename, 'exec')
         self.assertRaises(TypeError, compile, 'pass', list(b'file.py'), 'exec')
 
+    def test_compile_filename_refleak(self):
+        # Regression tests for reference leak in PyUnicode_FSDecoder.
+        # See https://github.com/python/cpython/issues/139748.
+        mortal_str = 'this is a mortal string'
+        # check error path when 'mode' AC conversion failed
+        self.assertRaises(TypeError, compile, b'', mortal_str, mode=1234)
+        # check error path when 'optimize' AC conversion failed
+        self.assertRaises(OverflowError, compile, b'', mortal_str,
+                          'exec', optimize=1 << 1000)
+        # check error path when 'dont_inherit' AC conversion failed
+        class EvilBool:
+            def __bool__(self): raise ValueError
+        self.assertRaises(ValueError, compile, b'', mortal_str,
+                          'exec', dont_inherit=EvilBool())
+
     @support.cpython_only
     def test_same_filename_used(self):
         s = """def f(): pass\ndef g(): pass"""
@@ -823,8 +838,10 @@ class TestSpecifics(unittest.TestCase):
             else:
                 return "unused"
 
-        self.assertEqual(f.__code__.co_consts,
-                         (f.__doc__, "used"))
+        if f.__doc__ is None:
+            self.assertEqual(f.__code__.co_consts, (True, "used"))
+        else:
+            self.assertEqual(f.__code__.co_consts, (f.__doc__, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_no_docstring(self):
@@ -869,7 +886,11 @@ class TestSpecifics(unittest.TestCase):
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, (f1.__doc__,))
+
+        if f1.__doc__ is None:
+            self.assertEqual(f1.__code__.co_consts, (42,))
+        else:
+            self.assertEqual(f1.__code__.co_consts, (f1.__doc__,))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -1609,6 +1630,17 @@ class TestSpecifics(unittest.TestCase):
         def f():
             a if (1 if b else c) else d
 
+    def test_lineno_propagation_empty_blocks(self):
+        # Smoke test. See gh-138714.
+        def f():
+            while name:
+                try:
+                    break
+                except:
+                    pass
+            else:
+                1 if 1 else 1
+
     def test_global_declaration_in_except_used_in_else(self):
         # See gh-111123
         code = textwrap.dedent("""\
@@ -1722,6 +1754,21 @@ class TestBooleanExpression(unittest.TestCase):
         res = v[0] or v[1] and v[2] or v[3] or v[4]
         self.assertIs(res, v[3])
         self.assertEqual([e.called for e in v], [1, 1, 0, 1, 0])
+
+    def test_exception(self):
+        # See gh-137288
+        class Foo:
+            def __bool__(self):
+                raise NotImplementedError()
+
+        a = Foo()
+        b = Foo()
+
+        with self.assertRaises(NotImplementedError):
+            bool(a)
+
+        with self.assertRaises(NotImplementedError):
+            c = a or b
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):

@@ -884,6 +884,7 @@ class HTMLDoc(Doc):
         for key, value in inspect.getmembers(object, inspect.isroutine):
             # if __all__ exists, believe it.  Otherwise use a heuristic.
             if (all is not None
+                or inspect.isbuiltin(value)
                 or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
@@ -1328,6 +1329,7 @@ location listed above.
         for key, value in inspect.getmembers(object, inspect.isroutine):
             # if __all__ exists, believe it.  Otherwise use a heuristic.
             if (all is not None
+                or inspect.isbuiltin(value)
                 or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
@@ -1812,7 +1814,6 @@ def writedocs(dir, pkgpath='', done=None):
 
 
 def _introdoc():
-    import textwrap
     ver = '%d.%d' % sys.version_info[:2]
     if os.environ.get('PYTHON_BASIC_REPL'):
         pyrepl_keys = ''
@@ -2170,7 +2171,6 @@ module "pydoc_data.topics" could not be found.
         if more_xrefs:
             xrefs = (xrefs or '') + ' ' + more_xrefs
         if xrefs:
-            import textwrap
             text = 'Related help topics: ' + ', '.join(xrefs.split()) + '\n'
             wrapped_text = textwrap.wrap(text, 72)
             doc += '\n%s\n' % '\n'.join(wrapped_text)

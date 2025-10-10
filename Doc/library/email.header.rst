@@ -206,7 +206,7 @@ The :mod:`email.header` module also provides the following convenient functions.
 
    .. note::
 
-       This function exists for for backwards compatibility only. For
+       This function exists for backwards compatibility only. For
        new code, we recommend using :class:`email.headerregistry.HeaderRegistry`.
 
 
@@ -225,5 +225,5 @@ The :mod:`email.header` module also provides the following convenient functions.
 
    .. note::
 
-       This function exists for for backwards compatibility only, and is
+       This function exists for backwards compatibility only, and is
        not recommended for use in new code.

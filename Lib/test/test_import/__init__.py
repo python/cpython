@@ -35,7 +35,7 @@ from test.support import (
     cpython_only,
     is_apple_mobile,
     is_emscripten,
-    is_wasi,
+    is_wasm32,
     run_in_subinterp,
     run_in_subinterp_with_config,
     Py_TRACE_REFS,
@@ -1187,6 +1187,7 @@ except ImportError as e:
 
     @unittest.skipIf(sys.platform == 'win32', 'Cannot delete cwd on Windows')
     @unittest.skipIf(sys.platform == 'sunos5', 'Cannot delete cwd on Solaris/Illumos')
+    @unittest.skipIf(sys.platform.startswith('aix'), 'Cannot delete cwd on AIX')
     def test_script_shadowing_stdlib_cwd_failure(self):
         with os_helper.temp_dir() as tmp:
             subtmp = os.path.join(tmp, "subtmp")
@@ -1257,7 +1258,7 @@ class FilePermissionTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "Emscripten's/WASI's umask is a stub."
     )
     def test_creation_mode(self):

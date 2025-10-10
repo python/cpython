@@ -42,6 +42,8 @@ noted otherwise, all return values are floats.
 :func:`fabs(x) <fabs>`                                Absolute value of *x*
 :func:`floor(x)  <floor>`                             Floor of *x*, the largest integer less than or equal to *x*
 :func:`fma(x, y, z) <fma>`                            Fused multiply-add operation: ``(x * y) + z``
+:func:`fmax(x, y) <fmax>`                             Maximum of two floating-point values
+:func:`fmin(x, y) <fmin>`                             Minimum of two floating-point values
 :func:`fmod(x, y) <fmod>`                             Remainder of division ``x / y``
 :func:`modf(x) <modf>`                                Fractional and integer parts of *x*
 :func:`remainder(x, y) <remainder>`                   Remainder of *x* with respect to *y*
@@ -59,6 +61,7 @@ noted otherwise, all return values are floats.
 :func:`isnan(x) <isnan>`                              Check if *x* is a NaN  (not a number)
 :func:`ldexp(x, i) <ldexp>`                           ``x * (2**i)``, inverse of function :func:`frexp`
 :func:`nextafter(x, y, steps) <nextafter>`            Floating-point value *steps* steps after *x* towards *y*
+:func:`signbit(x) <signbit>`                          Check if *x* is a negative number
 :func:`ulp(x) <ulp>`                                  Value of the least significant bit of *x*
 
 **Power, exponential and logarithmic functions**
@@ -247,6 +250,30 @@ Floating point arithmetic
    .. versionadded:: 3.13
 
 
+.. function:: fmax(x, y)
+
+   Get the larger of two floating-point values, treating NaNs as missing data.
+
+   When both operands are (signed) NaNs or zeroes, return ``nan`` and ``0``
+   respectively and the sign of the result is implementation-defined, that
+   is, :func:`!fmax` is not required to be sensitive to the sign of such
+   operands (see Annex F of the C11 standard, §F.10.0.3 and §F.10.9.2).
+
+   .. versionadded:: next
+
+
+.. function:: fmin(x, y)
+
+   Get the smaller of two floating-point values, treating NaNs as missing data.
+
+   When both operands are (signed) NaNs or zeroes, return ``nan`` and ``0``
+   respectively and the sign of the result is implementation-defined, that
+   is, :func:`!fmin` is not required to be sensitive to the sign of such
+   operands (see Annex F of the C11 standard, §F.10.0.3 and §F.10.9.3).
+
+   .. versionadded:: next
+
+
 .. function:: fmod(x, y)
 
    Return the floating-point remainder of ``x / y``,
@@ -429,6 +456,15 @@ Floating point manipulation functions
 
    .. versionchanged:: 3.12
       Added the *steps* argument.
+
+
+.. function:: signbit(x)
+
+   Return ``True`` if the sign of *x* is negative and ``False`` otherwise.
+
+   This is useful to detect the sign bit of zeroes, infinities and NaNs.
+
+   .. versionadded:: next
 
 
 .. function:: ulp(x)
@@ -794,7 +830,7 @@ Constants
    The mathematical constant *τ* = 6.283185..., to available precision.
    Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
-   Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
+   Wrong <https://vimeo.com/147792667>`_, and start celebrating
    `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
