@@ -302,6 +302,9 @@ Object Protocol
 
    .. versionadded:: next
 
+   .. seealso::
+      :c:func:`PyObject_GenericGetDict` function.
+
 
 .. c:function:: PyObject** _PyObject_GetDictPtr(PyObject *obj)
 
