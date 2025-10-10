@@ -426,7 +426,8 @@ _PyTokenizer_check_coding_spec(const char* line, Py_ssize_t size, struct tok_sta
         if (strcmp(tok->encoding, cs) != 0) {
             tok->line_start = line;
             tok->cur = (char *)line;
-            _PyTokenizer_syntaxerror_known_range(tok, 0, size,
+            assert(size <= INT_MAX);
+            _PyTokenizer_syntaxerror_known_range(tok, 0, (int)size,
                         "encoding problem: %s with BOM", cs);
             PyMem_Free(cs);
             _PyTokenizer_error_ret(tok);
