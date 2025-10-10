@@ -1274,7 +1274,7 @@ PyTupleWriter*
 PyTupleWriter_Create(Py_ssize_t size)
 {
     if (size < 0) {
-        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
+        PyErr_BadInternalCall();
         return NULL;
     }
 

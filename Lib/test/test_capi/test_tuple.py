@@ -314,6 +314,9 @@ class TupleWriterTest(unittest.TestCase):
         writer = self.create_writer(123)
         self.assertIs(writer.finish(), ())
 
+        with self.assertRaises(SystemError):
+            self.create_writer(-2)
+
     def check_add(self, name):
          writer = self.create_writer(3)
          add = getattr(writer, name)
