@@ -1552,7 +1552,7 @@ class CommandLineTestCase(unittest.TestCase):
     @mock.patch.object(HTTPServer, 'serve_forever')
     def test_extra_response_headers_arg(self, _, mock_make_server):
         server._main(
-            ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2', '8080']
+            ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2:v3 v4', '8080']
         )
         # Get an instance of the server / RequestHandler by using
         # the spied call args, then calling _make_server with them.
@@ -1573,7 +1573,7 @@ class CommandLineTestCase(unittest.TestCase):
                 mock.ANY, mock.ANY, mock.ANY,
                 directory=mock.ANY,
                 extra_response_headers=[
-                    ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2']
+                    ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2:v3 v4']
                 ]
             )
 
