@@ -215,6 +215,10 @@ The variables defined in the :mod:`signal` module are:
 
    Segmentation fault: invalid memory reference.
 
+.. data:: SIGSTOP
+
+   Stop executing (cannot be caught or ignored).
+
 .. data:: SIGSTKFLT
 
    Stack fault on coprocessor. The Linux kernel does not raise this signal: it
@@ -240,6 +244,18 @@ The variables defined in the :mod:`signal` module are:
 .. data:: SIGUSR2
 
    User-defined signal 2.
+
+   .. availability:: Unix.
+
+.. data:: SIGPROF
+
+   Profiling timer expired.
+
+   .. availability:: Unix.
+
+.. data:: SIGVTALRM
+
+   Virtual timer expired.
 
    .. availability:: Unix.
 
