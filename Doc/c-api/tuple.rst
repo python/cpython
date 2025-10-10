@@ -207,6 +207,17 @@ object.
    On success, return ``0``.
    On error, set an exception and return ``-1``.
 
+.. c:function:: int PyTupleWriter_AddSteal(PyTupleWriter *writer, PyObject *item)
+
+   Similar to :c:func:`PyTupleWriter_Add`, but take the ownership of *item*.
+
+.. c:function:: int PyTupleWriter_AddArray(PyTupleWriter *writer, PyObject *const *array, Py_ssize_t size)
+
+   Add items from an array to *writer*.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
 
 .. _struct-sequence-objects:
 

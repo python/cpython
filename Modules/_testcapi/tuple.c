@@ -217,6 +217,43 @@ writer_add(PyObject *self_raw, PyObject *item)
 
 
 static PyObject*
+writer_add_steal(PyObject *self_raw, PyObject *item)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    if (PyTupleWriter_AddSteal(self->writer, Py_NewRef(item)) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+writer_add_array(PyObject *self_raw, PyObject *args)
+{
+    PyObject *tuple;
+    if (!PyArg_ParseTuple(args, "O!", &PyTuple_Type, &tuple)) {
+        return NULL;
+    }
+
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    PyObject **array = &PyTuple_GET_ITEM(tuple, 0);
+    Py_ssize_t size = PyTuple_GET_SIZE(tuple);
+    if (PyTupleWriter_AddArray(self->writer, array, size) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
 writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -232,6 +269,8 @@ writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 
 static PyMethodDef writer_methods[] = {
     {"add", _PyCFunction_CAST(writer_add), METH_O},
+    {"add_steal", _PyCFunction_CAST(writer_add_steal), METH_O},
+    {"add_array", _PyCFunction_CAST(writer_add_array), METH_VARARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {NULL, NULL}  /* sentinel */
 };

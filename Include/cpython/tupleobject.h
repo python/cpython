@@ -51,5 +51,12 @@ PyAPI_FUNC(PyTupleWriter*) PyTupleWriter_Create(Py_ssize_t size);
 PyAPI_FUNC(int) PyTupleWriter_Add(
     PyTupleWriter *writer,
     PyObject *item);
+PyAPI_FUNC(int) PyTupleWriter_AddSteal(
+    PyTupleWriter *writer,
+    PyObject *item);
+PyAPI_FUNC(int) PyTupleWriter_AddArray(
+    PyTupleWriter *writer,
+    PyObject *const *array,
+    Py_ssize_t size);
 PyAPI_FUNC(PyObject*) PyTupleWriter_Finish(PyTupleWriter *writer);
 PyAPI_FUNC(void) PyTupleWriter_Discard(PyTupleWriter *writer);

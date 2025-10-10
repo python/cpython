@@ -314,16 +314,35 @@ class TupleWriterTest(unittest.TestCase):
         writer = self.create_writer(123)
         self.assertIs(writer.finish(), ())
 
-    def test_add(self):
-         # Test PyTupleWriter_Add()
+    def check_add(self, name):
          writer = self.create_writer(3)
+         add = getattr(writer, name)
          for ch in 'abc':
-             writer.add(ch)
+             add(ch)
          self.assertEqual(writer.finish(), ('a', 'b', 'c'))
 
          writer = self.create_writer(0)
+         add = getattr(writer, name)
          for i in range(1024):
-             writer.add(i)
+             add(i)
+         self.assertEqual(writer.finish(), tuple(range(1024)))
+
+    def test_add(self):
+         # Test PyTupleWriter_Add()
+         self.check_add('add')
+
+    def test_add_steal(self):
+         # Test PyTupleWriter_AddSteal()
+         self.check_add('add_steal')
+
+    def test_add_array(self):
+         writer = self.create_writer(0)
+         writer.add_array(('a', 'b', 'c'))
+         writer.add_array(('d', 'e'))
+         self.assertEqual(writer.finish(), ('a', 'b', 'c', 'd', 'e'))
+
+         writer = self.create_writer(0)
+         writer.add_array(tuple(range(1024)))
          self.assertEqual(writer.finish(), tuple(range(1024)))
 
 

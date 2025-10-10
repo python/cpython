@@ -1314,15 +1314,30 @@ PyTupleWriter_Create(Py_ssize_t size)
 }
 
 
-int PyTupleWriter_Add(PyTupleWriter *writer, PyObject *item)
+int
+PyTupleWriter_Add(PyTupleWriter *writer, PyObject *item)
 {
     if (writer->size >= writer->allocated) {
         if (_PyTupleWriter_SetSize(writer, writer->size + 1, 1) < 0) {
             return -1;
         }
-        assert(writer->size < writer->allocated);
     }
-    assert(writer->items != NULL);
+
+    writer->items[writer->size] = Py_NewRef(item);
+    writer->size++;
+    return 0;
+}
+
+
+int
+PyTupleWriter_AddSteal(PyTupleWriter *writer, PyObject *item)
+{
+    if (writer->size >= writer->allocated) {
+        if (_PyTupleWriter_SetSize(writer, writer->size + 1, 1) < 0) {
+            Py_DECREF(item);
+            return -1;
+        }
+    }
 
     writer->items[writer->size] = item;
     writer->size++;
@@ -1330,7 +1345,33 @@ int PyTupleWriter_Add(PyTupleWriter *writer, PyObject *item)
 }
 
 
-PyObject* PyTupleWriter_Finish(PyTupleWriter *writer)
+int
+PyTupleWriter_AddArray(PyTupleWriter *writer,
+                       PyObject *const *array, Py_ssize_t size)
+{
+    if (size < 0) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    if ((writer->size + (size_t)size) > writer->allocated) {
+        if (_PyTupleWriter_SetSize(writer,
+                                   writer->size + (size_t)size, 1) < 0) {
+            return -1;
+        }
+    }
+
+    PyObject **items = &writer->items[writer->size];
+    for (Py_ssize_t i=0; i < size; i++) {
+        *items++ = Py_NewRef(*array++);
+    }
+    writer->size += size;
+    return 0;
+}
+
+
+PyObject*
+PyTupleWriter_Finish(PyTupleWriter *writer)
 {
     if (writer->size == 0) {
         PyTupleWriter_Discard(writer);
@@ -1362,7 +1403,8 @@ PyObject* PyTupleWriter_Finish(PyTupleWriter *writer)
 }
 
 
-void PyTupleWriter_Discard(PyTupleWriter *writer)
+void
+PyTupleWriter_Discard(PyTupleWriter *writer)
 {
     if (writer == NULL) {
         return;
