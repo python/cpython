@@ -333,7 +333,7 @@ class ModuleFinder:
     def load_module(self, fqname, fp, pathname, file_info):
         suffix, mode, type = file_info
         self.msgin(2, "load_module", fqname, fp and "fp", pathname)
-        if type == _PKG_DIRECTORY:
+        if type in (_PKG_DIRECTORY, _NAMESPACE):
             m = self.load_package(fqname, pathname)
             self.msgout(2, "load_module ->", m)
             return m
@@ -458,6 +458,13 @@ class ModuleFinder:
         if newname:
             fqname = newname
         m = self.add_module(fqname)
+
+        # TODO: Update the type check once GH-119669 is merged.
+        # if isinstance(pathname, importlib.machinery.NamespacePath):
+        if 'NamespacePath' in type(pathname).__name__:
+            m.__path__ = pathname
+            return m
+
         m.__file__ = pathname
         m.__path__ = [pathname]
 
