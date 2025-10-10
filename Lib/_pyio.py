@@ -876,16 +876,28 @@ class BytesIO(BufferedIOBase):
     _buffer = None
 
     def __init__(self, initial_bytes=None):
+        # Use to keep self._buffer and self._pos consistent.
+        self._lock = Lock()
+
         buf = bytearray()
         if initial_bytes is not None:
             buf += initial_bytes
-        self._buffer = buf
-        self._pos = 0
+
+        with self._lock:
+            self._buffer = buf
+            self._pos = 0
 
     def __getstate__(self):
         if self.closed:
             raise ValueError("__getstate__ on closed file")
-        return self.__dict__.copy()
+        with self._lock:
+            state = self.__dict__.copy()
+        del state['_lock']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._lock = Lock()
 
     def getvalue(self):
         """Return the bytes value (contents) of the buffer
@@ -918,14 +930,16 @@ class BytesIO(BufferedIOBase):
                 raise TypeError(f"{size!r} is not an integer")
             else:
                 size = size_index()
-        if size < 0:
-            size = len(self._buffer)
-        if len(self._buffer) <= self._pos:
-            return b""
-        newpos = min(len(self._buffer), self._pos + size)
-        b = self._buffer[self._pos : newpos]
-        self._pos = newpos
-        return bytes(b)
+
+        with self._lock:
+            if size < 0:
+                size = len(self._buffer)
+            if len(self._buffer) <= self._pos:
+                return b""
+            newpos = min(len(self._buffer), self._pos + size)
+            b = self._buffer[self._pos : newpos]
+            self._pos = newpos
+            return bytes(b)
 
     def read1(self, size=-1):
         """This is the same as read.
@@ -941,12 +955,14 @@ class BytesIO(BufferedIOBase):
             n = view.nbytes  # Size of any bytes-like object
         if n == 0:
             return 0
-        pos = self._pos
-        if pos > len(self._buffer):
-            # Pad buffer to pos with null bytes.
-            self._buffer.resize(pos)
-        self._buffer[pos:pos + n] = b
-        self._pos += n
+
+        with self._lock:
+            pos = self._pos
+            if pos > len(self._buffer):
+                # Pad buffer to pos with null bytes.
+                self._buffer.resize(pos)
+            self._buffer[pos:pos + n] = b
+            self._pos += n
         return n
 
     def seek(self, pos, whence=0):
@@ -963,9 +979,11 @@ class BytesIO(BufferedIOBase):
                 raise ValueError("negative seek position %r" % (pos,))
             self._pos = pos
         elif whence == 1:
-            self._pos = max(0, self._pos + pos)
+            with self._lock:
+                self._pos = max(0, self._pos + pos)
         elif whence == 2:
-            self._pos = max(0, len(self._buffer) + pos)
+            with self._lock:
+                self._pos = max(0, len(self._buffer) + pos)
         else:
             raise ValueError("unsupported whence value")
         return self._pos
@@ -978,18 +996,20 @@ class BytesIO(BufferedIOBase):
     def truncate(self, pos=None):
         if self.closed:
             raise ValueError("truncate on closed file")
-        if pos is None:
-            pos = self._pos
-        else:
-            try:
-                pos_index = pos.__index__
-            except AttributeError:
-                raise TypeError(f"{pos!r} is not an integer")
+
+        with self._lock:
+            if pos is None:
+                pos = self._pos
             else:
-                pos = pos_index()
-            if pos < 0:
-                raise ValueError("negative truncate position %r" % (pos,))
-        del self._buffer[pos:]
+                try:
+                    pos_index = pos.__index__
+                except AttributeError:
+                    raise TypeError(f"{pos!r} is not an integer")
+                else:
+                    pos = pos_index()
+                if pos < 0:
+                    raise ValueError("negative truncate position %r" % (pos,))
+            del self._buffer[pos:]
         return pos
 
     def readable(self):

@@ -132,7 +132,7 @@ class DictComprehensionTest(unittest.TestCase):
 
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
-        # __next__ should should be the iterator expression
+        # __next__ should be the iterator expression
         def init_raises():
             try:
                 {x:x for x in BrokenIter(init_raises=True)}

@@ -1,0 +1,1 @@
+Fix :class:`wave.Wave_write` emitting an unraisable when open raises.

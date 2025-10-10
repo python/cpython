@@ -16,6 +16,7 @@
 
 
 // Include standard header files
+// When changing these files, remember to update Doc/extending/extending.rst.
 #include <assert.h>               // assert()
 #include <inttypes.h>             // uintptr_t
 #include <limits.h>               // INT_MAX
@@ -45,27 +46,28 @@
 #  endif
 #endif
 
-// gh-111506: The free-threaded build is not compatible with the limited API
-// or the stable ABI.
-#if defined(Py_LIMITED_API) && defined(Py_GIL_DISABLED)
-#  error "The limited API is not currently supported in the free-threaded build"
+#if defined(Py_GIL_DISABLED)
+#  if defined(Py_LIMITED_API) && !defined(_Py_OPAQUE_PYOBJECT)
+#    error "Py_LIMITED_API is not currently supported in the free-threaded build"
+#  endif
+
+#  if defined(_MSC_VER)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+
+#  if defined(__MINGW32__)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+#endif // Py_GIL_DISABLED
+
+#ifdef _MSC_VER
+// Ignore MSC warning C4201: "nonstandard extension used: nameless
+// struct/union".  (Only generated for C standard versions less than C11, which
+// we don't *officially* support.)
+__pragma(warning(push))
+__pragma(warning(disable: 4201))
 #endif
 
-#if defined(Py_GIL_DISABLED) && defined(_MSC_VER)
-#  include <intrin.h>             // __readgsqword()
-#endif
-
-#if defined(Py_GIL_DISABLED) && defined(__MINGW32__)
-#  include <intrin.h>             // __readgsqword()
-#endif
-
-// Suppress known warnings in Python header files.
-#if defined(_MSC_VER)
-// Warning that alignas behaviour has changed. Doesn't affect us, because we
-// never relied on the old behaviour.
-#pragma warning(push)
-#pragma warning(disable: 5274)
-#endif
 
 // Include Python header files
 #include "pyport.h"
@@ -76,7 +78,7 @@
 #include "pybuffer.h"
 #include "pystats.h"
 #include "pyatomic.h"
-#include "lock.h"
+#include "cpython/pylock.h"
 #include "critical_section.h"
 #include "object.h"
 #include "refcount.h"
@@ -103,7 +105,7 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
-#include "monitoring.h"
+#include "cpython/monitoring.h"
 #include "cpython/funcobject.h"
 #include "cpython/classobject.h"
 #include "fileobject.h"
@@ -146,9 +148,8 @@
 #include "cpython/pyfpe.h"
 #include "cpython/tracemalloc.h"
 
-// Restore warning filter
 #ifdef _MSC_VER
-#pragma warning(pop)
+__pragma(warning(pop))  // warning(disable: 4201)
 #endif
 
 #endif /* !Py_PYTHON_H */
