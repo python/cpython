@@ -852,6 +852,10 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* Add :c:type:`PyObject_GetDictPtr` function to get a pointer to
+  :py:attr:`~object.__dict__` of an object.
+  (Contributed by Victor Stinner in :gh:`139852`.)
+
 
 Porting to Python 3.15
 ----------------------

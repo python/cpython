@@ -287,14 +287,26 @@ Object Protocol
    .. versionadded:: 3.3
 
 
+.. c:function:: int PyObject_GetDictPtr(PyObject *obj, PyObject ***dict_ptr)
+
+   Get a pointer to :py:attr:`~object.__dict__` of the object *obj*.
+
+   * If there is a ``__dict__``, set *\*dict_ptr* and return ``1``.
+   * If there is no ``__dict__``, set *\*dict_ptr* to ``NULL`` without setting
+     an exception and return ``0``.
+   * On error, set an exception and return ``-1``.
+
+   This function may need to allocate memory for the dictionary, so it may be
+   more efficient to call :c:func:`PyObject_GetAttr` when accessing an
+   attribute on the object.
+
+   .. versionadded:: next
+
+
 .. c:function:: PyObject** _PyObject_GetDictPtr(PyObject *obj)
 
-   Return a pointer to :py:attr:`~object.__dict__` of the object *obj*.
-   If there is no ``__dict__``, return ``NULL`` without setting an exception.
-
-   This function may need to allocate memory for the
-   dictionary, so it may be more efficient to call :c:func:`PyObject_GetAttr`
-   when accessing an attribute on the object.
+   Similar to :c:func:`PyObject_GetDictPtr`, but ignore errors silently (return
+   ``NULL`` without setting an exception).
 
 
 .. c:function:: PyObject* PyObject_RichCompare(PyObject *o1, PyObject *o2, int opid)

@@ -1,0 +1,2 @@
+Add :c:type:`PyObject_GetDictPtr` function to get a pointer to
+:py:attr:`~object.__dict__` of an object. Patch by Victor Stinner.
