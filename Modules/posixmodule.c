@@ -689,6 +689,14 @@ reset_remotedebug_data(PyThreadState *tstate)
            _Py_MAX_SCRIPT_PATH_SIZE);
 }
 
+static void
+reset_asyncio_state(_PyThreadStateImpl *tstate)
+{
+    llist_init(&tstate->asyncio_tasks_head);
+    tstate->asyncio_running_loop = NULL;
+    tstate->asyncio_running_task = NULL;
+}
+
 
 void
 PyOS_AfterFork_Child(void)
@@ -724,6 +732,8 @@ PyOS_AfterFork_Child(void)
     }
 
     reset_remotedebug_data(tstate);
+
+    reset_asyncio_state((_PyThreadStateImpl *)tstate);
 
     // Remove the dead thread states. We "start the world" once we are the only
     // thread state left to undo the stop the world call in `PyOS_BeforeFork`.
