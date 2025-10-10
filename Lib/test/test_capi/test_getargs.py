@@ -1445,6 +1445,7 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                 use_main_obmalloc=False,
                 gil=2,
                 check_multi_interp_extensions=True,
+                can_handle_signals=True,
             )
             rc = support.run_in_subinterp_with_config(script, **config)
             assert rc == 0

@@ -93,6 +93,9 @@ might not be allowed in the current interpreter (i.e. os.fork() would fail).
 /* Set if os.exec*() is allowed. */
 #define Py_RTFLAGS_EXEC (1UL << 16)
 
+/* Set if signal handling is allowed. */
+#define Py_RTFLAGS_CAN_HANDLE_SIGNALS (1UL << 17)
+
 extern int _PyInterpreterState_HasFeature(PyInterpreterState *interp,
                                           unsigned long feature);
 
