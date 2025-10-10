@@ -42,22 +42,22 @@ Python in one of various formats, follow one of links in this table.{% endtrans 
   </tr>
   <tr>
     <td>{% trans %}HTML{% endtrans %}</td>
-    <td>{% trans download_size="13" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-html.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
-    <td>{% trans download_size="8" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-html.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-html.zip">Download</a>{% endtrans %}</td>
+    <td>{% trans %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-html.tar.bz2">Download</a>{% endtrans %}</td>
   </tr>
   <tr>
     <td>{% trans %}Plain text{% endtrans %}</td>
-    <td>{% trans download_size="4" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-text.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
-    <td>{% trans download_size="3" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-text.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-text.zip">Download</a>{% endtrans %}</td>
+    <td>{% trans %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-text.tar.bz2">Download</a>{% endtrans %}</td>
   </tr>
   <tr>
     <td>{% trans %}Texinfo{% endtrans %}</td>
-    <td>{% trans download_size="9" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-texinfo.zip">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
-    <td>{% trans download_size="7" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-texinfo.tar.bz2">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-texinfo.zip">Download</a>{% endtrans %}</td>
+    <td>{% trans %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs-texinfo.tar.bz2">Download</a>{% endtrans %}</td>
  </tr>
  <tr>
     <td>{% trans %}EPUB{% endtrans %}</td>
-    <td>{% trans download_size="6" %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs.epub">Download</a> (ca. {{ download_size }} MiB){% endtrans %}</td>
+    <td>{% trans %}<a href="{{ dl_base }}/python-{{ dl_version }}-docs.epub">Download</a>{% endtrans %}</td>
     <td></td>
   </tr>
 </table>
@@ -71,6 +71,9 @@ To build a PDF archive, follow the instructions in the
 and run <code>make dist-pdf</code> in the <code>Doc/</code> directory of a copy of the CPython repository.
 {% endtrans %}</p>
 
+<p>{% trans %}
+See the <a href="https://docs.python.org/{{ version }}/archives/">directory listing</a>
+for file sizes.{% endtrans %}</p>
 
 <h2>{% trans %}Unpacking{% endtrans %}</h2>
 
@@ -83,9 +86,8 @@ best compression and fastest download times.{% endtrans %}</p>
 <p>{% trans %}Windows users can use the ZIP archives since those are customary on that
 platform. These are created on Unix using the Info-ZIP zip program.{% endtrans %}</p>
 
-
 <h2>{% trans %}Problems{% endtrans %}</h2>
-
-<p>{% trans %}If you have comments or suggestions for the Python documentation, please send
-email to <a href="mailto:docs@python.org">docs@python.org</a>.{% endtrans %}</p>
+{% set bugs = pathto('bugs') %}
+<p>{% trans bugs = bugs %}<a href="{{ bugs }}">Open an issue</a>
+if you have comments or suggestions for the Python documentation.{% endtrans %}</p>
 {% endblock %}
