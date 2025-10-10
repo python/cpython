@@ -378,7 +378,8 @@ http.server
 -----------
 
 * Added a new ``extra_response_headers`` keyword argument to
-  :class:`SimpleHTTPRequestHandler` to support custom headers in HTTP responses.
+  :class:`~http.server.SimpleHTTPRequestHandler` to support custom headers in
+  HTTP responses.
   (Contributed by Anton I. Sipos in :gh:`135057`.)
 
 * Added a ``-H`` or ``--header`` flag to the :program:`python -m http.server`
