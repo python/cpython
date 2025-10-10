@@ -212,8 +212,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          Writable :term:`bytes-like object` is now accepted.
 
 
-   .. method:: flush()
-               flush(offset, size, /)
+   .. method:: flush([offset[, size]])
 
       Flushes changes made to the in-memory copy of a file back to disk. Without
       use of this call there is no guarantee that changes are written back before
@@ -229,6 +228,12 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          Previously, a nonzero value was returned on success; zero was returned
          on error under Windows.  A zero value was returned on success; an
          exception was raised on error under Unix.
+
+      .. versionchanged:: next
+         Allow specifying *offset* without *size*. Previously, both *offset*
+         and *size* parameters were required together. Now *offset* can be
+         specified alone, and the flush operation will extend from *offset*
+         to the end of the mmap.
 
 
    .. method:: madvise(option[, start[, length]])

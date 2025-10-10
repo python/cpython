@@ -1047,6 +1047,10 @@ static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
 }
 #endif
 
+/* Utility for the tp_traverse slot of mutable heap types that have no other
+ * references. */
+PyAPI_FUNC(int) _PyObject_VisitType(PyObject *op, visitproc visit, void *arg);
+
 #ifdef __cplusplus
 }
 #endif
