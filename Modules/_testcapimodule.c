@@ -3375,8 +3375,9 @@ _testcapi_exec(PyObject *m)
         return -1;
     }
 
-    if (PyType_Ready(&OldComplexLikeType) < 0)
-        return NULL;
+    if (PyType_Ready(&OldComplexLikeType) < 0) {
+        return -1;
+    }
     Py_INCREF(&OldComplexLikeType);
     PyModule_AddObject(m, "old_complex_like", (PyObject *)&OldComplexLikeType);
     PyObject *managed_dict_type = create_managed_dict_type();
