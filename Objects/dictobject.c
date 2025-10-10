@@ -2220,9 +2220,9 @@ dict_new_presized(Py_ssize_t minused, bool unicode)
 }
 
 PyObject *
-_PyDict_NewPresized(Py_ssize_t minused)
+PyDict_NewPresized(Py_ssize_t size)
 {
-    return dict_new_presized(minused, false);
+    return dict_new_presized(size, false);
 }
 
 PyObject *

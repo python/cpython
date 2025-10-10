@@ -36,6 +36,14 @@ Dictionary Objects
    Return a new empty dictionary, or ``NULL`` on failure.
 
 
+.. c:function:: PyObject* PyDict_NewPresized(Py_ssize_t size)
+
+   Return a new empty dictionary with at least *size* preallocated items,
+   or ``NULL`` on failure.
+
+   .. versionadded:: next
+
+
 .. c:function:: PyObject* PyDictProxy_New(PyObject *mapping)
 
    Return a :class:`types.MappingProxyType` object for a mapping which

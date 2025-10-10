@@ -258,6 +258,17 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject *
+dict_newpresized(PyObject *self, PyObject *args)
+{
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "n", &size)) {
+        return NULL;
+    }
+    return PyDict_NewPresized(size);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"dict_containsstring", dict_containsstring, METH_VARARGS},
     {"dict_getitemref", dict_getitemref, METH_VARARGS},
@@ -268,7 +279,8 @@ static PyMethodDef test_methods[] = {
     {"dict_pop_null", dict_pop_null, METH_VARARGS},
     {"dict_popstring", dict_popstring, METH_VARARGS},
     {"dict_popstring_null", dict_popstring_null, METH_VARARGS},
-    {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
+    {"test_dict_iteration", test_dict_iteration, METH_NOARGS},
+    {"dict_newpresized", dict_newpresized, METH_VARARGS},
     {NULL},
 };
 

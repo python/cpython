@@ -852,6 +852,10 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* Add :c:func:`PyDict_NewPresized` function to create a new empty dictionary
+  with at least *size* preallocated items.
+  (Contributed by Victor Stinner in :gh:`139772`.)
+
 
 Porting to Python 3.15
 ----------------------
