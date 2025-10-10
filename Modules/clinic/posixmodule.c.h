@@ -5035,7 +5035,8 @@ PyDoc_STRVAR(os_forkpty__doc__,
 "Returns a tuple of (pid, master_fd).\n"
 "Like fork(), return pid of 0 to the child process,\n"
 "and pid of child to the parent process.\n"
-"To both, return fd of newly opened pseudo-terminal.");
+"To both, return fd of newly opened pseudo-terminal.\n"
+"The master_fd is non-inheritable.");
 
 #define OS_FORKPTY_METHODDEF    \
     {"forkpty", (PyCFunction)os_forkpty, METH_NOARGS, os_forkpty__doc__},
@@ -7814,6 +7815,7 @@ PyDoc_STRVAR(os_preadv__doc__,
 "\n"
 "- RWF_HIPRI\n"
 "- RWF_NOWAIT\n"
+"- RWF_DONTCACHE\n"
 "\n"
 "Using non-zero flags requires Linux 4.6 or newer.");
 
@@ -8555,6 +8557,7 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "- RWF_DSYNC\n"
 "- RWF_SYNC\n"
 "- RWF_APPEND\n"
+"- RWF_DONTCACHE\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
@@ -13444,4 +13447,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=92662828d49f5d88 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47ace1528820858b input=a9049054013a1b77]*/
