@@ -1,0 +1,4 @@
+When :mod:`dataclasses` replaces a class with a slotted dataclass, the
+original class can now be garbage collected again. Earlier changes in Python
+3.14 caused this class to always remain in existence together with the replacement
+class synthesized by :mod:`dataclasses`.

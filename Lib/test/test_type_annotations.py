@@ -309,7 +309,7 @@ class AnnotateTests(unittest.TestCase):
             print(f.__annotations__)
 
         f.__annotate__ = lambda x: 42
-        with self.assertRaisesRegex(TypeError, r"__annotate__ returned non-dict of type 'int'"):
+        with self.assertRaisesRegex(TypeError, r"__annotate__\(\) must return a dict, not int"):
             print(f.__annotations__)
 
         f.__annotate__ = lambda x: {"x": x}
@@ -497,6 +497,28 @@ class DeferredEvaluationTests(unittest.TestCase):
         annos = {"x": "int", "return": "int"}
         self.assertEqual(f.__annotate__(annotationlib.Format.VALUE), annos)
         self.assertEqual(f.__annotations__, annos)
+
+    def test_set_annotations(self):
+        function_code = textwrap.dedent("""
+        def f(x: int):
+            pass
+        """)
+        class_code = textwrap.dedent("""
+        class f:
+            x: int
+        """)
+        for future in (False, True):
+            for label, code in (("function", function_code), ("class", class_code)):
+                with self.subTest(future=future, label=label):
+                    if future:
+                        code = "from __future__ import annotations\n" + code
+                    ns = run_code(code)
+                    f = ns["f"]
+                    anno = "int" if future else int
+                    self.assertEqual(f.__annotations__, {"x": anno})
+
+                    f.__annotations__ = {"x": str}
+                    self.assertEqual(f.__annotations__, {"x": str})
 
     def test_name_clash_with_format(self):
         # this test would fail if __annotate__'s parameter was called "format"
@@ -813,3 +835,40 @@ class RegressionTests(unittest.TestCase):
         genexp = annos["unique_name_2"][0]
         lamb = list(genexp)[0]
         self.assertEqual(lamb(), 42)
+
+    # gh-138349
+    def test_module_level_annotation_plus_listcomp(self):
+        cases = [
+            """
+            def report_error():
+                pass
+            try:
+                [0 for name_2 in unique_name_0 if (lambda: name_2)]
+            except:
+                pass
+            annotated_name: 0
+            """,
+            """
+            class Generic:
+                pass
+            try:
+                [0 for name_2 in unique_name_0 if (0 for unique_name_1 in unique_name_2 for unique_name_3 in name_2)]
+            except:
+                pass
+            annotated_name: 0
+            """,
+            """
+            class Generic:
+                pass
+            annotated_name: 0
+            try:
+                [0 for name_2 in [[0]] for unique_name_1 in unique_name_2 if (lambda: name_2)]
+            except:
+                pass
+            """,
+        ]
+        for code in cases:
+            with self.subTest(code=code):
+                mod = build_module(code)
+                annos = mod.__annotations__
+                self.assertEqual(annos, {"annotated_name": 0})

@@ -1,0 +1,1 @@
+Fix to not print KeyboardInterrupt twice in default asyncio REPL.

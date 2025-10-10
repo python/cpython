@@ -386,6 +386,7 @@ class WindowsConsoleGetEventTests(TestCase):
         self.console._read_input = self.mock
         self.console._WindowsConsole__vt_support = kwargs.get("vt_support",
                                                               False)
+        self.console.wait = MagicMock(return_value=True)
         event = self.console.get_event(block=False)
         return event
 

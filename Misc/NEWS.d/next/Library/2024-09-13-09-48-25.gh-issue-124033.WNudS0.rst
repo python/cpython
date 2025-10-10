@@ -1,0 +1,1 @@
+``SimplePath`` is now presented in ``importlib.metadata.__all__``.

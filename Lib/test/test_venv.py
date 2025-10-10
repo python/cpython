@@ -12,7 +12,6 @@ import os.path
 import pathlib
 import re
 import shutil
-import struct
 import subprocess
 import sys
 import sysconfig
@@ -21,7 +20,7 @@ import shlex
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_android, is_apple_mobile,
-                          is_emscripten, is_wasi,
+                          is_wasm32,
                           requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
@@ -42,7 +41,7 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
-if is_android or is_apple_mobile or is_emscripten or is_wasi:
+if is_android or is_apple_mobile or is_wasm32:
     raise unittest.SkipTest("venv is not available on this platform")
 
 @requires_subprocess()
@@ -138,14 +137,9 @@ class BasicTest(BaseTest):
         self.isdir(self.bindir)
         self.isdir(self.include)
         self.isdir(*self.lib)
-        # Issue 21197
         p = self.get_env_file('lib64')
-        conditions = ((struct.calcsize('P') == 8) and (os.name == 'posix') and
-                      (sys.platform != 'darwin'))
-        if conditions:
-            self.assertTrue(os.path.islink(p))
-        else:
-            self.assertFalse(os.path.exists(p))
+        if os.path.exists(p):
+            self.assertFalse(os.path.islink(p))
         data = self.get_text_file_contents('pyvenv.cfg')
         executable = sys._base_executable
         path = os.path.dirname(executable)
@@ -522,6 +516,8 @@ class BasicTest(BaseTest):
 
     # gh-124651: test quoted strings
     @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    @unittest.skipIf(sys.platform.startswith('netbsd'),
+                     "NetBSD csh fails with quoted special chars; see gh-139308")
     def test_special_chars_csh(self):
         """
         Test that the template strings are quoted properly (csh)
@@ -1008,7 +1004,7 @@ class EnsurePipTest(BaseTest):
                      err, flags=re.MULTILINE)
         # Ignore warning about missing optional module:
         try:
-            import ssl
+            import ssl  # noqa: F401
         except ImportError:
             err = re.sub(
                 "^WARNING: Disabling truststore since ssl support is missing$",
