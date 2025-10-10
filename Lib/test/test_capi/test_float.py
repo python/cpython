@@ -2,7 +2,6 @@ import math
 import random
 import sys
 import unittest
-import warnings
 
 from test.test_capi.test_getargs import (Float, FloatSubclass, FloatSubclass2,
                                          BadIndex2, BadFloat2, Index, BadIndex,

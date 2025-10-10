@@ -1,7 +1,6 @@
 from math import isnan
 import errno
 import unittest
-import warnings
 
 from test.test_capi.test_getargs import (BadComplex, BadComplex2, Complex,
                                          FloatSubclass, Float, BadFloat,
