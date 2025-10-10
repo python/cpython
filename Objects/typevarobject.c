@@ -2117,7 +2117,7 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
         return NULL;
     }
 
-    // It's impossible to determine qualname, so we use name insted.
+    // It's impossible to determine qualname, so we use name instead.
     PyObject *ta = (PyObject *)typealias_alloc(
         name, name, checked_params, NULL, value, module);
     Py_DECREF(module);
