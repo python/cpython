@@ -1728,10 +1728,11 @@ class Logger(Filterer):
         c = self
         found = 0
         while c:
-            for hdlr in c.handlers:
-                found = found + 1
-                if record.levelno >= hdlr.level:
-                    hdlr.handle(record)
+            if record.levelno >= c.level:
+                for hdlr in c.handlers:
+                    found = found + 1
+                    if record.levelno >= hdlr.level:
+                        hdlr.handle(record)
             if not c.propagate:
                 c = None    #break out
             else:
