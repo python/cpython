@@ -1,0 +1,1 @@
+In addition to checking the handler level, also verify the logger level when propagating log message.
