@@ -1258,8 +1258,7 @@ _PyTupleWriter_SetSize(PyTupleWriter *writer, size_t size, int resize)
             return -1;
         }
 
-        if (resize) {
-            assert(writer->size > 0);
+        if (resize && writer->size > 0) {
             memcpy(_PyTuple_ITEMS(writer->tuple),
                    writer->small_tuple,
                    writer->size * sizeof(writer->small_tuple[0]));
