@@ -324,7 +324,8 @@ class _COFF(
                 "Offset": offset,
                 "Symbol": s,
                 "Type": {
-                    "Name": "IMAGE_REL_ARM64_BRANCH26"
+                    "Name": "IMAGE_REL_ARM64_BRANCH19"
+                    | "IMAGE_REL_ARM64_BRANCH26"
                     | "IMAGE_REL_ARM64_PAGEBASE_REL21"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12A"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12L" as kind
