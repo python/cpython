@@ -290,7 +290,6 @@ def ismount(path):
     if root and not rest:
         # Drive root is a mount point if it exists.
         return exists(path)
-
     if _getvolumepathname:
         try:
             # The path is a mount point if it's a mounted volume.
