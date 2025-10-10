@@ -21,17 +21,13 @@ Features and minimum versions required to build CPython:
   <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
 
 * Support for threads.
-
+abcdefghijklmnopq r stuvwxyz
 To build optional modules:
 
 * `libbz2 <https://sourceware.org/bzip2/>`_ for the :mod:`bz2` module.
 
 * `libb2 <https://github.com/BLAKE2/libb2>`_ (:ref:`BLAKE2 <hashlib-blake2>`),
-   used by :mod:`hashlib` module.
-
-* `libedit <https://www.thrysoee.dk/editline/>`_ or
-  `libreadline <https://tiswww.case.edu/php/chet/readline/rltop.html>`_
-  for the :mod:`readline` module.
+  used by :mod:`hashlib` module.
 
 * `libffi <https://sourceware.org/libffi/>`_ 3.3.0 is the recommended
   minimum version for the :mod:`ctypes` module.
@@ -47,14 +43,19 @@ To build optional modules:
 * ``libpanel`` or ``libpanelw``,
   for the :mod:`curses.panel` module.
 
+* `libreadline <https://tiswww.case.edu/php/chet/readline/rltop.html>`_ or
+  `libedit <https://www.thrysoee.dk/editline/>`_
+  for the :mod:`readline` module.
+
 * `libuuid <https://linux.die.net/man/3/libuuid>`_, for the :mod:`uuid` module.
 
-* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.18 is the recommended
-  minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
+* `OpenSSL <https://www.openssl.org/>`_ 1.1.1 is the minimum version and
+  OpenSSL 3.0.18 is the recommended minimum version for the
+  :mod:`ssl` and :mod:`hashlib` extension modules.
 
-* SQLite 3.15.2 for the :mod:`sqlite3` extension module.
+* `SQLite <https://sqlite.org/>`_ 3.15.2 for the :mod:`sqlite3` extension module.
 
-* Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
+* `Tcl/Tk <https://www.tcl-lang.org/>`_ 8.5.12 for the :mod:`tkinter` module.
 
 * `zlib <https://www.zlib.net>`_ 1.1.4 is the reccomended minimum version for the
   :mod:`zlib` module.
