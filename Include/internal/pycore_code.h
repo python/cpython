@@ -663,6 +663,15 @@ PyAPI_FUNC(int) _PyCode_VerifyStateless(
 PyAPI_FUNC(int) _PyCode_CheckPureFunction(PyCodeObject *, const char **);
 PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
 
+/* Create a comparable key used to compare constants taking in account the
+ * object type. It is used to make sure types are not coerced (e.g., float and
+ * complex) _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms
+ *
+ * Return (type(obj), obj, ...): a tuple with variable size (at least 2 items)
+ * depending on the type and the value. The type is the first item to not
+ * compare bytes and str which can raise a BytesWarning exception. */
+extern PyObject* _PyCode_ConstantKey(PyObject *obj);
+
 
 #ifdef __cplusplus
 }

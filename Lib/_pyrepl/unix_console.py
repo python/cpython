@@ -390,7 +390,12 @@ class UnixConsole(Console):
             os.write(self.output_fd, b"\033[?7h")
 
         if hasattr(self, "old_sigwinch"):
-            signal.signal(signal.SIGWINCH, self.old_sigwinch)
+            try:
+                signal.signal(signal.SIGWINCH, self.old_sigwinch)
+            except ValueError as e:
+                import threading
+                if threading.current_thread() is threading.main_thread():
+                    raise e
             del self.old_sigwinch
 
     def push_char(self, char: int | bytes) -> None:

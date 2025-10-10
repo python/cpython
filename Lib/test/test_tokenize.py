@@ -1216,6 +1216,23 @@ f'''
     FSTRING_END "\'\'\'"         (3, 1) (3, 4)
     """)
 
+        # gh-139516, the '\n' is explicit to ensure no trailing whitespace which would invalidate the test
+        self.check_tokenize('''f"{f(a=lambda: 'à'\n)}"''', """\
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    OP         '{'           (1, 2) (1, 3)
+    NAME       'f'           (1, 3) (1, 4)
+    OP         '('           (1, 4) (1, 5)
+    NAME       'a'           (1, 5) (1, 6)
+    OP         '='           (1, 6) (1, 7)
+    NAME       'lambda'      (1, 7) (1, 13)
+    OP         ':'           (1, 13) (1, 14)
+    STRING     "\'à\'"         (1, 15) (1, 18)
+    NL         '\\n'          (1, 18) (1, 19)
+    OP         ')'           (2, 0) (2, 1)
+    OP         '}'           (2, 1) (2, 2)
+    FSTRING_END \'"\'           (2, 2) (2, 3)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
