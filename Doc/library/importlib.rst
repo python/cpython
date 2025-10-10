@@ -1017,7 +1017,7 @@ find and load modules.
 
    Represents a :term:`namespace package`'s path (:attr:`module.__path__`).
 
-   When its value is accessed, if necessary, it will be recomputed.
+   When its `__path__` value is accessed it will be recomputed if necessary.
    This keeps it in-sync with the global state (:attr:`sys.modules`).
 
    The *name* argument is the name of the namespace module.
@@ -1025,7 +1025,7 @@ find and load modules.
    The *path* argument is the initial path value.
 
    The *path_finder* argument is the callable used to recompute the path value.
-   It has the same signature as :meth:`MetaPathFinder.find_spec`.
+   The callable has the same signature as :meth:`MetaPathFinder.find_spec`.
 
    When the parent's :attr:`module.__path__` attribute is updated, the path
    value is recomputed.
