@@ -2031,7 +2031,7 @@ PySequence_Tuple(PyObject *v)
             }
             break;
         }
-        if (PyTupleWriter_Add(writer, item) < 0) {
+        if (PyTupleWriter_AddSteal(writer, item) < 0) {
             goto fail;
         }
     }
