@@ -1,0 +1,119 @@
+# -*- coding: utf-8 -*-
+"""
+مشروع: توليد ملفات عرض PowerPoint + PDF + ZIP
+"""
+import os, io, zipfile, subprocess, sys
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.enum.text import PP_ALIGN
+from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE
+from PIL import Image
+import requests
+
+# ---------- إعدادات المستخدم ----------
+OUT_BASENAME = "مشروع_صناعة_الأكياس_البلاستيكية_ياسين_طباخ"
+LOGO_INSFP = "insfp_logo.png"
+LOGO_CDE   = "cde_logo.png"
+
+IMAGE_URLS = [
+    "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500",
+    "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=500",
+    "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500",
+    "https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=500"
+]
+
+def download_images(urls, folder="images"):
+    """تحميل الصور مع معالجة أفضل للأخطاء"""
+    os.makedirs(folder, exist_ok=True)
+    local_paths = []
+    for i, url in enumerate(urls, start=1):
+        try:
+            print(f"جاري تحميل الصورة {i}...")
+            r = requests.get(url, timeout=30)
+            r.raise_for_status()
+            
+            fname = os.path.join(folder, f"machine_{i}.jpg")
+            with open(fname, "wb") as f:
+                f.write(r.content)
+            local_paths.append(fname)
+            print(f"✓ تم تحميل: {fname}")
+        except Exception as e:
+            print(f"✗ فشل تحميل الصورة {i}: {e}")
+            # استخدام صورة بديلة فارغة
+            blank_img = Image.new('RGB', (800, 600), color='lightgray')
+            fname = os.path.join(folder, f"machine_{i}.jpg")
+            blank_img.save(fname)
+            local_paths.append(fname)
+    return local_paths
+
+def create_presentation(filename, page_size_inches=(8.27, 11.69), images=[]):
+    """إنشاء العرض التقديمي"""
+    try:
+        prs = Presentation()
+        prs.slide_width = Inches(page_size_inches[0])
+        prs.slide_height = Inches(page_size_inches[1])
+        sw = prs.slide_width
+        sh = prs.slide_height
+
+        # شريحة الغلاف
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        if images:
+            try:
+                slide.shapes.add_picture(images[0], 0, 0, width=sw, height=sh)
+            except: pass
+
+        # إضافة الشعارات إذا وجدت
+        if os.path.exists(LOGO_INSFP):
+            slide.shapes.add_picture(LOGO_INSFP, Inches(sw.inches - 1.6), Inches(0.35), width=Inches(1.3))
+        if os.path.exists(LOGO_CDE):
+            slide.shapes.add_picture(LOGO_CDE, Inches(0.35), Inches(0.35), width=Inches(1.3))
+
+        # العنوان الرئيسي
+        tx = slide.shapes.add_textbox(Inches(0.6), Inches(1.4), sw - Inches(1.2), Inches(2))
+        tf = tx.text_frame
+        p = tf.paragraphs[0]
+        p.text = "مشروع إنشاء مؤسسة لصناعة الأكياس البلاستيكية"
+        p.font.size = Pt(32)
+        p.font.bold = True
+        p.font.name = "Arial"
+        p.alignment = PP_ALIGN.CENTER
+
+        p2 = tf.add_paragraph()
+        p2.text = "إعداد: ياسين طباخ\nINSFP BBA 2"
+        p2.font.size = Pt(18)
+        p2.font.name = "Arial"
+        p2.alignment = PP_ALIGN.CENTER
+
+        # حفظ الملف
+        prs.save(filename)
+        print(f"✓ تم إنشاء: {filename}")
+        return True
+    except Exception as e:
+        print(f"✗ خطأ في إنشاء {filename}: {e}")
+        return False
+
+def main():
+    print("🚀 بدء إنشاء المشروع...")
+    
+    # تحميل الصور
+    images = download_images(IMAGE_URLS)
+    
+    # التحقق من الشعارات
+    if not os.path.exists(LOGO_INSFP):
+        print("⚠️ ملاحظة: ملف insfp_logo.png غير موجود")
+    if not os.path.exists(LOGO_CDE):
+        print("⚠️ ملاحظة: ملف cde_logo.png غير موجود")
+    
+    # إنشاء العروض
+    create_presentation(f"{OUT_BASENAME}_A4.pptx", (8.27, 11.69), images)
+    create_presentation(f"{OUT_BASENAME}_16-9.pptx", (13.33, 7.5), images)
+    
+    print("✅ تم الانتهاء بنجاح!")
+    print("📁 الملفات الناتجة:")
+    for file in [f"{OUT_BASENAME}_A4.pptx", f"{OUT_BASENAME}_16-9.pptx"]:
+        if os.path.exists(file):
+            print(f"   ✓ {file}")
+
+if __name__ == "__main__":
+    main()
