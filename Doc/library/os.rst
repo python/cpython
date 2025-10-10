@@ -4592,6 +4592,8 @@ written in Python, such as a mail server's external command delivery program.
    master end of the pseudo-terminal.  For a more portable approach, use the
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
 
+   The returned file descriptor *fd* is :ref:`non-inheritable <fd_inheritance>`.
+
    .. audit-event:: os.forkpty "" os.forkpty
 
    .. warning::
@@ -4607,6 +4609,9 @@ written in Python, such as a mail server's external command delivery program.
       If Python is able to detect that your process has multiple
       threads, this now raises a :exc:`DeprecationWarning`. See the
       longer explanation on :func:`os.fork`.
+
+   .. versionchanged:: next
+      The returned file descriptor is now made non-inheritable.
 
    .. availability:: Unix, not WASI, not Android, not iOS.
 
