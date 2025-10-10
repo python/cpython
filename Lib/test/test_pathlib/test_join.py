@@ -3,6 +3,8 @@ Tests for pathlib.types._JoinablePath
 """
 
 import unittest
+import threading
+from test.support import threading_helper
 
 from .support import is_pypi
 from .support.lexical_path import LexicalPath
@@ -157,6 +159,26 @@ class JoinTestBase:
         p = P(f'{sep}a{sep}b')
         parts = p.parts
         self.assertEqual(parts, (sep, 'a', 'b'))
+
+    @threading_helper.requires_working_threading()
+    def test_parts_multithreaded(self):
+        P = self.cls
+
+        NUM_THREADS = 10
+        NUM_ITERS = 10
+
+        for _ in range(NUM_ITERS):
+            b = threading.Barrier(NUM_THREADS)
+            path = P('a') / 'b' / 'c' / 'd' / 'e'
+            expected = ('a', 'b', 'c', 'd', 'e')
+
+            def check_parts():
+                b.wait()
+                self.assertEqual(path.parts, expected)
+
+            threads = [threading.Thread(target=check_parts) for _ in range(NUM_THREADS)]
+            with threading_helper.start_threads(threads):
+                pass
 
     def test_parent(self):
         # Relative
