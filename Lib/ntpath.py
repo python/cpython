@@ -290,9 +290,11 @@ def ismount(path):
         return True
 
     if _getvolumepathname:
-        x = path.rstrip(seps)
-        y =_getvolumepathname(path).rstrip(seps)
-        return x.casefold() == y.casefold()
+        try:
+            # The path is a mount point if it's a mounted volume.
+            return path.rstrip(seps).casefold() == _getvolumepathname(path).rstrip(seps).casefold()
+        except (OSError, FileNotFoundError):
+            return False
     else:
         return False
 
