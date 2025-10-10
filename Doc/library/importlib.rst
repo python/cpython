@@ -1017,7 +1017,7 @@ find and load modules.
 
    Represents a :term:`namespace package`'s path (:attr:`module.__path__`).
 
-   When its `__path__` value is accessed it will be recomputed if necessary.
+   When its ``__path__`` value is accessed it will be recomputed if necessary.
    This keeps it in-sync with the global state (:attr:`sys.modules`).
 
    The *name* argument is the name of the namespace module.
