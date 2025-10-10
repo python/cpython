@@ -1233,7 +1233,7 @@ struct PyTupleWriter {
 
 
 static int
-_PyTupleWriter_SetSize(PyTupleWriter *writer, size_t size, int overallocate)
+_PyTupleWriter_SetSize(PyTupleWriter *writer, size_t size, int resize)
 {
     assert(size >= 1);
 
@@ -1243,7 +1243,7 @@ _PyTupleWriter_SetSize(PyTupleWriter *writer, size_t size, int overallocate)
         return -1;
     }
 
-    if (overallocate) {
+    if (resize) {
         size += (size >> 2);  // Over-allocate by 25%
     }
 
@@ -1258,7 +1258,8 @@ _PyTupleWriter_SetSize(PyTupleWriter *writer, size_t size, int overallocate)
             return -1;
         }
 
-        if (writer->size > 0) {
+        if (resize) {
+            assert(writer->size > 0);
             memcpy(_PyTuple_ITEMS(writer->tuple),
                    writer->small_tuple,
                    writer->size * sizeof(writer->small_tuple[0]));
