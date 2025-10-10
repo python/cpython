@@ -1,0 +1,22 @@
+import os
+
+SCRIPT_NAME = 'Tools/build/consts_getter.py'
+__file__ = os.path.abspath(__file__)
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+INTERNAL = os.path.join(ROOT, 'Include', 'internal')
+
+def get_nsmallnegints_and_nsmallposints():
+    nsmallposints = None
+    nsmallnegints = None
+    with open(os.path.join(INTERNAL, 'pycore_runtime_structs.h')) as infile:
+        for line in infile:
+            if line.startswith('#define _PY_NSMALLPOSINTS'):
+                nsmallposints = int(line.split()[-1])
+            elif line.startswith('#define _PY_NSMALLNEGINTS'):
+                nsmallnegints = int(line.split()[-1])
+                break
+        else:
+            raise NotImplementedError
+    assert nsmallposints
+    assert nsmallnegints
+    return nsmallnegints, nsmallposints
