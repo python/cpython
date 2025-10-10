@@ -205,6 +205,12 @@ The variables defined in the :mod:`signal` module are:
 
    .. availability:: Unix.
 
+.. data:: SIGQUIT
+
+   Terminal quit signal.
+
+   .. availability:: Unix.
+
 .. data:: SIGSEGV
 
    Segmentation fault: invalid memory reference.
