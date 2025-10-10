@@ -1629,7 +1629,6 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
 {
     _hashlibstate *state = get_hashlib_state(module);
     PyObject *key_obj = NULL;
-    char *key;
     long dklen;
     int retval;
 
@@ -1682,24 +1681,24 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
         goto end;
     }
 
-    key_obj = PyBytes_FromStringAndSize(NULL, dklen);
-    if (key_obj == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(dklen);
+    if (writer == NULL) {
         goto end;
     }
-    key = PyBytes_AS_STRING(key_obj);
 
     Py_BEGIN_ALLOW_THREADS
     retval = PKCS5_PBKDF2_HMAC((const char *)password->buf, (int)password->len,
                                (const unsigned char *)salt->buf, (int)salt->len,
                                iterations, digest, dklen,
-                               (unsigned char *)key);
+                               (unsigned char *)PyBytesWriter_GetData(writer));
     Py_END_ALLOW_THREADS
 
     if (!retval) {
-        Py_CLEAR(key_obj);
+        PyBytesWriter_Discard(writer);
         notify_ssl_error_occurred_in(Py_STRINGIFY(PKCS5_PBKDF2_HMAC));
         goto end;
     }
+    key_obj = PyBytesWriter_Finish(writer);
 
 end:
     if (digest != NULL) {
@@ -1799,7 +1798,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         (const char *)password->buf, (size_t)password->len,
         (const unsigned char *)salt->buf, (size_t)salt->len,
         (uint64_t)n, (uint64_t)r, (uint64_t)p, (uint64_t)maxmem,
-        PyBytesWriter_GetData(writer), (size_t)dklen
+        (unsigned char *)PyBytesWriter_GetData(writer), (size_t)dklen
     );
     Py_END_ALLOW_THREADS
 
