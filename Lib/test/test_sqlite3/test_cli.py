@@ -168,8 +168,8 @@ class InteractiveSession(unittest.TestCase):
     def test_interact_incomplete_multiline_sql(self):
         out, err = self.run_cli(commands=("SELECT 1",))
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertEndsWith(out, self.PS2)
-        self.assertEqual(out.count(self.PS1), 1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(err.count('SyntaxError'), 1)
         self.assertEqual(out.count(self.PS2), 1)
 
     def test_interact_valid_multiline_sql(self):
