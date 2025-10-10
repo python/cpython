@@ -527,9 +527,12 @@ _Py_bytes_index(const char *str, Py_ssize_t len, PyObject *sub,
     if (result == -2)
         return NULL;
     if (result == -1) {
-        PyErr_Format(PyExc_ValueError, "%s not in %s",
-                     PyIndex_Check(sub) ? "value" : "subsection",
-                     classname);
+        if (PyIndex_Check(sub)) {
+            PyErr_Format(PyExc_ValueError, "value not in %s", classname);
+        }
+        else {
+            PyErr_SetString(PyExc_ValueError, "subsection not found");
+        }
         return NULL;
     }
     return PyLong_FromSsize_t(result);
