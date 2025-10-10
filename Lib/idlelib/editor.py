@@ -1014,7 +1014,7 @@ class EditorWindow:
             title = short + " - " + long + _py_version
         elif short:
             if short == "IDLE Shell":
-                title = short + platform.python_version()
+                title = short + " " +  platform.python_version()
             else:
                 title = short + _py_version
         elif long:
