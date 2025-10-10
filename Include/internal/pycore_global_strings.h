@@ -56,6 +56,28 @@ struct _Py_global_strings {
     } literals;
 
     struct {
+        STRUCT_FOR_ID(!=)
+        STRUCT_FOR_ID(%=)
+        STRUCT_FOR_ID(&=)
+        STRUCT_FOR_ID(**)
+        STRUCT_FOR_ID(**=)
+        STRUCT_FOR_ID(*=)
+        STRUCT_FOR_ID(+=)
+        STRUCT_FOR_ID(-=)
+        STRUCT_FOR_ID(->)
+        STRUCT_FOR_ID(...)
+        STRUCT_FOR_ID(//)
+        STRUCT_FOR_ID(//=)
+        STRUCT_FOR_ID(/=)
+        STRUCT_FOR_ID(:=)
+        STRUCT_FOR_ID(<<)
+        STRUCT_FOR_ID(<<=)
+        STRUCT_FOR_ID(<=)
+        STRUCT_FOR_ID(==)
+        STRUCT_FOR_ID(>=)
+        STRUCT_FOR_ID(>>)
+        STRUCT_FOR_ID(>>=)
+        STRUCT_FOR_ID(>>>)
         STRUCT_FOR_ID(CANCELLED)
         STRUCT_FOR_ID(Emax)
         STRUCT_FOR_ID(Emin)
@@ -67,6 +89,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(TextIOWrapper)
         STRUCT_FOR_ID(True)
         STRUCT_FOR_ID(WarningMessage)
+        STRUCT_FOR_ID(^=)
         STRUCT_FOR_ID(_WindowsConsoleIO)
         STRUCT_FOR_ID(__IOBase_closed)
         STRUCT_FOR_ID(__abc_tpflags__)
@@ -851,6 +874,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(year)
         STRUCT_FOR_ID(zdict)
         STRUCT_FOR_ID(zstd_dict)
+        STRUCT_FOR_ID(|=)
     } identifiers;
     struct {
         PyASCIIObject _ascii;

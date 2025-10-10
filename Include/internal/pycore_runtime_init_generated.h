@@ -1331,6 +1331,28 @@ extern "C" {
 }
 
 #define _Py_str_identifiers_INIT { \
+    INIT_ID(!=), \
+    INIT_ID(%=), \
+    INIT_ID(&=), \
+    INIT_ID(**), \
+    INIT_ID(**=), \
+    INIT_ID(*=), \
+    INIT_ID(+=), \
+    INIT_ID(-=), \
+    INIT_ID(->), \
+    INIT_ID(...), \
+    INIT_ID(//), \
+    INIT_ID(//=), \
+    INIT_ID(/=), \
+    INIT_ID(:=), \
+    INIT_ID(<<), \
+    INIT_ID(<<=), \
+    INIT_ID(<=), \
+    INIT_ID(==), \
+    INIT_ID(>=), \
+    INIT_ID(>>), \
+    INIT_ID(>>=), \
+    INIT_ID(>>>), \
     INIT_ID(CANCELLED), \
     INIT_ID(Emax), \
     INIT_ID(Emin), \
@@ -1342,6 +1364,7 @@ extern "C" {
     INIT_ID(TextIOWrapper), \
     INIT_ID(True), \
     INIT_ID(WarningMessage), \
+    INIT_ID(^=), \
     INIT_ID(_WindowsConsoleIO), \
     INIT_ID(__IOBase_closed), \
     INIT_ID(__abc_tpflags__), \
@@ -2126,6 +2149,7 @@ extern "C" {
     INIT_ID(year), \
     INIT_ID(zdict), \
     INIT_ID(zstd_dict), \
+    INIT_ID(|=), \
 }
 
 #define _Py_str_ascii_INIT { \

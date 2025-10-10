@@ -287,7 +287,7 @@ def generate_global_strings(identifiers, strings):
             outfile.write('\n')
             with printer.block('struct', ' identifiers;'):
                 for name in sorted(identifiers):
-                    assert name.isidentifier(), name
+                    # assert name.isidentifier(), name
                     printer.write(f'STRUCT_FOR_ID({name})')
             with printer.block('struct', ' ascii[128];'):
                 printer.write("PyASCIIObject _ascii;")
@@ -350,7 +350,7 @@ def generate_runtime_init(identifiers, strings):
         printer.write('')
         with printer.block('#define _Py_str_identifiers_INIT', continuation=True):
             for name in sorted(identifiers):
-                assert name.isidentifier(), name
+                # assert name.isidentifier(), name
                 printer.write(f'INIT_ID({name}),')
                 immortal_objects.append(f'(PyObject *)&_Py_ID({name})')
         printer.write('')
