@@ -5035,7 +5035,8 @@ PyDoc_STRVAR(os_forkpty__doc__,
 "Returns a tuple of (pid, master_fd).\n"
 "Like fork(), return pid of 0 to the child process,\n"
 "and pid of child to the parent process.\n"
-"To both, return fd of newly opened pseudo-terminal.");
+"To both, return fd of newly opened pseudo-terminal.\n"
+"The master_fd is non-inheritable.");
 
 #define OS_FORKPTY_METHODDEF    \
     {"forkpty", (PyCFunction)os_forkpty, METH_NOARGS, os_forkpty__doc__},
@@ -13446,4 +13447,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=b5b370c499174f85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=47ace1528820858b input=a9049054013a1b77]*/

@@ -51,7 +51,6 @@ Doc/library/xml.sax.reader.rst
 Doc/library/xml.sax.rst
 Doc/library/xmlrpc.client.rst
 Doc/library/xmlrpc.server.rst
-Doc/library/zlib.rst
 Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst
