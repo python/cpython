@@ -1294,7 +1294,7 @@ PyTupleWriter_Create(Py_ssize_t size)
     writer->size = 0;
     writer->allocated = Py_ARRAY_LENGTH(writer->small_tuple);
 
-    if (size > writer->allocated) {
+    if ((size_t)size > writer->allocated) {
         if (_PyTupleWriter_SetSize(writer, size, 0) < 0) {
             PyTupleWriter_Discard(writer);
             return NULL;
