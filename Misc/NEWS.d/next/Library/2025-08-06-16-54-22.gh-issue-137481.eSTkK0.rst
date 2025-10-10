@@ -1,0 +1,2 @@
+Calendar uses the lengths of the locale's weekdays to decide if the width
+requires abbreviation.

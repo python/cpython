@@ -31,14 +31,15 @@
 #endif
 
 #if defined(__APPLE__) && defined(__arm64__)
-#  undef HACL_CAN_COMPILE_SIMD128
-#  undef HACL_CAN_COMPILE_SIMD256
+#  undef _Py_HACL_CAN_COMPILE_VEC128
+#  undef _Py_HACL_CAN_COMPILE_VEC256
 #endif
 
-// Small mismatch between the variable names Python defines as part of configure
-// at the ones HACL* expects to be set in order to enable those headers.
-#define HACL_CAN_COMPILE_VEC128 HACL_CAN_COMPILE_SIMD128
-#define HACL_CAN_COMPILE_VEC256 HACL_CAN_COMPILE_SIMD256
+// HACL* expects HACL_CAN_COMPILE_VEC* macros to be set in order to enable
+// the corresponding SIMD instructions so we need to "forward" the values
+// we just deduced above.
+#define HACL_CAN_COMPILE_VEC128 _Py_HACL_CAN_COMPILE_VEC128
+#define HACL_CAN_COMPILE_VEC256 _Py_HACL_CAN_COMPILE_VEC256
 
 #include "_hacl/Hacl_HMAC.h"
 #include "_hacl/Hacl_Streaming_HMAC.h"  // Hacl_Agile_Hash_* identifiers
@@ -50,8 +51,21 @@
 
 // --- Reusable error messages ------------------------------------------------
 
-#define INVALID_KEY_LENGTH  "key length exceeds UINT32_MAX"
-#define INVALID_MSG_LENGTH  "message length exceeds UINT32_MAX"
+static inline void
+set_invalid_key_length_error(void)
+{
+    (void)PyErr_Format(PyExc_OverflowError,
+                       "key length exceeds %u",
+                       UINT32_MAX);
+}
+
+static inline void
+set_invalid_msg_length_error(void)
+{
+    (void)PyErr_Format(PyExc_OverflowError,
+                       "message length exceeds %u",
+                       UINT32_MAX);
+}
 
 // --- HMAC underlying hash function static information -----------------------
 
@@ -203,105 +217,6 @@ typedef struct py_hmac_hacl_api {
 #endif
 
 /*
- * Call the HACL* HMAC-HASH update function on the given data.
- *
- * The magnitude of 'LEN' is not checked and thus 'LEN' must be
- * safely convertible to a uint32_t value.
- */
-#define Py_HMAC_HACL_UPDATE_CALL(HACL_STATE, BUF, LEN)          \
-    Hacl_Streaming_HMAC_update(HACL_STATE, BUF, (uint32_t)(LEN))
-
-/*
- * Call the HACL* HMAC-HASH update function on the given data.
- *
- * On DEBUG builds, the 'ERRACTION' statements are executed if
- * the update() call returned a non-successful HACL* exit code.
- *
- * The buffer 'BUF' and its length 'LEN' are left untouched.
- *
- * The formal signature of this macro is:
- *
- *     (HACL_HMAC_state *, uint8_t *, uint32_t, PyObject *, (C statements))
- */
-#ifndef NDEBUG
-#define Py_HMAC_HACL_UPDATE_ONCE(                                           \
-    HACL_STATE, BUF, LEN,                                                   \
-    ALGORITHM, ERRACTION                                                    \
-)                                                                           \
-    do {                                                                    \
-        Py_CHECK_HACL_UINT32_T_LENGTH(LEN);                                 \
-        hacl_errno_t code = Py_HMAC_HACL_UPDATE_CALL(HACL_STATE, BUF, LEN); \
-        if (_hacl_convert_errno(code, (ALGORITHM)) < 0) {                   \
-            ERRACTION;                                                      \
-        }                                                                   \
-    } while (0)
-#else
-#define Py_HMAC_HACL_UPDATE_ONCE(                                   \
-    HACL_STATE, BUF, LEN,                                           \
-    _ALGORITHM, _ERRACTION                                          \
-)                                                                   \
-    do {                                                            \
-        (void)Py_HMAC_HACL_UPDATE_CALL(HACL_STATE, BUF, (LEN));     \
-    } while (0)
-#endif
-
-/*
- * Repetivively call the HACL* HMAC-HASH update function on the given
- * data until the buffer length 'LEN' is strictly less than UINT32_MAX.
- *
- * On builds with PY_SSIZE_T_MAX <= UINT32_MAX, this is a no-op.
- *
- * The buffer 'BUF' (resp. 'LEN') is advanced (resp. decremented)
- * by UINT32_MAX after each update. On DEBUG builds, each update()
- * call is verified and the 'ERRACTION' statements are executed if
- * a non-successful HACL* exit code is being returned.
- *
- * In particular, 'BUF' and 'LEN' must be variable names and not
- * expressions on their own.
- *
- * The formal signature of this macro is:
- *
- *     (HACL_HMAC_state *, uint8_t *, C integer, PyObject *, (C statements))
- */
-#ifdef Py_HMAC_SSIZE_LARGER_THAN_UINT32
-#define Py_HMAC_HACL_UPDATE_LOOP(                                   \
-    HACL_STATE, BUF, LEN,                                           \
-    ALGORITHM, ERRACTION                                            \
-)                                                                   \
-    do {                                                            \
-        while ((Py_ssize_t)LEN > UINT32_MAX_AS_SSIZE_T) {           \
-            Py_HMAC_HACL_UPDATE_ONCE(HACL_STATE, BUF, UINT32_MAX,   \
-                                     ALGORITHM, ERRACTION);         \
-            BUF += UINT32_MAX;                                      \
-            LEN -= UINT32_MAX;                                      \
-        }                                                           \
-    } while (0)
-#else
-#define Py_HMAC_HACL_UPDATE_LOOP(   \
-    HACL_STATE, BUF, LEN,           \
-    _ALGORITHM, _ERRACTION          \
-)
-#endif
-
-/*
- * Perform the HMAC-HASH update() operation in a streaming fashion.
- *
- * The formal signature of this macro is:
- *
- *     (HACL_HMAC_state *, uint8_t *, C integer, PyObject *, (C statements))
- */
-#define Py_HMAC_HACL_UPDATE(                            \
-    HACL_STATE, BUF, LEN,                               \
-    ALGORITHM, ERRACTION                                \
-)                                                       \
-    do {                                                \
-        Py_HMAC_HACL_UPDATE_LOOP(HACL_STATE, BUF, LEN,  \
-                                 ALGORITHM, ERRACTION); \
-        Py_HMAC_HACL_UPDATE_ONCE(HACL_STATE, BUF, LEN,  \
-                                 ALGORITHM, ERRACTION); \
-    } while (0)
-
-/*
  * HMAC underlying hash function static information.
  */
 typedef struct py_hmac_hinfo {
@@ -369,11 +284,7 @@ get_hmacmodule_state_by_cls(PyTypeObject *cls)
 typedef Hacl_Streaming_HMAC_agile_state HACL_HMAC_state;
 
 typedef struct HMACObject {
-    PyObject_HEAD
-
-    bool use_mutex;
-    PyMutex mutex;
-
+    HASHLIB_OBJECT_HEAD
     // Hash function information
     PyObject *name;         // rendered name (exact unicode object)
     HMAC_Hash_Kind kind;    // can be used for runtime dispatch (must be known)
@@ -451,7 +362,7 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
 {
     switch (kind) {
         case Py_hmac_kind_hmac_blake2s_32: {
-#if HACL_CAN_COMPILE_SIMD128
+#if _Py_HACL_CAN_COMPILE_VEC128
             if (state->can_run_simd128) {
                 return Py_hmac_kind_hmac_vectorized_blake2s_32;
             }
@@ -459,7 +370,7 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
             return kind;
         }
         case Py_hmac_kind_hmac_blake2b_32: {
-#if HACL_CAN_COMPILE_SIMD256
+#if _Py_HACL_CAN_COMPILE_VEC256
             if (state->can_run_simd256) {
                 return Py_hmac_kind_hmac_vectorized_blake2b_32;
             }
@@ -478,38 +389,40 @@ narrow_hmac_hash_kind(hmacmodule_state *state, HMAC_Hash_Kind kind)
  * Otherwise, this sets an appropriate exception and returns -1.
  */
 static int
-_hacl_convert_errno(hacl_errno_t code, PyObject *algorithm)
+_hacl_convert_errno(hacl_errno_t code)
 {
+    assert(PyGILState_GetThisThreadState() != NULL);
+    if (code == Hacl_Streaming_Types_Success) {
+        return 0;
+    }
+
+    PyGILState_STATE gstate = PyGILState_Ensure();
     switch (code) {
-        case Hacl_Streaming_Types_Success: {
-            return 0;
-        }
         case Hacl_Streaming_Types_InvalidAlgorithm: {
-            // only makes sense if an algorithm is known at call time
-            assert(algorithm != NULL);
-            assert(PyUnicode_CheckExact(algorithm));
-            PyErr_Format(PyExc_ValueError, "invalid algorithm: %U", algorithm);
-            return -1;
+            PyErr_SetString(PyExc_ValueError, "invalid HACL* algorithm");
+            break;
         }
         case Hacl_Streaming_Types_InvalidLength: {
             PyErr_SetString(PyExc_ValueError, "invalid length");
-            return -1;
+            break;
         }
         case Hacl_Streaming_Types_MaximumLengthExceeded: {
             PyErr_SetString(PyExc_OverflowError, "maximum length exceeded");
-            return -1;
+            break;
         }
         case Hacl_Streaming_Types_OutOfMemory: {
             PyErr_NoMemory();
-            return -1;
+            break;
         }
         default: {
             PyErr_Format(PyExc_RuntimeError,
-                         "HACL* internal routine failed with error code: %d",
+                         "HACL* internal routine failed with error code: %u",
                          code);
-            return -1;
+            break;
         }
     }
+    PyGILState_Release(gstate);
+    return -1;
 }
 
 /*
@@ -523,7 +436,7 @@ _hacl_hmac_state_new(HMAC_Hash_Kind kind, uint8_t *key, uint32_t len)
     assert(kind != Py_hmac_kind_hash_unknown);
     HACL_HMAC_state *state = NULL;
     hacl_errno_t retcode = Hacl_Streaming_HMAC_malloc_(kind, key, len, &state);
-    if (_hacl_convert_errno(retcode, NULL) < 0) {
+    if (_hacl_convert_errno(retcode) < 0) {
         assert(state == NULL);
         return NULL;
     }
@@ -539,6 +452,51 @@ _hacl_hmac_state_free(HACL_HMAC_state *state)
     if (state != NULL) {
         Hacl_Streaming_HMAC_free(state);
     }
+}
+
+/*
+ * Call the HACL* HMAC-HASH update function on the given data.
+ *
+ * On DEBUG builds, the update() call is verified.
+ *
+ * Return 0 on success; otherwise, set an exception and return -1 on failure.
+*/
+static int
+_hacl_hmac_state_update_once(HACL_HMAC_state *state,
+                             uint8_t *buf, uint32_t len)
+{
+#ifndef NDEBUG
+    hacl_errno_t code = Hacl_Streaming_HMAC_update(state, buf, len);
+    return _hacl_convert_errno(code);
+#else
+    (void)Hacl_Streaming_HMAC_update(state, buf, len);
+    return 0;
+#endif
+}
+
+/*
+ * Perform the HMAC-HASH update() operation in a streaming fashion.
+ *
+ * On DEBUG builds, each update() call is verified.
+ *
+ * Return 0 on success; otherwise, set an exception and return -1 on failure.
+ */
+static int
+_hacl_hmac_state_update(HACL_HMAC_state *state, uint8_t *buf, Py_ssize_t len)
+{
+    assert(len >= 0);
+#ifdef Py_HMAC_SSIZE_LARGER_THAN_UINT32
+    while (len > UINT32_MAX_AS_SSIZE_T) {
+        if (_hacl_hmac_state_update_once(state, buf, UINT32_MAX) < 0) {
+            assert(PyErr_Occurred());
+            return -1;
+        }
+        buf += UINT32_MAX;
+        len -= UINT32_MAX;
+    }
+#endif
+    Py_CHECK_HACL_UINT32_T_LENGTH(len);
+    return _hacl_hmac_state_update_once(state, buf, (uint32_t)len);
 }
 
 /* Static information used to construct the hash table. */
@@ -698,7 +656,7 @@ find_hash_info(hmacmodule_state *state, PyObject *hash_info_ref)
     }
     if (rc == 0) {
         PyErr_Format(state->unknown_hash_error,
-                     "unsupported hash type: %R", hash_info_ref);
+                     HASHLIB_UNSUPPORTED_ALGORITHM, hash_info_ref);
         return NULL;
     }
     assert(info != NULL);
@@ -760,7 +718,7 @@ hmac_new_initial_state(HMACObject *self, uint8_t *key, Py_ssize_t len)
     // not rely on HACL* implementation anymore. As such, we explicitly
     // reject keys that do not fit on 32 bits until HACL* handles them.
     if (len > UINT32_MAX_AS_SSIZE_T) {
-        PyErr_SetString(PyExc_OverflowError, INVALID_KEY_LENGTH);
+        set_invalid_key_length_error();
         return -1;
     }
 #endif
@@ -769,45 +727,6 @@ hmac_new_initial_state(HMACObject *self, uint8_t *key, Py_ssize_t len)
     self->state = _hacl_hmac_state_new(self->kind, key, (uint32_t)len);
     // _hacl_hmac_state_new() may set an exception on error
     return self->state == NULL ? -1 : 0;
-}
-
-/*
- * Feed initial data.
- *
- * This function MUST only be called by the HMAC object constructor
- * and after hmac_set_hinfo() and hmac_new_initial_state() have been
- * called, lest the behaviour is undefined.
- *
- * Return 0 on success; otherwise, set an exception and return -1 on failure.
- */
-static int
-hmac_feed_initial_data(HMACObject *self, uint8_t *msg, Py_ssize_t len)
-{
-    assert(self->name != NULL);
-    assert(self->state != NULL);
-    if (len == 0) {
-        // do nothing if the buffer is empty
-        return 0;
-    }
-
-    if (len < HASHLIB_GIL_MINSIZE) {
-        Py_HMAC_HACL_UPDATE(self->state, msg, len, self->name, return -1);
-        return 0;
-    }
-
-    int res = 0;
-    Py_BEGIN_ALLOW_THREADS
-        Py_HMAC_HACL_UPDATE(self->state, msg, len, self->name, goto error);
-        goto done;
-#ifndef NDEBUG
-error:
-        res = -1;
-#else
-        Py_UNREACHABLE();
-#endif
-done:
-    Py_END_ALLOW_THREADS
-    return res;
 }
 
 /*[clinic input]
@@ -837,7 +756,7 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
         return NULL;
     }
 
-    HMACObject *self = PyObject_GC_New(HMACObject, state->hmac_type);
+    HMACObject *self = PyObject_New(HMACObject, state->hmac_type);
     if (self == NULL) {
         return NULL;
     }
@@ -856,7 +775,12 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
     if (msgobj != NULL && msgobj != Py_None) {
         Py_buffer msg;
         GET_BUFFER_VIEW_OR_ERROR(msgobj, &msg, goto error);
-        rc = hmac_feed_initial_data(self, msg.buf, msg.len);
+        /* Do not use self->mutex here as this is the constructor
+         * where it is not yet possible to have concurrent access. */
+        HASHLIB_EXTERNAL_INSTRUCTIONS_UNLOCKED(
+            msg.len,
+            rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
+        );
         PyBuffer_Release(&msg);
 #ifndef NDEBUG
         if (rc < 0) {
@@ -867,7 +791,6 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
 #endif
     }
     assert(rc == 0);
-    PyObject_GC_Track(self);
     return (PyObject *)self;
 
 error_on_key:
@@ -928,17 +851,17 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=a955bfa55b65b215 input=17b2c0ad0b147e36]*/
 {
     hmacmodule_state *state = get_hmacmodule_state_by_cls(cls);
-    HMACObject *copy = PyObject_GC_New(HMACObject, state->hmac_type);
+    HMACObject *copy = PyObject_New(HMACObject, state->hmac_type);
     if (copy == NULL) {
         return NULL;
     }
 
-    ENTER_HASHLIB(self);
+    HASHLIB_ACQUIRE_LOCK(self);
     /* copy hash information */
     hmac_copy_hinfo(copy, self);
     /* copy internal state */
     int rc = hmac_copy_state(copy, self);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
 
     if (rc < 0) {
         Py_DECREF(copy);
@@ -946,80 +869,7 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
     }
 
     HASHLIB_INIT_MUTEX(copy);
-    PyObject_GC_Track(copy);
     return (PyObject *)copy;
-}
-
-/*
- * Update the HMAC object with the given buffer.
- *
- * This unconditionally acquires the lock on the HMAC object.
- *
- * On DEBUG builds, each update() call is verified.
- *
- * Return 0 on success; otherwise, set an exception and return -1 on failure.
- */
-static int
-hmac_update_state_with_lock(HMACObject *self, uint8_t *buf, Py_ssize_t len)
-{
-    int res = 0;
-    Py_BEGIN_ALLOW_THREADS
-        PyMutex_Lock(&self->mutex);  // unconditionally acquire a lock
-        Py_HMAC_HACL_UPDATE(self->state, buf, len, self->name, goto error);
-        goto done;
-#ifndef NDEBUG
-error:
-        res = -1;
-#else
-        Py_UNREACHABLE();
-#endif
-done:
-        PyMutex_Unlock(&self->mutex);
-    Py_END_ALLOW_THREADS
-    return res;
-}
-
-/*
- * Update the HMAC object with the given buffer.
- *
- * This conditionally acquires the lock on the HMAC object.
- *
- * On DEBUG builds, each update() call is verified.
- *
- * Return 0 on success; otherwise, set an exception and return -1 on failure.
- */
-static int
-hmac_update_state_cond_lock(HMACObject *self, uint8_t *buf, Py_ssize_t len)
-{
-    ENTER_HASHLIB(self);  // conditionally acquire a lock
-    Py_HMAC_HACL_UPDATE(self->state, buf, len, self->name, goto error);
-    LEAVE_HASHLIB(self);
-    return 0;
-
-#ifndef NDEBUG
-error:
-    LEAVE_HASHLIB(self);
-    return -1;
-#else
-    Py_UNREACHABLE();
-#endif
-}
-
-/*
- * Update the internal HMAC state with the given buffer.
- *
- * Return 0 on success; otherwise, set an exception and return -1 on failure.
- */
-static inline int
-hmac_update_state(HMACObject *self, uint8_t *buf, Py_ssize_t len)
-{
-    assert(buf != 0);
-    assert(len >= 0);
-    return len == 0
-               ? 0 /* nothing to do */
-               : len < HASHLIB_GIL_MINSIZE
-                     ? hmac_update_state_cond_lock(self, buf, len)
-                     : hmac_update_state_with_lock(self, buf, len);
 }
 
 /*[clinic input]
@@ -1034,9 +884,13 @@ static PyObject *
 _hmac_HMAC_update_impl(HMACObject *self, PyObject *msgobj)
 /*[clinic end generated code: output=962134ada5e55985 input=7c0ea830efb03367]*/
 {
+    int rc = 0;
     Py_buffer msg;
     GET_BUFFER_VIEW_OR_ERROUT(msgobj, &msg);
-    int rc = hmac_update_state(self, msg.buf, msg.len);
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
+        self, msg.len,
+        rc = _hacl_hmac_state_update(self->state, msg.buf, msg.len)
+    );
     PyBuffer_Release(&msg);
     return rc < 0 ? NULL : Py_None;
 }
@@ -1052,18 +906,18 @@ _hmac_HMAC_update_impl(HMACObject *self, PyObject *msgobj)
  * Note: this function may raise a MemoryError.
  */
 static int
-hmac_digest_compute_cond_lock(HMACObject *self, uint8_t *digest)
+hmac_digest_compute_locked(HMACObject *self, uint8_t *digest)
 {
     assert(digest != NULL);
     hacl_errno_t rc;
-    ENTER_HASHLIB(self);  // conditionally acquire a lock
+    HASHLIB_ACQUIRE_LOCK(self);
     rc = Hacl_Streaming_HMAC_digest(self->state, digest, self->digest_size);
-    LEAVE_HASHLIB(self);
+    HASHLIB_RELEASE_LOCK(self);
     assert(
         rc == Hacl_Streaming_Types_Success ||
         rc == Hacl_Streaming_Types_OutOfMemory
     );
-    return _hacl_convert_errno(rc, NULL);
+    return _hacl_convert_errno(rc);
 }
 
 /*[clinic input]
@@ -1080,13 +934,15 @@ _hmac_HMAC_digest_impl(HMACObject *self)
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
-    if (hmac_digest_compute_cond_lock(self, digest) < 0) {
+    if (hmac_digest_compute_locked(self, digest) < 0) {
         return NULL;
     }
     return PyBytes_FromStringAndSize((const char *)digest, self->digest_size);
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 _hmac.HMAC.hexdigest
 
 Return hexadecimal digest of the bytes passed to the update() method so far.
@@ -1099,11 +955,11 @@ This method may raise a MemoryError.
 
 static PyObject *
 _hmac_HMAC_hexdigest_impl(HMACObject *self)
-/*[clinic end generated code: output=6659807a09ae14ec input=493b2db8013982b9]*/
+/*[clinic end generated code: output=6659807a09ae14ec input=6e0e796e38d82fc8]*/
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
-    if (hmac_digest_compute_cond_lock(self, digest) < 0) {
+    if (hmac_digest_compute_locked(self, digest) < 0) {
         return NULL;
     }
     return _Py_strhex((const char *)digest, self->digest_size);
@@ -1168,17 +1024,9 @@ static void
 HMACObject_dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
     (void)HMACObject_clear(op);
     type->tp_free(op);
     Py_DECREF(type);
-}
-
-static int
-HMACObject_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
 }
 
 static PyMethodDef HMACObject_methods[] = {
@@ -1200,9 +1048,7 @@ static PyType_Slot HMACObject_Type_slots[] = {
     {Py_tp_repr, HMACObject_repr},
     {Py_tp_methods, HMACObject_methods},
     {Py_tp_getset, HMACObject_getsets},
-    {Py_tp_clear, HMACObject_clear},
     {Py_tp_dealloc, HMACObject_dealloc},
-    {Py_tp_traverse, HMACObject_traverse},
     {0, NULL} /* sentinel */
 };
 
@@ -1212,8 +1058,7 @@ static PyType_Spec HMAC_Type_spec = {
     .flags = Py_TPFLAGS_DEFAULT
              | Py_TPFLAGS_DISALLOW_INSTANTIATION
              | Py_TPFLAGS_HEAPTYPE
-             | Py_TPFLAGS_IMMUTABLETYPE
-             | Py_TPFLAGS_HAVE_GC,
+             | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = HMACObject_Type_slots,
 };
 
@@ -1243,28 +1088,46 @@ _hmac_compute_digest_impl(PyObject *module, PyObject *key, PyObject *msg,
 }
 
 /*
- * One-shot HMAC-HASH using the given HACL_HID.
+ * Obtain a view for 'key' and 'msg', storing it in 'keyview' and 'msgview'.
+ *
+ * Return 0 on success; otherwise set an exception and return -1.
  *
  * The length of the key and message buffers must not exceed UINT32_MAX,
  * lest an OverflowError is raised. The Python implementation takes care
  * of dispatching to the OpenSSL implementation in this case.
  */
-#define Py_HMAC_HACL_ONESHOT(HACL_HID, KEY, MSG)                        \
+static int
+hmac_get_buffer_views(PyObject *key, Py_buffer *keyview,
+                      PyObject *msg, Py_buffer *msgview)
+{
+    if (_Py_hashlib_get_buffer_view(key, keyview) < 0) {
+        return -1;
+    }
+    if (!has_uint32_t_buffer_length(keyview)) {
+        PyBuffer_Release(keyview);
+        set_invalid_key_length_error();
+        return -1;
+    }
+    if (_Py_hashlib_get_buffer_view(msg, msgview) < 0) {
+        PyBuffer_Release(keyview);
+        return -1;
+    }
+    if (!has_uint32_t_buffer_length(msgview)) {
+        PyBuffer_Release(msgview);
+        PyBuffer_Release(keyview);
+        set_invalid_msg_length_error();
+        return -1;
+    }
+    return 0;
+}
+
+/*
+ * One-shot HMAC-HASH using the given HACL_HID.
+ */
+#define HACL_HMAC_COMPUTE_NAMED_DIGEST(HACL_HID, KEY, MSG)              \
     do {                                                                \
         Py_buffer keyview, msgview;                                     \
-        GET_BUFFER_VIEW_OR_ERROUT((KEY), &keyview);                     \
-        if (!has_uint32_t_buffer_length(&keyview)) {                    \
-            PyBuffer_Release(&keyview);                                 \
-            PyErr_SetString(PyExc_OverflowError, INVALID_KEY_LENGTH);   \
-            return NULL;                                                \
-        }                                                               \
-        GET_BUFFER_VIEW_OR_ERROR((MSG), &msgview,                       \
-                                 PyBuffer_Release(&keyview);            \
-                                 return NULL);                          \
-        if (!has_uint32_t_buffer_length(&msgview)) {                    \
-            PyBuffer_Release(&msgview);                                 \
-            PyBuffer_Release(&keyview);                                 \
-            PyErr_SetString(PyExc_OverflowError, INVALID_MSG_LENGTH);   \
+        if (hmac_get_buffer_views(key, &keyview, msg, &msgview) < 0) {  \
             return NULL;                                                \
         }                                                               \
         uint8_t out[Py_hmac_## HACL_HID ##_digest_size];                \
@@ -1294,7 +1157,7 @@ static PyObject *
 _hmac_compute_md5_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=7837a4ceccbbf636 input=77a4b774c7d61218]*/
 {
-    Py_HMAC_HACL_ONESHOT(md5, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(md5, key, msg);
 }
 
 /*[clinic input]
@@ -1310,7 +1173,7 @@ static PyObject *
 _hmac_compute_sha1_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=79fd7689c83691d8 input=3b64dccc6bdbe4ba]*/
 {
-    Py_HMAC_HACL_ONESHOT(sha1, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(sha1, key, msg);
 }
 
 /*[clinic input]
@@ -1326,7 +1189,7 @@ static PyObject *
 _hmac_compute_sha2_224_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=7f21f1613e53979e input=a1a75f25f23449af]*/
 {
-    Py_HMAC_HACL_ONESHOT(sha2_224, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(sha2_224, key, msg);
 }
 
 /*[clinic input]
@@ -1342,7 +1205,7 @@ static PyObject *
 _hmac_compute_sha2_256_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=d4a291f7d9a82459 input=5c9ccf2df048ace3]*/
 {
-    Py_HMAC_HACL_ONESHOT(sha2_256, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(sha2_256, key, msg);
 }
 
 /*[clinic input]
@@ -1358,7 +1221,7 @@ static PyObject *
 _hmac_compute_sha2_384_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=f211fa26e3700c27 input=2fee2c14766af231]*/
 {
-    Py_HMAC_HACL_ONESHOT(sha2_384, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(sha2_384, key, msg);
 }
 
 /*[clinic input]
@@ -1374,7 +1237,7 @@ static PyObject *
 _hmac_compute_sha2_512_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=d5c20373762cecca input=3371eaac315c7864]*/
 {
-    Py_HMAC_HACL_ONESHOT(sha2_512, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(sha2_512, key, msg);
 }
 
 /*[clinic input]
@@ -1390,7 +1253,7 @@ static PyObject *
 _hmac_compute_sha3_224_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=a242ccac9ad9c22b input=d0ab0c7d189c3d87]*/
 {
-    Py_HMAC_HACL_ONESHOT(sha3_224, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(sha3_224, key, msg);
 }
 
 /*[clinic input]
@@ -1406,7 +1269,7 @@ static PyObject *
 _hmac_compute_sha3_256_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=b539dbb61af2fe0b input=f05d7b6364b35d02]*/
 {
-    Py_HMAC_HACL_ONESHOT(sha3_256, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(sha3_256, key, msg);
 }
 
 /*[clinic input]
@@ -1422,7 +1285,7 @@ static PyObject *
 _hmac_compute_sha3_384_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=5eb372fb5c4ffd3a input=d842d393e7aa05ae]*/
 {
-    Py_HMAC_HACL_ONESHOT(sha3_384, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(sha3_384, key, msg);
 }
 
 /*[clinic input]
@@ -1438,7 +1301,7 @@ static PyObject *
 _hmac_compute_sha3_512_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=154bcbf8c2eacac1 input=166fe5baaeaabfde]*/
 {
-    Py_HMAC_HACL_ONESHOT(sha3_512, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(sha3_512, key, msg);
 }
 
 /*[clinic input]
@@ -1454,7 +1317,7 @@ static PyObject *
 _hmac_compute_blake2s_32_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=cfc730791bc62361 input=d22c36e7fe31a985]*/
 {
-    Py_HMAC_HACL_ONESHOT(blake2s_32, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(blake2s_32, key, msg);
 }
 
 /*[clinic input]
@@ -1470,8 +1333,10 @@ static PyObject *
 _hmac_compute_blake2b_32_impl(PyObject *module, PyObject *key, PyObject *msg)
 /*[clinic end generated code: output=765c5c4fb9124636 input=4a35ee058d172f4b]*/
 {
-    Py_HMAC_HACL_ONESHOT(blake2b_32, key, msg);
+    HACL_HMAC_COMPUTE_NAMED_DIGEST(blake2b_32, key, msg);
 }
+
+#undef HACL_HMAC_COMPUTE_NAMED_DIGEST
 
 // --- HMAC module methods ----------------------------------------------------
 
@@ -1679,6 +1544,20 @@ hmacmodule_init_strings(hmacmodule_state *state)
     return 0;
 }
 
+static int
+hmacmodule_init_globals(PyObject *module, hmacmodule_state *state)
+{
+#define ADD_INT_CONST(NAME, VALUE)                                  \
+    do {                                                            \
+        if (PyModule_AddIntConstant(module, (NAME), (VALUE)) < 0) { \
+            return -1;                                              \
+        }                                                           \
+    } while (0)
+    ADD_INT_CONST("_GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
+#undef ADD_INT_CONST
+    return 0;
+}
+
 static void
 hmacmodule_init_cpu_features(hmacmodule_state *state)
 {
@@ -1688,11 +1567,11 @@ hmacmodule_init_cpu_features(hmacmodule_state *state)
     __cpuid_count(1, 0, eax1, ebx1, ecx1, edx1);
     __cpuid_count(7, 0, eax7, ebx7, ecx7, edx7);
 #elif defined(_M_X64)
-    int info1[4] = { 0 };
+    int info1[4] = {0};
     __cpuidex(info1, 1, 0);
     eax1 = info1[0], ebx1 = info1[1], ecx1 = info1[2], edx1 = info1[3];
 
-    int info7[4] = { 0 };
+    int info7[4] = {0};
     __cpuidex(info7, 7, 0);
     eax7 = info7[0], ebx7 = info7[1], ecx7 = info7[2], edx7 = info7[3];
 #endif
@@ -1732,7 +1611,7 @@ hmacmodule_init_cpu_features(hmacmodule_state *state)
 #undef ECX_SSE3
 #undef EBX_AVX2
 
-#if HACL_CAN_COMPILE_SIMD128
+#if _Py_HACL_CAN_COMPILE_VEC128
     // TODO(picnixz): use py_cpuid_features (gh-125022) to improve detection
     state->can_run_simd128 = sse && sse2 && sse3 && sse41 && sse42 && cmov;
 #else
@@ -1742,7 +1621,7 @@ hmacmodule_init_cpu_features(hmacmodule_state *state)
     state->can_run_simd128 = false;
 #endif
 
-#if HACL_CAN_COMPILE_SIMD256
+#if _Py_HACL_CAN_COMPILE_VEC256
     // TODO(picnixz): use py_cpuid_features (gh-125022) to improve detection
     state->can_run_simd256 = state->can_run_simd128 && avx && avx2;
 #else
@@ -1767,6 +1646,9 @@ hmacmodule_exec(PyObject *module)
         return -1;
     }
     if (hmacmodule_init_strings(state) < 0) {
+        return -1;
+    }
+    if (hmacmodule_init_globals(module, state) < 0) {
         return -1;
     }
     hmacmodule_init_cpu_features(state);

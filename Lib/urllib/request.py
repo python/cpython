@@ -1466,29 +1466,39 @@ class FileHandler(BaseHandler):
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        filename = _splittype(req.full_url)[1]
-        localfile = url2pathname(filename)
+        localfile = url2pathname(req.full_url, require_scheme=True, resolve_host=True)
         try:
             stats = os.stat(localfile)
             size = stats.st_size
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-            mtype = mimetypes.guess_type(filename)[0]
+            mtype = mimetypes.guess_file_type(localfile)[0]
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
-            origurl = f'file:{pathname2url(localfile)}'
+            origurl = pathname2url(localfile, add_scheme=True)
             return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
             raise URLError(exp, exp.filename)
 
     file_open = open_local_file
 
-def _is_local_authority(authority):
+def _is_local_authority(authority, resolve):
+    # Compare hostnames
     if not authority or authority == 'localhost':
         return True
     try:
-        address = socket.gethostbyname(authority)
+        hostname = socket.gethostname()
     except (socket.gaierror, AttributeError):
+        pass
+    else:
+        if authority == hostname:
+            return True
+    # Compare IP addresses
+    if not resolve:
+        return False
+    try:
+        address = socket.gethostbyname(authority)
+    except (socket.gaierror, AttributeError, UnicodeEncodeError):
         return False
     return address in FileHandler().get_names()
 
@@ -1633,14 +1643,27 @@ class DataHandler(BaseHandler):
         return addinfourl(io.BytesIO(data), headers, url)
 
 
-# Code move from the old urllib module
+# Code moved from the old urllib module
 
-def url2pathname(url):
-    """OS-specific conversion from a relative URL of the 'file' scheme
-    to a file system path; not recommended for general use."""
-    authority, url = _splithost(url)
+def url2pathname(url, *, require_scheme=False, resolve_host=False):
+    """Convert the given file URL to a local file system path.
+
+    The 'file:' scheme prefix must be omitted unless *require_scheme*
+    is set to true.
+
+    The URL authority may be resolved with gethostbyname() if
+    *resolve_host* is set to true.
+    """
+    if not require_scheme:
+        url = 'file:' + url
+    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    if scheme != 'file':
+        raise URLError("URL is missing a 'file:' scheme")
     if os.name == 'nt':
-        if not _is_local_authority(authority):
+        if authority[1:2] == ':':
+            # e.g. file://c:/file.txt
+            url = authority + url
+        elif not _is_local_authority(authority, resolve_host):
             # e.g. file://server/share/file.txt
             url = '//' + authority + url
         elif url[:3] == '///':
@@ -1654,20 +1677,24 @@ def url2pathname(url):
                 # Older URLs use a pipe after a drive letter
                 url = url[:1] + ':' + url[2:]
         url = url.replace('/', '\\')
-    elif not _is_local_authority(authority):
+    elif not _is_local_authority(authority, resolve_host):
         raise URLError("file:// scheme is supported only on localhost")
     encoding = sys.getfilesystemencoding()
     errors = sys.getfilesystemencodeerrors()
     return unquote(url, encoding=encoding, errors=errors)
 
 
-def pathname2url(pathname):
-    """OS-specific conversion from a file system path to a relative URL
-    of the 'file' scheme; not recommended for general use."""
+def pathname2url(pathname, *, add_scheme=False):
+    """Convert the given local file system path to a file URL.
+
+    The 'file:' scheme prefix is omitted unless *add_scheme*
+    is set to true.
+    """
     if os.name == 'nt':
         pathname = pathname.replace('\\', '/')
     encoding = sys.getfilesystemencoding()
     errors = sys.getfilesystemencodeerrors()
+    scheme = 'file:' if add_scheme else ''
     drive, root, tail = os.path.splitroot(pathname)
     if drive:
         # First, clean up some special forms. We are going to sacrifice the
@@ -1689,7 +1716,7 @@ def pathname2url(pathname):
         # avoids interpreting the path as a URL authority.
         root = '//' + root
     tail = quote(tail, encoding=encoding, errors=errors)
-    return drive + root + tail
+    return scheme + drive + root + tail
 
 
 # Utility functions

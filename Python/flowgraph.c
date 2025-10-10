@@ -199,8 +199,10 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     cfg_instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = oparg;
-    i->i_target = NULL;
     i->i_loc = loc;
+    // memory is already zero initialized
+    assert(i->i_target == NULL);
+    assert(i->i_except == NULL);
 
     return SUCCESS;
 }
@@ -295,30 +297,38 @@ dump_instr(cfg_instr *i)
 static inline int
 basicblock_returns(const basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    return last && last->i_opcode == RETURN_VALUE;
+    return last && IS_RETURN_OPCODE(last->i_opcode);
 }
 
 static void
-dump_basicblock(const basicblock *b)
+dump_basicblock(const basicblock *b, bool highlight)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
+    if (highlight) {
+        fprintf(stderr, ">>> ");
+    }
     fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, preds: %d %s\n",
         b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_predecessors, b_return);
+    int depth = b->b_startdepth;
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
-            fprintf(stderr, "  [%02d] ", i);
+            fprintf(stderr, "  [%02d] depth: %d ", i, depth);
             dump_instr(b->b_instr + i);
+
+            int popped = _PyOpcode_num_popped(b->b_instr[i].i_opcode, b->b_instr[i].i_oparg);
+            int pushed = _PyOpcode_num_pushed(b->b_instr[i].i_opcode, b->b_instr[i].i_oparg);
+            depth += (pushed - popped);
         }
     }
 }
 
 void
-_PyCfgBuilder_DumpGraph(const basicblock *entryblock)
+_PyCfgBuilder_DumpGraph(const basicblock *entryblock, const basicblock *mark)
 {
     for (const basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        dump_basicblock(b);
+        dump_basicblock(b, b == mark);
     }
 }
 
@@ -1096,6 +1106,7 @@ basicblock_remove_redundant_nops(basicblock *bb) {
     assert(dest <= bb->b_iused);
     int num_removed = bb->b_iused - dest;
     bb->b_iused = dest;
+    memset(&bb->b_instr[dest], 0, sizeof(cfg_instr) * num_removed);
     return num_removed;
 }
 
@@ -1884,6 +1895,10 @@ eval_const_unaryop(PyObject *operand, int opcode, int oparg)
             result = PyNumber_Negative(operand);
             break;
         case UNARY_INVERT:
+            // XXX: This should be removed once the ~bool depreciation expires.
+            if (PyBool_Check(operand)) {
+                return NULL;
+            }
             result = PyNumber_Invert(operand);
             break;
         case UNARY_NOT: {
@@ -2795,6 +2810,11 @@ optimize_load_fast(cfg_builder *g)
             assert(opcode != EXTENDED_ARG);
             switch (opcode) {
                 // Opcodes that load and store locals
+                case DELETE_FAST: {
+                    kill_local(instr_flags, &refs, oparg);
+                    break;
+                }
+
                 case LOAD_FAST: {
                     PUSH_REF(i, oparg);
                     break;
@@ -2857,8 +2877,11 @@ optimize_load_fast(cfg_builder *g)
                 // how many inputs should be left on the stack.
 
                 // Opcodes that consume no inputs
+                case FORMAT_SIMPLE:
                 case GET_ANEXT:
+                case GET_ITER:
                 case GET_LEN:
+                case GET_YIELD_FROM_ITER:
                 case IMPORT_FROM:
                 case MATCH_KEYS:
                 case MATCH_MAPPING:
@@ -2868,7 +2891,7 @@ optimize_load_fast(cfg_builder *g)
                     int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
                     int net_pushed = num_pushed - num_popped;
                     assert(net_pushed >= 0);
-                    for (int i = 0; i < net_pushed; i++) {
+                    for (int j = 0; j < net_pushed; j++) {
                         PUSH_REF(i, NOT_LOCAL);
                     }
                     break;
@@ -2890,6 +2913,16 @@ optimize_load_fast(cfg_builder *g)
                     for (int i = 0; i < net_popped; i++) {
                         ref_stack_pop(&refs);
                     }
+                    break;
+                }
+
+                case END_SEND:
+                case SET_FUNCTION_ATTRIBUTE: {
+                    assert(_PyOpcode_num_popped(opcode, oparg) == 2);
+                    assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
+                    ref tos = ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(tos.instr, tos.local);
                     break;
                 }
 
@@ -2919,6 +2952,14 @@ optimize_load_fast(cfg_builder *g)
                         // back onto the stack
                         PUSH_REF(self.instr, self.local);
                     }
+                    break;
+                }
+
+                case LOAD_SPECIAL:
+                case PUSH_EXC_INFO: {
+                    ref tos = ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    PUSH_REF(tos.instr, tos.local);
                     break;
                 }
 
@@ -2952,11 +2993,8 @@ optimize_load_fast(cfg_builder *g)
         }
 
         // Push fallthrough block
-        cfg_instr *term = basicblock_last_instr(block);
-        if (term != NULL && block->b_next != NULL &&
-            !(IS_UNCONDITIONAL_JUMP_OPCODE(term->i_opcode) ||
-              IS_SCOPE_EXIT_OPCODE(term->i_opcode))) {
-            assert(BB_HAS_FALLTHROUGH(block));
+        if (BB_HAS_FALLTHROUGH(block)) {
+            assert(block->b_next != NULL);
             load_fast_push_block(&sp, block->b_next, refs.size);
         }
 
@@ -3434,11 +3472,13 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                 instr->i_opcode = instr->i_opcode == JUMP_IF_FALSE ?
                                           POP_JUMP_IF_FALSE : POP_JUMP_IF_TRUE;
                 location loc = instr->i_loc;
+                basicblock *except = instr->i_except;
                 cfg_instr copy = {
                             .i_opcode = COPY,
                             .i_oparg = 1,
                             .i_loc = loc,
                             .i_target = NULL,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &copy));
                 cfg_instr to_bool = {
@@ -3446,6 +3486,7 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                             .i_oparg = 0,
                             .i_loc = loc,
                             .i_target = NULL,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &to_bool));
             }
@@ -3550,8 +3591,19 @@ duplicate_exits_without_lineno(cfg_builder *g)
  * Also reduces the size of the line number table,
  * but has no impact on the generated line number events.
  */
+
+static inline void
+maybe_propagate_location(basicblock *b, int i, location loc)
+{
+    assert(b->b_iused > i);
+    if (b->b_instr[i].i_loc.lineno == NO_LOCATION.lineno) {
+         b->b_instr[i].i_loc = loc;
+    }
+}
+
 static void
-propagate_line_numbers(basicblock *entryblock) {
+propagate_line_numbers(basicblock *entryblock)
+{
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         cfg_instr *last = basicblock_last_instr(b);
         if (last == NULL) {
@@ -3560,26 +3612,21 @@ propagate_line_numbers(basicblock *entryblock) {
 
         location prev_location = NO_LOCATION;
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_loc.lineno == NO_LOCATION.lineno) {
-                b->b_instr[i].i_loc = prev_location;
-            }
-            else {
-                prev_location = b->b_instr[i].i_loc;
-            }
+            maybe_propagate_location(b, i, prev_location);
+            prev_location = b->b_instr[i].i_loc;
         }
         if (BB_HAS_FALLTHROUGH(b) && b->b_next->b_predecessors == 1) {
             if (b->b_next->b_iused > 0) {
-                if (b->b_next->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
-                    b->b_next->b_instr[0].i_loc = prev_location;
-                }
+                maybe_propagate_location(b->b_next, 0, prev_location);
             }
         }
         if (is_jump(last)) {
             basicblock *target = last->i_target;
+            while (target->b_iused == 0 && target->b_predecessors == 1) {
+                target = target->b_next;
+            }
             if (target->b_predecessors == 1) {
-                if (target->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
-                    target->b_instr[0].i_loc = prev_location;
-                }
+                maybe_propagate_location(target, 0, prev_location);
             }
         }
     }
@@ -3688,6 +3735,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = 0,
             .i_loc = loc,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
         cfg_instr pop_top = {
@@ -3695,6 +3743,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = 0,
             .i_loc = loc,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));
     }
@@ -3725,6 +3774,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
                 .i_oparg = oldindex,
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
+                .i_except = NULL,
             };
             if (basicblock_insert_instruction(entryblock, ncellsused, &make_cell) < 0) {
                 PyMem_RawFree(sorted);
@@ -3741,6 +3791,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = nfreevars,
             .i_loc = NO_LOCATION,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &copy_frees));
     }
@@ -3847,16 +3898,38 @@ _PyCfg_FromInstructionSequence(_PyInstructionSequence *seq)
             seq->s_instrs[instr->i_oparg].i_target = 1;
         }
     }
+    int offset = 0;
     for (int i = 0; i < seq->s_used; i++) {
         _PyInstruction *instr = &seq->s_instrs[i];
+        if (instr->i_opcode == ANNOTATIONS_PLACEHOLDER) {
+            if (seq->s_annotations_code != NULL) {
+                assert(seq->s_annotations_code->s_labelmap_size == 0
+                    && seq->s_annotations_code->s_nested == NULL);
+                for (int j = 0; j < seq->s_annotations_code->s_used; j++) {
+                    _PyInstruction *ann_instr = &seq->s_annotations_code->s_instrs[j];
+                    assert(!HAS_TARGET(ann_instr->i_opcode));
+                    if (_PyCfgBuilder_Addop(g, ann_instr->i_opcode, ann_instr->i_oparg, ann_instr->i_loc) < 0) {
+                        goto error;
+                    }
+                }
+                offset += seq->s_annotations_code->s_used - 1;
+            }
+            else {
+                offset -= 1;
+            }
+            continue;
+        }
         if (instr->i_target) {
-            jump_target_label lbl_ = {i};
+            jump_target_label lbl_ = {i + offset};
             if (_PyCfgBuilder_UseLabel(g, lbl_) < 0) {
                 goto error;
             }
         }
         int opcode = instr->i_opcode;
         int oparg = instr->i_oparg;
+        if (HAS_TARGET(opcode)) {
+            oparg += offset;
+        }
         if (_PyCfgBuilder_Addop(g, opcode, oparg, instr->i_loc) < 0) {
             goto error;
         }

@@ -150,7 +150,7 @@ class OtherNetworkTests(unittest.TestCase):
             f.write('hi there\n')
             f.close()
             urls = [
-                'file:' + urllib.request.pathname2url(os.path.abspath(TESTFN)),
+                urllib.request.pathname2url(os.path.abspath(TESTFN), add_scheme=True),
                 ('file:///nonsensename/etc/passwd', None,
                  urllib.error.URLError),
                 ]
@@ -217,27 +217,6 @@ class OtherNetworkTests(unittest.TestCase):
             request.add_header('User-Agent','Test-Agent')
             opener.open(request)
             self.assertEqual(request.get_header('User-agent'),'Test-Agent')
-
-    @unittest.skip('XXX: http://www.imdb.com is gone')
-    def test_sites_no_connection_close(self):
-        # Some sites do not send Connection: close header.
-        # Verify that those work properly. (#issue12576)
-
-        URL = 'http://www.imdb.com' # mangles Connection:close
-
-        with socket_helper.transient_internet(URL):
-            try:
-                with urllib.request.urlopen(URL) as res:
-                    pass
-            except ValueError:
-                self.fail("urlopen failed for site not sending \
-                           Connection:close")
-            else:
-                self.assertTrue(res)
-
-            req = urllib.request.urlopen(URL)
-            res = req.read()
-            self.assertTrue(res)
 
     def _test_urls(self, urls, handlers, retry=True):
         import time

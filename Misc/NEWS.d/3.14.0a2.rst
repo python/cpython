@@ -310,7 +310,7 @@ same manner as :data:`sys.path` is configured in workers before executing
 work items.
 
 This bug caused some forkserver module preloading to silently fail to
-preload. This manifested as a performance degration in child processes when
+preload. This manifested as a performance degradation in child processes when
 the ``sys.path`` was required due to additional repeated work in every
 worker.
 
@@ -1400,7 +1400,7 @@ The :class:`memoryview` type now supports subscription, making it a
 .. nonce: KlCdgD
 .. section: Core and Builtins
 
-Adds :opcode:`LOAD_SMALL_INT` and :opcode:`LOAD_CONST_IMMORTAL`
+Adds :opcode:`LOAD_SMALL_INT` and :opcode:`!LOAD_CONST_IMMORTAL`
 instructions. ``LOAD_SMALL_INT`` pushes a small integer equal to the
 ``oparg`` to the stack. ``LOAD_CONST_IMMORTAL`` does the same as
 ``LOAD_CONST`` but is more efficient for immortal objects. Removes
