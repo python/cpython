@@ -12,5 +12,8 @@ _JIT_ENTRY(
 ) {
     typedef DECLARE_TARGET((*jit_func));
     jit_func jitted = (jit_func)exec->jit_code;
+    if (--tstate->interp->trace_run_counter == 0) {
+        _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
+    }
     return jitted(frame, stack_pointer, tstate);
 }
