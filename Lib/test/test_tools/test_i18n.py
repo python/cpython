@@ -596,7 +596,12 @@ class Test_pygettext(unittest.TestCase):
             with open('test.py', 'w', encoding='utf-8') as fp:
                 fp.write('_("áscii")')
 
-            res = assert_python_ok(self.script, 'test.py', PYTHONCOERCECLOCALE="0", PYTHONUTF8="0", PYTHONIOENCODING="ascii", LANG="C", LC_ALL="C")
+            res = assert_python_ok(self.script,
+                                   'test.py',
+                                   PYTHONCOERCECLOCALE="0",
+                                   PYTHONUTF8="0",
+                                   LANG="C",
+                                   LC_ALL="C")
             self.assertEqual(res.err, b'')
 
             with open('messages.pot', encoding='utf-8') as fp:
