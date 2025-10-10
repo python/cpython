@@ -287,7 +287,8 @@ def ismount(path):
     if drive and drive[0] in seps:
         return not rest
     if root and not rest:
-        return True
+        # Drive root is a mount point if it exists.
+        return exists(path)
 
     if _getvolumepathname:
         try:
