@@ -1368,7 +1368,7 @@ class TestNtpath(NtpathTestCase):
         self.assertTrue(ntpath.ismount(b"\\\\.\\c:\\"))
         self.assertTrue(ntpath.ismount(b"\\\\.\\C:\\"))
 
-        # Look for a non-existent drive letter that can be used to test 
+        # Look for a non-existent drive letter that can be used to test
         # behaviour of ismount().
         for drive in "DEFGHIJKLMNOPQRSTUVWXYZ":
             if not ntpath.exists(drive + ":\\"):
