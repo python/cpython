@@ -66,13 +66,6 @@ _AARCH64_BRANCHES = {
     "bc." + cond: ("bc." + inverse if inverse else None)
     for (cond, inverse) in _AARCH64_COND_CODES.items()
 }
-# And four compare and branch instructions
-_AARCH64_BRANCHES |= {
-    "cbz": "cbnz",
-    "cbnz": "cbz",
-    "tbz": "tbnz",
-    "tbnz": "tbz",
-}
 
 
 @dataclasses.dataclass

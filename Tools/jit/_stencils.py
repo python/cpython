@@ -61,6 +61,7 @@ _PATCH_FUNCS = {
     # x86_64-pc-windows-msvc:
     "IMAGE_REL_AMD64_REL32": "patch_x86_64_32rx",
     # aarch64-pc-windows-msvc:
+    "IMAGE_REL_ARM64_BRANCH19": "patch_aarch64_19r",
     "IMAGE_REL_ARM64_BRANCH26": "patch_aarch64_26r",
     "IMAGE_REL_ARM64_PAGEBASE_REL21": "patch_aarch64_21rx",
     "IMAGE_REL_ARM64_PAGEOFFSET_12A": "patch_aarch64_12",
@@ -81,7 +82,6 @@ _PATCH_FUNCS = {
     "R_AARCH64_MOVW_UABS_G1_NC": "patch_aarch64_16b",
     "R_AARCH64_MOVW_UABS_G2_NC": "patch_aarch64_16c",
     "R_AARCH64_MOVW_UABS_G3": "patch_aarch64_16d",
-    "R_AARCH64_TSTBR14": "patch_aarch64_14r",
     # x86_64-unknown-linux-gnu:
     "R_X86_64_64": "patch_64",
     "R_X86_64_GOTPCRELX": "patch_x86_64_32rx",
