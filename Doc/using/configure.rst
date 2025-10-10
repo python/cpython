@@ -21,7 +21,7 @@ Features and minimum versions required to build CPython:
   <https://en.wikipedia.org/wiki/NaN#Floating_point>`_.
 
 * Support for threads.
-abcdefghijklmnopq r stuvwxyz
+
 To build optional modules:
 
 * `libbz2 <https://sourceware.org/bzip2/>`_ for the :mod:`bz2` module.
