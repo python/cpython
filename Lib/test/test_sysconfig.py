@@ -764,8 +764,12 @@ class MakefileTests(unittest.TestCase):
             print("var3=42", file=makefile)
             print("var4=$/invalid", file=makefile)
             print("var5=dollar$$5", file=makefile)
-            print("var6=${var3}/lib/python3.5/config-$(VAR2)$(var5)"
+            print("var6=${var7}/lib/python3.5/config-$(VAR2)$(var5)"
                   "-x86_64-linux-gnu", file=makefile)
+            print("var7=${var3}", file=makefile)
+            print("var8=$$(var3)", file=makefile)
+            print("var9=$(var10)(var3)", file=makefile)
+            print("var10=$$", file=makefile)
         vars = _parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': 'ab42',
@@ -774,6 +778,71 @@ class MakefileTests(unittest.TestCase):
             'var4': '$/invalid',
             'var5': 'dollar$5',
             'var6': '42/lib/python3.5/config-b42dollar$5-x86_64-linux-gnu',
+            'var7': 42,
+            'var8': '$(var3)',
+            'var9': '$(var3)',
+            'var10': '$',
+        })
+
+    def _test_parse_makefile_recursion(self):
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as makefile:
+            print("var1=var1=$(var1)", file=makefile)
+            print("var2=var3=$(var3)", file=makefile)
+            print("var3=var2=$(var2)", file=makefile)
+        vars = _parse_makefile(TESTFN)
+        self.assertEqual(vars, {
+            'var1': 'var1=',
+            'var2': 'var3=var2=',
+            'var3': 'var2=',
+        })
+
+    def test_parse_makefile_renamed_vars(self):
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as makefile:
+            print("var1=$(CFLAGS)", file=makefile)
+            print("PY_CFLAGS=-Wall $(CPPFLAGS)", file=makefile)
+            print("PY_LDFLAGS=-lm", file=makefile)
+            print("var2=$(LDFLAGS)", file=makefile)
+            print("var3=$(CPPFLAGS)", file=makefile)
+        vars = _parse_makefile(TESTFN)
+        self.assertEqual(vars, {
+            'var1': '-Wall',
+            'CFLAGS': '-Wall',
+            'PY_CFLAGS': '-Wall',
+            'LDFLAGS': '-lm',
+            'PY_LDFLAGS': '-lm',
+            'var2': '-lm',
+            'var3': '',
+        })
+
+    def test_parse_makefile_keep_unresolved(self):
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as makefile:
+            print("var1=value", file=makefile)
+            print("var2=$/", file=makefile)
+            print("var3=$/$(var1)", file=makefile)
+            print("var4=var5=$(var5)", file=makefile)
+            print("var5=$/$(var1)", file=makefile)
+            print("var6=$(var1)$/", file=makefile)
+            print("var7=var8=$(var8)", file=makefile)
+            print("var8=$(var1)$/", file=makefile)
+        vars = _parse_makefile(TESTFN)
+        self.assertEqual(vars, {
+            'var1': 'value',
+            'var2': '$/',
+            'var3': '$/value',
+            'var4': 'var5=$/value',
+            'var5': '$/value',
+            'var6': 'value$/',
+            'var7': 'var8=value$/',
+            'var8': 'value$/',
+        })
+        vars = _parse_makefile(TESTFN, keep_unresolved=False)
+        self.assertEqual(vars, {
+            'var1': 'value',
+            'var4': 'var5=',
+            'var7': 'var8=',
         })
 
 
