@@ -15,7 +15,7 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import os_helper, warnings_helper
+from test.support import os_helper
 from test.support import socket_helper
 from test.support import wait_process
 from test.support import hashlib_helper
