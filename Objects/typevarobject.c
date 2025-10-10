@@ -53,6 +53,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     PyObject *name;
+    PyObject *qualname;
     PyObject *type_params;
     PyObject *compute_value;
     PyObject *value;
@@ -1852,6 +1853,7 @@ typealias_dealloc(PyObject *self)
     _PyObject_GC_UNTRACK(self);
     typealiasobject *ta = typealiasobject_CAST(self);
     Py_DECREF(ta->name);
+    Py_DECREF(ta->qualname);
     Py_XDECREF(ta->type_params);
     Py_XDECREF(ta->compute_value);
     Py_XDECREF(ta->value);
@@ -1878,11 +1880,12 @@ static PyObject *
 typealias_repr(PyObject *self)
 {
     typealiasobject *ta = (typealiasobject *)self;
-    return Py_NewRef(ta->name);
+    return Py_NewRef(ta->qualname);
 }
 
 static PyMemberDef typealias_members[] = {
     {"__name__", _Py_T_OBJECT, offsetof(typealiasobject, name), Py_READONLY},
+    {"__qualname__", _Py_T_OBJECT, offsetof(typealiasobject, qualname), Py_READONLY},
     {0}
 };
 
@@ -1997,7 +2000,7 @@ typealias_check_type_params(PyObject *type_params, int *err) {
 }
 
 static PyObject *
-typelias_convert_type_params(PyObject *type_params)
+typealias_convert_type_params(PyObject *type_params)
 {
     if (
         type_params == NULL
@@ -2012,14 +2015,15 @@ typelias_convert_type_params(PyObject *type_params)
 }
 
 static typealiasobject *
-typealias_alloc(PyObject *name, PyObject *type_params, PyObject *compute_value,
-                PyObject *value, PyObject *module)
+typealias_alloc(PyObject *name, PyObject *qualname, PyObject *type_params,
+                PyObject *compute_value, PyObject *value, PyObject *module)
 {
     typealiasobject *ta = PyObject_GC_New(typealiasobject, &_PyTypeAlias_Type);
     if (ta == NULL) {
         return NULL;
     }
     ta->name = Py_NewRef(name);
+    ta->qualname = Py_NewRef(qualname);
     ta->type_params = Py_XNewRef(type_params);
     ta->compute_value = Py_XNewRef(compute_value);
     ta->value = Py_XNewRef(value);
@@ -2112,8 +2116,10 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
     if (module == NULL) {
         return NULL;
     }
-    PyObject *ta = (PyObject *)typealias_alloc(name, checked_params, NULL, value,
-                                               module);
+
+    // It's impossible to determine qualname, so we use name insted.
+    PyObject *ta = (PyObject *)typealias_alloc(
+        name, name, checked_params, NULL, value, module);
     Py_DECREF(module);
     return ta;
 }
@@ -2179,10 +2185,17 @@ _Py_make_typealias(PyThreadState* unused, PyObject *args)
     assert(PyTuple_GET_SIZE(args) == 3);
     PyObject *name = PyTuple_GET_ITEM(args, 0);
     assert(PyUnicode_Check(name));
-    PyObject *type_params = typelias_convert_type_params(PyTuple_GET_ITEM(args, 1));
+    PyObject *type_params = typealias_convert_type_params(PyTuple_GET_ITEM(args, 1));
     PyObject *compute_value = PyTuple_GET_ITEM(args, 2);
     assert(PyFunction_Check(compute_value));
-    return (PyObject *)typealias_alloc(name, type_params, compute_value, NULL, NULL);
+
+    PyFunctionObject *compute_func = (PyFunctionObject *)compute_value;
+    PyCodeObject *code_obj = (PyCodeObject *)compute_func->func_code;
+    PyObject *qualname = code_obj->co_qualname;
+    assert(qualname != NULL);
+
+    return (PyObject *)typealias_alloc(
+        name, qualname, type_params, compute_value, NULL, NULL);
 }
 
 PyDoc_STRVAR(generic_doc,

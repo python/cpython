@@ -144,31 +144,33 @@ class TypeParamsAliasValueTest(unittest.TestCase):
 
     def test_repr(self):
         type Simple = int
-        type VeryGeneric[T, *Ts, **P] = Callable[P, tuple[T, *Ts]]
+        self.assertEqual(repr(Simple), Simple.__qualname__)
 
-        self.assertEqual(repr(Simple), "Simple")
-        self.assertEqual(repr(VeryGeneric), "VeryGeneric")
+        type VeryGeneric[T, *Ts, **P] = Callable[P, tuple[T, *Ts]]
+        self.assertEqual(repr(VeryGeneric), VeryGeneric.__qualname__)
+        fullname = f"{VeryGeneric.__module__}.{VeryGeneric.__qualname__}"
         self.assertEqual(repr(VeryGeneric[int, bytes, str, [float, object]]),
-                         "VeryGeneric[int, bytes, str, [float, object]]")
+                         f"{fullname}[int, bytes, str, [float, object]]")
         self.assertEqual(repr(VeryGeneric[int, []]),
-                         "VeryGeneric[int, []]")
+                         f"{fullname}[int, []]")
         self.assertEqual(repr(VeryGeneric[int, [VeryGeneric[int], list[str]]]),
-                         "VeryGeneric[int, [VeryGeneric[int], list[str]]]")
+                         f"{fullname}[int, [{fullname}[int], list[str]]]")
 
     def test_recursive_repr(self):
         type Recursive = Recursive
-        self.assertEqual(repr(Recursive), "Recursive")
+        self.assertEqual(repr(Recursive), Recursive.__qualname__)
 
         type X = list[Y]
         type Y = list[X]
-        self.assertEqual(repr(X), "X")
-        self.assertEqual(repr(Y), "Y")
+        self.assertEqual(repr(X), X.__qualname__)
+        self.assertEqual(repr(Y), Y.__qualname__)
 
         type GenericRecursive[X] = list[X | GenericRecursive[X]]
-        self.assertEqual(repr(GenericRecursive), "GenericRecursive")
-        self.assertEqual(repr(GenericRecursive[int]), "GenericRecursive[int]")
+        self.assertEqual(repr(GenericRecursive), GenericRecursive.__qualname__)
+        fullname = f"{GenericRecursive.__module__}.{GenericRecursive.__qualname__}"
+        self.assertEqual(repr(GenericRecursive[int]), f"{fullname}[int]")
         self.assertEqual(repr(GenericRecursive[GenericRecursive[int]]),
-                         "GenericRecursive[GenericRecursive[int]]")
+                         f"{fullname}[{fullname}[int]]")
 
     def test_raising(self):
         type MissingName = list[_My_X]
