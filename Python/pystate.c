@@ -1717,6 +1717,9 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->async_gen_finalizer);
 
     Py_CLEAR(tstate->context);
+#ifdef _Py_TIER2
+    Py_CLEAR(tstate->current_executor);
+#endif
 
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.

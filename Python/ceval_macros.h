@@ -351,12 +351,12 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 
 /* Tier-switching macros. */
 
-#define TIER1_TO_TIER2(EXECUTOR)                        \
+#define TIER1_TO_TIER2(EXECUTOR) \
 do {                                                   \
-    OPT_STAT_INC(traces_executed);                     \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
+    Py_DECREF(EXECUTOR);                               \
     if (next_instr == NULL) {                          \
         next_instr = frame->instr_ptr;                 \
         JUMP_TO_LABEL(error);                          \
@@ -413,4 +413,3 @@ check_periodics(PyThreadState *tstate) {
     }
     return 0;
 }
-

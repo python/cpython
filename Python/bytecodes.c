@@ -2972,6 +2972,7 @@ dummy_func(
                     assert(tstate->current_executor == NULL);
                     assert(executor != tstate->interp->cold_executor);
                     tstate->jit_exit = NULL;
+                    tstate->current_executor = (PyObject *)executor;
                     TIER1_TO_TIER2(executor);
                 }
             }

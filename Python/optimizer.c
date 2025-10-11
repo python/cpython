@@ -1202,6 +1202,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     if (executor == NULL) {
         return NULL;
     }
+    _PyObject_GC_TRACK(executor);
 
     /* Initialize exits */
     _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
@@ -1246,7 +1247,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
     sanity_check(executor);
 #endif
-    _PyObject_GC_TRACK(executor);
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->jit_size = 0;
@@ -1507,6 +1507,7 @@ _PyExecutor_GetColdExecutor(void)
     if (cold == NULL) {
         Py_FatalError("Cannot allocate core JIT code");
     }
+    _PyObject_GC_TRACK(cold);
     ((_PyUOpInstruction *)cold->trace)->opcode = _COLD_EXIT;
 #ifdef _Py_JIT
     cold->jit_code = NULL;

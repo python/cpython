@@ -7668,7 +7668,13 @@
                         assert(tstate->current_executor == NULL);
                         assert(executor != tstate->interp->cold_executor);
                         tstate->jit_exit = NULL;
+                        tstate->current_executor = (PyObject *)executor;
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
                         TIER1_TO_TIER2(executor);
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        Py_DECREF(executor);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
                     }
                 }
                 else {

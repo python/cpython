@@ -1146,6 +1146,11 @@ early_exit:
     assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
     /* Restore previous frame and exit */
     tstate->current_frame = frame->previous;
+#ifdef _Py_TIER2
+    if (tstate->current_executor != NULL) {
+        tstate->current_executor = NULL;
+   }
+#endif
     return NULL;
 }
 #ifdef _Py_TIER2
