@@ -2267,6 +2267,20 @@ without the dedicated syntax, as documented below.
          >>> Alias.__name__
          'Alias'
 
+   .. attribute:: __qualname__
+
+      The :term:`qualified name` of the type alias:
+
+      .. doctest::
+
+        >>> class Class:
+        ...     type Alias = int
+        ...
+        >>> Class.Alias.__qualname__
+        'Class.Alias'
+
+   .. versionadded:: 3.15
+
    .. attribute:: __module__
 
       The name of the module in which the type alias was defined::

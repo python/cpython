@@ -8,6 +8,11 @@ from typing import (
     Callable, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, Unpack, get_args,
 )
 
+type GlobalTypeAlias = int
+
+def get_type_alias():
+    type TypeAliasInFunc = str
+    return TypeAliasInFunc
 
 class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collisions(self):
@@ -70,6 +75,8 @@ class TypeParamsAccessTest(unittest.TestCase):
 
 
 class TypeParamsAliasValueTest(unittest.TestCase):
+    type TypeAliasInClass = dict
+
     def test_alias_value_01(self):
         type TA1 = int
 
@@ -141,6 +148,38 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertIsInstance(specialized2, types.GenericAlias)
         self.assertIs(specialized2.__origin__, VeryGeneric)
         self.assertEqual(specialized2.__args__, (int, str, float, [bool, range]))
+
+    def test___name__(self):
+        type TypeAliasLocal = GlobalTypeAlias
+
+        self.assertEqual(GlobalTypeAlias.__name__, 'GlobalTypeAlias')
+        self.assertEqual(get_type_alias().__name__, 'TypeAliasInFunc')
+        self.assertEqual(self.TypeAliasInClass.__name__, 'TypeAliasInClass')
+        self.assertEqual(TypeAliasLocal.__name__, 'TypeAliasLocal')
+
+        with self.assertRaisesRegex(
+            AttributeError,
+            "readonly attribute",
+        ):
+            setattr(TypeAliasLocal, '__name__', 'TA')
+
+    def test___qualname__(self):
+        type TypeAliasLocal = GlobalTypeAlias
+
+        self.assertEqual(GlobalTypeAlias.__qualname__,
+                         'GlobalTypeAlias')
+        self.assertEqual(get_type_alias().__qualname__,
+                         'get_type_alias.<locals>.TypeAliasInFunc')
+        self.assertEqual(self.TypeAliasInClass.__qualname__,
+                         'TypeParamsAliasValueTest.TypeAliasInClass')
+        self.assertEqual(TypeAliasLocal.__qualname__,
+                         'TypeParamsAliasValueTest.test___qualname__.<locals>.TypeAliasLocal')
+
+        with self.assertRaisesRegex(
+            AttributeError,
+            "readonly attribute",
+        ):
+            setattr(TypeAliasLocal, '__qualname__', 'TA')
 
     def test_repr(self):
         type Simple = int
