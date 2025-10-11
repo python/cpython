@@ -1034,12 +1034,14 @@ mmap.mmap.flush
     offset: Py_ssize_t = 0
     size: Py_ssize_t = -1
     /
+    flags: int = 0
 
 [clinic start generated code]*/
 
 static PyObject *
-mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size)
-/*[clinic end generated code: output=956ced67466149cf input=c50b893bc69520ec]*/
+mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size,
+                     int flags)
+/*[clinic end generated code: output=4225f4174dc75a53 input=e79195ecf4f0a271]*/
 {
     CHECK_VALID(NULL);
     if (size == -1) {
