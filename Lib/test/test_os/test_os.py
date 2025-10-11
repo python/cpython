@@ -3203,7 +3203,7 @@ class LoginTests(unittest.TestCase):
         try:
             user_name = os.getlogin()
         except OSError as exc:
-            if exc.errno in (errno.ENOTTY, errno.ENXIO):
+            if exc.errno in (errno.ENOTTY, errno.ENXIO, errno.ENOENT):
                 self.skipTest(str(exc))
             else:
                 raise
