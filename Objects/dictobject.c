@@ -2263,6 +2263,15 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
     return dict;
 }
 
+
+PyObject *
+PyDict_FromItems(PyObject *const *keys, PyObject *const *values,
+                 Py_ssize_t length)
+{
+    return _PyDict_FromItems(keys, 1, values, 1, length);
+}
+
+
 /* Note that, for historical reasons, PyDict_GetItem() suppresses all errors
  * that may occur (originally dicts supported only string keys, and exceptions
  * weren't possible).  So, while the original intent was that a NULL return
