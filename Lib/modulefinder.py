@@ -66,7 +66,15 @@ def _find_module(name, path=None):
 
     file_path = spec.origin
 
-    if spec.loader.is_package(name):
+    # On namespace packages, spec.loader might be None, but
+    # spec.submodule_search_locations should always be set — check it instead.
+    #
+    # TODO: Update the type check once GH-119669 is merged.
+    # if isinstance(spec.submodule_search_locations, importlib.machinery.NamespacePath):
+    if 'NamespacePath' in type(spec.submodule_search_locations).__name__:
+        return None, spec.submodule_search_locations, ("", "", _PKG_DIRECTORY)
+
+    if spec.loader.is_package(name):  # non-namespace package
         return None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY)
 
     if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
@@ -454,6 +462,13 @@ class ModuleFinder:
         if newname:
             fqname = newname
         m = self.add_module(fqname)
+
+        # TODO: Update the type check once GH-119669 is merged.
+        # if isinstance(pathname, importlib.machinery.NamespacePath):
+        if 'NamespacePath' in type(pathname).__name__:
+            m.__path__ = pathname
+            return m
+
         m.__file__ = pathname
         m.__path__ = [pathname]
 
