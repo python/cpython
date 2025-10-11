@@ -266,16 +266,16 @@ The module defines the following functions:
 
       Allocation flags. Can be one of:
 
-      * :const:`F_ALLOCATECONTIG` - Allocate contiguous space
-      * :const:`F_ALLOCATEALL` - Allocate all requested space
-      * :const:`F_ALLOCATEPERSIST` - Make the allocation persistent
+      * :const:`!F_ALLOCATECONTIG` - Allocate contiguous space
+      * :const:`!F_ALLOCATEALL` - Allocate all requested space
+      * :const:`!F_ALLOCATEPERSIST` - Make the allocation persistent
 
    .. attribute:: posmode
 
       Position mode. Can be one of:
 
-      * :const:`F_PEOFPOSMODE` - Allocate relative to the physical end of file
-      * :const:`F_VOLPOSMODE` - Allocate relative to volume position
+      * :const:`!F_PEOFPOSMODE` - Allocate relative to the physical end of file
+      * :const:`!F_VOLPOSMODE` - Allocate relative to volume position
 
    .. attribute:: offset
 
@@ -296,6 +296,8 @@ The module defines the following functions:
 
       This is useful for creating an fstore instance from the result of
       :func:`fcntl.fcntl` when using the F_PREALLOCATE command.
+
+   .. availability:: macOS
 
    .. versionadded:: next
 
