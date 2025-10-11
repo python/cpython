@@ -3282,7 +3282,7 @@ class TestMiscellaneous(TestEmailBase):
     def test_noquote_dump(self):
         self.assertEqual(
             utils.formataddr(('A Silly Person', 'person@dom.ain')),
-            'A Silly Person <person@dom.ain>')
+            '"A Silly Person" <person@dom.ain>')
 
     def test_escape_dump(self):
         self.assertEqual(
@@ -3302,6 +3302,12 @@ class TestMiscellaneous(TestEmailBase):
         a = r'Arthur \Backslash\ Foobar'
         b = 'person@dom.ain'
         self.assertEqual(utils.parseaddr(utils.formataddr((a, b))), (a, b))
+
+    def test_parseaddr_formataddr_inverse(self):
+        # gh-91400
+        identity = '"foo  bar" <foo@example.com>'
+        single = utils.formataddr(utils.parseaddr(identity))
+        self.assertEqual(identity, single)
 
     def test_quotes_unicode_names(self):
         # issue 1690608.  email.utils.formataddr() should be rfc2047 aware.
