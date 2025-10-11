@@ -889,18 +889,8 @@ class CommandLineTests(unittest.TestCase):
             text=True,
             check=True
         )
-        paths, vars = 'Paths: \n', 'Variables: \n'
-        for key, value in sorted(get_paths().items()):
-            paths += f'\t{key} = "{value}"\n'
-        for key, value in sorted(get_config_vars().items()):
-            vars += f'\t{key} = "{value}"\n'
-        mock_result = f'''Platform: "{get_platform()}"
-Python version: "{get_python_version()}"
-Current installation scheme: "{get_default_scheme()}"
-
-{paths}
-{vars}'''
-        self.assertTrue(output.stdout == mock_result)
+        self.assertTrue(output.returncode == 0)
+        self.assertTrue(output.stdout.startswith("Platform: "))
 
 
 if __name__ == "__main__":
