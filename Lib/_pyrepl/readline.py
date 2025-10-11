@@ -50,6 +50,8 @@ else:
     from .unix_console import UnixConsole as Console, _error
 
 ENCODING = sys.getdefaultencoding() or "latin1"
+_EDITLINE_MARKER = "_HiStOrY_V2_"
+_EDITLINE_BYTES_MARKER = b"_HiStOrY_V2_"
 
 
 # types
@@ -60,7 +62,7 @@ from .types import Callback, Completer, KeySpec, CommandName
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
-    from typing import Any, Mapping
+    from typing import Any, IO, Mapping
 
 
 MoreLinesCallable = Callable[[str], bool]
@@ -425,6 +427,15 @@ class _ReadlineWrapper:
     def get_current_history_length(self) -> int:
         return len(self.get_reader().history)
 
+    @staticmethod
+    def _is_editline_history(filename: str | IO[bytes]) -> bool:
+        if isinstance(filename, str):
+            if not os.path.exists(filename):
+                return False
+            with open(filename, "rb") as f:
+                return f.readline().startswith(_EDITLINE_BYTES_MARKER)
+        return filename.readline().startswith(_EDITLINE_BYTES_MARKER)
+
     def read_history_file(self, filename: str = gethistoryfile()) -> None:
         # multiline extension (really a hack) for the end of lines that
         # are actually continuations inside a single multiline_input()
@@ -433,8 +444,7 @@ class _ReadlineWrapper:
         history = self.get_reader().history
 
         with open(os.path.expanduser(filename), 'rb') as f:
-            is_editline = f.readline().startswith(b"_HiStOrY_V2_")
-            if is_editline:
+            if self._is_editline_history(f):
                 encoding = "unicode-escape"
             else:
                 f.seek(0)
@@ -457,9 +467,12 @@ class _ReadlineWrapper:
     def write_history_file(self, filename: str = gethistoryfile()) -> None:
         maxlength = self.saved_history_length
         history = self.get_reader().get_trimmed_history(maxlength)
-        f = open(os.path.expanduser(filename), "w",
-                 encoding="utf-8", newline="\n")
-        with f:
+
+        filename = os.path.expanduser(filename)
+        is_editline = self._is_editline_history(filename)
+        with open(filename, "w", encoding="utf-8", newline="\n") as f:
+            if is_editline:
+                f.write(f"{_EDITLINE_MARKER}\n")
             for entry in history:
                 entry = entry.replace("\n", "\r\n")  # multiline history support
                 f.write(entry + "\n")
@@ -469,9 +482,9 @@ class _ReadlineWrapper:
         saved_length = self.get_history_length()
         length = self.get_current_history_length() - saved_length
         history = reader.get_trimmed_history(length)
-        f = open(os.path.expanduser(filename), "a",
-                 encoding="utf-8", newline="\n")
-        with f:
+
+        filename = os.path.expanduser(filename)
+        with open(filename, "a", encoding="utf-8", newline="\n") as f:
             for entry in history:
                 entry = entry.replace("\n", "\r\n")  # multiline history support
                 f.write(entry + "\n")

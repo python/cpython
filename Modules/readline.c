@@ -316,6 +316,7 @@ readline_read_history_file_impl(PyObject *module, PyObject *filename_obj)
 }
 
 static int _history_length = -1; /* do not truncate history by default */
+static int _py_get_history_length_lock_held(void);
 
 /* Exported function to save a readline history file */
 
@@ -354,6 +355,18 @@ readline_write_history_file_impl(PyObject *module, PyObject *filename_obj)
             return NULL;
         }
     }
+
+    /*
+     * If the current history is empty, we do not re-create an empty
+     * file we want to preserve the first line marker '_HiStOrY_V2_'.
+     *
+     * See https://github.com/python/cpython/issues/139352.
+     */
+    if (_py_get_history_length_lock_held() == 0) {
+        Py_XDECREF(filename_bytes);
+        Py_RETURN_NONE;
+    }
+
     errno = err = write_history(filename);
     int history_length = FT_ATOMIC_LOAD_INT_RELAXED(_history_length);
     if (!err && history_length >= 0)
