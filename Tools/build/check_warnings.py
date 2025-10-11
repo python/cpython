@@ -8,21 +8,29 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, TypedDict
 
 
 class IgnoreRule(NamedTuple):
     file_path: str
-    count: int
+    count: int  # type: ignore[assignment]
     ignore_all: bool = False
     is_directory: bool = False
+
+
+class CompileWarning(TypedDict):
+    file: str
+    line: str
+    column: str
+    message: str
+    option: str
 
 
 def parse_warning_ignore_file(file_path: str) -> set[IgnoreRule]:
     """
     Parses the warning ignore file and returns a set of IgnoreRules
     """
-    files_with_expected_warnings = set()
+    files_with_expected_warnings: set[IgnoreRule] = set()
     with Path(file_path).open(encoding="UTF-8") as ignore_rules_file:
         files_with_expected_warnings = set()
         for i, line in enumerate(ignore_rules_file):
@@ -46,7 +54,7 @@ def parse_warning_ignore_file(file_path: str) -> set[IgnoreRule]:
                         )
                         sys.exit(1)
                     if ignore_all:
-                        count = 0
+                        count = "0"
 
                     files_with_expected_warnings.add(
                         IgnoreRule(
@@ -61,7 +69,7 @@ def extract_warnings_from_compiler_output(
     compiler_output: str,
     compiler_output_type: str,
     path_prefix: str = "",
-) -> list[dict]:
+) -> list[CompileWarning]:
     """
     Extracts warnings from the compiler output based on compiler
     output type. Removes path prefix from file paths if provided.
@@ -78,8 +86,12 @@ def extract_warnings_from_compiler_output(
             r"(?P<file>.*):(?P<line>\d+):(?P<column>\d+): warning: "
             r"(?P<message>.*) (?P<option>\[-[^\]]+\])$"
         )
+    else:
+        raise RuntimeError(
+            f"Unsupported compiler output type: {compiler_output_type}",
+        )
     compiled_regex = re.compile(regex_pattern)
-    compiler_warnings = []
+    compiler_warnings: list[CompileWarning] = []
     for i, line in enumerate(compiler_output.splitlines(), start=1):
         if match := compiled_regex.match(line):
             try:
@@ -100,7 +112,9 @@ def extract_warnings_from_compiler_output(
     return compiler_warnings
 
 
-def get_warnings_by_file(warnings: list[dict]) -> dict[str, list[dict]]:
+def get_warnings_by_file(
+    warnings: list[CompileWarning],
+) -> dict[str, list[CompileWarning]]:
     """
     Returns a dictionary where the key is the file and the data is the
     warnings in that file. Does not include duplicate warnings for a
@@ -138,7 +152,7 @@ def is_file_ignored(
 
 def get_unexpected_warnings(
     ignore_rules: set[IgnoreRule],
-    files_with_warnings: set[IgnoreRule],
+    files_with_warnings: dict[str, list[CompileWarning]],
 ) -> int:
     """
     Returns failure status if warnings discovered in list of warnings
@@ -180,7 +194,7 @@ def get_unexpected_warnings(
 
 def get_unexpected_improvements(
     ignore_rules: set[IgnoreRule],
-    files_with_warnings: set[IgnoreRule],
+    files_with_warnings: dict[str, list[CompileWarning]],
 ) -> int:
     """
     Returns failure status if the number of warnings for a file is greater

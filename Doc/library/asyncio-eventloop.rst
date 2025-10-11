@@ -304,6 +304,12 @@ clocks to track time.
    custom :class:`contextvars.Context` for the *callback* to run in.
    The current context is used when no *context* is provided.
 
+   .. note::
+
+      For performance, callbacks scheduled with :meth:`loop.call_later`
+      may run up to one clock-resolution early (see
+      ``time.get_clock_info('monotonic').resolution``).
+
    .. versionchanged:: 3.7
       The *context* keyword-only parameter was added. See :pep:`567`
       for more details.
@@ -323,6 +329,12 @@ clocks to track time.
 
    An instance of :class:`asyncio.TimerHandle` is returned which can
    be used to cancel the callback.
+
+   .. note::
+
+      For performance, callbacks scheduled with :meth:`loop.call_at`
+      may run up to one clock-resolution early (see
+      ``time.get_clock_info('monotonic').resolution``).
 
    .. versionchanged:: 3.7
       The *context* keyword-only parameter was added. See :pep:`567`

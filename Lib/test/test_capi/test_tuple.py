@@ -62,6 +62,28 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, tuple_new, PY_SSIZE_T_MIN)
         self.assertRaises(MemoryError, tuple_new, PY_SSIZE_T_MAX)
 
+    def test_tuple_fromarray(self):
+        # Test PyTuple_FromArray()
+        tuple_fromarray = _testcapi.tuple_fromarray
+
+        tup = tuple([i] for i in range(5))
+        copy = tuple_fromarray(tup)
+        self.assertEqual(copy, tup)
+
+        tup = ()
+        copy = tuple_fromarray(tup)
+        self.assertIs(copy, tup)
+
+        copy = tuple_fromarray(NULL, 0)
+        self.assertIs(copy, ())
+
+        with self.assertRaises(SystemError):
+            tuple_fromarray(NULL, -1)
+        with self.assertRaises(SystemError):
+            tuple_fromarray(NULL, PY_SSIZE_T_MIN)
+        with self.assertRaises(MemoryError):
+            tuple_fromarray(NULL, PY_SSIZE_T_MAX)
+
     def test_tuple_pack(self):
         # Test PyTuple_Pack()
         pack = _testlimitedcapi.tuple_pack

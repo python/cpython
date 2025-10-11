@@ -366,7 +366,7 @@ tuple_item(PyObject *op, Py_ssize_t i)
 }
 
 PyObject *
-_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
+PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 {
     if (n == 0) {
         return tuple_get_empty();

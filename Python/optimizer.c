@@ -109,13 +109,18 @@ uop_optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *instr,
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
  * If optimized, *executor_ptr contains a new reference to the executor
  */
-int
+// gh-137573: inlining this function causes stack overflows
+Py_NO_INLINE int
 _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
     _PyExecutorObject **executor_ptr, int chain_depth)
 {
     _PyStackRef *stack_pointer = frame->stackpointer;
-    assert(_PyInterpreterState_GET()->jit);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->jit);
+    assert(!interp->compiling);
+#ifndef Py_GIL_DISABLED
+    interp->compiling = true;
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
@@ -125,10 +130,12 @@ _PyOptimizer_Optimize(
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
     if (progress_needed && !has_space_for_executor(code, start)) {
+        interp->compiling = false;
         return 0;
     }
     int err = uop_optimize(frame, start, executor_ptr, (int)(stack_pointer - _PyFrame_Stackbase(frame)), progress_needed);
     if (err <= 0) {
+        interp->compiling = false;
         return err;
     }
     assert(*executor_ptr != NULL);
@@ -142,6 +149,7 @@ _PyOptimizer_Optimize(
              * it might get confused by the executor disappearing,
              * but there is not much we can do about that here. */
             Py_DECREF(*executor_ptr);
+            interp->compiling = false;
             return 0;
         }
         insert_executor(code, start, index, *executor_ptr);
@@ -151,7 +159,11 @@ _PyOptimizer_Optimize(
     }
     (*executor_ptr)->vm_data.chain_depth = chain_depth;
     assert((*executor_ptr)->vm_data.valid);
+    interp->compiling = false;
     return 1;
+#else
+    return 0;
+#endif
 }
 
 static _PyExecutorObject *
@@ -590,9 +602,8 @@ translate_bytecode_to_trace(
 
     for (;;) {
         target = INSTR_IP(instr, code);
-        // Need space for _DEOPT
-        max_length--;
-
+        // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
+        max_length-=2;
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
 
@@ -886,7 +897,7 @@ translate_bytecode_to_trace(
                                 _Py_BloomFilter_Add(dependencies, new_code);
                                 /* Set the operand to the callee's function or code object,
                                  * to assist optimization passes.
-                                 * We prefer setting it to the function (for remove_globals())
+                                 * We prefer setting it to the function
                                  * but if that's not available but the code is available,
                                  * use the code, setting the low bit so the optimizer knows.
                                  */
@@ -1237,7 +1248,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
 #endif
 #ifdef _Py_JIT
     executor->jit_code = NULL;
-    executor->jit_side_entry = NULL;
     executor->jit_size = 0;
     // This is initialized to true so we can prevent the executor
     // from being immediately detected as cold and invalidated.
@@ -1281,8 +1291,20 @@ uop_optimize(
 {
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
-    _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->jit_uop_buffer == NULL) {
+        interp->jit_uop_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
+        if (interp->jit_uop_buffer == NULL) {
+            return 0;
+        }
+    }
+    _PyUOpInstruction *buffer = interp->jit_uop_buffer;
     OPT_STAT_INC(attempts);
+    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
+    bool is_noopt = true;
+    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
+        is_noopt = false;
+    }
     int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies, progress_needed);
     if (length <= 0) {
         // Error or nothing translated
@@ -1290,8 +1312,7 @@ uop_optimize(
     }
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
-    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
-    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
+    if (!is_noopt) {
         length = _Py_uop_analyze_and_optimize(frame, buffer,
                                            length,
                                            curr_stackentries, &dependencies);
@@ -1489,7 +1510,6 @@ _PyExecutor_GetColdExecutor(void)
     ((_PyUOpInstruction *)cold->trace)->opcode = _COLD_EXIT;
 #ifdef _Py_JIT
     cold->jit_code = NULL;
-    cold->jit_side_entry = NULL;
     cold->jit_size = 0;
     // This is initialized to true so we can prevent the executor
     // from being immediately detected as cold and invalidated.
