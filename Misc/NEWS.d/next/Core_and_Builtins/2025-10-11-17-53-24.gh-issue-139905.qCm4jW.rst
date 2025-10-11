@@ -1,0 +1,2 @@
+Print better error message when subclassing `GenericAlias` without calling
+``super().__init_subclass__``.
