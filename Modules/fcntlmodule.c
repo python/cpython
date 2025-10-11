@@ -13,10 +13,7 @@
 #include <sys/ioctl.h>            // ioctl()
 
 #ifdef F_PREALLOCATE
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#include <stddef.h>  /* for offsetof */
+#  include <stddef.h>             // offsetof()
 #endif
 #ifdef HAVE_SYS_FILE_H
 #  include <sys/file.h>           // flock()
