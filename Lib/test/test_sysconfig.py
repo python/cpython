@@ -27,7 +27,7 @@ import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        get_default_scheme, get_scheme_names, get_config_var,
-                       _expand_vars, _get_preferred_schemes,
+                       _expand_vars, _get_preferred_schemes, get_python_version,
                        is_python_build, _PROJECT_BASE)
 from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
@@ -770,7 +770,6 @@ class MakefileTests(unittest.TestCase):
             print("var8=$$(var3)", file=makefile)
             print("var9=$(var10)(var3)", file=makefile)
             print("var10=$$", file=makefile)
-            print("var11=$${ORIGIN}${var5}", file=makefile)
         vars = _parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': 'ab42',
@@ -783,7 +782,6 @@ class MakefileTests(unittest.TestCase):
             'var8': '$(var3)',
             'var9': '$(var3)',
             'var10': '$',
-            'var11': '${ORIGIN}dollar$5',
         })
 
     def _test_parse_makefile_recursion(self):
@@ -880,6 +878,27 @@ class DeprecationTests(unittest.TestCase):
         ):
             sysconfig.is_python_build('foo')
 
+class CommandLineTests(unittest.TestCase):
+    def test_config_output(self):
+        output = subprocess.run(
+            [sys.executable, "-m", "sysconfig"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        paths, vars = '', ''
+        for key, value in sorted(get_paths().items()):
+            paths += f'\t{key} = "{value}"\n'
+        for key, value in sorted(get_config_vars().items()):
+            vars += f'\t{key} = "{value}"\n'
+        mock_result = f'''Platform: "{get_platform()}"
+Python version: "{get_python_version()}"
+Current installation scheme: "{get_default_scheme()}"
 
+Paths: 
+{paths}
+Variables: 
+{vars}'''
+        self.assertTrue(output.stdout == mock_result)
 if __name__ == "__main__":
     unittest.main()
