@@ -878,6 +878,7 @@ class DeprecationTests(unittest.TestCase):
         ):
             sysconfig.is_python_build('foo')
 
+
 class CommandLineTests(unittest.TestCase):
     def test_config_output(self):
         output = subprocess.run(
@@ -900,5 +901,7 @@ Paths:
 Variables: 
 {vars}'''
         self.assertTrue(output.stdout == mock_result)
+
+
 if __name__ == "__main__":
     unittest.main()
