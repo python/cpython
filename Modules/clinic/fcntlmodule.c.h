@@ -2,6 +2,10 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(fcntl_fcntl__doc__,
@@ -268,6 +272,109 @@ exit:
 
 #if defined(F_PREALLOCATE)
 
+PyDoc_STRVAR(fcntl_fstore___init____doc__,
+"fstore(flags=0, posmode=0, offset=0, length=0)\n"
+"--\n"
+"\n"
+"Initialize an fstore structure.\n"
+"\n"
+"This structure is used with the F_PREALLOCATE command to preallocate\n"
+"file space on macOS systems.");
+
+static int
+fcntl_fstore___init___impl(FStoreObject *self, int flags, int posmode,
+                           long offset, long length);
+
+static int
+fcntl_fstore___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(flags), &_Py_ID(posmode), &_Py_ID(offset), &_Py_ID(length), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"flags", "posmode", "offset", "length", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "fstore",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    int flags = 0;
+    int posmode = 0;
+    long offset = 0;
+    long length = 0;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        flags = PyLong_AsInt(fastargs[0]);
+        if (flags == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[1]) {
+        posmode = PyLong_AsInt(fastargs[1]);
+        if (posmode == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[2]) {
+        offset = PyLong_AsLong(fastargs[2]);
+        if (offset == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    length = PyLong_AsLong(fastargs[3]);
+    if (length == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = fcntl_fstore___init___impl((FStoreObject *)self, flags, posmode, offset, length);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(F_PREALLOCATE) */
+
+#if defined(F_PREALLOCATE)
+
 PyDoc_STRVAR(fcntl_fstore_from_buffer__doc__,
 "from_buffer($type, data, /)\n"
 "--\n"
@@ -310,4 +417,4 @@ exit:
 #ifndef FCNTL_FSTORE_FROM_BUFFER_METHODDEF
     #define FCNTL_FSTORE_FROM_BUFFER_METHODDEF
 #endif /* !defined(FCNTL_FSTORE_FROM_BUFFER_METHODDEF) */
-/*[clinic end generated code: output=5ed3d5a284b060f6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6b4d62e7dcc1068 input=a9049054013a1b77]*/

@@ -32,11 +32,18 @@
 // NUL followed by random bytes.
 static const char guard[GUARDSZ] _Py_NONSTRING = "\x00\xfa\x69\xc4\x67\xa3\x6c\x58";
 
+#ifdef F_PREALLOCATE
+typedef struct {
+    PyObject_HEAD
+    struct fstore fstore;
+} FStoreObject;
+#endif /* F_PREALLOCATE */
+
 /*[clinic input]
 module fcntl
-class fcntl.fstore "fstoreObject *" "&fstore_type"
+class fcntl.fstore "FStoreObject *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1fbf02539f611b1d]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=54136216ba908cf8]*/
 
 #include "clinic/fcntlmodule.c.h"
 
@@ -512,38 +519,36 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
 
 #ifdef F_PREALLOCATE
 
-typedef struct {
-    PyObject_HEAD
-    struct fstore fstore;
-} fstoreObject;
+/*[clinic input]
+fcntl.fstore.__init__
+
+    flags: int = 0
+    posmode: int = 0
+    offset: long = 0
+    length: long = 0
+
+Initialize an fstore structure.
+
+This structure is used with the F_PREALLOCATE command to preallocate
+file space on macOS systems.
+[clinic start generated code]*/
 
 static int
-fstore_init(fstoreObject *self, PyObject *args, PyObject *kwds)
+fcntl_fstore___init___impl(FStoreObject *self, int flags, int posmode,
+                           long offset, long length)
+/*[clinic end generated code: output=4fcf4413aa57e2dd input=f4caa1fbbe7a0e32]*/
 {
-    static char *kwlist[] = {
-        "flags", "posmode", "offset", "length", NULL
-    };
-    int flags = 0;
-    int posmode = 0;
-    off_t offset = 0;
-    off_t length = 0;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iiLL", kwlist,
-                                     &flags, &posmode, &offset, &length)) {
-        return -1;
-    }
-
     memset(&self->fstore, 0, sizeof(struct fstore));
     self->fstore.fst_flags = flags;
     self->fstore.fst_posmode = posmode;
-    self->fstore.fst_offset = offset;
-    self->fstore.fst_length = length;
+    self->fstore.fst_offset = (off_t)offset;
+    self->fstore.fst_length = (off_t)length;
 
     return 0;
 }
 
 static Py_ssize_t
-fstore_getbuffer(fstoreObject *self, Py_buffer *view, int flags)
+fstore_getbuffer(FStoreObject *self, Py_buffer *view, int flags)
 {
     return PyBuffer_FillInfo(view, (PyObject *)self, (void *)&self->fstore,
                              sizeof(struct fstore), 1, flags);
@@ -568,7 +573,7 @@ static PyObject *
 fcntl_fstore_from_buffer_impl(PyTypeObject *type, Py_buffer *data)
 /*[clinic end generated code: output=e401a2f775342265 input=3148957e92e9570f]*/
 {
-    fstoreObject *self;
+    FStoreObject *self;
 
     if (data->len != sizeof(struct fstore)) {
         PyErr_Format(PyExc_ValueError,
@@ -577,7 +582,7 @@ fcntl_fstore_from_buffer_impl(PyTypeObject *type, Py_buffer *data)
         return NULL;
     }
 
-    self = (fstoreObject *)PyType_GenericNew(type, NULL, NULL);
+    self = (FStoreObject *)PyType_GenericNew(type, NULL, NULL);
     if (self == NULL) {
         return NULL;
     }
@@ -593,21 +598,21 @@ static PyMethodDef fstore_methods[] = {
 };
 
 static PyMemberDef fstore_members[] = {
-    {"flags", Py_T_INT, offsetof(fstoreObject, fstore.fst_flags), 0,
+    {"flags", Py_T_INT, offsetof(FStoreObject, fstore.fst_flags), 0,
      "Allocation flags"},
-    {"posmode", Py_T_INT, offsetof(fstoreObject, fstore.fst_posmode), 0,
+    {"posmode", Py_T_INT, offsetof(FStoreObject, fstore.fst_posmode), 0,
      "Position mode"},
-    {"offset", Py_T_LONGLONG, offsetof(fstoreObject, fstore.fst_offset), 0,
+    {"offset", Py_T_LONGLONG, offsetof(FStoreObject, fstore.fst_offset), 0,
      "File offset"},
-    {"length", Py_T_LONGLONG, offsetof(fstoreObject, fstore.fst_length), 0,
+    {"length", Py_T_LONGLONG, offsetof(FStoreObject, fstore.fst_length), 0,
      "Length to allocate"},
-    {"bytesalloc", Py_T_LONGLONG, offsetof(fstoreObject, fstore.fst_bytesalloc), Py_READONLY,
+    {"bytesalloc", Py_T_LONGLONG, offsetof(FStoreObject, fstore.fst_bytesalloc), Py_READONLY,
      "Number of bytes actually allocated"},
     {NULL},
 };
 
 static PyType_Slot fstore_slots[] = {
-    {Py_tp_init, (initproc)fstore_init},
+    {Py_tp_init, (initproc)fcntl_fstore___init__},
     {Py_tp_members, fstore_members},
     {Py_tp_methods, fstore_methods},
     {Py_tp_doc, "fstore structure for F_PREALLOCATE"},
@@ -617,7 +622,7 @@ static PyType_Slot fstore_slots[] = {
 
 static PyType_Spec fstore_spec = {
     .name = "fcntl.fstore",
-    .basicsize = sizeof(fstoreObject),
+    .basicsize = sizeof(FStoreObject),
     .flags = Py_TPFLAGS_DEFAULT,
     .slots = fstore_slots,
 };
