@@ -1,1 +1,2 @@
-Add MIME type for ``.toml`` files. Patch by Gil Forcada
+The ``application/toml`` mime type is now supported by :mod:`mimetypes`.
+Patch by Gil Forcada.
