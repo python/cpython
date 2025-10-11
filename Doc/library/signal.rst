@@ -205,6 +205,12 @@ The variables defined in the :mod:`signal` module are:
 
    .. availability:: Unix.
 
+.. data:: SIGPROF
+
+   Profiling timer expired.
+
+   .. availability:: Unix.
+
 .. data:: SIGQUIT
 
    Terminal quit signal.
@@ -244,12 +250,6 @@ The variables defined in the :mod:`signal` module are:
 .. data:: SIGUSR2
 
    User-defined signal 2.
-
-   .. availability:: Unix.
-
-.. data:: SIGPROF
-
-   Profiling timer expired.
 
    .. availability:: Unix.
 
