@@ -2132,7 +2132,7 @@
 
         case _LOAD_BUILD_CLASS: {
             _PyStackRef bc;
-            PyObject *restrict bc_o;
+            PyObject *Py_MSVC_RESTRICT bc_o;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _PyEval_Mapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2640,7 +2640,7 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             class_dict_st = stack_pointer[-1];
-            PyObject *restrict value_o;
+            PyObject *Py_MSVC_RESTRICT value_o;
             PyObject *name;
             PyObject *class_dict = PyStackRef_AsPyObjectBorrow(class_dict_st);
             assert(class_dict);
@@ -3042,7 +3042,7 @@
         }
 
         case _SETUP_ANNOTATIONS: {
-            PyObject *restrict ann_dict;
+            PyObject *Py_MSVC_RESTRICT ann_dict;
             if (LOCALS() == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_Format(tstate, PyExc_SystemError,
@@ -4672,7 +4672,7 @@
             (void)lasti;
             PyObject* res_o;
             Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
-            PyObject *restrict stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
+            PyObject *Py_MSVC_RESTRICT stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,

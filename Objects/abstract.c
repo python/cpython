@@ -225,7 +225,7 @@ PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
 }
 
 Py_NO_INLINE_MSVC_TAILCALL int
-_PyEval_Mapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **restrict result)
+_PyEval_Mapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **Py_MSVC_RESTRICT result)
 {
     return PyMapping_GetOptionalItem(obj, key, result);
 }

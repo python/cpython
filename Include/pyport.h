@@ -385,10 +385,16 @@ extern "C" {
 #  define Py_NO_INLINE
 #endif
 
-#if defined(_MSC_VER) && Py_TAIL_CALL_INTERP
+#if defined(_MSC_VER) && !defined(__clang__) && Py_TAIL_CALL_INTERP
 #  define Py_NO_INLINE_MSVC_TAILCALL Py_NO_INLINE
 #else
 #  define Py_NO_INLINE_MSVC_TAILCALL
+#endif
+
+#if defined(_MSC_VER) && !defined(__clang__)
+#  define Py_MSVC_RESTRICT restrict
+#else
+#  define Py_MSVC_RESTRICT
 #endif
 
 // Just a scope. Hints to the programmer

@@ -945,7 +945,7 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 
 
 PyObject **
-_PyObjectArray_FromStackRefArray(_PyThreadStateImpl *_tstate, _PyStackRef *input, Py_ssize_t nargs)
+_PyObjectArray_FromStackRefArray(_PyThreadStateImpl *_tstate, _PyStackRef *Py_MSVC_RESTRICT input, Py_ssize_t nargs)
 {
     PyObject **result;
     /* +1 because vectorcall might use -1 to write self */
