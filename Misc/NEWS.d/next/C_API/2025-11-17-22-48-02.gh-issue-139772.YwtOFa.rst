@@ -1,0 +1,2 @@
+Add :c:func:`PyDict_FromKeysAndValues` to create a dictionary from an array
+of keys and an array of values. Patch by Victor Stinner.

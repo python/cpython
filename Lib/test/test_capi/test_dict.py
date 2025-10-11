@@ -545,6 +545,63 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_popstring({}, NULL)
         # CRASHES dict_popstring({"a": 1}, NULL)
 
+    def test_dict_fromkeysandvalues(self):
+        # Test PyDict_FromKeysAndValues()
+        dict_fromkeysandvalues = _testcapi.dict_fromkeysandvalues
+
+        d = dict_fromkeysandvalues((), ())
+        self.assertEqual(d, {})
+
+        d = dict_fromkeysandvalues(tuple(range(1, 4)), tuple('abc'))
+        self.assertEqual(d, {1: 'a', 2: 'b', 3: 'c'})
+
+        # test unicode keys
+        d = dict_fromkeysandvalues(tuple('abc'), tuple(range(1, 4)))
+        self.assertEqual(d, {'a': 1, 'b': 2, 'c': 3})
+
+        # test "large" dict (1024 items)
+        d = dict_fromkeysandvalues(tuple(range(1024)),
+                                   tuple(map(str, range(1024))))
+        self.assertEqual(d, {i: str(i) for i in range(1024)})
+
+        # Test PyDict_FromItems(NULL, NULL, 0)
+        d = dict_fromkeysandvalues()
+        self.assertEqual(d, {})
+
+        errmsg = "length must be greater than or equal to 0"
+        with self.assertRaisesRegex(ValueError, errmsg):
+            dict_fromkeysandvalues(tuple(range(1, 4)), tuple('abc'), -1)
+
+    def test_dict_fromitems(self):
+        # Test PyDict_FromItems()
+        dict_fromitems = _testcapi.dict_fromitems
+
+        d = dict_fromitems(())
+        self.assertEqual(d, {})
+
+        d = dict_fromitems((1, 'a', 2, 'b', 3, 'c'))
+        self.assertEqual(d, {1: 'a', 2: 'b', 3: 'c'})
+
+        # test unicode keys
+        d = dict_fromitems(('a', 1, 'b', 2, 'c', 3))
+        self.assertEqual(d, {'a': 1, 'b': 2, 'c': 3})
+
+        # test "large" dict (1024 items)
+        items = []
+        for key, value in zip(range(1024), map(str, range(1024))):
+            items.extend((key, value))
+        d = dict_fromitems(tuple(items))
+        self.assertEqual(d, {i: str(i) for i in range(1024)})
+
+        # Test PyDict_FromItems(NULL, 0)
+        d = dict_fromitems()
+        self.assertEqual(d, {})
+
+        # test invalid arguments
+        errmsg = "length must be greater than or equal to 0"
+        with self.assertRaisesRegex(ValueError, errmsg):
+            dict_fromitems(('x', 1), -1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -103,3 +103,12 @@ PyAPI_FUNC(int) PyDict_ClearWatcher(int watcher_id);
 // Mark given dictionary as "watched" (callback will be called if it is modified)
 PyAPI_FUNC(int) PyDict_Watch(int watcher_id, PyObject* dict);
 PyAPI_FUNC(int) PyDict_Unwatch(int watcher_id, PyObject* dict);
+
+PyAPI_FUNC(PyObject*) PyDict_FromItems(
+    PyObject *const *items,
+    Py_ssize_t length);
+
+PyAPI_FUNC(PyObject*) PyDict_FromKeysAndValues(
+    PyObject *const *keys,
+    PyObject *const *values,
+    Py_ssize_t length);

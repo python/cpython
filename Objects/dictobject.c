@@ -2230,6 +2230,10 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
                   PyObject *const *values, Py_ssize_t values_offset,
                   Py_ssize_t length)
 {
+    assert(keys_offset >= 1);
+    assert(values_offset >= 1);
+    assert(length >= 0);
+
     bool unicode = true;
     PyObject *const *ks = keys;
 
@@ -2262,6 +2266,32 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
 
     return dict;
 }
+
+
+PyObject*
+PyDict_FromItems(PyObject *const *items, Py_ssize_t length)
+{
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "length must be greater than or equal to 0");
+        return NULL;
+    }
+    return _PyDict_FromItems(items, 2, items + 1, 2, length);
+}
+
+
+PyObject*
+PyDict_FromKeysAndValues(PyObject *const *keys, PyObject *const *values,
+                         Py_ssize_t length)
+{
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "length must be greater than or equal to 0");
+        return NULL;
+    }
+    return _PyDict_FromItems(keys, 1, values, 1, length);
+}
+
 
 /* Note that, for historical reasons, PyDict_GetItem() suppresses all errors
  * that may occur (originally dicts supported only string keys, and exceptions
