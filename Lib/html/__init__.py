@@ -16,12 +16,13 @@ def escape(s, quote=True):
     characters, both double quote (") and single quote (') characters are also
     translated.
     """
-    s = s.replace("&", "&amp;") # Must be done first!
-    s = s.replace("<", "&lt;")
-    s = s.replace(">", "&gt;")
+    s = (
+        s.replace("&", "&amp;") # Must be done first!
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
     if quote:
-        s = s.replace('"', "&quot;")
-        s = s.replace('\'', "&#x27;")
+        return s.replace('"', "&quot;").replace('\'', "&#x27;")
     return s
 
 
