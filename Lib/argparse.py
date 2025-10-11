@@ -280,7 +280,7 @@ class HelpFormatter(object):
         if action.help is not SUPPRESS:
 
             # find all invocations
-            get_invocation = self._format_action_invocation
+            get_invocation = lambda x: self._decolor(self._format_action_invocation(x))
             invocation_lengths = [len(get_invocation(action)) + self._current_indent]
             for subaction in self._iter_indented_subactions(action):
                 invocation_lengths.append(len(get_invocation(subaction)) + self._current_indent)
@@ -1959,7 +1959,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # prog defaults to the usage message of this parser, skipping
         # optional arguments and with no "usage:" prefix
         if kwargs.get('prog') is None:
-            formatter = self._get_formatter()
+            # Create formatter without color to avoid storing ANSI codes in prog
+            formatter = self.formatter_class(prog=self.prog)
+            formatter._set_color(False)
             positionals = self._get_positional_actions()
             groups = self._mutually_exclusive_groups
             formatter.add_usage(None, positionals, groups, '')

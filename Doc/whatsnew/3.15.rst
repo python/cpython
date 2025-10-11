@@ -852,6 +852,9 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
+  (Contributed by Victor Stinner in :gh:`111489`.)
+
 
 Porting to Python 3.15
 ----------------------
