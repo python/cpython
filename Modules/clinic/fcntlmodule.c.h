@@ -265,4 +265,49 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9773e44da302dc7c input=a9049054013a1b77]*/
+
+#if defined(F_PREALLOCATE)
+
+PyDoc_STRVAR(fcntl_fstore_from_buffer__doc__,
+"from_buffer($type, data, /)\n"
+"--\n"
+"\n"
+"Create an fstore instance from bytes data.\n"
+"\n"
+"This is useful for creating an fstore instance from the result of\n"
+"fcntl.fcntl when using the F_PREALLOCATE command.\n"
+"\n"
+"Raises ValueError if the data is not exactly the size of struct fstore.");
+
+#define FCNTL_FSTORE_FROM_BUFFER_METHODDEF    \
+    {"from_buffer", (PyCFunction)fcntl_fstore_from_buffer, METH_O|METH_CLASS, fcntl_fstore_from_buffer__doc__},
+
+static PyObject *
+fcntl_fstore_from_buffer_impl(PyTypeObject *type, Py_buffer *data);
+
+static PyObject *
+fcntl_fstore_from_buffer(PyObject *type, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_buffer data = {NULL, NULL};
+
+    if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    return_value = fcntl_fstore_from_buffer_impl((PyTypeObject *)type, &data);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
+    }
+
+    return return_value;
+}
+
+#endif /* defined(F_PREALLOCATE) */
+
+#ifndef FCNTL_FSTORE_FROM_BUFFER_METHODDEF
+    #define FCNTL_FSTORE_FROM_BUFFER_METHODDEF
+#endif /* !defined(FCNTL_FSTORE_FROM_BUFFER_METHODDEF) */
+/*[clinic end generated code: output=5ed3d5a284b060f6 input=a9049054013a1b77]*/

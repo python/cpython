@@ -290,7 +290,7 @@ The module defines the following functions:
       Number of bytes actually allocated (read-only). This field is populated
       by the system after the F_PREALLOCATE operation.
 
-   .. staticmethod:: frombytes(data)
+   .. staticmethod:: from_buffer(data)
 
       Create an :class:`fstore` instance from bytes data.
 

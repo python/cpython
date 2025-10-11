@@ -34,8 +34,9 @@ static const char guard[GUARDSZ] _Py_NONSTRING = "\x00\xfa\x69\xc4\x67\xa3\x6c\x
 
 /*[clinic input]
 module fcntl
+class fcntl.fstore "fstoreObject *" "&fstore_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=124b58387c158179]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1fbf02539f611b1d]*/
 
 #include "clinic/fcntlmodule.c.h"
 
@@ -548,45 +549,46 @@ fstore_getbuffer(fstoreObject *self, Py_buffer *view, int flags)
                              sizeof(struct fstore), 1, flags);
 }
 
+/*[clinic input]
+@classmethod
+fcntl.fstore.from_buffer
+
+    data: Py_buffer
+    /
+
+Create an fstore instance from bytes data.
+
+This is useful for creating an fstore instance from the result of
+fcntl.fcntl when using the F_PREALLOCATE command.
+
+Raises ValueError if the data is not exactly the size of struct fstore.
+[clinic start generated code]*/
+
 static PyObject *
-fstore_frombytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
+fcntl_fstore_from_buffer_impl(PyTypeObject *type, Py_buffer *data)
+/*[clinic end generated code: output=e401a2f775342265 input=3148957e92e9570f]*/
 {
-    static char *kwlist[] = {"data", NULL};
-    PyObject *data_obj;
-    Py_buffer view;
     fstoreObject *self;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", kwlist, &data_obj)) {
-        return NULL;
-    }
-
-    if (PyObject_GetBuffer(data_obj, &view, PyBUF_SIMPLE) < 0) {
-        return NULL;
-    }
-
-    if (view.len != sizeof(struct fstore)) {
-        PyBuffer_Release(&view);
+    if (data->len != sizeof(struct fstore)) {
         PyErr_Format(PyExc_ValueError,
                      "data must be exactly %zu bytes, got %zd bytes",
-                     sizeof(struct fstore), view.len);
+                     sizeof(struct fstore), data->len);
         return NULL;
     }
 
     self = (fstoreObject *)PyType_GenericNew(type, NULL, NULL);
     if (self == NULL) {
-        PyBuffer_Release(&view);
         return NULL;
     }
 
-    memcpy(&self->fstore, view.buf, sizeof(struct fstore));
-    PyBuffer_Release(&view);
+    memcpy(&self->fstore, data->buf, sizeof(struct fstore));
 
     return (PyObject *)self;
 }
 
 static PyMethodDef fstore_methods[] = {
-    {"frombytes", (PyCFunction)fstore_frombytes, METH_VARARGS | METH_KEYWORDS | METH_CLASS,
-     "Create an fstore instance from bytes data."},
+    FCNTL_FSTORE_FROM_BUFFER_METHODDEF
     {NULL, NULL}
 };
 

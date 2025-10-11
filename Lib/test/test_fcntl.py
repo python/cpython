@@ -301,7 +301,7 @@ class TestFcntl(unittest.TestCase):
         )
 
         bs = fcntl.fcntl(fd, fcntl.F_PREALLOCATE, fs)
-        result = fcntl.fstore.frombytes(bs)
+        result = fcntl.fstore.from_buffer(bs)
         self.assertEqual(result.bytesalloc, 1024)
 
 
