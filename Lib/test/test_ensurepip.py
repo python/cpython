@@ -185,6 +185,16 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
         ensurepip.bootstrap()
         self.assertEqual(self.os_environ["PIP_CONFIG_FILE"], os.devnull)
 
+    def test_missing_zlib(self):
+        with unittest.mock.patch.dict('sys.modules', {'zlib': None}):
+            with self.assertRaises(ModuleNotFoundError) as cm:
+                ensurepip.bootstrap()
+
+            error_msg = str(cm.exception)
+            self.assertIn("ensurepip requires the standard library module 'zlib'", error_msg)
+
+        self.assertFalse(self.run_pip.called)
+
 @contextlib.contextmanager
 def fake_pip(version=ensurepip.version()):
     if version is None:
