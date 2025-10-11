@@ -13203,12 +13203,12 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
 
 #ifdef HAVE_CLEARENV
 /*[clinic input]
-os.clearenv
+os._clearenv
 [clinic start generated code]*/
 
 static PyObject *
-os_clearenv_impl(PyObject *module)
-/*[clinic end generated code: output=417e500890b2b9cf input=04ce6a2cb66ec46e]*/
+os__clearenv_impl(PyObject *module)
+/*[clinic end generated code: output=2d6705d62c014b51 input=47d2fa7f323c43ca]*/
 {
     errno = 0;
     int err = clearenv();
@@ -17186,7 +17186,7 @@ static PyMethodDef posix_methods[] = {
     OS_POSIX_FADVISE_METHODDEF
     OS_PUTENV_METHODDEF
     OS_UNSETENV_METHODDEF
-    OS_CLEARENV_METHODDEF
+    OS__CLEARENV_METHODDEF
     OS_STRERROR_METHODDEF
     OS_FCHDIR_METHODDEF
     OS_FSYNC_METHODDEF

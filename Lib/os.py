@@ -58,6 +58,11 @@ if 'posix' in _names:
         __all__.append('_exit')
     except ImportError:
         pass
+    try:
+        from posix import _clearenv
+        __all__.append('_clearenv')
+    except ImportError:
+        pass
     import posixpath as path
 
     try:
@@ -768,9 +773,9 @@ class _Environ(MutableMapping):
         new.update(self)
         return new
 
-    if _exists("clearenv"):
+    if _exists("_clearenv"):
         def clear(self):
-            clearenv()
+            _clearenv()
             self._data.clear()
 
 

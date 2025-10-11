@@ -9541,21 +9541,21 @@ exit:
 
 #if defined(HAVE_CLEARENV)
 
-PyDoc_STRVAR(os_clearenv__doc__,
-"clearenv($module, /)\n"
+PyDoc_STRVAR(os__clearenv__doc__,
+"_clearenv($module, /)\n"
 "--\n"
 "\n");
 
-#define OS_CLEARENV_METHODDEF    \
-    {"clearenv", (PyCFunction)os_clearenv, METH_NOARGS, os_clearenv__doc__},
+#define OS__CLEARENV_METHODDEF    \
+    {"_clearenv", (PyCFunction)os__clearenv, METH_NOARGS, os__clearenv__doc__},
 
 static PyObject *
-os_clearenv_impl(PyObject *module);
+os__clearenv_impl(PyObject *module);
 
 static PyObject *
-os_clearenv(PyObject *module, PyObject *Py_UNUSED(ignored))
+os__clearenv(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return os_clearenv_impl(module);
+    return os__clearenv_impl(module);
 }
 
 #endif /* defined(HAVE_CLEARENV) */
@@ -13313,9 +13313,9 @@ exit:
     #define OS_UNSETENV_METHODDEF
 #endif /* !defined(OS_UNSETENV_METHODDEF) */
 
-#ifndef OS_CLEARENV_METHODDEF
-    #define OS_CLEARENV_METHODDEF
-#endif /* !defined(OS_CLEARENV_METHODDEF) */
+#ifndef OS__CLEARENV_METHODDEF
+    #define OS__CLEARENV_METHODDEF
+#endif /* !defined(OS__CLEARENV_METHODDEF) */
 
 #ifndef OS_WCOREDUMP_METHODDEF
     #define OS_WCOREDUMP_METHODDEF
@@ -13472,4 +13472,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=52bed87f431d653b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=67f0df7cd5a7de20 input=a9049054013a1b77]*/
