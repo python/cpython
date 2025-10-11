@@ -304,10 +304,12 @@ def _filter(flist, skip):
 
 # Demonstration and testing.
 #
-def demo():
+def demo(args=None):
     import sys
     import getopt
-    options, args = getopt.getopt(sys.argv[1:], 'r')
+
+    args = sys.argv[1:] if args is None else args
+    options, args = getopt.getopt(args, 'r')
     if len(args) != 2:
         raise getopt.GetoptError('need exactly two args', None)
     dd = dircmp(args[0], args[1])
