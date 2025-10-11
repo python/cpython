@@ -396,7 +396,7 @@ class _Stream:
                     self.cmp = lzma.LZMADecompressor()
                     self.exception = lzma.LZMAError
                 else:
-                    self.cmp = lzma.LZMACompressor(kwargs["preset"])
+                    self.cmp = lzma.LZMACompressor(preset=kwargs["preset"])
             elif comptype == "zst":
                 try:
                     from compression import zstd
