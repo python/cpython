@@ -385,24 +385,6 @@ extern "C" {
 #  define Py_NO_INLINE
 #endif
 
-#if defined(_MSC_VER) && !defined(__clang__) && _Py_TAIL_CALL_INTERP
-#  define Py_NO_INLINE_MSVC_TAILCALL Py_NO_INLINE
-#else
-#  define Py_NO_INLINE_MSVC_TAILCALL
-#endif
-
-#if defined(_MSC_VER) && !defined(__clang__)
-#  define Py_MSVC_RESTRICT restrict
-#else
-#  define Py_MSVC_RESTRICT
-#endif
-
-// Just a scope. Hints to the programmer
-// That any local variable defined within this block MUST
-// not escape from the current definition.
-# define Py_BEGIN_LOCALS_MUST_NOT_ESCAPE() {
-# define Py_END_LOCALS_MUST_NOT_ESCAPE() }
-
 #include "exports.h"
 
 #ifdef Py_LIMITED_API
