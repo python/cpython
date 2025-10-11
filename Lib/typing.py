@@ -1160,10 +1160,21 @@ def _generic_class_getitem(cls, args):
         # Subscripting a regular Generic subclass.
         try:
             parameters = cls.__parameters__
-        except AttributeError:
-            raise TypeError(f"type object '{cls.__qualname__}' has no attribute "
-                            f"'__parameters__'. Maybe you forgot to call "
-                            f"super().__init_subclass__()?") from None
+        except AttributeError as e:
+            init_subclass = getattr(cls, '__init_subclass__', None)
+            if init_subclass not in {None, Generic.__init_subclass__}:
+                e.add_note(
+                    f"Note: this exception may have been caused by "
+                    f"{init_subclass.__qualname__!r} (or the "
+                    f"'__init_subclass__' method on a superclass) not "
+                    f"calling 'super().__init_subclass__()'"
+                )
+                e.add_note(
+                    "Note: all classes with 'Generic' in their MRO must call "
+                    "'super().__init_subclass__()' from custom "
+                    "'__init_subclass__' methods"
+                )
+            raise
         for param in parameters:
             prepare = getattr(param, '__typing_prepare_subst__', None)
             if prepare is not None:

@@ -4723,19 +4723,34 @@ class GenericTests(BaseTestCase):
             D[()]
 
     def test_generic_init_subclass_not_called_error(self):
+        notes = ["Note: this exception may have been caused by "
+                 "'GenericTests.test_generic_init_subclass_not_called_error.<locals>.Base.__init_subclass__' "
+                 "(or the '__init_subclass__' method on a superclass) not calling 'super().__init_subclass__()'",
+                 "Note: all classes with 'Generic' in their MRO must call "
+                 "'super().__init_subclass__()' from custom '__init_subclass__' methods"]
+
         class Base:
             def __init_subclass__(cls) -> None:
                 # Oops, I forgot super().__init_subclass__()!
                 pass
 
-        class Sub(Base, Generic[T]):
-            pass
+        with self.subTest():
+            class Sub(Base, Generic[T]):
+                pass
 
-        msg = (r"type object '.*Sub' has no attribute " +
-              re.escape("'__parameters__'. Maybe you forgot to call "
-                        "super().__init_subclass__()?"))
-        with self.assertRaisesRegex(TypeError, msg):
-            Sub[int]
+            with self.assertRaises(AttributeError) as cm:
+                Sub[int]
+
+            self.assertEqual(cm.exception.__notes__, notes)
+
+        with self.subTest():
+            class Sub[U](Base):
+                pass
+
+            with self.assertRaises(AttributeError) as cm:
+                Sub[int]
+
+            self.assertEqual(cm.exception.__notes__, notes)
 
     def test_generic_subclass_checks(self):
         for typ in [list[int], List[int],
