@@ -544,7 +544,7 @@ fcntl_fstore___init___impl(FStoreObject *self, int flags, int posmode,
     return 0;
 }
 
-static Py_ssize_t
+static int
 fstore_getbuffer(FStoreObject *self, Py_buffer *view, int flags)
 {
     return PyBuffer_FillInfo(view, (PyObject *)self, (void *)&self->fstore,
