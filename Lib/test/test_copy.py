@@ -68,6 +68,26 @@ class TestCopy(unittest.TestCase):
         self.assertIs(y, x)
         self.assertEqual(c, [1])
 
+    def test_copy_invalid_reduction_methods(self):
+        class C(object):
+            __copy__ = None
+        x = C()
+        with self.assertRaises(TypeError):
+            copy.copy(x)
+
+        class C(object):
+            __reduce_ex__ = None
+        x = C()
+        with self.assertRaises(TypeError):
+            copy.copy(x)
+
+        class C(object):
+            __reduce_ex__ = copy._NoValue
+            __reduce__ = None
+        x = C()
+        with self.assertRaises(TypeError):
+            copy.copy(x)
+
     def test_copy_reduce(self):
         class C(object):
             def __reduce__(self):
@@ -976,6 +996,13 @@ class TestReplace(unittest.TestCase):
         self.assertEqual(attrs(copy.replace(c, x=1, y=2)), (1, 2))
         with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
             copy.replace(c, x=1, error=2)
+
+    def test_invalid_replace_method(self):
+        class A:
+            __replace__ = None
+        a = A()
+        with self.assertRaises(TypeError):
+            copy.replace(a)
 
 
 class MiscTestCase(unittest.TestCase):
