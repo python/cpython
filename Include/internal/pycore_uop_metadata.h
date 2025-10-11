@@ -212,7 +212,12 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_MATCH_SEQUENCE] = 0,
     [_MATCH_KEYS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_GET_ITER_SELF] = HAS_DEOPT_FLAG,
+    [_GET_ITER_INDEX] = HAS_DEOPT_FLAG,
+    [_GET_ITER_RANGE] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_GET_YIELD_FROM_ITER] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_ITER_CHECK_INDEX] = HAS_DEOPT_FLAG,
+    [_FOR_ITER_INDEX_TIER_TWO] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_FOR_ITER_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_LIST] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_LIST] = HAS_EXIT_FLAG,
@@ -222,7 +227,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_ITER_NEXT_TUPLE] = 0,
     [_ITER_CHECK_RANGE] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_RANGE] = HAS_EXIT_FLAG,
-    [_ITER_NEXT_RANGE] = HAS_ERROR_FLAG,
+    [_ITER_NEXT_RANGE] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
     [_FOR_ITER_GEN_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_INSERT_NULL] = 0,
     [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
@@ -454,11 +459,15 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_FORMAT_SIMPLE] = "_FORMAT_SIMPLE",
     [_FORMAT_WITH_SPEC] = "_FORMAT_WITH_SPEC",
     [_FOR_ITER_GEN_FRAME] = "_FOR_ITER_GEN_FRAME",
+    [_FOR_ITER_INDEX_TIER_TWO] = "_FOR_ITER_INDEX_TIER_TWO",
     [_FOR_ITER_TIER_TWO] = "_FOR_ITER_TIER_TWO",
     [_GET_AITER] = "_GET_AITER",
     [_GET_ANEXT] = "_GET_ANEXT",
     [_GET_AWAITABLE] = "_GET_AWAITABLE",
     [_GET_ITER] = "_GET_ITER",
+    [_GET_ITER_INDEX] = "_GET_ITER_INDEX",
+    [_GET_ITER_RANGE] = "_GET_ITER_RANGE",
+    [_GET_ITER_SELF] = "_GET_ITER_SELF",
     [_GET_LEN] = "_GET_LEN",
     [_GET_YIELD_FROM_ITER] = "_GET_YIELD_FROM_ITER",
     [_GUARD_BINARY_OP_EXTEND] = "_GUARD_BINARY_OP_EXTEND",
@@ -513,6 +522,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_INSERT_NULL] = "_INSERT_NULL",
     [_IS_NONE] = "_IS_NONE",
     [_IS_OP] = "_IS_OP",
+    [_ITER_CHECK_INDEX] = "_ITER_CHECK_INDEX",
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
     [_ITER_CHECK_RANGE] = "_ITER_CHECK_RANGE",
     [_ITER_CHECK_TUPLE] = "_ITER_CHECK_TUPLE",
@@ -1055,8 +1065,18 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _GET_ITER:
             return 1;
+        case _GET_ITER_SELF:
+            return 0;
+        case _GET_ITER_INDEX:
+            return 0;
+        case _GET_ITER_RANGE:
+            return 1;
         case _GET_YIELD_FROM_ITER:
             return 1;
+        case _ITER_CHECK_INDEX:
+            return 0;
+        case _FOR_ITER_INDEX_TIER_TWO:
+            return 0;
         case _FOR_ITER_TIER_TWO:
             return 0;
         case _ITER_CHECK_LIST:

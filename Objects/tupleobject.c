@@ -833,6 +833,16 @@ tuple_subscript(PyObject *op, PyObject* item)
     }
 }
 
+static PyObject *
+tuple_iterindex(PyObject *self, Py_ssize_t index)
+{
+    if (index < 0 || index >= PyTuple_GET_SIZE(self)) {
+        return NULL;
+    }
+    PyObject *item = PyTuple_GET_ITEM(self, index);
+    return Py_NewRef(item);
+}
+
 /*[clinic input]
 tuple.__getnewargs__
 [clinic start generated code]*/
@@ -904,6 +914,7 @@ PyTypeObject PyTuple_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_TUPLE,
+    .tp_iterindex = tuple_iterindex,
 };
 
 /* The following function breaks the notion that tuples are immutable:

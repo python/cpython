@@ -10,21 +10,6 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 
-/* Support objects whose length is > PY_SSIZE_T_MAX.
-
-   This could be sped up for small PyLongs if they fit in a Py_ssize_t.
-   This only matters on Win64.  Though we could use long long which
-   would presumably help perf.
-*/
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *start;
-    PyObject *stop;
-    PyObject *step;
-    PyObject *length;
-} rangeobject;
-
 /* Helper function for validating step.  Always returns a new reference or
    NULL on error.
 */
@@ -155,6 +140,7 @@ range_vectorcall(PyObject *rangetype, PyObject *const *args,
     }
     return range_from_array((PyTypeObject *)rangetype, args, nargs);
 }
+
 
 PyDoc_STRVAR(range_doc,
 "range(stop) -> range object\n\
