@@ -1,0 +1,1 @@
+Fix a memory leak of a JIT executor that occurred when JIT compilation failed.
