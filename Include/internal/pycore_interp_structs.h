@@ -165,6 +165,7 @@ typedef struct {
     // Lowest two bits are used for flags documented later.
     // Those bits are made available by the struct's minimum alignment.
     uintptr_t _gc_prev;
+    uintptr_t _visited;
 } PyGC_Head;
 
 #define _PyGC_Head_UNUSED PyGC_Head
@@ -181,6 +182,7 @@ struct gc_collection_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    Py_ssize_t tracked_tuples;
     Py_ssize_t untracked_tuples;
 };
 
@@ -192,6 +194,8 @@ struct gc_generation_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    Py_ssize_t tracked_tuples;
+    Py_ssize_t total_tracked_tuples;
     Py_ssize_t untracked_tuples;
     Py_ssize_t total_untracked_tuples;
     Py_ssize_t total_tuples;

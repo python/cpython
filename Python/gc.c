@@ -70,6 +70,18 @@ gc_clear_collecting(PyGC_Head *g)
     g->_gc_prev &= ~PREV_MASK_COLLECTING;
 }
 
+static inline int
+gc_is_visited(PyGC_Head *g)
+{
+    return (int)g->_visited;
+}
+
+static inline void
+gc_set_is_visited(PyGC_Head *g)
+{
+    g->_visited = 1;
+}
+
 static inline Py_ssize_t
 gc_get_refs(PyGC_Head *g)
 {
@@ -769,6 +781,25 @@ untrack_tuples(PyGC_Head *head)
     return untracked;
 }
 
+static Py_ssize_t
+count_tuples(PyGC_Head *head)
+{
+    Py_ssize_t tuples = 0;
+    PyGC_Head *gc = GC_NEXT(head);
+    while (gc != head) {
+        PyObject *op = FROM_GC(gc);
+        PyGC_Head *next = GC_NEXT(gc);
+        if (!gc_is_visited(gc)) {
+            if (PyTuple_CheckExact(op)) {
+                tuples += 1;
+            }
+            gc_set_is_visited(gc);
+        }
+        gc = next;
+    }
+    return tuples;
+}
+
 /* Return true if object has a pre-PEP 442 finalization method. */
 static int
 has_legacy_finalizer(PyObject *op)
@@ -1378,6 +1409,7 @@ gc_collect_young(PyThreadState *tstate,
     validate_spaces(gcstate);
     PyGC_Head *young = &gcstate->young.head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
+    stats->tracked_tuples += count_tuples(young);
     stats->untracked_tuples += untrack_tuples(young);
     GC_STAT_ADD(0, collections, 1);
 
@@ -1656,6 +1688,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     GC_STAT_ADD(1, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
     gcstate->work_to_do += assess_work_to_do(gcstate);
+    stats->tracked_tuples += count_tuples(&gcstate->young.head);
     stats->untracked_tuples += untrack_tuples(&gcstate->young.head);
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
@@ -1718,6 +1751,7 @@ gc_collect_full(PyThreadState *tstate,
     PyGC_Head *young = &gcstate->young.head;
     PyGC_Head *pending = &gcstate->old[gcstate->visited_space^1].head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
+    stats->tracked_tuples += count_tuples(young);
     stats->untracked_tuples += untrack_tuples(young);
     /* merge all generations into visited */
     gc_list_merge(young, pending);
@@ -1758,6 +1792,7 @@ gc_collect_region(PyThreadState *tstate,
     gc_list_init(&unreachable);
     deduce_unreachable(from, &unreachable);
     validate_consistent_old_space(from);
+    stats->tracked_tuples += count_tuples(from);
     stats->untracked_tuples += untrack_tuples(from);
 
   /* Move reachable objects to next generation. */
@@ -2100,8 +2135,10 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         default:
             Py_UNREACHABLE();
     }
-    gcstate->generation_stats[generation].untracked_tuples += stats.untracked_tuples;
+    gcstate->generation_stats[0].total_tracked_tuples += stats.tracked_tuples;
     gcstate->generation_stats[0].total_untracked_tuples += stats.untracked_tuples;
+    gcstate->generation_stats[generation].tracked_tuples += stats.tracked_tuples;
+    gcstate->generation_stats[generation].untracked_tuples += stats.untracked_tuples;
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(stats.uncollectable + stats.collected);
     }
@@ -2109,19 +2146,20 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         invoke_gc_callback(gcstate, "stop", generation, &stats);
     }
     else {
-        FILE *out = stderr;
+        if (true) {
+            FILE *out = stderr;
 
-        fprintf(out, "GC[%d] total tuples    : %zd\n", 0, gcstate->generation_stats[0].total_tuples);
-        fprintf(out, "GC[%d] total untracked_tuples    : %zd\n", 0, gcstate->generation_stats[0].total_untracked_tuples);
-        for (int i = 0; i < 33; i++) {
-            fprintf(out, "GC[%d] by size %d  : %zd\n", 0, i, gcstate->generation_stats[0].tuples_by_size[i]);
-        }
+            fprintf(out, "GC[%d] total tuples              : %zd\n", 0, gcstate->generation_stats[0].total_tuples);
+            fprintf(out, "GC[%d] total tracked_tuples      : %zd\n", 0, gcstate->generation_stats[0].total_tracked_tuples);
+            fprintf(out, "GC[%d] total untracked_tuples    : %zd\n", 0, gcstate->generation_stats[0].total_untracked_tuples);
+            for (int i = 0; i < 33; i++) {
+                fprintf(out, "GC[%d] by size %d  : %zd\n", 0, i, gcstate->generation_stats[0].tuples_by_size[i]);
+            }
 
-        for (int i = 0; i < NUM_GENERATIONS; i++) {
-            fprintf(out, "GC[%d] collections     : %zd\n", i, gcstate->generation_stats[i].collections);
-            fprintf(out, "GC[%d] collected       : %zd\n", i, gcstate->generation_stats[i].collected);
-            fprintf(out, "GC[%d] uncollectable   : %zd\n", i, gcstate->generation_stats[i].uncollectable);
-            fprintf(out, "GC[%d] untracked_tuples: %zd\n", i, gcstate->generation_stats[i].untracked_tuples);
+            for (int i = 0; i < NUM_GENERATIONS; i++) {
+                fprintf(out, "GC[%d] tracked_tuples  : %zd\n", i, gcstate->generation_stats[i].tracked_tuples);
+                fprintf(out, "GC[%d] untracked_tuples: %zd\n", i, gcstate->generation_stats[i].untracked_tuples);
+            }
         }
     }
     _PyErr_SetRaisedException(tstate, exc);
@@ -2316,6 +2354,7 @@ _PyObject_GC_Link(PyObject *op)
     GCState *gcstate = &tstate->interp->gc;
     gc->_gc_next = 0;
     gc->_gc_prev = 0;
+    gc->_visited = 0;
     gcstate->young.count++; /* number of allocated GC objects */
     gcstate->heap_size++;
     if (gcstate->young.count > gcstate->young.threshold &&
