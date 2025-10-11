@@ -2288,14 +2288,20 @@ dummy_func(
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyTypeObject *cls = (PyTypeObject *)class;
-            int method_found = 0;
-            PyObject *attr_o = _PySuper_Lookup(cls, self, name, NULL);
+            // Note: not actually a pointer, just so that we can use restrict on it.
+            int *Py_MSVC_RESTRICT method_found = NULL;
+            PyObject *attr_o = _PySuper_Lookup(cls, self, name,
+                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? (int *)&method_found : NULL);
             if (attr_o == NULL) {
                 ERROR_NO_POP();
             }
-             PyStackRef_CLOSE(self_st);
-            self_or_null = PyStackRef_NULL;
-
+            if (method_found) {
+                self_or_null = self_st; // transfer ownership
+                DEAD(self_st);
+            } else {
+                PyStackRef_CLOSE(self_st);
+                self_or_null = PyStackRef_NULL;
+            }
             DECREF_INPUTS();
 
             attr = PyStackRef_FromPyObjectSteal(attr_o);
