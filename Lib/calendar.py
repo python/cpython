@@ -588,6 +588,11 @@ class HTMLCalendar(Calendar):
         a(f'<meta charset="{encoding}">\n')
         a('<meta name="viewport" content="width=device-width, initial-scale=1">\n')
         a(f'<title>Calendar for {theyear}</title>\n')
+        a('<style>\n')
+        a(':root { color-scheme: light dark; }\n')
+        a('table.year { border: solid; }\n')
+        a('table.year > tbody > tr > td { border: solid; vertical-align: top; }\n')
+        a('</style>\n')
         if css is not None:
             a(f'<link rel="stylesheet" href="{css}">\n')
         a('</head>\n')
