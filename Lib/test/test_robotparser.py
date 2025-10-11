@@ -15,14 +15,18 @@ class BaseRobotTest:
     good = []
     bad = []
     site_maps = None
+    expected_output = None
 
     def __init_subclass__(cls):
         super().__init_subclass__()
         # Remove tests that do nothing.
-        if not cls.good:
-            cls.test_good_urls = None
-        if not cls.bad:
-            cls.test_bad_urls = None
+        if issubclass(cls, unittest.TestCase):
+            if not cls.good:
+                cls.test_good_urls = None
+            if not cls.bad:
+                cls.test_bad_urls = None
+            if cls.expected_output is None:
+                cls.test_string_formatting = None
 
     def setUp(self):
         lines = io.StringIO(self.robots_txt).readlines()
@@ -50,6 +54,8 @@ class BaseRobotTest:
     def test_site_maps(self):
         self.assertEqual(self.parser.site_maps(), self.site_maps)
 
+    def test_string_formatting(self):
+        self.assertEqual(str(self.parser), self.expected_output)
 
 class UserAgentWildcardTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
@@ -60,6 +66,56 @@ Disallow: /foo.html
     """
     good = ['/', '/test.html']
     bad = ['/cyberworld/map/index.html', '/tmp/xxx', '/foo.html']
+
+class SimpleExampleTest(BaseRobotTest, unittest.TestCase):
+    # Example from RFC 9309, section 5.1.
+    robots_txt = """\
+User-Agent: *
+Disallow: *.gif$
+Disallow: /example/
+Allow: /publications/
+
+User-Agent: foobot
+Disallow:/
+Allow:/example/page.html
+Allow:/example/allowed.gif
+
+User-Agent: barbot
+User-Agent: bazbot
+Disallow: /example/page.html
+
+User-Agent: quxbot
+    """
+    good = [
+        '/', '/publications/',
+        ('foobot', '/example/page.html'), ('foobot', '/example/allowed.gif'),
+        ('barbot', '/'), ('barbot', '/example/'),
+            ('barbot', '/example/allowed.gif'),
+            ('barbot', '/example/disallowed.gif'),
+            ('barbot', '/publications/'),
+            ('barbot', '/publications/allowed.gif'),
+        ('bazbot', '/'), ('bazbot', '/example/'),
+            ('bazbot', '/example/allowed.gif'),
+            ('bazbot', '/example/disallowed.gif'),
+            ('bazbot', '/publications/'),
+            ('bazbot', '/publications/allowed.gif'),
+        ('quxbot', '/'), ('quxbot', '/example/'),
+            ('quxbot', '/example/page.html'), ('quxbot', '/example/allowed.gif'),
+            ('quxbot', '/example/disallowed.gif'),
+            ('quxbot', '/publications/'),
+            ('quxbot', '/publications/allowed.gif'),
+        ]
+    bad = [
+        '/example/', '/example/page.html', '/example/allowed.gif',
+            '/example/disallowed.gif',
+            '/publications/allowed.gif',
+        ('foobot', '/'), ('foobot', '/example/'),
+            ('foobot', '/example/disallowed.gif'),
+            ('foobot', '/publications/'),
+            ('foobot', '/publications/allowed.gif'),
+        ('barbot', '/example/page.html'),
+        ('bazbot', '/example/page.html'),
+    ]
 
 
 class CrawlDelayAndCustomAgentTest(BaseRobotTest, unittest.TestCase):
@@ -137,6 +193,7 @@ class BaseRequestRateTest(BaseRobotTest):
 class EmptyFileTest(BaseRequestRateTest, unittest.TestCase):
     robots_txt = ''
     good = ['/foo']
+    expected_output = ''
 
 
 class CrawlDelayAndRequestRateTest(BaseRequestRateTest, unittest.TestCase):
@@ -221,17 +278,185 @@ class UserAgentGoogleMobileTest(UserAgentOrderingTest):
     agent = 'Googlebot-Mobile'
 
 
-class GoogleURLOrderingTest(BaseRobotTest, unittest.TestCase):
-    # Google also got the order wrong. You need
-    # to specify the URLs from more specific to more general
+class LongestMatchTest(BaseRobotTest, unittest.TestCase):
+    # Based on example from RFC 9309, section 5.2.
     robots_txt = """\
-User-agent: Googlebot
-Allow: /folder1/myfile.html
-Disallow: /folder1/
+User-agent: *
+Allow: /example/page/
+Disallow: /example/page/disallowed.gif
+Allow: /example/
     """
-    agent = 'googlebot'
-    good = ['/folder1/myfile.html']
-    bad = ['/folder1/anotherfile.html']
+    good = ['/example/', '/example/page/']
+    bad = ['/example/page/disallowed.gif']
+
+
+class LongestMatchWildcardTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Allow: /example/page/
+Disallow: *.gif
+Allow: /example/
+    """
+    good = ['/example/', '/example/page/']
+    bad = ['/example/page/disallowed.gif', '/x.gif']
+
+
+class AllowWinsEqualMatchTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /spam
+Allow: /spam
+Disallow: /spam
+    """
+    good = ['/spam', '/spam/']
+
+
+class AllowWinsEqualFullMatchTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /spam
+Allow: /spam$
+Disallow: /spam
+Disallow: /eggs$
+Allow: /eggs
+Disallow: /eggs$
+    """
+    good = ['/spam', '/eggs', '/eggs/']
+    bad = ['/spam/']
+
+
+class AllowWinsEqualMatchWildcardTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /spam
+Allow: *am
+Disallow: /spam
+Disallow: *gs
+Allow: /eggs
+Disallow: *gs
+    """
+    good = ['/spam', '/eggs', '/spam/', '/eggs/']
+
+
+class MergeGroupsTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: spambot
+Disallow: /some/path
+
+User-agent: spambot
+Disallow: /another/path
+    """
+    agent = 'spambot'
+    bad = ['/some/path', '/another/path']
+
+
+class UserAgentStartsGroupTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: spambot
+Disallow: /some/path
+User-agent: eggsbot
+Disallow: /another/path
+    """
+    good = [('spambot', '/'), ('spambot', '/another/path'),
+            ('eggsbot', '/'), ('eggsbot', '/some/path')]
+    bad = [('spambot', '/some/path'), ('eggsbot', '/another/path')]
+    expected_output = """\
+User-agent: spambot
+Disallow: /some/path
+
+User-agent: eggsbot
+Disallow: /another/path\
+"""
+
+class IgnoreEmptyLinesTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: spambot
+
+User-agent: eggsbot
+Disallow: /some/path
+
+Disallow: /another/path
+    """
+    good = [('spambot', '/'), ('eggsbot', '/')]
+    bad = [
+        ('spambot', '/some/path'), ('spambot', '/another/path'),
+        ('eggsbot', '/some/path'), ('eggsbot', '/another/path'),
+    ]
+    expected_output = """\
+User-agent: spambot
+User-agent: eggsbot
+Disallow: /another/path
+Disallow: /some/path\
+"""
+
+
+class IgnoreRulesWithoutUserAgentTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+Disallow: /some/path
+
+User-agent: *
+Disallow: /another/path
+    """
+    good = ['/', '/some/path']
+    bad = ['/another/path']
+    expected_output = """\
+User-agent: *
+Disallow: /another/path\
+"""
+
+
+class EmptyGroupTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+Disallow: /some/path
+
+User-agent: spambot
+    """
+    agent = 'spambot'
+    good = ['/', '/some/path']
+    expected_output = """\
+User-agent: *
+Disallow: /some/path
+
+User-agent: spambot
+Allow:\
+"""
+
+
+class WeirdPathTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = f"""\
+User-agent: *
+Disallow: /a$$$
+Disallow: /b$z
+Disallow: /c***
+Disallow: /d***z
+Disallow: /e*$**$$
+Disallow: /f*$**$$z
+Disallow: /g$*$$**
+Disallow: /h$*$$**z
+    """
+    good = ['/b', '/bz', '/ax', '/d', '/f', '/fz', '/gx', '/h', '/hz']
+    bad = ['/a', '/c', '/cxy', '/dz', '/dxyz', '/dxzy', '/e', '/exy', '/g']
+    expected_output = """\
+User-agent: *
+Disallow: /c*
+Disallow: /d*z
+Disallow: /e*$
+Disallow: /a$
+Disallow: /g$\
+"""
+
+
+class PathWithManyWildcardsTest(BaseRobotTest, unittest.TestCase):
+    # This test would take many years if use naive translation to regular
+    # expression (* -> .*).
+    N = 50
+    robots_txt = f"""\
+User-agent: *
+Disallow: /{'*a'*N}*b
+    """
+    good = ['/' + 'a'*N + 'a']
+    bad = ['/' + 'a'*N + 'b']
 
 
 class DisallowQueryStringTest(BaseRobotTest, unittest.TestCase):
@@ -249,19 +474,6 @@ Disallow: /yet/one/path?name=value&more
     bad = ['/some/path?name=value'
            '/another/path?', '/another/path?name=value',
            '/yet/one/path?name=value&more']
-
-
-class UseFirstUserAgentWildcardTest(BaseRobotTest, unittest.TestCase):
-    # obey first * entry (#4108)
-    robots_txt = """\
-User-agent: *
-Disallow: /some/path
-
-User-agent: *
-Disallow: /another/path
-    """
-    good = ['/another/path']
-    bad = ['/some/path']
 
 
 class PercentEncodingTest(BaseRobotTest, unittest.TestCase):
@@ -365,17 +577,60 @@ Disallow: /some/path
     """
 
     expected_output = """\
-User-agent: cybermapper
-Disallow: /some/path
-
 User-agent: *
 Crawl-delay: 1
 Request-rate: 3/15
-Disallow: /cyberworld/map/\
+Disallow: /cyberworld/map/
+
+User-agent: cybermapper
+Disallow: /some/path\
 """
 
-    def test_string_formatting(self):
-        self.assertEqual(str(self.parser), self.expected_output)
+
+class ConstructedStringFormattingTest(unittest.TestCase):
+    def test_empty(self):
+        parser = urllib.robotparser.RobotFileParser()
+        self.assertEqual(str(parser), '')
+
+    def test_group_without_rules(self):
+        parser = urllib.robotparser.RobotFileParser()
+        entry = urllib.robotparser.Entry()
+        entry.useragents = ['spambot']
+        parser._add_entry(entry)
+        entry = urllib.robotparser.Entry()
+        entry.useragents = ['hambot']
+        entry.rulelines = [urllib.robotparser.RuleLine('/ham', False)]
+        parser._add_entry(entry)
+        entry = urllib.robotparser.Entry()
+        entry.useragents = ['eggsbot']
+        parser._add_entry(entry)
+        self.assertEqual(str(parser), """\
+User-agent: spambot
+Allow:
+
+User-agent: hambot
+Disallow: /ham
+
+User-agent: eggsbot
+Allow:\
+""")
+
+    def test_group_without_user_agent(self):
+        parser = urllib.robotparser.RobotFileParser()
+        entry = urllib.robotparser.Entry()
+        entry.rulelines = [urllib.robotparser.RuleLine('/ham', False)]
+        parser._add_entry(entry)
+        entry = urllib.robotparser.Entry()
+        entry.useragents = ['spambot']
+        entry.rulelines = [urllib.robotparser.RuleLine('/spam', False)]
+        parser._add_entry(entry)
+        entry = urllib.robotparser.Entry()
+        entry.rulelines = [urllib.robotparser.RuleLine('/eggs', False)]
+        parser._add_entry(entry)
+        self.assertEqual(str(parser), """\
+User-agent: spambot
+Disallow: /spam\
+""")
 
 
 @unittest.skipUnless(
@@ -495,7 +750,7 @@ class NetworkTestCase(unittest.TestCase):
     def test_can_fetch(self):
         self.assertTrue(self.parser.can_fetch('*', self.url('elsewhere')))
         self.assertFalse(self.parser.can_fetch('Nutch', self.base_url))
-        self.assertFalse(self.parser.can_fetch('Nutch', self.url('brian')))
+        self.assertTrue(self.parser.can_fetch('Nutch', self.url('brian')))
         self.assertFalse(self.parser.can_fetch('Nutch', self.url('webstats')))
         self.assertFalse(self.parser.can_fetch('*', self.url('webstats')))
         self.assertTrue(self.parser.can_fetch('*', self.base_url))
