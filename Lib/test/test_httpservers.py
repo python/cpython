@@ -778,6 +778,83 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             finally:
                 os.chmod(self.tempdir, 0o755)
 
+    def test_single_range_get(self):
+        route = self.base_url + '/test'
+        response = self.request(route)
+        self.assertEqual(response.getheader('accept-ranges'), 'bytes')
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+        # valid ranges
+        response = self.request(route, headers={'Range': 'bYtEs=3-12'})  # case insensitive
+        self.assertEqual(response.getheader('content-range'), 'bytes 3-12/30')
+        self.assertEqual(response.getheader('content-length'), '10')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[3:13])
+
+        response = self.request(route, headers={'Range': 'bytes=3-'})
+        self.assertEqual(response.getheader('content-range'), 'bytes 3-29/30')
+        self.assertEqual(response.getheader('content-length'), '27')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[3:])
+
+        response = self.request(route, headers={'Range': 'bytes=-5'})
+        self.assertEqual(response.getheader('content-range'), 'bytes 25-29/30')
+        self.assertEqual(response.getheader('content-length'), '5')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[25:])
+
+        response = self.request(route, headers={'Range': 'bytes=29-29'})
+        self.assertEqual(response.getheader('content-range'), 'bytes 29-29/30')
+        self.assertEqual(response.getheader('content-length'), '1')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[29:])
+
+        # end > file size
+        response = self.request(route, headers={'Range': 'bytes=25-100'})
+        self.assertEqual(response.getheader('content-range'), 'bytes 25-29/30')
+        self.assertEqual(response.getheader('content-length'), '5')
+        self.check_status_and_reason(response, HTTPStatus.PARTIAL_CONTENT, data=self.data[25:])
+
+        # invalid ranges
+        response = self.request(route, headers={'Range': 'bytes=100-200'})
+        self.assertEqual(response.getheader('content-range'), 'bytes */30')
+        self.check_status_and_reason(response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+
+        response = self.request(route, headers={'Range': 'bytes=4-3'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+        response = self.request(route, headers={'Range': 'bytes=wrong format'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+        response = self.request(route, headers={'Range': 'bytes=-'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+        response = self.request(route, headers={'Range': 'bytes=--'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+        response = self.request(route, headers={'Range': 'bytes='})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
+    def test_single_range_get_empty(self):
+        # range requests to an empty file
+        os_helper.create_empty_file(os.path.join(self.tempdir_name, 'empty'))
+        empty_path = self.base_url + '/empty'
+
+        response = self.request(empty_path, headers={'Range': 'bytes=0-512'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=b'')
+
+        response = self.request(empty_path, headers={'Range': 'bytes=-512'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=b'')
+
+        response = self.request(empty_path, headers={'Range': 'bytes=1-2'})
+        self.assertEqual(response.getheader('content-range'), 'bytes */0')
+        self.check_status_and_reason(response, HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+
+        # invalid Range header is always ignored
+        response = self.request(empty_path, headers={'Range': 'bytes=5-4'})
+        self.check_status_and_reason(response, HTTPStatus.OK)
+
+    def test_multi_range_get(self):
+        # multipart ranges (not supported currently)
+        response = self.request(self.base_url + '/test', headers={'Range': 'bytes=1-2, 4-7'})
+        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+
     def test_head(self):
         response = self.request(
             self.base_url + '/test', method='HEAD')
