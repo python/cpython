@@ -27,7 +27,7 @@ import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        get_default_scheme, get_scheme_names, get_config_var,
-                       _expand_vars, _get_preferred_schemes, get_python_version,
+                       _expand_vars, _get_preferred_schemes,
                        is_python_build, _PROJECT_BASE)
 from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
