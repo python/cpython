@@ -55,8 +55,9 @@ def get_with_retries(url, headers):
     )
 
 
-def fetch_zip(commit_hash, zip_dir, *, org='python', verbose):
-    url = f'https://github.com/{org}/cpython-source-deps/archive/{commit_hash}.zip'
+def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose=False):
+    repo = 'cpython-bin-deps' if binary else 'cpython-source-deps'
+    url = f'https://github.com/{org}/{repo}/archive/{commit_hash}.zip'
     reporthook = None
     if verbose:
         reporthook = print
@@ -69,42 +70,48 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', verbose):
     return filename
 
 
-def fetch_release_asset(asset_id, output_path, org):
+def fetch_release_asset(asset_id, output_path, org, verbose=False):
     """Download a GitHub release asset.
 
     Release assets need the Content-Type header set to
     application/octet-stream to download the binary, so we can't use
-    urlretrieve. Code here is based on urlretrieve
+    urlretrieve. Code here is based on urlretrieve.
     """
     url = f'https://api.github.com/repos/{org}/cpython-bin-deps/releases/assets/{asset_id}'
-    rest = get_with_retries(url,
-                            headers={'Accept': 'application/vnd.github+json'})
-    json_data = json.loads(rest.read())
-    hash_info = json_data['digest']
+    if verbose:
+        print(f'Fetching metadata for asset {asset_id}...')
+    metadata_resp = get_with_retries(url,
+                                     headers={'Accept': 'application/vnd.github+json'})
+    json_data = json.loads(metadata_resp.read())
+    hash_info = json_data.get('digest')
+    if not hash_info:
+        raise RuntimeError(f'Release asset {asset_id} missing digest field in metadata')
     algorithm, hashsum = hash_info.split(':')
     if algorithm != 'sha256':
         raise RuntimeError(f'Unknown hash algorithm {algorithm} for asset {asset_id}')
+    if verbose:
+        print(f'Downloading asset {asset_id}...')
     with contextlib.closing(
         get_with_retries(url, headers={'Accept': 'application/octet-stream'})
     ) as resp:
-        read = 0
         hasher = hashlib.sha256()
         with open(output_path, 'wb') as fp:
             while block := resp.read(io.DEFAULT_BUFFER_SIZE):
                 hasher.update(block)
-                read += len(block)
                 fp.write(block)
         if hasher.hexdigest() != hashsum:
             raise RuntimeError('Downloaded content hash did not match!')
+    if verbose:
+        print(f'Successfully downloaded and verified {output_path}')
 
 
-def fetch_release(tag, tarball_dir, *, org='python'):
-    tarball_dir.mkdir(exist_ok=True)
+def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
+    tarball_dir.mkdir(parents=True, exist_ok=True)
     asset_id = TAG_TO_ASSET_ID.get(tag)
     if asset_id is None:
         raise ValueError(f'Unknown tag for binary dependencies {tag}')
     output_path = tarball_dir / f'{tag}.tar.xz'
-    fetch_release_asset(asset_id, output_path, org)
+    fetch_release_asset(asset_id, output_path, org, verbose)
     return output_path
 
 
@@ -137,22 +144,36 @@ def parse_args():
 
 def main():
     args = parse_args()
-    if args.binary:
+    final_name = args.externals_dir / args.tag
+
+    # Check if the dependency already exists in externals/ directory
+    # (either already downloaded/extracted, or checked into the git tree)
+    if final_name.exists():
+        if args.verbose:
+            print(f'{args.tag} already exists at {final_name}, skipping download.')
+        return
+
+    # Determine download method: release artifacts for large deps (like LLVM),
+    # otherwise zip download from GitHub branches
+    if args.tag in TAG_TO_ASSET_ID:
         tarball_path = fetch_release(
             args.tag,
             args.externals_dir / 'tarballs',
             org=args.organization,
+            verbose=args.verbose,
         )
         extracted = extract_tarball(args.externals_dir, tarball_path, args.tag)
     else:
+        # Use zip download from GitHub branches
+        # (cpython-bin-deps if --binary, cpython-source-deps otherwise)
         zip_path = fetch_zip(
             args.tag,
             args.externals_dir / 'zips',
             org=args.organization,
+            binary=args.binary,
             verbose=args.verbose,
         )
         extracted = extract_zip(args.externals_dir, zip_path)
-    final_name = args.externals_dir / args.tag
     for wait in [1, 2, 3, 5, 8, 0]:
         try:
             extracted.replace(final_name)
