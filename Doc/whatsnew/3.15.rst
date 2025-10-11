@@ -696,6 +696,14 @@ http.server
   (Contributed by Bénédikt Tran in :gh:`133810`.)
 
 
+importlib.resources
+-------------------
+
+* Removed deprecated ``package`` parameter
+  from :func:`importlib.resources.files` function.
+  (Contributed by Semyon Moroz in :gh:`138044`)
+
+
 pathlib
 -------
 
