@@ -260,7 +260,7 @@ Create, Finish, Discard
    writer size to *size*. The caller is responsible to write *size*
    bytes using :c:func:`PyBytesWriter_GetData`.
 
-   On error, set an exception and return NULL.
+   On error, set an exception and return ``NULL``.
 
    *size* must be positive or zero.
 

@@ -50,6 +50,7 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     cflags: str = ""
+    llvm_version: str = _llvm._LLVM_VERSION
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
@@ -81,7 +82,9 @@ class _Target(typing.Generic[_S, _R]):
     async def _parse(self, path: pathlib.Path) -> _stencils.StencilGroup:
         group = _stencils.StencilGroup()
         args = ["--disassemble", "--reloc", f"{path}"]
-        output = await _llvm.maybe_run("llvm-objdump", args, echo=self.verbose)
+        output = await _llvm.maybe_run(
+            "llvm-objdump", args, echo=self.verbose, llvm_version=self.llvm_version
+        )
         if output is not None:
             # Make sure that full paths don't leak out (for reproducibility):
             long, short = str(path), str(path.name)
@@ -99,7 +102,9 @@ class _Target(typing.Generic[_S, _R]):
             "--sections",
             f"{path}",
         ]
-        output = await _llvm.run("llvm-readobj", args, echo=self.verbose)
+        output = await _llvm.run(
+            "llvm-readobj", args, echo=self.verbose, llvm_version=self.llvm_version
+        )
         # --elf-output-style=JSON is only *slightly* broken on Mach-O...
         output = output.replace("PrivateExtern\n", "\n")
         output = output.replace("Extern\n", "\n")
@@ -175,12 +180,16 @@ class _Target(typing.Generic[_S, _R]):
             # Allow user-provided CFLAGS to override any defaults
             *shlex.split(self.cflags),
         ]
-        await _llvm.run("clang", args_s, echo=self.verbose)
+        await _llvm.run(
+            "clang", args_s, echo=self.verbose, llvm_version=self.llvm_version
+        )
         self.optimizer(
             s, label_prefix=self.label_prefix, symbol_prefix=self.symbol_prefix
         ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
-        await _llvm.run("clang", args_o, echo=self.verbose)
+        await _llvm.run(
+            "clang", args_o, echo=self.verbose, llvm_version=self.llvm_version
+        )
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
@@ -224,6 +233,8 @@ class _Target(typing.Generic[_S, _R]):
         if not self.stable:
             warning = f"JIT support for {self.triple} is still experimental!"
             request = "Please report any issues you encounter.".center(len(warning))
+            if self.llvm_version != _llvm._LLVM_VERSION:
+                request = f"Warning! Building with an LLVM version other than {_llvm._LLVM_VERSION} is not supported."
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest()}\n"

@@ -916,6 +916,26 @@ class unicode_converter(CConverter):
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
+class _unicode_fs_converter_base(CConverter):
+    type = 'PyObject *'
+
+    def converter_init(self) -> None:
+        if self.default is not unspecified:
+            fail(f"{self.__class__.__name__} does not support default values")
+        self.c_default = 'NULL'
+
+    def cleanup(self) -> str:
+        return f"Py_XDECREF({self.parser_name});"
+
+
+class unicode_fs_encoded_converter(_unicode_fs_converter_base):
+    converter = 'PyUnicode_FSConverter'
+
+
+class unicode_fs_decoded_converter(_unicode_fs_converter_base):
+    converter = 'PyUnicode_FSDecoder'
+
+
 @add_legacy_c_converter('u')
 @add_legacy_c_converter('u#', zeroes=True)
 @add_legacy_c_converter('Z', accept={str, NoneType})

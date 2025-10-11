@@ -858,8 +858,8 @@ Some smaller changes made to the core Python language are:
 
   .. XXX bytearray doesn't seem to be documented
 
-* When using :class:`@classmethod <classmethod>` and
-  :class:`@staticmethod <staticmethod>` to wrap
+* When using :deco:`classmethod` and
+  :deco:`staticmethod` to wrap
   methods as class or static methods, the wrapper object now
   exposes the wrapped function as their :attr:`~method.__func__`
   attribute.
