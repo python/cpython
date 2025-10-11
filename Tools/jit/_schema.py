@@ -101,7 +101,8 @@ class ELFSection(typing.TypedDict):
     Index: int
     Info: int
     Relocations: list[dict[typing.Literal["Relocation"], ELFRelocation]]
-    SectionData: dict[typing.Literal["Bytes"], list[int]]
+    SectionData: typing.NotRequired[dict[typing.Literal["Bytes"], list[int]]]
+    Size: int
     Symbols: list[dict[typing.Literal["Symbol"], _ELFSymbol]]
     Type: dict[typing.Literal["Name"], str]
 
@@ -117,4 +118,6 @@ class MachOSection(typing.TypedDict):
         list[dict[typing.Literal["Relocation"], MachORelocation]]
     ]
     SectionData: typing.NotRequired[dict[typing.Literal["Bytes"], list[int]]]
+    Segment: dict[typing.Literal["Value"], str]
+    Size: int
     Symbols: typing.NotRequired[list[dict[typing.Literal["Symbol"], _MachOSymbol]]]
