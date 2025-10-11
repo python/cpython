@@ -881,5 +881,17 @@ class DeprecationTests(unittest.TestCase):
             sysconfig.is_python_build('foo')
 
 
+class CommandLineTests(unittest.TestCase):
+    def test_config_output(self):
+        output = subprocess.run(
+            [sys.executable, "-m", "sysconfig"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        self.assertTrue(output.returncode == 0)
+        self.assertTrue(output.stdout.startswith("Platform: "))
+
+
 if __name__ == "__main__":
     unittest.main()
