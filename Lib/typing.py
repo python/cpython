@@ -1162,7 +1162,7 @@ def _generic_class_getitem(cls, args):
             parameters = cls.__parameters__
         except AttributeError:
             raise TypeError(f"type object '{cls.__qualname__}' has no attribute "
-                            f"'__parameters__'; Maybe you forgot to call "
+                            f"'__parameters__'. Maybe you forgot to call "
                             f"super().__init_subclass__()?") from None
         for param in parameters:
             prepare = getattr(param, '__typing_prepare_subst__', None)

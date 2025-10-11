@@ -4731,10 +4731,10 @@ class GenericTests(BaseTestCase):
         class Sub(Base, Generic[T]):
             pass
 
-        with self.assertRaisesRegex(TypeError,
-                                  r"type object '.*Sub' has no attribute "
-                                    r"'__parameters__'; Maybe you forgot to call "
-                                    r"super\(\).__init_subclass__\(\)\?"):
+        msg = (r"type object '.*Sub' has no attribute " +
+              re.escape("'__parameters__'. Maybe you forgot to call "
+                        "super().__init_subclass__()?"))
+        with self.assertRaisesRegex(TypeError, msg):
             Sub[int]
 
     def test_generic_subclass_checks(self):

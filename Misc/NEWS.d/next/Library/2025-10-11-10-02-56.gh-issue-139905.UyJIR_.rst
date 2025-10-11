@@ -1,2 +1,3 @@
-Add suggestion to inscrutable error about ``cls.__parameters__`` not
-existing, because ``super().__init_subclass__()`` was not called.
+Add suggestion to error message for :class:`typing.Generic` subclasses when
+``cls.__parameters__`` is missing due to a parent class failing to call
+``super().__init_subclass__()`` in its ``__init_subclass__``.
