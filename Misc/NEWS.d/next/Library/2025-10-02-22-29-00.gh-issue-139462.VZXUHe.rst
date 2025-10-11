@@ -1,0 +1,3 @@
+When a child process in a :class:`concurrent.futures.ProcessPoolExecutor`
+terminates abruptly, the resulting traceback will now tell you the PID
+and exit code of the terminated process. Contributed by Jonathan Berg.
