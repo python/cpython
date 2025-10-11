@@ -768,6 +768,12 @@ class _Environ(MutableMapping):
         new.update(self)
         return new
 
+    if _exists("clearenv"):
+        def clear(self):
+            clearenv()
+            self._data.clear()
+
+
 def _create_environ_mapping():
     if name == 'nt':
         # Where Env Var Names Must Be UPPERCASE

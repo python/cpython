@@ -9539,6 +9539,27 @@ exit:
 
 #endif /* !defined(MS_WINDOWS) */
 
+#if defined(HAVE_CLEARENV)
+
+PyDoc_STRVAR(os_clearenv__doc__,
+"clearenv($module, /)\n"
+"--\n"
+"\n");
+
+#define OS_CLEARENV_METHODDEF    \
+    {"clearenv", (PyCFunction)os_clearenv, METH_NOARGS, os_clearenv__doc__},
+
+static PyObject *
+os_clearenv_impl(PyObject *module);
+
+static PyObject *
+os_clearenv(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os_clearenv_impl(module);
+}
+
+#endif /* defined(HAVE_CLEARENV) */
+
 PyDoc_STRVAR(os_strerror__doc__,
 "strerror($module, code, /)\n"
 "--\n"
@@ -13292,6 +13313,10 @@ exit:
     #define OS_UNSETENV_METHODDEF
 #endif /* !defined(OS_UNSETENV_METHODDEF) */
 
+#ifndef OS_CLEARENV_METHODDEF
+    #define OS_CLEARENV_METHODDEF
+#endif /* !defined(OS_CLEARENV_METHODDEF) */
+
 #ifndef OS_WCOREDUMP_METHODDEF
     #define OS_WCOREDUMP_METHODDEF
 #endif /* !defined(OS_WCOREDUMP_METHODDEF) */
@@ -13447,4 +13472,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=47ace1528820858b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=52bed87f431d653b input=a9049054013a1b77]*/

@@ -1494,6 +1494,14 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             self.assertNotIn(b'test_env', os.environb)
             self.assertNotIn('test_env', os.environ)
 
+    def test_clearenv(self):
+        os.environ['REMOVEME'] = '1'
+        os.environ.clear()
+        self.assertEqual(os.environ, {})
+
+        self.assertRaises(TypeError, os.environ.clear, None)
+
+
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
     is_fwalk = False
