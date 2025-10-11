@@ -230,6 +230,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/gzip", ".gz"),
                 ("application/ogg", ".ogx"),
                 ("application/postscript", ".ps"),
+                ("application/toml", ".toml"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
                 ("application/vnd.ms-excel", ".xls"),
                 ("application/vnd.ms-fontobject", ".eot"),
