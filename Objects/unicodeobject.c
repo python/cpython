@@ -56,7 +56,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pyhash.h"        // _Py_HashSecret_t
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_unicodeobject_generated.h"  // _PyUnicode_InitStaticStrings()
@@ -14494,7 +14493,7 @@ unicode_vectorcall(PyObject *type, PyObject *const *args,
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) != 0) {
         // Fallback to unicode_new()
-        PyObject *tuple = _PyTuple_FromArray(args, nargs);
+        PyObject *tuple = PyTuple_FromArray(args, nargs);
         if (tuple == NULL) {
             return NULL;
         }
