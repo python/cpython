@@ -1,4 +1,5 @@
 import io
+import re
 import textwrap
 import unittest
 from email import message_from_string, message_from_bytes
@@ -288,6 +289,30 @@ class TestGeneratorBase:
         g.flatten(msg)
         self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_non_ascii_addr_spec_raises(self):
+        # RFC2047 encoded-word is not permitted in any part of an addr-spec.
+        # (See also test_non_ascii_addr_spec_preserved below.)
+        g = self.genclass(self.ioclass(), policy=self.policy.clone(utf8=False))
+        cases = [
+            'wők@example.com',
+            'wok@exàmple.com',
+            'wők@exàmple.com',
+            '"Name, for display" <wők@example.com>',
+            'Näyttönimi <wők@example.com>',
+        ]
+        for address in cases:
+            with self.subTest(address=address):
+                msg = EmailMessage()
+                msg['To'] = address
+                addr_spec = msg['To'].addresses[0].addr_spec
+                expected_error = (
+                    fr"(?i)(?=.*non-ascii)(?=.*{re.escape(addr_spec)})(?=.*policy.*utf8)"
+                )
+                with self.assertRaisesRegex(
+                    email.errors.InvalidMailboxError, expected_error
+                ):
+                    g.flatten(msg)
+
 
 class TestGenerator(TestGeneratorBase, TestEmailBase):
 
@@ -432,12 +457,12 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
 
     def test_smtputf8_policy(self):
         msg = EmailMessage()
-        msg['From'] = "Páolo <főo@bar.com>"
+        msg['From'] = "Páolo <főo@bàr.com>"
         msg['To'] = 'Dinsdale'
         msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
         msg.set_content("oh là là, know what I mean, know what I mean?")
         expected = textwrap.dedent("""\
-            From: Páolo <főo@bar.com>
+            From: Páolo <főo@bàr.com>
             To: Dinsdale
             Subject: Nudge nudge, wink, wink \u1F609
             Content-Type: text/plain; charset="utf-8"
@@ -469,6 +494,37 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
             """).encode().replace(b"\n", b"\r\n")
         s = io.BytesIO()
         g = BytesGenerator(s, policy=policy.SMTP)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_non_ascii_addr_spec_preserved(self):
+        # A defective non-ASCII addr-spec parsed from the original
+        # message is left unchanged when flattening.
+        # (See also test_non_ascii_addr_spec_raises above.)
+        source = (
+            'To: jörg@example.com, "But a long name still works with refold_source" <jörg@example.com>'
+        ).encode()
+        expected = (
+            b'To: j\xc3\xb6rg@example.com,\n'
+            b' "But a long name still works with refold_source" <j\xc3\xb6rg@example.com>\n'
+            b'\n'
+        )
+        msg = message_from_bytes(source, policy=policy.default)
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.default)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_idna_encoding_preserved(self):
+        # Nothing tries to decode a pre-encoded IDNA domain.
+        msg = EmailMessage()
+        msg["To"] = Address(
+            username='jörg',
+            domain='☕.example'.encode('idna').decode()  # IDNA 2003
+        )
+        expected = 'To: jörg@xn--53h.example\n\n'.encode()
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.default.clone(utf8=True))
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 
