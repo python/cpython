@@ -3340,7 +3340,11 @@ class Decimal(object):
         return opa, opb
 
     def logical_and(self, other, context=None):
-        """Applies an 'and' operation between self and other's digits."""
+        """Applies an 'and' operation between self and other's digits.
+
+        Both self and other should have zero sign and exponent,
+        and digits either 0 or 1.
+        """
         if context is None:
             context = getcontext()
 
@@ -3357,14 +3361,21 @@ class Decimal(object):
         return _dec_from_triple(0, result.lstrip('0') or '0', 0)
 
     def logical_invert(self, context=None):
-        """Invert all its digits."""
+        """Invert all its digits.
+
+        The self should have zero sign and exponent, and digits either 0 or 1.
+        """
         if context is None:
             context = getcontext()
         return self.logical_xor(_dec_from_triple(0,'1'*context.prec,0),
                                 context)
 
     def logical_or(self, other, context=None):
-        """Applies an 'or' operation between self and other's digits."""
+        """Applies an 'or' operation between self and other's digits.
+
+        Both self and other should have zero sign and exponent,
+        and digits either 0 or 1.
+        """
         if context is None:
             context = getcontext()
 
@@ -3381,7 +3392,11 @@ class Decimal(object):
         return _dec_from_triple(0, result.lstrip('0') or '0', 0)
 
     def logical_xor(self, other, context=None):
-        """Applies an 'xor' operation between self and other's digits."""
+        """Applies an 'xor' operation between self and other's digits.
+
+        Both self and other should have zero sign and exponent,
+        and digits either 0 or 1.
+        """
         if context is None:
             context = getcontext()
 
@@ -4704,7 +4719,8 @@ class Context(object):
     def logical_and(self, a, b):
         """Applies the logical operation 'and' between each operand's digits.
 
-        The operands must be both logical numbers.
+        Both operands should have zero sign and exponent, and
+        digits either 0 or 1.
 
         >>> ExtendedContext.logical_and(Decimal('0'), Decimal('0'))
         Decimal('0')
@@ -4731,7 +4747,8 @@ class Context(object):
     def logical_invert(self, a):
         """Invert all the digits in the operand.
 
-        The operand must be a logical number.
+        The operand should have zero sign and exponent, and digits
+        either 0 or 1.
 
         >>> ExtendedContext.logical_invert(Decimal('0'))
         Decimal('111111111')
@@ -4750,7 +4767,8 @@ class Context(object):
     def logical_or(self, a, b):
         """Applies the logical operation 'or' between each operand's digits.
 
-        The operands must be both logical numbers.
+        Both operands should have zero sign and exponent, and digits
+        either 0 or 1.
 
         >>> ExtendedContext.logical_or(Decimal('0'), Decimal('0'))
         Decimal('0')
@@ -4777,7 +4795,8 @@ class Context(object):
     def logical_xor(self, a, b):
         """Applies the logical operation 'xor' between each operand's digits.
 
-        The operands must be both logical numbers.
+        Both operands should have zero sign and exponent, and digits
+        either 0 or 1.
 
         >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('0'))
         Decimal('0')
