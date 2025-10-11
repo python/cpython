@@ -72,7 +72,7 @@ def parse_opcode_signature(env, sig, signode):
 
 # Support for documenting pdb commands
 
-pdbcmd_sig_re = re.compile(r'([a-z()!]+)\s*(.*)')
+pdbcmd_sig_re = re.compile(r'([a-z()!_]+)\s*(.*)')
 
 # later...
 # pdbargs_tokens_re = re.compile(r'''[a-zA-Z]+  |  # identifiers
