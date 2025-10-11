@@ -108,7 +108,6 @@
       <PreprocessorDefinitions Condition="'$(UseJIT)' == 'true'">_Py_JIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseTIER2)' != '' and '$(UseTIER2)' != '0'">_Py_TIER2=$(UseTIER2);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseTailCallInterp)' == 'true'">Py_TAIL_CALL_INTERP=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(UseTailCallInterp)' == 'true'">/std:clatest %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions Condition="'$(WITH_COMPUTED_GOTOS)' != ''">HAVE_COMPUTED_GOTOS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(DisableRemoteDebug)' != 'true'">Py_REMOTE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -591,7 +590,9 @@
     <ClCompile Include="..\Python\bltinmodule.c" />
     <ClCompile Include="..\Python\bootstrap_hash.c" />
     <ClCompile Include="..\Python\brc.c" />
-    <ClCompile Include="..\Python\ceval.c" />
+    <ClCompile Include="..\Python\ceval.c">
+      <AdditionalOptions Condition="'$(UseTailCallInterp)' == 'true' and $(PlatformToolset) != 'ClangCL'">/std:clatest %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\codegen.c" />
     <ClCompile Include="..\Python\compile.c" />

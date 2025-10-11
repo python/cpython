@@ -79,7 +79,7 @@
 #endif
 
 #if Py_TAIL_CALL_INTERP
-#   ifdef _MSC_VER
+#   if defined(_MSC_VER) && !defined(__clang__)
 #      define Py_MUSTTAIL [[msvc::musttail]]
 #      define Py_PRESERVE_NONE_CC __preserve_none
 #   else
