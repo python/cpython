@@ -4724,10 +4724,8 @@ class GenericTests(BaseTestCase):
 
     def test_generic_init_subclass_not_called_error(self):
         notes = ["Note: this exception may have been caused by "
-                 "'GenericTests.test_generic_init_subclass_not_called_error.<locals>.Base.__init_subclass__' "
-                 "(or the '__init_subclass__' method on a superclass) not calling 'super().__init_subclass__()'",
-                 "Note: all classes with 'Generic' in their MRO must call "
-                 "'super().__init_subclass__()' from custom '__init_subclass__' methods"]
+                 r"'GenericTests.test_generic_init_subclass_not_called_error.<locals>.Base.__init_subclass__' "
+                 "(or the '__init_subclass__' method on a superclass) not calling 'super().__init_subclass__()'"]
 
         class Base:
             def __init_subclass__(cls) -> None:

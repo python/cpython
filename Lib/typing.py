@@ -1169,11 +1169,6 @@ def _generic_class_getitem(cls, args):
                     f"'__init_subclass__' method on a superclass) not "
                     f"calling 'super().__init_subclass__()'"
                 )
-                e.add_note(
-                    "Note: all classes with 'Generic' in their MRO must call "
-                    "'super().__init_subclass__()' from custom "
-                    "'__init_subclass__' methods"
-                )
             raise
         for param in parameters:
             prepare = getattr(param, '__typing_prepare_subst__', None)
