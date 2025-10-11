@@ -6,6 +6,7 @@ import sys
 import errno
 import ntpath
 import pathlib
+import pathlib.types
 import pickle
 import posixpath
 import socket
@@ -2522,6 +2523,11 @@ class PathTest(PurePathTest):
         with self.assertRaises(pathlib.UnsupportedOperation):
             q.symlink_to(p)
 
+    def test_info(self):
+        p = self.cls(self.base)
+        self.assertIsInstance(p.info, pathlib.Info)
+        self.assertIsInstance(p.info, pathlib.types.PathInfo)
+
     def test_info_exists_caching(self):
         p = self.cls(self.base)
         q = p / 'myfile'
@@ -2561,6 +2567,19 @@ class PathTest(PurePathTest):
         self.assertTrue(q.info.is_symlink())
         q.unlink()
         self.assertTrue(q.info.is_symlink())
+
+    def test_info_stat(self):
+        p = self.cls(self.base)
+        q = p / 'myfile'
+        self.assertRaises(FileNotFoundError, q.info.stat)
+        self.assertRaises(FileNotFoundError, q.info.stat)
+        q.write_text('hullo')
+        st = os.stat(q)
+        self.assertTrue(os.path.samestat(st, q.info.stat()))
+        q.unlink()
+        self.assertTrue(os.path.samestat(st, q.info.stat()))
+        q = p / 'mylink'  # same path, new instance.
+        self.assertRaises(FileNotFoundError, q.info.stat)
 
     def test_stat(self):
         statA = self.cls(self.base).joinpath('fileA').stat()
@@ -3669,6 +3688,12 @@ class CompatiblePathTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             # Verify improper operations still raise a TypeError
             10 / pathlib.PurePath("test")
+
+
+class InfoTest(unittest.TestCase):
+    def test_info_not_instantiable(self):
+        with self.assertRaises(TypeError):
+            pathlib.Info('foo')
 
 
 if __name__ == "__main__":

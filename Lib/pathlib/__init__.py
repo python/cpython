@@ -611,41 +611,44 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
 
-class _Info:
+class Info:
+    """Implementation of pathlib.types.PathInfo that provides cached
+    information about a local filesystem path. Don't try to construct it
+    yourself.
+    """
     __slots__ = ('_path',)
 
     def __init__(self, path):
+        if type(self) is Info:
+            raise TypeError('Info cannot be directly instantiated; '
+                            'use Path.info instead.')
         self._path = path
 
-    def __repr__(self):
-        path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
-        return f"<{path_type}.info>"
-
-    def _stat(self, *, follow_symlinks=True):
+    def stat(self, *, follow_symlinks=True):
         """Return the status as an os.stat_result."""
         raise NotImplementedError
 
     def _posix_permissions(self, *, follow_symlinks=True):
         """Return the POSIX file permissions."""
-        return S_IMODE(self._stat(follow_symlinks=follow_symlinks).st_mode)
+        return S_IMODE(self.stat(follow_symlinks=follow_symlinks).st_mode)
 
     def _file_id(self, *, follow_symlinks=True):
         """Returns the identifier of the file."""
-        st = self._stat(follow_symlinks=follow_symlinks)
+        st = self.stat(follow_symlinks=follow_symlinks)
         return st.st_dev, st.st_ino
 
     def _access_time_ns(self, *, follow_symlinks=True):
         """Return the access time in nanoseconds."""
-        return self._stat(follow_symlinks=follow_symlinks).st_atime_ns
+        return self.stat(follow_symlinks=follow_symlinks).st_atime_ns
 
     def _mod_time_ns(self, *, follow_symlinks=True):
         """Return the modify time in nanoseconds."""
-        return self._stat(follow_symlinks=follow_symlinks).st_mtime_ns
+        return self.stat(follow_symlinks=follow_symlinks).st_mtime_ns
 
     if hasattr(os.stat_result, 'st_flags'):
         def _bsd_flags(self, *, follow_symlinks=True):
             """Return the flags."""
-            return self._stat(follow_symlinks=follow_symlinks).st_flags
+            return self.stat(follow_symlinks=follow_symlinks).st_flags
 
     if hasattr(os, 'listxattr'):
         def _xattrs(self, *, follow_symlinks=True):
@@ -664,7 +667,7 @@ class _Info:
 _STAT_RESULT_ERROR = []  # falsy sentinel indicating stat() failed.
 
 
-class _StatResultInfo(_Info):
+class _StatResultInfo(Info):
     """Implementation of pathlib.types.PathInfo that provides status
     information by querying a wrapped os.stat_result object. Don't try to
     construct it yourself."""
@@ -675,7 +678,7 @@ class _StatResultInfo(_Info):
         self._stat_result = None
         self._lstat_result = None
 
-    def _stat(self, *, follow_symlinks=True):
+    def stat(self, *, follow_symlinks=True):
         """Return the status as an os.stat_result."""
         if follow_symlinks:
             if not self._stat_result:
@@ -703,7 +706,7 @@ class _StatResultInfo(_Info):
             if self._lstat_result is _STAT_RESULT_ERROR:
                 return False
         try:
-            self._stat(follow_symlinks=follow_symlinks)
+            self.stat(follow_symlinks=follow_symlinks)
         except (OSError, ValueError):
             return False
         return True
@@ -717,7 +720,7 @@ class _StatResultInfo(_Info):
             if self._lstat_result is _STAT_RESULT_ERROR:
                 return False
         try:
-            st = self._stat(follow_symlinks=follow_symlinks)
+            st = self.stat(follow_symlinks=follow_symlinks)
         except (OSError, ValueError):
             return False
         return S_ISDIR(st.st_mode)
@@ -731,7 +734,7 @@ class _StatResultInfo(_Info):
             if self._lstat_result is _STAT_RESULT_ERROR:
                 return False
         try:
-            st = self._stat(follow_symlinks=follow_symlinks)
+            st = self.stat(follow_symlinks=follow_symlinks)
         except (OSError, ValueError):
             return False
         return S_ISREG(st.st_mode)
@@ -741,13 +744,13 @@ class _StatResultInfo(_Info):
         if self._lstat_result is _STAT_RESULT_ERROR:
             return False
         try:
-            st = self._stat(follow_symlinks=False)
+            st = self.stat(follow_symlinks=False)
         except (OSError, ValueError):
             return False
         return S_ISLNK(st.st_mode)
 
 
-class _DirEntryInfo(_Info):
+class _DirEntryInfo(Info):
     """Implementation of pathlib.types.PathInfo that provides status
     information by querying a wrapped os.DirEntry object. Don't try to
     construct it yourself."""
@@ -757,7 +760,7 @@ class _DirEntryInfo(_Info):
         super().__init__(entry.path)
         self._entry = entry
 
-    def _stat(self, *, follow_symlinks=True):
+    def stat(self, *, follow_symlinks=True):
         """Return the status as an os.stat_result."""
         return self._entry.stat(follow_symlinks=follow_symlinks)
 
@@ -766,7 +769,7 @@ class _DirEntryInfo(_Info):
         if not follow_symlinks:
             return True
         try:
-            self._stat(follow_symlinks=follow_symlinks)
+            self.stat(follow_symlinks=follow_symlinks)
         except OSError:
             return False
         return True
