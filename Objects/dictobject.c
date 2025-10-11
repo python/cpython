@@ -2230,6 +2230,10 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
                   PyObject *const *values, Py_ssize_t values_offset,
                   Py_ssize_t length)
 {
+    assert(keys == NULL || keys_offset >= 1);
+    assert(values == NULL || values_offset >= 1);
+    assert(length >= 0);
+
     bool unicode = true;
     PyObject *const *ks = keys;
 
@@ -2262,6 +2266,32 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
 
     return dict;
 }
+
+
+PyObject *
+PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
+                 PyObject *const *values, Py_ssize_t values_offset,
+                 Py_ssize_t length)
+{
+    if (keys != NULL && keys_offset < 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "keys_offset must be greater than 0");
+        return NULL;
+    }
+    if (values != NULL && values_offset < 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "values_offset must be greater than 0");
+        return NULL;
+    }
+    if (length < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "length must be greater than or equal to 0");
+        return NULL;
+    }
+
+    return _PyDict_FromItems(keys, keys_offset, values, values_offset, length);
+}
+
 
 /* Note that, for historical reasons, PyDict_GetItem() suppresses all errors
  * that may occur (originally dicts supported only string keys, and exceptions
