@@ -1169,6 +1169,26 @@ class TestPyReplModuleCompleter(TestCase):
             self.assertEqual(output, "import mymodule.")
             del sys.modules["mymodule"]
 
+    def test_already_imported_module_without_origin_or_spec(self):
+        with (tempfile.TemporaryDirectory() as _dir1,
+              patch.object(sys, "path", [_dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            for mod in ("no_origin", "no_spec"):
+                (dir1 / mod).mkdir()
+                (dir1 / mod / "__init__.py").touch()
+                (dir1 / mod / "foo.py").touch()
+                module = importlib.import_module(mod)
+                assert module.__spec__
+                if mod == "no_origin":
+                    module.__spec__.origin = None
+                else:
+                    module.__spec__ = None
+                events = code_to_events(f"import {mod}.\t\n")
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, f"import {mod}.")
+                del sys.modules[mod]
+
     def test_get_path_and_prefix(self):
         cases = (
             ('', ('', '')),
