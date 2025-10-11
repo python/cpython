@@ -1,0 +1,8 @@
+Add a :ref:`PyTupleWriter API <pytuplewriter>` to create :class:`tuple`:
+
+* :c:func:`PyTupleWriter_Create`
+* :c:func:`PyTupleWriter_Add`
+* :c:func:`PyTupleWriter_Finish`
+* :c:func:`PyTupleWriter_Discard`
+
+Patch by Victor Stinner.
