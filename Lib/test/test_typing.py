@@ -4722,6 +4722,20 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             D[()]
 
+    def test_generic_init_subclass_not_called_error(self):
+        class Base:
+            def __init_subclass__(cls) -> None:
+                # Oops, I forgot super().__init_subclass__()!
+                pass
+
+        class Sub(Base, Generic[T]):
+            pass
+
+        with self.assertRaisesRegex(TypeError,
+                                  r"'.*Sub' has no attribute '__parameters__'; "
+                                  r"Maybe you forgot to call super\(\)\.__init_subclass__\(\)\?"):
+            Sub[int]
+
     def test_generic_subclass_checks(self):
         for typ in [list[int], List[int],
                     tuple[int, str], Tuple[int, str],

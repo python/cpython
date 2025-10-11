@@ -1,0 +1,2 @@
+Add suggestion to inscrutable error about ``cls.__parameters__`` not
+existing, because ``super().__init_subclass__()`` was not called.
