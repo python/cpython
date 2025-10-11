@@ -2495,7 +2495,9 @@ class BaseExceptionReportingTests:
         # unprintable, non-string item in the __notes__ sequence
         e.__notes__  = [Unprintable(), 'Final Note']
         err_msg = '<note str() failed>'
-        self.assertEqual(self.get_report(e), vanilla + err_msg + '\nFinal Note\n')
+        msg = self.get_report(e)
+        self.assertIn(vanilla + err_msg + '\nFinal Note\n', msg)
+        self.assertIn("Exception ignored in note str():", msg)
 
         e.__notes__  = "please do not explode me"
         err_msg = "'please do not explode me'"
@@ -4231,8 +4233,14 @@ class GetattrSuggestionTests(BaseSuggestionTests):
                 raise AttributeError(23)
 
         for cls in [A, B, C]:
-            actual = self.get_suggestion(cls(), 'bluch')
-            self.assertIn("blech", actual)
+            try:
+                getattr(cls(), "bluch")
+            except AttributeError:
+                msg = traceback.format_exc()
+                self.assertIn("blech", msg)
+            # actual = self.get_suggestion(cls(), 'bluch')
+            # self.assertIn("blech", actual)
+            # The above using is changed because it will get the warning in the ignore exception
 
 
 class DelattrSuggestionTests(BaseSuggestionTests):
