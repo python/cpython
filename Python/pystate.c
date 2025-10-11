@@ -1490,6 +1490,9 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     _tstate->c_stack_top = 0;
     _tstate->c_stack_hard_limit = 0;
 
+    _tstate->c_stack_init_base = 0;
+    _tstate->c_stack_init_top = 0;
+
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
 
