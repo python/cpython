@@ -29,7 +29,6 @@ Doc/library/profile.rst
 Doc/library/pyexpat.rst
 Doc/library/resource.rst
 Doc/library/select.rst
-Doc/library/signal.rst
 Doc/library/smtplib.rst
 Doc/library/socket.rst
 Doc/library/ssl.rst
