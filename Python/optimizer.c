@@ -1246,6 +1246,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
     sanity_check(executor);
 #endif
+    _PyObject_GC_TRACK(executor);
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->jit_size = 0;
@@ -1257,7 +1258,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         return NULL;
     }
 #endif
-    _PyObject_GC_TRACK(executor);
     return executor;
 }
 
