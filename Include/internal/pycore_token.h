@@ -86,9 +86,9 @@ extern "C" {
 
 /* Special definitions for cooperation with parser */
 
-#define ISTERMINAL(x)           ((x) < NT_OFFSET)
-#define ISNONTERMINAL(x)        ((x) >= NT_OFFSET)
-#define ISEOF(x)                ((x) == ENDMARKER)
+#define ISTERMINAL(x)           ((x) < NT_OFFSET) /* Deprecated and will be removed in 3.17 */
+#define ISNONTERMINAL(x)        ((x) >= NT_OFFSET) /* Deprecated and will be removed in 3.17 */
+#define ISEOF(x)                ((x) == ENDMARKER) /* Deprecated and will be removed in 3.17 */
 #define ISWHITESPACE(x)         ((x) == ENDMARKER || \
                                  (x) == NEWLINE   || \
                                  (x) == INDENT    || \
