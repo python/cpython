@@ -852,6 +852,10 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* Add :c:func:`PyDict_FromItems(keys, values, length) <PyDict_FromItems>`
+  to create a dictionary from *keys* and *values* of *length* items.
+  (Contributed by Victor Stinner in :gh:`139772`.)
+
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
