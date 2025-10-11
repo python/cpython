@@ -2290,7 +2290,7 @@ dummy_func(
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
             PyObject *attr_o;
-            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();.
+            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
             int *Py_MSVC_RESTRICT method_found_ptr = &method_found;
             attr_o = _PySuper_Lookup(cls, self, name,
                                    Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
