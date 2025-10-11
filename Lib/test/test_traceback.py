@@ -225,13 +225,13 @@ class TracebackCases(unittest.TestCase):
             def __str__(self):
                 1/0
         err = traceback.format_exception_only(X, X())
-        self.assertEqual(len(err), 1)
+        self.assertEqual(len(err), 10)
         str_value = '<exception str() failed>'
         if X.__module__ in ('__main__', 'builtins'):
             str_name = X.__qualname__
         else:
             str_name = '.'.join([X.__module__, X.__qualname__])
-        self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
+        self.assertIn("%s: %s\n" % (str_name, str_value), err[0])
 
     def test_format_exception_group_without_show_group(self):
         eg = ExceptionGroup('A', [ValueError('B')])
@@ -2482,7 +2482,10 @@ class BaseExceptionReportingTests:
 
         e.__notes__ = Unprintable()
         err_msg = '<__notes__ repr() failed>'
-        self.assertEqual(self.get_report(e), vanilla + err_msg + '\n')
+        ignore_msg = "Exception ignored in __notes__ repr():"
+        msg = self.get_report(e)
+        self.assertIn(vanilla + err_msg + '\n', msg)
+        self.assertIn(ignore_msg, msg)
 
         # non-string item in the __notes__ sequence
         e.__notes__  = [BadThing(), 'Final Note']
@@ -2602,7 +2605,9 @@ class BaseExceptionReportingTests:
         err = self.get_report(X())
         str_value = '<exception str() failed>'
         str_name = '.'.join([X.__module__, X.__qualname__])
-        self.assertEqual(MODULE_PREFIX + err, f"{str_name}: {str_value}\n")
+        ignore_sentence = "Exception ignored in exception str():"
+        self.assertIn(f"{str_name}: {str_value}\n", MODULE_PREFIX + err)
+        self.assertIn(ignore_sentence, err)
 
 
     # #### Exception Groups ####
