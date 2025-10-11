@@ -224,6 +224,8 @@ class ExceptionTests(unittest.TestCase):
                 if not isinstance(src, str):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
+                if lineno == 1:
+                    line = line.removeprefix('\ufeff')
                 self.assertIn(line, cm.exception.text)
 
     def test_error_offset_continuation_characters(self):
@@ -239,7 +241,9 @@ class ExceptionTests(unittest.TestCase):
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
         check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
               2, 19, encoding='cp1251')
-        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 10)
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 12)
+        check(b'\n\n\nPython = "\xcf\xb3\xf2\xee\xed" +', 4, 12)
+        check(b'\xef\xbb\xbfPython = "\xcf\xb3\xf2\xee\xed" +', 1, 12)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
@@ -287,7 +291,7 @@ class ExceptionTests(unittest.TestCase):
         check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
         check("(1+)", 1, 4)
         check("[interesting\nfoo()\n", 1, 1)
-        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
+        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 1, 0)
         check("""f'''
             {
             (123_a)
