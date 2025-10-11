@@ -2426,5 +2426,25 @@ class MockTest(unittest.TestCase):
         for m in (mock.method, mock.class_method, mock.static_method):
             self.assertIsInstance(m, AsyncMock)
 
+    def test_mock_no_reference_cycle(self):
+        obj = Something()
+        ref = sys.getrefcount(obj)
+        mock = MagicMock()
+        mock.mocked_list = [obj]
+        del mock
+        ref2 = sys.getrefcount(obj)
+        self.assertEqual(ref, ref2)
+
+    def test_mock_patch_no_reference_cycle(self):
+        class Foo():
+            one = 'one'
+
+        obj = Something()
+        ref = sys.getrefcount(obj)
+        with mock.patch.object(Foo, 'one', return_value=3):
+            Foo.one(obj)
+        ref2 = sys.getrefcount(obj)
+        self.assertEqual(ref, ref2)
+
 if __name__ == '__main__':
     unittest.main()

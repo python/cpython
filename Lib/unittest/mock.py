@@ -39,6 +39,7 @@ from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
 from threading import RLock
+import weakref
 
 
 class InvalidSpecError(Exception):
@@ -2195,7 +2196,7 @@ class MagicMixin(Base):
 
         _type = type(self)
         for entry in these_magics:
-            setattr(_type, entry, MagicProxy(entry, self))
+            setattr(_type, entry, MagicProxy(entry, weakref.ref(self)))
 
 
 
@@ -2255,7 +2256,7 @@ class MagicProxy(Base):
 
     def create_mock(self):
         entry = self.name
-        parent = self.parent
+        parent = self.parent()  # self.parent is a weakref to the parent
         m = parent._get_child_mock(name=entry, _new_name=entry,
                                    _new_parent=parent)
         setattr(parent, entry, m)
