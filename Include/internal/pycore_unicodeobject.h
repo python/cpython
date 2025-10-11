@@ -274,8 +274,8 @@ PyAPI_FUNC(PyObject*) _PyUnicode_TransformDecimalAndSpaceToASCII(
 /* --- Methods & Slots ---------------------------------------------------- */
 
 PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
-    PyObject *restrict separator,
-    PyObject *const *restrict items,
+    PyObject * separator,
+    PyObject *const * items,
     Py_ssize_t seqlen
     );
 

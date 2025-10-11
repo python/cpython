@@ -385,7 +385,7 @@ extern "C" {
 #  define Py_NO_INLINE
 #endif
 
-#if defined(_MSC_VER) && !defined(__clang__) && Py_TAIL_CALL_INTERP
+#if defined(_MSC_VER) && !defined(__clang__) && _Py_TAIL_CALL_INTERP
 #  define Py_NO_INLINE_MSVC_TAILCALL Py_NO_INLINE
 #else
 #  define Py_NO_INLINE_MSVC_TAILCALL

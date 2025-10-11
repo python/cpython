@@ -2226,8 +2226,8 @@ _PyDict_NewPresized(Py_ssize_t minused)
 }
 
 Py_NO_INLINE_MSVC_TAILCALL PyObject *
-_PyDict_FromItems(PyObject *const *restrict keys, Py_ssize_t keys_offset,
-                  PyObject *const *restrict values, Py_ssize_t values_offset,
+_PyDict_FromItems(PyObject *const *Py_MSVC_RESTRICT keys, Py_ssize_t keys_offset,
+                  PyObject *const *Py_MSVC_RESTRICT values, Py_ssize_t values_offset,
                   Py_ssize_t length)
 {
     bool unicode = true;

@@ -78,7 +78,7 @@
 #   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg
 #endif
 
-#if Py_TAIL_CALL_INTERP
+#if _Py_TAIL_CALL_INTERP
 #   if defined(_MSC_VER) && !defined(__clang__)
 #      define Py_MUSTTAIL [[msvc::musttail]]
 #      define Py_PRESERVE_NONE_CC __preserve_none
