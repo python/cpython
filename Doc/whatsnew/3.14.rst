@@ -532,7 +532,7 @@ Improved error messages
 
   .. code-block:: pycon
 
-     >>> whille True:
+     >>> while True:
      ...     pass
      Traceback (most recent call last):
        File "<stdin>", line 1
