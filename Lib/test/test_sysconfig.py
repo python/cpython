@@ -889,7 +889,7 @@ class CommandLineTests(unittest.TestCase):
             text=True,
             check=True
         )
-        paths, vars = '', ''
+        paths, vars = 'Paths: \n', 'Variables: \n'
         for key, value in sorted(get_paths().items()):
             paths += f'\t{key} = "{value}"\n'
         for key, value in sorted(get_config_vars().items()):
@@ -898,9 +898,7 @@ class CommandLineTests(unittest.TestCase):
 Python version: "{get_python_version()}"
 Current installation scheme: "{get_default_scheme()}"
 
-Paths: 
 {paths}
-Variables: 
 {vars}'''
         self.assertTrue(output.stdout == mock_result)
 
