@@ -11,7 +11,7 @@ import keyword
 import tokenize
 import io
 import _colorize
-import traceback
+import threading
 
 from contextlib import suppress
 
