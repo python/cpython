@@ -2011,7 +2011,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *res = NULL;
-    PyObject *defaults = _PyTuple_FromArray(defs, defcount);
+    PyObject *defaults = PyTuple_FromArray(defs, defcount);
     if (defaults == NULL) {
         return NULL;
     }

@@ -26,6 +26,10 @@ repos:
         name: Run Ruff (lint) on Tools/peg_generator/
         args: [--exit-non-zero-on-fix, --config=Tools/peg_generator/.ruff.toml]
         files: ^Tools/peg_generator/
+      - id: ruff-check
+        name: Run Ruff (lint) on Tools/wasm/
+        args: [--exit-non-zero-on-fix, --config=Tools/wasm/.ruff.toml]
+        files: ^Tools/wasm/
       - id: ruff-format
         name: Run Ruff (format) on Doc/
         args: [--check]
