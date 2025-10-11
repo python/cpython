@@ -1704,6 +1704,186 @@ class TestForwardRefClass(unittest.TestCase):
             fr.evaluate()
 
 
+class TestFunctoolsPartialMethod(unittest.TestCase):
+    """Tests for get_annotations() with functools.partialmethod objects."""
+
+    def test_partialmethod_unbound(self):
+        """Test unbound partialmethod."""
+        class MyClass:
+            def method(self, a: int, b: str, c: float) -> bool:
+                return True
+
+            partial_method = functools.partialmethod(method, 1)
+
+        result = get_annotations(MyClass.partial_method)
+
+        # 'a' is bound, but 'self' should remain (unbound method)
+        expected = {'self': type(None).__class__, 'b': str, 'c': float, 'return': bool}
+        # Note: 'self' might not have an annotation in the original function
+        # So we check what parameters remain
+        self.assertIn('b', result)
+        self.assertIn('c', result)
+        self.assertIn('return', result)
+        self.assertNotIn('a', result)
+
+    def test_partialmethod_bound(self):
+        """Test bound partialmethod (which becomes a partial object)."""
+        class MyClass:
+            def method(self, a: int, b: str, c: float) -> bool:
+                return True
+
+            partial_method = functools.partialmethod(method, 1)
+
+        obj = MyClass()
+        result = get_annotations(obj.partial_method)
+
+        # 'self' and 'a' are bound, only b, c remain
+        expected = {'b': str, 'c': float, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partialmethod_with_keyword(self):
+        """Test partialmethod with keyword argument."""
+        class MyClass:
+            def method(self, a: int, b: str, c: float) -> bool:
+                return True
+
+            partial_method = functools.partialmethod(method, b="hello")
+
+        result = get_annotations(MyClass.partial_method)
+
+        # Keyword args don't remove params, but 'a' might be affected
+        self.assertIn('b', result)
+        self.assertIn('c', result)
+        self.assertIn('return', result)
+
+    def test_partialmethod_classmethod(self):
+        """Test partialmethod with classmethod."""
+        class MyClass:
+            @classmethod
+            def method(cls, a: int, b: str) -> bool:
+                return True
+
+            partial_method = functools.partialmethod(method, 1)
+
+        result = get_annotations(MyClass.partial_method)
+
+        # 'a' is bound, 'cls' and 'b' should remain
+        self.assertIn('b', result)
+        self.assertIn('return', result)
+        self.assertNotIn('a', result)
+
+    def test_partialmethod_no_annotations(self):
+        """Test partialmethod without annotations."""
+        class MyClass:
+            def method(self, a, b, c):
+                return True
+
+            partial_method = functools.partialmethod(method, 1)
+
+        result = get_annotations(MyClass.partial_method)
+        self.assertEqual(result, {})
+
+
+class TestFunctoolsPartial(unittest.TestCase):
+    """Tests for get_annotations() with functools.partial objects."""
+
+    def test_partial_basic(self):
+        """Test basic partial with positional argument."""
+        def foo(a: int, b: str, c: float) -> bool:
+            return True
+
+        partial_foo = functools.partial(foo, 1)
+        result = get_annotations(partial_foo)
+
+        # 'a' is bound, so only b, c, and return should remain
+        expected = {'b': str, 'c': float, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partial_with_keyword(self):
+        """Test partial with keyword argument."""
+        def foo(a: int, b: str, c: float) -> bool:
+            return True
+
+        partial_foo = functools.partial(foo, b="hello")
+        result = get_annotations(partial_foo)
+
+        # Keyword arguments don't remove parameters from signature
+        expected = {'a': int, 'b': str, 'c': float, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partial_all_args_bound(self):
+        """Test partial with all arguments bound."""
+        def foo(a: int, b: str) -> bool:
+            return True
+
+        partial_foo = functools.partial(foo, 1, "hello")
+        result = get_annotations(partial_foo)
+
+        # Only return annotation should remain
+        expected = {'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partial_no_annotations(self):
+        """Test partial of function without annotations."""
+        def foo(a, b, c):
+            return True
+
+        partial_foo = functools.partial(foo, 1)
+        result = get_annotations(partial_foo)
+
+        # Should return empty dict
+        self.assertEqual(result, {})
+
+    def test_nested_partial(self):
+        """Test nested partial applications."""
+        def foo(a: int, b: str, c: float, d: list) -> bool:
+            return True
+
+        partial1 = functools.partial(foo, 1)
+        partial2 = functools.partial(partial1, "hello")
+        result = get_annotations(partial2)
+
+        # a and b are bound, c and d remain
+        expected = {'c': float, 'd': list, 'return': bool}
+        self.assertEqual(result, expected)
+
+    def test_partial_no_return_annotation(self):
+        """Test partial without return annotation."""
+        def foo(a: int, b: str):
+            pass
+
+        partial_foo = functools.partial(foo, 1)
+        result = get_annotations(partial_foo)
+
+        # Only b should remain
+        expected = {'b': str}
+        self.assertEqual(result, expected)
+
+    def test_partial_format_string(self):
+        """Test partial with STRING format."""
+        def foo(a: int, b: str) -> bool:
+            return True
+
+        partial_foo = functools.partial(foo, 1)
+        result = get_annotations(partial_foo, format=Format.STRING)
+
+        # Should return strings
+        expected = {'b': 'str', 'return': 'bool'}
+        self.assertEqual(result, expected)
+
+    def test_partial_format_forwardref(self):
+        """Test partial with FORWARDREF format."""
+        def foo(a: int, b: str) -> bool:
+            return True
+
+        partial_foo = functools.partial(foo, 1)
+        result = get_annotations(partial_foo, format=Format.FORWARDREF)
+
+        # Should resolve to actual types
+        expected = {'b': str, 'return': bool}
+        self.assertEqual(result, expected)
+
+
 class TestAnnotationLib(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, annotationlib)
