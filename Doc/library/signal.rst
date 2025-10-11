@@ -666,9 +666,8 @@ The :mod:`signal` module defines the following functions:
    *sigset*.
 
    The return value is an object representing the data contained in the
-   :c:type:`siginfo_t` structure, namely: :attr:`!si_signo`, :attr:`!si_code`,
-   :attr:`!si_errno`, :attr:`!si_pid`, :attr:`!si_uid`, :attr:`!si_status`,
-   :attr:`!si_band`.
+   :c:type:`siginfo_t` structure, namely: ``si_signo``, ``si_code``,
+   ``si_errno``, ``si_pid``, ``si_uid``, ``si_status``, ``si_band``.
 
    .. availability:: Unix.
 
