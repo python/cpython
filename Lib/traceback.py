@@ -11,6 +11,7 @@ import keyword
 import tokenize
 import io
 import _colorize
+import traceback
 
 from contextlib import suppress
 
