@@ -438,7 +438,7 @@ tuple_slice(PyTupleObject *a, Py_ssize_t ilow,
     if (ilow == 0 && ihigh == Py_SIZE(a) && PyTuple_CheckExact(a)) {
         return Py_NewRef(a);
     }
-    return _PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
+    return PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
 }
 
 PyObject *
