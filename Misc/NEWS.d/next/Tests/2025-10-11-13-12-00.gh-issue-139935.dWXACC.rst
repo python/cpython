@@ -1,1 +1,0 @@
-Fix: flaky test for ``test_getlogin`` since the errno maybe ENOENT.
