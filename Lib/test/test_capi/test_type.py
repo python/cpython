@@ -274,3 +274,20 @@ class TypeTests(unittest.TestCase):
         obj.__dict__ = {'bar': 3}
         self.assertEqual(obj.__dict__, {'bar': 3})
         self.assertEqual(obj.bar, 3)
+
+    def test_type_lookup(self):
+        type_lookup = _testcapi.type_lookup
+
+        class Parent:
+            parent_attr = "parent"
+
+        class Child(Parent):
+            child_attr = "child"
+
+        self.assertEqual(type_lookup(Child, "parent_attr"), "parent")
+        self.assertEqual(type_lookup(Child, "child_attr"), "child")
+        self.assertEqual(type_lookup(Child, "xxx"), AttributeError)
+
+        # name parameter must be a str
+        self.assertRaises(TypeError, type_lookup, Child, b'name')
+        self.assertRaises(TypeError, type_lookup, Child, 123)
