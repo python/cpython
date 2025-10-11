@@ -925,12 +925,6 @@ Deprecated C APIs
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
-.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
-
-.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
-
-.. include:: ../deprecations/c-api-pending-removal-in-future.rst
-
 Removed C APIs
 --------------
 
