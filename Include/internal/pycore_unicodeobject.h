@@ -11,6 +11,70 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
+
+// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
+#define _Py_MAX_UNICODE 0x10ffff
+
+
+extern int _PyUnicode_IsModifiable(PyObject *unicode);
+
+
+static inline void
+_PyUnicode_Fill(int kind, void *data, Py_UCS4 value,
+                Py_ssize_t start, Py_ssize_t length)
+{
+    assert(0 <= start);
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND: {
+        assert(value <= 0xff);
+        Py_UCS1 ch = (unsigned char)value;
+        Py_UCS1 *to = (Py_UCS1 *)data + start;
+        memset(to, ch, length);
+        break;
+    }
+    case PyUnicode_2BYTE_KIND: {
+        assert(value <= 0xffff);
+        Py_UCS2 ch = (Py_UCS2)value;
+        Py_UCS2 *to = (Py_UCS2 *)data + start;
+        const Py_UCS2 *end = to + length;
+        for (; to < end; ++to) *to = ch;
+        break;
+    }
+    case PyUnicode_4BYTE_KIND: {
+        assert(value <= _Py_MAX_UNICODE);
+        Py_UCS4 ch = value;
+        Py_UCS4 * to = (Py_UCS4 *)data + start;
+        const Py_UCS4 *end = to + length;
+        for (; to < end; ++to) *to = ch;
+        break;
+    }
+    default: Py_UNREACHABLE();
+    }
+}
+
+static inline int
+_PyUnicode_EnsureUnicode(PyObject *obj)
+{
+    if (!PyUnicode_Check(obj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "must be str, not %T", obj);
+        return -1;
+    }
+    return 0;
+}
+
+static inline int
+_PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
+{
+    assert(ch <= _Py_MAX_UNICODE);
+    if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0)
+        return -1;
+    PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
+    writer->pos++;
+    return 0;
+}
+
+
 /* --- Characters Type APIs ----------------------------------------------- */
 
 extern int _PyUnicode_IsXidStart(Py_UCS4 ch);
@@ -82,12 +146,16 @@ extern int _PyUnicode_FormatAdvancedWriter(
     Py_ssize_t start,
     Py_ssize_t end);
 
+/* PyUnicodeWriter_Format, with va_list instead of `...` */
+extern int _PyUnicodeWriter_FormatV(
+    PyUnicodeWriter *writer,
+    const char *format,
+    va_list vargs);
+
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
 extern PyObject* _PyUnicode_EncodeUTF7(
     PyObject *unicode,          /* Unicode object */
-    int base64SetO,             /* Encode RFC2152 Set O characters in base64 */
-    int base64WhiteSpace,       /* Encode whitespace (sp, ht, nl, cr) in base64 */
     const char *errors);        /* error handling */
 
 /* --- UTF-8 Codecs ------------------------------------------------------- */
@@ -235,21 +303,6 @@ extern PyObject* _PyUnicode_XStrip(
     PyObject *sepobj
     );
 
-
-/* Using explicit passed-in values, insert the thousands grouping
-   into the string pointed to by buffer.  For the argument descriptions,
-   see Objects/stringlib/localeutil.h */
-extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
-    _PyUnicodeWriter *writer,
-    Py_ssize_t n_buffer,
-    PyObject *digits,
-    Py_ssize_t d_pos,
-    Py_ssize_t n_digits,
-    Py_ssize_t min_width,
-    const char *grouping,
-    PyObject *thousands_sep,
-    Py_UCS4 *maxchar,
-    int forward);
 
 /* Dedent a string.
    Behaviour is expected to be an exact match of `textwrap.dedent`.

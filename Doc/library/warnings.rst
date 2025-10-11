@@ -80,7 +80,9 @@ The following warnings category classes are currently defined:
 |                                  | unless triggered by code in ``__main__``).    |
 +----------------------------------+-----------------------------------------------+
 | :exc:`SyntaxWarning`             | Base category for warnings about dubious      |
-|                                  | syntactic features.                           |
+|                                  | syntactic features (typically emitted when    |
+|                                  | compiling Python source code, and hence       |
+|                                  | may not be suppressed by runtime filters)     |
 +----------------------------------+-----------------------------------------------+
 | :exc:`RuntimeWarning`            | Base category for warnings about dubious      |
 |                                  | runtime features.                             |
@@ -157,8 +159,10 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
 
 * *message* is a string containing a regular expression that the start of
   the warning message must match, case-insensitively.  In :option:`-W` and
-  :envvar:`PYTHONWARNINGS`, *message* is a literal string that the start of the
-  warning message must contain (case-insensitively), ignoring any whitespace at
+  :envvar:`PYTHONWARNINGS`, if *message* starts and ends with a forward slash
+  (``/``), it specifies a regular expression as above;
+  otherwise it is a literal string that the start of the
+  warning message must match (case-insensitively), ignoring any whitespace at
   the start or end of *message*.
 
 * *category* is a class (a subclass of :exc:`Warning`) of which the warning
@@ -166,7 +170,9 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
 
 * *module* is a string containing a regular expression that the start of the
   fully qualified module name must match, case-sensitively.  In :option:`-W` and
-  :envvar:`PYTHONWARNINGS`, *module* is a literal string that the
+  :envvar:`PYTHONWARNINGS`, if *module* starts and ends with a forward slash
+  (``/``), it specifies a regular expression as above;
+  otherwise it is a literal string that the
   fully qualified module name must be equal to (case-sensitively), ignoring any
   whitespace at the start or end of *module*.
 
@@ -584,7 +590,7 @@ Available Functions
    The deprecation message passed to the decorator is saved in the
    ``__deprecated__`` attribute on the decorated object.
    If applied to an overload, the decorator
-   must be after the :func:`@overload <typing.overload>` decorator
+   must be after the :deco:`~typing.overload` decorator
    for the attribute to exist on the overload as returned by
    :func:`typing.get_overloads`.
 
