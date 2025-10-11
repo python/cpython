@@ -106,6 +106,8 @@ typedef struct _Py_DebugOffsets {
         uint64_t native_thread_id;
         uint64_t datastack_chunk;
         uint64_t status;
+        uint64_t holds_gil;
+        uint64_t gil_requested;
     } thread_state;
 
     // InterpreterFrame offset;
@@ -273,6 +275,8 @@ typedef struct _Py_DebugOffsets {
         .native_thread_id = offsetof(PyThreadState, native_thread_id), \
         .datastack_chunk = offsetof(PyThreadState, datastack_chunk), \
         .status = offsetof(PyThreadState, _status), \
+        .holds_gil = offsetof(PyThreadState, holds_gil), \
+        .gil_requested = offsetof(PyThreadState, gil_requested), \
     }, \
     .interpreter_frame = { \
         .size = sizeof(_PyInterpreterFrame), \
