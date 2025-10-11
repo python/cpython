@@ -19,6 +19,7 @@ typedef struct {
     int optimize;
     int ff_features;
     int syntax_check_only;
+    int enable_warnings;
 
     _Py_c_array_t cf_finally;       /* context for PEP 765 check */
     int cf_finally_used;
@@ -78,7 +79,7 @@ control_flow_in_finally_warning(const char *kw, stmt_ty n, _PyASTPreprocessState
 static int
 before_return(_PyASTPreprocessState *state, stmt_ty node_)
 {
-    if (state->cf_finally_used > 0) {
+    if (state->enable_warnings && state->cf_finally_used > 0) {
         ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
         if (ctx->in_finally && ! ctx->in_funcdef) {
             if (!control_flow_in_finally_warning("return", node_, state)) {
@@ -92,7 +93,7 @@ before_return(_PyASTPreprocessState *state, stmt_ty node_)
 static int
 before_loop_exit(_PyASTPreprocessState *state, stmt_ty node_, const char *kw)
 {
-    if (state->cf_finally_used > 0) {
+    if (state->enable_warnings && state->cf_finally_used > 0) {
         ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
         if (ctx->in_finally && ! ctx->in_loop) {
             if (!control_flow_in_finally_warning(kw, node_, state)) {
@@ -968,7 +969,7 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTPreprocessState *st
 
 int
 _PyAST_Preprocess(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
-                  int ff_features, int syntax_check_only)
+                  int ff_features, int syntax_check_only, int enable_warnings)
 {
     _PyASTPreprocessState state;
     memset(&state, 0, sizeof(_PyASTPreprocessState));
@@ -976,6 +977,7 @@ _PyAST_Preprocess(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
     state.optimize = optimize;
     state.ff_features = ff_features;
     state.syntax_check_only = syntax_check_only;
+    state.enable_warnings = enable_warnings;
     if (_Py_CArray_Init(&state.cf_finally, sizeof(ControlFlowInFinallyContext), 20) < 0) {
         return -1;
     }
