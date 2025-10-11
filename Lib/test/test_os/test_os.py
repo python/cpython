@@ -1501,14 +1501,12 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
         # Test environ.clear() removes the environment variables
         os.environ.clear()
-
         self.assertEqual(os.environ, {})
         if os.supports_bytes_environ:
             self.assertEqual(os.environb, {})
 
         # Repeated calls should be idempotent
         os.environ.clear()
-
         self.assertEqual(os.environ, {})
         if os.supports_bytes_environ:
             self.assertEqual(os.environb, {})
@@ -1521,13 +1519,11 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
         # Test environ.clear() removes the environment variables
         os.environb.clear()
-
         self.assertEqual(os.environ, {})
         self.assertEqual(os.environb, {})
 
         # Repeated calls should be idempotent
         os.environb.clear()
-
         self.assertEqual(os.environ, {})
         self.assertEqual(os.environb, {})
 
@@ -1551,7 +1547,6 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
         # Test that os.clear() clears both os.environ and os.environb
         os.environ.clear()
-
         self.assertEqual(os.environ, {})
         if os.supports_bytes_environ:
             self.assertEqual(os.environb, {})
