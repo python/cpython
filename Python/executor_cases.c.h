@@ -3252,11 +3252,15 @@
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyTypeObject *cls = (PyTypeObject *)class;
-            int *Py_MSVC_RESTRICT method_found = NULL;
+            int method_found = 0;
+            PyObject *attr_o;
+            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
+            int *Py_MSVC_RESTRICT method_found_ptr = &method_found;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *attr_o = _PySuper_Lookup(cls, self, name,
-                Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? (int *)&method_found : NULL);
+            attr_o = _PySuper_Lookup(cls, self, name,
+                                     Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            Py_END_LOCALS_MUST_NOT_ESCAPE();
             if (attr_o == NULL) {
                 JUMP_TO_ERROR();
             }
