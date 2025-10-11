@@ -1933,11 +1933,11 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     }
     ++ok;
 
-    // 2. Non-adaptive run of 5
     Py_ssize_t mu = L;
     Py_ssize_t std = ok >> 1;
     Py_ssize_t m = ok + 5;      // NOTE: a) Calibrate
     if (m < n) {
+        // 2. Non-adaptive run of 5
         for (; ok < m; ++ok) {
             L = 0;
             R = ok;
@@ -1968,7 +1968,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             mu = L;
         }
 
-        // 2. Maybe-adaptive run
+        // 3. Maybe-adaptive run
         Py_ssize_t std_max = ok >> 2;   // NOTE: b) Calibrate
         if (std <= std_max) {
             for (; ok < n; ++ok) {
@@ -2053,7 +2053,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             }
         }
     }
-    // 3. Finish off with simple binary
+    // 4. Finish off with simple binary
     for (; ok < n; ++ok) {
         L = 0;
         R = ok;
