@@ -859,6 +859,8 @@ New features
 
   * :c:func:`PyTupleWriter_Create`
   * :c:func:`PyTupleWriter_Add`
+  * :c:func:`PyTupleWriter_AddSteal`
+  * :c:func:`PyTupleWriter_AddArray`
   * :c:func:`PyTupleWriter_Finish`
   * :c:func:`PyTupleWriter_Discard`
 

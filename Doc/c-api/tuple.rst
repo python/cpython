@@ -204,7 +204,7 @@ object.
    Add an item to *writer*.
 
    * On success, return ``0``.
-   * If *item* is ``NULL``, return ``-1`` with an exception set.
+   * If *item* is ``NULL`` with an exception set, return ``-1``.
    * On error, set an exception and return ``-1``.
 
 .. c:function:: int PyTupleWriter_AddSteal(PyTupleWriter *writer, PyObject *item)
