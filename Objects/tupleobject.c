@@ -1308,6 +1308,13 @@ PyTupleWriter_Create(Py_ssize_t size)
 int
 PyTupleWriter_Add(PyTupleWriter *writer, PyObject *item)
 {
+    if (item == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_BadInternalCall();
+        }
+        return -1;
+    }
+
     if (writer->size >= writer->allocated) {
         if (_PyTupleWriter_SetSize(writer, writer->size + 1, 1) < 0) {
             return -1;
@@ -1323,6 +1330,13 @@ PyTupleWriter_Add(PyTupleWriter *writer, PyObject *item)
 int
 PyTupleWriter_AddSteal(PyTupleWriter *writer, PyObject *item)
 {
+    if (item == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_BadInternalCall();
+        }
+        return -1;
+    }
+
     if (writer->size >= writer->allocated) {
         if (_PyTupleWriter_SetSize(writer, writer->size + 1, 1) < 0) {
             Py_DECREF(item);

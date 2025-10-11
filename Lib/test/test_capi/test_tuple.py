@@ -330,6 +330,11 @@ class TupleWriterTest(unittest.TestCase):
              add(i)
          self.assertEqual(writer.finish(), tuple(range(1024)))
 
+         writer = self.create_writer(1)
+         add = getattr(writer, name)
+         with self.assertRaises(SystemError):
+             add(NULL)
+
     def test_add(self):
          # Test PyTupleWriter_Add()
          self.check_add('add')

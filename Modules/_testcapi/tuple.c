@@ -207,6 +207,8 @@ writer_check(WriterObject *self)
 static PyObject*
 writer_add(PyObject *self_raw, PyObject *item)
 {
+    NULLABLE(item);
+
     WriterObject *self = (WriterObject *)self_raw;
     if (writer_check(self) < 0) {
         return NULL;
@@ -222,12 +224,14 @@ writer_add(PyObject *self_raw, PyObject *item)
 static PyObject*
 writer_add_steal(PyObject *self_raw, PyObject *item)
 {
+    NULLABLE(item);
+
     WriterObject *self = (WriterObject *)self_raw;
     if (writer_check(self) < 0) {
         return NULL;
     }
 
-    if (PyTupleWriter_AddSteal(self->writer, Py_NewRef(item)) < 0) {
+    if (PyTupleWriter_AddSteal(self->writer, Py_XNewRef(item)) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;

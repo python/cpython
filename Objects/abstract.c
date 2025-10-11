@@ -2024,11 +2024,8 @@ PySequence_Tuple(PyObject *v)
     }
 
     for (;;) {
-        PyObject *item = PyIter_Next(it);
-        if (item == NULL) {
-            if (PyErr_Occurred()) {
-                goto fail;
-            }
+        PyObject *item;
+        if (PyIter_NextItem(it, &item) == 0) {
             break;
         }
         if (PyTupleWriter_AddSteal(writer, item) < 0) {
