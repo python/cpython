@@ -1158,6 +1158,9 @@ def _generic_class_getitem(cls, args):
                 f"Parameters to {cls.__name__}[...] must all be unique")
     else:
         # Subscripting a regular Generic subclass.
+        if not hasattr(cls, "__parameters__"):
+            raise RuntimeError(f"{cls.__name__} has no __parameters__, "
+                               f"you may forget to call super().__init_subclass__()")
         for param in cls.__parameters__:
             prepare = getattr(param, '__typing_prepare_subst__', None)
             if prepare is not None:

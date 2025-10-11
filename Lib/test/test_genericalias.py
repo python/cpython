@@ -203,6 +203,20 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(C.__bases__, (list,))
         self.assertEqual(C.__class__, type)
 
+        class Foo:
+            def __init_subclass__(cls) -> None:
+                pass
+
+        class Bar:
+            def __init_subclass__(cls) -> None:
+                super().__init_subclass__()
+
+        class FooSub[T](Foo): pass
+        class BarSub[T](Bar): pass
+        with self.assertRaisesRegex(RuntimeError, '__parameters__'):
+            _ = FooSub[int]
+        _ = BarSub[int]
+
     def test_class_methods(self):
         t = dict[int, None]
         self.assertEqual(dict.fromkeys(range(2)), {0: None, 1: None})  # This works
