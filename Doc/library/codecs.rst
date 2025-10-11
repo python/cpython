@@ -1000,6 +1000,23 @@ byte sequence. The byte swapped version of this character (``0xFFFE``) is an
 illegal character that may not appear in a Unicode text. So when the
 first character in a ``UTF-16`` or ``UTF-32`` byte sequence
 appears to be a ``U+FFFE`` the bytes have to be swapped on decoding.
+
+.. note::
+
+   **Python UTF-16 and UTF-32 Codec Behavior**
+
+   Python's ``UTF-16`` and ``UTF-32`` codecs (when used without an explicit
+   byte order suffix like ``-BE`` or ``-LE``) follow the platform's native
+   byte order when no BOM is present. This differs from the Unicode Standard
+   specification, which states that UTF-16 and UTF-32 encoding schemes should
+   default to big-endian byte order when no BOM is present and no higher-level
+   protocol specifies the byte order.
+
+   This behavior was chosen for practical compatibility reasons, as it avoids
+   byte swapping on the most common platforms, but developers should be aware
+   of this difference when exchanging data with systems that strictly follow
+   the Unicode specification.
+
 Unfortunately the character ``U+FEFF`` had a second purpose as
 a ``ZERO WIDTH NO-BREAK SPACE``: a character that has no width and doesn't allow
 a word to be split. It can e.g. be used to give hints to a ligature algorithm.
