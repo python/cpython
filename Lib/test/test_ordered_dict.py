@@ -1,3 +1,4 @@
+import abc
 import builtins
 import contextlib
 import copy
@@ -5,7 +6,7 @@ import gc
 import operator
 import pickle
 import re
-from random import randrange, shuffle
+from random import randrange, shuffle, randint
 import struct
 import sys
 import unittest
@@ -728,6 +729,22 @@ class OrderedDictTests:
             a | ""
         with self.assertRaises(ValueError):
             a |= "BAD"
+
+    def test_unstable_hash_should_not_abort_issue132461(self):
+        # OrderedDict should raise, not abort, when used with unstable-hash keys
+        large_num = 2**64
+
+        class WeirdBase(abc.ABCMeta):
+            def __hash__(self):
+                return randint(0, large_num)
+
+        class weird_bytes(bytes, metaclass=WeirdBase):
+            pass
+
+        obj = self.OrderedDict()
+        with self.assertRaises(Exception):
+            for x in range(100):
+                obj.setdefault(weird_bytes, None)
 
     @support.cpython_only
     def test_ordered_dict_items_result_gc(self):
