@@ -579,6 +579,13 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(sorted(st.get_identifiers()), [".0", "y"])
         self.assertEqual(st.get_children(), [])
 
+    def test__symtable_refleak(self):
+        # Regression test for reference leak in PyUnicode_FSDecoder.
+        # See https://github.com/python/cpython/issues/139748.
+        mortal_str = 'this is a mortal string'
+        # check error path when 'compile_type' AC conversion failed
+        self.assertRaises(TypeError, symtable.symtable, '', mortal_str, 1)
+
 
 class ComprehensionTests(unittest.TestCase):
     def get_identifiers_recursive(self, st, res):

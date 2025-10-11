@@ -164,6 +164,7 @@
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\typevarobject.c" />
+    <ClCompile Include="..\Objects\unicode_format.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicode_formatter.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />

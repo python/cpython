@@ -11,8 +11,12 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
+
 // Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
 #define _Py_MAX_UNICODE 0x10ffff
+
+
+extern int _PyUnicode_IsModifiable(PyObject *unicode);
 
 
 static inline void
@@ -46,6 +50,28 @@ _PyUnicode_Fill(int kind, void *data, Py_UCS4 value,
     }
     default: Py_UNREACHABLE();
     }
+}
+
+static inline int
+_PyUnicode_EnsureUnicode(PyObject *obj)
+{
+    if (!PyUnicode_Check(obj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "must be str, not %T", obj);
+        return -1;
+    }
+    return 0;
+}
+
+static inline int
+_PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
+{
+    assert(ch <= _Py_MAX_UNICODE);
+    if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0)
+        return -1;
+    PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
+    writer->pos++;
+    return 0;
 }
 
 
