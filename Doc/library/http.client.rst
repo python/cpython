@@ -133,7 +133,7 @@ This module provides the following function:
 
    Parse the headers from a file pointer *fp* representing a HTTP
    request/response. The file has to be a :class:`~io.BufferedIOBase` reader
-   (i.e. not text) and must provide a valid :rfc:`2822` style header.
+   (i.e. not text) and must provide a valid :rfc:`5322` style header.
 
    This function returns an instance of :class:`http.client.HTTPMessage`
    that holds the header fields, but no payload
