@@ -2288,10 +2288,13 @@ dummy_func(
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyTypeObject *cls = (PyTypeObject *)class;
-            // Note: not actually a pointer, just so that we can use restrict on it.
-            int *Py_MSVC_RESTRICT method_found = NULL;
-            PyObject *attr_o = _PySuper_Lookup(cls, self, name,
-                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? (int *)&method_found : NULL);
+            int method_found = 0;
+            PyObject *attr_o;
+            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();.
+            int *Py_MSVC_RESTRICT method_found_ptr = &method_found;
+            attr_o = _PySuper_Lookup(cls, self, name,
+                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
+            Py_END_LOCALS_MUST_NOT_ESCAPE();
             if (attr_o == NULL) {
                 ERROR_NO_POP();
             }
