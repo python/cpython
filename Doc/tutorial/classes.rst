@@ -660,8 +660,8 @@ For examnple::
    >>> cat_dog.who_am_i()
    I'm a Dog
 
-In reality it is a little more complicated. Python uses the C3 method 
-resolution order (MRO). Each class has a built-in attribute 
+In reality it is a little more complicated. Python uses the C3 method
+resolution order (MRO). Each class has a built-in attribute
 :attr:`~type.__mro__` that returns a tuple of classes that are considered
 during method resolution::
 
