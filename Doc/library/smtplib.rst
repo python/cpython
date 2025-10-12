@@ -500,10 +500,6 @@ An :class:`SMTP` instance has the following methods and attributes:
    :exc:`SMTPRecipientsRefused`
       All recipients were refused.  Nobody got the mail.
 
-      .. attribute:: recipients
-
-      A dictionary with information about the refused recipients
-      (like the one returned when at least one recipient was accepted).
 
    :exc:`SMTPHeloError`
       The server didn't reply properly to the ``HELO`` greeting.
