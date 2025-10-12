@@ -70,7 +70,7 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose=False
     return filename
 
 
-def fetch_release_asset(asset_id, output_path, org, verbose=False):
+def fetch_release_asset(asset_id, output_path, org):
     """Download a GitHub release asset.
 
     Release assets need the Content-Type header set to
@@ -78,8 +78,6 @@ def fetch_release_asset(asset_id, output_path, org, verbose=False):
     urlretrieve. Code here is based on urlretrieve.
     """
     url = f'https://api.github.com/repos/{org}/cpython-bin-deps/releases/assets/{asset_id}'
-    if verbose:
-        print(f'Fetching metadata for asset {asset_id}...')
     metadata_resp = get_with_retries(url,
                                      headers={'Accept': 'application/vnd.github+json'})
     json_data = json.loads(metadata_resp.read())
@@ -89,8 +87,6 @@ def fetch_release_asset(asset_id, output_path, org, verbose=False):
     algorithm, hashsum = hash_info.split(':')
     if algorithm != 'sha256':
         raise RuntimeError(f'Unknown hash algorithm {algorithm} for asset {asset_id}')
-    if verbose:
-        print(f'Downloading asset {asset_id}...')
     with contextlib.closing(
         get_with_retries(url, headers={'Accept': 'application/octet-stream'})
     ) as resp:
@@ -101,8 +97,6 @@ def fetch_release_asset(asset_id, output_path, org, verbose=False):
                 fp.write(block)
         if hasher.hexdigest() != hashsum:
             raise RuntimeError('Downloaded content hash did not match!')
-    if verbose:
-        print(f'Successfully downloaded and verified {output_path}')
 
 
 def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
@@ -111,7 +105,7 @@ def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
     if asset_id is None:
         raise ValueError(f'Unknown tag for binary dependencies {tag}')
     output_path = tarball_dir / f'{tag}.tar.xz'
-    fetch_release_asset(asset_id, output_path, org, verbose)
+    fetch_release_asset(asset_id, output_path, org)
     return output_path
 
 
