@@ -575,7 +575,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-eval:
 
-.. function:: eval(source, /, globals=None, locals=None)
+.. function:: eval(source, globals=None, locals=None, /)
 
    :param source:
       A Python expression.
@@ -651,7 +651,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. index:: pair: built-in function; exec
 
-.. function:: exec(source, /, globals=None, locals=None, *, closure=None)
+.. function:: exec(source, globals=None, locals=None, /, *, closure=None)
 
    .. warning::
 
