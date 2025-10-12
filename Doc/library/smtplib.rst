@@ -575,7 +575,6 @@ here.  For details, consult the module code.
    see :meth:`ehlo`.
 .. _smtp-example:
 
-
 SMTP Example
 ------------
 
