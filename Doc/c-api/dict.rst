@@ -40,7 +40,7 @@ Dictionary Objects
 
    Create a dictionary from *keys* and *values* of *length* items.
 
-   Return a new empty dictionary, or ``NULL`` on failure.
+   Return a new dictionary, or ``NULL`` on failure.
 
    .. versionadded:: next
 
