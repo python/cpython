@@ -1837,7 +1837,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             }
 
             std += labs(aL - mu);
-            std /= 2;
+            std /= 2;    // EWMA with alpha=0.5
             mu = aL;
         }
 
@@ -1916,7 +1916,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             }
 
             std += labs(aL - mu);
-            std /= 2;
+            std /= 2;    // EWMA with alpha=0.5
             std_max += !(ok % 4);
             mu = aL;
         }
