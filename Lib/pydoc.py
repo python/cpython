@@ -576,6 +576,20 @@ class Doc:
             docloc = None
         return docloc
 
+    def get_version(self, object):
+        if self._is_stdlib_module(object):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                if hasattr(object, '__version__'):
+                    return str(object.__version__)
+                else:
+                    return None
+        else:
+            if hasattr(object, '__version__'):
+                return str(object.__version__)
+            else:
+                return None
+
     def _is_stdlib_module(self, object, basedir=sysconfig.get_path('stdlib')):
         try:
             file = inspect.getabsfile(object)
@@ -850,16 +864,7 @@ class HTMLDoc(Doc):
             filelink = '(built-in)'
         info = []
 
-        if self._is_stdlib_module(object):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                if has_version := hasattr(object, '__version__'):
-                    version = str(object.__version__)
-        else:
-            if has_version := hasattr(object, '__version__'):
-                version = str(object.__version__)
-
-        if has_version:
+        if (version := self.get_version(object)) is not None:
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             info.append('version %s' % self.escape(version))
@@ -1394,16 +1399,7 @@ location listed above.
                 contents.append(self.docother(value, key, name, maxlen=70))
             result = result + self.section('DATA', '\n'.join(contents))
 
-        if self._is_stdlib_module(object):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                if has_version := hasattr(object, '__version__'):
-                    version = str(object.__version__)
-        else:
-            if has_version := hasattr(object, '__version__'):
-                version = str(object.__version__)
-
-        if has_version:
+        if (version := self.get_version(object)) is not None:
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             result = result + self.section('VERSION', version)
