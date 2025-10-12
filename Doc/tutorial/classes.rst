@@ -640,7 +640,7 @@ multiple base classes looks like this::
 For most purposes, in the simplest cases, you can think of the search for
 attributes inherited from a parent class as breadth-first, left-to-right, not
 searching twice in the same class where there is an overlap in the hierarchy.
- For examnple::
+For examnple::
 
    >>> class Animal:
    ...     def who_am_i(self):
