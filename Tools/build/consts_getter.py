@@ -5,7 +5,7 @@ __file__ = os.path.abspath(__file__)
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 INTERNAL = os.path.join(ROOT, 'Include', 'internal')
 
-def get_nsmallnegints_and_nsmallposints():
+def get_nsmallnegints_and_nsmallposints() -> tuple[int, int]:
     nsmallposints = None
     nsmallnegints = None
     with open(os.path.join(INTERNAL, 'pycore_runtime_structs.h')) as infile:
