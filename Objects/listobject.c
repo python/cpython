@@ -1902,8 +1902,8 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
 
             std += mu < aL ? aL - mu : mu - aL;
             std /= 2;    // EWMA with alpha=0.5
-            std_max += !(ok % 4);
             mu = aL;
+            std_max += !(ok % 4);
         }
     }
 
