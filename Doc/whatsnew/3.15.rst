@@ -612,71 +612,6 @@ module_name
 
 
 
-Deprecated
-==========
-
-New deprecations
-----------------
-
-* CLI:
-
-  * Deprecate :option:`-b` and :option:`!-bb` command-line options
-    and schedule them to become no-op in Python 3.17.
-    These were primarily helpers for the Python 2 -> 3 transition.
-    Starting with Python 3.17, no :exc:`BytesWarning` will be raised
-    for these cases; use a type checker instead.
-
-    (Contributed by Nikita Sobolev in :gh:`136355`.)
-
-* :mod:`hashlib`:
-
-  * In hash function constructors such as :func:`~hashlib.new` or the
-    direct hash-named constructors such as :func:`~hashlib.md5` and
-    :func:`~hashlib.sha256`, their optional initial data parameter could
-    also be passed a keyword argument named ``data=`` or ``string=`` in
-    various :mod:`hashlib` implementations.
-
-    Support for the ``string`` keyword argument name is now deprecated and
-    is slated for removal in Python 3.19. Prefer passing the initial data as
-    a positional argument for maximum backwards compatibility.
-
-    (Contributed by Bénédikt Tran in :gh:`134978`.)
-
-* ``__version__``
-
-  * The ``__version__`` attribute has been deprecated in these standard library
-    modules and will be removed in Python 3.20.
-    Use :py:data:`sys.version_info` instead.
-
-    - :mod:`argparse`
-    - :mod:`csv`
-    - :mod:`!ctypes.macholib`
-    - :mod:`ipaddress`
-    - :mod:`json`
-    - :mod:`logging` (``__date__`` also deprecated)
-    - :mod:`optparse`
-    - :mod:`pickle`
-    - :mod:`platform`
-    - :mod:`re`
-    - :mod:`socketserver`
-    - :mod:`tabnanny`
-    - :mod:`tkinter.font`
-    - :mod:`tkinter.ttk`
-
-    (Contributed by Hugo van Kemenade in :gh:`76007`.)
-
-.. Add deprecations above alphabetically, not here at the end.
-
-.. include:: ../deprecations/pending-removal-in-3.16.rst
-
-.. include:: ../deprecations/pending-removal-in-3.17.rst
-
-.. include:: ../deprecations/pending-removal-in-3.19.rst
-
-.. include:: ../deprecations/pending-removal-in-3.20.rst
-
-.. include:: ../deprecations/pending-removal-in-future.rst
-
 Removed
 =======
 
@@ -816,6 +751,72 @@ zipimport
   (Contributed by Jiahao Li in :gh:`133656`.)
 
 
+Deprecated
+==========
+
+New deprecations
+----------------
+
+* CLI:
+
+  * Deprecate :option:`-b` and :option:`!-bb` command-line options
+    and schedule them to become no-op in Python 3.17.
+    These were primarily helpers for the Python 2 -> 3 transition.
+    Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+    for these cases; use a type checker instead.
+
+    (Contributed by Nikita Sobolev in :gh:`136355`.)
+
+* :mod:`hashlib`:
+
+  * In hash function constructors such as :func:`~hashlib.new` or the
+    direct hash-named constructors such as :func:`~hashlib.md5` and
+    :func:`~hashlib.sha256`, their optional initial data parameter could
+    also be passed a keyword argument named ``data=`` or ``string=`` in
+    various :mod:`hashlib` implementations.
+
+    Support for the ``string`` keyword argument name is now deprecated and
+    is slated for removal in Python 3.19. Prefer passing the initial data as
+    a positional argument for maximum backwards compatibility.
+
+    (Contributed by Bénédikt Tran in :gh:`134978`.)
+
+* ``__version__``
+
+  * The ``__version__`` attribute has been deprecated in these standard library
+    modules and will be removed in Python 3.20.
+    Use :py:data:`sys.version_info` instead.
+
+    - :mod:`argparse`
+    - :mod:`csv`
+    - :mod:`!ctypes.macholib`
+    - :mod:`ipaddress`
+    - :mod:`json`
+    - :mod:`logging` (``__date__`` also deprecated)
+    - :mod:`optparse`
+    - :mod:`pickle`
+    - :mod:`platform`
+    - :mod:`re`
+    - :mod:`socketserver`
+    - :mod:`tabnanny`
+    - :mod:`tkinter.font`
+    - :mod:`tkinter.ttk`
+
+    (Contributed by Hugo van Kemenade in :gh:`76007`.)
+
+.. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
+
+
 Porting to Python 3.15
 ======================
 
@@ -903,39 +904,6 @@ Porting to Python 3.15
   underlying syscall, instead of raising a :exc:`SystemError`.
 
 
-Deprecated C APIs
------------------
-
-* For unsigned integer formats in :c:func:`PyArg_ParseTuple`,
-  accepting Python integers with value that is larger than the maximal value
-  for the C type or less than the minimal value for the corresponding
-  signed integer type of the same size is now deprecated.
-  (Contributed by Serhiy Storchaka in :gh:`132629`.)
-
-* :c:func:`PyBytes_FromStringAndSize(NULL, len) <PyBytes_FromStringAndSize>`
-  and :c:func:`_PyBytes_Resize` are :term:`soft deprecated`,
-  use the :c:type:`PyBytesWriter` API instead.
-  (Contributed by Victor Stinner in :gh:`129813`.)
-
-* Deprecate :c:member:`~PyComplexObject.cval` field of the the
-  :c:type:`PyComplexObject` type.
-  Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
-  to convert a Python complex number to/from the C :c:type:`Py_complex`
-  representation.
-  (Contributed by Sergey B Kirpichev in :gh:`128813`.)
-
-* Functions :c:func:`_Py_c_sum`, :c:func:`_Py_c_diff`, :c:func:`_Py_c_neg`,
-  :c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and
-  :c:func:`_Py_c_abs` are :term:`soft deprecated`.
-  (Contributed by Sergey B Kirpichev in :gh:`128813`.)
-
-* :c:member:`~PyConfig.bytes_warning` is deprecated
-  since 3.15 and will be removed in 3.17.
-  (Contributed by Nikita Sobolev in :gh:`136355`.)
-
-
-.. Add C API deprecations above alphabetically, not here at the end.
-
 Removed C APIs
 --------------
 
@@ -1004,3 +972,37 @@ on Python 3.13 and older.
 .. |pythoncapi_compat_project| replace:: |pythoncapi_compat_project_link|_
 .. |pythoncapi_compat_project_link| replace:: pythoncapi-compat project
 .. _pythoncapi_compat_project_link: https://github.com/python/pythoncapi-compat
+
+
+Deprecated C APIs
+-----------------
+
+* For unsigned integer formats in :c:func:`PyArg_ParseTuple`,
+  accepting Python integers with value that is larger than the maximal value
+  for the C type or less than the minimal value for the corresponding
+  signed integer type of the same size is now deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`132629`.)
+
+* :c:func:`PyBytes_FromStringAndSize(NULL, len) <PyBytes_FromStringAndSize>`
+  and :c:func:`_PyBytes_Resize` are :term:`soft deprecated`,
+  use the :c:type:`PyBytesWriter` API instead.
+  (Contributed by Victor Stinner in :gh:`129813`.)
+
+* Deprecate :c:member:`~PyComplexObject.cval` field of the the
+  :c:type:`PyComplexObject` type.
+  Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
+  to convert a Python complex number to/from the C :c:type:`Py_complex`
+  representation.
+  (Contributed by Sergey B Kirpichev in :gh:`128813`.)
+
+* Functions :c:func:`_Py_c_sum`, :c:func:`_Py_c_diff`, :c:func:`_Py_c_neg`,
+  :c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and
+  :c:func:`_Py_c_abs` are :term:`soft deprecated`.
+  (Contributed by Sergey B Kirpichev in :gh:`128813`.)
+
+* :c:member:`~PyConfig.bytes_warning` is deprecated
+  since 3.15 and will be removed in 3.17.
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
+
+
+.. Add C API deprecations above alphabetically, not here at the end.
