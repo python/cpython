@@ -171,9 +171,9 @@ A nice selection of exceptions is defined as well:
 
    .. attribute:: recipients
 
-      The errors for each recipient are accessible through this
-      attribute, which is a dictionary of exactly thesame sort as
-      :meth:`SMTP.sendmail` returns.
+      A dictionary of exactly the same sort as returned
+      by :meth:`SMTP.sendmail` containing the errors for
+      each recipient.
 
 
 .. exception:: SMTPDataError
