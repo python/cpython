@@ -74,7 +74,8 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             return
         except BaseException:
             if keyboard_interrupted:
-                self.write("\nKeyboardInterrupt\n")
+                if not CAN_USE_PYREPL:
+                    self.write("\nKeyboardInterrupt\n")
             else:
                 self.showtraceback()
             return self.STATEMENT_FAILED
@@ -113,6 +114,7 @@ class REPLThread(threading.Thread):
                     run_multiline_interactive_console,
                 )
                 try:
+                    sys.ps1 = ps1
                     run_multiline_interactive_console(console)
                 except SystemExit:
                     # expected via the `exit` and `quit` commands
