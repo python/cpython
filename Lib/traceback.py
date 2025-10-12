@@ -227,36 +227,45 @@ def _traceback_to_tuples(tb):
 
 
 def _safe_string(value, what, func=str,
-    exception_target=None, exception_exclude=None,
-    _seen=threading.local()):
-    if not hasattr(_seen, "_seen"):
-        _seen._seen = set()
-    if not hasattr(_seen, "times"):
-        _seen.times = 0
+        exception_target=None, exception_exclude=None):
     try:
-        _seen.times += 1
         return func(value)
     except:
         if isinstance(exception_target, list):
             typ, val, tb = sys.exc_info()
-            tb_tuple = _traceback_to_tuples(tb)
-            if tb_tuple not in _seen._seen:
-                _seen._seen.add(tb_tuple)
-                if exception_exclude:
-                    _remove_exception(val, exception_exclude)
-                msg = "".join(TracebackException(typ, val, tb).format())
-                while msg.endswith("\n") or msg.endswith(" "):
-                    msg = msg[:-1]
-                exception_target.append(
-                    f"\nException ignored in {what} {func.__name__}():"
-                )
-                exception_target.append(msg)
+            _add_exception_note(typ, val, tb, f"{what} {func.__name__}()",
+                               exception_target, exception_exclude)
         return f"<{what} {func.__name__}() failed>"
-    finally:
-        _seen.times -= 1
-        if _seen.times <= 0:
-            _seen.times = 0
-            _seen._seen.clear()
+
+
+_ADD_EXC_NOTE_LIMIT = 10
+
+
+def _add_exception_note(exc_type, exc_value, exc_tb, where,
+        exception_target, exception_exclude=None, _seen=threading.local()):
+    if not hasattr(_seen, "_seen"):
+        _seen._seen = set()
+    if not hasattr(_seen, "times"):
+        _seen.times = 0
+    if not isinstance(exception_target, list):
+        return
+    _seen.times += 1
+    tb_tuple = _traceback_to_tuples(exc_tb)
+    if tb_tuple not in _seen._seen and _seen.times <= _ADD_EXC_NOTE_LIMIT:
+        _seen._seen.add(tb_tuple)
+        if exception_exclude:
+            _remove_exception(exc_value, exception_exclude)
+        msg = "".join(TracebackException(exc_type, exc_value, exc_tb).format())
+        while msg.endswith("\n") or msg.endswith(" "):
+            msg = msg[:-1]
+        exception_target.append(
+            f"\nException ignored in {where}:"
+        )
+        exception_target.append(msg)
+    _seen.times -= 1
+    if _seen.times <= 0:
+        _seen.times = 0
+        _seen._seen.clear()
 
 # --
 
@@ -1205,7 +1214,8 @@ class TracebackException:
                         i, "note", str, exception_target, exc_value
                     )
                 )
-        self.__notes__ = final_string_list + exception_target
+        self.__notes__ = final_string_list
+        self.exception_target = exception_target
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = (
@@ -1339,6 +1349,7 @@ class TracebackException:
         well, recursively, with indentation relative to their nesting depth.
         """
         colorize = kwargs.get("colorize", False)
+        exception_target = kwargs.get("exception_target", True)
 
         indent = 3 * _depth * ' '
         if not self._have_exc_type:
@@ -1361,15 +1372,11 @@ class TracebackException:
         else:
             yield from [indent + l for l in self._format_syntax_error(stype, colorize=colorize)]
 
-        if (
-            isinstance(self.__notes__, collections.abc.Sequence)
-            and not isinstance(self.__notes__, (str, bytes))
-        ):
-            for note in self.__notes__:
-                note = _safe_string(note, 'note')
+        for note in self.__notes__:
+            yield from [indent + l + '\n' for l in note.split('\n')]
+        if exception_target:
+            for note in self.exception_target:
                 yield from [indent + l + '\n' for l in note.split('\n')]
-        elif self.__notes__ is not None:
-            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
 
         if self.exceptions and show_group:
             for ex in self.exceptions:
