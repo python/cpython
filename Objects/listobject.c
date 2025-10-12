@@ -1764,134 +1764,6 @@ struct s_MergeState {
    Even in case of error, the output slice will be some permutation of
    the input (nothing is lost or duplicated).
 */
-// static int
-// binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
-// {
-//     Py_ssize_t k; /* for IFLT macro expansion */
-//     PyObject ** const a = ss->keys;
-//     PyObject ** const v = ss->values;
-//     const bool has_values = v != NULL;
-//     PyObject *pivot;
-//     Py_ssize_t M;
-
-//     assert(0 <= ok && ok <= n && 1 <= n && n <= MAX_MINRUN);
-//     /* assert a[:ok] is sorted */
-//     if (! ok)
-//         ++ok;
-//     /* Regular insertion sort has average- and worst-case O(n**2) cost
-//        for both # of comparisons and number of bytes moved. But its branches
-//        are highly predictable, and it loves sorted input (n-1 compares and no
-//        data movement). This is significant in cases like sortperf.py's %sort,
-//        where an out-of-order element near the start of a run is moved into
-//        place slowly but then the remaining elements up to length minrun are
-//        generally at worst one slot away from their correct position (so only
-//        need 1 or 2 commpares to resolve). If comparisons are very fast (such
-//        as for a list of Python floats), the simple inner loop leaves it
-//        very competitive with binary insertion, despite that it does
-//        significantly more compares overall on random data.
-
-//        Binary insertion sort has worst, average, and best case O(n log n)
-//        cost for # of comparisons, but worst and average case O(n**2) cost
-//        for data movement. The more expensive comparisons, the more important
-//        the comparison advantage. But its branches are less predictable the
-//        more "randomish" the data, and that's so significant its worst case
-//        in real life is random input rather than reverse-ordered (which does
-//        about twice the data movement than random input does).
-
-//        Note that the number of bytes moved doesn't seem to matter. MAX_MINRUN
-//        of 64 is so small that the key and value pointers all fit in a corner
-//        of L1 cache, and moving things around in that is very fast. */
-// #if 0 // ordinary insertion sort.
-//     PyObject * vpivot = NULL;
-//     for (; ok < n; ++ok) {
-//         pivot = a[ok];
-//         if (has_values)
-//             vpivot = v[ok];
-//         for (M = ok - 1; M >= 0; --M) {
-//             k = ISLT(pivot, a[M]);
-//             if (k < 0) {
-//                 a[M + 1] = pivot;
-//                 if (has_values)
-//                     v[M + 1] = vpivot;
-//                 goto fail;
-//             }
-//             else if (k) {
-//                 a[M + 1] = a[M];
-//                 if (has_values)
-//                     v[M + 1] = v[M];
-//             }
-//             else
-//                 break;
-//         }
-//         a[M + 1] = pivot;
-//         if (has_values)
-//             v[M + 1] = vpivot;
-//     }
-// #else // binary insertion sort
-//     Py_ssize_t L, R;
-//     for (; ok < n; ++ok) {
-//         /* set L to where a[ok] belongs */
-//         L = 0;
-//         R = ok;
-//         pivot = a[ok];
-//         /* Slice invariants. vacuously true at the start:
-//          * all a[0:L]  <= pivot
-//          * all a[L:R]     unknown
-//          * all a[R:ok]  > pivot
-//          */
-//         assert(L < R);
-//         do {
-//             /* don't do silly ;-) things to prevent overflow when finding
-//                the midpoint; L and R are very far from filling a Py_ssize_t */
-
-// #if 1 // straightforward, but highly unpredictable branch on random data
-//             M = (L + R) >> 1;
-//             IFLT(pivot, a[M])
-//                 R = M;
-//             else
-//                 L = M + 1;
-// #else
-//             /* Try to get compiler to generate conditional move instructions
-//                instead. Works fine, but leaving it disabled for now because
-//                it's not yielding consistently faster sorts. Needs more
-//                investigation. More computation in the inner loop adds its own
-//                costs, which can be significant when compares are fast. */
-//             k = ISLT(pivot, a[M]);
-//             if (k < 0)
-//                 goto fail;
-//             Py_ssize_t Mp1 = M + 1;
-//             R = k ? M : R;
-//             L = k ? L : Mp1;
-// #endif
-//         } while (L < R);
-//         assert(L == R);
-//         /* a[:L] holds all elements from a[:ok] <= pivot now, so pivot belongs
-//            at index L. Slide a[L:ok] to the right a slot to make room for it.
-//            Caution: using memmove is much slower under MSVC 5; we're not
-//            usually moving many slots. Years later: under Visual Studio 2022,
-//            memmove seems just slightly slower than doing it "by hand". */
-//         for (M = ok; M > L; --M)
-//             a[M] = a[M - 1];
-//         a[L] = pivot;
-//         if (has_values) {
-//             pivot = v[ok];
-//             for (M = ok; M > L; --M)
-//                 v[M] = v[M - 1];
-//             v[L] = pivot;
-//         }
-
-//         // Update Adaptive runvars
-//         // std += labs(L - mu);
-//         // std /= 2;
-//         // mu = L;
-//     }
-// #endif // pick binary or regular insertion sort
-//     return 0;
-
-//  fail:
-//     return -1;
-// }
-
 static int
 binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
 {
@@ -1904,171 +1776,247 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
 
     assert(0 <= ok && ok <= n && 1 <= n && n <= MAX_MINRUN);
     /* assert a[:ok] is sorted */
-    ok += !ok;
+    if (! ok)
+        ++ok;
 
-    if (ok == n)
+#if 1   // Adaptivity with post `count_run` optimization of 1st pivot
+    // 1. Known: a[ok] < a[ok - 1], as called after `count_run`
+    if (ok >= n)
         return 0;
-
-    // 1, Known: a[ok] < a[ok - 1]
-    Py_ssize_t L = 0;
-    Py_ssize_t R = ok - 1;
+    Py_ssize_t aL = 0;
+    Py_ssize_t aR = ok - 1;
     pivot = a[ok];
-    assert(L < R);
+    assert(aL < aR);
     do {
-        M = (L + R) >> 1;
+        M = (aL + aR) >> 1;
         IFLT(pivot, a[M])
-            R = M;
+            aR = M;
         else
-            L = M + 1;
-    } while (L < R);
-    assert(L == R);
-    for (M = ok; M > L; --M)
+            aL = M + 1;
+    } while (aL < aR);
+    assert(aL == aR);
+    for (M = ok; M > aL; --M)
         a[M] = a[M - 1];
-    a[L] = pivot;
+    a[aL] = pivot;
     if (has_values) {
         pivot = v[ok];
-        for (M = ok; M > L; --M)
+        for (M = ok; M > aL; --M)
             v[M] = v[M - 1];
-        v[L] = pivot;
+        v[aL] = pivot;
     }
     ++ok;
 
-    Py_ssize_t mu = L;
-    Py_ssize_t std = ok >> 1;
-    Py_ssize_t m = ok + 5;      // NOTE: a) Calibrate
+    Py_ssize_t m = ok < 5 ? 11 : ok + 6;
     if (m < n) {
-        // 2. Non-adaptive run of 5
+        // 2. Small non-adaptive run to acquire good `std` estimate
+        Py_ssize_t mu = aL;
+        Py_ssize_t std = ok >> 1;
         for (; ok < m; ++ok) {
-            L = 0;
-            R = ok;
+            aL = 0;
+            aR = ok;
             pivot = a[ok];
 
-            assert(L < R);
+            assert(aL < aR);
             do {
-                M = (L + R) >> 1;
+                M = (aL + aR) >> 1;
                 IFLT(pivot, a[M])
-                    R = M;
+                    aR = M;
                 else
-                    L = M + 1;
-            } while (L < R);
-            assert(L == R);
+                    aL = M + 1;
+            } while (aL < aR);
+            assert(aL == aR);
 
-            for (M = ok; M > L; --M)
+            for (M = ok; M > aL; --M)
                 a[M] = a[M - 1];
-            a[L] = pivot;
+            a[aL] = pivot;
             if (has_values) {
                 pivot = v[ok];
-                for (M = ok; M > L; --M)
+                for (M = ok; M > aL; --M)
                     v[M] = v[M - 1];
-                v[L] = pivot;
+                v[aL] = pivot;
             }
 
-            std += labs(L - mu);
+            std += labs(aL - mu);
             std /= 2;
-            mu = L;
+            mu = aL;
         }
 
-        // 3. Maybe-adaptive run
-        Py_ssize_t std_max = ok >> 2;   // NOTE: b) Calibrate
-        if (std <= std_max) {
-            for (; ok < n; ++ok) {
-                pivot = a[ok];
-                mu = L;
+        // 3. Adaptive routine while `std` is small enough
+        Py_ssize_t std_max = ok >> 2;
+        for (; ok < n && std <= std_max; ++ok) {
+            pivot = a[ok];
 
-                IFLT(pivot, a[mu]) {
-                    L = 0;
-                    R = mu;
-                    if (L < R) {
-                        std += !std;
-                        M = R - std;
-                        if (M < L)
-                            M = L;
-                        IFLT(pivot, a[M]) {
-                            R = M;
-                            if (L < R) {
-                                M = R - std;
-                                if (M < L)
-                                    M = L;
-                                IFLT(pivot, a[M])
-                                    R = M;
-                                else
-                                    L = M + 1;
-                            }
-                        }
-                        else {
-                            L = M + 1;
+            IFLT(pivot, a[mu]) {
+                aL = 0;
+                aR = mu;
+                if (aL < aR) {
+                    std += !std;
+                    M = aR - std;
+                    if (M < aL)
+                        M = aL;
+                    IFLT(pivot, a[M]) {
+                        aR = M;
+                        if (aL < aR) {
+                            M = aR - std;
+                            if (M < aL)
+                                M = aL;
+                            IFLT(pivot, a[M])
+                                aR = M;
+                            else
+                                aL = M + 1;
                         }
                     }
-                }
-                else {
-                    L = mu + 1;
-                    R = ok;
-                    if (L < R) {
-                        M = L + std;
-                        if (M >= R)
-                            M = R - 1;
-                        IFLT(pivot, a[M]) {
-                            R = M;
-                        }
-                        else {
-                            L = M + 1;
-                            if (L < R) {
-                                M = L + std;
-                                if (M >= R)
-                                    M = R - 1;
-                                IFLT(pivot, a[M])
-                                    R = M;
-                                else
-                                    L = M + 1;
-                            }
-                        }
+                    else {
+                        aL = M + 1;
                     }
-                }
-                // Binary Insertion
-                while (L < R) {
-                    M = (L + R) >> 1;
-                    IFLT(pivot, a[M])
-                        R = M;
-                    else
-                        L = M + 1;
-                }
-
-                for (M = ok; M > L; --M)
-                    a[M] = a[M - 1];
-                a[L] = pivot;
-                if (has_values) {
-                    pivot = v[ok];
-                    for (M = ok; M > L; --M)
-                        v[M] = v[M - 1];
-                    v[L] = pivot;
-                }
-
-                std += labs(L - mu);
-                std /= 2;
-                std_max += !(ok % 4);
-                if (std > std_max) {
-                    ++ok;
-                    break;
                 }
             }
+            else {
+                aL = mu + 1;
+                aR = ok;
+                if (aL < aR) {
+                    M = aL + std;
+                    if (M >= aR)
+                        M = aR - 1;
+                    IFLT(pivot, a[M]) {
+                        aR = M;
+                    }
+                    else {
+                        aL = M + 1;
+                        if (aL < aR) {
+                            M = aL + std;
+                            if (M >= aR)
+                                M = aR - 1;
+                            IFLT(pivot, a[M])
+                                aR = M;
+                            else
+                                aL = M + 1;
+                        }
+                    }
+                }
+            }
+            // Binary Insertion
+            while (aL < aR) {
+                M = (aL + aR) >> 1;
+                IFLT(pivot, a[M])
+                    aR = M;
+                else
+                    aL = M + 1;
+            }
+            assert(aL == aR);
+
+            for (M = ok; M > aL; --M)
+                a[M] = a[M - 1];
+            a[aL] = pivot;
+            if (has_values) {
+                pivot = v[ok];
+                for (M = ok; M > aL; --M)
+                    v[M] = v[M - 1];
+                v[aL] = pivot;
+            }
+
+            std += labs(aL - mu);
+            std /= 2;
+            std_max += !(ok % 4);
+            mu = aL;
         }
     }
-    // 4. Finish off with simple binary
+
+    // 4. Finish off with non-adaptive sort
+#endif  // End of adaptivity
+
+
+    /* Regular insertion sort has average- and worst-case O(n**2) cost
+       for both # of comparisons and number of bytes moved. But its branches
+       are highly predictable, and it loves sorted input (n-1 compares and no
+       data movement). This is significant in cases like sortperf.py's %sort,
+       where an out-of-order element near the start of a run is moved into
+       place slowly but then the remaining elements up to length minrun are
+       generally at worst one slot away from their correct position (so only
+       need 1 or 2 commpares to resolve). If comparisons are very fast (such
+       as for a list of Python floats), the simple inner loop leaves it
+       very competitive with binary insertion, despite that it does
+       significantly more compares overall on random data.
+
+       Binary insertion sort has worst, average, and best case O(n log n)
+       cost for # of comparisons, but worst and average case O(n**2) cost
+       for data movement. The more expensive comparisons, the more important
+       the comparison advantage. But its branches are less predictable the
+       more "randomish" the data, and that's so significant its worst case
+       in real life is random input rather than reverse-ordered (which does
+       about twice the data movement than random input does).
+
+       Note that the number of bytes moved doesn't seem to matter. MAX_MINRUN
+       of 64 is so small that the key and value pointers all fit in a corner
+       of L1 cache, and moving things around in that is very fast. */
+#if 0 // ordinary insertion sort.
+    PyObject * vpivot = NULL;
     for (; ok < n; ++ok) {
+        pivot = a[ok];
+        if (has_values)
+            vpivot = v[ok];
+        for (M = ok - 1; M >= 0; --M) {
+            k = ISLT(pivot, a[M]);
+            if (k < 0) {
+                a[M + 1] = pivot;
+                if (has_values)
+                    v[M + 1] = vpivot;
+                goto fail;
+            }
+            else if (k) {
+                a[M + 1] = a[M];
+                if (has_values)
+                    v[M + 1] = v[M];
+            }
+            else
+                break;
+        }
+        a[M + 1] = pivot;
+        if (has_values)
+            v[M + 1] = vpivot;
+    }
+#else // binary insertion sort
+    Py_ssize_t L, R;
+    for (; ok < n; ++ok) {
+        /* set L to where a[ok] belongs */
         L = 0;
         R = ok;
         pivot = a[ok];
-
+        /* Slice invariants. vacuously true at the start:
+         * all a[0:L]  <= pivot
+         * all a[L:R]     unknown
+         * all a[R:ok]  > pivot
+         */
         assert(L < R);
         do {
+            /* don't do silly ;-) things to prevent overflow when finding
+               the midpoint; L and R are very far from filling a Py_ssize_t */
             M = (L + R) >> 1;
+#if 1 // straightforward, but highly unpredictable branch on random data
             IFLT(pivot, a[M])
                 R = M;
             else
                 L = M + 1;
+#else
+            /* Try to get compiler to generate conditional move instructions
+               instead. Works fine, but leaving it disabled for now because
+               it's not yielding consistently faster sorts. Needs more
+               investigation. More computation in the inner loop adds its own
+               costs, which can be significant when compares are fast. */
+            k = ISLT(pivot, a[M]);
+            if (k < 0)
+                goto fail;
+            Py_ssize_t Mp1 = M + 1;
+            R = k ? M : R;
+            L = k ? L : Mp1;
+#endif
         } while (L < R);
         assert(L == R);
-
+        /* a[:L] holds all elements from a[:ok] <= pivot now, so pivot belongs
+           at index L. Slide a[L:ok] to the right a slot to make room for it.
+           Caution: using memmove is much slower under MSVC 5; we're not
+           usually moving many slots. Years later: under Visual Studio 2022,
+           memmove seems just slightly slower than doing it "by hand". */
         for (M = ok; M > L; --M)
             a[M] = a[M - 1];
         a[L] = pivot;
@@ -2079,6 +2027,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             v[L] = pivot;
         }
     }
+#endif // pick binary or regular insertion sort
     return 0;
 
  fail:

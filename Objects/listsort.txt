@@ -836,6 +836,10 @@ So cutting the number of compares is almost always measurably helpful in
 CPython, and the savings swamp the quadratic-time data movement costs for
 reasonable minrun values.
 
+Additionally, "binary insertion sort" has implemented adaptivity procedure,
+which reduces the number of comparisons for cases where data is already
+sorted to high degree in either forward or reversed order.
+
 
 LEFT OR RIGHT
 gallop_left() and gallop_right() are akin to the Python bisect module's
