@@ -5184,10 +5184,10 @@ class TestStdLib(unittest.TestCase):
                 # __doc__ is too big to check exactly, so treat the same as __init_subclass__
                 for name in ('name','kind','defining_class'):
                     if getattr(v, name) != getattr(r, name):
-                        print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
+                        print('\n%s\nexpected: %s\nactual:   %s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                         failed = True
             elif r != v:
-                print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
+                print('\n%s\nexpected: %s\nactual:   %s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
                 failed = True
         if failed:
             self.fail("result does not equal expected, see print above")
