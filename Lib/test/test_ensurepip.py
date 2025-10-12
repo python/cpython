@@ -60,7 +60,7 @@ class EnsurepipMixin:
         self.run_pip.return_value = 0
         self.addCleanup(run_pip_patch.stop)
 
-        # Ensure zlib is available for tests (unless specifically testing missing zlib)
+        # Allow testing on zlib-less platforms by avoiding the check for zlib in _bootstrap()
         zlib_patch = unittest.mock.patch.dict('sys.modules', {'zlib': unittest.mock.MagicMock()})
         zlib_patch.start()
         self.addCleanup(zlib_patch.stop)
