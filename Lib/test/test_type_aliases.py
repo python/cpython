@@ -321,7 +321,7 @@ class TypeAliasConstructorTest(unittest.TestCase):
             TypeAliasType("A", int, type_params=(T, 2))
 
     def test_keywords(self):
-        TA = TypeAliasType(name="TA", value=int)
+        TA = TypeAliasType(name="TA", value=int, type_params=(), qualname=None)
         self.assertEqual(TA.__name__, "TA")
         self.assertEqual(TA.__qualname__, "TA")
         self.assertIs(TA.__value__, int)
