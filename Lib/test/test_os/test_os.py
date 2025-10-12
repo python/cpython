@@ -764,6 +764,7 @@ class StatAttributeTests(unittest.TestCase):
             if result.stx_mask & bits == bits and hasattr(basic_result, name):
                 x = getattr(result, name)
                 b = getattr(basic_result, name)
+                self.assertEqual(type(x), type(b))
                 if isinstance(x, float):
                     self.assertAlmostEqual(x, b, msg=name)
                 else:
@@ -785,6 +786,12 @@ class StatAttributeTests(unittest.TestCase):
 
         self.assertEqual(result.stx_attributes & result.stx_attributes_mask,
                          result.stx_attributes)
+
+        # statx_result is not a tuple or tuple-like object.
+        with self.assertRaisesRegex(TypeError, 'not subscriptable'):
+            result[0]
+        with self.assertRaisesRegex(TypeError, 'cannot unpack'):
+            _, _ = result
 
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_attributes(self):

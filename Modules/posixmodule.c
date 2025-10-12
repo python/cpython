@@ -2632,6 +2632,7 @@ stat_nanosecond_timestamp(_posixstate *state, time_t sec, unsigned long nsec)
         return PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
     }
     else {
+        PyObject *ns_total = NULL;
         PyObject *s_in_ns = NULL;
         PyObject *s = _PyLong_FromTime_t(sec);
         PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
@@ -2644,17 +2645,13 @@ stat_nanosecond_timestamp(_posixstate *state, time_t sec, unsigned long nsec)
             goto exit;
         }
 
-        PyObject *ns_total = PyNumber_Add(s_in_ns, ns_fractional);
-        if (ns_total == NULL) {
-            goto exit;
-        }
-        return ns_total;
+        ns_total = PyNumber_Add(s_in_ns, ns_fractional);
 
     exit:
         Py_XDECREF(s);
         Py_XDECREF(ns_fractional);
         Py_XDECREF(s_in_ns);
-        return NULL;
+        return ns_total;
     }
 }
 
@@ -3336,7 +3333,7 @@ static PyMemberDef pystatx_result_members[] = {
     MM(st_size, Py_T_ULONGLONG, size, "total size, in bytes"),
     MM(st_blocks, Py_T_ULONGLONG, blocks, "number of blocks allocated"),
     MM(stx_attributes_mask, Py_T_ULONGLONG, attributes_mask,
-        "Linux inode attribute bits supported for this file"),
+        "Mask of supported bits in stx_attributes"),
     MX(st_atime, Py_T_DOUBLE, atime_sec, "time of last access"),
     MX(st_birthtime, Py_T_DOUBLE, btime_sec, "time of creation"),
     MX(st_ctime, Py_T_DOUBLE, ctime_sec, "time of last change"),
@@ -3366,6 +3363,7 @@ pystatx_result_get_u32(PyObject *op, void *context) {
     Py_statx_result *self = (Py_statx_result *) op;
     uint16_t offset = (uintptr_t)context;
     uint32_t val;
+    assert(offset + sizeof(val) <= sizeof(Py_statx_result));
     memcpy(&val, (void *)self + offset, sizeof(val));
     return PyLong_FromUInt32(val);
 }
@@ -3376,6 +3374,7 @@ pystatx_result_get_nsec(PyObject *op, void *context)
     Py_statx_result *self = (Py_statx_result *) op;
     uint16_t offset = (uintptr_t)context;
     struct statx_timestamp val;
+    assert(offset + sizeof(val) <= sizeof(Py_statx_result));
     memcpy(&val, (void *)self + offset, sizeof(val));
     _posixstate *state = PyType_GetModuleState(Py_TYPE(op));
     assert(state != NULL);
@@ -3561,8 +3560,9 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
 {
     if (path_and_dir_fd_invalid("statx", path, dir_fd) ||
         dir_fd_and_fd_invalid("statx", dir_fd, path->fd) ||
-        fd_and_follow_symlinks_invalid("statx", path->fd, follow_symlinks))
+        fd_and_follow_symlinks_invalid("statx", path->fd, follow_symlinks)) {
         return NULL;
+    }
 
     /* reject flags covered by kwargs, but allow unknown flags that may be
        future AT_STATX_* extensions */

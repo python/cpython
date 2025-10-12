@@ -3411,34 +3411,45 @@ features:
 
 .. class:: statx_result
 
-   Object whose attributes correspond roughly to the members of the
-   :c:struct:`!statx` structure. It is used for the result of :func:`os.statx`.
-   :class:`!statx_result` has all of the attributes of :class:`stat_result`
-   available on Linux, but is not a subclass of :class:`stat_result` nor a
-   tuple.  :class:`!statx_result` has the following additional attributes:
+   Information about a file returned by :func:`os.statx`.
+
+   :class:`!statx_result` has all the attributes that :class:`~stat_result` has
+   on Linux, making it :term:`duck-typing` compatible, but
+   :class:`!statx_result` is not a subclass of :class:`~stat_result` and cannot
+   be used as a tuple.
+
+   :class:`!statx_result` has the following additional attributes:
 
    .. attribute:: stx_mask
 
       Bitmask of :const:`STATX_* <STATX_TYPE>` constants specifying the
-      information retrieved, which may differ from what was requested depending
-      on the filesystem, filesystem type, and kernel version.  All attributes
-      of this class are accessible regardless of the value of
-      :attr:`!stx_mask`, and they may have useful fictitious values.  For
-      example, for a file on a network filesystem, :const:`STATX_UID` and
-      :const:`STATX_GID` may be unset because file ownership on the server is
-      based on an external user database, but :attr:`!st_uid` and
-      :attr:`!st_gid` may contain the IDs of the local user who controls the
-      mount.
+      information retrieved, which may differ from what was requested.
 
    .. attribute:: stx_attributes_mask
 
-      Bitmask of :const:`!STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
+      Bitmask of :const:`STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
       specifying the attributes bits supported for this file.
 
    .. attribute:: stx_attributes
 
-      Bitmask of :const:`!STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
+      Bitmask of :const:`STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
       specifying the attributes of this file.
+
+   .. attribute:: stx_dev_major
+
+      Major number of the device on which this file resides.
+
+   .. attribute:: stx_dev_minor
+
+      Minor number of the device on which this file resides.
+
+   .. attribute:: stx_rdev_major
+
+      Major number of the device this file represents.
+
+   .. attribute:: stx_rdev_minor
+
+      Minor number of the device this file represents.
 
    .. attribute:: stx_mnt_id
 
