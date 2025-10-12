@@ -1,9 +1,8 @@
 import unittest
 
-from test.support import import_helper, threading_helper
+from test.support import import_helper, os_helper, threading_helper
 from test.support.threading_helper import run_concurrently
 
-import tempfile
 import threading
 
 gdbm = import_helper.import_module("dbm.gnu")
@@ -67,7 +66,7 @@ class TestGdbm(unittest.TestCase):
             for i in range(KEY_PER_THREAD):
                 db[f"key_{tid}_{i}"] = f"value_{tid}_{i}"
 
-        with tempfile.TemporaryDirectory() as tmpdirname:
+        with os_helper.temp_dir() as tmpdirname:
             db = gdbm.open(f"{tmpdirname}/{gdbm_filename}", "c")
             run_concurrently(
                 worker_func=gdbm_multi_op_worker, nthreads=NTHREADS, args=(db,)
