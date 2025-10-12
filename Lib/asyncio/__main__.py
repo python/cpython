@@ -11,6 +11,7 @@ import sys
 import threading
 import types
 import warnings
+from code import InteractiveConsole
 
 from _colorize import get_theme
 from _pyrepl.console import InteractiveColoredConsole
@@ -26,6 +27,11 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
 
         self.loop = loop
         self.context = contextvars.copy_context()
+
+    def runsource(self, source, filename="<input>", symbol="single"):
+        if CAN_USE_PYREPL:
+            return super().runsource(source, filename, symbol)
+        return InteractiveConsole.runsource(self, source, filename, symbol)
 
     def runcode(self, code):
         global return_code
