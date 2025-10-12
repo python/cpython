@@ -264,24 +264,24 @@ class Completion(unittest.TestCase):
 
     def test_complete_table_indexes_triggers_views(self):
         input_ = textwrap.dedent("""\
-            CREATE TABLE _table (id);
-            CREATE INDEX _index ON _table (id);
-            CREATE TRIGGER _trigger BEFORE INSERT
-                   ON _table BEGIN SELECT 1; END;
-            CREATE VIEW _view AS SELECT 1;
+            CREATE TABLE _Table (id);
+            CREATE INDEX _Index ON _table (id);
+            CREATE TRIGGER _Trigger BEFORE INSERT
+                   ON _Table BEGIN SELECT 1; END;
+            CREATE VIEW _View AS SELECT 1;
 
-            CREATE TEMP TABLE _temp_table (id);
-            CREATE INDEX temp._temp_index ON _temp_table (id);
-            CREATE TEMP TRIGGER _temp_trigger BEFORE INSERT
-                   ON _table BEGIN SELECT 1; END;
-            CREATE TEMP VIEW _temp_view AS SELECT 1;
+            CREATE TEMP TABLE _Temp_table (id);
+            CREATE INDEX temp._Temp_index ON _Temp_table (id);
+            CREATE TEMP TRIGGER _Temp_trigger BEFORE INSERT
+                   ON _Table BEGIN SELECT 1; END;
+            CREATE TEMP VIEW _Temp_view AS SELECT 1;
 
             ATTACH ':memory:' AS attached;
-            CREATE TABLE attached._attached_table (id);
-            CREATE INDEX attached._attached_index ON _attached_table (id);
-            CREATE TRIGGER attached._attached_trigger BEFORE INSERT
-                   ON _attached_table BEGIN SELECT 1; END;
-            CREATE VIEW attached._attached_view AS SELECT 1;
+            CREATE TABLE attached._Attached_table (id);
+            CREATE INDEX attached._Attached_index ON _Attached_table (id);
+            CREATE TRIGGER attached._Attached_trigger BEFORE INSERT
+                   ON _Attached_table BEGIN SELECT 1; END;
+            CREATE VIEW attached._Attached_view AS SELECT 1;
 
             SELECT id FROM _\t\tta\t;
             .quit\n""").encode()
@@ -293,18 +293,18 @@ class Completion(unittest.TestCase):
         candidates = [l.strip() for l in lines[start+1:end]]
         self.assertEqual(candidates,
             [
-                "_attached_index",
-                "_attached_table",
-                "_attached_trigger",
-                "_attached_view",
-                "_index",
-                "_table",
-                "_temp_index",
-                "_temp_table",
-                "_temp_trigger",
-                "_temp_view",
-                "_trigger",
-                "_view",
+                "_Attached_index",
+                "_Attached_table",
+                "_Attached_trigger",
+                "_Attached_view",
+                "_Index",
+                "_Table",
+                "_Temp_index",
+                "_Temp_table",
+                "_Temp_trigger",
+                "_Temp_view",
+                "_Trigger",
+                "_View",
             ],
         )
 
@@ -343,19 +343,24 @@ class Completion(unittest.TestCase):
 
     def test_complete_schemata(self):
         input_ = textwrap.dedent("""\
-            ATTACH ':memory:' AS _attached;
+            ATTACH ':memory:' AS MixedCase;
+            -- Test '_' is escaped in Like pattern filtering
+            ATTACH ':memory:' AS _underscore;
+            -- Let database_list pragma have a 'temp' schema entry
             CREATE TEMP TABLE _table (id);
 
-            SELECT * FROM \t\t_att\t.sqlite_master;
+            SELECT * FROM \t\tmIX\t.sqlite_master;
+            SELECT * FROM _und\t.sqlite_master;
             .quit\n""").encode()
         output = self.write_input(input_)
         lines = output.decode().splitlines()
         indices = [
             i for i, line in enumerate(lines) if line.startswith(self.PS1)
         ]
-        start, end = indices[-3], indices[-2]
+        start, end = indices[-4], indices[-3]
         candidates = [l.strip() for l in lines[start+1:end]]
-        self.assertIn("_attached", candidates)
+        self.assertIn("MixedCase", candidates)
+        self.assertIn("_underscore", candidates)
         self.assertIn("main", candidates)
         self.assertIn("temp", candidates)
 
