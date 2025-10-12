@@ -230,6 +230,7 @@ class PtyTest(unittest.TestCase):
                 os._exit(2)
             os._exit(4)
         else:
+            self.assertFalse(os.get_inheritable(master_fd))
             debug("Waiting for child (%d) to finish." % pid)
             # In verbose mode, we have to consume the debug output from the
             # child or the child will block, causing this test to hang in the

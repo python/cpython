@@ -1299,7 +1299,6 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
-    @os_helper.skip_unless_working_chmod
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
         os.mkdir(pkgdir)
@@ -1334,47 +1333,6 @@ class PydocImportTest(PydocBaseTest):
                 self.assertIn(found, text)
             finally:
                 sys.path[:] = saved_paths
-
-    @unittest.skip('causes undesirable side-effects (#20128)')
-    def test_modules(self):
-        # See Helper.listmodules().
-        num_header_lines = 2
-        num_module_lines_min = 5  # Playing it safe.
-        num_footer_lines = 3
-        expected = num_header_lines + num_module_lines_min + num_footer_lines
-
-        output = StringIO()
-        helper = pydoc.Helper(output=output)
-        helper('modules')
-        result = output.getvalue().strip()
-        num_lines = len(result.splitlines())
-
-        self.assertGreaterEqual(num_lines, expected)
-
-    @unittest.skip('causes undesirable side-effects (#20128)')
-    def test_modules_search(self):
-        # See Helper.listmodules().
-        expected = 'pydoc - '
-
-        output = StringIO()
-        helper = pydoc.Helper(output=output)
-        with captured_stdout() as help_io:
-            helper('modules pydoc')
-        result = help_io.getvalue()
-
-        self.assertIn(expected, result)
-
-    @unittest.skip('some buildbots are not cooperating (#20128)')
-    def test_modules_search_builtin(self):
-        expected = 'gc - '
-
-        output = StringIO()
-        helper = pydoc.Helper(output=output)
-        with captured_stdout() as help_io:
-            helper('modules garbage')
-        result = help_io.getvalue()
-
-        self.assertStartsWith(result, expected)
 
     def test_importfile(self):
         try:
@@ -1944,7 +1902,7 @@ class PydocFodderTest(unittest.TestCase):
         else:
             self.assertIn(' |  get(...) method of builtins.dict instance', lines)
             self.assertIn(' |  dict_get = get(...) method of builtins.dict instance', lines)
-            self.assertIn(' |  sin(...)', lines)
+            self.assertIn(' |  sin(object, /)', lines)
 
         lines = self.getsection(result, f' |  Class methods {where}:', ' |  ' + '-'*70)
         self.assertIn(' |  B_classmethod(x)', lines)
@@ -2034,7 +1992,7 @@ class PydocFodderTest(unittest.TestCase):
         if not support.MISSING_C_DOCSTRINGS:
             self.assertIn('    sin(x, /)', lines)
         else:
-            self.assertIn('    sin(...)', lines)
+            self.assertIn('    sin(object, /)', lines)
 
     def test_html_doc_routines_in_module(self):
         doc = pydoc.HTMLDoc()
@@ -2079,7 +2037,7 @@ class PydocFodderTest(unittest.TestCase):
         if not support.MISSING_C_DOCSTRINGS:
             self.assertIn(' sin(x, /)', lines)
         else:
-            self.assertIn(' sin(...)', lines)
+            self.assertIn(' sin(object, /)', lines)
 
 
 @unittest.skipIf(
