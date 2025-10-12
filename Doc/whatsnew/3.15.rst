@@ -237,7 +237,7 @@ Other language changes
 
   To retain the previous behaviour, Python's UTF-8 mode may be disabled with
   the :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` environment variable or the
-  :option:`-X utf8=0 <-X>` command line option.
+  :option:`-X utf8=0 <-X>` command-line option.
 
   .. seealso:: :pep:`686` for further details.
 
