@@ -1240,18 +1240,16 @@ tuplewriter_free(PyTupleWriter *writer)
 
 
 static int
-_PyTupleWriter_SetSize(PyTupleWriter *writer, size_t size, int resize)
+_PyTupleWriter_SetSize(PyTupleWriter *writer, size_t size)
 {
     assert(size >= 1);
+
+    size += (size >> 1);  // Over-allocate by 50%
 
     if (size > (size_t)PY_SSIZE_T_MAX) {
         /* Check for overflow */
         PyErr_NoMemory();
         return -1;
-    }
-
-    if (resize) {
-        size += (size >> 2);  // Over-allocate by 25%
     }
 
     if (writer->tuple != NULL) {
@@ -1265,7 +1263,7 @@ _PyTupleWriter_SetSize(PyTupleWriter *writer, size_t size, int resize)
             return -1;
         }
 
-        if (resize && writer->size > 0) {
+        if (writer->size > 0) {
             memcpy(_PyTuple_ITEMS(writer->tuple),
                    writer->small_tuple,
                    writer->size * sizeof(writer->small_tuple[0]));
@@ -1327,7 +1325,7 @@ PyTupleWriter_Add(PyTupleWriter *writer, PyObject *item)
     }
 
     if (writer->size >= writer->allocated) {
-        if (_PyTupleWriter_SetSize(writer, writer->size + 1, 1) < 0) {
+        if (_PyTupleWriter_SetSize(writer, writer->size + 1) < 0) {
             return -1;
         }
     }
@@ -1349,7 +1347,7 @@ PyTupleWriter_AddSteal(PyTupleWriter *writer, PyObject *item)
     }
 
     if (writer->size >= writer->allocated) {
-        if (_PyTupleWriter_SetSize(writer, writer->size + 1, 1) < 0) {
+        if (_PyTupleWriter_SetSize(writer, writer->size + 1) < 0) {
             Py_DECREF(item);
             return -1;
         }
@@ -1372,7 +1370,7 @@ PyTupleWriter_AddArray(PyTupleWriter *writer,
 
     if ((writer->size + (size_t)size) > writer->allocated) {
         if (_PyTupleWriter_SetSize(writer,
-                                   writer->size + (size_t)size, 1) < 0) {
+                                   writer->size + (size_t)size) < 0) {
             return -1;
         }
     }
