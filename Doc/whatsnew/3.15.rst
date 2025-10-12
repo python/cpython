@@ -56,8 +56,8 @@ For full details, see the :ref:`changelog <changelog>`.
    so it's worth checking back even after reading earlier versions.
 
 
-Summary --- release highlights
-==============================
+Summary -- Release highlights
+=============================
 
 .. This section singles out the most important changes in Python 3.15.
    Brevity is key.
@@ -615,55 +615,55 @@ module_name
 Deprecated
 ==========
 
-CLI
----
+New deprecations
+----------------
 
-* Deprecate :option:`-b` and :option:`!-bb` command line options
-  and schedule them to become no-op in Python 3.17.
-  These were primarily helpers for the Python 2 -> 3 transition.
-  Starting with Python 3.17, no :exc:`BytesWarning` will be raised
-  for these cases; use a type checker instead.
+* CLI:
 
-  (Contributed by Nikita Sobolev in :gh:`136355`.)
+  * Deprecate :option:`-b` and :option:`!-bb` command-line options
+    and schedule them to become no-op in Python 3.17.
+    These were primarily helpers for the Python 2 -> 3 transition.
+    Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+    for these cases; use a type checker instead.
 
-hashlib
--------
+    (Contributed by Nikita Sobolev in :gh:`136355`.)
 
-* In hash function constructors such as :func:`~hashlib.new` or the
-  direct hash-named constructors such as :func:`~hashlib.md5` and
-  :func:`~hashlib.sha256`, their optional initial data parameter could
-  also be passed a keyword argument named ``data=`` or ``string=`` in
-  various :mod:`hashlib` implementations.
+* :mod:`hashlib`:
 
-  Support for the ``string`` keyword argument name is now deprecated and
-  is slated for removal in Python 3.19. Prefer passing the initial data as
-  a positional argument for maximum backwards compatibility.
+  * In hash function constructors such as :func:`~hashlib.new` or the
+    direct hash-named constructors such as :func:`~hashlib.md5` and
+    :func:`~hashlib.sha256`, their optional initial data parameter could
+    also be passed a keyword argument named ``data=`` or ``string=`` in
+    various :mod:`hashlib` implementations.
 
-  (Contributed by Bénédikt Tran in :gh:`134978`.)
+    Support for the ``string`` keyword argument name is now deprecated and
+    is slated for removal in Python 3.19. Prefer passing the initial data as
+    a positional argument for maximum backwards compatibility.
 
-__version__
------------
+    (Contributed by Bénédikt Tran in :gh:`134978`.)
 
-* The ``__version__`` attribute has been deprecated in these standard library
-  modules and will be removed in Python 3.20.
-  Use :py:data:`sys.version_info` instead.
+* ``__version__``
 
-  - :mod:`argparse`
-  - :mod:`csv`
-  - :mod:`!ctypes.macholib`
-  - :mod:`ipaddress`
-  - :mod:`json`
-  - :mod:`logging` (``__date__`` also deprecated)
-  - :mod:`optparse`
-  - :mod:`pickle`
-  - :mod:`platform`
-  - :mod:`re`
-  - :mod:`socketserver`
-  - :mod:`tabnanny`
-  - :mod:`tkinter.font`
-  - :mod:`tkinter.ttk`
+  * The ``__version__`` attribute has been deprecated in these standard library
+    modules and will be removed in Python 3.20.
+    Use :py:data:`sys.version_info` instead.
 
-  (Contributed by Hugo van Kemenade in :gh:`76007`.)
+    - :mod:`argparse`
+    - :mod:`csv`
+    - :mod:`!ctypes.macholib`
+    - :mod:`ipaddress`
+    - :mod:`json`
+    - :mod:`logging` (``__date__`` also deprecated)
+    - :mod:`optparse`
+    - :mod:`pickle`
+    - :mod:`platform`
+    - :mod:`re`
+    - :mod:`socketserver`
+    - :mod:`tabnanny`
+    - :mod:`tkinter.font`
+    - :mod:`tkinter.ttk`
+
+    (Contributed by Hugo van Kemenade in :gh:`76007`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 
