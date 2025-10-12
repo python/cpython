@@ -221,7 +221,7 @@ A nice selection of exceptions is defined as well:
 SMTP Objects
 ------------
 
-An :class:`SMTP` instance has the following methods and attributes:
+An :class:`SMTP` instance has the following methods:
 
 .. method:: SMTP.set_debuglevel(level)
 
