@@ -884,7 +884,7 @@ Porting to Python 3.15
 
 * Private functions promoted to public C APIs:
 
-  * :c:func:`_PyDict_NewPresized`: use :c:func:`PyDict_NewPresized`.
+  * :c:func:`!_PyDict_NewPresized`: use :c:func:`PyDict_NewPresized`.
 
   The |pythoncapi_compat_project| can be used to get most of these new
   functions on Python 3.14 and older.
