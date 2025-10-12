@@ -573,6 +573,8 @@ here.  For details, consult the module code.
 
    A dictionary of the names of SMTP service extensions supported by the server,
    see :meth:`ehlo`.
+
+
 .. _smtp-example:
 
 SMTP Example
