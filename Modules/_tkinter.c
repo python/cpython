@@ -3080,33 +3080,60 @@ Tkapp_Dealloc(PyObject *op)
 
 /**** Tkinter Module ****/
 
+typedef struct {
+    PyObject* tuple;
+    Py_ssize_t size; /* current size */
+    Py_ssize_t maxsize; /* allocated size */
+} FlattenContext;
+
 static int
-_flatten1(PyTupleWriter *writer, PyObject *item, int depth)
+_bump(FlattenContext* context, Py_ssize_t size)
+{
+    /* expand tuple to hold (at least) size new items.
+       return true if successful, false if an exception was raised */
+
+    Py_ssize_t maxsize = context->maxsize * 2;  /* never overflows */
+
+    if (maxsize < context->size + size)
+        maxsize = context->size + size;  /* never overflows */
+
+    context->maxsize = maxsize;
+
+    return _PyTuple_Resize(&context->tuple, maxsize) >= 0;
+}
+
+static int
+_flatten1(FlattenContext* context, PyObject* item, int depth)
 {
     /* add tuple or list to argument tuple (recursively) */
+
+    Py_ssize_t i, size;
 
     if (depth > 1000) {
         PyErr_SetString(PyExc_ValueError,
                         "nesting too deep in _flatten");
         return 0;
-    }
-
-    if (PyTuple_Check(item) || PyList_Check(item)) {
-        Py_ssize_t size = PySequence_Fast_GET_SIZE(item);
+    } else if (PyTuple_Check(item) || PyList_Check(item)) {
+        size = PySequence_Fast_GET_SIZE(item);
+        /* preallocate (assume no nesting) */
+        if (context->size + size > context->maxsize &&
+            !_bump(context, size))
+            return 0;
         /* copy items to output tuple */
-        for (Py_ssize_t i = 0; i < size; i++) {
+        for (i = 0; i < size; i++) {
             PyObject *o = PySequence_Fast_GET_ITEM(item, i);
             if (PyList_Check(o) || PyTuple_Check(o)) {
-                if (!_flatten1(writer, o, depth + 1))
+                if (!_flatten1(context, o, depth + 1))
                     return 0;
             } else if (o != Py_None) {
-                if (PyTupleWriter_Add(writer, o) < 0) {
+                if (context->size + 1 > context->maxsize &&
+                    !_bump(context, 1))
                     return 0;
-                }
+                PyTuple_SET_ITEM(context->tuple,
+                                 context->size++, Py_NewRef(o));
             }
         }
-    }
-    else {
+    } else {
         PyErr_SetString(PyExc_TypeError, "argument must be sequence");
         return 0;
     }
@@ -3125,25 +3152,29 @@ static PyObject *
 _tkinter__flatten(PyObject *module, PyObject *item)
 /*[clinic end generated code: output=cad02a3f97f29862 input=6b9c12260aa1157f]*/
 {
-    Py_ssize_t maxsize = PySequence_Size(item);
-    if (maxsize < 0) {
+    FlattenContext context;
+
+    context.maxsize = PySequence_Size(item);
+    if (context.maxsize < 0)
         return NULL;
-    }
-    if (maxsize == 0) {
+    if (context.maxsize == 0)
         return PyTuple_New(0);
-    }
 
-    PyTupleWriter *writer = PyTupleWriter_Create(maxsize);
-    if (writer == NULL) {
+    context.tuple = PyTuple_New(context.maxsize);
+    if (!context.tuple)
+        return NULL;
+
+    context.size = 0;
+
+    if (!_flatten1(&context, item, 0)) {
+        Py_XDECREF(context.tuple);
         return NULL;
     }
 
-    if (!_flatten1(writer, item, 0)) {
-        PyTupleWriter_Discard(writer);
+    if (_PyTuple_Resize(&context.tuple, context.size))
         return NULL;
-    }
 
-    return PyTupleWriter_Finish(writer);
+    return context.tuple;
 }
 
 /*[clinic input]
