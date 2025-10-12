@@ -1375,6 +1375,14 @@ PyTupleWriter_AddArray(PyTupleWriter *writer,
 }
 
 
+PyObject**
+_PyTupleWriter_GetItems(PyTupleWriter *writer, Py_ssize_t *size)
+{
+    *size = writer->size;
+    return writer->items;
+}
+
+
 static inline void
 tuplewriter_free(PyTupleWriter *writer)
 {

@@ -153,13 +153,17 @@ tuple_index(PyObject *self, Py_ssize_t len, PyObject *item)
 }
 
 static int
-tuple_add(PyObject *self, Py_ssize_t len, PyObject *item)
+tuplewriter_add(PyTupleWriter *writer, PyObject *item)
 {
-    if (tuple_index(self, len, item) < 0) {
-        PyTuple_SET_ITEM(self, len, Py_NewRef(item));
-        return 1;
+    Py_ssize_t len;
+    PyObject **items = _PyTupleWriter_GetItems(writer, &len);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        if (items[i] == item) {
+            return 0;
+        }
     }
-    return 0;
+
+    return PyTupleWriter_Add(writer, item);
 }
 
 PyObject *
@@ -175,13 +179,10 @@ _Py_make_parameters(PyObject *args)
         }
     }
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t len = nargs;
-    PyObject *parameters = PyTuple_New(len);
+    PyTupleWriter *parameters = PyTupleWriter_Create(nargs);
     if (parameters == NULL) {
-        Py_XDECREF(tuple_args);
-        return NULL;
+        goto error;
     }
-    Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
         // We don't want __parameters__ descriptor of a bare Python class.
@@ -190,60 +191,47 @@ _Py_make_parameters(PyObject *args)
         }
         int rc = PyObject_HasAttrWithError(t, &_Py_ID(__typing_subst__));
         if (rc < 0) {
-            Py_DECREF(parameters);
-            Py_XDECREF(tuple_args);
-            return NULL;
+            goto error;
         }
         if (rc) {
-            iparam += tuple_add(parameters, iparam, t);
+            if (tuplewriter_add(parameters, t) < 0) {
+                goto error;
+            }
         }
         else {
             PyObject *subparams;
             if (PyObject_GetOptionalAttr(t, &_Py_ID(__parameters__),
                                      &subparams) < 0) {
-                Py_DECREF(parameters);
-                Py_XDECREF(tuple_args);
-                return NULL;
+                goto error;
             }
             if (!subparams && (PyTuple_Check(t) || PyList_Check(t))) {
                 // Recursively call _Py_make_parameters for lists/tuples and
                 // add the results to the current parameters.
                 subparams = _Py_make_parameters(t);
                 if (subparams == NULL) {
-                    Py_DECREF(parameters);
-                    Py_XDECREF(tuple_args);
-                    return NULL;
+                    goto error;
                 }
             }
             if (subparams && PyTuple_Check(subparams)) {
                 Py_ssize_t len2 = PyTuple_GET_SIZE(subparams);
-                Py_ssize_t needed = len2 - 1 - (iarg - iparam);
-                if (needed > 0) {
-                    len += needed;
-                    if (_PyTuple_Resize(&parameters, len) < 0) {
-                        Py_DECREF(subparams);
-                        Py_DECREF(parameters);
-                        Py_XDECREF(tuple_args);
-                        return NULL;
-                    }
-                }
                 for (Py_ssize_t j = 0; j < len2; j++) {
                     PyObject *t2 = PyTuple_GET_ITEM(subparams, j);
-                    iparam += tuple_add(parameters, iparam, t2);
+                    if (tuplewriter_add(parameters, t2) < 0) {
+                        Py_DECREF(subparams);
+                        goto error;
+                    }
                 }
             }
             Py_XDECREF(subparams);
         }
     }
-    if (iparam < len) {
-        if (_PyTuple_Resize(&parameters, iparam) < 0) {
-            Py_XDECREF(parameters);
-            Py_XDECREF(tuple_args);
-            return NULL;
-        }
-    }
     Py_XDECREF(tuple_args);
-    return parameters;
+    return PyTupleWriter_Finish(parameters);
+
+error:
+    PyTupleWriter_Discard(parameters);
+    Py_XDECREF(tuple_args);
+    return NULL;
 }
 
 /* If obj is a generic alias, substitute type variables params

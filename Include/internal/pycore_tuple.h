@@ -71,6 +71,10 @@ _PyTuple_Recycle(PyObject *op)
 #endif
 #define _PyTuple_HASH_EMPTY (_PyTuple_HASH_XXPRIME_5 + (_PyTuple_HASH_XXPRIME_5 ^ 3527539UL))
 
+extern PyObject** _PyTupleWriter_GetItems(
+    PyTupleWriter *writer,
+    Py_ssize_t *size);
+
 #ifdef __cplusplus
 }
 #endif
