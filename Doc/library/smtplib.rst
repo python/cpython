@@ -148,7 +148,7 @@ A nice selection of exceptions is defined as well:
 
    Base class for all exceptions that include an SMTP error code. These exceptions
    are generated in some instances when the SMTP server returns an error code.
-   
+
    .. attribute:: smtp_code
 
       The error code.
@@ -229,8 +229,9 @@ An :class:`SMTP` instance has the following methods and attributes:
 
 
 .. attribute:: SMTP.ehlo_resp
-   
+
    The response to the ``EHLO`` command, see :meth:`ehlo`.
+
 
 .. attribute:: SMTP.does_esmtp
 
