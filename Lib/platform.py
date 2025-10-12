@@ -29,7 +29,7 @@
 #
 #    History:
 #
-#    <see CVS and SVN checkin messages for history>
+#    <see checkin messages for history>
 #
 #    1.0.9 - added invalidate_caches() function to invalidate cached values
 #    1.0.8 - changed Windows support to read version from kernel32.dll
@@ -110,7 +110,7 @@ __copyright__ = """
 
 """
 
-__version__ = '1.0.9'
+__version__ = '1.1.0'
 
 import collections
 import os
@@ -526,53 +526,6 @@ def ios_ver(system="", release="", model="", is_simulator=False):
             return IOSVersionInfo(*result)
 
     return IOSVersionInfo(system, release, model, is_simulator)
-
-
-def _java_getprop(name, default):
-    """This private helper is deprecated in 3.13 and will be removed in 3.15"""
-    from java.lang import System
-    try:
-        value = System.getProperty(name)
-        if value is None:
-            return default
-        return value
-    except AttributeError:
-        return default
-
-def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
-
-    """ Version interface for Jython.
-
-        Returns a tuple (release, vendor, vminfo, osinfo) with vminfo being
-        a tuple (vm_name, vm_release, vm_vendor) and osinfo being a
-        tuple (os_name, os_version, os_arch).
-
-        Values which cannot be determined are set to the defaults
-        given as parameters (which all default to '').
-
-    """
-    import warnings
-    warnings._deprecated('java_ver', remove=(3, 15))
-    # Import the needed APIs
-    try:
-        import java.lang  # noqa: F401
-    except ImportError:
-        return release, vendor, vminfo, osinfo
-
-    vendor = _java_getprop('java.vendor', vendor)
-    release = _java_getprop('java.version', release)
-    vm_name, vm_release, vm_vendor = vminfo
-    vm_name = _java_getprop('java.vm.name', vm_name)
-    vm_vendor = _java_getprop('java.vm.vendor', vm_vendor)
-    vm_release = _java_getprop('java.vm.version', vm_release)
-    vminfo = vm_name, vm_release, vm_vendor
-    os_name, os_version, os_arch = osinfo
-    os_arch = _java_getprop('java.os.arch', os_arch)
-    os_name = _java_getprop('java.os.name', os_name)
-    os_version = _java_getprop('java.os.version', os_version)
-    osinfo = os_name, os_version, os_arch
-
-    return release, vendor, vminfo, osinfo
 
 
 AndroidVer = collections.namedtuple(
@@ -1034,13 +987,6 @@ def uname():
                     version = '16bit'
             system = 'Windows'
 
-        elif system[:4] == 'java':
-            release, vendor, vminfo, osinfo = java_ver()
-            system = 'Java'
-            version = ', '.join(vminfo)
-            if not version:
-                version = vendor
-
     # System specific extensions
     if system == 'OpenVMS':
         # OpenVMS seems to have release and version mixed up
@@ -1370,15 +1316,6 @@ def platform(aliased=False, terse=False):
         platform = _platform(system, release, machine, processor,
                              'with',
                              libcname+libcversion)
-    elif system == 'Java':
-        # Java platforms
-        r, v, vminfo, (os_name, os_version, os_arch) = java_ver()
-        if terse or not os_name:
-            platform = _platform(system, release, version)
-        else:
-            platform = _platform(system, release, version,
-                                 'on',
-                                 os_name, os_version, os_arch)
 
     else:
         # Generic handler

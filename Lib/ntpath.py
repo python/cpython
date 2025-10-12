@@ -661,9 +661,10 @@ else:
         # 87: ERROR_INVALID_PARAMETER
         # 123: ERROR_INVALID_NAME
         # 161: ERROR_BAD_PATHNAME
+        # 1005: ERROR_UNRECOGNIZED_VOLUME
         # 1920: ERROR_CANT_ACCESS_FILE
         # 1921: ERROR_CANT_RESOLVE_FILENAME (implies unfollowable symlink)
-        allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 53, 65, 67, 87, 123, 161, 1920, 1921
+        allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 53, 65, 67, 87, 123, 161, 1005, 1920, 1921
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.

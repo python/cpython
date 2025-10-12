@@ -551,11 +551,12 @@ Patterns and classes
 
 If you are using classes to structure your data, you can use as a pattern
 the class name followed by an argument list resembling a constructor. This
-pattern has the ability to capture class attributes into variables::
+pattern has the ability to capture instance attributes into variables::
 
     class Point:
-        x: int
-        y: int
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
 
     def location(point):
         match point:

@@ -2,7 +2,7 @@
 =====================================================================
 
 .. module:: decimal
-   :synopsis: Implementation of the General Decimal Arithmetic  Specification.
+   :synopsis: Implementation of the General Decimal Arithmetic Specification.
 
 .. moduleauthor:: Eric Price <eprice at tjhsst.edu>
 .. moduleauthor:: Facundo Batista <facundo at taniquetil.com.ar>
@@ -121,7 +121,7 @@ reset them before monitoring a calculation.
 
 .. _decimal-tutorial:
 
-Quick-start Tutorial
+Quick-start tutorial
 --------------------
 
 The usual start to using decimals is importing the module, viewing the current
@@ -1096,40 +1096,52 @@ In addition to the three supplied contexts, new contexts can be created with the
    default values are copied from the :const:`DefaultContext`.  If the *flags*
    field is not specified or is :const:`None`, all flags are cleared.
 
-   *prec* is an integer in the range [``1``, :const:`MAX_PREC`] that sets
-   the precision for arithmetic operations in the context.
+   .. attribute:: prec
 
-   The *rounding* option is one of the constants listed in the section
-   `Rounding Modes`_.
+      An integer in the range [``1``, :const:`MAX_PREC`] that sets
+      the precision for arithmetic operations in the context.
 
-   The *traps* and *flags* fields list any signals to be set. Generally, new
-   contexts should only set traps and leave the flags clear.
+   .. attribute:: rounding
 
-   The *Emin* and *Emax* fields are integers specifying the outer limits allowable
-   for exponents. *Emin* must be in the range [:const:`MIN_EMIN`, ``0``],
-   *Emax* in the range [``0``, :const:`MAX_EMAX`].
+      One of the constants listed in the section `Rounding Modes`_.
 
-   The *capitals* field is either ``0`` or ``1`` (the default). If set to
-   ``1``, exponents are printed with a capital ``E``; otherwise, a
-   lowercase ``e`` is used: ``Decimal('6.02e+23')``.
+   .. attribute:: traps
+                  flags
 
-   The *clamp* field is either ``0`` (the default) or ``1``.
-   If set to ``1``, the exponent ``e`` of a :class:`Decimal`
-   instance representable in this context is strictly limited to the
-   range ``Emin - prec + 1 <= e <= Emax - prec + 1``.  If *clamp* is
-   ``0`` then a weaker condition holds: the adjusted exponent of
-   the :class:`Decimal` instance is at most :attr:`~Context.Emax`.  When *clamp* is
-   ``1``, a large normal number will, where possible, have its
-   exponent reduced and a corresponding number of zeros added to its
-   coefficient, in order to fit the exponent constraints; this
-   preserves the value of the number but loses information about
-   significant trailing zeros.  For example::
+      Lists of any signals to be set. Generally, new contexts should only set
+      traps and leave the flags clear.
 
-      >>> Context(prec=6, Emax=999, clamp=1).create_decimal('1.23e999')
-      Decimal('1.23000E+999')
+   .. attribute:: Emin
+                  Emax
 
-   A *clamp* value of ``1`` allows compatibility with the
-   fixed-width decimal interchange formats specified in IEEE 754.
+      Integers specifying the outer limits allowable for exponents. *Emin* must
+      be in the range [:const:`MIN_EMIN`, ``0``], *Emax* in the range
+      [``0``, :const:`MAX_EMAX`].
+
+   .. attribute:: capitals
+
+      Either ``0`` or ``1`` (the default). If set to
+      ``1``, exponents are printed with a capital ``E``; otherwise, a
+      lowercase ``e`` is used: ``Decimal('6.02e+23')``.
+
+   .. attribute:: clamp
+
+      Either ``0`` (the default) or ``1``.  If set to ``1``, the exponent ``e``
+      of a :class:`Decimal` instance representable in this context is strictly
+      limited to the range ``Emin - prec + 1 <= e <= Emax - prec + 1``.
+      If *clamp* is ``0`` then a weaker condition holds: the adjusted exponent of
+      the :class:`Decimal` instance is at most :attr:`~Context.Emax`.  When *clamp* is
+      ``1``, a large normal number will, where possible, have its
+      exponent reduced and a corresponding number of zeros added to its
+      coefficient, in order to fit the exponent constraints; this
+      preserves the value of the number but loses information about
+      significant trailing zeros.  For example::
+
+         >>> Context(prec=6, Emax=999, clamp=1).create_decimal('1.23e999')
+         Decimal('1.23000E+999')
+
+      A *clamp* value of ``1`` allows compatibility with the
+      fixed-width decimal interchange formats specified in IEEE 754.
 
    The :class:`Context` class defines several general purpose methods as well as
    a large number of methods for doing arithmetic directly in a given context.
@@ -1769,7 +1781,7 @@ The following table summarizes the hierarchy of signals::
 
 .. _decimal-notes:
 
-Floating-Point Notes
+Floating-point notes
 --------------------
 
 

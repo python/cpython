@@ -857,6 +857,8 @@ exit:
     return return_value;
 }
 
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+
 PyDoc_STRVAR(_winapi_GetShortPathName__doc__,
 "GetShortPathName($module, /, path)\n"
 "--\n"
@@ -929,6 +931,8 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
 PyDoc_STRVAR(_winapi_GetStdHandle__doc__,
 "GetStdHandle($module, std_handle, /)\n"
@@ -2161,4 +2165,8 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6cd07628af447d0a input=a9049054013a1b77]*/
+
+#ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
+    #define _WINAPI_GETSHORTPATHNAME_METHODDEF
+#endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
+/*[clinic end generated code: output=ede63eaaf63aa7e6 input=a9049054013a1b77]*/

@@ -99,12 +99,17 @@ WIN32 is still required for the locale module.
 #  define Py_DEBUG 1
 #endif
 
-/* Define to 1 if you want to disable the GIL */
-/* Uncomment the definition for free-threaded builds, or define it manually
- * when compiling extension modules. Note that we test with #ifdef, so
- * defining as 0 will still disable the GIL. */
-#ifndef Py_GIL_DISABLED
-/* #define Py_GIL_DISABLED 1 */
+/* Define to 1 when compiling for experimental free-threaded builds */
+#ifdef Py_GIL_DISABLED
+/* We undefine if it was set to zero because all later checks are #ifdef.
+ * Note that non-Windows builds do not do this, and so every effort should
+ * be made to avoid defining the variable at all when not desired. However,
+ * sysconfig.get_config_var always returns a 1 or a 0, and so it seems likely
+ * that a build backend will define it with the value.
+ */
+#if Py_GIL_DISABLED == 0
+#undef Py_GIL_DISABLED
+#endif
 #endif
 
 /* Compiler specific defines */

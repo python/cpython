@@ -523,6 +523,25 @@ error:
 
 }
 
+const uint16_t op_without_push[MAX_UOP_ID + 1] = {
+    [_COPY] = _NOP,
+    [_LOAD_CONST_INLINE] = _NOP,
+    [_LOAD_CONST_INLINE_BORROW] = _NOP,
+    [_LOAD_FAST] = _NOP,
+    [_LOAD_FAST_BORROW] = _NOP,
+    [_LOAD_SMALL_INT] = _NOP,
+    [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
+    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
+    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
+};
+
+const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
+    [_POP_TOP] = _NOP,
+    [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
+    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
+    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TOP_LOAD_CONST_INLINE_BORROW,
+};
+
 
 static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
@@ -551,50 +570,23 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _NOP;
                 }
                 break;
-            case _POP_TOP:
-            case _POP_TOP_LOAD_CONST_INLINE:
-            case _POP_TOP_LOAD_CONST_INLINE_BORROW:
-            case _POP_TWO_LOAD_CONST_INLINE_BORROW:
-            optimize_pop_top_again:
-            {
-                _PyUOpInstruction *last = &buffer[pc-1];
-                while (last->opcode == _NOP) {
-                    last--;
-                }
-                switch (last->opcode) {
-                    case _POP_TWO_LOAD_CONST_INLINE_BORROW:
-                        last->opcode = _POP_TOP;
-                        break;
-                    case _POP_TOP_LOAD_CONST_INLINE:
-                    case _POP_TOP_LOAD_CONST_INLINE_BORROW:
-                        last->opcode = _NOP;
-                        goto optimize_pop_top_again;
-                    case _COPY:
-                    case _LOAD_CONST_INLINE:
-                    case _LOAD_CONST_INLINE_BORROW:
-                    case _LOAD_FAST:
-                    case _LOAD_FAST_BORROW:
-                    case _LOAD_SMALL_INT:
-                        last->opcode = _NOP;
-                        if (opcode == _POP_TOP) {
-                            opcode = buffer[pc].opcode = _NOP;
-                        }
-                        else if (opcode == _POP_TOP_LOAD_CONST_INLINE) {
-                            opcode = buffer[pc].opcode = _LOAD_CONST_INLINE;
-                        }
-                        else if (opcode == _POP_TOP_LOAD_CONST_INLINE_BORROW) {
-                            opcode = buffer[pc].opcode = _LOAD_CONST_INLINE_BORROW;
-                        }
-                        else {
-                            assert(opcode == _POP_TWO_LOAD_CONST_INLINE_BORROW);
-                            opcode = buffer[pc].opcode = _POP_TOP_LOAD_CONST_INLINE_BORROW;
-                            goto optimize_pop_top_again;
-                        }
-                }
-                _Py_FALLTHROUGH;
-            }
             default:
             {
+                // Cancel out pushes and pops, repeatedly. So:
+                //     _LOAD_FAST + _POP_TWO_LOAD_CONST_INLINE_BORROW + _POP_TOP
+                // ...becomes:
+                //     _NOP + _POP_TOP + _NOP
+                while (op_without_pop[opcode]) {
+                    _PyUOpInstruction *last = &buffer[pc - 1];
+                    while (last->opcode == _NOP) {
+                        last--;
+                    }
+                    if (!op_without_push[last->opcode]) {
+                        break;
+                    }
+                    last->opcode = op_without_push[last->opcode];
+                    opcode = buffer[pc].opcode = op_without_pop[opcode];
+                }
                 /* _PUSH_FRAME doesn't escape or error, but it
                  * does need the IP for the return address */
                 bool needs_ip = opcode == _PUSH_FRAME;

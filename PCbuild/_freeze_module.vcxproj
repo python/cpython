@@ -276,7 +276,7 @@
     <ClCompile Include="..\Python\uniqueid.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\PC\pyconfig.h.in" />
+    <ClInclude Include="..\PC\pyconfig.h" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN frozen modules -->
@@ -435,31 +435,6 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-
-  <!-- Direct copy from pythoncore.vcxproj, but this one is only used for our
-       own build. All other extension modules will use the copy that pythoncore
-       generates. -->
-  <Target Name="_UpdatePyconfig" BeforeTargets="PrepareForBuild">
-    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
-    <ItemGroup>
-      <PyConfigH Remove="@(PyConfigH)" />
-      <PyConfigH Include="@(ClInclude)" Condition="'%(Filename)%(Extension)' == 'pyconfig.h.in'" />
-    </ItemGroup>
-    <Error Text="Did not find pyconfig.h" Condition="@(ClInclude) == ''" />
-    <PropertyGroup>
-      <PyConfigH>@(PyConfigH->'%(FullPath)', ';')</PyConfigH>
-      <PyConfigHText>$([System.IO.File]::ReadAllText($(PyConfigH)))</PyConfigHText>
-      <OldPyConfigH Condition="Exists('$(IntDir)pyconfig.h')">$([System.IO.File]::ReadAllText('$(IntDir)pyconfig.h'))</OldPyConfigH>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(DisableGil) == 'true'">
-      <PyConfigHText>$(PyConfigHText.Replace('/* #define Py_GIL_DISABLED 1 */', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
-    </PropertyGroup>
-    <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
-    <WriteLinesToFile File="$(IntDir)pyconfig.h"
-                      Lines="$(PyConfigHText)"
-                      Overwrite="true"
-                      Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
-  </Target>
 
   <Target Name="_RebuildGetPath" AfterTargets="_RebuildFrozen" Condition="$(Configuration) != 'PGUpdate'">
     <Exec Command='"$(TargetPath)" "%(GetPath.ModName)" "%(GetPath.FullPath)" "%(GetPath.IntFile)"' />

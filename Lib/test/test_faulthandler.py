@@ -166,29 +166,6 @@ class FaultHandlerTests(unittest.TestCase):
         fatal_error = 'Windows fatal exception: %s' % name_regex
         self.check_error(code, line_number, fatal_error, **kw)
 
-    @unittest.skipIf(sys.platform.startswith('aix'),
-                     "the first page of memory is a mapped read-only on AIX")
-    def test_read_null(self):
-        if not MS_WINDOWS:
-            self.check_fatal_error("""
-                import faulthandler
-                faulthandler.enable()
-                faulthandler._read_null()
-                """,
-                3,
-                # Issue #12700: Read NULL raises SIGILL on Mac OS X Lion
-                '(?:Segmentation fault'
-                    '|Bus error'
-                    '|Illegal instruction)')
-        else:
-            self.check_windows_exception("""
-                import faulthandler
-                faulthandler.enable()
-                faulthandler._read_null()
-                """,
-                3,
-                'access violation')
-
     @skip_segfault_on_android
     def test_sigsegv(self):
         self.check_fatal_error("""

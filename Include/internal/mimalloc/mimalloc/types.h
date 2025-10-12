@@ -235,7 +235,7 @@ typedef size_t     mi_threadid_t;
 
 // free lists contain blocks
 typedef struct mi_block_s {
-  mi_encoded_t next;
+  _Atomic(mi_encoded_t) next;
 } mi_block_t;
 
 

@@ -902,7 +902,7 @@ dis_loop_test_quickened_code = """\
 %3d           RESUME_CHECK             0
 
 %3d           BUILD_LIST               0
-              LOAD_CONST_MORTAL        2 ((1, 2, 3))
+              LOAD_CONST               2 ((1, 2, 3))
               LIST_EXTEND              1
               LOAD_SMALL_INT           3
               BINARY_OP                5 (*)
@@ -918,7 +918,7 @@ dis_loop_test_quickened_code = """\
 
 %3d   L2:     END_FOR
               POP_ITER
-              LOAD_CONST_IMMORTAL      1 (None)
+              LOAD_CONST               1 (None)
               RETURN_VALUE
 """ % (loop_test.__code__.co_firstlineno,
        loop_test.__code__.co_firstlineno + 1,
@@ -1304,7 +1304,7 @@ class DisTests(DisTestBase):
         load_attr_quicken = """\
   0           RESUME_CHECK             0
 
-  1           LOAD_CONST_IMMORTAL      0 ('a')
+  1           LOAD_CONST               0 ('a')
               LOAD_ATTR_SLOT           0 (__class__)
               RETURN_VALUE
 """

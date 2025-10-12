@@ -173,7 +173,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         # listening socket has triggered an EVENT_READ. There may be multiple
         # connections waiting for an .accept() so it is called in a loop.
         # See https://bugs.python.org/issue27906 for more details.
-        for _ in range(backlog):
+        for _ in range(backlog + 1):
             try:
                 conn, addr = sock.accept()
                 if self._debug:

@@ -3,6 +3,7 @@ import contextlib
 import copy
 import io
 import pickle
+import os
 import sys
 import unittest
 import encodings
@@ -3106,6 +3107,13 @@ class TransformCodecTest(unittest.TestCase):
                 with self.subTest(alias=alias):
                     info = codecs.lookup(alias)
                     self.assertEqual(info.name, expected_name)
+
+    def test_alias_modules_exist(self):
+        encodings_dir = os.path.dirname(encodings.__file__)
+        for value in encodings.aliases.aliases.values():
+            codec_file = os.path.join(encodings_dir, value + ".py")
+            self.assertTrue(os.path.isfile(codec_file),
+                            "Codec file not found: " + codec_file)
 
     def test_quopri_stateless(self):
         # Should encode with quotetabs=True

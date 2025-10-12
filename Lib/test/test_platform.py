@@ -383,15 +383,6 @@ class PlatformTest(unittest.TestCase):
                 finally:
                     platform._uname_cache = None
 
-    def test_java_ver(self):
-        import re
-        msg = re.escape(
-            "'java_ver' is deprecated and slated for removal in Python 3.15"
-        )
-        with self.assertWarnsRegex(DeprecationWarning, msg):
-            res = platform.java_ver()
-        self.assertEqual(len(res), 4)
-
     @unittest.skipUnless(support.MS_WINDOWS, 'This test only makes sense on Windows')
     def test_win32_ver(self):
         release1, version1, csd1, ptype1 = 'a', 'b', 'c', 'd'

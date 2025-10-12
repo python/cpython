@@ -45,8 +45,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_FAST_AND_CLEAR] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_FAST_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_FAST_BORROW_LOAD_FAST_BORROW] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
-    [_LOAD_CONST_MORTAL] = HAS_ARG_FLAG | HAS_CONST_FLAG,
-    [_LOAD_CONST_IMMORTAL] = HAS_ARG_FLAG | HAS_CONST_FLAG,
+    [_LOAD_CONST] = HAS_ARG_FLAG | HAS_CONST_FLAG,
     [_LOAD_SMALL_INT_0] = 0,
     [_LOAD_SMALL_INT_1] = 0,
     [_LOAD_SMALL_INT_2] = 0,
@@ -64,6 +63,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_FAST_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_FAST_STORE_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
     [_POP_TOP] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
+    [_POP_TWO] = HAS_ESCAPES_FLAG,
     [_PUSH_NULL] = HAS_PURE_FLAG,
     [_END_FOR] = HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG,
     [_END_SEND] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
@@ -247,6 +247,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS] = HAS_ARG_FLAG | HAS_PURE_FLAG,
     [_PUSH_FRAME] = 0,
     [_GUARD_NOS_NULL] = HAS_DEOPT_FLAG,
+    [_GUARD_NOS_NOT_NULL] = HAS_EXIT_FLAG,
     [_GUARD_THIRD_NULL] = HAS_DEOPT_FLAG,
     [_GUARD_CALLABLE_TYPE_1] = HAS_DEOPT_FLAG,
     [_CALL_TYPE_1] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
@@ -265,6 +266,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CALL_LEN] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_CALLABLE_ISINSTANCE] = HAS_DEOPT_FLAG,
     [_CALL_ISINSTANCE] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_CALLABLE_LIST_APPEND] = HAS_DEOPT_FLAG,
     [_CALL_LIST_APPEND] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_METHOD_DESCRIPTOR_O] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -303,6 +305,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
+    [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_CHECK_FUNCTION] = HAS_DEOPT_FLAG,
     [_START_EXECUTOR] = 0,
     [_MAKE_WARM] = 0,
@@ -429,6 +432,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_BINARY_OP_EXTEND] = "_GUARD_BINARY_OP_EXTEND",
     [_GUARD_CALLABLE_ISINSTANCE] = "_GUARD_CALLABLE_ISINSTANCE",
     [_GUARD_CALLABLE_LEN] = "_GUARD_CALLABLE_LEN",
+    [_GUARD_CALLABLE_LIST_APPEND] = "_GUARD_CALLABLE_LIST_APPEND",
     [_GUARD_CALLABLE_STR_1] = "_GUARD_CALLABLE_STR_1",
     [_GUARD_CALLABLE_TUPLE_1] = "_GUARD_CALLABLE_TUPLE_1",
     [_GUARD_CALLABLE_TYPE_1] = "_GUARD_CALLABLE_TYPE_1",
@@ -444,6 +448,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_NOS_FLOAT] = "_GUARD_NOS_FLOAT",
     [_GUARD_NOS_INT] = "_GUARD_NOS_INT",
     [_GUARD_NOS_LIST] = "_GUARD_NOS_LIST",
+    [_GUARD_NOS_NOT_NULL] = "_GUARD_NOS_NOT_NULL",
     [_GUARD_NOS_NULL] = "_GUARD_NOS_NULL",
     [_GUARD_NOS_TUPLE] = "_GUARD_NOS_TUPLE",
     [_GUARD_NOS_UNICODE] = "_GUARD_NOS_UNICODE",
@@ -496,10 +501,9 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_ATTR_WITH_HINT] = "_LOAD_ATTR_WITH_HINT",
     [_LOAD_BUILD_CLASS] = "_LOAD_BUILD_CLASS",
     [_LOAD_COMMON_CONSTANT] = "_LOAD_COMMON_CONSTANT",
-    [_LOAD_CONST_IMMORTAL] = "_LOAD_CONST_IMMORTAL",
+    [_LOAD_CONST] = "_LOAD_CONST",
     [_LOAD_CONST_INLINE] = "_LOAD_CONST_INLINE",
     [_LOAD_CONST_INLINE_BORROW] = "_LOAD_CONST_INLINE_BORROW",
-    [_LOAD_CONST_MORTAL] = "_LOAD_CONST_MORTAL",
     [_LOAD_DEREF] = "_LOAD_DEREF",
     [_LOAD_FAST] = "_LOAD_FAST",
     [_LOAD_FAST_0] = "_LOAD_FAST_0",
@@ -549,10 +553,12 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_MAYBE_EXPAND_METHOD] = "_MAYBE_EXPAND_METHOD",
     [_MAYBE_EXPAND_METHOD_KW] = "_MAYBE_EXPAND_METHOD_KW",
     [_NOP] = "_NOP",
+    [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW",
     [_POP_EXCEPT] = "_POP_EXCEPT",
     [_POP_TOP] = "_POP_TOP",
     [_POP_TOP_LOAD_CONST_INLINE] = "_POP_TOP_LOAD_CONST_INLINE",
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = "_POP_TOP_LOAD_CONST_INLINE_BORROW",
+    [_POP_TWO] = "_POP_TWO",
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_TWO_LOAD_CONST_INLINE_BORROW",
     [_PUSH_EXC_INFO] = "_PUSH_EXC_INFO",
     [_PUSH_FRAME] = "_PUSH_FRAME",
@@ -668,9 +674,7 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_FAST_BORROW_LOAD_FAST_BORROW:
             return 0;
-        case _LOAD_CONST_MORTAL:
-            return 0;
-        case _LOAD_CONST_IMMORTAL:
+        case _LOAD_CONST:
             return 0;
         case _LOAD_SMALL_INT_0:
             return 0;
@@ -706,6 +710,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _POP_TOP:
             return 1;
+        case _POP_TWO:
+            return 2;
         case _PUSH_NULL:
             return 0;
         case _END_FOR:
@@ -1072,6 +1078,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _GUARD_NOS_NULL:
             return 0;
+        case _GUARD_NOS_NOT_NULL:
+            return 0;
         case _GUARD_THIRD_NULL:
             return 0;
         case _GUARD_CALLABLE_TYPE_1:
@@ -1108,6 +1116,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _CALL_ISINSTANCE:
             return 4;
+        case _GUARD_CALLABLE_LIST_APPEND:
+            return 0;
         case _CALL_LIST_APPEND:
             return 3;
         case _CALL_METHOD_DESCRIPTOR_O:
@@ -1184,6 +1194,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _POP_TWO_LOAD_CONST_INLINE_BORROW:
             return 2;
+        case _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW:
+            return 4;
         case _CHECK_FUNCTION:
             return 0;
         case _START_EXECUTOR:

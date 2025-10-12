@@ -1143,7 +1143,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unboundop)
         _queue_unmark_waiter(queue, queues->mutex);
         return -1;
     }
-    if (_PyObject_GetXIData(tstate, obj, data) != 0) {
+    if (_PyObject_GetXIDataNoFallback(tstate, obj, data) != 0) {
         _queue_unmark_waiter(queue, queues->mutex);
         GLOBAL_FREE(data);
         return -1;
@@ -1270,7 +1270,7 @@ set_external_queue_type(module_state *state, PyTypeObject *queue_type)
     }
 
     // Add and register the new type.
-    if (ensure_xid_class(queue_type, _queueobj_shared) < 0) {
+    if (ensure_xid_class(queue_type, GETDATA(_queueobj_shared)) < 0) {
         return -1;
     }
     state->queue_type = (PyTypeObject *)Py_NewRef(queue_type);

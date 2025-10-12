@@ -234,8 +234,19 @@ class _Extra(bytes):
 
 def _check_zipfile(fp):
     try:
-        if _EndRecData(fp):
-            return True         # file has correct magic number
+        endrec = _EndRecData(fp)
+        if endrec:
+            if endrec[_ECD_ENTRIES_TOTAL] == 0 and endrec[_ECD_SIZE] == 0 and endrec[_ECD_OFFSET] == 0:
+                return True     # Empty zipfiles are still zipfiles
+            elif endrec[_ECD_DISK_NUMBER] == endrec[_ECD_DISK_START]:
+                # Central directory is on the same disk
+                fp.seek(sum(_handle_prepended_data(endrec)))
+                if endrec[_ECD_SIZE] >= sizeCentralDir:
+                    data = fp.read(sizeCentralDir)   # CD is where we expect it to be
+                    if len(data) == sizeCentralDir:
+                        centdir = struct.unpack(structCentralDir, data) # CD is the right size
+                        if centdir[_CD_SIGNATURE] == stringCentralDir:
+                            return True         # First central directory entry  has correct magic number
     except OSError:
         pass
     return False
@@ -257,6 +268,22 @@ def is_zipfile(filename):
     except OSError:
         pass
     return result
+
+def _handle_prepended_data(endrec, debug=0):
+    size_cd = endrec[_ECD_SIZE]             # bytes in central directory
+    offset_cd = endrec[_ECD_OFFSET]         # offset of central directory
+
+    # "concat" is zero, unless zip was concatenated to another file
+    concat = endrec[_ECD_LOCATION] - size_cd - offset_cd
+    if endrec[_ECD_SIGNATURE] == stringEndArchive64:
+        # If Zip64 extension structures are present, account for them
+        concat -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
+
+    if debug > 2:
+        inferred = concat + offset_cd
+        print("given, inferred, offset", offset_cd, inferred, concat)
+
+    return offset_cd, concat
 
 def _EndRecData64(fpin, offset, endrec):
     """
@@ -1501,28 +1528,21 @@ class ZipFile:
             raise BadZipFile("File is not a zip file")
         if self.debug > 1:
             print(endrec)
-        size_cd = endrec[_ECD_SIZE]             # bytes in central directory
-        offset_cd = endrec[_ECD_OFFSET]         # offset of central directory
         self._comment = endrec[_ECD_COMMENT]    # archive comment
 
-        # "concat" is zero, unless zip was concatenated to another file
-        concat = endrec[_ECD_LOCATION] - size_cd - offset_cd
-        if endrec[_ECD_SIGNATURE] == stringEndArchive64:
-            # If Zip64 extension structures are present, account for them
-            concat -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
+        offset_cd, concat = _handle_prepended_data(endrec, self.debug)
+
+        # self.start_dir:  Position of start of central directory
+        self.start_dir = offset_cd + concat
 
         # store the offset to the beginning of data for the
         # .data_offset property
         self._data_offset = concat
 
-        if self.debug > 2:
-            inferred = concat + offset_cd
-            print("given, inferred, offset", offset_cd, inferred, concat)
-        # self.start_dir:  Position of start of central directory
-        self.start_dir = offset_cd + concat
         if self.start_dir < 0:
             raise BadZipFile("Bad offset for central directory")
         fp.seek(self.start_dir, 0)
+        size_cd = endrec[_ECD_SIZE]
         data = fp.read(size_cd)
         fp = io.BytesIO(data)
         total = 0

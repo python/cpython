@@ -131,7 +131,23 @@ PyAPI_FUNC(void) _PyXIData_Clear(PyInterpreterState *, _PyXIData_t *);
 
 /* getting cross-interpreter data */
 
-typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
+typedef int xidata_fallback_t;
+#define _PyXIDATA_XIDATA_ONLY (0)
+#define _PyXIDATA_FULL_FALLBACK (1)
+
+// Technically, we don't need two different function types;
+// we could go with just the fallback one.  However, only container
+// types like tuple need it, so always having the extra arg would be
+// a bit unfortunate.  It's also nice to be able to clearly distinguish
+// between types that might call _PyObject_GetXIData() and those that won't.
+//
+typedef int (*xidatafunc)(PyThreadState *, PyObject *, _PyXIData_t *);
+typedef int (*xidatafbfunc)(
+        PyThreadState *, PyObject *, xidata_fallback_t, _PyXIData_t *);
+typedef struct {
+    xidatafunc basic;
+    xidatafbfunc fallback;
+} _PyXIData_getdata_t;
 
 PyAPI_FUNC(PyObject *) _PyXIData_GetNotShareableErrorType(PyThreadState *);
 PyAPI_FUNC(void) _PyXIData_SetNotShareableError(PyThreadState *, const char *);
@@ -140,16 +156,21 @@ PyAPI_FUNC(void) _PyXIData_FormatNotShareableError(
         const char *,
         ...);
 
-PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(
+PyAPI_FUNC(_PyXIData_getdata_t) _PyXIData_Lookup(
         PyThreadState *,
         PyObject *);
 PyAPI_FUNC(int) _PyObject_CheckXIData(
         PyThreadState *,
         PyObject *);
 
+PyAPI_FUNC(int) _PyObject_GetXIDataNoFallback(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
 PyAPI_FUNC(int) _PyObject_GetXIData(
         PyThreadState *,
         PyObject *,
+        xidata_fallback_t,
         _PyXIData_t *);
 
 // _PyObject_GetXIData() for bytes

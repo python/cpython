@@ -211,8 +211,8 @@ The variables defined in the :mod:`signal` module are:
 
 .. data:: SIGSTKFLT
 
-    Stack fault on coprocessor. The Linux kernel does not raise this signal: it
-    can only be raised in user space.
+   Stack fault on coprocessor. The Linux kernel does not raise this signal: it
+   can only be raised in user space.
 
    .. availability:: Linux.
 

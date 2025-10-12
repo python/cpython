@@ -98,8 +98,9 @@ does not affect any installs of Python runtimes. Uninstalling the Python install
 manager does not uninstall any Python runtimes.
 
 If you are not able to install an MSIX in your context, for example, you are
-using automated deployment software that does not support it, please see
-:ref:`pymanager-advancedinstall` below for more information.
+using automated deployment software that does not support it, or are targeting
+Windows Server 2019, please see :ref:`pymanager-advancedinstall` below for more
+information.
 
 
 Basic Use
@@ -515,6 +516,11 @@ per-machine installs to its default location in Program Files. It will attempt
 to modify the system :envvar:`PATH` environment variable to include this install
 location, but be sure to validate this on your configuration.
 
+.. note::
+
+   Windows Server 2019 is the only version of Windows that CPython supports that
+   does not support MSIX. For Windows Server 2019, you should use the MSI.
+
 Be aware that the MSI package does not bundle any runtimes, and so is not
 suitable for installs into offline environments without also creating an offline
 install index. See :ref:`pymanager-offline` and :ref:`pymanager-admin-config`
@@ -535,13 +541,32 @@ depending on whether it was installed from python.org or through the Windows
 Store. Attempting to run the executable directly from Program Files is not
 recommended.
 
-To programmatically install or uninstall the MSIX without using your
-distribution platform's native support, the `Add-AppxPackage
-<https://learn.microsoft.com/powershell/module/appx/add-appxpackage>`_ and
-`Remove-AppxPackage <https://learn.microsoft.com/powershell/module/appx/remove-appxpackage>`_
-PowerShell cmdlets are simplest to use:
+To programmatically install the Python install manager, it is easiest to use
+WinGet, which is included with all supported versions of Windows:
 
-.. code::
+.. code-block:: powershell
+
+   $> winget install 9NQ7512CXL7T -e --accept-package-agreements --disable-interactivity
+
+   # Optionally run the configuration checker and accept all changes
+   $> py install --configure -y
+
+To download the Python install manager and install on another machine, the
+following WinGet command will download the required files from the Store to your
+Downloads directory (add ``-d <location>`` to customize the output location).
+This also generates a YAML file that appears to be unnecessary, as the
+downloaded MSIX can be installed by launching or using the commands below.
+
+.. code-block:: powershell
+
+   $> winget download 9NQ7512CXL7T -e --skip-license --accept-package-agreements --disable-interactivity
+
+To programmatically install or uninstall an MSIX using only PowerShell, the
+`Add-AppxPackage <https://learn.microsoft.com/powershell/module/appx/add-appxpackage>`_
+and `Remove-AppxPackage <https://learn.microsoft.com/powershell/module/appx/remove-appxpackage>`_
+PowerShell cmdlets are recommended:
+
+.. code-block:: powershell
 
    $> Add-AppxPackage C:\Downloads\python-manager-25.0.msix
    ...
@@ -554,6 +579,11 @@ class. The :func:`!AddPackageAsync` method installs for the current user, or use
 to install the Python install manager for all users from the MSIX package. Users
 will still need to install their own copies of Python itself, as there is no way
 to trigger those installs without being a logged in user.
+
+Note that the MSIX downloadable from the Store and from the Python website are
+subtly different and cannot be installed at the same time. Wherever possible,
+we suggest using the above commands to download the package from the Store to
+reduce the risk of setting up conflicting installs.
 
 .. _pymanager-admin-config:
 
