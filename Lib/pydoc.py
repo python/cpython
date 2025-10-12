@@ -564,20 +564,9 @@ class Doc:
     def getdocloc(self, object, basedir=sysconfig.get_path('stdlib')):
         """Return the location of module docs or None"""
 
-        try:
-            file = inspect.getabsfile(object)
-        except TypeError:
-            file = '(built-in)'
-
         docloc = os.environ.get("PYTHONDOCS", self.PYTHONDOCS)
 
-        basedir = os.path.normcase(basedir)
-        if (isinstance(object, type(os)) and
-            (object.__name__ in ('errno', 'exceptions', 'gc',
-                                 'marshal', 'posix', 'signal', 'sys',
-                                 '_thread', 'zipimport') or
-             (file.startswith(basedir) and
-              not file.startswith(os.path.join(basedir, 'site-packages')))) and
+        if (self._is_stdlib_module(object, basedir) and
             object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
             if docloc.startswith(("http://", "https://")):
                 docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
@@ -586,6 +575,20 @@ class Doc:
         else:
             docloc = None
         return docloc
+
+    def _is_stdlib_module(self, object, basedir=sysconfig.get_path('stdlib')):
+        try:
+            file = inspect.getabsfile(object)
+        except TypeError:
+            file = '(built-in)'
+
+        basedir = os.path.normcase(basedir)
+        return (isinstance(object, type(os)) and
+                (object.__name__ in ('errno', 'exceptions', 'gc',
+                                     'marshal', 'posix', 'signal', 'sys',
+                                     '_thread', 'zipimport')
+                or (file.startswith(basedir) and
+                 not file.startswith(os.path.join(basedir, 'site-packages')))))
 
 # -------------------------------------------- HTML documentation generator
 
@@ -846,8 +849,17 @@ class HTMLDoc(Doc):
         except TypeError:
             filelink = '(built-in)'
         info = []
-        if hasattr(object, '__version__'):
-            version = str(object.__version__)
+
+        if self._is_stdlib_module(object):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                if has_version := hasattr(object, '__version__'):
+                    version = str(object.__version__)
+        else:
+            if has_version := hasattr(object, '__version__'):
+                version = str(object.__version__)
+
+        if has_version:
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             info.append('version %s' % self.escape(version))
@@ -1382,8 +1394,16 @@ location listed above.
                 contents.append(self.docother(value, key, name, maxlen=70))
             result = result + self.section('DATA', '\n'.join(contents))
 
-        if hasattr(object, '__version__'):
-            version = str(object.__version__)
+        if self._is_stdlib_module(object):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                if has_version := hasattr(object, '__version__'):
+                    version = str(object.__version__)
+        else:
+            if has_version := hasattr(object, '__version__'):
+                version = str(object.__version__)
+
+        if has_version:
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             result = result + self.section('VERSION', version)
