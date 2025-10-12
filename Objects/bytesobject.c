@@ -2893,44 +2893,24 @@ fail:
 static PyObject*
 _PyBytes_FromSequence_lock_held(PyObject *x)
 {
-<<<<<<< HEAD
-    Py_ssize_t size = PySequence_Fast_GET_SIZE(x);
-    PyObject *bytes = _PyBytes_FromSize(size, 0);
-    if (bytes == NULL) {
-        return NULL;
-    }
-    char *str = PyBytes_AS_STRING(bytes);
-    PyObject *const *items = PySequence_Fast_ITEMS(x);
-    for (Py_ssize_t i = 0; i < size; i++) {
-        if (!PyLong_Check(items[i])) {
-            Py_DECREF(bytes);
-            /* Py_None as a fallback sentinel to the slow path */
-            Py_RETURN_NONE;
-        }
-        Py_ssize_t value = PyNumber_AsSsize_t(items[i], NULL);
-        if (value == -1 && PyErr_Occurred()) {
-            Py_DECREF(bytes);
-            return NULL;
-        }
-=======
     Py_ssize_t size = PySequence_Fast_GET_SIZE(x);
     PyBytesWriter *writer = PyBytesWriter_Create(size);
     if (writer == NULL) {
         return NULL;
     }
     char *str = PyBytesWriter_GetData(writer);
-    assert _PyBytesWriter_GetAllocated(writer) >= size;
+    assert(_PyBytesWriter_GetAllocated(writer) >= size);
 
     PyObject *const *items = PySequence_Fast_ITEMS(x);
     for (Py_ssize_t i = 0; i < size; i++) {
         if (!PyLong_Check(items[i])) {
-            Py_DECREF(bytes);
+            PyBytesWriter_Discard(writer);
             /* Py_None as a fallback sentinel to the slow path */
             Py_RETURN_NONE;
         }
         Py_ssize_t value = PyNumber_AsSsize_t(items[i], NULL);
         if (value == -1 && PyErr_Occurred()) {
-            Py_DECREF(bytes);
+            PyBytesWriter_Discard(writer);
             return NULL;
         }
 
