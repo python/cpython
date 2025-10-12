@@ -1266,13 +1266,12 @@ class varpos_tuple_converter(VarPosCConverter):
                     }}}}
                     """
             else:
-                self.add_include('pycore_tuple.h', '_PyTuple_FromArray()')
                 start = f'args + {max_pos}' if max_pos else 'args'
                 size = f'nargs - {max_pos}' if max_pos else 'nargs'
                 if min(pos_only, min_pos) < max_pos:
                     return f"""
                         {paramname} = nargs > {max_pos}
-                            ? _PyTuple_FromArray({start}, {size})
+                            ? PyTuple_FromArray({start}, {size})
                             : PyTuple_New(0);
                         if ({paramname} == NULL) {{{{
                             goto exit;
@@ -1280,7 +1279,7 @@ class varpos_tuple_converter(VarPosCConverter):
                         """
                 else:
                     return f"""
-                        {paramname} = _PyTuple_FromArray({start}, {size});
+                        {paramname} = PyTuple_FromArray({start}, {size});
                         if ({paramname} == NULL) {{{{
                             goto exit;
                         }}}}

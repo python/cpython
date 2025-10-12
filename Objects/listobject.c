@@ -6,16 +6,16 @@
 #include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_dict.h"          // _PyDictViewObject
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
-#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_interp.h"        // PyInterpreterState.list
 #include "pycore_list.h"          // struct _Py_list_freelist, _PyListIterObject
 #include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
-#include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
-#include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
+#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
+#include "pycore_tuple.h"         // _PyTuple_FromArraySteal()
+#include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
 #include <stddef.h>
 
 /*[clinic input]
@@ -3221,7 +3221,7 @@ PyList_AsTuple(PyObject *v)
     PyObject *ret;
     PyListObject *self = (PyListObject *)v;
     Py_BEGIN_CRITICAL_SECTION(self);
-    ret = _PyTuple_FromArray(self->ob_item, Py_SIZE(v));
+    ret = PyTuple_FromArray(self->ob_item, Py_SIZE(v));
     Py_END_CRITICAL_SECTION();
     return ret;
 }

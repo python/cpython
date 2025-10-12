@@ -1494,6 +1494,14 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             self.assertNotIn(b'test_env', os.environb)
             self.assertNotIn('test_env', os.environ)
 
+    def test_clearenv(self):
+        os.environ['REMOVEME'] = '1'
+        os.environ.clear()
+        self.assertEqual(os.environ, {})
+
+        self.assertRaises(TypeError, os.environ.clear, None)
+
+
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
     is_fwalk = False
@@ -3203,7 +3211,8 @@ class LoginTests(unittest.TestCase):
         try:
             user_name = os.getlogin()
         except OSError as exc:
-            if exc.errno in (errno.ENOTTY, errno.ENXIO):
+            # See https://man7.org/linux/man-pages/man3/getlogin.3.html#ERRORS.
+            if exc.errno in (errno.ENXIO, errno.ENOENT, errno.ENOTTY):
                 self.skipTest(str(exc))
             else:
                 raise
