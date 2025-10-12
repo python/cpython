@@ -158,7 +158,7 @@ class _RLock:
         except KeyError:
             pass
         return "<%s %s.%s object owner=%r count=%d at %s>" % (
-            "locked" if self._block.locked() else "unlocked",
+            "locked" if self.locked() else "unlocked",
             self.__class__.__module__,
             self.__class__.__qualname__,
             owner,
@@ -237,7 +237,7 @@ class _RLock:
 
     def locked(self):
         """Return whether this object is locked."""
-        return self._count > 0
+        return self._block.locked()
 
     # Internal methods used by condition variables
 
@@ -1414,7 +1414,7 @@ class _DeleteDummyThreadOnDel:
         # the related _DummyThread will be kept forever!
         _thread_local_info._track_dummy_thread_ref = self
 
-    def __del__(self):
+    def __del__(self, _active_limbo_lock=_active_limbo_lock, _active=_active):
         with _active_limbo_lock:
             if _active.get(self._tident) is self._dummy_thread:
                 _active.pop(self._tident, None)
@@ -1557,8 +1557,9 @@ def _shutdown():
     # normally - that won't happen until the interpreter is nearly dead. So
     # mark it done here.
     if _main_thread._os_thread_handle.is_done() and _is_main_interpreter():
-        # _shutdown() was already called
-        return
+        # _shutdown() was already called, but threads might have started
+        # in the meantime.
+        return _thread_shutdown()
 
     global _SHUTTING_DOWN
     _SHUTTING_DOWN = True

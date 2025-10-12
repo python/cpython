@@ -3,7 +3,6 @@
 import ctypes
 from _ctypes import Structure, Union, _Pointer, Array, _SimpleCData, CFuncPtr
 import sys
-from test import support
 
 
 _CData = Structure.__base__

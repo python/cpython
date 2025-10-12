@@ -64,7 +64,6 @@ considered public as object names -- the API of the formatter objects is
 still considered an implementation detail.)
 """
 
-__version__ = '1.1'
 __all__ = [
     'ArgumentParser',
     'ArgumentError',
@@ -167,7 +166,7 @@ class HelpFormatter(object):
         indent_increment=2,
         max_help_position=24,
         width=None,
-        color=False,
+        color=True,
     ):
         # default setting for width
         if width is None:
@@ -281,7 +280,7 @@ class HelpFormatter(object):
         if action.help is not SUPPRESS:
 
             # find all invocations
-            get_invocation = self._format_action_invocation
+            get_invocation = lambda x: self._decolor(self._format_action_invocation(x))
             invocation_lengths = [len(get_invocation(action)) + self._current_indent]
             for subaction in self._iter_indented_subactions(action):
                 invocation_lengths.append(len(get_invocation(subaction)) + self._current_indent)
@@ -1231,7 +1230,7 @@ class _SubParsersAction(Action):
         self._name_parser_map = {}
         self._choices_actions = []
         self._deprecated = set()
-        self._color = False
+        self._color = True
 
         super(_SubParsersAction, self).__init__(
             option_strings=option_strings,
@@ -1534,7 +1533,7 @@ class _ActionsContainer(object):
         action_name = kwargs.get('action')
         action_class = self._pop_action_class(kwargs)
         if not callable(action_class):
-            raise ValueError('unknown action {action_class!r}')
+            raise ValueError(f'unknown action {action_class!r}')
         action = action_class(**kwargs)
 
         # raise an error if action for positional argument does not
@@ -1878,7 +1877,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  exit_on_error=True,
                  *,
                  suggest_on_error=False,
-                 color=False,
+                 color=True,
                  ):
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1960,7 +1959,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # prog defaults to the usage message of this parser, skipping
         # optional arguments and with no "usage:" prefix
         if kwargs.get('prog') is None:
-            formatter = self._get_formatter()
+            # Create formatter without color to avoid storing ANSI codes in prog
+            formatter = self.formatter_class(prog=self.prog)
+            formatter._set_color(False)
             positionals = self._get_positional_actions()
             groups = self._mutually_exclusive_groups
             formatter.add_usage(None, positionals, groups, '')
@@ -2773,3 +2774,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _warning(self, message):
         args = {'prog': self.prog, 'message': message}
         self._print_message(_('%(prog)s: warning: %(message)s\n') % args, _sys.stderr)
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.1"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

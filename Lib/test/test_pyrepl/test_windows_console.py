@@ -35,6 +35,7 @@ class WindowsConsoleTests(TestCase):
     def console(self, events, **kwargs) -> Console:
         console = WindowsConsole()
         console.get_event = MagicMock(side_effect=events)
+        console.getpending = MagicMock(return_value=Event("key", ""))
         console.wait = MagicMock()
         console._scroll = MagicMock()
         console._hide_cursor = MagicMock()
@@ -385,6 +386,7 @@ class WindowsConsoleGetEventTests(TestCase):
         self.console._read_input = self.mock
         self.console._WindowsConsole__vt_support = kwargs.get("vt_support",
                                                               False)
+        self.console.wait = MagicMock(return_value=True)
         event = self.console.get_event(block=False)
         return event
 

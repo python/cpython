@@ -28,7 +28,6 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop',
-    '_DefaultEventLoopPolicy',
     'EventLoop',
 )
 

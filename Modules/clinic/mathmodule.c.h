@@ -84,6 +84,146 @@ PyDoc_STRVAR(math_floor__doc__,
 #define MATH_FLOOR_METHODDEF    \
     {"floor", (PyCFunction)math_floor, METH_O, math_floor__doc__},
 
+PyDoc_STRVAR(math_fmax__doc__,
+"fmax($module, x, y, /)\n"
+"--\n"
+"\n"
+"Return the larger of two floating-point arguments.");
+
+#define MATH_FMAX_METHODDEF    \
+    {"fmax", _PyCFunction_CAST(math_fmax), METH_FASTCALL, math_fmax__doc__},
+
+static double
+math_fmax_impl(PyObject *module, double x, double y);
+
+static PyObject *
+math_fmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+    double _return_value;
+
+    if (!_PyArg_CheckPositional("fmax", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    _return_value = math_fmax_impl(module, x, y);
+    if ((_return_value == -1.0) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyFloat_FromDouble(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_fmin__doc__,
+"fmin($module, x, y, /)\n"
+"--\n"
+"\n"
+"Return the smaller of two floating-point arguments.");
+
+#define MATH_FMIN_METHODDEF    \
+    {"fmin", _PyCFunction_CAST(math_fmin), METH_FASTCALL, math_fmin__doc__},
+
+static double
+math_fmin_impl(PyObject *module, double x, double y);
+
+static PyObject *
+math_fmin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+    double _return_value;
+
+    if (!_PyArg_CheckPositional("fmin", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    _return_value = math_fmin_impl(module, x, y);
+    if ((_return_value == -1.0) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyFloat_FromDouble(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_signbit__doc__,
+"signbit($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if the sign of x is negative and False otherwise.");
+
+#define MATH_SIGNBIT_METHODDEF    \
+    {"signbit", (PyCFunction)math_signbit, METH_O, math_signbit__doc__},
+
+static PyObject *
+math_signbit_impl(PyObject *module, double x);
+
+static PyObject *
+math_signbit(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_signbit_impl(module, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
 "--\n"
@@ -628,6 +768,74 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(math_isnormal__doc__,
+"isnormal($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is normal, and False otherwise.");
+
+#define MATH_ISNORMAL_METHODDEF    \
+    {"isnormal", (PyCFunction)math_isnormal, METH_O, math_isnormal__doc__},
+
+static PyObject *
+math_isnormal_impl(PyObject *module, double x);
+
+static PyObject *
+math_isnormal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_isnormal_impl(module, x);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_issubnormal__doc__,
+"issubnormal($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is subnormal, and False otherwise.");
+
+#define MATH_ISSUBNORMAL_METHODDEF    \
+    {"issubnormal", (PyCFunction)math_issubnormal, METH_O, math_issubnormal__doc__},
+
+static PyObject *
+math_issubnormal_impl(PyObject *module, double x);
+
+static PyObject *
+math_issubnormal(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_issubnormal_impl(module, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_isnan__doc__,
 "isnan($module, x, /)\n"
 "--\n"
@@ -1110,4 +1318,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=77e7b8c161c39843 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4fb180d4c25ff8fa input=a9049054013a1b77]*/

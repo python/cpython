@@ -1,0 +1,2 @@
+Fixed a typo that prevented printing of uncollectable objects when the
+:const:`gc.DEBUG_UNCOLLECTABLE` mode was set.
