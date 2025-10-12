@@ -1232,6 +1232,13 @@ struct PyTupleWriter {
 };
 
 
+static inline void
+tuplewriter_free(PyTupleWriter *writer)
+{
+    _Py_FREELIST_FREE(tuple_writers, writer, PyMem_Free);
+}
+
+
 static int
 _PyTupleWriter_SetSize(PyTupleWriter *writer, size_t size, int resize)
 {
@@ -1286,21 +1293,25 @@ PyTupleWriter_Create(Py_ssize_t size)
             return NULL;
         }
     }
-#ifdef Py_DEBUG
-    memset(writer->small_tuple, 0xff, sizeof(writer->small_tuple));
-#endif
-    writer->tuple = NULL;
-    writer->items = writer->small_tuple;
     writer->size = 0;
-    writer->allocated = Py_ARRAY_LENGTH(writer->small_tuple);
 
-    if ((size_t)size > writer->allocated) {
-        if (_PyTupleWriter_SetSize(writer, size, 0) < 0) {
-            PyTupleWriter_Discard(writer);
+    if (size != 0) {
+        writer->tuple = _PyTuple_NewNoTrack(size);
+        if (writer->tuple == NULL) {
+            tuplewriter_free(writer);
             return NULL;
         }
+        writer->items = _PyTuple_ITEMS(writer->tuple);
+        writer->allocated = size;
     }
-
+    else {
+#ifdef Py_DEBUG
+        memset(writer->small_tuple, 0xff, sizeof(writer->small_tuple));
+#endif
+        writer->tuple = NULL;
+        writer->items = writer->small_tuple;
+        writer->allocated = Py_ARRAY_LENGTH(writer->small_tuple);
+    }
     return writer;
 }
 
@@ -1380,13 +1391,6 @@ _PyTupleWriter_GetItems(PyTupleWriter *writer, Py_ssize_t *size)
 {
     *size = writer->size;
     return writer->items;
-}
-
-
-static inline void
-tuplewriter_free(PyTupleWriter *writer)
-{
-    _Py_FREELIST_FREE(tuple_writers, writer, PyMem_Free);
 }
 
 
