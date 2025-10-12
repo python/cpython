@@ -2092,14 +2092,15 @@ typealias.__new__ as typealias_new
     value: object
     *
     type_params: object = NULL
+    qualname: object(c_default="NULL") = None
 
 Create a TypeAliasType.
 [clinic start generated code]*/
 
 static PyObject *
 typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
-                   PyObject *type_params)
-/*[clinic end generated code: output=8920ce6bdff86f00 input=df163c34e17e1a35]*/
+                   PyObject *type_params, PyObject *qualname)
+/*[clinic end generated code: output=b7f6d9f1c577cd9c input=cbec290f8c4886ef]*/
 {
     if (type_params != NULL && !PyTuple_Check(type_params)) {
         PyErr_SetString(PyExc_TypeError, "type_params must be a tuple");
@@ -2117,9 +2118,18 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
         return NULL;
     }
 
-    // It's impossible to determine qualname, so we use name instead.
+    if (qualname == NULL || qualname == Py_None) {
+        // If qualname was not set directly, we use name instead.
+        qualname = name;
+    } else {
+        if (!PyUnicode_Check(qualname)) {
+            PyErr_SetString(PyExc_TypeError, "qualname must be a string");
+            return NULL;
+        }
+    }
+
     PyObject *ta = (PyObject *)typealias_alloc(
-        name, name, checked_params, NULL, value, module);
+        name, qualname, checked_params, NULL, value, module);
     Py_DECREF(module);
     return ta;
 }

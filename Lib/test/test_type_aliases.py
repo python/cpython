@@ -234,7 +234,16 @@ class TypeAliasConstructorTest(unittest.TestCase):
     def test_basic(self):
         TA = TypeAliasType("TA", int)
         self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "TA")
         self.assertIs(TA.__value__, int)
+        self.assertEqual(TA.__type_params__, ())
+        self.assertEqual(TA.__module__, __name__)
+
+    def test_with_qualname(self):
+        TA = TypeAliasType("TA", str, qualname="Class.TA")
+        self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "Class.TA")
+        self.assertIs(TA.__value__, str)
         self.assertEqual(TA.__type_params__, ())
         self.assertEqual(TA.__module__, __name__)
 
@@ -243,6 +252,7 @@ class TypeAliasConstructorTest(unittest.TestCase):
         exec("type TA = int", ns, ns)
         TA = ns["TA"]
         self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "TA")
         self.assertIs(TA.__value__, int)
         self.assertEqual(TA.__type_params__, ())
         self.assertIs(TA.__module__, None)
@@ -251,6 +261,7 @@ class TypeAliasConstructorTest(unittest.TestCase):
         T = TypeVar("T")
         TA = TypeAliasType("TA", list[T], type_params=(T,))
         self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "TA")
         self.assertEqual(TA.__value__, list[T])
         self.assertEqual(TA.__type_params__, (T,))
         self.assertEqual(TA.__module__, __name__)
@@ -259,6 +270,7 @@ class TypeAliasConstructorTest(unittest.TestCase):
     def test_not_generic(self):
         TA = TypeAliasType("TA", list[int], type_params=())
         self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "TA")
         self.assertEqual(TA.__value__, list[int])
         self.assertEqual(TA.__type_params__, ())
         self.assertEqual(TA.__module__, __name__)
@@ -311,6 +323,7 @@ class TypeAliasConstructorTest(unittest.TestCase):
     def test_keywords(self):
         TA = TypeAliasType(name="TA", value=int)
         self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "TA")
         self.assertIs(TA.__value__, int)
         self.assertEqual(TA.__type_params__, ())
         self.assertEqual(TA.__module__, __name__)
@@ -324,6 +337,8 @@ class TypeAliasConstructorTest(unittest.TestCase):
             TypeAliasType("TA", list, ())
         with self.assertRaises(TypeError):
             TypeAliasType("TA", list, type_params=42)
+        with self.assertRaises(TypeError):
+            TypeAliasType("TA", list, qualname=range(5))
 
 
 class TypeAliasTypeTest(unittest.TestCase):

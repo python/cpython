@@ -2243,7 +2243,7 @@ without the dedicated syntax, as documented below.
    .. versionadded:: 3.10
 
 
-.. class:: TypeAliasType(name, value, *, type_params=())
+.. class:: TypeAliasType(name, value, *, type_params=(), qualname=None)
 
    The type of type aliases created through the :keyword:`type` statement.
 
