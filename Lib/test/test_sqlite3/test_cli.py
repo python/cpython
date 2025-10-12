@@ -308,6 +308,9 @@ class Completion(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(sqlite3.sqlite_version_info < (3, 16, 0),
+                     "PRAGMA table-valued function is not available until "
+                     "SQLite 3.16.0")
     def test_complete_columns(self):
         input_ = textwrap.dedent("""\
             CREATE TABLE _table (_col_table);
@@ -329,6 +332,9 @@ class Completion(unittest.TestCase):
             candidates, ["_col_attached", "_col_table", "_col_temp"]
         )
 
+    @unittest.skipIf(sqlite3.sqlite_version_info < (3, 30, 0),
+                     "PRAGMA function_list is not available until "
+                     "SQLite 3.30.0")
     def test_complete_functions(self):
         input_ = b"SELECT AV\t1);\n.quit\n"
         output = self.write_input(input_)
