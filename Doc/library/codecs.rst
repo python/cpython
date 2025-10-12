@@ -990,32 +990,20 @@ code point, is to store each code point as four consecutive bytes. There are two
 possibilities: store the bytes in big endian or in little endian order. These
 two encodings are called ``UTF-32-BE`` and ``UTF-32-LE`` respectively. Their
 disadvantage is that if e.g. you use ``UTF-32-BE`` on a little endian machine you
-will always have to swap bytes on encoding and decoding. ``UTF-32`` avoids this
-problem: bytes will always be in natural endianness. When these bytes are read
-by a CPU with a different endianness, then bytes have to be swapped though. To
-be able to detect the endianness of a ``UTF-16`` or ``UTF-32`` byte sequence,
-there's the so called BOM ("Byte Order Mark"). This is the Unicode character
-``U+FEFF``. This character can be prepended to every ``UTF-16`` or ``UTF-32``
-byte sequence. The byte swapped version of this character (``0xFFFE``) is an
-illegal character that may not appear in a Unicode text. So when the
-first character in a ``UTF-16`` or ``UTF-32`` byte sequence
-appears to be a ``U+FFFE`` the bytes have to be swapped on decoding.
-
-.. note::
-
-   **Python UTF-16 and UTF-32 Codec Behavior**
-
-   Python's ``UTF-16`` and ``UTF-32`` codecs (when used without an explicit
-   byte order suffix like ``-BE`` or ``-LE``) follow the platform's native
-   byte order when no BOM is present. This differs from the Unicode Standard
-   specification, which states that UTF-16 and UTF-32 encoding schemes should
-   default to big-endian byte order when no BOM is present and no higher-level
-   protocol specifies the byte order.
-
-   This behavior was chosen for practical compatibility reasons, as it avoids
-   byte swapping on the most common platforms, but developers should be aware
-   of this difference when exchanging data with systems that strictly follow
-   the Unicode specification.
+will always have to swap bytes on encoding and decoding.
+Python's ``UTF-32`` codec avoids this problem by using the platform's native byte
+order when no BOM is present. The plain ``UTF-16`` codec (without a ``-BE`` or
+``-LE`` suffix) behaves the same way. Python follows prevailing platform
+practice so native-endian data round-trips without redundant byte swapping,
+even though the Unicode Standard defaults to big-endian when the byte order is
+unspecified.When these bytes are read by a CPU with a different endianness,
+then bytes have to be swapped though. To be able to detect the endianness of a
+``UTF-16`` or ``UTF-32`` byte sequence, there's the so called BOM ("Byte Order Mark").
+This is the Unicode character ``U+FEFF``. This character can be prepended to every
+``UTF-16`` or ``UTF-32`` byte sequence. The byte swapped version of this character
+(``0xFFFE``) is an illegal character that may not appear in a Unicode text.
+So when the first character in a ``UTF-16`` or ``UTF-32`` byte sequence appears to be
+a ``U+FFFE`` the bytes have to be swapped on decoding.
 
 Unfortunately the character ``U+FEFF`` had a second purpose as
 a ``ZERO WIDTH NO-BREAK SPACE``: a character that has no width and doesn't allow
