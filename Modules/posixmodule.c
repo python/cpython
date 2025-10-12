@@ -3307,9 +3307,10 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 #ifdef HAVE_STATX
 typedef struct {
     PyObject_HEAD
-    struct statx stx;
     double atime_sec, btime_sec, ctime_sec, mtime_sec;
     dev_t rdev, dev;
+    /* Assertions in posixmodule_exec rely on struct statx being at the end. */
+    struct statx stx;
 } Py_statx_result;
 
 #define M(attr, type, offset, doc) \
@@ -3363,7 +3364,6 @@ pystatx_result_get_u32(PyObject *op, void *context) {
     Py_statx_result *self = (Py_statx_result *) op;
     uint16_t offset = (uintptr_t)context;
     uint32_t val;
-    assert(offset + sizeof(val) <= sizeof(Py_statx_result));
     memcpy(&val, (void *)self + offset, sizeof(val));
     return PyLong_FromUInt32(val);
 }
@@ -3374,7 +3374,6 @@ pystatx_result_get_nsec(PyObject *op, void *context)
     Py_statx_result *self = (Py_statx_result *) op;
     uint16_t offset = (uintptr_t)context;
     struct statx_timestamp val;
-    assert(offset + sizeof(val) <= sizeof(Py_statx_result));
     memcpy(&val, (void *)self + offset, sizeof(val));
     _posixstate *state = PyType_GetModuleState(Py_TYPE(op));
     assert(state != NULL);
@@ -18517,6 +18516,47 @@ posixmodule_exec(PyObject *m)
 #endif
 
 #ifdef HAVE_STATX
+#ifndef NDEBUG
+    /* struct statx may be extended in the future.  Assert that our definition
+       of struct statx is large enough for all the members we expose to Python.
+       These asserts rely on struct statx being the last member of
+       Py_statx_result.  If you hit these asserts, upgrade your kernel
+       userspace API and/or libc headers. */
+    for (const PyMemberDef *m = pystatx_result_members; m->name != NULL; ++m) {
+        Py_ssize_t size;
+        switch (m->type) {
+            case Py_T_USHORT:
+                size = 2;
+                break;
+            case Py_T_UINT:
+                size = 4;
+                break;
+            case Py_T_ULONGLONG:
+            case Py_T_DOUBLE:
+                size = 8;
+                break;
+            default:
+                assert(false);
+        }
+        assert(m->offset + size <= (Py_ssize_t)sizeof(Py_statx_result));
+    }
+
+    for (const PyGetSetDef *m = pystatx_result_getset; m->name != NULL; ++m) {
+        uint16_t offset = (uintptr_t)m->closure;
+        Py_ssize_t size;
+        if (m->get == pystatx_result_get_u32) {
+            size = 4;
+        }
+        else if (m->get == pystatx_result_get_nsec) {
+            size = sizeof(struct statx_timestamp);
+        }
+        else {
+            assert(false);
+        }
+        assert(offset + size <= (Py_ssize_t)sizeof(Py_statx_result));
+    }
+#endif /* !NDEBUG */
+
     if (statx == NULL) {
         PyObject* dct = PyModule_GetDict(m);
         if (dct == NULL) {
