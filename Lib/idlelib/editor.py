@@ -1399,7 +1399,7 @@ class EditorWindow:
                 if index2line(first) != index2line(last):
                     return self.dedent_region_event(event)
             prefix = self.text.get('insert linestart', 'insert')
-            raw, effective = classifyws(prefix, self.tabwidth)
+            raw, effective = get_line_indent(prefix, self.tabwidth)
             if raw == len(prefix):
                 # Only whitespace to the left
                 self.reindent_to(effective - self.indentwidth)
