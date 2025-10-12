@@ -817,22 +817,6 @@ New deprecations
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 
-Porting to Python 3.15
-======================
-
-This section lists previously described changes and other bugfixes
-that may require changes to your code.
-
-
-Build changes
-=============
-
-* Removed implicit fallback to the bundled copy of the ``libmpdec`` library.
-  Now this should be explicitly enabled with :option:`--with-system-libmpdec`
-  set to ``no`` or with :option:`!--without-system-libmpdec`.
-  (Contributed by Sergey B Kirpichev in :gh:`115119`.)
-
-
 C API changes
 =============
 
@@ -1006,3 +990,19 @@ Deprecated C APIs
 
 
 .. Add C API deprecations above alphabetically, not here at the end.
+
+
+Build changes
+=============
+
+* Removed implicit fallback to the bundled copy of the ``libmpdec`` library.
+  Now this should be explicitly enabled with :option:`--with-system-libmpdec`
+  set to ``no`` or with :option:`!--without-system-libmpdec`.
+  (Contributed by Sergey B Kirpichev in :gh:`115119`.)
+
+
+Porting to Python 3.15
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
