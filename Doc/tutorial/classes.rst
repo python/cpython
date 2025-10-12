@@ -656,8 +656,8 @@ For examnple::
    >>> class CatDog(Cat, Dog):
    ...     pass
    ...
-   >>> cat_dog = CatDog()
-   >>> cat_dog.whoami()
+   >>> catdog = CatDog()
+   >>> catdog.whoami()
    I'm a Dog
 
 In reality it is a little more complicated. Python uses the C3 method
