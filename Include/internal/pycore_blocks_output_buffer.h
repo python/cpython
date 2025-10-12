@@ -243,7 +243,7 @@ static inline PyObject *
 _BlocksOutputBuffer_Finish(_BlocksOutputBuffer *buffer,
                            const Py_ssize_t avail_out)
 {
-    return PyBytesWriter_FinishWithSize(buffer->writer, 
+    return PyBytesWriter_FinishWithSize(buffer->writer,
                                         buffer->allocated - avail_out);
 }
 
