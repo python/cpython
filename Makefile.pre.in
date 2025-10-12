@@ -501,7 +501,6 @@ PYTHON_OBJS=	\
 		Python/pystrtod.o \
 		Python/pystrhex.o \
 		Python/dtoa.o \
-		Python/formatter_unicode.o \
 		Python/fileutils.o \
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
@@ -558,8 +557,10 @@ OBJECT_OBJS=	\
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
 		Objects/typevarobject.o \
-		Objects/unicodeobject.o \
+		Objects/unicode_format.o \
+		Objects/unicode_formatter.o \
 		Objects/unicodectype.o \
+		Objects/unicodeobject.o \
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
 		@PERF_TRAMPOLINE_OBJ@
@@ -2091,7 +2092,6 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/fastsearch.h \
 		$(srcdir)/Objects/stringlib/find.h \
 		$(srcdir)/Objects/stringlib/find_max_char.h \
-		$(srcdir)/Objects/stringlib/localeutil.h \
 		$(srcdir)/Objects/stringlib/partition.h \
 		$(srcdir)/Objects/stringlib/replace.h \
 		$(srcdir)/Objects/stringlib/repr.h \
@@ -2106,6 +2106,7 @@ Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
 Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
+Objects/unicode_format.o: $(srcdir)/Objects/unicode_format.c $(UNICODE_DEPS)
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
