@@ -565,7 +565,7 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         host = "aarch64-pc-windows-msvc"
         condition = "defined(_M_ARM64)"
-        args = ["-fms-runtime-lib=dll", "-fplt"]
+        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerAArch64
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
@@ -585,7 +585,7 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
         host = "x86_64-apple-darwin"
         condition = "defined(__x86_64__) && defined(__APPLE__)"
-        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0", "-fno-plt"]
+        args = ["-fno-plt"]
         optimizer = _optimizers.OptimizerX86
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
