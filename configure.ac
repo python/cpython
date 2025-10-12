@@ -5226,7 +5226,8 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS([ \
-  accept4 alarm bind_textdomain_codeset chmod chown clock closefrom close_range confstr \
+  accept4 alarm bind_textdomain_codeset chmod chown clearenv \
+  clock closefrom close_range confstr \
   copy_file_range ctermid dladdr dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
@@ -8173,7 +8174,7 @@ PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_d
 
 # Determine JIT stencils header files based on target platform
 JIT_STENCILS_H=""
-AS_VAR_IF([enable_experimental_jit], [no], 
+AS_VAR_IF([enable_experimental_jit], [no],
   [],
   [case "$host" in
     aarch64-apple-darwin*)

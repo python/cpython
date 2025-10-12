@@ -5169,7 +5169,8 @@ PyDoc_STRVAR(os_forkpty__doc__,
 "Returns a tuple of (pid, master_fd).\n"
 "Like fork(), return pid of 0 to the child process,\n"
 "and pid of child to the parent process.\n"
-"To both, return fd of newly opened pseudo-terminal.");
+"To both, return fd of newly opened pseudo-terminal.\n"
+"The master_fd is non-inheritable.");
 
 #define OS_FORKPTY_METHODDEF    \
     {"forkpty", (PyCFunction)os_forkpty, METH_NOARGS, os_forkpty__doc__},
@@ -9672,6 +9673,27 @@ exit:
 
 #endif /* !defined(MS_WINDOWS) */
 
+#if defined(HAVE_CLEARENV)
+
+PyDoc_STRVAR(os__clearenv__doc__,
+"_clearenv($module, /)\n"
+"--\n"
+"\n");
+
+#define OS__CLEARENV_METHODDEF    \
+    {"_clearenv", (PyCFunction)os__clearenv, METH_NOARGS, os__clearenv__doc__},
+
+static PyObject *
+os__clearenv_impl(PyObject *module);
+
+static PyObject *
+os__clearenv(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__clearenv_impl(module);
+}
+
+#endif /* defined(HAVE_CLEARENV) */
+
 PyDoc_STRVAR(os_strerror__doc__,
 "strerror($module, code, /)\n"
 "--\n"
@@ -13429,6 +13451,10 @@ exit:
     #define OS_UNSETENV_METHODDEF
 #endif /* !defined(OS_UNSETENV_METHODDEF) */
 
+#ifndef OS__CLEARENV_METHODDEF
+    #define OS__CLEARENV_METHODDEF
+#endif /* !defined(OS__CLEARENV_METHODDEF) */
+
 #ifndef OS_WCOREDUMP_METHODDEF
     #define OS_WCOREDUMP_METHODDEF
 #endif /* !defined(OS_WCOREDUMP_METHODDEF) */
@@ -13584,4 +13610,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=17a595172d899afe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=44f7a1a16dad2e08 input=a9049054013a1b77]*/

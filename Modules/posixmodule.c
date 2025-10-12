@@ -718,6 +718,14 @@ reset_remotedebug_data(PyThreadState *tstate)
            _Py_MAX_SCRIPT_PATH_SIZE);
 }
 
+static void
+reset_asyncio_state(_PyThreadStateImpl *tstate)
+{
+    llist_init(&tstate->asyncio_tasks_head);
+    tstate->asyncio_running_loop = NULL;
+    tstate->asyncio_running_task = NULL;
+}
+
 
 void
 PyOS_AfterFork_Child(void)
@@ -753,6 +761,8 @@ PyOS_AfterFork_Child(void)
     }
 
     reset_remotedebug_data(tstate);
+
+    reset_asyncio_state((_PyThreadStateImpl *)tstate);
 
     // Remove the dead thread states. We "start the world" once we are the only
     // thread state left to undo the stop the world call in `PyOS_BeforeFork`.
@@ -9371,11 +9381,12 @@ Returns a tuple of (pid, master_fd).
 Like fork(), return pid of 0 to the child process,
 and pid of child to the parent process.
 To both, return fd of newly opened pseudo-terminal.
+The master_fd is non-inheritable.
 [clinic start generated code]*/
 
 static PyObject *
 os_forkpty_impl(PyObject *module)
-/*[clinic end generated code: output=60d0a5c7512e4087 input=f1f7f4bae3966010]*/
+/*[clinic end generated code: output=60d0a5c7512e4087 input=24765e0f33275b3b]*/
 {
     int master_fd = -1;
     pid_t pid;
@@ -9401,6 +9412,12 @@ os_forkpty_impl(PyObject *module)
     } else {
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
+        /* set O_CLOEXEC on master_fd */
+        if (_Py_set_inheritable(master_fd, 0, NULL) < 0) {
+            PyErr_FormatUnraisable("Exception ignored when setting master_fd "
+                                   "non-inheritable in forkpty()");
+        }
+
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
         if (warn_about_fork_with_threads("forkpty") < 0)
             return NULL;
@@ -9408,6 +9425,7 @@ os_forkpty_impl(PyObject *module)
     if (pid == -1) {
         return posix_error();
     }
+
     return Py_BuildValue("(Ni)", PyLong_FromPid(pid), master_fd);
 }
 #endif /* HAVE_FORKPTY */
@@ -13536,6 +13554,25 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
 #endif /* !MS_WINDOWS */
 
 
+#ifdef HAVE_CLEARENV
+/*[clinic input]
+os._clearenv
+[clinic start generated code]*/
+
+static PyObject *
+os__clearenv_impl(PyObject *module)
+/*[clinic end generated code: output=2d6705d62c014b51 input=47d2fa7f323c43ca]*/
+{
+    errno = 0;
+    int err = clearenv();
+    if (err) {
+        return posix_error();
+    }
+    Py_RETURN_NONE;
+}
+#endif
+
+
 /*[clinic input]
 os.strerror
 
@@ -17503,6 +17540,7 @@ static PyMethodDef posix_methods[] = {
     OS_POSIX_FADVISE_METHODDEF
     OS_PUTENV_METHODDEF
     OS_UNSETENV_METHODDEF
+    OS__CLEARENV_METHODDEF
     OS_STRERROR_METHODDEF
     OS_FCHDIR_METHODDEF
     OS_FSYNC_METHODDEF
