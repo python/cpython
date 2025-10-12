@@ -2002,8 +2002,15 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
            Caution: using memmove is much slower under MSVC 5; we're not
            usually moving many slots. Years later: under Visual Studio 2022,
            memmove seems just slightly slower than doing it "by hand". */
-
-        _binarysort_INSORT(L, M);
+        for (M = ok; M > L; --M)
+            a[M] = a[M - 1];
+        a[L] = pivot;
+        if (has_values) {
+            pivot = v[ok];
+            for (M = ok; M > L; --M)
+                v[M] = v[M - 1];
+            v[L] = pivot;
+        }
     }
 #endif // pick binary or regular insertion sort
     return 0;
