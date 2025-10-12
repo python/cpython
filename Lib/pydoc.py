@@ -576,25 +576,27 @@ class Doc:
             docloc = None
         return docloc
 
-    def get_version(self, object):
+    def _get_version(self, object):
         if self._is_stdlib_module(object):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", DeprecationWarning)
                 if hasattr(object, '__version__'):
                     return str(object.__version__)
-                else:
-                    return None
         else:
             if hasattr(object, '__version__'):
                 return str(object.__version__)
-            else:
-                return None
+        return None
 
     def _is_stdlib_module(self, object, basedir=sysconfig.get_path('stdlib')):
         try:
             file = inspect.getabsfile(object)
         except TypeError:
             file = '(built-in)'
+
+        if sysconfig.is_python_build():
+            srcdir = sysconfig.get_config_var('srcdir')
+            if srcdir:
+                basedir = os.path.join(srcdir, 'Lib')
 
         basedir = os.path.normcase(basedir)
         return (isinstance(object, type(os)) and
@@ -864,7 +866,7 @@ class HTMLDoc(Doc):
             filelink = '(built-in)'
         info = []
 
-        if (version := self.get_version(object)) is not None:
+        if version := self._get_version(object):
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             info.append('version %s' % self.escape(version))
@@ -1399,7 +1401,7 @@ location listed above.
                 contents.append(self.docother(value, key, name, maxlen=70))
             result = result + self.section('DATA', '\n'.join(contents))
 
-        if (version := self.get_version(object)) is not None:
+        if version := self._get_version(object):
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             result = result + self.section('VERSION', version)

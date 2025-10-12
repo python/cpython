@@ -2305,6 +2305,33 @@ class TestInternalUtilities(unittest.TestCase):
                 trailing_argv0dir = trailing_curdir + [self.argv0dir]
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
 
+    def test__get_version(self):
+        import warnings
+        import json
+
+        class Module:
+            __name__ = 'fauxmod'
+
+            def __getattr__(self, name):
+                if name == "__version__":
+                    from warnings import _deprecated
+                    _deprecated("__version__", remove=(3, 20))
+                    return "1"
+
+        module = Module()
+        doc = pydoc.Doc()
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            version = doc._get_version(json)
+            self.assertEqual(version, "2.0.9")
+            self.assertEqual(len(w), 0)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            version = doc._get_version(module)
+            self.assertEqual(version, "1")
+            self.assertEqual(len(w), 2)
+
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()
