@@ -223,28 +223,6 @@ SMTP Objects
 
 An :class:`SMTP` instance has the following methods and attributes:
 
-.. attribute:: SMTP.helo_resp
-
-   The response to the ``HELO`` command, see :meth:`helo`.
-
-
-.. attribute:: SMTP.ehlo_resp
-
-   The response to the ``EHLO`` command, see :meth:`ehlo`.
-
-
-.. attribute:: SMTP.does_esmtp
-
-   A boolean value indicating whether the server supports ESMTP, see
-   :meth:`ehlo`.
-
-
-.. attribute:: SMTP.esmtp_features
-
-   A dictionary of the names of SMTP service extensions supported by the server,
-   see :meth:`ehlo`.
-
-
 .. method:: SMTP.set_debuglevel(level)
 
    Set the debug output level.  A value of 1 or ``True`` for *level* results in
@@ -500,7 +478,6 @@ An :class:`SMTP` instance has the following methods and attributes:
    :exc:`SMTPRecipientsRefused`
       All recipients were refused.  Nobody got the mail.
 
-
    :exc:`SMTPHeloError`
       The server didn't reply properly to the ``HELO`` greeting.
 
@@ -576,7 +553,28 @@ Normally these do not need to be called directly, so they are not documented
 here.  For details, consult the module code.
 
 
+.. attribute:: SMTP.helo_resp
+
+   The response to the ``HELO`` command, see :meth:`helo`.
+
+
+.. attribute:: SMTP.ehlo_resp
+
+   The response to the ``EHLO`` command, see :meth:`ehlo`.
+
+
+.. attribute:: SMTP.does_esmtp
+
+   A boolean value indicating whether the server supports ESMTP, see
+   :meth:`ehlo`.
+
+
+.. attribute:: SMTP.esmtp_features
+
+   A dictionary of the names of SMTP service extensions supported by the server,
+   see :meth:`ehlo`.
 .. _smtp-example:
+
 
 SMTP Example
 ------------
