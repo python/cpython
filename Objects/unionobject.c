@@ -474,11 +474,13 @@ _Py_union_from_tuple(PyObject *args)
     }
     if (PyTuple_CheckExact(args)) {
         if (!unionbuilder_add_tuple(&ub, args)) {
+            unionbuilder_finalize(&ub);
             return NULL;
         }
     }
     else {
         if (!unionbuilder_add_single(&ub, args)) {
+            unionbuilder_finalize(&ub);
             return NULL;
         }
     }
