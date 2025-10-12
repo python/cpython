@@ -4,7 +4,7 @@
 The Python Profilers
 ********************
 
-**Source code:** :source:`Lib/profile.py`, :source:`Lib/pstats.py`, and :source:`Lib/profile/sample.py`
+**Source code:** :source:`Lib/profile.py`, :source:`Lib/pstats.py`, and :source:`Lib/profiling/sampling/`
 
 --------------
 

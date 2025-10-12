@@ -132,7 +132,7 @@ Other functions
    :term:`bytes-like objects <bytes-like object>`
    *a* and *b* are equal, otherwise ``False``,
    using a "constant-time compare" to reduce the risk of
-   `timing attacks <https://codahale.com/a-lesson-in-timing-attacks/>`_.
+   `timing attacks <https://en.wikipedia.org/wiki/Timing_attack>`_.
    See :func:`hmac.compare_digest` for additional details.
 
 

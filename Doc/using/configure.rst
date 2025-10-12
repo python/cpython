@@ -1089,7 +1089,7 @@ See :source:`Mac/README.rst`.
 iOS Options
 -----------
 
-See :source:`iOS/README.rst`.
+See :source:`Apple/iOS/README.md`.
 
 .. option:: --enable-framework=INSTALLDIR
 
