@@ -3532,10 +3532,10 @@ os.statx
     mask: unsigned_int(bitwise=True)
         A bitmask of STATX_* constants defining the requested information.
 
+    *
+
     flags: int = 0
         A bitmask of AT_NO_AUTOMOUNT and/or AT_STATX_* flags.
-
-    *
 
     dir_fd : dir_fd = None
         If not None, it should be a file descriptor open to a directory,
@@ -3557,7 +3557,7 @@ It's an error to use dir_fd or follow_symlinks when specifying path as
 static PyObject *
 os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
               int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=e3765979ac6fe15b input=7ebd6e0f93476670]*/
+/*[clinic end generated code: output=e3765979ac6fe15b input=f0116380c5dc4f2f]*/
 {
     if (path_and_dir_fd_invalid("statx", path, dir_fd) ||
         dir_fd_and_fd_invalid("statx", dir_fd, path->fd) ||

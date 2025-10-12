@@ -189,7 +189,7 @@ exit:
 #if defined(HAVE_STATX)
 
 PyDoc_STRVAR(os_statx__doc__,
-"statx($module, /, path, mask, flags=0, *, dir_fd=None,\n"
+"statx($module, /, path, mask, *, flags=0, dir_fd=None,\n"
 "      follow_symlinks=True)\n"
 "--\n"
 "\n"
@@ -261,7 +261,7 @@ os_statx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int follow_symlinks = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -285,7 +285,7 @@ os_statx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     if (args[2]) {
         flags = PyLong_AsInt(args[2]);
@@ -293,12 +293,8 @@ os_statx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
-    }
-skip_optional_pos:
-    if (!noptargs) {
-        goto skip_optional_kwonly;
     }
     if (args[3]) {
         if (!dir_fd_converter(args[3], &dir_fd)) {
@@ -13588,4 +13584,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=d5a13014cfc9a617 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17a595172d899afe input=a9049054013a1b77]*/
