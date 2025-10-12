@@ -1753,6 +1753,31 @@ struct s_MergeState {
      Py_ssize_t mr_current, mr_e, mr_mask;
 };
 
+#define _binarysort_BISECT(L, R)    \
+    do {                            \
+        do {                        \
+            M = (L + R) >> 1;       \
+            IFLT(pivot, a[M])       \
+                R = M;              \
+            else                    \
+                L = M + 1;          \
+        } while (L < R);            \
+        assert(L == R);             \
+    } while (0)
+
+#define _binarysort_INSORT(idx, tmp)            \
+    do {                                        \
+        for (tmp = ok; tmp > idx; --tmp)        \
+            a[tmp] = a[tmp - 1];                \
+        a[idx] = pivot;                         \
+        if (has_values) {                       \
+            pivot = v[ok];                      \
+            for (tmp = ok; tmp > idx; --tmp)    \
+                v[tmp] = v[tmp - 1];            \
+            v[idx] = pivot;                     \
+        }                                       \
+    } while (0)
+
 /* binarysort is the best method for sorting small arrays: it does few
    compares, but can do data movement quadratic in the number of elements.
    ss->keys is viewed as an array of n kays, a[:n]. a[:ok] is already sorted.
@@ -1786,24 +1811,10 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     Py_ssize_t aL = 0;
     Py_ssize_t aR = ok - 1;
     pivot = a[ok];
+
     assert(aL < aR);
-    do {
-        M = (aL + aR) >> 1;
-        IFLT(pivot, a[M])
-            aR = M;
-        else
-            aL = M + 1;
-    } while (aL < aR);
-    assert(aL == aR);
-    for (M = ok; M > aL; --M)
-        a[M] = a[M - 1];
-    a[aL] = pivot;
-    if (has_values) {
-        pivot = v[ok];
-        for (M = ok; M > aL; --M)
-            v[M] = v[M - 1];
-        v[aL] = pivot;
-    }
+    _binarysort_BISECT(aL, aR);
+    _binarysort_INSORT(aL, M);
     ++ok;
 
     Py_ssize_t m = ok < 5 ? 11 : ok + 6;
@@ -1817,24 +1828,8 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             pivot = a[ok];
 
             assert(aL < aR);
-            do {
-                M = (aL + aR) >> 1;
-                IFLT(pivot, a[M])
-                    aR = M;
-                else
-                    aL = M + 1;
-            } while (aL < aR);
-            assert(aL == aR);
-
-            for (M = ok; M > aL; --M)
-                a[M] = a[M - 1];
-            a[aL] = pivot;
-            if (has_values) {
-                pivot = v[ok];
-                for (M = ok; M > aL; --M)
-                    v[M] = v[M - 1];
-                v[aL] = pivot;
-            }
+            _binarysort_BISECT(aL, aR);
+            _binarysort_INSORT(aL, M);
 
             std += labs(aL - mu);
             std /= 2;    // EWMA with alpha=0.5
@@ -1850,14 +1845,13 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
                 aL = 0;
                 aR = mu;
                 if (aL < aR) {
-                    std += !std;
-                    M = aR - std;
+                    M = aR - 1 - std;
                     if (M < aL)
                         M = aL;
                     IFLT(pivot, a[M]) {
                         aR = M;
                         if (aL < aR) {
-                            M = aR - std;
+                            M = aR - 1 - std;
                             if (M < aL)
                                 M = aL;
                             IFLT(pivot, a[M])
@@ -1904,16 +1898,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
                     aL = M + 1;
             }
             assert(aL == aR);
-
-            for (M = ok; M > aL; --M)
-                a[M] = a[M - 1];
-            a[aL] = pivot;
-            if (has_values) {
-                pivot = v[ok];
-                for (M = ok; M > aL; --M)
-                    v[M] = v[M - 1];
-                v[aL] = pivot;
-            }
+            _binarysort_INSORT(aL, M);
 
             std += labs(aL - mu);
             std /= 2;    // EWMA with alpha=0.5
@@ -2017,15 +2002,8 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
            Caution: using memmove is much slower under MSVC 5; we're not
            usually moving many slots. Years later: under Visual Studio 2022,
            memmove seems just slightly slower than doing it "by hand". */
-        for (M = ok; M > L; --M)
-            a[M] = a[M - 1];
-        a[L] = pivot;
-        if (has_values) {
-            pivot = v[ok];
-            for (M = ok; M > L; --M)
-                v[M] = v[M - 1];
-            v[L] = pivot;
-        }
+
+        _binarysort_INSORT(L, M);
     }
 #endif // pick binary or regular insertion sort
     return 0;
