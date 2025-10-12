@@ -643,21 +643,21 @@ searching twice in the same class where there is an overlap in the hierarchy.
 For examnple::
 
    >>> class Animal:
-   ...     def who_am_i(self):
+   ...     def whoami(self):
    ...         print("I'm an Animal")
    ...
    >>> class Cat(Animal):
    ...     pass
-   ...  
+   ...
    >>> class Dog(Animal):
-   ...     def who_am_i(self):
+   ...     def whoami(self):
    ...         print("I'm a Dog")
-   ...  
+   ...
    >>> class CatDog(Cat, Dog):
    ...     pass
    ...
    >>> cat_dog = CatDog()
-   >>> cat_dog.who_am_i()
+   >>> cat_dog.whoami()
    I'm a Dog
 
 In reality it is a little more complicated. Python uses the C3 method
