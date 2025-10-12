@@ -1,5 +1,5 @@
-:mod:`email.charset`: Representing character sets
--------------------------------------------------
+:mod:`!email.charset`: Representing character sets
+--------------------------------------------------
 
 .. module:: email.charset
    :synopsis: Character Sets
@@ -58,9 +58,9 @@ Import this class from the :mod:`email.charset` module.
    .. attribute:: header_encoding
 
       If the character set must be encoded before it can be used in an email
-      header, this attribute will be set to ``Charset.QP`` (for
-      quoted-printable), ``Charset.BASE64`` (for base64 encoding), or
-      ``Charset.SHORTEST`` for the shortest of QP or BASE64 encoding. Otherwise,
+      header, this attribute will be set to ``charset.QP`` (for
+      quoted-printable), ``charset.BASE64`` (for base64 encoding), or
+      ``charset.SHORTEST`` for the shortest of QP or BASE64 encoding. Otherwise,
       it will be ``None``.
 
 
@@ -68,7 +68,7 @@ Import this class from the :mod:`email.charset` module.
 
       Same as *header_encoding*, but describes the encoding for the mail
       message's body, which indeed may be different than the header encoding.
-      ``Charset.SHORTEST`` is not allowed for *body_encoding*.
+      ``charset.SHORTEST`` is not allowed for *body_encoding*.
 
 
    .. attribute:: output_charset
@@ -108,39 +108,6 @@ Import this class from the :mod:`email.charset` module.
       Returns the string ``quoted-printable`` if *body_encoding* is ``QP``,
       returns the string ``base64`` if *body_encoding* is ``BASE64``, and
       returns the string ``7bit`` otherwise.
-
-
-   .. XXX to_splittable and from_splittable are not there anymore!
-
-   .. to_splittable(s)
-
-      Convert a possibly multibyte string to a safely splittable format. *s* is
-      the string to split.
-
-      Uses the *input_codec* to try and convert the string to Unicode, so it can
-      be safely split on character boundaries (even for multibyte characters).
-
-      Returns the string as-is if it isn't known how to convert *s* to Unicode
-      with the *input_charset*.
-
-      Characters that could not be converted to Unicode will be replaced with
-      the Unicode replacement character ``'U+FFFD'``.
-
-
-   .. from_splittable(ustr[, to_output])
-
-      Convert a splittable string back into an encoded string.  *ustr* is a
-      Unicode string to "unsplit".
-
-      This method uses the proper codec to try and convert the string from
-      Unicode back into an encoded format.  Return the string as-is if it is not
-      Unicode, or if it could not be converted from Unicode.
-
-      Characters that could not be converted from Unicode will be replaced with
-      an appropriate character (usually ``'?'``).
-
-      If *to_output* is ``True`` (the default), uses *output_codec* to convert
-      to an encoded format.  If *to_output* is ``False``, it uses *input_codec*.
 
 
    .. method:: get_output_charset()
@@ -183,7 +150,7 @@ Import this class from the :mod:`email.charset` module.
    .. method:: __str__()
 
       Returns *input_charset* as a string coerced to lower
-      case. :meth:`__repr__` is an alias for :meth:`__str__`.
+      case. :meth:`!__repr__` is an alias for :meth:`!__str__`.
 
 
    .. method:: __eq__(other)
@@ -208,9 +175,9 @@ new entries to the global character set, alias, and codec registries:
    *charset* is the input character set, and must be the canonical name of a
    character set.
 
-   Optional *header_enc* and *body_enc* is either ``Charset.QP`` for
-   quoted-printable, ``Charset.BASE64`` for base64 encoding,
-   ``Charset.SHORTEST`` for the shortest of quoted-printable or base64 encoding,
+   Optional *header_enc* and *body_enc* is either ``charset.QP`` for
+   quoted-printable, ``charset.BASE64`` for base64 encoding,
+   ``charset.SHORTEST`` for the shortest of quoted-printable or base64 encoding,
    or ``None`` for no encoding.  ``SHORTEST`` is only valid for
    *header_enc*. The default is ``None`` for no encoding.
 

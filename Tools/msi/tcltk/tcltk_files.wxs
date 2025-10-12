@@ -5,8 +5,19 @@
             <Component Id="_tkinter.pyd" Directory="DLLs" Guid="*">
                 <File Name="_tkinter.pyd" KeyPath="yes" />
             </Component>
+        </ComponentGroup>
+        <ComponentGroup Id="tcltk_dlls">
             <Component Id="_tkinter.lib" Directory="libs" Guid="*">
                 <File Name="_tkinter.lib" KeyPath="yes" />
+            </Component>
+            <Component Id="tcl86t.dll" Directory="DLLs" Guid="*">
+                <File Name="tcl86t.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="tk86t.dll" Directory="DLLs" Guid="*">
+                <File Name="tk86t.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="zlib1.dll" Directory="DLLs" Guid="*">
+                <File Name="zlib1.dll" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>

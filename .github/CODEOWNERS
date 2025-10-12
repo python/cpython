@@ -1,0 +1,632 @@
+# See https://help.github.com/articles/about-codeowners/
+# for further details about the .github/CODEOWNERS file.
+
+# It uses the same pattern rule for gitignore file
+# https://git-scm.com/docs/gitignore#_pattern_format
+# Notably, a later match overrides earlier matches, so order matters.
+# If using a wildcard pattern, try to be as specific as possible to avoid
+# matching unintended files or overriding previous entries.
+# To exclude a file from ownership, add a line with only the file.
+# See the exclusions section at the end of the file for examples.
+
+# =======
+# Purpose
+# =======
+#
+# An entry in this file does not imply 'ownership', despite the name of the
+# file, but instead that those listed take an interest in that part of the
+# project and will automatically be added as reviewers to PRs that affect
+# the matching files.
+# See also the Experts Index in the Python Developer's Guide:
+# https://devguide.python.org/core-developers/experts/
+#
+# =========
+# Structure
+# =========
+#
+# The CODEOWNERS file is organised by topic area.
+# Please add new entries in alphabetical order within the relevant section.
+# Where possible, keep related files together. For example, documentation,
+# code, and tests for a given item should all be listed in the same place.
+#
+# GitHub usernames should be aligned to column 31, or the next multiple
+# of three if the relevant paths are too long to fit.
+#
+# Top-level sections are:
+#
+# * Buildbots, Continuous Integration, and Testing
+#     project-wide configuration files, internal tools for use in CI,
+#     linting.
+# * Build System
+#     the Makefile, autoconf, and other autotools files.
+# * Documentation
+#     broader sections of documentation, documentation tools
+# * Internal Tools & Data
+#     internal tools, integration with external systems,
+#     entries that don't fit elsewhere
+# * Platform Support
+#     relating to support for specific platforms
+# * Interpreter Core
+#     the grammar, parser, compiler, interpreter, etc.
+# * Standard Library
+#     standard library modules (from both Lib and Modules)
+#     and related files (such as their tests and docs)
+# * Exclusions
+#     exclusions from .github/CODEOWNERS should go at the very end
+#     because the final matching pattern will take precedence.
+
+# ----------------------------------------------------------------------------
+# Buildbots, Continuous Integration, and Testing
+# ----------------------------------------------------------------------------
+
+# Azure Pipelines
+.azure-pipelines/             @AA-Turner
+
+# GitHub & related scripts
+.github/                               @ezio-melotti @hugovk @AA-Turner
+Tools/build/compute-changes.py         @AA-Turner
+Tools/build/verify_ensurepip_wheels.py @AA-Turner @pfmoore @pradyunsg
+
+# Pre-commit
+.pre-commit-config.yaml       @hugovk
+.ruff.toml                    @hugovk @AlexWaygood @AA-Turner
+
+# Patchcheck
+Tools/patchcheck/             @AA-Turner
+
+
+# ----------------------------------------------------------------------------
+# Build System
+# ----------------------------------------------------------------------------
+
+# Autotools
+configure*                       @erlend-aasland @corona10 @AA-Turner @emmatyping
+Makefile.pre.in                  @erlend-aasland @AA-Turner @emmatyping
+Modules/makesetup                @erlend-aasland @AA-Turner @emmatyping
+Modules/Setup*                   @erlend-aasland @AA-Turner @emmatyping
+Tools/build/regen-configure.sh   @AA-Turner
+
+# generate-build-details
+Tools/build/generate-build-details.py   @FFY00
+Lib/test/test_build_details.py          @FFY00
+
+
+# ----------------------------------------------------------------------------
+# Documentation
+# ----------------------------------------------------------------------------
+
+# Internal Docs
+InternalDocs/                 @AA-Turner
+
+# Tools, Configuration, etc
+Doc/Makefile                  @AA-Turner @hugovk
+Doc/_static/                  @AA-Turner @hugovk
+Doc/conf.py                   @AA-Turner @hugovk
+Doc/make.bat                  @AA-Turner @hugovk
+Doc/requirements.txt          @AA-Turner @hugovk
+Doc/tools/                    @AA-Turner @hugovk
+
+# PR Previews
+.readthedocs.yml              @AA-Turner
+
+# Sections
+Doc/reference/                @willingc @AA-Turner
+Doc/whatsnew/                 @AA-Turner
+
+
+# ----------------------------------------------------------------------------
+# Internal Tools and Data
+# ----------------------------------------------------------------------------
+
+# Argument Clinic
+Tools/clinic/                 @erlend-aasland @AA-Turner
+Lib/test/test_clinic.py       @erlend-aasland @AA-Turner
+Doc/howto/clinic.rst          @erlend-aasland @AA-Turner
+
+# C Analyser
+Tools/c-analyzer/             @ericsnowcurrently
+
+# Fuzzing
+Modules/_xxtestfuzz/          @ammaraskar
+
+# Limited C API & Stable ABI
+Doc/c-api/stable.rst          @encukou
+Doc/data/*.abi                @encukou
+Misc/stable_abi.toml          @encukou
+Tools/build/stable_abi.py     @encukou
+
+# SBOM
+Misc/externals.spdx.json      @sethmlarson
+Misc/sbom.spdx.json           @sethmlarson
+Tools/build/generate_sbom.py  @sethmlarson
+
+
+# ----------------------------------------------------------------------------
+# Platform Support
+# ----------------------------------------------------------------------------
+
+# Android
+Android/                      @mhsmith @freakboy3742
+Doc/using/android.rst         @mhsmith @freakboy3742
+Lib/_android_support.py       @mhsmith @freakboy3742
+Lib/test/test_android.py      @mhsmith @freakboy3742
+
+# iOS
+Doc/using/ios.rst             @freakboy3742
+Lib/_ios_support.py           @freakboy3742
+Apple/                        @freakboy3742
+iOS/                          @freakboy3742
+
+# macOS
+Mac/                          @python/macos-team
+Lib/_osx_support.py           @python/macos-team
+Lib/test/test__osx_support.py @python/macos-team
+
+# WebAssembly
+Tools/wasm/README.md          @brettcannon @freakboy3742 @emmatyping
+
+# WebAssembly (Emscripten)
+Tools/wasm/config.site-wasm32-emscripten  @freakboy3742 @emmatyping
+Tools/wasm/emscripten                     @freakboy3742 @emmatyping
+
+# WebAssembly (WASI)
+Tools/wasm/wasi-env           @brettcannon @emmatyping
+Tools/wasm/wasi.py            @brettcannon @emmatyping
+Tools/wasm/wasi               @brettcannon @emmatyping
+
+# Windows
+PC/                           @python/windows-team
+PCbuild/                      @python/windows-team
+
+# Windows installer packages
+Tools/msi/                    @python/windows-team
+Tools/nuget/                  @python/windows-team
+
+# Windows Launcher
+PC/launcher.c                 @python/windows-team @vsajip
+
+
+# ----------------------------------------------------------------------------
+# Interpreter Core
+# ----------------------------------------------------------------------------
+
+# AST
+Lib/_ast_unparse.py           @isidentical @JelleZijlstra @eclips4 @tomasr8
+Lib/ast.py                    @isidentical @JelleZijlstra @eclips4 @tomasr8
+Lib/test/test_ast/            @eclips4 @tomasr8
+Parser/asdl.py                @isidentical @JelleZijlstra @eclips4 @tomasr8
+Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4 @tomasr8
+Python/ast.c                  @isidentical @JelleZijlstra @eclips4 @tomasr8
+Python/ast_preprocess.c       @isidentical @eclips4 @tomasr8
+
+# Built-in types
+Objects/call.c                @markshannon
+Objects/codeobject.c          @markshannon
+Objects/dict*                 @methane @markshannon
+Objects/frameobject.c         @markshannon
+**/*genobject*                @markshannon
+Objects/object.c              @ZeroIntensity
+Objects/set*                  @rhettinger
+Objects/type*                 @markshannon
+Objects/typevarobject.c       @JelleZijlstra
+Objects/unionobject.c         @JelleZijlstra
+
+# Byte code interpreter ('the eval loop')
+Python/bytecodes.c            @markshannon
+Python/ceval*                 @markshannon
+Tools/cases_generator/        @markshannon
+
+# Compiler (AST to byte code)
+Python/assemble.c             @markshannon @iritkatriel
+Python/codegen.c              @markshannon @iritkatriel
+Python/compile.c              @markshannon @iritkatriel
+Python/flowgraph.c            @markshannon @iritkatriel
+Python/instruction_sequence.c @iritkatriel
+Python/symtable.c             @JelleZijlstra @carljm
+
+# Context variables & HAMT
+**/contextvars*                     @1st1
+**/*hamt*                           @1st1
+Include/cpython/context.h           @1st1
+Include/internal/pycore_context.h   @1st1
+Lib/test/test_context.py            @1st1
+Python/context.c                    @1st1
+
+# Core Modules
+**/*bltinmodule*              @ericsnowcurrently
+**/*sysmodule*                @ericsnowcurrently
+
+# Exceptions
+Lib/test/test_except*.py      @iritkatriel
+Objects/exceptions.c          @iritkatriel
+
+# Getpath
+Lib/test/test_getpath.py      @FFY00
+Modules/getpath*              @FFY00
+
+# Hashing / ``hash()`` and related
+Include/cpython/pyhash.h         @gpshead @picnixz
+Include/internal/pycore_pyhash.h @gpshead @picnixz
+Include/pyhash.h                 @gpshead @picnixz
+Python/pyhash.c                  @gpshead @picnixz
+
+# The import system (including importlib)
+**/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
+Python/import.c               @brettcannon @ericsnowcurrently @ncoghlan @warsaw @kumaraditya303
+**/*freeze*                   @ericsnowcurrently
+**/*frozen*                   @ericsnowcurrently
+**/*modsupport*               @ericsnowcurrently
+**/*modulefinder*             @ericsnowcurrently
+**/*moduleobject*             @ericsnowcurrently
+**/*multiphase*               @ericsnowcurrently
+**/*pkgutil*                  @ericsnowcurrently
+**/*pythonrun*                @ericsnowcurrently
+**/*runpy*                    @ericsnowcurrently
+**/*singlephase*              @ericsnowcurrently
+Doc/c-api/module.rst          @ericsnowcurrently
+Lib/test/test_module/         @ericsnowcurrently
+Python/dynload_*.c            @ericsnowcurrently
+
+# Initialisation
+**/*initconfig*               @ericsnowcurrently
+**/*pathconfig*               @ericsnowcurrently
+**/*preconfig*                @ericsnowcurrently
+Doc/library/sys_path_init.rst @FFY00
+Doc/c-api/init_config.rst     @FFY00
+
+# Interpreter main program
+Modules/main.c                @ericsnowcurrently
+Programs/_bootstrap_python.c  @ericsnowcurrently
+Programs/python.c             @ericsnowcurrently
+
+# JIT
+Include/internal/pycore_jit.h @brandtbucher @savannahostrowski @diegorusso
+Python/jit.c                  @brandtbucher @savannahostrowski @diegorusso
+Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
+InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
+
+# Micro-op / μop / Tier 2 Optimiser
+Python/optimizer.c            @markshannon
+Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner
+Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner
+Python/optimizer_symbols.c    @markshannon @tomasr8
+
+# Parser, Lexer, and Grammar
+Grammar/python.gram           @pablogsal @lysnikolaou
+Lib/test/test_peg_generator/  @pablogsal @lysnikolaou
+Lib/test/test_tokenize.py     @pablogsal @lysnikolaou
+Lib/tokenize.py               @pablogsal @lysnikolaou
+Parser/                       @pablogsal @lysnikolaou
+Tools/peg_generator/          @pablogsal @lysnikolaou
+
+# Runtime state/lifecycle
+**/*gil*                      @ericsnowcurrently
+**/*pylifecycle*              @ericsnowcurrently @ZeroIntensity
+**/*pystate*                  @ericsnowcurrently @ZeroIntensity
+Include/internal/pycore_*_init.h          @ericsnowcurrently
+Include/internal/pycore_*_state.h         @ericsnowcurrently
+Include/internal/pycore_atexit.h          @ericsnowcurrently
+Include/internal/pycore_freelist.h        @ericsnowcurrently
+Include/internal/pycore_global_objects.h  @ericsnowcurrently
+Include/internal/pycore_interp.h          @ericsnowcurrently
+Include/internal/pycore_obmalloc.h        @ericsnowcurrently
+Include/internal/pycore_pymem.h           @ericsnowcurrently
+Include/internal/pycore_runtime.h         @ericsnowcurrently
+Include/internal/pycore_stackref.h        @Fidget-Spinner
+Include/internal/pycore_tstate.h          @ericsnowcurrently
+Tools/build/generate_global_objects.py    @ericsnowcurrently
+
+# Remote Debugging
+Python/remote_debug.h               @pablogsal
+Python/remote_debugging.c           @pablogsal
+Modules/_remote_debugging_module.c  @pablogsal @ambv @1st1
+
+# Sub-Interpreters
+**/*crossinterp*                          @ericsnowcurrently
+**/*interpreteridobject.*                 @ericsnowcurrently
+Doc/library/concurrent.interpreters.rst   @ericsnowcurrently
+Lib/concurrent/futures/interpreter.py     @ericsnowcurrently
+Lib/concurrent/interpreters/              @ericsnowcurrently
+Lib/test/support/channels.py              @ericsnowcurrently
+Lib/test/test__interp*.py                 @ericsnowcurrently
+Lib/test/test_interpreters/               @ericsnowcurrently
+Modules/_interp*module.c                  @ericsnowcurrently
+
+# Template string literals (t-strings)
+Lib/test/test_tstring.py      @lysnikolaou
+Objects/interpolationobject.c @lysnikolaou
+Objects/templateobject.c      @lysnikolaou
+
+# Tests
+Lib/test/test_patma.py           @brandtbucher
+Lib/test/test_type_*.py          @JelleZijlstra
+Lib/test/test_capi/test_misc.py  @markshannon
+
+
+# ----------------------------------------------------------------------------
+# Standard Library
+# ----------------------------------------------------------------------------
+
+# Annotationlib
+Doc/library/annotationlib.rst    @JelleZijlstra
+Lib/annotationlib.py             @JelleZijlstra
+Lib/test/test_annotationlib.py   @JelleZijlstra
+
+# Argparse
+Doc/**/argparse*.rst          @savannahostrowski
+Lib/argparse.py               @savannahostrowski
+Lib/test/test_argparse.py     @savannahostrowski
+
+# Asyncio
+Doc/library/asyncio*.rst      @1st1 @asvetlov @kumaraditya303 @willingc
+InternalDocs/asyncio.md       @1st1 @asvetlov @kumaraditya303 @willingc @AA-Turner
+Lib/asyncio/                  @1st1 @asvetlov @kumaraditya303 @willingc
+Lib/test/test_asyncio/        @1st1 @asvetlov @kumaraditya303 @willingc
+Modules/_asynciomodule.c      @1st1 @asvetlov @kumaraditya303 @willingc
+
+# Bisect
+Doc/library/bisect.rst        @rhettinger
+Lib/bisect.py                 @rhettinger
+Lib/test/test_bisect.py       @rhettinger
+Modules/_bisectmodule.c       @rhettinger
+
+# Calendar
+Lib/calendar.py               @AA-Turner
+Lib/test/test_calendar.py     @AA-Turner
+
+# Cryptographic Primitives and Applications
+**/*hashlib*                  @gpshead @picnixz
+**/*hashopenssl*              @gpshead @picnixz
+**/*hmac*                     @gpshead @picnixz
+**/*ssl*                      @gpshead @picnixz
+Modules/_hacl/                @gpshead @picnixz
+Modules/*blake*               @gpshead @picnixz
+Modules/*md5*                 @gpshead @picnixz
+Modules/*sha*                 @gpshead @picnixz
+
+# Codecs
+Modules/cjkcodecs/            @corona10
+Tools/unicode/gencjkcodecs.py @corona10
+
+# Collections
+Doc/library/collections.abc.rst  @rhettinger
+Doc/library/collections.rst      @rhettinger
+Lib/_collections_abc.py          @rhettinger
+Lib/collections/                 @rhettinger
+Lib/test/test_collections.py     @rhettinger
+Modules/_collectionsmodule.c     @rhettinger
+
+# Colorize
+Lib/_colorize.py              @hugovk
+Lib/test/test__colorize.py    @hugovk
+
+# Config Parser
+Lib/configparser.py           @jaraco
+Lib/test/test_configparser.py @jaraco
+
+# Dataclasses
+Doc/library/dataclasses.rst   @ericvsmith
+Lib/dataclasses.py            @ericvsmith
+Lib/test/test_dataclasses/    @ericvsmith
+
+# Dates and times
+Doc/**/*time.rst                 @pganssle @abalkin
+Doc/library/zoneinfo.rst         @pganssle
+Include/datetime.h               @pganssle @abalkin
+Include/internal/pycore_time.h   @pganssle @abalkin
+Lib/test/test_zoneinfo/          @pganssle
+Lib/zoneinfo/                    @pganssle
+Lib/*time.py                     @pganssle @abalkin
+Lib/test/datetimetester.py       @pganssle @abalkin
+Lib/test/test_*time.py           @pganssle @abalkin
+Modules/*zoneinfo*               @pganssle
+Modules/*time*                   @pganssle @abalkin
+Python/pytime.c                  @pganssle @abalkin
+
+# Dbm
+Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
+Lib/dbm/                      @corona10 @erlend-aasland @serhiy-storchaka
+Lib/test/test_dbm*.py         @corona10 @erlend-aasland @serhiy-storchaka
+Modules/*dbm*                 @corona10 @erlend-aasland @serhiy-storchaka
+
+# Email and related
+**/*mail*                     @python/email-team
+**/*smtp*                     @python/email-team
+**/*mime*                     @python/email-team
+**/*imap*                     @python/email-team
+**/*poplib*                   @python/email-team
+
+# Ensurepip
+Doc/library/ensurepip.rst     @pfmoore @pradyunsg
+Lib/ensurepip/                @pfmoore @pradyunsg
+Lib/test/test_ensurepip.py    @pfmoore @pradyunsg
+
+# Enum
+Doc/howto/enum.rst               @ethanfurman
+Doc/library/enum.rst             @ethanfurman
+Lib/enum.py                      @ethanfurman
+Lib/test/test_enum.py            @ethanfurman
+Lib/test/test_json/test_enum.py  @ethanfurman
+
+# FTP
+Doc/library/ftplib.rst        @giampaolo
+Lib/ftplib.py                 @giampaolo
+Lib/test/test_ftplib.py       @giampaolo
+
+# Functools
+Doc/library/functools.rst     @rhettinger
+Lib/functools.py              @rhettinger
+Lib/test/test_functools.py    @rhettinger
+Modules/_functoolsmodule.c    @rhettinger
+
+# Garbage collector
+Modules/gcmodule.c            @pablogsal
+Doc/library/gc.rst            @pablogsal
+
+# Gettext
+Doc/library/gettext.rst       @tomasr8
+Lib/gettext.py                @tomasr8
+Lib/test/test_gettext.py      @tomasr8
+Tools/i18n/pygettext.py       @tomasr8
+
+# Heapq
+Doc/library/heapq*            @rhettinger
+Lib/heapq.py                  @rhettinger
+Lib/test/test_heapq.py        @rhettinger
+Modules/_heapqmodule.c        @rhettinger
+
+# HTML
+Doc/library/html*                   @ezio-melotti
+Lib/html/                           @ezio-melotti
+Lib/_markupbase.py                  @ezio-melotti
+Lib/test/test_html*.py              @ezio-melotti
+Tools/build/parse_html5_entities.py @ezio-melotti
+
+# IDLE
+Doc/library/idle.rst          @terryjreedy
+Lib/idlelib/                  @terryjreedy
+Lib/turtledemo/               @terryjreedy
+
+# importlib.metadata
+Doc/library/importlib.metadata.rst  @jaraco @warsaw
+Lib/importlib/metadata/             @jaraco @warsaw
+Lib/test/test_importlib/metadata/   @jaraco @warsaw
+
+# importlib.resources
+Doc/library/importlib.resources.abc.rst   @jaraco @warsaw
+Doc/library/importlib.resources.rst       @jaraco @warsaw
+Lib/importlib/resources/                  @jaraco @warsaw @FFY00
+Lib/test/test_importlib/resources/        @jaraco @warsaw @FFY00
+
+# Itertools
+Doc/library/itertools.rst     @rhettinger
+Lib/test/test_itertools.py    @rhettinger
+Modules/itertoolsmodule.c     @rhettinger
+
+# Logging
+Doc/**/logging*               @vsajip
+Lib/logging/                  @vsajip
+Lib/test/test_logging.py      @vsajip
+
+# Multiprocessing
+Doc/library/multiprocessing*.rst @gpshead
+Lib/multiprocessing/             @gpshead
+Lib/test/*multiprocessing.py     @gpshead
+Lib/test/test_multiprocessing*/  @gpshead
+Modules/_multiprocessing/        @gpshead
+
+# Pathlib
+Doc/library/pathlib.rst       @barneygale
+Lib/pathlib/                  @barneygale
+Lib/test/test_pathlib/        @barneygale
+
+# Pdb & Bdb
+Doc/library/bdb.rst           @gaogaotiantian
+Doc/library/pdb.rst           @gaogaotiantian
+Lib/bdb.py                    @gaogaotiantian
+Lib/pdb.py                    @gaogaotiantian
+Lib/test/test_bdb.py          @gaogaotiantian
+Lib/test/test_pdb.py          @gaogaotiantian
+Lib/test/test_remote_pdb.py   @gaogaotiantian
+
+# Pydoc
+Lib/pydoc.py                  @AA-Turner
+Lib/pydoc_data/               @AA-Turner
+Lib/test/test_pydoc/          @AA-Turner
+
+# PyREPL
+Lib/_pyrepl/                  @pablogsal @lysnikolaou @ambv
+Lib/test/test_pyrepl/         @pablogsal @lysnikolaou @ambv
+
+# Random
+Doc/library/random.rst        @rhettinger
+Lib/random.py                 @rhettinger
+Lib/test/test_random.py       @rhettinger
+Modules/_randommodule.c       @rhettinger
+
+# Shutil
+Doc/library/shutil.rst        @giampaolo
+Lib/shutil.py                 @giampaolo
+Lib/test/test_shutil.py       @giampaolo
+
+# Site
+Lib/site.py                   @FFY00
+Lib/test/test_site.py         @FFY00
+Doc/library/site.rst          @FFY00
+
+# string.templatelib
+Doc/library/string.templatelib.rst        @lysnikolaou @AA-Turner
+Lib/string/templatelib.py                 @lysnikolaou @AA-Turner
+Lib/test/test_string/test_templatelib.py  @lysnikolaou @AA-Turner
+
+# Sysconfig
+**/*sysconfig*                @FFY00
+
+# SQLite 3
+Doc/library/sqlite3.rst       @berkerpeksag @erlend-aasland
+Lib/sqlite3/                  @berkerpeksag @erlend-aasland
+Lib/test/test_sqlite3/        @berkerpeksag @erlend-aasland
+Modules/_sqlite/              @berkerpeksag @erlend-aasland
+
+# Subprocess
+Lib/subprocess.py             @gpshead
+Lib/test/test_subprocess.py   @gpshead
+Modules/*subprocess*          @gpshead
+
+# Tarfile
+Doc/library/tarfile.rst       @ethanfurman
+Lib/tarfile.py                @ethanfurman
+Lib/test/test_tarfile.py      @ethanfurman
+
+# TOML
+Doc/library/tomllib.rst       @encukou @hauntsaninja
+Lib/test/test_tomllib/        @encukou @hauntsaninja
+Lib/tomllib/                  @encukou @hauntsaninja
+
+# Typing
+Doc/library/typing.rst        @JelleZijlstra @AlexWaygood
+Lib/test/test_typing.py       @JelleZijlstra @AlexWaygood
+Lib/test/typinganndata/       @JelleZijlstra @AlexWaygood
+Lib/typing.py                 @JelleZijlstra @AlexWaygood
+Modules/_typingmodule.c       @JelleZijlstra @AlexWaygood
+
+# Types
+Lib/test/test_types.py        @AA-Turner
+Lib/types.py                  @AA-Turner
+Modules/_typesmodule.c        @AA-Turner
+
+# Unittest
+Lib/unittest/mock.py             @cjw296
+Lib/test/test_unittest/testmock/ @cjw296
+
+# Urllib
+**/*robotparser*              @berkerpeksag
+
+# Venv
+**/*venv*                     @vsajip @FFY00
+
+# Weakref
+**/*weakref*                  @kumaraditya303
+
+# Zipfile.Path
+Lib/test/test_zipfile/_path/  @jaraco
+Lib/zipfile/_path/            @jaraco
+
+# Zstandard
+Lib/compression/zstd/         @AA-Turner @emmatyping
+Lib/test/test_zstd.py         @AA-Turner @emmatyping
+Modules/_zstd/                @AA-Turner @emmatyping
+
+# ----------------------------------------------------------------------------
+
+# Exclusions from .github/CODEOWNERS should go at the very end
+# because the final matching pattern will take precedence.
+
+# Exclude .mailmap from being owned by @python/email-team
+.mailmap
+
+# Exclude Argument Clinic directories
+Modules/**/clinic/
+Objects/**/clinic/
+PC/**/clinic/
+Python/**/clinic/

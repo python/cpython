@@ -1,5 +1,5 @@
-:mod:`pkgutil` --- Package extension utility
-============================================
+:mod:`!pkgutil` --- Package extension utility
+=============================================
 
 .. module:: pkgutil
    :synopsis: Utilities for the import system.
@@ -25,18 +25,19 @@ support.
       from pkgutil import extend_path
       __path__ = extend_path(__path__, __name__)
 
-   This will add to the package's ``__path__`` all subdirectories of directories
-   on ``sys.path`` named after the package.  This is useful if one wants to
-   distribute different parts of a single logical package as multiple
+   For each directory on :data:`sys.path` that has a subdirectory that matches the
+   package name, add the subdirectory to the package's
+   :attr:`~module.__path__`. This is useful
+   if one wants to distribute different parts of a single logical package as multiple
    directories.
 
    It also looks for :file:`\*.pkg` files beginning where ``*`` matches the
    *name* argument.  This feature is similar to :file:`\*.pth` files (see the
    :mod:`site` module for more information), except that it doesn't special-case
    lines starting with ``import``.  A :file:`\*.pkg` file is trusted at face
-   value: apart from checking for duplicates, all entries found in a
-   :file:`\*.pkg` file are added to the path, regardless of whether they exist
-   on the filesystem.  (This is a feature.)
+   value: apart from skipping blank lines and ignoring comments, all entries
+   found in a :file:`\*.pkg` file are added to the path, regardless of whether
+   they exist on the filesystem (this is a feature).
 
    If the input path is not a list (as is the case for frozen packages) it is
    returned unchanged.  The input path is not modified; an extended copy is
@@ -48,48 +49,6 @@ support.
    this function to raise an exception (in line with :func:`os.path.isdir`
    behavior).
 
-
-.. class:: ImpImporter(dirname=None)
-
-   :pep:`302` Finder that wraps Python's "classic" import algorithm.
-
-   If *dirname* is a string, a :pep:`302` finder is created that searches that
-   directory.  If *dirname* is ``None``, a :pep:`302` finder is created that
-   searches the current :data:`sys.path`, plus any modules that are frozen or
-   built-in.
-
-   Note that :class:`ImpImporter` does not currently support being used by
-   placement on :data:`sys.meta_path`.
-
-   .. deprecated:: 3.3
-      This emulation is no longer needed, as the standard import mechanism
-      is now fully PEP 302 compliant and available in :mod:`importlib`.
-
-
-.. class:: ImpLoader(fullname, file, filename, etc)
-
-   :term:`Loader` that wraps Python's "classic" import algorithm.
-
-   .. deprecated:: 3.3
-      This emulation is no longer needed, as the standard import mechanism
-      is now fully PEP 302 compliant and available in :mod:`importlib`.
-
-
-.. function:: find_loader(fullname)
-
-   Retrieve a module :term:`loader` for the given *fullname*.
-
-   This is a backwards compatibility wrapper around
-   :func:`importlib.util.find_spec` that converts most failures to
-   :exc:`ImportError` and only returns the loader rather than the full
-   :class:`ModuleSpec`.
-
-   .. versionchanged:: 3.3
-      Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
-
-   .. versionchanged:: 3.4
-      Updated to be based on :pep:`451`
 
 .. function:: get_importer(path_item)
 
@@ -103,34 +62,16 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
-
-
-.. function:: get_loader(module_or_name)
-
-   Get a :term:`loader` object for *module_or_name*.
-
-   If the module or package is accessible via the normal import mechanism, a
-   wrapper around the relevant part of that machinery is returned.  Returns
-   ``None`` if the module cannot be found or imported.  If the named module is
-   not already imported, its containing package (if any) is imported, in order
-   to establish the package ``__path__``.
-
-   .. versionchanged:: 3.3
-      Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
-
-   .. versionchanged:: 3.4
-      Updated to be based on :pep:`451`
+      on the package internal :pep:`302` import emulation.
 
 
 .. function:: iter_importers(fullname='')
 
    Yield :term:`finder` objects for the given module name.
 
-   If fullname contains a '.', the finders will be for the package
-   containing fullname, otherwise they will be all registered top level
-   finders (i.e. those on both sys.meta_path and sys.path_hooks).
+   If *fullname* contains a ``'.'``, the finders will be for the package
+   containing *fullname*, otherwise they will be all registered top level
+   finders (i.e. those on both :data:`sys.meta_path` and :data:`sys.path_hooks`).
 
    If the named module is in a package, that package is imported as a side
    effect of invoking this function.
@@ -139,13 +80,13 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
+      on the package internal :pep:`302` import emulation.
 
 
 .. function:: iter_modules(path=None, prefix='')
 
    Yields :class:`ModuleInfo` for all submodules on *path*, or, if
-   *path* is ``None``, all top-level modules on ``sys.path``.
+   *path* is ``None``, all top-level modules on :data:`sys.path`.
 
    *path* should be either ``None`` or a list of paths to look for modules in.
 
@@ -160,7 +101,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
+      on the package internal :pep:`302` import emulation.
 
 
 .. function:: walk_packages(path=None, prefix='', onerror=None)
@@ -199,7 +140,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
+      on the package internal :pep:`302` import emulation.
 
 
 .. function:: get_data(package, resource)
@@ -227,3 +168,44 @@ support.
    then ``None`` is returned.  In particular, the :term:`loader` for
    :term:`namespace packages <namespace package>` does not support
    :meth:`get_data <importlib.abc.ResourceLoader.get_data>`.
+
+
+.. function:: resolve_name(name)
+
+   Resolve a name to an object.
+
+   This functionality is used in numerous places in the standard library (see
+   :issue:`12915`) - and equivalent functionality is also in widely used
+   third-party packages such as setuptools, Django and Pyramid.
+
+   It is expected that *name* will be a string in one of the following
+   formats, where W is shorthand for a valid Python identifier and dot stands
+   for a literal period in these pseudo-regexes:
+
+   * ``W(.W)*``
+   * ``W(.W)*:(W(.W)*)?``
+
+   The first form is intended for backward compatibility only. It assumes that
+   some part of the dotted name is a package, and the rest is an object
+   somewhere within that package, possibly nested inside other objects.
+   Because the place where the package stops and the object hierarchy starts
+   can't be inferred by inspection, repeated attempts to import must be done
+   with this form.
+
+   In the second form, the caller makes the division point clear through the
+   provision of a single colon: the dotted name to the left of the colon is a
+   package to be imported, and the dotted name to the right is the object
+   hierarchy within that package. Only one import is needed in this form. If
+   it ends with the colon, then a module object is returned.
+
+   The function will return an object (which might be a module), or raise one
+   of the following exceptions:
+
+   :exc:`ValueError` -- if *name* isn't in a recognised format.
+
+   :exc:`ImportError` -- if an import failed when it shouldn't have.
+
+   :exc:`AttributeError` -- If a failure occurred when traversing the object
+   hierarchy within the imported package to get to the desired object.
+
+   .. versionadded:: 3.9

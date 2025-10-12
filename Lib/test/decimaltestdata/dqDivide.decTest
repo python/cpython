@@ -580,7 +580,7 @@ dqdiv1756 divide  1e-4277 -1e+3311 -> -0E-6176 Underflow Subnormal Inexact Round
 dqdiv1757 divide -1e-4277  1e+3311 -> -0E-6176 Underflow Subnormal Inexact Rounded Clamped
 dqdiv1758 divide -1e-4277 -1e+3311 ->  0E-6176 Underflow Subnormal Inexact Rounded Clamped
 
--- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+-- 'subnormal' boundary (all hard underflow or overflow in base arithmetic)
 dqdiv1760 divide 1e-6069 1e+101 -> 1E-6170 Subnormal
 dqdiv1761 divide 1e-6069 1e+102 -> 1E-6171 Subnormal
 dqdiv1762 divide 1e-6069 1e+103 -> 1E-6172 Subnormal

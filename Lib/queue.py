@@ -1,22 +1,41 @@
 '''A multi-producer, multi-consumer queue.'''
 
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
+import threading
+import types
 from collections import deque
 from heapq import heappush, heappop
 from time import monotonic as time
+try:
+    from _queue import SimpleQueue
+except ImportError:
+    SimpleQueue = None
 
-__all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue']
+__all__ = [
+    'Empty',
+    'Full',
+    'ShutDown',
+    'Queue',
+    'PriorityQueue',
+    'LifoQueue',
+    'SimpleQueue',
+]
 
-class Empty(Exception):
-    'Exception raised by Queue.get(block=0)/get_nowait().'
-    pass
+
+try:
+    from _queue import Empty
+except ImportError:
+    class Empty(Exception):
+        'Exception raised by Queue.get(block=0)/get_nowait().'
+        pass
 
 class Full(Exception):
     'Exception raised by Queue.put(block=0)/put_nowait().'
     pass
+
+
+class ShutDown(Exception):
+    '''Raised when put/get with shut-down queue.'''
+
 
 class Queue:
     '''Create a queue object with a given maximum size.
@@ -46,6 +65,9 @@ class Queue:
         # drops to zero; thread waiting to join() is notified to resume
         self.all_tasks_done = threading.Condition(self.mutex)
         self.unfinished_tasks = 0
+
+        # Queue shutdown state
+        self.is_shutdown = False
 
     def task_done(self):
         '''Indicate that a formerly enqueued task is complete.
@@ -122,8 +144,12 @@ class Queue:
         Otherwise ('block' is false), put an item on the queue if a free slot
         is immediately available, else raise the Full exception ('timeout'
         is ignored in that case).
+
+        Raises ShutDown if the queue has been shut down.
         '''
         with self.not_full:
+            if self.is_shutdown:
+                raise ShutDown
             if self.maxsize > 0:
                 if not block:
                     if self._qsize() >= self.maxsize:
@@ -131,6 +157,8 @@ class Queue:
                 elif timeout is None:
                     while self._qsize() >= self.maxsize:
                         self.not_full.wait()
+                        if self.is_shutdown:
+                            raise ShutDown
                 elif timeout < 0:
                     raise ValueError("'timeout' must be a non-negative number")
                 else:
@@ -140,6 +168,8 @@ class Queue:
                         if remaining <= 0.0:
                             raise Full
                         self.not_full.wait(remaining)
+                        if self.is_shutdown:
+                            raise ShutDown
             self._put(item)
             self.unfinished_tasks += 1
             self.not_empty.notify()
@@ -154,14 +184,21 @@ class Queue:
         Otherwise ('block' is false), return an item if one is immediately
         available, else raise the Empty exception ('timeout' is ignored
         in that case).
+
+        Raises ShutDown if the queue has been shut down and is empty,
+        or if the queue has been shut down immediately.
         '''
         with self.not_empty:
+            if self.is_shutdown and not self._qsize():
+                raise ShutDown
             if not block:
                 if not self._qsize():
                     raise Empty
             elif timeout is None:
                 while not self._qsize():
                     self.not_empty.wait()
+                    if self.is_shutdown and not self._qsize():
+                        raise ShutDown
             elif timeout < 0:
                 raise ValueError("'timeout' must be a non-negative number")
             else:
@@ -171,6 +208,8 @@ class Queue:
                     if remaining <= 0.0:
                         raise Empty
                     self.not_empty.wait(remaining)
+                    if self.is_shutdown and not self._qsize():
+                        raise ShutDown
             item = self._get()
             self.not_full.notify()
             return item
@@ -191,6 +230,31 @@ class Queue:
         '''
         return self.get(block=False)
 
+    def shutdown(self, immediate=False):
+        '''Shut-down the queue, making queue gets and puts raise ShutDown.
+
+        By default, gets will only raise once the queue is empty. Set
+        'immediate' to True to make gets raise immediately instead.
+
+        All blocked callers of put() and get() will be unblocked.
+
+        If 'immediate', the queue is drained and unfinished tasks
+        is reduced by the number of drained tasks.  If unfinished tasks
+        is reduced to zero, callers of Queue.join are unblocked.
+        '''
+        with self.mutex:
+            self.is_shutdown = True
+            if immediate:
+                while self._qsize():
+                    self._get()
+                    if self.unfinished_tasks > 0:
+                        self.unfinished_tasks -= 1
+                # release all blocked threads in `join()`
+                self.all_tasks_done.notify_all()
+            # All getters need to re-check queue-empty to raise ShutDown
+            self.not_empty.notify_all()
+            self.not_full.notify_all()
+
     # Override these methods to implement other queue organizations
     # (e.g. stack or priority queue).
     # These will only be called with appropriate locks held
@@ -209,6 +273,8 @@ class Queue:
     # Get an item from the queue
     def _get(self):
         return self.queue.popleft()
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class PriorityQueue(Queue):
@@ -244,3 +310,74 @@ class LifoQueue(Queue):
 
     def _get(self):
         return self.queue.pop()
+
+
+class _PySimpleQueue:
+    '''Simple, unbounded FIFO queue.
+
+    This pure Python implementation is not reentrant.
+    '''
+    # Note: while this pure Python version provides fairness
+    # (by using a threading.Semaphore which is itself fair, being based
+    #  on threading.Condition), fairness is not part of the API contract.
+    # This allows the C version to use a different implementation.
+
+    def __init__(self):
+        self._queue = deque()
+        self._count = threading.Semaphore(0)
+
+    def put(self, item, block=True, timeout=None):
+        '''Put the item on the queue.
+
+        The optional 'block' and 'timeout' arguments are ignored, as this method
+        never blocks.  They are provided for compatibility with the Queue class.
+        '''
+        self._queue.append(item)
+        self._count.release()
+
+    def get(self, block=True, timeout=None):
+        '''Remove and return an item from the queue.
+
+        If optional args 'block' is true and 'timeout' is None (the default),
+        block if necessary until an item is available. If 'timeout' is
+        a non-negative number, it blocks at most 'timeout' seconds and raises
+        the Empty exception if no item was available within that time.
+        Otherwise ('block' is false), return an item if one is immediately
+        available, else raise the Empty exception ('timeout' is ignored
+        in that case).
+        '''
+        if timeout is not None and timeout < 0:
+            raise ValueError("'timeout' must be a non-negative number")
+        if not self._count.acquire(block, timeout):
+            raise Empty
+        return self._queue.popleft()
+
+    def put_nowait(self, item):
+        '''Put an item into the queue without blocking.
+
+        This is exactly equivalent to `put(item, block=False)` and is only provided
+        for compatibility with the Queue class.
+        '''
+        return self.put(item, block=False)
+
+    def get_nowait(self):
+        '''Remove and return an item from the queue without blocking.
+
+        Only get an item if one is immediately available. Otherwise
+        raise the Empty exception.
+        '''
+        return self.get(block=False)
+
+    def empty(self):
+        '''Return True if the queue is empty, False otherwise (not reliable!).'''
+        return len(self._queue) == 0
+
+    def qsize(self):
+        '''Return the approximate size of the queue (not reliable!).'''
+        return len(self._queue)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+
+if SimpleQueue is None:
+    SimpleQueue = _PySimpleQueue

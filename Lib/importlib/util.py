@@ -1,5 +1,5 @@
 """Utility code for constructing importers, etc."""
-from . import abc
+from ._abc import Loader
 from ._bootstrap import module_from_spec
 from ._bootstrap import _resolve_name
 from ._bootstrap import spec_from_loader
@@ -10,11 +10,14 @@ from ._bootstrap_external import decode_source
 from ._bootstrap_external import source_from_cache
 from ._bootstrap_external import spec_from_file_location
 
-from contextlib import contextmanager
-import functools
+import _imp
 import sys
 import types
-import warnings
+
+
+def source_hash(source_bytes):
+    "Return the hash of *source_bytes* as used in hash-based pyc files."
+    return _imp.source_hash(_imp.pyc_magic_number_token, source_bytes)
 
 
 def resolve_name(name, package):
@@ -22,8 +25,8 @@ def resolve_name(name, package):
     if not name.startswith('.'):
         return name
     elif not package:
-        raise ValueError(f'no package specified for {repr(name)} '
-                         '(required for relative module names)')
+        raise ImportError(f'no package specified for {repr(name)} '
+                          '(required for relative module names)')
     level = 0
     for character in name:
         if character != '.':
@@ -56,10 +59,10 @@ def _find_spec_from_path(name, path=None):
         try:
             spec = module.__spec__
         except AttributeError:
-            raise ValueError('{}.__spec__ is not set'.format(name)) from None
+            raise ValueError(f'{name}.__spec__ is not set') from None
         else:
             if spec is None:
-                raise ValueError('{}.__spec__ is None'.format(name))
+                raise ValueError(f'{name}.__spec__ is None')
             return spec
 
 
@@ -89,7 +92,7 @@ def find_spec(name, package=None):
                 parent_path = parent.__path__
             except AttributeError as e:
                 raise ModuleNotFoundError(
-                    f"__path__ attribute not found on {parent_name!r}"
+                    f"__path__ attribute not found on {parent_name!r} "
                     f"while trying to find {fullname!r}", name=fullname) from e
         else:
             parent_path = None
@@ -101,112 +104,64 @@ def find_spec(name, package=None):
         try:
             spec = module.__spec__
         except AttributeError:
-            raise ValueError('{}.__spec__ is not set'.format(name)) from None
+            raise ValueError(f'{name}.__spec__ is not set') from None
         else:
             if spec is None:
-                raise ValueError('{}.__spec__ is None'.format(name))
+                raise ValueError(f'{name}.__spec__ is None')
             return spec
 
 
-@contextmanager
-def _module_to_load(name):
-    is_reload = name in sys.modules
+# Normally we would use contextlib.contextmanager.  However, this module
+# is imported by runpy, which means we want to avoid any unnecessary
+# dependencies.  Thus we use a class.
 
-    module = sys.modules.get(name)
-    if not is_reload:
-        # This must be done before open() is called as the 'io' module
-        # implicitly imports 'locale' and would otherwise trigger an
-        # infinite loop.
-        module = type(sys)(name)
-        # This must be done before putting the module in sys.modules
-        # (otherwise an optimization shortcut in import.c becomes wrong)
-        module.__initializing__ = True
-        sys.modules[name] = module
-    try:
-        yield module
-    except Exception:
-        if not is_reload:
-            try:
-                del sys.modules[name]
-            except KeyError:
-                pass
-    finally:
-        module.__initializing__ = False
+class _incompatible_extension_module_restrictions:
+    """A context manager that can temporarily skip the compatibility check.
 
+    NOTE: This function is meant to accommodate an unusual case; one
+    which is likely to eventually go away.  There's is a pretty good
+    chance this is not what you were looking for.
 
-def set_package(fxn):
-    """Set __package__ on the returned module.
+    WARNING: Using this function to disable the check can lead to
+    unexpected behavior and even crashes.  It should only be used during
+    extension module development.
 
-    This function is deprecated.
+    If "disable_check" is True then the compatibility check will not
+    happen while the context manager is active.  Otherwise the check
+    *will* happen.
 
+    Normally, extensions that do not support multiple interpreters
+    may not be imported in a subinterpreter.  That implies modules
+    that do not implement multi-phase init or that explicitly of out.
+
+    Likewise for modules import in a subinterpreter with its own GIL
+    when the extension does not support a per-interpreter GIL.  This
+    implies the module does not have a Py_mod_multiple_interpreters slot
+    set to Py_MOD_PER_INTERPRETER_GIL_SUPPORTED.
+
+    In both cases, this context manager may be used to temporarily
+    disable the check for compatible extension modules.
+
+    You can get the same effect as this function by implementing the
+    basic interface of multi-phase init (PEP 489) and lying about
+    support for multiple interpreters (or per-interpreter GIL).
     """
-    @functools.wraps(fxn)
-    def set_package_wrapper(*args, **kwargs):
-        warnings.warn('The import system now takes care of this automatically.',
-                      DeprecationWarning, stacklevel=2)
-        module = fxn(*args, **kwargs)
-        if getattr(module, '__package__', None) is None:
-            module.__package__ = module.__name__
-            if not hasattr(module, '__path__'):
-                module.__package__ = module.__package__.rpartition('.')[0]
-        return module
-    return set_package_wrapper
 
+    def __init__(self, *, disable_check):
+        self.disable_check = bool(disable_check)
 
-def set_loader(fxn):
-    """Set __loader__ on the returned module.
+    def __enter__(self):
+        self.old = _imp._override_multi_interp_extensions_check(self.override)
+        return self
 
-    This function is deprecated.
+    def __exit__(self, *args):
+        old = self.old
+        del self.old
+        _imp._override_multi_interp_extensions_check(old)
 
-    """
-    @functools.wraps(fxn)
-    def set_loader_wrapper(self, *args, **kwargs):
-        warnings.warn('The import system now takes care of this automatically.',
-                      DeprecationWarning, stacklevel=2)
-        module = fxn(self, *args, **kwargs)
-        if getattr(module, '__loader__', None) is None:
-            module.__loader__ = self
-        return module
-    return set_loader_wrapper
-
-
-def module_for_loader(fxn):
-    """Decorator to handle selecting the proper module for loaders.
-
-    The decorated function is passed the module to use instead of the module
-    name. The module passed in to the function is either from sys.modules if
-    it already exists or is a new module. If the module is new, then __name__
-    is set the first argument to the method, __loader__ is set to self, and
-    __package__ is set accordingly (if self.is_package() is defined) will be set
-    before it is passed to the decorated function (if self.is_package() does
-    not work for the module it will be set post-load).
-
-    If an exception is raised and the decorator created the module it is
-    subsequently removed from sys.modules.
-
-    The decorator assumes that the decorated function takes the module name as
-    the second argument.
-
-    """
-    warnings.warn('The import system now takes care of this automatically.',
-                  DeprecationWarning, stacklevel=2)
-    @functools.wraps(fxn)
-    def module_for_loader_wrapper(self, fullname, *args, **kwargs):
-        with _module_to_load(fullname) as module:
-            module.__loader__ = self
-            try:
-                is_package = self.is_package(fullname)
-            except (ImportError, AttributeError):
-                pass
-            else:
-                if is_package:
-                    module.__package__ = fullname
-                else:
-                    module.__package__ = fullname.rpartition('.')[0]
-            # If __package__ was not set above, __import__() will do it later.
-            return fxn(self, module, *args, **kwargs)
-
-    return module_for_loader_wrapper
+    @property
+    def override(self):
+        return -1 if self.disable_check else 1
 
 
 class _LazyModule(types.ModuleType):
@@ -215,37 +170,57 @@ class _LazyModule(types.ModuleType):
 
     def __getattribute__(self, attr):
         """Trigger the load of the module and return the attribute."""
-        # All module metadata must be garnered from __spec__ in order to avoid
-        # using mutated values.
-        # Stop triggering this method.
-        self.__class__ = types.ModuleType
-        # Get the original name to make sure no object substitution occurred
-        # in sys.modules.
-        original_name = self.__spec__.name
-        # Figure out exactly what attributes were mutated between the creation
-        # of the module and now.
-        attrs_then = self.__spec__.loader_state['__dict__']
-        original_type = self.__spec__.loader_state['__class__']
-        attrs_now = self.__dict__
-        attrs_updated = {}
-        for key, value in attrs_now.items():
-            # Code that set the attribute may have kept a reference to the
-            # assigned object, making identity more important than equality.
-            if key not in attrs_then:
-                attrs_updated[key] = value
-            elif id(attrs_now[key]) != id(attrs_then[key]):
-                attrs_updated[key] = value
-        self.__spec__.loader.exec_module(self)
-        # If exec_module() was used directly there is no guarantee the module
-        # object was put into sys.modules.
-        if original_name in sys.modules:
-            if id(self) != id(sys.modules[original_name]):
-                raise ValueError(f"module object for {original_name!r} "
-                                  "substituted in sys.modules during a lazy "
-                                  "load")
-        # Update after loading since that's what would happen in an eager
-        # loading situation.
-        self.__dict__.update(attrs_updated)
+        __spec__ = object.__getattribute__(self, '__spec__')
+        loader_state = __spec__.loader_state
+        with loader_state['lock']:
+            # Only the first thread to get the lock should trigger the load
+            # and reset the module's class. The rest can now getattr().
+            if object.__getattribute__(self, '__class__') is _LazyModule:
+                __class__ = loader_state['__class__']
+
+                # Reentrant calls from the same thread must be allowed to proceed without
+                # triggering the load again.
+                # exec_module() and self-referential imports are the primary ways this can
+                # happen, but in any case we must return something to avoid deadlock.
+                if loader_state['is_loading']:
+                    return __class__.__getattribute__(self, attr)
+                loader_state['is_loading'] = True
+
+                __dict__ = __class__.__getattribute__(self, '__dict__')
+
+                # All module metadata must be gathered from __spec__ in order to avoid
+                # using mutated values.
+                # Get the original name to make sure no object substitution occurred
+                # in sys.modules.
+                original_name = __spec__.name
+                # Figure out exactly what attributes were mutated between the creation
+                # of the module and now.
+                attrs_then = loader_state['__dict__']
+                attrs_now = __dict__
+                attrs_updated = {}
+                for key, value in attrs_now.items():
+                    # Code that set an attribute may have kept a reference to the
+                    # assigned object, making identity more important than equality.
+                    if key not in attrs_then:
+                        attrs_updated[key] = value
+                    elif id(attrs_now[key]) != id(attrs_then[key]):
+                        attrs_updated[key] = value
+                __spec__.loader.exec_module(self)
+                # If exec_module() was used directly there is no guarantee the module
+                # object was put into sys.modules.
+                if original_name in sys.modules:
+                    if id(self) != id(sys.modules[original_name]):
+                        raise ValueError(f"module object for {original_name!r} "
+                                          "substituted in sys.modules during a lazy "
+                                          "load")
+                # Update after loading since that's what would happen in an eager
+                # loading situation.
+                __dict__.update(attrs_updated)
+                # Finally, stop triggering this method, if the module did not
+                # already update its own __class__.
+                if isinstance(self, _LazyModule):
+                    object.__setattr__(self, '__class__', __class__)
+
         return getattr(self, attr)
 
     def __delattr__(self, attr):
@@ -256,7 +231,7 @@ class _LazyModule(types.ModuleType):
         delattr(self, attr)
 
 
-class LazyLoader(abc.Loader):
+class LazyLoader(Loader):
 
     """A loader that creates a module which defers loading until attribute access."""
 
@@ -280,6 +255,9 @@ class LazyLoader(abc.Loader):
 
     def exec_module(self, module):
         """Make the module load lazily."""
+        # Threading is only needed for lazy loading, and importlib.util can
+        # be pulled in at interpreter startup, so defer until needed.
+        import threading
         module.__spec__.loader = self.loader
         module.__loader__ = self.loader
         # Don't need to worry about deep-copying as trying to set an attribute
@@ -289,5 +267,13 @@ class LazyLoader(abc.Loader):
         loader_state = {}
         loader_state['__dict__'] = module.__dict__.copy()
         loader_state['__class__'] = module.__class__
+        loader_state['lock'] = threading.RLock()
+        loader_state['is_loading'] = False
         module.__spec__.loader_state = loader_state
         module.__class__ = _LazyModule
+
+
+__all__ = ['LazyLoader', 'Loader', 'MAGIC_NUMBER',
+           'cache_from_source', 'decode_source', 'find_spec',
+           'module_from_spec', 'resolve_name', 'source_from_cache',
+           'source_hash', 'spec_from_file_location', 'spec_from_loader']

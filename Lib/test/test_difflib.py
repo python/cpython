@@ -1,5 +1,5 @@
 import difflib
-from test.support import run_unittest, findfile
+from test.support import findfile, force_colorized
 import unittest
 import doctest
 import sys
@@ -28,6 +28,16 @@ class TestWithAscii(unittest.TestCase):
             [   ('equal', 0, 40, 0, 40),
                 ('delete', 40, 41, 40, 40),
                 ('equal', 41, 81, 40, 80)])
+
+    def test_opcode_caching(self):
+        sm = difflib.SequenceMatcher(None, 'b' * 100, 'a' + 'b' * 100)
+        opcode = sm.get_opcodes()
+        self.assertEqual(opcode,
+            [   ('insert', 0, 0, 0, 1),
+                ('equal', 0, 100, 1, 101)])
+        # Implementation detail: opcodes are cached;
+        # `get_opcodes()` returns the same object
+        self.assertIs(opcode, sm.get_opcodes())
 
     def test_bjunk(self):
         sm = difflib.SequenceMatcher(isjunk=lambda x: x == ' ',
@@ -89,9 +99,23 @@ class TestSFbugs(unittest.TestCase):
         # Check fix for bug #1488943
         diff = list(difflib.Differ().compare(["\tI am a buggy"],["\t\tI am a bug"]))
         self.assertEqual("- \tI am a buggy", diff[0])
-        self.assertEqual("?            --\n", diff[1])
+        self.assertEqual("? \t          --\n", diff[1])
         self.assertEqual("+ \t\tI am a bug", diff[2])
         self.assertEqual("? +\n", diff[3])
+
+    def test_hint_indented_properly_with_tabs(self):
+        diff = list(difflib.Differ().compare(["\t \t \t^"], ["\t \t \t^\n"]))
+        self.assertEqual("- \t \t \t^", diff[0])
+        self.assertEqual("+ \t \t \t^\n", diff[1])
+        self.assertEqual("? \t \t \t +\n", diff[2])
+
+    def test_mdiff_catch_stop_iteration(self):
+        # Issue #33224
+        self.assertEqual(
+            list(difflib._mdiff(["2"], ["3"], 1)),
+            [((1, '\x00-2\x01'), (1, '\x00+3\x01'), True)],
+        )
+
 
 patch914575_from1 = """
    1. Beautiful is beTTer than ugly.
@@ -227,7 +251,7 @@ class TestSFpatches(unittest.TestCase):
         #with open('test_difflib_expect.html','w') as fp:
         #    fp.write(actual)
 
-        with open(findfile('test_difflib_expect.html')) as fp:
+        with open(findfile('test_difflib_expect.html'), encoding="utf-8") as fp:
             self.assertEqual(actual, fp.read())
 
     def test_recursion_limit(self):
@@ -241,27 +265,56 @@ class TestSFpatches(unittest.TestCase):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_from1.splitlines(),
                                      patch914575_to1.splitlines())
-        self.assertIn('content="text/html; charset=utf-8"', output)
+        self.assertIn('charset="utf-8"', output)
 
     def test_make_file_iso88591_charset(self):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_from1.splitlines(),
                                      patch914575_to1.splitlines(),
                                      charset='iso-8859-1')
-        self.assertIn('content="text/html; charset=iso-8859-1"', output)
+        self.assertIn('charset="iso-8859-1"', output)
 
     def test_make_file_usascii_charset_with_nonascii_input(self):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_nonascii_from1.splitlines(),
                                      patch914575_nonascii_to1.splitlines(),
                                      charset='us-ascii')
-        self.assertIn('content="text/html; charset=us-ascii"', output)
+        self.assertIn('charset="us-ascii"', output)
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
+
+class TestDiffer(unittest.TestCase):
+    def test_close_matches_aligned(self):
+        # Of the 4 closely matching pairs, we want 1 to match with 3,
+        # and 2 with 4, to align with a "top to bottom" mental model.
+        a = ["cat\n", "dog\n", "close match 1\n", "close match 2\n"]
+        b = ["close match 3\n", "close match 4\n", "kitten\n", "puppy\n"]
+        m = difflib.Differ().compare(a, b)
+        self.assertEqual(list(m),
+                           ['- cat\n',
+                            '- dog\n',
+                            '- close match 1\n',
+                            '?             ^\n',
+                            '+ close match 3\n',
+                            '?             ^\n',
+                            '- close match 2\n',
+                            '?             ^\n',
+                            '+ close match 4\n',
+                            '?             ^\n',
+                            '+ kitten\n',
+                            '+ puppy\n'])
+
+    def test_one_insert(self):
+        m = difflib.Differ().compare('b' * 2, 'a' + 'b' * 2)
+        self.assertEqual(list(m), ['+ a', '  b', '  b'])
+
+    def test_one_delete(self):
+        m = difflib.Differ().compare('a' + 'b' * 2, 'b' * 2)
+        self.assertEqual(list(m), ['- a', '  b', '  b'])
 
 
 class TestOutputFormat(unittest.TestCase):
     def test_tab_delimiter(self):
-        args = ['one', 'two', 'Original', 'Current',
+        args = [['one'], ['two'], 'Original', 'Current',
             '2005-01-26 23:30:50', '2010-04-02 10:20:52']
         ud = difflib.unified_diff(*args, lineterm='')
         self.assertEqual(list(ud)[0:2], [
@@ -273,7 +326,7 @@ class TestOutputFormat(unittest.TestCase):
                            "--- Current\t2010-04-02 10:20:52"])
 
     def test_no_trailing_tab_on_empty_filedate(self):
-        args = ['one', 'two', 'Original', 'Current']
+        args = [['one'], ['two'], 'Original', 'Current']
         ud = difflib.unified_diff(*args, lineterm='')
         self.assertEqual(list(ud)[0:2], ["--- Original", "+++ Current"])
 
@@ -320,6 +373,22 @@ class TestOutputFormat(unittest.TestCase):
         self.assertEqual(fmt(3,5), '4,5')
         self.assertEqual(fmt(3,6), '4,6')
         self.assertEqual(fmt(0,0), '0')
+
+    @force_colorized
+    def test_unified_diff_colored_output(self):
+        args = [['one', 'three'], ['two', 'three'], 'Original', 'Current',
+            '2005-01-26 23:30:50', '2010-04-02 10:20:52']
+        actual = list(difflib.unified_diff(*args, lineterm='', color=True))
+
+        expect = [
+            "\033[1m--- Original\t2005-01-26 23:30:50\033[0m",
+            "\033[1m+++ Current\t2010-04-02 10:20:52\033[0m",
+             "\033[36m@@ -1,2 +1,2 @@\033[0m",
+             "\033[31m-one\033[0m",
+             "\033[32m+two\033[0m",
+             "\033[0m three\033[0m",
+        ]
+        self.assertEqual(expect, actual)
 
 
 class TestBytes(unittest.TestCase):
@@ -413,6 +482,28 @@ class TestBytes(unittest.TestCase):
                                     lineterm=b'')
         assertDiff(expect, actual)
 
+
+class TestInputTypes(unittest.TestCase):
+    def _assert_type_error(self, msg, generator, *args):
+        with self.assertRaises(TypeError) as ctx:
+            list(generator(*args))
+        self.assertEqual(msg, str(ctx.exception))
+
+    def test_input_type_checks(self):
+        unified = difflib.unified_diff
+        context = difflib.context_diff
+
+        expect = "input must be a sequence of strings, not str"
+        self._assert_type_error(expect, unified, 'a', ['b'])
+        self._assert_type_error(expect, context, 'a', ['b'])
+
+        self._assert_type_error(expect, unified, ['a'], 'b')
+        self._assert_type_error(expect, context, ['a'], 'b')
+
+        expect = "lines to compare must be str, not NoneType (None)"
+        self._assert_type_error(expect, unified, ['a'], [None])
+        self._assert_type_error(expect, context, ['a'], [None])
+
     def test_mixed_types_content(self):
         # type of input content must be consistent: all str or all bytes
         a = [b'hello']
@@ -461,18 +552,102 @@ class TestBytes(unittest.TestCase):
         b = ['bar\n']
         list(difflib.unified_diff(a, b, 'a', 'b', datea, dateb))
 
-    def _assert_type_error(self, msg, generator, *args):
-        with self.assertRaises(TypeError) as ctx:
-            list(generator(*args))
-        self.assertEqual(msg, str(ctx.exception))
+
+class TestJunkAPIs(unittest.TestCase):
+    def test_is_line_junk_true(self):
+        for line in ['#', '  ', ' #', '# ', ' # ', '']:
+            self.assertTrue(difflib.IS_LINE_JUNK(line), repr(line))
+
+    def test_is_line_junk_false(self):
+        for line in ['##', ' ##', '## ', 'abc ', 'abc #', 'Mr. Moose is up!']:
+            self.assertFalse(difflib.IS_LINE_JUNK(line), repr(line))
+
+    def test_is_line_junk_REDOS(self):
+        evil_input = ('\t' * 1000000) + '##'
+        self.assertFalse(difflib.IS_LINE_JUNK(evil_input))
+
+    def test_is_character_junk_true(self):
+        for char in [' ', '\t']:
+            self.assertTrue(difflib.IS_CHARACTER_JUNK(char), repr(char))
+
+    def test_is_character_junk_false(self):
+        for char in ['a', '#', '\n', '\f', '\r', '\v']:
+            self.assertFalse(difflib.IS_CHARACTER_JUNK(char), repr(char))
+
+class TestFindLongest(unittest.TestCase):
+    def longer_match_exists(self, a, b, n):
+        return any(b_part in a for b_part in
+                   [b[i:i + n + 1] for i in range(0, len(b) - n - 1)])
+
+    def test_default_args(self):
+        a = 'foo bar'
+        b = 'foo baz bar'
+        sm = difflib.SequenceMatcher(a=a, b=b)
+        match = sm.find_longest_match()
+        self.assertEqual(match.a, 0)
+        self.assertEqual(match.b, 0)
+        self.assertEqual(match.size, 6)
+        self.assertEqual(a[match.a: match.a + match.size],
+                         b[match.b: match.b + match.size])
+        self.assertFalse(self.longer_match_exists(a, b, match.size))
+
+        match = sm.find_longest_match(alo=2, blo=4)
+        self.assertEqual(match.a, 3)
+        self.assertEqual(match.b, 7)
+        self.assertEqual(match.size, 4)
+        self.assertEqual(a[match.a: match.a + match.size],
+                         b[match.b: match.b + match.size])
+        self.assertFalse(self.longer_match_exists(a[2:], b[4:], match.size))
+
+        match = sm.find_longest_match(bhi=5, blo=1)
+        self.assertEqual(match.a, 1)
+        self.assertEqual(match.b, 1)
+        self.assertEqual(match.size, 4)
+        self.assertEqual(a[match.a: match.a + match.size],
+                         b[match.b: match.b + match.size])
+        self.assertFalse(self.longer_match_exists(a, b[1:5], match.size))
+
+    def test_longest_match_with_popular_chars(self):
+        a = 'dabcd'
+        b = 'd'*100 + 'abc' + 'd'*100  # length over 200 so popular used
+        sm = difflib.SequenceMatcher(a=a, b=b)
+        match = sm.find_longest_match(0, len(a), 0, len(b))
+        self.assertEqual(match.a, 0)
+        self.assertEqual(match.b, 99)
+        self.assertEqual(match.size, 5)
+        self.assertEqual(a[match.a: match.a + match.size],
+                         b[match.b: match.b + match.size])
+        self.assertFalse(self.longer_match_exists(a, b, match.size))
 
 
-def test_main():
+class TestCloseMatches(unittest.TestCase):
+    # Happy paths are tested in the doctests of `difflib.get_close_matches`.
+
+    def test_invalid_inputs(self):
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], n=0)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], n=-1)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], cutoff=1.1)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], cutoff=-0.1)
+
+
+class TestRestore(unittest.TestCase):
+    # Happy paths are tested in the doctests of `difflib.restore`.
+
+    def test_invalid_input(self):
+        with self.assertRaises(ValueError):
+            ''.join(difflib.restore([], 0))
+        with self.assertRaises(ValueError):
+            ''.join(difflib.restore([], 3))
+
+
+def setUpModule():
     difflib.HtmlDiff._default_prefix = 0
-    Doctests = doctest.DocTestSuite(difflib)
-    run_unittest(
-        TestWithAscii, TestAutojunk, TestSFpatches, TestSFbugs,
-        TestOutputFormat, TestBytes, Doctests)
+
+
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite(difflib))
+    return tests
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

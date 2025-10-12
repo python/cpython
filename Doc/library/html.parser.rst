@@ -1,5 +1,5 @@
-:mod:`html.parser` --- Simple HTML and XHTML parser
-===================================================
+:mod:`!html.parser` --- Simple HTML and XHTML parser
+====================================================
 
 .. module:: html.parser
    :synopsis: A simple parser that can handle HTML and XHTML.
@@ -43,7 +43,9 @@ Example HTML Parser Application
 
 As a basic example, below is a simple HTML parser that uses the
 :class:`HTMLParser` class to print out start tags, end tags, and data
-as they are encountered::
+as they are encountered:
+
+.. testcode::
 
    from html.parser import HTMLParser
 
@@ -63,7 +65,7 @@ as they are encountered::
 
 The output will then be:
 
-.. code-block:: none
+.. testoutput::
 
    Encountered a start tag: html
    Encountered a start tag: head
@@ -126,7 +128,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 
 .. method:: HTMLParser.handle_starttag(tag, attrs)
 
-   This method is called to handle the start of a tag (e.g. ``<div id="main">``).
+   This method is called to handle the start tag of an element (e.g. ``<div id="main">``).
 
    The *tag* argument is the name of the tag converted to lower case. The *attrs*
    argument is a list of ``(name, value)`` pairs containing the attributes found
@@ -173,7 +175,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 .. method:: HTMLParser.handle_charref(name)
 
    This method is called to process decimal and hexadecimal numeric character
-   references of the form ``&#NNN;`` and ``&#xNNN;``.  For example, the decimal
+   references of the form :samp:`&#{NNN};` and :samp:`&#x{NNN};`.  For example, the decimal
    equivalent for ``&gt;`` is ``&#62;``, whereas the hexadecimal is ``&#x3E;``;
    in this case the method will receive ``'62'`` or ``'x3E'``.  This method
    is never called if *convert_charrefs* is ``True``.
@@ -230,7 +232,9 @@ Examples
 --------
 
 The following class implements a parser that will be used to illustrate more
-examples::
+examples:
+
+.. testcode::
 
    from html.parser import HTMLParser
    from html.entities import name2codepoint
@@ -266,13 +270,17 @@ examples::
 
    parser = MyHTMLParser()
 
-Parsing a doctype::
+Parsing a doctype:
+
+.. doctest::
 
    >>> parser.feed('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
    ...             '"http://www.w3.org/TR/html4/strict.dtd">')
    Decl     : DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"
 
-Parsing an element with a few attributes and a title::
+Parsing an element with a few attributes and a title:
+
+.. doctest::
 
    >>> parser.feed('<img src="python-logo.png" alt="The Python logo">')
    Start tag: img
@@ -285,7 +293,9 @@ Parsing an element with a few attributes and a title::
    End tag  : h1
 
 The content of ``script`` and ``style`` elements is returned as is, without
-further parsing::
+further parsing:
+
+.. doctest::
 
    >>> parser.feed('<style type="text/css">#python { color: green }</style>')
    Start tag: style
@@ -300,16 +310,25 @@ further parsing::
    Data     : alert("<strong>hello!</strong>");
    End tag  : script
 
-Parsing comments::
+Parsing comments:
 
-   >>> parser.feed('<!-- a comment -->'
+.. doctest::
+
+   >>> parser.feed('<!--a comment-->'
    ...             '<!--[if IE 9]>IE-specific content<![endif]-->')
-   Comment  :  a comment
+   Comment  : a comment
    Comment  : [if IE 9]>IE-specific content<![endif]
 
 Parsing named and numeric character references and converting them to the
-correct char (note: these 3 references are all equivalent to ``'>'``)::
+correct char (note: these 3 references are all equivalent to ``'>'``):
 
+.. doctest::
+
+   >>> parser = MyHTMLParser()
+   >>> parser.feed('&gt;&#62;&#x3E;')
+   Data     : >>>
+
+   >>> parser = MyHTMLParser(convert_charrefs=False)
    >>> parser.feed('&gt;&#62;&#x3E;')
    Named ent: >
    Num ent  : >
@@ -317,18 +336,22 @@ correct char (note: these 3 references are all equivalent to ``'>'``)::
 
 Feeding incomplete chunks to :meth:`~HTMLParser.feed` works, but
 :meth:`~HTMLParser.handle_data` might be called more than once
-(unless *convert_charrefs* is set to ``True``)::
+(unless *convert_charrefs* is set to ``True``):
 
-   >>> for chunk in ['<sp', 'an>buff', 'ered ', 'text</s', 'pan>']:
+.. doctest::
+
+   >>> for chunk in ['<sp', 'an>buff', 'ered', ' text</s', 'pan>']:
    ...     parser.feed(chunk)
    ...
    Start tag: span
    Data     : buff
    Data     : ered
-   Data     : text
+   Data     :  text
    End tag  : span
 
-Parsing invalid HTML (e.g. unquoted attributes) also works::
+Parsing invalid HTML (e.g. unquoted attributes) also works:
+
+.. doctest::
 
    >>> parser.feed('<p><a class=link href=#main>tag soup</p ></a>')
    Start tag: p

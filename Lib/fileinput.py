@@ -3,14 +3,14 @@
 Typical use is:
 
     import fileinput
-    for line in fileinput.input():
+    for line in fileinput.input(encoding="utf-8"):
         process(line)
 
 This iterates over the lines of all files listed in sys.argv[1:],
 defaulting to sys.stdin if the list is empty.  If a filename is '-' it
-is also replaced by sys.stdin.  To specify an alternative list of
-filenames, pass it as the argument to input().  A single file name is
-also allowed.
+is also replaced by sys.stdin and the optional arguments mode and
+openhook are ignored.  To specify an alternative list of filenames,
+pass it as the argument to input().  A single file name is also allowed.
 
 Functions filename(), lineno() return the filename and cumulative line
 number of the line that has just been read; filelineno() returns its
@@ -53,7 +53,7 @@ __getitem__() method which implements the sequence behavior.  The
 sequence must be accessed in strictly sequential order; sequence
 access and readline() cannot be mixed.
 
-Optional in-place filtering: if the keyword argument inplace=1 is
+Optional in-place filtering: if the keyword argument inplace=True is
 passed to input() or to the FileInput constructor, the file is moved
 to a backup file and standard output is directed to the input file.
 This makes it possible to write a filter that rewrites its input file
@@ -63,16 +63,11 @@ file remains around; by default, the extension is ".bak" and it is
 deleted when the output file is closed.  In-place filtering is
 disabled when standard input is read.  XXX The current implementation
 does not work for MS-DOS 8+3 filesystems.
-
-XXX Possible additions:
-
-- optional getopt argument processing
-- isatty()
-- read(), read(size), even readlines()
-
 """
 
+import io
 import sys, os
+from types import GenericAlias
 
 __all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
            "fileno", "isfirstline", "isstdin", "FileInput", "hook_compressed",
@@ -80,8 +75,8 @@ __all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
 
 _state = None
 
-def input(files=None, inplace=False, backup="", bufsize=0,
-          mode="r", openhook=None):
+def input(files=None, inplace=False, backup="", *, mode="r", openhook=None,
+          encoding=None, errors=None):
     """Return an instance of the FileInput class, which can be iterated.
 
     The parameters are passed to the constructor of the FileInput class.
@@ -91,7 +86,8 @@ def input(files=None, inplace=False, backup="", bufsize=0,
     global _state
     if _state and _state._file:
         raise RuntimeError("input() already active")
-    _state = FileInput(files, inplace, backup, bufsize, mode, openhook)
+    _state = FileInput(files, inplace, backup, mode=mode, openhook=openhook,
+                       encoding=encoding, errors=errors)
     return _state
 
 def close():
@@ -173,7 +169,7 @@ def isstdin():
     return _state.isstdin()
 
 class FileInput:
-    """FileInput([files[, inplace[, backup[, bufsize, [, mode[, openhook]]]]]])
+    """FileInput([files[, inplace[, backup]]], *, mode=None, openhook=None)
 
     Class FileInput is the implementation of the module; its methods
     filename(), lineno(), fileline(), isfirstline(), isstdin(), fileno(),
@@ -185,8 +181,8 @@ class FileInput:
     sequential order; random access and readline() cannot be mixed.
     """
 
-    def __init__(self, files=None, inplace=False, backup="", bufsize=0,
-                 mode="r", openhook=None):
+    def __init__(self, files=None, inplace=False, backup="", *,
+                 mode="r", openhook=None, encoding=None, errors=None):
         if isinstance(files, str):
             files = (files,)
         elif isinstance(files, os.PathLike):
@@ -201,10 +197,6 @@ class FileInput:
         self._files = files
         self._inplace = inplace
         self._backup = backup
-        if bufsize:
-            import warnings
-            warnings.warn('bufsize is deprecated and ignored',
-                          DeprecationWarning, stacklevel=2)
         self._savestdout = None
         self._output = None
         self._filename = None
@@ -213,15 +205,22 @@ class FileInput:
         self._file = None
         self._isstdin = False
         self._backupfilename = None
-        # restrict mode argument to reading modes
-        if mode not in ('r', 'rU', 'U', 'rb'):
-            raise ValueError("FileInput opening mode must be one of "
-                             "'r', 'rU', 'U' and 'rb'")
-        if 'U' in mode:
+        self._encoding = encoding
+        self._errors = errors
+
+        # We can not use io.text_encoding() here because old openhook doesn't
+        # take encoding parameter.
+        if (sys.flags.warn_default_encoding and
+                "b" not in mode and encoding is None and openhook is None):
             import warnings
-            warnings.warn("'U' mode is deprecated",
-                          DeprecationWarning, 2)
+            warnings.warn("'encoding' argument not specified.",
+                          EncodingWarning, 2)
+
+        # restrict mode argument to reading modes
+        if mode not in ('r', 'rb'):
+            raise ValueError("FileInput opening mode must be 'r' or 'rb'")
         self._mode = mode
+        self._write_mode = mode.replace('r', 'w')
         if openhook:
             if inplace:
                 raise ValueError("FileInput cannot use an opening hook in inplace mode")
@@ -257,14 +256,6 @@ class FileInput:
                 raise StopIteration
             self.nextfile()
             # repeat with next file
-
-    def __getitem__(self, i):
-        if i != self.lineno():
-            raise RuntimeError("accessing lines out of order")
-        try:
-            return self.__next__()
-        except StopIteration:
-            raise IndexError("end of input reached")
 
     def nextfile(self):
         savestdout = self._savestdout
@@ -320,6 +311,13 @@ class FileInput:
         self._file = None
         self._isstdin = False
         self._backupfilename = 0
+
+        # EncodingWarning is emitted in __init__() already
+        if "b" not in self._mode:
+            encoding = self._encoding or "locale"
+        else:
+            encoding = None
+
         if self._filename == '-':
             self._filename = '<stdin>'
             if 'b' in self._mode:
@@ -330,28 +328,30 @@ class FileInput:
         else:
             if self._inplace:
                 self._backupfilename = (
-                    self._filename + (self._backup or ".bak"))
+                    os.fspath(self._filename) + (self._backup or ".bak"))
                 try:
                     os.unlink(self._backupfilename)
                 except OSError:
                     pass
                 # The next few lines may raise OSError
                 os.rename(self._filename, self._backupfilename)
-                self._file = open(self._backupfilename, self._mode)
+                self._file = open(self._backupfilename, self._mode,
+                                  encoding=encoding, errors=self._errors)
                 try:
                     perm = os.fstat(self._file.fileno()).st_mode
                 except OSError:
-                    self._output = open(self._filename, "w")
+                    self._output = open(self._filename, self._write_mode,
+                                        encoding=encoding, errors=self._errors)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
                     if hasattr(os, 'O_BINARY'):
                         mode |= os.O_BINARY
 
                     fd = os.open(self._filename, mode, perm)
-                    self._output = os.fdopen(fd, "w")
+                    self._output = os.fdopen(fd, self._write_mode,
+                                             encoding=encoding, errors=self._errors)
                     try:
-                        if hasattr(os, 'chmod'):
-                            os.chmod(self._filename, perm)
+                        os.chmod(self._filename, perm)
                     except OSError:
                         pass
                 self._savestdout = sys.stdout
@@ -359,9 +359,15 @@ class FileInput:
             else:
                 # This may raise OSError
                 if self._openhook:
-                    self._file = self._openhook(self._filename, self._mode)
+                    # Custom hooks made previous to Python 3.10 didn't have
+                    # encoding argument
+                    if self._encoding is None:
+                        self._file = self._openhook(self._filename, self._mode)
+                    else:
+                        self._file = self._openhook(
+                            self._filename, self._mode, encoding=self._encoding, errors=self._errors)
                 else:
-                    self._file = open(self._filename, self._mode)
+                    self._file = open(self._filename, self._mode, encoding=encoding, errors=self._errors)
         self._readline = self._file.readline  # hide FileInput._readline
         return self._readline()
 
@@ -389,17 +395,26 @@ class FileInput:
     def isstdin(self):
         return self._isstdin
 
+    __class_getitem__ = classmethod(GenericAlias)
 
-def hook_compressed(filename, mode):
+
+def hook_compressed(filename, mode, *, encoding=None, errors=None):
+    if encoding is None and "b" not in mode:  # EncodingWarning is emitted in FileInput() already.
+        encoding = "locale"
     ext = os.path.splitext(filename)[1]
     if ext == '.gz':
         import gzip
-        return gzip.open(filename, mode)
+        stream = gzip.open(filename, mode)
     elif ext == '.bz2':
         import bz2
-        return bz2.BZ2File(filename, mode)
+        stream = bz2.BZ2File(filename, mode)
     else:
-        return open(filename, mode)
+        return open(filename, mode, encoding=encoding, errors=errors)
+
+    # gzip and bz2 are binary mode by default.
+    if "b" not in mode:
+        stream = io.TextIOWrapper(stream, encoding=encoding, errors=errors)
+    return stream
 
 
 def hook_encoded(encoding, errors=None):

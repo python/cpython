@@ -9,15 +9,13 @@ XXX TO DO:
 - seems to contain a bug when updating...
 
 - reclaim free space (currently, space once occupied by deleted or expanded
-items is never reused)
+items is not reused exept if .reorganize() is called)
 
 - support concurrent access (currently, if two processes take turns making
 updates, they can mess up the index)
 
 - support efficient access to large databases (currently, the whole index
 is read when the database is opened, and some updates rewrite the whole index)
-
-- support opening for read-only (flag = 'm')
 
 """
 
@@ -46,6 +44,7 @@ class _Database(collections.abc.MutableMapping):
     _io = _io       # for _commit()
 
     def __init__(self, filebasename, mode, flag='c'):
+        filebasename = self._os.fsencode(filebasename)
         self._mode = mode
         self._readonly = (flag == 'r')
 
@@ -54,14 +53,14 @@ class _Database(collections.abc.MutableMapping):
         # where key is the string key, pos is the offset into the dat
         # file of the associated value's first byte, and siz is the number
         # of bytes in the associated value.
-        self._dirfile = filebasename + '.dir'
+        self._dirfile = filebasename + b'.dir'
 
         # The data file is a binary file pointed into by the directory
         # file, and holds the values associated with keys.  Each value
         # begins at a _BLOCKSIZE-aligned byte offset, and is a raw
         # binary 8-bit string value.
-        self._datfile = filebasename + '.dat'
-        self._bakfile = filebasename + '.bak'
+        self._datfile = filebasename + b'.dat'
+        self._bakfile = filebasename + b'.bak'
 
         # The index is an in-memory dict, mirroring the directory file.
         self._index = None  # maps keys to (pos, siz) pairs
@@ -82,10 +81,7 @@ class _Database(collections.abc.MutableMapping):
             f = _io.open(self._datfile, 'r', encoding="Latin-1")
         except OSError:
             if flag not in ('c', 'n'):
-                import warnings
-                warnings.warn("The database file is missing, the "
-                              "semantics of the 'c' flag will be used.",
-                              DeprecationWarning, stacklevel=4)
+                raise
             with _io.open(self._datfile, 'w', encoding="Latin-1") as f:
                 self._chmod(self._datfile)
         else:
@@ -93,18 +89,16 @@ class _Database(collections.abc.MutableMapping):
 
     # Read directory file into the in-memory index dict.
     def _update(self, flag):
+        self._modified = False
         self._index = {}
         try:
             f = _io.open(self._dirfile, 'r', encoding="Latin-1")
         except OSError:
-            self._modified = not self._readonly
             if flag not in ('c', 'n'):
-                import warnings
-                warnings.warn("The index file is missing, the "
-                              "semantics of the 'c' flag will be used.",
-                              DeprecationWarning, stacklevel=4)
+                raise
+            with self._io.open(self._dirfile, 'w', encoding="Latin-1") as f:
+                self._chmod(self._dirfile)
         else:
-            self._modified = False
             with f:
                 for line in f:
                     line = line.rstrip()
@@ -139,6 +133,7 @@ class _Database(collections.abc.MutableMapping):
                 # position; UTF-8, though, does care sometimes.
                 entry = "%r, %r\n" % (key.decode('Latin-1'), pos_and_siz_pair)
                 f.write(entry)
+        self._modified = False
 
     sync = _commit
 
@@ -191,9 +186,7 @@ class _Database(collections.abc.MutableMapping):
 
     def __setitem__(self, key, val):
         if self._readonly:
-            import warnings
-            warnings.warn('The database is opened for reading only',
-                          DeprecationWarning, stacklevel=2)
+            raise error('The database is opened for reading only')
         if isinstance(key, str):
             key = key.encode('utf-8')
         elif not isinstance(key, (bytes, bytearray)):
@@ -230,9 +223,7 @@ class _Database(collections.abc.MutableMapping):
 
     def __delitem__(self, key):
         if self._readonly:
-            import warnings
-            warnings.warn('The database is opened for reading only',
-                          DeprecationWarning, stacklevel=2)
+            raise error('The database is opened for reading only')
         if isinstance(key, str):
             key = key.encode('utf-8')
         self._verify_open()
@@ -288,14 +279,41 @@ class _Database(collections.abc.MutableMapping):
     __del__ = close
 
     def _chmod(self, file):
-        if hasattr(self._os, 'chmod'):
-            self._os.chmod(file, self._mode)
+        self._os.chmod(file, self._mode)
 
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
         self.close()
+
+    def reorganize(self):
+        if self._readonly:
+            raise error('The database is opened for reading only')
+        self._verify_open()
+        # Ensure all changes are committed before reorganizing.
+        self._commit()
+        # Open file in r+ to allow changing in-place.
+        with _io.open(self._datfile, 'rb+') as f:
+            reorganize_pos = 0
+
+            # Iterate over existing keys, sorted by starting byte.
+            for key in sorted(self._index, key = lambda k: self._index[k][0]):
+                pos, siz = self._index[key]
+                f.seek(pos)
+                val = f.read(siz)
+
+                f.seek(reorganize_pos)
+                f.write(val)
+                self._index[key] = (reorganize_pos, siz)
+
+                blocks_occupied = (siz + _BLOCKSIZE - 1) // _BLOCKSIZE
+                reorganize_pos += blocks_occupied * _BLOCKSIZE
+
+            f.truncate(reorganize_pos)
+        # Commit changes to index, which were not in-place.
+        self._commit()
+
 
 
 def open(file, flag='c', mode=0o666):
@@ -323,7 +341,5 @@ def open(file, flag='c', mode=0o666):
         # Turn off any bits that are set in the umask
         mode = mode & (~um)
     if flag not in ('r', 'w', 'c', 'n'):
-        import warnings
-        warnings.warn("Flag must be one of 'r', 'w', 'c', or 'n'",
-                      DeprecationWarning, stacklevel=2)
+        raise ValueError("Flag must be one of 'r', 'w', 'c', or 'n'")
     return _Database(file, mode, flag=flag)

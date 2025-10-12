@@ -24,47 +24,45 @@
  */
 
 #include <Python.h>
-#include <structmember.h>
 
 #include "cursor.h"
 #include "microprotocols.h"
 #include "prepare_protocol.h"
 
 
-/** the adapters registry **/
-
-PyObject *psyco_adapters;
-
 /* pysqlite_microprotocols_init - initialize the adapters dictionary */
 
 int
-pysqlite_microprotocols_init(PyObject *dict)
+pysqlite_microprotocols_init(PyObject *module)
 {
     /* create adapters dictionary and put it in module namespace */
-    if ((psyco_adapters = PyDict_New()) == NULL) {
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->psyco_adapters = PyDict_New();
+    if (state->psyco_adapters == NULL) {
         return -1;
     }
 
-    return PyDict_SetItemString(dict, "adapters", psyco_adapters);
+    return PyModule_AddObjectRef(module, "adapters", state->psyco_adapters);
 }
 
 
 /* pysqlite_microprotocols_add - add a reverse type-caster to the dictionary */
 
 int
-pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
+pysqlite_microprotocols_add(pysqlite_state *state, PyTypeObject *type,
+                            PyObject *proto, PyObject *cast)
 {
     PyObject* key;
     int rc;
 
-    if (proto == NULL) proto = (PyObject*)&pysqlite_PrepareProtocolType;
-
-    key = Py_BuildValue("(OO)", (PyObject*)type, proto);
+    assert(type != NULL);
+    assert(proto != NULL);
+    key = PyTuple_Pack(2, (PyObject *)type, proto);
     if (!key) {
         return -1;
     }
 
-    rc = PyDict_SetItem(psyco_adapters, key, cast);
+    rc = PyDict_SetItem(state->psyco_adapters, key, cast);
     Py_DECREF(key);
 
     return rc;
@@ -73,74 +71,73 @@ pysqlite_microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
 /* pysqlite_microprotocols_adapt - adapt an object to the built-in protocol */
 
 PyObject *
-pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
+pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
+                              PyObject *proto, PyObject *alt)
 {
-    PyObject *adapter, *key;
+    PyObject *adapter, *key, *adapted;
 
     /* we don't check for exact type conformance as specified in PEP 246
-       because the pysqlite_PrepareProtocolType type is abstract and there is no
+       because the PrepareProtocolType type is abstract and there is no
        way to get a quotable object to be its instance */
 
     /* look for an adapter in the registry */
-    key = Py_BuildValue("(OO)", (PyObject*)obj->ob_type, proto);
+    key = PyTuple_Pack(2, (PyObject *)Py_TYPE(obj), proto);
     if (!key) {
         return NULL;
     }
-    adapter = PyDict_GetItem(psyco_adapters, key);
+    if (PyDict_GetItemRef(state->psyco_adapters, key, &adapter) < 0) {
+        Py_DECREF(key);
+        return NULL;
+    }
     Py_DECREF(key);
     if (adapter) {
-        PyObject *adapted = PyObject_CallFunctionObjArgs(adapter, obj, NULL);
+        adapted = PyObject_CallOneArg(adapter, obj);
+        Py_DECREF(adapter);
         return adapted;
     }
 
-    /* try to have the protocol adapt this object*/
-    if (PyObject_HasAttrString(proto, "__adapt__")) {
-        _Py_IDENTIFIER(__adapt__);
-        PyObject *adapted = _PyObject_CallMethodId(proto, &PyId___adapt__, "O", obj);
+    /* try to have the protocol adapt this object */
+    if (PyObject_GetOptionalAttr(proto, state->str___adapt__, &adapter) < 0) {
+        return NULL;
+    }
+    if (adapter) {
+        adapted = PyObject_CallOneArg(adapter, obj);
+        Py_DECREF(adapter);
 
-        if (adapted) {
-            if (adapted != Py_None) {
-                return adapted;
-            } else {
-                Py_DECREF(adapted);
-            }
+        if (adapted == Py_None) {
+            Py_DECREF(adapted);
         }
-
-        if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_TypeError))
-            return NULL;
+        else if (adapted || !PyErr_ExceptionMatches(PyExc_TypeError)) {
+            return adapted;
+        }
+        else {
+            PyErr_Clear();
+        }
     }
 
     /* and finally try to have the object adapt itself */
-    if (PyObject_HasAttrString(obj, "__conform__")) {
-        _Py_IDENTIFIER(__conform__);
-        PyObject *adapted = _PyObject_CallMethodId(obj, &PyId___conform__,"O", proto);
+    if (PyObject_GetOptionalAttr(obj, state->str___conform__, &adapter) < 0) {
+        return NULL;
+    }
+    if (adapter) {
+        adapted = PyObject_CallOneArg(adapter, proto);
+        Py_DECREF(adapter);
 
-        if (adapted) {
-            if (adapted != Py_None) {
-                return adapted;
-            } else {
-                Py_DECREF(adapted);
-            }
+        if (adapted == Py_None) {
+            Py_DECREF(adapted);
         }
-
-        if (PyErr_Occurred() && !PyErr_ExceptionMatches(PyExc_TypeError)) {
-            return NULL;
+        else if (adapted || !PyErr_ExceptionMatches(PyExc_TypeError)) {
+            return adapted;
+        }
+        else {
+            PyErr_Clear();
         }
     }
 
+    if (alt) {
+        return Py_NewRef(alt);
+    }
     /* else set the right exception and return NULL */
-    PyErr_SetString(pysqlite_ProgrammingError, "can't adapt");
+    PyErr_SetString(state->ProgrammingError, "can't adapt");
     return NULL;
-}
-
-/** module-level functions **/
-
-PyObject *
-pysqlite_adapt(pysqlite_Cursor *self, PyObject *args)
-{
-    PyObject *obj, *alt = NULL;
-    PyObject *proto = (PyObject*)&pysqlite_PrepareProtocolType;
-
-    if (!PyArg_ParseTuple(args, "O|OO", &obj, &proto, &alt)) return NULL;
-    return pysqlite_microprotocols_adapt(obj, proto, alt);
 }

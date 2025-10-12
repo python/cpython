@@ -1,12 +1,15 @@
 """Abstract Transport class."""
 
-__all__ = ['BaseTransport', 'ReadTransport', 'WriteTransport',
-           'Transport', 'DatagramTransport', 'SubprocessTransport',
-           ]
+__all__ = (
+    'BaseTransport', 'ReadTransport', 'WriteTransport',
+    'Transport', 'DatagramTransport', 'SubprocessTransport',
+)
 
 
 class BaseTransport:
     """Base class for transports."""
+
+    __slots__ = ('_extra',)
 
     def __init__(self, extra=None):
         if extra is None:
@@ -26,8 +29,8 @@ class BaseTransport:
 
         Buffered data will be flushed asynchronously.  No more data
         will be received.  After all buffered data is flushed, the
-        protocol's connection_lost() method will (eventually) called
-        with None as its argument.
+        protocol's connection_lost() method will (eventually) be
+        called with None as its argument.
         """
         raise NotImplementedError
 
@@ -42,6 +45,12 @@ class BaseTransport:
 
 class ReadTransport(BaseTransport):
     """Interface for read-only transports."""
+
+    __slots__ = ()
+
+    def is_reading(self):
+        """Return True if the transport is receiving."""
+        raise NotImplementedError
 
     def pause_reading(self):
         """Pause the receiving end.
@@ -62,6 +71,8 @@ class ReadTransport(BaseTransport):
 
 class WriteTransport(BaseTransport):
     """Interface for write-only transports."""
+
+    __slots__ = ()
 
     def set_write_buffer_limits(self, high=None, low=None):
         """Set the high- and low-water limits for write flow control.
@@ -86,6 +97,12 @@ class WriteTransport(BaseTransport):
 
     def get_write_buffer_size(self):
         """Return the current size of the write buffer."""
+        raise NotImplementedError
+
+    def get_write_buffer_limits(self):
+        """Get the high and low watermarks for write flow control.
+        Return a tuple (low, high) where low and high are
+        positive number of bytes."""
         raise NotImplementedError
 
     def write(self, data):
@@ -149,9 +166,13 @@ class Transport(ReadTransport, WriteTransport):
     except writelines(), which calls write() in a loop.
     """
 
+    __slots__ = ()
+
 
 class DatagramTransport(BaseTransport):
     """Interface for datagram (UDP) transports."""
+
+    __slots__ = ()
 
     def sendto(self, data, addr=None):
         """Send data to the transport.
@@ -160,6 +181,8 @@ class DatagramTransport(BaseTransport):
         to be sent out asynchronously.
         addr is target socket address.
         If addr is None use target address pointed on transport creation.
+        If data is an empty bytes object a zero-length datagram will be
+        sent.
         """
         raise NotImplementedError
 
@@ -174,6 +197,8 @@ class DatagramTransport(BaseTransport):
 
 
 class SubprocessTransport(BaseTransport):
+
+    __slots__ = ()
 
     def get_pid(self):
         """Get subprocess id."""
@@ -242,6 +267,8 @@ class _FlowControlMixin(Transport):
     resume_writing() may be called.
     """
 
+    __slots__ = ('_loop', '_protocol_paused', '_high_water', '_low_water')
+
     def __init__(self, extra=None, loop=None):
         super().__init__(extra)
         assert loop is not None
@@ -257,7 +284,9 @@ class _FlowControlMixin(Transport):
             self._protocol_paused = True
             try:
                 self._protocol.pause_writing()
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 self._loop.call_exception_handler({
                     'message': 'protocol.pause_writing() failed',
                     'exception': exc,
@@ -267,11 +296,13 @@ class _FlowControlMixin(Transport):
 
     def _maybe_resume_protocol(self):
         if (self._protocol_paused and
-            self.get_write_buffer_size() <= self._low_water):
+                self.get_write_buffer_size() <= self._low_water):
             self._protocol_paused = False
             try:
                 self._protocol.resume_writing()
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 self._loop.call_exception_handler({
                     'message': 'protocol.resume_writing() failed',
                     'exception': exc,
@@ -285,14 +316,16 @@ class _FlowControlMixin(Transport):
     def _set_write_buffer_limits(self, high=None, low=None):
         if high is None:
             if low is None:
-                high = 64*1024
+                high = 64 * 1024
             else:
-                high = 4*low
+                high = 4 * low
         if low is None:
             low = high // 4
+
         if not high >= low >= 0:
-            raise ValueError('high (%r) must be >= low (%r) must be >= 0' %
-                             (high, low))
+            raise ValueError(
+                f'high ({high!r}) must be >= low ({low!r}) must be >= 0')
+
         self._high_water = high
         self._low_water = low
 

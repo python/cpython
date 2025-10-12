@@ -37,24 +37,9 @@ Writing C is hard; are there any alternatives?
 ----------------------------------------------
 
 There are a number of alternatives to writing your own C extensions, depending
-on what you're trying to do.
-
-.. XXX make sure these all work
-
-`Cython <http://cython.org>`_ and its relative `Pyrex
-<https://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_ are compilers
-that accept a slightly modified form of Python and generate the corresponding
-C code.  Cython and Pyrex make it possible to write an extension without having
-to learn Python's C API.
-
-If you need to interface to some C or C++ library for which no Python extension
-currently exists, you can try wrapping the library's data types and functions
-with a tool such as `SWIG <http://www.swig.org>`_.  `SIP
-<https://riverbankcomputing.com/software/sip/intro>`__, `CXX
-<http://cxx.sourceforge.net/>`_ `Boost
-<http://www.boost.org/libs/python/doc/index.html>`_, or `Weave
-<https://scipy.github.io/devdocs/tutorial/weave.html>`_ are also
-alternatives for wrapping C++ libraries.
+on what you're trying to do. :ref:`Recommended third party tools <c-api-tools>`
+offer both simpler and more sophisticated approaches to creating C and C++
+extensions for Python.
 
 
 How can I execute arbitrary Python statements from C?
@@ -62,8 +47,8 @@ How can I execute arbitrary Python statements from C?
 
 The highest-level function to do this is :c:func:`PyRun_SimpleString` which takes
 a single string argument to be executed in the context of the module
-``__main__`` and returns 0 for success and -1 when an exception occurred
-(including ``SyntaxError``).  If you want more control, use
+``__main__`` and returns ``0`` for success and ``-1`` when an exception occurred
+(including :exc:`SyntaxError`).  If you want more control, use
 :c:func:`PyRun_String`; see the source for :c:func:`PyRun_SimpleString` in
 ``Python/pythonrun.c``.
 
@@ -81,15 +66,15 @@ How do I extract C values from a Python object?
 
 That depends on the object's type.  If it's a tuple, :c:func:`PyTuple_Size`
 returns its length and :c:func:`PyTuple_GetItem` returns the item at a specified
-index.  Lists have similar functions, :c:func:`PyListSize` and
+index.  Lists have similar functions, :c:func:`PyList_Size` and
 :c:func:`PyList_GetItem`.
 
 For bytes, :c:func:`PyBytes_Size` returns its length and
 :c:func:`PyBytes_AsStringAndSize` provides a pointer to its value and its
 length.  Note that Python bytes objects may contain null bytes so C's
-:c:func:`strlen` should not be used.
+:c:func:`!strlen` should not be used.
 
-To test the type of an object, first make sure it isn't *NULL*, and then use
+To test the type of an object, first make sure it isn't ``NULL``, and then use
 :c:func:`PyBytes_Check`, :c:func:`PyTuple_Check`, :c:func:`PyList_Check`, etc.
 
 There is also a high-level API to Python objects which is provided by the
@@ -246,14 +231,12 @@ Then, when you run GDB:
 I want to compile a Python module on my Linux system, but some files are missing. Why?
 --------------------------------------------------------------------------------------
 
-Most packaged versions of Python don't include the
-:file:`/usr/lib/python2.{x}/config/` directory, which contains various files
+Most packaged versions of Python omit some files
 required for compiling Python extensions.
 
-For Red Hat, install the python-devel RPM to get the necessary files.
+For Red Hat, install the python3-devel RPM to get the necessary files.
 
-For Debian, run ``apt-get install python-dev``.
-
+For Debian, run ``apt-get install python3-dev``.
 
 How do I tell "incomplete input" from "invalid input"?
 ------------------------------------------------------
@@ -273,159 +256,6 @@ you. You can also set the :c:func:`PyOS_ReadlineFunctionPointer` to point at you
 custom input function. See ``Modules/readline.c`` and ``Parser/myreadline.c``
 for more hints.
 
-However sometimes you have to run the embedded Python interpreter in the same
-thread as your rest application and you can't allow the
-:c:func:`PyRun_InteractiveLoop` to stop while waiting for user input.  The one
-solution then is to call :c:func:`PyParser_ParseString` and test for ``e.error``
-equal to ``E_EOF``, which means the input is incomplete).  Here's a sample code
-fragment, untested, inspired by code from Alex Farber::
-
-   #include <Python.h>
-   #include <node.h>
-   #include <errcode.h>
-   #include <grammar.h>
-   #include <parsetok.h>
-   #include <compile.h>
-
-   int testcomplete(char *code)
-     /* code should end in \n */
-     /* return -1 for error, 0 for incomplete, 1 for complete */
-   {
-     node *n;
-     perrdetail e;
-
-     n = PyParser_ParseString(code, &_PyParser_Grammar,
-                              Py_file_input, &e);
-     if (n == NULL) {
-       if (e.error == E_EOF)
-         return 0;
-       return -1;
-     }
-
-     PyNode_Free(n);
-     return 1;
-   }
-
-Another solution is trying to compile the received string with
-:c:func:`Py_CompileString`. If it compiles without errors, try to execute the
-returned code object by calling :c:func:`PyEval_EvalCode`. Otherwise save the
-input for later. If the compilation fails, find out if it's an error or just
-more input is required - by extracting the message string from the exception
-tuple and comparing it to the string "unexpected EOF while parsing".  Here is a
-complete example using the GNU readline library (you may want to ignore
-**SIGINT** while calling readline())::
-
-   #include <stdio.h>
-   #include <readline.h>
-
-   #include <Python.h>
-   #include <object.h>
-   #include <compile.h>
-   #include <eval.h>
-
-   int main (int argc, char* argv[])
-   {
-     int i, j, done = 0;                          /* lengths of line, code */
-     char ps1[] = ">>> ";
-     char ps2[] = "... ";
-     char *prompt = ps1;
-     char *msg, *line, *code = NULL;
-     PyObject *src, *glb, *loc;
-     PyObject *exc, *val, *trb, *obj, *dum;
-
-     Py_Initialize ();
-     loc = PyDict_New ();
-     glb = PyDict_New ();
-     PyDict_SetItemString (glb, "__builtins__", PyEval_GetBuiltins ());
-
-     while (!done)
-     {
-       line = readline (prompt);
-
-       if (NULL == line)                          /* Ctrl-D pressed */
-       {
-         done = 1;
-       }
-       else
-       {
-         i = strlen (line);
-
-         if (i > 0)
-           add_history (line);                    /* save non-empty lines */
-
-         if (NULL == code)                        /* nothing in code yet */
-           j = 0;
-         else
-           j = strlen (code);
-
-         code = realloc (code, i + j + 2);
-         if (NULL == code)                        /* out of memory */
-           exit (1);
-
-         if (0 == j)                              /* code was empty, so */
-           code[0] = '\0';                        /* keep strncat happy */
-
-         strncat (code, line, i);                 /* append line to code */
-         code[i + j] = '\n';                      /* append '\n' to code */
-         code[i + j + 1] = '\0';
-
-         src = Py_CompileString (code, "<stdin>", Py_single_input);
-
-         if (NULL != src)                         /* compiled just fine - */
-         {
-           if (ps1  == prompt ||                  /* ">>> " or */
-               '\n' == code[i + j - 1])           /* "... " and double '\n' */
-           {                                               /* so execute it */
-             dum = PyEval_EvalCode (src, glb, loc);
-             Py_XDECREF (dum);
-             Py_XDECREF (src);
-             free (code);
-             code = NULL;
-             if (PyErr_Occurred ())
-               PyErr_Print ();
-             prompt = ps1;
-           }
-         }                                        /* syntax error or E_EOF? */
-         else if (PyErr_ExceptionMatches (PyExc_SyntaxError))
-         {
-           PyErr_Fetch (&exc, &val, &trb);        /* clears exception! */
-
-           if (PyArg_ParseTuple (val, "sO", &msg, &obj) &&
-               !strcmp (msg, "unexpected EOF while parsing")) /* E_EOF */
-           {
-             Py_XDECREF (exc);
-             Py_XDECREF (val);
-             Py_XDECREF (trb);
-             prompt = ps2;
-           }
-           else                                   /* some other syntax error */
-           {
-             PyErr_Restore (exc, val, trb);
-             PyErr_Print ();
-             free (code);
-             code = NULL;
-             prompt = ps1;
-           }
-         }
-         else                                     /* some non-syntax error */
-         {
-           PyErr_Print ();
-           free (code);
-           code = NULL;
-           prompt = ps1;
-         }
-
-         free (line);
-       }
-     }
-
-     Py_XDECREF(glb);
-     Py_XDECREF(loc);
-     Py_Finalize();
-     exit(0);
-   }
-
-
 How do I find undefined g++ symbols __builtin_new or __pure_virtual?
 --------------------------------------------------------------------
 
@@ -440,6 +270,6 @@ Can I create an object class with some methods implemented in C and others in Py
 Yes, you can inherit from built-in classes such as :class:`int`, :class:`list`,
 :class:`dict`, etc.
 
-The Boost Python Library (BPL, http://www.boost.org/libs/python/doc/index.html)
+The Boost Python Library (BPL, https://www.boost.org/libs/python/doc/index.html)
 provides a way of doing this from C++ (i.e. you can inherit from an extension
 class written in C++ using the BPL).

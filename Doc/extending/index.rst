@@ -26,17 +26,9 @@ Recommended third party tools
 =============================
 
 This guide only covers the basic tools for creating extensions provided
-as part of this version of CPython. Third party tools like Cython,
-``cffi``, SWIG and Numba offer both simpler and more sophisticated
-approaches to creating C and C++ extensions for Python.
-
-.. seealso::
-
-   `Python Packaging User Guide: Binary Extensions <https://packaging.python.org/en/latest/extensions/>`_
-      The Python Packaging User Guide not only covers several available
-      tools that simplify the creation of binary extensions, but also
-      discusses the various reasons why creating an extension module may be
-      desirable in the first place.
+as part of this version of CPython. Some :ref:`third party tools
+<c-api-tools>` offer both simpler and more sophisticated approaches to creating
+C and C++ extensions for Python.
 
 
 Creating extensions without third party tools
@@ -47,11 +39,16 @@ assistance from third party tools. It is intended primarily for creators
 of those tools, rather than being a recommended way to create your own
 C extensions.
 
+.. seealso::
+
+   :pep:`489` -- Multi-phase extension module initialization
+
 .. toctree::
    :maxdepth: 2
    :numbered:
 
    extending.rst
+   newtypes_tutorial.rst
    newtypes.rst
    building.rst
    windows.rst

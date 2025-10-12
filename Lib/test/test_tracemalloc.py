@@ -1,23 +1,28 @@
 import contextlib
 import os
 import sys
+import textwrap
 import tracemalloc
 import unittest
 from unittest.mock import patch
 from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
 from test import support
-try:
-    import threading
-except ImportError:
-    threading = None
+from test.support import force_not_colorized, warnings_helper
+from test.support import os_helper
+from test.support import threading_helper
+
 try:
     import _testcapi
+    import _testinternalcapi
 except ImportError:
     _testcapi = None
+    _testinternalcapi = None
 
 
+DEFAULT_DOMAIN = 0
 EMPTY_STRING_SIZE = sys.getsizeof(b'')
+INVALID_NFRAME = (-1, 2**30)
 
 
 def get_frames(nframe, lineno_delta):
@@ -38,7 +43,7 @@ def allocate_bytes(size):
     bytes_len = (size - EMPTY_STRING_SIZE)
     frames = get_frames(nframe, 1)
     data = b'x' * bytes_len
-    return data, tracemalloc.Traceback(frames)
+    return data, tracemalloc.Traceback(frames, min(len(frames), nframe))
 
 def create_snapshots():
     traceback_limit = 2
@@ -47,27 +52,27 @@ def create_snapshots():
     # traceback_frames) tuples. traceback_frames is a tuple of (filename,
     # line_number) tuples.
     raw_traces = [
-        (0, 10, (('a.py', 2), ('b.py', 4))),
-        (0, 10, (('a.py', 2), ('b.py', 4))),
-        (0, 10, (('a.py', 2), ('b.py', 4))),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
 
-        (1, 2, (('a.py', 5), ('b.py', 4))),
+        (1, 2, (('a.py', 5), ('b.py', 4)), 3),
 
-        (2, 66, (('b.py', 1),)),
+        (2, 66, (('b.py', 1),), 1),
 
-        (3, 7, (('<unknown>', 0),)),
+        (3, 7, (('<unknown>', 0),), 1),
     ]
     snapshot = tracemalloc.Snapshot(raw_traces, traceback_limit)
 
     raw_traces2 = [
-        (0, 10, (('a.py', 2), ('b.py', 4))),
-        (0, 10, (('a.py', 2), ('b.py', 4))),
-        (0, 10, (('a.py', 2), ('b.py', 4))),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+        (0, 10, (('a.py', 2), ('b.py', 4)), 3),
 
-        (2, 2, (('a.py', 5), ('b.py', 4))),
-        (2, 5000, (('a.py', 5), ('b.py', 4))),
+        (2, 2, (('a.py', 5), ('b.py', 4)), 3),
+        (2, 5000, (('a.py', 5), ('b.py', 4)), 3),
 
-        (4, 400, (('c.py', 578),)),
+        (4, 400, (('c.py', 578),), 1),
     ]
     snapshot2 = tracemalloc.Snapshot(raw_traces2, traceback_limit)
 
@@ -84,6 +89,25 @@ def traceback_lineno(filename, lineno):
 
 def traceback_filename(filename):
     return traceback_lineno(filename, 0)
+
+
+class TestTraceback(unittest.TestCase):
+    def test_repr(self):
+        def get_repr(*args) -> str:
+            return repr(tracemalloc.Traceback(*args))
+
+        self.assertEqual(get_repr(()), "<Traceback ()>")
+        self.assertEqual(get_repr((), 0), "<Traceback () total_nframe=0>")
+
+        frames = (("f1", 1), ("f2", 2))
+        exp_repr_frames = (
+            "(<Frame filename='f2' lineno=2>,"
+            " <Frame filename='f1' lineno=1>)"
+        )
+        self.assertEqual(get_repr(frames),
+                         f"<Traceback {exp_repr_frames}>")
+        self.assertEqual(get_repr(frames, 2),
+                         f"<Traceback {exp_repr_frames} total_nframe=2>")
 
 
 class TestTracemallocEnabled(unittest.TestCase):
@@ -113,6 +137,26 @@ class TestTracemallocEnabled(unittest.TestCase):
         traceback = tracemalloc.get_object_traceback(obj)
         self.assertEqual(traceback, obj_traceback)
 
+    def test_new_reference(self):
+        tracemalloc.clear_traces()
+        # gc.collect() indirectly calls PyList_ClearFreeList()
+        support.gc_collect()
+
+        # Create a list and "destroy it": put it in the PyListObject free list
+        obj = []
+        obj = None
+
+        # Create a list which should reuse the previously created empty list
+        obj = []
+
+        nframe = tracemalloc.get_traceback_limit()
+        frames = get_frames(nframe, -3)
+        obj_traceback = tracemalloc.Traceback(frames, min(len(frames), nframe))
+
+        traceback = tracemalloc.get_object_traceback(obj)
+        self.assertIsNotNone(traceback)
+        self.assertEqual(traceback, obj_traceback)
+
     def test_set_traceback_limit(self):
         obj_size = 10
 
@@ -133,9 +177,11 @@ class TestTracemallocEnabled(unittest.TestCase):
         self.assertEqual(len(traceback), 1)
         self.assertEqual(traceback, obj_traceback)
 
-    def find_trace(self, traces, traceback):
+    def find_trace(self, traces, traceback, size):
+        # filter also by size to ignore the memory allocated by
+        # _PyRefchain_Trace() if Python is built with Py_TRACE_REFS.
         for trace in traces:
-            if trace[2] == traceback._frames:
+            if trace[2] == traceback._frames and trace[1] == size:
                 return trace
 
         self.fail("trace not found")
@@ -146,11 +192,10 @@ class TestTracemallocEnabled(unittest.TestCase):
         obj, obj_traceback = allocate_bytes(obj_size)
 
         traces = tracemalloc._get_traces()
-        trace = self.find_trace(traces, obj_traceback)
+        trace = self.find_trace(traces, obj_traceback, obj_size)
 
         self.assertIsInstance(trace, tuple)
-        domain, size, traceback = trace
-        self.assertEqual(size, obj_size)
+        domain, size, traceback, length = trace
         self.assertEqual(traceback, obj_traceback._frames)
 
         tracemalloc.stop()
@@ -168,16 +213,20 @@ class TestTracemallocEnabled(unittest.TestCase):
         # Ensure that two identical tracebacks are not duplicated
         tracemalloc.stop()
         tracemalloc.start(4)
-        obj_size = 123
-        obj1, obj1_traceback = allocate_bytes4(obj_size)
-        obj2, obj2_traceback = allocate_bytes4(obj_size)
+        obj1_size = 123
+        obj2_size = 125
+        obj1, obj1_traceback = allocate_bytes4(obj1_size)
+        obj2, obj2_traceback = allocate_bytes4(obj2_size)
 
         traces = tracemalloc._get_traces()
 
-        trace1 = self.find_trace(traces, obj1_traceback)
-        trace2 = self.find_trace(traces, obj2_traceback)
-        domain1, size1, traceback1 = trace1
-        domain2, size2, traceback2 = trace2
+        obj1_traceback._frames = tuple(reversed(obj1_traceback._frames))
+        obj2_traceback._frames = tuple(reversed(obj2_traceback._frames))
+
+        trace1 = self.find_trace(traces, obj1_traceback, obj1_size)
+        trace2 = self.find_trace(traces, obj2_traceback, obj2_size)
+        domain1, size1, traceback1, length1 = trace1
+        domain2, size2, traceback2, length2 = trace2
         self.assertIs(traceback2, traceback1)
 
     def test_get_traced_memory(self):
@@ -225,6 +274,30 @@ class TestTracemallocEnabled(unittest.TestCase):
         traceback2 = tracemalloc.get_object_traceback(obj)
         self.assertIsNone(traceback2)
 
+    def test_reset_peak(self):
+        # Python allocates some internals objects, so the test must tolerate
+        # a small difference between the expected size and the real usage
+        tracemalloc.clear_traces()
+
+        # Example: allocate a large piece of memory, temporarily
+        large_sum = sum(list(range(100000)))
+        size1, peak1 = tracemalloc.get_traced_memory()
+
+        # reset_peak() resets peak to traced memory: peak2 < peak1
+        tracemalloc.reset_peak()
+        size2, peak2 = tracemalloc.get_traced_memory()
+        self.assertGreaterEqual(peak2, size2)
+        self.assertLess(peak2, peak1)
+
+        # check that peak continue to be updated if new memory is allocated:
+        # peak3 > peak2
+        obj_size = 1024 * 1024
+        obj, obj_traceback = allocate_bytes(obj_size)
+        size3, peak3 = tracemalloc.get_traced_memory()
+        self.assertGreaterEqual(peak3, size3)
+        self.assertGreater(peak3, peak2)
+        self.assertGreaterEqual(peak3 - peak2, obj_size)
+
     def test_is_tracing(self):
         tracemalloc.stop()
         self.assertFalse(tracemalloc.is_tracing())
@@ -238,12 +311,15 @@ class TestTracemallocEnabled(unittest.TestCase):
         # take a snapshot
         snapshot = tracemalloc.take_snapshot()
 
+        # This can vary
+        self.assertGreater(snapshot.traces[1].traceback.total_nframe, 10)
+
         # write on disk
-        snapshot.dump(support.TESTFN)
-        self.addCleanup(support.unlink, support.TESTFN)
+        snapshot.dump(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
         # load from disk
-        snapshot2 = tracemalloc.Snapshot.load(support.TESTFN)
+        snapshot2 = tracemalloc.Snapshot.load(os_helper.TESTFN)
         self.assertEqual(snapshot2.traces, snapshot.traces)
 
         # tracemalloc must be tracing memory allocations to take a snapshot
@@ -258,11 +334,11 @@ class TestTracemallocEnabled(unittest.TestCase):
         # take a snapshot with a new attribute
         snapshot = tracemalloc.take_snapshot()
         snapshot.test_attr = "new"
-        snapshot.dump(support.TESTFN)
-        self.addCleanup(support.unlink, support.TESTFN)
+        snapshot.dump(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
         # load() should recreate the attribute
-        snapshot2 = tracemalloc.Snapshot.load(support.TESTFN)
+        snapshot2 = tracemalloc.Snapshot.load(os_helper.TESTFN)
         self.assertEqual(snapshot2.test_attr, "new")
 
     def fork_child(self):
@@ -278,7 +354,8 @@ class TestTracemallocEnabled(unittest.TestCase):
         # everything is fine
         return 0
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork()')
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.requires_fork()
     def test_fork(self):
         # check that tracemalloc is still working after fork
         pid = os.fork()
@@ -290,17 +367,28 @@ class TestTracemallocEnabled(unittest.TestCase):
             finally:
                 os._exit(exitcode)
         else:
-            pid2, status = os.waitpid(pid, 0)
-            self.assertTrue(os.WIFEXITED(status))
-            exitcode = os.WEXITSTATUS(status)
-            self.assertEqual(exitcode, 0)
+            support.wait_process(pid, exitcode=0)
+
+    def test_no_incomplete_frames(self):
+        tracemalloc.stop()
+        tracemalloc.start(8)
+
+        def f(x):
+            def g():
+                return x
+            return g
+
+        obj = f(0).__closure__[0]
+        traceback = tracemalloc.get_object_traceback(obj)
+        self.assertIn("test_tracemalloc", traceback[-1].filename)
+        self.assertNotIn("test_tracemalloc", traceback[-2].filename)
 
 
 class TestSnapshot(unittest.TestCase):
     maxDiff = 4000
 
     def test_create_snapshot(self):
-        raw_traces = [(0, 5, (('a.py', 2),))]
+        raw_traces = [(0, 5, (('a.py', 2),), 10)]
 
         with contextlib.ExitStack() as stack:
             stack.enter_context(patch.object(tracemalloc, 'is_tracing',
@@ -315,6 +403,7 @@ class TestSnapshot(unittest.TestCase):
             self.assertEqual(len(snapshot.traces), 1)
             trace = snapshot.traces[0]
             self.assertEqual(trace.size, 5)
+            self.assertEqual(trace.traceback.total_nframe, 10)
             self.assertEqual(len(trace.traceback), 1)
             self.assertEqual(trace.traceback[0].filename, 'a.py')
             self.assertEqual(trace.traceback[0].lineno, 2)
@@ -330,11 +419,11 @@ class TestSnapshot(unittest.TestCase):
         # exclude b.py
         snapshot3 = snapshot.filter_traces((filter1,))
         self.assertEqual(snapshot3.traces._traces, [
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (1, 2, (('a.py', 5), ('b.py', 4))),
-            (3, 7, (('<unknown>', 0),)),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (1, 2, (('a.py', 5), ('b.py', 4)), 3),
+            (3, 7, (('<unknown>', 0),), 1),
         ])
 
         # filter_traces() must not touch the original snapshot
@@ -343,10 +432,10 @@ class TestSnapshot(unittest.TestCase):
         # only include two lines of a.py
         snapshot4 = snapshot3.filter_traces((filter2, filter3))
         self.assertEqual(snapshot4.traces._traces, [
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (1, 2, (('a.py', 5), ('b.py', 4))),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (1, 2, (('a.py', 5), ('b.py', 4)), 3),
         ])
 
         # No filter: just duplicate the snapshot
@@ -367,21 +456,21 @@ class TestSnapshot(unittest.TestCase):
         # exclude a.py of domain 1
         snapshot3 = snapshot.filter_traces((filter1,))
         self.assertEqual(snapshot3.traces._traces, [
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (2, 66, (('b.py', 1),)),
-            (3, 7, (('<unknown>', 0),)),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (2, 66, (('b.py', 1),), 1),
+            (3, 7, (('<unknown>', 0),), 1),
         ])
 
         # include domain 1
         snapshot3 = snapshot.filter_traces((filter1,))
         self.assertEqual(snapshot3.traces._traces, [
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (2, 66, (('b.py', 1),)),
-            (3, 7, (('<unknown>', 0),)),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (2, 66, (('b.py', 1),), 1),
+            (3, 7, (('<unknown>', 0),), 1),
         ])
 
     def test_filter_traces_domain_filter(self):
@@ -392,17 +481,17 @@ class TestSnapshot(unittest.TestCase):
         # exclude domain 2
         snapshot3 = snapshot.filter_traces((filter1,))
         self.assertEqual(snapshot3.traces._traces, [
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (0, 10, (('a.py', 2), ('b.py', 4))),
-            (1, 2, (('a.py', 5), ('b.py', 4))),
-            (2, 66, (('b.py', 1),)),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (0, 10, (('a.py', 2), ('b.py', 4)), 3),
+            (1, 2, (('a.py', 5), ('b.py', 4)), 3),
+            (2, 66, (('b.py', 1),), 1),
         ])
 
         # include domain 2
         snapshot3 = snapshot.filter_traces((filter2,))
         self.assertEqual(snapshot3.traces._traces, [
-            (3, 7, (('<unknown>', 0),)),
+            (3, 7, (('<unknown>', 0),), 1),
         ])
 
     def test_snapshot_group_by_line(self):
@@ -540,11 +629,11 @@ class TestSnapshot(unittest.TestCase):
     def test_trace_format(self):
         snapshot, snapshot2 = create_snapshots()
         trace = snapshot.traces[0]
-        self.assertEqual(str(trace), 'a.py:2: 10 B')
+        self.assertEqual(str(trace), 'b.py:4: 10 B')
         traceback = trace.traceback
-        self.assertEqual(str(traceback), 'a.py:2')
+        self.assertEqual(str(traceback), 'b.py:4')
         frame = traceback[0]
-        self.assertEqual(str(frame), 'a.py:2')
+        self.assertEqual(str(frame), 'b.py:4')
 
     def test_statistic_format(self):
         snapshot, snapshot2 = create_snapshots()
@@ -577,17 +666,32 @@ class TestSnapshot(unittest.TestCase):
                                  side_effect=getline):
             tb = snapshot.traces[0].traceback
             self.assertEqual(tb.format(),
-                             ['  File "a.py", line 2',
-                              '    <a.py, 2>',
-                              '  File "b.py", line 4',
-                              '    <b.py, 4>'])
+                             ['  File "b.py", line 4',
+                              '    <b.py, 4>',
+                              '  File "a.py", line 2',
+                              '    <a.py, 2>'])
 
             self.assertEqual(tb.format(limit=1),
                              ['  File "a.py", line 2',
                               '    <a.py, 2>'])
 
             self.assertEqual(tb.format(limit=-1),
-                             [])
+                             ['  File "b.py", line 4',
+                              '    <b.py, 4>'])
+
+            self.assertEqual(tb.format(most_recent_first=True),
+                             ['  File "a.py", line 2',
+                              '    <a.py, 2>',
+                              '  File "b.py", line 4',
+                              '    <b.py, 4>'])
+
+            self.assertEqual(tb.format(limit=1, most_recent_first=True),
+                             ['  File "a.py", line 2',
+                              '    <a.py, 2>'])
+
+            self.assertEqual(tb.format(limit=-1, most_recent_first=True),
+                             ['  File "b.py", line 4',
+                              '    <b.py, 4>'])
 
 
 class TestFilters(unittest.TestCase):
@@ -818,6 +922,13 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.rstrip()
         self.assertEqual(stdout, b'False')
 
+    def test_env_var_disabled(self):
+        # tracing at startup
+        code = 'import tracemalloc; print(tracemalloc.is_tracing())'
+        ok, stdout, stderr = assert_python_ok('-c', code, PYTHONTRACEMALLOC='0')
+        stdout = stdout.rstrip()
+        self.assertEqual(stdout, b'False')
+
     def test_env_var_enabled_at_startup(self):
         # tracing at startup
         code = 'import tracemalloc; print(tracemalloc.is_tracing())'
@@ -832,16 +943,23 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.rstrip()
         self.assertEqual(stdout, b'10')
 
+    @force_not_colorized
+    def check_env_var_invalid(self, nframe):
+        with support.SuppressCrashReport():
+            ok, stdout, stderr = assert_python_failure(
+                '-c', 'pass',
+                PYTHONTRACEMALLOC=str(nframe))
+
+        if b'ValueError: the number of frames must be in range' in stderr:
+            return
+        if b'PYTHONTRACEMALLOC: invalid number of frames' in stderr:
+            return
+        self.fail(f"unexpected output: {stderr!a}")
+
     def test_env_var_invalid(self):
-        for nframe in (-1, 0, 2**30):
+        for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
-                with support.SuppressCrashReport():
-                    ok, stdout, stderr = assert_python_failure(
-                        '-c', 'pass',
-                        PYTHONTRACEMALLOC=str(nframe))
-                    self.assertIn(b'PYTHONTRACEMALLOC: invalid '
-                                  b'number of frames',
-                                  stderr)
+                self.check_env_var_invalid(nframe)
 
     def test_sys_xoptions(self):
         for xoptions, nframe in (
@@ -855,15 +973,22 @@ class TestCommandLine(unittest.TestCase):
                 stdout = stdout.rstrip()
                 self.assertEqual(stdout, str(nframe).encode('ascii'))
 
+    def check_sys_xoptions_invalid(self, nframe):
+        args = ('-X', 'tracemalloc=%s' % nframe, '-c', 'pass')
+        with support.SuppressCrashReport():
+            ok, stdout, stderr = assert_python_failure(*args)
+
+        if b'ValueError: the number of frames must be in range' in stderr:
+            return
+        if b'-X tracemalloc=NFRAME: invalid number of frames' in stderr:
+            return
+        self.fail(f"unexpected output: {stderr!a}")
+
+    @force_not_colorized
     def test_sys_xoptions_invalid(self):
-        for nframe in (-1, 0, 2**30):
+        for nframe in INVALID_NFRAME:
             with self.subTest(nframe=nframe):
-                with support.SuppressCrashReport():
-                    args = ('-X', 'tracemalloc=%s' % nframe, '-c', 'pass')
-                    ok, stdout, stderr = assert_python_failure(*args)
-                    self.assertIn(b'-X tracemalloc=NFRAME: invalid '
-                                  b'number of frames',
-                                  stderr)
+                self.check_sys_xoptions_invalid(nframe)
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     def test_pymem_alloc0(self):
@@ -893,20 +1018,20 @@ class TestCAPI(unittest.TestCase):
         tracemalloc.stop()
 
     def get_traceback(self):
-        frames = _testcapi.tracemalloc_get_traceback(self.domain, self.ptr)
+        frames = _testinternalcapi._PyTraceMalloc_GetTraceback(self.domain, self.ptr)
         if frames is not None:
             return tracemalloc.Traceback(frames)
         else:
             return None
 
     def track(self, release_gil=False, nframe=1):
-        frames = get_frames(nframe, 2)
+        frames = get_frames(nframe, 1)
         _testcapi.tracemalloc_track(self.domain, self.ptr, self.size,
                                     release_gil)
         return frames
 
-    def untrack(self):
-        _testcapi.tracemalloc_untrack(self.domain, self.ptr)
+    def untrack(self, release_gil=False):
+        _testcapi.tracemalloc_untrack(self.domain, self.ptr, release_gil)
 
     def get_traced_memory(self):
         # Get the traced size in the domain
@@ -948,7 +1073,7 @@ class TestCAPI(unittest.TestCase):
         self.assertEqual(self.get_traceback(),
                          tracemalloc.Traceback(frames))
 
-    def test_untrack(self):
+    def check_untrack(self, release_gil):
         tracemalloc.start()
 
         self.track()
@@ -956,13 +1081,19 @@ class TestCAPI(unittest.TestCase):
         self.assertEqual(self.get_traced_memory(), self.size)
 
         # untrack must remove the trace
-        self.untrack()
+        self.untrack(release_gil)
         self.assertIsNone(self.get_traceback())
         self.assertEqual(self.get_traced_memory(), 0)
 
         # calling _PyTraceMalloc_Untrack() multiple times must not crash
-        self.untrack()
-        self.untrack()
+        self.untrack(release_gil)
+        self.untrack(release_gil)
+
+    def test_untrack(self):
+        self.check_untrack(False)
+
+    def test_untrack_without_gil(self):
+        self.check_untrack(True)
 
     def test_stop_track(self):
         tracemalloc.start()
@@ -980,15 +1111,38 @@ class TestCAPI(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.untrack()
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi')
+    @threading_helper.requires_working_threading()
+    # gh-128679: Test crash on a debug build (especially on FreeBSD).
+    @unittest.skipIf(support.Py_DEBUG, 'need release build')
+    @support.skip_if_sanitizer('gh-131566: race when setting allocator', thread=True)
+    def test_tracemalloc_track_race(self):
+        # gh-128679: Test fix for tracemalloc.stop() race condition
+        _testcapi.tracemalloc_track_race()
 
-def test_main():
-    support.run_unittest(
-        TestTracemallocEnabled,
-        TestSnapshot,
-        TestFilters,
-        TestCommandLine,
-        TestCAPI,
-    )
+    def test_late_untrack(self):
+        code = textwrap.dedent(f"""
+            from test import support
+            import tracemalloc
+            import _testcapi
+
+            class Tracked:
+                def __init__(self, domain, size):
+                    self.domain = domain
+                    self.ptr = id(self)
+                    self.size = size
+                    _testcapi.tracemalloc_track(self.domain, self.ptr, self.size)
+
+                def __del__(self, untrack=_testcapi.tracemalloc_untrack):
+                    untrack(self.domain, self.ptr, 1)
+
+            domain = {DEFAULT_DOMAIN}
+            tracemalloc.start()
+            obj = Tracked(domain, 1024 * 1024)
+            support.late_deletion(obj)
+        """)
+        assert_python_ok("-c", code)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

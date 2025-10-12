@@ -1,11 +1,9 @@
-''' Test idlelib.scrolledlist.
+"Test scrolledlist, coverage 38%."
 
-Coverage: 39%
-'''
-from idlelib import scrolledlist
+from idlelib.scrolledlist import ScrolledList
+import unittest
 from test.support import requires
 requires('gui')
-import unittest
 from tkinter import Tk
 
 
@@ -22,7 +20,7 @@ class ScrolledListTest(unittest.TestCase):
 
 
     def test_init(self):
-        scrolledlist.ScrolledList(self.root)
+        ScrolledList(self.root)
 
 
 if __name__ == '__main__':

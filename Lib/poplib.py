@@ -16,6 +16,7 @@ Based on the J. Myers POP3 draft, Jan. 96
 import errno
 import re
 import socket
+import sys
 
 try:
     import ssl
@@ -99,16 +100,20 @@ class POP3:
         self.host = host
         self.port = port
         self._tls_established = False
+        sys.audit("poplib.connect", self, host, port)
         self.sock = self._create_socket(timeout)
         self.file = self.sock.makefile('rb')
         self._debugging = 0
         self.welcome = self._getresp()
 
     def _create_socket(self, timeout):
+        if timeout is not None and not timeout:
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
         return socket.create_connection((self.host, self.port), timeout)
 
     def _putline(self, line):
         if self._debugging > 1: print('*put*', repr(line))
+        sys.audit("poplib.putline", self, line)
         self.sock.sendall(line + CRLF)
 
 
@@ -221,8 +226,19 @@ class POP3:
         retval = self._shortcmd('STAT')
         rets = retval.split()
         if self._debugging: print('*stat*', repr(rets))
-        numMessages = int(rets[1])
-        sizeMessages = int(rets[2])
+
+        # Check if the response has enough elements
+        # RFC 1939 requires at least 3 elements (+OK, message count, mailbox size)
+        # but allows additional data after the required fields
+        if len(rets) < 3:
+            raise error_proto("Invalid STAT response format")
+
+        try:
+            numMessages = int(rets[1])
+            sizeMessages = int(rets[2])
+        except ValueError:
+            raise error_proto("Invalid STAT response data: non-numeric values")
+
         return (numMessages, sizeMessages)
 
 
@@ -304,11 +320,11 @@ class POP3:
     # optional commands:
 
     def rpop(self, user):
-        """Not sure what this does."""
+        """Send RPOP command to access the mailbox with an alternate user."""
         return self._shortcmd('RPOP %s' % user)
 
 
-    timestamp = re.compile(br'\+OK.*(<[^>]+>)')
+    timestamp = re.compile(br'\+OK.[^<]*(<.*>)')
 
     def apop(self, user, password):
         """Authorisation
@@ -382,7 +398,7 @@ class POP3:
             for capline in rawcaps:
                 capnm, capargs = _parsecap(capline)
                 caps[capnm] = capargs
-        except error_proto as _err:
+        except error_proto:
             raise error_proto('-ERR CAPA not supported by server')
         return caps
 
@@ -414,35 +430,19 @@ if HAVE_SSL:
     class POP3_SSL(POP3):
         """POP3 client class over SSL connection
 
-        Instantiate with: POP3_SSL(hostname, port=995, keyfile=None, certfile=None,
-                                   context=None)
+        Instantiate with: POP3_SSL(hostname, port=995, context=None)
 
                hostname - the hostname of the pop3 over ssl server
                port - port number
-               keyfile - PEM formatted file that contains your private key
-               certfile - PEM formatted certificate chain file
                context - a ssl.SSLContext
 
         See the methods of the parent class POP3 for more documentation.
         """
 
-        def __init__(self, host, port=POP3_SSL_PORT, keyfile=None, certfile=None,
-                     timeout=socket._GLOBAL_DEFAULT_TIMEOUT, context=None):
-            if context is not None and keyfile is not None:
-                raise ValueError("context and keyfile arguments are mutually "
-                                 "exclusive")
-            if context is not None and certfile is not None:
-                raise ValueError("context and certfile arguments are mutually "
-                                 "exclusive")
-            if keyfile is not None or certfile is not None:
-                import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a"
-                              "custom context instead", DeprecationWarning, 2)
-            self.keyfile = keyfile
-            self.certfile = certfile
+        def __init__(self, host, port=POP3_SSL_PORT,
+                     *, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, context=None):
             if context is None:
-                context = ssl._create_stdlib_context(certfile=certfile,
-                                                     keyfile=keyfile)
+                context = ssl._create_stdlib_context()
             self.context = context
             POP3.__init__(self, host, port, timeout)
 
@@ -452,7 +452,7 @@ if HAVE_SSL:
                                             server_hostname=self.host)
             return sock
 
-        def stls(self, keyfile=None, certfile=None, context=None):
+        def stls(self, context=None):
             """The method unconditionally raises an exception since the
             STLS command doesn't make any sense on an already established
             SSL/TLS session.
@@ -462,7 +462,6 @@ if HAVE_SSL:
     __all__.append("POP3_SSL")
 
 if __name__ == "__main__":
-    import sys
     a = POP3(sys.argv[1])
     print(a.getwelcome())
     a.user(sys.argv[2])

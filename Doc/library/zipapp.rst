@@ -1,8 +1,8 @@
-:mod:`zipapp` --- Manage executable python zip archives
-=======================================================
+:mod:`!zipapp` --- Manage executable Python zip archives
+========================================================
 
 .. module:: zipapp
-   :synopsis: Manage executable python zip archives
+   :synopsis: Manage executable Python zip archives
 
 .. versionadded:: 3.5
 
@@ -27,7 +27,7 @@ can be used to create an executable archive from a directory containing
 Python code.  When run, the archive will execute the ``main`` function from
 the module ``myapp`` in the archive.
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m zipapp myapp -m "myapp:main"
    $ python myapp.pyz
@@ -41,7 +41,7 @@ Command-Line Interface
 
 When called as a program from the command line, the following form is used:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m zipapp source [options]
 
@@ -54,7 +54,7 @@ The following options are understood:
 
 .. program:: zipapp
 
-.. cmdoption:: -o <output>, --output=<output>
+.. option:: -o <output>, --output=<output>
 
    Write the output to a file named *output*.  If this option is not specified,
    the output filename will be the same as the input *source*, with the
@@ -64,13 +64,13 @@ The following options are understood:
    An output filename must be specified if the *source* is an archive (and in
    that case, *output* must not be the same as *source*).
 
-.. cmdoption:: -p <interpreter>, --python=<interpreter>
+.. option:: -p <interpreter>, --python=<interpreter>
 
    Add a ``#!`` line to the archive specifying *interpreter* as the command
    to run.  Also, on POSIX, make the archive executable.  The default is to
    write no ``#!`` line, and not make the file executable.
 
-.. cmdoption:: -m <mainfn>, --main=<mainfn>
+.. option:: -m <mainfn>, --main=<mainfn>
 
    Write a ``__main__.py`` file to the archive that executes *mainfn*.  The
    *mainfn* argument should have the form "pkg.mod:fn", where "pkg.mod" is a
@@ -79,13 +79,22 @@ The following options are understood:
 
    :option:`--main` cannot be specified when copying an archive.
 
-.. cmdoption:: --info
+.. option:: -c, --compress
+
+   Compress files with the deflate method, reducing the size of the output
+   file. By default, files are stored uncompressed in the archive.
+
+   :option:`--compress` has no effect when copying an archive.
+
+   .. versionadded:: 3.7
+
+.. option:: --info
 
    Display the interpreter embedded in the archive, for diagnostic purposes.  In
    this case, any other options are ignored and SOURCE must be an archive, not a
    directory.
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Print a short usage message and exit.
 
@@ -98,7 +107,7 @@ Python API
 The module defines two convenience functions:
 
 
-.. function:: create_archive(source, target=None, interpreter=None, main=None)
+.. function:: create_archive(source, target=None, interpreter=None, main=None, filter=None, compressed=False)
 
    Create an application archive from *source*.  The source can be any
    of the following:
@@ -143,6 +152,16 @@ The module defines two convenience functions:
    contain a ``__main__.py`` file, as otherwise the resulting archive
    would not be executable.
 
+   The optional *filter* argument specifies a callback function that
+   is passed a Path object representing the path to the file being added
+   (relative to the source directory).  It should return ``True`` if the
+   file is to be added.
+
+   The optional *compressed* argument determines whether files are
+   compressed.  If set to ``True``, files in the archive are compressed
+   with the deflate method; otherwise, files are stored uncompressed.
+   This argument has no effect when copying an existing archive.
+
    If a file object is specified for *source* or *target*, it is the
    caller's responsibility to close it after calling create_archive.
 
@@ -151,6 +170,9 @@ The module defines two convenience functions:
    archive from a directory, if the target is a file object it will be
    passed to the ``zipfile.ZipFile`` class, and must supply the methods
    needed by that class.
+
+   .. versionchanged:: 3.7
+      Added the *filter* and *compressed* parameters.
 
 .. function:: get_interpreter(archive)
 
@@ -167,21 +189,21 @@ Examples
 
 Pack up a directory into an archive, and run it.
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m zipapp myapp
    $ python myapp.pyz
    <output from myapp>
 
-The same can be done using the :func:`create_archive` functon::
+The same can be done using the :func:`create_archive` function::
 
    >>> import zipapp
-   >>> zipapp.create_archive('myapp.pyz', 'myapp')
+   >>> zipapp.create_archive('myapp', 'myapp.pyz')
 
 To make the application directly executable on POSIX, specify an interpreter
 to use.
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python -m zipapp myapp -p "/usr/bin/env python"
    $ ./myapp.pyz
@@ -193,7 +215,7 @@ using the :func:`create_archive` function::
    >>> import zipapp
    >>> zipapp.create_archive('old_archive.pyz', 'new_archive.pyz', '/usr/bin/python3')
 
-To update the file in place, do the replacement in memory using a :class:`BytesIO`
+To update the file in place, do the replacement in memory using a :class:`~io.BytesIO`
 object, and then overwrite the source afterwards.  Note that there is a risk
 when overwriting a file in place that an error will result in the loss of
 the original file.  This code does not protect against such errors, but
@@ -206,6 +228,12 @@ fits in memory::
    >>> zipapp.create_archive('myapp.pyz', temp, '/usr/bin/python2')
    >>> with open('myapp.pyz', 'wb') as f:
    >>>     f.write(temp.getvalue())
+
+
+.. _zipapp-specifying-the-interpreter:
+
+Specifying the Interpreter
+--------------------------
 
 Note that if you specify an interpreter and then distribute your application
 archive, you need to ensure that the interpreter used is portable.  The Python
@@ -222,6 +250,67 @@ are other issues to consider:
 * There is no way to say "python X.Y or later", so be careful of using an
   exact version like "/usr/bin/env python3.4" as you will need to change your
   shebang line for users of Python 3.5, for example.
+
+Typically, you should use an "/usr/bin/env python2" or "/usr/bin/env python3",
+depending on whether your code is written for Python 2 or 3.
+
+
+Creating Standalone Applications with zipapp
+--------------------------------------------
+
+Using the :mod:`zipapp` module, it is possible to create self-contained Python
+programs, which can be distributed to end users who only need to have a
+suitable version of Python installed on their system.  The key to doing this
+is to bundle all of the application's dependencies into the archive, along
+with the application code.
+
+The steps to create a standalone archive are as follows:
+
+1. Create your application in a directory as normal, so you have a ``myapp``
+   directory containing a ``__main__.py`` file, and any supporting application
+   code.
+
+2. Install all of your application's dependencies into the ``myapp`` directory,
+   using pip:
+
+   .. code-block:: shell-session
+
+      $ python -m pip install -r requirements.txt --target myapp
+
+   (this assumes you have your project requirements in a ``requirements.txt``
+   file - if not, you can just list the dependencies manually on the pip command
+   line).
+
+3. Package the application using:
+
+   .. code-block:: shell-session
+
+      $ python -m zipapp -p "interpreter" myapp
+
+This will produce a standalone executable, which can be run on any machine with
+the appropriate interpreter available. See :ref:`zipapp-specifying-the-interpreter`
+for details. It can be shipped to users as a single file.
+
+On Unix, the ``myapp.pyz`` file is executable as it stands.  You can rename the
+file to remove the ``.pyz`` extension if you prefer a "plain" command name.  On
+Windows, the ``myapp.pyz[w]`` file is executable by virtue of the fact that
+the Python interpreter registers the ``.pyz`` and ``.pyzw`` file extensions
+when installed.
+
+
+Caveats
+~~~~~~~
+
+If your application depends on a package that includes a C extension, that
+package cannot be run from a zip file (this is an OS limitation, as executable
+code must be present in the filesystem for the OS loader to load it). In this
+case, you can exclude that dependency from the zipfile, and either require
+your users to have it installed, or ship it alongside your zipfile and add code
+to your ``__main__.py`` to include the directory containing the unzipped
+module in ``sys.path``. In this case, you will need to make sure to ship
+appropriate binaries for your target architecture(s) (and potentially pick the
+correct version to add to ``sys.path`` at runtime, based on the user's machine).
+
 
 The Python Zip Application Archive Format
 -----------------------------------------
@@ -243,7 +332,7 @@ Formally, the Python zip application format is therefore:
    interpreter name, and then a newline (``b'\n'``) character.  The interpreter
    name can be anything acceptable to the OS "shebang" processing, or the Python
    launcher on Windows.  The interpreter should be encoded in UTF-8 on Windows,
-   and in :func:`sys.getfilesystemencoding()` on POSIX.
+   and in :func:`sys.getfilesystemencoding` on POSIX.
 2. Standard zipfile data, as generated by the :mod:`zipfile` module.  The
    zipfile content *must* include a file called ``__main__.py`` (which must be
    in the "root" of the zipfile - i.e., it cannot be in a subdirectory).  The

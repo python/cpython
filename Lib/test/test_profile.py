@@ -4,13 +4,18 @@ import sys
 import pstats
 import unittest
 import os
+import warnings
 from difflib import unified_diff
 from io import StringIO
-from test.support import TESTFN, run_unittest, unlink
-from contextlib import contextmanager
+from test.support.os_helper import TESTFN, unlink, temp_dir, change_cwd
+from contextlib import contextmanager, redirect_stdout
 
-import profile
+# Suppress deprecation warning for profile module (PEP 799)
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    import profile
 from test.profilee import testfunc, timer
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 
 class ProfileTest(unittest.TestCase):
@@ -51,13 +56,18 @@ class ProfileTest(unittest.TestCase):
         results = self.do_profiling()
         expected = self.get_expected_output()
         self.assertEqual(results[0], 1000)
+        fail = []
         for i, method in enumerate(self.methodnames):
-            if results[i+1] != expected[method]:
-                print("Stats.%s output for %s doesn't fit expectation!" %
-                      (method, self.profilerclass.__name__))
-                print('\n'.join(unified_diff(
-                                  results[i+1].split('\n'),
-                                  expected[method].split('\n'))))
+            a = expected[method]
+            b = results[i+1]
+            if a != b:
+                fail.append(f"\nStats.{method} output for "
+                            f"{self.profilerclass.__name__} "
+                             "does not fit expectation:")
+                fail.extend(unified_diff(a.split('\n'), b.split('\n'),
+                            lineterm=""))
+        if fail:
+            self.fail("\n".join(fail))
 
     def test_calling_conventions(self):
         # Issue #5330: profile and cProfile wouldn't report C functions called
@@ -86,12 +96,43 @@ class ProfileTest(unittest.TestCase):
         self.profilermodule.run("int('1')", filename=TESTFN)
         self.assertTrue(os.path.exists(TESTFN))
 
+    def test_run_with_sort_by_values(self):
+        with redirect_stdout(StringIO()) as f:
+            self.profilermodule.run("int('1')", sort=('tottime', 'stdname'))
+        self.assertIn("Ordered by: internal time, standard name", f.getvalue())
+
     def test_runctx(self):
         with silent():
             self.profilermodule.runctx("testfunc()", globals(), locals())
         self.profilermodule.runctx("testfunc()", globals(), locals(),
                                   filename=TESTFN)
         self.assertTrue(os.path.exists(TESTFN))
+
+    def test_run_profile_as_module(self):
+        # Test that -m switch needs an argument
+        assert_python_failure('-m', self.profilermodule.__name__, '-m')
+
+        # Test failure for not-existent module
+        assert_python_failure('-m', self.profilermodule.__name__,
+                              '-m', 'random_module_xyz')
+
+        # Test successful run
+        assert_python_ok('-m', self.profilermodule.__name__,
+                         '-m', 'timeit', '-n', '1')
+
+    def test_output_file_when_changing_directory(self):
+        with temp_dir() as tmpdir, change_cwd(tmpdir):
+            os.mkdir('dest')
+            with open('demo.py', 'w', encoding="utf-8") as f:
+                f.write('import os; os.chdir("dest")')
+
+            assert_python_ok(
+                '-m', self.profilermodule.__name__,
+                '-o', 'out.pstats',
+                'demo.py',
+            )
+
+            self.assertTrue(os.path.exists('out.pstats'))
 
 
 def regenerate_expected_output(filename, cls):
@@ -123,12 +164,10 @@ def silent():
     finally:
         sys.stdout = stdout
 
-def test_main():
-    run_unittest(ProfileTest)
 
 def main():
     if '-r' not in sys.argv:
-        test_main()
+        unittest.main()
     else:
         regenerate_expected_output(__file__, ProfileTest)
 
@@ -148,7 +187,7 @@ _ProfileOutput['print_stats'] = """\
         8   63.976    7.997   79.960    9.995 profilee.py:98(subhelper)"""
 _ProfileOutput['print_callers'] = """\
 :0(append)                        <- profilee.py:73(helper1)(4)  119.964
-:0(exc_info)                      <- profilee.py:73(helper1)(4)  119.964
+:0(exception)                     <- profilee.py:73(helper1)(4)  119.964
 :0(hasattr)                       <- profilee.py:73(helper1)(4)  119.964
                                      profilee.py:88(helper2)(8)  399.912
 profilee.py:110(__getattr__)      <- :0(hasattr)(12)   11.964

@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2007 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Author: Ben Gertzfield
 # Contact: email-sig@python.org
 
@@ -15,7 +15,7 @@ This module provides an interface to encode and decode both headers and bodies
 with Base64 encoding.
 
 RFC 2045 defines a method for including character set information in an
-`encoded-word' in a header.  This method is commonly used for 8-bit real names
+'encoded-word' in a header.  This method is commonly used for 8-bit real names
 in To:, From:, Cc:, etc. fields, as well as Subject: lines.
 
 This module does not do the line wrapping or end-of-line character conversion
@@ -45,7 +45,6 @@ EMPTYSTRING = ''
 MISC_LEN = 7
 
 
-
 # Helpers
 def header_length(bytearray):
     """Return the length of s when it is encoded with base64."""
@@ -57,7 +56,6 @@ def header_length(bytearray):
     return n
 
 
-
 def header_encode(header_bytes, charset='iso-8859-1'):
     """Encode a single header line with Base64 encoding in a given charset.
 
@@ -72,7 +70,6 @@ def header_encode(header_bytes, charset='iso-8859-1'):
     return '=?%s?b?%s?=' % (charset, encoded)
 
 
-
 def body_encode(s, maxlinelen=76, eol=NL):
     r"""Encode a string with base64.
 
@@ -84,7 +81,7 @@ def body_encode(s, maxlinelen=76, eol=NL):
     in an email.
     """
     if not s:
-        return s
+        return ""
 
     encvec = []
     max_unencoded = maxlinelen * 3 // 4
@@ -98,7 +95,6 @@ def body_encode(s, maxlinelen=76, eol=NL):
     return EMPTYSTRING.join(encvec)
 
 
-
 def decode(string):
     """Decode a raw base64 string, returning a bytes object.
 

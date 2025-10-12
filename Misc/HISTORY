@@ -607,7 +607,7 @@ Library
   MemoryError.
 
 - Issue #18473: Fixed 2to3 and 3to2 compatible pickle mappings.  Fixed
-  ambigious reverse mappings.  Added many new mappings.  Import mapping is no
+  ambiguous reverse mappings.  Added many new mappings.  Import mapping is no
   longer applied to modules already mapped with full name mapping.
 
 - Issue #23745: The new email header parser now handles duplicate MIME
@@ -629,7 +629,7 @@ Library
 - Issue #21560: An attempt to write a data of wrong type no longer cause
   GzipFile corruption.  Original patch by Wolfgang Maier.
 
-- Issue #23647: Increase impalib's MAXLINE to accommodate modern mailbox sizes.
+- Issue #23647: Increase imaplib's MAXLINE to accommodate modern mailbox sizes.
 
 - Issue #23539: If body is None, http.client.HTTPConnection.request now sets
   Content-Length to 0 for PUT, POST, and PATCH headers to avoid 411 errors from
@@ -677,7 +677,7 @@ Library
 - Issue #23521: Corrected pure python implementation of timedelta division.
 
  * Eliminated OverflowError from timedelta * float for some floats;
- * Corrected rounding in timedlta true division.
+ * Corrected rounding in timedelta true division.
 
 - Issue #21619: Popen objects no longer leave a zombie after exit in the with
   statement if the pipe was broken.  Patch by Martin Panter.
@@ -966,7 +966,7 @@ Core and Builtins
   returned NotImplemented.  Original patch by Martin Panter.
 
 - Issue #23321: Fixed a crash in str.decode() when error handler returned
-  replacment string longer than mailformed input data.
+  replacement string longer than malformed input data.
 
 - Issue #23048: Fix jumping out of an infinite while loop in the pdb.
 
@@ -1042,7 +1042,7 @@ Library
 - Issue #23250: In the http.cookies module, capitalize "HttpOnly" and "Secure"
   as they are written in the standard.
 
-- Issue #23063: In the disutils' check command, fix parsing of reST with code or
+- Issue #23063: In the distutils' check command, fix parsing of reST with code or
   code-block directives.
 
 - Issue #23209, #23225: selectors.BaseSelector.close() now clears its internal
@@ -1225,13 +1225,13 @@ Library
 - Issue #22396: On 32-bit AIX platform, don't expose os.posix_fadvise() nor
   os.posix_fallocate() because their prototypes in system headers are wrong.
 
-- Issue #22517: When a io.BufferedRWPair object is deallocated, clear its
+- Issue #22517: When an io.BufferedRWPair object is deallocated, clear its
   weakrefs.
 
 - Issue #22448: Improve canceled timer handles cleanup to prevent
   unbound memory usage. Patch by Joshua Moore-Oliva.
 
-- Issue #23009: Make sure selectors.EpollSelecrtor.select() works when no
+- Issue #23009: Make sure selectors.EpollSelector.select() works when no
   FD is registered.
 
 IDLE
@@ -1389,7 +1389,7 @@ Release date: 2014-09-22
 Core and Builtins
 -----------------
 
-- Issue #22258: Fix the the internal function set_inheritable() on Illumos.
+- Issue #22258: Fix the internal function set_inheritable() on Illumos.
   This platform exposes the function ``ioctl(FIOCLEX)``, but calling it fails
   with errno is ENOTTY: "Inappropriate ioctl for device". set_inheritable()
   now falls back to the slower ``fcntl()`` (``F_GETFD`` and then ``F_SETFD``).
@@ -1429,7 +1429,7 @@ Library
   by Devin Cook.
 
 - Lax cookie parsing in http.cookies could be a security issue when combined
-  with non-standard cookie handling in some Web browsers.  Reported by
+  with non-standard cookie handling in some web browsers.  Reported by
   Sergey Bobrov.
 
 - Issue #22384: An exception in Tkinter callback no longer crashes the program
@@ -1597,7 +1597,7 @@ Library
   negative values the same way for keyword arguments as it does for
   positional arguments.
 
-- Issue #21812: turtle.shapetransform did not tranform the turtle on the
+- Issue #21812: turtle.shapetransform did not transform the turtle on the
   first call.  (Issue identified and fixed by Lita Cho.)
 
 - Issue #21635: The difflib SequenceMatcher.get_matching_blocks() method
@@ -2030,7 +2030,7 @@ Library
   initialization of the unquote_to_bytes() table of the urllib.parse module, to
   not waste memory if these modules are not used.
 
-- Issue #19157: Include the broadcast address in the usuable hosts for IPv6
+- Issue #19157: Include the broadcast address in the usable hosts for IPv6
   in ipaddress.
 
 - Issue #11599: When an external command (e.g. compiler) fails, distutils now
@@ -2113,7 +2113,7 @@ Build
 - Issue #21285: Refactor and fix curses configure check to always search
   in a ncursesw directory.
 
-- Issue #15234: For BerkelyDB and Sqlite, only add the found library and
+- Issue #15234: For BerkeleyDB and Sqlite, only add the found library and
   include directories if they aren't already being searched. This avoids
   an explicit runtime library dependency.
 
@@ -2620,7 +2620,7 @@ Library
 
 - asyncio: Various improvements and small changes not all covered by
   issues listed below.  E.g. wait_for() now cancels the inner task if
-  the timeout occcurs; tweaked the set of exported symbols; renamed
+  the timeout occurs; tweaked the set of exported symbols; renamed
   Empty/Full to QueueEmpty/QueueFull; "with (yield from lock)" now
   uses a separate context manager; readexactly() raises if not enough
   data was read; PTY support tweaks.
@@ -3245,7 +3245,7 @@ Core and Builtins
 
 - Issue #19466: Clear the frames of daemon threads earlier during the
   Python shutdown to call objects destructors. So "unclosed file" resource
-  warnings are now corretly emitted for daemon threads.
+  warnings are now correctly emitted for daemon threads.
 
 - Issue #19514: Deduplicate some _Py_IDENTIFIER declarations.
   Patch by Andrei Dorian Duma.
@@ -3386,7 +3386,7 @@ Library
 - Issue #19448: Add private API to SSL module to lookup ASN.1 objects by OID,
   NID, short name and long name.
 
-- Issue #19282: dbm.open now supports the context management protocol. (Inital
+- Issue #19282: dbm.open now supports the context management protocol. (Initial
   patch by Claudiu Popa)
 
 - Issue #8311: Added support for writing any bytes-like objects in the aifc,
@@ -3481,7 +3481,7 @@ Library
 - Issue #19227: Remove pthread_atfork() handler. The handler was added to
   solve #18747 but has caused issues.
 
-- Issue #19420: Fix reference leak in module initalization code of
+- Issue #19420: Fix reference leak in module initialization code of
   _hashopenssl.c
 
 - Issue #19329: Optimized compiling charsets in regular expressions.
@@ -3944,7 +3944,7 @@ Library
 - Issue #18996: TestCase.assertEqual() now more cleverly shorten differing
   strings in error report.
 
-- Issue #19034: repr() for tkinter.Tcl_Obj now exposes string reperesentation.
+- Issue #19034: repr() for tkinter.Tcl_Obj now exposes string representation.
 
 - Issue #18978: ``urllib.request.Request`` now allows the method to be
   indicated on the class and no longer sets it to None in ``__init__``.
@@ -3952,7 +3952,7 @@ Library
 - Issue #18626: the inspect module now offers a basic command line
   introspection interface (Initial patch by Claudiu Popa)
 
-- Issue #3015: Fixed tkinter with wantobject=False.  Any Tcl command call
+- Issue #3015: Fixed tkinter with ``wantobjects=False``.  Any Tcl command call
   returned empty string.
 
 - Issue #19037: The mailbox module now makes all changes to maildir files
@@ -4175,7 +4175,7 @@ Library
 
 - Issue #18709: Fix CVE-2013-4238. The SSL module now handles NULL bytes
   inside subjectAltName correctly. Formerly the module has used OpenSSL's
-  GENERAL_NAME_print() function to get the string represention of ASN.1
+  GENERAL_NAME_print() function to get the string representation of ASN.1
   strings for ``rfc822Name`` (email), ``dNSName`` (DNS) and
   ``uniformResourceIdentifier`` (URI).
 
@@ -4191,7 +4191,7 @@ Library
 - Issue #18532: Change the builtin hash algorithms' names to lower case names
   as promised by hashlib's documentation.
 
-- Issue #8713: add new spwan and forkserver start methods, and new functions
+- Issue #8713: add new spawn and forkserver start methods, and new functions
   get_all_start_methods, get_start_method, and set_start_method, to
   multiprocessing.
 
@@ -4268,7 +4268,7 @@ IDLE
 Documentation
 -------------
 
-- Issue #18743: Fix references to non-existant "StringIO" module.
+- Issue #18743: Fix references to non-existent "StringIO" module.
 
 - Issue #18783: Removed existing mentions of Python long type in docstrings,
   error messages and comments.
@@ -4524,7 +4524,7 @@ Core and Builtins
 - Issue #16613: Add *m* argument to ``collections.Chainmap.new_child`` to
   allow the new child map to be specified explicitly.
 
-- Issue #16730: importlib.machinery.FileFinder now no longers raises an
+- Issue #16730: importlib.machinery.FileFinder now no longer raises an
   exception when trying to populate its cache and it finds out the directory is
   unreadable or has turned into a file. Reported and diagnosed by
   David Pritchard.
@@ -4832,7 +4832,7 @@ Library
   on Windows and adds no value over and above python -m pydoc ...
 
 - Issue #18155: The csv module now correctly handles csv files that use
-  a delimter character that has a special meaning in regexes, instead of
+  a delimiter character that has a special meaning in regexes, instead of
   throwing an exception.
 
 - Issue #14360: encode_quopri can now be successfully used as an encoder
@@ -5022,7 +5022,7 @@ Library
   Thomas Barlow.
 
 - Issue #17358: Modules loaded by imp.load_source() and load_compiled() (and by
-  extention load_module()) now have a better chance of working when reloaded.
+  extension load_module()) now have a better chance of working when reloaded.
 
 - Issue #17804: New function ``struct.iter_unpack`` allows for streaming
   struct unpacking.
@@ -5135,8 +5135,8 @@ Library
   error message has been removed.  Patch by Ram Rachum.
 
 - Issue #18080: When building a C extension module on OS X, if the compiler
-  is overriden with the CC environment variable, use the new compiler as
-  the default for linking if LDSHARED is not also overriden.  This restores
+  is overridden with the CC environment variable, use the new compiler as
+  the default for linking if LDSHARED is not also overridden.  This restores
   Distutils behavior introduced in 3.2.3 and inadvertently dropped in 3.3.0.
 
 - Issue #18113: Fixed a refcount leak in the curses.panel module's
@@ -5207,7 +5207,7 @@ Library
   specifically addresses a stack misalignment issue on x86 and issues on
   some more recent platforms.
 
-- Issue #8862: Fixed curses cleanup when getkey is interrputed by a signal.
+- Issue #8862: Fixed curses cleanup when getkey is interrupted by a signal.
 
 - Issue #17443: imaplib.IMAP4_stream was using the default unbuffered IO
   in subprocess, but the imap code assumes buffered IO.  In Python2 this
@@ -5382,7 +5382,7 @@ Library
   internal XML encoding is not UTF-8 or US-ASCII.  It also now accepts bytes
   and strings larger than 2 GiB.
 
-- Issue #6083: Fix multiple segmentation faults occured when PyArg_ParseTuple
+- Issue #6083: Fix multiple segmentation faults occurred when PyArg_ParseTuple
   parses nested mutating sequence.
 
 - Issue #5289: Fix ctypes.util.find_library on Solaris.
@@ -5590,7 +5590,7 @@ Library
 - Issue #16248: Disable code execution from the user's home directory by
   tkinter when the -E flag is passed to Python.  Patch by Zachary Ware.
 
-- Issue #13390: New function :func:`sys.getallocatedblocks()` returns the
+- Issue #13390: New function :func:`sys.getallocatedblocks` returns the
   number of memory blocks currently allocated.
 
 - Issue #16628: Fix a memory leak in ctypes.resize().
@@ -6157,7 +6157,7 @@ Tests
   starting with a ".".  Patch by Sebastian Kreft.
 
 - Issue #13390: The ``-R`` option to regrtest now also checks for memory
-  allocation leaks, using :func:`sys.getallocatedblocks()`.
+  allocation leaks, using :func:`sys.getallocatedblocks`.
 
 - Issue #16559: Add more tests for the json module, including some from the
   official test suite at json.org.  Patch by Serhiy Storchaka.
@@ -6329,7 +6329,7 @@ Documentation
 
 - Issue #15940: Specify effect of locale on time functions.
 
-- Issue #17538: Document XML vulnerabilties
+- Issue #17538: Document XML vulnerabilities
 
 - Issue #16642: sched.scheduler timefunc initial default is time.monotonic.
   Patch by Ramchandra Apte
@@ -6676,7 +6676,7 @@ Library
 
 - Issue #14669: Fix pickling of connections and sockets on Mac OS X by
   sending/receiving an acknowledgment after file descriptor transfer.
-  TestPicklingConnection has been reenabled for Mac OS X.
+  TestPicklingConnection has been re-enabled for Mac OS X.
 
 - Issue #11062: Fix adding a message from file to Babyl mailbox.
 
@@ -7114,7 +7114,7 @@ Build
 - Issue #14330: For cross builds, don't use host python, use host search paths
   for host compiler.
 
-- Issue #15235: Allow Berkley DB versions up to 5.3 to build the dbm module.
+- Issue #15235: Allow Berkeley DB versions up to 5.3 to build the dbm module.
 
 - Issue #15268: Search curses.h in /usr/include/ncursesw.
 
@@ -7264,7 +7264,7 @@ Library
   called with no arguments.
 
 - Issue #14653: email.utils.mktime_tz() no longer relies on system
-  mktime() when timezone offest is supplied.
+  mktime() when timezone offset is supplied.
 
 - Issue #14684: zlib.compressobj() and zlib.decompressobj() now support the use
   of predefined compression dictionaries. Original patch by Sam Rushing.
@@ -7606,7 +7606,7 @@ Library
 - Issue #14773: Fix os.fwalk() failing on dangling symlinks.
 
 - Issue #12541: Be lenient with quotes around Realm field of HTTP Basic
-  Authentation in urllib2.
+  Authentication in urllib2.
 
 - Issue #14807: move undocumented tarfile.filemode() to stat.filemode() and add
   doc entry. Add tarfile.filemode alias with deprecation warning.
@@ -7673,7 +7673,7 @@ Library
 IDLE
 ----
 
-- Issue #14958: Change IDLE systax highlighting to recognize all string and
+- Issue #14958: Change IDLE syntax highlighting to recognize all string and
   byte literals supported in Python 3.3.
 
 - Issue #10997: Prevent a duplicate entry in IDLE's "Recent Files" menu.
@@ -9752,7 +9752,7 @@ Library
 - Issue #11382: Trivial system calls, such as dup() or pipe(), needn't
   release the GIL.  Patch by Charles-François Natali.
 
-- Issue #11223: Add threading._info() function providing informations about
+- Issue #11223: Add threading._info() function providing information about
   the thread implementation.
 
 - Issue #11731: simplify/enhance email parser/generator API by introducing
@@ -9956,7 +9956,7 @@ Library
   ensure that it will be found regardless of the shell PATH. This ensures
   that multiprocessing.cpu_count works on default installs of MacOSX.
 
-- Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
+- Issue #11501: distutils.archive_utils.make_zipfile no longer fails if zlib is
   not installed. Instead, the zipfile.ZIP_STORED compression is used to create
   the ZipFile. Patch by Natalia B. Bidart.
 
@@ -10176,7 +10176,7 @@ IDLE
 - Issue #13296: Fix IDLE to clear compile __future__ flags on shell restart.
   (Patch by Roger Serwy)
 
-- Issue #9871: Prevent IDLE 3 crash when given byte stings
+- Issue #9871: Prevent IDLE 3 crash when given byte strings
   with invalid hex escape sequences, like b'\x0'.
   (Original patch by Claudiu Popa.)
 
@@ -10380,7 +10380,7 @@ Tests
 
 - Avoid failing in test_robotparser when mueblesmoraleda.com is flaky and
   an overzealous DNS service (e.g. OpenDNS) redirects to a placeholder
-  Web site.
+  web site.
 
 - Avoid failing in test_urllibnet.test_bad_address when some overzealous
   DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
@@ -11273,7 +11273,7 @@ Library
 
 - Issue #10549: Fix pydoc traceback when text-documenting certain classes.
 
-- Issue #2001: New HTML server with enhanced Web page features.  Patch by Ron
+- Issue #2001: New HTML server with enhanced web page features.  Patch by Ron
   Adam.
 
 - Issue #10360: In WeakSet, do not raise TypeErrors when testing for membership
@@ -12098,7 +12098,7 @@ Library
 - Issue #9632: Remove sys.setfilesystemencoding() function: use PYTHONFSENCODING
   environment variable to set the filesystem encoding at Python startup.
   sys.setfilesystemencoding() creates inconsistencies because it is unable to
-  reencode all filenames in all objects.
+  re-encode all filenames in all objects.
 
 - Issue #9410: Various optimizations to the pickle module, leading to speedups
   up to 4x (depending on the benchmark).  Mostly ported from Unladen Swallow;
@@ -12509,7 +12509,7 @@ Library
 - Issue #9605: posix.getlogin() decodes the username with file filesystem
   encoding and surrogateescape error handler. Patch written by David Watson.
 
-- Issue #9604: posix.initgroups() encodes the username using the fileystem
+- Issue #9604: posix.initgroups() encodes the username using the filesystem
   encoding and surrogateescape error handler. Patch written by David Watson.
 
 - Issue #9603: posix.ttyname() and posix.ctermid() decode the terminal name
@@ -12667,7 +12667,7 @@ What's New in Python 3.2 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #8991: convertbuffer() rejects discontigious buffers.
+- Issue #8991: convertbuffer() rejects discontiguous buffers.
 
 - Issue #7616: Fix copying of overlapping memoryview slices with the Intel
   compiler.
@@ -13211,7 +13211,7 @@ Library
 
 - Issue #7989: Added pure python implementation of the `datetime` module.  The C
   module is renamed to `_datetime` and if available, overrides all classes
-  defined in datetime with fast C impementation.  Python implementation is based
+  defined in datetime with fast C implementation.  Python implementation is based
   on the original python prototype for the datetime module by Tim Peters with
   minor modifications by the PyPy project.  The test suite now tests `datetime`
   module with and without `_datetime` acceleration using the same test cases.
@@ -13756,7 +13756,7 @@ Library
   processing instruction.  Patch by Neil Muller.
 
 - Issue #6233: ElementTree failed converting unicode characters to XML entities
-  when they could't be represented in the requested output encoding.  Patch by
+  when they couldn't be represented in the requested output encoding.  Patch by
   Jerry Chen.
 
 - Issue #6003: add an argument to ``zipfile.Zipfile.writestr`` to specify the
@@ -15049,7 +15049,7 @@ Extension Modules
   an error.  The _PY_STRUCT_FLOAT_COERCE constant has been removed.
   The version number has been bumped to 0.3.
 
-- Issue #5359: Readd the Berkeley DB detection code to allow _dbm be built
+- Issue #5359: Re-add the Berkeley DB detection code to allow _dbm be built
   using Berkeley DB.
 
 Tests
@@ -16169,7 +16169,7 @@ Core and Builtins
   codec subsystem, for example UTF-8 is turned into utf-8.
 
 - Issue #4200: Changed the atexit module to store its state in its
-  PyModuleDef atexitmodule. This fixes a bug with multiple subinterpeters.
+  PyModuleDef atexitmodule. This fixes a bug with multiple subinterpreters.
 
 - Issue #4237: io.FileIO() was raising invalid warnings caused by
   insufficient initialization of PyFileIOObject struct members.
@@ -16660,7 +16660,7 @@ Core and Builtins
   Exception (KeyboardInterrupt, and SystemExit) propagate instead of
   ignoring them.
 
-- #3021 Exception reraising sematics have been significantly improved.  However,
+- #3021 Exception reraising semantics have been significantly improved.  However,
   f_exc_type, f_exc_value, and f_exc_traceback cannot be accessed from Python
   code anymore.
 
@@ -17028,7 +17028,7 @@ Extension Modules
   and renamed to filter(), map(), and zip().  Also, renamed
   izip_longest() to zip_longest() and ifilterfalse() to filterfalse().
 
-- Issue #1762972: Readded the reload() function as imp.reload().
+- Issue #1762972: Re-added the reload() function as imp.reload().
 
 - Bug #2111: mmap segfaults when trying to write a block opened with
   PROT_READ.
@@ -18448,7 +18448,7 @@ Core and builtins
 
 - Fixed bug #1459029 - unicode reprs were double-escaped.
 
-- Patch #1396919: The system scope threads are reenabled on FreeBSD
+- Patch #1396919: The system scope threads are re-enabled on FreeBSD
   5.4 and later versions.
 
 - Bug #1115379: Compiling a Unicode string with an encoding declaration
@@ -19610,7 +19610,7 @@ durable way.  For example, some people say they're confused by that
 the Open Source Initiative's entry for the Python Software Foundation
 License::
 
-      http://www.opensource.org/licenses/PythonSoftFoundation.php
+      https://opensource.org/licenses/PythonSoftFoundation.php
 
 says "Python 2.1.1" all over it, wondering whether it applies only
 to Python 2.1.1.
@@ -20085,7 +20085,7 @@ Windows
 
 - Boosted the stack reservation for python.exe and pythonw.exe from
   the default 1MB to 2MB.  Stack frames under VC 7.1 for 2.4 are enough
-  bigger than under VC 6.0 for 2.3.4 that deeply recursive progams
+  bigger than under VC 6.0 for 2.3.4 that deeply recursive programs
   within the default sys.getrecursionlimit() default value of 1000 were
   able to suffer undetected C stack overflows.  The standard test program
   test_compiler was one such program.  If a Python process on Windows
@@ -21043,7 +21043,7 @@ IDLE
   own when any program opens a socket.  IDLE does use sockets, talking
   on the computer's internal loopback interface.  This connection is not
   visible on any external interface and no data is sent to or received
-  from the Internet.  So, if you get such a dialog when opening IDLE,
+  from the internet.  So, if you get such a dialog when opening IDLE,
   asking whether to let pythonw.exe talk to address 127.0.0.1, say yes,
   and rest assured no communication external to your machine is taking
   place.  If you don't allow it, IDLE won't be able to start.
@@ -21790,7 +21790,7 @@ Library
   x == y is False, and x != y is True.  This is akin to the change made
   for mixed-type comparisons of datetime objects in 2.3a2; more info
   about the rationale is in the NEWS entry for that.  See also SF bug
-  report <http://www.python.org/sf/693121>.
+  report <https://bugs.python.org/issue693121>.
 
 - On Unix platforms, if os.listdir() is called with a Unicode argument,
   it now returns Unicode strings.  (This behavior was added earlier
@@ -21803,7 +21803,7 @@ Library
 - New csv package makes it easy to read/write CSV files.
 
 - Module shlex has been extended to allow posix-like shell parsings,
-  including a split() function for easy spliting of quoted strings and
+  including a split() function for easy splitting of quoted strings and
   commands. An iterator interface was also implemented.
 
 Tools/Demos
@@ -22025,7 +22025,7 @@ Extension modules
   now.
 
   today() and now() now round system timestamps to the closest
-  microsecond <http://www.python.org/sf/661086>.  This repairs an
+  microsecond <https://bugs.python.org/issue661086>.  This repairs an
   irritation most likely seen on Windows systems.
 
   In dt.astimezone(tz), if tz.utcoffset(dt) returns a duration,
@@ -22080,7 +22080,7 @@ Extension modules
 
   datetime.fromtimestamp():  Like datetime.now() above, this had less than
   useful behavior when the optional tinzo argument was specified.  See
-  also SF bug report <http://www.python.org/sf/660872>.
+  also SF bug report <https://bugs.python.org/issue660872>.
 
   date and datetime comparison:  In order to prevent comparison from
   falling back to the default compare-object-addresses strategy, these
@@ -22139,10 +22139,10 @@ Library
   dependent path modules (e.g. ntpath.py) rather than os.py, so these
   variables are now available via os.path.  They continue to be
   available from the os module.
-  (see <http://www.python.org/sf/680789>).
+  (see <https://bugs.python.org/issue680789>).
 
 - array.array was added to the types repr.py knows about (see
-  <http://www.python.org/sf/680789>).
+  <https://bugs.python.org/issue680789>).
 
 - The new pickletools.py contains lots of documentation about pickle
   internals, and supplies some helpers for working with pickles, such as
@@ -22527,7 +22527,7 @@ Core and builtins
   potential drawback is that list.sort() may require temp space of
   len(list)*2 bytes (``*4`` on a 64-bit machine).  It's therefore possible
   for list.sort() to raise MemoryError now, even if a comparison function
-  does not.  See <http://www.python.org/sf/587076> for full details.
+  does not.  See <https://bugs.python.org/issue587076> for full details.
 
 - All standard iterators now ensure that, once StopIteration has been
   raised, all future calls to next() on the same iterator will also
@@ -26790,7 +26790,7 @@ using sre (without changes to the re API).
 
 filecmp - supersedes the old cmp.py and dircmp.py modules.
 
-tabnanny - check Python sources for tab-width dependance.  (Moved from
+tabnanny - check Python sources for tab-width dependence.  (Moved from
 Tools/scripts/.)
 
 urllib2 - new and improved but incompatible version of urllib (still
@@ -27197,7 +27197,7 @@ Wed Apr  7 20:23:17 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
 
 	"""
 		Mostly I just re-added the SMTPRecipientsRefused exception
-	(the exeption object now has the appropriate info in it ) [Per had
+	(the exception object now has the appropriate info in it ) [Per had
 	removed this in his patch --GvR] and tweaked the behavior of the
 	sendmail method whence it throws the newly added SMTPHeloException (it
 	was closing the connection, which it shouldn't.  whatever catches the
@@ -27751,7 +27751,7 @@ Fri Mar 12 22:15:43 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
 
 	The filename to URL conversion didn't properly quote special
 	characters.
-	The URL to filename didn't properly unquote special chatacters.
+	The URL to filename didn't properly unquote special characters.
 
 	* Objects/floatobject.c:
 	OK, try again.  Vladimir gave me a fix for the alignment bus error,
@@ -27807,7 +27807,7 @@ Wed Mar 10 22:55:47 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
 	    classes in selected module
 	    methods of selected class
 
-	Sinlge clicking in a directory, module or class item updates the next
+	Single clicking in a directory, module or class item updates the next
 	column with info about the selected item.  Double clicking in a
 	module, class or method item opens the file (and selects the clicked
 	item if it is a class or method).
@@ -28130,7 +28130,7 @@ webchecker and other ftp retrieves.
 
 - ConfigParser's get() method now accepts an optional keyword argument
 (vars) that is substituted on top of the defaults that were setup in
-__init__.  You can now also have recusive references in your
+__init__.  You can now also have recursive references in your
 configuration file.
 
 - Some improvements to the Queue module, including a put_nowait()
@@ -28209,7 +28209,7 @@ core.
 not.
 
 - The curses module implements an optional nlines argument to
-w.scroll().  (It then calls wscrl(win, nlines) instead of scoll(win).)
+w.scroll().  (It then calls wscrl(win, nlines) instead of scroll(win).)
 
 Changes to tools
 ----------------
@@ -28504,7 +28504,7 @@ PyEval_GetGlobals.
 - glmodule.c: check in the changed version after running the stubber
 again -- this solves the conflict with curses over the 'clear' entry
 point much nicer.  (Jack Jansen had checked in the changes to cstubs
-eons ago, but I never regenrated glmodule.c :-( )
+eons ago, but I never regenerated glmodule.c :-( )
 
 - frameobject.c: fix reference count bug in PyFrame_New.  Vladimir
 Marangozov.
@@ -28581,7 +28581,7 @@ idiom L1[len(L1):] = L2.
 
 - Better error messages when a sequence is indexed with a non-integer.
 
-- Bettter error message when calling a non-callable object (include
+- Better error message when calling a non-callable object (include
 the type in the message).
 
 Python services
@@ -28656,7 +28656,7 @@ Internet Protocols and Support
 - imaplib.py: new version from Piers Lauder.
 
 - smtplib.py: change sendmail() method to accept a single string or a
-list or strings as the destination (commom newbie mistake).
+list or strings as the destination (common newbie mistake).
 
 - poplib.py: LIST with a msg argument fixed.
 
@@ -29642,7 +29642,7 @@ of the object in the message.
 - Fixed a bug in list.sort() that would occasionally dump core.
 
 - Fixed a bug in PyNumber_Power() that caused numeric arrays to fail
-when taken tothe real power.
+when taken to the real power.
 
 - Fixed a number of bugs in the file reading code, at least one of
 which could cause a core dump on NT, and one of which would
@@ -29689,7 +29689,7 @@ thanks to Charles Waldman.
 - Many nits fixed in the manuals, thanks to Fred Drake and many others
 (especially Rob Hooft and Andrew Kuchling).  The HTML version now uses
 HTML markup instead of inline GIF images for tables; only two images
-are left (for obsure bits of math).  The index of the HTML version has
+are left (for obscure bits of math).  The index of the HTML version has
 also been much improved.  Finally, it is once again possible to
 generate an Emacs info file from the library manual (but I don't
 commit to supporting this in future versions).
@@ -30341,7 +30341,7 @@ http://grail.cnri.reston.va.us/python/essays/packages.html
 for more info.
 
 - Changes to standard library subdirectory names: those subdirectories
-that are not packages have been renamed with a hypen in their name,
+that are not packages have been renamed with a hyphen in their name,
 e.g. lib-tk, lib-stdwin, plat-win, plat-linux2, plat-sunos5, dos-8x3.
 The test suite is now a package -- to run a test, you must now use
 "import test.test_foo".
@@ -31109,7 +31109,7 @@ encoding/decoding CGI form arguments.  Catch all errors from the ftp
 module.  HTTP requests now add the Host: header line.  The proxy
 variable names are now mapped to lower case, for Windows.  The
 spliturl() function no longer erroneously throws away all data past
-the first newline.  The basejoin() function now intereprets "../"
+the first newline.  The basejoin() function now interprets "../"
 correctly.  I *believe* that the problems with "exception raised in
 __del__" under certain circumstances have been fixed (mostly by
 changes elsewher in the interpreter).
@@ -31397,7 +31397,7 @@ changes and fixes.
 
 - Added a bunch of new winfo options to Tkinter.py; we should now be
 up to date with Tk 4.2.  The new winfo options supported are:
-mananger, pointerx, pointerxy, pointery, server, viewable, visualid,
+manager, pointerx, pointerxy, pointery, server, viewable, visualid,
 visualsavailable.
 
 - The broken bind() method on Canvas objects defined in the Canvas.py
@@ -32325,7 +32325,7 @@ the Tutorial.
 of that chapter.)
 
 
-Changes to the WWW and Internet tools
+Changes to the WWW and internet tools
 =====================================
 
 The "htmllib" module has been rewritten in an incompatible fashion.
@@ -32485,7 +32485,7 @@ notice them anyway :-)
 
 - The Library Reference has been restructured, and many new and
 existing modules are now documented, in particular the debugger and
-the profiler, as well as the persistency and the WWW/Internet support
+the profiler, as well as the persistency and the WWW/internet support
 modules.
 
 - All known bugs have been fixed.  For example the pow(2,2,3L) bug on
@@ -32552,7 +32552,7 @@ The same applies to posixfile.open() and the socket method makefile().
 is being maintained and distributed separately.
 
 - Improved support for the Apple Macintosh, in part by Jack Jansen,
-e.g. interfaces to (a few) resource mananger functions, get/set file
+e.g. interfaces to (a few) resource manager functions, get/set file
 type and creator, gestalt, sound manager, speech manager, MacTCP, comm
 toolbox, and the think C console library.  This is being maintained
 and distributed separately.
@@ -32720,7 +32720,7 @@ New standard library modules:
 
     - types.py defines standard names for built-in types, e.g. StringType
 
-    - urlparse.py parses URLs according to the latest Internet draft
+    - urlparse.py parses URLs according to the latest internet draft
 
     - uu.py does uuencode/uudecode (not the fastest in the world, but
     quicker than installing uuencode on a non-UNIX machine :-)
@@ -33229,7 +33229,7 @@ sys.argv[0]; it can simply do "if __name__ == '__main__': main()".
 * When an object is printed by the print statement, its implementation
 of str() is used.  This means that classes can define __str__(self) to
 direct how their instances are printed.  This is different from
-__repr__(self), which should define an unambigous string
+__repr__(self), which should define an unambiguous string
 representation of the instance.  (If __str__() is not defined, it
 defaults to __repr__().)
 
@@ -34181,7 +34181,7 @@ You need STDWIN version 0.9.7 (released 30 June 1992) for the stdwin
 interface
 
 Dynamic loading is now supported for Sun (and other non-COFF systems)
-throug dld-3.2.3, as well as for SGI (a new version of Jack Jansen's
+through dld-3.2.3, as well as for SGI (a new version of Jack Jansen's
 DL is out, 1.4)
 
 The system-dependent code for the use of the select() system call is
@@ -34366,7 +34366,7 @@ eval_code) and ceval.h (which doesn't need compile.hand declares the
 rest)
 
 ceval.h defines macros BGN_SAVE / END_SAVE for use with threads (to
-improve the parallellism of multi-threaded programs by letting other
+improve the parallelism of multi-threaded programs by letting other
 Python code run when a blocking system call or something similar is
 made)
 
@@ -34514,7 +34514,7 @@ names listed in a 'global' statement must not be used in the function
 before the statement is reached.
 
 Remember that you don't need to use 'global' if you only want to *use*
-a global variable in a function; nor do you need ot for assignments to
+a global variable in a function; nor do you need to for assignments to
 parts of global variables (e.g., list or dictionary items or
 attributes of class instances).  This has not changed; in fact
 assignment to part of a global variable was the standard workaround.
@@ -34785,7 +34785,7 @@ the "highlights" section above.
 
 4. Changes to the demonstration programs
 
-- Added new useful scipts: byteyears, eptags, fact, from, lfact,
+- Added new useful scripts: byteyears, eptags, fact, from, lfact,
   objgraph, pdeps, pi, primes, ptags, which
 - Added a bunch of socket demos
 - Doubled the speed of ptags

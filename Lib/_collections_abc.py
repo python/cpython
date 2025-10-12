@@ -6,8 +6,40 @@
 Unit tests are in test_collections.
 """
 
+############ Maintenance notes #########################################
+#
+# ABCs are different from other standard library modules in that they
+# specify compliance tests.  In general, once an ABC has been published,
+# new methods (either abstract or concrete) cannot be added.
+#
+# Though classes that inherit from an ABC would automatically receive a
+# new mixin method, registered classes would become non-compliant and
+# violate the contract promised by ``isinstance(someobj, SomeABC)``.
+#
+# Though irritating, the correct procedure for adding new abstract or
+# mixin methods is to create a new ABC as a subclass of the previous
+# ABC.  For example, union(), intersection(), and difference() cannot
+# be added to Set but could go into a new ABC that extends Set.
+#
+# Because they are so hard to change, new ABCs should have their APIs
+# carefully thought through prior to publication.
+#
+# Since ABCMeta only checks for the presence of methods, it is possible
+# to alter the signature of a method by adding optional arguments
+# or changing parameters names.  This is still a bit dubious but at
+# least it won't cause isinstance() to return an incorrect result.
+#
+#
+#######################################################################
+
 from abc import ABCMeta, abstractmethod
 import sys
+
+GenericAlias = type(list[int])
+EllipsisType = type(...)
+def _f(): pass
+FunctionType = type(_f)
+del _f
 
 __all__ = ["Awaitable", "Coroutine",
            "AsyncIterable", "AsyncIterator", "AsyncGenerator",
@@ -17,7 +49,7 @@ __all__ = ["Awaitable", "Coroutine",
            "Mapping", "MutableMapping",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
-           "ByteString",
+           "Buffer",
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
@@ -53,6 +85,10 @@ dict_values = type({}.values())
 dict_items = type({}.items())
 ## misc ##
 mappingproxy = type(type.__dict__)
+def _get_framelocalsproxy():
+    return type(sys._getframe().f_locals)
+framelocalsproxy = _get_framelocalsproxy()
+del _get_framelocalsproxy
 generator = type((lambda: (yield))())
 ## coroutine ##
 async def _coro(): pass
@@ -109,6 +145,8 @@ class Awaitable(metaclass=ABCMeta):
         if cls is Awaitable:
             return _check_methods(C, "__await__")
         return NotImplemented
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class Coroutine(Awaitable):
@@ -168,6 +206,8 @@ class AsyncIterable(metaclass=ABCMeta):
         if cls is AsyncIterable:
             return _check_methods(C, "__aiter__")
         return NotImplemented
+
+    __class_getitem__ = classmethod(GenericAlias)
 
 
 class AsyncIterator(AsyncIterable):
@@ -255,6 +295,8 @@ class Iterable(metaclass=ABCMeta):
             return _check_methods(C, "__iter__")
         return NotImplemented
 
+    __class_getitem__ = classmethod(GenericAlias)
+
 
 class Iterator(Iterable):
 
@@ -273,6 +315,7 @@ class Iterator(Iterable):
         if cls is Iterator:
             return _check_methods(C, '__iter__', '__next__')
         return NotImplemented
+
 
 Iterator.register(bytes_iterator)
 Iterator.register(bytearray_iterator)
@@ -353,6 +396,7 @@ class Generator(Iterator):
                                   'send', 'throw', 'close')
         return NotImplemented
 
+
 Generator.register(generator)
 
 
@@ -385,6 +429,9 @@ class Container(metaclass=ABCMeta):
             return _check_methods(C, "__contains__")
         return NotImplemented
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 class Collection(Sized, Iterable, Container):
 
     __slots__ = ()
@@ -394,6 +441,90 @@ class Collection(Sized, Iterable, Container):
         if cls is Collection:
             return _check_methods(C,  "__len__", "__iter__", "__contains__")
         return NotImplemented
+
+
+class Buffer(metaclass=ABCMeta):
+
+    __slots__ = ()
+
+    @abstractmethod
+    def __buffer__(self, flags: int, /) -> memoryview:
+        raise NotImplementedError
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Buffer:
+            return _check_methods(C, "__buffer__")
+        return NotImplemented
+
+
+class _CallableGenericAlias(GenericAlias):
+    """ Represent `Callable[argtypes, resulttype]`.
+
+    This sets ``__args__`` to a tuple containing the flattened ``argtypes``
+    followed by ``resulttype``.
+
+    Example: ``Callable[[int, str], float]`` sets ``__args__`` to
+    ``(int, str, float)``.
+    """
+
+    __slots__ = ()
+
+    def __new__(cls, origin, args):
+        if not (isinstance(args, tuple) and len(args) == 2):
+            raise TypeError(
+                "Callable must be used as Callable[[arg, ...], result].")
+        t_args, t_result = args
+        if isinstance(t_args, (tuple, list)):
+            args = (*t_args, t_result)
+        elif not _is_param_expr(t_args):
+            raise TypeError(f"Expected a list of types, an ellipsis, "
+                            f"ParamSpec, or Concatenate. Got {t_args}")
+        return super().__new__(cls, origin, args)
+
+    def __repr__(self):
+        if len(self.__args__) == 2 and _is_param_expr(self.__args__[0]):
+            return super().__repr__()
+        from annotationlib import type_repr
+        return (f'collections.abc.Callable'
+                f'[[{", ".join([type_repr(a) for a in self.__args__[:-1]])}], '
+                f'{type_repr(self.__args__[-1])}]')
+
+    def __reduce__(self):
+        args = self.__args__
+        if not (len(args) == 2 and _is_param_expr(args[0])):
+            args = list(args[:-1]), args[-1]
+        return _CallableGenericAlias, (Callable, args)
+
+    def __getitem__(self, item):
+        # Called during TypeVar substitution, returns the custom subclass
+        # rather than the default types.GenericAlias object.  Most of the
+        # code is copied from typing's _GenericAlias and the builtin
+        # types.GenericAlias.
+        if not isinstance(item, tuple):
+            item = (item,)
+
+        new_args = super().__getitem__(item).__args__
+
+        # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
+        if not isinstance(new_args[0], (tuple, list)):
+            t_result = new_args[-1]
+            t_args = new_args[:-1]
+            new_args = (t_args, t_result)
+        return _CallableGenericAlias(Callable, tuple(new_args))
+
+def _is_param_expr(obj):
+    """Checks if obj matches either a list of types, ``...``, ``ParamSpec`` or
+    ``_ConcatenateGenericAlias`` from typing.py
+    """
+    if obj is Ellipsis:
+        return True
+    if isinstance(obj, list):
+        return True
+    obj = type(obj)
+    names = ('ParamSpec', '_ConcatenateGenericAlias')
+    return obj.__module__ == 'typing' and any(obj.__name__ == name for name in names)
+
 
 class Callable(metaclass=ABCMeta):
 
@@ -409,12 +540,13 @@ class Callable(metaclass=ABCMeta):
             return _check_methods(C, "__call__")
         return NotImplemented
 
+    __class_getitem__ = classmethod(_CallableGenericAlias)
+
 
 ### SETS ###
 
 
 class Set(Collection):
-
     """A set is a finite, iterable container.
 
     This class provides concrete generic implementations of all
@@ -542,6 +674,7 @@ class Set(Collection):
             hx = hash(x)
             h ^= (hx ^ (hx << 16) ^ 89869747)  * 3644798167
             h &= MASK
+        h ^= (h >> 11) ^ (h >> 25)
         h = h * 69069 + 907133923
         h &= MASK
         if h > MAX:
@@ -549,6 +682,7 @@ class Set(Collection):
         if h == -1:
             h = 590923713
         return h
+
 
 Set.register(frozenset)
 
@@ -632,23 +766,24 @@ class MutableSet(Set):
                 self.discard(value)
         return self
 
+
 MutableSet.register(set)
 
 
 ### MAPPINGS ###
 
-
 class Mapping(Collection):
-
-    __slots__ = ()
-
     """A Mapping is a generic container for associating key/value
     pairs.
 
     This class provides concrete generic implementations of all
     methods except for __getitem__, __iter__, and __len__.
-
     """
+
+    __slots__ = ()
+
+    # Tell ABCMeta.__new__ that this class should have TPFLAGS_MAPPING set.
+    __abc_tpflags__ = 1 << 6 # Py_TPFLAGS_MAPPING
 
     @abstractmethod
     def __getitem__(self, key):
@@ -689,6 +824,7 @@ class Mapping(Collection):
     __reversed__ = None
 
 Mapping.register(mappingproxy)
+Mapping.register(framelocalsproxy)
 
 
 class MappingView(Sized):
@@ -704,13 +840,15 @@ class MappingView(Sized):
     def __repr__(self):
         return '{0.__class__.__name__}({0._mapping!r})'.format(self)
 
+    __class_getitem__ = classmethod(GenericAlias)
+
 
 class KeysView(MappingView, Set):
 
     __slots__ = ()
 
     @classmethod
-    def _from_iterable(self, it):
+    def _from_iterable(cls, it):
         return set(it)
 
     def __contains__(self, key):
@@ -718,6 +856,7 @@ class KeysView(MappingView, Set):
 
     def __iter__(self):
         yield from self._mapping
+
 
 KeysView.register(dict_keys)
 
@@ -727,7 +866,7 @@ class ItemsView(MappingView, Set):
     __slots__ = ()
 
     @classmethod
-    def _from_iterable(self, it):
+    def _from_iterable(cls, it):
         return set(it)
 
     def __contains__(self, item):
@@ -743,10 +882,11 @@ class ItemsView(MappingView, Set):
         for key in self._mapping:
             yield (key, self._mapping[key])
 
+
 ItemsView.register(dict_items)
 
 
-class ValuesView(MappingView):
+class ValuesView(MappingView, Collection):
 
     __slots__ = ()
 
@@ -761,21 +901,20 @@ class ValuesView(MappingView):
         for key in self._mapping:
             yield self._mapping[key]
 
+
 ValuesView.register(dict_values)
 
 
 class MutableMapping(Mapping):
-
-    __slots__ = ()
-
     """A MutableMapping is a generic container for associating
     key/value pairs.
 
     This class provides concrete generic implementations of all
     methods except for __getitem__, __setitem__, __delitem__,
     __iter__, and __len__.
-
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __setitem__(self, key, value):
@@ -821,30 +960,21 @@ class MutableMapping(Mapping):
         except KeyError:
             pass
 
-    def update(*args, **kwds):
+    def update(self, other=(), /, **kwds):
         ''' D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
-            If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
+            If E present and has a .keys() method, does:     for k in E.keys(): D[k] = E[k]
             If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
             In either case, this is followed by: for k, v in F.items(): D[k] = v
         '''
-        if not args:
-            raise TypeError("descriptor 'update' of 'MutableMapping' object "
-                            "needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('update expected at most 1 arguments, got %d' %
-                            len(args))
-        if args:
-            other = args[0]
-            if isinstance(other, Mapping):
-                for key in other:
-                    self[key] = other[key]
-            elif hasattr(other, "keys"):
-                for key in other.keys():
-                    self[key] = other[key]
-            else:
-                for key, value in other:
-                    self[key] = value
+        if isinstance(other, Mapping):
+            for key in other:
+                self[key] = other[key]
+        elif hasattr(other, "keys"):
+            for key in other.keys():
+                self[key] = other[key]
+        else:
+            for key, value in other:
+                self[key] = value
         for key, value in kwds.items():
             self[key] = value
 
@@ -856,14 +986,13 @@ class MutableMapping(Mapping):
             self[key] = default
         return default
 
+
 MutableMapping.register(dict)
 
 
 ### SEQUENCES ###
 
-
 class Sequence(Reversible, Collection):
-
     """All the operations on a read-only sequence.
 
     Concrete subclasses must override __new__ or __init__,
@@ -871,6 +1000,9 @@ class Sequence(Reversible, Collection):
     """
 
     __slots__ = ()
+
+    # Tell ABCMeta.__new__ that this class should have TPFLAGS_SEQUENCE set.
+    __abc_tpflags__ = 1 << 5 # Py_TPFLAGS_SEQUENCE
 
     @abstractmethod
     def __getitem__(self, index):
@@ -899,6 +1031,9 @@ class Sequence(Reversible, Collection):
     def index(self, value, start=0, stop=None):
         '''S.index(value, [start, [stop]]) -> integer -- return first index of value.
            Raises ValueError if the value is not present.
+
+           Supporting start and stop arguments is optional, but
+           recommended.
         '''
         if start is not None and start < 0:
             start = max(len(self) + start, 0)
@@ -909,10 +1044,10 @@ class Sequence(Reversible, Collection):
         while stop is None or i < stop:
             try:
                 v = self[i]
-                if v is value or v == value:
-                    return i
             except IndexError:
                 break
+            if v is value or v == value:
+                return i
             i += 1
         raise ValueError
 
@@ -922,15 +1057,38 @@ class Sequence(Reversible, Collection):
 
 Sequence.register(tuple)
 Sequence.register(str)
+Sequence.register(bytes)
 Sequence.register(range)
 Sequence.register(memoryview)
 
+class _DeprecateByteStringMeta(ABCMeta):
+    def __new__(cls, name, bases, namespace, **kwargs):
+        if name != "ByteString":
+            import warnings
 
-class ByteString(Sequence):
+            warnings._deprecated(
+                "collections.abc.ByteString",
+                remove=(3, 17),
+            )
+        return super().__new__(cls, name, bases, namespace, **kwargs)
 
-    """This unifies bytes and bytearray.
+    def __instancecheck__(cls, instance):
+        import warnings
 
-    XXX Should add all their methods.
+        warnings._deprecated(
+            "collections.abc.ByteString",
+            remove=(3, 17),
+        )
+        return super().__instancecheck__(instance)
+
+class ByteString(Sequence, metaclass=_DeprecateByteStringMeta):
+    """Deprecated ABC serving as a common supertype of ``bytes`` and ``bytearray``.
+
+    This ABC is scheduled for removal in Python 3.17.
+    Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+    implements the buffer protocol at runtime. For use in type annotations,
+    either use ``Buffer`` or a union that explicitly specifies the types your
+    code supports (e.g., ``bytes | bytearray | memoryview``).
     """
 
     __slots__ = ()
@@ -940,15 +1098,13 @@ ByteString.register(bytearray)
 
 
 class MutableSequence(Sequence):
-
-    __slots__ = ()
-
     """All the operations on a read-write sequence.
 
     Concrete subclasses must provide __new__ or __init__,
     __getitem__, __setitem__, __delitem__, __len__, and insert().
-
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __setitem__(self, index, value):
@@ -983,6 +1139,8 @@ class MutableSequence(Sequence):
 
     def extend(self, values):
         'S.extend(iterable) -- extend sequence by appending elements from the iterable'
+        if values is self:
+            values = list(values)
         for v in values:
             self.append(v)
 
@@ -1004,5 +1162,16 @@ class MutableSequence(Sequence):
         self.extend(values)
         return self
 
+
 MutableSequence.register(list)
-MutableSequence.register(bytearray)  # Multiply inheriting, see ByteString
+MutableSequence.register(bytearray)
+
+_deprecated_ByteString = globals().pop("ByteString")
+
+def __getattr__(attr):
+    if attr == "ByteString":
+        import warnings
+        warnings._deprecated("collections.abc.ByteString", remove=(3, 17))
+        globals()["ByteString"] = _deprecated_ByteString
+        return _deprecated_ByteString
+    raise AttributeError(f"module 'collections.abc' has no attribute {attr!r}")

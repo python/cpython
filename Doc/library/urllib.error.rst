@@ -1,5 +1,5 @@
-:mod:`urllib.error` --- Exception classes raised by urllib.request
-==================================================================
+:mod:`!urllib.error` --- Exception classes raised by urllib.request
+===================================================================
 
 .. module:: urllib.error
    :synopsis: Exception classes raised by urllib.request.
@@ -27,11 +27,11 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
       exception instance.
 
    .. versionchanged:: 3.3
-      :exc:`URLError` has been made a subclass of :exc:`OSError` instead
-      of :exc:`IOError`.
+      :exc:`URLError` used to be a subtype of :exc:`IOError`, which is now an
+      alias of :exc:`OSError`.
 
 
-.. exception:: HTTPError
+.. exception:: HTTPError(url, code, msg, hdrs, fp)
 
    Though being an exception (a subclass of :exc:`URLError`), an
    :exc:`HTTPError` can also function as a non-exceptional file-like return
@@ -39,29 +39,41 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
    is useful when handling exotic HTTP errors, such as requests for
    authentication.
 
+   .. attribute:: url
+
+      Contains the request URL.
+      An alias for *filename* attribute.
+
    .. attribute:: code
 
-      An HTTP status code as defined in `RFC 2616
-      <http://www.faqs.org/rfcs/rfc2616.html>`_.  This numeric value corresponds
+      An HTTP status code as defined in :rfc:`2616`.  This numeric value corresponds
       to a value found in the dictionary of codes as found in
       :attr:`http.server.BaseHTTPRequestHandler.responses`.
 
    .. attribute:: reason
 
       This is usually a string explaining the reason for this error.
+      An alias for *msg* attribute.
 
    .. attribute:: headers
 
       The HTTP response headers for the HTTP request that caused the
       :exc:`HTTPError`.
+      An alias for *hdrs* attribute.
 
       .. versionadded:: 3.4
+
+   .. attribute:: fp
+
+      A file-like object where the HTTP error body can be read from.
 
 .. exception:: ContentTooShortError(msg, content)
 
    This exception is raised when the :func:`~urllib.request.urlretrieve`
    function detects that
    the amount of the downloaded data is less than the expected amount (given by
-   the *Content-Length* header).  The :attr:`content` attribute stores the
-   downloaded (and supposedly truncated) data.
+   the *Content-Length* header).
 
+   .. attribute:: content
+
+      The downloaded (and supposedly truncated) data.

@@ -19,8 +19,8 @@ standard library module.  (Eventually you'll learn what's in the standard
 library and will be able to skip this step.)
 
 For third-party packages, search the `Python Package Index
-<https://pypi.python.org/pypi>`_ or try `Google <https://www.google.com>`_ or
-another Web search engine.  Searching for "Python" plus a keyword or two for
+<https://pypi.org>`_ or try `Google <https://www.google.com>`_ or
+another web search engine.  Searching for "Python" plus a keyword or two for
 your topic of interest will usually find something helpful.
 
 
@@ -74,7 +74,9 @@ interpreter.
 
 Occasionally, a user's environment is so full that the :program:`/usr/bin/env`
 program fails; or there's no env program at all.  In that case, you can try the
-following hack (due to Alex Rezinsky)::
+following hack (due to Alex Rezinsky):
+
+.. code-block:: sh
 
    #! /bin/sh
    """:"
@@ -104,15 +106,12 @@ support, pads, and mouse support. This means the module isn't compatible with
 operating systems that only have BSD curses, but there don't seem to be any
 currently maintained OSes that fall into this category.
 
-For Windows: use `the consolelib module
-<http://effbot.org/zone/console-index.htm>`_.
-
 
 Is there an equivalent to C's onexit() in Python?
 -------------------------------------------------
 
 The :mod:`atexit` module provides a register function that is similar to C's
-:c:func:`onexit`.
+:c:func:`!onexit`.
 
 
 Why don't my signal handlers work?
@@ -123,7 +122,7 @@ argument list.  It is called as ::
 
    handler(signum, frame)
 
-so it should be declared with two arguments::
+so it should be declared with two parameters::
 
    def handler(signum, frame):
        ...
@@ -157,9 +156,9 @@ The "global main logic" of your program may be as simple as ::
 
 at the bottom of the main module of your program.
 
-Once your program is organized as a tractable collection of functions and class
-behaviours you should write test functions that exercise the behaviours.  A test
-suite that automates a sequence of tests can be associated with each module.
+Once your program is organized as a tractable collection of function and class
+behaviours, you should write test functions that exercise the behaviours.  A
+test suite that automates a sequence of tests can be associated with each module.
 This sounds like a lot of work, but since Python is so terse and flexible it's
 surprisingly easy.  You can make coding much more pleasant and fun by writing
 your test functions in parallel with the "production code", since this makes it
@@ -181,8 +180,8 @@ How do I create documentation from doc strings?
 
 The :mod:`pydoc` module can create HTML from the doc strings in your Python
 source code.  An alternative for creating API documentation purely from
-docstrings is `epydoc <http://epydoc.sourceforge.net/>`_.  `Sphinx
-<http://sphinx-doc.org>`_ can also include docstring content.
+docstrings is `epydoc <https://epydoc.sourceforge.net/>`_.  `Sphinx
+<https://www.sphinx-doc.org>`_ can also include docstring content.
 
 
 How do I get a single keypress at a time?
@@ -241,9 +240,6 @@ Be sure to use the :mod:`threading` module and not the :mod:`_thread` module.
 The :mod:`threading` module builds convenient abstractions on top of the
 low-level primitives provided by the :mod:`_thread` module.
 
-Aahz has a set of slides from his threading tutorial that are helpful; see
-http://www.pythoncraft.com/OSCON2001/.
-
 
 None of my threads seem to run: why?
 ------------------------------------
@@ -293,7 +289,7 @@ queue as there are threads.
 How do I parcel out work among a bunch of worker threads?
 ---------------------------------------------------------
 
-The easiest way is to use the new :mod:`concurrent.futures` module,
+The easiest way is to use the :mod:`concurrent.futures` module,
 especially the :mod:`~concurrent.futures.ThreadPoolExecutor` class.
 
 Or, if you want fine control over the dispatching algorithm, you can write
@@ -317,11 +313,11 @@ Here's a trivial example::
            try:
                arg = q.get(block=False)
            except queue.Empty:
-               print('Worker', threading.currentThread(), end=' ')
+               print('Worker', threading.current_thread(), end=' ')
                print('queue empty')
                break
            else:
-               print('Worker', threading.currentThread(), end=' ')
+               print('Worker', threading.current_thread(), end=' ')
                print('running with argument', arg)
                time.sleep(0.5)
 
@@ -401,7 +397,7 @@ These aren't::
    D[x] = D[x] + 1
 
 Operations that replace other objects may invoke those other objects'
-:meth:`__del__` method when their reference count reaches zero, and that can
+:meth:`~object.__del__` method when their reference count reaches zero, and that can
 affect things.  This is especially true for the mass updates to dictionaries and
 lists.  When in doubt, use a mutex!
 
@@ -409,22 +405,37 @@ lists.  When in doubt, use a mutex!
 Can't we get rid of the Global Interpreter Lock?
 ------------------------------------------------
 
-.. XXX link to dbeazley's talk about GIL?
-
 The :term:`global interpreter lock` (GIL) is often seen as a hindrance to Python's
 deployment on high-end multiprocessor server machines, because a multi-threaded
 Python program effectively only uses one CPU, due to the insistence that
 (almost) all Python code can only run while the GIL is held.
 
-Back in the days of Python 1.5, Greg Stein actually implemented a comprehensive
-patch set (the "free threading" patches) that removed the GIL and replaced it
-with fine-grained locking.  Adam Olsen recently did a similar experiment
-in his `python-safethread <http://code.google.com/p/python-safethread/>`_
-project.  Unfortunately, both experiments exhibited a sharp drop in single-thread
-performance (at least 30% slower), due to the amount of fine-grained locking
-necessary to compensate for the removal of the GIL.
+With the approval of :pep:`703` work is now underway to remove the GIL from the
+CPython implementation of Python.  Initially it will be implemented as an
+optional compiler flag when building the interpreter, and so separate
+builds will be available with and without the GIL.  Long-term, the hope is
+to settle on a single build, once the performance implications of removing the
+GIL are fully understood.  Python 3.13 is likely to be the first release
+containing this work, although it may not be completely functional in this
+release.
 
-This doesn't mean that you can't make good use of Python on multi-CPU machines!
+The current work to remove the GIL is based on a
+`fork of Python 3.9 with the GIL removed <https://github.com/colesbury/nogil>`_
+by Sam Gross.
+Prior to that,
+in the days of Python 1.5, Greg Stein actually implemented a comprehensive
+patch set (the "free threading" patches) that removed the GIL and replaced it
+with fine-grained locking.  Adam Olsen did a similar experiment
+in his `python-safethread <https://code.google.com/archive/p/python-safethread>`_
+project.  Unfortunately, both of these earlier experiments exhibited a sharp
+drop in single-thread
+performance (at least 30% slower), due to the amount of fine-grained locking
+necessary to compensate for the removal of the GIL.  The Python 3.9 fork
+is the first attempt at removing the GIL with an acceptable performance
+impact.
+
+The presence of the GIL in current Python releases
+doesn't mean that you can't make good use of Python on multi-CPU machines!
 You just have to be creative with dividing the work up between multiple
 *processes* rather than multiple *threads*.  The
 :class:`~concurrent.futures.ProcessPoolExecutor` class in the new
@@ -438,22 +449,13 @@ thread of execution is in the C code and allow other threads to get some work
 done.  Some standard library modules such as :mod:`zlib` and :mod:`hashlib`
 already do this.
 
-It has been suggested that the GIL should be a per-interpreter-state lock rather
-than truly global; interpreters then wouldn't be able to share objects.
-Unfortunately, this isn't likely to happen either.  It would be a tremendous
-amount of work, because many object implementations currently have global state.
-For example, small integers and short strings are cached; these caches would
-have to be moved to the interpreter state.  Other object types have their own
-free list; these free lists would have to be moved to the interpreter state.
-And so on.
-
-And I doubt that it can even be done in finite time, because the same problem
-exists for 3rd party extensions.  It is likely that 3rd party extensions are
-being written at a faster rate than you can convert them to store all their
-global state in the interpreter state.
-
-And finally, once you have multiple interpreters not sharing any state, what
-have you gained over running each interpreter in a separate process?
+An alternative approach to reducing the impact of the GIL is
+to make the GIL a per-interpreter-state lock rather than truly global.
+This was :ref:`first implemented in Python 3.12 <whatsnew312-pep684>` and is
+available in the C API. A Python interface to it is expected in Python 3.13.
+The main limitation to it at the moment is likely to be 3rd party extension
+modules, since these must be written with multiple interpreters in mind in
+order to be usable, so many older extension modules will not be usable.
 
 
 Input and Output
@@ -487,8 +489,14 @@ including :func:`~shutil.copyfile`, :func:`~shutil.copytree`, and
 How do I copy a file?
 ---------------------
 
-The :mod:`shutil` module contains a :func:`~shutil.copyfile` function.  Note
-that on MacOS 9 it doesn't copy the resource fork and Finder info.
+The :mod:`shutil` module contains a :func:`~shutil.copyfile` function.
+Note that on Windows NTFS volumes, it does not copy
+`alternate data streams
+<https://en.wikipedia.org/wiki/NTFS#Alternate_data_stream_(ADS)>`_
+nor `resource forks <https://en.wikipedia.org/wiki/Resource_fork>`__
+on macOS HFS+ volumes, though both are now rarely used.
+It also doesn't copy file permissions and metadata, though using
+:func:`shutil.copy2` instead will preserve most (though not all) of it.
 
 
 How do I read (or write) binary data?
@@ -533,91 +541,12 @@ Thus, to read *n* bytes from a pipe *p* created with :func:`os.popen`, you need 
 use ``p.read(n)``.
 
 
-.. XXX update to use subprocess. See the :ref:`subprocess-replacements` section.
-
-   How do I run a subprocess with pipes connected to both input and output?
-   ------------------------------------------------------------------------
-
-   Use the :mod:`popen2` module.  For example::
-
-      import popen2
-      fromchild, tochild = popen2.popen2("command")
-      tochild.write("input\n")
-      tochild.flush()
-      output = fromchild.readline()
-
-   Warning: in general it is unwise to do this because you can easily cause a
-   deadlock where your process is blocked waiting for output from the child
-   while the child is blocked waiting for input from you.  This can be caused
-   by the parent expecting the child to output more text than it does or
-   by data being stuck in stdio buffers due to lack of flushing.
-   The Python parent can of course explicitly flush the data it sends to the
-   child before it reads any output, but if the child is a naive C program it
-   may have been written to never explicitly flush its output, even if it is
-   interactive, since flushing is normally automatic.
-
-   Note that a deadlock is also possible if you use :func:`popen3` to read
-   stdout and stderr. If one of the two is too large for the internal buffer
-   (increasing the buffer size does not help) and you ``read()`` the other one
-   first, there is a deadlock, too.
-
-   Note on a bug in popen2: unless your program calls ``wait()`` or
-   ``waitpid()``, finished child processes are never removed, and eventually
-   calls to popen2 will fail because of a limit on the number of child
-   processes.  Calling :func:`os.waitpid` with the :data:`os.WNOHANG` option can
-   prevent this; a good place to insert such a call would be before calling
-   ``popen2`` again.
-
-   In many cases, all you really need is to run some data through a command and
-   get the result back.  Unless the amount of data is very large, the easiest
-   way to do this is to write it to a temporary file and run the command with
-   that temporary file as input.  The standard module :mod:`tempfile` exports a
-   :func:`~tempfile.mktemp` function to generate unique temporary file names. ::
-
-      import tempfile
-      import os
-
-      class Popen3:
-          """
-          This is a deadlock-safe version of popen that returns
-          an object with errorlevel, out (a string) and err (a string).
-          (capturestderr may not work under windows.)
-          Example: print(Popen3('grep spam','\n\nhere spam\n\n').out)
-          """
-          def __init__(self,command,input=None,capturestderr=None):
-              outfile=tempfile.mktemp()
-              command="( %s ) > %s" % (command,outfile)
-              if input:
-                  infile=tempfile.mktemp()
-                  open(infile,"w").write(input)
-                  command=command+" <"+infile
-              if capturestderr:
-                  errfile=tempfile.mktemp()
-                  command=command+" 2>"+errfile
-              self.errorlevel=os.system(command) >> 8
-              self.out=open(outfile,"r").read()
-              os.remove(outfile)
-              if input:
-                  os.remove(infile)
-              if capturestderr:
-                  self.err=open(errfile,"r").read()
-                  os.remove(errfile)
-
-   Note that many interactive programs (e.g. vi) don't work well with pipes
-   substituted for standard input and output.  You will have to use pseudo ttys
-   ("ptys") instead of pipes. Or you can use a Python interface to Don Libes'
-   "expect" library.  A Python extension that interfaces to expect is called
-   "expy" and available from http://expectpy.sourceforge.net.  A pure Python
-   solution that works like expect is `pexpect
-   <https://pypi.python.org/pypi/pexpect/>`_.
-
-
 How do I access the serial (RS232) port?
 ----------------------------------------
 
-For Win32, POSIX (Linux, BSD, etc.), Jython:
+For Win32, OSX, Linux, BSD, Jython, IronPython:
 
-   http://pyserial.sourceforge.net
+   :pypi:`pyserial`
 
 For Unix, see a Usenet post by Mitch Chapman:
 
@@ -666,41 +595,6 @@ and client-side web systems.
 
 A summary of available frameworks is maintained by Paul Boddie at
 https://wiki.python.org/moin/WebProgramming\ .
-
-Cameron Laird maintains a useful set of pages about Python web technologies at
-http://phaseit.net/claird/comp.lang.python/web_python.
-
-
-How can I mimic CGI form submission (METHOD=POST)?
---------------------------------------------------
-
-I would like to retrieve web pages that are the result of POSTing a form. Is
-there existing code that would let me do this easily?
-
-Yes. Here's a simple example that uses urllib.request::
-
-   #!/usr/local/bin/python
-
-   import urllib.request
-
-   # build the query string
-   qs = "First=Josephine&MI=Q&Last=Public"
-
-   # connect and send the server a path
-   req = urllib.request.urlopen('http://www.some-server.out-there'
-                                '/cgi-bin/some-cgi-script', data=qs)
-   with req:
-       msg, hdrs = req.read(), req.info()
-
-Note that in general for percent-encoded POST operations, query strings must be
-quoted using :func:`urllib.parse.urlencode`.  For example, to send
-``name=Guy Steele, Jr.``::
-
-   >>> import urllib.parse
-   >>> urllib.parse.urlencode({'name': 'Guy Steele, Jr.'})
-   'name=Guy+Steele%2C+Jr.'
-
-.. seealso:: :ref:`urllib-howto` for extensive examples.
 
 
 What module should I use to help with generating HTML?
@@ -763,21 +657,25 @@ The :mod:`select` module is commonly used to help with asynchronous I/O on
 sockets.
 
 To prevent the TCP connect from blocking, you can set the socket to non-blocking
-mode.  Then when you do the ``connect()``, you will either connect immediately
+mode.  Then when you do the :meth:`~socket.socket.connect`,
+you will either connect immediately
 (unlikely) or get an exception that contains the error number as ``.errno``.
 ``errno.EINPROGRESS`` indicates that the connection is in progress, but hasn't
 finished yet.  Different OSes will return different values, so you're going to
 have to check what's returned on your system.
 
-You can use the ``connect_ex()`` method to avoid creating an exception.  It will
-just return the errno value.  To poll, you can call ``connect_ex()`` again later
+You can use the :meth:`~socket.socket.connect_ex` method
+to avoid creating an exception.
+It will just return the errno value.
+To poll, you can call :meth:`~socket.socket.connect_ex` again later
 -- ``0`` or ``errno.EISCONN`` indicate that you're connected -- or you can pass this
-socket to select to check if it's writable.
+socket to :meth:`select.select` to check if it's writable.
 
 .. note::
-   The :mod:`asyncore` module presents a framework-like approach to the problem
-   of writing non-blocking networking code.
-   The third-party `Twisted <https://twistedmatrix.com/trac/>`_ library is
+   The :mod:`asyncio` module provides a general purpose single-threaded and
+   concurrent asynchronous library, which can be used for writing non-blocking
+   network code.
+   The third-party `Twisted <https://twisted.org/>`_ library is
    a popular and feature-rich alternative.
 
 
@@ -820,18 +718,18 @@ is simple::
    import random
    random.random()
 
-This returns a random floating point number in the range [0, 1).
+This returns a random floating-point number in the range [0, 1).
 
 There are also many other specialized generators in this module, such as:
 
 * ``randrange(a, b)`` chooses an integer in the range [a, b).
-* ``uniform(a, b)`` chooses a floating point number in the range [a, b).
+* ``uniform(a, b)`` chooses a floating-point number in the range [a, b).
 * ``normalvariate(mean, sdev)`` samples the normal (Gaussian) distribution.
 
 Some higher-level functions operate on sequences directly, such as:
 
-* ``choice(S)`` chooses random element from a given sequence
-* ``shuffle(L)`` shuffles a list in-place, i.e. permutes it randomly
+* ``choice(S)`` chooses a random element from a given sequence.
+* ``shuffle(L)`` shuffles a list in-place, i.e. permutes it randomly.
 
 There's also a ``Random`` class you can instantiate to create independent
 multiple random number generators.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,22 +27,29 @@
 
 
 #include "mpdecimal.h"
+
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <limits.h>
-#include <assert.h>
-#include <errno.h>
-#include <locale.h>
-#include "bits.h"
-#include "constants.h"
-#include "typearith.h"
+
 #include "io.h"
+#include "typearith.h"
 
 
 /* This file contains functions for decimal <-> string conversions, including
    PEP-3101 formatting for numeric types. */
+
+
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER) && __GNUC__ >= 7
+  #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+  #pragma GCC diagnostic ignored "-Wmisleading-indentation"
+  #pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
 
 
 /*
@@ -149,13 +156,13 @@ scan_dpoint_exp(const char *s, const char **dpoint, const char **exp,
                 s++;
             break;
         default:
-            if (!isdigit((uchar)*s))
+            if (!isdigit((unsigned char)*s))
                 return NULL;
             if (coeff == NULL && *exp == NULL) {
                 if (*s == '0') {
-                    if (!isdigit((uchar)*(s+1)))
+                    if (!isdigit((unsigned char)*(s+1)))
                         if (!(*(s+1) == '.' &&
-                              isdigit((uchar)*(s+2))))
+                              isdigit((unsigned char)*(s+2))))
                             coeff = s;
                 }
                 else {
@@ -181,7 +188,7 @@ scan_payload(const char *s, const char **end)
         s++;
     coeff = s;
 
-    while (isdigit((uchar)*s))
+    while (isdigit((unsigned char)*s))
         s++;
     *end = s;
 
@@ -271,7 +278,7 @@ mpd_qset_string(mpd_t *dec, const char *s, const mpd_context_t *ctx,
             }
         }
 
-            digits = end - coeff;
+        digits = end - coeff;
         if (dpoint) {
             size_t fracdigits = end-dpoint-1;
             if (dpoint > coeff) digits--;
@@ -320,10 +327,30 @@ conversion_error:
     mpd_seterror(dec, MPD_Conversion_syntax, status);
 }
 
+/* convert a character string to a decimal, use a maxcontext for conversion */
+void
+mpd_qset_string_exact(mpd_t *dec, const char *s, uint32_t *status)
+{
+    mpd_context_t maxcontext;
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qset_string(dec, s, &maxcontext, status);
+
+    if (*status & (MPD_Inexact|MPD_Rounded|MPD_Clamped)) {
+        /* we want exact results */
+        mpd_seterror(dec, MPD_Invalid_operation, status);
+    }
+    *status &= MPD_Errors;
+}
+
 /* Print word x with n decimal digits to string s. dot is either NULL
    or the location of a decimal point. */
 #define EXTRACT_DIGIT(s, x, d, dot) \
         if (s == dot) *s++ = '.'; *s++ = '0' + (char)(x / d); x %= d
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER) && __GNUC__ >= 12
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 static inline char *
 word_to_string(char *s, mpd_uint_t x, int n, char *dot)
 {
@@ -355,6 +382,9 @@ word_to_string(char *s, mpd_uint_t x, int n, char *dot)
     *s = '\0';
     return s;
 }
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER) && __GNUC__ >= 12
+  #pragma GCC diagnostic pop
+#endif
 
 /* Print exponent x to string s. Undefined for MPD_SSIZE_MIN. */
 static inline char *
@@ -533,8 +563,8 @@ _mpd_to_string(char **result, const mpd_t *dec, int flags, mpd_ssize_t dplace)
                 dplace = -1 + mod_mpd_ssize_t(dec->exp+2, 3);
             }
             else { /* ldigits-1 is the adjusted exponent, which
-                * should be divisible by three. If not, move
-                * dplace one or two places to the right. */
+                    * should be divisible by three. If not, move
+                    * dplace one or two places to the right. */
                 dplace += mod_mpd_ssize_t(ldigits-1, 3);
             }
         }
@@ -667,8 +697,8 @@ mpd_to_eng_size(char **res, const mpd_t *dec, int fmt)
 static int
 _mpd_copy_utf8(char dest[5], const char *s)
 {
-    const uchar *cp = (const uchar *)s;
-    uchar lb, ub;
+    const unsigned char *cp = (const unsigned char *)s;
+    unsigned char lb, ub;
     int count, i;
 
 
@@ -821,7 +851,7 @@ mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps)
     }
 
     /* minimum width */
-    if (isdigit((uchar)*cp)) {
+    if (isdigit((unsigned char)*cp)) {
         if (*cp == '0') {
             return 0;
         }
@@ -843,7 +873,7 @@ mpd_parse_fmt_str(mpd_spec_t *spec, const char *fmt, int caps)
     /* fraction digits or significant digits */
     if (*cp == '.') {
         cp++;
-        if (!isdigit((uchar)*cp)) {
+        if (!isdigit((unsigned char)*cp)) {
             return 0;
         }
         errno = 0;
@@ -1083,9 +1113,9 @@ _mpd_apply_lconv(mpd_mbstr_t *result, const mpd_spec_t *spec, uint32_t *status)
         sign = dp++;
     }
     /* integer part */
-    assert(isdigit((uchar)*dp));
+    assert(isdigit((unsigned char)*dp));
     intpart = dp++;
-    while (isdigit((uchar)*dp)) {
+    while (isdigit((unsigned char)*dp)) {
         dp++;
     }
     n_int = (mpd_ssize_t)(dp-intpart);
@@ -1240,8 +1270,8 @@ mpd_qformat_spec(const mpd_t *dec, const mpd_spec_t *spec,
         return NULL;
     }
 
-    if (isupper((uchar)type)) {
-        type = tolower((uchar)type);
+    if (isupper((unsigned char)type)) {
+        type = (char)tolower((unsigned char)type);
         flags |= MPD_FMT_UPPER;
     }
     if (spec->sign == ' ') {
@@ -1259,6 +1289,7 @@ mpd_qformat_spec(const mpd_t *dec, const mpd_spec_t *spec,
             stackspec.align = '>';
             spec = &stackspec;
         }
+        assert(strlen(spec->fill) == 1); /* annotation for scan-build */
         if (type == '%') {
             flags |= MPD_FMT_PERCENT;
         }
@@ -1573,5 +1604,3 @@ mpd_print(const mpd_t *dec)
         fputs("mpd_fprint: output error\n", stderr); /* GCOV_NOT_REACHED */
     }
 }
-
-

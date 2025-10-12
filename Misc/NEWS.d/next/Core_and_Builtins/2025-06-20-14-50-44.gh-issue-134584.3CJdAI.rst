@@ -1,0 +1,1 @@
+Specialize :opcode:`POP_TOP` in the JIT compiler by specializing for reference lifetime and type. This will also enable easier top of stack caching in the JIT compiler.

@@ -41,7 +41,7 @@ must be running an SMTP server.
         directory = '.'
     # Create the message
     msg = EmailMessage()
-    msg['Subject'] = 'Contents of directory %s' % os.path.abspath(directory)
+    msg['Subject'] = f'Contents of directory {os.path.abspath(directory)}'
     msg['To'] = ', '.join(args.recipients)
     msg['From'] = args.sender
     msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
@@ -53,7 +53,7 @@ must be running an SMTP server.
         # Guess the content type based on the file's extension.  Encoding
         # will be ignored, although we should check for simple things like
         # gzip'd or compressed files.
-        ctype, encoding = mimetypes.guess_type(path)
+        ctype, encoding = mimetypes.guess_file_type(path)
         if ctype is None or encoding is not None:
             # No guess could be made, or the file is encoded (compressed), so
             # use a generic bag-of-bits type.

@@ -1,5 +1,5 @@
-:mod:`urllib.parse` --- Parse URLs into components
-==================================================
+:mod:`!urllib.parse` --- Parse URLs into components
+===================================================
 
 .. module:: urllib.parse
    :synopsis: Parse URLs into or assemble them from components.
@@ -20,16 +20,29 @@ strings up in components (addressing scheme, network location, path etc.), to
 combine the components back into a URL string, and to convert a "relative URL"
 to an absolute URL given a "base URL."
 
-The module has been designed to match the Internet RFC on Relative Uniform
+The module has been designed to match the internet RFC on Relative Uniform
 Resource Locators. It supports the following URL schemes: ``file``, ``ftp``,
-``gopher``, ``hdl``, ``http``, ``https``, ``imap``, ``mailto``, ``mms``,
-``news``, ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtspu``, ``sftp``,
-``shttp``, ``sip``, ``sips``, ``snews``, ``svn``, ``svn+ssh``, ``telnet``,
-``wais``, ``ws``, ``wss``.
+``gopher``, ``hdl``, ``http``, ``https``, ``imap``, ``itms-services``, ``mailto``, ``mms``,
+``news``, ``nntp``, ``prospero``, ``rsync``, ``rtsp``, ``rtsps``, ``rtspu``,
+``sftp``, ``shttp``, ``sip``, ``sips``, ``snews``, ``svn``, ``svn+ssh``,
+``telnet``, ``wais``, ``ws``, ``wss``.
+
+.. impl-detail::
+
+   The inclusion of the ``itms-services`` URL scheme can prevent an app from
+   passing Apple's App Store review process for the macOS and iOS App Stores.
+   Handling for the ``itms-services`` scheme is always removed on iOS; on
+   macOS, it *may* be removed if CPython has been built with the
+   :option:`--with-app-store-compliance` option.
 
 The :mod:`urllib.parse` module defines functions that fall into two broad
 categories: URL parsing and URL quoting. These are covered in detail in
 the following sections.
+
+This module's functions use the deprecated term ``netloc`` (or ``net_loc``),
+which was introduced in :rfc:`1808`. However, this term has been obsoleted by
+:rfc:`3986`, which introduced the term ``authority`` as its replacement.
+The use of ``netloc`` is continued for backward compatibility.
 
 URL Parsing
 -----------
@@ -39,25 +52,38 @@ or on combining URL components into a URL string.
 
 .. function:: urlparse(urlstring, scheme='', allow_fragments=True)
 
-   Parse a URL into six components, returning a 6-tuple.  This corresponds to the
-   general structure of a URL: ``scheme://netloc/path;parameters?query#fragment``.
-   Each tuple item is a string, possibly empty. The components are not broken up in
-   smaller parts (for example, the network location is a single string), and %
+   Parse a URL into six components, returning a 6-item :term:`named tuple`.  This
+   corresponds to the general structure of a URL:
+   ``scheme://netloc/path;parameters?query#fragment``.
+   Each tuple item is a string, possibly empty. The components are not broken up
+   into smaller parts (for example, the network location is a single string), and %
    escapes are not expanded. The delimiters as shown above are not part of the
    result, except for a leading slash in the *path* component, which is retained if
    present.  For example:
 
+   .. doctest::
+      :options: +NORMALIZE_WHITESPACE
+
       >>> from urllib.parse import urlparse
-      >>> o = urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
-      >>> o   # doctest: +NORMALIZE_WHITESPACE
-      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                  params='', query='', fragment='')
+      >>> urlparse("scheme://netloc/path;parameters?query#fragment")
+      ParseResult(scheme='scheme', netloc='netloc', path='/path;parameters', params='',
+                  query='query', fragment='fragment')
+      >>> o = urlparse("http://docs.python.org:80/3/library/urllib.parse.html?"
+      ...              "highlight=params#url-parsing")
+      >>> o
+      ParseResult(scheme='http', netloc='docs.python.org:80',
+                  path='/3/library/urllib.parse.html', params='',
+                  query='highlight=params', fragment='url-parsing')
       >>> o.scheme
       'http'
+      >>> o.netloc
+      'docs.python.org:80'
+      >>> o.hostname
+      'docs.python.org'
       >>> o.port
       80
-      >>> o.geturl()
-      'http://www.cwi.nl:80/%7Eguido/Python.html'
+      >>> o._replace(fragment="").geturl()
+      'http://docs.python.org:80/3/library/urllib.parse.html?highlight=params'
 
    Following the syntax specifications in :rfc:`1808`, urlparse recognizes
    a netloc only if it is properly introduced by '//'.  Otherwise the
@@ -67,15 +93,15 @@ or on combining URL components into a URL string.
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-       >>> from urllib.parse import urlparse
-       >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
-       ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+      >>> from urllib.parse import urlparse
+      >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
+      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
                   params='', query='', fragment='')
-       >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
-       ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
+      >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
+      ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
                   params='', query='', fragment='')
-       >>> urlparse('help/Python.html')
-       ParseResult(scheme='', netloc='', path='help/Python.html', params='',
+      >>> urlparse('help/Python.html')
+      ParseResult(scheme='', netloc='', path='help/Python.html', params='',
                   query='', fragment='')
 
    The *scheme* argument gives the default addressing scheme, to be
@@ -88,34 +114,34 @@ or on combining URL components into a URL string.
    or query component, and :attr:`fragment` is set to the empty string in
    the return value.
 
-   The return value is actually an instance of a subclass of :class:`tuple`.  This
-   class has the following additional read-only convenience attributes:
+   The return value is a :term:`named tuple`, which means that its items can
+   be accessed by index or as named attributes, which are:
 
-   +------------------+-------+--------------------------+----------------------+
-   | Attribute        | Index | Value                    | Value if not present |
-   +==================+=======+==========================+======================+
-   | :attr:`scheme`   | 0     | URL scheme specifier     | *scheme* parameter   |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`netloc`   | 1     | Network location part    | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`path`     | 2     | Hierarchical path        | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`params`   | 3     | Parameters for last path | empty string         |
-   |                  |       | element                  |                      |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`query`    | 4     | Query component          | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`fragment` | 5     | Fragment identifier      | empty string         |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`username` |       | User name                | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`password` |       | Password                 | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`hostname` |       | Host name (lower case)   | :const:`None`        |
-   +------------------+-------+--------------------------+----------------------+
-   | :attr:`port`     |       | Port number as integer,  | :const:`None`        |
-   |                  |       | if present               |                      |
-   +------------------+-------+--------------------------+----------------------+
+   +------------------+-------+-------------------------+------------------------+
+   | Attribute        | Index | Value                   | Value if not present   |
+   +==================+=======+=========================+========================+
+   | :attr:`scheme`   | 0     | URL scheme specifier    | *scheme* parameter     |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`netloc`   | 1     | Network location part   | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`path`     | 2     | Hierarchical path       | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`params`   | 3     | Parameters for last     | empty string           |
+   |                  |       | path element            |                        |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`query`    | 4     | Query component         | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`fragment` | 5     | Fragment identifier     | empty string           |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`username` |       | User name               | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`password` |       | Password                | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`hostname` |       | Host name (lower case)  | :const:`None`          |
+   +------------------+-------+-------------------------+------------------------+
+   | :attr:`port`     |       | Port number as integer, | :const:`None`          |
+   |                  |       | if present              |                        |
+   +------------------+-------+-------------------------+------------------------+
 
    Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
    an invalid port is specified in the URL.  See section
@@ -124,20 +150,51 @@ or on combining URL components into a URL string.
    Unmatched square brackets in the :attr:`netloc` attribute will raise a
    :exc:`ValueError`.
 
+   Characters in the :attr:`netloc` attribute that decompose under NFKC
+   normalization (as used by the IDNA encoding) into any of ``/``, ``?``,
+   ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
+   decomposed before parsing, no error will be raised.
+
+   As is the case with all named tuples, the subclass has a few additional methods
+   and attributes that are particularly useful. One such method is :meth:`_replace`.
+   The :meth:`_replace` method will return a new ParseResult object replacing specified
+   fields with new values.
+
+   .. doctest::
+      :options: +NORMALIZE_WHITESPACE
+
+      >>> from urllib.parse import urlparse
+      >>> u = urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
+      >>> u
+      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+                  params='', query='', fragment='')
+      >>> u._replace(scheme='http')
+      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+                  params='', query='', fragment='')
+
+   .. warning::
+
+      :func:`urlparse` does not perform validation.  See :ref:`URL parsing
+      security <url-parsing-security>` for details.
+
    .. versionchanged:: 3.2
       Added IPv6 URL parsing capabilities.
 
    .. versionchanged:: 3.3
-      The fragment is now parsed for all URL schemes (unless *allow_fragment* is
-      false), in accordance with :rfc:`3986`.  Previously, a whitelist of
+      The fragment is now parsed for all URL schemes (unless *allow_fragments* is
+      false), in accordance with :rfc:`3986`.  Previously, an allowlist of
       schemes that support fragments existed.
 
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
       returning :const:`None`.
 
+   .. versionchanged:: 3.8
+      Characters that affect netloc parsing under NFKC normalization will
+      now raise :exc:`ValueError`.
 
-.. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace')
+
+.. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None, separator='&')
 
    Parse a query string given as a string argument (data of type
    :mimetype:`application/x-www-form-urlencoded`).  Data are returned as a
@@ -158,6 +215,13 @@ or on combining URL components into a URL string.
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
 
+   The optional argument *max_num_fields* is the maximum number of fields to
+   read. If set, then throws a :exc:`ValueError` if there are more than
+   *max_num_fields* fields read.
+
+   The optional argument *separator* is the symbol to use for separating the
+   query arguments. It defaults to ``&``.
+
    Use the :func:`urllib.parse.urlencode` function (with the ``doseq``
    parameter set to ``True``) to convert such dictionaries into query
    strings.
@@ -166,8 +230,21 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.2
       Add *encoding* and *errors* parameters.
 
+   .. versionchanged:: 3.8
+      Added *max_num_fields* parameter.
 
-.. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace')
+   .. versionchanged:: 3.10
+      Added *separator* parameter with the default value of ``&``. Python
+      versions earlier than Python 3.10 allowed using both ``;`` and ``&`` as
+      query parameter separator. This has been changed to allow only a single
+      separator key, with ``&`` as the default separator.
+
+   .. deprecated:: 3.14
+      Accepting objects with false values (like ``0`` and ``[]``) except empty
+      strings and byte-like objects and ``None`` is now deprecated.
+
+
+.. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None, separator='&')
 
    Parse a query string given as a string argument (data of type
    :mimetype:`application/x-www-form-urlencoded`).  Data are returned as a list of
@@ -187,11 +264,27 @@ or on combining URL components into a URL string.
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
 
+   The optional argument *max_num_fields* is the maximum number of fields to
+   read. If set, then throws a :exc:`ValueError` if there are more than
+   *max_num_fields* fields read.
+
+   The optional argument *separator* is the symbol to use for separating the
+   query arguments. It defaults to ``&``.
+
    Use the :func:`urllib.parse.urlencode` function to convert such lists of pairs into
    query strings.
 
    .. versionchanged:: 3.2
       Add *encoding* and *errors* parameters.
+
+   .. versionchanged:: 3.8
+      Added *max_num_fields* parameter.
+
+   .. versionchanged:: 3.10
+      Added *separator* parameter with the default value of ``&``. Python
+      versions earlier than Python 3.10 allowed using both ``;`` and ``&`` as
+      query parameter separator. This has been changed to allow only a single
+      separator key, with ``&`` as the default separator.
 
 
 .. function:: urlunparse(parts)
@@ -209,11 +302,13 @@ or on combining URL components into a URL string.
    This should generally be used instead of :func:`urlparse` if the more recent URL
    syntax allowing parameters to be applied to each segment of the *path* portion
    of the URL (see :rfc:`2396`) is wanted.  A separate function is needed to
-   separate the path segments and parameters.  This function returns a 5-tuple:
-   (addressing scheme, network location, path, query, fragment identifier).
+   separate the path segments and parameters.  This function returns a 5-item
+   :term:`named tuple`::
 
-   The return value is actually an instance of a subclass of :class:`tuple`.  This
-   class has the following additional read-only convenience attributes:
+      (addressing scheme, network location, path, query, fragment identifier).
+
+   The return value is a :term:`named tuple`, its items can be accessed by index
+   or as named attributes:
 
    +------------------+-------+-------------------------+----------------------+
    | Attribute        | Index | Value                   | Value if not present |
@@ -245,10 +340,35 @@ or on combining URL components into a URL string.
    Unmatched square brackets in the :attr:`netloc` attribute will raise a
    :exc:`ValueError`.
 
+   Characters in the :attr:`netloc` attribute that decompose under NFKC
+   normalization (as used by the IDNA encoding) into any of ``/``, ``?``,
+   ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
+   decomposed before parsing, no error will be raised.
+
+   Following some of the `WHATWG spec`_ that updates RFC 3986, leading C0
+   control and space characters are stripped from the URL. ``\n``,
+   ``\r`` and tab ``\t`` characters are removed from the URL at any position.
+
+   .. warning::
+
+      :func:`urlsplit` does not perform validation.  See :ref:`URL parsing
+      security <url-parsing-security>` for details.
+
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
       returning :const:`None`.
 
+   .. versionchanged:: 3.8
+      Characters that affect netloc parsing under NFKC normalization will
+      now raise :exc:`ValueError`.
+
+   .. versionchanged:: 3.10
+      ASCII newline and tab characters are stripped from the URL.
+
+   .. versionchanged:: 3.12
+      Leading WHATWG C0 control and space characters are stripped from the URL.
+
+.. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
 .. function:: urlunsplit(parts)
 
@@ -275,22 +395,31 @@ or on combining URL components into a URL string.
 
    .. note::
 
-      If *url* is an absolute URL (that is, starting with ``//`` or ``scheme://``),
-      the *url*'s host name and/or scheme will be present in the result.  For example:
+      If *url* is an absolute URL (that is, it starts with ``//`` or ``scheme://``),
+      the *url*'s hostname and/or scheme will be present in the result.  For example:
 
-   .. doctest::
+      .. doctest::
 
-      >>> urljoin('http://www.cwi.nl/%7Eguido/Python.html',
-      ...         '//www.python.org/%7Eguido')
-      'http://www.python.org/%7Eguido'
+         >>> urljoin('http://www.cwi.nl/%7Eguido/Python.html',
+         ...         '//www.python.org/%7Eguido')
+         'http://www.python.org/%7Eguido'
 
-   If you do not want that behavior, preprocess the *url* with :func:`urlsplit` and
-   :func:`urlunsplit`, removing possible *scheme* and *netloc* parts.
+      If you do not want that behavior, preprocess the *url* with :func:`urlsplit` and
+      :func:`urlunsplit`, removing possible *scheme* and *netloc* parts.
+
+   .. warning::
+
+      Because an absolute URL may be passed as the ``url`` parameter, it is
+      generally **not secure** to use ``urljoin`` with an attacker-controlled
+      ``url``. For example in,
+      ``urljoin("https://website.com/users/", username)``, if ``username`` can
+      contain an absolute URL, the result of ``urljoin`` will be the absolute
+      URL.
 
 
    .. versionchanged:: 3.5
 
-      Behaviour updated to match the semantics defined in :rfc:`3986`.
+      Behavior updated to match the semantics defined in :rfc:`3986`.
 
 
 .. function:: urldefrag(url)
@@ -300,8 +429,8 @@ or on combining URL components into a URL string.
    string.  If there is no fragment identifier in *url*, return *url* unmodified
    and an empty string.
 
-   The return value is actually an instance of a subclass of :class:`tuple`.  This
-   class has the following additional read-only convenience attributes:
+   The return value is a :term:`named tuple`, its items can be accessed by index
+   or as named attributes:
 
    +------------------+-------+-------------------------+----------------------+
    | Attribute        | Index | Value                   | Value if not present |
@@ -316,6 +445,42 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.2
       Result is a structured object rather than a simple 2-tuple.
+
+.. function:: unwrap(url)
+
+   Extract the url from a wrapped URL (that is, a string formatted as
+   ``<URL:scheme://host/path>``, ``<scheme://host/path>``, ``URL:scheme://host/path``
+   or ``scheme://host/path``). If *url* is not a wrapped URL, it is returned
+   without changes.
+
+.. _url-parsing-security:
+
+URL parsing security
+--------------------
+
+The :func:`urlsplit` and :func:`urlparse` APIs do not perform **validation** of
+inputs.  They may not raise errors on inputs that other applications consider
+invalid.  They may also succeed on some inputs that might not be considered
+URLs elsewhere.  Their purpose is for practical functionality rather than
+purity.
+
+Instead of raising an exception on unusual input, they may instead return some
+component parts as empty strings. Or components may contain more than perhaps
+they should.
+
+We recommend that users of these APIs where the values may be used anywhere
+with security implications code defensively. Do some verification within your
+code before trusting a returned component part.  Does that ``scheme`` make
+sense?  Is that a sensible ``path``?  Is there anything strange about that
+``hostname``?  etc.
+
+What constitutes a URL is not universally well defined.  Different applications
+have different needs and desired constraints.  For instance the living `WHATWG
+spec`_ describes what user facing web clients such as a web browser require.
+While :rfc:`3986` is more general.  These functions incorporate some aspects of
+both, but cannot be claimed compliant with either.  The APIs and existing user
+code with expectations on specific behaviors predate both standards leading us
+to be very cautious about making API behavior changes.
 
 .. _parsing-ascii-encoded-bytes:
 
@@ -459,17 +624,17 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: quote(string, safe='/', encoding=None, errors=None)
 
-   Replace special characters in *string* using the ``%xx`` escape. Letters,
+   Replace special characters in *string* using the :samp:`%{xx}` escape. Letters,
    digits, and the characters ``'_.-~'`` are never quoted. By default, this
-   function is intended for quoting the path section of URL. The optional *safe*
-   parameter specifies additional ASCII characters that should not be quoted
-   --- its default value is ``'/'``.
+   function is intended for quoting the path section of a URL. The optional
+   *safe* parameter specifies additional ASCII characters that should not be
+   quoted --- its default value is ``'/'``.
 
-   *string* may be either a :class:`str` or a :class:`bytes`.
+   *string* may be either a :class:`str` or a :class:`bytes` object.
 
    .. versionchanged:: 3.7
-      Moved from RFC 2396 to RFC 3986 for quoting URL strings. "~" is now
-      included in the set of reserved characters.
+      Moved from :rfc:`2396` to :rfc:`3986` for quoting URL strings. "~" is now
+      included in the set of unreserved characters.
 
    The optional *encoding* and *errors* parameters specify how to deal with
    non-ASCII characters, as accepted by the :meth:`str.encode` method.
@@ -487,7 +652,7 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: quote_plus(string, safe='', encoding=None, errors=None)
 
-   Like :func:`quote`, but also replace spaces by plus signs, as required for
+   Like :func:`quote`, but also replace spaces with plus signs, as required for
    quoting HTML form values when building up a query string to go into a URL.
    Plus signs in the original string are escaped unless they are included in
    *safe*.  It also does not have *safe* default to ``'/'``.
@@ -506,12 +671,12 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: unquote(string, encoding='utf-8', errors='replace')
 
-   Replace ``%xx`` escapes by their single-character equivalent.
+   Replace :samp:`%{xx}` escapes with their single-character equivalent.
    The optional *encoding* and *errors* parameters specify how to decode
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
 
-   *string* must be a :class:`str`.
+   *string* may be either a :class:`str` or a :class:`bytes` object.
 
    *encoding* defaults to ``'utf-8'``.
    *errors* defaults to ``'replace'``, meaning invalid sequences are replaced
@@ -519,11 +684,16 @@ task isn't already covered by the URL parsing functions above.
 
    Example: ``unquote('/El%20Ni%C3%B1o/')`` yields ``'/El Niño/'``.
 
+   .. versionchanged:: 3.9
+      *string* parameter supports bytes and str objects (previously only str).
+
+
+
 
 .. function:: unquote_plus(string, encoding='utf-8', errors='replace')
 
-   Like :func:`unquote`, but also replace plus signs by spaces, as required for
-   unquoting HTML form values.
+   Like :func:`unquote`, but also replace plus signs with spaces, as required
+   for unquoting HTML form values.
 
    *string* must be a :class:`str`.
 
@@ -532,10 +702,10 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: unquote_to_bytes(string)
 
-   Replace ``%xx`` escapes by their single-octet equivalent, and return a
+   Replace :samp:`%{xx}` escapes with their single-octet equivalent, and return a
    :class:`bytes` object.
 
-   *string* may be either a :class:`str` or a :class:`bytes`.
+   *string* may be either a :class:`str` or a :class:`bytes` object.
 
    If it is a :class:`str`, unescaped non-ASCII characters in *string*
    are encoded into UTF-8 bytes.
@@ -566,7 +736,7 @@ task isn't already covered by the URL parsing functions above.
    When a sequence of two-element tuples is used as the *query*
    argument, the first element of each tuple is a key and the second is a
    value. The value element in itself can be a sequence and in that case, if
-   the optional parameter *doseq* is evaluates to ``True``, individual
+   the optional parameter *doseq* evaluates to ``True``, individual
    ``key=value`` pairs separated by ``'&'`` are generated for each element of
    the value sequence for the key.  The order of parameters in the encoded
    string will match the order of parameter tuples in the sequence.
@@ -578,17 +748,26 @@ task isn't already covered by the URL parsing functions above.
    To reverse this encoding process, :func:`parse_qs` and :func:`parse_qsl` are
    provided in this module to parse query strings into Python data structures.
 
-   Refer to :ref:`urllib examples <urllib-examples>` to find out how urlencode
-   method can be used for generating query string for a URL or data for POST.
+   Refer to :ref:`urllib examples <urllib-examples>` to find out how the
+   :func:`urllib.parse.urlencode` method can be used for generating the query
+   string of a URL or data for a POST request.
 
    .. versionchanged:: 3.2
-      Query parameter supports bytes and string objects.
+      *query* supports bytes and string objects.
 
-   .. versionadded:: 3.5
-      *quote_via* parameter.
+   .. versionchanged:: 3.5
+      Added the *quote_via* parameter.
+
+   .. deprecated:: 3.14
+      Accepting objects with false values (like ``0`` and ``[]``) except empty
+      strings and byte-like objects and ``None`` is now deprecated.
 
 
 .. seealso::
+
+   `WHATWG`_ -  URL Living standard
+      Working Group for the URL Standard that defines URLs, domains, IP addresses, the
+      application/x-www-form-urlencoded format, and their API.
 
    :rfc:`3986` - Uniform Resource Identifiers
       This is the current standard (STD66). Any changes to urllib.parse module
@@ -613,3 +792,5 @@ task isn't already covered by the URL parsing functions above.
 
    :rfc:`1738` - Uniform Resource Locators (URL)
       This specifies the formal syntax and semantics of absolute URLs.
+
+.. _WHATWG: https://url.spec.whatwg.org/

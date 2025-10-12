@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 import builtins
 import rlcompleter
+from test.support import MISSING_C_DOCSTRINGS
 
 class CompleteMe:
     """ Trivial class used in testing rlcompleter.Completer. """
@@ -40,12 +41,12 @@ class TestRlcompleter(unittest.TestCase):
 
         # test with a customized namespace
         self.assertEqual(self.completer.global_matches('CompleteM'),
-                         ['CompleteMe('])
+                ['CompleteMe(' if MISSING_C_DOCSTRINGS else 'CompleteMe()'])
         self.assertEqual(self.completer.global_matches('eg'),
                          ['egg('])
         # XXX: see issue5256
         self.assertEqual(self.completer.global_matches('CompleteM'),
-                         ['CompleteMe('])
+                ['CompleteMe(' if MISSING_C_DOCSTRINGS else 'CompleteMe()'])
 
     def test_attr_matches(self):
         # test with builtins namespace
@@ -53,8 +54,26 @@ class TestRlcompleter(unittest.TestCase):
                          ['str.{}('.format(x) for x in dir(str)
                           if x.startswith('s')])
         self.assertEqual(self.stdcompleter.attr_matches('tuple.foospamegg'), [])
-        expected = sorted({'None.%s%s' % (x, '(' if x != '__doc__' else '')
-                           for x in dir(None)})
+
+        def create_expected_for_none():
+            if not MISSING_C_DOCSTRINGS:
+                parentheses = ('__init_subclass__', '__class__')
+            else:
+                # When `--without-doc-strings` is used, `__class__`
+                # won't have a known signature.
+                parentheses = ('__init_subclass__',)
+
+            items = set()
+            for x in dir(None):
+                if x in parentheses:
+                    items.add(f'None.{x}()')
+                elif x == '__doc__':
+                    items.add(f'None.{x}')
+                else:
+                    items.add(f'None.{x}(')
+            return sorted(items)
+
+        expected = create_expected_for_none()
         self.assertEqual(self.stdcompleter.attr_matches('None.'), expected)
         self.assertEqual(self.stdcompleter.attr_matches('None._'), expected)
         self.assertEqual(self.stdcompleter.attr_matches('None.__'), expected)
@@ -64,12 +83,12 @@ class TestRlcompleter(unittest.TestCase):
                          ['CompleteMe.spam'])
         self.assertEqual(self.completer.attr_matches('Completeme.egg'), [])
         self.assertEqual(self.completer.attr_matches('CompleteMe.'),
-                         ['CompleteMe.mro(', 'CompleteMe.spam'])
+                         ['CompleteMe.mro()', 'CompleteMe.spam'])
         self.assertEqual(self.completer.attr_matches('CompleteMe._'),
                          ['CompleteMe._ham'])
         matches = self.completer.attr_matches('CompleteMe.__')
         for x in matches:
-            self.assertTrue(x.startswith('CompleteMe.__'), x)
+            self.assertStartsWith(x, 'CompleteMe.__')
         self.assertIn('CompleteMe.__name__', matches)
         self.assertIn('CompleteMe.__new__(', matches)
 
@@ -81,17 +100,41 @@ class TestRlcompleter(unittest.TestCase):
                               if x.startswith('s')])
 
     def test_excessive_getattr(self):
-        # Ensure getattr() is invoked no more than once per attribute
+        """Ensure getattr() is invoked no more than once per attribute"""
+
+        # note the special case for @property methods below; that is why
+        # we use __dir__ and __getattr__ in class Foo to create a "magic"
+        # class attribute 'bar'. This forces `getattr` to call __getattr__
+        # (which is doesn't necessarily do).
         class Foo:
             calls = 0
-            @property
-            def bar(self):
-                self.calls += 1
-                return None
+            bar = ''
+            def __getattribute__(self, name):
+                if name == 'bar':
+                    self.calls += 1
+                    return None
+                return super().__getattribute__(name)
+
         f = Foo()
         completer = rlcompleter.Completer(dict(f=f))
         self.assertEqual(completer.complete('f.b', 0), 'f.bar')
         self.assertEqual(f.calls, 1)
+
+    def test_property_method_not_called(self):
+        class Foo:
+            _bar = 0
+            property_called = False
+
+            @property
+            def bar(self):
+                self.property_called = True
+                return self._bar
+
+        f = Foo()
+        completer = rlcompleter.Completer(dict(f=f))
+        self.assertEqual(completer.complete('f.b', 0), 'f.bar')
+        self.assertFalse(f.property_called)
+
 
     def test_uncreated_attr(self):
         # Attributes like properties and slots should be completed even when
@@ -114,6 +157,9 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('el', 0), 'elif ')
         self.assertEqual(completer.complete('el', 1), 'else')
         self.assertEqual(completer.complete('tr', 0), 'try:')
+        self.assertEqual(completer.complete('_', 0), '_')
+        self.assertEqual(completer.complete('match', 0), 'match ')
+        self.assertEqual(completer.complete('case', 0), 'case ')
 
     def test_duplicate_globals(self):
         namespace = {
@@ -134,7 +180,7 @@ class TestRlcompleter(unittest.TestCase):
         # No opening bracket "(" because we overrode the built-in class
         self.assertEqual(completer.complete('memoryview', 0), 'memoryview')
         self.assertIsNone(completer.complete('memoryview', 1))
-        self.assertEqual(completer.complete('Ellipsis', 0), 'Ellipsis(')
+        self.assertEqual(completer.complete('Ellipsis', 0), 'Ellipsis()')
         self.assertIsNone(completer.complete('Ellipsis', 1))
 
 if __name__ == '__main__':

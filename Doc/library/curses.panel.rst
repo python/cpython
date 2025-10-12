@@ -1,5 +1,5 @@
-:mod:`curses.panel` --- A panel stack extension for curses
-==========================================================
+:mod:`!curses.panel` --- A panel stack extension for curses
+===========================================================
 
 .. module:: curses.panel
    :synopsis: A panel stack extension that adds depth to  curses windows.
@@ -74,7 +74,7 @@ Panel objects have the following methods:
 
 .. method:: Panel.hidden()
 
-   Returns true if the panel is hidden (not visible), false otherwise.
+   Returns ``True`` if the panel is hidden (not visible), ``False`` otherwise.
 
 
 .. method:: Panel.hide()

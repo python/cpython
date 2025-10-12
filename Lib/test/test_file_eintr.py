@@ -15,11 +15,14 @@ import subprocess
 import sys
 import time
 import unittest
+from test import support
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 # Test import all of the things we're about to try testing up front.
-import _io
-import _pyio
-
+import _io    # noqa: F401
+import _pyio  # noqa: F401
 
 @unittest.skipUnless(os.name == 'posix', 'tests requires a posix system.')
 class TestFileIOSignalInterrupt:
@@ -213,7 +216,7 @@ class TestTextIOSignalInterrupt(TestFileIOSignalInterrupt):
     def _generate_infile_setup_code(self):
         """Returns the infile = ... line of code to make a TextIOWrapper."""
         return ('import %s as io ;'
-                'infile = io.open(sys.stdin.fileno(), "rt", newline=None) ;'
+                'infile = io.open(sys.stdin.fileno(), encoding="utf-8", newline=None) ;'
                 'assert isinstance(infile, io.TextIOWrapper)' %
                 self.modname)
 

@@ -14,7 +14,9 @@ import unittest
 
 from io import StringIO
 from test import support
-
+from test.support import cpython_only, os_helper
+from test.support.i18n_helper import TestTranslationsBase, update_translation_snapshots
+from test.support.import_helper import ensure_lazy_imports
 
 import optparse
 from optparse import make_option, Option, \
@@ -23,8 +25,6 @@ from optparse import make_option, Option, \
      BadOptionError, OptionValueError, Values
 from optparse import _match_abbrev
 from optparse import _parse_num
-
-retype = type(re.compile(''))
 
 class InterceptedError(Exception):
     def __init__(self,
@@ -107,7 +107,7 @@ Args were %(args)s.""" % locals ())
             func(*args, **kwargs)
         except expected_exception as err:
             actual_message = str(err)
-            if isinstance(expected_message, retype):
+            if isinstance(expected_message, re.Pattern):
                 self.assertTrue(expected_message.search(actual_message),
                              """\
 expected exception message pattern:
@@ -615,9 +615,9 @@ Options:
         self.parser.add_option(
             "-p", "--prob",
             help="blow up with probability PROB [default: %default]")
-        self.parser.set_defaults(prob=0.43)
+        self.parser.set_defaults(prob=0.25)
         expected_help = self.help_prefix + \
-            "  -p PROB, --prob=PROB  blow up with probability PROB [default: 0.43]\n"
+            "  -p PROB, --prob=PROB  blow up with probability PROB [default: 0.25]\n"
         self.assertHelp(self.parser, expected_help)
 
     def test_alt_expand(self):
@@ -1023,10 +1023,10 @@ class TestExtendAddTypes(BaseTest):
         self.parser.add_option("-f", "--file", type="file", dest="file")
 
     def tearDown(self):
-        if os.path.isdir(support.TESTFN):
-            os.rmdir(support.TESTFN)
-        elif os.path.isfile(support.TESTFN):
-            os.unlink(support.TESTFN)
+        if os.path.isdir(os_helper.TESTFN):
+            os.rmdir(os_helper.TESTFN)
+        elif os.path.isfile(os_helper.TESTFN):
+            os.unlink(os_helper.TESTFN)
 
     class MyOption (Option):
         def check_file(option, opt, value):
@@ -1041,21 +1041,21 @@ class TestExtendAddTypes(BaseTest):
         TYPE_CHECKER["file"] = check_file
 
     def test_filetype_ok(self):
-        support.create_empty_file(support.TESTFN)
-        self.assertParseOK(["--file", support.TESTFN, "-afoo"],
-                           {'file': support.TESTFN, 'a': 'foo'},
+        os_helper.create_empty_file(os_helper.TESTFN)
+        self.assertParseOK(["--file", os_helper.TESTFN, "-afoo"],
+                           {'file': os_helper.TESTFN, 'a': 'foo'},
                            [])
 
     def test_filetype_noexist(self):
-        self.assertParseFail(["--file", support.TESTFN, "-afoo"],
+        self.assertParseFail(["--file", os_helper.TESTFN, "-afoo"],
                              "%s: file does not exist" %
-                             support.TESTFN)
+                             os_helper.TESTFN)
 
     def test_filetype_notfile(self):
-        os.mkdir(support.TESTFN)
-        self.assertParseFail(["--file", support.TESTFN, "-afoo"],
+        os.mkdir(os_helper.TESTFN)
+        self.assertParseFail(["--file", os_helper.TESTFN, "-afoo"],
                              "%s: not a regular file" %
-                             support.TESTFN)
+                             os_helper.TESTFN)
 
 
 class TestExtendAddActions(BaseTest):
@@ -1499,7 +1499,7 @@ class TestHelp(BaseTest):
         # we must restore its original value -- otherwise, this test
         # screws things up for other tests when it's part of the Python
         # test suite.
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env['COLUMNS'] = str(columns)
             return InterceptingOptionParser(option_list=options)
 
@@ -1524,7 +1524,7 @@ class TestHelp(BaseTest):
         self.assertHelpEquals(_expected_help_long_opts_first)
 
     def test_help_title_formatter(self):
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env["COLUMNS"] = "80"
             self.parser.formatter = TitledHelpFormatter()
             self.assertHelpEquals(_expected_help_title_formatter)
@@ -1653,12 +1653,32 @@ class TestParseNumber(BaseTest):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'check_builtin', 'AmbiguousOptionError', 'NO_DEFAULT'}
-        support.check__all__(self, optparse, blacklist=blacklist)
+        not_exported = {'check_builtin', 'AmbiguousOptionError', 'NO_DEFAULT'}
+        support.check__all__(self, optparse, not_exported=not_exported)
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("optparse", {"textwrap"})
 
 
-def test_main():
-    support.run_unittest(__name__)
+class TestTranslations(TestTranslationsBase):
+    def test_translations(self):
+        self.assertMsgidsEqual(optparse)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(optparse, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
 
 if __name__ == '__main__':
-    test_main()
+    # To regenerate translation snapshots
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        update_translation_snapshots(optparse)
+        sys.exit(0)
+    unittest.main()

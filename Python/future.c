@@ -1,24 +1,18 @@
 #include "Python.h"
-#include "Python-ast.h"
-#include "node.h"
-#include "token.h"
-#include "graminit.h"
-#include "code.h"
-#include "symtable.h"
+#include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_symtable.h"      // _PyFutureFeatures
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
-#define ERR_LATE_FUTURE \
-"from __future__ imports must occur at the beginning of the file"
 
 static int
-future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
+future_check_features(_PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
 {
-    int i;
-    asdl_seq *names;
+    Py_ssize_t i;
 
     assert(s->kind == ImportFrom_kind);
 
-    names = s->v.ImportFrom.names;
+    asdl_alias_seq *names = s->v.ImportFrom.names;
     for (i = 0; i < asdl_seq_LEN(names); i++) {
         alias_ty name = (alias_ty)asdl_seq_GET(names, i);
         const char *feature = PyUnicode_AsUTF8(name->name);
@@ -41,16 +35,26 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
         } else if (strcmp(feature, FUTURE_BARRY_AS_BDFL) == 0) {
             ff->ff_features |= CO_FUTURE_BARRY_AS_BDFL;
         } else if (strcmp(feature, FUTURE_GENERATOR_STOP) == 0) {
-            ff->ff_features |= CO_FUTURE_GENERATOR_STOP;
+            continue;
+        } else if (strcmp(feature, FUTURE_ANNOTATIONS) == 0) {
+            ff->ff_features |= CO_FUTURE_ANNOTATIONS;
         } else if (strcmp(feature, "braces") == 0) {
             PyErr_SetString(PyExc_SyntaxError,
                             "not a chance");
-            PyErr_SyntaxLocationObject(filename, s->lineno, s->col_offset);
+            PyErr_RangedSyntaxLocationObject(filename,
+                                             name->lineno,
+                                             name->col_offset + 1,
+                                             name->end_lineno,
+                                             name->end_col_offset + 1);
             return 0;
         } else {
             PyErr_Format(PyExc_SyntaxError,
                          UNDEFINED_FUTURE_FEATURE, feature);
-            PyErr_SyntaxLocationObject(filename, s->lineno, s->col_offset);
+            PyErr_RangedSyntaxLocationObject(filename,
+                                             name->lineno,
+                                             name->col_offset + 1,
+                                             name->end_lineno,
+                                             name->end_col_offset + 1);
             return 0;
         }
     }
@@ -58,94 +62,58 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
 }
 
 static int
-future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
+future_parse(_PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 {
-    int i, done = 0, prev_line = 0;
-
-    if (!(mod->kind == Module_kind || mod->kind == Interactive_kind))
+    if (!(mod->kind == Module_kind || mod->kind == Interactive_kind)) {
         return 1;
+    }
 
-    if (asdl_seq_LEN(mod->v.Module.body) == 0)
+    Py_ssize_t n = asdl_seq_LEN(mod->v.Module.body);
+    if (n == 0) {
         return 1;
+    }
 
-    /* A subsequent pass will detect future imports that don't
-       appear at the beginning of the file.  There's one case,
-       however, that is easier to handle here: A series of imports
-       joined by semi-colons, where the first import is a future
-       statement but some subsequent import has the future form
-       but is preceded by a regular import.
-    */
+    Py_ssize_t i = 0;
+    if (_PyAST_GetDocString(mod->v.Module.body) != NULL) {
+        i++;
+    }
 
-    for (i = 0; i < asdl_seq_LEN(mod->v.Module.body); i++) {
+    for (; i < n; i++) {
         stmt_ty s = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
 
-        if (done && s->lineno > prev_line)
-            return 1;
-        prev_line = s->lineno;
+        /* The only things that can precede a future statement
+         *  are another future statement and a doc string.
+         */
 
-        /* The tests below will return from this function unless it is
-           still possible to find a future statement.  The only things
-           that can precede a future statement are another future
-           statement and a doc string.
-        */
-
-        if (s->kind == ImportFrom_kind) {
+        if (s->kind == ImportFrom_kind && s->v.ImportFrom.level == 0) {
             identifier modname = s->v.ImportFrom.module;
             if (modname &&
                 _PyUnicode_EqualToASCIIString(modname, "__future__")) {
-                if (done) {
-                    PyErr_SetString(PyExc_SyntaxError,
-                                    ERR_LATE_FUTURE);
-                    PyErr_SyntaxLocationObject(filename, s->lineno, s->col_offset);
+                if (!future_check_features(ff, s, filename)) {
                     return 0;
                 }
-                if (!future_check_features(ff, s, filename))
-                    return 0;
-                ff->ff_lineno = s->lineno;
+                ff->ff_location = SRC_LOCATION_FROM_AST(s);
             }
             else {
-                done = 1;
+                return 1;
             }
         }
         else {
-            done = 1;
+            return 1;
         }
     }
     return 1;
 }
 
 
-PyFutureFeatures *
-PyFuture_FromASTObject(mod_ty mod, PyObject *filename)
+int
+_PyFuture_FromAST(mod_ty mod, PyObject *filename, _PyFutureFeatures *ff)
 {
-    PyFutureFeatures *ff;
-
-    ff = (PyFutureFeatures *)PyObject_Malloc(sizeof(PyFutureFeatures));
-    if (ff == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     ff->ff_features = 0;
-    ff->ff_lineno = -1;
+    ff->ff_location = (_Py_SourceLocation){-1, -1, -1, -1};
 
     if (!future_parse(ff, mod, filename)) {
-        PyObject_Free(ff);
-        return NULL;
+        return 0;
     }
-    return ff;
-}
-
-
-PyFutureFeatures *
-PyFuture_FromAST(mod_ty mod, const char *filename_str)
-{
-    PyFutureFeatures *ff;
-    PyObject *filename;
-
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL)
-        return NULL;
-    ff = PyFuture_FromASTObject(mod, filename);
-    Py_DECREF(filename);
-    return ff;
+    return 1;
 }

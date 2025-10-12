@@ -1,5 +1,5 @@
-:mod:`sched` --- Event scheduler
-================================
+:mod:`!sched` --- Event scheduler
+=================================
 
 .. module:: sched
    :synopsis: General purpose event scheduler.
@@ -20,8 +20,7 @@ scheduler:
    The :class:`scheduler` class defines a generic interface to scheduling events.
    It needs two functions to actually deal with the "outside world" --- *timefunc*
    should be callable without arguments, and return  a number (the "time", in any
-   units whatsoever). If time.monotonic is not available, the *timefunc* default
-   is time.time instead. The *delayfunc* function should be callable with one
+   units whatsoever).  The *delayfunc* function should be callable with one
    argument, compatible with the output of *timefunc*, and should delay that many
    time units. *delayfunc* will also be called with the argument ``0`` after each
    event is run to allow other threads an opportunity to run in multi-threaded
@@ -45,16 +44,22 @@ Example::
    ...     print(time.time())
    ...     s.enter(10, 1, print_time)
    ...     s.enter(5, 2, print_time, argument=('positional',))
+   ...     # despite having higher priority, 'keyword' runs after 'positional' as enter() is relative
    ...     s.enter(5, 1, print_time, kwargs={'a': 'keyword'})
+   ...     s.enterabs(1_650_000_000, 10, print_time, argument=("first enterabs",))
+   ...     s.enterabs(1_650_000_000, 5, print_time, argument=("second enterabs",))
    ...     s.run()
    ...     print(time.time())
    ...
    >>> print_some_times()
-   930343690.257
-   From print_time 930343695.274 positional
-   From print_time 930343695.275 keyword
-   From print_time 930343700.273 default
-   930343700.276
+   1652342830.3640375
+   From print_time 1652342830.3642538 second enterabs
+   From print_time 1652342830.3643398 first enterabs
+   From print_time 1652342835.3694863 positional
+   From print_time 1652342835.3696074 keyword
+   From print_time 1652342840.369612 default
+   1652342840.3697174
+
 
 .. _scheduler-objects:
 
@@ -69,7 +74,7 @@ Scheduler Objects
    Schedule a new event. The *time* argument should be a numeric type compatible
    with the return value of the *timefunc* function passed  to the constructor.
    Events scheduled for the same *time* will be executed in the order of their
-   *priority*.
+   *priority*. A lower number represents a higher priority.
 
    Executing the event means executing ``action(*argument, **kwargs)``.
    *argument* is a sequence holding the positional arguments for *action*.
@@ -81,7 +86,7 @@ Scheduler Objects
    .. versionchanged:: 3.3
       *argument* parameter is optional.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       *kwargs* parameter was added.
 
 
@@ -94,7 +99,7 @@ Scheduler Objects
    .. versionchanged:: 3.3
       *argument* parameter is optional.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       *kwargs* parameter was added.
 
 .. method:: scheduler.cancel(event)
@@ -105,12 +110,12 @@ Scheduler Objects
 
 .. method:: scheduler.empty()
 
-   Return true if the event queue is empty.
+   Return ``True`` if the event queue is empty.
 
 
 .. method:: scheduler.run(blocking=True)
 
-   Run all scheduled events. This method will wait  (using the :func:`delayfunc`
+   Run all scheduled events. This method will wait  (using the *delayfunc*
    function passed to the constructor) for the next event, then execute it and so
    on until there are no more scheduled events.
 
@@ -128,7 +133,7 @@ Scheduler Objects
    the calling code is responsible for canceling  events which are no longer
    pertinent.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       *blocking* parameter was added.
 
 .. attribute:: scheduler.queue

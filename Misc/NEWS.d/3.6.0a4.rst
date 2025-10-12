@@ -1,0 +1,685 @@
+.. bpo: 27704
+.. date: 9455
+.. nonce: RUxzHf
+.. release date: 2016-08-15
+.. section: Core and Builtins
+
+Optimized creating bytes and bytearray from byte-like objects and iterables.
+Speed up to 3 times for short objects.  Original patch by Naoki Inada.
+
+..
+
+.. bpo: 26823
+.. date: 9454
+.. nonce: UWORiU
+.. section: Core and Builtins
+
+Large sections of repeated lines in tracebacks are now abbreviated as
+"[Previous line repeated {count} more times]" by the builtin traceback
+rendering. Patch by Emanuel Barry.
+
+..
+
+.. bpo: 27574
+.. date: 9453
+.. nonce: q73Tss
+.. section: Core and Builtins
+
+Decreased an overhead of parsing keyword arguments in functions implemented
+with using Argument Clinic.
+
+..
+
+.. bpo: 22557
+.. date: 9452
+.. nonce: Hta2Rz
+.. section: Core and Builtins
+
+Now importing already imported modules is up to 2.5 times faster.
+
+..
+
+.. bpo: 17596
+.. date: 9451
+.. nonce: XgbA9V
+.. section: Core and Builtins
+
+Include <wincrypt.h> to help with Min GW building.
+
+..
+
+.. bpo: 17599
+.. date: 9450
+.. nonce: noy7o1
+.. section: Core and Builtins
+
+On Windows, rename the privately defined REPARSE_DATA_BUFFER structure to
+avoid conflicting with the definition from Min GW.
+
+..
+
+.. bpo: 27507
+.. date: 9449
+.. nonce: 3pX0Be
+.. section: Core and Builtins
+
+Add integer overflow check in bytearray.extend().  Patch by Xiang Zhang.
+
+..
+
+.. bpo: 27581
+.. date: 9448
+.. nonce: KezjNt
+.. section: Core and Builtins
+
+Don't rely on wrapping for overflow check in PySequence_Tuple().  Patch by
+Xiang Zhang.
+
+..
+
+.. bpo: 1621
+.. date: 9447
+.. nonce: _FZWTr
+.. section: Core and Builtins
+
+Avoid signed integer overflow in list and tuple operations. Patch by Xiang
+Zhang.
+
+..
+
+.. bpo: 27419
+.. date: 9446
+.. nonce: YaGodL
+.. section: Core and Builtins
+
+Standard __import__() no longer look up "__import__" in globals or builtins
+for importing submodules or "from import".  Fixed a crash if raise a warning
+about unabling to resolve package from __spec__ or __package__.
+
+..
+
+.. bpo: 27083
+.. date: 9445
+.. nonce: F4ZT1C
+.. section: Core and Builtins
+
+Respect the PYTHONCASEOK environment variable under Windows.
+
+..
+
+.. bpo: 27514
+.. date: 9444
+.. nonce: NLbwPG
+.. section: Core and Builtins
+
+Make having too many statically nested blocks a SyntaxError instead of
+SystemError.
+
+..
+
+.. bpo: 27366
+.. date: 9443
+.. nonce: VrInsj
+.. section: Core and Builtins
+
+Implemented :pep:`487` (Simpler customization of class creation). Upon
+subclassing, the __init_subclass__ classmethod is called on the base class.
+Descriptors are initialized with __set_name__ after class creation.
+
+..
+
+.. bpo: 26027
+.. date: 9442
+.. nonce: nfVMKM
+.. section: Library
+
+Add :pep:`519`/__fspath__() support to the os and os.path modules. Includes
+code from Jelle Zijlstra. (See also: bpo-27524)
+
+..
+
+.. bpo: 27598
+.. date: 9441
+.. nonce: y7PtEV
+.. section: Library
+
+Add Collections to collections.abc. Patch by Ivan Levkivskyi, docs by Neil
+Girdhar.
+
+..
+
+.. bpo: 25958
+.. date: 9440
+.. nonce: X-V4U1
+.. section: Library
+
+Support "anti-registration" of special methods from various ABCs, like
+__hash__, __iter__ or __len__.  All these (and several more) can be set to
+None in an implementation class and the behavior will be as if the method is
+not defined at all. (Previously, this mechanism existed only for __hash__,
+to make mutable classes unhashable.)  Code contributed by Andrew Barnert and
+Ivan Levkivskyi.
+
+..
+
+.. bpo: 16764
+.. date: 9439
+.. nonce: cPbNjL
+.. section: Library
+
+Support keyword arguments to zlib.decompress().  Patch by Xiang Zhang.
+
+..
+
+.. bpo: 27736
+.. date: 9438
+.. nonce: 8kMhpQ
+.. section: Library
+
+Prevent segfault after interpreter re-initialization due to ref count
+problem introduced in code for issue #27038 in 3.6.0a3. Patch by Xiang
+Zhang.
+
+..
+
+.. bpo: 25628
+.. date: 9437
+.. nonce: UcQnHF
+.. section: Library
+
+The *verbose* and *rename* parameters for collections.namedtuple are now
+keyword-only.
+
+..
+
+.. bpo: 12345
+.. date: 9436
+.. nonce: nbAEM8
+.. section: Library
+
+Add mathematical constant tau to math and cmath. See also :pep:`628`.
+
+..
+
+.. bpo: 26823
+.. date: 9435
+.. nonce: HcO8tR
+.. section: Library
+
+traceback.StackSummary.format now abbreviates large sections of repeated
+lines as "[Previous line repeated {count} more times]" (this change then
+further affects other traceback display operations in the module). Patch by
+Emanuel Barry.
+
+..
+
+.. bpo: 27664
+.. date: 9434
+.. nonce: 6DJPxw
+.. section: Library
+
+Add to concurrent.futures.thread.ThreadPoolExecutor() the ability to specify
+a thread name prefix.
+
+..
+
+.. bpo: 27181
+.. date: 9433
+.. nonce: 8aw9TZ
+.. section: Library
+
+Add geometric_mean and harmonic_mean to statistics module.
+
+..
+
+.. bpo: 27573
+.. date: 9432
+.. nonce: B7XhTs
+.. section: Library
+
+code.interact now prints an message when exiting.
+
+..
+
+.. bpo: 6422
+.. date: 9431
+.. nonce: iBSc45
+.. section: Library
+
+Add autorange method to timeit.Timer objects.
+
+..
+
+.. bpo: 27773
+.. date: 9430
+.. nonce: hMSSeX
+.. section: Library
+
+Correct some memory management errors server_hostname in _ssl.wrap_socket().
+
+..
+
+.. bpo: 26750
+.. date: 9429
+.. nonce: OQn3fr
+.. section: Library
+
+unittest.mock.create_autospec() now works properly for subclasses of
+property() and other data descriptors.  Removes the never publicly used,
+never documented unittest.mock.DescriptorTypes tuple.
+
+..
+
+.. bpo: 26754
+.. date: 9428
+.. nonce: XZqomf
+.. section: Library
+
+Undocumented support of general bytes-like objects as path in compile() and
+similar functions is now deprecated.
+
+..
+
+.. bpo: 26800
+.. date: 9427
+.. nonce: QDcK8u
+.. section: Library
+
+Undocumented support of general bytes-like objects as paths in os functions
+is now deprecated.
+
+..
+
+.. bpo: 26981
+.. date: 9426
+.. nonce: yhNTCf
+.. section: Library
+
+Add _order_ compatibility shim to enum.Enum for Python 2/3 code bases.
+
+..
+
+.. bpo: 27661
+.. date: 9425
+.. nonce: 3JZckO
+.. section: Library
+
+Added tzinfo keyword argument to datetime.combine.
+
+..
+
+.. bpo: 0
+.. date: 9424
+.. nonce: Ny9oPv
+.. section: Library
+
+In the curses module, raise an error if window.getstr() or window.instr() is
+passed a negative value.
+
+..
+
+.. bpo: 27783
+.. date: 9423
+.. nonce: cR1jXH
+.. section: Library
+
+Fix possible usage of uninitialized memory in operator.methodcaller.
+
+..
+
+.. bpo: 27774
+.. date: 9422
+.. nonce: FDcik1
+.. section: Library
+
+Fix possible Py_DECREF on unowned object in _sre.
+
+..
+
+.. bpo: 27760
+.. date: 9421
+.. nonce: gxMjp4
+.. section: Library
+
+Fix possible integer overflow in binascii.b2a_qp.
+
+..
+
+.. bpo: 27758
+.. date: 9420
+.. nonce: 0NRV03
+.. section: Library
+
+Fix possible integer overflow in the _csv module for large record lengths.
+
+..
+
+.. bpo: 27568
+.. date: 9419
+.. nonce: OnuO9s
+.. section: Library
+
+Prevent HTTPoxy attack (:cve:`2016-1000110`). Ignore the HTTP_PROXY variable
+when REQUEST_METHOD environment is set, which indicates that the script is
+in CGI mode.
+
+..
+
+.. bpo: 7063
+.. date: 9418
+.. nonce: nXsVKB
+.. section: Library
+
+Remove dead code from the "array" module's slice handling. Patch by Chuck.
+
+..
+
+.. bpo: 27656
+.. date: 9417
+.. nonce: joTscM
+.. section: Library
+
+Do not assume sched.h defines any SCHED_* constants.
+
+..
+
+.. bpo: 27130
+.. date: 9416
+.. nonce: SUxwXZ
+.. section: Library
+
+In the "zlib" module, fix handling of large buffers (typically 4 GiB) when
+compressing and decompressing.  Previously, inputs were limited to 4 GiB,
+and compression and decompression operations did not properly handle results
+of 4 GiB.
+
+..
+
+.. bpo: 24773
+.. date: 9415
+.. nonce: IDW05R
+.. section: Library
+
+Implemented :pep:`495` (Local Time Disambiguation).
+
+..
+
+.. bpo: 0
+.. date: 9414
+.. nonce: lOkwM8
+.. section: Library
+
+Expose the EPOLLEXCLUSIVE constant (when it is defined) in the select
+module.
+
+..
+
+.. bpo: 27567
+.. date: 9413
+.. nonce: bYOgyw
+.. section: Library
+
+Expose the EPOLLRDHUP and POLLRDHUP constants in the select module.
+
+..
+
+.. bpo: 1621
+.. date: 9412
+.. nonce: 0nclmI
+.. section: Library
+
+Avoid signed int negation overflow in the "audioop" module.
+
+..
+
+.. bpo: 27533
+.. date: 9411
+.. nonce: iDmKzV
+.. section: Library
+
+Release GIL in nt._isdir
+
+..
+
+.. bpo: 17711
+.. date: 9410
+.. nonce: 47AILJ
+.. section: Library
+
+Fixed unpickling by the persistent ID with protocol 0. Original patch by
+Alexandre Vassalotti.
+
+..
+
+.. bpo: 27522
+.. date: 9409
+.. nonce: 8vVz_t
+.. section: Library
+
+Avoid an unintentional reference cycle in email.feedparser.
+
+..
+
+.. bpo: 27512
+.. date: 9408
+.. nonce: FaGwup
+.. section: Library
+
+Fix a segfault when os.fspath() called an __fspath__() method that raised an
+exception. Patch by Xiang Zhang.
+
+..
+
+.. bpo: 27714
+.. date: 9407
+.. nonce: bUEDsI
+.. section: IDLE
+
+text_textview and test_autocomplete now pass when re-run in the same
+process.  This occurs when test_idle fails when run with the -w option but
+without -jn.  Fix warning from test_config.
+
+..
+
+.. bpo: 27621
+.. date: 9406
+.. nonce: BcpOPU
+.. section: IDLE
+
+Put query response validation error messages in the query box itself instead
+of in a separate messagebox.  Redo tests to match. Add Mac OSX refinements.
+Original patch by Mark Roseman.
+
+..
+
+.. bpo: 27620
+.. date: 9405
+.. nonce: TXRR6x
+.. section: IDLE
+
+Escape key now closes Query box as cancelled.
+
+..
+
+.. bpo: 27609
+.. date: 9404
+.. nonce: MbTuKa
+.. section: IDLE
+
+IDLE: tab after initial whitespace should tab, not autocomplete. This fixes
+problem with writing docstrings at least twice indented.
+
+..
+
+.. bpo: 27609
+.. date: 9403
+.. nonce: OBYgv_
+.. section: IDLE
+
+Explicitly return None when there are also non-None returns. In a few cases,
+reverse a condition and eliminate a return.
+
+..
+
+.. bpo: 25507
+.. date: 9402
+.. nonce: lxf68d
+.. section: IDLE
+
+IDLE no longer runs buggy code because of its tkinter imports. Users must
+include the same imports required to run directly in Python.
+
+..
+
+.. bpo: 27173
+.. date: 9401
+.. nonce: M-fYaV
+.. section: IDLE
+
+Add 'IDLE Modern Unix' to the built-in key sets. Make the default key set
+depend on the platform. Add tests for the changes to the config module.
+
+..
+
+.. bpo: 27452
+.. date: 9400
+.. nonce: RtWnyR
+.. section: IDLE
+
+add line counter and crc to IDLE configHandler test dump.
+
+..
+
+.. bpo: 25805
+.. date: 9399
+.. nonce: 9SVxXQ
+.. section: Tests
+
+Skip a test in test_pkgutil as needed that doesn't work when ``__name__ ==
+__main__``. Patch by SilentGhost.
+
+..
+
+.. bpo: 27472
+.. date: 9398
+.. nonce: NS3L93
+.. section: Tests
+
+Add test.support.unix_shell as the path to the default shell.
+
+..
+
+.. bpo: 27369
+.. date: 9397
+.. nonce: LG7U2D
+.. section: Tests
+
+In test_pyexpat, avoid testing an error message detail that changed in Expat
+2.2.0.
+
+..
+
+.. bpo: 27594
+.. date: 9396
+.. nonce: w3F57B
+.. section: Tests
+
+Prevent assertion error when running test_ast with coverage enabled: ensure
+code object has a valid first line number. Patch suggested by Ivan
+Levkivskyi.
+
+..
+
+.. bpo: 27647
+.. date: 9395
+.. nonce: -1HUR6
+.. section: Windows
+
+Update bundled Tcl/Tk to 8.6.6.
+
+..
+
+.. bpo: 27610
+.. date: 9394
+.. nonce: O0o0mB
+.. section: Windows
+
+Adds :pep:`514` metadata to Windows installer
+
+..
+
+.. bpo: 27469
+.. date: 9393
+.. nonce: 0GwDkX
+.. section: Windows
+
+Adds a shell extension to the launcher so that drag and drop works
+correctly.
+
+..
+
+.. bpo: 27309
+.. date: 9392
+.. nonce: chiOo6
+.. section: Windows
+
+Enables proper Windows styles in python[w].exe manifest.
+
+..
+
+.. bpo: 27713
+.. date: 9391
+.. nonce: _3DgXG
+.. section: Build
+
+Suppress spurious build warnings when updating importlib's bootstrap files.
+Patch by Xiang Zhang
+
+..
+
+.. bpo: 25825
+.. date: 9390
+.. nonce: MLbdVU
+.. section: Build
+
+Correct the references to Modules/python.exp, which is required on AIX.  The
+references were accidentally changed in 3.5.0a1.
+
+..
+
+.. bpo: 27453
+.. date: 9389
+.. nonce: Pb5DBi
+.. section: Build
+
+CPP invocation in configure must use CPPFLAGS. Patch by Chi Hsuan Yen.
+
+..
+
+.. bpo: 27641
+.. date: 9388
+.. nonce: eGzgCk
+.. section: Build
+
+The configure script now inserts comments into the makefile to prevent the
+pgen and _freeze_importlib executables from being cross-compiled.
+
+..
+
+.. bpo: 26662
+.. date: 9387
+.. nonce: XkwRxM
+.. section: Build
+
+Set PYTHON_FOR_GEN in configure as the Python program to be used for file
+generation during the build.
+
+..
+
+.. bpo: 10910
+.. date: 9386
+.. nonce: ZdRayb
+.. section: Build
+
+Avoid C++ compilation errors on FreeBSD and OS X. Also update FreedBSD
+version checks for the original ctype UTF-8 workaround.

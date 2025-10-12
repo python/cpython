@@ -23,12 +23,13 @@ __all__ = ['RawValue', 'RawArray', 'Value', 'Array', 'copy', 'synchronized']
 #
 
 typecode_to_type = {
-    'c': ctypes.c_char,  'u': ctypes.c_wchar,
-    'b': ctypes.c_byte,  'B': ctypes.c_ubyte,
-    'h': ctypes.c_short, 'H': ctypes.c_ushort,
-    'i': ctypes.c_int,   'I': ctypes.c_uint,
-    'l': ctypes.c_long,  'L': ctypes.c_ulong,
-    'f': ctypes.c_float, 'd': ctypes.c_double
+    'c': ctypes.c_char,     'u': ctypes.c_wchar,
+    'b': ctypes.c_byte,     'B': ctypes.c_ubyte,
+    'h': ctypes.c_short,    'H': ctypes.c_ushort,
+    'i': ctypes.c_int,      'I': ctypes.c_uint,
+    'l': ctypes.c_long,     'L': ctypes.c_ulong,
+    'q': ctypes.c_longlong, 'Q': ctypes.c_ulonglong,
+    'f': ctypes.c_float,    'd': ctypes.c_double
     }
 
 #
@@ -36,7 +37,12 @@ typecode_to_type = {
 #
 
 def _new_value(type_):
-    size = ctypes.sizeof(type_)
+    try:
+        size = ctypes.sizeof(type_)
+    except TypeError as e:
+        raise TypeError("bad typecode (must be a ctypes type or one of "
+                        "c, b, B, u, h, H, i, I, l, L, q, Q, f or d)") from e
+
     wrapper = heap.BufferWrapper(size)
     return rebuild_ctype(type_, wrapper, None)
 
@@ -77,7 +83,7 @@ def Value(typecode_or_type, *args, lock=True, ctx=None):
         ctx = ctx or get_context()
         lock = ctx.RLock()
     if not hasattr(lock, 'acquire'):
-        raise AttributeError("'%r' has no method 'acquire'" % lock)
+        raise AttributeError("%r has no method 'acquire'" % lock)
     return synchronized(obj, lock, ctx=ctx)
 
 def Array(typecode_or_type, size_or_initializer, *, lock=True, ctx=None):
@@ -91,7 +97,7 @@ def Array(typecode_or_type, size_or_initializer, *, lock=True, ctx=None):
         ctx = ctx or get_context()
         lock = ctx.RLock()
     if not hasattr(lock, 'acquire'):
-        raise AttributeError("'%r' has no method 'acquire'" % lock)
+        raise AttributeError("%r has no method 'acquire'" % lock)
     return synchronized(obj, lock, ctx=ctx)
 
 def copy(obj):

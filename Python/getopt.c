@@ -18,10 +18,6 @@
  * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA, OR PROFITS, WHETHER
  * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * Nevertheless, I would like to know about bugs in this library or
- * suggestions for improvment.  Send bug reports and feedback to
- * davegottner@delphi.com.
  *---------------------------------------------------------------------------*/
 
 /* Modified to support --help and --version, as well as /? on Windows
@@ -31,17 +27,27 @@
 #include <stdio.h>
 #include <string.h>
 #include <wchar.h>
-#include <pygetopt.h>
+#include "pycore_getopt.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+int _PyOS_opterr = 1;                 /* generate error messages */
+Py_ssize_t _PyOS_optind = 1;          /* index into argv array   */
+const wchar_t *_PyOS_optarg = NULL;   /* optional argument       */
 
-int _PyOS_opterr = 1;          /* generate error messages */
-int _PyOS_optind = 1;          /* index into argv array   */
-wchar_t *_PyOS_optarg = NULL;     /* optional argument       */
+static const wchar_t *opt_ptr = L"";
 
-static wchar_t *opt_ptr = L"";
+/* Python command line short and long options */
+
+#define SHORT_OPTS L"bBc:dEhiIm:OPqRsStuvVW:xX:?"
+
+static const _PyOS_LongOption longopts[] = {
+    /* name, has_arg, val (used in switch in initconfig.c) */
+    {L"check-hash-based-pycs", 1, 0},
+    {L"help-all", 0, 1},
+    {L"help-env", 0, 2},
+    {L"help-xoptions", 0, 3},
+    {NULL, 0, -1},                     /* sentinel */
+};
+
 
 void _PyOS_ResetGetOpt(void)
 {
@@ -51,7 +57,7 @@ void _PyOS_ResetGetOpt(void)
     opt_ptr = L"";
 }
 
-int _PyOS_GetOpt(int argc, wchar_t **argv, wchar_t *optstring)
+int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
 {
     wchar_t *ptr;
     wchar_t option;
@@ -86,22 +92,51 @@ int _PyOS_GetOpt(int argc, wchar_t **argv, wchar_t *optstring)
             return 'V';
         }
 
-
         opt_ptr = &argv[_PyOS_optind++][1];
     }
 
     if ((option = *opt_ptr++) == L'\0')
         return -1;
 
-    if (option == 'J') {
-        if (_PyOS_opterr)
-            fprintf(stderr, "-J is reserved for Jython\n");
-        return '_';
+    if (option == L'-') {
+        // Parse long option.
+        if (*opt_ptr == L'\0') {
+            if (_PyOS_opterr) {
+                fprintf(stderr, "Expected long option\n");
+            }
+            return -1;
+        }
+        *longindex = 0;
+        const _PyOS_LongOption *opt;
+        for (opt = &longopts[*longindex]; opt->name; opt = &longopts[++(*longindex)]) {
+            if (!wcscmp(opt->name, opt_ptr))
+                break;
+        }
+        if (!opt->name) {
+            if (_PyOS_opterr) {
+                fprintf(stderr, "Unknown option: %ls\n", argv[_PyOS_optind - 1]);
+            }
+            return '_';
+        }
+        opt_ptr = L"";
+        if (!opt->has_arg) {
+            return opt->val;
+        }
+        if (_PyOS_optind >= argc) {
+            if (_PyOS_opterr) {
+                fprintf(stderr, "Argument expected for the %ls options\n",
+                        argv[_PyOS_optind - 1]);
+            }
+            return '_';
+        }
+        _PyOS_optarg = argv[_PyOS_optind++];
+        return opt->val;
     }
 
-    if ((ptr = wcschr(optstring, option)) == NULL) {
-        if (_PyOS_opterr)
+    if ((ptr = wcschr(SHORT_OPTS, option)) == NULL) {
+        if (_PyOS_opterr) {
             fprintf(stderr, "Unknown option: -%c\n", (char)option);
+        }
         return '_';
     }
 
@@ -113,9 +148,10 @@ int _PyOS_GetOpt(int argc, wchar_t **argv, wchar_t *optstring)
 
         else {
             if (_PyOS_optind >= argc) {
-                if (_PyOS_opterr)
+                if (_PyOS_opterr) {
                     fprintf(stderr,
                         "Argument expected for the -%c option\n", (char)option);
+                }
                 return '_';
             }
 
@@ -125,8 +161,3 @@ int _PyOS_GetOpt(int argc, wchar_t **argv, wchar_t *optstring)
 
     return option;
 }
-
-#ifdef __cplusplus
-}
-#endif
-

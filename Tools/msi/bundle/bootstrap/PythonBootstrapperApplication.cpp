@@ -205,6 +205,7 @@ static struct { LPCWSTR regName; LPCWSTR variableName; } OPTIONAL_FEATURES[] = {
     { L"exe", L"Include_exe" },
     { L"lib", L"Include_lib" },
     { L"path", L"PrependPath" },
+    { L"appendpath", L"AppendPath" },
     { L"pip", L"Include_pip" },
     { L"tcltk", L"Include_tcltk" },
     { L"test", L"Include_test" },
@@ -212,6 +213,7 @@ static struct { LPCWSTR regName; LPCWSTR variableName; } OPTIONAL_FEATURES[] = {
     { L"Shortcuts", L"Shortcuts" },
     // Include_launcher and AssociateFiles are handled separately and so do
     // not need to be included in this list.
+    { L"freethreaded", L"Include_freethreaded" },
     { nullptr, nullptr }
 };
 
@@ -281,10 +283,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         case ID_INSTALL_BUTTON:
             SavePageSettings();
 
-            if (!WillElevate() && !QueryElevateForCrtInstall()) {
-                break;
-            }
-
             hr = BalGetNumericVariable(L"InstallAllUsers", &installAllUsers);
             ExitOnFailure(hr, L"Failed to get install scope");
 
@@ -330,10 +328,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             if (SUCCEEDED(hr)) {
                 // TODO: Check whether directory exists and contains another installation
                 ReleaseStr(targetDir);
-            }
-
-            if (!WillElevate() && !QueryElevateForCrtInstall()) {
-                break;
             }
 
             OnPlan(_command.action);
@@ -449,6 +443,14 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         ThemeControlElevates(_theme, ID_INSTALL_BUTTON, elevated);
         ThemeControlElevates(_theme, ID_INSTALL_SIMPLE_BUTTON, elevated);
         ThemeControlElevates(_theme, ID_INSTALL_UPGRADE_BUTTON, elevated);
+
+        LONGLONG blockedLauncher;
+        if (SUCCEEDED(BalGetNumericVariable(L"BlockedLauncher", &blockedLauncher)) && blockedLauncher) {
+            LOC_STRING *pLocString = nullptr;
+            if (SUCCEEDED(LocGetString(_wixLoc, L"#(loc.ShortInstallLauncherBlockedLabel)", &pLocString)) && pLocString) {
+                ThemeSetTextControl(_theme, ID_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX, pLocString->wzText);
+            }
+        }
     }
 
     void Custom1Page_Show() {
@@ -463,11 +465,11 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
 
         LOC_STRING *pLocString = nullptr;
         LPCWSTR locKey = L"#(loc.Include_launcherHelp)";
-        LONGLONG detectedLauncher;
+        LONGLONG blockedLauncher;
 
-        if (SUCCEEDED(BalGetNumericVariable(L"DetectedLauncher", &detectedLauncher)) && detectedLauncher) {
+        if (SUCCEEDED(BalGetNumericVariable(L"BlockedLauncher", &blockedLauncher)) && blockedLauncher) {
             locKey = L"#(loc.Include_launcherRemove)";
-        } else if (SUCCEEDED(BalGetNumericVariable(L"DetectedOldLauncher", &detectedLauncher)) && detectedLauncher) {
+        } else if (SUCCEEDED(BalGetNumericVariable(L"DetectedOldLauncher", &blockedLauncher)) && blockedLauncher) {
             locKey = L"#(loc.Include_launcherUpgrade)";
         }
 
@@ -725,19 +727,67 @@ public: // IBootstrapperApplication
         __in DWORD64 /*dw64Version*/,
         __in BOOTSTRAPPER_RELATED_OPERATION operation
     ) {
-        if (BOOTSTRAPPER_RELATED_OPERATION_MAJOR_UPGRADE == operation && 
-            (CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, wzPackageId, -1, L"launcher_AllUsers", -1) ||
-             CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, wzPackageId, -1, L"launcher_JustForMe", -1))) {
-            auto hr = LoadAssociateFilesStateFromKey(_engine, fPerMachine ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER);
-            if (hr == S_OK) {
-                _engine->SetVariableNumeric(L"AssociateFiles", 1);
-            } else if (FAILED(hr)) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to load AssociateFiles state: error code 0x%08X", hr);
+        // Only check launcher_AllUsers because we'll find the same packages
+        // twice if we check launcher_JustForMe as well.
+        if (CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, wzPackageId, -1, L"launcher_AllUsers", -1)) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Detected existing launcher install");
+
+            LONGLONG blockedLauncher, detectedLauncher;
+            if (FAILED(BalGetNumericVariable(L"BlockedLauncher", &blockedLauncher))) {
+                blockedLauncher = 0;
             }
 
-            _engine->SetVariableNumeric(L"Include_launcher", 1);
-            _engine->SetVariableNumeric(L"DetectedOldLauncher", 1);
-            _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
+            // Get the prior DetectedLauncher value so we can see if we've
+            // detected more than one, and then update the stored variable
+            // (we use the original value later on via the local).
+            if (FAILED(BalGetNumericVariable(L"DetectedLauncher", &detectedLauncher))) {
+                detectedLauncher = 0;
+            }
+            if (!detectedLauncher) {
+                _engine->SetVariableNumeric(L"DetectedLauncher", 1);
+            }
+
+            if (blockedLauncher) {
+                // Nothing else to do, we're already blocking
+            }
+            else if (BOOTSTRAPPER_RELATED_OPERATION_DOWNGRADE == operation) {
+                // Found a higher version, so we can't install ours.
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Higher version launcher has been detected.");
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Launcher will not be installed");
+                _engine->SetVariableNumeric(L"BlockedLauncher", 1);
+            }
+            else if (detectedLauncher) {
+                if (!blockedLauncher) {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Multiple launcher installs have been detected.");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "No launcher will be installed or upgraded until one has been removed.");
+                    _engine->SetVariableNumeric(L"BlockedLauncher", 1);
+                }
+            }
+            else if (BOOTSTRAPPER_RELATED_OPERATION_MAJOR_UPGRADE == operation) {
+                // Found an older version, so let's run the equivalent as an upgrade
+                // This overrides "unknown" all users options, but will leave alone
+                // any that have already been set/detected.
+                // User can deselect the option to include the launcher, but cannot
+                // change it from the current per user/machine setting.
+                LONGLONG includeLauncher, includeLauncherAllUsers;
+                if (FAILED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))) {
+                    includeLauncher = -1;
+                }
+                if (FAILED(BalGetNumericVariable(L"InstallLauncherAllUsers", &includeLauncherAllUsers))) {
+                    includeLauncherAllUsers = -1;
+                }
+
+                if (includeLauncher < 0) {
+                    _engine->SetVariableNumeric(L"Include_launcher", 1);
+                }
+                if (includeLauncherAllUsers < 0) {
+                    _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
+                } else if (includeLauncherAllUsers != fPerMachine ? 1 : 0) {
+                    // Requested AllUsers option is inconsistent, so block
+                    _engine->SetVariableNumeric(L"BlockedLauncher", 1);
+                }
+                _engine->SetVariableNumeric(L"DetectedOldLauncher", 1);
+            }
         }
         return CheckCanceled() ? IDCANCEL : IDNOACTION;
     }
@@ -785,46 +835,79 @@ public: // IBootstrapperApplication
         __in LPCWSTR wzPackageId,
         __in HRESULT hrStatus,
         __in BOOTSTRAPPER_PACKAGE_STATE state
-    ) {
-        if (FAILED(hrStatus)) {
-            return;
-        }
-
-        BOOL detectedLauncher = FALSE;
-        HKEY hkey = HKEY_LOCAL_MACHINE;
-        if (CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, wzPackageId, -1, L"launcher_AllUsers", -1)) {
-            if (BOOTSTRAPPER_PACKAGE_STATE_PRESENT == state || BOOTSTRAPPER_PACKAGE_STATE_OBSOLETE == state) {
-                detectedLauncher = TRUE;
-                _engine->SetVariableNumeric(L"InstallLauncherAllUsers", 1);
-            }
-        } else if (CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, wzPackageId, -1, L"launcher_JustForMe", -1)) {
-            if (BOOTSTRAPPER_PACKAGE_STATE_PRESENT == state || BOOTSTRAPPER_PACKAGE_STATE_OBSOLETE == state) {
-                detectedLauncher = TRUE;
-                _engine->SetVariableNumeric(L"InstallLauncherAllUsers", 0);
-            }
-        }
-
-        if (detectedLauncher) {
-            /* When we detect the current version of the launcher. */
-            _engine->SetVariableNumeric(L"Include_launcher", 1);
-            _engine->SetVariableNumeric(L"DetectedLauncher", 1);
-            _engine->SetVariableString(L"Include_launcherState", L"disable");
-            _engine->SetVariableString(L"InstallLauncherAllUsersState", L"disable");
-
-            auto hr = LoadAssociateFilesStateFromKey(_engine, hkey);
-            if (hr == S_OK) {
-                _engine->SetVariableNumeric(L"AssociateFiles", 1);
-            } else if (FAILED(hr)) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to load AssociateFiles state: error code 0x%08X", hr);
-            }
-        }
-    }
+    ) { }
 
 
     virtual STDMETHODIMP_(void) OnDetectComplete(__in HRESULT hrStatus) {
         if (SUCCEEDED(hrStatus) && _baFunction) {
             BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Running detect complete BA function");
             _baFunction->OnDetectComplete();
+        }
+
+        if (SUCCEEDED(hrStatus)) {
+            // Update launcher install states
+            // If we didn't detect any existing installs, Include_launcher and
+            // InstallLauncherAllUsers will both be -1, so we will set to their
+            // defaults and leave the options enabled.
+            // Otherwise, if we detected an existing install, we disable the
+            // options so they remain fixed.
+            // The code in OnDetectRelatedMsiPackage is responsible for figuring
+            // out whether existing installs are compatible with the settings in
+            // place during detection.
+            LONGLONG blockedLauncher;
+            if (SUCCEEDED(BalGetNumericVariable(L"BlockedLauncher", &blockedLauncher))
+                    && blockedLauncher) {
+                _engine->SetVariableNumeric(L"Include_launcher", 0);
+                _engine->SetVariableNumeric(L"InstallLauncherAllUsers", 0);
+                _engine->SetVariableString(L"InstallLauncherAllUsersState", L"disable");
+                _engine->SetVariableString(L"Include_launcherState", L"disable");
+            }
+            else {
+                LONGLONG includeLauncher, includeLauncherAllUsers, associateFiles;
+
+                if (FAILED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))) {
+                    includeLauncher = -1;
+                }
+                if (FAILED(BalGetNumericVariable(L"InstallLauncherAllUsers", &includeLauncherAllUsers))) {
+                    includeLauncherAllUsers = -1;
+                }
+                if (FAILED(BalGetNumericVariable(L"AssociateFiles", &associateFiles))) {
+                    associateFiles = -1;
+                }
+
+                if (includeLauncherAllUsers < 0) {
+                    includeLauncherAllUsers = 0;
+                    _engine->SetVariableNumeric(L"InstallLauncherAllUsers", includeLauncherAllUsers);
+                }
+
+                if (includeLauncher < 0) {
+                    if (BOOTSTRAPPER_ACTION_LAYOUT == _command.action ||
+                        (BOOTSTRAPPER_ACTION_INSTALL == _command.action && !_upgrading)) {
+                        // When installing/downloading, we include the launcher
+                        // (though downloads should ignore this setting anyway)
+                        _engine->SetVariableNumeric(L"Include_launcher", 1);
+                    } else {
+                        // Any other action, we should have detected an existing
+                        // install (e.g. on remove/modify), so if we didn't, we
+                        // assume it's not selected.
+                        _engine->SetVariableNumeric(L"Include_launcher", 0);
+                        _engine->SetVariableNumeric(L"AssociateFiles", 0);
+                    }
+                }
+
+                if (associateFiles < 0) {
+                    auto hr = LoadAssociateFilesStateFromKey(
+                        _engine,
+                        includeLauncherAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER
+                    );
+                    if (FAILED(hr)) {
+                        BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to load AssociateFiles state: error code 0x%08X", hr);
+                    } else if (hr == S_OK) {
+                        associateFiles = 1;
+                    }
+                    _engine->SetVariableNumeric(L"AssociateFiles", associateFiles);
+                }
+            }
         }
 
         if (SUCCEEDED(hrStatus)) {
@@ -1459,6 +1542,10 @@ private:
         hr = ParseOverridableVariablesFromXml(pixdManifest);
         BalExitOnFailure(hr, "Failed to read overridable variables.");
 
+        if (_command.action == BOOTSTRAPPER_ACTION_MODIFY) {
+            LoadOptionalFeatureStates(_engine);
+        }
+
         hr = ParseVariablesFromUnattendXml();
         ExitOnFailure(hr, "Failed to read unattend.ini file.");
 
@@ -1485,10 +1572,6 @@ private:
 
         hr = UpdateUIStrings(_command.action);
         BalExitOnFailure(hr, "Failed to load UI strings.");
-
-        if (_command.action == BOOTSTRAPPER_ACTION_MODIFY) {
-            LoadOptionalFeatureStates(_engine);
-        }
 
         GetBundleFileVersion();
         // don't fail if we couldn't get the version info; best-effort only
@@ -2589,7 +2672,7 @@ private:
                 /*Elevate when installing for all users*/
                 L"InstallAllUsers or "
                 /*Elevate when installing the launcher for all users and it was not detected*/
-                L"(Include_launcher and InstallLauncherAllUsers and not DetectedLauncher)"
+                L"(Include_launcher and InstallLauncherAllUsers and not BlockedLauncher)"
             L")",
             L""
         };
@@ -2640,30 +2723,6 @@ private:
         free(pData);
         _crtInstalledToken = result ? 1 : 0;
         return result;
-    }
-
-    BOOL QueryElevateForCrtInstall() {
-        // Called to prompt the user that even though they think they won't need
-        // to elevate, they actually will because of the CRT install.
-        if (IsCrtInstalled()) {
-            // CRT is already installed - no need to prompt
-            return TRUE;
-        }
-        
-        LONGLONG elevated;
-        HRESULT hr = BalGetNumericVariable(L"WixBundleElevated", &elevated);
-        if (SUCCEEDED(hr) && elevated) {
-            // Already elevated - no need to prompt
-            return TRUE;
-        }
-
-        LOC_STRING *locStr;
-        hr = LocGetString(_wixLoc, L"#(loc.ElevateForCRTInstall)", &locStr);
-        if (FAILED(hr)) {
-            BalLogError(hr, "Failed to get ElevateForCRTInstall string");
-            return FALSE;
-        }
-        return ::MessageBoxW(_hWnd, locStr->wzText, _theme->sczCaption, MB_YESNO) != IDNO;
     }
 
     HRESULT EvaluateConditions() {
@@ -2825,6 +2884,17 @@ private:
         return ::CompareStringW(LOCALE_NEUTRAL, 0, platform, -1, L"x64", -1) == CSTR_EQUAL;
     }
 
+    static bool IsTargetPlatformARM64(__in IBootstrapperEngine* pEngine) {
+        WCHAR platform[8];
+        DWORD platformLen = 8;
+
+        if (FAILED(pEngine->GetVariableString(L"TargetPlatform", platform, &platformLen))) {
+            return S_FALSE;
+        }
+
+        return ::CompareStringW(LOCALE_NEUTRAL, 0, platform, -1, L"ARM64", -1) == CSTR_EQUAL;
+    }
+
     static HRESULT LoadOptionalFeatureStatesFromKey(
         __in IBootstrapperEngine* pEngine,
         __in HKEY hkHive,
@@ -2833,7 +2903,7 @@ private:
         HKEY hKey;
         LRESULT res;
 
-        if (IsTargetPlatformx64(pEngine)) {
+        if (IsTargetPlatformx64(pEngine) || IsTargetPlatformARM64(pEngine)) {
             res = RegOpenKeyExW(hkHive, subkey, 0, KEY_READ | KEY_WOW64_64KEY, &hKey);
         } else {
             res = RegOpenKeyExW(hkHive, subkey, 0, KEY_READ | KEY_WOW64_32KEY, &hKey);
@@ -2872,7 +2942,7 @@ private:
         BYTE buffer[1024];
         DWORD bufferLen = sizeof(buffer);
 
-        if (IsTargetPlatformx64(pEngine)) {
+        if (IsTargetPlatformx64(pEngine) || IsTargetPlatformARM64(pEngine)) {
             res = RegOpenKeyExW(hkHive, subkey, 0, KEY_READ | KEY_WOW64_64KEY, &hKey);
         } else {
             res = RegOpenKeyExW(hkHive, subkey, 0, KEY_READ | KEY_WOW64_32KEY, &hKey);
@@ -2930,12 +3000,7 @@ private:
         HRESULT hr;
         HKEY hkHive;
 
-        // The launcher installation is separate from the Python install, so we
-        // check its state later. For now, assume we don't want the launcher or
-        // file associations, and if they have already been installed then
-        // loading the state will reactivate these settings.
-        pEngine->SetVariableNumeric(L"Include_launcher", 0);
-        pEngine->SetVariableNumeric(L"AssociateFiles", 0);
+        BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Loading state of optional features");
 
         // Get the registry key from the bundle, to save having to duplicate it
         // in multiple places.
@@ -3021,47 +3086,40 @@ private:
         LOC_STRING *pLocString = nullptr;
         
         if (IsWindowsServer()) {
-            if (IsWindowsVersionOrGreater(6, 1, 1)) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2008 R2 or later");
+            if (IsWindowsVersionOrGreater(10, 0, 0)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2016 or later");
                 return;
+            } else if (IsWindowsVersionOrGreater(6, 2, 0)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2012");
+            } else if (IsWindowsVersionOrGreater(6, 1, 1)) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2");
             } else if (IsWindowsVersionOrGreater(6, 1, 0)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWS2K8R2MissingSP1)", &pLocString);
-            } else if (IsWindowsVersionOrGreater(6, 0, 2)) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows Server 2008 SP2 or later");
-                return;
             } else if (IsWindowsVersionOrGreater(6, 0, 0)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 2 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWS2K8MissingSP2)", &pLocString);
             } else {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2003 or earlier");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Server 2008 SP2 or later is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWS2K3OrEarlier)", &pLocString);
             }
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Server 2016 or later is required to continue installation");
         } else {
-            if (IsWindows7SP1OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 7 SP1 or later");
+            if (IsWindows10OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 10 or later");
                 return;
+            } else if (IsWindows8Point1OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 8.1");
+            } else if (IsWindows8OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 8");
             } else if (IsWindows7OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 RTM");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
-            } else if (IsWindowsVistaSP2OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows Vista SP2");
-                return;
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7");
             } else if (IsWindowsVistaOrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Vista RTM or SP1");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 2 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureVistaMissingSP2)", &pLocString);
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Vista");
             } else { 
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows XP or earlier");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Vista SP2 or later is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureXPOrEarlier)", &pLocString);
             }
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows 10 or later is required to continue installation");
         }
 
+        LocGetString(_wixLoc, L"#(loc.FailureOldOS)", &pLocString);
         if (pLocString && pLocString->wzText) {
             BalFormatString(pLocString->wzText, &_failedMessage);
         }

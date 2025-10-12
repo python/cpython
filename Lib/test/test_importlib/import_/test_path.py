@@ -1,4 +1,5 @@
-from .. import util
+from test.support import os_helper
+from test.test_importlib import util
 
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
@@ -75,11 +76,12 @@ class FinderTests:
         with util.import_state(path_importer_cache={}, path_hooks=[],
                                path=[path_entry]):
             with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter('always')
+                warnings.simplefilter('always', ImportWarning)
+                warnings.simplefilter('ignore', DeprecationWarning)
                 self.assertIsNone(self.find('os'))
                 self.assertIsNone(sys.path_importer_cache[path_entry])
                 self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[-1].category, ImportWarning))
+                self.assertIsSubclass(w[-1].category, ImportWarning)
 
     def test_path_importer_cache_empty_string(self):
         # The empty string should create a finder using the cwd.
@@ -114,38 +116,6 @@ class FinderTests:
         finally:
             if email is not missing:
                 sys.modules['email'] = email
-
-    def test_finder_with_find_module(self):
-        class TestFinder:
-            def find_module(self, fullname):
-                return self.to_return
-        failing_finder = TestFinder()
-        failing_finder.to_return = None
-        path = 'testing path'
-        with util.import_state(path_importer_cache={path: failing_finder}):
-            self.assertIsNone(
-                    self.machinery.PathFinder.find_spec('whatever', [path]))
-        success_finder = TestFinder()
-        success_finder.to_return = __loader__
-        with util.import_state(path_importer_cache={path: success_finder}):
-            spec = self.machinery.PathFinder.find_spec('whatever', [path])
-        self.assertEqual(spec.loader, __loader__)
-
-    def test_finder_with_find_loader(self):
-        class TestFinder:
-            loader = None
-            portions = []
-            def find_loader(self, fullname):
-                return self.loader, self.portions
-        path = 'testing path'
-        with util.import_state(path_importer_cache={path: TestFinder()}):
-            self.assertIsNone(
-                    self.machinery.PathFinder.find_spec('whatever', [path]))
-        success_finder = TestFinder()
-        success_finder.loader = __loader__
-        with util.import_state(path_importer_cache={path: success_finder}):
-            spec = self.machinery.PathFinder.find_spec('whatever', [path])
-        self.assertEqual(spec.loader, __loader__)
 
     def test_finder_with_find_spec(self):
         class TestFinder:
@@ -184,10 +154,70 @@ class FinderTests:
             # Do not want FileNotFoundError raised.
             self.assertIsNone(self.machinery.PathFinder.find_spec('whatever'))
 
+    @os_helper.skip_unless_working_chmod
+    def test_permission_error_cwd(self):
+        # gh-115911: Test that an unreadable CWD does not break imports, in
+        # particular during early stages of interpreter startup.
+
+        def noop_hook(*args):
+            raise ImportError
+
+        with (
+            os_helper.temp_dir() as new_dir,
+            os_helper.save_mode(new_dir),
+            os_helper.change_cwd(new_dir),
+            util.import_state(path=[''], path_hooks=[noop_hook]),
+        ):
+            # chmod() is done here (inside the 'with' block) because the order
+            # of teardown operations cannot be the reverse of setup order. See
+            # https://github.com/python/cpython/pull/116131#discussion_r1739649390
+            try:
+                os.chmod(new_dir, 0o000)
+            except OSError:
+                self.skipTest("platform does not allow "
+                              "changing mode of the cwd")
+
+            # Do not want PermissionError raised.
+            self.assertIsNone(self.machinery.PathFinder.find_spec('whatever'))
+
+    def test_invalidate_caches_finders(self):
+        # Finders with an invalidate_caches() method have it called.
+        class FakeFinder:
+            def __init__(self):
+                self.called = False
+
+            def invalidate_caches(self):
+                self.called = True
+
+        key = os.path.abspath('finder_to_invalidate')
+        cache = {'leave_alone': object(), key: FakeFinder()}
+        with util.import_state(path_importer_cache=cache):
+            self.machinery.PathFinder.invalidate_caches()
+        self.assertTrue(cache[key].called)
+
+    def test_invalidate_caches_clear_out_None(self):
+        # Clear out None in sys.path_importer_cache() when invalidating caches.
+        cache = {'clear_out': None}
+        with util.import_state(path_importer_cache=cache):
+            self.machinery.PathFinder.invalidate_caches()
+        self.assertEqual(len(cache), 0)
+
+    def test_invalidate_caches_clear_out_relative_path(self):
+        class FakeFinder:
+            def invalidate_caches(self):
+                pass
+
+        cache = {'relative_path': FakeFinder()}
+        with util.import_state(path_importer_cache=cache):
+            self.machinery.PathFinder.invalidate_caches()
+        self.assertEqual(cache, {})
+
 
 class FindModuleTests(FinderTests):
     def find(self, *args, **kwargs):
-        return self.machinery.PathFinder.find_module(*args, **kwargs)
+        spec = self.machinery.PathFinder.find_spec(*args, **kwargs)
+        return None if spec is None else spec.loader
+
     def check_found(self, found, importer):
         self.assertIs(found, importer)
 
@@ -212,40 +242,22 @@ class FindSpecTests(FinderTests):
 class PathEntryFinderTests:
 
     def test_finder_with_failing_find_spec(self):
-        # PathEntryFinder with find_module() defined should work.
-        # Issue #20763.
         class Finder:
-            path_location = 'test_finder_with_find_module'
+            path_location = 'test_finder_with_find_spec'
             def __init__(self, path):
                 if path != self.path_location:
                     raise ImportError
 
             @staticmethod
-            def find_module(fullname):
+            def find_spec(fullname, target=None):
                 return None
 
 
         with util.import_state(path=[Finder.path_location]+sys.path[:],
                                path_hooks=[Finder]):
-            self.machinery.PathFinder.find_spec('importlib')
-
-    def test_finder_with_failing_find_module(self):
-        # PathEntryFinder with find_module() defined should work.
-        # Issue #20763.
-        class Finder:
-            path_location = 'test_finder_with_find_module'
-            def __init__(self, path):
-                if path != self.path_location:
-                    raise ImportError
-
-            @staticmethod
-            def find_module(fullname):
-                return None
-
-
-        with util.import_state(path=[Finder.path_location]+sys.path[:],
-                               path_hooks=[Finder]):
-            self.machinery.PathFinder.find_module('importlib')
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                self.machinery.PathFinder.find_spec('importlib')
 
 
 (Frozen_PEFTests,

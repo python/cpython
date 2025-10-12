@@ -30,8 +30,10 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
+from _colorize import can_colorize, get_theme
 from heapq import nlargest as _nlargest
 from collections import namedtuple as _namedtuple
+from types import GenericAlias
 
 Match = _namedtuple('Match', 'a b size')
 
@@ -61,7 +63,7 @@ class SequenceMatcher:
     notion, pairing up elements that appear uniquely in each sequence.
     That, and the method here, appear to yield more intuitive difference
     reports than does diff.  This method appears to be the least vulnerable
-    to synching up on blocks of "junk lines", though (like blank lines in
+    to syncing up on blocks of "junk lines", though (like blank lines in
     ordinary text files, or maybe "<P>" lines in HTML files).  That may be
     because this is the only method of the 3 that has a *concept* of
     "junk" <wink>.
@@ -77,8 +79,8 @@ class SequenceMatcher:
     sequences.  As a rule of thumb, a .ratio() value over 0.6 means the
     sequences are close matches:
 
-    >>> print(round(s.ratio(), 3))
-    0.866
+    >>> print(round(s.ratio(), 2))
+    0.87
     >>>
 
     If you're only interested in where the sequences match,
@@ -114,38 +116,6 @@ class SequenceMatcher:
     case.  SequenceMatcher is quadratic time for the worst case and has
     expected-case behavior dependent in a complicated way on how many
     elements the sequences have in common; best case time is linear.
-
-    Methods:
-
-    __init__(isjunk=None, a='', b='')
-        Construct a SequenceMatcher.
-
-    set_seqs(a, b)
-        Set the two sequences to be compared.
-
-    set_seq1(a)
-        Set the first sequence to be compared.
-
-    set_seq2(b)
-        Set the second sequence to be compared.
-
-    find_longest_match(alo, ahi, blo, bhi)
-        Find longest matching block in a[alo:ahi] and b[blo:bhi].
-
-    get_matching_blocks()
-        Return list of triples describing matching subsequences.
-
-    get_opcodes()
-        Return list of 5-tuples describing how to turn a into b.
-
-    ratio()
-        Return a measure of the sequences' similarity (float in [0,1]).
-
-    quick_ratio()
-        Return an upper bound on .ratio() relatively quickly.
-
-    real_quick_ratio()
-        Return an upper bound on ratio() very quickly.
     """
 
     def __init__(self, isjunk=None, a='', b='', autojunk=True):
@@ -333,8 +303,10 @@ class SequenceMatcher:
             for elt in popular: # ditto; as fast for 1% deletion
                 del b2j[elt]
 
-    def find_longest_match(self, alo, ahi, blo, bhi):
+    def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
+
+        By default it will find the longest match in the entirety of a and b.
 
         If isjunk is not defined:
 
@@ -390,6 +362,10 @@ class SequenceMatcher:
         # the unique 'b's and then matching the first two 'a's.
 
         a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
+        if ahi is None:
+            ahi = len(a)
+        if bhi is None:
+            bhi = len(b)
         besti, bestj, bestsize = alo, blo, 0
         # find longest junk-free match
         # during an iteration of the loop, j2len[j] = length of longest
@@ -685,6 +661,9 @@ class SequenceMatcher:
         # shorter sequence
         return _calculate_ratio(min(la, lb), la + lb)
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     """Use SequenceMatcher to return list of the best "good enough" matches.
 
@@ -733,20 +712,15 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     # Strip scores for the best n matches
     return [x for score, x in result]
 
-def _count_leading(line, ch):
-    """
-    Return number of `ch` characters at the start of `line`.
 
-    Example:
+def _keep_original_ws(s, tag_s):
+    """Replace whitespace with the original whitespace characters in `s`"""
+    return ''.join(
+        c if tag_c == " " and c.isspace() else tag_c
+        for c, tag_c in zip(s, tag_s)
+    )
 
-    >>> _count_leading('   abc', ' ')
-    3
-    """
 
-    i, n = 0, len(line)
-    while i < n and line[i] == ch:
-        i += 1
-    return i
 
 class Differ:
     r"""
@@ -832,14 +806,6 @@ class Differ:
     +   4. Complicated is better than complex.
     ?           ++++ ^                      ^
     +   5. Flat is better than nested.
-
-    Methods:
-
-    __init__(linejunk=None, charjunk=None)
-        Construct a text differencer, with optional filters.
-
-    compare(a, b)
-        Compare two sequences of lines; generate the resulting delta.
     """
 
     def __init__(self, linejunk=None, charjunk=None):
@@ -872,7 +838,7 @@ class Differ:
         Each sequence must contain individual single-line strings ending with
         newlines. Such sequences can be obtained from the `readlines()` method
         of file-like objects.  The delta generated also consists of newline-
-        terminated strings, ready to be printed as-is via the writeline()
+        terminated strings, ready to be printed as-is via the writelines()
         method of a file-like object.
 
         Example:
@@ -943,87 +909,85 @@ class Differ:
         + abcdefGhijkl
         ?    ^  ^  ^
         """
-
-        # don't synch up unless the lines have a similarity score of at
-        # least cutoff; best_ratio tracks the best score seen so far
-        best_ratio, cutoff = 0.74, 0.75
+        # Don't synch up unless the lines have a similarity score above
+        # cutoff. Previously only the smallest pair was handled here,
+        # and if there are many pairs with the best ratio, recursion
+        # could grow very deep, and runtime cubic. See:
+        # https://github.com/python/cpython/issues/119105
+        #
+        # Later, more pathological cases prompted removing recursion
+        # entirely.
+        cutoff = 0.74999
         cruncher = SequenceMatcher(self.charjunk)
-        eqi, eqj = None, None   # 1st indices of equal lines (if any)
+        crqr = cruncher.real_quick_ratio
+        cqr = cruncher.quick_ratio
+        cr = cruncher.ratio
 
-        # search for the pair that matches best without being identical
-        # (identical lines must be junk lines, & we don't want to synch up
-        # on junk -- unless we have to)
+        WINDOW = 10
+        best_i = best_j = None
+        dump_i, dump_j = alo, blo # smallest indices not yet resolved
         for j in range(blo, bhi):
-            bj = b[j]
-            cruncher.set_seq2(bj)
-            for i in range(alo, ahi):
-                ai = a[i]
-                if ai == bj:
-                    if eqi is None:
-                        eqi, eqj = i, j
-                    continue
-                cruncher.set_seq1(ai)
-                # computing similarity is expensive, so use the quick
-                # upper bounds first -- have seen this speed up messy
-                # compares by a factor of 3.
-                # note that ratio() is only expensive to compute the first
-                # time it's called on a sequence pair; the expensive part
-                # of the computation is cached by cruncher
-                if cruncher.real_quick_ratio() > best_ratio and \
-                      cruncher.quick_ratio() > best_ratio and \
-                      cruncher.ratio() > best_ratio:
-                    best_ratio, best_i, best_j = cruncher.ratio(), i, j
-        if best_ratio < cutoff:
-            # no non-identical "pretty close" pair
-            if eqi is None:
-                # no identical pair either -- treat it as a straight replace
-                yield from self._plain_replace(a, alo, ahi, b, blo, bhi)
-                return
-            # no close pair, but an identical pair -- synch up on that
-            best_i, best_j, best_ratio = eqi, eqj, 1.0
-        else:
-            # there's a close pair, so forget the identical pair (if any)
-            eqi = None
+            cruncher.set_seq2(b[j])
+            # Search the corresponding i's within WINDOW for rhe highest
+            # ratio greater than `cutoff`.
+            aequiv = alo + (j - blo)
+            arange = range(max(aequiv - WINDOW, dump_i),
+                           min(aequiv + WINDOW + 1, ahi))
+            if not arange: # likely exit if `a` is shorter than `b`
+                break
+            best_ratio = cutoff
+            for i in arange:
+                cruncher.set_seq1(a[i])
+                # Ordering by cheapest to most expensive ratio is very
+                # valuable, most often getting out early.
+                if (crqr() > best_ratio
+                      and cqr() > best_ratio
+                      and cr() > best_ratio):
+                    best_i, best_j, best_ratio = i, j, cr()
 
-        # a[best_i] very similar to b[best_j]; eqi is None iff they're not
-        # identical
+            if best_i is None:
+                # found nothing to synch on yet - move to next j
+                continue
 
-        # pump out diffs from before the synch point
-        yield from self._fancy_helper(a, alo, best_i, b, blo, best_j)
+            # pump out straight replace from before this synch pair
+            yield from self._fancy_helper(a, dump_i, best_i,
+                                          b, dump_j, best_j)
+            # do intraline marking on the synch pair
+            aelt, belt = a[best_i], b[best_j]
+            if aelt != belt:
+                # pump out a '-', '?', '+', '?' quad for the synched lines
+                atags = btags = ""
+                cruncher.set_seqs(aelt, belt)
+                for tag, ai1, ai2, bj1, bj2 in cruncher.get_opcodes():
+                    la, lb = ai2 - ai1, bj2 - bj1
+                    if tag == 'replace':
+                        atags += '^' * la
+                        btags += '^' * lb
+                    elif tag == 'delete':
+                        atags += '-' * la
+                    elif tag == 'insert':
+                        btags += '+' * lb
+                    elif tag == 'equal':
+                        atags += ' ' * la
+                        btags += ' ' * lb
+                    else:
+                        raise ValueError('unknown tag %r' % (tag,))
+                yield from self._qformat(aelt, belt, atags, btags)
+            else:
+                # the synch pair is identical
+                yield '  ' + aelt
+            dump_i, dump_j = best_i + 1, best_j + 1
+            best_i = best_j = None
 
-        # do intraline marking on the synch pair
-        aelt, belt = a[best_i], b[best_j]
-        if eqi is None:
-            # pump out a '-', '?', '+', '?' quad for the synched lines
-            atags = btags = ""
-            cruncher.set_seqs(aelt, belt)
-            for tag, ai1, ai2, bj1, bj2 in cruncher.get_opcodes():
-                la, lb = ai2 - ai1, bj2 - bj1
-                if tag == 'replace':
-                    atags += '^' * la
-                    btags += '^' * lb
-                elif tag == 'delete':
-                    atags += '-' * la
-                elif tag == 'insert':
-                    btags += '+' * lb
-                elif tag == 'equal':
-                    atags += ' ' * la
-                    btags += ' ' * lb
-                else:
-                    raise ValueError('unknown tag %r' % (tag,))
-            yield from self._qformat(aelt, belt, atags, btags)
-        else:
-            # the synch pair is identical
-            yield '  ' + aelt
-
-        # pump out diffs from after the synch point
-        yield from self._fancy_helper(a, best_i+1, ahi, b, best_j+1, bhi)
+        # pump out straight replace from after the last synch pair
+        yield from self._fancy_helper(a, dump_i, ahi,
+                                      b, dump_j, bhi)
 
     def _fancy_helper(self, a, alo, ahi, b, blo, bhi):
         g = []
         if alo < ahi:
             if blo < bhi:
-                g = self._fancy_replace(a, alo, ahi, b, blo, bhi)
+                g = self._plain_replace(a, alo, ahi, b, blo, bhi)
             else:
                 g = self._dump('-', a, alo, ahi)
         elif blo < bhi:
@@ -1033,7 +997,7 @@ class Differ:
 
     def _qformat(self, aline, bline, atags, btags):
         r"""
-        Format "?" output and deal with leading tabs.
+        Format "?" output and deal with tabs.
 
         Example:
 
@@ -1047,22 +1011,16 @@ class Differ:
         '+ \tabcdefGhijkl\n'
         '? \t ^ ^  ^\n'
         """
-
-        # Can hurt, but will probably help most of the time.
-        common = min(_count_leading(aline, "\t"),
-                     _count_leading(bline, "\t"))
-        common = min(common, _count_leading(atags[:common], " "))
-        common = min(common, _count_leading(btags[:common], " "))
-        atags = atags[common:].rstrip()
-        btags = btags[common:].rstrip()
+        atags = _keep_original_ws(aline, atags).rstrip()
+        btags = _keep_original_ws(bline, btags).rstrip()
 
         yield "- " + aline
         if atags:
-            yield "? %s%s\n" % ("\t" * common, atags)
+            yield f"? {atags}\n"
 
         yield "+ " + bline
         if btags:
-            yield "? %s%s\n" % ("\t" * common, btags)
+            yield f"? {btags}\n"
 
 # With respect to junk, an earlier version of ndiff simply refused to
 # *start* a match with a junk element.  The result was cases like this:
@@ -1081,11 +1039,9 @@ class Differ:
 # remaining is that perhaps it was really the case that " volatile"
 # was inserted after "private".  I can live with that <wink>.
 
-import re
-
-def IS_LINE_JUNK(line, pat=re.compile(r"\s*#?\s*$").match):
+def IS_LINE_JUNK(line, pat=None):
     r"""
-    Return 1 for ignorable line: iff `line` is blank or contains a single '#'.
+    Return True for ignorable line: if `line` is blank or contains a single '#'.
 
     Examples:
 
@@ -1097,11 +1053,16 @@ def IS_LINE_JUNK(line, pat=re.compile(r"\s*#?\s*$").match):
     False
     """
 
+    if pat is None:
+        # Default: match '#' or the empty string
+        return line.strip() in '#'
+   # Previous versions used the undocumented parameter 'pat' as a
+   # match function. Retain this behaviour for compatibility.
     return pat(line) is not None
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""
-    Return 1 for ignorable character: iff `ch` is a space or tab.
+    Return True for ignorable character: iff `ch` is a space or tab.
 
     Examples:
 
@@ -1134,7 +1095,7 @@ def _format_range_unified(start, stop):
     return '{},{}'.format(beginning, length)
 
 def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
-                 tofiledate='', n=3, lineterm='\n'):
+                 tofiledate='', n=3, lineterm='\n', *, color=False):
     r"""
     Compare two sequences of lines; generate the delta as a unified diff.
 
@@ -1150,6 +1111,10 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
 
     For inputs that do not have trailing newlines, set the lineterm
     argument to "" so that the output will be uniformly newline free.
+
+    Set 'color' to True to enable output in color, similar to
+    'git diff --color'. Even if enabled, it can be
+    controlled using environment variables such as 'NO_COLOR'.
 
     The unidiff format normally has a header for filenames and modification
     times.  Any or all of these may be specified using strings for
@@ -1174,6 +1139,11 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
      four
     """
 
+    if color and can_colorize():
+        t = get_theme(force_color=True).difflib
+    else:
+        t = get_theme(force_no_color=True).difflib
+
     _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     started = False
     for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
@@ -1181,25 +1151,25 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
             started = True
             fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
             todate = '\t{}'.format(tofiledate) if tofiledate else ''
-            yield '--- {}{}{}'.format(fromfile, fromdate, lineterm)
-            yield '+++ {}{}{}'.format(tofile, todate, lineterm)
+            yield f'{t.header}--- {fromfile}{fromdate}{lineterm}{t.reset}'
+            yield f'{t.header}+++ {tofile}{todate}{lineterm}{t.reset}'
 
         first, last = group[0], group[-1]
         file1_range = _format_range_unified(first[1], last[2])
         file2_range = _format_range_unified(first[3], last[4])
-        yield '@@ -{} +{} @@{}'.format(file1_range, file2_range, lineterm)
+        yield f'{t.hunk}@@ -{file1_range} +{file2_range} @@{lineterm}{t.reset}'
 
         for tag, i1, i2, j1, j2 in group:
             if tag == 'equal':
                 for line in a[i1:i2]:
-                    yield ' ' + line
+                    yield f'{t.context} {line}{t.reset}'
                 continue
             if tag in {'replace', 'delete'}:
                 for line in a[i1:i2]:
-                    yield '-' + line
+                    yield f'{t.removed}-{line}{t.reset}'
             if tag in {'replace', 'insert'}:
                 for line in b[j1:j2]:
-                    yield '+' + line
+                    yield f'{t.added}+{line}{t.reset}'
 
 
 ########################################################################
@@ -1307,6 +1277,12 @@ def _check_types(a, b, *args):
     if b and not isinstance(b[0], str):
         raise TypeError('lines to compare must be str, not %s (%r)' %
                         (type(b[0]).__name__, b[0]))
+    if isinstance(a, str):
+        raise TypeError('input must be a sequence of strings, not %s' %
+                        type(a).__name__)
+    if isinstance(b, str):
+        raise TypeError('input must be a sequence of strings, not %s' %
+                        type(b).__name__)
     for arg in args:
         if not isinstance(arg, str):
             raise TypeError('all arguments must be str, not: %r' % (arg,))
@@ -1634,27 +1610,28 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 lines_to_write -= 1
             # Now yield the context lines after the change
             lines_to_write = context-1
-            while(lines_to_write):
-                from_line, to_line, found_diff = next(line_pair_iterator)
-                # If another change within the context, extend the context
-                if found_diff:
-                    lines_to_write = context-1
-                else:
-                    lines_to_write -= 1
-                yield from_line, to_line, found_diff
+            try:
+                while(lines_to_write):
+                    from_line, to_line, found_diff = next(line_pair_iterator)
+                    # If another change within the context, extend the context
+                    if found_diff:
+                        lines_to_write = context-1
+                    else:
+                        lines_to_write -= 1
+                    yield from_line, to_line, found_diff
+            except StopIteration:
+                # Catch exception from next() and return normally
+                return
 
 
 _file_template = """
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta http-equiv="Content-Type"
-          content="text/html; charset=%(charset)s" />
-    <title></title>
-    <style type="text/css">%(styles)s
+    <meta charset="%(charset)s">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diff comparison</title>
+    <style>%(styles)s
     </style>
 </head>
 
@@ -1665,13 +1642,47 @@ _file_template = """
 </html>"""
 
 _styles = """
-        table.diff {font-family:Courier; border:medium;}
-        .diff_header {background-color:#e0e0e0}
-        td.diff_header {text-align:right}
-        .diff_next {background-color:#c0c0c0}
-        .diff_add {background-color:#aaffaa}
+        :root {color-scheme: light dark}
+        table.diff {
+            font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
+            border: medium;
+        }
+        .diff_header {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+        td.diff_header {
+            text-align: right;
+            padding: 0 8px;
+        }
+        .diff_next {
+            background-color: #c0c0c0;
+            padding: 4px 0;
+        }
+        .diff_add {background-color:palegreen}
         .diff_chg {background-color:#ffff77}
-        .diff_sub {background-color:#ffaaaa}"""
+        .diff_sub {background-color:#ffaaaa}
+        table.diff[summary="Legends"] {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
+        table.diff[summary="Legends"] th {
+            background-color: #e0e0e0;
+            padding: 4px 8px;
+        }
+        table.diff[summary="Legends"] td {
+            padding: 4px 8px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .diff_header {background-color:#666}
+            .diff_next {background-color:#393939}
+            .diff_add {background-color:darkgreen}
+            .diff_chg {background-color:#847415}
+            .diff_sub {background-color:darkred}
+            table.diff[summary="Legends"] {border-color:#555}
+            table.diff[summary="Legends"] th{background-color:#666}
+        }"""
 
 _table_template = """
     <table class="diff" id="difflib_chg_%(prefix)s_top"
@@ -1713,7 +1724,7 @@ class HtmlDiff(object):
     make_table -- generates HTML for a single side by side table
     make_file -- generates complete HTML file with a single side by side table
 
-    See tools/scripts/diff.py for an example usage of this class.
+    See Doc/includes/diff.py for an example usage of this class.
     """
 
     _file_template = _file_template
@@ -1913,8 +1924,11 @@ class HtmlDiff(object):
         # make space non-breakable so they don't get compressed or line wrapped
         text = text.replace(' ','&nbsp;').rstrip()
 
-        return '<td class="diff_header"%s>%s</td><td nowrap="nowrap">%s</td>' \
-               % (id,linenum,text)
+        # add a class to the td tag if there is a difference on the line
+        css_class = ' class="diff_changed" ' if flag else ' '
+
+        return f'<td class="diff_header"{id}>{linenum}</td>' \
+            + f'<td{css_class}nowrap="nowrap">{text}</td>'
 
     def _make_prefix(self):
         """Create unique anchor prefixes"""
@@ -2051,7 +2065,6 @@ class HtmlDiff(object):
                      replace('\1','</span>'). \
                      replace('\t','&nbsp;')
 
-del re
 
 def restore(delta, which):
     r"""
@@ -2084,10 +2097,3 @@ def restore(delta, which):
     for line in delta:
         if line[:2] in prefixes:
             yield line[2:]
-
-def _test():
-    import doctest, difflib
-    return doctest.testmod(difflib)
-
-if __name__ == "__main__":
-    _test()

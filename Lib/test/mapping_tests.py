@@ -1,6 +1,7 @@
 # tests common to dict and UserDict
 import unittest
 import collections
+from test import support
 
 
 class BasicTestMappingProtocol(unittest.TestCase):
@@ -69,8 +70,8 @@ class BasicTestMappingProtocol(unittest.TestCase):
         if not d: self.fail("Full mapping must compare to True")
         # keys(), items(), iterkeys() ...
         def check_iterandlist(iter, lst, ref):
-            self.assertTrue(hasattr(iter, '__next__'))
-            self.assertTrue(hasattr(iter, '__iter__'))
+            self.assertHasAttr(iter, '__next__')
+            self.assertHasAttr(iter, '__iter__')
             x = list(iter)
             self.assertTrue(set(x)==set(lst)==set(ref))
         check_iterandlist(iter(d.keys()), list(d.keys()),
@@ -447,7 +448,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         class Exc(Exception): pass
 
         class baddict1(self.type2test):
-            def __init__(self):
+            def __init__(self, *args, **kwargs):
                 raise Exc()
 
         self.assertRaises(Exc, baddict1.fromkeys, [1])
@@ -594,12 +595,14 @@ class TestHashMappingProtocol(TestMappingProtocol):
         d = self._empty_mapping()
         d[1] = 1
         try:
+            count = 0
             for i in d:
                 d[i+1] = 1
+                if count >= 1:
+                    self.fail("changing dict size during iteration doesn't raise Error")
+                count += 1
         except RuntimeError:
             pass
-        else:
-            self.fail("changing dict size during iteration doesn't raise Error")
 
     def test_repr(self):
         d = self._empty_mapping()
@@ -618,6 +621,17 @@ class TestHashMappingProtocol(TestMappingProtocol):
 
         d = self._full_mapping({1: BadRepr()})
         self.assertRaises(Exc, repr, d)
+
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_if_sanitizer("requires deep stack", ub=True)
+    def test_repr_deep(self):
+        d = self._empty_mapping()
+        for i in range(support.exceeds_recursion_limit()):
+            d0 = d
+            d = self._empty_mapping()
+            d[1] = d0
+        self.assertRaises(RecursionError, repr, d)
 
     def test_eq(self):
         self.assertEqual(self._empty_mapping(), self._empty_mapping())

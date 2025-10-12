@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
   ----------------------------------------------
       turtleDemo - Help
@@ -92,20 +90,21 @@ from tkinter import *
 from idlelib.colorizer import ColorDelegator, color_config
 from idlelib.percolator import Percolator
 from idlelib.textview import view_text
+import turtle
 from turtledemo import __doc__ as about_turtledemo
 
-import turtle
+if sys.platform == 'win32':
+    from idlelib.util import fix_win_hidpi
+    fix_win_hidpi()
 
 demo_dir = os.path.dirname(os.path.abspath(__file__))
 darwin = sys.platform == 'darwin'
-
 STARTUP = 1
 READY = 2
 RUNNING = 3
 DONE = 4
 EVENTDRIVEN = 5
 
-menufont = ("Arial", 12, NORMAL)
 btnfont = ("Arial", 12, 'bold')
 txtfont = ['Lucida Console', 10, 'normal']
 
@@ -124,7 +123,6 @@ help_entries = (  # (help_label,  help_doc)
     )
 
 
-
 class DemoWindow(object):
 
     def __init__(self, filename=None):
@@ -136,7 +134,7 @@ class DemoWindow(object):
             import subprocess
             # Make sure we are the currently activated OS X application
             # so that our menu bar appears.
-            p = subprocess.Popen(
+            subprocess.run(
                     [
                         'osascript',
                         '-e', 'tell application "System Events"',
@@ -162,7 +160,7 @@ class DemoWindow(object):
                               label='Help', underline=0)
         root['menu'] = self.mBar
 
-        pane = PanedWindow(orient=HORIZONTAL, sashwidth=5,
+        pane = PanedWindow(root, orient=HORIZONTAL, sashwidth=5,
                            sashrelief=SOLID, bg='#ddd')
         pane.add(self.makeTextFrame(pane))
         pane.add(self.makeGraphFrame(pane))
@@ -171,15 +169,23 @@ class DemoWindow(object):
         self.output_lbl = Label(root, height= 1, text=" --- ", bg="#ddf",
                                 font=("Arial", 16, 'normal'), borderwidth=2,
                                 relief=RIDGE)
-        self.start_btn = Button(root, text=" START ", font=btnfont,
-                                fg="white", disabledforeground = "#fed",
-                                command=self.startDemo)
-        self.stop_btn = Button(root, text=" STOP ", font=btnfont,
-                               fg="white", disabledforeground = "#fed",
-                               command=self.stopIt)
-        self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
-                                fg="white", disabledforeground="#fed",
-                                command = self.clearCanvas)
+        if darwin:  # Leave Mac button colors alone - #44254.
+            self.start_btn = Button(root, text=" START ", font=btnfont,
+                                    fg='#00cc22', command=self.startDemo)
+            self.stop_btn = Button(root, text=" STOP ", font=btnfont,
+                                   fg='#00cc22', command=self.stopIt)
+            self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
+                                    fg='#00cc22', command = self.clearCanvas)
+        else:
+            self.start_btn = Button(root, text=" START ", font=btnfont,
+                                    fg="white", disabledforeground = "#fed",
+                                    command=self.startDemo)
+            self.stop_btn = Button(root, text=" STOP ", font=btnfont,
+                                   fg="white", disabledforeground = "#fed",
+                                   command=self.stopIt)
+            self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
+                                    fg="white", disabledforeground="#fed",
+                                    command = self.clearCanvas)
         self.output_lbl.grid(row=1, column=0, sticky='news', padx=(0,5))
         self.start_btn.grid(row=1, column=1, sticky='ew')
         self.stop_btn.grid(row=1, column=2, sticky='ew')
@@ -196,10 +202,10 @@ class DemoWindow(object):
 
 
     def onResize(self, event):
-        cwidth = self._canvas.winfo_width()
-        cheight = self._canvas.winfo_height()
-        self._canvas.xview_moveto(0.5*(self.canvwidth-cwidth)/self.canvwidth)
-        self._canvas.yview_moveto(0.5*(self.canvheight-cheight)/self.canvheight)
+        cwidth = self.canvas.winfo_width()
+        cheight = self.canvas.winfo_height()
+        self.canvas.xview_moveto(0.5*(self.canvwidth-cwidth)/self.canvwidth)
+        self.canvas.yview_moveto(0.5*(self.canvheight-cheight)/self.canvheight)
 
     def makeTextFrame(self, root):
         self.text_frame = text_frame = Frame(root)
@@ -209,7 +215,7 @@ class DemoWindow(object):
 
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
         vbar['command'] = text.yview
-        vbar.pack(side=LEFT, fill=Y)
+        vbar.pack(side=RIGHT, fill=Y)
         self.hbar = hbar = Scrollbar(text_frame, name='hbar', orient=HORIZONTAL)
         hbar['command'] = text.xview
         hbar.pack(side=BOTTOM, fill=X)
@@ -230,19 +236,23 @@ class DemoWindow(object):
         return text_frame
 
     def makeGraphFrame(self, root):
+        # t._Screen is a singleton class instantiated or retrieved
+        # by calling Screen.  Since tdemo canvas needs a different
+        # configuration, we manually set class attributes before
+        # calling Screen and manually call superclass init after.
         turtle._Screen._root = root
+
         self.canvwidth = 1000
         self.canvheight = 800
-        turtle._Screen._canvas = self._canvas = canvas = turtle.ScrolledCanvas(
+        turtle._Screen._canvas = self.canvas = canvas = turtle.ScrolledCanvas(
                 root, 800, 600, self.canvwidth, self.canvheight)
         canvas.adjustScrolls()
         canvas._rootwindow.bind('<Configure>', self.onResize)
         canvas._canvas['borderwidth'] = 0
 
-        self.screen = _s_ = turtle.Screen()
-        turtle.TurtleScreen.__init__(_s_, _s_._canvas)
-        self.scanvas = _s_._canvas
-        turtle.RawTurtle.screens = [_s_]
+        self.screen = screen = turtle.Screen()
+        turtle.TurtleScreen.__init__(screen, canvas)
+        turtle.RawTurtle.screens = [screen]
         return canvas
 
     def set_txtsize(self, size):
@@ -259,7 +269,7 @@ class DemoWindow(object):
         return 'break'
 
     def update_mousewheel(self, event):
-        # For wheel up, event.delte = 120 on Windows, -1 on darwin.
+        # For wheel up, event.delta = 120 on Windows, -1 on darwin.
         # X-11 sends Control-Button-4 event instead.
         if (event.delta < 0) == (not darwin):
             return self.decrease_size()
@@ -267,46 +277,49 @@ class DemoWindow(object):
             return self.increase_size()
 
     def configGUI(self, start, stop, clear, txt="", color="blue"):
-        self.start_btn.config(state=start,
-                              bg="#d00" if start == NORMAL else "#fca")
-        self.stop_btn.config(state=stop,
-                             bg="#d00" if stop == NORMAL else "#fca")
-        self.clear_btn.config(state=clear,
-                              bg="#d00" if clear == NORMAL else"#fca")
+        if darwin:  # Leave Mac button colors alone - #44254.
+            self.start_btn.config(state=start)
+            self.stop_btn.config(state=stop)
+            self.clear_btn.config(state=clear)
+        else:
+            self.start_btn.config(state=start,
+                                  bg="#d00" if start == NORMAL else "#fca")
+            self.stop_btn.config(state=stop,
+                                 bg="#d00" if stop == NORMAL else "#fca")
+            self.clear_btn.config(state=clear,
+                                  bg="#d00" if clear == NORMAL else "#fca")
         self.output_lbl.config(text=txt, fg=color)
 
     def makeLoadDemoMenu(self, master):
-        menu = Menu(master)
+        menu = Menu(master, tearoff=1)  # TJR: leave this one.
 
         for entry in getExampleEntries():
             def load(entry=entry):
                 self.loadfile(entry)
-            menu.add_command(label=entry, underline=0,
-                             font=menufont, command=load)
+            menu.add_command(label=entry, underline=0, command=load)
         return menu
 
     def makeFontMenu(self, master):
-        menu = Menu(master)
-        menu.add_command(label="Decrease (C-'-')", command=self.decrease_size,
-                         font=menufont)
-        menu.add_command(label="Increase (C-'+')", command=self.increase_size,
-                         font=menufont)
+        menu = Menu(master, tearoff=0)
+        menu.add_command(label="Decrease", command=self.decrease_size,
+                         accelerator=f"{'Command' if darwin else 'Ctrl'}+-")
+        menu.add_command(label="Increase", command=self.increase_size,
+                         accelerator=f"{'Command' if darwin else 'Ctrl'}+=")
         menu.add_separator()
 
         for size in font_sizes:
             def resize(size=size):
                 self.set_txtsize(size)
-            menu.add_command(label=str(size), underline=0,
-                             font=menufont, command=resize)
+            menu.add_command(label=str(size), underline=0, command=resize)
         return menu
 
     def makeHelpMenu(self, master):
-        menu = Menu(master)
+        menu = Menu(master, tearoff=0)
 
         for help_label, help_file in help_entries:
             def show(help_label=help_label, help_file=help_file):
                 view_text(self.root, help_label, help_file)
-            menu.add_command(label=help_label, font=menufont, command=show)
+            menu.add_command(label=help_label, command=show)
         return menu
 
     def refreshCanvas(self):
@@ -361,7 +374,7 @@ class DemoWindow(object):
     def clearCanvas(self):
         self.refreshCanvas()
         self.screen._delete("all")
-        self.scanvas.config(cursor="")
+        self.canvas.config(cursor="")
         self.configGUI(NORMAL, DISABLED, DISABLED)
 
     def stopIt(self):

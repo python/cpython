@@ -1,13 +1,11 @@
 #include "Python.h"
+#include "pycore_pyarena.h"       // PyArena
 
 /* A simple arena block structure.
 
    Measurements with standard library modules suggest the average
-   allocation is about 20 bytes and that most compiles use a single
+   allocation is about 20 bytes and that most compilers use a single
    block.
-
-   TODO(jhylton): Think about a realloc API, maybe just for the last
-   allocation?
 */
 
 #define DEFAULT_BLOCK_SIZE 8192
@@ -49,7 +47,7 @@ struct _arena {
      */
     block *a_head;
 
-    /* Pointer to the block currently used for allocation.  It's
+    /* Pointer to the block currently used for allocation.  Its
        ab_next field should be NULL.  If it is not-null after a
        call to block_alloc(), it means a new block has been allocated
        and a_cur should be reset to point it.
@@ -57,7 +55,7 @@ struct _arena {
     block *a_cur;
 
     /* A Python list object containing references to all the PyObject
-       pointers associated with this area.  They will be DECREFed
+       pointers associated with this arena.  They will be DECREFed
        when the arena is freed.
     */
     PyObject *a_objects;
@@ -107,7 +105,6 @@ block_alloc(block *b, size_t size)
         /* If we need to allocate more memory than will fit in
            the default block, allocate a one-off block that is
            exactly the right size. */
-        /* TODO(jhylton): Think about space waste at end of block */
         block *newbl = block_new(
                         size < DEFAULT_BLOCK_SIZE ?
                         DEFAULT_BLOCK_SIZE : size);
@@ -125,7 +122,7 @@ block_alloc(block *b, size_t size)
 }
 
 PyArena *
-PyArena_New()
+_PyArena_New(void)
 {
     PyArena* arena = (PyArena *)PyMem_Malloc(sizeof(PyArena));
     if (!arena)
@@ -154,13 +151,13 @@ PyArena_New()
 }
 
 void
-PyArena_Free(PyArena *arena)
+_PyArena_Free(PyArena *arena)
 {
     assert(arena);
 #if defined(Py_DEBUG)
     /*
     fprintf(stderr,
-        "alloc=%d size=%d blocks=%d block_size=%d big=%d objects=%d\n",
+        "alloc=%zu size=%zu blocks=%zu block_size=%zu big=%zu objects=%zu\n",
         arena->total_allocs, arena->total_size, arena->total_blocks,
         arena->total_block_size, arena->total_big_blocks,
         PyList_Size(arena->a_objects));
@@ -177,7 +174,7 @@ PyArena_Free(PyArena *arena)
 }
 
 void *
-PyArena_Malloc(PyArena *arena, size_t size)
+_PyArena_Malloc(PyArena *arena, size_t size)
 {
     void *p = block_alloc(arena->a_cur, size);
     if (!p)
@@ -200,7 +197,7 @@ PyArena_Malloc(PyArena *arena, size_t size)
 }
 
 int
-PyArena_AddPyObject(PyArena *arena, PyObject *obj)
+_PyArena_AddPyObject(PyArena *arena, PyObject *obj)
 {
     int r = PyList_Append(arena->a_objects, obj);
     if (r >= 0) {

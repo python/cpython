@@ -10,6 +10,28 @@ Appendix
 Interactive Mode
 ================
 
+There are two variants of the interactive :term:`REPL`.  The classic
+basic interpreter is supported on all platforms with minimal line
+control capabilities.
+
+On Windows, or Unix-like systems with :mod:`curses` support,
+a new interactive shell is used by default since Python 3.13.
+This one supports color, multiline editing, history browsing, and
+paste mode.  To disable color, see :ref:`using-on-controlling-color` for
+details.  Function keys provide some additional functionality.
+:kbd:`F1` enters the interactive help browser :mod:`pydoc`.
+:kbd:`F2` allows for browsing command-line history with neither output nor the
+:term:`>>>` and :term:`...` prompts. :kbd:`F3` enters "paste mode", which
+makes pasting larger blocks of code easier. Press :kbd:`F3` to return to
+the regular prompt.
+
+When using the new interactive shell, exit the shell by typing :kbd:`exit`
+or :kbd:`quit`. Adding call parentheses after those commands is not
+required.
+
+If the new interactive shell is not desired, it can be disabled via
+the :envvar:`PYTHON_BASIC_REPL` environment variable.
+
 .. _tut-error:
 
 Error Handling
@@ -20,7 +42,7 @@ In interactive mode, it then returns to the primary prompt; when input came from
 a file, it exits with a nonzero exit status after printing the stack trace.
 (Exceptions handled by an :keyword:`except` clause in a :keyword:`try` statement
 are not errors in this context.)  Some errors are unconditionally fatal and
-cause an exit with a nonzero exit; this applies to internal inconsistencies and
+cause an exit with a nonzero exit status; this applies to internal inconsistencies and
 some cases of running out of memory.  All error messages are written to the
 standard error stream; normal output from executed commands is written to
 standard output.
@@ -40,7 +62,7 @@ Executable Python Scripts
 On BSD'ish Unix systems, Python scripts can be made directly executable, like
 shell scripts, by putting the line ::
 
-   #!/usr/bin/env python3.5
+   #!/usr/bin/env python3
 
 (assuming that the interpreter is on the user's :envvar:`PATH`) at the beginning
 of the script and giving the file an executable mode.  The ``#!`` must be the
@@ -52,7 +74,7 @@ comment in Python.
 The script can be given an executable mode, or permission, using the
 :program:`chmod` command.
 
-.. code-block:: bash
+.. code-block:: shell-session
 
    $ chmod +x myscript.py
 
@@ -101,21 +123,21 @@ in the script::
 The Customization Modules
 -------------------------
 
-Python provides two hooks to let you customize it: :mod:`sitecustomize` and
-:mod:`usercustomize`.  To see how it works, you need first to find the location
+Python provides two hooks to let you customize it: :index:`sitecustomize` and
+:index:`usercustomize`.  To see how it works, you need first to find the location
 of your user site-packages directory.  Start Python and run this code::
 
    >>> import site
    >>> site.getusersitepackages()
-   '/home/user/.local/lib/python3.5/site-packages'
+   '/home/user/.local/lib/python3.x/site-packages'
 
 Now you can create a file named :file:`usercustomize.py` in that directory and
 put anything you want in it.  It will affect every invocation of Python, unless
 it is started with the :option:`-s` option to disable the automatic import.
 
-:mod:`sitecustomize` works in the same way, but is typically created by an
+:index:`sitecustomize` works in the same way, but is typically created by an
 administrator of the computer in the global site-packages directory, and is
-imported before :mod:`usercustomize`.  See the documentation of the :mod:`site`
+imported before :index:`usercustomize`.  See the documentation of the :mod:`site`
 module for more details.
 
 

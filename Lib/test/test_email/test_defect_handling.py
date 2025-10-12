@@ -57,7 +57,7 @@ class TestDefectsBase:
             msg = self._str_msg(source)
         if self.raise_expected: return
         inner = msg.get_payload(0)
-        self.assertTrue(hasattr(inner, 'defects'))
+        self.assertHasAttr(inner, 'defects')
         self.assertEqual(len(self.get_defects(inner)), 1)
         self.assertIsInstance(self.get_defects(inner)[0],
                               errors.StartBoundaryNotFoundDefect)
@@ -151,7 +151,7 @@ class TestDefectsBase:
         with self._raise_point(errors.NoBoundaryInMultipartDefect):
             msg = self._str_msg(source)
         if self.raise_expected: return
-        self.assertTrue(hasattr(msg, 'defects'))
+        self.assertHasAttr(msg, 'defects')
         self.assertEqual(len(self.get_defects(msg)), 2)
         self.assertIsInstance(self.get_defects(msg)[0],
                               errors.NoBoundaryInMultipartDefect)
@@ -253,6 +253,23 @@ class TestDefectsBase:
         self.assertEqual(payload, b'vi')
         self.assertDefectsEqual(self.get_defects(msg),
                                 [errors.InvalidBase64CharactersDefect])
+
+    def test_invalid_length_of_base64_payload(self):
+        source = textwrap.dedent("""\
+            Subject: test
+            MIME-Version: 1.0
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: base64
+
+            abcde
+            """)
+        msg = self._str_msg(source)
+        with self._raise_point(errors.InvalidBase64LengthDefect):
+            payload = msg.get_payload(decode=True)
+        if self.raise_expected: return
+        self.assertEqual(payload, b'abcde')
+        self.assertDefectsEqual(self.get_defects(msg),
+                                [errors.InvalidBase64LengthDefect])
 
     def test_missing_ending_boundary(self):
         source = textwrap.dedent("""\

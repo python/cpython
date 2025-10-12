@@ -10,13 +10,11 @@ class ExceptionClassTests(unittest.TestCase):
     inheritance hierarchy)"""
 
     def test_builtins_new_style(self):
-        self.assertTrue(issubclass(Exception, object))
+        self.assertIsSubclass(Exception, object)
 
     def verify_instance_interface(self, ins):
         for attr in ("args", "__str__", "__repr__"):
-            self.assertTrue(hasattr(ins, attr),
-                    "%s missing %s attribute" %
-                        (ins.__class__.__name__, attr))
+            self.assertHasAttr(ins, attr)
 
     def test_inheritance(self):
         # Make sure the inheritance hierarchy matches the documentation
@@ -28,8 +26,9 @@ class ExceptionClassTests(unittest.TestCase):
             except TypeError:
                 pass
 
-        inheritance_tree = open(os.path.join(os.path.split(__file__)[0],
-                                                'exception_hierarchy.txt'))
+        inheritance_tree = open(
+                os.path.join(os.path.split(__file__)[0], 'exception_hierarchy.txt'),
+                encoding="utf-8")
         try:
             superclass_name = inheritance_tree.readline().rstrip()
             try:
@@ -43,7 +42,7 @@ class ExceptionClassTests(unittest.TestCase):
             last_depth = 0
             for exc_line in inheritance_tree:
                 exc_line = exc_line.rstrip()
-                depth = exc_line.rindex('-')
+                depth = exc_line.rindex('─')
                 exc_name = exc_line[depth+2:]  # Slice past space
                 if '(' in exc_name:
                     paren_index = exc_name.index('(')
@@ -64,7 +63,7 @@ class ExceptionClassTests(unittest.TestCase):
                 elif last_depth > depth:
                     while superclasses[-1][0] >= depth:
                         superclasses.pop()
-                self.assertTrue(issubclass(exc, superclasses[-1][1]),
+                self.assertIsSubclass(exc, superclasses[-1][1],
                 "%s is not a subclass of %s" % (exc.__name__,
                     superclasses[-1][1].__name__))
                 try:  # Some exceptions require arguments; just skip them
@@ -77,6 +76,9 @@ class ExceptionClassTests(unittest.TestCase):
                 last_depth = depth
         finally:
             inheritance_tree.close()
+
+        # Underscore-prefixed (private) exceptions don't need to be documented
+        exc_set = set(e for e in exc_set if not e.startswith('_'))
         self.assertEqual(len(exc_set), 0, "%s not accounted for" % exc_set)
 
     interface_tests = ("length", "args", "str", "repr")
@@ -92,7 +94,7 @@ class ExceptionClassTests(unittest.TestCase):
         exc = Exception(arg)
         results = ([len(exc.args), 1], [exc.args[0], arg],
                    [str(exc), str(arg)],
-            [repr(exc), exc.__class__.__name__ + repr(exc.args)])
+            [repr(exc), '%s(%r)' % (exc.__class__.__name__, arg)])
         self.interface_test_driver(results)
 
     def test_interface_multi_arg(self):
@@ -112,6 +114,31 @@ class ExceptionClassTests(unittest.TestCase):
                 [str(exc), ''],
                 [repr(exc), exc.__class__.__name__ + '()'])
         self.interface_test_driver(results)
+
+    def test_setstate_refcount_no_crash(self):
+        # gh-97591: Acquire strong reference before calling tp_hash slot
+        # in PyObject_SetAttr.
+        import gc
+        d = {}
+        class HashThisKeyWillClearTheDict(str):
+            def __hash__(self) -> int:
+                d.clear()
+                return super().__hash__()
+        class Value(str):
+            pass
+        exc = Exception()
+
+        d[HashThisKeyWillClearTheDict()] = Value()  # refcount of Value() is 1 now
+
+        # Exception.__setstate__ should acquire a strong reference of key and
+        # value in the dict. Otherwise, Value()'s refcount would go below
+        # zero in the tp_hash call in PyObject_SetAttr(), and it would cause
+        # crash in GC.
+        exc.__setstate__(d)  # __hash__() is called again here, clearing the dict.
+
+        # This GC would crash if the refcount of Value() goes below zero.
+        gc.collect()
+
 
 class UsageTests(unittest.TestCase):
 
@@ -163,7 +190,7 @@ class UsageTests(unittest.TestCase):
         self.raise_fails("spam")
 
     def test_catch_non_BaseException(self):
-        # Tryinng to catch an object that does not inherit from BaseException
+        # Trying to catch an object that does not inherit from BaseException
         # is not allowed.
         class NonBaseException(object):
             pass

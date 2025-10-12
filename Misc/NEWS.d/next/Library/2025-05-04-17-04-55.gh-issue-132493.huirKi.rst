@@ -1,0 +1,2 @@
+Avoid accessing ``__annotations__`` unnecessarily in
+:func:`inspect.signature`.
