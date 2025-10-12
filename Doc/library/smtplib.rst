@@ -552,6 +552,8 @@ Low-level methods corresponding to the standard SMTP/ESMTP commands ``HELP``,
 Normally these do not need to be called directly, so they are not documented
 here.  For details, consult the module code.
 
+Additionally, an SMTP instance has the following attributes:
+
 
 .. attribute:: SMTP.helo_resp
 
