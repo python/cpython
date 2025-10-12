@@ -10,7 +10,7 @@ _Py_CODEUNIT *
 _JIT_ENTRY(
     _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
 ) {
-    typedef DECLARE_TARGET((*jit_func));
+    typedef _Py_CODEUNIT *__attribute__((preserve_none)) (*jit_func)(_PyInterpreterFrame *, _PyStackRef *, PyThreadState *);
     jit_func jitted = (jit_func)exec->jit_code;
     return jitted(frame, stack_pointer, tstate);
 }
