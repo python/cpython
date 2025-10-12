@@ -140,7 +140,8 @@ doctest:
 pydoc-topics: BUILDER = pydoc-topics
 pydoc-topics: build
 	@echo "Building finished; now run this:" \
-	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
+	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py" \
+	      "&& cp build/pydoc-topics/module_docs.py ../Lib/pydoc_data/module_docs.py"
 
 .PHONY: gettext
 gettext: BUILDER = gettext

@@ -1,0 +1,2 @@
+:mod:`pydoc`: Ensure that the link to the online documentation of a
+:term:`stdlib` module is correct.
