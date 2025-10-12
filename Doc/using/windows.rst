@@ -729,14 +729,9 @@ directory containing the configuration file that specified them.
 Installing free-threaded binaries
 ---------------------------------
 
-.. versionadded:: 3.13 (Experimental)
+.. versionadded:: 3.13
 
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
-
-Pre-built distributions of the experimental free-threaded build are available
+Pre-built distributions of the free-threaded build are available
 by installing tags with the ``t`` suffix.
 
 .. code::
@@ -989,12 +984,7 @@ for the 64-bit version, `www.nuget.org/packages/pythonx86
 Free-threaded packages
 ----------------------
 
-.. versionadded:: 3.13 (Experimental)
-
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
+.. versionadded:: 3.13
 
 Packages containing free-threaded binaries are named
 `python-freethreaded <https://www.nuget.org/packages/python-freethreaded>`_
@@ -1548,12 +1538,7 @@ settings and replace any that have been removed or modified.
 Installing free-threaded binaries
 ---------------------------------
 
-.. versionadded:: 3.13 (Experimental)
-
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
+.. versionadded:: 3.13
 
 To install pre-built binaries with free-threading enabled (see :pep:`703`), you
 should select "Customize installation". The second page of options includes the
