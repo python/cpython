@@ -1309,7 +1309,7 @@ The parts are separated by a decimal point, ``.``::
    4.0
 
 Unlike in integer literals, leading zeros are allowed in the integer part,
-and trailing zeros are allowed in the fractional part.
+and trailing zeros are allowed in the fraction part.
 For example, ``077.010`` is legal, and denotes the same number as ``77.01``.
 
 As in integer literals, single underscores may occur between digits to help
