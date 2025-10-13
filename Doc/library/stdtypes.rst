@@ -2123,8 +2123,6 @@ expression support in the :mod:`re` module).
    value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
 
 
-.. _meth-str-isprintable:
-
 .. method:: str.isprintable()
 
    Return ``True`` if all characters in the string are printable, ``False`` if it
