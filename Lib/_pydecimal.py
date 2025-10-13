@@ -92,6 +92,8 @@ else:
 
 MIN_ETINY = MIN_EMIN - (MAX_PREC-1)
 
+_LOG_10_BASE_2 = float.fromhex('0x1.a934f0979a371p+1')  # log2(10)
+
 # Errors
 
 class DecimalException(ArithmeticError):
@@ -1355,9 +1357,11 @@ class Decimal(object):
             else:
                 op2.int *= 10**(op2.exp - op1.exp)
             q, r = divmod(op1.int, op2.int)
-            if q < 10**context.prec:
-                return (_dec_from_triple(sign, str(q), 0),
-                        _dec_from_triple(self._sign, str(r), ideal_exp))
+            if q.bit_length() < 1 + context.prec * _LOG_10_BASE_2:
+                # ensure that the previous check was sufficient
+                if len(str_q := str(q)) <= context.prec:
+                    return (_dec_from_triple(sign, str_q, 0),
+                            _dec_from_triple(self._sign, str(r), ideal_exp))
 
         # Here the quotient is too large to be representable
         ans = context._raise_error(DivisionImpossible,
