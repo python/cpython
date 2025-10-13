@@ -221,7 +221,7 @@ _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
     buffer->allocated += block_size;
     buffer->num_blocks += 1;
 
-    char* data = PyBytesWriter_GetData(buffer->writer);
+    char *data = PyBytesWriter_GetData(buffer->writer);
     *next_out = data + current_size;
     return block_size;
 }
