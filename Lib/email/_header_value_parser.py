@@ -796,6 +796,7 @@ class MimeParameters(TokenList):
                         value = urllib.parse.unquote(value, encoding='latin-1')
                     else:
                         try:
+                            charset = utils._sanitize_charset_name(charset, 'us-ascii')
                             value = value.decode(charset, 'surrogateescape')
                         except (LookupError, UnicodeEncodeError):
                             # XXX: there should really be a custom defect for
