@@ -1360,8 +1360,16 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    On success, return ``0``.
    On failure, set an exception and return ``-1``.
 
-   .. seealso::
-      The :c:func:`PyUnstable_ThreadState_ResetStack` function.
+   CPython implements :ref:`recursion control <recursion>` for C code by raising
+   :py:exc:`RecursionError` when it notices that the machine execution stack is close
+   to overflow.
+   For this, it needs to know the location of the current thread's stack, which it
+   normally gets from the operating system.
+   When the stack is changed, for example using context switching techniques like the
+   Boost library's ``boost::context``, you must call
+   :c:func:`~PyUnstable_ThreadState_SetStack` to inform CPython of the change.
+
+   See :c:func:`PyUnstable_ThreadState_ResetStack` for undoing this operation.
 
    .. versionadded:: next
 
