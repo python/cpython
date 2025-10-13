@@ -514,6 +514,10 @@ class TestFuncWatchers(unittest.TestCase):
             _testcapi.set_func_kwdefaults_via_capi(myfunc, new_kwdefaults)
             self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_KWDEFAULTS, myfunc, new_kwdefaults), events)
 
+            new_qualname = "foo.bar"
+            myfunc.__qualname__ = new_qualname
+            self.assertIn((_testcapi.PYFUNC_EVENT_MODIFY_QUALNAME, myfunc, new_qualname), events)
+
             # Clear events reference to func
             events = []
             del myfunc

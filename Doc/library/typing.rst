@@ -2269,7 +2269,7 @@ without the dedicated syntax, as documented below.
 
    .. attribute:: __module__
 
-      The module in which the type alias was defined::
+      The name of the module in which the type alias was defined::
 
          >>> type Alias = int
          >>> Alias.__module__
@@ -2449,7 +2449,7 @@ types.
 
    .. attribute:: __module__
 
-      The module in which the new type is defined.
+      The name of the module in which the new type is defined.
 
    .. attribute:: __name__
 

@@ -19226,6 +19226,12 @@ then :
   printf "%s\n" "#define HAVE_CHOWN 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "clearenv" "ac_cv_func_clearenv"
+if test "x$ac_cv_func_clearenv" = xyes
+then :
+  printf "%s\n" "#define HAVE_CLEARENV 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "clock" "ac_cv_func_clock"
 if test "x$ac_cv_func_clock" = xyes
 then :
