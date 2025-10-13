@@ -1398,7 +1398,7 @@ XMLParser Objects
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
 
-      Note that :meth:`!flush`
+      :meth:`!flush`
       has been backported to some prior releases of CPython as a security fix.
       Check for availability of
       :meth:`!flush`
@@ -1478,7 +1478,7 @@ XMLPullParser Objects
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
 
-      Note that :meth:`!flush`
+      :meth:`!flush`
       has been backported to some prior releases of CPython as a security fix.
       Check for availability of
       :meth:`!flush`

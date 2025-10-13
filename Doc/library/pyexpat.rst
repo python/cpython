@@ -223,7 +223,7 @@ XMLParser Objects
    Calling ``SetReparseDeferralEnabled(True)`` allows re-enabling reparse
    deferral.
 
-   Note that :meth:`!SetReparseDeferralEnabled`
+   :meth:`!SetReparseDeferralEnabled`
    has been backported to some prior releases of CPython as a security fix.
    Check for availability of
    :meth:`!SetReparseDeferralEnabled`
@@ -259,7 +259,7 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
-   Note that  :meth:`!SetBillionLaughsAttackProtectionActivationThreshold`
+   :meth:`!SetBillionLaughsAttackProtectionActivationThreshold`
    has been backported to some prior releases of CPython as a security fix.
    Check for availability of
    :meth:`!SetBillionLaughsAttackProtectionActivationThreshold`
@@ -297,7 +297,7 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
-   Note that :meth:`!SetBillionLaughsAttackProtectionMaximumAmplification`
+   :meth:`!SetBillionLaughsAttackProtectionMaximumAmplification`
    has been backported to some prior releases of CPython as a security fix.
    Check for availability of
    :meth:`!SetBillionLaughsAttackProtectionMaximumAmplification`
@@ -325,7 +325,7 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
-   Note that :meth:`!SetAllocTrackerActivationThreshold`
+   :meth:`!SetAllocTrackerActivationThreshold`
    has been backported to some prior releases of CPython as a security fix.
    Check for availability of
    :meth:`!SetAllocTrackerActivationThreshold`
@@ -357,7 +357,7 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
-   Note that :meth:`!SetAllocTrackerMaximumAmplification`
+   :meth:`!SetAllocTrackerMaximumAmplification`
    has been backported to some prior releases of CPython as a security fix.
    Check for availability of
    :meth:`!SetAllocTrackerMaximumAmplification`
