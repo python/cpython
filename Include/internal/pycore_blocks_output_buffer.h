@@ -52,7 +52,7 @@ typedef struct {
     // Max length of the buffer, negative number means unlimited length
     Py_ssize_t max_length;
     // Number of blocks of bytes. Used to calculate next allocation size
-    Py_ssize_t num_blocks;
+    size_t num_blocks;
 } _BlocksOutputBuffer;
 
 static const char unable_allocate_msg[] = "Unable to allocate output buffer.";
@@ -154,7 +154,6 @@ _BlocksOutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer,
 
     buffer->writer = PyBytesWriter_Create(init_size);
     if (buffer->writer == NULL) {
-        // PyBytesWriter_Create already sets an exception when out of memory.
         return -1;
     }
 
@@ -187,7 +186,7 @@ _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
     }
 
     // get block size
-    if (buffer->num_blocks < (Py_ssize_t) Py_ARRAY_LENGTH(BUFFER_BLOCK_SIZE)) {
+    if (buffer->num_blocks < Py_ARRAY_LENGTH(BUFFER_BLOCK_SIZE)) {
         block_size = BUFFER_BLOCK_SIZE[buffer->num_blocks];
     } else {
         block_size = BUFFER_BLOCK_SIZE[Py_ARRAY_LENGTH(BUFFER_BLOCK_SIZE) - 1];
