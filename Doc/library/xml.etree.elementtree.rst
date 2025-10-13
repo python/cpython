@@ -1400,10 +1400,8 @@ XMLParser Objects
 
       :meth:`!flush`
       has been backported to some prior releases of CPython as a security fix.
-      Check for availability of
-      :meth:`!flush`
-      using :func:`hasattr` if used in code running across a variety of Python
-      versions.
+      Check for availability using :func:`hasattr` if used in code running
+      across a variety of Python versions.
 
       .. versionadded:: 3.13
 
@@ -1480,10 +1478,8 @@ XMLPullParser Objects
 
       :meth:`!flush`
       has been backported to some prior releases of CPython as a security fix.
-      Check for availability of
-      :meth:`!flush`
-      using :func:`hasattr` if used in code running across a variety of Python
-      versions.
+      Check for availability using :func:`hasattr` if used in code running
+      across a variety of Python versions.
 
       .. versionadded:: 3.13
 
