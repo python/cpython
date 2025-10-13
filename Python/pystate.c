@@ -575,6 +575,9 @@ init_interpreter(PyInterpreterState *interp,
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
     interp->executor_deletion_list_remaining_capacity = 0;
+#ifdef Py_GIL_DISABLED
+    interp->executor_list_lock = (PyMutex){0};
+#endif
     interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
