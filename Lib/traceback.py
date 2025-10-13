@@ -1195,8 +1195,10 @@ class TracebackException:
             original__notes__ = [
                 f"Ignored error getting __notes__: {_safe_string(e, '__notes__', repr, exception_target, exc_value)}"
             ]
-        if original__notes__ is not None and not isinstance(
-            original__notes__, list):
+        if original__notes__ is not None and not (
+            isinstance(original__notes__, collections.abc.Sequence)
+            and not isinstance(original__notes__, (str, bytes))
+        ):
             original__notes__ = [
                 _safe_string(
                     original__notes__,
