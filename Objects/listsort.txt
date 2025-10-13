@@ -839,6 +839,12 @@ reasonable minrun values.
 Additionally, "binary insertion sort" has implemented adaptivity procedure,
 which reduces the number of comparisons for cases where data is already
 sorted to high degree in either forward or reversed order.
+While "binary insertion sort" ensures optimal number of comparisons
+it looses best case of textbook insertion sort when data is highly sorted
+in correct order. Adaptivity addition brings that back and more at small cost.
+It adapts to any data where position of next element is close to the one of
+last element. Thus, it adapts to cases where it is highly sorted in correct
+order, reverse order or elements are being funneled into some mid-point.
 
 
 LEFT OR RIGHT
