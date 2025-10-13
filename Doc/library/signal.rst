@@ -205,6 +205,12 @@ The variables defined in the :mod:`signal` module are:
 
    .. availability:: Unix.
 
+.. data:: SIGPROF
+
+   Profiling timer expired.
+
+   .. availability:: Unix.
+
 .. data:: SIGQUIT
 
    Terminal quit signal.
@@ -247,12 +253,6 @@ The variables defined in the :mod:`signal` module are:
 
    .. availability:: Unix.
 
-.. data:: SIGPROF
-
-   Profiling timer expired.
-
-   .. availability:: Unix.
-
 .. data:: SIGVTALRM
 
    Virtual timer expired.
@@ -276,7 +276,7 @@ The variables defined in the :mod:`signal` module are:
    All the signal numbers are defined symbolically.  For example, the hangup signal
    is defined as :const:`signal.SIGHUP`; the variable names are identical to the
    names used in C programs, as found in ``<signal.h>``.  The Unix man page for
-   ':c:func:``signal``' lists the existing signals (on some systems this is
+   '``signal``' lists the existing signals (on some systems this is
    :manpage:`signal(2)`, on others the list is in :manpage:`signal(7)`). Note that
    not all systems define the same set of signal names; only those names defined by
    the system are defined by this module.
