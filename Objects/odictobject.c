@@ -1820,7 +1820,7 @@ odictiter_iternext_lock_held(PyObject *op)
     /* Handle the items case. */
     result = di->di_result;
 
-    if (_PyObject_IsUniquelyReferenced(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         /* not in use so we can reuse it
          * (the common case during iteration) */
         Py_INCREF(result);
