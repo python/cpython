@@ -2151,8 +2151,6 @@ expression support in the :mod:`re` module).
    ``B``, or ``S``.
 
 
-.. _meth-str-istitle:
-
 .. method:: str.istitle()
 
    Return ``True`` if the string is a titlecased string and there is at least one
