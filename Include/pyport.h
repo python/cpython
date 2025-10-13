@@ -400,8 +400,8 @@ extern "C" {
 // Just a scope. Hints to the programmer
 // That any local variable defined within this block MUST
 // not escape from the current definition.
-# define Py_BEGIN_LOCALS_MUST_NOT_ESCAPE() {
-# define Py_END_LOCALS_MUST_NOT_ESCAPE() }
+# define Py_BEGIN_LOCALS_MUST_NOT_ESCAPE {
+# define Py_END_LOCALS_MUST_NOT_ESCAPE }
 
 #include "exports.h"
 

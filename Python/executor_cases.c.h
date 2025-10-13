@@ -2132,7 +2132,7 @@
 
         case _LOAD_BUILD_CLASS: {
             _PyStackRef bc;
-            PyObject *Py_MSVC_RESTRICT bc_o;
+            PyObject *bc_o;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _PyEval_Mapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2640,7 +2640,7 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             class_dict_st = stack_pointer[-1];
-            PyObject *Py_MSVC_RESTRICT value_o;
+            PyObject *value_o;
             PyObject *name;
             PyObject *class_dict = PyStackRef_AsPyObjectBorrow(class_dict_st);
             assert(class_dict);
@@ -3042,7 +3042,7 @@
         }
 
         case _SETUP_ANNOTATIONS: {
-            PyObject *Py_MSVC_RESTRICT ann_dict;
+            PyObject *ann_dict;
             if (LOCALS() == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_Format(tstate, PyExc_SystemError,
@@ -3254,13 +3254,13 @@
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
             PyObject *attr_o;
-            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
+            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
             int *Py_MSVC_RESTRICT method_found_ptr = &method_found;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             attr_o = _PySuper_Lookup(cls, self, name,
                                      Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            Py_END_LOCALS_MUST_NOT_ESCAPE();
+            Py_END_LOCALS_MUST_NOT_ESCAPE;
             if (attr_o == NULL) {
                 JUMP_TO_ERROR();
             }
@@ -4683,14 +4683,14 @@
             assert(PyStackRef_IsTaggedInt(lasti));
             (void)lasti;
             PyObject* res_o;
-            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
+            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
             PyObject *Py_MSVC_RESTRICT stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
                                         (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            Py_END_LOCALS_MUST_NOT_ESCAPE();
+            Py_END_LOCALS_MUST_NOT_ESCAPE;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_XDECREF(original_tb);
             stack_pointer = _PyFrame_GetStackPointer(frame);

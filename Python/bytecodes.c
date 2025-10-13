@@ -1534,7 +1534,7 @@ dummy_func(
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
-            PyObject *Py_MSVC_RESTRICT bc_o;
+            PyObject *bc_o;
             int err = _PyEval_Mapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
             ERROR_IF(err < 0);
             if (bc_o == NULL) {
@@ -1738,7 +1738,7 @@ dummy_func(
 
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *Py_MSVC_RESTRICT v_o;
+            PyObject *v_o;
             int err = _PyEval_Mapping_GetOptionalItem(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &v_o);
             PyStackRef_CLOSE(mod_or_class_dict);
             ERROR_IF(err < 0);
@@ -1925,7 +1925,7 @@ dummy_func(
         }
 
         inst(LOAD_FROM_DICT_OR_DEREF, (class_dict_st -- value)) {
-            PyObject *Py_MSVC_RESTRICT value_o;
+            PyObject *value_o;
             PyObject *name;
             PyObject *class_dict = PyStackRef_AsPyObjectBorrow(class_dict_st);
 
@@ -2115,7 +2115,7 @@ dummy_func(
         }
 
         inst(SETUP_ANNOTATIONS, (--)) {
-            PyObject *Py_MSVC_RESTRICT ann_dict;
+            PyObject *ann_dict;
             if (LOCALS() == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when setting up annotations");
@@ -2227,10 +2227,10 @@ dummy_func(
             // we make no attempt to optimize here; specializations should
             // handle any case whose performance we care about
             PyObject *super;
-            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
-                PyObject *Py_MSVC_RESTRICT stack[] = {class, self};
-                super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
-            Py_END_LOCALS_MUST_NOT_ESCAPE();
+            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
+            PyObject *Py_MSVC_RESTRICT stack[] = {class, self};
+            super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
+            Py_END_LOCALS_MUST_NOT_ESCAPE;
             if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                 if (super == NULL) {
@@ -2290,11 +2290,11 @@ dummy_func(
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
             PyObject *attr_o;
-            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
+            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
             int *Py_MSVC_RESTRICT method_found_ptr = &method_found;
             attr_o = _PySuper_Lookup(cls, self, name,
-                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
-            Py_END_LOCALS_MUST_NOT_ESCAPE();
+                                Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
+            Py_END_LOCALS_MUST_NOT_ESCAPE;
             if (attr_o == NULL) {
                 ERROR_NO_POP();
             }
@@ -3518,12 +3518,12 @@ dummy_func(
             assert(PyStackRef_IsTaggedInt(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject* res_o;
-            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
+            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
             PyObject *Py_MSVC_RESTRICT stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
             res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
                     (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-            Py_END_LOCALS_MUST_NOT_ESCAPE();
+            Py_END_LOCALS_MUST_NOT_ESCAPE;
             Py_XDECREF(original_tb);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);

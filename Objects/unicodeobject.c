@@ -10068,7 +10068,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 }
 
 PyObject *
-_PyUnicode_JoinArray(PyObject *Py_MSVC_RESTRICT separator, PyObject *const *Py_MSVC_RESTRICT items, Py_ssize_t seqlen)
+_PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seqlen)
 {
     PyObject *res = NULL; /* the result */
     PyObject *sep = NULL;
