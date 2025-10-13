@@ -3251,7 +3251,7 @@ PyCData_MallocBuffer(CDataObject *obj, StgInfo *info)
      * used in constructors and therefore does not have concurrent
      * access.
      */
-   assert (Py_REFCNT(obj) == 1);
+   assert (_PyObject_IsUniquelyReferenced(obj));
    assert(stginfo_get_dict_final(info) == 1);
 
     if ((size_t)info->size <= sizeof(obj->b_value)) {

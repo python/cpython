@@ -291,7 +291,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (kw == NULL) {
             pto->kw = PyDict_New();
         }
-        else if (Py_REFCNT(kw) == 1) {
+        else if (_PyObject_IsUniquelyReferenced(kw)) {
             pto->kw = Py_NewRef(kw);
         }
         else {
@@ -1093,7 +1093,7 @@ _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
             result = op2;
         else {
             /* Update the args tuple in-place */
-            assert(Py_REFCNT(args) == 1);
+            assert(_PyObject_IsUniquelyReferenced(args));
             Py_XSETREF(_PyTuple_ITEMS(args)[0], result);
             Py_XSETREF(_PyTuple_ITEMS(args)[1], op2);
             if ((result = PyObject_Call(func, args, NULL)) == NULL) {

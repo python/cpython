@@ -388,7 +388,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
      * But we use TYPE_REF always for interned string, to PYC file stable
      * as possible.
      */
-    if (Py_REFCNT(v) == 1 &&
+    if (_PyObject_IsUniquelyReferenced(v) &&
             !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
         return 0;
     }

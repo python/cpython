@@ -376,7 +376,7 @@ pairwise_next(PyObject *op)
     }
 
     result = po->result;
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         PyObject *last_old = PyTuple_GET_ITEM(result, 0);
         PyObject *last_new = PyTuple_GET_ITEM(result, 1);
@@ -802,7 +802,7 @@ teedataobject_traverse(PyObject *op, visitproc visit, void * arg)
 static void
 teedataobject_safe_decref(PyObject *obj)
 {
-    while (obj && Py_REFCNT(obj) == 1) {
+    while (obj && _PyObject_IsUniquelyReferenced(obj)) {
         teedataobject *tmp = teedataobject_CAST(obj);
         PyObject *nextlink = tmp->nextlink;
         tmp->nextlink = NULL;
@@ -2143,7 +2143,7 @@ product_next_lock_held(PyObject *op)
             _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
-        assert (npools==0 || Py_REFCNT(result) == 1);
+        assert (npools==0 || _PyObject_IsUniquelyReferenced(result));
 
         /* Update the pool indices right-to-left.  Only advance to the
            next pool when the previous one rolls-over */
@@ -2381,7 +2381,7 @@ combinations_next_lock_held(PyObject *op)
          * CPython's empty tuple is a singleton and cached in
          * PyTuple's freelist.
          */
-        assert(r == 0 || Py_REFCNT(result) == 1);
+        assert(r == 0 || _PyObject_IsUniquelyReferenced(result));
 
         /* Scan indices right-to-left until finding one that is not
            at its maximum (i + n - r). */
@@ -2633,7 +2633,7 @@ cwr_next(PyObject *op)
         }
         /* Now, we've got the only copy so we can update it in-place CPython's
            empty tuple is a singleton and cached in PyTuple's freelist. */
-        assert(r == 0 || Py_REFCNT(result) == 1);
+        assert(r == 0 || _PyObject_IsUniquelyReferenced(result));
 
        /* Scan indices right-to-left until finding one that is not
         * at its maximum (n-1). */
@@ -2893,7 +2893,7 @@ permutations_next(PyObject *op)
             _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
-        assert(r == 0 || Py_REFCNT(result) == 1);
+        assert(r == 0 || _PyObject_IsUniquelyReferenced(result));
 
         /* Decrement rightmost cycle, moving leftward upon zero rollover */
         for (i=r-1 ; i>=0 ; i--) {
@@ -3847,7 +3847,7 @@ zip_longest_next(PyObject *op)
         return NULL;
     if (lz->numactive == 0)
         return NULL;
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);

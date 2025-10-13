@@ -1058,7 +1058,7 @@ set_update_lock_held(PySetObject *so, PyObject *other)
 static int
 set_update_local(PySetObject *so, PyObject *other)
 {
-    assert(Py_REFCNT(so) == 1);
+    assert(_PyObject_IsUniquelyReferenced(so));
     if (PyAnySet_Check(other)) {
         int rv;
         Py_BEGIN_CRITICAL_SECTION(other);
@@ -2444,7 +2444,7 @@ set_init(PyObject *so, PyObject *args, PyObject *kwds)
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;
 
-    if (Py_REFCNT(self) == 1 && self->fill == 0) {
+    if (_PyObject_IsUniquelyReferenced(self) && self->fill == 0) {
         self->hash = -1;
         if (iterable == NULL) {
             return 0;

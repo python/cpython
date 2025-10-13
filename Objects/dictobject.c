@@ -5670,13 +5670,7 @@ try_locked:
 static bool
 has_unique_reference(PyObject *op)
 {
-#ifdef Py_GIL_DISABLED
-    return (_Py_IsOwnedByCurrentThread(op) &&
-            op->ob_ref_local == 1 &&
-            _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared) == 0);
-#else
-    return Py_REFCNT(op) == 1;
-#endif
+    return _PyObject_IsUniquelyReferenced(op) == 1;
 }
 
 static bool
@@ -5828,7 +5822,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
     }
     else if (Py_IS_TYPE(di, &PyDictRevIterItem_Type)) {
         result = di->di_result;
-        if (Py_REFCNT(result) == 1) {
+        if (_PyObject_IsUniquelyReferenced(result)) {
             PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
             PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
             PyTuple_SET_ITEM(result, 0, Py_NewRef(key));
