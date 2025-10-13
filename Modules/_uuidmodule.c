@@ -32,11 +32,15 @@ py_uuid_generate_time_safe(PyObject *Py_UNUSED(context),
 #ifdef HAVE_UUID_GENERATE_TIME_SAFE
     int res;
 
+    Py_BEGIN_ALLOW_THREADS
     res = uuid_generate_time_safe(uuid);
+    Py_END_ALLOW_THREADS
     return Py_BuildValue("y#i", (const char *) uuid, sizeof(uuid), res);
 #elif defined(HAVE_UUID_CREATE)
     uint32_t status;
+    Py_BEGIN_ALLOW_THREADS
     uuid_create(&uuid, &status);
+    Py_END_ALLOW_THREADS
 # if defined(HAVE_UUID_ENC_BE)
     unsigned char buf[sizeof(uuid)];
     uuid_enc_be(buf, &uuid);
@@ -45,7 +49,9 @@ py_uuid_generate_time_safe(PyObject *Py_UNUSED(context),
     return Py_BuildValue("y#i", (const char *) &uuid, sizeof(uuid), (int) status);
 # endif /* HAVE_UUID_CREATE */
 #else /* HAVE_UUID_GENERATE_TIME_SAFE */
+    Py_BEGIN_ALLOW_THREADS
     uuid_generate_time(uuid);
+    Py_END_ALLOW_THREADS
     return Py_BuildValue("y#O", (const char *) uuid, sizeof(uuid), Py_None);
 #endif /* HAVE_UUID_GENERATE_TIME_SAFE */
 }
