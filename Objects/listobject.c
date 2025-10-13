@@ -1755,28 +1755,24 @@ struct s_MergeState {
 
 #define _binarysort_BISECT(L, R)    \
     do {                            \
-        do {                        \
-            M = (L + R) >> 1;       \
-            IFLT(pivot, a[M])       \
-                R = M;              \
-            else                    \
-                L = M + 1;          \
-        } while (L < R);            \
-        assert(L == R);             \
-    } while (0)
+        M = (L + R) >> 1;           \
+        IFLT(pivot, a[M])           \
+            R = M;                  \
+        else                        \
+            L = M + 1;              \
+    } while (L < R);                \
+    assert(L == R);
 
-#define _binarysort_INSORT(idx, tmp)            \
-    do {                                        \
-        for (tmp = ok; tmp > idx; --tmp)        \
-            a[tmp] = a[tmp - 1];                \
-        a[idx] = pivot;                         \
-        if (has_values) {                       \
-            pivot = v[ok];                      \
-            for (tmp = ok; tmp > idx; --tmp)    \
-                v[tmp] = v[tmp - 1];            \
-            v[idx] = pivot;                     \
-        }                                       \
-    } while (0)
+#define _binarysort_INSORT(idx, tmp)        \
+    for (tmp = ok; tmp > idx; --tmp)        \
+        a[tmp] = a[tmp - 1];                \
+    a[idx] = pivot;                         \
+    if (has_values) {                       \
+        pivot = v[ok];                      \
+        for (tmp = ok; tmp > idx; --tmp)    \
+            v[tmp] = v[tmp - 1];            \
+        v[idx] = pivot;                     \
+    }
 
 /* binarysort is the best method for sorting small arrays: it does few
    compares, but can do data movement quadratic in the number of elements.
@@ -1813,8 +1809,8 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     pivot = a[ok];
 
     assert(aL < aR);
-    _binarysort_BISECT(aL, aR);
-    _binarysort_INSORT(aL, M);
+    _binarysort_BISECT(aL, aR)
+    _binarysort_INSORT(aL, M)
     ++ok;
 
     Py_ssize_t m = ok < 5 ? 11 : ok + 6;
@@ -1828,10 +1824,10 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             pivot = a[ok];
 
             assert(aL < aR);
-            _binarysort_BISECT(aL, aR);
-            _binarysort_INSORT(aL, M);
+            _binarysort_BISECT(aL, aR)
+            _binarysort_INSORT(aL, M)
 
-            std += mu < aL ? aL - mu : mu - aL;
+            std += labs(aL - mu);
             std /= 2;    // EWMA with alpha=0.5
             mu = aL;
         }
@@ -1898,9 +1894,9 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
                     aL = M + 1;
             }
             assert(aL == aR);
-            _binarysort_INSORT(aL, M);
+            _binarysort_INSORT(aL, M)
 
-            std += mu < aL ? aL - mu : mu - aL;
+            std += labs(aL - mu);
             std /= 2;    // EWMA with alpha=0.5
             mu = aL;
             std_max += !(ok % 4);
