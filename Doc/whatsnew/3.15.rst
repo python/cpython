@@ -221,6 +221,8 @@ Improved error messages
 Other language changes
 ======================
 
+.. _whatsnew315-utf8-default:
+
 * Python now uses UTF-8_ as the default encoding, independent of the system's
   environment. This means that I/O operations without an explicit encoding,
   e.g. ``open('flying-circus.txt')``, will use UTF-8.
