@@ -186,11 +186,10 @@ _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
     }
 
     // get block size
-    if (buffer->num_blocks < Py_ARRAY_LENGTH(BUFFER_BLOCK_SIZE)) {
-        block_size = BUFFER_BLOCK_SIZE[buffer->num_blocks];
-    } else {
-        block_size = BUFFER_BLOCK_SIZE[Py_ARRAY_LENGTH(BUFFER_BLOCK_SIZE) - 1];
-    }
+    size_t maxblock = Py_ARRAY_LENGTH(BUFFER_BLOCK_SIZE);
+    assert(maxblock >= 1);
+    size_t block_index = Py_MIN(buffer->num_blocks, maxblock - 1);
+    block_size = BUFFER_BLOCK_SIZE[block_index];
 
     // check max_length
     if (buffer->max_length >= 0) {
