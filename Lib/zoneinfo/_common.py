@@ -17,17 +17,28 @@ def load_tzdata(key):
     except ImportError:
         # If package_name doesn't exist, it means tzdata is not installed
         # or there's an error in the folder name like Amrica/New_York
-        msg = (
-            f"No time zone found with key {key}.\n\n"
-            "This error may occur if timezone data is not available. "
-            "To resolve this:\n"
-            "  • Install the tzdata package: python -m pip install tzdata\n"
-            "  • Ensure your operating system has timezone data installed\n"
-            "  • Verify the timezone key is correct (e.g., 'America/New_York')\n\n"
-            "For more information, see:\n"
-            "https://docs.python.org/3/library/zoneinfo.html"
-        )
-        raise ZoneInfoNotFoundError(msg)
+        exc = ZoneInfoNotFoundError(f"No time zone found with key {key}")
+        
+        # Check if tzdata is actually missing
+        try:
+            import tzdata
+        except ImportError:
+            # tzdata is not installed, provide installation instructions
+            exc.add_note(
+                "This error may occur if timezone data is not available. "
+                "To resolve this:"
+            )
+            exc.add_note("  - Install the tzdata package: python -m pip install tzdata")
+            exc.add_note("  - Verify the timezone key is correct (for example, 'America/New_York')")
+            exc.add_note("")
+            exc.add_note("For more information, see:")
+            exc.add_note("https://docs.python.org/3/library/zoneinfo.html")
+        else:
+            # tzdata is installed but the key wasn't found
+            exc.add_note(f"The timezone key '{key}' was not found in the tzdata package.")
+            exc.add_note("Please verify the timezone key is correct (for example, 'America/New_York').")
+        
+        raise exc
     except (FileNotFoundError, UnicodeEncodeError, IsADirectoryError):
         # Other errors that amount to "we cannot find this key":
         #
@@ -177,10 +188,3 @@ class _TZifHeader:
 
 class ZoneInfoNotFoundError(KeyError):
     """Exception raised when a ZoneInfo key is not found."""
-    
-    def __str__(self):
-        # Override __str__ to return the message directly without repr() formatting
-        # that KeyError applies by default
-        if self.args:
-            return str(self.args[0])
-        return super().__str__()
