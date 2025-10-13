@@ -277,7 +277,7 @@ sys_audit_tstate(PyThreadState *ts, const char *event,
     if (argFormat && argFormat[0]) {
         eventArgs = Py_VaBuildValue(argFormat, vargs);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
-            PyObject *argTuple = PyTuple_Pack(1, eventArgs);
+            PyObject *argTuple = PyTuple_MakeSingle(eventArgs);
             Py_SETREF(eventArgs, argTuple);
         }
     }

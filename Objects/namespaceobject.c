@@ -217,7 +217,7 @@ namespace_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     if (!args)
         return NULL;
 
-    result = PyTuple_Pack(3, (PyObject *)Py_TYPE(ns), args, ns->ns_dict);
+    result = PyTuple_MakeTriplet((PyObject *)Py_TYPE(ns), args, ns->ns_dict);
     Py_DECREF(args);
     return result;
 }

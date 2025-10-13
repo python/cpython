@@ -3256,9 +3256,9 @@ zip_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     zipobject *lz = _zipobject_CAST(self);
     /* Just recreate the zip with the internal iterator tuple */
     if (lz->strict) {
-        return PyTuple_Pack(3, Py_TYPE(lz), lz->ittuple, Py_True);
+        return PyTuple_MakeTriplet((PyObject *)Py_TYPE(lz), lz->ittuple, Py_True);
     }
-    return PyTuple_Pack(2, Py_TYPE(lz), lz->ittuple);
+    return PyTuple_MakePair((PyObject *)Py_TYPE(lz), lz->ittuple);
 }
 
 static PyObject *

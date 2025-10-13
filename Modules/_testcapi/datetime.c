@@ -353,7 +353,7 @@ get_date_fromtimestamp(PyObject *self, PyObject *args)
     }
 
     // Construct the argument tuple
-    if ((tsargs = PyTuple_Pack(1, ts)) == NULL) {
+    if ((tsargs = PyTuple_MakeSingle(ts)) == NULL) {
         return NULL;
     }
 
@@ -383,10 +383,10 @@ get_datetime_fromtimestamp(PyObject *self, PyObject *args)
 
     // Construct the argument tuple
     if (usetz) {
-        tsargs = PyTuple_Pack(2, ts, tzinfo);
+        tsargs = PyTuple_MakePair(ts, tzinfo);
     }
     else {
-        tsargs = PyTuple_Pack(1, ts);
+        tsargs = PyTuple_MakeSingle(ts);
     }
 
     if (tsargs == NULL) {

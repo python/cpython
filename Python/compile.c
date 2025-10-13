@@ -1657,7 +1657,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         return NULL;
     }
     /* Allocate a copy of the instruction sequence on the heap */
-    res = PyTuple_Pack(2, _PyCompile_InstrSequence(c), metadata);
+    res = PyTuple_MakePair((PyObject *)_PyCompile_InstrSequence(c), metadata);
 
 finally:
     Py_XDECREF(metadata);

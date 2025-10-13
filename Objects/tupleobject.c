@@ -1181,3 +1181,51 @@ _PyTuple_DebugMallocStats(FILE *out)
                                _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
 }
+
+PyObject *
+PyTuple_MakeSingle(PyObject *one)
+{
+    assert (one != NULL);
+
+    PyTupleObject *op = tuple_alloc(1);
+    if (op == NULL) {
+        return NULL;
+    }
+    op->ob_item[0] = Py_NewRef(one);
+    _PyObject_GC_TRACK(op);
+    return (PyObject *) op;
+}
+
+PyObject *
+PyTuple_MakePair(PyObject *one, PyObject *two)
+{
+    assert (one != NULL);
+    assert (two != NULL);
+
+    PyTupleObject *op = tuple_alloc(2);
+    if (op == NULL) {
+        return NULL;
+    }
+    op->ob_item[0] = Py_NewRef(one);
+    op->ob_item[1] = Py_NewRef(two);
+    _PyObject_GC_TRACK(op);
+    return (PyObject *) op;
+}
+
+PyObject *
+PyTuple_MakeTriplet(PyObject *one, PyObject *two, PyObject *three)
+{
+    assert (one != NULL);
+    assert (two != NULL);
+    assert (three != NULL);
+
+    PyTupleObject *op = tuple_alloc(3);
+    if (op == NULL) {
+        return NULL;
+    }
+    op->ob_item[0] = Py_NewRef(one);
+    op->ob_item[1] = Py_NewRef(two);
+    op->ob_item[2] = Py_NewRef(three);
+    _PyObject_GC_TRACK(op);
+    return (PyObject *) op;
+}

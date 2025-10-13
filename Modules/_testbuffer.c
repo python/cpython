@@ -1220,7 +1220,7 @@ init_ndbuf(PyObject *items, PyObject *shape, PyObject *strides,
 
     /* convert scalar to list */
     if (ndim == 0) {
-        items = PyTuple_Pack(1, items);
+        items = PyTuple_MakeSingle(items);
         if (items == NULL)
             return NULL;
     }

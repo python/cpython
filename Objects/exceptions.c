@@ -220,9 +220,9 @@ BaseException___reduce___impl(PyBaseExceptionObject *self)
 /*[clinic end generated code: output=af87c1247ef98748 input=283be5a10d9c964f]*/
 {
     if (self->args && self->dict)
-        return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
+        return PyTuple_MakeTriplet((PyObject *)Py_TYPE(self), self->args, self->dict);
     else
-        return PyTuple_Pack(2, Py_TYPE(self), self->args);
+        return PyTuple_MakePair((PyObject *)Py_TYPE(self), self->args);
 }
 
 /*
@@ -1001,7 +1001,7 @@ _PyExc_CreateExceptionGroup(const char *msg_str, PyObject *excs)
     if (!msg) {
         return NULL;
     }
-    PyObject *args = PyTuple_Pack(2, msg, excs);
+    PyObject *args = PyTuple_MakePair(msg, excs);
     Py_DECREF(msg);
     if (!args) {
         return NULL;
@@ -1075,7 +1075,7 @@ BaseExceptionGroup_derive_impl(PyBaseExceptionGroupObject *self,
                                PyObject *excs)
 /*[clinic end generated code: output=4307564218dfbf06 input=f72009d38e98cec1]*/
 {
-    PyObject *init_args = PyTuple_Pack(2, self->msg, excs);
+    PyObject *init_args = PyTuple_MakePair(self->msg, excs);
     if (!init_args) {
         return NULL;
     }
@@ -1392,8 +1392,7 @@ BaseExceptionGroup_split_impl(PyBaseExceptionGroupObject *self,
         return NULL;
     }
 
-    PyObject *result = PyTuple_Pack(
-            2,
+    PyObject *result = PyTuple_MakePair(
             split_result.match ? split_result.match : Py_None,
             split_result.rest ? split_result.rest : Py_None);
 
@@ -1707,8 +1706,8 @@ static PyObject*
 create_exception_group_class(void) {
     struct _Py_exc_state *state = get_exc_state();
 
-    PyObject *bases = PyTuple_Pack(
-        2, PyExc_BaseExceptionGroup, PyExc_Exception);
+    PyObject *bases = PyTuple_MakePair(
+        PyExc_BaseExceptionGroup, PyExc_Exception);
     if (bases == NULL) {
         return NULL;
     }
@@ -1856,9 +1855,9 @@ ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
         return NULL;
     PyBaseExceptionObject *exc = PyBaseExceptionObject_CAST(self);
     if (state == Py_None)
-        res = PyTuple_Pack(2, Py_TYPE(self), exc->args);
+        res = PyTuple_MakePair((PyObject *)Py_TYPE(self), exc->args);
     else
-        res = PyTuple_Pack(3, Py_TYPE(self), exc->args, state);
+        res = PyTuple_MakeTriplet((PyObject *)Py_TYPE(self), exc->args, state);
     Py_DECREF(state);
     return res;
 }
@@ -2356,9 +2355,9 @@ OSError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
         Py_INCREF(args);
 
     if (self->dict)
-        res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
+        res = PyTuple_MakeTriplet((PyObject *)Py_TYPE(self), args, self->dict);
     else
-        res = PyTuple_Pack(2, Py_TYPE(self), args);
+        res = PyTuple_MakePair((PyObject *)Py_TYPE(self), args);
     Py_DECREF(args);
     return res;
 }
@@ -2680,7 +2679,7 @@ AttributeError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     }
 
     PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
-    PyObject *return_value = PyTuple_Pack(3, Py_TYPE(self), self->args, state);
+    PyObject *return_value = PyTuple_MakeTriplet((PyObject *)Py_TYPE(self), self->args, state);
     Py_DECREF(state);
     return return_value;
 }

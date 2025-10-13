@@ -140,7 +140,7 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
         goto finally;
     }
 
-    bases = PyTuple_Pack(2, class_a, class_b);
+    bases = PyTuple_MakePair(class_a, class_b);
     if (bases == NULL) {
         goto finally;
     }
@@ -1356,7 +1356,7 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     if (HeapCType == NULL) {
         return -1;
     }
-    PyObject *subclass_bases = PyTuple_Pack(1, HeapCType);
+    PyObject *subclass_bases = PyTuple_MakeSingle(HeapCType);
     Py_DECREF(HeapCType);
     if (subclass_bases == NULL) {
         return -1;
@@ -1395,7 +1395,7 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     PyObject *HeapCTypeVectorcall = PyType_FromSpec(&HeapCTypeVectorcall_spec);
     ADD("HeapCTypeVectorcall", HeapCTypeVectorcall);
 
-    PyObject *subclass_with_finalizer_bases = PyTuple_Pack(1, HeapCTypeSubclass);
+    PyObject *subclass_with_finalizer_bases = PyTuple_MakeSingle(HeapCTypeSubclass);
     if (subclass_with_finalizer_bases == NULL) {
         return -1;
     }

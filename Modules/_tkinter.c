@@ -1428,7 +1428,7 @@ Tkapp_CallProc(Tcl_Event *evPtr, int flags)
     Tcl_Size objc;
     int i;
     ENTER_PYTHON
-    if (e->self->trace && !Tkapp_Trace(e->self, PyTuple_Pack(1, e->args))) {
+    if (e->self->trace && !Tkapp_Trace(e->self, PyTuple_MakeSingle(e->args))) {
         objv = NULL;
     }
     else {

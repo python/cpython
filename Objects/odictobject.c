@@ -1157,7 +1157,7 @@ OrderedDict_popitem_impl(PyODictObject *self, int last)
     value = _odict_popkey_hash((PyObject *)self, key, NULL, _odictnode_HASH(node));
     if (value == NULL)
         return NULL;
-    item = PyTuple_Pack(2, key, value);
+    item = PyTuple_MakePair(key, value);
     Py_DECREF(key);
     Py_DECREF(value);
     return item;
@@ -1857,7 +1857,7 @@ odictiter_new(PyODictObject *od, int kind)
         return NULL;
 
     if ((kind & _odict_ITER_ITEMS) == _odict_ITER_ITEMS) {
-        di->di_result = PyTuple_Pack(2, Py_None, Py_None);
+        di->di_result = PyTuple_MakePair(Py_None, Py_None);
         if (di->di_result == NULL) {
             Py_DECREF(di);
             return NULL;

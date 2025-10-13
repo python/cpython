@@ -2200,7 +2200,7 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
         }
         else {
             /* naked exception - wrap it */
-            PyObject *excs = PyTuple_Pack(1, exc_value);
+            PyObject *excs = PyTuple_MakeSingle(exc_value);
             if (excs == NULL) {
                 return -1;
             }

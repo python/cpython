@@ -218,7 +218,7 @@ sys_trace_exception_func(
     if (tb == NULL) {
         tb = Py_NewRef(Py_None);
     }
-    PyObject *tuple = PyTuple_Pack(3, type, exc, tb);
+    PyObject *tuple = PyTuple_MakeTriplet(type, exc, tb);
     Py_DECREF(tb);
     if (tuple == NULL) {
         return NULL;

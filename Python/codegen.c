@@ -1206,7 +1206,7 @@ codegen_type_param_bound_or_default(compiler *c, expr_ty e,
                                     identifier name, void *key,
                                     bool allow_starred)
 {
-    PyObject *defaults = PyTuple_Pack(1, _PyLong_GetOne());
+    PyObject *defaults = PyTuple_MakeSingle(_PyLong_GetOne());
     ADDOP_LOAD_CONST_NEW(c, LOC(e), defaults);
     RETURN_IF_ERROR(codegen_setup_annotations_scope(c, LOC(e), key, name));
     if (allow_starred && e->kind == Starred_kind) {
@@ -1711,7 +1711,7 @@ codegen_typealias_body(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
     PyObject *name = s->v.TypeAlias.name->v.Name.id;
-    PyObject *defaults = PyTuple_Pack(1, _PyLong_GetOne());
+    PyObject *defaults = PyTuple_MakeSingle(_PyLong_GetOne());
     ADDOP_LOAD_CONST_NEW(c, loc, defaults);
     RETURN_IF_ERROR(
         codegen_setup_annotations_scope(c, LOC(s), s, name));

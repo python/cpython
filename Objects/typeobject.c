@@ -1794,10 +1794,10 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
 
     PyObject *tuple;
     if (old_mro != NULL) {
-        tuple = PyTuple_Pack(3, type, new_mro, old_mro);
+        tuple = PyTuple_MakeTriplet((PyObject *)type, new_mro, old_mro);
     }
     else {
-        tuple = PyTuple_Pack(2, type, new_mro);
+        tuple = PyTuple_MakePair((PyObject *)type, new_mro);
     }
 
     if (tuple != NULL) {
@@ -4834,7 +4834,7 @@ type_new_get_slots(type_new_ctx *ctx, PyObject *dict)
     // Make it into a tuple
     PyObject *new_slots;
     if (PyUnicode_Check(slots)) {
-        new_slots = PyTuple_Pack(1, slots);
+        new_slots = PyTuple_MakeSingle(slots);
     }
     else {
         new_slots = PySequence_Tuple(slots);
@@ -4946,7 +4946,7 @@ type_new_get_bases(type_new_ctx *ctx, PyObject **type)
     if (nbases == 0) {
         // Adjust for empty tuple bases
         ctx->base = &PyBaseObject_Type;
-        PyObject *new_bases = PyTuple_Pack(1, ctx->base);
+        PyObject *new_bases = PyTuple_MakeSingle((PyObject *)ctx->base);
         if (new_bases == NULL) {
             return -1;
         }
@@ -5115,7 +5115,7 @@ get_bases_tuple(PyObject *bases_in, PyType_Spec *spec)
             }
         }
         if (!bases) {
-            return PyTuple_Pack(1, base);
+            return PyTuple_MakeSingle((PyObject *)base);
         }
         if (PyTuple_Check(bases)) {
             return Py_NewRef(bases);
@@ -5127,7 +5127,7 @@ get_bases_tuple(PyObject *bases_in, PyType_Spec *spec)
         return Py_NewRef(bases_in);
     }
     // Not a tuple, should be a single type
-    return PyTuple_Pack(1, bases_in);
+    return PyTuple_MakeSingle(bases_in);
 }
 
 static inline int
@@ -7718,7 +7718,7 @@ object_getstate_default(PyObject *obj, int required)
         if (PyDict_GET_SIZE(slots) > 0) {
             PyObject *state2;
 
-            state2 = PyTuple_Pack(2, state, slots);
+            state2 = PyTuple_MakePair(state, slots);
             Py_DECREF(state);
             if (state2 == NULL) {
                 Py_DECREF(slotnames);
@@ -7967,7 +7967,7 @@ reduce_newobj(PyObject *obj)
             Py_DECREF(kwargs);
             return NULL;
         }
-        newargs = PyTuple_Pack(3, Py_TYPE(obj), args, kwargs);
+        newargs = PyTuple_MakeTriplet((PyObject *)Py_TYPE(obj), args, kwargs);
         Py_DECREF(args);
         Py_DECREF(kwargs);
         if (newargs == NULL) {
@@ -8796,7 +8796,7 @@ type_ready_set_bases(PyTypeObject *type, int initial)
             bases = PyTuple_New(0);
         }
         else {
-            bases = PyTuple_Pack(1, base);
+            bases = PyTuple_MakeSingle((PyObject *)base);
         }
         if (bases == NULL) {
             return -1;

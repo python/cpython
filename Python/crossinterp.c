@@ -1085,7 +1085,7 @@ _convert_exc_to_TracebackException(PyObject *exc, PyObject **p_tbexc)
         return -1;
     }
 
-    args = PyTuple_Pack(1, exc);
+    args = PyTuple_MakeSingle(exc);
     if (args == NULL) {
         goto error;
     }

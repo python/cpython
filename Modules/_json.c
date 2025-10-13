@@ -826,7 +826,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
                 goto bail;
 
             if (has_pairs_hook) {
-                PyObject *item = PyTuple_Pack(2, key, val);
+                PyObject *item = PyTuple_MakePair(key, val);
                 if (item == NULL)
                     goto bail;
                 Py_CLEAR(key);
@@ -1491,7 +1491,7 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
     if (str == NULL) {
         return NULL;
     }
-    PyObject *result = PyTuple_Pack(1, str);
+    PyObject *result = PyTuple_MakeSingle(str);
     Py_DECREF(str);
     return result;
 }

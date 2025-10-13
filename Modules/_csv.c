@@ -1787,7 +1787,7 @@ csv_exec(PyObject *module) {
     }
 
     /* Add the CSV exception object to the module. */
-    PyObject *bases = PyTuple_Pack(1, PyExc_Exception);
+    PyObject *bases = PyTuple_MakeSingle(PyExc_Exception);
     if (bases == NULL) {
         return -1;
     }

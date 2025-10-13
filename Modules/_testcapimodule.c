@@ -1840,7 +1840,7 @@ get_basic_static_type(PyObject *self, PyObject *args)
     PyTypeObject *cls = &BasicStaticTypes[num_basic_static_types_used++];
 
     if (base != NULL) {
-        cls->tp_bases = PyTuple_Pack(1, base);
+        cls->tp_bases = PyTuple_MakeSingle(base);
         if (cls->tp_bases == NULL) {
             return NULL;
         }
@@ -2112,7 +2112,7 @@ record_func(PyObject *obj, PyFrameObject *f, int what, PyObject *arg)
     if (line_obj == NULL) {
         goto error;
     }
-    tuple = PyTuple_Pack(3, what_obj, line_obj, arg);
+    tuple = PyTuple_MakeTriplet(what_obj, line_obj, arg);
     if (tuple == NULL) {
         goto error;
     }
@@ -2770,7 +2770,7 @@ typedef struct {
 static PyObject *
 ipowType_ipow(PyObject *self, PyObject *other, PyObject *mod)
 {
-    return PyTuple_Pack(2, other, mod);
+    return PyTuple_MakePair(other, mod);
 }
 
 static PyNumberMethods ipowType_as_number = {
@@ -2968,7 +2968,7 @@ static PyObject *
 generic_alias_mro_entries(PyObject *op, PyObject *Py_UNUSED(bases))
 {
     PyGenericAliasObject *self = (PyGenericAliasObject*)op;
-    return PyTuple_Pack(1, self->item);
+    return PyTuple_MakeSingle(self->item);
 }
 
 static PyMethodDef generic_alias_methods[] = {
