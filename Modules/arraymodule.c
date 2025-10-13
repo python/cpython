@@ -1379,26 +1379,20 @@ static PyObject *
 array_array_buffer_info_impl(arrayobject *self)
 /*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=63d9ad83ba60cda8]*/
 {
-    PyObject *retval = NULL, *v;
+    PyObject *retval = NULL;
 
-    retval = PyTuple_New(2);
-    if (!retval)
-        return NULL;
-
-    v = PyLong_FromVoidPtr(self->ob_item);
-    if (v == NULL) {
-        Py_DECREF(retval);
+    PyObject *one = PyLong_FromVoidPtr(self->ob_item);
+    if (one == NULL) {
         return NULL;
     }
-    PyTuple_SET_ITEM(retval, 0, v);
 
-    v = PyLong_FromSsize_t(Py_SIZE(self));
-    if (v == NULL) {
-        Py_DECREF(retval);
+    PyObject *two = PyLong_FromSsize_t(Py_SIZE(self));
+    if (two == NULL) {
+        Py_DECREF(one);
         return NULL;
     }
-    PyTuple_SET_ITEM(retval, 1, v);
 
+    retval = PyTuple_MakePairSteal(one, two);
     return retval;
 }
 
@@ -2034,13 +2028,10 @@ make_array(PyTypeObject *arraytype, char typecode, PyObject *items)
     if (typecode_obj == NULL)
         return NULL;
 
-    new_args = PyTuple_New(2);
+    new_args = PyTuple_MakePairSteal(typecode_obj, Py_NewRef(items));
     if (new_args == NULL) {
-        Py_DECREF(typecode_obj);
         return NULL;
     }
-    PyTuple_SET_ITEM(new_args, 0, typecode_obj);
-    PyTuple_SET_ITEM(new_args, 1, Py_NewRef(items));
 
     array_obj = array_new(arraytype, new_args, NULL);
     Py_DECREF(new_args);

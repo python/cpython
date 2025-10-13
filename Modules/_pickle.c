@@ -4958,20 +4958,11 @@ _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self)
     if (contents == NULL)
         return NULL;
 
-    reduce_value = PyTuple_New(2);
-    if (reduce_value == NULL) {
-        Py_DECREF(contents);
-        return NULL;
-    }
-    dict_args = PyTuple_New(1);
+    dict_args = PyTuple_MakeSingleSteal(contents);
     if (dict_args == NULL) {
-        Py_DECREF(contents);
-        Py_DECREF(reduce_value);
         return NULL;
     }
-    PyTuple_SET_ITEM(dict_args, 0, contents);
-    PyTuple_SET_ITEM(reduce_value, 0, Py_NewRef(&PyDict_Type));
-    PyTuple_SET_ITEM(reduce_value, 1, dict_args);
+    reduce_value = PyTuple_MakePairSteal(Py_NewRef(&PyDict_Type), dict_args);
     return reduce_value;
 }
 
@@ -7451,20 +7442,11 @@ _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self)
     if (contents == NULL)
         return NULL;
 
-    reduce_value = PyTuple_New(2);
-    if (reduce_value == NULL) {
-        Py_DECREF(contents);
-        return NULL;
-    }
-    constructor_args = PyTuple_New(1);
+    constructor_args = PyTuple_MakeSingleSteal(contents);
     if (constructor_args == NULL) {
-        Py_DECREF(contents);
-        Py_DECREF(reduce_value);
         return NULL;
     }
-    PyTuple_SET_ITEM(constructor_args, 0, contents);
-    PyTuple_SET_ITEM(reduce_value, 0, Py_NewRef(&PyDict_Type));
-    PyTuple_SET_ITEM(reduce_value, 1, constructor_args);
+    reduce_value = PyTuple_MakePairSteal(Py_NewRef(&PyDict_Type), constructor_args);
     return reduce_value;
 }
 

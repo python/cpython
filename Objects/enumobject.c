@@ -224,14 +224,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
         _PyTuple_Recycle(result);
         return result;
     }
-    result = PyTuple_New(2);
-    if (result == NULL) {
-        Py_DECREF(next_index);
-        Py_DECREF(next_item);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(result, 0, next_index);
-    PyTuple_SET_ITEM(result, 1, next_item);
+    result = PyTuple_MakePairSteal(next_index, next_item);
     return result;
 }
 
@@ -274,14 +267,7 @@ enum_next(PyObject *op)
         _PyTuple_Recycle(result);
         return result;
     }
-    result = PyTuple_New(2);
-    if (result == NULL) {
-        Py_DECREF(next_index);
-        Py_DECREF(next_item);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(result, 0, next_index);
-    PyTuple_SET_ITEM(result, 1, next_item);
+    result = PyTuple_MakePairSteal(next_index, next_item);
     return result;
 }
 

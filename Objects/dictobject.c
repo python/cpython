@@ -5716,11 +5716,9 @@ dictiter_iternextitem(PyObject *self)
             _PyTuple_Recycle(result);
         }
         else {
-            result = PyTuple_New(2);
+            result = PyTuple_MakePairSteal(key, value);
             if (result == NULL)
                 return NULL;
-            PyTuple_SET_ITEM(result, 0, key);
-            PyTuple_SET_ITEM(result, 1, value);
         }
         return result;
     }
@@ -5839,12 +5837,10 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
             _PyTuple_Recycle(result);
         }
         else {
-            result = PyTuple_New(2);
+            result = PyTuple_MakePair(key, value);
             if (result == NULL) {
                 return NULL;
             }
-            PyTuple_SET_ITEM(result, 0, Py_NewRef(key));
-            PyTuple_SET_ITEM(result, 1, Py_NewRef(value));
         }
         return result;
     }

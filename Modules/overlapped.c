@@ -964,18 +964,12 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             }
 
             // The result is a two item tuple: (message, address)
-            self->read_from.result = PyTuple_New(2);
+            // first item: message
+            // second item: address
+            self->read_from.result = PyTuple_MakePairSteal(Py_NewRef(self->read_from.allocated_buffer), addr);
             if (self->read_from.result == NULL) {
-                Py_CLEAR(addr);
                 return NULL;
             }
-
-            // first item: message
-            PyTuple_SET_ITEM(self->read_from.result, 0,
-                             Py_NewRef(self->read_from.allocated_buffer));
-            // second item: address
-            PyTuple_SET_ITEM(self->read_from.result, 1, addr);
-
             return Py_NewRef(self->read_from.result);
         case TYPE_READ_FROM_INTO:
             // unparse the address
@@ -987,18 +981,12 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             }
 
             // The result is a two item tuple: (number of bytes read, address)
-            self->read_from_into.result = PyTuple_New(2);
+            // first item: number of bytes read
+            // second item: address
+            self->read_from_into.result = PyTuple_MakePairSteal(PyLong_FromUnsignedLong((unsigned long)transferred), addr);
             if (self->read_from_into.result == NULL) {
-                Py_CLEAR(addr);
                 return NULL;
             }
-
-            // first item: number of bytes read
-            PyTuple_SET_ITEM(self->read_from_into.result, 0,
-                PyLong_FromUnsignedLong((unsigned long)transferred));
-            // second item: address
-            PyTuple_SET_ITEM(self->read_from_into.result, 1, addr);
-
             return Py_NewRef(self->read_from_into.result);
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);

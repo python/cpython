@@ -837,14 +837,10 @@ future_add_done_callback(asyncio_state *state, FutureObj *fut, PyObject *arg,
             fut->fut_context0 = Py_NewRef(ctx);
         }
         else {
-            PyObject *tup = PyTuple_New(2);
+            PyObject *tup = PyTuple_MakePair(arg, (PyObject *)ctx);
             if (tup == NULL) {
                 return NULL;
             }
-            Py_INCREF(arg);
-            PyTuple_SET_ITEM(tup, 0, arg);
-            Py_INCREF(ctx);
-            PyTuple_SET_ITEM(tup, 1, (PyObject *)ctx);
 
             if (fut->fut_callbacks != NULL) {
                 int err = PyList_Append(fut->fut_callbacks, tup);
@@ -1511,14 +1507,12 @@ _asyncio_Future__callbacks_get_impl(FutureObj *self)
 
     Py_ssize_t i = 0;
     if (self->fut_callback0 != NULL) {
-        PyObject *tup0 = PyTuple_New(2);
+        assert(self->fut_context0 != NULL);
+        PyObject *tup0 = PyTuple_MakePair(self->fut_callback0, self->fut_context0);
         if (tup0 == NULL) {
             Py_DECREF(callbacks);
             return NULL;
         }
-        PyTuple_SET_ITEM(tup0, 0, Py_NewRef(self->fut_callback0));
-        assert(self->fut_context0 != NULL);
-        PyTuple_SET_ITEM(tup0, 1, Py_NewRef(self->fut_context0));
         PyList_SET_ITEM(callbacks, i, tup0);
         i++;
     }

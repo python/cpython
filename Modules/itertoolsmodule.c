@@ -389,11 +389,7 @@ pairwise_next(PyObject *op)
         _PyTuple_Recycle(result);
     }
     else {
-        result = PyTuple_New(2);
-        if (result != NULL) {
-            PyTuple_SET_ITEM(result, 0, Py_NewRef(old));
-            PyTuple_SET_ITEM(result, 1, Py_NewRef(new));
-        }
+        result = PyTuple_MakePair(old, new);
     }
 
     Py_XSETREF(po->old, new);
