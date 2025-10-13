@@ -6589,7 +6589,7 @@ socket_socketpair(PyObject *self, PyObject *args)
     s1 = new_sockobject(state, sv[1], family, type, proto);
     if (s1 == NULL)
         goto finally;
-    res = PyTuple_MakePair(s0, s1);
+    res = PyTuple_MakePair((PyObject *)s0, (PyObject *)s1);
 
 finally:
     if (res == NULL) {

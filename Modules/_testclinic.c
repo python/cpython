@@ -1430,7 +1430,7 @@ _testclinic_TestClass_get_defining_class_arg_impl(PyObject *self,
                                                   PyObject *arg)
 /*[clinic end generated code: output=fe7e49d96cbb7718 input=d1b83d3b853af6d9]*/
 {
-    return PyTuple_MakePair(cls, arg);
+    return PyTuple_MakePair((PyObject *)cls, arg);
 }
 
 /*[clinic input]
@@ -1444,7 +1444,7 @@ _testclinic_TestClass_defclass_varpos_impl(PyObject *self, PyTypeObject *cls,
                                            PyObject *args)
 /*[clinic end generated code: output=fad33f2d3a8d778d input=332043286e393d38]*/
 {
-    return PyTuple_MakePair(cls, args);
+    return PyTuple_MakePair((PyObject *)cls, args);
 }
 
 /*[clinic input]
