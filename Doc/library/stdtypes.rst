@@ -2549,6 +2549,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`istitle`.
 
+
 .. method:: str.translate(table, /)
 
    Return a copy of the string in which each character has been mapped through
