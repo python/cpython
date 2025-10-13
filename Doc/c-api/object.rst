@@ -278,6 +278,10 @@ Object Protocol
 
    On failure, returns ``NULL`` with an exception set.
 
+   The :c:func:`PyObject_GetDict` function is recommended instead of using this
+   function, since it does not raise an exception if the object has no
+   ``__dict__``.
+
    .. versionadded:: 3.3
 
 
