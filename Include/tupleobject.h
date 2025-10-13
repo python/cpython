@@ -35,7 +35,9 @@ PyAPI_FUNC(PyObject *) PyTuple_GetSlice(PyObject *, Py_ssize_t, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyTuple_Pack(Py_ssize_t, ...);
 
 PyAPI_FUNC(PyObject *) PyTuple_MakeSingle(PyObject *one);
+PyAPI_FUNC(PyObject *) PyTuple_MakeSingleSteal(PyObject *one);
 PyAPI_FUNC(PyObject *) PyTuple_MakePair(PyObject *one, PyObject *two);
+PyAPI_FUNC(PyObject *) PyTuple_MakePairSteal(PyObject *one, PyObject *two);
 PyAPI_FUNC(PyObject *) PyTuple_MakeTriplet(PyObject *one, PyObject *two, PyObject *three);
 
 
