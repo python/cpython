@@ -1,0 +1,2 @@
+The asyncio REPL in basic mode now supports multi-line inputs. Contributed
+by Bartosz Sławecki.
