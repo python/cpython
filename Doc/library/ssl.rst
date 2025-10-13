@@ -2961,13 +2961,13 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
        Donald E., Jeffrey I. Schiller
 
    :rfc:`RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile <5280>`
-       D. Cooper
+       D\. Cooper
 
    :rfc:`RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <5246>`
-       T. Dierks et. al.
+       T\. Dierks et. al.
 
    :rfc:`RFC 6066: Transport Layer Security (TLS) Extensions <6066>`
-       D. Eastlake
+       D\. Eastlake
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
        IANA

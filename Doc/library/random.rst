@@ -49,7 +49,7 @@ from sources provided by the operating system.
 
 .. seealso::
 
-   M. Matsumoto and T. Nishimura, "Mersenne Twister: A 623-dimensionally
+   M\. Matsumoto and T. Nishimura, "Mersenne Twister: A 623-dimensionally
    equidistributed uniform pseudorandom number generator", ACM Transactions on
    Modeling and Computer Simulation Vol. 8, No. 1, January pp.3--30 1998.
 

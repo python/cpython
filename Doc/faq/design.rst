@@ -170,14 +170,14 @@ Why does Python use methods for some functionality (e.g. list.index()) but funct
 
 As Guido said:
 
-    (a) For some operations, prefix notation just reads better than
+    \(a) For some operations, prefix notation just reads better than
     postfix -- prefix (and infix!) operations have a long tradition in
     mathematics which likes notations where the visuals help the
     mathematician thinking about a problem. Compare the easy with which we
     rewrite a formula like x*(a+b) into x*a + x*b to the clumsiness of
     doing the same thing using a raw OO notation.
 
-    (b) When I read code that says len(x) I *know* that it is asking for
+    \(b) When I read code that says len(x) I *know* that it is asking for
     the length of something. This tells me two things: the result is an
     integer, and the argument is some kind of container. To the contrary,
     when I read x.len(), I have to already know that x is some kind of
