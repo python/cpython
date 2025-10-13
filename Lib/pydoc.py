@@ -577,15 +577,14 @@ class Doc:
                                  'marshal', 'posix', 'signal', 'sys',
                                  '_thread', 'zipimport') or
              (file.startswith(basedir) and
-              not file.startswith(os.path.join(basedir, 'site-packages')))) and
-            object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
+              not file.startswith(os.path.join(basedir, 'site-packages'))))):
 
             try:
                 from pydoc_data import module_docs
             except ImportError:
                 module_docs = None
 
-            if object.__name__ in module_docs.module_docs:
+            if module_docs and object.__name__ in module_docs.module_docs:
                 doc_name = module_docs.module_docs[object.__name__]
                 if docloc.startswith(("http://", "https://")):
                     docloc = "{}/{}".format(docloc.rstrip("/"), doc_name)
