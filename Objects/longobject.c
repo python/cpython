@@ -352,7 +352,7 @@ _PyLong_Negate(PyLongObject **x_p)
     PyLongObject *x;
 
     x = (PyLongObject *)*x_p;
-    if (_PyObject_IsUniquelyReferenced(x)) {
+    if (_PyObject_IsUniquelyReferenced((PyObject *)x)) {
          _PyLong_FlipSign(x);
         return;
     }
@@ -3848,7 +3848,7 @@ long_add(PyLongObject *a, PyLongObject *b)
                    and thus z must be a multiple-digit int.
                    That also means z is not an element of
                    small_ints, so negating it in-place is safe. */
-                assert(_PyObject_IsUniquelyReferenced(z));
+                assert(_PyObject_IsUniquelyReferenced((PyObject *)z));
                 _PyLong_FlipSign(z);
             }
         }
@@ -3895,7 +3895,8 @@ long_sub(PyLongObject *a, PyLongObject *b)
         else {
             z = x_add(a, b);
             if (z != NULL) {
-                assert(_PyLong_IsZero(z) || _PyObject_IsUniquelyReferenced(z));
+                assert(_PyLong_IsZero(z) ||
+                       _PyObject_IsUniquelyReferenced((PyObject *)z));
                 _PyLong_FlipSign(z);
             }
         }
@@ -5487,7 +5488,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     if (z == NULL)
         return NULL;
     if (_PyLong_IsNegative(a)) {
-        assert(_PyObject_IsUniquelyReferenced(z));
+        assert(_PyObject_IsUniquelyReferenced((PyObject *)z));
         _PyLong_FlipSign(z);
     }
     for (i = 0; i < wordshift; i++)
@@ -5849,7 +5850,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(c, 1, size_a);
         }
-        else if (_PyObject_IsUniquelyReferenced(a)) {
+        else if (_PyObject_IsUniquelyReferenced((PyObject *)a)) {
             c = (PyLongObject*)Py_NewRef(a);
         }
         else {
@@ -5863,7 +5864,8 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(d, 1, size_a);
         }
-        else if (_PyObject_IsUniquelyReferenced(b) && size_a <= alloc_b) {
+        else if (_PyObject_IsUniquelyReferenced((PyObject *)b) &&
+                 size_a <= alloc_b) {
             d = (PyLongObject*)Py_NewRef(b);
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(d, 1, size_a);
@@ -6951,7 +6953,7 @@ PyLongWriter_Discard(PyLongWriter *writer)
     }
 
     PyLongObject *obj = (PyLongObject *)writer;
-    assert(_PyObject_IsUniquelyReferenced(obj));
+    assert(_PyObject_IsUniquelyReferenced((PyObject *)obj));
     Py_DECREF(obj);
 }
 
@@ -6960,7 +6962,7 @@ PyObject*
 PyLongWriter_Finish(PyLongWriter *writer)
 {
     PyLongObject *obj = (PyLongObject *)writer;
-    assert(_PyObject_IsUniquelyReferenced(obj));
+    assert(_PyObject_IsUniquelyReferenced((PyObject *)obj));
 
     // Normalize and get singleton if possible
     obj = maybe_small_long(long_normalize(obj));

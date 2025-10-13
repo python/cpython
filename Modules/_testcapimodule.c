@@ -2249,7 +2249,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(ref == obj);
 
     // delete the referenced object: clear the weakref
-    assert(_PyObject_IsUniquelyReferenced(obj));
+    assert(PyUnstable_Object_IsUniquelyReferenced(obj));
     Py_DECREF(obj);
 
     assert(PyWeakref_IsDead(weakref));
