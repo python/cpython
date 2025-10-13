@@ -141,6 +141,9 @@
 /* Define if you have the 'chroot' function. */
 #undef HAVE_CHROOT
 
+/* Define to 1 if you have the 'clearenv' function. */
+#undef HAVE_CLEARENV
+
 /* Define to 1 if you have the 'clock' function. */
 #undef HAVE_CLOCK
 

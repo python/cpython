@@ -364,14 +364,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except ImportError:
             pass
 
-        # GH-138860
-        # We need to lazy-import rlcompleter to avoid deadlock
-        # We cannot import it during self.complete* methods because importing
-        # rlcompleter for the first time will overwrite readline's completer
-        # So we import it here and save the Completer class
-        from rlcompleter import Completer
-        self.RlCompleter = Completer
-
         self.allow_kbdint = False
         self.nosigint = nosigint
         # Consider these characters as part of the command so when the users type
@@ -1100,6 +1092,31 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
 
+    @property
+    def rlcompleter(self):
+        """Return the `Completer` class from `rlcompleter`, while avoiding the
+        side effects of changing the completer from `import rlcompleter`.
+
+        This is a compromise between GH-138860 and GH-139289. If GH-139289 is
+        fixed, then we don't need this and we can just `import rlcompleter` in
+        `Pdb.__init__`.
+        """
+        if not hasattr(self, "_rlcompleter"):
+            try:
+                import readline
+            except ImportError:
+                # readline is not available, just get the Completer
+                from rlcompleter import Completer
+                self._rlcompleter = Completer
+            else:
+                # importing rlcompleter could have side effect of changing
+                # the current completer, we need to restore it
+                prev_completer = readline.get_completer()
+                from rlcompleter import Completer
+                self._rlcompleter = Completer
+                readline.set_completer(prev_completer)
+        return self._rlcompleter
+
     def completenames(self, text, line, begidx, endidx):
         # Overwrite completenames() of cmd so for the command completion,
         # if no current command matches, check for expressions as well
@@ -1196,7 +1213,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         state = 0
         matches = []
-        completer = self.RlCompleter(self.curframe.f_globals | self.curframe.f_locals)
+        completer = self.rlcompleter(self.curframe.f_globals | self.curframe.f_locals)
         while (match := completer.complete(text, state)) is not None:
             matches.append(match)
             state += 1
@@ -1211,7 +1228,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
 
         try:
-            completer = self.RlCompleter(ns)
+            completer = self.rlcompleter(ns)
             old_completer = readline.get_completer()
             readline.set_completer(completer.complete)
             yield
