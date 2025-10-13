@@ -30,15 +30,10 @@ extern "C" {
 #endif
 
 // Executor list lock macros for thread-safe access to executor linked lists
-#ifdef Py_GIL_DISABLED
-#  define EXECUTOR_LIST_LOCK(interp) \
-    PyMutex_Lock(&(interp)->executor_list_lock)
-#  define EXECUTOR_LIST_UNLOCK(interp) \
-    PyMutex_Unlock(&(interp)->executor_list_lock)
-#else
-#  define EXECUTOR_LIST_LOCK(interp) ((void)0)
-#  define EXECUTOR_LIST_UNLOCK(interp) ((void)0)
-#endif
+#define EXECUTOR_LIST_LOCK(interp) \
+    FT_MUTEX_LOCK(&(interp)->executor_list_lock)
+#define EXECUTOR_LIST_UNLOCK(interp) \
+    FT_MUTEX_UNLOCK(&(interp)->executor_list_lock)
 
 typedef int (*_Py_pending_call_func)(void *);
 
