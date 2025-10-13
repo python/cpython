@@ -711,7 +711,7 @@ typing
 
 * Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
   type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
-  as it was incorrectly infered in runtime before.
+  as it was incorrectly inferred in runtime before.
   (Contributed by Nikita Sobolev in :gh:`137191`.)
 
 * :class:`typing.ByteString` has been removed from ``typing.__all__``.
