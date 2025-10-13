@@ -2319,7 +2319,7 @@ class TestInternalUtilities(unittest.TestCase):
 
         module = MyModule()
         doc = pydoc.Doc()
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True) as w: # TODO: remove in 3.20
             warnings.simplefilter("always")
             version = doc._get_version(json)
             self.assertEqual(version, "2.0.9")
