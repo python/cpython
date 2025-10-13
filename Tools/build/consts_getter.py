@@ -1,8 +1,6 @@
 import os
 
-SCRIPT_NAME = 'Tools/build/consts_getter.py'
-__file__ = os.path.abspath(__file__)
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 INTERNAL = os.path.join(ROOT, 'Include', 'internal')
 
 def get_nsmallnegints_and_nsmallposints() -> tuple[int, int]:
