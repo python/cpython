@@ -823,11 +823,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
 
     /* Normalize message. */
     Py_INCREF(message);  /* DECREF'ed in cleanup. */
-    rc = PyObject_IsInstance(message, PyExc_Warning);
-    if (rc == -1) {
-        goto cleanup;
-    }
-    if (rc == 1) {
+    if (PyObject_TypeCheck(message, (PyTypeObject *)PyExc_Warning)) {
         text = PyObject_Str(message);
         if (text == NULL)
             goto cleanup;
@@ -1124,26 +1120,25 @@ setup_context(Py_ssize_t stack_level,
 static PyObject *
 get_category(PyObject *message, PyObject *category)
 {
-    int rc;
-
-    /* Get category. */
-    rc = PyObject_IsInstance(message, PyExc_Warning);
-    if (rc == -1)
-        return NULL;
-
-    if (rc == 1)
-        category = (PyObject*)Py_TYPE(message);
-    else if (category == NULL || category == Py_None)
-        category = PyExc_UserWarning;
+    if (PyObject_TypeCheck(message, (PyTypeObject *)PyExc_Warning)) {
+        /* Ignore the category argument. */
+        return (PyObject*)Py_TYPE(message);
+    }
+    if (category == NULL || category == Py_None) {
+        return PyExc_UserWarning;
+    }
 
     /* Validate category. */
-    rc = PyObject_IsSubclass(category, PyExc_Warning);
-    /* category is not a subclass of PyExc_Warning or
-       PyObject_IsSubclass raised an error */
-    if (rc == -1 || rc == 0) {
+    if (!PyType_Check(category)) {
         PyErr_Format(PyExc_TypeError,
-                     "category must be a Warning subclass, not '%s'",
-                     Py_TYPE(category)->tp_name);
+                     "category must be a Warning subclass, not '%T'",
+                     category);
+        return NULL;
+    }
+    if (!PyType_IsSubtype((PyTypeObject *)category, (PyTypeObject *)PyExc_Warning)) {
+        PyErr_Format(PyExc_TypeError,
+                     "category must be a Warning subclass, not class '%N'",
+                     (PyTypeObject *)category);
         return NULL;
     }
 

@@ -882,7 +882,7 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
  * to invalidate caches (e.g. by PyType_Modified), that clearing has created
  * a bug.  If the weakref to the subclass is cleared before a finalizer is
  * called, the cache may not be correctly invalidated.  That can lead to
- * segfaults since the caches can refer to deallocated objects (GH-91636
+ * segfaults since the caches can refer to deallocated objects (GH-135552
  * is an example).  Now, we delay the clear of weakrefs without callbacks
  * until *after* finalizers have been executed.  That means weakrefs without
  * callbacks are still usable while finalizers are being executed.

@@ -756,7 +756,7 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
         return NULL;
     }
 
-    HMACObject *self = PyObject_GC_New(HMACObject, state->hmac_type);
+    HMACObject *self = PyObject_New(HMACObject, state->hmac_type);
     if (self == NULL) {
         return NULL;
     }
@@ -791,7 +791,6 @@ _hmac_new_impl(PyObject *module, PyObject *keyobj, PyObject *msgobj,
 #endif
     }
     assert(rc == 0);
-    PyObject_GC_Track(self);
     return (PyObject *)self;
 
 error_on_key:
@@ -852,7 +851,7 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
 /*[clinic end generated code: output=a955bfa55b65b215 input=17b2c0ad0b147e36]*/
 {
     hmacmodule_state *state = get_hmacmodule_state_by_cls(cls);
-    HMACObject *copy = PyObject_GC_New(HMACObject, state->hmac_type);
+    HMACObject *copy = PyObject_New(HMACObject, state->hmac_type);
     if (copy == NULL) {
         return NULL;
     }
@@ -870,7 +869,6 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
     }
 
     HASHLIB_INIT_MUTEX(copy);
-    PyObject_GC_Track(copy);
     return (PyObject *)copy;
 }
 
@@ -943,6 +941,8 @@ _hmac_HMAC_digest_impl(HMACObject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 _hmac.HMAC.hexdigest
 
 Return hexadecimal digest of the bytes passed to the update() method so far.
@@ -955,7 +955,7 @@ This method may raise a MemoryError.
 
 static PyObject *
 _hmac_HMAC_hexdigest_impl(HMACObject *self)
-/*[clinic end generated code: output=6659807a09ae14ec input=493b2db8013982b9]*/
+/*[clinic end generated code: output=6659807a09ae14ec input=6e0e796e38d82fc8]*/
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
@@ -1024,17 +1024,9 @@ static void
 HMACObject_dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
     (void)HMACObject_clear(op);
     type->tp_free(op);
     Py_DECREF(type);
-}
-
-static int
-HMACObject_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
 }
 
 static PyMethodDef HMACObject_methods[] = {
@@ -1056,9 +1048,7 @@ static PyType_Slot HMACObject_Type_slots[] = {
     {Py_tp_repr, HMACObject_repr},
     {Py_tp_methods, HMACObject_methods},
     {Py_tp_getset, HMACObject_getsets},
-    {Py_tp_clear, HMACObject_clear},
     {Py_tp_dealloc, HMACObject_dealloc},
-    {Py_tp_traverse, HMACObject_traverse},
     {0, NULL} /* sentinel */
 };
 
@@ -1068,8 +1058,7 @@ static PyType_Spec HMAC_Type_spec = {
     .flags = Py_TPFLAGS_DEFAULT
              | Py_TPFLAGS_DISALLOW_INSTANTIATION
              | Py_TPFLAGS_HEAPTYPE
-             | Py_TPFLAGS_IMMUTABLETYPE
-             | Py_TPFLAGS_HAVE_GC,
+             | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = HMACObject_Type_slots,
 };
 

@@ -1300,10 +1300,9 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
         #  available in _MARKER.
         cls_dict.pop(field_name, None)
 
-    # Remove __dict__ itself.
+    # Remove __dict__ and `__weakref__` descriptors.
+    # They'll be added back if applicable.
     cls_dict.pop('__dict__', None)
-
-    # Clear existing `__weakref__` descriptor, it belongs to a previous type:
     cls_dict.pop('__weakref__', None)  # gh-102069
 
     # And finally create the class.
