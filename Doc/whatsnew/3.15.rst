@@ -839,6 +839,8 @@ New features
   and :c:data:`Py_mod_abi`.
   (Contributed by Petr Viktorin in :gh:`137210`.)
 
+.. _whatsnew315-pep782:
+
 * Implement :pep:`782`, the :ref:`PyBytesWriter API <pybyteswriter>`.
   Add functions:
 
