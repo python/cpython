@@ -2228,7 +2228,7 @@ dummy_func(
             // handle any case whose performance we care about
             PyObject *super;
             Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
-            PyObject *Py_MSVC_RESTRICT stack[] = {class, self};
+            PyObject *stack[] = {class, self};
             super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
             Py_END_LOCALS_MUST_NOT_ESCAPE;
             if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
@@ -2291,7 +2291,7 @@ dummy_func(
             int method_found = 0;
             PyObject *attr_o;
             Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
-            int *Py_MSVC_RESTRICT method_found_ptr = &method_found;
+            int *method_found_ptr = &method_found;
             attr_o = _PySuper_Lookup(cls, self, name,
                                 Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
             Py_END_LOCALS_MUST_NOT_ESCAPE;
@@ -3519,7 +3519,7 @@ dummy_func(
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject* res_o;
             Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
-            PyObject *Py_MSVC_RESTRICT stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
+            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
             res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
                     (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);

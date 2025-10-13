@@ -7095,7 +7095,7 @@
                 }
                 PyObject *super;
                 Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
-                PyObject *Py_MSVC_RESTRICT stack[] = {class, self};
+                PyObject *stack[] = {class, self};
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -9495,7 +9495,7 @@
                 }
                 PyObject *super;
                 Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
-                PyObject *Py_MSVC_RESTRICT stack[] = {class, self};
+                PyObject *stack[] = {class, self};
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -9666,7 +9666,7 @@
             int method_found = 0;
             PyObject *attr_o;
             Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
-            int *Py_MSVC_RESTRICT method_found_ptr = &method_found;
+            int *method_found_ptr = &method_found;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             attr_o = _PySuper_Lookup(cls, self, name,
                                      Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
@@ -12048,7 +12048,7 @@
             (void)lasti;
             PyObject* res_o;
             Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
-            PyObject *Py_MSVC_RESTRICT stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
+            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
