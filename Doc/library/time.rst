@@ -189,7 +189,7 @@ Functions
    .. versionadded:: 3.7
 
 
-.. function:: clock_settime(clk_id, time: float)
+.. function:: clock_settime(clk_id, time)
 
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
@@ -200,6 +200,9 @@ Functions
    .. availability:: Unix, not Android, not iOS.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: next
+      Accepts any real number as *time*, not only integer or float.
 
 
 .. function:: clock_settime_ns(clk_id, time: int)
@@ -222,6 +225,9 @@ Functions
    returned by :func:`.time` is used. ``ctime(secs)`` is equivalent to
    ``asctime(localtime(secs))``. Locale information is not used by
    :func:`ctime`.
+
+   .. versionchanged:: next
+      Accepts any real number, not only integer or float.
 
 
 .. function:: get_clock_info(name)
@@ -258,6 +264,9 @@ Functions
    :class:`struct_time` object. See :func:`calendar.timegm` for the inverse of this
    function.
 
+   .. versionchanged:: next
+      Accepts any real number, not only integer or float.
+
 
 .. function:: localtime([secs])
 
@@ -270,6 +279,9 @@ Functions
    or :c:func:`gmtime` functions, and :exc:`OSError` on :c:func:`localtime` or
    :c:func:`gmtime` failure. It's common for this to be restricted to years
    between 1970 and 2038.
+
+   .. versionchanged:: next
+      Accepts any real number, not only integer or float.
 
 
 .. function:: mktime(t)
@@ -382,8 +394,7 @@ Functions
 .. function:: sleep(secs)
 
    Suspend execution of the calling thread for the given number of seconds.
-   The argument may be a floating-point number to indicate a more precise sleep
-   time.
+   The argument may be a non-integer to indicate a more precise sleep time.
 
    If the sleep is interrupted by a signal and no exception is raised by the
    signal handler, the sleep is restarted with a recomputed timeout.
@@ -427,6 +438,9 @@ Functions
 
    .. versionchanged:: 3.13
       Raises an auditing event.
+
+   .. versionchanged:: next
+      Accepts any real number, not only integer or float.
 
 .. index::
    single: % (percent); datetime format
