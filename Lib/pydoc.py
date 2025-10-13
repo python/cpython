@@ -536,6 +536,7 @@ class Doc:
     PYTHONDOCS = os.environ.get("PYTHONDOCS",
                                 "https://docs.python.org/%d.%d/library"
                                 % sys.version_info[:2])
+    STDLIB_DIR = sysconfig.get_path('stdlib')
 
     def document(self, object, name=None, *args):
         """Generate documentation for an object."""
@@ -561,9 +562,9 @@ class Doc:
 
     docmodule = docclass = docroutine = docother = docproperty = docdata = fail
 
-    def getdocloc(self, object, basedir=sysconfig.get_path('stdlib')):
+    def getdocloc(self, object, basedir=None):
         """Return the location of module docs or None"""
-
+        basedir = self.STDLIB_DIR if basedir is None else basedir
         docloc = os.environ.get("PYTHONDOCS", self.PYTHONDOCS)
 
         if (self._is_stdlib_module(object, basedir) and
@@ -587,7 +588,9 @@ class Doc:
                 return str(object.__version__)
         return None
 
-    def _is_stdlib_module(self, object, basedir=sysconfig.get_path('stdlib')):
+    def _is_stdlib_module(self, object, basedir=None):
+        basedir = self.STDLIB_DIR if basedir is None else basedir
+
         try:
             file = inspect.getabsfile(object)
         except TypeError:
