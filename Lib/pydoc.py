@@ -581,12 +581,9 @@ class Doc:
         if self._is_stdlib_module(object):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", DeprecationWarning)
-                if hasattr(object, '__version__'):
-                    return str(object.__version__)
+                return str(getattr(object, '__version__', None))
         else:
-            if hasattr(object, '__version__'):
-                return str(object.__version__)
-        return None
+            return str(getattr(object, '__version__', None))
 
     def _is_stdlib_module(self, object, basedir=None):
         basedir = self.STDLIB_DIR if basedir is None else basedir

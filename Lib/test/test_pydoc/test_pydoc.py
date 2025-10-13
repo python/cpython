@@ -2310,13 +2310,13 @@ class TestInternalUtilities(unittest.TestCase):
         import json
 
         class Module:
-            __name__ = 'fauxmod'
+            __name__ = 'my_module'
 
-            def __getattr__(self, name):
-                if name == "__version__":
-                    from warnings import _deprecated
-                    _deprecated("__version__", remove=(3, 20))
-                    return "1"
+            @property
+            def __version__(self):
+                from warnings import _deprecated
+                _deprecated("__version__", remove=(3, 20))
+                return "1.2.3"
 
         module = Module()
         doc = pydoc.Doc()
@@ -2329,8 +2329,8 @@ class TestInternalUtilities(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             version = doc._get_version(module)
-            self.assertEqual(version, "1")
-            self.assertEqual(len(w), 2)
+            self.assertEqual(version, "1.2.3")
+            self.assertEqual(len(w), 1)
 
 
 def setUpModule():
