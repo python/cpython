@@ -24,19 +24,13 @@ def load_tzdata(key):
             import tzdata
         except ImportError:
             # tzdata is not installed, provide installation instructions
-            exc.add_note(
-                "This error may occur if timezone data is not available. "
-                "To resolve this:"
-            )
-            exc.add_note("  - Install the tzdata package: python -m pip install tzdata")
-            exc.add_note("  - Verify the timezone key is correct (for example, 'America/New_York')")
+            exc.add_note("This error may occur if timezone data is not available.")
+            exc.add_note("Try:")
+            exc.add_note("  - Installing the tzdata package: python -m pip install tzdata")
+            exc.add_note("  - Verifying the timezone key is correct (for example, 'America/New_York')")
             exc.add_note("")
             exc.add_note("For more information, see:")
             exc.add_note("https://docs.python.org/3/library/zoneinfo.html")
-        else:
-            # tzdata is installed but the key wasn't found
-            exc.add_note(f"The timezone key '{key}' was not found in the tzdata package.")
-            exc.add_note("Please verify the timezone key is correct (for example, 'America/New_York').")
         
         raise exc
     except (FileNotFoundError, UnicodeEncodeError, IsADirectoryError):
