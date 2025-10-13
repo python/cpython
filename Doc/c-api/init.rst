@@ -1362,7 +1362,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    CPython implements :ref:`recursion control <recursion>` for C code by raising
    :py:exc:`RecursionError` when it notices that the machine execution stack is close
-   to overflow.
+   to overflow. See for example the :c:func:`Py_EnterRecursiveCall` function.
    For this, it needs to know the location of the current thread's stack, which it
    normally gets from the operating system.
    When the stack is changed, for example using context switching techniques like the
