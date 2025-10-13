@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 typedef struct {
-    // List of bytes objects
+    // Bytes writer managing output buffer
     PyBytesWriter *writer;
     // Number of whole allocated size
     Py_ssize_t allocated;
@@ -154,7 +154,7 @@ _BlocksOutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer,
 
     buffer->writer = PyBytesWriter_Create(init_size);
     if (buffer->writer == NULL) {
-        PyErr_SetString(PyExc_MemoryError, unable_allocate_msg);
+        // PyBytesWriter_Create already sets an exception when out of memory.
         return -1;
     }
 
@@ -244,6 +244,7 @@ static inline PyObject *
 _BlocksOutputBuffer_Finish(_BlocksOutputBuffer *buffer,
                            const Py_ssize_t avail_out)
 {
+    assert(buffer->writer != NULL);
     return PyBytesWriter_FinishWithSize(buffer->writer,
                                         buffer->allocated - avail_out);
 }
@@ -253,6 +254,7 @@ static inline void
 _BlocksOutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 {
     PyBytesWriter_Discard(buffer->writer);
+    buffer->writer = NULL;
 }
 
 #ifdef __cplusplus
