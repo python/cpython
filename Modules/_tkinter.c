@@ -3312,7 +3312,7 @@ static PyMethodDef moduleMethods[] =
 };
 
 static void
-MyFileProc(void *clientData, int mask)
+MyChannelProc(void *clientData, int mask)
 {
     int* stdin_ready = clientData;
     *stdin_ready = 1;
@@ -3327,7 +3327,7 @@ EventHook(void)
     Tcl_Channel channel = Tcl_GetStdChannel(TCL_STDIN);
     PyEval_RestoreThread(event_tstate);
     errorInCmd = 0;
-    Tcl_CreateChannelHandler(channel, TCL_READABLE, MyFileProc, &stdin_ready);
+    Tcl_CreateChannelHandler(channel, TCL_READABLE, MyChannelProc, &stdin_ready);
     while (!errorInCmd && !stdin_ready) {
         int result;
         Py_BEGIN_ALLOW_THREADS
@@ -3345,7 +3345,7 @@ EventHook(void)
         if (result < 0)
             break;
     }
-    Tcl_DeleteChannelHandler(channel, MyFileProc, &stdin_ready);
+    Tcl_DeleteChannelHandler(channel, MyChannelProc, &stdin_ready);
     if (errorInCmd) {
         errorInCmd = 0;
         PyErr_SetRaisedException(excInCmd);
