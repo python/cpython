@@ -796,7 +796,7 @@ get_summary(PyInterpreterState *interp)
         Py_DECREF(idobj);
         return NULL;
     }
-    PyObject *res = PyTuple_Pack(2, idobj, whenceobj);
+    PyObject *res = PyTuple_MakePair(idobj, whenceobj);
     Py_DECREF(idobj);
     Py_DECREF(whenceobj);
     return res;

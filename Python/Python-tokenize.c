@@ -164,7 +164,7 @@ _tokenizer_error(tokenizeriterobject *it)
         goto exit;
     }
 
-    value = PyTuple_Pack(2, errstr, tmp);
+    value = PyTuple_MakePair(errstr, tmp);
     if (!value) {
         result = -1;
         goto exit;

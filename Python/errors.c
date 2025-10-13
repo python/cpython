@@ -1312,7 +1312,7 @@ PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
     if (PyTuple_Check(base)) {
         bases = Py_NewRef(base);
     } else {
-        bases = PyTuple_Pack(1, base);
+        bases = PyTuple_MakeSingle(base);
         if (bases == NULL)
             goto failure;
     }

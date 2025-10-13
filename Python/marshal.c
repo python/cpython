@@ -612,7 +612,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
                 Py_DECREF(value);
                 break;
             }
-            PyObject *pair = PyTuple_Pack(2, dump, value);
+            PyObject *pair = PyTuple_MakePair(dump, value);
             Py_DECREF(dump);
             Py_DECREF(value);
             if (pair == NULL) {

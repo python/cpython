@@ -310,7 +310,7 @@ pairwise_new_impl(PyTypeObject *type, PyObject *iterable)
     }
     po->it = it;
     po->old = NULL;
-    po->result = PyTuple_Pack(2, Py_None, Py_None);
+    po->result = PyTuple_MakePair(Py_None, Py_None);
     if (po->result == NULL) {
         Py_DECREF(po);
         return NULL;
@@ -563,7 +563,7 @@ groupby_next(PyObject *op)
     if (grouper == NULL)
         return NULL;
 
-    r = PyTuple_Pack(2, gbo->currkey, grouper);
+    r = PyTuple_MakePair(gbo->currkey, grouper);
     Py_DECREF(grouper);
     return r;
 }

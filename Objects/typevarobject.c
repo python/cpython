@@ -372,7 +372,7 @@ type_check(PyObject *arg, const char *msg)
 static PyObject *
 make_union(PyObject *self, PyObject *other)
 {
-    PyObject *args = PyTuple_Pack(2, self, other);
+    PyObject *args = PyTuple_MakePair(self, other);
     if (args == NULL) {
         return NULL;
     }
@@ -800,7 +800,7 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
             return NULL;
         }
         if (dflt != &_Py_NoDefaultStruct) {
-            PyObject *new_args = PyTuple_Pack(1, dflt);
+            PyObject *new_args = PyTuple_MakeSingle(dflt);
             Py_DECREF(dflt);
             if (new_args == NULL) {
                 Py_DECREF(params);
@@ -1536,7 +1536,7 @@ unpack_iter(PyObject *self)
     if (unpacked == NULL) {
         return NULL;
     }
-    PyObject *tuple = PyTuple_Pack(1, unpacked);
+    PyObject *tuple = PyTuple_MakeSingle(unpacked);
     if (tuple == NULL) {
         Py_DECREF(unpacked);
         return NULL;

@@ -2222,7 +2222,7 @@ defdict_missing(PyObject *op, PyObject *key)
     if (factory == NULL || factory == Py_None) {
         /* XXX Call dict.__missing__(key) */
         PyObject *tup;
-        tup = PyTuple_Pack(1, key);
+        tup = PyTuple_MakeSingle(key);
         if (!tup) return NULL;
         PyErr_SetObject(PyExc_KeyError, tup);
         Py_DECREF(tup);
@@ -2292,7 +2292,7 @@ defdict_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
     if (dd->default_factory == NULL || dd->default_factory == Py_None)
         args = PyTuple_New(0);
     else
-        args = PyTuple_Pack(1, dd->default_factory);
+        args = PyTuple_MakeSingle(dd->default_factory);
     if (args == NULL)
         return NULL;
     items = PyObject_CallMethodNoArgs(op, &_Py_ID(items));

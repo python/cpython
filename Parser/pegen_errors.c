@@ -41,7 +41,7 @@ _PyPegen_raise_tokenizer_init_error(PyObject *filename)
         goto error;
     }
 
-    tuple = PyTuple_Pack(2, errstr, tmp);
+    tuple = PyTuple_MakePair(errstr, tmp);
     Py_DECREF(tmp);
     if (!value) {
         goto error;
@@ -393,7 +393,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     if (!tmp) {
         goto error;
     }
-    value = PyTuple_Pack(2, errstr, tmp);
+    value = PyTuple_MakePair(errstr, tmp);
     Py_DECREF(tmp);
     if (!value) {
         goto error;

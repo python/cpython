@@ -408,7 +408,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
         if (PyErr_Occurred())
             ret = NULL;
         else
-            ret = PyTuple_Pack(3, rlist, wlist, xlist);
+            ret = PyTuple_MakeTriplet(rlist, wlist, xlist);
 
         Py_XDECREF(rlist);
         Py_XDECREF(wlist);
@@ -1045,7 +1045,7 @@ select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
             Py_XDECREF(num2);
             goto error;
         }
-        value = PyTuple_Pack(2, num1, num2);
+        value = PyTuple_MakePair(num1, num2);
         Py_DECREF(num1);
         Py_DECREF(num2);
         if (value == NULL)

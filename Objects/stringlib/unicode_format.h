@@ -1183,7 +1183,7 @@ fieldnameiter_next(PyObject *op)
             goto done;
 
         /* return a tuple of values */
-        result = PyTuple_Pack(2, is_attr_obj, obj);
+        result = PyTuple_MakePair(is_attr_obj, obj);
 
     done:
         Py_XDECREF(is_attr_obj);
@@ -1274,7 +1274,7 @@ formatter_field_name_split(PyObject *Py_UNUSED(module), PyObject *self)
         goto done;
 
     /* return a tuple of values */
-    result = PyTuple_Pack(2, first_obj, it);
+    result = PyTuple_MakePair(first_obj, (PyObject *)it);
 
 done:
     Py_XDECREF(it);

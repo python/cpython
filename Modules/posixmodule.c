@@ -5675,7 +5675,7 @@ os__path_splitroot_ex_impl(PyObject *module, path_t *path)
             goto exit;
         }
     }
-    result = PyTuple_Pack(3, drv, root, tail);
+    result = PyTuple_MakeTriplet(drv, root, tail);
 exit:
     Py_XDECREF(drv);
     Py_XDECREF(root);
@@ -10832,7 +10832,7 @@ build_itimerspec(const struct itimerspec* curr_value)
         Py_DECREF(value);
         return NULL;
     }
-    PyObject *tuple = PyTuple_Pack(2, value, interval);
+    PyObject *tuple = PyTuple_MakePair(value, interval);
     Py_DECREF(interval);
     Py_DECREF(value);
     return tuple;

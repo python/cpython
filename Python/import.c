@@ -4447,9 +4447,9 @@ _imp_find_frozen_impl(PyObject *module, PyObject *name, int withdata)
         }
     }
 
-    PyObject *result = PyTuple_Pack(3, data ? data : Py_None,
-                                    info.is_package ? Py_True : Py_False,
-                                    origname ? origname : Py_None);
+    PyObject *result = PyTuple_MakeTriplet(data ? data : Py_None,
+                                           info.is_package ? Py_True : Py_False,
+                                           origname ? origname : Py_None);
     Py_XDECREF(origname);
     Py_XDECREF(data);
     return result;

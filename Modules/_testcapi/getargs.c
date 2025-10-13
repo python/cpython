@@ -186,7 +186,7 @@ test_w_code_invalid(PyObject *self, PyObject *arg)
     PyObject *kwargs;
     PyObject *tmp;
 
-    if (!(args = PyTuple_Pack(1, Py_None))) {
+    if (!(args = PyTuple_MakeSingle(Py_None))) {
         return NULL;
     }
 

@@ -2948,7 +2948,7 @@ _PyCode_ConstantKey(PyObject *op)
     else if (PyBool_Check(op) || PyBytes_CheckExact(op)) {
         /* Make booleans different from integers 0 and 1.
          * Avoid BytesWarning from comparing bytes with strings. */
-        key = PyTuple_Pack(2, Py_TYPE(op), op);
+        key = PyTuple_MakePair((PyObject *)Py_TYPE(op), op);
     }
     else if (PyFloat_CheckExact(op)) {
         double d = PyFloat_AS_DOUBLE(op);
@@ -2956,9 +2956,9 @@ _PyCode_ConstantKey(PyObject *op)
          * or -0.0 case from all others, just to avoid the "coercion".
          */
         if (d == 0.0 && copysign(1.0, d) < 0.0)
-            key = PyTuple_Pack(3, Py_TYPE(op), op, Py_None);
+            key = PyTuple_MakeTriplet((PyObject *)Py_TYPE(op), op, Py_None);
         else
-            key = PyTuple_Pack(2, Py_TYPE(op), op);
+            key = PyTuple_MakePair((PyObject *)Py_TYPE(op), op);
     }
     else if (PyComplex_CheckExact(op)) {
         Py_complex z;
@@ -2973,16 +2973,16 @@ _PyCode_ConstantKey(PyObject *op)
         /* use True, False and None singleton as tags for the real and imag
          * sign, to make tuples different */
         if (real_negzero && imag_negzero) {
-            key = PyTuple_Pack(3, Py_TYPE(op), op, Py_True);
+            key = PyTuple_MakeTriplet((PyObject *)Py_TYPE(op), op, Py_True);
         }
         else if (imag_negzero) {
-            key = PyTuple_Pack(3, Py_TYPE(op), op, Py_False);
+            key = PyTuple_MakeTriplet((PyObject *)Py_TYPE(op), op, Py_False);
         }
         else if (real_negzero) {
-            key = PyTuple_Pack(3, Py_TYPE(op), op, Py_None);
+            key = PyTuple_MakeTriplet((PyObject *)Py_TYPE(op), op, Py_None);
         }
         else {
-            key = PyTuple_Pack(2, Py_TYPE(op), op);
+            key = PyTuple_MakePair((PyObject *)Py_TYPE(op), op);
         }
     }
     else if (PyTuple_CheckExact(op)) {
@@ -3007,7 +3007,7 @@ _PyCode_ConstantKey(PyObject *op)
             PyTuple_SET_ITEM(tuple, i, item_key);
         }
 
-        key = PyTuple_Pack(2, tuple, op);
+        key = PyTuple_MakePair(tuple, op);
         Py_DECREF(tuple);
     }
     else if (PyFrozenSet_CheckExact(op)) {
@@ -3041,7 +3041,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (set == NULL)
             return NULL;
 
-        key = PyTuple_Pack(2, set, op);
+        key = PyTuple_MakePair(set, op);
         Py_DECREF(set);
         return key;
     }
@@ -3072,7 +3072,7 @@ _PyCode_ConstantKey(PyObject *op)
             goto slice_exit;
         }
 
-        key = PyTuple_Pack(2, slice_key, op);
+        key = PyTuple_MakePair(slice_key, op);
         Py_DECREF(slice_key);
     slice_exit:
         Py_XDECREF(start_key);
@@ -3086,7 +3086,7 @@ _PyCode_ConstantKey(PyObject *op)
         if (obj_id == NULL)
             return NULL;
 
-        key = PyTuple_Pack(2, obj_id, op);
+        key = PyTuple_MakePair(obj_id, op);
         Py_DECREF(obj_id);
     }
     return key;

@@ -260,7 +260,7 @@ _testcapi_set_exc_info_impl(PyObject *module, PyObject *new_type,
     Py_INCREF(new_tb);
     PyErr_SetExcInfo(new_type, new_value, new_tb);
 
-    PyObject *orig_exc = PyTuple_Pack(3,
+    PyObject *orig_exc = PyTuple_MakeTriplet(
             type  ? type  : Py_None,
             value ? value : Py_None,
             tb    ? tb    : Py_None);

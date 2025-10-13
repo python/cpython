@@ -12989,7 +12989,7 @@ PyUnicode_Partition(PyObject *str_obj, PyObject *sep_obj)
     len2 = PyUnicode_GET_LENGTH(sep_obj);
     if (kind1 < kind2 || len1 < len2) {
         PyObject *empty = unicode_get_empty();  // Borrowed reference
-        return PyTuple_Pack(3, str_obj, empty, empty);
+        return PyTuple_MakeTriplet(str_obj, empty, empty);
     }
     buf1 = PyUnicode_DATA(str_obj);
     buf2 = PyUnicode_DATA(sep_obj);
@@ -13041,7 +13041,7 @@ PyUnicode_RPartition(PyObject *str_obj, PyObject *sep_obj)
     len2 = PyUnicode_GET_LENGTH(sep_obj);
     if (kind1 < kind2 || len1 < len2) {
         PyObject *empty = unicode_get_empty();  // Borrowed reference
-        return PyTuple_Pack(3, empty, empty, str_obj);
+        return PyTuple_MakeTriplet(empty, empty, str_obj);
     }
     buf1 = PyUnicode_DATA(str_obj);
     buf2 = PyUnicode_DATA(sep_obj);

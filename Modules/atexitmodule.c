@@ -190,7 +190,7 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
     {
         func_kwargs = Py_None;
     }
-    PyObject *callback = PyTuple_Pack(3, func, func_args, func_kwargs);
+    PyObject *callback = PyTuple_MakeTriplet(func, func_args, func_kwargs);
     if (callback == NULL)
     {
         return NULL;

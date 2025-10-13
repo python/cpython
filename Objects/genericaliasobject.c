@@ -738,7 +738,7 @@ static PyObject *
 ga_mro_entries(PyObject *self, PyObject *args)
 {
     gaobject *alias = (gaobject *)self;
-    return PyTuple_Pack(1, alias->origin);
+    return PyTuple_MakeSingle(alias->origin);
 }
 
 static PyObject *
@@ -864,7 +864,7 @@ static PyGetSetDef ga_properties[] = {
 static inline int
 setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
     if (!PyTuple_Check(args)) {
-        args = PyTuple_Pack(1, args);
+        args = PyTuple_MakeSingle(args);
         if (args == NULL) {
             return 0;
         }

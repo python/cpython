@@ -2400,13 +2400,13 @@ set___reduce___impl(PySetObject *so)
     keys = PySequence_List((PyObject *)so);
     if (keys == NULL)
         goto done;
-    args = PyTuple_Pack(1, keys);
+    args = PyTuple_MakeSingle(keys);
     if (args == NULL)
         goto done;
     state = _PyObject_GetState((PyObject *)so);
     if (state == NULL)
         goto done;
-    result = PyTuple_Pack(3, Py_TYPE(so), args, state);
+    result = PyTuple_MakeTriplet((PyObject *)Py_TYPE(so), args, state);
 done:
     Py_XDECREF(args);
     Py_XDECREF(keys);
