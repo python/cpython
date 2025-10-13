@@ -1723,6 +1723,11 @@ def locate(path, forceload=0):
             object = getattr(object, part)
         except AttributeError:
             return None
+    if _is_dunder_name(path) and not isinstance(object, (type, type(__import__))):
+        # if we're looking up a special variable and we don't find a class or a
+        # function, it's probably not what the user wanted (if it is, they can
+        # look up builtins.whatever)
+        return None
     return object
 
 # --------------------------------------- interactive interpreter interface
@@ -1736,10 +1741,15 @@ def resolve(thing, forceload=0):
     if isinstance(thing, str):
         object = locate(thing, forceload)
         if object is None:
+            if _is_dunder_name(thing):
+                special = "Use help('specialnames') for a list of special names for which help is available.\n"
+            else:
+                special = ""
             raise ImportError('''\
-No Python documentation found for %r.
-Use help() to get the interactive help utility.
-Use help(str) for help on the str class.''' % thing)
+No help entry found for %r.
+%sUse help() to get the interactive help utility.
+Use help(str) for help on the str class.
+Additional documentation is available online at https://docs.python.org/%s.%s/''' % (thing, special, *sys.version_info[:2]))
         return object, thing
     else:
         name = getattr(thing, '__name__', None)
@@ -1829,10 +1839,10 @@ def _introdoc():
         Python, you should definitely check out the tutorial at
         https://docs.python.org/{ver}/tutorial/.
 
-        Enter the name of any module, keyword, or topic to get help on writing
-        Python programs and using Python modules.  To get a list of available
-        modules, keywords, symbols, or topics, enter "modules", "keywords",
-        "symbols", or "topics".
+        Enter the name of any module, keyword, symbol, or topic to get help on
+        writing Python programs and using Python modules.  To get a list of
+        available modules, keywords, symbols, special names, or topics, enter
+        "modules", "keywords", "symbols", "specialnames", or "topics".
         {pyrepl_keys}
         Each module also comes with a one-line summary of what it does; to list
         the modules whose name or summary contain a given string such as "spam",
@@ -1841,6 +1851,96 @@ def _introdoc():
         To quit this help utility and return to the interpreter,
         enter "q", "quit" or "exit".
     ''')
+
+def _is_dunder_name(x):
+    return isinstance(x, str) and len(x) > 4 and x[:2] == x[-2:] == '__'
+
+def collect_dunders(symbols):
+    dunders = {
+        '__name__': ('name_equals_main', ''),
+        '__main__': ('__main__', ''),
+        '__call__': ('callable-types', 'SPECIALMETHODS'),
+    }
+
+    basic_dunders = [
+        '__new__', '__init__', '__del__', '__repr__', '__str__', '__bytes__',
+        '__format__', '__hash__', '__bool__',
+    ]
+    for bd in basic_dunders:
+        dunders[bd] = ('customization', 'SPECIALMETHODS')
+
+    attribute_dunders = [
+        '__getattr__', '__getattribute__', '__setattr__', '__delattr__',
+        '__dir__', '__get__', '__set__', '__delete__', '__objclass__',
+    ]
+    for ad in attribute_dunders:
+        dunders[ad] = ('attribute-access', 'SPECIALMETHODS')
+
+    class_dunders = [
+        '__init_subclass__', '__set_names__', '__mro_entries__',
+    ]
+    for cd in class_dunders:
+        dunders[cd] = ('class-customization', 'SPECIALMETHODS')
+
+    instance_dunders = [
+        '__instancecheck__', '__subclasscheck__'
+    ]
+    for d in instance_dunders:
+        dunders[d] = ('customize-instance-subclass-checks', 'SPECIALMETHODS')
+
+    sequence_dunders = [
+       '__len__', '__length_hint__', '__getitem__', '__setitem__',
+       '__delitem__', '__missing__', '__iter__', '__reversed__',
+       '__contains__',
+    ]
+    for sd in sequence_dunders:
+        dunders[sd] = ('sequence-types', 'SPECIALMETHODS')
+
+    comparison_dunders = {
+        '__lt__': '<',
+        '__le__': '<=',
+        '__eq__': '==',
+        '__ne__': '!=',
+        '__gt__': '>',
+        '__ge__': '>=',
+    }
+    for dunder, symbol in comparison_dunders.items():
+        dunders[dunder] = ('customization', f'{symbol} SPECIALMETHODS')
+        if symbol in symbols:
+            symbols[symbol] += f' {dunder}'
+
+    arithmetic_dunders = {
+        '__add__': '+',
+        '__sub__': '-',
+        '__mul__': '*',
+        '__truediv__': '/',
+        '__floordiv__': '//',
+        '__mod__': '%',
+        '__pow__': '**',
+        '__lshift__': '<<',
+        '__rshift__': '>>',
+        '__and__': '&',
+        '__or__': '|',
+        '__xor__': '^',
+    }
+    for dunder, symbol in arithmetic_dunders.items():
+        rname = "__r" + dunder[2:]
+        iname = "__i" + dunder[2:]
+        dunders[dunder] = ('numeric-types', f'{symbol} {rname} {iname} SPECIALMETHODS')
+        dunders[rname] = ('numeric-types', f'{symbol} {dunder} SPECIALMETHODS')
+        dunders[iname] = ('numeric-types', f'{symbol} {dunder} SPECIALMETHODS')
+        if symbol in symbols:
+            symbols[symbol] += f' {dunder}'
+
+    # __matmul__ isn't included above because help('@') doesn't talk about
+    # matrix multiplication, so we shouldn't list it here as a related topic.
+    dunders['__matmul__'] = ('numeric-types', f'__rmatmul__ __imatmul__ SPECIALMETHODS')
+    dunders['__rmatmul__'] = ('numeric-types', f'__matmul__ SPECIALMETHODS')
+    dunders['__imatmul__'] = ('numeric-types', f'__matmul__ SPECIALMETHODS')
+
+    dunders['__divmod__'] = ('numeric-types', 'divmod')
+
+    return dunders
 
 class Helper:
 
@@ -1922,7 +2022,8 @@ class Helper:
         '(': 'TUPLES FUNCTIONS CALLS',
         ')': 'TUPLES FUNCTIONS CALLS',
         '[': 'LISTS SUBSCRIPTS SLICINGS',
-        ']': 'LISTS SUBSCRIPTS SLICINGS'
+        ']': 'LISTS SUBSCRIPTS SLICINGS',
+
     }
     for topic, symbols_ in _symbols_inverse.items():
         for symbol in symbols_:
@@ -1972,8 +2073,7 @@ class Helper:
         'BASICMETHODS': ('customization', 'hash repr str SPECIALMETHODS'),
         'ATTRIBUTEMETHODS': ('attribute-access', 'ATTRIBUTES SPECIALMETHODS'),
         'CALLABLEMETHODS': ('callable-types', 'CALLS SPECIALMETHODS'),
-        'SEQUENCEMETHODS': ('sequence-types', 'SEQUENCES SEQUENCEMETHODS '
-                             'SPECIALMETHODS'),
+        'SEQUENCEMETHODS': ('sequence-types', 'SEQUENCES SPECIALMETHODS'),
         'MAPPINGMETHODS': ('sequence-types', 'MAPPINGS SPECIALMETHODS'),
         'NUMBERMETHODS': ('numeric-types', 'NUMBERS AUGMENTEDASSIGNMENT '
                           'SPECIALMETHODS'),
@@ -2018,7 +2118,14 @@ class Helper:
         'TRUTHVALUE': ('truth', 'if while and or not BASICMETHODS'),
         'DEBUGGING': ('debugger', 'pdb'),
         'CONTEXTMANAGERS': ('context-managers', 'with'),
+        'DUNDERMETHODS': 'SPECIALMETHODS',
+        'MAINMODULE': '__main__',
     }
+
+    # add dunder methods
+    dunders = collect_dunders(symbols)
+    topics |= dunders
+
 
     def __init__(self, input=None, output=None):
         self._input = input
@@ -2092,6 +2199,8 @@ has the same effect as typing a particular string at the help> prompt.
             if request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
             elif request == 'topics': self.listtopics()
+            elif request == 'specialnames':
+                self.listdunders()
             elif request == 'modules': self.listmodules()
             elif request[:8] == 'modules ':
                 self.listmodules(request.split()[1])
@@ -2143,7 +2252,14 @@ to. Enter any symbol to get more help.
 Here is a list of available topics.  Enter any topic name to get more help.
 
 ''')
-        self.list(self.topics.keys(), columns=3)
+        self.list([k for k in self.topics if k not in self.dunders], columns=3)
+
+    def listdunders(self):
+        self.output.write('''
+Here is a list of special names for which help is available.  Enter any one to get more help.
+
+''')
+        self.list(self.dunders.keys(), columns=3)
 
     def showtopic(self, topic, more_xrefs=''):
         try:
@@ -2847,7 +2963,8 @@ def cli():
     reference to a class or function within a module or module in a
     package.  If <name> contains a '{sep}', it is used as the path to a
     Python source file to document. If name is 'keywords', 'topics',
-    or 'modules', a listing of these things is displayed.
+    'symbols', 'specialnames', or 'modules', a listing of these things is
+    displayed.
 
 {cmd} -k <keyword>
     Search for a keyword in the synopsis lines of all available modules.
