@@ -76,18 +76,6 @@ typedef int Tcl_Size;
 #define TCL_SIZE_MAX INT_MAX
 #endif
 
-#if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
-#define HAVE_CREATEFILEHANDLER
-#endif
-
-#ifdef HAVE_CREATEFILEHANDLER
-
-/* If Tcl can wait for a Unix file descriptor, define the EventHook() routine
-   which uses this to handle Tcl events while the user is typing commands. */
-
-#define WAIT_FOR_STDIN
-
-#endif /* HAVE_CREATEFILEHANDLER */
 
 /* Use OS native encoding for converting between Python strings and
    Tcl objects.
@@ -108,8 +96,6 @@ typedef int Tcl_Size;
 #endif
 
 #ifdef MS_WINDOWS
-#include <conio.h>
-#define WAIT_FOR_STDIN
 
 static PyObject *
 _get_tcl_lib_path(void)
@@ -3325,41 +3311,25 @@ static PyMethodDef moduleMethods[] =
     {NULL,                 NULL}
 };
 
-#ifdef WAIT_FOR_STDIN
-
-static int stdin_ready = 0;
-
-#ifndef MS_WINDOWS
 static void
 MyFileProc(void *clientData, int mask)
 {
-    stdin_ready = 1;
+    int* stdin_ready = clientData;
+    *stdin_ready = 1;
 }
-#endif
 
 static PyThreadState *event_tstate = NULL;
 
 static int
 EventHook(void)
 {
-#ifndef MS_WINDOWS
-    int tfile;
-#endif
+    int stdin_ready = 0;
+    Tcl_Channel channel = Tcl_GetStdChannel(TCL_STDIN);
     PyEval_RestoreThread(event_tstate);
-    stdin_ready = 0;
     errorInCmd = 0;
-#ifndef MS_WINDOWS
-    tfile = fileno(stdin);
-    Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, NULL);
-#endif
+    Tcl_CreateChannelHandler(channel, TCL_READABLE, MyFileProc, &stdin_ready);
     while (!errorInCmd && !stdin_ready) {
         int result;
-#ifdef MS_WINDOWS
-        if (_kbhit()) {
-            stdin_ready = 1;
-            break;
-        }
-#endif
         Py_BEGIN_ALLOW_THREADS
         if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
         tcl_tstate = event_tstate;
@@ -3375,9 +3345,7 @@ EventHook(void)
         if (result < 0)
             break;
     }
-#ifndef MS_WINDOWS
-    Tcl_DeleteFileHandler(tfile);
-#endif
+    Tcl_DeleteChannelHandler(channel, MyFileProc, &stdin_ready);
     if (errorInCmd) {
         errorInCmd = 0;
         PyErr_SetRaisedException(excInCmd);
@@ -3388,27 +3356,21 @@ EventHook(void)
     return 0;
 }
 
-#endif
-
 static void
 EnableEventHook(void)
 {
-#ifdef WAIT_FOR_STDIN
     if (PyOS_InputHook == NULL) {
         event_tstate = PyThreadState_Get();
         PyOS_InputHook = EventHook;
     }
-#endif
 }
 
 static void
 DisableEventHook(void)
 {
-#ifdef WAIT_FOR_STDIN
     if (Tk_GetNumMainWindows() == 0 && PyOS_InputHook == EventHook) {
         PyOS_InputHook = NULL;
     }
-#endif
 }
 
 static int
