@@ -2770,8 +2770,8 @@ PyDict_DelItem(PyObject *op, PyObject *key)
     return _PyDict_DelItem_KnownHash(op, key, hash);
 }
 
-static int
-delitem_knownhash_lock_held(PyObject *op, PyObject *key, Py_hash_t hash)
+int
+_PyDict_DelItem_KnownHash_LockHeld(PyObject *op, PyObject *key, Py_hash_t hash)
 {
     Py_ssize_t ix;
     PyDictObject *mp;
@@ -2806,7 +2806,7 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 {
     int res;
     Py_BEGIN_CRITICAL_SECTION(op);
-    res = delitem_knownhash_lock_held(op, key, hash);
+    res = _PyDict_DelItem_KnownHash_LockHeld(op, key, hash);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -4654,9 +4654,11 @@ dict_tp_clear(PyObject *op)
 
 static PyObject *dictiter_new(PyDictObject *, PyTypeObject *);
 
-static Py_ssize_t
-sizeof_lock_held(PyDictObject *mp)
+Py_ssize_t
+_PyDict_SizeOf_LockHeld(PyDictObject *mp)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+
     size_t res = _PyObject_SIZE(Py_TYPE(mp));
     if (_PyDict_HasSplitTable(mp)) {
         res += shared_keys_usable_size(mp->ma_keys) * sizeof(PyObject*);
@@ -4675,7 +4677,7 @@ _PyDict_SizeOf(PyDictObject *mp)
 {
     Py_ssize_t res;
     Py_BEGIN_CRITICAL_SECTION(mp);
-    res = sizeof_lock_held(mp);
+    res = _PyDict_SizeOf_LockHeld(mp);
     Py_END_CRITICAL_SECTION();
 
     return res;
@@ -6865,7 +6867,7 @@ _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
             dict_unhashable_type(name);
             return -1;
         }
-        return delitem_knownhash_lock_held((PyObject *)dict, name, hash);
+        return _PyDict_DelItem_KnownHash_LockHeld((PyObject *)dict, name, hash);
     } else {
         return setitem_lock_held(dict, name, value);
     }
