@@ -1379,8 +1379,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Reset the stack start address and stack size of a Python thread state to
    the operating system defaults.
 
-   .. seealso::
-      The :c:func:`PyUnstable_ThreadState_SetStack` function.
+   See :c:func:`PyUnstable_ThreadState_SetStack` for an explanation.
 
    .. versionadded:: next
 
