@@ -273,12 +273,15 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._must_cancel = False
         self._fut_waiter = None
 
-        _py_enter_task(self._loop, self)
+        prev_task = _py_swap_current_task(self._loop, self)
         try:
             self.__step_run_and_handle_result(exc)
         finally:
-            _py_leave_task(self._loop, self)
-            self = None  # Needed to break cycles when an exception occurs.
+            try:
+                curtask = _py_swap_current_task(self._loop, prev_task)
+                assert curtask is self
+            finally:
+                self = None  # Needed to break cycles when an exception occurs.
 
     def __step_run_and_handle_result(self, exc):
         coro = self._coro
@@ -1099,6 +1102,9 @@ def _swap_current_task(loop, task):
         del _current_tasks[loop]
     else:
         _current_tasks[loop] = task
+    if _c_swap_current_task is not _py_swap_current_task:
+        # keep the C task state in sync
+        _c_swap_current_task(loop, task)
     return prev_task
 
 
