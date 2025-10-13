@@ -256,7 +256,7 @@ class ExecutorTest:
 
         # gh-136655: ensure cancelled futures are notified
         count = self.worker_count * 2
-        barrier = self.create_barrier(self.worker_count + 1)
+        barrier = self.create_barrier(self.worker_count + 1, timeout=1)
         with self.executor as exec:
             fs = [exec.submit(blocking_raiser,
                               barrier if index < self.worker_count else None)
@@ -277,5 +277,5 @@ class ExecutorTest:
 
 def blocking_raiser(barrier=None):
     if barrier is not None:
-        barrier.wait(1)
+        barrier.wait()
     raise FalseyBoolException()
