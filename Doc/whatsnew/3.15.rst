@@ -225,7 +225,7 @@ Other language changes
 
 * Python now uses UTF-8_ as the default encoding, independent of the system's
   environment. This means that I/O operations without an explicit encoding,
-  e.g. ``open('flying-circus.txt')``, will use UTF-8.
+  for example, ``open('flying-circus.txt')``, will use UTF-8.
   UTF-8 is a widely-supported Unicode_ character encoding that has become a
   *de facto* standard for representing text, including nearly every webpage
   on the internet, many common file formats, programming languages, and more.
