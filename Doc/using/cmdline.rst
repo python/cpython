@@ -1277,9 +1277,8 @@ conflict.
 .. envvar:: PYTHON_BASIC_REPL
 
    If this variable is set to any value, the interpreter will not attempt to
-   load the Python-based :term:`REPL` that requires :mod:`curses` and
-   :mod:`readline`, and will instead use the traditional parser-based
-   :term:`REPL`.
+   load the Python-based :term:`REPL` that requires :mod:`readline`, and will
+   instead use the traditional parser-based :term:`REPL`.
 
    .. versionadded:: 3.13
 
