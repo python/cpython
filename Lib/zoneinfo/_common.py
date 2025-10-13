@@ -14,13 +14,23 @@ def load_tzdata(key):
         if path.is_dir():
             raise IsADirectoryError
         return path.open("rb")
-    except (ImportError, FileNotFoundError, UnicodeEncodeError, IsADirectoryError):
-        # There are four types of exception that can be raised that all amount
-        # to "we cannot find this key":
+    except ImportError:
+        # If package_name doesn't exist, it means tzdata is not installed
+        # or there's an error in the folder name like Amrica/New_York
+        msg = (
+            f"No time zone found with key {key}.\n\n"
+            "This error may occur if timezone data is not available. "
+            "To resolve this:\n"
+            "  • Install the tzdata package: python -m pip install tzdata\n"
+            "  • Ensure your operating system has timezone data installed\n"
+            "  • Verify the timezone key is correct (e.g., 'America/New_York')\n\n"
+            "For more information, see:\n"
+            "https://docs.python.org/3/library/zoneinfo.html"
+        )
+        raise ZoneInfoNotFoundError(msg)
+    except (FileNotFoundError, UnicodeEncodeError, IsADirectoryError):
+        # Other errors that amount to "we cannot find this key":
         #
-        # ImportError: If package_name doesn't exist (e.g. if tzdata is not
-        #   installed, or if there's an error in the folder name like
-        #   Amrica/New_York)
         # FileNotFoundError: If resource_name doesn't exist in the package
         #   (e.g. Europe/Krasnoy)
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
@@ -167,3 +177,10 @@ class _TZifHeader:
 
 class ZoneInfoNotFoundError(KeyError):
     """Exception raised when a ZoneInfo key is not found."""
+    
+    def __str__(self):
+        # Override __str__ to return the message directly without repr() formatting
+        # that KeyError applies by default
+        if self.args:
+            return str(self.args[0])
+        return super().__str__()
