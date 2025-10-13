@@ -3,7 +3,7 @@
   What's new in Python 3.15
 ****************************
 
-:Editor: TBD
+:Editor: Hugo van Kemenade
 
 .. Rules for maintenance:
 
