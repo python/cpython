@@ -400,22 +400,21 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
         if (loc8[-2] == 0x8B) {
             // mov reg, dword ptr [rip + AAA] -> lea reg, [rip + XXX]
             loc8[-2] = 0x8D;
-            value = relaxed;
+            patch_32r(location, relaxed);
         }
         else if (loc8[-2] == 0xFF && loc8[-1] == 0x15) {
             // call qword ptr [rip + AAA] -> nop; call XXX
             loc8[-2] = 0x90;
             loc8[-1] = 0xE8;
-            value = relaxed;
+            patch_32r(location, relaxed);
         }
         else if (loc8[-2] == 0xFF && loc8[-1] == 0x25) {
             // jmp qword ptr [rip + AAA] -> nop; jmp XXX
             loc8[-2] = 0x90;
             loc8[-1] = 0xE9;
-            value = relaxed;
+            patch_32r(location, relaxed);
         }
     }
-    patch_32r(location, value);
 }
 
 void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state);
