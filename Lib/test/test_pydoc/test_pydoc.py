@@ -2306,19 +2306,18 @@ class TestInternalUtilities(unittest.TestCase):
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
 
     def test__get_version(self):
-        import warnings
         import json
+        import warnings
 
-        class Module:
+        class MyModule:
             __name__ = 'my_module'
 
             @property
             def __version__(self):
-                from warnings import _deprecated
-                _deprecated("__version__", remove=(3, 20))
+                warnings._deprecated("__version__", remove=(3, 20))
                 return "1.2.3"
 
-        module = Module()
+        module = MyModule()
         doc = pydoc.Doc()
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
