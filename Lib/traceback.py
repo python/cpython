@@ -1218,11 +1218,6 @@ class TracebackException:
         self.exception_target = exception_target
         if lookup_lines:
             self._load_lines()
-        self.__suppress_context__ = (
-            exc_value.__suppress_context__ if exc_value is not None else False
-        )
-        if lookup_lines:
-            self._load_lines()
         self.__suppress_context__ = \
             exc_value.__suppress_context__ if exc_value is not None else False
 
