@@ -461,7 +461,7 @@ alloc_interpreter(void)
     // the first word of the memory block is used to store
     // the original pointer to be used later to free the memory.
     size_t alignment = _Alignof(PyInterpreterState);
-    size_t allocsize = sizeof(PyInterpreterState) + sizeof(void*) + alignment - 1;
+    size_t allocsize = sizeof(PyInterpreterState) + sizeof(void *) + alignment - 1;
     void *mem = PyMem_RawCalloc(1, allocsize);
     if (mem == NULL) {
         return NULL;
