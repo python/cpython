@@ -5668,15 +5668,9 @@ try_locked:
 #endif
 
 static bool
-has_unique_reference(PyObject *op)
-{
-    return _PyObject_IsUniquelyReferenced(op) == 1;
-}
-
-static bool
 acquire_iter_result(PyObject *result)
 {
-    if (has_unique_reference(result)) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         return true;
     }

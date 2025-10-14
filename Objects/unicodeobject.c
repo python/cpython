@@ -1717,7 +1717,7 @@ unicode_dealloc(PyObject *unicode)
             // Successfully popped.
             assert(popped == unicode);
             // Only our `popped` reference should be left; remove it too.
-            assert(_PyObject_IsUniquelyReferenced(unicode));
+            assert(Py_REFCNT(unicode) == 1);
             Py_SET_REFCNT(unicode, 0);
 #ifdef Py_REF_DEBUG
             /* let's be pedantic with the ref total */

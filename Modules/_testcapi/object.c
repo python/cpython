@@ -258,7 +258,7 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
     if (obj == NULL) {
         return NULL;
     }
-    assert(PyUnstable_Object_IsUniquelyReferenced(obj));
+    assert(Py_REFCNT(obj) == 1);
 
     Py_SET_REFCNT(obj,  0);
     /* Py_DECREF() must call _Py_NegativeRefcount() and abort Python */
@@ -275,7 +275,7 @@ decref_freed_object(PyObject *self, PyObject *Py_UNUSED(args))
     if (obj == NULL) {
         return NULL;
     }
-    assert(PyUnstable_Object_IsUniquelyReferenced(obj));
+    assert(Py_REFCNT(obj) == 1);
 
     // Deallocate the memory
     Py_DECREF(obj);

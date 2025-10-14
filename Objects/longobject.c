@@ -6953,7 +6953,7 @@ PyLongWriter_Discard(PyLongWriter *writer)
     }
 
     PyLongObject *obj = (PyLongObject *)writer;
-    assert(_PyObject_IsUniquelyReferenced((PyObject *)obj));
+    assert(Py_REFCNT(obj) == 1);
     Py_DECREF(obj);
 }
 
@@ -6962,7 +6962,7 @@ PyObject*
 PyLongWriter_Finish(PyLongWriter *writer)
 {
     PyLongObject *obj = (PyLongObject *)writer;
-    assert(_PyObject_IsUniquelyReferenced((PyObject *)obj));
+    assert(Py_REFCNT(obj) == 1);
 
     // Normalize and get singleton if possible
     obj = maybe_small_long(long_normalize(obj));
