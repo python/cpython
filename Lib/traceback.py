@@ -1193,7 +1193,7 @@ class TracebackException:
             original__notes__ = getattr(exc_value, "__notes__", None)
         except Exception as e:
             original__notes__ = [
-                f"Ignored error getting __notes__: {_safe_string(e, '__notes__', repr, exception_target, exc_value)}"
+                f"Ignored error getting __notes__: {_safe_string(e, '__notes__', repr, exception_target, e)}"
             ]
         if original__notes__ is not None and not (
             isinstance(original__notes__, collections.abc.Sequence)
@@ -1209,7 +1209,7 @@ class TracebackException:
                 )
             ]
         final_string_list = []
-        if original__notes__:
+        if original__notes__ is not None: # avoid that __bool__ raise Exception
             for i in original__notes__:
                 final_string_list.append(
                     _safe_string(
