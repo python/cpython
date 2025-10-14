@@ -2143,7 +2143,7 @@ product_next_lock_held(PyObject *op)
             _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
-        assert (npools==0 || _PyObject_IsUniquelyReferenced(result));
+        assert (npools==0 || Py_REFCNT(result) == 1);
 
         /* Update the pool indices right-to-left.  Only advance to the
            next pool when the previous one rolls-over */
@@ -2381,7 +2381,7 @@ combinations_next_lock_held(PyObject *op)
          * CPython's empty tuple is a singleton and cached in
          * PyTuple's freelist.
          */
-        assert(r == 0 || _PyObject_IsUniquelyReferenced(result));
+        assert(r == 0 || Py_REFCNT(result) == 1);
 
         /* Scan indices right-to-left until finding one that is not
            at its maximum (i + n - r). */
@@ -2633,7 +2633,7 @@ cwr_next(PyObject *op)
         }
         /* Now, we've got the only copy so we can update it in-place CPython's
            empty tuple is a singleton and cached in PyTuple's freelist. */
-        assert(r == 0 || _PyObject_IsUniquelyReferenced(result));
+        assert(r == 0 || Py_REFCNT(result) == 1);
 
        /* Scan indices right-to-left until finding one that is not
         * at its maximum (n-1). */
@@ -2893,7 +2893,7 @@ permutations_next(PyObject *op)
             _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
-        assert(r == 0 || _PyObject_IsUniquelyReferenced(result));
+        assert(r == 0 || Py_REFCNT(result) == 1);
 
         /* Decrement rightmost cycle, moving leftward upon zero rollover */
         for (i=r-1 ; i>=0 ; i--) {

@@ -987,7 +987,7 @@ CDataType_from_buffer_copy_impl(PyObject *type, PyTypeObject *cls,
 
     result = generic_pycdata_new(st, (PyTypeObject *)type, NULL, NULL);
     if (result != NULL) {
-        assert(_PyObject_IsUniquelyReferenced(result));
+        assert(Py_REFCNT(result) == 1);
         memcpy(((CDataObject *) result)->b_ptr, (char *)buffer->buf + offset, info->size);
     }
     return result;

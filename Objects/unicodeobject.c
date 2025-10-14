@@ -1162,7 +1162,7 @@ static int
 resize_inplace(PyObject *unicode, Py_ssize_t length)
 {
     assert(!PyUnicode_IS_COMPACT(unicode));
-    assert(_PyObject_IsUniquelyReferenced(unicode));
+    assert(Py_REFCNT(unicode) == 1);
 
     Py_ssize_t new_size;
     Py_ssize_t char_size;

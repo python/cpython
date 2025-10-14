@@ -3848,7 +3848,7 @@ long_add(PyLongObject *a, PyLongObject *b)
                    and thus z must be a multiple-digit int.
                    That also means z is not an element of
                    small_ints, so negating it in-place is safe. */
-                assert(_PyObject_IsUniquelyReferenced((PyObject *)z));
+                assert(Py_REFCNT(z) == 1);
                 _PyLong_FlipSign(z);
             }
         }
@@ -3895,8 +3895,7 @@ long_sub(PyLongObject *a, PyLongObject *b)
         else {
             z = x_add(a, b);
             if (z != NULL) {
-                assert(_PyLong_IsZero(z) ||
-                       _PyObject_IsUniquelyReferenced((PyObject *)z));
+                assert(_PyLong_IsZero(z) || Py_REFCNT(z) == 1);
                 _PyLong_FlipSign(z);
             }
         }
@@ -5488,7 +5487,7 @@ long_lshift1(PyLongObject *a, Py_ssize_t wordshift, digit remshift)
     if (z == NULL)
         return NULL;
     if (_PyLong_IsNegative(a)) {
-        assert(_PyObject_IsUniquelyReferenced((PyObject *)z));
+        assert(Py_REFCNT(z) == 1);
         _PyLong_FlipSign(z);
     }
     for (i = 0; i < wordshift; i++)

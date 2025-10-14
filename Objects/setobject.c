@@ -1058,7 +1058,7 @@ set_update_lock_held(PySetObject *so, PyObject *other)
 static int
 set_update_local(PySetObject *so, PyObject *other)
 {
-    assert(_PyObject_IsUniquelyReferenced((PyObject *)so));
+    assert(Py_REFCNT(so) == 1);
     if (PyAnySet_Check(other)) {
         int rv;
         Py_BEGIN_CRITICAL_SECTION(other);

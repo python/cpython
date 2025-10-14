@@ -1093,7 +1093,7 @@ _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
             result = op2;
         else {
             /* Update the args tuple in-place */
-            assert(_PyObject_IsUniquelyReferenced(args));
+            assert(Py_REFCNT(args) == 1);
             Py_XSETREF(_PyTuple_ITEMS(args)[0], result);
             Py_XSETREF(_PyTuple_ITEMS(args)[1], op2);
             if ((result = PyObject_Call(func, args, NULL)) == NULL) {
