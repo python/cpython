@@ -1,0 +1,3 @@
+Fixed asyncio memory leak in cancelled shield tasks. For shielded tasks
+where the shield was cancelled, log potential exceptions through the
+exception handler. Contributed by Christian Harries.

@@ -1,0 +1,1 @@
+Add parameter ``formatter`` to :func:`logging.basicConfig`.

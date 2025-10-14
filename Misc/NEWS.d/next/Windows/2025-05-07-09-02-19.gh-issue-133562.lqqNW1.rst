@@ -1,0 +1,1 @@
+Disable handling of security descriptors by :func:`os.mkdir` with mode ``0o700`` on WinAPI partitions that do not support it. This only affects custom builds for specialized targets.

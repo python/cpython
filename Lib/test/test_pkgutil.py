@@ -1,6 +1,6 @@
 from pathlib import Path
-from test.support.import_helper import unload, CleanImport
-from test.support.warnings_helper import check_warnings, ignore_warnings
+from test.support.import_helper import unload
+from test.support.warnings_helper import check_warnings
 import unittest
 import sys
 import importlib

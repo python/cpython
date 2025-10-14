@@ -1,0 +1,2 @@
+Improve class creation times by up to 12% by pre-computing type slots
+just once. Patch by Sergey Miryanov.

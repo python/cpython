@@ -1,0 +1,4 @@
+:data:`resource.RLIM_INFINITY` is now always a positive integer.
+On all supported platforms, it is larger than any limited resource value,
+which simplifies comparison of the resource values.
+Previously, it could be negative, such as -1 or -3, depending on platform.

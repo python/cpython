@@ -6,7 +6,7 @@ import unittest
 import textwrap
 
 from test import support
-from test.support import import_helper
+from test.support import import_helper, force_not_colorized
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE
 from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.support.testcase import ExceptionIsLikeMixin
@@ -85,9 +85,7 @@ class Test_Exceptions(unittest.TestCase):
         warnings = proc.err.splitlines()
         self.assertEqual(warnings, [
             b'<string>:6: RuntimeWarning: Testing PyErr_WarnEx',
-            b'  foo()  # line 6',
             b'<string>:9: RuntimeWarning: Testing PyErr_WarnEx',
-            b'  foo()  # line 9',
         ])
 
     def test_warn_during_finalization(self):
@@ -339,6 +337,10 @@ class Test_ErrSetAndRestore(unittest.TestCase):
             self.assertIsNone(cm.unraisable.err_msg)
             self.assertIsNone(cm.unraisable.object)
 
+    @force_not_colorized
+    def test_err_writeunraisable_lines(self):
+        writeunraisable = _testcapi.err_writeunraisable
+
         with (support.swap_attr(sys, 'unraisablehook', None),
               support.captured_stderr() as stderr):
             writeunraisable(CustomError('oops!'), hex)
@@ -388,6 +390,10 @@ class Test_ErrSetAndRestore(unittest.TestCase):
                              firstline + 24)
             self.assertIsNone(cm.unraisable.err_msg)
             self.assertIsNone(cm.unraisable.object)
+
+    @force_not_colorized
+    def test_err_formatunraisable_lines(self):
+        formatunraisable = _testcapi.err_formatunraisable
 
         with (support.swap_attr(sys, 'unraisablehook', None),
               support.captured_stderr() as stderr):

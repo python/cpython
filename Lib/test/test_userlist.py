@@ -3,7 +3,6 @@
 from collections import UserList
 from test import list_tests
 import unittest
-from test import support
 
 
 class UserListTest(list_tests.CommonTest):
@@ -69,9 +68,7 @@ class UserListTest(list_tests.CommonTest):
 
     # Decorate existing test with recursion limit, because
     # the test is for C structure, but `UserList` is a Python structure.
-    test_repr_deep = support.infinite_recursion(25)(
-        list_tests.CommonTest.test_repr_deep,
-    )
+    test_repr_deep = list_tests.CommonTest.test_repr_deep
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,1 @@
+Make :func:`os.path.realpath` ignore Windows error 1005 when in non-strict mode.

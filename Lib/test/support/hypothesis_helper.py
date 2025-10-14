@@ -7,7 +7,8 @@ except ImportError:
 else:
     # Regrtest changes to use a tempdir as the working directory, so we have
     # to tell Hypothesis to use the original in order to persist the database.
-    from .os_helper import SAVEDCWD
+    from test.support import has_socket_support
+    from test.support.os_helper import SAVEDCWD
     from hypothesis.configuration import set_hypothesis_home_dir
 
     set_hypothesis_home_dir(os.path.join(SAVEDCWD, ".hypothesis"))
@@ -28,7 +29,14 @@ else:
     # of failing examples, and also use a pull-through cache to automatically
     # replay any failing examples discovered in CI.  For details on how this
     # works, see https://hypothesis.readthedocs.io/en/latest/database.html
-    if "CI" not in os.environ:
+    # We only do that if a GITHUB_TOKEN env var is provided, see:
+    # https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+    # And Python is built with socket support:
+    if (
+        has_socket_support
+        and "CI" not in os.environ
+        and "GITHUB_TOKEN" in os.environ
+    ):
         from hypothesis.database import (
             GitHubArtifactDatabase,
             MultiplexedDatabase,

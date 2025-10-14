@@ -1,0 +1,2 @@
+Split ``CALL_ISINSTANCE`` into several uops, allowing the JIT to remove some
+of them.

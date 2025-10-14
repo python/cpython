@@ -1,0 +1,1 @@
+Add support for configuring compiler flags for the JIT with ``CFLAGS_JIT``

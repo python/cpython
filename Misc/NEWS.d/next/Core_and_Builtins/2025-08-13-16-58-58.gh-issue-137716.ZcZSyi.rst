@@ -1,0 +1,1 @@
+Fix double period in :exc:`AttributeError` message for invalid mock assertions

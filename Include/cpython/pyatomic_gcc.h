@@ -519,7 +519,7 @@ _Py_atomic_store_ullong_relaxed(unsigned long long *obj,
 
 static inline void
 _Py_atomic_store_char_relaxed(char *obj, char value)
-{ __atomic_store_n(obj, value, __ATOMIC_RELEASE); }
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
 
 static inline void
 _Py_atomic_store_uchar_relaxed(unsigned char *obj, unsigned char value)

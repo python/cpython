@@ -1,1 +1,0 @@
-Avoid error from calling ``PyModule_GetFilenameObject`` on a non-module object when importing a non-existent symbol from a non-module object.

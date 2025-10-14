@@ -1,0 +1,2 @@
+Improve the JIT's ability to optimize away cached class attribute and method
+loads.

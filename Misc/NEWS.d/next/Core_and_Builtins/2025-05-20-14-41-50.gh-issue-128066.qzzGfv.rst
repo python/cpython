@@ -1,0 +1,3 @@
+Fixes an edge case where PyREPL improperly threw an error when Python is
+invoked on a read only filesystem while trying to write history file
+entries.

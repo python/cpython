@@ -1,0 +1,3 @@
+Speed up :mod:`asyncio` performance of transferring state from thread
+pool :class:`concurrent.futures.Future` by up to 4.4x. Patch by J. Nick
+Koston.

@@ -65,7 +65,7 @@ class AbstractWidgetTest(AbstractTkTest):
         orig = widget[name]
         if errmsg is not None:
             errmsg = errmsg.format(re.escape(str(value)))
-            errmsg = fr'\A{errmsg}\Z'
+            errmsg = fr'\A{errmsg}\z'
         with self.assertRaisesRegex(tkinter.TclError, errmsg or ''):
             widget[name] = value
         self.assertEqual(widget[name], orig)
@@ -247,7 +247,11 @@ class PixelOptionsTests:
         widget = self.create()
         self.checkPixelsParam(widget, 'borderwidth',
                               0, 1.3, 2.6, 6, '10p')
-        self.checkParam(widget, 'borderwidth', -2)
+        if tk_version < (9, 0):
+            self.checkParam(widget, 'borderwidth', -2)
+        else:
+            self.checkParam(widget, 'borderwidth', 0)
+
         if 'bd' in self.OPTIONS:
             self.checkPixelsParam(widget, 'bd', 0, 1.3, 2.6, 6, '10p')
             self.checkParam(widget, 'bd', -2, expected=expected)
@@ -260,27 +264,46 @@ class PixelOptionsTests:
 
     def test_configure_insertborderwidth(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'insertborderwidth',
-                              0, 1.3, 2.6, 6, '10p')
-        self.checkParam(widget, 'insertborderwidth', -2)
+        if tk_version < (9, 0):
+            values = (0, 1.3, 2.6, 6, -2, '10p')
+            value = -2
+        else:
+            values = (0, 1, 3, 6, 13)
+            value = 0
+        self.checkPixelsParam(widget, 'insertborderwidth', *values)
+        self.checkParam(widget, 'insertborderwidth', value)
 
     def test_configure_insertwidth(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'insertwidth', 1.3, 2.6, -2, '10p')
+        if tk_version < (9, 0):
+            self.checkPixelsParam(widget, 'insertwidth', 1.3, 2.6, -2, '10p')
+        else:
+            self.checkPixelsParam(widget, 'insertwidth', 1, 3, 0, 13)
 
     def test_configure_padx(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m')
-        self.checkParam(widget, 'padx', -2)
+        if tk_version < (9, 0):
+            self.checkParam(widget, 'padx', -2)
+        else:
+            self.checkParam(widget, 'padx', 0)
 
     def test_configure_pady(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m')
-        self.checkParam(widget, 'pady', -2)
+        if tk_version < (9, 0):
+            self.checkParam(widget, 'pady', -2)
+        else:
+            self.checkParam(widget, 'pady', 0)
 
     def test_configure_selectborderwidth(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'selectborderwidth', 1.3, 2.6, -2, '10p')
+        if tk_version < (9, 0):
+            values = (1.3, 2.6, -2, '10p')
+        else:
+            values = (1, 3, 0, 13)
+        self.checkPixelsParam(widget, 'selectborderwidth', *values)
+
 
 class StandardOptionsTests(PixelOptionsTests):
 
@@ -546,22 +569,34 @@ class IntegerSizeTests:
     """ Tests widgets which only accept integral width and height."""
     def test_configure_height(self):
         widget = self.create()
-        self.checkIntegerParam(widget, 'height', 100, -100, 0)
+        if tk_version < (9, 0):
+            self.checkIntegerParam(widget, 'height', 100, -100, 0)
+        else:
+            self.checkIntegerParam(widget, 'height', 100, 0, 0)
 
     def test_configure_width(self):
         widget = self.create()
-        self.checkIntegerParam(widget, 'width', 402, -402, 0)
+        if tk_version < (9, 0):
+            self.checkIntegerParam(widget, 'width', 402, -402, 0)
+        else:
+            self.checkIntegerParam(widget, 'width', 402, 0, 0)
 
 
 class PixelSizeTests:
     """ Tests widgets which accept screen distances for width and height."""
     def test_configure_height(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'height', 100, 101.2, 102.6, -100, 0, '3c')
+        value = -100 if tk_version < (9, 0) else 0
+        self.checkPixelsParam(
+            widget, 'height', 100, 101.2, 102.6, value, 0, '3c'
+        )
 
     def test_configure_width(self):
         widget = self.create()
-        self.checkPixelsParam(widget, 'width', 402, 403.4, 404.6, -402, 0, '5i')
+        value = -402 if tk_version < (9, 0) else 0
+        self.checkPixelsParam(
+            widget, 'width', 402, 403.4, 404.6, value, 0, '5i'
+        )
 
 
 def add_configure_tests(*source_classes):

@@ -99,7 +99,7 @@ Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
 Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
 
 #From pycore_frame.h
-FRAME_OWNED_BY_CSTACK = 3
+FRAME_OWNED_BY_INTERPRETER = 3
 
 MAX_OUTPUT_LEN=1024
 
@@ -890,7 +890,7 @@ class PyLongObjectPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         '''
-        Python's Include/longinterpr.h has this declaration:
+        Python's Include/cpython/longinterpr.h has this declaration:
 
             typedef struct _PyLongValue {
                 uintptr_t lv_tag; /* Number of digits, sign and flags */
@@ -909,8 +909,7 @@ class PyLongObjectPtr(PyObjectPtr):
                 - 0: Positive
                 - 1: Zero
                 - 2: Negative
-            The third lowest bit of lv_tag is reserved for an immortality flag, but is
-            not currently used.
+            The third lowest bit of lv_tag is set to 1 for the small ints and 0 otherwise.
 
         where SHIFT can be either:
             #define PyLong_SHIFT        30
@@ -1113,7 +1112,7 @@ class PyFramePtr:
         return int(instr_ptr - first_instr)
 
     def is_shim(self):
-        return self._f_special("owner", int) == FRAME_OWNED_BY_CSTACK
+        return self._f_special("owner", int) == FRAME_OWNED_BY_INTERPRETER
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)

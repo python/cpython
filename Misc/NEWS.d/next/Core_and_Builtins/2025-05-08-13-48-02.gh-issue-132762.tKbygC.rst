@@ -1,0 +1,1 @@
+:meth:`~dict.fromkeys` no longer loops forever when adding a small set of keys to a large base dict. Patch by Angela Liss.

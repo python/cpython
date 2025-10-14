@@ -165,6 +165,19 @@ PyDoc_STRVAR(float_fromhex__doc__,
 #define FLOAT_FROMHEX_METHODDEF    \
     {"fromhex", (PyCFunction)float_fromhex, METH_O|METH_CLASS, float_fromhex__doc__},
 
+static PyObject *
+float_fromhex_impl(PyTypeObject *type, PyObject *string);
+
+static PyObject *
+float_fromhex(PyObject *type, PyObject *string)
+{
+    PyObject *return_value = NULL;
+
+    return_value = float_fromhex_impl((PyTypeObject *)type, string);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(float_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
@@ -236,6 +249,19 @@ PyDoc_STRVAR(float_from_number__doc__,
 #define FLOAT_FROM_NUMBER_METHODDEF    \
     {"from_number", (PyCFunction)float_from_number, METH_O|METH_CLASS, float_from_number__doc__},
 
+static PyObject *
+float_from_number_impl(PyTypeObject *type, PyObject *number);
+
+static PyObject *
+float_from_number(PyObject *type, PyObject *number)
+{
+    PyObject *return_value = NULL;
+
+    return_value = float_from_number_impl((PyTypeObject *)type, number);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(float___getnewargs____doc__,
 "__getnewargs__($self, /)\n"
 "--\n"
@@ -275,7 +301,7 @@ static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr);
 
 static PyObject *
-float___getformat__(PyTypeObject *type, PyObject *arg)
+float___getformat__(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const char *typestr;
@@ -293,7 +319,7 @@ float___getformat__(PyTypeObject *type, PyObject *arg)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    return_value = float___getformat___impl(type, typestr);
+    return_value = float___getformat___impl((PyTypeObject *)type, typestr);
 
 exit:
     return return_value;
@@ -327,4 +353,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=366cea9463cc5bf6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=927035897ea3573f input=a9049054013a1b77]*/

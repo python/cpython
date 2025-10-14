@@ -1,0 +1,2 @@
+Fix use-after-free in the "unicode-escape" decoder with a non-"strict" error
+handler.

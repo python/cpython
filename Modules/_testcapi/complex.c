@@ -57,48 +57,10 @@ _py_c_neg(PyObject *Py_UNUSED(module), PyObject *num)
         return Py_BuildValue("Di", &res, errno);                 \
     };
 
-#define _PY_CR_FUNC2(suffix)                                     \
-    static PyObject *                                            \
-    _py_cr_##suffix(PyObject *Py_UNUSED(module), PyObject *args) \
-    {                                                            \
-        Py_complex a, res;                                       \
-        double b;                                                \
-                                                                 \
-        if (!PyArg_ParseTuple(args, "Dd", &a, &b)) {             \
-            return NULL;                                         \
-        }                                                        \
-                                                                 \
-        errno = 0;                                               \
-        res = _Py_cr_##suffix(a, b);                             \
-        return Py_BuildValue("Di", &res, errno);                 \
-    };
-
-#define _PY_RC_FUNC2(suffix)                                     \
-    static PyObject *                                            \
-    _py_rc_##suffix(PyObject *Py_UNUSED(module), PyObject *args) \
-    {                                                            \
-        Py_complex b, res;                                       \
-        double a;                                                \
-                                                                 \
-        if (!PyArg_ParseTuple(args, "dD", &a, &b)) {             \
-            return NULL;                                         \
-        }                                                        \
-                                                                 \
-        errno = 0;                                               \
-        res = _Py_rc_##suffix(a, b);                             \
-        return Py_BuildValue("Di", &res, errno);                 \
-    };
-
 _PY_C_FUNC2(sum)
-_PY_CR_FUNC2(sum)
 _PY_C_FUNC2(diff)
-_PY_CR_FUNC2(diff)
-_PY_RC_FUNC2(diff)
 _PY_C_FUNC2(prod)
-_PY_CR_FUNC2(prod)
 _PY_C_FUNC2(quot)
-_PY_CR_FUNC2(quot)
-_PY_RC_FUNC2(quot)
 _PY_C_FUNC2(pow)
 
 static PyObject*
@@ -124,16 +86,10 @@ static PyMethodDef test_methods[] = {
     {"complex_fromccomplex", complex_fromccomplex, METH_O},
     {"complex_asccomplex", complex_asccomplex, METH_O},
     {"_py_c_sum", _py_c_sum, METH_VARARGS},
-    {"_py_cr_sum", _py_cr_sum, METH_VARARGS},
     {"_py_c_diff", _py_c_diff, METH_VARARGS},
-    {"_py_cr_diff", _py_cr_diff, METH_VARARGS},
-    {"_py_rc_diff", _py_rc_diff, METH_VARARGS},
     {"_py_c_neg", _py_c_neg, METH_O},
     {"_py_c_prod", _py_c_prod, METH_VARARGS},
-    {"_py_cr_prod", _py_cr_prod, METH_VARARGS},
     {"_py_c_quot", _py_c_quot, METH_VARARGS},
-    {"_py_cr_quot", _py_cr_quot, METH_VARARGS},
-    {"_py_rc_quot", _py_rc_quot, METH_VARARGS},
     {"_py_c_pow", _py_c_pow, METH_VARARGS},
     {"_py_c_abs", _py_c_abs, METH_O},
     {NULL},

@@ -1,0 +1,4 @@
+The :attr:`object.__dict__` and :attr:`!__weakref__` descriptors now use a
+single descriptor instance per interpreter, shared across all types that
+need them.
+This speeds up class creation, and helps avoid reference cycles.

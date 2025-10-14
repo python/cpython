@@ -14,9 +14,10 @@ class CFunctions(unittest.TestCase):
     _dll = CDLL(_ctypes_test.__file__)
 
     def S(self):
-        return c_longlong.in_dll(self._dll, "last_tf_arg_s").value
+        return _ctypes_test.get_last_tf_arg_s()
+
     def U(self):
-        return c_ulonglong.in_dll(self._dll, "last_tf_arg_u").value
+        return _ctypes_test.get_last_tf_arg_u()
 
     def test_byte(self):
         self._dll.tf_b.restype = c_byte

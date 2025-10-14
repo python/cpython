@@ -569,6 +569,11 @@ class NonCallableMock(Base):
         __dict__['_mock_methods'] = spec
         __dict__['_spec_asyncs'] = _spec_asyncs
 
+    def _mock_extend_spec_methods(self, spec_methods):
+        methods = self.__dict__.get('_mock_methods') or []
+        methods.extend(spec_methods)
+        self.__dict__['_mock_methods'] = methods
+
     def __get_return_value(self):
         ret = self._mock_return_value
         if self._mock_delegate is not None:
@@ -695,7 +700,7 @@ class NonCallableMock(Base):
             if name.startswith(('assert', 'assret', 'asert', 'aseert', 'assrt')) or name in _ATTRIB_DENY_LIST:
                 raise AttributeError(
                     f"{name!r} is not a valid assertion. Use a spec "
-                    f"for the mock if {name!r} is meant to be an attribute.")
+                    f"for the mock if {name!r} is meant to be an attribute")
 
         with NonCallableMock._lock:
             result = self._mock_children.get(name)
@@ -981,7 +986,7 @@ class NonCallableMock(Base):
 
 
     def assert_called_once_with(self, /, *args, **kwargs):
-        """assert that the mock was called exactly once and that that call was
+        """assert that the mock was called exactly once and that call was
         with the specified arguments."""
         if not self.call_count == 1:
             msg = ("Expected '%s' to be called once. Called %s times.%s"
@@ -2766,14 +2771,16 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         raise InvalidSpecError(f'Cannot autospec a Mock object. '
                                f'[object={spec!r}]')
     is_async_func = _is_async_func(spec)
+    _kwargs = {'spec': spec}
 
     entries = [(entry, _missing) for entry in dir(spec)]
     if is_type and instance and is_dataclass(spec):
+        is_dataclass_spec = True
         dataclass_fields = fields(spec)
         entries.extend((f.name, f.type) for f in dataclass_fields)
-        _kwargs = {'spec': [f.name for f in dataclass_fields]}
+        dataclass_spec_list = [f.name for f in dataclass_fields]
     else:
-        _kwargs = {'spec': spec}
+        is_dataclass_spec = False
 
     if spec_set:
         _kwargs = {'spec_set': spec}
@@ -2810,6 +2817,8 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
     mock = Klass(parent=_parent, _new_parent=_parent, _new_name=_new_name,
                  name=_name, **_kwargs)
+    if is_dataclass_spec:
+        mock._mock_extend_spec_methods(dataclass_spec_list)
 
     if isinstance(spec, FunctionTypes):
         # should only happen at the top level because we don't

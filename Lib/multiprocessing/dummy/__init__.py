@@ -33,7 +33,7 @@ from queue import Queue
 
 class DummyProcess(threading.Thread):
 
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):
         threading.Thread.__init__(self, group, target, name, args, kwargs)
         self._pid = None
         self._children = weakref.WeakKeyDictionary()

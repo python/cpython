@@ -1,0 +1,3 @@
+Remove the deprecated ``getmark()``, ``setmark()`` and ``getmarkers()``
+methods of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write`
+classes, which were deprecated since Python 3.13. Patch by Bénédikt Tran.

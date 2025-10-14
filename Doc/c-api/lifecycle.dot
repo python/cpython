@@ -1,0 +1,156 @@
+digraph "Life Events" {
+   graph [
+     fontnames="svg"
+     fontsize=12.0
+     id="life_events_graph"
+     layout="dot"
+     margin="0,0"
+     ranksep=0.25
+     stylesheet="lifecycle.dot.css"
+   ]
+   node [
+     fontname="Courier"
+     fontsize=12.0
+   ]
+   edge [
+     fontname="Times-Italic"
+     fontsize=12.0
+   ]
+
+   "start" [fontname="Times-Italic" shape=plain label=<  start  > style=invis]
+   {
+     rank="same"
+     "tp_new" [href="typeobj.html#c.PyTypeObject.tp_new" target="_top"]
+     "tp_alloc" [href="typeobj.html#c.PyTypeObject.tp_alloc" target="_top"]
+   }
+   "tp_init" [href="typeobj.html#c.PyTypeObject.tp_init" target="_top"]
+   "reachable" [fontname="Times-Italic" shape=box]
+   "tp_traverse" [
+     href="typeobj.html#c.PyTypeObject.tp_traverse"
+     ordering="in"
+     target="_top"
+   ]
+   "finalized?" [
+     fontname="Times-Italic"
+     label=<marked as<br/>finalized?>
+     ordering="in"
+     shape=diamond
+     tooltip="marked as finalized?"
+   ]
+   "tp_finalize" [
+     href="typeobj.html#c.PyTypeObject.tp_finalize"
+     ordering="in"
+     target="_top"
+   ]
+   "tp_clear" [href="typeobj.html#c.PyTypeObject.tp_clear" target="_top"]
+   "uncollectable" [
+     fontname="Times-Italic"
+     label=<uncollectable<br/>(leaked)>
+     shape=box
+     tooltip="uncollectable (leaked)"
+   ]
+   "tp_dealloc" [
+     href="typeobj.html#c.PyTypeObject.tp_dealloc"
+     ordering="in"
+     target="_top"
+   ]
+   "tp_free" [href="typeobj.html#c.PyTypeObject.tp_free" target="_top"]
+
+   "start" -> "tp_new" [
+     label=<    type call  >
+   ]
+   "tp_new" -> "tp_alloc" [
+     label=<  direct call  > arrowhead=empty
+     labeltooltip="tp_new to tp_alloc: direct call"
+     tooltip="tp_new to tp_alloc: direct call"
+   ]
+   "tp_new" -> "tp_init" [tooltip="tp_new to tp_init"]
+   "tp_init" -> "reachable" [tooltip="tp_init to reachable"]
+   "reachable" -> "tp_traverse" [
+     dir="back"
+     label=<  not in a  <br/>  cyclic  <br/>  isolate  >
+     labeltooltip="tp_traverse to reachable: not in a cyclic isolate"
+     tooltip="tp_traverse to reachable: not in a cyclic isolate"
+   ]
+   "reachable" -> "tp_traverse" [
+     label=<  periodic  <br/>  cyclic isolate   <br/>  detection  >
+     labeltooltip="reachable to tp_traverse: periodic cyclic isolate detection"
+     tooltip="reachable to tp_traverse: periodic cyclic isolate detection"
+   ]
+   "reachable" -> "tp_init" [tooltip="reachable to tp_init"]
+   "reachable" -> "tp_finalize" [
+     dir="back"
+     label=<  resurrected  <br/>  (maybe remove  <br/>  finalized mark)  >
+     labeltooltip="tp_finalize to reachable: resurrected (maybe remove finalized mark)"
+     tooltip="tp_finalize to reachable: resurrected (maybe remove finalized mark)"
+   ]
+   "tp_traverse" -> "finalized?" [
+     label=<  cyclic  <br/>  isolate  >
+     labeltooltip="tp_traverse to finalized?: cyclic isolate"
+     tooltip="tp_traverse to finalized?: cyclic isolate"
+   ]
+   "reachable" -> "finalized?" [
+     label=<  no refs  >
+     labeltooltip="reachable to finalized?: no refs"
+     tooltip="reachable to finalized?: no refs"
+   ]
+   "finalized?" -> "tp_finalize" [
+     label=<  no (mark  <br/>  as finalized)  >
+     labeltooltip="finalized? to tp_finalize: no (mark as finalized)"
+     tooltip="finalized? to tp_finalize: no (mark as finalized)"
+   ]
+   "finalized?" -> "tp_clear" [
+     label=<  yes  >
+     labeltooltip="finalized? to tp_clear: yes"
+     tooltip="finalized? to tp_clear: yes"
+   ]
+   "tp_finalize" -> "tp_clear" [
+     label=<  no refs or   <br/>  cyclic isolate  >
+     labeltooltip="tp_finalize to tp_clear: no refs or cyclic isolate"
+     tooltip="tp_finalize to tp_clear: no refs or cyclic isolate"
+   ]
+   "tp_finalize" -> "tp_dealloc" [
+     arrowtail=empty
+     dir="back"
+     href="lifecycle.html#c.PyObject_CallFinalizerFromDealloc"
+     style=dashed
+     label=<  recommended<br/>  call (see<br/>  explanation)>
+     labeltooltip="tp_dealloc to tp_finalize: recommended call (see explanation)"
+     target="_top"
+     tooltip="tp_dealloc to tp_finalize: recommended call (see explanation)"
+   ]
+   "tp_finalize" -> "tp_dealloc" [
+     label=<   no refs  >
+     labeltooltip="tp_finalize to tp_dealloc: no refs"
+     tooltip="tp_finalize to tp_dealloc: no refs"
+   ]
+   "tp_clear" -> "tp_dealloc" [
+     label=<  no refs  >
+     labeltooltip="tp_clear to tp_dealloc: no refs"
+     tooltip="tp_clear to tp_dealloc: no refs"
+   ]
+   "tp_clear" -> "uncollectable" [
+     label=<  cyclic  <br/>  isolate  >
+     labeltooltip="tp_clear to uncollectable: cyclic isolate"
+     tooltip="tp_clear to uncollectable: cyclic isolate"
+   ]
+   "uncollectable" -> "tp_dealloc" [
+     style=invis
+     tooltip="uncollectable to tp_dealloc"
+   ]
+   "reachable" -> "uncollectable" [
+     label=<  cyclic  <br/>  isolate  <br/>  (no GC  <br/>  support)  >
+     labeltooltip="reachable to uncollectable: cyclic isolate (no GC support)"
+     tooltip="reachable to uncollectable: cyclic isolate (no GC support)"
+   ]
+   "reachable" -> "tp_dealloc" [
+     label=<  no refs>
+     labeltooltip="reachable to tp_dealloc: no refs"
+   ]
+   "tp_dealloc" -> "tp_free" [
+     arrowhead=empty
+     label=<    direct call  >
+     labeltooltip="tp_dealloc to tp_free: direct call"
+     tooltip="tp_dealloc to tp_free: direct call"
+   ]
+}

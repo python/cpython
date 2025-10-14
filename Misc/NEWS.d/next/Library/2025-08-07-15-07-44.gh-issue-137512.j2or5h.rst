@@ -1,0 +1,4 @@
+Add new constants in the :mod:`resource` module:
+:data:`~resource.RLIMIT_NTHR`, :data:`~resource.RLIMIT_UMTXP`,
+:data:`~resource.RLIMIT_PIPEBUF`, :data:`~resource.RLIMIT_THREADS`,
+:data:`~resource.RLIM_SAVED_CUR`, and :data:`~resource.RLIM_SAVED_MAX`.

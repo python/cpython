@@ -382,21 +382,22 @@ Other functions
 
    Examples of returned values:
 
-   - linux-i586
-   - linux-alpha (?)
+   - linux-x86_64
+   - linux-aarch64
    - solaris-2.6-sun4u
 
-   Windows will return one of:
+   Windows:
 
-   - win-amd64 (64bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
+   - win-amd64 (64-bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
+   - win-arm64 (64-bit Windows on ARM64, aka AArch64)
    - win32 (all others - specifically, sys.platform is returned)
 
-   macOS can return:
+   POSIX based OS:
 
-   - macosx-10.6-ppc
-   - macosx-10.4-ppc64
-   - macosx-10.3-i386
-   - macosx-10.4-fat
+   - linux-x86_64
+   - macosx-15.5-arm64
+   - macosx-26.0-universal2 (macOS on Apple Silicon or Intel)
+   - android-24-arm64_v8a
 
    For other non-POSIX platforms, currently just returns :data:`sys.platform`.
 
@@ -428,9 +429,10 @@ Other functions
    Return the path of :file:`Makefile`.
 
 .. _sysconfig-cli:
+.. _using-sysconfig-as-a-script:
 
-Using :mod:`sysconfig` as a script
-----------------------------------
+Command-line usage
+------------------
 
 You can use :mod:`sysconfig` as a script with Python's *-m* option:
 

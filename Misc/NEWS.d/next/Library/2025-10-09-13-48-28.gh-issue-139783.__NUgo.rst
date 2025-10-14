@@ -1,0 +1,2 @@
+Fix :func:`inspect.getsourcelines` for the case when a decorator is followed
+by a comment or an empty line.

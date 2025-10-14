@@ -1,0 +1,1 @@
+Fix crash when initializing :mod:`datetime` concurrently.

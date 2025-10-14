@@ -28,8 +28,17 @@ import io
 import sys
 import time
 import marshal
+import warnings
 
 __all__ = ["run", "runctx", "Profile"]
+
+# Emit deprecation warning as per PEP 799
+warnings.warn(
+    "The profile module is deprecated and will be removed in Python 3.17. "
+    "Use profiling.tracing (or cProfile) for tracing profilers instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 # Sample timer for use with
 #i_count = 0

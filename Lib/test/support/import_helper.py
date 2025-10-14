@@ -1,10 +1,12 @@
 import contextlib
 import _imp
 import importlib
+import importlib.machinery
 import importlib.util
 import os
 import shutil
 import sys
+import textwrap
 import unittest
 import warnings
 
@@ -309,3 +311,132 @@ def ready_to_import(name=None, source=""):
                 sys.modules[name] = old_module
             else:
                 sys.modules.pop(name, None)
+
+
+def ensure_lazy_imports(imported_module, modules_to_block):
+    """Test that when imported_module is imported, none of the modules in
+    modules_to_block are imported as a side effect."""
+    modules_to_block = frozenset(modules_to_block)
+    script = textwrap.dedent(
+        f"""
+        import sys
+        modules_to_block = {modules_to_block}
+        if unexpected := modules_to_block & sys.modules.keys():
+            startup = ", ".join(unexpected)
+            raise AssertionError(f'unexpectedly imported at startup: {{startup}}')
+
+        import {imported_module}
+        if unexpected := modules_to_block & sys.modules.keys():
+            after = ", ".join(unexpected)
+            raise AssertionError(f'unexpectedly imported after importing {imported_module}: {{after}}')
+        """
+    )
+    from .script_helper import assert_python_ok
+    assert_python_ok("-S", "-c", script)
+
+
+@contextlib.contextmanager
+def module_restored(name):
+    """A context manager that restores a module to the original state."""
+    missing = object()
+    orig = sys.modules.get(name, missing)
+    if orig is None:
+        mod = importlib.import_module(name)
+    else:
+        mod = type(sys)(name)
+        mod.__dict__.update(orig.__dict__)
+        sys.modules[name] = mod
+    try:
+        yield mod
+    finally:
+        if orig is missing:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = orig
+
+
+def create_module(name, loader=None, *, ispkg=False):
+    """Return a new, empty module."""
+    spec = importlib.machinery.ModuleSpec(
+        name,
+        loader,
+        origin='<import_helper>',
+        is_package=ispkg,
+    )
+    return importlib.util.module_from_spec(spec)
+
+
+def _ensure_module(name, ispkg, addparent, clearnone):
+    try:
+        mod = orig = sys.modules[name]
+    except KeyError:
+        mod = orig = None
+        missing = True
+    else:
+        missing = False
+        if mod is not None:
+            # It was already imported.
+            return mod, orig, missing
+        # Otherwise, None means it was explicitly disabled.
+
+    assert name != '__main__'
+    if not missing:
+        assert orig is None, (name, sys.modules[name])
+        if not clearnone:
+            raise ModuleNotFoundError(name)
+        del sys.modules[name]
+    # Try normal import, then fall back to adding the module.
+    try:
+        mod = importlib.import_module(name)
+    except ModuleNotFoundError:
+        if addparent and not clearnone:
+            addparent = None
+        mod = _add_module(name, ispkg, addparent)
+    return mod, orig, missing
+
+
+def _add_module(spec, ispkg, addparent):
+    if isinstance(spec, str):
+        name = spec
+        mod = create_module(name, ispkg=ispkg)
+        spec = mod.__spec__
+    else:
+        name = spec.name
+        mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    if addparent is not False and spec.parent:
+        _ensure_module(spec.parent, True, addparent, bool(addparent))
+    return mod
+
+
+def add_module(spec, *, parents=True):
+    """Return the module after creating it and adding it to sys.modules.
+
+    If parents is True then also create any missing parents.
+    """
+    return _add_module(spec, False, parents)
+
+
+def add_package(spec, *, parents=True):
+    """Return the module after creating it and adding it to sys.modules.
+
+    If parents is True then also create any missing parents.
+    """
+    return _add_module(spec, True, parents)
+
+
+def ensure_module_imported(name, *, clearnone=True):
+    """Return the corresponding module.
+
+    If it was already imported then return that.  Otherwise, try
+    importing it (optionally clear it first if None).  If that fails
+    then create a new empty module.
+
+    It can be helpful to combine this with ready_to_import() and/or
+    isolated_modules().
+    """
+    if sys.modules.get(name) is not None:
+        mod = sys.modules[name]
+    else:
+        mod, _, _ = _ensure_module(name, False, True, clearnone)
+    return mod

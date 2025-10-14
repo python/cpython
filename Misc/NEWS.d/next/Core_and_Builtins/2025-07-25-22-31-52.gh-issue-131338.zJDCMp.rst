@@ -1,0 +1,2 @@
+Disable computed stack limit checks on non-glibc linux platforms to fix
+crashes on deep recursion.

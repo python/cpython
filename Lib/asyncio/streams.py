@@ -214,7 +214,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         return self._stream_reader_wr()
 
     def _replace_transport(self, transport):
-        loop = self._loop
         self._transport = transport
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
 
@@ -271,7 +270,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                 self._closed.set_exception(exc)
         super().connection_lost(exc)
         self._stream_reader_wr = None
-        self._stream_writer = None
         self._task = None
         self._transport = None
 

@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.5, compared to 3.4.
-Python 3.5 was released on September 13, 2015.  See the
+Python 3.5 was released on September 13, 2015.  See the
 `changelog <https://docs.python.org/3.5/whatsnew/changelog.html>`_ for a full
 list of changes.
 
@@ -181,7 +181,7 @@ Coroutine functions are declared using the new :keyword:`async def` syntax::
 Inside a coroutine function, the new :keyword:`await` expression can be used
 to suspend coroutine execution until the result is available.  Any object
 can be *awaited*, as long as it implements the :term:`awaitable` protocol by
-defining the :meth:`__await__` method.
+defining the :meth:`~object.__await__` method.
 
 PEP 492 also adds :keyword:`async for` statement for convenient iteration
 over asynchronous iterables.
@@ -273,9 +273,10 @@ PEP 465 - A dedicated infix operator for matrix multiplication
 
 :pep:`465` adds the ``@`` infix operator for matrix multiplication.
 Currently, no builtin Python types implement the new operator, however, it
-can be implemented by defining :meth:`__matmul__`, :meth:`__rmatmul__`,
-and :meth:`__imatmul__` for regular, reflected, and in-place matrix
-multiplication.  The semantics of these methods is similar to that of
+can be implemented by defining :meth:`~object.__matmul__`,
+:meth:`~object.__rmatmul__`, and :meth:`~object.__imatmul__` for regular,
+reflected, and in-place matrix multiplication.
+The semantics of these methods is similar to that of
 methods defining other infix arithmetic operators.
 
 Matrix multiplication is a notably common operation in many fields of
@@ -800,7 +801,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.4.0:
   control.
   (Contributed by Victor Stinner.)
 
-* The :func:`~asyncio.async` function is deprecated in favor of
+* The :func:`!async` function is deprecated in favor of
   :func:`~asyncio.ensure_future`.
   (Contributed by Yury Selivanov.)
 
@@ -905,10 +906,8 @@ collections
 The :class:`~collections.OrderedDict` class is now implemented in C, which
 makes it 4 to 100 times faster.  (Contributed by Eric Snow in :issue:`16991`.)
 
-:meth:`OrderedDict.items() <collections.OrderedDict.items>`,
-:meth:`OrderedDict.keys() <collections.OrderedDict.keys>`,
-:meth:`OrderedDict.values() <collections.OrderedDict.values>` views now support
-:func:`reversed` iteration.
+:meth:`!OrderedDict.items`, :meth:`!OrderedDict.keys`,
+and :meth:`!OrderedDict.values` views now support :func:`reversed` iteration.
 (Contributed by Serhiy Storchaka in :issue:`19505`.)
 
 The :class:`~collections.deque` class now defines
@@ -928,7 +927,7 @@ Docstrings produced by :func:`~collections.namedtuple` can now be updated::
 (Contributed by Berker Peksag in :issue:`24064`.)
 
 The :class:`~collections.UserString` class now implements the
-:meth:`__getnewargs__`, :meth:`__rmod__`, :meth:`~str.casefold`,
+:meth:`~object.__getnewargs__`, :meth:`~object.__rmod__`, :meth:`~str.casefold`,
 :meth:`~str.format_map`, :meth:`~str.isprintable`, and :meth:`~str.maketrans`
 methods to match the corresponding methods of :class:`str`.
 (Contributed by Joe Jevnik in :issue:`22189`.)
@@ -937,7 +936,7 @@ methods to match the corresponding methods of :class:`str`.
 collections.abc
 ---------------
 
-The :meth:`Sequence.index() <collections.abc.Sequence.index>` method now
+The :meth:`!Sequence.index` method now
 accepts *start* and *stop* arguments to match the corresponding methods
 of :class:`tuple`, :class:`list`, etc.
 (Contributed by Devin Jeanpierre in :issue:`23086`.)
@@ -1045,8 +1044,8 @@ not just sequences.  (Contributed by Serhiy Storchaka in :issue:`23171`.)
 curses
 ------
 
-The new :func:`~curses.update_lines_cols` function updates the :data:`LINES`
-and :data:`COLS` module variables.  This is useful for detecting
+The new :func:`~curses.update_lines_cols` function updates the :data:`~curses.LINES`
+and :data:`~curses.COLS` module variables.  This is useful for detecting
 manual screen resizing.  (Contributed by Arnon Yaari in :issue:`4254`.)
 
 
@@ -1347,8 +1346,8 @@ network objects from existing addresses::
 
 (Contributed by Peter Moody and Antoine Pitrou in :issue:`16531`.)
 
-A new :attr:`~ipaddress.IPv4Network.reverse_pointer` attribute for the
-:class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` classes
+A new :attr:`~ipaddress.IPv4Address.reverse_pointer` attribute for the
+:class:`~ipaddress.IPv4Address` and :class:`~ipaddress.IPv6Address` classes
 returns the name of the reverse DNS PTR record::
 
     >>> import ipaddress
@@ -1451,7 +1450,7 @@ and :data:`~math.nan`.  (Contributed by Mark Dickinson in :issue:`23185`.)
 A new function :func:`~math.isclose` provides a way to test for approximate
 equality. (Contributed by Chris Barker and Tal Einat in :issue:`24270`.)
 
-A new :func:`~math.gcd` function has been added.  The :func:`fractions.gcd`
+A new :func:`~math.gcd` function has been added.  The :func:`!fractions.gcd`
 function is now deprecated. (Contributed by Mark Dickinson and Serhiy
 Storchaka in :issue:`22486`.)
 
@@ -1602,10 +1601,10 @@ The :func:`~re.sub` and :func:`~re.subn` functions now replace unmatched
 groups with empty strings instead of raising an exception.
 (Contributed by Serhiy Storchaka in :issue:`1519638`.)
 
-The :class:`re.error` exceptions have new attributes,
-:attr:`~re.error.msg`, :attr:`~re.error.pattern`,
-:attr:`~re.error.pos`, :attr:`~re.error.lineno`,
-and :attr:`~re.error.colno`, that provide better context
+The :class:`re.error <re.PatternError>` exceptions have new attributes,
+:attr:`~re.PatternError.msg`, :attr:`~re.PatternError.pattern`,
+:attr:`~re.PatternError.pos`, :attr:`~re.PatternError.lineno`,
+and :attr:`~re.PatternError.colno`, that provide better context
 information about the error::
 
     >>> re.compile("""
@@ -1794,10 +1793,10 @@ query the actual protocol version in use.
 (Contributed by Antoine Pitrou in :issue:`20421`.)
 
 The :class:`~ssl.SSLSocket` class now implements
-a :meth:`SSLSocket.sendfile() <ssl.SSLSocket.sendfile>` method.
+a :meth:`!SSLSocket.sendfile` method.
 (Contributed by Giampaolo Rodola' in :issue:`17552`.)
 
-The :meth:`SSLSocket.send() <ssl.SSLSocket.send>` method now raises either
+The :meth:`!SSLSocket.send` method now raises either
 the :exc:`ssl.SSLWantReadError` or :exc:`ssl.SSLWantWriteError` exception on a
 non-blocking socket if the operation would block. Previously, it would return
 ``0``.  (Contributed by Nikolaus Rath in :issue:`20951`.)
@@ -1806,20 +1805,20 @@ The :func:`~ssl.cert_time_to_seconds` function now interprets the input time
 as UTC and not as local time, per :rfc:`5280`.  Additionally, the return
 value is always an :class:`int`. (Contributed by Akira Li in :issue:`19940`.)
 
-New :meth:`SSLObject.shared_ciphers() <ssl.SSLObject.shared_ciphers>` and
+New :meth:`!SSLObject.shared_ciphers` and
 :meth:`SSLSocket.shared_ciphers() <ssl.SSLSocket.shared_ciphers>` methods return
 the list of ciphers sent by the client during the handshake.
 (Contributed by Benjamin Peterson in :issue:`23186`.)
 
 The :meth:`SSLSocket.do_handshake() <ssl.SSLSocket.do_handshake>`,
 :meth:`SSLSocket.read() <ssl.SSLSocket.read>`,
-:meth:`SSLSocket.shutdown() <ssl.SSLSocket.shutdown>`, and
+:meth:`!SSLSocket.shutdown`, and
 :meth:`SSLSocket.write() <ssl.SSLSocket.write>` methods of the :class:`~ssl.SSLSocket`
 class no longer reset the socket timeout every time bytes are received or sent.
 The socket timeout is now the maximum total duration of the method.
 (Contributed by Victor Stinner in :issue:`23853`.)
 
-The :func:`~ssl.match_hostname` function now supports matching of IP addresses.
+The :func:`!match_hostname` function now supports matching of IP addresses.
 (Contributed by Antoine Pitrou in :issue:`23239`.)
 
 
@@ -1863,10 +1862,10 @@ Examples::
 sys
 ---
 
-A new :func:`~sys.set_coroutine_wrapper` function allows setting a global
+A new :func:`!set_coroutine_wrapper` function allows setting a global
 hook that will be called whenever a :term:`coroutine object <coroutine>`
 is created by an :keyword:`async def` function.  A corresponding
-:func:`~sys.get_coroutine_wrapper` can be used to obtain a currently set
+:func:`!get_coroutine_wrapper` can be used to obtain a currently set
 wrapper.  Both functions are :term:`provisional <provisional API>`,
 and are intended for debugging purposes only.  (Contributed by Yury Selivanov
 in :issue:`24017`.)
@@ -2014,8 +2013,9 @@ The :class:`~unittest.mock.Mock` class has the following improvements:
   method to check if the mock object was called.
   (Contributed by Kushal Das in :issue:`21262`.)
 
-The :class:`~unittest.mock.MagicMock` class now supports :meth:`__truediv__`,
-:meth:`__divmod__` and :meth:`__matmul__` operators.
+The :class:`~unittest.mock.MagicMock` class now supports
+:meth:`~object.__truediv__`, :meth:`~object.__divmod__`
+and :meth:`~object.__matmul__` operators.
 (Contributed by Johannes Baiter in :issue:`20968`, and Håkan Lövdahl
 in :issue:`23581` and :issue:`23568`.)
 
@@ -2290,10 +2290,10 @@ Windows XP is no longer supported by Microsoft, thus, per :PEP:`11`, CPython
 Deprecated Python modules, functions and methods
 ------------------------------------------------
 
-The :mod:`formatter` module has now graduated to full deprecation and is still
+The :mod:`!formatter` module has now graduated to full deprecation and is still
 slated for removal in Python 3.6.
 
-The :func:`asyncio.async` function is deprecated in favor of
+The :func:`!asyncio.async` function is deprecated in favor of
 :func:`~asyncio.ensure_future`.
 
 The :mod:`!smtpd` module has in the past always decoded the DATA portion of
@@ -2314,7 +2314,7 @@ Passing a format string as keyword argument *format_string* to the
 class has been deprecated.
 (Contributed by Serhiy Storchaka in :issue:`23671`.)
 
-The :func:`platform.dist` and :func:`platform.linux_distribution` functions
+The :func:`!platform.dist` and :func:`!platform.linux_distribution` functions
 are now deprecated.  Linux distributions use too many different ways of
 describing themselves, so the functionality is left to a package.
 (Contributed by Vajrasky Kok and Berker Peksag in :issue:`1322`.)
@@ -2324,11 +2324,11 @@ The previously undocumented ``from_function`` and ``from_builtin`` methods of
 :meth:`Signature.from_callable() <inspect.Signature.from_callable>`
 method instead. (Contributed by Yury Selivanov in :issue:`24248`.)
 
-The :func:`inspect.getargspec` function is deprecated and scheduled to be
+The :func:`!inspect.getargspec` function is deprecated and scheduled to be
 removed in Python 3.6.  (See :issue:`20438` for details.)
 
 The :mod:`inspect` :func:`~inspect.getfullargspec`,
-:func:`~inspect.getcallargs`, and :func:`~inspect.formatargspec` functions are
+:func:`~inspect.getcallargs`, and :func:`!formatargspec` functions are
 deprecated in favor of the :func:`inspect.signature` API. (Contributed by Yury
 Selivanov in :issue:`20438`.)
 
@@ -2405,7 +2405,7 @@ Changes in the Python API
   error-prone and has been removed in Python 3.5.  See :issue:`13936` for full
   details.
 
-* The :meth:`ssl.SSLSocket.send` method now raises either
+* The :meth:`!ssl.SSLSocket.send` method now raises either
   :exc:`ssl.SSLWantReadError` or :exc:`ssl.SSLWantWriteError`
   on a non-blocking socket if the operation would block.  Previously,
   it would return ``0``.  (Contributed by Nikolaus Rath in :issue:`20951`.)
@@ -2440,12 +2440,12 @@ Changes in the Python API
   :mod:`http.client` and :mod:`http.server` remain available for backwards
   compatibility.  (Contributed by Demian Brecht in :issue:`21793`.)
 
-* When an import loader defines :meth:`importlib.machinery.Loader.exec_module`
+* When an import loader defines :meth:`~importlib.abc.Loader.exec_module`
   it is now expected to also define
-  :meth:`~importlib.machinery.Loader.create_module` (raises a
+  :meth:`~importlib.abc.Loader.create_module` (raises a
   :exc:`DeprecationWarning` now, will be an error in Python 3.6). If the loader
   inherits from :class:`importlib.abc.Loader` then there is nothing to do, else
-  simply define :meth:`~importlib.machinery.Loader.create_module` to return
+  simply define :meth:`~importlib.abc.Loader.create_module` to return
   ``None``.  (Contributed by Brett Cannon in :issue:`23014`.)
 
 * The :func:`re.split` function always ignored empty pattern matches, so the
@@ -2488,7 +2488,7 @@ Changes in the Python API
   the POT-Creation-Date header.
 
 * The :mod:`smtplib` module now uses :data:`sys.stderr` instead of the previous
-  module-level :data:`stderr` variable for debug output.  If your (test)
+  module-level :data:`!stderr` variable for debug output.  If your (test)
   program depends on patching the module-level variable to capture the debug
   output, you will need to update it to capture sys.stderr instead.
 
@@ -2514,11 +2514,11 @@ Changes in the C API
 --------------------
 
 * The undocumented :c:member:`!format` member of the
-  (non-public) :c:type:`PyMemoryViewObject` structure has been removed.
+  (non-public) :c:type:`!PyMemoryViewObject` structure has been removed.
   All extensions relying on the relevant parts in ``memoryobject.h``
   must be rebuilt.
 
-* The :c:type:`PyMemAllocator` structure was renamed to
+* The :c:type:`!PyMemAllocator` structure was renamed to
   :c:type:`PyMemAllocatorEx` and a new ``calloc`` field was added.
 
 * Removed non-documented macro :c:macro:`!PyObject_REPR()` which leaked references.

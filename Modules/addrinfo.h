@@ -77,6 +77,7 @@
 #undef AI_PASSIVE
 #undef AI_CANONNAME
 #undef AI_NUMERICHOST
+#undef AI_NUMERICSERV
 #undef AI_MASK
 #undef AI_ALL
 #undef AI_V4MAPPED_CFG
@@ -88,8 +89,9 @@
 #define AI_PASSIVE      0x00000001 /* get address to use bind() */
 #define AI_CANONNAME    0x00000002 /* fill ai_canonname */
 #define AI_NUMERICHOST  0x00000004 /* prevent name resolution */
+#define AI_NUMERICSERV  0x00000008 /* prevent service resolution */
 /* valid flags for addrinfo */
-#define AI_MASK         (AI_PASSIVE | AI_CANONNAME | AI_NUMERICHOST)
+#define AI_MASK         (AI_PASSIVE | AI_CANONNAME | AI_NUMERICHOST | AI_NUMERICSERV)
 
 #define AI_ALL          0x00000100 /* IPv6 and IPv4-mapped (with AI_V4MAPPED) */
 #define AI_V4MAPPED_CFG 0x00000200 /* accept IPv4-mapped if kernel supports */

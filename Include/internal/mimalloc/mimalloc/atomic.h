@@ -338,8 +338,9 @@ static inline void mi_atomic_yield(void) {
   _mm_pause();
 }
 #elif (defined(__GNUC__) || defined(__clang__)) && \
-      (defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__armel__) || defined(__ARMEL__) || \
-       defined(__aarch64__) || defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)) || defined(__POWERPC__)
+      (defined(__x86_64__) || defined(__i386__) || \
+       defined(__aarch64__) || defined(__arm__) || \
+       defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) || defined(__POWERPC__))
 #if defined(__x86_64__) || defined(__i386__)
 static inline void mi_atomic_yield(void) {
   __asm__ volatile ("pause" ::: "memory");
@@ -348,10 +349,16 @@ static inline void mi_atomic_yield(void) {
 static inline void mi_atomic_yield(void) {
   __asm__ volatile("wfe");
 }
-#elif (defined(__arm__) && __ARM_ARCH__ >= 7)
+#elif defined(__arm__)
+#if __ARM_ARCH >= 7
 static inline void mi_atomic_yield(void) {
   __asm__ volatile("yield" ::: "memory");
 }
+#else
+static inline void mi_atomic_yield(void) {
+  __asm__ volatile ("nop" ::: "memory");
+}
+#endif
 #elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) || defined(__POWERPC__)
 #ifdef __APPLE__
 static inline void mi_atomic_yield(void) {
@@ -362,10 +369,6 @@ static inline void mi_atomic_yield(void) {
   __asm__ __volatile__ ("or 27,27,27" ::: "memory");
 }
 #endif
-#elif defined(__armel__) || defined(__ARMEL__)
-static inline void mi_atomic_yield(void) {
-  __asm__ volatile ("nop" ::: "memory");
-}
 #endif
 #elif defined(__sun)
 // Fallback for other archs

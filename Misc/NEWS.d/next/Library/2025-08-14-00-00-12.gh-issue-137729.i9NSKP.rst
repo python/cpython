@@ -1,0 +1,3 @@
+:func:`locale.setlocale` now supports language codes with ``@``-modifiers.
+``@``-modifier are no longer silently removed in :func:`locale.getlocale`,
+but included in the language code.

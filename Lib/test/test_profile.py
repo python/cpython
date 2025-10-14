@@ -4,12 +4,16 @@ import sys
 import pstats
 import unittest
 import os
+import warnings
 from difflib import unified_diff
 from io import StringIO
 from test.support.os_helper import TESTFN, unlink, temp_dir, change_cwd
 from contextlib import contextmanager, redirect_stdout
 
-import profile
+# Suppress deprecation warning for profile module (PEP 799)
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    import profile
 from test.profilee import testfunc, timer
 from test.support.script_helper import assert_python_failure, assert_python_ok
 

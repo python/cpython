@@ -1,0 +1,2 @@
+Fixed an off by one error concerning the backlog parameter in
+:meth:`~asyncio.loop.create_unix_server`. Contributed by Christian Harries.

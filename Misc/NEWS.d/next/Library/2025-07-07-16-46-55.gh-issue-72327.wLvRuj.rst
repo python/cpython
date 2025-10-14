@@ -1,0 +1,2 @@
+Suggest using the system command prompt when ``pip install`` is typed into
+the REPL. Patch by Tom Viner, Richard Si, and Brian Schubert.

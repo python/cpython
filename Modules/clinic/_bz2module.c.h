@@ -27,7 +27,7 @@ static PyObject *
 _bz2_BZ2Compressor_compress_impl(BZ2Compressor *self, Py_buffer *data);
 
 static PyObject *
-_bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
+_bz2_BZ2Compressor_compress(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
@@ -35,7 +35,7 @@ _bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    return_value = _bz2_BZ2Compressor_compress_impl(self, &data);
+    return_value = _bz2_BZ2Compressor_compress_impl((BZ2Compressor *)self, &data);
 
 exit:
     /* Cleanup for data */
@@ -63,9 +63,9 @@ static PyObject *
 _bz2_BZ2Compressor_flush_impl(BZ2Compressor *self);
 
 static PyObject *
-_bz2_BZ2Compressor_flush(BZ2Compressor *self, PyObject *Py_UNUSED(ignored))
+_bz2_BZ2Compressor_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _bz2_BZ2Compressor_flush_impl(self);
+    return _bz2_BZ2Compressor_flush_impl((BZ2Compressor *)self);
 }
 
 PyDoc_STRVAR(_bz2_BZ2Compressor__doc__,
@@ -137,7 +137,7 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
                                      Py_ssize_t max_length);
 
 static PyObject *
-_bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_bz2_BZ2Decompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -146,9 +146,11 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(data), &_Py_ID(max_length), },
     };
     #undef NUM_KEYWORDS
@@ -194,7 +196,7 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *const *args, Py
         max_length = ival;
     }
 skip_optional_pos:
-    return_value = _bz2_BZ2Decompressor_decompress_impl(self, &data, max_length);
+    return_value = _bz2_BZ2Decompressor_decompress_impl((BZ2Decompressor *)self, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -235,4 +237,4 @@ _bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=701a383434374c36 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=552ac6d4c5a101b7 input=a9049054013a1b77]*/

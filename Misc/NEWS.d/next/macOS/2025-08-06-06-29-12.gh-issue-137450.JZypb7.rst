@@ -1,0 +1,3 @@
+macOS installer shell path management improvements: separate the installer
+``Shell profile updater`` postinstall script from the
+``Update Shell Profile.command`` to enable more robust error handling.

@@ -61,13 +61,14 @@ See also the `Examples`_ subsection.
 Creating Subprocesses
 =====================
 
-.. coroutinefunction:: create_subprocess_exec(program, *args, stdin=None, \
-                          stdout=None, stderr=None, limit=None, **kwds)
+.. function:: create_subprocess_exec(program, *args, stdin=None, \
+                 stdout=None, stderr=None, limit=None, **kwds)
+   :async:
 
    Create a subprocess.
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
-   wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
+   wrappers for :attr:`~asyncio.subprocess.Process.stdout` and :attr:`~asyncio.subprocess.Process.stderr`
    (if :const:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
@@ -79,13 +80,14 @@ Creating Subprocesses
       Removed the *loop* parameter.
 
 
-.. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
-                          stdout=None, stderr=None, limit=None, **kwds)
+.. function:: create_subprocess_shell(cmd, stdin=None, \
+                 stdout=None, stderr=None, limit=None, **kwds)
+   :async:
 
    Run the *cmd* shell command.
 
    The *limit* argument sets the buffer limit for :class:`StreamReader`
-   wrappers for :attr:`Process.stdout` and :attr:`Process.stderr`
+   wrappers for :attr:`~asyncio.subprocess.Process.stdout` and :attr:`~asyncio.subprocess.Process.stderr`
    (if :const:`subprocess.PIPE` is passed to *stdout* and *stderr* arguments).
 
    Return a :class:`~asyncio.subprocess.Process` instance.
@@ -130,12 +132,12 @@ Constants
 
    If *PIPE* is passed to *stdin* argument, the
    :attr:`Process.stdin <asyncio.subprocess.Process.stdin>` attribute
-   will point to a :class:`StreamWriter` instance.
+   will point to a :class:`~asyncio.StreamWriter` instance.
 
    If *PIPE* is passed to *stdout* or *stderr* arguments, the
    :attr:`Process.stdout <asyncio.subprocess.Process.stdout>` and
    :attr:`Process.stderr <asyncio.subprocess.Process.stderr>`
-   attributes will point to :class:`StreamReader` instances.
+   attributes will point to :class:`~asyncio.StreamReader` instances.
 
 .. data:: asyncio.subprocess.STDOUT
    :module:
@@ -163,7 +165,7 @@ their completion.
    :module:
 
    An object that wraps OS processes created by the
-   :func:`create_subprocess_exec` and :func:`create_subprocess_shell`
+   :func:`~asyncio.create_subprocess_exec` and :func:`~asyncio.create_subprocess_shell`
    functions.
 
    This class is designed to have a similar API to the
@@ -188,7 +190,8 @@ their completion.
    See also the :ref:`Subprocess and Threads <asyncio-subprocess-threads>`
    section.
 
-   .. coroutinemethod:: wait()
+   .. method:: wait()
+      :async:
 
       Wait for the child process to terminate.
 
@@ -202,7 +205,8 @@ their completion.
          more data. Use the :meth:`communicate` method when using pipes
          to avoid this condition.
 
-   .. coroutinemethod:: communicate(input=None)
+   .. method:: communicate(input=None)
+      :async:
 
       Interact with process:
 
@@ -232,7 +236,7 @@ their completion.
 
       .. versionchanged:: 3.12
 
-         *stdin* gets closed when `input=None` too.
+         *stdin* gets closed when ``input=None`` too.
 
    .. method:: send_signal(signal)
 
@@ -259,24 +263,24 @@ their completion.
 
       Kill the child process.
 
-      On POSIX systems this method sends :py:data:`SIGKILL` to the child
+      On POSIX systems this method sends :py:data:`~signal.SIGKILL` to the child
       process.
 
       On Windows this method is an alias for :meth:`terminate`.
 
    .. attribute:: stdin
 
-      Standard input stream (:class:`StreamWriter`) or ``None``
+      Standard input stream (:class:`~asyncio.StreamWriter`) or ``None``
       if the process was created with ``stdin=None``.
 
    .. attribute:: stdout
 
-      Standard output stream (:class:`StreamReader`) or ``None``
+      Standard output stream (:class:`~asyncio.StreamReader`) or ``None``
       if the process was created with ``stdout=None``.
 
    .. attribute:: stderr
 
-      Standard error stream (:class:`StreamReader`) or ``None``
+      Standard error stream (:class:`~asyncio.StreamReader`) or ``None``
       if the process was created with ``stderr=None``.
 
    .. warning::
@@ -292,7 +296,7 @@ their completion.
 
       Process identification number (PID).
 
-      Note that for processes created by the :func:`create_subprocess_shell`
+      Note that for processes created by the :func:`~asyncio.create_subprocess_shell`
       function, this attribute is the PID of the spawned shell.
 
    .. attribute:: returncode

@@ -1,0 +1,3 @@
+:meth:`IMAP4.login_cram_md5 <imaplib.IMAP4.login_cram_md5>` now raises an
+:exc:`IMAP4.error <imaplib.IMAP4.error>` if CRAM-MD5 authentication is not
+supported. Patch by Bénédikt Tran.

@@ -11,12 +11,27 @@
 """
 
 import collections
+import re
+import urllib.error
 import urllib.parse
 import urllib.request
 
 __all__ = ["RobotFileParser"]
 
 RequestRate = collections.namedtuple("RequestRate", "requests seconds")
+
+
+def normalize(path):
+    unquoted = urllib.parse.unquote(path, errors='surrogateescape')
+    return urllib.parse.quote(unquoted, errors='surrogateescape')
+
+def normalize_path(path):
+    path, sep, query = path.partition('?')
+    path = normalize(path)
+    if sep:
+        query = re.sub(r'[^=&]+', lambda m: normalize(m[0]), query)
+        path += '?' + query
+    return path
 
 
 class RobotFileParser:
@@ -54,7 +69,7 @@ class RobotFileParser:
     def set_url(self, url):
         """Sets the URL referring to a robots.txt file."""
         self.url = url
-        self.host, self.path = urllib.parse.urlparse(url)[1:3]
+        self.host, self.path = urllib.parse.urlsplit(url)[1:3]
 
     def read(self):
         """Reads the robots.txt URL and feeds it to the parser."""
@@ -65,9 +80,10 @@ class RobotFileParser:
                 self.disallow_all = True
             elif err.code >= 400 and err.code < 500:
                 self.allow_all = True
+            err.close()
         else:
             raw = f.read()
-            self.parse(raw.decode("utf-8").splitlines())
+            self.parse(raw.decode("utf-8", "surrogateescape").splitlines())
 
     def _add_entry(self, entry):
         if "*" in entry.useragents:
@@ -111,7 +127,7 @@ class RobotFileParser:
             line = line.split(':', 1)
             if len(line) == 2:
                 line[0] = line[0].strip().lower()
-                line[1] = urllib.parse.unquote(line[1].strip())
+                line[1] = line[1].strip()
                 if line[0] == "user-agent":
                     if state == 2:
                         self._add_entry(entry)
@@ -165,10 +181,11 @@ class RobotFileParser:
             return False
         # search for given user agent matches
         # the first match counts
-        parsed_url = urllib.parse.urlparse(urllib.parse.unquote(url))
-        url = urllib.parse.urlunparse(('','',parsed_url.path,
-            parsed_url.params,parsed_url.query, parsed_url.fragment))
-        url = urllib.parse.quote(url)
+        # TODO: The private API is used in order to preserve an empty query.
+        # This is temporary until the public API starts supporting this feature.
+        parsed_url = urllib.parse._urlsplit(url, '')
+        url = urllib.parse._urlunsplit(None, None, *parsed_url[2:])
+        url = normalize_path(url)
         if not url:
             url = "/"
         for entry in self.entries:
@@ -211,7 +228,6 @@ class RobotFileParser:
             entries = entries + [self.default_entry]
         return '\n\n'.join(map(str, entries))
 
-
 class RuleLine:
     """A rule line is a single "Allow:" (allowance==True) or "Disallow:"
        (allowance==False) followed by a path."""
@@ -219,8 +235,7 @@ class RuleLine:
         if path == '' and not allowance:
             # an empty value means allow all
             allowance = True
-        path = urllib.parse.urlunparse(urllib.parse.urlparse(path))
-        self.path = urllib.parse.quote(path)
+        self.path = normalize_path(path)
         self.allowance = allowance
 
     def applies_to(self, filename):
@@ -266,7 +281,7 @@ class Entry:
     def allowance(self, filename):
         """Preconditions:
         - our agent applies to this entry
-        - filename is URL decoded"""
+        - filename is URL encoded"""
         for line in self.rulelines:
             if line.applies_to(filename):
                 return line.allowance

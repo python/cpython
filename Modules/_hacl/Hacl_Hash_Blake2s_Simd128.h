@@ -32,13 +32,12 @@ extern "C" {
 
 #include <string.h>
 #include "python_hacl_namespaces.h"
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
 #include "Hacl_Streaming_Types.h"
 #include "Hacl_Hash_Blake2b.h"
-#include "libintvector.h"
 
 #define HACL_HASH_BLAKE2S_SIMD128_BLOCK_BYTES (64U)
 
@@ -50,29 +49,10 @@ extern "C" {
 
 #define HACL_HASH_BLAKE2S_SIMD128_PERSONAL_BYTES (8U)
 
-typedef struct K____Lib_IntVector_Intrinsics_vec128___Lib_IntVector_Intrinsics_vec128__s
-{
-  Lib_IntVector_Intrinsics_vec128 *fst;
-  Lib_IntVector_Intrinsics_vec128 *snd;
-}
-K____Lib_IntVector_Intrinsics_vec128___Lib_IntVector_Intrinsics_vec128_;
-
 typedef struct Hacl_Hash_Blake2s_Simd128_block_state_t_s
-{
-  uint8_t fst;
-  uint8_t snd;
-  bool thd;
-  K____Lib_IntVector_Intrinsics_vec128___Lib_IntVector_Intrinsics_vec128_ f3;
-}
 Hacl_Hash_Blake2s_Simd128_block_state_t;
 
-typedef struct Hacl_Hash_Blake2s_Simd128_state_t_s
-{
-  Hacl_Hash_Blake2s_Simd128_block_state_t block_state;
-  uint8_t *buf;
-  uint64_t total_len;
-}
-Hacl_Hash_Blake2s_Simd128_state_t;
+typedef struct Hacl_Hash_Blake2s_Simd128_state_t_s Hacl_Hash_Blake2s_Simd128_state_t;
 
 /**
  General-purpose allocation function that gives control over all
@@ -108,7 +88,7 @@ The caller must satisfy the following requirements.
 
 */
 Hacl_Hash_Blake2s_Simd128_state_t
-*Hacl_Hash_Blake2s_Simd128_malloc_with_key0(uint8_t *k, uint8_t kk);
+*Hacl_Hash_Blake2s_Simd128_malloc_with_key(uint8_t *k, uint8_t kk);
 
 /**
  Specialized allocation function that picks default values for all

@@ -11,13 +11,7 @@ extern "C" {
 
 #include <assert.h>
 #include <stdbool.h>
-#include <stdint.h>
-
-
-typedef struct {
-    uint16_t value_and_backoff;
-} _Py_BackoffCounter;
-
+#include "pycore_structs.h"       // _Py_BackoffCounter
 
 /* 16-bit countdown counters using exponential backoff.
 
@@ -101,8 +95,10 @@ backoff_counter_triggers(_Py_BackoffCounter counter)
     return counter.value_and_backoff < UNREACHABLE_BACKOFF;
 }
 
-/* Initial JUMP_BACKWARD counter.
- * This determines when we create a trace for a loop. */
+// Initial JUMP_BACKWARD counter.
+// Must be larger than ADAPTIVE_COOLDOWN_VALUE, otherwise when JIT code is
+// invalidated we may construct a new trace before the bytecode has properly
+// re-specialized:
 #define JUMP_BACKWARD_INITIAL_VALUE 4095
 #define JUMP_BACKWARD_INITIAL_BACKOFF 12
 static inline _Py_BackoffCounter

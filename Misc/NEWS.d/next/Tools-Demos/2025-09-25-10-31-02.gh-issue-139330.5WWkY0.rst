@@ -1,0 +1,3 @@
+SBOM generation tool didn't cross-check the version and checksum values
+against the ``Modules/expat/refresh.sh`` script, leading to the values
+becoming out-of-date during routine updates.

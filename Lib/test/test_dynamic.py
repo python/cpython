@@ -4,7 +4,7 @@ import builtins
 import sys
 import unittest
 
-from test.support import swap_item, swap_attr, is_wasi, Py_DEBUG
+from test.support import swap_item, swap_attr, skip_wasi_stack_overflow
 
 
 class RebindBuiltinsTests(unittest.TestCase):
@@ -134,7 +134,8 @@ class RebindBuiltinsTests(unittest.TestCase):
 
         self.assertEqual(foo(), 7)
 
-    @unittest.skipIf(is_wasi and Py_DEBUG, "requires too much stack")
+
+    @skip_wasi_stack_overflow()
     def test_load_global_specialization_failure_keeps_oparg(self):
         # https://github.com/python/cpython/issues/91625
         class MyGlobals(dict):

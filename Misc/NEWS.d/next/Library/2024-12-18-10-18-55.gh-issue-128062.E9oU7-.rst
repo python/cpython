@@ -1,2 +1,0 @@
-Revert the font of :mod:`turtledemo`'s menu bar to its default value and
-display the shortcut keys in the correct position.

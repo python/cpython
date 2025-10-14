@@ -24,11 +24,11 @@ def concretize(cls):
 
 class TestNumbers(unittest.TestCase):
     def test_int(self):
-        self.assertTrue(issubclass(int, Integral))
-        self.assertTrue(issubclass(int, Rational))
-        self.assertTrue(issubclass(int, Real))
-        self.assertTrue(issubclass(int, Complex))
-        self.assertTrue(issubclass(int, Number))
+        self.assertIsSubclass(int, Integral)
+        self.assertIsSubclass(int, Rational)
+        self.assertIsSubclass(int, Real)
+        self.assertIsSubclass(int, Complex)
+        self.assertIsSubclass(int, Number)
 
         self.assertEqual(7, int(7).real)
         self.assertEqual(0, int(7).imag)
@@ -38,11 +38,11 @@ class TestNumbers(unittest.TestCase):
         self.assertEqual(1, int(7).denominator)
 
     def test_float(self):
-        self.assertFalse(issubclass(float, Integral))
-        self.assertFalse(issubclass(float, Rational))
-        self.assertTrue(issubclass(float, Real))
-        self.assertTrue(issubclass(float, Complex))
-        self.assertTrue(issubclass(float, Number))
+        self.assertNotIsSubclass(float, Integral)
+        self.assertNotIsSubclass(float, Rational)
+        self.assertIsSubclass(float, Real)
+        self.assertIsSubclass(float, Complex)
+        self.assertIsSubclass(float, Number)
 
         self.assertEqual(7.3, float(7.3).real)
         self.assertEqual(0, float(7.3).imag)
@@ -50,11 +50,11 @@ class TestNumbers(unittest.TestCase):
         self.assertEqual(-7.3, float(-7.3).conjugate())
 
     def test_complex(self):
-        self.assertFalse(issubclass(complex, Integral))
-        self.assertFalse(issubclass(complex, Rational))
-        self.assertFalse(issubclass(complex, Real))
-        self.assertTrue(issubclass(complex, Complex))
-        self.assertTrue(issubclass(complex, Number))
+        self.assertNotIsSubclass(complex, Integral)
+        self.assertNotIsSubclass(complex, Rational)
+        self.assertNotIsSubclass(complex, Real)
+        self.assertIsSubclass(complex, Complex)
+        self.assertIsSubclass(complex, Number)
 
         c1, c2 = complex(3, 2), complex(4,1)
         # XXX: This is not ideal, but see the comment in math_trunc().
