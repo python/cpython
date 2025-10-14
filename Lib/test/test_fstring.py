@@ -1859,6 +1859,13 @@ print(f'''{{
         # Test multiple format specs in same raw f-string
         self.assertEqual(rf"{UnchangedFormat():\xFF} {UnchangedFormat():\n}", '\\xFF \\n')
 
+    def test_gh139516(self):
+        with temp_cwd():
+            script = 'script.py'
+            with open(script, 'wb') as f:
+                f.write('''def f(a): pass\nf"{f(a=lambda: 'à'\n)}"'''.encode())
+            assert_python_ok(script)
+
 
 if __name__ == '__main__':
     unittest.main()
