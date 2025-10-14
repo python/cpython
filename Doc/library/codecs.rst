@@ -78,7 +78,7 @@ The full details for each codec can also be looked up directly:
    .. versionchanged:: 3.9
       Any characters except ASCII letters and digits and a dot are converted to underscore.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       No characters are converted to underscore anymore.
       Spaces are converted to hyphens.
 

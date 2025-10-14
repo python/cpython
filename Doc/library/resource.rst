@@ -51,7 +51,7 @@ this module for those platforms.
 
    Constant used to represent the limit for an unlimited resource.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       It is now always positive.
       Previously, it could be negative, such as -1 or -3.
 
@@ -63,7 +63,7 @@ this module for those platforms.
    cannot be represented in the ``rlim_t`` value in C.
    Can be equal to :data:`RLIM_INFINITY`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: getrlimit(resource)
@@ -296,7 +296,7 @@ platform.
 
    .. availability:: NetBSD >= 7.0.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: RLIMIT_PIPEBUF
@@ -306,7 +306,7 @@ platform.
 
    .. availability:: FreeBSD >= 14.2.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: RLIMIT_THREADS
@@ -315,7 +315,7 @@ platform.
 
    .. availability:: AIX.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: RLIMIT_UMTXP
@@ -325,7 +325,7 @@ platform.
 
    .. availability:: FreeBSD >= 11.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 Resource Usage

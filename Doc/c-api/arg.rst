@@ -305,7 +305,7 @@ the minimal value for the corresponding signed integer type of the same size.
 ``D`` (:class:`complex`) [Py_complex]
    Convert a Python complex number to a C :c:type:`Py_complex` structure.
 
-.. deprecated:: next
+.. deprecated:: 3.15
 
    For unsigned integer formats ``B``, ``H``, ``I``, ``k`` and ``K``,
    :exc:`DeprecationWarning` is emitted when the value is larger than

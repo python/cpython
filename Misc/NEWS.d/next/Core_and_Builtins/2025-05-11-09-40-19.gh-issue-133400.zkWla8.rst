@@ -1,1 +1,0 @@
-Fixed Ctrl+D (^D) behavior in _pyrepl module to match old pre-3.13 REPL behavior.

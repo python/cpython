@@ -202,7 +202,7 @@ third-party distributors.
 ABI Checking
 ============
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 Python includes a rudimentary check for ABI compatibility.
 
@@ -249,7 +249,7 @@ The full API is described below for advanced use cases.
    may lead to crashes.
    In particular, it is not safe to examine the raised exception.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:macro:: PyABIInfo_VAR(NAME)
 
@@ -266,7 +266,7 @@ The full API is described below for advanced use cases.
           PyABIInfo_DEFAULT_ABI_VERSION
       }
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:type:: PyABIInfo
 
@@ -352,7 +352,7 @@ The full API is described below for advanced use cases.
          values of macros such as :c:macro:`Py_LIMITED_API`,
          :c:macro:`PY_VERSION_HEX` and :c:macro:`Py_GIL_DISABLED`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. _limited-api-list:

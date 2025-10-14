@@ -78,7 +78,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    This mode is useful to limit the number of open file handles.
    The original file can be renamed (but not deleted) after closing *fileno*.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The *trackfd* parameter was added.
 
    .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
@@ -229,7 +229,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          on error under Windows.  A zero value was returned on success; an
          exception was raised on error under Unix.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Allow specifying *offset* without *size*. Previously, both *offset*
          and *size* parameters were required together. Now *offset* can be
          specified alone, and the flush operation will extend from *offset*
@@ -334,7 +334,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       memory-mapped area.
       For an anonymous mapping, return its size.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Anonymous mappings are now supported on Unix.
 
 

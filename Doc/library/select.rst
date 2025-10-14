@@ -165,7 +165,7 @@ The module defines the following:
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 
@@ -274,7 +274,7 @@ object.
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 
@@ -385,7 +385,7 @@ Edge and Level Trigger Polling (epoll) Objects
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 
@@ -476,7 +476,7 @@ linearly scanned again. :c:func:`!select` is *O*\ (*highest file descriptor*), w
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 
@@ -520,7 +520,7 @@ Kqueue Objects
       :pep:`475` for the rationale), instead of raising
       :exc:`InterruptedError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 
