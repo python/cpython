@@ -311,12 +311,29 @@ Type Objects
 
    Look for a type attribute through the type
    :term:`MRO <method resolution order>`.
+   Do not invoke descriptors or metaclass ``__getattr__``.
 
    *name* must be a :class:`str`.
 
    * If found, set *\*attr* to a :term:`strong reference` and return ``1``.
    * If not found, set *\*attr* to ``NULL`` and return ``0``.
    * On error, set an exception and return ``-1``.
+
+   Python pseudo-code (return :exc:`AttributeError` if not found instead of
+   raising an exception)::
+
+       def PyType_Lookup(type, name):
+           if not isinstance(name, str):
+               raise TypeError
+
+           for klass in type.mro():
+               try:
+                   return klass.__dict__[name]
+               except KeyError:
+                   pass
+
+           # not found
+           return AttributeError
 
    .. versionadded:: next
 
