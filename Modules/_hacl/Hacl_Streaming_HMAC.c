@@ -2521,3 +2521,4 @@ Hacl_Streaming_HMAC_agile_state
     "unreachable (pattern matches are exhaustive in F*)");
   KRML_HOST_EXIT(255U);
 }
+
