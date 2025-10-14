@@ -1824,6 +1824,10 @@ Slice objects are used to represent slices for
 :meth:`~object.__getitem__`
 methods.  They are also created by the built-in :func:`slice` function.
 
+.. versionadded:: 3.15
+
+   :class:`slice` now supports :ref:`subscription`.
+
 .. index::
    single: start (slice object attribute)
    single: stop (slice object attribute)
