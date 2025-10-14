@@ -112,6 +112,8 @@ atexit_callfuncs(struct atexit_state *state)
     {
         PyErr_FormatUnraisable("Exception ignored while "
                                "copying atexit callbacks");
+        // gh-140080: need to cleanup
+        atexit_cleanup(state);
         return;
     }
 
