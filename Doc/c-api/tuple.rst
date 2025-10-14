@@ -58,6 +58,34 @@ Tuple Objects
    ``PyTuple_Pack(2, a, b)`` is equivalent to ``Py_BuildValue("(OO)", a, b)``.
 
 
+.. c:function:: PyObject* PyTuple_MakeSingle(PyObject *one)
+
+   Return a new tuple object of size 1,
+   or ``NULL`` with an exception set on failure. The tuple value
+   is initialized with the new reference to the *one* object.
+   ``PyTuple_MakeSingle(a)`` is equivalent to ``PyTuple_Pack(1, a)``.
+
+   .. warning::
+
+      This function expects non ``NULL`` object *one*.
+      Checking is performed as an assertion if Python is built in
+      :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
+
+
+.. c:function:: PyObject* PyTuple_MakePair(PyObject *one, PyObject *two)
+
+   Return a new tuple object of size 2,
+   or ``NULL`` with an exception set on failure. The tuple values
+   are initialized with the new references to the *one* and *two* objects.
+   ``PyTuple_MakePair(a, b)`` is equivalent to ``PyTuple_Pack(2, a, b)``.
+
+   .. warning::
+
+      This function expects non ``NULL`` objects *one* and *two*.
+      Checking is performed as an assertion if Python is built in
+      :ref:`debug mode <debug-build>` or :option:`with assertions <--with-assertions>`.
+
+
 .. c:function:: Py_ssize_t PyTuple_Size(PyObject *p)
 
    Take a pointer to a tuple object, and return the size of that tuple.

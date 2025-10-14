@@ -184,6 +184,35 @@ PyTuple_Pack(Py_ssize_t n, ...)
     return (PyObject *)result;
 }
 
+PyObject *
+PyTuple_MakeSingle(PyObject *one)
+{
+    assert (one != NULL);
+
+    PyTupleObject *op = tuple_alloc(1);
+    if (op == NULL) {
+        return NULL;
+    }
+    op->ob_item[0] = Py_NewRef(one);
+    _PyObject_GC_TRACK(op);
+    return (PyObject *) op;
+}
+
+PyObject *
+PyTuple_MakePair(PyObject *one, PyObject *two)
+{
+    assert (one != NULL);
+    assert (two != NULL);
+
+    PyTupleObject *op = tuple_alloc(2);
+    if (op == NULL) {
+        return NULL;
+    }
+    op->ob_item[0] = Py_NewRef(one);
+    op->ob_item[1] = Py_NewRef(two);
+    _PyObject_GC_TRACK(op);
+    return (PyObject *) op;
+}
 
 /* Methods */
 

@@ -99,6 +99,35 @@ class CAPITest(unittest.TestCase):
         # CRASHES pack(1, NULL)
         # CRASHES pack(2, [1])
 
+    def test_tuple_make_single(self):
+        # Test PyTuple_MakeSingle()
+        make_single = _testcapi.tuple_make_single
+
+        self.assertEqual(make_single(1), (1,))
+        self.assertEqual(make_single(None), (None,))
+        self.assertEqual(make_single(True), (True,))
+
+        temp = object()
+        self.assertEqual(make_single(temp), (temp,))
+
+        self.assertRaises(TypeError, make_single, 1, 2)
+        self.assertRaises(TypeError, make_single)
+
+    def test_tuple_make_pair(self):
+        # Test PyTuple_MakePair()
+        make_pair = _testcapi.tuple_make_pair
+
+        self.assertEqual(make_pair(1, 2), (1, 2))
+        self.assertEqual(make_pair(None, None), (None, None))
+        self.assertEqual(make_pair(True, False), (True, False))
+
+        temp = object()
+        self.assertEqual(make_pair(temp, temp), (temp, temp))
+
+        self.assertRaises(TypeError, make_pair, 1, 2, 3)
+        self.assertRaises(TypeError, make_pair, 1)
+        self.assertRaises(TypeError, make_pair)
+
     def test_tuple_size(self):
         # Test PyTuple_Size()
         size = _testlimitedcapi.tuple_size
