@@ -1,6 +1,8 @@
 import atexit
 import os
 import subprocess
+import sys
+import tempfile
 import textwrap
 import unittest
 from test import support
@@ -196,7 +198,7 @@ class SubinterpreterTest(unittest.TestCase):
     def test_atexit_with_low_memory(self):
         # gh-140080: Test that setting low memory after registering an atexit
         # callback doesn't cause an infinite loop during finalization.
-        user_input = textwrap.dedent("""
+        code = textwrap.dedent("""
         import atexit
         import _testcapi
 
@@ -207,17 +209,25 @@ class SubinterpreterTest(unittest.TestCase):
         # Simulate low memory condition
         _testcapi.set_nomemory(0)
         """)
-        with SuppressCrashReport():
-            with script_helper.spawn_python('-c', user_input,
-                                           stderr=subprocess.PIPE) as p:
-                p.wait()
-                stdout = p.stdout.read()
-                stderr = p.stderr.read()
 
-        self.assertIn(p.returncode, (0, 1))
-        self.assertNotIn(b"hello", stdout)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(code)
+            script = f.name
+
+        try:
+            with SuppressCrashReport():
+                proc = subprocess.run(
+                    [sys.executable, script],
+                    capture_output=True,
+                    timeout=10
+                )
+        finally:
+            os.unlink(script)
+
+        self.assertIn(proc.returncode, (0, 1))
+        self.assertNotIn(b"hello", proc.stdout)
         # MemoryError should appear in stderr
-        self.assertIn(b"MemoryError", stderr)
+        self.assertIn(b"MemoryError", proc.stderr)
 
 
 if __name__ == "__main__":
