@@ -21,3 +21,8 @@ Pending removal in Python 3.20
   - :mod:`tkinter.ttk`
 
   (Contributed by Hugo van Kemenade in :gh:`76007`.)
+
+* :mod:`ast`:
+
+  * Creating instances of abstract AST nodes (such as :class:`ast.AST`
+    or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
