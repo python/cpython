@@ -1580,6 +1580,7 @@ class TracebackException:
         string in the output.
         """
         colorize = kwargs.get("colorize", False)
+        exception_target = kwargs.get("exception_target", True)
         if _ctx is None:
             _ctx = _ExceptionPrintContext()
 
@@ -1610,7 +1611,7 @@ class TracebackException:
                 if exc.stack:
                     yield from _ctx.emit('Traceback (most recent call last):\n')
                     yield from _ctx.emit(exc.stack.format(colorize=colorize))
-                yield from _ctx.emit(exc.format_exception_only(colorize=colorize))
+                yield from _ctx.emit(exc.format_exception_only(colorize=colorize, exception_target=exception_target))
             elif _ctx.exception_group_depth > self.max_group_depth:
                 # exception group, but depth exceeds limit
                 yield from _ctx.emit(
@@ -1627,7 +1628,7 @@ class TracebackException:
                         margin_char = '+' if is_toplevel else None)
                     yield from _ctx.emit(exc.stack.format(colorize=colorize))
 
-                yield from _ctx.emit(exc.format_exception_only(colorize=colorize))
+                yield from _ctx.emit(exc.format_exception_only(colorize=colorize, exception_target=exception_target))
                 num_excs = len(exc.exceptions)
                 if num_excs <= self.max_group_width:
                     n = num_excs
@@ -1650,7 +1651,7 @@ class TracebackException:
                            f'+---------------- {title} ----------------\n')
                     _ctx.exception_group_depth += 1
                     if not truncated:
-                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx, colorize=colorize)
+                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx, colorize=colorize, exception_target=exception_target)
                     else:
                         remaining = num_excs - self.max_group_width
                         plural = 's' if remaining > 1 else ''
