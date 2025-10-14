@@ -131,13 +131,8 @@ tuple_fromarray(PyObject* Py_UNUSED(module), PyObject *args)
 }
 
 static PyObject *
-tuple_make_single(PyObject *Py_UNUSED(module), PyObject *args)
+tuple_make_single(PyObject *Py_UNUSED(module), PyObject *one)
 {
-    PyObject *one;
-    if (!PyArg_ParseTuple(args, "O", &one)) {
-        return NULL;
-    }
-
     return PyTuple_MakeSingle(one);
 }
 
@@ -160,7 +155,7 @@ static PyMethodDef test_methods[] = {
     {"_tuple_resize", _tuple_resize, METH_VARARGS},
     {"_check_tuple_item_is_NULL", _check_tuple_item_is_NULL, METH_VARARGS},
     {"tuple_fromarray", tuple_fromarray, METH_VARARGS},
-    {"tuple_make_single", tuple_make_single, METH_VARARGS},
+    {"tuple_make_single", tuple_make_single, METH_O},
     {"tuple_make_pair", tuple_make_pair, METH_VARARGS},
     {NULL},
 };
