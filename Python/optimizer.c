@@ -362,7 +362,7 @@ uop_item(PyObject *op, Py_ssize_t index)
         return NULL;
     }
     PyObject *target = PyLong_FromUnsignedLong(self->trace[index].target);
-    if (oparg == NULL) {
+    if (target == NULL) {
         Py_DECREF(oparg);
         Py_DECREF(oname);
         return NULL;
