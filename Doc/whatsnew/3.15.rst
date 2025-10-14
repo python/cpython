@@ -65,6 +65,13 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+* :pep:`799`: :ref:`A dedicated profiling package for organizing Python
+  profiling tools <whatsnew315-sampling-profiler>`
+* :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
+  <whatsnew315-utf8-default>`
+* :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
+  <whatsnew315-pep782>`
+* :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 
 
 New features
@@ -72,8 +79,8 @@ New features
 
 .. _whatsnew315-sampling-profiler:
 
-High frequency statistical sampling profiler
---------------------------------------------
+:pep:`799`: High frequency statistical sampling profiler
+--------------------------------------------------------
 
 A new statistical sampling profiler has been added to the new :mod:`!profiling` module as
 :mod:`!profiling.sampling`. This profiler enables low-overhead performance analysis of
@@ -176,8 +183,12 @@ analysis, highlighting functions with high CPU usage and call frequency patterns
 This capability is particularly valuable for debugging performance issues in
 production systems where traditional profiling approaches would be too intrusive.
 
+  .. seealso:: :pep:`799` for further details.
+
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953`.)
 
+
+.. _whatsnew315-improved-error-messages:
 
 Improved error messages
 -----------------------
