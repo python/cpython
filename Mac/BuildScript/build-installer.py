@@ -378,9 +378,9 @@ def library_recipes():
               install=f"make && ranlib libsqlite3.a && make install DESTDIR={shellQuote(os.path.join(WORKDIR, 'libraries'))}",
           ),
           dict(
-              name="libmpdec 4.0.0",
-              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.0.tar.gz",
-              checksum="942445c3245b22730fd41a67a7c5c231d11cb1b9936b9c0f76334fb7d0b4468c",
+              name="libmpdec 4.0.1",
+              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz",
+              checksum="96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8",
               configure_pre=[
                   "--disable-cxx",
                   "MACHINE=universal",
