@@ -26,28 +26,26 @@ To build optional modules:
 
 * `libbz2 <https://sourceware.org/bzip2/>`_ for the :mod:`bz2` module.
 
-* `libb2 <https://github.com/BLAKE2/libb2>`_ (:ref:`BLAKE2 <hashlib-blake2>`),
-  used by :mod:`hashlib` module.
+* `libb2 <https://github.com/BLAKE2/libb2>`_ (:ref:`BLAKE2 <hashlib-blake2>`)
+  for the :mod:`hashlib` module.
 
 * `libffi <https://sourceware.org/libffi/>`_ 3.3.0 is the recommended
   minimum version for the :mod:`ctypes` module.
 
-* ``liblzma``, for the :mod:`lzma` module.
+* ``liblzma`` for the :mod:`lzma` module.
 
 * `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_ 2.5.0
   for the :mod:`decimal` module.
 
-* ``libncurses`` or ``libncursesw``,
-  for the :mod:`curses` module.
+* ``libncurses`` or ``libncursesw`` for the :mod:`curses` module.
 
-* ``libpanel`` or ``libpanelw``,
-  for the :mod:`curses.panel` module.
+* ``libpanel`` or ``libpanelw`` for the :mod:`curses.panel` module.
 
 * `libreadline <https://tiswww.case.edu/php/chet/readline/rltop.html>`_ or
   `libedit <https://www.thrysoee.dk/editline/>`_
   for the :mod:`readline` module.
 
-* `libuuid <https://linux.die.net/man/3/libuuid>`_, for the :mod:`uuid` module.
+* `libuuid <https://linux.die.net/man/3/libuuid>`_ for the :mod:`uuid` module.
 
 * `OpenSSL <https://www.openssl.org/>`_ 1.1.1 is the minimum version and
   OpenSSL 3.0.18 is the recommended minimum version for the
@@ -57,7 +55,7 @@ To build optional modules:
 
 * `Tcl/Tk <https://www.tcl-lang.org/>`_ 8.5.12 for the :mod:`tkinter` module.
 
-* `zlib <https://www.zlib.net>`_ 1.1.4 is the reccomended minimum version for the
+* `zlib <https://www.zlib.net>`_ 1.2.2.1 is the minimum version for the
   :mod:`zlib` module.
 
 * `zstd <https://facebook.github.io/zstd/>`_ 1.4.5 is the minimum version for
