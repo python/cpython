@@ -3302,7 +3302,10 @@ class Decimal(object):
         return opa, opb
 
     def logical_and(self, other, context=None):
-        """Applies an 'and' operation between self and other's digits."""
+        """Applies an 'and' operation between self and other's digits.
+
+        Both self and other must be logical numbers.
+        """
         if context is None:
             context = getcontext()
 
@@ -3319,14 +3322,20 @@ class Decimal(object):
         return _dec_from_triple(0, result.lstrip('0') or '0', 0)
 
     def logical_invert(self, context=None):
-        """Invert all its digits."""
+        """Invert all its digits.
+
+        The self must be logical number.
+        """
         if context is None:
             context = getcontext()
         return self.logical_xor(_dec_from_triple(0,'1'*context.prec,0),
                                 context)
 
     def logical_or(self, other, context=None):
-        """Applies an 'or' operation between self and other's digits."""
+        """Applies an 'or' operation between self and other's digits.
+
+        Both self and other must be logical numbers.
+        """
         if context is None:
             context = getcontext()
 
@@ -3343,7 +3352,10 @@ class Decimal(object):
         return _dec_from_triple(0, result.lstrip('0') or '0', 0)
 
     def logical_xor(self, other, context=None):
-        """Applies an 'xor' operation between self and other's digits."""
+        """Applies an 'xor' operation between self and other's digits.
+
+        Both self and other must be logical numbers.
+        """
         if context is None:
             context = getcontext()
 
