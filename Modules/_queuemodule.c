@@ -501,6 +501,7 @@ _queue_SimpleQueue_qsize_impl(simplequeueobject *self)
 }
 
 /*[clinic input]
+@critical_section
 _queue.SimpleQueue.__sizeof__ -> Py_ssize_t
 
 Return size of queue in bytes, including underlying data structure.
