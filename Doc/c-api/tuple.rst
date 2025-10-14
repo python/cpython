@@ -75,8 +75,6 @@ Tuple Objects
    are initialized with the new references to the *one* and *two* objects.
    ``PyTuple_MakePair(a, b)`` is equivalent to ``PyTuple_Pack(2, a, b)``.
 
-   .. warning::
-
       *one* and *two* must not be ``NULL``.
 
 
