@@ -201,6 +201,7 @@ class SubinterpreterTest(unittest.TestCase):
         import _testcapi
 
         def callback():
+            print("hello")
             pass
 
         atexit.register(callback)
@@ -211,9 +212,10 @@ class SubinterpreterTest(unittest.TestCase):
             with script_helper.spawn_python('-c', user_input,
                                            stderr=subprocess.PIPE) as p:
                 p.wait()
-                p.stdout.read()
+                output = p.stdout.read()
 
         self.assertIn(p.returncode, (0, 1))
+        self.assertNotIn(b"hello", output)
 
 
 if __name__ == "__main__":
