@@ -92,8 +92,6 @@ else:
 
 MIN_ETINY = MIN_EMIN - (MAX_PREC-1)
 
-_LOG_10_BASE_2 = float.fromhex('0x1.a934f0979a371p+1')  # log2(10)
-
 # Errors
 
 class DecimalException(ArithmeticError):
@@ -443,6 +441,27 @@ def IEEEContext(bits, /):
 
 
 ##### Decimal class #######################################################
+
+# Observation: For all q >= 0 and a >= 1, q < 10**a iff len(str(q)) <= a.
+#
+# The constants below are used to speed-up "q < 10 ** a" checks to avoid
+# computing len(str(q)) as much as possible. Those speed-ups are based on
+# the following claims.
+#
+# See https://github.com/python/cpython/issues/140036 for details.
+
+# Claim: If 0 < z <= log2(10) and q.bit_length() < a*z, then q < 10**a.
+# Proof: By contradiction, q >= 10**a. By definition,
+#   log2(q) >= a*log2(10) >= a*z > q.bit_length().
+# In particular, q > 2**q.bit_length(), which is impossible.
+_LOG_10_BASE_2_LO = float.fromhex('0x1.a934f0979a371p+1')
+assert pow(2, _LOG_10_BASE_2_LO) < 10
+
+# Claim: If z > log2(10) and q.bit_length() >= 1 + a*z, then q > 10**a.
+# Proof: Since q >= 2**(q.bit_length()-1), we have
+#   q >= 2**(q.bit_length()-1) >= 2**(a*z) > 2**(a*log2(10)) = 10**a.
+_LOG_10_BASE_2_HI = float.fromhex('0x1.a934f0979a372p+1')
+assert pow(2, _LOG_10_BASE_2_HI) > 10
 
 # Do not subclass Decimal from numbers.Real and do not register it as such
 # (because Decimals are not interoperable with floats).  See the notes in
@@ -1357,11 +1376,27 @@ class Decimal(object):
             else:
                 op2.int *= 10**(op2.exp - op1.exp)
             q, r = divmod(op1.int, op2.int)
-            if q.bit_length() < 1 + context.prec * _LOG_10_BASE_2:
-                # ensure that the previous check was sufficient
-                if len(str_q := str(q)) <= context.prec:
-                    return (_dec_from_triple(sign, str_q, 0),
-                            _dec_from_triple(self._sign, str(r), ideal_exp))
+            # See notes for _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
+            str_q = None  # to cache str(q) when possible
+            if q.bit_length() < context.prec * _LOG_10_BASE_2_LO:
+                # assert q < 10 ** context.prec
+                is_valid = True
+            elif q.bit_length() >= 1 + context.prec * _LOG_10_BASE_2_HI:
+                # assert q > 10 ** context.prec
+                is_valid = False
+            else:
+                # Handles other cases due to floating point precision loss
+                # when computing _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
+                # Computation of str(q) may fail!
+                str_q = str(q)  # we need to compute this in case of success
+                is_valid = len(str_q) <= context.prec
+            if is_valid:
+                if str_q is None:
+                    str_q = str(q)
+                # assert q < 10 ** context.prec
+                # assert len(str(q)) <= context.prec
+                return (_dec_from_triple(sign, str_q, 0),
+                        _dec_from_triple(self._sign, str(r), ideal_exp))
 
         # Here the quotient is too large to be representable
         ans = context._raise_error(DivisionImpossible,
@@ -1515,7 +1550,26 @@ class Decimal(object):
             r -= op2.int
             q += 1
 
-        if q >= 10**context.prec:
+        # See notes for _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
+        if q.bit_length() < context.prec * _LOG_10_BASE_2_LO:
+            # assert q < 10 ** context.prec
+            is_valid = True
+        elif q.bit_length() >= 1 + context.prec * _LOG_10_BASE_2_HI:
+            # assert q > 10 ** context.prec
+            is_valid = False
+        else:
+            # Handles other cases due to floating point precision loss
+            # when computing _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
+            # Computation of str(q) or 10 ** context.prec may be slow!
+            try:
+                str_q = str(q)
+            except ValueError:
+                is_valid = q < 10 ** context.prec
+            else:
+                is_valid = len(str_q) <= context.prec
+        if not is_valid:
+            # assert q >= 10 ** context.prec
+            # assert len(str(q)) > context.prec
             return context._raise_error(DivisionImpossible)
 
         # result has same sign as self unless r is negative
