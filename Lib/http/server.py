@@ -78,6 +78,7 @@ import itertools
 import mimetypes
 import os
 import posixpath
+import re
 import shutil
 import socket
 import socketserver
@@ -111,6 +112,7 @@ DEFAULT_ERROR_MESSAGE = """\
 """
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
+RANGE_REGEX_PATTERN = re.compile(r'bytes=(\d*)-(\d*)$', re.ASCII | re.IGNORECASE)
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -471,7 +473,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         while not self.close_connection:
             self.handle_one_request()
 
-    def send_error(self, code, message=None, explain=None):
+    def send_error(self, code, message=None, explain=None, *, extra_headers=()):
         """Send and log an error reply.
 
         Arguments are
@@ -482,6 +484,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                    defaults to short entry matching the response code
         * explain: a detailed message defaults to the long entry
                    matching the response code.
+        * extra_headers: extra headers to be included in the response
 
         This sends an error response (so it must be called before any
         output has been generated), logs the error, and finally sends
@@ -519,6 +522,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             body = content.encode('UTF-8', 'replace')
             self.send_header("Content-Type", self.error_content_type)
             self.send_header('Content-Length', str(len(body)))
+        for name, value in extra_headers:
+            self.send_header(name, value)
         self.end_headers()
 
         if self.command != 'HEAD' and body:
@@ -710,7 +715,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         f = self.send_head()
         if f:
             try:
-                self.copyfile(f, self.wfile)
+                self.copyfile(f, self.wfile, range=self._range)
             finally:
                 f.close()
 
@@ -733,6 +738,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         """
         path = self.translate_path(self.path)
         f = None
+        self._range = self.parse_range()
         if os.path.isdir(path):
             parts = urllib.parse.urlsplit(self.path)
             if not parts.path.endswith(('/', '%2f', '%2F')):
@@ -797,9 +803,44 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                             f.close()
                             return None
 
-            self.send_response(HTTPStatus.OK)
+            if self._range:
+                start, end = self._range
+                if start is None:
+                    # parse_range() collapses (None, None) to None as it's invalid
+                    # https://github.com/python/cpython/pull/118949#discussion_r1912397525
+                    assert end is not None
+                    # `end` here means suffix length
+                    start = max(0, fs.st_size - end)
+                    end = fs.st_size - 1
+                elif end is None or end >= fs.st_size:
+                    end = fs.st_size - 1
+
+                if start == 0 and end >= fs.st_size - 1:
+                    # Send entire file
+                    self._range = None
+                elif start >= fs.st_size:
+                    # 416 REQUESTED_RANGE_NOT_SATISFIABLE means that
+                    # none of the range values overlap the extent of
+                    # the resource
+                    f.close()
+                    headers = [('Content-Range', f'bytes */{fs.st_size}')]
+                    self.send_error(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
+                                    extra_headers=headers)
+                    return None
+
+            if self._range:
+                self.send_response(HTTPStatus.PARTIAL_CONTENT)
+                self.send_header("Content-Range",
+                    f"bytes {start}-{end}/{fs.st_size}")
+                self.send_header("Content-Length", str(end - start + 1))
+
+                # Update range to be sent to be used later in copyfile
+                self._range = (start, end)
+            else:
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Accept-Ranges", "bytes")
+                self.send_header("Content-Length", str(fs.st_size))
             self.send_header("Content-type", ctype)
-            self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
             self.end_headers()
@@ -899,13 +940,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             path += '/'
         return path
 
-    def copyfile(self, source, outputfile):
-        """Copy all data between two file objects.
+    def copyfile(self, source, outputfile, *, range=None):
+        """Copy all data between two file objects if range is None.
+        Otherwise, copy data between two file objects based on the
+        inclusive range (start, end).
 
         The SOURCE argument is a file object open for reading
-        (or anything with a read() method) and the DESTINATION
-        argument is a file object open for writing (or
-        anything with a write() method).
+        (or anything with read() and seek() method) and the
+        DESTINATION argument is a file object open for writing
+        (or anything with a write() method).
 
         The only reason for overriding this would be to change
         the block size or perhaps to replace newlines by CRLF
@@ -913,7 +956,18 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         to copy binary data as well.
 
         """
-        shutil.copyfileobj(source, outputfile)
+        if range is None:
+            shutil.copyfileobj(source, outputfile)
+        else:
+            start, end = range
+            length = end - start + 1
+            source.seek(start)
+            while length > 0:
+                buf = source.read(min(length, shutil.COPY_BUFSIZE))
+                if not buf:
+                    raise EOFError('File shrank after size was checked')
+                length -= len(buf)
+                outputfile.write(buf)
 
     def guess_type(self, path):
         """Guess the type of a file.
@@ -939,6 +993,35 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if guess:
             return guess
         return 'application/octet-stream'
+
+    def parse_range(self):
+        """Return a tuple of (start, end) representing the range header in
+        the HTTP request. If the range header is missing or not resolvable,
+        this returns None.
+
+        This currently only supports single part ranges.
+
+        """
+        range_header = self.headers.get('range')
+        if range_header is None:
+            return None
+        m = RANGE_REGEX_PATTERN.match(range_header)
+        # Ignore invalid Range header and return None
+        # https://datatracker.ietf.org/doc/html/rfc9110#name-range
+        if m is None:
+            return None
+
+        start = int(m.group(1)) if m.group(1) else None
+        end = int(m.group(2)) if m.group(2) else None
+
+        if start is None and end is None:
+            return None
+
+        if start is not None and end is not None and start > end:
+            return None
+
+        return start, end
+
 
 
 nobody = None
