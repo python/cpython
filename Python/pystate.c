@@ -466,7 +466,7 @@ alloc_interpreter(void)
     if (mem == NULL) {
         return NULL;
     }
-    void *ptr = _Py_ALIGN_UP((char *)mem + sizeof(void*), alignment);
+    void *ptr = _Py_ALIGN_UP((char *)mem + sizeof(void *), alignment);
     ((void **)ptr)[-1] = mem;
     assert(_Py_IS_ALIGNED(ptr, alignment));
     return ptr;
