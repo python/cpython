@@ -65,9 +65,7 @@ Tuple Objects
    is initialized with the new reference to the *one* object.
    ``PyTuple_MakeSingle(a)`` is equivalent to ``PyTuple_Pack(1, a)``.
 
-   .. warning::
-
-      *one* must not be ``NULL``.
+   *one* must not be ``NULL``.
 
 
 .. c:function:: PyObject* PyTuple_MakePair(PyObject *one, PyObject *two)
