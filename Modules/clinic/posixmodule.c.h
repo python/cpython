@@ -5035,7 +5035,8 @@ PyDoc_STRVAR(os_forkpty__doc__,
 "Returns a tuple of (pid, master_fd).\n"
 "Like fork(), return pid of 0 to the child process,\n"
 "and pid of child to the parent process.\n"
-"To both, return fd of newly opened pseudo-terminal.");
+"To both, return fd of newly opened pseudo-terminal.\n"
+"The master_fd is non-inheritable.");
 
 #define OS_FORKPTY_METHODDEF    \
     {"forkpty", (PyCFunction)os_forkpty, METH_NOARGS, os_forkpty__doc__},
@@ -7814,6 +7815,7 @@ PyDoc_STRVAR(os_preadv__doc__,
 "\n"
 "- RWF_HIPRI\n"
 "- RWF_NOWAIT\n"
+"- RWF_DONTCACHE\n"
 "\n"
 "Using non-zero flags requires Linux 4.6 or newer.");
 
@@ -8100,6 +8102,11 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -8206,6 +8213,11 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     return_value = os_sendfile_impl(module, out_fd, in_fd, offobj, count);
 
@@ -8545,6 +8557,7 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "- RWF_DSYNC\n"
 "- RWF_SYNC\n"
 "- RWF_APPEND\n"
+"- RWF_DONTCACHE\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
@@ -8689,6 +8702,11 @@ os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -8807,6 +8825,11 @@ os_splice(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -9515,6 +9538,27 @@ exit:
 }
 
 #endif /* !defined(MS_WINDOWS) */
+
+#if defined(HAVE_CLEARENV)
+
+PyDoc_STRVAR(os__clearenv__doc__,
+"_clearenv($module, /)\n"
+"--\n"
+"\n");
+
+#define OS__CLEARENV_METHODDEF    \
+    {"_clearenv", (PyCFunction)os__clearenv, METH_NOARGS, os__clearenv__doc__},
+
+static PyObject *
+os__clearenv_impl(PyObject *module);
+
+static PyObject *
+os__clearenv(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__clearenv_impl(module);
+}
+
+#endif /* defined(HAVE_CLEARENV) */
 
 PyDoc_STRVAR(os_strerror__doc__,
 "strerror($module, code, /)\n"
@@ -11237,6 +11281,11 @@ os_urandom(PyObject *module, PyObject *arg)
             goto exit;
         }
         size = ival;
+        if (size < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "size cannot be negative");
+            goto exit;
+        }
     }
     return_value = os_urandom_impl(module, size);
 
@@ -13264,6 +13313,10 @@ exit:
     #define OS_UNSETENV_METHODDEF
 #endif /* !defined(OS_UNSETENV_METHODDEF) */
 
+#ifndef OS__CLEARENV_METHODDEF
+    #define OS__CLEARENV_METHODDEF
+#endif /* !defined(OS__CLEARENV_METHODDEF) */
+
 #ifndef OS_WCOREDUMP_METHODDEF
     #define OS_WCOREDUMP_METHODDEF
 #endif /* !defined(OS_WCOREDUMP_METHODDEF) */
@@ -13419,4 +13472,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=23de5d098e2dd73f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=67f0df7cd5a7de20 input=a9049054013a1b77]*/
