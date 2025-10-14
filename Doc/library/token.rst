@@ -35,15 +35,21 @@ a ``"match"`` token may be either :data:`NAME` or :data:`SOFT_KEYWORD`.
 
    Return ``True`` for terminal token values.
 
+   .. deprecated-removed:: next 3.17
+
 
 .. function:: ISNONTERMINAL(x)
 
    Return ``True`` for non-terminal token values.
 
+   .. deprecated-removed:: next 3.17
+
 
 .. function:: ISEOF(x)
 
    Return ``True`` if *x* is the marker indicating the end of input.
+
+   .. deprecated-removed:: next 3.17
 
 
 The token constants are:
