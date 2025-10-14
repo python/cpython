@@ -16,6 +16,12 @@ extern "C" {
 #include "pycore_stats.h"         // EVAL_CALL_STAT_INC()
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 
+/* HP PA-RISC has a stack that goes up */
+#ifdef __hppa__
+#  define _Py_STACK_GROWS_DOWN 0
+#else
+#  define _Py_STACK_GROWS_DOWN 1
+#endif
 
 /* Forward declarations */
 struct _ceval_runtime_state;
@@ -217,10 +223,10 @@ extern void _PyEval_DeactivateOpCache(void);
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-#ifdef __hppa__
-    return here_addr > _tstate->c_stack_soft_limit;
-#else
+#if _Py_STACK_GROWS_DOWN
     return here_addr < _tstate->c_stack_soft_limit;
+#else
+    return here_addr > _tstate->c_stack_soft_limit;
 #endif
 }
 
@@ -253,10 +259,10 @@ static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     assert(_tstate->c_stack_hard_limit != 0);
-#ifdef __hppa__
-    return here_addr >= _tstate->c_stack_soft_limit;
-#else
+#if _Py_STACK_GROWS_DOWN
     return here_addr <= _tstate->c_stack_soft_limit;
+#else
+    return here_addr >= _tstate->c_stack_soft_limit;
 #endif
 }
 
