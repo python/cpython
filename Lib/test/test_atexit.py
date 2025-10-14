@@ -1,9 +1,10 @@
 import atexit
 import os
+import subprocess
 import textwrap
 import unittest
 from test import support
-from test.support import script_helper
+from test.support import SuppressCrashReport, script_helper
 from test.support import threading_helper
 
 class GeneralTest(unittest.TestCase):
@@ -188,6 +189,31 @@ class SubinterpreterTest(unittest.TestCase):
         os.close(w)
         self.assertEqual(os.read(r, len(expected)), expected)
         os.close(r)
+
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    def test_atexit_with_low_memory(self):
+        # gh-140080: Test that setting low memory after registering an atexit
+        # callback doesn't cause an infinite loop during finalization.
+        user_input = textwrap.dedent("""
+        import atexit
+        import _testcapi
+
+        def callback():
+            pass
+
+        atexit.register(callback)
+        # Simulate low memory condition
+        _testcapi.set_nomemory(0)
+        """)
+        with SuppressCrashReport():
+            with script_helper.spawn_python('-c', user_input,
+                                           stderr=subprocess.PIPE) as p:
+                p.wait()
+                p.stdout.read()
+
+        self.assertIn(p.returncode, (0, 1))
 
 
 if __name__ == "__main__":

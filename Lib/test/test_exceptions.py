@@ -342,31 +342,6 @@ class ExceptionTests(unittest.TestCase):
         with self.assertRaisesRegex(OverflowError, "Parser column offset overflow"):
             compile(src, '<fragment>', 'exec')
 
-    @cpython_only
-    # Python built with Py_TRACE_REFS fail with a fatal error in
-    # _PyRefchain_Trace() on memory allocation error.
-    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
-    def test_atexit_with_low_memory(self):
-        # gh-140080: Test that setting low memory after registering an atexit
-        # callback doesn't cause an infinite loop during finalization.
-        user_input = dedent("""
-        import atexit
-        import _testcapi
-
-        def callback():
-            pass
-
-        atexit.register(callback)
-        # Simulate low memory condition
-        _testcapi.set_nomemory(0)
-        """)
-        with SuppressCrashReport():
-            with script_helper.spawn_python('-c', user_input) as p:
-                p.wait()
-                output = p.stdout.read()
-
-        # The key point is that the process should exit (not hang)
-        self.assertIn(p.returncode, (0, 1))
 
     @cpython_only
     def testSettingException(self):
