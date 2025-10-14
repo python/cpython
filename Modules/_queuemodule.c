@@ -516,8 +516,6 @@ _queue_SimpleQueue___sizeof___impl(simplequeueobject *self)
     return size;
 }
 
-
-
 static int
 queue_traverse(PyObject *m, visitproc visit, void *arg)
 {
