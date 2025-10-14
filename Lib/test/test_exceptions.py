@@ -342,7 +342,6 @@ class ExceptionTests(unittest.TestCase):
         with self.assertRaisesRegex(OverflowError, "Parser column offset overflow"):
             compile(src, '<fragment>', 'exec')
 
-
     @cpython_only
     def testSettingException(self):
         # test that setting an exception at the C level works even if the
