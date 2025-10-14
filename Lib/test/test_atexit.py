@@ -202,7 +202,6 @@ class SubinterpreterTest(unittest.TestCase):
 
         def callback():
             print("hello")
-            pass
 
         atexit.register(callback)
         # Simulate low memory condition
@@ -212,10 +211,13 @@ class SubinterpreterTest(unittest.TestCase):
             with script_helper.spawn_python('-c', user_input,
                                            stderr=subprocess.PIPE) as p:
                 p.wait()
-                output = p.stdout.read()
+                stdout = p.stdout.read()
+                stderr = p.stderr.read()
 
         self.assertIn(p.returncode, (0, 1))
-        self.assertNotIn(b"hello", output)
+        self.assertNotIn(b"hello", stdout)
+        # MemoryError should appear in stderr
+        self.assertIn(b"MemoryError", stderr)
 
 
 if __name__ == "__main__":
