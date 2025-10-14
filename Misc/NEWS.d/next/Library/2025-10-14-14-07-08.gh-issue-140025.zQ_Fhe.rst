@@ -1,0 +1,1 @@
+fix queue.SimpleQueue.__sizeof__() computation
