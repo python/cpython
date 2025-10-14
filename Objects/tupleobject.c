@@ -195,7 +195,7 @@ PyTuple_MakeSingle(PyObject *one)
     }
     op->ob_item[0] = Py_NewRef(one);
     _PyObject_GC_TRACK(op);
-    return (PyObject *) op;
+    return (PyObject *)op;
 }
 
 PyObject *
@@ -211,7 +211,7 @@ PyTuple_MakePair(PyObject *one, PyObject *two)
     op->ob_item[0] = Py_NewRef(one);
     op->ob_item[1] = Py_NewRef(two);
     _PyObject_GC_TRACK(op);
-    return (PyObject *) op;
+    return (PyObject *)op;
 }
 
 /* Methods */

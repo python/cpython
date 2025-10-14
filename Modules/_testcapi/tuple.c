@@ -144,8 +144,7 @@ tuple_make_single(PyObject *Py_UNUSED(module), PyObject *args)
 static PyObject *
 tuple_make_pair(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    PyObject *one;
-    PyObject *two;
+    PyObject *one, *two;
     if (!PyArg_ParseTuple(args, "OO", &one, &two)) {
         return NULL;
     }
