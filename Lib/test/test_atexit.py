@@ -198,15 +198,15 @@ class SubinterpreterTest(unittest.TestCase):
         # gh-140080: Test that setting low memory after registering an atexit
         # callback doesn't cause an infinite loop during finalization.
         code = textwrap.dedent("""
-        import atexit
-        import _testcapi
+            import atexit
+            import _testcapi
 
-        def callback():
-            print("hello")
+            def callback():
+                print("hello")
 
-        atexit.register(callback)
-        # Simulate low memory condition
-        _testcapi.set_nomemory(0)
+            atexit.register(callback)
+            # Simulate low memory condition
+            _testcapi.set_nomemory(0)
         """)
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py') as f:
