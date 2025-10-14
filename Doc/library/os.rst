@@ -3455,37 +3455,64 @@ features:
 
       Mount ID.
 
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 5.8.
+
    .. attribute:: stx_dio_mem_align
 
       Direct I/O memory buffer alignment requirement.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.1.
 
    .. attribute:: stx_dio_offset_align
 
       Direct I/O file offset alignment requirement.
 
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.1.
+
    .. attribute:: stx_subvol
 
       Subvolume ID.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.10.
 
    .. attribute:: stx_atomic_write_unit_min
 
       Minimum size for direct I/O with torn-write protection.
 
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
    .. attribute:: stx_atomic_write_unit_max
 
       Maximum size for direct I/O with torn-write protection.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
+   .. attribute:: stx_atomic_write_unit_max_opt
+
+      Maximum optimized size for direct I/O with torn-write protection.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
 
    .. attribute:: stx_atomic_write_segments_max
 
       Maximum iovecs for direct I/O with torn-write protection.
 
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
    .. attribute:: stx_dio_read_offset_align
 
       Direct I/O file offset alignment requirement for reads.
 
-   .. attribute:: stx_atomic_write_unit_max_opt
-
-      Maximum optimized size for direct I/O with torn-write protection.
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.14.
 
    .. seealso:: The :manpage:`statx(2)` man page.
 
@@ -3514,7 +3541,9 @@ features:
           STATX_WRITE_ATOMIC
           STATX_DIO_READ_ALIGN
 
-   Bitflags for use as the *mask* parameter to :func:`os.statx`.
+   Bitflags for use in the *mask* parameter to :func:`os.statx`.  Flags
+   including and after :const:`!STATX_MNT_ID` are only available when their
+   corresponding members in :class:`statx_result` are available.
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 

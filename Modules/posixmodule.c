@@ -412,29 +412,26 @@ extern char *ctermid_r(char *);
 #ifdef HAVE_STATX
 /* until we can assume glibc 2.28 at runtime, we must weakly link */
 #  pragma weak statx
-/* provide constants introduced later than statx itself */
-#  ifndef STATX_MNT_ID
-#    define STATX_MNT_ID 0x00001000U
-#  endif
-#  ifndef STATX_DIOALIGN
-#    define STATX_DIOALIGN 0x00002000U
-#  endif
-#  ifndef STATX_MNT_ID_UNIQUE
-#    define STATX_MNT_ID_UNIQUE 0x00004000U
-#  endif
-#  ifndef STATX_SUBVOL
-#    define STATX_SUBVOL 0x00008000U
-#  endif
-#  ifndef STATX_WRITE_ATOMIC
-#    define STATX_WRITE_ATOMIC 0x00010000U
-#  endif
-#  ifndef STATX_DIO_READ_ALIGN
-#    define STATX_DIO_READ_ALIGN 0x00020000U
-#  endif
-# define _Py_STATX_KNOWN (STATX_BASIC_STATS | STATX_BTIME | STATX_MNT_ID | \
-                          STATX_DIOALIGN | STATX_MNT_ID_UNIQUE | \
-                          STATX_SUBVOL | STATX_WRITE_ATOMIC | \
-                          STATX_DIO_READ_ALIGN)
+static const unsigned int _Py_STATX_KNOWN = (STATX_BASIC_STATS | STATX_BTIME
+#ifdef STATX_MNT_ID
+                                             | STATX_MNT_ID
+#endif
+#ifdef STATX_DIOALIGN
+                                             | STATX_DIOALIGN
+#endif
+#ifdef STATX_MNT_ID_UNIQUE
+                                             | STATX_MNT_ID_UNIQUE
+#endif
+#ifdef STATX_SUBVOL
+                                             | STATX_SUBVOL
+#endif
+#ifdef STATX_WRITE_ATOMIC
+                                             | STATX_WRITE_ATOMIC
+#endif
+#ifdef STATX_DIO_READ_ALIGN
+                                             | STATX_DIO_READ_ALIGN
+#endif
+                                            );
 #endif /* HAVE_STATX */
 
 
@@ -3319,14 +3316,11 @@ typedef struct {
     PyObject_HEAD
     double atime_sec, btime_sec, ctime_sec, mtime_sec;
     dev_t rdev, dev;
-    /* Assertions in posixmodule_exec rely on struct statx being at the end. */
     struct statx stx;
 } Py_statx_result;
 
 #define M(attr, type, offset, doc) \
     {attr, type, offset, Py_READONLY, PyDoc_STR(doc)}
-#define MO(attr, type, offset, doc) \
-    M(#attr, type, offsetof(Py_statx_result, stx) + offset, doc)
 #define MM(attr, type, member, doc) \
     M(#attr, type, offsetof(Py_statx_result, stx.stx_##member), doc)
 #define MX(attr, type, member, doc) \
@@ -3355,78 +3349,64 @@ static PyMemberDef pystatx_result_members[] = {
     MM(stx_dev_major, Py_T_UINT, dev_major, "containing device major number"),
     MM(stx_dev_minor, Py_T_UINT, dev_minor, "containing device minor number"),
     MX(st_dev, Py_T_ULONGLONG, dev, "device"),
-    /* We may be building against old kernel API headers that do not have the
-       names of these members, so access them by offset.  The reserved space in
-       struct statx was originally defined as arrays of u64, so later members
-       of other types must use getters to avoid a strict aliasing violation. */
-    MO(stx_mnt_id, Py_T_ULONGLONG, 144, "mount ID"),
-    MO(stx_subvol, Py_T_ULONGLONG, 160, "subvolume ID"),
+#ifdef STATX_MNT_ID
+    MM(stx_mnt_id, Py_T_ULONGLONG, mnt_id, "mount ID"),
+#endif
+#ifdef STATX_DIOALIGN
+    MM(stx_dio_mem_align, Py_T_UINT, dio_mem_align,
+        "direct I/O memory buffer alignment"),
+    MM(stx_dio_offset_align, Py_T_UINT, dio_offset_align,
+        "direct I/O file offset alignment"),
+#endif
+#ifdef STATX_SUBVOL
+    MM(stx_subvol, Py_T_ULONGLONG, subvol, "subvolume ID"),
+#endif
+#ifdef STATX_WRITE_ATOMIC
+    MM(stx_atomic_write_unit_min, Py_T_UINT, atomic_write_unit_min,
+        "minimum size for direct I/O with torn-write protection"),
+    MM(stx_atomic_write_unit_max, Py_T_UINT, atomic_write_unit_max,
+        "maximum size for direct I/O with torn-write protection"),
+    MM(stx_atomic_write_unit_max_opt, Py_T_UINT, atomic_write_unit_max_opt,
+        "maximum optimized size for direct I/O with torn-write protection"),
+    MM(stx_atomic_write_segments_max, Py_T_UINT, atomic_write_segments_max,
+        "maximum iovecs for direct I/O with torn-write protection"),
+#endif
+#ifdef STATX_DIO_READ_ALIGN
+    MM(stx_dio_read_offset_align, Py_T_UINT, dio_read_offset_align,
+        "direct I/O file offset alignment for reads"),
+#endif
     {NULL},
 };
 
 #undef MX
 #undef MM
-#undef MO
 #undef M
-
-static PyObject *
-pystatx_result_get_u32(PyObject *op, void *context) {
-    Py_statx_result *self = (Py_statx_result *) op;
-    uint16_t offset = (uintptr_t)context;
-    uint32_t val;
-    memcpy(&val, (void *)self + offset, sizeof(val));
-    return PyLong_FromUInt32(val);
-}
 
 static PyObject *
 pystatx_result_get_nsec(PyObject *op, void *context)
 {
-    Py_statx_result *self = (Py_statx_result *) op;
     uint16_t offset = (uintptr_t)context;
-    struct statx_timestamp val;
-    memcpy(&val, (void *)self + offset, sizeof(val));
+    struct statx_timestamp *ts = (void*)op + offset;
     _posixstate *state = PyType_GetModuleState(Py_TYPE(op));
     assert(state != NULL);
-    return stat_nanosecond_timestamp(state, val.tv_sec, val.tv_nsec);
+    return stat_nanosecond_timestamp(state, ts->tv_sec, ts->tv_nsec);
 }
 
 /* The low 16 bits of the context pointer are the offset from the start of
    Py_statx_result to the struct statx member. */
-#define OFFSET_CONTEXT(offset) (void *)(offsetof(Py_statx_result, stx) + offset)
-#define MEMBER_CONTEXT(name) OFFSET_CONTEXT(offsetof(struct statx, stx_##name))
-
-#define G(attr, type, doc, context) \
-    {attr, pystatx_result_get_##type, NULL, PyDoc_STR(doc), context}
 #define GM(attr, type, member, doc) \
-    G(#attr, type, doc, MEMBER_CONTEXT(member))
-#define GO(attr, type, offset, doc) \
-    G(#attr, type, doc, OFFSET_CONTEXT(offset))
+    {#attr, pystatx_result_get_##type, NULL, PyDoc_STR(doc), \
+     (void *)(offsetof(Py_statx_result, stx.stx_##member))}
 
 static PyGetSetDef pystatx_result_getset[] = {
     GM(st_atime_ns, nsec, atime, "time of last access in nanoseconds"),
     GM(st_birthtime_ns, nsec, btime, "time of creation in nanoseconds"),
     GM(st_ctime_ns, nsec, ctime, "time of last change in nanoseconds"),
     GM(st_mtime_ns, nsec, mtime, "time of last modification in nanoseconds"),
-    GO(stx_dio_mem_align, u32, 152, "direct I/O memory buffer alignment"),
-    GO(stx_dio_offset_align, u32, 156, "direct I/O file offset alignment"),
-    GO(stx_atomic_write_unit_min, u32, 168,
-        "minimum size for direct I/O with torn-write protection"),
-    GO(stx_atomic_write_unit_max, u32, 172,
-        "maximum size for direct I/O with torn-write protection"),
-    GO(stx_atomic_write_segments_max, u32, 176,
-        "maximum iovecs for direct I/O with torn-write protection"),
-    GO(stx_dio_read_offset_align, u32, 180,
-        "direct I/O file offset alignment for reads"),
-    GO(stx_atomic_write_unit_max_opt, u32, 184,
-        "maximum optimized size for direct I/O with torn-write protection"),
     {NULL},
 };
 
-#undef GO
 #undef GM
-#undef G
-#undef MEMBER_CONTEXT
-#undef OFFSET_CONTEXT
 
 static PyObject *
 pystatx_result_repr(PyObject *op) {
@@ -18269,12 +18249,24 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, STATX_BLOCKS)) return -1;
     if (PyModule_AddIntMacro(m, STATX_BASIC_STATS)) return -1;
     if (PyModule_AddIntMacro(m, STATX_BTIME)) return -1;
+#ifdef STATX_MNT_ID
     if (PyModule_AddIntMacro(m, STATX_MNT_ID)) return -1;
+#endif
+#ifdef STATX_DIOALIGN
     if (PyModule_AddIntMacro(m, STATX_DIOALIGN)) return -1;
+#endif
+#ifdef STATX_MNT_ID_UNIQUE
     if (PyModule_AddIntMacro(m, STATX_MNT_ID_UNIQUE)) return -1;
+#endif
+#ifdef STATX_SUBVOL
     if (PyModule_AddIntMacro(m, STATX_SUBVOL)) return -1;
+#endif
+#ifdef STATX_WRITE_ATOMIC
     if (PyModule_AddIntMacro(m, STATX_WRITE_ATOMIC)) return -1;
+#endif
+#ifdef STATX_DIO_READ_ALIGN
     if (PyModule_AddIntMacro(m, STATX_DIO_READ_ALIGN)) return -1;
+#endif
     /* STATX_ALL intentionally omitted because it is deprecated */
     if (PyModule_AddIntMacro(m, AT_STATX_SYNC_AS_STAT)) return -1;
     if (PyModule_AddIntMacro(m, AT_STATX_FORCE_SYNC)) return -1;
@@ -18554,47 +18546,6 @@ posixmodule_exec(PyObject *m)
 #endif
 
 #ifdef HAVE_STATX
-#ifndef NDEBUG
-    /* struct statx may be extended in the future.  Assert that our definition
-       of struct statx is large enough for all the members we expose to Python.
-       These asserts rely on struct statx being the last member of
-       Py_statx_result.  If you hit these asserts, upgrade your kernel
-       userspace API and/or libc headers. */
-    for (const PyMemberDef *m = pystatx_result_members; m->name != NULL; ++m) {
-        Py_ssize_t size;
-        switch (m->type) {
-            case Py_T_USHORT:
-                size = 2;
-                break;
-            case Py_T_UINT:
-                size = 4;
-                break;
-            case Py_T_ULONGLONG:
-            case Py_T_DOUBLE:
-                size = 8;
-                break;
-            default:
-                assert(false);
-        }
-        assert(m->offset + size <= (Py_ssize_t)sizeof(Py_statx_result));
-    }
-
-    for (const PyGetSetDef *m = pystatx_result_getset; m->name != NULL; ++m) {
-        uint16_t offset = (uintptr_t)m->closure;
-        Py_ssize_t size;
-        if (m->get == pystatx_result_get_u32) {
-            size = 4;
-        }
-        else if (m->get == pystatx_result_get_nsec) {
-            size = sizeof(struct statx_timestamp);
-        }
-        else {
-            assert(false);
-        }
-        assert(offset + size <= (Py_ssize_t)sizeof(Py_statx_result));
-    }
-#endif /* !NDEBUG */
-
     if (statx == NULL) {
         PyObject* dct = PyModule_GetDict(m);
         if (dct == NULL) {
