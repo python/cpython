@@ -2137,6 +2137,30 @@ zlib_free(void *mod)
     zlib_clear((PyObject *)mod);
 }
 
+static PyObject *
+zlib_getattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name)) {
+        const char *name_str = PyUnicode_AsUTF8(name);
+        if (name_str && strcmp(name_str, "__version__") == 0) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                             "'__version__' is deprecated and slated for removal in Python 3.20",
+                             1) < 0) {
+                return NULL;
+            }
+            return PyUnicode_FromString("1.0");
+        }
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module 'zlib' has no attribute %R", name);
+    return NULL;
+}
+
 static int
 zlib_exec(PyObject *mod)
 {
@@ -2221,9 +2245,17 @@ zlib_exec(PyObject *mod)
         return -1;
     }
 #endif
-    if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
+    static PyMethodDef getattr_method = {"__getattr__", zlib_getattr, METH_VARARGS, "Module __getattr__"};
+    PyObject *getattr_func = PyCFunction_New(&getattr_method, mod);
+    if (getattr_func == NULL) {
         return -1;
     }
+
+    if (PyModule_AddObjectRef(mod, "__getattr__", getattr_func) < 0) {
+        Py_DECREF(getattr_func);
+        return -1;
+    }
+    Py_DECREF(getattr_func);
     return 0;
 }
 
