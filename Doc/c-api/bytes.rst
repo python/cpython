@@ -236,7 +236,7 @@ PyBytesWriter
 The :c:type:`PyBytesWriter` API can be used to create a Python :class:`bytes`
 object.
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 .. c:type:: PyBytesWriter
 

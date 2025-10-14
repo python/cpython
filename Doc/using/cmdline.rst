@@ -512,7 +512,7 @@ Miscellaneous options
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added regular expression support for *message* and *module*.
 
 
@@ -989,7 +989,7 @@ conflict.
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added regular expression support for *message* and *module*.
 
 
