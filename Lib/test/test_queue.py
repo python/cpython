@@ -1009,6 +1009,60 @@ class BaseSimpleQueueTest:
             gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
 
+    def test_sizeof(self):
+        # Test that __sizeof__() accounts for underlying data structure
+        q = self.q
+
+        # Get the size of an empty queue
+        empty_size = q.__sizeof__()
+        self.assertGreater(empty_size, 0, "Empty queue should have non-zero size")
+
+        # Size should include basic object structure
+        # For C implementation, this includes the ring buffer array
+        # For Python implementation, this includes the underlying list
+
+        # Add items within initial capacity (if applicable)
+        # For C SimpleQueue, initial capacity is 8 items
+        for i in range(8):
+            q.put(object())
+
+        size_after_8 = q.__sizeof__()
+        # Size may or may not change depending on implementation
+        # C implementation: no change (still within initial ring buffer capacity)
+        # Python implementation: may change (list growth)
+
+        # Add one more item to potentially trigger growth
+        q.put(object())  # Now 9 items
+
+        size_after_9 = q.__sizeof__()
+        self.assertGreaterEqual(size_after_9, size_after_8,
+                               "Size should not decrease when adding items")
+
+        # Test with a larger number of items
+        large_q = self.type2test()
+        for i in range(1000):
+            large_q.put(object())
+
+        large_size = large_q.__sizeof__()
+
+        # For C implementation, size should grow with capacity
+        # For Python implementation, __sizeof__ may not account for underlying list
+        # (this is a known limitation of the Python implementation)
+        if self.__class__.__name__ == 'CSimpleQueueTest':
+            # This is the C implementation
+            self.assertGreater(large_size, empty_size,
+                              "C SimpleQueue with many items should be larger than empty queue")
+
+            # Verify size is reasonable (should be proportional to capacity)
+            # For very large queues, size should be significantly larger
+            self.assertGreater(large_size, empty_size * 2,
+                              "Large C SimpleQueue should be at least 2x size of empty queue")
+        else:
+            # This is the Python implementation
+            # The Python implementation doesn't properly implement __sizeof__
+            # but we can at least verify it returns a positive number
+            self.assertGreater(large_size, 0, "Python SimpleQueue should have positive size")
+
 
 class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
 

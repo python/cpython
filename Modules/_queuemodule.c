@@ -500,6 +500,24 @@ _queue_SimpleQueue_qsize_impl(simplequeueobject *self)
     return RingBuf_Len(&self->buf);
 }
 
+/*[clinic input]
+_queue.SimpleQueue.__sizeof__ -> Py_ssize_t
+
+Return size of queue in bytes, including underlying data structure.
+[clinic start generated code]*/
+
+static Py_ssize_t
+_queue_SimpleQueue___sizeof___impl(simplequeueobject *self)
+/*[clinic end generated code: output=58ce4e3bbc078fd4 input=7b9d000cdcb71b7d]*/
+{
+    Py_ssize_t size = Py_TYPE(self)->tp_basicsize;
+    // Add size of the ring buffer items array
+    size += self->buf.items_cap * sizeof(PyObject *);
+    return size;
+}
+
+
+
 static int
 queue_traverse(PyObject *m, visitproc visit, void *arg)
 {
@@ -534,6 +552,7 @@ static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
     _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
+    _QUEUE_SIMPLEQUEUE___SIZEOF___METHODDEF
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,           NULL}              /* sentinel */
