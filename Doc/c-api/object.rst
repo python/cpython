@@ -324,7 +324,9 @@ Object Protocol
    when accessing an attribute on the object.
 
    .. deprecated:: 3.15
-      Use :c:func:`PyObject_GetDict` or :c:func:`PyObject_GetAttr` instead.
+      Use :c:func:`PyObject_GetDict`, :c:func:`PyObject_GetAttr`,
+      :c:func:`PyObject_SetAttr` or :c:func:`PyObject_ClearManagedDict`
+      instead.
 
 
 .. c:function:: PyObject* PyObject_RichCompare(PyObject *o1, PyObject *o2, int opid)
