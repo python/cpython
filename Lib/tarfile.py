@@ -372,7 +372,7 @@ class _Stream:
                     self.exception = zlib.error
                     self._init_read_gz()
                 else:
-                    self._init_write_gz(kwargs["compresslevel"])
+                    self._init_write_gz(kwargs.get("compresslevel"))
 
             elif comptype == "bz2":
                 try:
@@ -384,7 +384,7 @@ class _Stream:
                     self.cmp = bz2.BZ2Decompressor()
                     self.exception = OSError
                 else:
-                    self.cmp = bz2.BZ2Compressor(kwargs["compresslevel"])
+                    self.cmp = bz2.BZ2Compressor(kwargs.get("compresslevel"))
 
             elif comptype == "xz":
                 try:
@@ -396,7 +396,7 @@ class _Stream:
                     self.cmp = lzma.LZMADecompressor()
                     self.exception = lzma.LZMAError
                 else:
-                    self.cmp = lzma.LZMACompressor(preset=kwargs["preset"])
+                    self.cmp = lzma.LZMACompressor(preset=kwargs.get("preset"))
             elif comptype == "zst":
                 try:
                     from compression import zstd
@@ -404,13 +404,13 @@ class _Stream:
                     raise CompressionError("compression.zstd module is not available") from None
                 if mode == "r":
                     self.dbuf = b""
-                    self.cmp = zstd.ZstdDecompressor(kwargs["zstd_dict"],
-                            kwargs["options"])
+                    self.cmp = zstd.ZstdDecompressor(kwargs.get("zstd_dict"),
+                            kwargs.get("options"))
                     self.exception = zstd.ZstdError
                 else:
-                    self.cmp = zstd.ZstdCompressor(kwargs["level"],
-                                                   kwargs["options"],
-                                                   kwargs["zstd_dict"])
+                    self.cmp = zstd.ZstdCompressor(kwargs.get("level"),
+                                                   kwargs.get("options"),
+                                                   kwargs.get("zstd_dict"))
             elif comptype != "tar":
                 raise CompressionError("unknown compression type %r" % comptype)
 
