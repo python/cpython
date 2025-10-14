@@ -768,6 +768,9 @@ struct _is {
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
 
+    // unused, kept for ABI compatibility
+    void *_malloced;
+
     PyInterpreterState *next;
 
     int64_t id;
