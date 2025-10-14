@@ -28,7 +28,15 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
    cause variations in behavior. For example, TLSv1.3 comes with OpenSSL version
    1.1.1.
 
+.. note::
+
+   Support for other implementations of ``libssl`` such as AWS-LC, BoringSSL,
+   or LibreSSL may be assumed but not guaranteed. When a feature is known to
+   be unavailable for a specific backend, it will be explicitly mentioned in
+   an :ref:`Availability <availability>` note as *Availability: not <backend>*.
+
 .. warning::
+
    Don't use this module without reading the :ref:`ssl-security`.  Doing so
    may lead to a false sense of security, as the default settings of the
    ssl module are not necessarily appropriate for your application.
@@ -231,6 +239,8 @@ Signature algorithms
    These names can be used when building string values to pass to the
    :meth:`SSLContext.set_client_sigalgs` and
    :meth:`SSLContext.set_server_sigalgs` methods.
+
+   .. availability:: OpenSSL >= 3.4
 
    .. versionadded:: next
 
@@ -1317,6 +1327,8 @@ SSL sockets also have the following additional methods and attributes:
    Return the group used for doing key agreement on this connection. If no
    connection has been established, returns ``None``.
 
+   .. availability:: OpenSSL >= 3.2
+
    .. versionadded:: next
 
 .. method:: SSLSocket.client_sigalg()
@@ -1325,6 +1337,8 @@ SSL sockets also have the following additional methods and attributes:
    authentication on this connection, or ``None`` if no connection has been
    established or client authentication didn't occur.
 
+   .. availability:: OpenSSL >= 3.5
+
    .. versionadded:: next
 
 .. method:: SSLSocket.server_sigalg()
@@ -1332,6 +1346,8 @@ SSL sockets also have the following additional methods and attributes:
    Return the signature algorithm used by the server to complete the TLS
    handshake on this connection, or ``None`` if no connection has been
    established or the cipher suite has no signature.
+
+   .. availability:: OpenSSL >= 3.5
 
    .. versionadded:: next
 
@@ -1709,6 +1725,8 @@ to speed up repeated connections from the same clients.
    :const:`True` this method will also return any associated aliases such as
    the ECDH curve names supported in older versions of OpenSSL.
 
+   .. availability:: OpenSSL >= 3.5
+
    .. versionadded:: next
 
 .. method:: SSLContext.set_default_verify_paths()
@@ -1775,6 +1793,8 @@ to speed up repeated connections from the same clients.
       When connected, the :meth:`SSLSocket.client_sigalg` method of SSL
       sockets will return the signature algorithm used for performing
       certificate-based client authentication on that connection.
+
+   .. availability:: not AWS-LC
 
    .. versionadded:: next
 
