@@ -62,7 +62,7 @@ Tuple Objects
 
    Return a new tuple object of size 1,
    or ``NULL`` with an exception set on failure. The tuple value
-   is initialized with the new reference to the *one* object.
+   is initialized with a new reference to the *one* object.
    ``PyTuple_MakeSingle(a)`` is equivalent to ``PyTuple_Pack(1, a)``.
 
    *one* must not be ``NULL``.
@@ -72,7 +72,7 @@ Tuple Objects
 
    Return a new tuple object of size 2,
    or ``NULL`` with an exception set on failure. The tuple values
-   are initialized with the new references to the *one* and *two* objects.
+   are initialized with new references to the *one* and *two* objects.
    ``PyTuple_MakePair(a, b)`` is equivalent to ``PyTuple_Pack(2, a, b)``.
 
       *one* and *two* must not be ``NULL``.
