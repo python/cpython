@@ -1,0 +1,1 @@
+Update :class:`bytearray` to use a :class:`bytes` under the hood as its buffer which enables optimizations.
