@@ -382,7 +382,7 @@ behavior:
 .. data:: Z_DEFAULT_COMPRESSION
 
    Default compression level (``-1``); a compromise between speed and
-   compression. Equivalent to compression level ``6``.
+   compression. Currently equivalent to compression level ``6``.
 
 
 .. data:: Z_DEFAULT_STRATEGY
