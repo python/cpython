@@ -66,7 +66,7 @@ Expat versions lower than 2.7.2 may be vulnerable to "billion laughs",
 "quadratic blowup" and "large tokens" or disproportional use of dynamic memory.
 Python bundles a copy of Expat, and whether the bundled or a system-wide Expat
 is being used by Python, depends on how the Python interpreter
-:doc:`has been configured <../using/configure>` in your environment.
+:option:`has been configured <--with-system-expat>` in your environment.
 Python may be vulnerable if it uses such older versions of Expat.
 Check :const:`!pyexpat.EXPAT_VERSION`.
 
