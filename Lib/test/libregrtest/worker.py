@@ -1,7 +1,7 @@
-import _colorize
 import subprocess
 import sys
 import os
+from _colorize import can_colorize  # type: ignore[import-not-found]
 from typing import Any, NoReturn
 
 from test.support import os_helper, Py_DEBUG
@@ -36,7 +36,7 @@ def create_worker_process(runtests: WorkerRunTests, output_fd: int,
     # The subcommand is run with a temporary output which means it is not a tty
     # and won't auto-color. The test results are printed to stdout so if we can
     # color that have the subprocess use color.
-    if _colorize.can_colorize(file=sys.stdout):
+    if can_colorize(file=sys.stdout):
         env['FORCE_COLOR'] = '1'
 
     # Running the child from the same working directory as regrtest's original
