@@ -4,6 +4,13 @@ Released on 2025-10-07
 =========================
 
 
+gh-112936: IDLE - Include Shell menu in single-process mode,
+though with Restart Shell and View Last Restart disabled.
+Patch by Zhikang Yan.
+
+gh-112938: IDLE - Fix uninteruptable hang when Shell gets
+rapid continuous output.
+
 gh-127060: Set TERM environment variable to 'dumb' to not add ANSI escape
 sequences for text color in tracebacks. IDLE does not understand them.
 Patch by Victor Stinner.

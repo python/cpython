@@ -1,6 +1,6 @@
 import unittest
 from test.support import (
-    is_android, is_apple_mobile, is_emscripten, is_wasi, reap_children, verbose
+    is_android, is_apple_mobile, is_wasm32, reap_children, verbose, warnings_helper
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
@@ -8,7 +8,7 @@ from test.support.os_helper import TESTFN, unlink
 # Skip these tests if termios is not available
 import_module('termios')
 
-if is_android or is_apple_mobile or is_emscripten or is_wasi:
+if is_android or is_apple_mobile or is_wasm32:
     raise unittest.SkipTest("pty is not available on this platform")
 
 import errno
@@ -20,7 +20,6 @@ import select
 import signal
 import socket
 import io # readline
-import warnings
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
 TEST_STRING_2 = b"For my pet fish, Eric.\n"
@@ -195,6 +194,7 @@ class PtyTest(unittest.TestCase):
         s2 = _readline(master_fd)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_fork(self):
         debug("calling pty.fork()")
         pid, master_fd = pty.fork()
@@ -230,6 +230,7 @@ class PtyTest(unittest.TestCase):
                 os._exit(2)
             os._exit(4)
         else:
+            self.assertFalse(os.get_inheritable(master_fd))
             debug("Waiting for child (%d) to finish." % pid)
             # In verbose mode, we have to consume the debug output from the
             # child or the child will block, causing this test to hang in the
@@ -296,6 +297,7 @@ class PtyTest(unittest.TestCase):
 
         self.assertEqual(data, b"")
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_spawn_doesnt_hang(self):
         self.addCleanup(unlink, TESTFN)
         with open(TESTFN, 'wb') as f:

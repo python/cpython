@@ -21,6 +21,7 @@
 
 from __future__ import annotations
 import os
+import time
 
 # Categories of actions:
 #  killing
@@ -31,6 +32,7 @@ import os
 #  finishing
 # [completion]
 
+from .trace import trace
 
 # types
 if False:
@@ -368,6 +370,13 @@ class self_insert(EditCommand):
         r = self.reader
         text = self.event * r.get_arg()
         r.insert(text)
+        if r.paste_mode:
+            data = ""
+            ev = r.console.getpending()
+            data += ev.data
+            if data:
+                r.insert(data)
+                r.last_refresh_cache.invalidated = True
 
 
 class insert_nl(EditCommand):
@@ -411,14 +420,17 @@ class delete(EditCommand):
     def do(self) -> None:
         r = self.reader
         b = r.buffer
-        if (
-            r.pos == 0
-            and len(b) == 0  # this is something of a hack
-            and self.event[-1] == "\004"
-        ):
-            r.update_screen()
-            r.console.finish()
-            raise EOFError
+        if self.event[-1] == "\004":
+            if b and b[-1].endswith("\n"):
+                self.finish = True
+            elif (
+                r.pos == 0
+                and len(b) == 0  # this is something of a hack
+            ):
+                r.update_screen()
+                r.console.finish()
+                raise EOFError
+
         for i in range(r.get_arg()):
             if r.pos != len(b):
                 del b[r.pos]
@@ -437,7 +449,7 @@ class help(Command):
         import _sitebuiltins
 
         with self.reader.suspend():
-            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment, call-arg]
+            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
 
 
 class invalid_key(Command):
@@ -471,19 +483,23 @@ class show_history(Command):
 
 
 class paste_mode(Command):
-
     def do(self) -> None:
         self.reader.paste_mode = not self.reader.paste_mode
         self.reader.dirty = True
 
 
-class enable_bracketed_paste(Command):
+class perform_bracketed_paste(Command):
     def do(self) -> None:
-        self.reader.paste_mode = True
-        self.reader.in_bracketed_paste = True
-
-class disable_bracketed_paste(Command):
-    def do(self) -> None:
-        self.reader.paste_mode = False
-        self.reader.in_bracketed_paste = False
-        self.reader.dirty = True
+        done = "\x1b[201~"
+        data = ""
+        start = time.time()
+        while done not in data:
+            ev = self.reader.console.getpending()
+            data += ev.data
+        trace(
+            "bracketed pasting of {l} chars done in {s:.2f}s",
+            l=len(data),
+            s=time.time() - start,
+        )
+        self.reader.insert(data.replace(done, ""))
+        self.reader.last_refresh_cache.invalidated = True

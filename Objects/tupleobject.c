@@ -207,7 +207,6 @@ tuple_dealloc(PyObject *self)
     }
 
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_BEGIN(op, tuple_dealloc)
 
     Py_ssize_t i = Py_SIZE(op);
     while (--i >= 0) {
@@ -217,8 +216,6 @@ tuple_dealloc(PyObject *self)
     if (!maybe_freelist_push(op)) {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
-
-    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -369,7 +366,7 @@ tuple_item(PyObject *op, Py_ssize_t i)
 }
 
 PyObject *
-_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
+PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 {
     if (n == 0) {
         return tuple_get_empty();
@@ -441,7 +438,7 @@ tuple_slice(PyTupleObject *a, Py_ssize_t ilow,
     if (ilow == 0 && ihigh == Py_SIZE(a) && PyTuple_CheckExact(a)) {
         return Py_NewRef(a);
     }
-    return _PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
+    return PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
 }
 
 PyObject *

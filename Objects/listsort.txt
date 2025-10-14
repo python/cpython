@@ -270,8 +270,8 @@ result.  This has two primary good effects:
 
 Computing minrun
 ----------------
-If N < MAX_MINRUN, minrun is N.  IOW, binary insertion sort is used for the 
-whole array then; it's hard to beat that given the overheads of trying 
+If N < MAX_MINRUN, minrun is N.  IOW, binary insertion sort is used for the
+whole array then; it's hard to beat that given the overheads of trying
 something fancier (see note BINSORT).
 
 When N is a power of 2, testing on random data showed that minrun values of
@@ -288,7 +288,6 @@ that 32 isn't a good choice for the general case!  Consider N=2112:
 
 >>> divmod(2112, 32)
 (66, 0)
->>>
 
 If the data is randomly ordered, we're very likely to end up with 66 runs
 each of length 32.  The first 64 of these trigger a sequence of perfectly
@@ -301,22 +300,94 @@ to get 64 elements into place).
 If we take minrun=33 in this case, then we're very likely to end up with 64
 runs each of length 33, and then all merges are perfectly balanced.  Better!
 
-What we want to avoid is picking minrun such that in
+The original code used a cheap heuristic to pick a minrun that avoided the
+very worst cases of imbalance for the final merge, but "pretty bad" cases
+still existed.
 
-    q, r = divmod(N, minrun)
+In 2025, Stefan Pochmann found a much better approach, based on letting minrun
+vary a bit from one run to the next. Under his scheme, at _all_ levels of the
+merge tree:
 
-q is a power of 2 and r>0 (then the last merge only gets r elements into
-place, and r < minrun is small compared to N), or q a little larger than a
-power of 2 regardless of r (then we've got a case similar to "2112", again
-leaving too little work for the last merge to do).
+- The number of runs is a power of 2.
+- At most two different run lengths appear.
+- When two do appear, the smaller is one less than the larger.
+- The lengths of run pairs merged never differ by more than one.
 
-Instead we pick a minrun in range(MAX_MINRUN / 2, MAX_MINRUN + 1) such that 
-N/minrun is exactly a power of 2, or if that isn't possible, is close to, but 
-strictly less than, a power of 2.  This is easier to do than it may sound: 
-take the first log2(MAX_MINRUN) bits of N, and add 1 if any of the remaining 
-bits are set. In fact, that rule covers every case in this section, including 
-small N and exact powers of 2; merge_compute_minrun() is a deceptively simple 
-function.
+So, in all respects, as perfectly balanced as possible.
+
+For the 2112 case, that also keeps minrun at 33, but we were lucky there
+that 2112 is 33 times a power of 2. The new approach doesn't rely on luck.
+
+For example, with 315 random elements, the old scheme uses fixed minrun=40 and
+produces runs of length 40, except for the last. The new scheme produces a
+mix of lengths 39 and 40:
+
+old:  40 40 40 40 40 40 40 35
+new:  39 39 40 39 39 40 39 40
+
+Both schemes produce eight runs, a power of 2. That's good for a balanced
+merge tree. But the new scheme allows merges where left and right length
+never differ by more than 1:
+
+39 39 40 39 39 40 39 40
+  78   79     79   79
+    157         158
+          315
+
+(This shows merges downward, e.g., two runs of length 39 are merged and
+become a run of length 78.)
+
+With larger lists, the old scheme can get even more unbalanced. For example,
+with 32769 elements (that's 2**15 + 1), it uses minrun=33 and produces 993
+runs (of length 33). That's not even a power of 2. The new scheme instead
+produces 1024 runs, all with length 32 except for the last one with length 33.
+
+How does it work? Ideally, all runs would be exactly equally long. For the
+above example, each run would have 315/8 = 39.375 elements. Which of course
+doesn't work. But we can get close:
+
+For the first run, we'd like 39.375 elements. Since that's impossible, we
+instead use 39 (the floor) and remember the current leftover fraction 0.375.
+For the second run, we add 0.375 + 39.375 = 39.75. Again impossible, so we
+instead use 39 and remember 0.75. For the third run, we add 0.75 + 39.375 =
+40.125. This time we get 40 and remember 0.125. And so on. Here's a Python
+generator doing that:
+
+def gen_minruns_with_floats(n):
+    mr = n
+    while mr >= MAX_MINRUN:
+        mr /= 2
+
+    mr_current = 0
+    while True:
+        mr_current += mr
+        yield int(mr_current)
+        mr_current %= 1
+
+But while all arithmetic here can be done exactly using binery floating point,
+floats have less precision that a Py_ssize_t, and mixing floats with ints is
+needlessly expensive anyway.
+
+So here's an integer version, where the internal numbers are scaled up by
+2**e, or rather not divided by 2**e. Instead, only each yielded minrun gets
+divided (by right-shifting). For example instead of adding 39.375 and
+reducing modulo 1, it just adds 315 and reduces modulo 8. And always divides
+by 8 to get each actual minrun value:
+
+def gen_minruns_simpler(n):
+    e = 0
+    while (n >> e) >= MAX_MINRUN:
+        e += 1
+    mask = (1 << e) - 1
+
+    mr_current = 0
+    while True:
+        mr_current += n
+        yield mr_current >> e
+        mr_current &= mask
+
+See note MINRUN CODE for a full implementation and a driver that exhaustively
+verifies the claims above for all list lengths through 2 million.
 
 
 The Merge Pattern
@@ -820,3 +891,75 @@ partially mitigated by pre-scanning the data to determine whether the data is
 homogeneous with respect to type.  If so, it is sometimes possible to
 substitute faster type-specific comparisons for the slower, generic
 PyObject_RichCompareBool.
+
+MINRUN CODE
+from itertools import accumulate
+try:
+    from itertools import batched
+except ImportError:
+    from itertools import islice
+    def batched(xs, k):
+        it = iter(xs)
+        while chunk := tuple(islice(it, k)):
+            yield chunk
+
+MAX_MINRUN = 64
+
+def gen_minruns(n):
+    # In listobject.c, initialization is done in merge_init(), and
+    # the body of the loop in minrun_next().
+    mr_e = 0
+    while (n >> mr_e) >= MAX_MINRUN:
+        mr_e += 1
+    mr_mask = (1 << mr_e) - 1
+
+    mr_current = 0
+    while True:
+        mr_current += n
+        yield mr_current >> mr_e
+        mr_current &= mr_mask
+
+def chew(n, show=False):
+    if n < 1:
+        return
+
+    sizes = []
+    tot = 0
+    for size in gen_minruns(n):
+        sizes.append(size)
+        tot += size
+        if tot >= n:
+            break
+    assert tot == n
+    print(n, len(sizes))
+
+    small, large = MAX_MINRUN // 2, MAX_MINRUN
+    while len(sizes) > 1:
+        assert not len(sizes) & 1
+        assert len(sizes).bit_count() == 1 # i.e., power of 2
+        assert sum(sizes) == n
+        assert min(sizes) >= min(n, small)
+        assert max(sizes) <= large
+
+        d = set(sizes)
+        assert len(d) <= 2
+        if len(d) == 2:
+            lo, hi = sorted(d)
+            assert lo + 1 == hi
+
+        mr = n / len(sizes)
+        for i, s in enumerate(accumulate(sizes, initial=0)):
+            assert int(mr * i) == s
+
+        newsizes = []
+        for a, b in batched(sizes, 2):
+            assert abs(a - b) <= 1
+            newsizes.append(a + b)
+        sizes = newsizes
+        smsll = large
+        large *= 2
+
+    assert sizes[0] == n
+
+for n in range(2_000_001):
+    chew(n)
