@@ -209,19 +209,17 @@ class SubinterpreterTest(unittest.TestCase):
         _testcapi.set_nomemory(0)
         """)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py') as f:
             f.write(code)
+            f.flush()
             script = f.name
 
-        try:
             with SuppressCrashReport():
                 with script_helper.spawn_python(script,
                                                 stderr=subprocess.PIPE) as proc:
                     proc.wait()
                     stdout = proc.stdout.read()
                     stderr = proc.stderr.read()
-        finally:
-            os.unlink(script)
 
         self.assertIn(proc.returncode, (0, 1))
         self.assertNotIn(b"hello", stdout)
