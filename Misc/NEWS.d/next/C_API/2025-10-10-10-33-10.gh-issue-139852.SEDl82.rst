@@ -1,2 +1,3 @@
-Deprecate private :c:func:`_PyObject_GetDictPtr` function: use public
-:c:func:`PyObject_GetDict` or :c:func:`PyObject_GetAttr` instead.
+Deprecate the private :c:func:`_PyObject_GetDictPtr` function: use public
+:c:func:`PyObject_GetDict`, :c:func:`PyObject_GetAttr`,
+:c:func:`PyObject_SetAttr` or :c:func:`PyObject_ClearManagedDict` instead.
