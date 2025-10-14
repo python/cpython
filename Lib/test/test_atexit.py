@@ -1,7 +1,6 @@
 import atexit
 import os
 import subprocess
-import sys
 import tempfile
 import textwrap
 import unittest
@@ -195,7 +194,6 @@ class SubinterpreterTest(unittest.TestCase):
     # Python built with Py_TRACE_REFS fail with a fatal error in
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
-    @support.requires_subprocess()
     def test_atexit_with_low_memory(self):
         # gh-140080: Test that setting low memory after registering an atexit
         # callback doesn't cause an infinite loop during finalization.
@@ -217,17 +215,17 @@ class SubinterpreterTest(unittest.TestCase):
 
         try:
             with SuppressCrashReport():
-                proc = subprocess.run(
-                    [sys.executable, script],
-                    capture_output=True,
-                    timeout=10
-                )
+                with script_helper.spawn_python(script,
+                                               stderr=subprocess.PIPE) as proc:
+                    proc.wait()
+                    stdout = proc.stdout.read()
+                    stderr = proc.stderr.read()
         finally:
             os.unlink(script)
 
         self.assertIn(proc.returncode, (0, 1))
-        self.assertNotIn(b"hello", proc.stdout)
-        self.assertIn(b"MemoryError", proc.stderr)
+        self.assertNotIn(b"hello", stdout)
+        self.assertIn(b"MemoryError", stderr)
 
 
 if __name__ == "__main__":
