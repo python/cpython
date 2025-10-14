@@ -67,9 +67,7 @@ Tuple Objects
 
    .. warning::
 
-      *one* must not be ``NULL``. Checking is performed as an assertion
-      if Python is built in  :ref:`debug mode <debug-build>` or
-      :option:`with assertions <--with-assertions>`.
+      *one* must not be ``NULL``.
 
 
 .. c:function:: PyObject* PyTuple_MakePair(PyObject *one, PyObject *two)
@@ -81,9 +79,7 @@ Tuple Objects
 
    .. warning::
 
-      *one* and *two* must not be ``NULL``. Checking is performed as an assertion
-      if Python is built in  :ref:`debug mode <debug-build>` or
-      :option:`with assertions <--with-assertions>`.
+      *one* and *two* must not be ``NULL``.
 
 
 .. c:function:: Py_ssize_t PyTuple_Size(PyObject *p)
