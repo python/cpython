@@ -1,1 +1,0 @@
-Function watchers can now receive a PyFunction_PYFUNC_EVENT_MODIFY_QUALNAME event when a watched functions qualname is changed.

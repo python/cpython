@@ -1,3 +1,0 @@
-Optimize :data:`os.environ.clear() <os.environ>` by calling
-:manpage:`clearenv(3)` when this function is available.
-Patch by Victor Stinner.

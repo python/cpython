@@ -56,7 +56,7 @@ The available exception and functions in this module are:
    that were concurrently computed. To compute checksums sequentially, use
    :func:`adler32` with the running checksum as the ``value`` argument.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
@@ -162,7 +162,7 @@ The available exception and functions in this module are:
    that were concurrently computed. To compute checksums sequentially, use
    :func:`crc32` with the running checksum as the ``value`` argument.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. function:: decompress(data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
