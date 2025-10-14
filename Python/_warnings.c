@@ -1317,28 +1317,6 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
     return 0;
 }
 
-/* Like PyErr_WarnExplicitObject, but automatically sets up context */
-int
-_PyErr_WarnExplicitObjectWithContext(PyObject *category, PyObject *message,
-                                     PyObject *filename, int lineno)
-{
-    PyObject *unused_filename, *module, *registry;
-    int unused_lineno;
-    int stack_level = 1;
-
-    if (!setup_context(stack_level, NULL, &unused_filename, &unused_lineno,
-                       &module, &registry)) {
-        return -1;
-    }
-
-    int rc = PyErr_WarnExplicitObject(category, message, filename, lineno,
-                                      module, registry);
-    Py_DECREF(unused_filename);
-    Py_DECREF(registry);
-    Py_DECREF(module);
-    return rc;
-}
-
 int
 PyErr_WarnExplicit(PyObject *category, const char *text,
                    const char *filename_str, int lineno,
