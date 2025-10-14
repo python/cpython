@@ -1076,7 +1076,7 @@ _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
     for (;;) {
         PyObject *op2;
 
-        if (_PyObject_IsUniquelyReferenced(args)) {
+        if (!_PyObject_IsUniquelyReferenced(args)) {
             Py_DECREF(args);
             if ((args = PyTuple_New(2)) == NULL)
                 goto Fail;
