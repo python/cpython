@@ -1,0 +1,2 @@
+Fixes a memory leak in ``Hacl_Streaming_HMAC_digest`` by freeing the
+``snd`` and ``thd`` fields of ``tmp_block_state1``.
