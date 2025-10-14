@@ -1,4 +1,2 @@
 Add :c:func:`PyTuple_MakeSingle` and :c:func:`PyTuple_MakePair` functions to
-create short-sized tuples.
-
-Patch by Sergey Miryanov.
+create short-sized tuples. Patch by Sergey Miryanov.
