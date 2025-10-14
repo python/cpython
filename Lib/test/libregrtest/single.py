@@ -2,12 +2,13 @@ import faulthandler
 import gc
 import importlib
 import io
+import os
 import sys
 import time
 import traceback
 import unittest
 
-from _colorize import get_colors  # type: ignore[import-not-found]
+from _colorize import can_colorize, get_colors  # type: ignore[import-not-found]
 from test import support
 from test.support import threading_helper
 
@@ -273,6 +274,9 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
     verbose = runtests.verbose
     output_on_failure = runtests.output_on_failure
     timeout = runtests.timeout
+
+    if can_colorize(file=sys.stdout):
+        os.environ['FORCE_COLOR'] = "1"
 
     if timeout is not None and threading_helper.can_start_thread:
         use_timeout = True
