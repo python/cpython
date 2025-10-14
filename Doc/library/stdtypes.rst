@@ -2157,6 +2157,19 @@ expression support in the :mod:`re` module).
    character, for example uppercase characters may only follow uncased characters
    and lowercase characters only cased ones.  Return ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Spam, Spam, Spam'.istitle()
+      True
+      >>> 'spam, spam, spam'.istitle()
+      False
+      >>> 'SPAM, SPAM, SPAM'.istitle()
+      False
+
+   See also :meth:`title`.
+
 
 .. method:: str.isupper()
 
@@ -2533,6 +2546,8 @@ expression support in the :mod:`re` module).
         ...
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
+
+   See also :meth:`istitle`.
 
 
 .. method:: str.translate(table, /)
