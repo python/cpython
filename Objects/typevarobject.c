@@ -1859,6 +1859,7 @@ typealias_dealloc(PyObject *self)
     _PyObject_GC_UNTRACK(self);
     typealiasobject *ta = typealiasobject_CAST(self);
     Py_XDECREF(ta->name);
+    Py_XDECREF(ta->qualname);
     Py_XDECREF(ta->type_params);
     Py_XDECREF(ta->compute_value);
     Py_XDECREF(ta->value);
@@ -2042,6 +2043,7 @@ typealias_traverse(PyObject *op, visitproc visit, void *arg)
 {
     typealiasobject *self = typealiasobject_CAST(op);
     Py_VISIT(self->name);
+    Py_VISIT(self->qualname);
     Py_VISIT(self->type_params);
     Py_VISIT(self->compute_value);
     Py_VISIT(self->value);
@@ -2054,6 +2056,7 @@ typealias_clear(PyObject *op)
 {
     typealiasobject *self = typealiasobject_CAST(op);
     Py_CLEAR(self->name);
+    Py_CLEAR(self->qualname);
     Py_CLEAR(self->type_params);
     Py_CLEAR(self->compute_value);
     Py_CLEAR(self->value);
