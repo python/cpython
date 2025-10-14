@@ -2774,7 +2774,7 @@ int
 PySet_Add(PyObject *anyset, PyObject *key)
 {
     if (!PySet_Check(anyset) &&
-        (!PyFrozenSet_Check(anyset) || Py_REFCNT(anyset) != 1)) {
+        (!PyFrozenSet_Check(anyset) || !_PyObject_IsUniquelyReferenced(anyset))) {
         PyErr_BadInternalCall();
         return -1;
     }

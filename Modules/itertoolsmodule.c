@@ -2129,7 +2129,7 @@ product_next_lock_held(PyObject *op)
         Py_ssize_t *indices = lz->indices;
 
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
             result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), npools);
             if (result == NULL)
@@ -2364,7 +2364,7 @@ combinations_next_lock_held(PyObject *op)
         }
     } else {
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
             result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
@@ -2618,7 +2618,7 @@ cwr_next(PyObject *op)
         }
     } else {
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
             result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
@@ -2879,7 +2879,7 @@ permutations_next(PyObject *op)
             goto empty;
 
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
             result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
