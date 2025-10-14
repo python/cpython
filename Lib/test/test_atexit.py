@@ -216,7 +216,7 @@ class SubinterpreterTest(unittest.TestCase):
         try:
             with SuppressCrashReport():
                 with script_helper.spawn_python(script,
-                                               stderr=subprocess.PIPE) as proc:
+                                                stderr=subprocess.PIPE) as proc:
                     proc.wait()
                     stdout = proc.stdout.read()
                     stderr = proc.stderr.read()
