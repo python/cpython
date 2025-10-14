@@ -708,88 +708,88 @@ PyDoc_STRVAR(doc_ctx_logical_and,
 "logical_and($self, x, y, /)\n--\n\n\
 Applies the logical operation 'and' between each operand's digits.\n\n\
 The operands must be both logical numbers.\n\n\
-    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('0')\n\
-    Decimal('0'\n\
-    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('1')\n\
-    Decimal('0'\n\
-    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('0')\n\
-    Decimal('0'\n\
-    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('1')\n\
-    Decimal('1'\n\
-    >>> ExtendedContext.logical_and(Decimal('1100'), Decimal('1010')\n\
-    Decimal('1000'\n\
-    >>> ExtendedContext.logical_and(Decimal('1111'), Decimal('10')\n\
-    Decimal('10'\n\
-    >>> ExtendedContext.logical_and(110, 1101\n\
-    Decimal('100'\n\
-    >>> ExtendedContext.logical_and(Decimal(110), 1101\n\
-    Decimal('100'\n\
-    >>> ExtendedContext.logical_and(110, Decimal(1101)\n\
-    Decimal('100'\n\
+    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('0'))\n\
+    Decimal('0')\n\
+    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('1'))\n\
+    Decimal('0')\n\
+    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('0'))\n\
+    Decimal('0')\n\
+    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('1'))\n\
+    Decimal('1')\n\
+    >>> ExtendedContext.logical_and(Decimal('1100'), Decimal('1010'))\n\
+    Decimal('1000')\n\
+    >>> ExtendedContext.logical_and(Decimal('1111'), Decimal('10'))\n\
+    Decimal('10')\n\
+    >>> ExtendedContext.logical_and(110, 1101)\n\
+    Decimal('100')\n\
+    >>> ExtendedContext.logical_and(Decimal(110), 1101)\n\
+    Decimal('100')\n\
+    >>> ExtendedContext.logical_and(110, Decimal(1101))\n\
+    Decimal('100')\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_logical_invert,
 "logical_invert($self, x, /)\n--\n\n\
 Invert all the digits in the operand.\n\n\
 The operand must be a logical number.\n\n\
-    >>> ExtendedContext.logical_invert(Decimal('0')\n\
-    Decimal('111111111'\n\
-    >>> ExtendedContext.logical_invert(Decimal('1')\n\
-    Decimal('111111110'\n\
-    >>> ExtendedContext.logical_invert(Decimal('111111111')\n\
-    Decimal('0'\n\
-    >>> ExtendedContext.logical_invert(Decimal('101010101')\n\
-    Decimal('10101010'\n\
-    >>> ExtendedContext.logical_invert(1101\n\
-    Decimal('111110010'\n\
+    >>> ExtendedContext.logical_invert(Decimal('0'))\n\
+    Decimal('111111111')\n\
+    >>> ExtendedContext.logical_invert(Decimal('1'))\n\
+    Decimal('111111110')\n\
+    >>> ExtendedContext.logical_invert(Decimal('111111111'))\n\
+    Decimal('0')\n\
+    >>> ExtendedContext.logical_invert(Decimal('101010101'))\n\
+    Decimal('10101010')\n\
+    >>> ExtendedContext.logical_invert(1101)\n\
+    Decimal('111110010')\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_logical_or,
 "logical_or($self, x, y, /)\n--\n\n\
 Applies the logical operation 'or' between each operand's digits.\n\n\
 The operands must be both logical numbers.\n\n\
-    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('0')\n\
-    Decimal('0'\n\
-    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('1')\n\
-    Decimal('1'\n\
-    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('0')\n\
-    Decimal('1'\n\
-    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('1')\n\
-    Decimal('1'\n\
-    >>> ExtendedContext.logical_or(Decimal('1100'), Decimal('1010')\n\
-    Decimal('1110'\n\
-    >>> ExtendedContext.logical_or(Decimal('1110'), Decimal('10')\n\
-    Decimal('1110'\n\
-    >>> ExtendedContext.logical_or(110, 1101\n\
-    Decimal('1111'\n\
-    >>> ExtendedContext.logical_or(Decimal(110), 1101\n\
-    Decimal('1111'\n\
-    >>> ExtendedContext.logical_or(110, Decimal(1101)\n\
-    Decimal('1111'\n\
+    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('0'))\n\
+    Decimal('0')\n\
+    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('1'))\n\
+    Decimal('1')\n\
+    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('0'))\n\
+    Decimal('1')\n\
+    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('1'))\n\
+    Decimal('1')\n\
+    >>> ExtendedContext.logical_or(Decimal('1100'), Decimal('1010'))\n\
+    Decimal('1110')\n\
+    >>> ExtendedContext.logical_or(Decimal('1110'), Decimal('10'))\n\
+    Decimal('1110')\n\
+    >>> ExtendedContext.logical_or(110, 1101)\n\
+    Decimal('1111')\n\
+    >>> ExtendedContext.logical_or(Decimal(110), 1101)\n\
+    Decimal('1111')\n\
+    >>> ExtendedContext.logical_or(110, Decimal(1101))\n\
+    Decimal('1111')\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_logical_xor,
 "logical_xor($self, x, y, /)\n--\n\n\
 Applies the logical operation 'xor' between each operand's digits.\n\n\
 The operands must be both logical numbers.\n\n\
-    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('0')\n\
-    Decimal('0'\n\
-    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('1')\n\
-    Decimal('1'\n\
-    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('0')\n\
-    Decimal('1'\n\
-    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('1')\n\
-    Decimal('0'\n\
-    >>> ExtendedContext.logical_xor(Decimal('1100'), Decimal('1010')\n\
-    Decimal('110'\n\
-    >>> ExtendedContext.logical_xor(Decimal('1111'), Decimal('10')\n\
-    Decimal('1101'\n\
-    >>> ExtendedContext.logical_xor(110, 1101\n\
-    Decimal('1011'\n\
-    >>> ExtendedContext.logical_xor(Decimal(110), 1101\n\
-    Decimal('1011'\n\
-    >>> ExtendedContext.logical_xor(110, Decimal(1101)\n\
-    Decimal('1011'\n\
+    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('0'))\n\
+    Decimal('0')\n\
+    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('1'))\n\
+    Decimal('1')\n\
+    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('0'))\n\
+    Decimal('1')\n\
+    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('1'))\n\
+    Decimal('0')\n\
+    >>> ExtendedContext.logical_xor(Decimal('1100'), Decimal('1010'))\n\
+    Decimal('110')\n\
+    >>> ExtendedContext.logical_xor(Decimal('1111'), Decimal('10'))\n\
+    Decimal('1101')\n\
+    >>> ExtendedContext.logical_xor(110, 1101)\n\
+    Decimal('1011')\n\
+    >>> ExtendedContext.logical_xor(Decimal(110), 1101)\n\
+    Decimal('1011')\n\
+    >>> ExtendedContext.logical_xor(110, Decimal(1101))\n\
+    Decimal('1011')\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_max,
