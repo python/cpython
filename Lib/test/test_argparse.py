@@ -5831,6 +5831,7 @@ class TestConflictHandling(TestCase):
 # Help and Version option tests
 # =============================
 
+@force_not_colorized_test_class
 class TestOptionalsHelpVersionActions(TestCase):
     """Test the help and version actions"""
 

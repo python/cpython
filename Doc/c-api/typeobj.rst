@@ -1704,7 +1704,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:func:`Py_CLEAR` macro performs the operations in a safe order.
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
-   :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
+   :c:member:`~PyTypeObject.tp_flags` field, the clear function must call
    :c:func:`PyObject_ClearManagedDict` like this::
 
        PyObject_ClearManagedDict((PyObject*)self);
