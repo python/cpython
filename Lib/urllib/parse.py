@@ -97,11 +97,9 @@ def clear_cache():
     _byte_quoter_factory.cache_clear()
 
 # Helpers for bytes handling
-# For 3.2, we deliberately require applications that
-# handle improperly quoted URLs to do their own
-# decoding and encoding. If valid use cases are
-# presented, we may relax this by using latin-1
-# decoding internally for 3.3
+# We deliberately require applications that
+# handle improperly quoted URLs to do their
+# own decoding and encoding.
 _implicit_encoding = 'ascii'
 _implicit_errors = 'strict'
 
@@ -460,7 +458,7 @@ def _check_bracketed_netloc(netloc):
 # https://www.rfc-editor.org/rfc/rfc3986#page-49 and https://url.spec.whatwg.org/
 def _check_bracketed_host(hostname):
     if hostname.startswith('v'):
-        if not re.match(r"\Av[a-fA-F0-9]+\..+\Z", hostname):
+        if not re.match(r"\Av[a-fA-F0-9]+\..+\z", hostname):
             raise ValueError(f"IPvFuture address is invalid")
     else:
         ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4

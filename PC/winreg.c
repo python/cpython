@@ -49,7 +49,9 @@ PyDoc_STRVAR(module_doc,
 "ConnectRegistry() - Establishes a connection to a predefined registry handle\n"
 "                    on another computer.\n"
 "CreateKey() - Creates the specified key, or opens it if it already exists.\n"
+"CreateKeyEx() - Creates the specified key, or opens it if it already exists.\n"
 "DeleteKey() - Deletes the specified key.\n"
+"DeleteKeyEx() - Deletes the specified key.\n"
 "DeleteValue() - Removes a named value from the specified registry key.\n"
 "EnumKey() - Enumerates subkeys of the specified open registry key.\n"
 "EnumValue() - Enumerates values of the specified open registry key.\n"
@@ -69,6 +71,9 @@ PyDoc_STRVAR(module_doc,
 "SaveKey() - Saves the specified key, and all its subkeys a file.\n"
 "SetValue() - Associates a value with a specified key.\n"
 "SetValueEx() - Stores data in the value field of an open registry key.\n"
+"DisableReflectionKey() - Disables registry reflection for 32bit processes running on a 64bit OS.\n"
+"EnableReflectionKey() - Restores registry reflection for a key.\n"
+"QueryReflectionKey() - Determines the reflection state for a key.\n"
 "\n"
 "Special objects:\n"
 "\n"
@@ -154,13 +159,6 @@ PyHKEY_deallocFunc(PyObject *ob)
     PyObject_GC_UnTrack(ob);
     PyObject_GC_Del(ob);
     Py_DECREF(tp);
-}
-
-static int
-PyHKEY_traverseFunc(PyHKEYObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
 }
 
 static int
@@ -364,7 +362,7 @@ static PyType_Slot pyhkey_type_slots[] = {
     {Py_tp_members, PyHKEY_memberlist},
     {Py_tp_methods, PyHKEY_methods},
     {Py_tp_doc, (char *)PyHKEY_doc},
-    {Py_tp_traverse, PyHKEY_traverseFunc},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_hash, PyHKEY_hashFunc},
     {Py_tp_str, PyHKEY_strFunc},
 
@@ -426,7 +424,9 @@ PyHKEY_Close(winreg_state *st, PyObject *ob_handle)
     if (PyHKEY_Check(st, ob_handle)) {
         ((PyHKEYObject*)ob_handle)->hkey = 0;
     }
+    Py_BEGIN_ALLOW_THREADS
     rc = key ? RegCloseKey(key) : ERROR_SUCCESS;
+    Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
     return rc == ERROR_SUCCESS;
@@ -499,14 +499,21 @@ PyWinObject_CloseHKEY(winreg_state *st, PyObject *obHandle)
     }
 #if SIZEOF_LONG >= SIZEOF_HKEY
     else if (PyLong_Check(obHandle)) {
-        long rc = RegCloseKey((HKEY)PyLong_AsLong(obHandle));
+        long rc;
+        Py_BEGIN_ALLOW_THREADS
+        rc = RegCloseKey((HKEY)PyLong_AsLong(obHandle));
+        Py_END_ALLOW_THREADS
         ok = (rc == ERROR_SUCCESS);
         if (!ok)
             PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
     }
 #else
     else if (PyLong_Check(obHandle)) {
-        long rc = RegCloseKey((HKEY)PyLong_AsVoidPtr(obHandle));
+        long rc;
+        HKEY hkey = (HKEY)PyLong_AsVoidPtr(obHandle);
+        Py_BEGIN_ALLOW_THREADS
+        rc = RegCloseKey(hkey);
+        Py_END_ALLOW_THREADS
         ok = (rc == ERROR_SUCCESS);
         if (!ok)
             PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
@@ -924,7 +931,9 @@ winreg_CreateKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
                     (Py_ssize_t)KEY_WRITE) < 0) {
         return NULL;
     }
+    Py_BEGIN_ALLOW_THREADS
     rc = RegCreateKeyW(key, sub_key, &retKey);
+    Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS) {
         PyErr_SetFromWindowsErrWithFunction(rc, "CreateKey");
         return NULL;
@@ -973,8 +982,10 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
     }
+    Py_BEGIN_ALLOW_THREADS
     rc = RegCreateKeyExW(key, sub_key, reserved, NULL, 0,
                          access, NULL, &retKey, NULL);
+    Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS) {
         PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
         return NULL;
@@ -1187,10 +1198,12 @@ winreg_EnumValue_impl(PyObject *module, HKEY key, int index)
                     (Py_ssize_t)key, index) < 0) {
         return NULL;
     }
-    if ((rc = RegQueryInfoKeyW(key, NULL, NULL, NULL, NULL, NULL, NULL,
-                              NULL,
-                              &retValueSize, &retDataSize, NULL, NULL))
-        != ERROR_SUCCESS)
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegQueryInfoKeyW(key, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                          &retValueSize, &retDataSize, NULL, NULL);
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegQueryInfoKey");
     ++retValueSize;    /* include null terminators */
@@ -1290,7 +1303,7 @@ winreg_ExpandEnvironmentStrings_impl(PyObject *module, const wchar_t *string)
         return PyErr_SetFromWindowsErrWithFunction(retValueSize,
                                         "ExpandEnvironmentStrings");
     }
-    o = PyUnicode_FromWideChar(retValue, wcslen(retValue));
+    o = PyUnicode_FromWideChar(retValue, -1);
     PyMem_Free(retValue);
     return o;
 }
@@ -1477,9 +1490,11 @@ winreg_QueryInfoKey_impl(PyObject *module, HKEY key)
     if (PySys_Audit("winreg.QueryInfoKey", "n", (Py_ssize_t)key) < 0) {
         return NULL;
     }
-    if ((rc = RegQueryInfoKeyW(key, NULL, NULL, 0, &nSubKeys, NULL, NULL,
-                               &nValues,  NULL,  NULL, NULL, &ft))
-                               != ERROR_SUCCESS) {
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegQueryInfoKeyW(key, NULL, NULL, 0, &nSubKeys, NULL, NULL,
+                          &nValues,  NULL,  NULL, NULL, &ft);
+    Py_END_ALLOW_THREADS
+    if (rc != ERROR_SUCCESS) {
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegQueryInfoKey");
     }
     li.LowPart = ft.dwLowDateTime;
@@ -1587,7 +1602,9 @@ exit:
         PyMem_Free(pbuf);
     }
     if (childKey != key) {
+        Py_BEGIN_ALLOW_THREADS
         RegCloseKey(childKey);
+        Py_END_ALLOW_THREADS
     }
     return result;
 }
@@ -1625,7 +1642,9 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const wchar_t *name)
                     (Py_ssize_t)key, NULL, name) < 0) {
         return NULL;
     }
+    Py_BEGIN_ALLOW_THREADS
     rc = RegQueryValueExW(key, name, NULL, NULL, NULL, &bufSize);
+    Py_END_ALLOW_THREADS
     if (rc == ERROR_MORE_DATA)
         bufSize = 256;
     else if (rc != ERROR_SUCCESS)
@@ -1637,8 +1656,10 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const wchar_t *name)
 
     while (1) {
         retSize = bufSize;
+        Py_BEGIN_ALLOW_THREADS
         rc = RegQueryValueExW(key, name, NULL, &typ,
                              (BYTE *)retBuf, &retSize);
+        Py_END_ALLOW_THREADS
         if (rc != ERROR_MORE_DATA)
             break;
 
@@ -1999,6 +2020,45 @@ winreg_EnableReflectionKey_impl(PyObject *module, HKEY key)
 }
 
 /*[clinic input]
+winreg.DeleteTree
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(accept={str, NoneType}) = None
+        A string that names the subkey to delete. If None, deletes all subkeys
+        and values of the specified key.
+    /
+
+Deletes the specified key and all its subkeys and values recursively.
+
+This function deletes a key and all its descendants. If sub_key is None,
+all subkeys and values of the specified key are deleted.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_DeleteTree_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
+/*[clinic end generated code: output=c34395ee59290501 input=419ef9bb8b06e4bf]*/
+{
+    LONG rc;
+
+    if (PySys_Audit("winreg.DeleteTree", "nu",
+                    (Py_ssize_t)key, sub_key) < 0) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegDeleteTreeW(key, sub_key);
+    Py_END_ALLOW_THREADS
+
+    if (rc != ERROR_SUCCESS) {
+        PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteTreeW");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 winreg.QueryReflectionKey
 
     key: HKEY
@@ -2056,6 +2116,7 @@ static struct PyMethodDef winreg_methods[] = {
     WINREG_DELETEKEY_METHODDEF
     WINREG_DELETEKEYEX_METHODDEF
     WINREG_DELETEVALUE_METHODDEF
+    WINREG_DELETETREE_METHODDEF
     WINREG_DISABLEREFLECTIONKEY_METHODDEF
     WINREG_ENABLEREFLECTIONKEY_METHODDEF
     WINREG_ENUMKEY_METHODDEF

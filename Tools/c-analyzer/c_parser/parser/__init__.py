@@ -116,6 +116,8 @@ TODO:
 * alt impl using a state machine (& tokenizer or split on delimiters)
 """
 
+import textwrap
+
 from ..info import ParsedItem
 from ._info import SourceInfo
 
@@ -208,7 +210,27 @@ def _iter_source(lines, *, maxtext=11_000, maxlines=200, showtext=False):
             return
     # At this point either the file ended prematurely
     # or there's "too much" text.
-    filename, lno, text = srcinfo.filename, srcinfo._start, srcinfo.text
+    filename, lno_from, lno_to = srcinfo.filename, srcinfo.start, srcinfo.end
+    text = srcinfo.text
     if len(text) > 500:
         text = text[:500] + '...'
-    raise Exception(f'unmatched text ({filename} starting at line {lno}):\n{text}')
+
+    if srcinfo.too_much_text(maxtext):
+        msg = f'''
+            too much text, try to increase MAX_SIZES[MAXTEXT] in cpython/_parser.py
+            {filename} starting at line {lno_from} to {lno_to}
+            has code with length {len(text)} greater than {maxtext}:
+            {text}
+        '''
+        raise RuntimeError(textwrap.dedent(msg))
+
+    if srcinfo.too_many_lines(maxlines):
+        msg = f'''
+            too many lines, try to increase MAX_SIZES[MAXLINES] in cpython/_parser.py
+            {filename} starting at line {lno_from} to {lno_to}
+            has code with number of lines {lno_to - lno_from} greater than {maxlines}:
+            {text}
+        '''
+        raise RuntimeError(textwrap.dedent(msg))
+
+    raise RuntimeError(f'unmatched text ({filename} starting at line {lno_from}):\n{text}')

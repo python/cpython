@@ -38,3 +38,7 @@ PyTuple_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
 }
 #define PyTuple_SET_ITEM(op, index, value) \
     PyTuple_SET_ITEM(_PyObject_CAST(op), (index), _PyObject_CAST(value))
+
+PyAPI_FUNC(PyObject*) PyTuple_FromArray(
+    PyObject *const *array,
+    Py_ssize_t size);

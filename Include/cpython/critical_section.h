@@ -74,10 +74,16 @@ PyAPI_FUNC(void)
 PyCriticalSection_Begin(PyCriticalSection *c, PyObject *op);
 
 PyAPI_FUNC(void)
+PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m);
+
+PyAPI_FUNC(void)
 PyCriticalSection_End(PyCriticalSection *c);
 
 PyAPI_FUNC(void)
 PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b);
+
+PyAPI_FUNC(void)
+PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2);
 
 PyAPI_FUNC(void)
 PyCriticalSection2_End(PyCriticalSection2 *c);
@@ -85,9 +91,13 @@ PyCriticalSection2_End(PyCriticalSection2 *c);
 #ifndef Py_GIL_DISABLED
 # define Py_BEGIN_CRITICAL_SECTION(op)      \
     {
+# define Py_BEGIN_CRITICAL_SECTION_MUTEX(mutex)    \
+    {
 # define Py_END_CRITICAL_SECTION()          \
     }
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)   \
+    {
+# define Py_BEGIN_CRITICAL_SECTION2_MUTEX(m1, m2)  \
     {
 # define Py_END_CRITICAL_SECTION2()         \
     }
@@ -118,6 +128,11 @@ struct PyCriticalSection2 {
         PyCriticalSection _py_cs;                                       \
         PyCriticalSection_Begin(&_py_cs, _PyObject_CAST(op))
 
+# define Py_BEGIN_CRITICAL_SECTION_MUTEX(mutex)                         \
+    {                                                                   \
+        PyCriticalSection _py_cs;                                       \
+        PyCriticalSection_BeginMutex(&_py_cs, mutex)
+
 # define Py_END_CRITICAL_SECTION()                                      \
         PyCriticalSection_End(&_py_cs);                                 \
     }
@@ -126,6 +141,11 @@ struct PyCriticalSection2 {
     {                                                                   \
         PyCriticalSection2 _py_cs2;                                     \
         PyCriticalSection2_Begin(&_py_cs2, _PyObject_CAST(a), _PyObject_CAST(b))
+
+# define Py_BEGIN_CRITICAL_SECTION2_MUTEX(m1, m2)                       \
+    {                                                                   \
+        PyCriticalSection2 _py_cs2;                                     \
+        PyCriticalSection2_BeginMutex(&_py_cs2, m1, m2)
 
 # define Py_END_CRITICAL_SECTION2()                                     \
         PyCriticalSection2_End(&_py_cs2);                               \

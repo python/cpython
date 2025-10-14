@@ -71,18 +71,9 @@ class ConnectionFactoryTests(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 super(Factory, self).__init__(*args, **kwargs)
 
-        regex = (
-            r"Passing more than 1 positional argument to _sqlite3.Connection\(\) "
-            r"is deprecated. Parameters 'timeout', 'detect_types', "
-            r"'isolation_level', 'check_same_thread', 'factory', "
-            r"'cached_statements' and 'uri' will become keyword-only "
-            r"parameters in Python 3.15."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            with memory_database(5.0, 0, None, True, Factory) as con:
-                self.assertIsNone(con.isolation_level)
-                self.assertIsInstance(con, Factory)
-        self.assertEqual(cm.filename, __file__)
+        with self.assertRaisesRegex(TypeError,
+                r'connect\(\) takes at most 1 positional arguments'):
+            memory_database(5.0, 0, None, True, Factory)
 
 
 class CursorFactoryTests(MemoryDatabaseMixin, unittest.TestCase):

@@ -460,6 +460,7 @@ signal_raise_signal_impl(PyObject *module, int signalnum)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 signal.signal
 
     signalnum: int
@@ -478,7 +479,7 @@ the first is the signal number, the second is the interrupted stack frame.
 
 static PyObject *
 signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
-/*[clinic end generated code: output=b44cfda43780f3a1 input=deee84af5fa0432c]*/
+/*[clinic end generated code: output=b44cfda43780f3a1 input=7608656f34fa378b]*/
 {
     _signal_module_state *modstate = get_signal_state(module);
     PyObject *old_handler;
@@ -709,6 +710,7 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
 
 
 /*[clinic input]
+@permit_long_summary
 signal.set_wakeup_fd
 
     fd as fdobj: object
@@ -727,7 +729,7 @@ The fd must be non-blocking.
 static PyObject *
 signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
                           int warn_on_full_buffer)
-/*[clinic end generated code: output=2280d72dd2a54c4f input=5b545946a28b8339]*/
+/*[clinic end generated code: output=2280d72dd2a54c4f input=1b914d48079e9274]*/
 {
     struct _Py_stat_struct status;
 #ifdef MS_WINDOWS
@@ -847,6 +849,7 @@ PySignal_SetWakeupFd(int fd)
 
 #ifdef HAVE_SETITIMER
 /*[clinic input]
+@permit_long_docstring_body
 signal.setitimer
 
     which:    int
@@ -865,7 +868,7 @@ Returns old values as a tuple: (delay, interval).
 static PyObject *
 signal_setitimer_impl(PyObject *module, int which, PyObject *seconds,
                       PyObject *interval)
-/*[clinic end generated code: output=65f9dcbddc35527b input=de43daf194e6f66f]*/
+/*[clinic end generated code: output=65f9dcbddc35527b input=ab5bf2b8f5cff3f4]*/
 {
     _signal_module_state *modstate = get_signal_state(module);
 
@@ -1180,7 +1183,13 @@ signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset)
         err = sigwaitinfo(&sigset, &si);
         Py_END_ALLOW_THREADS
     } while (err == -1
-             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+             && (errno == EINTR
+#if defined(__NetBSD__)
+                 /* NetBSD's implementation violates POSIX by setting
+                  * errno to ECANCELED instead of EINTR. */
+                 || errno == ECANCELED
+#endif
+            ) && !(async_err = PyErr_CheckSignals()));
     if (err == -1)
         return (!async_err) ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
 
@@ -1201,13 +1210,13 @@ signal.sigtimedwait
 
 Like sigwaitinfo(), but with a timeout.
 
-The timeout is specified in seconds, with floating-point numbers allowed.
+The timeout is specified in seconds, rounded up to nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
-/*[clinic end generated code: output=59c8971e8ae18a64 input=955773219c1596cd]*/
+/*[clinic end generated code: output=59c8971e8ae18a64 input=f89af57d645e48e0]*/
 {
     PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
@@ -1623,7 +1632,7 @@ signal_module_exec(PyObject *m)
     modstate->ignore_handler = state->ignore_handler;  // borrowed ref
 
 #ifdef PYHAVE_ITIMER_ERROR
-    modstate->itimer_error = PyErr_NewException("signal.itimer_error",
+    modstate->itimer_error = PyErr_NewException("signal.ItimerError",
                                                 PyExc_OSError, NULL);
     if (modstate->itimer_error == NULL) {
         return -1;
@@ -1776,6 +1785,10 @@ PyErr_CheckSignals(void)
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
     }
+
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    _PyRunRemoteDebugger(tstate);
+#endif
 
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
@@ -1936,7 +1949,7 @@ signal_install_handlers(void)
 /* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
  *
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  *
  * If this function is updated, update also _posix_spawn() of subprocess.py.

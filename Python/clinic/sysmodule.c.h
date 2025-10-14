@@ -7,7 +7,6 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
@@ -102,7 +101,7 @@ sys_audit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    __clinic_args = _PyTuple_FromArray(args + 1, nargs - 1);
+    __clinic_args = PyTuple_FromArray(args + 1, nargs - 1);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -1821,6 +1820,90 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_jit_is_available__doc__,
+"is_available($module, /)\n"
+"--\n"
+"\n"
+"Return True if the current Python executable supports JIT compilation, and False otherwise.");
+
+#define _JIT_IS_AVAILABLE_METHODDEF    \
+    {"is_available", (PyCFunction)_jit_is_available, METH_NOARGS, _jit_is_available__doc__},
+
+static int
+_jit_is_available_impl(PyObject *module);
+
+static PyObject *
+_jit_is_available(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _jit_is_available_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_jit_is_enabled__doc__,
+"is_enabled($module, /)\n"
+"--\n"
+"\n"
+"Return True if JIT compilation is enabled for the current Python process (implies sys._jit.is_available()), and False otherwise.");
+
+#define _JIT_IS_ENABLED_METHODDEF    \
+    {"is_enabled", (PyCFunction)_jit_is_enabled, METH_NOARGS, _jit_is_enabled__doc__},
+
+static int
+_jit_is_enabled_impl(PyObject *module);
+
+static PyObject *
+_jit_is_enabled(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _jit_is_enabled_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_jit_is_active__doc__,
+"is_active($module, /)\n"
+"--\n"
+"\n"
+"Return True if the topmost Python frame is currently executing JIT code (implies sys._jit.is_enabled()), and False otherwise.");
+
+#define _JIT_IS_ACTIVE_METHODDEF    \
+    {"is_active", (PyCFunction)_jit_is_active, METH_NOARGS, _jit_is_active__doc__},
+
+static int
+_jit_is_active_impl(PyObject *module);
+
+static PyObject *
+_jit_is_active(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _jit_is_active_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1864,4 +1947,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=1aca52cefbeb800f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f7d84c5bf00d557 input=a9049054013a1b77]*/

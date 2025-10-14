@@ -224,6 +224,8 @@ class ExceptionTests(unittest.TestCase):
                 if not isinstance(src, str):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
+                if lineno == 1:
+                    line = line.removeprefix('\ufeff')
                 self.assertIn(line, cm.exception.text)
 
     def test_error_offset_continuation_characters(self):
@@ -239,7 +241,9 @@ class ExceptionTests(unittest.TestCase):
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
         check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
               2, 19, encoding='cp1251')
-        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 10)
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 12)
+        check(b'\n\n\nPython = "\xcf\xb3\xf2\xee\xed" +', 4, 12)
+        check(b'\xef\xbb\xbfPython = "\xcf\xb3\xf2\xee\xed" +', 1, 12)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
@@ -287,7 +291,7 @@ class ExceptionTests(unittest.TestCase):
         check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
         check("(1+)", 1, 4)
         check("[interesting\nfoo()\n", 1, 1)
-        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
+        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 1, 0)
         check("""f'''
             {
             (123_a)
@@ -357,7 +361,7 @@ class ExceptionTests(unittest.TestCase):
             except TypeError as err:
                 co = err.__traceback__.tb_frame.f_code
                 self.assertEqual(co.co_name, "test_capi1")
-                self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
+                self.assertEndsWith(co.co_filename, 'test_exceptions.py')
             else:
                 self.fail("Expected exception")
 
@@ -369,7 +373,7 @@ class ExceptionTests(unittest.TestCase):
                 tb = err.__traceback__.tb_next
                 co = tb.tb_frame.f_code
                 self.assertEqual(co.co_name, "__init__")
-                self.assertTrue(co.co_filename.endswith('test_exceptions.py'))
+                self.assertEndsWith(co.co_filename, 'test_exceptions.py')
                 co2 = tb.tb_frame.f_back.f_code
                 self.assertEqual(co2.co_name, "test_capi2")
             else:
@@ -598,7 +602,7 @@ class ExceptionTests(unittest.TestCase):
     def test_notes(self):
         for e in [BaseException(1), Exception(2), ValueError(3)]:
             with self.subTest(e=e):
-                self.assertFalse(hasattr(e, '__notes__'))
+                self.assertNotHasAttr(e, '__notes__')
                 e.add_note("My Note")
                 self.assertEqual(e.__notes__, ["My Note"])
 
@@ -610,7 +614,7 @@ class ExceptionTests(unittest.TestCase):
                 self.assertEqual(e.__notes__, ["My Note", "Your Note"])
 
                 del e.__notes__
-                self.assertFalse(hasattr(e, '__notes__'))
+                self.assertNotHasAttr(e, '__notes__')
 
                 e.add_note("Our Note")
                 self.assertEqual(e.__notes__, ["Our Note"])
@@ -1429,6 +1433,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn("maximum recursion depth exceeded", str(exc))
 
     @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     @cpython_only
     @support.requires_resource('cpu')
     def test_trashcan_recursion(self):
@@ -1444,6 +1449,7 @@ class ExceptionTests(unittest.TestCase):
         foo()
         support.gc_collect()
 
+    @support.skip_emscripten_stack_overflow()
     @cpython_only
     def test_recursion_normalizing_exception(self):
         import_module("_testinternalcapi")
@@ -1521,6 +1527,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'Done.', out)
 
 
+    @support.skip_emscripten_stack_overflow()
     def test_recursion_in_except_handler(self):
 
         def set_relative_recursion_limit(n):
@@ -1626,7 +1633,7 @@ class ExceptionTests(unittest.TestCase):
         # test basic usage of PyErr_NewException
         error1 = _testcapi.make_exception_with_doc("_testcapi.error1")
         self.assertIs(type(error1), type)
-        self.assertTrue(issubclass(error1, Exception))
+        self.assertIsSubclass(error1, Exception)
         self.assertIsNone(error1.__doc__)
 
         # test with given docstring
@@ -1636,21 +1643,21 @@ class ExceptionTests(unittest.TestCase):
         # test with explicit base (without docstring)
         error3 = _testcapi.make_exception_with_doc("_testcapi.error3",
                                                    base=error2)
-        self.assertTrue(issubclass(error3, error2))
+        self.assertIsSubclass(error3, error2)
 
         # test with explicit base tuple
         class C(object):
             pass
         error4 = _testcapi.make_exception_with_doc("_testcapi.error4", doc4,
                                                    (error3, C))
-        self.assertTrue(issubclass(error4, error3))
-        self.assertTrue(issubclass(error4, C))
+        self.assertIsSubclass(error4, error3)
+        self.assertIsSubclass(error4, C)
         self.assertEqual(error4.__doc__, doc4)
 
         # test with explicit dictionary
         error5 = _testcapi.make_exception_with_doc("_testcapi.error5", "",
                                                    error4, {'a': 1})
-        self.assertTrue(issubclass(error5, error4))
+        self.assertIsSubclass(error5, error4)
         self.assertEqual(error5.a, 1)
         self.assertEqual(error5.__doc__, "")
 
@@ -1743,7 +1750,7 @@ class ExceptionTests(unittest.TestCase):
                     self.assertIn("<exception str() failed>", report)
                 else:
                     self.assertIn("test message", report)
-                self.assertTrue(report.endswith("\n"))
+                self.assertEndsWith(report, "\n")
 
     @cpython_only
     # Python built with Py_TRACE_REFS fail with a fatal error in
@@ -2075,6 +2082,50 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.msg, 'test')
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
+
+    def test_repr(self):
+        exc = ImportError()
+        self.assertEqual(repr(exc), "ImportError()")
+
+        exc = ImportError('test')
+        self.assertEqual(repr(exc), "ImportError('test')")
+
+        exc = ImportError('test', 'case')
+        self.assertEqual(repr(exc), "ImportError('test', 'case')")
+
+        exc = ImportError(name='somemodule')
+        self.assertEqual(repr(exc), "ImportError(name='somemodule')")
+
+        exc = ImportError('test', name='somemodule')
+        self.assertEqual(repr(exc), "ImportError('test', name='somemodule')")
+
+        exc = ImportError(path='somepath')
+        self.assertEqual(repr(exc), "ImportError(path='somepath')")
+
+        exc = ImportError('test', path='somepath')
+        self.assertEqual(repr(exc), "ImportError('test', path='somepath')")
+
+        exc = ImportError(name='somename', path='somepath')
+        self.assertEqual(repr(exc),
+                "ImportError(name='somename', path='somepath')")
+
+        exc = ImportError('test', name='somename', path='somepath')
+        self.assertEqual(repr(exc),
+                "ImportError('test', name='somename', path='somepath')")
+
+        exc = ModuleNotFoundError('test', name='somename', path='somepath')
+        self.assertEqual(repr(exc),
+                "ModuleNotFoundError('test', name='somename', path='somepath')")
+
+    def test_ModuleNotFoundError_repr_with_failed_import(self):
+        with self.assertRaises(ModuleNotFoundError) as cm:
+            import does_not_exist  # type: ignore[import] # noqa: F401
+
+        self.assertEqual(cm.exception.name, "does_not_exist")
+        self.assertIsNone(cm.exception.path)
+
+        self.assertEqual(repr(cm.exception),
+            "ModuleNotFoundError(\"No module named 'does_not_exist'\", name='does_not_exist')")
 
 
 def run_script(source):
@@ -2462,7 +2513,7 @@ class SyntaxErrorTests(unittest.TestCase):
         args = ("bad.py", 1, 2)
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
 
-        args = ("bad.py", 1, 2, 4, 5, 6, 7)
+        args = ("bad.py", 1, 2, 4, 5, 6, 7, 8)
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
 
         args = ("bad.py", 1, 2, "abcdefg", 1)

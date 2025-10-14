@@ -1,5 +1,0 @@
-Non-tuple sequences are deprecated as argument for the ``(items)`` format
-unit in :c:func:`PyArg_ParseTuple` and other :ref:`argument parsing
-<arg-parsing>` functions if *items* contains format units which store
-a :ref:`borrowed buffer <c-arg-borrowed-buffer>` or
-a :term:`borrowed reference`.

@@ -11,6 +11,52 @@
 This module constructs higher-level threading interfaces on top of the lower
 level :mod:`_thread` module.
 
+.. include:: ../includes/wasm-notavail.rst
+
+Introduction
+------------
+
+The :mod:`!threading` module provides a way to run multiple `threads
+<https://en.wikipedia.org/wiki/Thread_(computing)>`_ (smaller
+units of a process) concurrently within a single process. It allows for the
+creation and management of threads, making it possible to execute tasks in
+parallel, sharing memory space. Threads are particularly useful when tasks are
+I/O bound, such as file operations or making network requests,
+where much of the time is spent waiting for external resources.
+
+A typical use case for :mod:`!threading` includes managing a pool of worker
+threads that can process multiple tasks concurrently.  Here's a basic example of
+creating and starting threads using :class:`~threading.Thread`::
+
+   import threading
+   import time
+
+   def crawl(link, delay=3):
+       print(f"crawl started for {link}")
+       time.sleep(delay)  # Blocking I/O (simulating a network request)
+       print(f"crawl ended for {link}")
+
+   links = [
+       "https://python.org",
+       "https://docs.python.org",
+       "https://peps.python.org",
+   ]
+
+   # Start threads for each link
+   threads = []
+   for link in links:
+       # Using `args` to pass positional arguments and `kwargs` for keyword arguments
+       t = threading.Thread(target=crawl, args=(link,), kwargs={"delay": 2})
+       threads.append(t)
+
+   # Start each thread
+   for t in threads:
+       t.start()
+
+   # Wait for all threads to finish
+   for t in threads:
+       t.join()
+
 .. versionchanged:: 3.7
    This module used to be optional, it is now always available.
 
@@ -45,7 +91,25 @@ level :mod:`_thread` module.
    However, threading is still an appropriate model if you want to run
    multiple I/O-bound tasks simultaneously.
 
-.. include:: ../includes/wasm-notavail.rst
+GIL and performance considerations
+----------------------------------
+
+Unlike the :mod:`multiprocessing` module, which uses separate processes to
+bypass the :term:`global interpreter lock` (GIL), the threading module operates
+within a single process, meaning that all threads share the same memory space.
+However, the GIL limits the performance gains of threading when it comes to
+CPU-bound tasks, as only one thread can execute Python bytecode at a time.
+Despite this, threads remain a useful tool for achieving concurrency in many
+scenarios.
+
+As of Python 3.13, :term:`free-threaded <free threading>` builds
+can disable the GIL, enabling true parallel execution of threads, but this
+feature is not available by default (see :pep:`703`).
+
+.. TODO: At some point this feature will become available by default.
+
+Reference
+---------
 
 This module defines the following functions:
 
@@ -62,7 +126,7 @@ This module defines the following functions:
 
    Return the current :class:`Thread` object, corresponding to the caller's thread
    of control.  If the caller's thread of control was not created through the
-   :mod:`threading` module, a dummy thread object with limited functionality is
+   :mod:`!threading` module, a dummy thread object with limited functionality is
    returned.
 
    The function ``currentThread`` is a deprecated alias for this function.
@@ -127,12 +191,15 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD, Solaris.
 
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.13
       Added support for GNU/kFreeBSD.
+
+   .. versionchanged:: 3.15
+      Added support for Solaris.
 
 
 .. function:: enumerate()
@@ -157,13 +224,13 @@ This module defines the following functions:
 
    .. index:: single: trace function
 
-   Set a trace function for all threads started from the :mod:`threading` module.
+   Set a trace function for all threads started from the :mod:`!threading` module.
    The *func* will be passed to  :func:`sys.settrace` for each thread, before its
    :meth:`~Thread.run` method is called.
 
 .. function:: settrace_all_threads(func)
 
-   Set a trace function for all threads started from the :mod:`threading` module
+   Set a trace function for all threads started from the :mod:`!threading` module
    and all Python threads that are currently executing.
 
    The *func* will be passed to  :func:`sys.settrace` for each thread, before its
@@ -186,13 +253,13 @@ This module defines the following functions:
 
    .. index:: single: profile function
 
-   Set a profile function for all threads started from the :mod:`threading` module.
+   Set a profile function for all threads started from the :mod:`!threading` module.
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
    :meth:`~Thread.run` method is called.
 
 .. function:: setprofile_all_threads(func)
 
-   Set a profile function for all threads started from the :mod:`threading` module
+   Set a profile function for all threads started from the :mod:`!threading` module
    and all Python threads that are currently executing.
 
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
@@ -257,31 +324,140 @@ when implemented, are mapped to module-level functions.
 All of the methods described below are executed atomically.
 
 
-Thread-Local Data
------------------
+Thread-local data
+^^^^^^^^^^^^^^^^^
 
-Thread-local data is data whose values are thread specific.  To manage
-thread-local data, just create an instance of :class:`local` (or a
-subclass) and store attributes on it::
+Thread-local data is data whose values are thread specific. If you
+have data that you want to be local to a thread, create a
+:class:`local` object and use its attributes::
 
-  mydata = threading.local()
-  mydata.x = 1
+   >>> mydata = local()
+   >>> mydata.number = 42
+   >>> mydata.number
+   42
 
-The instance's values will be different for separate threads.
+You can also access the :class:`local`-object's dictionary::
+
+   >>> mydata.__dict__
+   {'number': 42}
+   >>> mydata.__dict__.setdefault('widgets', [])
+   []
+   >>> mydata.widgets
+   []
+
+If we access the data in a different thread::
+
+   >>> log = []
+   >>> def f():
+   ...     items = sorted(mydata.__dict__.items())
+   ...     log.append(items)
+   ...     mydata.number = 11
+   ...     log.append(mydata.number)
+
+   >>> import threading
+   >>> thread = threading.Thread(target=f)
+   >>> thread.start()
+   >>> thread.join()
+   >>> log
+   [[], 11]
+
+we get different data.  Furthermore, changes made in the other thread
+don't affect data seen in this thread::
+
+   >>> mydata.number
+   42
+
+Of course, values you get from a :class:`local` object, including their
+:attr:`~object.__dict__` attribute, are for whatever thread was current
+at the time the attribute was read.  For that reason, you generally
+don't want to save these values across threads, as they apply only to
+the thread they came from.
+
+You can create custom :class:`local` objects by subclassing the
+:class:`local` class::
+
+   >>> class MyLocal(local):
+   ...     number = 2
+   ...     def __init__(self, /, **kw):
+   ...         self.__dict__.update(kw)
+   ...     def squared(self):
+   ...         return self.number ** 2
+
+This can be useful to support default values, methods and
+initialization.  Note that if you define an :py:meth:`~object.__init__`
+method, it will be called each time the :class:`local` object is used
+in a separate thread.  This is necessary to initialize each thread's
+dictionary.
+
+Now if we create a :class:`local` object::
+
+   >>> mydata = MyLocal(color='red')
+
+we have a default number::
+
+   >>> mydata.number
+   2
+
+an initial color::
+
+   >>> mydata.color
+   'red'
+   >>> del mydata.color
+
+And a method that operates on the data::
+
+   >>> mydata.squared()
+   4
+
+As before, we can access the data in a separate thread::
+
+   >>> log = []
+   >>> thread = threading.Thread(target=f)
+   >>> thread.start()
+   >>> thread.join()
+   >>> log
+   [[('color', 'red')], 11]
+
+without affecting this thread's data::
+
+   >>> mydata.number
+   2
+   >>> mydata.color
+   Traceback (most recent call last):
+   ...
+   AttributeError: 'MyLocal' object has no attribute 'color'
+
+Note that subclasses can define :term:`__slots__`, but they are not
+thread local. They are shared across threads::
+
+   >>> class MyLocal(local):
+   ...     __slots__ = 'number'
+
+   >>> mydata = MyLocal()
+   >>> mydata.number = 42
+   >>> mydata.color = 'red'
+
+So, the separate thread::
+
+   >>> thread = threading.Thread(target=f)
+   >>> thread.start()
+   >>> thread.join()
+
+affects what we see::
+
+   >>> mydata.number
+   11
 
 
 .. class:: local()
 
    A class that represents thread-local data.
 
-   For more details and extensive examples, see the documentation string of the
-   :mod:`!_threading_local` module: :source:`Lib/_threading_local.py`.
-
 
 .. _thread-objects:
 
-Thread Objects
---------------
+Thread objects
+^^^^^^^^^^^^^^
 
 The :class:`Thread` class represents an activity that is run in a separate
 thread of control.  There are two ways to specify the activity: by passing a
@@ -432,7 +608,7 @@ since it is impossible to detect the termination of alien threads.
       timeout occurs.
 
       When the *timeout* argument is present and not ``None``, it should be a
-      floating-point number specifying a timeout for the operation in seconds
+      real number specifying a timeout for the operation in seconds
       (or fractions thereof). As :meth:`~Thread.join` always returns ``None``,
       you must call :meth:`~Thread.is_alive` after :meth:`~Thread.join` to
       decide whether a timeout happened -- if the thread is still alive, the
@@ -447,6 +623,17 @@ since it is impossible to detect the termination of alien threads.
       to join the current thread as that would cause a deadlock. It is also
       an error to :meth:`~Thread.join` a thread before it has been started
       and attempts to do so raise the same exception.
+
+      If an attempt is made to join a running daemonic thread in late stages
+      of :term:`Python finalization <interpreter shutdown>` :meth:`!join`
+      raises a :exc:`PythonFinalizationError`.
+
+      .. versionchanged:: 3.14
+
+         May raise :exc:`PythonFinalizationError`.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
    .. attribute:: name
 
@@ -528,8 +715,8 @@ since it is impossible to detect the termination of alien threads.
 
 .. _lock-objects:
 
-Lock Objects
-------------
+Lock objects
+^^^^^^^^^^^^
 
 A primitive lock is a synchronization primitive that is not owned by a
 particular thread when locked.  In Python, it is currently the lowest level
@@ -580,7 +767,7 @@ All methods are executed atomically.
       If a call with *blocking* set to ``True`` would block, return ``False``
       immediately; otherwise, set the lock to locked and return ``True``.
 
-      When invoked with the floating-point *timeout* argument set to a positive
+      When invoked with the *timeout* argument set to a positive
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  A *timeout* argument of ``-1``
       specifies an unbounded wait.  It is forbidden to specify a *timeout*
@@ -598,6 +785,9 @@ All methods are executed atomically.
 
       .. versionchanged:: 3.14
          Lock acquisition can now be interrupted by signals on Windows.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
 
    .. method:: release()
@@ -621,8 +811,8 @@ All methods are executed atomically.
 
 .. _rlock-objects:
 
-RLock Objects
--------------
+RLock objects
+^^^^^^^^^^^^^
 
 A reentrant lock is a synchronization primitive that may be acquired multiple
 times by the same thread.  Internally, it uses the concepts of "owning thread"
@@ -679,7 +869,7 @@ call release as many times the lock has been acquired can lead to deadlock.
          * If no thread owns the lock, acquire the lock and return immediately.
 
          * If another thread owns the lock, block until we are able to acquire
-           lock, or *timeout*, if set to a positive float value.
+           lock, or *timeout*, if set to a positive value.
 
          * If the same thread owns the lock, acquire the lock again, and
            return immediately. This is the difference between :class:`Lock` and
@@ -706,6 +896,9 @@ call release as many times the lock has been acquired can lead to deadlock.
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
 
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
+
 
    .. method:: release()
 
@@ -731,8 +924,8 @@ call release as many times the lock has been acquired can lead to deadlock.
 
 .. _condition-objects:
 
-Condition Objects
------------------
+Condition objects
+^^^^^^^^^^^^^^^^^
 
 A condition variable is always associated with some kind of lock; this can be
 passed in or one will be created by default.  Passing one in is useful when
@@ -839,7 +1032,7 @@ item to the buffer only needs to wake up one consumer thread.
       occurs.  Once awakened or timed out, it re-acquires the lock and returns.
 
       When the *timeout* argument is present and not ``None``, it should be a
-      floating-point number specifying a timeout for the operation in seconds
+      real number specifying a timeout for the operation in seconds
       (or fractions thereof).
 
       When the underlying lock is an :class:`RLock`, it is not released using
@@ -909,8 +1102,8 @@ item to the buffer only needs to wake up one consumer thread.
 
 .. _semaphore-objects:
 
-Semaphore Objects
------------------
+Semaphore objects
+^^^^^^^^^^^^^^^^^
 
 This is one of the oldest synchronization primitives in the history of computer
 science, invented by the early Dutch computer scientist Edsger W. Dijkstra (he
@@ -966,6 +1159,9 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
 
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
+
    .. method:: release(n=1)
 
       Release a semaphore, incrementing the internal counter by *n*.  When it
@@ -990,7 +1186,7 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
 
 .. _semaphore-examples:
 
-:class:`Semaphore` Example
+:class:`Semaphore` example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Semaphores are often used to guard resources with limited capacity, for example,
@@ -1018,8 +1214,8 @@ causes the semaphore to be released more than it's acquired will go undetected.
 
 .. _event-objects:
 
-Event Objects
--------------
+Event objects
+^^^^^^^^^^^^^
 
 This is one of the simplest mechanisms for communication between threads: one
 thread signals an event and other threads wait for it.
@@ -1066,7 +1262,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
       the internal flag did not become true within the given wait time.
 
       When the timeout argument is present and not ``None``, it should be a
-      floating-point number specifying a timeout for the operation in seconds,
+      real number specifying a timeout for the operation in seconds,
       or fractions thereof.
 
       .. versionchanged:: 3.1
@@ -1075,8 +1271,8 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
 .. _timer-objects:
 
-Timer Objects
--------------
+Timer objects
+^^^^^^^^^^^^^
 
 This class represents an action that should be run only after a certain amount
 of time has passed --- a timer.  :class:`Timer` is a subclass of :class:`Thread`
@@ -1113,8 +1309,8 @@ For example::
       only work if the timer is still in its waiting stage.
 
 
-Barrier Objects
----------------
+Barrier objects
+^^^^^^^^^^^^^^^
 
 .. versionadded:: 3.2
 

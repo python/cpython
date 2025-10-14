@@ -315,7 +315,10 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 
     def test_configure_height(self):
         widget = self.create()
-        self.checkIntegerParam(widget, 'height', 100, -100, 0, conv=str)
+        if tk_version < (9, 0):
+            self.checkIntegerParam(widget, 'height', 100, -100, 0, conv=str)
+        else:
+            self.checkIntegerParam(widget, 'height', 0, -100, 0)
 
     def test_configure_image(self):
         widget = self.create()
@@ -342,7 +345,10 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 
     def test_configure_width(self):
         widget = self.create()
-        self.checkIntegerParam(widget, 'width', 402, -402, 0, conv=str)
+        if tk_version < (9, 0):
+            self.checkIntegerParam(widget, 'width', 402, -402, 0, conv=str)
+        else:
+            self.checkIntegerParam(widget, 'width', 402, 0, 0)
 
 
 class OptionMenuTest(MenubuttonTest, unittest.TestCase):
@@ -353,6 +359,11 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
     def test_bad_kwarg(self):
         with self.assertRaisesRegex(TclError, r"^unknown option -image$"):
             tkinter.OptionMenu(self.root, None, 'b', image='')
+
+    def test_specify_name(self):
+        widget = tkinter.OptionMenu(self.root, None, ':)', name="option_menu")
+        self.assertEqual(str(widget), ".option_menu")
+        self.assertIs(self.root.children["option_menu"], widget)
 
 @add_configure_tests(IntegerSizeTests, StandardOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
@@ -386,8 +397,12 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_insertborderwidth(self):
         widget = self.create(insertwidth=100)
-        self.checkPixelsParam(widget, 'insertborderwidth',
-                              0, 1.3, 2.6, 6, '10p')
+        if tk_version < (9, 0):
+            self.checkPixelsParam(widget, 'insertborderwidth',
+                                  0, 1.3, 2.6, 6, '10p')
+        else:
+            self.checkPixelsParam(widget, 'insertborderwidth',
+                                  0, 1.3, 3, 6, '10p')
         self.checkParam(widget, 'insertborderwidth', -2)
         # insertborderwidth is bounded above by a half of insertwidth.
         expected =  100 // 2 if tk_version < (9, 0) else 60
@@ -546,11 +561,22 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         # XXX
         widget = self.create()
         self.assertEqual(widget['values'], '')
-        self.checkParam(widget, 'values', 'mon tue wed thur')
+        if tk_version < (9, 0):
+            expected = 'mon tue wed thur'
+        else:
+            expected = ('mon', 'tue', 'wed', 'thur')
+        self.checkParam(widget, 'values', 'mon tue wed thur',
+                        expected=expected)
         self.checkParam(widget, 'values', ('mon', 'tue', 'wed', 'thur'),
-                        expected='mon tue wed thur')
+                        expected=expected)
+
+        if tk_version < (9, 0):
+            expected = '42 3.14 {} {any string}'
+        else:
+            expected = (42, 3.14, '', 'any string')
         self.checkParam(widget, 'values', (42, 3.14, '', 'any string'),
-                        expected='42 3.14 {} {any string}')
+                        expected=expected)
+
         self.checkParam(widget, 'values', '')
 
     def test_configure_wrap(self):
@@ -644,10 +670,9 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_height(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'height', 100, 101.2, 102.6, '3c')
-        self.checkParam(widget, 'height', -100,
-                            expected=1 if tk_version < (9, 0) else -100)
-        self.checkParam(widget, 'height', 0,
-                            expected=1 if tk_version < (9, 0) else 0 )
+        expected = 1 if tk_version < (9, 0) else 0
+        self.checkParam(widget, 'height', -100, expected=expected)
+        self.checkParam(widget, 'height', 0, expected=expected)
 
     def test_configure_maxundo(self):
         widget = self.create()
@@ -665,8 +690,9 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_configure_selectborderwidth(self):
         widget = self.create()
+        value = -2 if tk_version < (9, 0) else 0
         self.checkPixelsParam(widget, 'selectborderwidth',
-                              1.3, 2.6, -2, '10p', conv=False)
+                              1.3, 2.6, value, '10p', conv=False)
 
     def test_configure_spacing1(self):
         widget = self.create()
