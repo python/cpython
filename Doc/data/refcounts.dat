@@ -2359,6 +2359,13 @@ PyTuple_GetSlice:PyObject*:p:0:
 PyTuple_GetSlice:Py_ssize_t:low::
 PyTuple_GetSlice:Py_ssize_t:high::
 
+PyTuple_MakePair:PyObject*::+1
+PyTuple_MakePair:PyObject*:one:+1
+PyTuple_MakePair:PyObject*:two:+1
+
+PyTuple_MakeSingle:PyObject*::+1
+PyTuple_MakeSingle:PyObject*:one:+1
+
 PyTuple_New:PyObject*::+1:
 PyTuple_New:Py_ssize_t:len::
 
