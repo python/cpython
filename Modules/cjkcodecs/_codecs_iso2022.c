@@ -810,6 +810,7 @@ jisx0213_encoder(const MultibyteCodec *codec, const Py_UCS4 *data,
             }
         }
         /* fall through */
+
     case -1: /* flush unterminated */
         *length = 1;
         coded = find_pairencmap((ucs2_t)data[0], 0,
