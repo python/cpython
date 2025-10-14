@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_Validate()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_fileutils.h"     // _PyFile_Flush
@@ -14,8 +15,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
-#include "pycore_cell.h"          // PyCell_GetRef()
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
 
 #include "clinic/bltinmodule.c.h"
 
@@ -123,7 +123,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         "__build_class__: name is not a string");
         return NULL;
     }
-    orig_bases = _PyTuple_FromArray(args + 2, nargs - 2);
+    orig_bases = PyTuple_FromArray(args + 2, nargs - 2);
     if (orig_bases == NULL)
         return NULL;
 

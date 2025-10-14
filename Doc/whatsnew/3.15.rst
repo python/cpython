@@ -696,6 +696,14 @@ http.server
   (Contributed by Bénédikt Tran in :gh:`133810`.)
 
 
+importlib.resources
+-------------------
+
+* Removed deprecated ``package`` parameter
+  from :func:`importlib.resources.files` function.
+  (Contributed by Semyon Moroz in :gh:`138044`)
+
+
 pathlib
 -------
 
@@ -851,6 +859,9 @@ New features
   * :c:func:`PyBytesWriter_WriteBytes`
 
   (Contributed by Victor Stinner in :gh:`129813`.)
+
+* Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
+  (Contributed by Victor Stinner in :gh:`111489`.)
 
 
 Porting to Python 3.15
