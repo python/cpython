@@ -291,6 +291,7 @@ struct compiler {
     bool c_save_nested_seqs;     /* if true, construct recursive instruction sequences
                                   * (including instructions for nested code objects)
                                   */
+    int c_disable_warning;
 };
 
 #define INSTR_SEQUENCE(C) ((C)->u->u_instr_sequence)
@@ -1437,6 +1438,9 @@ compiler_push_fblock(struct compiler *c, location loc,
     f->fb_loc = loc;
     f->fb_exit = exit;
     f->fb_datum = datum;
+    if (t == FINALLY_END) {
+        c->c_disable_warning++;
+    }
     return SUCCESS;
 }
 
@@ -1448,6 +1452,9 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, jump_target_label blo
     u->u_nfblocks--;
     assert(u->u_fblock[u->u_nfblocks].fb_type == t);
     assert(SAME_LABEL(u->u_fblock[u->u_nfblocks].fb_block, block_label));
+    if (t == FINALLY_END) {
+        c->c_disable_warning--;
+    }
 }
 
 static int
@@ -6609,6 +6616,9 @@ static int
 compiler_warn(struct compiler *c, location loc,
               const char *format, ...)
 {
+    if (c->c_disable_warning) {
+        return SUCCESS;
+    }
     va_list vargs;
     va_start(vargs, format);
     PyObject *msg = PyUnicode_FromFormatV(format, vargs);
@@ -6616,8 +6626,8 @@ compiler_warn(struct compiler *c, location loc,
     if (msg == NULL) {
         return ERROR;
     }
-    if (_PyErr_WarnExplicitObjectWithContext(PyExc_SyntaxWarning, msg,
-                                             c->c_filename, loc.lineno) < 0)
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
+                                 c->c_filename, loc.lineno, NULL, NULL) < 0)
     {
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             /* Replace the SyntaxWarning exception with a SyntaxError
