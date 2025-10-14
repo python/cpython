@@ -2746,7 +2746,7 @@ PyDoc_STRVAR(_decimal_Decimal_logical_invert__doc__,
 "\n"
 "Invert all its digits.\n"
 "\n"
-"The self should have zero sign and exponent, and digits either 0 or 1.");
+"The self must be logical number.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_INVERT_METHODDEF    \
     {"logical_invert", _PyCFunction_CAST(_decimal_Decimal_logical_invert), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_invert__doc__},
@@ -3340,8 +3340,7 @@ PyDoc_STRVAR(_decimal_Decimal_logical_and__doc__,
 "\n"
 "Applies an \'and\' operation between self and other\'s digits.\n"
 "\n"
-"Both self and other should have zero sign and exponent,\n"
-"and digits either 0 or 1.");
+"Both self and other must be logical numbers.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_AND_METHODDEF    \
     {"logical_and", _PyCFunction_CAST(_decimal_Decimal_logical_and), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_and__doc__},
@@ -3409,8 +3408,7 @@ PyDoc_STRVAR(_decimal_Decimal_logical_or__doc__,
 "\n"
 "Applies an \'or\' operation between self and other\'s digits.\n"
 "\n"
-"Both self and other should have zero sign and exponent,\n"
-"and digits either 0 or 1.");
+"Both self and other must be logical numbers.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_OR_METHODDEF    \
     {"logical_or", _PyCFunction_CAST(_decimal_Decimal_logical_or), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_or__doc__},
@@ -3478,8 +3476,7 @@ PyDoc_STRVAR(_decimal_Decimal_logical_xor__doc__,
 "\n"
 "Applies an \'xor\' operation between self and other\'s digits.\n"
 "\n"
-"Both self and other should have zero sign and exponent,\n"
-"and digits either 0 or 1.");
+"Both self and other must be logical numbers.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_XOR_METHODDEF    \
     {"logical_xor", _PyCFunction_CAST(_decimal_Decimal_logical_xor), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_xor__doc__},
@@ -6248,8 +6245,7 @@ PyDoc_STRVAR(_decimal_Context_logical_invert__doc__,
 "\n"
 "Invert all the digits in the operand.\n"
 "\n"
-"The operand should have zero sign and exponent, and digits\n"
-"either 0 or 1.\n"
+"The operand must be a logical number.\n"
 "\n"
 "    >>> ExtendedContext.logical_invert(Decimal(\'0\'))\n"
 "    Decimal(\'111111111\')\n"
@@ -6583,8 +6579,7 @@ PyDoc_STRVAR(_decimal_Context_logical_and__doc__,
 "\n"
 "Applies the logical operation \'and\' between each operand\'s digits.\n"
 "\n"
-"Both operands should have zero sign and exponent, and\n"
-"digits either 0 or 1.\n"
+"The operands must be both logical numbers.\n"
 "\n"
 "    >>> ExtendedContext.logical_and(Decimal(\'0\'), Decimal(\'0\'))\n"
 "    Decimal(\'0\')\n"
@@ -6652,8 +6647,7 @@ PyDoc_STRVAR(_decimal_Context_logical_or__doc__,
 "\n"
 "Applies the logical operation \'or\' between each operand\'s digits.\n"
 "\n"
-"Both operands should have zero sign and exponent, and digits\n"
-"either 0 or 1.\n"
+"The operands must be both logical numbers.\n"
 "\n"
 "    >>> ExtendedContext.logical_or(Decimal(\'0\'), Decimal(\'0\'))\n"
 "    Decimal(\'0\')\n"
@@ -6721,8 +6715,7 @@ PyDoc_STRVAR(_decimal_Context_logical_xor__doc__,
 "\n"
 "Applies the logical operation \'xor\' between each operand\'s digits.\n"
 "\n"
-"Both operands should have zero sign and exponent, and digits\n"
-"either 0 or 1.\n"
+"The operands must be both logical numbers.\n"
 "\n"
 "    >>> ExtendedContext.logical_xor(Decimal(\'0\'), Decimal(\'0\'))\n"
 "    Decimal(\'0\')\n"
@@ -6987,4 +6980,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=772d05afebf1ce88 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b288181c82fdc9f1 input=a9049054013a1b77]*/
