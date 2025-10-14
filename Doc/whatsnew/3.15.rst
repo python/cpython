@@ -662,6 +662,12 @@ importlib.resources
   (Contributed by Semyon Moroz in :gh:`138044`)
 
 
+mimetypes
+---------
+
+* Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+
+
 pathlib
 -------
 
