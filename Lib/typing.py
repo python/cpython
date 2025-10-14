@@ -1158,14 +1158,26 @@ def _generic_class_getitem(cls, args):
                 f"Parameters to {cls.__name__}[...] must all be unique")
     else:
         # Subscripting a regular Generic subclass.
-        for param in cls.__parameters__:
+        try:
+            parameters = cls.__parameters__
+        except AttributeError as e:
+            init_subclass = getattr(cls, '__init_subclass__', None)
+            if init_subclass not in {None, Generic.__init_subclass__}:
+                e.add_note(
+                    f"Note: this exception may have been caused by "
+                    f"{init_subclass.__qualname__!r} (or the "
+                    f"'__init_subclass__' method on a superclass) not "
+                    f"calling 'super().__init_subclass__()'"
+                )
+            raise
+        for param in parameters:
             prepare = getattr(param, '__typing_prepare_subst__', None)
             if prepare is not None:
                 args = prepare(cls, args)
         _check_generic_specialization(cls, args)
 
         new_args = []
-        for param, new_arg in zip(cls.__parameters__, args):
+        for param, new_arg in zip(parameters, args):
             if isinstance(param, TypeVarTuple):
                 new_args.extend(new_arg)
             else:

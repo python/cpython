@@ -236,7 +236,7 @@ PyBytesWriter
 The :c:type:`PyBytesWriter` API can be used to create a Python :class:`bytes`
 object.
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 .. c:type:: PyBytesWriter
 
@@ -260,7 +260,7 @@ Create, Finish, Discard
    writer size to *size*. The caller is responsible to write *size*
    bytes using :c:func:`PyBytesWriter_GetData`.
 
-   On error, set an exception and return NULL.
+   On error, set an exception and return ``NULL``.
 
    *size* must be positive or zero.
 

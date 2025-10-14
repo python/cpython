@@ -457,16 +457,19 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 static PyInterpreterState *
 alloc_interpreter(void)
 {
+    // Aligned allocation for PyInterpreterState.
+    // the first word of the memory block is used to store
+    // the original pointer to be used later to free the memory.
     size_t alignment = _Alignof(PyInterpreterState);
-    size_t allocsize = sizeof(PyInterpreterState) + alignment - 1;
+    size_t allocsize = sizeof(PyInterpreterState) + sizeof(void *) + alignment - 1;
     void *mem = PyMem_RawCalloc(1, allocsize);
     if (mem == NULL) {
         return NULL;
     }
-    PyInterpreterState *interp = _Py_ALIGN_UP(mem, alignment);
-    assert(_Py_IS_ALIGNED(interp, alignment));
-    interp->_malloced = mem;
-    return interp;
+    void *ptr = _Py_ALIGN_UP((char *)mem + sizeof(void *), alignment);
+    ((void **)ptr)[-1] = mem;
+    assert(_Py_IS_ALIGNED(ptr, alignment));
+    return ptr;
 }
 
 static void
@@ -481,7 +484,7 @@ free_interpreter(PyInterpreterState *interp)
             interp->obmalloc = NULL;
         }
         assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
-        PyMem_RawFree(interp->_malloced);
+        PyMem_RawFree(((void **)interp)[-1]);
     }
 }
 

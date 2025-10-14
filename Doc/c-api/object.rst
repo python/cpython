@@ -201,7 +201,7 @@ Object Protocol
    This case can arise from forgetting ``NULL`` checks and would delete the
    attribute.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Must not be called with NULL value if an exception is set.
 
 
@@ -226,7 +226,7 @@ Object Protocol
    For more details, see :c:func:`PyUnicode_InternFromString`, which may be
    used internally to create a key object.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Must not be called with NULL value if an exception is set.
 
 
@@ -600,7 +600,7 @@ Object Protocol
 
    Clear the managed dictionary of *obj*.
 
-   This function must only be called in a traverse function of the type which
+   This function must only be called in a clear function of the type which
    has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
 
    .. versionadded:: 3.13
