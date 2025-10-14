@@ -2378,6 +2378,8 @@ Hacl_Streaming_HMAC_digest(
     Hacl_Agile_Hash_state_s *s11 = tmp_block_state1.snd;
     update_last(s11, prev_len_last, buf_last, r);
     finish0(tmp_block_state1, output);
+    free_(tmp_block_state1.snd);
+    free_(tmp_block_state1.thd);
     return Hacl_Streaming_Types_Success;
   }
   KRML_HOST_EPRINTF("KaRaMeL abort at %s:%d\n%s\n",
@@ -2519,4 +2521,3 @@ Hacl_Streaming_HMAC_agile_state
     "unreachable (pattern matches are exhaustive in F*)");
   KRML_HOST_EXIT(255U);
 }
-
