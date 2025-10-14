@@ -21,9 +21,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "connection.h"
 #include "statement.h"
 #include "util.h"
+
+#include "pycore_object.h"        // _PyObject_VisitType()
+
 
 #define _pysqlite_Statement_CAST(op)    ((pysqlite_Statement *)(op))
 

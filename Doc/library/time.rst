@@ -201,7 +201,7 @@ Functions
 
    .. versionadded:: 3.3
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *time*, not only integer or float.
 
 
@@ -226,7 +226,7 @@ Functions
    ``asctime(localtime(secs))``. Locale information is not used by
    :func:`ctime`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number, not only integer or float.
 
 
@@ -244,8 +244,8 @@ Functions
 
    The result has the following attributes:
 
-   - *adjustable*: ``True`` if the clock can be changed automatically (e.g. by
-     a NTP daemon) or manually by the system administrator, ``False`` otherwise
+   - *adjustable*: ``True`` if the clock can be set to jump forward or backward
+     in time, ``False`` otherwise. Does not refer to gradual NTP rate adjustments.
    - *implementation*: The name of the underlying C function used to get
      the clock value.  Refer to :ref:`time-clock-id-constants` for possible values.
    - *monotonic*: ``True`` if the clock cannot go backward,
@@ -264,7 +264,7 @@ Functions
    :class:`struct_time` object. See :func:`calendar.timegm` for the inverse of this
    function.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number, not only integer or float.
 
 
@@ -280,7 +280,7 @@ Functions
    :c:func:`gmtime` failure. It's common for this to be restricted to years
    between 1970 and 2038.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number, not only integer or float.
 
 
@@ -439,7 +439,7 @@ Functions
    .. versionchanged:: 3.13
       Raises an auditing event.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number, not only integer or float.
 
 .. index::

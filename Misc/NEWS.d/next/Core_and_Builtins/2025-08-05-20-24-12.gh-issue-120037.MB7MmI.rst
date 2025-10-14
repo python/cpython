@@ -1,2 +1,0 @@
-Disable user site packages directory when a ``._pth`` file is used, even if
-it contains ``import site``.

@@ -1,7 +1,7 @@
 import contextlib
 import io
-import unittest
 import warnings
+import unittest
 from unittest.mock import patch
 from textwrap import dedent
 
