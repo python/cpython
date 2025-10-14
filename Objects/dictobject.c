@@ -5719,8 +5719,11 @@ dictiter_iternextitem(PyObject *self)
         }
         else {
             result = PyTuple_New(2);
-            if (result == NULL)
+            if (result == NULL) {
+                Py_DECREF(key);
+                Py_DECREF(value);
                 return NULL;
+            }
             PyTuple_SET_ITEM(result, 0, key);
             PyTuple_SET_ITEM(result, 1, value);
         }
