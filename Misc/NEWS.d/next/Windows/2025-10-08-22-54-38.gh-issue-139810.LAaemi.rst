@@ -1,0 +1,2 @@
+Installing with ``py install 3[.x]-dev`` will now select final versions as
+well as prereleases.

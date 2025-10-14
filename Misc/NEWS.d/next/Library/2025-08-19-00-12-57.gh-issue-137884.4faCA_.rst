@@ -1,0 +1,2 @@
+Add :func:`threading.get_native_id` support for Illumos/Solaris. Patch by
+Yüce Tekol.

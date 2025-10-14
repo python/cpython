@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_uop.h"           // _PyUOpInstruction
 #include "pycore_uop_ids.h"
 #include "pycore_stackref.h"      // _PyStackRef
 #include <stdbool.h>
@@ -41,34 +42,9 @@ typedef struct {
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
-/* Depending on the format,
- * the 32 bits between the oparg and operand are:
- * UOP_FORMAT_TARGET:
- *    uint32_t target;
- * UOP_FORMAT_JUMP
- *    uint16_t jump_target;
- *    uint16_t error_target;
- */
-typedef struct {
-    uint16_t opcode:15;
-    uint16_t format:1;
-    uint16_t oparg;
-    union {
-        uint32_t target;
-        struct {
-            uint16_t jump_target;
-            uint16_t error_target;
-        };
-    };
-    uint64_t operand0;  // A cache entry
-    uint64_t operand1;
-#ifdef Py_STATS
-    uint64_t execution_count;
-#endif
-} _PyUOpInstruction;
-
-typedef struct {
+typedef struct _PyExitData {
     uint32_t target;
+    uint16_t index;
     _Py_BackoffCounter temperature;
     struct _PyExecutorObject *executor;
 } _PyExitData;
@@ -81,7 +57,6 @@ typedef struct _PyExecutorObject {
     uint32_t code_size;
     size_t jit_size;
     void *jit_code;
-    void *jit_side_entry;
     _PyExitData exits[1];
 } _PyExecutorObject;
 
@@ -117,9 +92,6 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 // Used as the threshold to trigger executor invalidation when
 // trace_run_counter is greater than this value.
 #define JIT_CLEANUP_THRESHOLD 100000
-
-// This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 800
 
 #define TRACE_STACK_SIZE 5
 
@@ -252,6 +224,12 @@ PyJitRef_Wrap(JitOptSymbol *sym)
 }
 
 static inline JitOptRef
+PyJitRef_StripReferenceInfo(JitOptRef ref)
+{
+    return PyJitRef_Wrap(PyJitRef_Unwrap(ref));
+}
+
+static inline JitOptRef
 PyJitRef_Borrow(JitOptRef ref)
 {
     return (JitOptRef){ .bits = ref.bits | REF_IS_BORROWED };
@@ -272,9 +250,13 @@ PyJitRef_IsBorrowed(JitOptRef ref)
 }
 
 struct _Py_UOpsAbstractFrame {
+    bool globals_watched;
+     // The version number of the globals dicts, once checked. 0 if unchecked.
+    uint32_t globals_checked_version;
     // Max stacklen
     int stack_len;
     int locals_len;
+    PyFunctionObject *func;
 
     JitOptRef *stack_pointer;
     JitOptRef *stack;
@@ -293,6 +275,8 @@ typedef struct _JitOptContext {
     char done;
     char out_of_space;
     bool contradiction;
+     // Has the builtins dict been watched?
+    bool builtins_watched;
     // The current "executing" frame.
     _Py_UOpsAbstractFrame *frame;
     _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
@@ -332,8 +316,8 @@ extern bool _Py_uop_sym_is_bottom(JitOptRef sym);
 extern int _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef sym);
 extern PyTypeObject *_Py_uop_sym_get_type(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptRef *args);
-extern JitOptRef _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef sym, int item);
-extern int _Py_uop_sym_tuple_length(JitOptRef sym);
+extern JitOptRef _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef sym, Py_ssize_t item);
+extern Py_ssize_t _Py_uop_sym_tuple_length(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef value, bool truthy);
 extern bool _Py_uop_sym_is_compact_int(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_compact_int(JitOptContext *ctx);
@@ -354,6 +338,16 @@ PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
 PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyExecutorObject **exec_ptr, int chain_depth);
 
+static inline _PyExecutorObject *_PyExecutor_FromExit(_PyExitData *exit)
+{
+    _PyExitData *exit0 = exit - exit->index;
+    return (_PyExecutorObject *)(((char *)exit0) - offsetof(_PyExecutorObject, exits));
+}
+
+extern _PyExecutorObject *_PyExecutor_GetColdExecutor(void);
+
+PyAPI_FUNC(void) _PyExecutor_ClearExit(_PyExitData *exit);
+
 static inline int is_terminator(const _PyUOpInstruction *uop)
 {
     int opcode = uop->opcode;
@@ -362,6 +356,8 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
         opcode == _JUMP_TO_TOP
     );
 }
+
+extern void _PyExecutor_Free(_PyExecutorObject *self);
 
 PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 #ifdef _Py_TIER2

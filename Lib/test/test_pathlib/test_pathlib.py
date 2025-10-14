@@ -17,7 +17,7 @@ from urllib.request import pathname2url
 
 from test.support import import_helper
 from test.support import cpython_only
-from test.support import is_emscripten, is_wasi
+from test.support import is_emscripten, is_wasi, is_wasm32
 from test.support import infinite_recursion
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FS_NONASCII, FakePath
@@ -3158,7 +3158,7 @@ class PathTest(PurePathTest):
         self.assertEqual(str(P('//a/b').absolute()), '//a/b')
 
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "umask is not implemented on Emscripten/WASI."
     )
     @needs_posix
@@ -3189,7 +3189,7 @@ class PathTest(PurePathTest):
             os.chdir(current_directory)
 
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "umask is not implemented on Emscripten/WASI."
     )
     @needs_posix

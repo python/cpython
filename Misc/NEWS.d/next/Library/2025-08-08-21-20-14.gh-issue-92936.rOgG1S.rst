@@ -1,0 +1,2 @@
+Update regex used by ``http.cookies.SimpleCookie`` to handle values containing
+double quotes.
