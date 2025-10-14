@@ -195,6 +195,7 @@ class SubinterpreterTest(unittest.TestCase):
     # Python built with Py_TRACE_REFS fail with a fatal error in
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @support.requires_subprocess()
     def test_atexit_with_low_memory(self):
         # gh-140080: Test that setting low memory after registering an atexit
         # callback doesn't cause an infinite loop during finalization.
@@ -226,7 +227,6 @@ class SubinterpreterTest(unittest.TestCase):
 
         self.assertIn(proc.returncode, (0, 1))
         self.assertNotIn(b"hello", proc.stdout)
-        # MemoryError should appear in stderr
         self.assertIn(b"MemoryError", proc.stderr)
 
 
