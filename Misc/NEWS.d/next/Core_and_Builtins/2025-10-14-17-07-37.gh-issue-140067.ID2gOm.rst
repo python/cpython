@@ -1,1 +1,1 @@
-Fix memory leak in subinterpreter creation detected by AddressSanitizer.
+Fix memory leak in sub-interpreter creation.
