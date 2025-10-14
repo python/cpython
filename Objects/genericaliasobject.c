@@ -4,6 +4,7 @@
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typevarobject.h" // _Py_typing_type_repr
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
@@ -152,29 +153,17 @@ tuple_index(PyObject *self, Py_ssize_t len, PyObject *item)
 }
 
 static int
-tuple_add(PyObject *self, Py_ssize_t len, PyObject *item)
+tuplewriter_add(PyTupleWriter *writer, PyObject *item)
 {
-    if (tuple_index(self, len, item) < 0) {
-        PyTuple_SET_ITEM(self, len, Py_NewRef(item));
-        return 1;
+    Py_ssize_t len;
+    PyObject **items = _PyTupleWriter_GetItems(writer, &len);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        if (items[i] == item) {
+            return 0;
+        }
     }
-    return 0;
-}
 
-static Py_ssize_t
-tuple_extend(PyObject **dst, Py_ssize_t dstindex,
-             PyObject **src, Py_ssize_t count)
-{
-    assert(count >= 0);
-    if (_PyTuple_Resize(dst, PyTuple_GET_SIZE(*dst) + count - 1) != 0) {
-        return -1;
-    }
-    assert(dstindex + count <= PyTuple_GET_SIZE(*dst));
-    for (Py_ssize_t i = 0; i < count; ++i) {
-        PyObject *item = src[i];
-        PyTuple_SET_ITEM(*dst, dstindex + i, Py_NewRef(item));
-    }
-    return dstindex + count;
+    return PyTupleWriter_Add(writer, item);
 }
 
 PyObject *
@@ -190,13 +179,10 @@ _Py_make_parameters(PyObject *args)
         }
     }
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    Py_ssize_t len = nargs;
-    PyObject *parameters = PyTuple_New(len);
+    PyTupleWriter *parameters = PyTupleWriter_Create(nargs);
     if (parameters == NULL) {
-        Py_XDECREF(tuple_args);
-        return NULL;
+        goto error;
     }
-    Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
         // We don't want __parameters__ descriptor of a bare Python class.
@@ -205,60 +191,47 @@ _Py_make_parameters(PyObject *args)
         }
         int rc = PyObject_HasAttrWithError(t, &_Py_ID(__typing_subst__));
         if (rc < 0) {
-            Py_DECREF(parameters);
-            Py_XDECREF(tuple_args);
-            return NULL;
+            goto error;
         }
         if (rc) {
-            iparam += tuple_add(parameters, iparam, t);
+            if (tuplewriter_add(parameters, t) < 0) {
+                goto error;
+            }
         }
         else {
             PyObject *subparams;
             if (PyObject_GetOptionalAttr(t, &_Py_ID(__parameters__),
                                      &subparams) < 0) {
-                Py_DECREF(parameters);
-                Py_XDECREF(tuple_args);
-                return NULL;
+                goto error;
             }
             if (!subparams && (PyTuple_Check(t) || PyList_Check(t))) {
                 // Recursively call _Py_make_parameters for lists/tuples and
                 // add the results to the current parameters.
                 subparams = _Py_make_parameters(t);
                 if (subparams == NULL) {
-                    Py_DECREF(parameters);
-                    Py_XDECREF(tuple_args);
-                    return NULL;
+                    goto error;
                 }
             }
             if (subparams && PyTuple_Check(subparams)) {
                 Py_ssize_t len2 = PyTuple_GET_SIZE(subparams);
-                Py_ssize_t needed = len2 - 1 - (iarg - iparam);
-                if (needed > 0) {
-                    len += needed;
-                    if (_PyTuple_Resize(&parameters, len) < 0) {
-                        Py_DECREF(subparams);
-                        Py_DECREF(parameters);
-                        Py_XDECREF(tuple_args);
-                        return NULL;
-                    }
-                }
                 for (Py_ssize_t j = 0; j < len2; j++) {
                     PyObject *t2 = PyTuple_GET_ITEM(subparams, j);
-                    iparam += tuple_add(parameters, iparam, t2);
+                    if (tuplewriter_add(parameters, t2) < 0) {
+                        Py_DECREF(subparams);
+                        goto error;
+                    }
                 }
             }
             Py_XDECREF(subparams);
         }
     }
-    if (iparam < len) {
-        if (_PyTuple_Resize(&parameters, iparam) < 0) {
-            Py_XDECREF(parameters);
-            Py_XDECREF(tuple_args);
-            return NULL;
-        }
-    }
     Py_XDECREF(tuple_args);
-    return parameters;
+    return PyTupleWriter_Finish(parameters);
+
+error:
+    PyTupleWriter_Discard(parameters);
+    Py_XDECREF(tuple_args);
+    return NULL;
 }
 
 /* If obj is a generic alias, substitute type variables params
@@ -274,15 +247,14 @@ subs_tvars(PyObject *obj, PyObject *params,
     if (PyObject_GetOptionalAttr(obj, &_Py_ID(__parameters__), &subparams) < 0) {
         return NULL;
     }
+
     if (subparams && PyTuple_Check(subparams) && PyTuple_GET_SIZE(subparams)) {
         Py_ssize_t nparams = PyTuple_GET_SIZE(params);
         Py_ssize_t nsubargs = PyTuple_GET_SIZE(subparams);
-        PyObject *subargs = PyTuple_New(nsubargs);
-        if (subargs == NULL) {
-            Py_DECREF(subparams);
-            return NULL;
+        PyTupleWriter *writer = PyTupleWriter_Create(nsubargs);
+        if (writer == NULL) {
+            goto error;
         }
-        Py_ssize_t j = 0;
         for (Py_ssize_t i = 0; i < nsubargs; ++i) {
             PyObject *arg = PyTuple_GET_ITEM(subparams, i);
             Py_ssize_t iparam = tuple_index(params, nparams, arg);
@@ -290,27 +262,39 @@ subs_tvars(PyObject *obj, PyObject *params,
                 PyObject *param = PyTuple_GET_ITEM(params, iparam);
                 arg = argitems[iparam];
                 if (Py_TYPE(param)->tp_iter && PyTuple_Check(arg)) {  // TypeVarTuple
-                    j = tuple_extend(&subargs, j,
-                                    &PyTuple_GET_ITEM(arg, 0),
-                                    PyTuple_GET_SIZE(arg));
-                    if (j < 0) {
-                        return NULL;
+                    if (PyTupleWriter_AddArray(writer,
+                                               _PyTuple_ITEMS(arg),
+                                               PyTuple_GET_SIZE(arg)) < 0) {
+                        goto error;
                     }
                     continue;
                 }
             }
-            PyTuple_SET_ITEM(subargs, j, Py_NewRef(arg));
-            j++;
+            if (PyTupleWriter_Add(writer, arg) < 0) {
+                goto error;
+            }
         }
-        assert(j == PyTuple_GET_SIZE(subargs));
 
-        obj = PyObject_GetItem(obj, subargs);
+        PyObject *subargs = PyTupleWriter_Finish(writer);
+        if (subargs != NULL) {
+            obj = PyObject_GetItem(obj, subargs);
+            Py_DECREF(subargs);
+        }
+        else {
+            obj = NULL;
+        }
+        goto done;
 
-        Py_DECREF(subargs);
+error:
+        PyTupleWriter_Discard(writer);
+        Py_DECREF(subparams);
+        return NULL;
     }
     else {
         Py_INCREF(obj);
     }
+
+done:
     Py_XDECREF(subparams);
     return obj;
 }
@@ -454,60 +438,50 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         }
     }
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
-    PyObject *newargs = PyTuple_New(nargs);
+    PyTupleWriter *newargs = PyTupleWriter_Create(nargs);
     if (newargs == NULL) {
-        Py_DECREF(item);
-        Py_XDECREF(tuple_args);
-        return NULL;
+        goto error;
     }
-    for (Py_ssize_t iarg = 0, jarg = 0; iarg < nargs; iarg++) {
+
+    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(args, iarg);
         if (PyType_Check(arg)) {
-            PyTuple_SET_ITEM(newargs, jarg, Py_NewRef(arg));
-            jarg++;
+            if (PyTupleWriter_Add(newargs, arg) < 0) {
+                goto error;
+            }
             continue;
         }
+
         // Recursively substitute params in lists/tuples.
         if (PyTuple_Check(arg) || PyList_Check(arg)) {
             PyObject *subargs = _Py_subs_parameters(self, arg, parameters, item);
             if (subargs == NULL) {
-                Py_DECREF(newargs);
-                Py_DECREF(item);
-                Py_XDECREF(tuple_args);
-                return NULL;
+                goto error;
             }
             if (PyTuple_Check(arg)) {
-                PyTuple_SET_ITEM(newargs, jarg, subargs);
+                if (PyTupleWriter_AddSteal(newargs, subargs) < 0) {
+                    goto error;
+                }
             }
             else {
                 // _Py_subs_parameters returns a tuple. If the original arg was a list,
                 // convert subargs to a list as well.
                 PyObject *subargs_list = PySequence_List(subargs);
                 Py_DECREF(subargs);
-                if (subargs_list == NULL) {
-                    Py_DECREF(newargs);
-                    Py_DECREF(item);
-                    Py_XDECREF(tuple_args);
-                    return NULL;
+                if (PyTupleWriter_AddSteal(newargs, subargs_list) < 0) {
+                    goto error;
                 }
-                PyTuple_SET_ITEM(newargs, jarg, subargs_list);
             }
-            jarg++;
             continue;
         }
+
         int unpack = _is_unpacked_typevartuple(arg);
         if (unpack < 0) {
-            Py_DECREF(newargs);
-            Py_DECREF(item);
-            Py_XDECREF(tuple_args);
-            return NULL;
+            goto error;
         }
         PyObject *subst;
         if (PyObject_GetOptionalAttr(arg, &_Py_ID(__typing_subst__), &subst) < 0) {
-            Py_DECREF(newargs);
-            Py_DECREF(item);
-            Py_XDECREF(tuple_args);
-            return NULL;
+            goto error;
         }
         if (subst) {
             Py_ssize_t iparam = tuple_index(parameters, nparams, arg);
@@ -518,43 +492,42 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         else {
             arg = subs_tvars(arg, parameters, argitems, nitems);
         }
-        if (arg == NULL) {
-            Py_DECREF(newargs);
-            Py_DECREF(item);
-            Py_XDECREF(tuple_args);
-            return NULL;
-        }
         if (unpack) {
+            if (arg == NULL) {
+                goto error;
+            }
             if (!PyTuple_Check(arg)) {
-                Py_DECREF(newargs);
-                Py_DECREF(item);
-                Py_XDECREF(tuple_args);
                 PyObject *original = PyTuple_GET_ITEM(args, iarg);
                 PyErr_Format(PyExc_TypeError,
                              "expected __typing_subst__ of %T objects to return a tuple, not %T",
                              original, arg);
                 Py_DECREF(arg);
-                return NULL;
+                goto error;
             }
-            jarg = tuple_extend(&newargs, jarg,
-                    &PyTuple_GET_ITEM(arg, 0), PyTuple_GET_SIZE(arg));
+            if (PyTupleWriter_AddArray(newargs,
+                                       _PyTuple_ITEMS(arg),
+                                       PyTuple_GET_SIZE(arg)) < 0) {
+                Py_DECREF(arg);
+                goto error;
+            }
             Py_DECREF(arg);
-            if (jarg < 0) {
-                Py_DECREF(item);
-                Py_XDECREF(tuple_args);
-                assert(newargs == NULL);
-                return NULL;
-            }
         }
         else {
-            PyTuple_SET_ITEM(newargs, jarg, arg);
-            jarg++;
+            if (PyTupleWriter_AddSteal(newargs, arg) < 0) {
+                goto error;
+            }
         }
     }
 
     Py_DECREF(item);
     Py_XDECREF(tuple_args);
-    return newargs;
+    return PyTupleWriter_Finish(newargs);
+
+error:
+    PyTupleWriter_Discard(newargs);
+    Py_DECREF(item);
+    Py_XDECREF(tuple_args);
+    return NULL;
 }
 
 PyDoc_STRVAR(genericalias__doc__,
