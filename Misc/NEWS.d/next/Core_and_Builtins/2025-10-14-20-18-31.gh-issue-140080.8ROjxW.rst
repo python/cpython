@@ -1,2 +1,1 @@
-Fix: ``atexit_callfuncs`` need to atexit_cleanup the state when copy is NULL
-to avoid the low memory error then recursive error.
+Fix hang during finalization when attempting to call :mod:`atexit` handlers under no memory.
