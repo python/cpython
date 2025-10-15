@@ -393,11 +393,12 @@ Functions
      ``sys.modules[obj.__module__].__dict__`` and *locals* defaults
      to the *obj* class namespace.
    * If *obj* is a callable, *globals* defaults to
-     :attr:`obj.__globals__ <function.__globals__>`,
-     although if *obj* is a wrapped function (using
-     :func:`functools.update_wrapper`), a :class:`functools.partial` object,
-     or a :class:`functools.partialmethod` object,
-     it is unwrapped until a non-wrapped function is found.
+     :attr:`obj.__globals__ <function.__globals__>`.
+     If *obj* has a :attr:`~function.__wrapped__` attribute (such as functions
+     decorated with :func:`functools.update_wrapper`), or if it is a
+     :class:`functools.partial` object, it is unwrapped by following the
+     :attr:`!__wrapped__` attribute or :attr:`~functools.partial.func` attribute
+     repeatedly until a function with :attr:`~function.__globals__` is found.
 
    Calling :func:`!get_annotations` is best practice for accessing the
    annotations dict of any object. See :ref:`annotations-howto` for
