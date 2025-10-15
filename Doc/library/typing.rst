@@ -2279,7 +2279,7 @@ without the dedicated syntax, as documented below.
         >>> Class.Alias.__qualname__
         'Class.Alias'
 
-   .. versionadded:: 3.15
+      .. versionadded:: 3.15
 
    .. attribute:: __module__
 
