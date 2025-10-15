@@ -1176,12 +1176,11 @@ is a list, it makes a copy just like ``seq[:]`` would.
 What's a negative index?
 ------------------------
 
-Python sequences are indexed with positive numbers and negative numbers.  For
-positive numbers 0 is the first index 1 is the second index and so forth.  For
-negative indices -1 is the last index and -2 is the penultimate (next to last)
-index and so forth.  Think of ``seq[-n]`` as the same as ``seq[len(seq)-n]``.
+Python sequences are indexed with signed numbers (0, positive numbers and negative numbers). For example, 0 is the 1st index and for positive indices, 1 is the 2nd index, 2 is the 3rd index and so forth. For
+negative indices, -1 is the last index, -2 is the penultimate (next to last)
+index and so forth. Think of ``seq[-n]`` as the same as ``seq[len(seq)-n]``.
 
-Using negative indices can be very convenient.  For example ``S[:-1]`` is all of
+Using negative indices can be very convenient. For example ``S[:-1]`` is all of
 the string except for its last character, which is useful for removing the
 trailing newline from a string.
 
