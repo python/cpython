@@ -270,17 +270,16 @@ Object Protocol
 
    Raise an :exc:`AttributeError` if the object has no ``__dict__``.
 
-   This function may also be called to get the :py:attr:`~object.__dict__`
-   of the object *o*. Pass ``NULL`` for *context* when calling it.
-   Since this function may need to allocate memory for the
-   dictionary, it may be more efficient to call :c:func:`PyObject_GetAttr`
-   when accessing an attribute on the object.
-
    On failure, returns ``NULL`` with an exception set.
 
-   The :c:func:`PyObject_GetDict` function is recommended instead of using this
-   function, since it does not raise an exception if the object has no
-   ``__dict__``.
+   To get the  ``__dict__`` of an arbitrary object (that is, when you are not
+   implementing a getter of a ``__dict__`` descriptor), prefer using
+   :c:func:`PyObject_GetDict` instead.
+   Alternately, use this function and pass ``NULL`` for *context*.
+
+   Since this function may need to allocate memory for the
+   dictionary, it may be more efficient to call :c:func:`PyObject_GetAttr`
+   when accessing a single attribute on the object.
 
    .. versionadded:: 3.3
 
