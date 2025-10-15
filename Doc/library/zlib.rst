@@ -9,10 +9,8 @@
 
 For applications that require data compression, the functions in this module
 allow compression and decompression, using the zlib library. The zlib library
-has its own home page at https://www.zlib.net.   There are known
-incompatibilities between the Python module and versions of the zlib library
-earlier than 1.1.3; 1.1.3 has a `security vulnerability <https://zlib.net/zlib_faq.html#faq33>`_, so we recommend using
-1.1.4 or later.
+has its own home page at https://www.zlib.net.  zlib 1.2.2.1 is the minium
+supported version.
 
 zlib's functions have many options and often need to be used in a particular
 order.  This documentation doesn't attempt to cover all of the permutations;
@@ -56,7 +54,7 @@ The available exception and functions in this module are:
    that were concurrently computed. To compute checksums sequentially, use
    :func:`adler32` with the running checksum as the ``value`` argument.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
@@ -162,7 +160,7 @@ The available exception and functions in this module are:
    that were concurrently computed. To compute checksums sequentially, use
    :func:`crc32` with the running checksum as the ``value`` argument.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. function:: decompress(data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
