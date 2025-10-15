@@ -1,1 +1,1 @@
-fix ``queue.SimpleQueue.__sizeof__()`` computation
+Fix ``queue.SimpleQueue.__sizeof__()`` computation
