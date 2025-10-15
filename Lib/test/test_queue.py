@@ -1022,14 +1022,13 @@ class BaseSimpleQueueTest:
         # For Python implementation, this includes the underlying deque
 
         # Add items within initial capacity (if applicable)
-        # For C SimpleQueue, initial capacity is 8 items
         for i in range(8):
             q.put(object())
 
         size_after_8 = q.__sizeof__()
         # Size may or may not change depending on implementation
         # C implementation: no change (still within initial ring buffer capacity)
-        # Python implementation: may change (list growth)
+        # Python implementation: may change (deque growth, but __sizeof__ may not reflect it)
 
         # Add one more item to potentially trigger growth
         q.put(object())  # Now 9 items
@@ -1046,8 +1045,8 @@ class BaseSimpleQueueTest:
         large_size = large_q.__sizeof__()
 
         # For C implementation, size should grow with capacity
-        # For Python implementation, __sizeof__ may not account for underlying list
-        # (this is a known limitation of the Python implementation)
+        # For Python implementation, __sizeof__ will not account for underlying deque
+        # (this is documented behavior on CPython; PyPy doesn't support __sizeof__ at all)
         if self.__class__.__name__ == 'CSimpleQueueTest':
             # This is the C implementation
             self.assertGreater(large_size, empty_size,
