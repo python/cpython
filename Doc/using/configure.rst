@@ -117,7 +117,7 @@ Dependencies to build optional modules are:
 
 .. [2] See :option:`--with-readline` for choosing the backend for the
    :mod:`readline` module.
-.. [3] The :mod:`uuid` module uses `_uuid`` to generate "safe" UUIDs.
+.. [3] The :mod:`uuid` module uses ``_uuid`` to generate "safe" UUIDs.
    See the module documentation for details.
 .. [4] The :mod:`curses` module requires the ``libncurses`` or ``libncursesw``
    library.
