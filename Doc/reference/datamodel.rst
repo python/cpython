@@ -1833,7 +1833,7 @@ methods.  They are also created by the built-in :func:`slice` function.
 
 .. versionadded:: 3.15
 
-   :func:`slice` now supports :ref:`subscription`.
+   :func:`slice` now supports :ref:`subscription <subscriptions>`.
 
 .. index::
    single: start (slice object attribute)
