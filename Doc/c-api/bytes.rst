@@ -348,7 +348,8 @@ Low-level API
 .. c:function:: int PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
 
    Resize the writer to *size* bytes. It can be used to enlarge or to
-   shrink the writer. Overallocate the writer.
+   shrink the writer. This function typically overallocates to achieve
+   amortized performance when resizing multiple times.
 
    Newly allocated bytes are left uninitialized.
 
