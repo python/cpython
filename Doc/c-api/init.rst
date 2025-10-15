@@ -1369,6 +1369,11 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Boost library's ``boost::context``, you must call
    :c:func:`~PyUnstable_ThreadState_SetStack` to inform CPython of the change.
 
+   Call :c:func:`~PyUnstable_ThreadState_SetStack` either before
+   or after changing the stack.
+   Do not call any other Python C API between the call and the stack
+   change.
+
    See :c:func:`PyUnstable_ThreadState_ResetStack` for undoing this operation.
 
    .. versionadded:: next
