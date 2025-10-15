@@ -3502,7 +3502,7 @@ static PyType_Slot pystatx_result_slots[] = {
 };
 
 static PyType_Spec pystatx_result_spec = {
-    .name = "statx_result",
+    .name = "os.statx_result",
     .basicsize = sizeof(Py_statx_result),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC |
              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
@@ -18556,7 +18556,6 @@ posixmodule_exec(PyObject *m)
         }
     }
     else {
-        pystatx_result_spec.name = "os.statx_result";
         state->StatxResultType = PyType_FromModuleAndSpec(m, &pystatx_result_spec, NULL);
         if (PyModule_AddObjectRef(m, "statx_result", state->StatxResultType) < 0) {
             return -1;
