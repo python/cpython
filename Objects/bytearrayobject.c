@@ -1549,7 +1549,7 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     if (remaining_length > 0) {
         // +1 to copy across the null which always ends a bytearray.
         remaining = PyBytes_FromStringAndSize(self->ob_start + to_take,
-                                                    remaining_length + 1);
+                                              remaining_length + 1);
         if (remaining == NULL) {
             return NULL;
         }
