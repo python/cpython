@@ -33,6 +33,8 @@ The :mod:`!sqlite3` module was written by Gerhard Häring.  It provides an SQL i
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
 requires SQLite 3.15.2 or newer.
 
+.. include:: ../includes/optional-module.rst
+
 This document includes four main sections:
 
 * :ref:`sqlite3-tutorial` teaches how to use the :mod:`!sqlite3` module.

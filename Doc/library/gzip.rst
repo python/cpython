@@ -11,6 +11,8 @@
 This module provides a simple interface to compress and decompress files just
 like the GNU programs :program:`gzip` and :program:`gunzip` would.
 
+.. include:: ../includes/optional-module.rst
+
 The data compression is provided by the :mod:`zlib` module.
 
 The :mod:`gzip` module provides the :class:`GzipFile` class, as well as the

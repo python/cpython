@@ -73,9 +73,6 @@ Dependencies to build optional modules are:
    * - `libbz2 <https://sourceware.org/bzip2/>`_
      -
      - :mod:`bz2`
-   * - `libb2 <https://github.com/BLAKE2/libb2>`_
-     -
-     - :mod:`hashlib` (:ref:`BLAKE2 <hashlib-blake2>`)
    * - `libffi <https://sourceware.org/libffi/>`_
      - 3.3.0 recommended
      - :mod:`ctypes`
@@ -91,14 +88,14 @@ Dependencies to build optional modules are:
      - :mod:`readline`
    * - `libuuid <https://linux.die.net/man/3/libuuid>`_
      -
-     - :mod:`uuid`
-   * - `ncurses <https://gnu.org/software/ncurses/ncurses.html>`_ [3]_
+     - ``_uuid`` [3]_
+   * - `ncurses <https://gnu.org/software/ncurses/ncurses.html>`_ [4]_
      -
      - :mod:`curses`
    * - `OpenSSL <https://openssl-library.org/>`_
      - | 3.0.18 recommended
        | (1.1.1 minimum)
-     - :mod:`ssl`, :mod:`hashlib` [4]_
+     - :mod:`ssl`, :mod:`hashlib` [5]_
    * - `SQLite <https://sqlite.org/>`_
      - 3.15.2
      - :mod:`sqlite3`
@@ -120,11 +117,13 @@ Dependencies to build optional modules are:
 
 .. [2] See :option:`--with-readline` for choosing the backend for the
    :mod:`readline` module.
-.. [3] The :mod:`curses` module requires the ``libncurses`` or ``libncursesw``
+.. [3] The :mod:`uuid` module uses `_uuid`` to generate "safe" UUIDs.
+   See the module documentation for details.
+.. [4] The :mod:`curses` module requires the ``libncurses`` or ``libncursesw``
    library.
    The :mod:`curses.panel` module additionally requires the ``libpanel`` or
    ``libpanelw`` library.
-.. [4] If OpenSSL is not available, the :mod:`hashlib` module will use
+.. [5] If OpenSSL is not available, the :mod:`hashlib` module will use
    bundled implementations of several hash functions.
    See :option:`--with-builtin-hashlib-hashes` for *forcing* usage of OpenSSL.
 
@@ -499,12 +498,6 @@ Options for third-party dependencies
 .. option:: GDBM_LIBS
 
    C compiler and linker flags for ``gdbm``.
-
-.. option:: LIBB2_CFLAGS
-.. option:: LIBB2_LIBS
-
-   C compiler and linker flags for ``libb2`` (:ref:`BLAKE2 <hashlib-blake2>`),
-   used by :mod:`hashlib` module, overriding ``pkg-config``.
 
 .. option:: LIBEDIT_CFLAGS
 .. option:: LIBEDIT_LIBS
