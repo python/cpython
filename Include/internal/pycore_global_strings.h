@@ -590,6 +590,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(loop)
         STRUCT_FOR_ID(manual_reset)
         STRUCT_FOR_ID(mapping)
+        STRUCT_FOR_ID(mask)
         STRUCT_FOR_ID(match)
         STRUCT_FOR_ID(max_length)
         STRUCT_FOR_ID(maxdigits)
