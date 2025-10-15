@@ -258,7 +258,7 @@ Create, Finish, Discard
 
    If *size* is greater than zero, allocate *size* bytes, and set the
    writer size to *size*. The caller is responsible to write *size*
-   bytes using :c:func:`PyBytesWriter_GetData`. Do not overallocate.
+   bytes using :c:func:`PyBytesWriter_GetData`. This function does not overallocate.
 
    On error, set an exception and return ``NULL``.
 
