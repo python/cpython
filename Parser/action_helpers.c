@@ -1621,7 +1621,8 @@ _build_concatenated_bytes(Parser *p, asdl_expr_seq *strings, int lineno,
     Py_ssize_t total = 0;
     for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty elem = asdl_seq_GET(strings, i);
-        Py_ssize_t part = PyBytes_GET_SIZE(elem->v.Constant.value);
+        PyObject *bytes = elem->v.Constant.value;
+        Py_ssize_t part = PyBytes_GET_SIZE(bytes);
         if (part > PY_SSIZE_T_MAX - total) {
             PyErr_NoMemory();
             return NULL;
@@ -1637,9 +1638,10 @@ _build_concatenated_bytes(Parser *p, asdl_expr_seq *strings, int lineno,
     char *out = PyBytesWriter_GetData(writer);
     for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty elem = asdl_seq_GET(strings, i);
-        Py_ssize_t part = PyBytes_GET_SIZE(elem->v.Constant.value);
+        PyObject *bytes = elem->v.Constant.value;
+        Py_ssize_t part = PyBytes_GET_SIZE(bytes);
         if (part > 0) {
-            memcpy(out, PyBytes_AS_STRING(elem->v.Constant.value), part);
+            memcpy(out, PyBytes_AS_STRING(bytes), part);
             out += part;
         }
     }
