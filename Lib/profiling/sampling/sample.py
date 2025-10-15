@@ -642,9 +642,14 @@ def sample(
 
     if output_format == "pstats" and not filename:
         stats = pstats.SampledStats(collector).strip_dirs()
-        print_sampled_stats(
-            stats, sort, limit, show_summary, sample_interval_usec
-        )
+        if not stats.stats:
+            print("No samples were collected.")
+            if mode == PROFILING_MODE_CPU:
+                print("This can happen in CPU mode when all threads are idle.")
+        else:
+            print_sampled_stats(
+                stats, sort, limit, show_summary, sample_interval_usec
+            )
     else:
         collector.export(filename)
 
