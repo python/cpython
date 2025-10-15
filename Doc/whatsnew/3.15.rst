@@ -433,6 +433,14 @@ mmap
   (Contributed by Serhiy Storchaka in :gh:`78502`.)
 
 
+os
+--
+
+* Add :func:`os.statx` on Linux kernel versions 4.11 and later with
+  glibc versions 2.28 and later.
+  (Contributed by Jeffrey Bosboom in :gh:`83714`.)
+
+
 os.path
 -------
 

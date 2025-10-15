@@ -3383,6 +3383,214 @@ features:
       Added the :attr:`st_birthtime` member on Windows.
 
 
+.. function:: statx(path, mask, *, flags=0, dir_fd=None, follow_symlinks=True)
+
+   Get the status of a file or file descriptor by performing a :c:func:`!statx`
+   system call on the given path.
+
+   *path* is a :term:`path-like object` or an open file descriptor. *mask* is a
+   combination of the module-level :const:`STATX_* <STATX_TYPE>` constants
+   specifying the information to retrieve. *flags* is a combination of the
+   module-level :const:`AT_STATX_* <AT_STATX_FORCE_SYNC>` constants and/or
+   :const:`AT_NO_AUTOMOUNT`. Returns a :class:`statx_result` object whose
+   :attr:`~os.statx_result.stx_mask` attribute specifies the information
+   actually retrieved (which may differ from *mask*).
+
+   This function supports :ref:`specifying a file descriptor <path_fd>`,
+   :ref:`paths relative to directory descriptors <dir_fd>`, and
+   :ref:`not following symlinks <follow_symlinks>`.
+
+   .. seealso:: The :manpage:`statx(2)` man page.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: next
+
+
+.. class:: statx_result
+
+   Information about a file returned by :func:`os.statx`.
+
+   :class:`!statx_result` has all the attributes that :class:`~stat_result` has
+   on Linux, making it :term:`duck-typing` compatible, but
+   :class:`!statx_result` is not a subclass of :class:`~stat_result` and cannot
+   be used as a tuple.
+
+   :class:`!statx_result` has the following additional attributes:
+
+   .. attribute:: stx_mask
+
+      Bitmask of :const:`STATX_* <STATX_TYPE>` constants specifying the
+      information retrieved, which may differ from what was requested.
+
+   .. attribute:: stx_attributes_mask
+
+      Bitmask of :const:`STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
+      specifying the attributes bits supported for this file.
+
+   .. attribute:: stx_attributes
+
+      Bitmask of :const:`STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
+      specifying the attributes of this file.
+
+   .. attribute:: stx_dev_major
+
+      Major number of the device on which this file resides.
+
+   .. attribute:: stx_dev_minor
+
+      Minor number of the device on which this file resides.
+
+   .. attribute:: stx_rdev_major
+
+      Major number of the device this file represents.
+
+   .. attribute:: stx_rdev_minor
+
+      Minor number of the device this file represents.
+
+   .. attribute:: stx_mnt_id
+
+      Mount ID.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 5.8.
+
+   .. attribute:: stx_dio_mem_align
+
+      Direct I/O memory buffer alignment requirement.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.1.
+
+   .. attribute:: stx_dio_offset_align
+
+      Direct I/O file offset alignment requirement.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.1.
+
+   .. attribute:: stx_subvol
+
+      Subvolume ID.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.10.
+
+   .. attribute:: stx_atomic_write_unit_min
+
+      Minimum size for direct I/O with torn-write protection.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
+   .. attribute:: stx_atomic_write_unit_max
+
+      Maximum size for direct I/O with torn-write protection.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
+   .. attribute:: stx_atomic_write_unit_max_opt
+
+      Maximum optimized size for direct I/O with torn-write protection.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
+   .. attribute:: stx_atomic_write_segments_max
+
+      Maximum iovecs for direct I/O with torn-write protection.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
+
+   .. attribute:: stx_dio_read_offset_align
+
+      Direct I/O file offset alignment requirement for reads.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.14.
+
+   .. seealso:: The :manpage:`statx(2)` man page.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: next
+
+
+.. data:: STATX_TYPE
+          STATX_MODE
+          STATX_NLINK
+          STATX_UID
+          STATX_GID
+          STATX_ATIME
+          STATX_MTIME
+          STATX_CTIME
+          STATX_INO
+          STATX_SIZE
+          STATX_BLOCKS
+          STATX_BASIC_STATS
+          STATX_BTIME
+          STATX_MNT_ID
+          STATX_DIOALIGN
+          STATX_MNT_ID_UNIQUE
+          STATX_SUBVOL
+          STATX_WRITE_ATOMIC
+          STATX_DIO_READ_ALIGN
+
+   Bitflags for use in the *mask* parameter to :func:`os.statx`.  Flags
+   including and after :const:`!STATX_MNT_ID` are only available when their
+   corresponding members in :class:`statx_result` are available.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: next
+
+.. data:: AT_STATX_FORCE_SYNC
+
+   A flag for the :func:`os.statx` function.  Requests that the kernel return
+   up-to-date information even when doing so is expensive (for example,
+   requiring a round trip to the server for a file on a network filesystem).
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: next
+
+.. data:: AT_STATX_DONT_SYNC
+
+   A flag for the :func:`os.statx` function.  Requests that the kernel return
+   cached information if possible.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: next
+
+.. data:: AT_STATX_SYNC_AS_STAT
+
+   A flag for the :func:`os.statx` function.  This flag is defined as ``0``, so
+   it has no effect, but it can be used to explicitly indicate neither
+   :data:`AT_STATX_FORCE_SYNC` nor :data:`AT_STATX_DONT_SYNC` is being passed.
+   In the absence of the other two flags, the kernel will generally return
+   information as fresh as :func:`os.stat` would return.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: next
+
+
+.. data:: AT_NO_AUTOMOUNT
+
+   If the final component of a path is an automount point, operate on the
+   automount point instead of performing the automount.  On Linux,
+   :func:`os.stat`, :func:`os.fstat` and :func:`os.lstat` always behave this
+   way.
+
+   .. availability:: Linux.
+
+   .. versionadded:: next
+
+
 .. function:: statvfs(path)
 
    Perform a :c:func:`!statvfs` system call on the given path.  The return value is
