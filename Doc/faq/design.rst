@@ -2,9 +2,7 @@
 Design and History FAQ
 ======================
 
-.. only:: html
-
-   .. contents::
+.. contents::
 
 
 Why does Python use indentation for grouping of statements?
