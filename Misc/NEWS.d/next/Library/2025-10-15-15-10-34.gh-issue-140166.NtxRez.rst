@@ -1,1 +1,1 @@
-Per https://www.iana.org/assignments/media-types/application/texinfo, the .texi and .texinfo file formats has an officially-registered MIME type, thus deprecating the application/x-texinfo alias.
+Per https://www.iana.org/assignments/media-types/application/texinfo, the ``.texi`` and ``.texinfo`` file formats has an officially-registered MIME type, ``application/texinfo`` Therefore remove the outdated ``application/x-texinfo`` alias.
