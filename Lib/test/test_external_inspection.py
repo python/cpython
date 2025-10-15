@@ -1751,27 +1751,29 @@ class TestDetectionOfThreadStatus(unittest.TestCase):
                         break
 
                 attempts = 10
+                statuses = {}
                 try:
                     unwinder = RemoteUnwinder(p.pid, all_threads=True, mode=PROFILING_MODE_CPU,
                                                 skip_non_matching_threads=False)
                     for _ in range(attempts):
                         traces = unwinder.get_stack_trace()
-                        # Check if any thread is running
-                        if any(thread_info.status == 0 for interpreter_info in traces
-                               for thread_info in interpreter_info.threads):
+                        # Find threads and their statuses
+                        statuses = {}
+                        for interpreter_info in traces:
+                            for thread_info in interpreter_info.threads:
+                                statuses[thread_info.thread_id] = thread_info.status
+
+                        # Check if sleeper thread is idle and busy thread is running
+                        if (sleeper_tid in statuses and
+                            busy_tid in statuses and
+                            statuses[sleeper_tid] == 1 and
+                            statuses[busy_tid] == 0):
                             break
                         time.sleep(0.5)  # Give a bit of time to let threads settle
                 except PermissionError:
                     self.skipTest(
                         "Insufficient permissions to read the stack trace"
                     )
-
-
-                # Find threads and their statuses
-                statuses = {}
-                for interpreter_info in traces:
-                    for thread_info in interpreter_info.threads:
-                        statuses[thread_info.thread_id] = thread_info.status
 
                 self.assertIsNotNone(sleeper_tid, "Sleeper thread id not received")
                 self.assertIsNotNone(busy_tid, "Busy thread id not received")
@@ -1861,27 +1863,29 @@ class TestDetectionOfThreadStatus(unittest.TestCase):
                         break
 
                 attempts = 10
+                statuses = {}
                 try:
                     unwinder = RemoteUnwinder(p.pid, all_threads=True, mode=PROFILING_MODE_GIL,
                                                 skip_non_matching_threads=False)
                     for _ in range(attempts):
                         traces = unwinder.get_stack_trace()
-                        # Check if any thread is running
-                        if any(thread_info.status == 0 for interpreter_info in traces
-                               for thread_info in interpreter_info.threads):
+                        # Find threads and their statuses
+                        statuses = {}
+                        for interpreter_info in traces:
+                            for thread_info in interpreter_info.threads:
+                                statuses[thread_info.thread_id] = thread_info.status
+
+                        # Check if sleeper thread is idle (status 2 for GIL mode) and busy thread is running
+                        if (sleeper_tid in statuses and
+                            busy_tid in statuses and
+                            statuses[sleeper_tid] == 2 and
+                            statuses[busy_tid] == 0):
                             break
                         time.sleep(0.5)  # Give a bit of time to let threads settle
                 except PermissionError:
                     self.skipTest(
                         "Insufficient permissions to read the stack trace"
                     )
-
-
-                # Find threads and their statuses
-                statuses = {}
-                for interpreter_info in traces:
-                    for thread_info in interpreter_info.threads:
-                        statuses[thread_info.thread_id] = thread_info.status
 
                 self.assertIsNotNone(sleeper_tid, "Sleeper thread id not received")
                 self.assertIsNotNone(busy_tid, "Busy thread id not received")

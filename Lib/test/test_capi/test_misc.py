@@ -1996,6 +1996,7 @@ class SubinterpreterTest(unittest.TestCase):
         def output():
             time.sleep(1)
             os.write({w}, b"x")
+            os.close({w})
 
 
         def callback():
@@ -2014,6 +2015,7 @@ class SubinterpreterTest(unittest.TestCase):
         interp.close()
         data = os.read(r, 1)
         self.assertEqual(data, b"x")
+        os.close(r)
 
 
 @requires_subinterpreters
