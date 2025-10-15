@@ -19,5 +19,6 @@ Pending removal in Python 3.20
   - :mod:`tabnanny`
   - :mod:`tkinter.font`
   - :mod:`tkinter.ttk`
+  - :mod:`zlib`
 
-  (Contributed by Hugo van Kemenade in :gh:`76007`.)
+  (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
