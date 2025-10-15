@@ -1221,15 +1221,11 @@ Special attributes
        ``X.__bases__`` will be exactly equal to ``(A, B, C)``.
 
    * - .. attribute:: type.__base__
-     - The base class that determines the instance layout. This attribute
-       identifies the single base class in the inheritance chain that is
-       responsible for the memory layout of instances, corresponding to
-       :c:member:`~PyTypeObject.tp_base` at the C level.
+     - .. impl-detail::
 
-       .. impl-detail::
-          Note that behavior of the ``__base__`` attribute is dependent on the
-          :term:`CPython` implementation.
-
+          The single base class in the inheritance chain that is responsible
+          for the memory layout of instances. This attribute corresponds to
+          :c:member:`~PyTypeObject.tp_base` at the C level.
    * - .. attribute:: type.__doc__
      - The class's documentation string, or ``None`` if undefined.
        Not inherited by subclasses.
