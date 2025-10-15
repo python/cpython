@@ -963,7 +963,6 @@ _io__RawIOBase_readall_impl(PyObject *self)
 /*[clinic end generated code: output=1987b9ce929425a0 input=688874141213622a]*/
 {
     PyBytesWriter *writer = PyBytesWriter_Create(0);
-
     if (writer == NULL) {
         return NULL;
     }
