@@ -25,9 +25,6 @@ To build CPython, you will need:
 
 * Support for threads.
 
-* On non-Windows platforms, Autoconf 2.72 and aclocal 1.16.5 are required to
-  regenerate the :file:`configure` script.
-
 .. versionchanged:: 3.5
    On Windows, Visual Studio 2015 or later is now required.
 
@@ -41,13 +38,6 @@ To build CPython, you will need:
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
    On Windows, Visual Studio 2017 or later is required.
-
-.. versionchanged:: 3.13
-   Autoconf 2.71 and aclocal 1.16.5 and are now required to regenerate
-   :file:`configure`.
-
-.. versionchanged:: 3.14
-   Autoconf 2.72 is now required to regenerate :file:`configure`.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -184,8 +174,19 @@ The container is optional, the following command can be run locally::
 
     autoreconf -ivf -Werror
 
-The generated files can change depending on the exact ``autoconf-archive``,
-``aclocal`` and ``pkg-config`` versions.
+The generated files can change depending on the exact versions of the
+tools used.
+The container that CPython uses has
+`Autoconf <https://gnu.org/software/autoconf>`_ 2.72,
+``aclocal`` from `Automake <https://www.gnu.org/software/automake>`_ 1.16.5,
+and `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ 1.8.1.
+
+.. versionchanged:: 3.13
+   Autoconf 2.71 and aclocal 1.16.5 and are now used to regenerate
+   :file:`configure`.
+
+.. versionchanged:: 3.14
+   Autoconf 2.72 is now used to regenerate :file:`configure`.
 
 
 .. _configure-options:
