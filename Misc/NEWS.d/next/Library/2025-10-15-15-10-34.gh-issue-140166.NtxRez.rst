@@ -1,1 +1,1 @@
-Per https://www.iana.org/assignments/media-types/application/texinfo, the .texi and .texinfo file formats has an officially-registered MIME type, application/texinfo Therefore remove the outdated application/x-texinfo alias.
+:mod:`mimetypes`: Per the `IANA assignment <https://www.iana.org/assignments/media-types/application/texinfo>`_, update the MIME type for the ``.texi`` and ``.texinfo`` file formats to ``application/texinfo``, instead of ``application/x-texinfo``.
