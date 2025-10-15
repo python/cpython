@@ -223,6 +223,11 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         if (size < alloc / 2) {
             /* Major downsize; resize down to exact size */
             alloc = size + 1;
+
+            /* If new size is 0; don't need to allocate one byte for null. */
+            if (size == 0) {
+                alloc = 0;
+            }
         }
         else {
             /* Minor downsize; quick exit */
@@ -238,7 +243,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
             alloc = size + (size >> 3) + (size < 9 ? 3 : 6);
         }
         else {
-            /* Major upsize; resize up to exact size */
+            /* Major upsize; resize up to exact size. Upsize always means size > 0 */
             alloc = size + 1;
         }
     }

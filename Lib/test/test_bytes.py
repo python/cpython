@@ -1394,10 +1394,11 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b = bytearray(b'abc')
         b.clear()
         self.assertEqual(b.__alloc__(), 0)
-        self.assertEqual(sys.getsizeof(b), 0)
+        base_size = sys.getsizeof(bytearray())
+        self.assertEqual(sys.getsizeof(b), base_size)
         c = b.copy()
         self.assertEqual(c.__alloc__(), 0)
-        self.assertEqual(sys.getsizeof(c), 0)
+        self.assertEqual(sys.getsizeof(c), base_size)
 
     def test_copy(self):
         b = bytearray(b'abc')
@@ -1466,7 +1467,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(len(ba), 0)
         self.assertEqual(ba, bytearray(b''))
         self.assertEqual(ba.__alloc__(), 0)
-        self.assertEqual(sys.getsizeof(ba), 0)
+        base_size = sys.getsizeof(bytearray())
+        self.assertEqual(sys.getsizeof(ba), base_size)
 
         # Positive and negative slicing.
         ba = bytearray(b'abcdef')
