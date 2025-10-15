@@ -2159,7 +2159,6 @@ zlib_free(void *mod)
     zlib_clear((PyObject *)mod);
 }
 
-
 static int
 zlib_exec(PyObject *mod)
 {
