@@ -8,6 +8,7 @@ import sys
 import unittest
 from test import support
 from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
+from _colorize import can_colorize  # type: ignore[import-not-found]
 
 from .filter import set_match_tests
 from .runtests import RunTests
@@ -139,3 +140,6 @@ def setup_tests(runtests: RunTests) -> None:
         gc.set_threshold(runtests.gc_threshold)
 
     random.seed(runtests.random_seed)
+
+    if can_colorize(file=sys.stdout):
+        os.environ['FORCE_COLOR'] = "1"
