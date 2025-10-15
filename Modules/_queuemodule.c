@@ -501,12 +501,13 @@ _queue_SimpleQueue_qsize_impl(simplequeueobject *self)
 }
 
 /*[clinic input]
+@critical_section
 _queue.SimpleQueue.__sizeof__ -> Py_ssize_t
 [clinic start generated code]*/
 
 static Py_ssize_t
 _queue_SimpleQueue___sizeof___impl(simplequeueobject *self)
-/*[clinic end generated code: output=58ce4e3bbc078fd4 input=6661f95bc010c7c5]*/
+/*[clinic end generated code: output=58ce4e3bbc078fd4 input=40a793cdf1c78c30]*/
 {
     Py_ssize_t size = Py_TYPE(self)->tp_basicsize;
     size += self->buf.items_cap * sizeof(PyObject *);

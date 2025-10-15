@@ -376,7 +376,9 @@ _queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *return_value = NULL;
     Py_ssize_t _return_value;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     _return_value = _queue_SimpleQueue___sizeof___impl((simplequeueobject *)self);
+    Py_END_CRITICAL_SECTION();
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -385,4 +387,4 @@ _queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=64f86d4983c06225 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a27a14c5f640799e input=a9049054013a1b77]*/
