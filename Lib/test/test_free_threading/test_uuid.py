@@ -1,8 +1,9 @@
-import unittest
 import os
+import unittest
 
 from test.support import import_helper, threading_helper
 from test.support.threading_helper import run_concurrently
+from uuid import SafeUUID
 
 c_uuid = import_helper.import_module("_uuid")
 
@@ -27,7 +28,7 @@ class UUIDTests(unittest.TestCase):
                 # page, it is theoretically possible for two concurrently
                 # running processes to generate the same UUID(s) if the return
                 # value is not 0.
-                if is_safe == 0:
+                if is_safe == SafeUUID.safe:
                     local_uuids.append(uuid)
 
             # Merge all safe uuids
