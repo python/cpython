@@ -247,7 +247,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/x-debian-package", ".deb"),
                 ("application/x-httpd-php", ".php"),
                 ("application/x-rpm", ".rpm"),
-                ("application/x-texinfo", ".texi"),
+                ("application/texinfo", ".texi"),
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
                 ("application/yaml", ".yaml"),
