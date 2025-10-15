@@ -1390,6 +1390,15 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b.append(ord('p'))
         self.assertEqual(b, b'p')
 
+        # Cleared object should be empty.
+        b = bytearray(b'abc')
+        b.clear()
+        self.assertEqual(b.__alloc__(), 0)
+        self.assertEqual(sys.getsizeof(b), 0)
+        c = b.copy()
+        self.assertEqual(c.__alloc__(), 0)
+        self.assertEqual(sys.getsizeof(c), 0)
+
     def test_copy(self):
         b = bytearray(b'abc')
         bb = b.copy()
@@ -1456,6 +1465,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(ba.take_bytes(), b'ab')
         self.assertEqual(len(ba), 0)
         self.assertEqual(ba, bytearray(b''))
+        self.assertEqual(ba.__alloc__(), 0)
+        self.assertEqual(sys.getsizeof(ba), 0)
 
         # Positive and negative slicing.
         ba = bytearray(b'abcdef')
