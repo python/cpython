@@ -1019,7 +1019,7 @@ class BaseSimpleQueueTest:
 
         # Size should include basic object structure
         # For C implementation, this includes the ring buffer array
-        # For Python implementation, this includes the underlying list
+        # For Python implementation, this includes the underlying deque
 
         # Add items within initial capacity (if applicable)
         # For C SimpleQueue, initial capacity is 8 items
@@ -1059,8 +1059,8 @@ class BaseSimpleQueueTest:
                               "Large C SimpleQueue should be at least 2x size of empty queue")
         else:
             # This is the Python implementation
-            # The Python implementation doesn't properly implement __sizeof__
-            # but we can at least verify it returns a positive number
+            # The Python implementation doesn't override __sizeof__
+            # so it only accounts for the object itself, not the underlying deque
             self.assertGreater(large_size, 0, "Python SimpleQueue should have positive size")
 
 
