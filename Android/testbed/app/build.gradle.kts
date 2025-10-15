@@ -64,9 +64,10 @@ for ((i, prefix) in prefixes.withIndex()) {
     val libPythonDir = file("$libDir/python$pythonVersion")
     val triplet = run {
         for (filename in libPythonDir.list()!!) {
-            """_sysconfigdata_[a-z]*_android_(.+).py""".toRegex().matchEntire(filename)?.let {
-                return@run it.groupValues[1]
-            }
+            """_sysconfigdata_[a-z]*_android_(.+).py""".toRegex()
+                .matchEntire(filename)?.let {
+                    return@run it.groupValues[1]
+                }
         }
         throw GradleException("Failed to find Python triplet in $libPythonDir")
     }
