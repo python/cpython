@@ -964,8 +964,9 @@ _io__RawIOBase_readall_impl(PyObject *self)
 {
     PyBytesWriter *writer = PyBytesWriter_Create(0);
 
-    if (writer == NULL)
+    if (writer == NULL) {
         return NULL;
+    }
 
     while (1) {
         PyObject *data = _PyObject_CallMethod(self, &_Py_ID(read),
