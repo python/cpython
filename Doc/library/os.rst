@@ -108,7 +108,7 @@ Python UTF-8 Mode
 .. versionadded:: 3.7
    See :pep:`540` for more details.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Python UTF-8 mode is now enabled by default (:pep:`686`).
    It may be disabled with by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
@@ -1553,7 +1553,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    .. availability:: Linux >= 6.14
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: ptsname(fd, /)
@@ -2645,7 +2645,7 @@ features:
 
    Non-existent device.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: pathconf(path, name)
@@ -3646,7 +3646,7 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real numbers as *times*, not only integers or floats.
 
 
@@ -4610,7 +4610,7 @@ written in Python, such as a mail server's external command delivery program.
       threads, this now raises a :exc:`DeprecationWarning`. See the
       longer explanation on :func:`os.fork`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The returned file descriptor is now made non-inheritable.
 
    .. availability:: Unix, not WASI, not Android, not iOS.

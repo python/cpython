@@ -81,7 +81,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #define END_TYPE_DICT_LOCK() Py_END_CRITICAL_SECTION2()
 
-#ifdef Py_DEBUG
+#ifndef NDEBUG
 // Return true if the world is currently stopped.
 static bool
 types_world_is_stopped(void)
