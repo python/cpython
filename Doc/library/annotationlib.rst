@@ -368,10 +368,10 @@ Functions
      doesn't have its own annotations dict, returns an empty dict.
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
-   * For :class:`functools.partial` and :class:`functools.partialmethod` objects,
-     only returns annotations for parameters that have not been bound by the
-     partial application, along with the return annotation if present.
-     See :ref:`below <functools-objects-annotations>` for details.
+   * Supports objects that provide their own :attr:`~object.__annotate__` method,
+     such as :class:`functools.partial` and :class:`functools.partialmethod`.
+     See :ref:`below <functools-objects-annotations>` for details on using
+     :func:`!get_annotations` with :mod:`functools` objects.
 
    *eval_str* controls whether or not values of type :class:`!str` are
    replaced with the result of calling :func:`eval` on those values:
@@ -394,10 +394,10 @@ Functions
      to the *obj* class namespace.
    * If *obj* is a callable, *globals* defaults to
      :attr:`obj.__globals__ <function.__globals__>`.
-     If *obj* has a :attr:`~function.__wrapped__` attribute (such as functions
+     If *obj* has a ``__wrapped__`` attribute (such as functions
      decorated with :func:`functools.update_wrapper`), or if it is a
      :class:`functools.partial` object, it is unwrapped by following the
-     :attr:`!__wrapped__` attribute or :attr:`~functools.partial.func` attribute
+     ``__wrapped__`` attribute or :attr:`~functools.partial.func` attribute
      repeatedly until a function with :attr:`~function.__globals__` is found.
 
    Calling :func:`!get_annotations` is best practice for accessing the
