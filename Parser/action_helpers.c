@@ -1646,7 +1646,7 @@ _build_concatenated_bytes(Parser *p, asdl_expr_seq *strings, int lineno,
         }
     }
 
-    PyObject *res = PyBytesWriter_FinishWithPointer(writer, out);
+    PyObject *res = PyBytesWriter_Finish(writer);
     if (res == NULL) {
         return NULL;
     }
