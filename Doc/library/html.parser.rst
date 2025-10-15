@@ -40,7 +40,7 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
    .. versionchanged:: 3.5
       The default value for argument *convert_charrefs* is now ``True``.
 
-   .. versionchanged:: 3.13.8
+   .. versionchanged:: 3.14.1
       Added the *scripting* parameter.
 
 
