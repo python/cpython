@@ -48,14 +48,18 @@ support".
 Requirements for Optional Modules
 ---------------------------------
 
-To build *optional modules* of the standard library, you will need several
-third-party libraries, along with development dependencies like header files.
-(In common Linux distributions, development dependencies are found in
-``-dev`` or ``-devel`` packages.)
+To build :term:`optional modules <optional module>` of the standard library,
+you will need several third-party libraries installed for development
+(for example, header files must be available).
 
-Missing optional modules are listed near the end of ``make`` output.
-If you distribute a CPython interpreter without them, it's best practice to
-advise users, who generally expect that standard library modules are available.
+Missing requirements are generally given in ``configure`` output.
+Missing optional modules are listed near the end of ``make`` output,
+sometimes using an internal name such as ``_ctypes`` for the :mod:`ctypes`
+module.
+
+If you distribute a CPython interpreter without optional modules,
+it's best practice to advise users, who generally expect that
+standard library modules are available.
 
 Dependencies to build optional modules are:
 
@@ -78,23 +82,23 @@ Dependencies to build optional modules are:
    * - `liblzma <https://tukaani.org/xz/>`_
      -
      - :mod:`lzma`
-   * - `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_ [4]_
+   * - `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_
      - 2.5.0
-     - :mod:`decimal`
+     - :mod:`decimal` [1]_
    * - `libreadline <https://tiswww.case.edu/php/chet/readline/rltop.html>`_ or
-       `libedit <https://www.thrysoee.dk/editline/>`_ [1]_
+       `libedit <https://www.thrysoee.dk/editline/>`_ [2]_
      -
      - :mod:`readline`
    * - `libuuid <https://linux.die.net/man/3/libuuid>`_
      -
      - :mod:`uuid`
-   * - `ncurses <https://gnu.org/software/ncurses/ncurses.html>`_ [2]_
+   * - `ncurses <https://gnu.org/software/ncurses/ncurses.html>`_ [3]_
      -
      - :mod:`curses`
    * - `OpenSSL <https://openssl-library.org/>`_
      - | 3.0.18 recommended
        | (1.1.1 minimum)
-     - :mod:`ssl`, :mod:`hashlib` [3]_
+     - :mod:`ssl`, :mod:`hashlib` [4]_
    * - `SQLite <https://sqlite.org/>`_
      - 3.15.2
      - :mod:`sqlite3`
@@ -103,22 +107,26 @@ Dependencies to build optional modules are:
      - :mod:`tkinter`
    * - `zlib <https://www.zlib.net>`_
      - 1.2.2.1
-     - :mod:`zlib`, :mod:`ensurepip`
+     - :mod:`zlib`, :mod:`gzip`, :mod:`ensurepip`
    * - `zstd <https://facebook.github.io/zstd/>`_
      - 1.4.5
      - :mod:`compression.zstd`
 
-.. [1] See :option:`--with-readline` for choosing the backend for the
+.. [1] If *libmpdec* is not available, CPython will use a bundled copy.
+   This is deprecated; see :option:`--with-system-libmpdec` for details.
+
+   .. when the bundled libmpdec is removed, we should instead note that
+      :mod:`decimal` will fall back to a pure-Python implementation.
+
+.. [2] See :option:`--with-readline` for choosing the backend for the
    :mod:`readline` module.
-.. [2] The :mod:`curses` module requires the ``libncurses`` or ``libncursesw``
+.. [3] The :mod:`curses` module requires the ``libncurses`` or ``libncursesw``
    library.
    The :mod:`curses.panel` module additionally requires the ``libpanel`` or
    ``libpanelw`` library.
-.. [3] If OpenSSL is not available, the :mod:`hashlib` module will use
+.. [4] If OpenSSL is not available, the :mod:`hashlib` module will use
    bundled implementations of several hash functions.
    See :option:`--with-builtin-hashlib-hashes` for *forcing* usage of OpenSSL.
-.. [4] If *libmpdec* is not available, CPython will use a bundled copy.
-   This is deprecated; see :option:`--with-system-libmpdec` for details.
 
 .. seealso::
 
@@ -127,6 +135,7 @@ Dependencies to build optional modules are:
      instructions on how to install them on common platforms.
    * :option:`--with-system-expat` allows building with an external
      `libexpat <https://libexpat.github.io/>`_ library.
+   * :ref:`configure-options-for-dependencies`
 
 .. versionchanged:: 3.1
    Tcl/Tk version 8.3.1 is now required for :mod:`tkinter`.
@@ -466,6 +475,8 @@ Linker options
 
    Name for machine-dependent library files.
 
+
+.. _configure-options-for-dependencies:
 
 Options for third-party dependencies
 ------------------------------------
