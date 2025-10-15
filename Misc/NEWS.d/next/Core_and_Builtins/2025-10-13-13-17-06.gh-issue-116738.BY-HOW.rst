@@ -1,2 +1,0 @@
-Make :mod:`uuid` thread-safe on the :term:`free threaded <free threading>`
-build.
