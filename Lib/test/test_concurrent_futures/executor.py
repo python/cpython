@@ -248,6 +248,7 @@ class ExecutorTest:
         with self.assertRaisesRegex(FalseyLenException, msg):
             self.executor.submit(raiser, FalseyLenException, msg).result()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_shutdown_notifies_cancelled_futures(self):
 
         # TODO: remove when gh-109934 is fixed
