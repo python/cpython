@@ -1972,6 +1972,7 @@ extern "C" {
     INIT_ID(ps1), \
     INIT_ID(ps2), \
     INIT_ID(qid), \
+    INIT_ID(qualname), \
     INIT_ID(query), \
     INIT_ID(queuetype), \
     INIT_ID(quotetabs), \
