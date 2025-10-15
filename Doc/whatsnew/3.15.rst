@@ -433,6 +433,14 @@ mmap
   (Contributed by Serhiy Storchaka in :gh:`78502`.)
 
 
+os
+--
+
+* Add :func:`os.statx` on Linux kernel versions 4.11 and later with
+  glibc versions 2.28 and later.
+  (Contributed by Jeffrey Bosboom in :gh:`83714`.)
+
+
 os.path
 -------
 
@@ -828,8 +836,9 @@ New deprecations
     - :mod:`tabnanny`
     - :mod:`tkinter.font`
     - :mod:`tkinter.ttk`
+    - :mod:`zlib`
 
-    (Contributed by Hugo van Kemenade in :gh:`76007`.)
+    (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 
