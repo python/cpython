@@ -5863,8 +5863,8 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(d, 1, size_a);
         }
-        else if (_PyObject_IsUniquelyReferenced((PyObject *)b) &&
-                 size_a <= alloc_b) {
+        else if (_PyObject_IsUniquelyReferenced((PyObject *)b)
+                 && size_a <= alloc_b) {
             d = (PyLongObject*)Py_NewRef(b);
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(d, 1, size_a);

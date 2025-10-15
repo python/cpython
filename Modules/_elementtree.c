@@ -2794,9 +2794,9 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
         self->data = Py_NewRef(data);
     } else {
         /* more than one item; use a list to collect items */
-        if (PyBytes_CheckExact(self->data) &&
-            _PyObject_IsUniquelyReferenced(self->data) &&
-            PyBytes_CheckExact(data) && PyBytes_GET_SIZE(data) == 1) {
+        if (PyBytes_CheckExact(self->data)
+            && _PyObject_IsUniquelyReferenced(self->data)
+            && PyBytes_CheckExact(data) && PyBytes_GET_SIZE(data) == 1) {
             /* XXX this code path unused in Python 3? */
             /* expat often generates single character data sections; handle
                the most common case by resizing the existing string... */
