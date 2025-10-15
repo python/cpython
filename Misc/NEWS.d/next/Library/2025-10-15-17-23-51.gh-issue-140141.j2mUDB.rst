@@ -1,0 +1,6 @@
+When a distribution cannot be discovered with
+``importlib.metadata.Distribution.from_name``, the
+:py:class:`importlib.metadata.PackageNotFoundError` traceback no longer
+includes a transient :exc:`StopIteration` exception.
+
+Contributed by Bartosz Sławecki in :gh:`140142`.
