@@ -1494,6 +1494,14 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             self.assertNotIn(b'test_env', os.environb)
             self.assertNotIn('test_env', os.environ)
 
+    def test_clearenv(self):
+        os.environ['REMOVEME'] = '1'
+        os.environ.clear()
+        self.assertEqual(os.environ, {})
+
+        self.assertRaises(TypeError, os.environ.clear, None)
+
+
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
     is_fwalk = False
@@ -3197,13 +3205,17 @@ class SpawnTests(unittest.TestCase):
         self._test_invalid_env(os.spawnvpe)
 
 
-# The introduction of this TestCase caused at least two different errors on
-# *nix buildbots. Temporarily skip this to let the buildbots move along.
-@unittest.skip("Skip due to platform/environment differences on *NIX buildbots")
 @unittest.skipUnless(hasattr(os, 'getlogin'), "test needs os.getlogin")
 class LoginTests(unittest.TestCase):
     def test_getlogin(self):
-        user_name = os.getlogin()
+        try:
+            user_name = os.getlogin()
+        except OSError as exc:
+            # See https://man7.org/linux/man-pages/man3/getlogin.3.html#ERRORS.
+            if exc.errno in (errno.ENXIO, errno.ENOENT, errno.ENOTTY):
+                self.skipTest(str(exc))
+            else:
+                raise
         self.assertNotEqual(len(user_name), 0)
 
 
@@ -4080,6 +4092,7 @@ class OSErrorTests(unittest.TestCase):
             (self.filenames, os.listdir,),
             (self.filenames, os.rename, "dst"),
             (self.filenames, os.replace, "dst"),
+            (self.filenames, os.utime, None),
         ]
         if os_helper.can_chmod():
             funcs.append((self.filenames, os.chmod, 0o777))
@@ -4119,6 +4132,19 @@ class OSErrorTests(unittest.TestCase):
                     pass
                 else:
                     self.fail(f"No exception thrown by {func}")
+
+    def test_mkdir(self):
+        filename = os_helper.TESTFN
+        subdir = os.path.join(filename, 'subdir')
+        self.assertRaises(FileNotFoundError, os.mkdir, subdir)
+
+        self.addCleanup(os_helper.unlink, filename)
+        create_file(filename)
+        self.assertRaises(FileExistsError, os.mkdir, filename)
+
+        self.assertRaises((NotADirectoryError, FileNotFoundError),
+                          os.mkdir, subdir)
+
 
 class CPUCountTests(unittest.TestCase):
     def check_cpu_count(self, cpus):

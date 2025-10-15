@@ -14,7 +14,7 @@
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_tuple.h" // _PyTuple_FromArraySteal
+#include "pycore_tuple.h"         // _PyTuple_FromArraySteal
 #include "pycore_unicodeobject.h" // _PyUnicode_FromASCII
 #include "pycore_uop_ids.h"
 #include "pycore_jit.h"
@@ -362,7 +362,7 @@ uop_item(PyObject *op, Py_ssize_t index)
         return NULL;
     }
     PyObject *target = PyLong_FromUnsignedLong(self->trace[index].target);
-    if (oparg == NULL) {
+    if (target == NULL) {
         Py_DECREF(oparg);
         Py_DECREF(oname);
         return NULL;
