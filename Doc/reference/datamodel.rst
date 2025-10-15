@@ -1226,6 +1226,7 @@ Special attributes
           The single base class in the inheritance chain that is responsible
           for the memory layout of instances. This attribute corresponds to
           :c:member:`~PyTypeObject.tp_base` at the C level.
+
    * - .. attribute:: type.__doc__
      - The class's documentation string, or ``None`` if undefined.
        Not inherited by subclasses.
