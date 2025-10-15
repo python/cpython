@@ -362,8 +362,7 @@ exit:
 PyDoc_STRVAR(_queue_SimpleQueue___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
-"\n"
-"Return size of queue in bytes, including underlying data structure.");
+"\n");
 
 #define _QUEUE_SIMPLEQUEUE___SIZEOF___METHODDEF    \
     {"__sizeof__", (PyCFunction)_queue_SimpleQueue___sizeof__, METH_NOARGS, _queue_SimpleQueue___sizeof____doc__},
@@ -386,4 +385,4 @@ _queue_SimpleQueue___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dc7b32ca422336a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=64f86d4983c06225 input=a9049054013a1b77]*/
