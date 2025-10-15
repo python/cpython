@@ -3179,7 +3179,7 @@ objects.
       bytes.
 
       If *n* is negative indexes from the end and takes the first :func:`len`
-      minus *n* bytes. If *n* is out of bounds raises :exc:`IndexError`.
+      plus *n* bytes. If *n* is out of bounds raises :exc:`IndexError`.
 
       Taking less than the full length will leave remaining bytes in the
       :class:`bytearray` which requires a copy. If the remaining bytes should be
@@ -3188,8 +3188,7 @@ objects.
 
       .. impl-detail::
 
-         CPython implements this as a zero-copy operation making it a very
-         efficient way to make a :class:`bytes` from a :class:`bytearray`.
+         Taking all bytes is a zero-copy operation.
 
       .. list-table:: Suggested Replacements
          :header-rows: 1
@@ -3225,7 +3224,6 @@ objects.
                   buffer = bytearray(1024)
                   ...
                   data = buffer.take_bytes()
-                  assert len(buffer) == 0
 
          * - Split a buffer at a specific separator
            - .. code:: python
@@ -3241,7 +3239,6 @@ objects.
                   buffer = bytearray(b'abc\ndef')
                   n = buffer.find(b'\n')
                   data = buffer.take_bytes(n + 1)
-                  assert buffer == bytearray(b'def')
 
          * - Split a buffer at a specific separator; discard after the separator
            - .. code:: python
@@ -3259,8 +3256,6 @@ objects.
                   n = buffer.find(b'\n')
                   buffer.resize(n)
                   data = buffer.take_bytes()
-                  assert data == b'abc'
-                  assert len(buffer) == 0
 
       .. versionadded:: next
 
