@@ -1634,8 +1634,8 @@ _build_concatenated_bytes(Parser *p, asdl_expr_seq *strings, int lineno,
     if (writer == NULL) {
         return NULL;
     }
-
     char *out = PyBytesWriter_GetData(writer);
+
     for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty elem = asdl_seq_GET(strings, i);
         PyObject *bytes = elem->v.Constant.value;
