@@ -118,7 +118,7 @@ int
 PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
 {
     PyObject **p;
-    if (!PyTuple_Check(op) || Py_REFCNT(op) != 1) {
+    if (!PyTuple_Check(op) || !_PyObject_IsUniquelyReferenced(op)) {
         Py_XDECREF(newitem);
         PyErr_BadInternalCall();
         return -1;
@@ -923,7 +923,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 
     v = (PyTupleObject *) *pv;
     if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
-        (Py_SIZE(v) != 0 && Py_REFCNT(v) != 1)) {
+        (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
         *pv = 0;
         Py_XDECREF(v);
         PyErr_BadInternalCall();
