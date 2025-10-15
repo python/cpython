@@ -4,6 +4,9 @@ Configure Python
 
 .. highlight:: sh
 
+
+.. _build-requirements:
+
 Build Requirements
 ==================
 
@@ -49,6 +52,8 @@ To build CPython, you will need:
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
 
+
+.. _optional-module-requirements:
 
 Requirements for Optional Modules
 ---------------------------------
