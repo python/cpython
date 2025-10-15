@@ -6,6 +6,7 @@ import urllib.request
 import http.server
 import threading
 import unittest
+import unittest.mock
 import hashlib
 
 from test import support
@@ -336,8 +337,9 @@ class ProxyAuthTests(unittest.TestCase):
             os.environ.clear()
             os.environ.update(old_environ)
         self.addCleanup(restore_environ, os.environ.copy())
-        os.environ['NO_PROXY'] = ''
-        os.environ['no_proxy'] = ''
+        self._proxy_bypass = unittest.mock.patch('urllib.request.proxy_bypass', return_value=False)
+        self._proxy_bypass.start()
+        self.addCleanup(self._proxy_bypass.stop)
 
         self.digest_auth_handler = DigestAuthHandler()
         self.digest_auth_handler.set_users({self.USER: self.PASSWD})
