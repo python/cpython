@@ -60,7 +60,7 @@ packages.
 .. _windows-path-mod:
 .. _launcher:
 
-Python Install Manager
+Python install manager
 ======================
 
 Installation
@@ -103,7 +103,7 @@ Windows Server 2019, please see :ref:`pymanager-advancedinstall` below for more
 information.
 
 
-Basic Use
+Basic use
 ---------
 
 The recommended command for launching Python is ``python``, which will either
@@ -193,7 +193,7 @@ installed if automatic installation is configured (most likely by setting
 ``pymanager exec`` forms of the command were used.
 
 
-Command Help
+Command help
 ------------
 
 The ``py help`` command will display the full list of supported commands, along
@@ -218,7 +218,7 @@ override multiple settings at once. See :ref:`pymanager-config` below for more
 information about these files.
 
 
-Listing Runtimes
+Listing runtimes
 ----------------
 
 .. code::
@@ -259,7 +259,7 @@ For compatibility with the old launcher, the ``--list``, ``--list-paths``,
 additional options, and will produce legacy formatted output.
 
 
-Installing Runtimes
+Installing runtimes
 -------------------
 
 .. code::
@@ -298,7 +298,7 @@ useful for embedding runtimes into larger applications.
 
 .. _pymanager-offline:
 
-Offline Installs
+Offline installs
 ----------------
 
 To perform offline installs of Python, you will need to first create an offline
@@ -330,7 +330,7 @@ In this way, Python runtimes can be installed and managed on a machine without
 access to the internet.
 
 
-Uninstalling Runtimes
+Uninstalling runtimes
 ---------------------
 
 .. code::
@@ -398,7 +398,7 @@ customization.
      - Description
 
    * - ``default_tag``
-     - ``PYTHON_MANAGER_DEFAULT``
+     - .. envvar:: PYTHON_MANAGER_DEFAULT
      - The preferred default version to launch or install.
        By default, this is interpreted as the most recent non-prerelease version
        from the CPython team.
@@ -541,7 +541,7 @@ configuration option.
 
 .. _pymanager-advancedinstall:
 
-Advanced Installation
+Advanced installation
 ---------------------
 
 For situations where an MSIX cannot be installed, such as some older
@@ -635,7 +635,7 @@ the Store package in this way.
 
 .. _pymanager-admin-config:
 
-Administrative Configuration
+Administrative configuration
 ----------------------------
 
 There are a number of options that may be useful for administrators to override
@@ -726,17 +726,12 @@ directory containing the configuration file that specified them.
 
 .. _install-freethreaded-windows:
 
-Installing Free-threaded Binaries
+Installing free-threaded binaries
 ---------------------------------
 
-.. versionadded:: 3.13 (Experimental)
+.. versionadded:: 3.13
 
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
-
-Pre-built distributions of the experimental free-threaded build are available
+Pre-built distributions of the free-threaded build are available
 by installing tags with the ``t`` suffix.
 
 .. code::
@@ -812,7 +807,7 @@ default).
        ``python.exe`` alias is set to "Python (default)"
 
    * - ``python`` and ``py`` don't launch the runtime I expect
-     - Check your ``PYTHON_MANAGER_DEFAULT`` environment variable
+     - Check your :envvar:`PYTHON_MANAGER_DEFAULT` environment variable
        or ``default_tag`` configuration.
        The ``py list`` command will show your default based on these settings.
 
@@ -885,7 +880,7 @@ versions before providing updates to users.
 
 The two recommended use cases for this distribution are described below.
 
-Python Application
+Python application
 ------------------
 
 An application written in Python does not necessarily require users to be aware
@@ -989,12 +984,7 @@ for the 64-bit version, `www.nuget.org/packages/pythonx86
 Free-threaded packages
 ----------------------
 
-.. versionadded:: 3.13 (Experimental)
-
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
+.. versionadded:: 3.13
 
 Packages containing free-threaded binaries are named
 `python-freethreaded <https://www.nuget.org/packages/python-freethreaded>`_
@@ -1046,7 +1036,7 @@ please install Python 3.12.
 
 .. _max-path:
 
-Removing the MAX_PATH Limitation
+Removing the MAX_PATH limitation
 ================================
 
 Windows historically has limited path lengths to 260 characters. This meant that
@@ -1070,7 +1060,7 @@ UTF-8 mode
 ==========
 
 .. versionadded:: 3.7
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Python UTF-8 mode is now enabled by default (:pep:`686`).
 
@@ -1332,7 +1322,7 @@ installation". In this case:
 * Shortcuts are available for all users
 
 
-Removing the MAX_PATH Limitation
+Removing the MAX_PATH limitation
 --------------------------------
 
 Windows historically has limited path lengths to 260 characters. This meant that
@@ -1355,7 +1345,7 @@ After changing the above option, no further configuration is required.
 
 .. _install-quiet-option:
 
-Installing Without UI
+Installing without UI
 ---------------------
 
 All of the options available in the installer UI can also be specified from the
@@ -1504,7 +1494,7 @@ example file sets the same options as the previous example:
 
 .. _install-layout-option:
 
-Installing Without Downloading
+Installing without downloading
 ------------------------------
 
 As some features of Python are not included in the initial installer download,
@@ -1545,15 +1535,10 @@ settings and replace any that have been removed or modified.
 :ref:`launcher`, which has its own entry in Programs and Features.
 
 
-Installing Free-threaded Binaries
+Installing free-threaded binaries
 ---------------------------------
 
-.. versionadded:: 3.13 (Experimental)
-
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
+.. versionadded:: 3.13
 
 To install pre-built binaries with free-threading enabled (see :pep:`703`), you
 should select "Customize installation". The second page of options includes the
@@ -1585,7 +1570,7 @@ builds.
 Free-threaded binaries are also available :ref:`on nuget.org <windows-nuget>`.
 
 
-Python Launcher for Windows (Deprecated)
+Python launcher for Windows (deprecated)
 ========================================
 
 .. deprecated:: 3.14
@@ -1737,7 +1722,7 @@ have the script specify the version which should be used.
 The key benefit of this is that a single launcher can support multiple Python
 versions at the same time depending on the contents of the first line.
 
-Shebang Lines
+Shebang lines
 -------------
 
 If the first line of a script file starts with ``#!``, it is known as a
@@ -1802,7 +1787,7 @@ program, which performs a :envvar:`PATH` search.
 If an executable matching the first argument after the ``env`` command cannot
 be found, but the argument starts with ``python``, it will be handled as
 described for the other virtual commands.
-The environment variable :envvar:`PYLAUNCHER_NO_SEARCH_PATH` may be set
+The environment variable :envvar:`!PYLAUNCHER_NO_SEARCH_PATH` may be set
 (to any value) to skip this search of :envvar:`PATH`.
 
 Shebang lines that do not match any of these patterns are looked up in the
@@ -1869,7 +1854,7 @@ For example, a shebang line of ``#!python`` has no version qualifier, while
 ``#!python3`` has a version qualifier which specifies only a major version.
 
 If no version qualifiers are found in a command, the environment
-variable :envvar:`PY_PYTHON` can be set to specify the default version
+variable :envvar:`!PY_PYTHON` can be set to specify the default version
 qualifier. If it is not set, the default is "3". The variable can
 specify any value that may be passed on the command line, such as "3",
 "3.7", "3.7-32" or "3.7-64". (Note that the "-64" option is only
@@ -1942,17 +1927,17 @@ For example:
 Diagnostics
 -----------
 
-If an environment variable :envvar:`PYLAUNCHER_DEBUG` is set (to any value), the
+If an environment variable :envvar:`!PYLAUNCHER_DEBUG` is set (to any value), the
 launcher will print diagnostic information to stderr (i.e. to the console).
 While this information manages to be simultaneously verbose *and* terse, it
 should allow you to see what versions of Python were located, why a
 particular version was chosen and the exact command-line used to execute the
 target Python. It is primarily intended for testing and debugging.
 
-Dry Run
+Dry run
 -------
 
-If an environment variable :envvar:`PYLAUNCHER_DRYRUN` is set (to any value),
+If an environment variable :envvar:`!PYLAUNCHER_DRYRUN` is set (to any value),
 the launcher will output the command it would have run, but will not actually
 launch Python. This may be useful for tools that want to use the launcher to
 detect and then launch Python directly. Note that the command written to
@@ -1962,14 +1947,14 @@ the console.
 Install on demand
 -----------------
 
-If an environment variable :envvar:`PYLAUNCHER_ALLOW_INSTALL` is set (to any
+If an environment variable :envvar:`!PYLAUNCHER_ALLOW_INSTALL` is set (to any
 value), and the requested Python version is not installed but is available on
 the Microsoft Store, the launcher will attempt to install it. This may require
 user interaction to complete, and you may need to run the command again.
 
-An additional :envvar:`PYLAUNCHER_ALWAYS_INSTALL` variable causes the launcher
+An additional :envvar:`!PYLAUNCHER_ALWAYS_INSTALL` variable causes the launcher
 to always try to install Python, even if it is detected. This is mainly intended
-for testing (and should be used with :envvar:`PYLAUNCHER_DRYRUN`).
+for testing (and should be used with :envvar:`!PYLAUNCHER_DRYRUN`).
 
 Return codes
 ------------

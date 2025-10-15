@@ -23,6 +23,7 @@ class _zstd.ZstdDict "ZstdDict *" "&zstd_dict_type_spec"
 #define ZstdDict_CAST(op) ((ZstdDict *)op)
 
 /*[clinic input]
+@permit_long_docstring_body
 @classmethod
 _zstd.ZstdDict.__new__ as _zstd_ZstdDict_new
     dict_content: Py_buffer
@@ -43,7 +44,7 @@ by multiple ZstdCompressor or ZstdDecompressor objects.
 static PyObject *
 _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
                         int is_raw)
-/*[clinic end generated code: output=685b7406a48b0949 input=9e8c493e31c98383]*/
+/*[clinic end generated code: output=685b7406a48b0949 input=b132ee40b784c293]*/
 {
     /* All dictionaries must be at least 8 bytes */
     if (dict_content->len < 8) {
@@ -119,10 +120,10 @@ ZstdDict_dealloc(PyObject *ob)
 }
 
 PyDoc_STRVAR(ZstdDict_dictid_doc,
-"the Zstandard dictionary, an int between 0 and 2**32.\n\n"
-"A non-zero value represents an ordinary Zstandard dictionary, "
+"The Zstandard dictionary, an int between 0 and 2**32.\n\n"
+"A non-zero value represents an ordinary Zstandard dictionary,\n"
 "conforming to the standardised format.\n\n"
-"The special value '0' means a 'raw content' dictionary,"
+"A value of zero indicates a 'raw content' dictionary,\n"
 "without any restrictions on format or content.");
 
 static PyObject *
@@ -153,6 +154,7 @@ _zstd_ZstdDict_dict_content_get_impl(ZstdDict *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @getter
 _zstd.ZstdDict.as_digested_dict
 
@@ -171,12 +173,13 @@ compress(dat, zstd_dict=zd.as_digested_dict)
 
 static PyObject *
 _zstd_ZstdDict_as_digested_dict_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=09b086e7a7320dbb input=ee45e1b4a48f6f2c]*/
+/*[clinic end generated code: output=09b086e7a7320dbb input=8d01ff0b8b043f2e]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_DIGESTED);
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @getter
 _zstd.ZstdDict.as_undigested_dict
 
@@ -193,12 +196,13 @@ compress(dat, zstd_dict=zd.as_undigested_dict)
 
 static PyObject *
 _zstd_ZstdDict_as_undigested_dict_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=43c7a989e6d4253a input=d39210eedec76fed]*/
+/*[clinic end generated code: output=43c7a989e6d4253a input=b1bdb306c3798ad4]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_UNDIGESTED);
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @getter
 _zstd.ZstdDict.as_prefix
 
@@ -210,12 +214,12 @@ compress(dat, zstd_dict=zd.as_prefix)
 1. Prefix is compatible with long distance matching, while dictionary is not.
 2. It only works for the first frame, then the compressor/decompressor will
    return to no prefix state.
-3. When decompressing, must use the same prefix as when compressing."
+3. When decompressing, must use the same prefix as when compressing.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=6f7130c356595a16 input=d59757b0b5a9551a]*/
+/*[clinic end generated code: output=6f7130c356595a16 input=77966c012d15e6ab]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_PREFIX);
 }
