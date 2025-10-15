@@ -3366,10 +3366,12 @@ static PyMemberDef pystatx_result_members[] = {
         "minimum size for direct I/O with torn-write protection"),
     MM(stx_atomic_write_unit_max, Py_T_UINT, atomic_write_unit_max,
         "maximum size for direct I/O with torn-write protection"),
-    MM(stx_atomic_write_unit_max_opt, Py_T_UINT, atomic_write_unit_max_opt,
-        "maximum optimized size for direct I/O with torn-write protection"),
     MM(stx_atomic_write_segments_max, Py_T_UINT, atomic_write_segments_max,
         "maximum iovecs for direct I/O with torn-write protection"),
+#endif
+#if 0
+    MM(stx_atomic_write_unit_max_opt, Py_T_UINT, atomic_write_unit_max_opt,
+        "maximum optimized size for direct I/O with torn-write protection"),
 #endif
 #ifdef STATX_DIO_READ_ALIGN
     MM(stx_dio_read_offset_align, Py_T_UINT, dio_read_offset_align,
