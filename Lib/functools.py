@@ -541,9 +541,14 @@ def _partial_annotate(partial_obj, format):
     # Get the signature to determine which parameters are bound
     try:
         sig = inspect.signature(partial_obj)
-    except (ValueError, TypeError):
-        # If we can't get signature, return empty dict
-        return {}
+    except (ValueError, TypeError) as e:
+        # If we can't get signature, we can't reliably determine which
+        # parameters are bound. Raise an error rather than returning
+        # incorrect annotations.
+        raise TypeError(
+            f"Cannot compute annotations for {partial_obj!r}: "
+            f"unable to determine signature"
+        ) from e
 
     # Build new annotations dict with only unbound parameters
     # (parameters first, then return)
@@ -608,23 +613,37 @@ def _partialmethod_annotate(partialmethod_obj, format):
         # So if func is (self, a, b, c) and partialmethod.args=(1,)
         # Then 'self' stays, 'a' is bound, 'b' and 'c' remain
 
+        # We need to account for Placeholders which create "holes"
+        # For example: partialmethod(func, 1, Placeholder, 3) binds 'a' and 'c' but not 'b'
+
         remaining_params = func_params[1:]
-        num_positional_bound = len(partial_args)
+
+        # Track which positions are filled by Placeholder
+        placeholder_positions = set()
+        for i, arg in enumerate(partial_args):
+            if arg is Placeholder:
+                placeholder_positions.add(i)
+
+        # Number of non-Placeholder positional args
+        # This doesn't directly tell us which params are bound due to Placeholders
 
         for i, param_name in enumerate(remaining_params):
-            # Skip if this param is bound positionally
-            if i < num_positional_bound:
-                continue
-
-            # For keyword binding: keep the annotation (keyword sets default, doesn't remove param)
-            if param_name in partial_keywords:
+            # Check if this position has a Placeholder
+            if i in placeholder_positions:
+                # This parameter is deferred by Placeholder, keep it
                 if param_name in func_annotations:
                     new_annotations[param_name] = func_annotations[param_name]
                 continue
 
-            # This parameter is not bound, keep its annotation
-            if param_name in func_annotations:
-                new_annotations[param_name] = func_annotations[param_name]
+            # Check if this position is beyond the partial_args
+            if i >= len(partial_args):
+                # This parameter is not bound at all, keep it
+                if param_name in func_annotations:
+                    new_annotations[param_name] = func_annotations[param_name]
+                continue
+
+            # Otherwise, this position is bound (not a Placeholder and within bounds)
+            # Skip it
 
         # Add return annotation at the end
         if 'return' in func_annotations:
@@ -632,9 +651,14 @@ def _partialmethod_annotate(partialmethod_obj, format):
 
         return new_annotations
 
-    except (ValueError, TypeError):
-        # If we can't process, return the original annotations
-        return func_annotations
+    except (ValueError, TypeError) as e:
+        # If we can't process the signature, we can't reliably determine
+        # which parameters are bound. Raise an error rather than returning
+        # incorrect annotations (which would include bound parameters).
+        raise TypeError(
+            f"Cannot compute annotations for {partialmethod_obj!r}: "
+            f"unable to determine which parameters are bound"
+        ) from e
 
 ################################################################################
 ### LRU Cache function decorator

@@ -825,3 +825,16 @@ have three read-only attributes:
 callable, weak referenceable, and can have attributes.  There are some important
 differences.  For instance, the :attr:`~definition.__name__` and :attr:`~definition.__doc__` attributes
 are not created automatically.
+
+However, :class:`partial` objects do support the :attr:`~object.__annotate__` protocol for
+annotation introspection. When accessed, :attr:`!__annotate__` returns only the annotations
+for parameters that have not been bound by the partial application, along with the return
+annotation. This behavior is consistent with :func:`inspect.signature` and allows tools like
+:func:`annotationlib.get_annotations` to work correctly with partial objects.  See the
+:mod:`annotationlib` module documentation for more information on working with annotations
+on partial objects.
+
+:class:`partialmethod` objects similarly support :attr:`~object.__annotate__` for unbound methods.
+
+.. versionadded:: next
+   Added :attr:`~object.__annotate__` support to :class:`partial` and :class:`partialmethod`.

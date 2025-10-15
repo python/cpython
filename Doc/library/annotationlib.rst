@@ -371,6 +371,7 @@ Functions
    * For :class:`functools.partial` and :class:`functools.partialmethod` objects,
      only returns annotations for parameters that have not been bound by the
      partial application, along with the return annotation if present.
+     See :ref:`below <functools-objects-annotations>` for details.
 
    *eval_str* controls whether or not values of type :class:`!str` are
    replaced with the result of calling :func:`eval` on those values:
@@ -409,20 +410,7 @@ Functions
       >>> get_annotations(f)
       {'a': <class 'int'>, 'b': <class 'str'>, 'return': <class 'float'>}
 
-   :func:`!get_annotations` also works with :class:`functools.partial` and
-   :class:`functools.partialmethod` objects, returning only the annotations
-   for parameters that have not been bound:
-
-   .. doctest::
-
-      >>> from functools import partial
-      >>> def add(a: int, b: int, c: int) -> int:
-      ...     return a + b + c
-      >>> add_10 = partial(add, 10)
-      >>> get_annotations(add_10)
-      {'b': <class 'int'>, 'c': <class 'int'>, 'return': <class 'int'>}
-
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 .. function:: type_repr(value)
 
@@ -438,6 +426,7 @@ Functions
 
    .. versionadded:: 3.14
 
+.. _functools-objects-annotations:
 
 Using :func:`!get_annotations` with :mod:`functools` objects
 --------------------------------------------------------------
@@ -494,6 +483,36 @@ it becomes a :class:`functools.partial` object and is handled accordingly:
 This behavior ensures that :func:`get_annotations` returns annotations that
 accurately reflect the signature of the partial or partialmethod object, as
 determined by :func:`inspect.signature`.
+
+If :func:`!get_annotations` cannot reliably determine which parameters are bound
+(for example, if :func:`inspect.signature` raises an error), it will raise a
+:exc:`TypeError` rather than returning incorrect annotations. This ensures that
+you either get correct annotations or a clear error, never incorrect annotations:
+
+.. doctest::
+
+   >>> from functools import partial
+   >>> import inspect
+   >>> def func(a: int, b: str) -> bool:
+   ...     return True
+   >>> partial_func = partial(func, 1)
+   >>> # Simulate a case where signature inspection fails
+   >>> original_sig = inspect.signature
+   >>> def broken_signature(obj):
+   ...     if isinstance(obj, partial):
+   ...         raise ValueError("Cannot inspect signature")
+   ...     return original_sig(obj)
+   >>> inspect.signature = broken_signature
+   >>> try:
+   ...     get_annotations(partial_func)
+   ... except TypeError as e:
+   ...     print(f"Got expected error: {e}")
+   ... finally:
+   ...     inspect.signature = original_sig
+   Got expected error: Cannot compute annotations for ...: unable to determine signature
+
+This design prevents the common error of returning annotations that include
+parameters which have already been bound by the partial application.
 
 
 Recipes
