@@ -1720,6 +1720,11 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
     return None
 
 
+# add "exception_target=None"
+# then we can handle the exception raised from suggestion
+# use function "_add_exception_note"
+# it won't add in gh-135660
+
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
