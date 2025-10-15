@@ -1580,6 +1580,19 @@ class PythonFinalizationTests(unittest.TestCase):
         """)
         assert_python_ok("-c", code)
 
+    def test_warnings_fini(self):
+        # See https://github.com/python/cpython/issues/137384
+        code = textwrap.dedent('''
+            import asyncio
+            from contextvars import ContextVar
+
+            context_loop = ContextVar("context_loop", default=None)
+            loop = asyncio.new_event_loop()
+            context_loop.set(loop)
+        ''')
+
+        assert_python_ok("-c", code)
+
 
 def setUpModule():
     global enabled, debug

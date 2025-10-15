@@ -7,7 +7,6 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
@@ -102,7 +101,7 @@ sys_audit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    __clinic_args = _PyTuple_FromArray(args + 1, nargs - 1);
+    __clinic_args = PyTuple_FromArray(args + 1, nargs - 1);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -1793,37 +1792,6 @@ sys__baserepl(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys__baserepl_impl(module);
 }
 
-PyDoc_STRVAR(sys__clear_type_descriptors__doc__,
-"_clear_type_descriptors($module, type, /)\n"
-"--\n"
-"\n"
-"Private function for clearing certain descriptors from a type\'s dictionary.\n"
-"\n"
-"See gh-135228 for context.");
-
-#define SYS__CLEAR_TYPE_DESCRIPTORS_METHODDEF    \
-    {"_clear_type_descriptors", (PyCFunction)sys__clear_type_descriptors, METH_O, sys__clear_type_descriptors__doc__},
-
-static PyObject *
-sys__clear_type_descriptors_impl(PyObject *module, PyObject *type);
-
-static PyObject *
-sys__clear_type_descriptors(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    PyObject *type;
-
-    if (!PyObject_TypeCheck(arg, &PyType_Type)) {
-        _PyArg_BadArgument("_clear_type_descriptors", "argument", (&PyType_Type)->tp_name, arg);
-        goto exit;
-    }
-    type = arg;
-    return_value = sys__clear_type_descriptors_impl(module, type);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(sys__is_gil_enabled__doc__,
 "_is_gil_enabled($module, /)\n"
 "--\n"
@@ -1979,4 +1947,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=9052f399f40ca32d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f7d84c5bf00d557 input=a9049054013a1b77]*/
