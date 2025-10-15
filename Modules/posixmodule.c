@@ -3409,7 +3409,8 @@ static PyGetSetDef pystatx_result_getset[] = {
 #undef GM
 
 static PyObject *
-pystatx_result_repr(PyObject *op) {
+pystatx_result_repr(PyObject *op)
+{
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL) {
         return NULL;
@@ -3478,13 +3479,15 @@ error:
 }
 
 static int
-pystatx_result_traverse(PyObject *self, visitproc visit, void *arg) {
+pystatx_result_traverse(PyObject *self, visitproc visit, void *arg)
+{
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static void
-pystatx_result_dealloc(PyObject *op) {
+pystatx_result_dealloc(PyObject *op)
+{
     Py_statx_result *self = (Py_statx_result *) op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
