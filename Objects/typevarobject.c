@@ -472,7 +472,7 @@ typevar_dealloc(PyObject *self)
 
     _PyObject_GC_UNTRACK(self);
 
-    Py_DECREF(tv->name);
+    Py_XDECREF(tv->name);
     Py_XDECREF(tv->bound);
     Py_XDECREF(tv->evaluate_bound);
     Py_XDECREF(tv->constraints);
@@ -491,6 +491,7 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     typevarobject *tv = typevarobject_CAST(self);
+    Py_VISIT(tv->name);
     Py_VISIT(tv->bound);
     Py_VISIT(tv->evaluate_bound);
     Py_VISIT(tv->constraints);
@@ -505,6 +506,7 @@ static int
 typevar_clear(PyObject *op)
 {
     typevarobject *self = typevarobject_CAST(op);
+    Py_CLEAR(self->name);
     Py_CLEAR(self->bound);
     Py_CLEAR(self->evaluate_bound);
     Py_CLEAR(self->constraints);
@@ -1171,7 +1173,7 @@ paramspec_dealloc(PyObject *self)
 
     _PyObject_GC_UNTRACK(self);
 
-    Py_DECREF(ps->name);
+    Py_XDECREF(ps->name);
     Py_XDECREF(ps->bound);
     Py_XDECREF(ps->default_value);
     Py_XDECREF(ps->evaluate_default);
@@ -1187,6 +1189,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     paramspecobject *ps = paramspecobject_CAST(self);
+    Py_VISIT(ps->name);
     Py_VISIT(ps->bound);
     Py_VISIT(ps->default_value);
     Py_VISIT(ps->evaluate_default);
@@ -1198,6 +1201,7 @@ static int
 paramspec_clear(PyObject *op)
 {
     paramspecobject *self = paramspecobject_CAST(op);
+    Py_CLEAR(self->name);
     Py_CLEAR(self->bound);
     Py_CLEAR(self->default_value);
     Py_CLEAR(self->evaluate_default);
@@ -1519,7 +1523,7 @@ typevartuple_dealloc(PyObject *self)
     _PyObject_GC_UNTRACK(self);
     typevartupleobject *tvt = typevartupleobject_CAST(self);
 
-    Py_DECREF(tvt->name);
+    Py_XDECREF(tvt->name);
     Py_XDECREF(tvt->default_value);
     Py_XDECREF(tvt->evaluate_default);
     PyObject_ClearManagedDict(self);
@@ -1683,6 +1687,7 @@ typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     typevartupleobject *tvt = typevartupleobject_CAST(self);
+    Py_VISIT(tvt->name);
     Py_VISIT(tvt->default_value);
     Py_VISIT(tvt->evaluate_default);
     PyObject_VisitManagedDict(self, visit, arg);
@@ -1693,6 +1698,7 @@ static int
 typevartuple_clear(PyObject *self)
 {
     typevartupleobject *tvt = typevartupleobject_CAST(self);
+    Py_CLEAR(tvt->name);
     Py_CLEAR(tvt->default_value);
     Py_CLEAR(tvt->evaluate_default);
     PyObject_ClearManagedDict(self);
@@ -1851,7 +1857,7 @@ typealias_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     typealiasobject *ta = typealiasobject_CAST(self);
-    Py_DECREF(ta->name);
+    Py_XDECREF(ta->name);
     Py_XDECREF(ta->type_params);
     Py_XDECREF(ta->compute_value);
     Py_XDECREF(ta->value);
@@ -2032,6 +2038,7 @@ static int
 typealias_traverse(PyObject *op, visitproc visit, void *arg)
 {
     typealiasobject *self = typealiasobject_CAST(op);
+    Py_VISIT(self->name);
     Py_VISIT(self->type_params);
     Py_VISIT(self->compute_value);
     Py_VISIT(self->value);
@@ -2043,6 +2050,7 @@ static int
 typealias_clear(PyObject *op)
 {
     typealiasobject *self = typealiasobject_CAST(op);
+    Py_CLEAR(self->name);
     Py_CLEAR(self->type_params);
     Py_CLEAR(self->compute_value);
     Py_CLEAR(self->value);

@@ -1,4 +1,0 @@
-The LLVM version used by the JIT at build time can now be modified using
-the ``LLVM_VERSION`` environment variable. Use this at your own risk, as
-there is only one officially supported LLVM version. For more information,
-please check ``Tools/jit/README.md``.

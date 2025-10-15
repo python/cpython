@@ -344,7 +344,7 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
     PyObject *return_value;
     int flush;
     z_stream zst;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     zlibstate *state = get_zlib_state(module);
 
@@ -445,7 +445,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
     Py_ssize_t ibuflen;
     int err, flush;
     z_stream zst;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     zlibstate *state = get_zlib_state(module);
@@ -774,7 +774,7 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 {
     PyObject *return_value;
     int err;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     zlibstate *state = PyType_GetModuleState(cls);
 
     ENTER_ZLIB(self);
@@ -898,7 +898,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     int err = Z_OK;
     Py_ssize_t ibuflen;
     PyObject *return_value;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     PyObject *module = PyType_GetModule(cls);
     if (module == NULL)
@@ -1005,7 +1005,7 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 {
     int err;
     PyObject *return_value;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     zlibstate *state = PyType_GetModuleState(cls);
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
@@ -1267,7 +1267,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     Py_buffer data;
     PyObject *return_value;
     Py_ssize_t ibuflen;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     PyObject *module = PyType_GetModule(cls);

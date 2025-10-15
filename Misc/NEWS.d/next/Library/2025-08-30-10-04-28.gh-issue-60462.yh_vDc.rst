@@ -1,1 +1,0 @@
-Fix :func:`locale.strxfrm` on Solaris (and possibly other platforms).

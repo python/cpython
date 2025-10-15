@@ -201,7 +201,7 @@ Object Protocol
    This case can arise from forgetting ``NULL`` checks and would delete the
    attribute.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Must not be called with NULL value if an exception is set.
 
 
@@ -226,7 +226,7 @@ Object Protocol
    For more details, see :c:func:`PyUnicode_InternFromString`, which may be
    used internally to create a key object.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Must not be called with NULL value if an exception is set.
 
 

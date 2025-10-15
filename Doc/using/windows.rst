@@ -1060,7 +1060,7 @@ UTF-8 mode
 ==========
 
 .. versionadded:: 3.7
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Python UTF-8 mode is now enabled by default (:pep:`686`).
 
