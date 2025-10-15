@@ -311,8 +311,16 @@ class Optimizer:
         self.path.write_text(self._body())
 
 
+# Mach-O does not support the 19 bit branch locations needed for branch reordering
+class OptimizerAArch64_MachO(Optimizer):  # pylint: disable = too-few-public-methods
+    """aarch64-apple-darwin"""
+
+    # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
+    _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
+
+
 class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
-    """aarch64-apple-darwin/aarch64-pc-windows-msvc/aarch64-unknown-linux-gnu"""
+    """aarch64-pc-windows-msvc/aarch64-unknown-linux-gnu"""
 
     _branches = _AARCH64_BRANCHES
     _re_branch = re.compile(

@@ -334,7 +334,6 @@ patch_aarch64_21rx(unsigned char *location, uint64_t value)
     patch_aarch64_21r(location, value);
 }
 
-
 // 21-bit relative branch.
 void
 patch_aarch64_19r(unsigned char *location, uint64_t value)
@@ -348,21 +347,6 @@ patch_aarch64_19r(unsigned char *location, uint64_t value)
     // Since instructions are 4-byte aligned, only use 19 bits:
     assert(get_bits(value, 0, 2) == 0);
     set_bits(loc32, 5, value, 2, 19);
-}
-
-// 16-bit relative branch.
-void
-patch_aarch64_14r(unsigned char *location, uint64_t value)
-{
-    uint32_t *loc32 = (uint32_t *)location;
-    assert(IS_AARCH64_TEST_AND_BRANCH(*loc32));
-    value -= (uintptr_t)location;
-    // Check that we're not out of range of 16 signed bits:
-    assert((int64_t)value >= -(1 << 15));
-    assert((int64_t)value < (1 << 15));
-    // Since instructions are 4-byte aligned, only use 14 bits:
-    assert(get_bits(value, 0, 2) == 0);
-    set_bits(loc32, 5, value, 2, 14);
 }
 
 // 28-bit relative branch.
