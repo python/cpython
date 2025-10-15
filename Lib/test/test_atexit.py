@@ -1,11 +1,11 @@
 import atexit
 import os
 import subprocess
-import tempfile
 import textwrap
 import unittest
 from test import support
 from test.support import SuppressCrashReport, script_helper
+from test.support import os_helper
 from test.support import threading_helper
 
 class GeneralTest(unittest.TestCase):
@@ -209,11 +209,8 @@ class SubinterpreterTest(unittest.TestCase):
             _testcapi.set_nomemory(0)
         """)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py') as f:
-            f.write(code)
-            f.flush()
-            script = f.name
-
+        with os_helper.temp_dir() as temp_dir:
+            script = script_helper.make_script(temp_dir, 'test_atexit_script', code)
             with SuppressCrashReport():
                 with script_helper.spawn_python(script,
                                                 stderr=subprocess.PIPE) as proc:
