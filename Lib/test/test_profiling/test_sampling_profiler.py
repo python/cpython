@@ -2677,7 +2677,8 @@ main()
 '''
         with test_subprocess(cpu_vs_idle_script) as subproc:
             # Wait for signal that threads are running
-            subproc.socket.recv(1024)  # Receive "threads_ready"
+            response = subproc.socket.recv(1024)
+            self.assertEqual(response, b"threads_ready")
 
             with (
                 io.StringIO() as captured_output,
@@ -2926,7 +2927,8 @@ main()
 '''
         with test_subprocess(gil_test_script) as subproc:
             # Wait for signal that threads are running
-            subproc.socket.recv(1024)  # Receive "threads_ready"
+            response = subproc.socket.recv(1024)
+            self.assertEqual(response, b"threads_ready")
 
             with (
                 io.StringIO() as captured_output,
