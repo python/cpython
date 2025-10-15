@@ -11,8 +11,7 @@ UUID_PER_THREAD = 1000
 
 
 @threading_helper.requires_working_threading()
-@unittest.skipUnless(c_uuid, "requires the C _uuid module")
-class UuidTests(unittest.TestCase):
+class UUIDTests(unittest.TestCase):
     @unittest.skipUnless(os.name == "posix", "POSIX only")
     def test_generate_time_safe(self):
         uuids = []
