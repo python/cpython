@@ -965,7 +965,6 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     }
     HEAD_UNLOCK(runtime);
 
-    interp->finalizing = 1;
     _Py_qsbr_fini(interp);
     _PyObject_FiniState(interp);
     release_interp_owner(interp);
