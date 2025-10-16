@@ -793,6 +793,7 @@ struct _is {
     int finalizing;
 
     uintptr_t last_restart_version;
+    Py_ssize_t _owners;
     struct pythreads {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */

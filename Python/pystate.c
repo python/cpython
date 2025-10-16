@@ -485,6 +485,23 @@ free_interpreter(PyInterpreterState *interp)
     }
 }
 
+static void
+_finalize_and_free_interpreter(PyInterpreterState *interp)
+{
+    _Py_qsbr_fini(interp);
+    _PyObject_FiniState(interp);
+    free_interpreter(interp);
+}
+
+static inline void
+_interp_release_owner(PyInterpreterState *interp)
+{
+    Py_ssize_t prev = _Py_atomic_add_ssize(&interp->_owners, -1);
+    if (prev == 1) {
+        _finalize_and_free_interpreter(interp);
+    }
+}
+
 #ifndef NDEBUG
 static inline int check_interpreter_whence(long);
 #endif
@@ -534,6 +551,7 @@ init_interpreter(PyInterpreterState *interp,
     interp->id = id;
 
     interp->id_refcount = 0;
+    interp->_owners = 1;
 
     assert(runtime->interpreters.head == interp);
     assert(next != NULL || (interp == runtime->interpreters.main));
@@ -955,11 +973,9 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     }
     HEAD_UNLOCK(runtime);
 
-    _Py_qsbr_fini(interp);
+    interp->finalizing = 1;
 
-    _PyObject_FiniState(interp);
-
-    free_interpreter(interp);
+    _interp_release_owner(interp);
 }
 
 
@@ -1412,6 +1428,7 @@ static void
 free_threadstate(_PyThreadStateImpl *tstate)
 {
     PyInterpreterState *interp = tstate->base.interp;
+
     // The initial thread state of the interpreter is allocated
     // as part of the interpreter state so should not be freed.
     if (tstate == &interp->_initial_thread) {
@@ -1423,6 +1440,8 @@ free_threadstate(_PyThreadStateImpl *tstate)
     else {
         PyMem_RawFree(tstate);
     }
+
+    _interp_release_owner(interp);
 }
 
 static void
@@ -1548,6 +1567,8 @@ new_threadstate(PyInterpreterState *interp, int whence)
     interp->threads.next_unique_id += 1;
     uint64_t id = interp->threads.next_unique_id;
     init_threadstate(tstate, interp, id, whence);
+
+    _Py_atomic_add_ssize(&interp->_owners, 1);
 
     // Add the new thread state to the interpreter.
     PyThreadState *old_head = interp->threads.head;
