@@ -847,7 +847,7 @@ tuple_subscript(PyObject *op, PyObject* item)
                 dest[i] = it;
             }
 
-            if (_PyObject_GC_IS_TRACKED(self)) {
+            if (tuple_need_tracking(result)) {
                 _PyObject_GC_TRACK(result);
             }
             return (PyObject *)result;
