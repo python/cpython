@@ -915,7 +915,7 @@ def main(args=None):
     parser.add_argument(
         "month",
         nargs='?', type=int,
-        help="month number (1-12, text only)"
+        help="month number (1-12)"
     )
 
     options = parser.parse_args(args)
