@@ -1,2 +1,2 @@
-Do not track immutable tuples in GC. Count only tracked objects in GC young
-objects counter. Patch by Sergey Miryanov and Mikhail Efimov
+Do not track immutable tuples in GC.
+Patch by Sergey Miryanov and Mikhail Efimov
