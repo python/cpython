@@ -145,7 +145,7 @@ _PyTuple_MaybeUntrack(PyObject *op)
     t = (PyTupleObject *) op;
     n = Py_SIZE(t);
     for (i = 0; i < n; i++) {
-        PyObject *item = PyTuple_GET_ITEM(t, i);
+        PyObject *item = t->ob_item[i];
         /* Tuple with NULL elements aren't
            fully constructed, don't untrack
            them yet. */
@@ -156,16 +156,15 @@ _PyTuple_MaybeUntrack(PyObject *op)
     _PyObject_GC_UNTRACK(op);
 }
 
+//
 static bool
 tuple_need_tracking(PyTupleObject *self)
 {
     Py_ssize_t n = PyTuple_GET_SIZE(self);
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *item = PyTuple_GET_ITEM(self, i);
-        /* Tuple with NULL elements aren't
-           fully constructed, we should track them. */
-        if (!item ||
-            _PyObject_GC_MAY_BE_TRACKED(item)) {
+        PyObject *item = self->ob_item[i];
+        assert(item);
+        if (_PyObject_GC_MAY_BE_TRACKED(item)) {
             return true;
         }
     }
