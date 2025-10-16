@@ -793,7 +793,6 @@ struct _is {
     int finalizing;
 
     uintptr_t last_restart_version;
-    Py_ssize_t _owners;
     struct pythreads {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
@@ -972,6 +971,7 @@ struct _is {
 #  endif
 #endif
 
+    Py_ssize_t _owners;
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
     // _initial_thread should be the last field of PyInterpreterState.
