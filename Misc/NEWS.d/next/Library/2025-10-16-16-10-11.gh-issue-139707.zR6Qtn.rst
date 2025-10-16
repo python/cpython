@@ -1,0 +1,2 @@
+Improve :exc:`ModuleNotFound` error message when a :term:`standard library`
+module is missing.
