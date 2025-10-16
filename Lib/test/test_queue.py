@@ -1039,7 +1039,7 @@ class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         self.assertGreater(large_size, 0)
 
     def test_is_default(self):
-        self.assertIsNot(self.type2test, self.queue.SimpleQueue)
+        self.assertIs(self.type2test, self.queue.SimpleQueue)
         self.assertIs(self.type2test, self.queue._PySimpleQueue)
 
 
