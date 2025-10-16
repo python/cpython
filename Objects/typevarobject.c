@@ -2123,11 +2123,6 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
         return NULL;
     }
 
-    PyObject *module = caller();
-    if (module == NULL) {
-        return NULL;
-    }
-
     if (qualname == NULL || qualname == Py_None) {
         // If qualname was not set directly, we use name instead.
         qualname = name;
@@ -2136,6 +2131,11 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
             PyErr_SetString(PyExc_TypeError, "qualname must be a string");
             return NULL;
         }
+    }
+
+    PyObject *module = caller();
+    if (module == NULL) {
+        return NULL;
     }
 
     PyObject *ta = (PyObject *)typealias_alloc(
