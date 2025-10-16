@@ -237,13 +237,13 @@ gdbm_bool(PyObject *op)
 // This function is needed to support PY_SSIZE_T_CLEAN.
 // Return 1 on success, same to PyArg_Parse().
 static int
-parse_datum(PyObject *o, datum *d, const char *failmsg)
+parse_datum(PyObject *o, datum *d, const char *items_name)
 {
     Py_ssize_t size;
     if (!PyArg_Parse(o, "s#", &d->dptr, &size)) {
-        if (failmsg != NULL) {
-            PyErr_Format(PyExc_TypeError, failmsg, o);
-        }
+        PyErr_Format(PyExc_TypeError,
+                     "database %s must be bytes or str, not %T",
+                     items_name, o);
         return 0;
     }
     if (INT_MAX < size) {
@@ -262,7 +262,7 @@ gdbm_subscript_lock_held(PyObject *op, PyObject *key)
     gdbmobject *dp = _gdbmobject_CAST(op);
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
 
-    if (!parse_datum(key, &krec, NULL)) {
+    if (!parse_datum(key, &krec, "keys")) {
         return NULL;
     }
     if (dp->di_dbm == NULL) {
@@ -318,12 +318,10 @@ static int
 gdbm_ass_sub_lock_held(PyObject *op, PyObject *v, PyObject *w)
 {
     datum krec, drec;
-    const char *key_failmsg = "database keys must be bytes or str, not %T";
-    const char *value_failmsg = "database values must be bytes or str, not %T";
     gdbmobject *dp = _gdbmobject_CAST(op);
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
 
-    if (!parse_datum(v, &krec, key_failmsg)) {
+    if (!parse_datum(v, &krec, "keys")) {
         return -1;
     }
     if (dp->di_dbm == NULL) {
@@ -344,7 +342,7 @@ gdbm_ass_sub_lock_held(PyObject *op, PyObject *v, PyObject *w)
         }
     }
     else {
-        if (!parse_datum(w, &drec, value_failmsg)) {
+        if (!parse_datum(w, &drec, "values")) {
             return -1;
         }
         errno = 0;
