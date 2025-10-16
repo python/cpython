@@ -1421,7 +1421,6 @@ static void
 free_threadstate(_PyThreadStateImpl *tstate)
 {
     PyInterpreterState *interp = tstate->base.interp;
-
     // The initial thread state of the interpreter is allocated
     // as part of the interpreter state so should not be freed.
     if (tstate == &interp->_initial_thread) {
