@@ -2316,7 +2316,6 @@ _PyObject_GC_Link(PyObject *op)
     GCState *gcstate = &tstate->interp->gc;
     gc->_gc_next = 0;
     gc->_gc_prev = 0;
-    //gcstate->young.count++; /* number of allocated GC objects */
     gcstate->heap_size++;
     if (gcstate->young.count > gcstate->young.threshold &&
         gcstate->enabled &&
@@ -2448,9 +2447,6 @@ PyObject_GC_Del(void *op)
 #endif
     }
     GCState *gcstate = get_gc_state();
-    //if (gcstate->young.count > 0) {
-    //    gcstate->young.count--;
-    //}
     gcstate->heap_size--;
     PyObject_Free(((char *)op)-presize);
 }
