@@ -291,9 +291,8 @@ class TupleTest(seq_tests.CommonTest):
         self.assertEqual(repr(a2), "(0, 1, 2)")
 
     def _not_tracked(self, t):
-        # Nested tuples can take several collections to untrack
-        gc.collect()
-        gc.collect()
+        # There is no need for gc.collect()
+        # since we don't track these tuples at all.
         self.assertFalse(gc.is_tracked(t), t)
 
     def _tracked(self, t):
@@ -323,6 +322,19 @@ class TupleTest(seq_tests.CommonTest):
         self._tracked((set(),))
         self._tracked((x, y, z))
 
+    @support.cpython_only
+    def test_track_after_operations(self):
+        x, y, z = 1.5, "a", []
+
+        self._not_tracked((x, y) + (x, y))
+        self._tracked((x, y) + (z,))
+
+        self._not_tracked((x, y) * 5)
+        self._tracked((y, z) * 5)
+
+        self._not_tracked((x, y, z)[:2])
+        self._tracked((x, y, z)[2:])
+
     def check_track_dynamic(self, tp, always_track):
         x, y, z = 1.5, "a", []
 
@@ -342,6 +354,14 @@ class TupleTest(seq_tests.CommonTest):
         self._tracked(tp(obj for obj in [x, y, z]))
         self._tracked(tp(tuple([obj]) for obj in [x, y, z]))
         self._tracked(tuple(tp([obj]) for obj in [x, y, z]))
+
+        t = tp([1, x, y, z])
+        self.assertEqual(type(t), tp)
+        self._tracked(t)
+        self.assertEqual(type(t[:]), tuple)
+        self._tracked(t[:])
+        self.assertEqual(type(t[:3]), tuple)
+        self._not_tracked(t[:3])
 
     @support.cpython_only
     def test_track_dynamic(self):
