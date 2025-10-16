@@ -6,11 +6,11 @@ INTERNAL = ROOT / "Include" / "internal"
 def get_nsmallnegints_and_nsmallposints() -> tuple[int, int]:
     nsmallposints = None
     nsmallnegints = None
-    with open(os.path.join(INTERNAL, 'pycore_runtime_structs.h')) as infile:
+    with open(INTERNAL / "pycore_runtime_structs.h") as infile:
         for line in infile:
-            if line.startswith('#define _PY_NSMALLPOSINTS'):
+            if line.startswith("#define _PY_NSMALLPOSINTS"):
                 nsmallposints = int(line.split()[-1])
-            elif line.startswith('#define _PY_NSMALLNEGINTS'):
+            elif line.startswith("#define _PY_NSMALLNEGINTS"):
                 nsmallnegints = int(line.split()[-1])
                 break
         else:
