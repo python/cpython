@@ -254,11 +254,13 @@ class CAPITest(unittest.TestCase):
         class MyClass:
             pass
         obj = MyClass()
-        obj.attr = 123
 
         dict1 = object_getdict(obj)
         dict2 = obj.__dict__
         self.assertIs(dict1, dict2)
+
+        obj.attr = 123
+        self.assertEqual(dict1, {'attr': 123})
 
         class NoDict:
             __slots__ = ()
