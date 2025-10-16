@@ -585,11 +585,10 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     DPRINTF(2, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
 
-    if ((uint16_t)oparg != (uint64_t)oparg) {
+    // TODO support EXTENDED_ARG
+    if (oparg > 255) {
         goto unsupported;
     }
-    // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
-    max_length -= 2;
 
     if (opcode == EXTENDED_ARG) {
         return 1;
@@ -605,6 +604,9 @@ _PyJIT_translate_single_bytecode_to_trace(
     if (opcode == JUMP_FORWARD) {
         return 1;
     }
+
+    // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
+    max_length -= 2;
 
     if (opcode == ENTER_EXECUTOR) {
         ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
