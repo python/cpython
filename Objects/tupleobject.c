@@ -159,8 +159,8 @@ _PyTuple_MaybeUntrack(PyObject *op)
 static bool
 tuple_need_tracking(PyTupleObject *t)
 {
-    Py_ssize_t i = 0, n = Py_SIZE(t);
-    for (; i < n; i++) {
+    Py_ssize_t n = PyTuple_GET_SIZE(t);
+    for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *elt = PyTuple_GET_ITEM(t, i);
         /* Tuple with NULL elements aren't
            fully constructed, we should track them. */
