@@ -1914,6 +1914,33 @@ class ExceptionTests(unittest.TestCase):
             exc2 = None
 
 
+    @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    def test_exec_set_nomemory_hang(self):
+        import_module("_testcapi")
+        # gh-134163: chore from branch 3.13
+        warmup_code = "a = list(range(0, 1))\n" * 20
+        user_input = warmup_code + dedent("""
+            try:
+                import _testcapi
+                _testcapi.set_nomemory(0)
+                b = list(range(1000, 2000))
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+            """)
+        with SuppressCrashReport():
+            with script_helper.spawn_python('-c', user_input) as p:
+                p.wait()
+                output = p.stdout.read()
+
+        self.assertIn(p.returncode, (0, 1))
+        self.assertGreater(len(output), 0)  # At minimum, should not hang
+        self.assertIn(b"MemoryError", output)
+
+
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):
         try:
