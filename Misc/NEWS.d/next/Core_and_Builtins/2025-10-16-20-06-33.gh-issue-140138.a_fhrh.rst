@@ -1,0 +1,7 @@
+Fix a TSAN-reported data race and potential use-after-free when shutting
+down a subinterpreter with running daemon threads in free-threaded (NOGIL)
+builds. The interpreter state could be freed while daemon threads still
+accessed tstate->interp (e.g. during time.sleep). PyInterpreterState now
+keeps an atomic owner refcount and is only finalized/freed when the last
+PyThreadState is destroyed. This fixes
+test_threading.test_daemon_threads_fatal_error.
