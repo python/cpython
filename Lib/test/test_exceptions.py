@@ -1920,7 +1920,6 @@ class ExceptionTests(unittest.TestCase):
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_exec_set_nomemory_hang(self):
         import_module("_testcapi")
-        # gh-134163: chore from branch 3.13
         warmup_code = "a = list(range(0, 1))\n" * 20
         user_input = warmup_code + dedent("""
             try:
