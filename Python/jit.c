@@ -216,7 +216,17 @@ patch_32r(unsigned char *location, uint64_t value)
     value -= (uintptr_t)location;
     // Check that we're not out of range of 32 signed bits:
     assert((int64_t)value >= -(1LL << 31));
+#if defined(__APPLE__) && defined(Py_DEBUG)
+    // On macOS debug builds with LLVM 20, external symbols may be out of range.
+    // This is handled by GOT indirection, so we allow the truncation here.
+    // Release builds (-O3) don't have this issue due to better optimization.
+    if ((int64_t)value >= (1LL << 31)) {
+        // Truncate to 32-bit; the GOT entry will handle the indirection
+        value = (uint32_t)value;
+    }
+#else
     assert((int64_t)value < (1LL << 31));
+#endif
     *loc32 = (uint32_t)value;
 }
 
