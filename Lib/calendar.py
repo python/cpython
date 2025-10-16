@@ -603,6 +603,35 @@ class HTMLCalendar(Calendar):
         return ''.join(v).encode(encoding, "xmlcharrefreplace")
 
 
+    def formatmonthpage(self, theyear, themonth, width=3, css='calendar.css', encoding=None):
+        """
+        Return a formatted month as a complete HTML page.
+        """
+        if encoding is None:
+            encoding = 'utf-8'
+        v = []
+        a = v.append
+        a('<!DOCTYPE html>\n')
+        a('<html lang="en">\n')
+        a('<head>\n')
+        a(f'<meta charset="{encoding}">\n')
+        a('<meta name="viewport" content="width=device-width, initial-scale=1">\n')
+        a(f'<title>Calendar for {theyear}</title>\n')
+        a('<style>\n')
+        a(':root { color-scheme: light dark; }\n')
+        a('table.year { border: solid; }\n')
+        a('table.year > tbody > tr > td { border: solid; vertical-align: top; }\n')
+        a('</style>\n')
+        if css is not None:
+            a(f'<link rel="stylesheet" href="{css}">\n')
+        a('</head>\n')
+        a('<body>\n')
+        a(self.formatmonth(theyear, themonth, width))
+        a('</body>\n')
+        a('</html>\n')
+        return ''.join(v).encode(encoding, "xmlcharrefreplace")
+
+
 class different_locale:
     def __init__(self, locale):
         self.locale = locale
@@ -899,9 +928,6 @@ def main(args=None):
     today = datetime.date.today()
 
     if options.type == "html":
-        if options.month:
-            parser.error("incorrect number of arguments")
-            sys.exit(1)
         if options.locale:
             cal = LocaleHTMLCalendar(locale=locale)
         else:
@@ -912,10 +938,14 @@ def main(args=None):
             encoding = 'utf-8'
         optdict = dict(encoding=encoding, css=options.css)
         write = sys.stdout.buffer.write
+
         if options.year is None:
             write(cal.formatyearpage(today.year, **optdict))
         else:
-            write(cal.formatyearpage(options.year, **optdict))
+            if options.month:
+                write(cal.formatmonthpage(options.year, options.month, **optdict))
+            else:
+                write(cal.formatyearpage(options.year, **optdict))
     else:
         if options.locale:
             cal = _CLIDemoLocaleCalendar(highlight_day=today, locale=locale)
