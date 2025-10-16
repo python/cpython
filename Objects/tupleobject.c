@@ -156,7 +156,7 @@ _PyTuple_MaybeUntrack(PyObject *op)
     _PyObject_GC_UNTRACK(op);
 }
 
-/* This function helps to avoids performance issue in the GC,
+/* gh-139951: This function helps to avoid performance issue in the GC,
  * we don't track immutable tuples. */
 static bool
 tuple_need_tracking(PyTupleObject *self)

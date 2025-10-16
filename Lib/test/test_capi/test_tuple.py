@@ -15,14 +15,9 @@ class TupleSubclass(tuple):
 
 class CAPITest(unittest.TestCase):
     def _not_tracked(self, t):
-        # There is no need for gc.collect()
-        # since we don't track these tuples at all.
         self.assertFalse(gc.is_tracked(t), t)
 
     def _tracked(self, t):
-        self.assertTrue(gc.is_tracked(t), t)
-        gc.collect()
-        gc.collect()
         self.assertTrue(gc.is_tracked(t), t)
 
     def test_check(self):
@@ -121,7 +116,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(MemoryError, pack, PY_SSIZE_T_MAX)
 
         # CRASHES pack(1, NULL)
-        # CRASHES pack(1, None)
         # CRASHES pack(2, [1])
 
     def test_tuple_size(self):
