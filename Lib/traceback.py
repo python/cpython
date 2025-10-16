@@ -204,14 +204,30 @@ def _remove_exception(exc_value, other_exc_value, _seen=None):
         _seen = set()
     if id(exc_value) not in _seen:
         _seen.add(id(exc_value))
-        if exc_value.__cause__:
+        if isinstance(exc_value.__cause__, BaseException):
             if exc_value.__cause__ is other_exc_value:
                 exc_value.__cause__ = None
+            elif isinstance(exc_value.__cause__, BaseExceptionGroup):
+                if other_exc_value in exc_value.__cause__.exceptions:
+                    exc_value.__cause__ = None
+                else:
+                    _remove_exception(exc_value.__cause__, other_exc_value, _seen)
+                    for i in exc_value.__cause__.exceptions:
+                        _remove_exception(i, other_exc_value, _seen)
             else:
                 _remove_exception(exc_value.__cause__, other_exc_value, _seen)
-        if exc_value.__context__:
+        if isinstance(exc_value.__context__, BaseException):
             if exc_value.__context__ is other_exc_value:
                 exc_value.__context__ = None
+            elif isinstance(exc_value.__context__, BaseExceptionGroup):
+                if other_exc_value in exc_value.__context__.exceptions:
+                    exc_value.__context__ = None
+                else:
+                    _remove_exception(
+                        exc_value.__context__, other_exc_value, _seen
+                    )
+                    for i in exc_value.__context__.exceptions:
+                        _remove_exception(i, other_exc_value, _seen)
             else:
                 _remove_exception(
                     exc_value.__context__, other_exc_value, _seen
