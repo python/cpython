@@ -3529,31 +3529,24 @@ pystatx_result_repr(PyObject *op)
         Py_DECREF(o);
     }
 
-    if (Py_ARRAY_LENGTH(pystatx_result_members) > 1
-        && Py_ARRAY_LENGTH(pystatx_result_getset) > 1) {
-        WRITE_ASCII(", ");
-    }
-
     for (size_t i = 0; i < Py_ARRAY_LENGTH(pystatx_result_getset) - 1; ++i) {
         PyGetSetDef *d = &pystatx_result_getset[i];
         PyObject *o = d->get(op, d->closure);
         if (o == NULL) {
             goto error;
         }
-
-        if (o != Py_None) {
-            if (i > 0) {
-                WRITE_ASCII(", ");
-            }
-
-            WRITE_ASCII(d->name);
-            WRITE_ASCII("=");
-            if (PyUnicodeWriter_WriteRepr(writer, o) < 0) {
-                Py_DECREF(o);
-                goto error;
-            }
-            Py_DECREF(o);
+        if (o == Py_None) {
+            continue;
         }
+
+        WRITE_ASCII(", ");
+        WRITE_ASCII(d->name);
+        WRITE_ASCII("=");
+        if (PyUnicodeWriter_WriteRepr(writer, o) < 0) {
+            Py_DECREF(o);
+            goto error;
+        }
+        Py_DECREF(o);
     }
 
     WRITE_ASCII(")");
