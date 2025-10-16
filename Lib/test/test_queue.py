@@ -1010,8 +1010,6 @@ class BaseSimpleQueueTest:
             self.assertIsNone(wr())
 
 
-
-
 class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
 
     queue = py_queue
@@ -1030,7 +1028,7 @@ class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         
         size_after_8 = q.__sizeof__()
         
-        q.put(object())
+        q.put(object())  # Now 9 items
         size_after_9 = q.__sizeof__()
         self.assertGreaterEqual(size_after_9, size_after_8)
         
@@ -1041,6 +1039,9 @@ class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         large_size = large_q.__sizeof__()
         self.assertGreater(large_size, 0)
 
+    def test_is_default(self):
+        self.assertIsNot(self.type2test, self.queue.SimpleQueue)
+        self.assertIs(self.type2test, self.queue._PySimpleQueue)
 
 
 @need_c_queue
@@ -1056,16 +1057,16 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         q = self.type2test()
         
         empty_size = q.__sizeof__()
-        self.assertGreater(empty_size, 0, "Empty C SimpleQueue should have non-zero size")
+        self.assertGreater(empty_size, 0)
         
         for i in range(8):
             q.put(object())
         
         size_after_8 = q.__sizeof__()
 
-        q.put(object()) 
+        q.put(object())  # Now 9 items - should trigger ring buffer growth
         size_after_9 = q.__sizeof__()
-        self.assertGreaterEqual(size_after_9, size_after_8)
+        self.assertGreater(size_after_9, size_after_8)
         
         large_q = self.type2test()
         for i in range(1000):
