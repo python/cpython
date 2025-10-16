@@ -775,7 +775,7 @@ def _get_running_loop():
     except NameError:
         # C implementation not available
         pass
-    
+
     # NOTE: this function is implemented in C (see _asynciomodule.c)
     running_loop, pid = _running_loop.loop_pid
     if running_loop is not None and pid == os.getpid():
@@ -790,8 +790,8 @@ def _set_running_loop(loop):
     """
     # NOTE: this function is implemented in C (see _asynciomodule.c)
     _running_loop.loop_pid = (loop, os.getpid())
-    
-    # Keep C implementation in sync if available  
+
+    # Keep C implementation in sync if available
     try:
         if _c__set_running_loop is not _py__set_running_loop:
             _c__set_running_loop(loop)

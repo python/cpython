@@ -38,11 +38,11 @@ def current_task(loop=None):
     """Return a currently executed task."""
     if loop is None:
         loop = events.get_running_loop()
-    
+
     # If we have a C implementation, prefer it
     if current_task is not _py_current_task:
         return _c_current_task(loop)
-    
+
     # Fall back to Python state
     return _current_tasks.get(loop)
 
@@ -1093,7 +1093,7 @@ def _enter_task(loop, task):
                            f"task {current_task!r} is being executed.")
     _current_tasks[loop] = task
     if _c_swap_current_task is not _py_swap_current_task:
-        # keep the C task state in sync
+        # Keep the C task state in sync
         _c_swap_current_task(loop, task)
 
 
@@ -1104,7 +1104,7 @@ def _leave_task(loop, task):
                            f"the current task {current_task!r}.")
     del _current_tasks[loop]
     if _c_swap_current_task is not _py_swap_current_task:
-        # keep the C task state in sync
+        # Keep the C task state in sync
         _c_swap_current_task(loop, None)
 
 
@@ -1115,7 +1115,7 @@ def _swap_current_task(loop, task):
     else:
         _current_tasks[loop] = task
     if _c_swap_current_task is not _py_swap_current_task:
-        # keep the C task state in sync
+        # Keep the C task state in sync
         _c_swap_current_task(loop, task)
     return prev_task
 
