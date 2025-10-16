@@ -232,7 +232,7 @@ dbm_ass_sub_lock_held(PyObject *self, PyObject *v, PyObject *w)
 
     if ( !PyArg_Parse(v, "s#", &krec.dptr, &tmp_size) ) {
         PyErr_Format(PyExc_TypeError,
-                     "database keys must be bytes or str, not %T",
+                     "dbm key must be bytes or str, not '%T'",
                      v);
         return -1;
     }
@@ -260,7 +260,7 @@ dbm_ass_sub_lock_held(PyObject *self, PyObject *v, PyObject *w)
     } else {
         if ( !PyArg_Parse(w, "s#", &drec.dptr, &tmp_size) ) {
             PyErr_Format(PyExc_TypeError,
-                         "database values must be bytes or str, not %T",
+                         "dbm value must be bytes or str, not '%T'",
                          w);
             return -1;
         }
@@ -371,8 +371,7 @@ dbm_contains_lock_held(PyObject *self, PyObject *arg)
     }
     else if (!PyBytes_Check(arg)) {
         PyErr_Format(PyExc_TypeError,
-                     "dbm key must be bytes or string, not %.100s",
-                     Py_TYPE(arg)->tp_name);
+                     "dbm key must be bytes or str, not '%T'", arg);
         return -1;
     }
     else {

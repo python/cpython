@@ -217,6 +217,25 @@ class TestGdbm(unittest.TestCase):
             create_empty_file(os.path.join(d, 'test'))
             self.assertRaises(gdbm.error, gdbm.open, filename, 'r')
 
+    def test_type_errors(self):
+        self.g = gdbm.open(filename, 'c')
+        with self.assertRaisesRegex(
+            TypeError, "^a bytes-like object is required, not 'int'$",
+        ):
+            self.g[123]
+        with self.assertRaisesRegex(
+            TypeError, "^gdbm key must be bytes or str, not 'int'$",
+        ):
+            123 in self.g
+        with self.assertRaisesRegex(
+            TypeError, "^gdbm key must be bytes or str, not 'NoneType'$",
+        ):
+            self.g[None] = 123
+        with self.assertRaisesRegex(
+            TypeError, "^gdbm value must be bytes or str, not 'int'$",
+        ):
+            self.g['foo'] = 123
+
 
 if __name__ == '__main__':
     unittest.main()

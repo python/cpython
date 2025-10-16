@@ -237,13 +237,15 @@ gdbm_bool(PyObject *op)
 // This function is needed to support PY_SSIZE_T_CLEAN.
 // Return 1 on success, same to PyArg_Parse().
 static int
-parse_datum(PyObject *o, datum *d, const char *items_name)
+parse_datum(PyObject *o, datum *d, const char *item_name)
 {
     Py_ssize_t size;
     if (!PyArg_Parse(o, "s#", &d->dptr, &size)) {
-        PyErr_Format(PyExc_TypeError,
-                     "database %s must be bytes or str, not %T",
-                     items_name, o);
+        if (item_name) {
+            PyErr_Format(PyExc_TypeError,
+                         "gdbm %s must be bytes or str, not '%T'",
+                         item_name, o);
+        }
         return 0;
     }
     if (INT_MAX < size) {
@@ -262,7 +264,7 @@ gdbm_subscript_lock_held(PyObject *op, PyObject *key)
     gdbmobject *dp = _gdbmobject_CAST(op);
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
 
-    if (!parse_datum(key, &krec, "keys")) {
+    if (!parse_datum(key, &krec, NULL)) {
         return NULL;
     }
     if (dp->di_dbm == NULL) {
@@ -321,7 +323,7 @@ gdbm_ass_sub_lock_held(PyObject *op, PyObject *v, PyObject *w)
     gdbmobject *dp = _gdbmobject_CAST(op);
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
 
-    if (!parse_datum(v, &krec, "keys")) {
+    if (!parse_datum(v, &krec, "key")) {
         return -1;
     }
     if (dp->di_dbm == NULL) {
@@ -342,7 +344,7 @@ gdbm_ass_sub_lock_held(PyObject *op, PyObject *v, PyObject *w)
         }
     }
     else {
-        if (!parse_datum(w, &drec, "values")) {
+        if (!parse_datum(w, &drec, "value")) {
             return -1;
         }
         errno = 0;
@@ -490,8 +492,7 @@ gdbm_contains_lock_held(PyObject *self, PyObject *arg)
     }
     else if (!PyBytes_Check(arg)) {
         PyErr_Format(PyExc_TypeError,
-                     "gdbm key must be bytes or string, not %.100s",
-                     Py_TYPE(arg)->tp_name);
+                     "gdbm key must be bytes or str, not '%T'", arg);
         return -1;
     }
     else {
