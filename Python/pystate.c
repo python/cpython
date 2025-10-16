@@ -486,7 +486,7 @@ free_interpreter(PyInterpreterState *interp)
 }
 
 static void
-_finalize_and_free_interpreter(PyInterpreterState *interp)
+cleanup_and_free_interpreter(PyInterpreterState *interp)
 {
     _Py_qsbr_fini(interp);
     _PyObject_FiniState(interp);
@@ -494,11 +494,11 @@ _finalize_and_free_interpreter(PyInterpreterState *interp)
 }
 
 static inline void
-_interp_release_owner(PyInterpreterState *interp)
+release_interp_owner(PyInterpreterState *interp)
 {
     Py_ssize_t prev = _Py_atomic_add_ssize(&interp->owners, -1);
     if (prev == 1) {
-        _finalize_and_free_interpreter(interp);
+        cleanup_and_free_interpreter(interp);
     }
 }
 
@@ -975,7 +975,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 
     interp->finalizing = 1;
 
-    _interp_release_owner(interp);
+    release_interp_owner(interp);
 }
 
 
@@ -1441,7 +1441,7 @@ free_threadstate(_PyThreadStateImpl *tstate)
         PyMem_RawFree(tstate);
     }
 
-    _interp_release_owner(interp);
+    release_interp_owner(interp);
 }
 
 static void
