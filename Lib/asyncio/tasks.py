@@ -38,6 +38,12 @@ def current_task(loop=None):
     """Return a currently executed task."""
     if loop is None:
         loop = events.get_running_loop()
+    
+    # If we have a C implementation, prefer it
+    if current_task is not _py_current_task:
+        return _c_current_task(loop)
+    
+    # Fall back to Python state
     return _current_tasks.get(loop)
 
 
@@ -273,15 +279,12 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._must_cancel = False
         self._fut_waiter = None
 
-        prev_task = _py_swap_current_task(self._loop, self)
+        _py_enter_task(self._loop, self)
         try:
             self.__step_run_and_handle_result(exc)
         finally:
-            try:
-                curtask = _py_swap_current_task(self._loop, prev_task)
-                assert curtask is self
-            finally:
-                self = None  # Needed to break cycles when an exception occurs.
+            _py_leave_task(self._loop, self)
+            self = None  # Needed to break cycles when an exception occurs.
 
     def __step_run_and_handle_result(self, exc):
         coro = self._coro
@@ -1069,6 +1072,9 @@ _eager_tasks = set()
 # all running event loops.  {EventLoop: Task}
 _current_tasks = {}
 
+# Initialize C function references to Python implementations
+_c_current_task = None
+
 
 def _register_task(task):
     """Register an asyncio Task scheduled to run on an event loop."""
@@ -1086,6 +1092,9 @@ def _enter_task(loop, task):
         raise RuntimeError(f"Cannot enter into task {task!r} while another "
                            f"task {current_task!r} is being executed.")
     _current_tasks[loop] = task
+    if _c_swap_current_task is not _py_swap_current_task:
+        # keep the C task state in sync
+        _c_swap_current_task(loop, task)
 
 
 def _leave_task(loop, task):
@@ -1094,6 +1103,9 @@ def _leave_task(loop, task):
         raise RuntimeError(f"Leaving task {task!r} does not match "
                            f"the current task {current_task!r}.")
     del _current_tasks[loop]
+    if _c_swap_current_task is not _py_swap_current_task:
+        # keep the C task state in sync
+        _c_swap_current_task(loop, None)
 
 
 def _swap_current_task(loop, task):
@@ -1127,6 +1139,9 @@ _py_enter_task = _enter_task
 _py_leave_task = _leave_task
 _py_swap_current_task = _swap_current_task
 _py_all_tasks = all_tasks
+
+# Initially point C functions to Python implementations
+_c_current_task = current_task
 
 try:
     from _asyncio import (_register_task, _register_eager_task,
