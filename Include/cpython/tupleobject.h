@@ -43,7 +43,7 @@ PyAPI_FUNC(PyObject*) PyTuple_FromArray(
     PyObject *const *array,
     Py_ssize_t size);
 
-// --- Public PyUnicodeWriter API --------------------------------------------
+// --- Public PyTupleWriter API ----------------------------------------------
 
 typedef struct PyTupleWriter PyTupleWriter;
 
