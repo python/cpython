@@ -2134,6 +2134,7 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
     } else {
         if (!PyUnicode_Check(qualname)) {
             PyErr_SetString(PyExc_TypeError, "qualname must be a string");
+            Py_DECREF(module);
             return NULL;
         }
     }
