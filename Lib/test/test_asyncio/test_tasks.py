@@ -3710,6 +3710,105 @@ class SleepTests(test_utils.TestCase):
         self.assertEqual(result, 11)
 
 
+class CurrentTaskTestsMixin:
+    """Tests for current_task() function working with a mixture of _PyTask
+    and _CTask instances.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        try:
+            super().tearDown()
+        finally:
+            self.loop.close()
+            asyncio.set_event_loop(None)
+    
+    async def _test_coro(self):
+        # Get the current task - this should not return None
+        current = asyncio.current_task()
+        self.assertIsNotNone(current, "current_task() should not return None")
+        return current
+        
+
+    def current_task(self, eager=False):
+        """Test that current_task() works correctly with _PyTask
+        
+        This is a regression test for an issue where current_task() would return
+        None when called from within a _PyTask
+        The issue was caused by incomplete synchronization between the C and
+        Python asyncio implementations.
+        """
+
+        # Test with eager execution (common case where the bug occurred)
+        task = self.Task(self._test_coro(), loop=self.loop, eager_start=eager)
+        result = self.loop.run_until_complete(task)
+        self.assertIs(result, task)
+
+    def test_current_task_eager(self):
+        """Test current_task() with eager execution."""
+        self.current_task(eager=True)
+
+    def test_current_task(self):
+        """Test current_task() without eager execution."""
+        self.current_task(eager=False)
+
+    def test_current_task_consistency_after_task_switch(self):
+        """Test that current_task() remains consistent during task switching.
+        
+        This tests the synchronization between C and Python implementations
+        when tasks are swapped in and out of execution.
+        """
+        results = []
+        
+        async def task_a():
+            results.append(('task_a_start', asyncio.current_task()))
+            await asyncio.sleep(0)  # Yield control
+            results.append(('task_a_end', asyncio.current_task()))
+            return "A"
+        
+        async def task_b():
+            results.append(('task_b_start', asyncio.current_task()))
+            await asyncio.sleep(0)  # Yield control  
+            results.append(('task_b_end', asyncio.current_task()))
+            return "B"
+        
+        async def main():
+            # Start both tasks concurrently
+            a = self.Task(task_a())
+            b = self.Task(task_b())
+            
+            return await asyncio.gather(a, b)
+        
+        result = self.loop.run_until_complete(main())
+        self.assertEqual(result, ["A", "B"])
+        
+        # Verify that current_task() was never None and was consistent
+        for label, current_task in results:
+            self.assertIsNotNone(current_task, f"current_task() was None at {label}")
+        
+        # Verify we got results from both tasks
+        task_a_results = [r for r in results if r[0].startswith('task_a')]
+        task_b_results = [r for r in results if r[0].startswith('task_b')]
+        self.assertEqual(len(task_a_results), 2)
+        self.assertEqual(len(task_b_results), 2)
+
+
+@unittest.skipUnless(hasattr(tasks, '_CTask'),
+                     'requires the C _asyncio module')
+class CTask_CurrentTask_Tests(CurrentTaskTestsMixin,
+                              test_utils.TestCase):
+    Task = getattr(tasks, '_CTask', None)
+
+
+class PyTask_CurrentTask_Tests(CurrentTaskTestsMixin,
+                               test_utils.TestCase):
+    Task = tasks._PyTask
+
+
 class CompatibilityTests(test_utils.TestCase):
     # Tests for checking a bridge between old-styled coroutines
     # and async/await syntax
