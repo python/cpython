@@ -1927,7 +1927,7 @@ class ExceptionTests(unittest.TestCase):
         # PyLong_FromLong() from returning cached integers, which
         # don't require a memory allocation. Prepend some dummy code
         # to artificially increase the instruction index.
-        warmup_code = "a = list(range(0, 1))\n" * 20
+        warmup_code = "a = list(range(0, 1))\n" * 2000
         user_input = warmup_code + dedent("""
             try:
                 import _testcapi
