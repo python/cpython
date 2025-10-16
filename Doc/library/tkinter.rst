@@ -392,7 +392,7 @@ by spaces. Without getting into too many details, notice the following:
 * Operations which are implemented as separate *commands* in Tcl (like
   ``grid`` or ``destroy``) are represented as *methods* on Tkinter widget
   objects. As you'll see shortly, at other times Tcl uses what appear to be
-  method calls on widget objects, which more closely mirror what would is
+  method calls on widget objects, which more closely mirror what is
   used in Tkinter.
 
 
