@@ -2988,6 +2988,82 @@ class GetEventLoopTestsMixin:
             asyncio.Task = asyncio.tasks.Task = self._Task_saved
             asyncio.Future = asyncio.futures.Future = self._Future_saved
 
+    def test_py_set_running_loop_c_get_sync(self):
+        """Test that _py_set_running_loop synchronizes with C _get_running_loop.
+        
+        This verifies that when Python sets the running loop, both Python
+        and C implementations can retrieve it correctly.
+        """
+        py_set = events._py__set_running_loop
+        c_set = self._set_running_loop_saved
+        py_get = events._py__get_running_loop
+        c_get = self._get_running_loop_saved
+        if py_set is c_set:
+            self.skipTest("C _asyncio implementation not available")
+
+        old_running_loop = events._get_running_loop()
+        try:
+            # Clear any existing loop using Python implementation
+            py_set(None)
+            self.assertIsNone(py_get())
+            self.assertIsNone(c_get())
+
+            # Create test loop and set it using Python implementation
+            test_loop = asyncio.new_event_loop()
+            py_set(test_loop)
+
+            # Verify both Python and C implementations see the same loop
+            self.assertIs(py_get(), test_loop)
+            self.assertIs(c_get(), test_loop)
+
+            # Clear and verify both see None
+            py_set(None)
+            self.assertIsNone(py_get())
+            self.assertIsNone(c_get())
+
+            test_loop.close()
+            
+        finally:
+            events._set_running_loop(old_running_loop)
+
+    def test_c_set_running_loop_py_get_sync(self):
+        """Test that C _set_running_loop synchronizes with _py_get_running_loop.
+        
+        This verifies that when C sets the running loop, both C and Python
+        implementations can retrieve it correctly.
+        """
+        py_set = events._py__set_running_loop
+        c_set = self._set_running_loop_saved
+        py_get = events._py__get_running_loop
+        c_get = self._get_running_loop_saved
+        if py_set is c_set:
+            self.skipTest("C _asyncio implementation not available")
+
+        old_running_loop = events._get_running_loop()
+        try:
+            # Clear any existing loop using C implementation
+            c_set(None)
+            self.assertIsNone(c_get())
+            self.assertIsNone(py_get())
+
+            # Create test loop and set it using C implementation
+            test_loop = asyncio.new_event_loop()
+            c_set(test_loop)
+
+            # Verify both C and Python implementations see the same loop
+            self.assertIs(c_get(), test_loop)
+            self.assertIs(py_get(), test_loop)
+
+            # Clear and verify both see None
+            c_set(None)
+            self.assertIsNone(c_get())
+            self.assertIsNone(py_get())
+
+            test_loop.close()
+
+        finally:
+            events._set_running_loop(old_running_loop)
+
     if sys.platform != 'win32':
         def test_get_event_loop_new_process(self):
             # bpo-32126: The multiprocessing module used by
@@ -2998,6 +3074,15 @@ class GetEventLoopTestsMixin:
             self.addCleanup(multiprocessing_cleanup_tests)
 
             async def main():
+                # Test that current_task() works correctly with _PyTask
+                # This demonstrates the C/Python task sync problem
+                try:
+                    current = asyncio.current_task()
+                    self.assertIsNotNone(current, 
+                        "current_task() should not return None when called from _PyTask")
+                except RuntimeError as e:
+                    self.fail(f"current_task() failed when called from _PyTask: {e}")
+                
                 if multiprocessing.get_start_method() == 'fork':
                     # Avoid 'fork' DeprecationWarning.
                     mp_context = multiprocessing.get_context('forkserver')
