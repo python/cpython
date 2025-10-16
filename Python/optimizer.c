@@ -585,14 +585,6 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     DPRINTF(2, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
 
-    // TODO support EXTENDED_ARG
-    if (oparg > 255) {
-        goto unsupported;
-    }
-
-    if (opcode == EXTENDED_ARG) {
-        return 1;
-    }
     if (opcode == NOP) {
         return 1;
     }
@@ -626,6 +618,9 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     // Strange control-flow, unsupported opcode, etc.
     if (jump_taken ||
+        // TODO handle extended args.
+        oparg > 255 ||
+        opcode == EXTENDED_ARG ||
         opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO ||
         frame->owner >= FRAME_OWNED_BY_INTERPRETER ||
         // This can be supported, but requires a tracing shim frame.
