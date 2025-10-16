@@ -242,7 +242,7 @@ parse_datum(PyObject *o, datum *d, const char *failmsg)
     Py_ssize_t size;
     if (!PyArg_Parse(o, "s#", &d->dptr, &size)) {
         if (failmsg != NULL) {
-            PyErr_Format(PyExc_TypeError, failmsg, Py_TYPE(o)->tp_name, o, Py_TYPE(o)->tp_name);
+            PyErr_Format(PyExc_TypeError, failmsg, o);
         }
         return 0;
     }
@@ -318,8 +318,8 @@ static int
 gdbm_ass_sub_lock_held(PyObject *op, PyObject *v, PyObject *w)
 {
     datum krec, drec;
-    const char *key_failmsg = "dbm key returned %.100s for value %R But database keys must be bytes or str, not %.100s";
-    const char *value_failmsg = "dbm value returned %.100s for value %R But database keys must be bytes or str, not %.100s";
+    const char *key_failmsg = "database keys must be bytes or str, not %T";
+    const char *value_failmsg = "database values must be bytes or str, not %T";
     gdbmobject *dp = _gdbmobject_CAST(op);
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
 

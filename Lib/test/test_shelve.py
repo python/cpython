@@ -468,16 +468,16 @@ class TestShelveValidation(unittest.TestCase):
                              deserializer=deserializer) as s:
                 with self.assertRaises(shelve.ShelveError) as cm:
                     s["key"] = "value"
-                self.assertEqual("Serializer returned None for value 'value' "
-                                 "But database values must be bytes or str, not None",
+                self.assertEqual("Serializer returned None for value 'value', but "
+                                 "database values must be bytes or str, not None",
                                  f"{cm.exception}")
 
             with shelve.open(self.fname, serializer=int_serializer,
                              deserializer=deserializer,) as s:
                 with self.assertRaises(shelve.ShelveError) as cm:
                     s["key"] = "value"
-                self.assertEqual("Serializer returned int for value 'value' "
-                                 "But database values must be bytes or str, not int",
+                self.assertEqual("Serializer returned 3 for value 'value', but "
+                                 "database values must be bytes or str, not int",
                                  f"{cm.exception}")
 
     def test_shelve_type_compatibility(self):
