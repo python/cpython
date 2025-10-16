@@ -466,7 +466,7 @@ if language_code:
     tags.add('translation')  # noqa: F821
 
     rst_epilog += f"""\
-.. _TRANSLATION_REPO: https://github.com/python/python-docs-{language_code}
+.. _TRANSLATION_REPO: https://github.com/python/python-docs-{language_code.replace("_", "-").lower()}
 """  # noqa: F821
 else:
     rst_epilog += """\
