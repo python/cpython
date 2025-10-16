@@ -1,2 +1,0 @@
-Fix reference leaks in error branches of functions accepting path strings or
-bytes such as :func:`compile` and :func:`os.system`. Patch by Bénédikt Tran.
