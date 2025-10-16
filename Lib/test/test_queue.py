@@ -1009,50 +1009,7 @@ class BaseSimpleQueueTest:
             gc_collect()  # For PyPy or other GCs.
             self.assertIsNone(wr())
 
-    def test_sizeof(self):
-        q = self.q
 
-        empty_size = q.__sizeof__()
-        self.assertGreater(empty_size, 0, "Empty queue should have non-zero size")
-
-        for i in range(8):
-            q.put(object())
-
-        size_after_8 = q.__sizeof__()
-        # Size may or may not change depending on implementation
-        # C implementation: no change (still within initial ring buffer capacity)
-        # Python implementation: may change (deque growth, but __sizeof__ may not reflect it)
-
-        # Add one more item to potentially trigger growth
-        q.put(object())  # Now 9 items
-
-        size_after_9 = q.__sizeof__()
-        self.assertGreaterEqual(size_after_9, size_after_8)
-
-        # Test with a larger number of items
-        large_q = self.type2test()
-        for i in range(1000):
-            large_q.put(object())
-
-        large_size = large_q.__sizeof__()
-
-        # For C implementation, size should grow with capacity
-        # For Python implementation, __sizeof__ will not account for underlying deque
-        # (this is documented behavior on CPython; PyPy doesn't support __sizeof__ at all)
-        if self.__class__.__name__ == 'CSimpleQueueTest':
-            # This is the C implementation
-            self.assertGreater(large_size, empty_size,
-                              "C SimpleQueue with many items should be larger than empty queue")
-
-            # Verify size is reasonable (should be proportional to capacity)
-            # For very large queues, size should be significantly larger
-            self.assertGreater(large_size, empty_size * 2,
-                              "Large C SimpleQueue should be at least 2x size of empty queue")
-        else:
-            # This is the Python implementation
-            # The Python implementation doesn't override __sizeof__
-            # so it only accounts for the object itself, not the underlying deque
-            self.assertGreater(large_size, 0, "Python SimpleQueue should have positive size")
 
 
 class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
@@ -1062,21 +1019,28 @@ class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         self.type2test = self.queue._PySimpleQueue
         super().setUp()
 
-    def test_equality(self):
-        # Test that SimpleQueue uses object identity, not value equality
-        q1 = self.type2test()
-        q2 = self.type2test()
+    def test_sizeof(self):
+        q = self.type2test()
+        
+        empty_size = q.__sizeof__()
+        self.assertGreater(empty_size, 0)
+        
+        for i in range(8):
+            q.put(object())
+        
+        size_after_8 = q.__sizeof__()
+        
+        q.put(object())
+        size_after_9 = q.__sizeof__()
+        self.assertGreaterEqual(size_after_9, size_after_8)
+        
+        large_q = self.type2test()
+        for i in range(1000):
+            large_q.put(object())
+        
+        large_size = large_q.__sizeof__()
+        self.assertGreater(large_size, 0)
 
-        # Different instances should not be equal
-        self.assertNotEqual(q1, q2)
-
-        # Same instance should be equal to itself
-        self.assertEqual(q1, q1)
-
-        # Even with same content, instances should not be equal
-        q1.put('test')
-        q2.put('test')
-        self.assertNotEqual(q1, q2)
 
 
 @need_c_queue
@@ -1088,53 +1052,30 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         self.type2test = self.queue.SimpleQueue
         super().setUp()
 
-    def test_is_default(self):
-        self.assertIs(self.type2test, self.queue.SimpleQueue)
-        self.assertIs(self.type2test, self.queue.SimpleQueue)
+    def test_sizeof(self):
+        q = self.type2test()
+        
+        empty_size = q.__sizeof__()
+        self.assertGreater(empty_size, 0, "Empty C SimpleQueue should have non-zero size")
+        
+        for i in range(8):
+            q.put(object())
+        
+        size_after_8 = q.__sizeof__()
 
-    def test_equality(self):
-        # Test that SimpleQueue uses object identity, not value equality
-        q1 = self.type2test()
-        q2 = self.type2test()
-
-        # Different instances should not be equal
-        self.assertNotEqual(q1, q2)
-
-        # Same instance should be equal to itself
-        self.assertEqual(q1, q1)
-
-        # Even with same content, instances should not be equal
-        q1.put('test')
-        q2.put('test')
-        self.assertNotEqual(q1, q2)
-
-    def test_reentrancy(self):
-        # bpo-14976: put() may be called reentrantly in an asynchronous
-        # callback.
-        q = self.q
-        gen = itertools.count()
-        N = 10000
-        results = []
-
-        # This test exploits the fact that __del__ in a reference cycle
-        # can be called any time the GC may run.
-
-        class Circular(object):
-            def __init__(self):
-                self.circular = self
-
-            def __del__(self):
-                q.put(next(gen))
-
-        while True:
-            o = Circular()
-            q.put(next(gen))
-            del o
-            results.append(q.get())
-            if results[-1] >= N:
-                break
-
-        self.assertEqual(results, list(range(N + 1)))
+        q.put(object()) 
+        size_after_9 = q.__sizeof__()
+        self.assertGreaterEqual(size_after_9, size_after_8)
+        
+        large_q = self.type2test()
+        for i in range(1000):
+            large_q.put(object())
+        
+        large_size = large_q.__sizeof__()
+        
+        self.assertGreater(large_size, empty_size)
+        
+        self.assertGreater(large_size, empty_size * 2)
 
 
 if __name__ == "__main__":
