@@ -496,7 +496,7 @@ _finalize_and_free_interpreter(PyInterpreterState *interp)
 static inline void
 _interp_release_owner(PyInterpreterState *interp)
 {
-    Py_ssize_t prev = _Py_atomic_add_ssize(&interp->_owners, -1);
+    Py_ssize_t prev = _Py_atomic_add_ssize(&interp->owners, -1);
     if (prev == 1) {
         _finalize_and_free_interpreter(interp);
     }
@@ -551,7 +551,7 @@ init_interpreter(PyInterpreterState *interp,
     interp->id = id;
 
     interp->id_refcount = 0;
-    interp->_owners = 1;
+    interp->owners = 1;
 
     assert(runtime->interpreters.head == interp);
     assert(next != NULL || (interp == runtime->interpreters.main));
@@ -1568,7 +1568,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
     uint64_t id = interp->threads.next_unique_id;
     init_threadstate(tstate, interp, id, whence);
 
-    _Py_atomic_add_ssize(&interp->_owners, 1);
+    _Py_atomic_add_ssize(&interp->owners, 1);
 
     // Add the new thread state to the interpreter.
     PyThreadState *old_head = interp->threads.head;
