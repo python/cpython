@@ -1010,18 +1010,11 @@ class BaseSimpleQueueTest:
             self.assertIsNone(wr())
 
     def test_sizeof(self):
-        # Test that __sizeof__() accounts for underlying data structure
         q = self.q
 
-        # Get the size of an empty queue
         empty_size = q.__sizeof__()
         self.assertGreater(empty_size, 0, "Empty queue should have non-zero size")
 
-        # Size should include basic object structure
-        # For C implementation, this includes the ring buffer array
-        # For Python implementation, this includes the underlying deque
-
-        # Add items within initial capacity (if applicable)
         for i in range(8):
             q.put(object())
 
@@ -1034,8 +1027,7 @@ class BaseSimpleQueueTest:
         q.put(object())  # Now 9 items
 
         size_after_9 = q.__sizeof__()
-        self.assertGreaterEqual(size_after_9, size_after_8,
-                               "Size should not decrease when adding items")
+        self.assertGreaterEqual(size_after_9, size_after_8)
 
         # Test with a larger number of items
         large_q = self.type2test()
@@ -1070,6 +1062,22 @@ class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         self.type2test = self.queue._PySimpleQueue
         super().setUp()
 
+    def test_equality(self):
+        # Test that SimpleQueue uses object identity, not value equality
+        q1 = self.type2test()
+        q2 = self.type2test()
+        
+        # Different instances should not be equal
+        self.assertNotEqual(q1, q2)
+        
+        # Same instance should be equal to itself
+        self.assertEqual(q1, q1)
+        
+        # Even with same content, instances should not be equal
+        q1.put('test')
+        q2.put('test')
+        self.assertNotEqual(q1, q2)
+
 
 @need_c_queue
 class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
@@ -1083,6 +1091,22 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
     def test_is_default(self):
         self.assertIs(self.type2test, self.queue.SimpleQueue)
         self.assertIs(self.type2test, self.queue.SimpleQueue)
+
+    def test_equality(self):
+        # Test that SimpleQueue uses object identity, not value equality
+        q1 = self.type2test()
+        q2 = self.type2test()
+        
+        # Different instances should not be equal
+        self.assertNotEqual(q1, q2)
+        
+        # Same instance should be equal to itself
+        self.assertEqual(q1, q1)
+        
+        # Even with same content, instances should not be equal
+        q1.put('test')
+        q2.put('test')
+        self.assertNotEqual(q1, q2)
 
     def test_reentrancy(self):
         # bpo-14976: put() may be called reentrantly in an asynchronous
