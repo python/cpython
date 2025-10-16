@@ -3441,7 +3441,7 @@ STATX_GET_DOUBLE(st_mtime, mtime_sec, STATX_MTIME)
     }
 
 STATX_GET_NSEC(st_atime_ns, stx_atime, STATX_ATIME)
-STATX_GET_NSEC(st_birthtime_ns, stx_atime, STATX_BTIME)
+STATX_GET_NSEC(st_birthtime_ns, stx_btime, STATX_BTIME)
 STATX_GET_NSEC(st_ctime_ns, stx_ctime, STATX_CTIME)
 STATX_GET_NSEC(st_mtime_ns, stx_mtime, STATX_MTIME)
 
@@ -3459,7 +3459,7 @@ static PyGetSetDef pystatx_result_getset[] = {
     G(st_atime_ns, "time of last access in nanoseconds"),
     G(st_birthtime, "time of creation"),
     G(st_birthtime_ns, "time of creation in nanoseconds"),
-    G(st_ctime, "time of last modification"),
+    G(st_ctime, "time of last change"),
     G(st_ctime_ns, "time of last change in nanoseconds"),
     G(st_mtime, "time of last modification"),
     G(st_mtime_ns, "time of last modification in nanoseconds"),
