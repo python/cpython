@@ -157,7 +157,7 @@ _PyTuple_MaybeUntrack(PyObject *op)
 }
 
 static bool
-tuple_need_tracking(PyTupleObject *t)
+tuple_need_tracking(PyTupleObject *self)
 {
     Py_ssize_t n = PyTuple_GET_SIZE(t);
     for (Py_ssize_t i = 0; i < n; i++) {
