@@ -282,6 +282,7 @@ def print_exception():
             else:
                 print(f"{prefix2}  | <exception {type(sub).__name__} has printed>")
                 need_print_underline = True
+            need_print_underline *= (i == len(exc.exceptions))
             if need_print_underline:
                 print(f"{prefix2}  +------------------------------------", file=efile)
 
