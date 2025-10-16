@@ -1049,12 +1049,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         return NULL;
     }
 
-    // We came in already tracing, this means a recursive trace in the form of
-    // Python -> C -> Python happened. We want to abandon the outer trace then.
-    if (IS_JIT_TRACING()) {
-        _PyJIT_FinalizeTracing(tstate);
-        tstate->interp->jit_is_tracing = false;
-    }
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
     _Py_CODEUNIT *next_instr;
@@ -1201,14 +1195,27 @@ tier2_dispatch:
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (frame->lltrace >= 2) {
-            // if (next_uop->opcode != _YIELD_VALUE &&
-            // next_uop->opcode != _FOR_ITER_GEN_FRAME &&
-            // next_uop->opcode != _PUSH_FRAME &&
-            // next_uop->opcode != _PY_FRAME_KW &&
-            // next_uop->opcode != _SAVE_RETURN_OFFSET &&
-            // next_uop->opcode != _SAVE_RETURN_OFFSET) {
-            //     dump_stack(frame, stack_pointer);
-            // }
+            if (next_uop->opcode != _YIELD_VALUE &&
+            next_uop->opcode != _FOR_ITER_GEN_FRAME &&
+            next_uop->opcode != _PUSH_FRAME &&
+            next_uop->opcode != _PY_FRAME_KW &&
+            next_uop->opcode != _SAVE_RETURN_OFFSET &&
+            next_uop->opcode != _SAVE_RETURN_OFFSET) {
+                if (next_uop->opcode != _START_EXECUTOR) {
+                    if (next_uop->format == UOP_FORMAT_TARGET) {
+                        _Py_CODEUNIT *aim = _PyFrame_GetBytecode(frame) + next_uop->target;
+                        printf("    aim=[%s]\n", _PyOpcode_OpName[aim->op.code]);
+                    }
+                    else if (next_uop->format == UOP_FORMAT_JUMP) {
+                        _PyUOpInstruction *aim_uop =  current_executor->trace + next_uop->jump_target;
+                        if (aim_uop->format == UOP_FORMAT_TARGET) {
+                            _Py_CODEUNIT *aim = _PyFrame_GetBytecode(frame) + aim_uop->target;
+                            printf("    aim=[%s]\n", _PyOpcode_OpName[aim->op.code]);
+                        }
+                    }
+                }
+                dump_stack(frame, stack_pointer);
+            }
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }

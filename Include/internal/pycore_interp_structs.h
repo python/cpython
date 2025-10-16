@@ -944,7 +944,6 @@ struct _is {
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     // JIT tracing state
-    bool jit_is_tracing;
     int jit_tracer_code_max_size;
     int jit_tracer_code_curr_size;
     _PyBloomFilter jit_tracer_dependencies;
@@ -955,7 +954,8 @@ struct _is {
     PyCodeObject *jit_tracer_initial_code; // Strong
     PyFunctionObject *jit_tracer_initial_func; // Strong
     struct _PyExitData *jit_tracer_previous_exit;
-    bool jit_completed_loop;
+    _PyInterpreterFrame *jit_tracer_current_frame;
+    // End Jit tracing state
     bool jit;
     bool compiling;
     struct _PyUOpInstruction *jit_uop_buffer;

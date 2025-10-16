@@ -562,7 +562,8 @@ _PyJIT_translate_single_bytecode_to_trace(
     if (Py_IsNone((PyObject *)func)) {
         func = NULL;
     }
-    int is_first_instr = tstate->interp->jit_tracer_initial_instr == this_instr ;
+
+    int is_first_instr = tstate->interp->jit_tracer_initial_instr == this_instr;
     bool progress_needed = (tstate->interp->jit_tracer_initial_chain_depth % MAX_CHAIN_DEPTH) == 0 && is_first_instr;;
     _PyBloomFilter *dependencies = &tstate->interp->jit_tracer_dependencies;
     _Py_BloomFilter_Add(dependencies, old_code);
@@ -583,7 +584,39 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     target = INSTR_IP(target_instr, old_code);
 
-    DPRINTF(2, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
+    bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode] &&
+        !(opcode == FOR_ITER_RANGE || opcode == FOR_ITER_LIST || opcode == FOR_ITER_TUPLE) &&
+        !(opcode == JUMP_BACKWARD_NO_INTERRUPT || opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_JIT) &&
+        !(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_NONE || opcode == POP_JUMP_IF_NOT_NONE);
+
+    // Strange control-flow, unsupported opcode, etc.
+    if (jump_taken ||
+        // This happens when a recursive call happens that we can't trace. Such as Python -> C -> Python calls
+        // If we haven't guarded the IP, then it's untraceable.
+        (frame != tstate->interp->jit_tracer_current_frame && !needs_guard_ip) ||
+        // TODO handle extended args.
+        oparg > 255 || opcode == EXTENDED_ARG ||
+        opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO ||
+        frame->owner >= FRAME_OWNED_BY_INTERPRETER ||
+        // This can be supported, but requires a tracing shim frame.
+        opcode == CALL_ALLOC_AND_ENTER_INIT) {
+        unsupported:
+                {
+                    // Rewind to previous instruction and replace with _EXIT_TRACE.
+                    _PyUOpInstruction *curr = &trace[trace_length-1];
+                    while (curr->opcode != _SET_IP && trace_length > 1) {
+                        trace_length--;
+                        curr = &trace[trace_length-1];
+                    }
+                    assert(curr->opcode == _SET_IP || trace_length == 1);
+                    curr->opcode = _EXIT_TRACE;
+                    goto done;
+                }
+        }
+
+    tstate->interp->jit_tracer_current_frame = frame;
+
+    DPRINTF(2, "%p %d: %s(%d)\n", old_code, target, _PyOpcode_OpName[opcode], oparg);
 
     if (opcode == NOP) {
         return 1;
@@ -601,46 +634,17 @@ _PyJIT_translate_single_bytecode_to_trace(
     max_length -= 2;
 
     if (opcode == ENTER_EXECUTOR) {
-        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
-        ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
-        ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
         goto full;
     }
 
-    bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode] &&
-        !(opcode == FOR_ITER_RANGE || opcode == FOR_ITER_LIST || opcode == FOR_ITER_TUPLE) &&
-        !(opcode == JUMP_BACKWARD_NO_INTERRUPT || opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_JIT) &&
-        !(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_NONE || opcode == POP_JUMP_IF_NOT_NONE);
-
-    assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
-
     const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
 
-    // Strange control-flow, unsupported opcode, etc.
-    if (jump_taken ||
-        // TODO handle extended args.
-        oparg > 255 ||
-        opcode == EXTENDED_ARG ||
-        opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO ||
-        frame->owner >= FRAME_OWNED_BY_INTERPRETER ||
-        // This can be supported, but requires a tracing shim frame.
-        opcode == CALL_ALLOC_AND_ENTER_INIT) {
-    unsupported:
-            {
-                // Rewind to previous instruction and replace with _EXIT_TRACE.
-                _PyUOpInstruction *curr = &trace[trace_length-1];
-                while (curr->opcode != _SET_IP && trace_length > 1) {
-                    trace_length--;
-                    curr = &trace[trace_length-1];
-                }
-                assert(curr->opcode == _SET_IP || trace_length == 1);
-                curr->opcode = _EXIT_TRACE;
-                goto done;
-            }
-    }
     RESERVE_RAW(expansion->nuops + needs_guard_ip + 3, "uop and various checks");
 
     ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+
+    assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
+    assert(!_PyErr_Occurred(tstate));
 
     if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
         ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
@@ -851,9 +855,9 @@ _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     tstate->interp->jit_tracer_initial_func = (PyFunctionObject *)Py_NewRef(_PyFrame_GetFunction(frame));
     tstate->interp->jit_tracer_previous_exit = exit;
     memset(&tstate->interp->jit_tracer_dependencies.bits, 0, sizeof(tstate->interp->jit_tracer_dependencies.bits));
-    tstate->interp->jit_completed_loop = false;
     tstate->interp->jit_tracer_initial_stack_depth = curr_stackdepth;
     tstate->interp->jit_tracer_initial_chain_depth = chain_depth;
+    tstate->interp->jit_tracer_current_frame = frame;
 }
 
 void
