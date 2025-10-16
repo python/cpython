@@ -5251,7 +5251,7 @@ AC_CHECK_FUNCS([ \
   setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
-  sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
+  sigwaitinfo snprintf splice statx strftime strlcpy strsignal symlinkat sync \
   sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
@@ -5424,7 +5424,7 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 dnl detect zlib from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.2.1], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
@@ -5818,6 +5818,13 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
 ]])
 # Issue #21085: In Cygwin, siginfo_t does not have si_band field.
 AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[@%:@include <signal.h>]])
+
+if test "$ac_cv_func_statx" = yes; then
+  # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
+  # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
+  # doesn't imply having the member.
+  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_max_opt])
+fi
 
 AC_CACHE_CHECK([for time.h that defines altzone], [ac_cv_header_time_altzone], [
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <time.h>]], [[return altzone;]])],

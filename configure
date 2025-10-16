@@ -20192,6 +20192,12 @@ then :
   printf "%s\n" "#define HAVE_SPLICE 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "statx" "ac_cv_func_statx"
+if test "x$ac_cv_func_statx" = xyes
+then :
+  printf "%s\n" "#define HAVE_STATX 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "strftime" "ac_cv_func_strftime"
 if test "x$ac_cv_func_strftime" = xyes
 then :
@@ -21736,19 +21742,19 @@ fi
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
-printf %s "checking for zlib >= 1.2.0... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.2.1" >&5
+printf %s "checking for zlib >= 1.2.2.1... " >&6; }
 
 if test -n "$ZLIB_CFLAGS"; then
     pkg_cv_ZLIB_CFLAGS="$ZLIB_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.0") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.2.1\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.2.1") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "zlib >= 1.2.0" 2>/dev/null`
+  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "zlib >= 1.2.2.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -21760,12 +21766,12 @@ if test -n "$ZLIB_LIBS"; then
     pkg_cv_ZLIB_LIBS="$ZLIB_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.0") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.2.1\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.2.1") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "zlib >= 1.2.0" 2>/dev/null`
+  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "zlib >= 1.2.2.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -21786,9 +21792,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-                ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "zlib >= 1.2.0" 2>&1`
+                ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "zlib >= 1.2.2.1" 2>&1`
         else
-                ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "zlib >= 1.2.0" 2>&1`
+                ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "zlib >= 1.2.2.1" 2>&1`
         fi
         # Put the nasty error message in config.log where it belongs
         echo "$ZLIB_PKG_ERRORS" >&5
@@ -25126,6 +25132,21 @@ printf "%s\n" "#define HAVE_SIGINFO_T_SI_BAND 1" >>confdefs.h
 
 fi
 
+
+if test "$ac_cv_func_statx" = yes; then
+  # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
+  # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
+  # doesn't imply having the member.
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_atomic_write_unit_max_opt" "ac_cv_member_struct_statx_stx_atomic_write_unit_max_opt" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_atomic_write_unit_max_opt" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT 1" >>confdefs.h
+
+
+fi
+
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for time.h that defines altzone" >&5
 printf %s "checking for time.h that defines altzone... " >&6; }

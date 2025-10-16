@@ -1,2 +1,0 @@
-Implement :c:func:`PyObject_DelAttr` and :c:func:`PyObject_DelAttrString` as
-macros in the limited C API 3.12 and older. Patch by Victor Stinner.

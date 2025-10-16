@@ -1867,6 +1867,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(loop));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(manual_reset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mapping));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mask));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(match));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(max_length));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(maxdigits));
@@ -1973,6 +1974,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ps1));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ps2));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(qid));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(qualname));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(query));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(queuetype));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(quotetabs));
