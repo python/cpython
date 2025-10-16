@@ -156,7 +156,6 @@ _PyTuple_MaybeUntrack(PyObject *op)
     _PyObject_GC_UNTRACK(op);
 }
 
-//
 static bool
 tuple_need_tracking(PyTupleObject *self)
 {

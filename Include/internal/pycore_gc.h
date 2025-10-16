@@ -240,7 +240,6 @@ static inline void _PyObject_GC_TRACK(
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyGC_Head *generation0 = &interp->gc.young.head;
-    interp->gc.young.count++; /* number of tracked GC objects */
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
@@ -281,10 +280,6 @@ static inline void _PyObject_GC_UNTRACK(
     _PyGCHead_SET_PREV(next, prev);
     gc->_gc_next = 0;
     gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->gc.young.count > 0) {
-        interp->gc.young.count--;
-    }
 #endif
 }
 
