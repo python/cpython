@@ -25133,6 +25133,21 @@ printf "%s\n" "#define HAVE_SIGINFO_T_SI_BAND 1" >>confdefs.h
 fi
 
 
+if test "$ac_cv_func_statx" = yes; then
+  # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
+  # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
+  # doesn't imply having the member.
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_atomic_write_unit_max_opt" "ac_cv_member_struct_statx_stx_atomic_write_unit_max_opt" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_atomic_write_unit_max_opt" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT 1" >>confdefs.h
+
+
+fi
+
+fi
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for time.h that defines altzone" >&5
 printf %s "checking for time.h that defines altzone... " >&6; }
 if test ${ac_cv_header_time_altzone+y}
