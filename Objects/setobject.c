@@ -1180,7 +1180,7 @@ _PyFrozenSet_MaybeUntrack(PyObject *op)
     if ((op ==NULL) || !(PyFrozenSet_CheckExact(op))) {
         return;
     }
-    // the frozenset is tracked by the GC. if all elements are immutable we can untrack
+    // if all elements of a frozenset are not tracked, we untrack the object
     Py_ssize_t pos = 0;
     setentry *entry;
     while (set_next((PySetObject *)op, &pos, &entry)) {
