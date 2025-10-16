@@ -1,6 +1,5 @@
 # Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
-import itertools
 import random
 import threading
 import time
@@ -1019,23 +1018,23 @@ class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
 
     def test_sizeof(self):
         q = self.type2test()
-        
+
         empty_size = q.__sizeof__()
         self.assertGreater(empty_size, 0)
-        
+
         for i in range(8):
             q.put(object())
-        
+
         size_after_8 = q.__sizeof__()
-        
+
         q.put(object())  # Now 9 items
         size_after_9 = q.__sizeof__()
         self.assertGreaterEqual(size_after_9, size_after_8)
-        
+
         large_q = self.type2test()
         for i in range(1000):
             large_q.put(object())
-        
+
         large_size = large_q.__sizeof__()
         self.assertGreater(large_size, 0)
 
@@ -1055,27 +1054,27 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
 
     def test_sizeof(self):
         q = self.type2test()
-        
+
         empty_size = q.__sizeof__()
         self.assertGreater(empty_size, 0)
-        
+
         for i in range(8):
             q.put(object())
-        
+
         size_after_8 = q.__sizeof__()
 
         q.put(object())  # Now 9 items - should trigger ring buffer growth
         size_after_9 = q.__sizeof__()
         self.assertGreater(size_after_9, size_after_8)
-        
+
         large_q = self.type2test()
         for i in range(1000):
             large_q.put(object())
-        
+
         large_size = large_q.__sizeof__()
-        
+
         self.assertGreater(large_size, empty_size)
-        
+
         self.assertGreater(large_size, empty_size * 2)
 
 
