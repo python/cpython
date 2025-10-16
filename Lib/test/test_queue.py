@@ -1066,13 +1066,13 @@ class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         # Test that SimpleQueue uses object identity, not value equality
         q1 = self.type2test()
         q2 = self.type2test()
-        
+
         # Different instances should not be equal
         self.assertNotEqual(q1, q2)
-        
+
         # Same instance should be equal to itself
         self.assertEqual(q1, q1)
-        
+
         # Even with same content, instances should not be equal
         q1.put('test')
         q2.put('test')
@@ -1096,13 +1096,13 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         # Test that SimpleQueue uses object identity, not value equality
         q1 = self.type2test()
         q2 = self.type2test()
-        
+
         # Different instances should not be equal
         self.assertNotEqual(q1, q2)
-        
+
         # Same instance should be equal to itself
         self.assertEqual(q1, q1)
-        
+
         # Even with same content, instances should not be equal
         q1.put('test')
         q2.put('test')
