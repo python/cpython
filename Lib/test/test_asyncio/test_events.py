@@ -2990,7 +2990,7 @@ class GetEventLoopTestsMixin:
 
     def test_py_set_running_loop_c_get_sync(self):
         """Test that _py_set_running_loop synchronizes with C _get_running_loop.
-        
+
         This verifies that when Python sets the running loop, both Python
         and C implementations can retrieve it correctly.
         """
@@ -3022,13 +3022,13 @@ class GetEventLoopTestsMixin:
             self.assertIsNone(c_get())
 
             test_loop.close()
-            
+
         finally:
             events._set_running_loop(old_running_loop)
 
     def test_c_set_running_loop_py_get_sync(self):
         """Test that C _set_running_loop synchronizes with _py_get_running_loop.
-        
+
         This verifies that when C sets the running loop, both C and Python
         implementations can retrieve it correctly.
         """
@@ -3078,11 +3078,11 @@ class GetEventLoopTestsMixin:
                 # This demonstrates the C/Python task sync problem
                 try:
                     current = asyncio.current_task()
-                    self.assertIsNotNone(current, 
+                    self.assertIsNotNone(current,
                         "current_task() should not return None when called from _PyTask")
                 except RuntimeError as e:
                     self.fail(f"current_task() failed when called from _PyTask: {e}")
-                
+
                 if multiprocessing.get_start_method() == 'fork':
                     # Avoid 'fork' DeprecationWarning.
                     mp_context = multiprocessing.get_context('forkserver')
