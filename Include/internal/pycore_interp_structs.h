@@ -965,7 +965,7 @@ struct _is {
 #  endif
 #endif
 
-    Py_ssize_t _owners;
+    Py_ssize_t owners;
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
     // _initial_thread should be the last field of PyInterpreterState.
