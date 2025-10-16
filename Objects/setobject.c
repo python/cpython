@@ -2730,9 +2730,7 @@ PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
     PyObject *result = make_new_set(&PyFrozenSet_Type, iterable);
-    if (result != NULL) {
-        _PyFrozenSet_MaybeUntrack(result);
-    }
+    _PyFrozenSet_MaybeUntrack(result);
     return result;
 }
 
