@@ -1,7 +1,7 @@
-import os
+from pathlib import Path
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-INTERNAL = os.path.join(ROOT, 'Include', 'internal')
+ROOT = Path(__file__).resolve().parents[2]
+INTERNAL = ROOT / "Include" / "internal"
 
 def get_nsmallnegints_and_nsmallposints() -> tuple[int, int]:
     nsmallposints = None
