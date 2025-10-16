@@ -3369,7 +3369,7 @@ static PyMemberDef pystatx_result_members[] = {
     MM(stx_atomic_write_segments_max, Py_T_UINT, atomic_write_segments_max,
         "maximum iovecs for direct I/O with torn-write protection"),
 #endif
-#if 0
+#ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT
     MM(stx_atomic_write_unit_max_opt, Py_T_UINT, atomic_write_unit_max_opt,
         "maximum optimized size for direct I/O with torn-write protection"),
 #endif
