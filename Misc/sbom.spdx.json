@@ -1755,11 +1755,11 @@
           "checksumValue": "39f6fd4f2fe98aecc995a2fd980fae0e0835cef6e563ebbf25f69d3d3102bafd"
         }
       ],
-      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/4ef25b547b377dcef855db4289c6a00580e7221c.zip",
+      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/8ba599b2f6c9701b3dc961db895b0856a2210f76.zip",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:4ef25b547b377dcef855db4289c6a00580e7221c:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:8ba599b2f6c9701b3dc961db895b0856a2210f76:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1767,7 +1767,7 @@
       "name": "hacl-star",
       "originator": "Organization: HACL* Developers",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "4ef25b547b377dcef855db4289c6a00580e7221c"
+      "versionInfo": "8ba599b2f6c9701b3dc961db895b0856a2210f76"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-macholib",
