@@ -294,7 +294,7 @@ The full API is described below for advanced use cases.
          Default flags, based on current values of macros such as
          :c:macro:`Py_LIMITED_API` and :c:macro:`Py_GIL_DISABLED`.
 
-      Alternately, the field can be set to to the following flags, combined
+      Alternately, the field can be set to the following flags, combined
       by bitwise OR.
       Unused bits must be set to zero.
 
