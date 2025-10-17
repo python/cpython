@@ -97,6 +97,10 @@ To show the individual process IDs involved, here is an expanded example::
 For an explanation of why the ``if __name__ == '__main__'`` part is
 necessary, see :ref:`multiprocessing-programming`.
 
+The arguments to :class:`Process` usually need to be unpickleable from within
+the child process. If you tried typing the above example directly into a REPL it
+could lead to an :exc:`AttributeError` in the child process trying to locate the
+*f* function in the ``__main__`` module.
 
 
 .. _multiprocessing-start-methods:
@@ -233,9 +237,12 @@ processes for a different context.  In particular, locks created using
 the *fork* context cannot be passed to processes started using the
 *spawn* or *forkserver* start methods.
 
-A library which wants to use a particular start method should probably
-use :func:`get_context` to avoid interfering with the choice of the
-library user.
+Libraries using :mod:`multiprocessing` or
+:class:`~concurrent.futures.ProcessPoolExecutor` should be designed to allow
+their users to provide their own multiprocessing context.  Using a specific
+context of your own within a library can lead to incompatibilities with the
+rest of the library user's application.  Always document if your library
+requires a specific start method.
 
 .. warning::
 
@@ -538,8 +545,41 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    to pass to *target*.
 
    If a subclass overrides the constructor, it must make sure it invokes the
-   base class constructor (:meth:`Process.__init__`) before doing anything else
+   base class constructor (``super().__init__()``) before doing anything else
    to the process.
+
+   .. note::
+
+      In general, all arguments to :class:`Process` must be picklable.  This is
+      frequently observed when trying to create a :class:`Process` or use a
+      :class:`concurrent.futures.ProcessPoolExecutor` from a REPL with a
+      locally defined *target* function.
+
+      Passing a callable object defined in the current REPL session causes the
+      child process to die via an uncaught :exc:`AttributeError` exception when
+      starting as *target* must have been defined within an importable module
+      in order to be loaded during unpickling.
+
+      Example of this uncatchable error from the child::
+
+         >>> import multiprocessing as mp
+         >>> def knigit():
+         ...     print("Ni!")
+         ...
+         >>> process = mp.Process(target=knigit)
+         >>> process.start()
+         >>> Traceback (most recent call last):
+           File ".../multiprocessing/spawn.py", line ..., in spawn_main
+           File ".../multiprocessing/spawn.py", line ..., in _main
+         AttributeError: module '__main__' has no attribute 'knigit'
+         >>> process
+         <SpawnProcess name='SpawnProcess-1' pid=379473 parent=378707 stopped exitcode=1>
+
+      See :ref:`multiprocessing-programming-spawn`.  While this restriction is
+      not true if using the ``"fork"`` start method, as of Python ``3.14`` that
+      is no longer the default on any platform.  See
+      :ref:`multiprocessing-start-methods`.
+      See also :gh:`132898`.
 
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
@@ -3070,10 +3110,10 @@ start method.
 
 More picklability
 
-    Ensure that all arguments to :meth:`Process.__init__` are picklable.
-    Also, if you subclass :class:`~multiprocessing.Process` then make sure that
-    instances will be picklable when the :meth:`Process.start
-    <multiprocessing.Process.start>` method is called.
+    Ensure that all arguments to :class:`~multiprocessing.Process` are
+    picklable.  Also, if you subclass ``Process.__init__``, you must make sure
+    that instances will be picklable when the
+    :meth:`Process.start <multiprocessing.Process.start>` method is called.
 
 Global variables
 

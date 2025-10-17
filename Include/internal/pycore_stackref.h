@@ -464,6 +464,12 @@ PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
     PyStackRef_CLOSE(ref);
 }
 
+static inline int
+PyStackRef_RefcountOnObject(_PyStackRef ref)
+{
+    return (ref.bits & Py_TAG_REFCNT) == 0;
+}
+
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef stackref)
 {
@@ -838,6 +844,13 @@ _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
 }
 
 #endif
+
+#define PyStackRef_XSETREF(dst, src) \
+    do { \
+        _PyStackRef _tmp_dst_ref = (dst); \
+        (dst) = (src); \
+        PyStackRef_XCLOSE(_tmp_dst_ref); \
+    } while(0)
 
 // Like Py_VISIT but for _PyStackRef fields
 #define _Py_VISIT_STACKREF(ref)                                         \

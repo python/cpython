@@ -34,6 +34,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime_structs.h" // _PY_NSMALLPOSINTS
 #include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -125,6 +126,18 @@ get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
     return PyLong_FromLong(remaining);
 }
 
+static PyObject*
+get_stack_pointer(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    return PyLong_FromSize_t(here_addr);
+}
+
+static PyObject*
+get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyLong_FromSize_t(_PyOS_STACK_MARGIN_BYTES);
+}
 
 static PyObject*
 test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
@@ -2345,10 +2358,72 @@ incref_decref_delayed(PyObject *self, PyObject *op)
     Py_RETURN_NONE;
 }
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h"
+
+EM_JS(int, emscripten_set_up_async_input_device_js, (void), {
+    let idx = 0;
+    const encoder = new TextEncoder();
+    const bufs = [
+        encoder.encode("ab\n"),
+        encoder.encode("fi\n"),
+        encoder.encode("xy\n"),
+    ];
+    function sleep(t) {
+        return new Promise(res => setTimeout(res, t));
+    }
+    FS.createAsyncInputDevice("/dev", "blah", async () => {
+        await sleep(5);
+        return bufs[(idx ++) % 3];
+    });
+    return !!WebAssembly.promising;
+});
+
+static PyObject *
+emscripten_set_up_async_input_device(PyObject *self, PyObject *Py_UNUSED(ignored)) {
+    if (emscripten_set_up_async_input_device_js()) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+#endif
+
+static PyObject *
+simple_pending_call(PyObject *self, PyObject *callable)
+{
+    if (_PyEval_AddPendingCall(_PyInterpreterState_GET(), _pending_callback, Py_NewRef(callable), 0) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+vectorcall_nop(PyObject *callable, PyObject *const *args,
+               size_t nargsf, PyObject *kwnames)
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+set_vectorcall_nop(PyObject *self, PyObject *func)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "expected function");
+        return NULL;
+    }
+
+    ((PyFunctionObject*)func)->vectorcall = vectorcall_nop;
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
+    {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
+    {"get_stack_margin", get_stack_margin, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
@@ -2447,6 +2522,11 @@ static PyMethodDef module_functions[] = {
     {"is_static_immortal", is_static_immortal, METH_O},
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
     GET_NEXT_DICT_KEYS_VERSION_METHODDEF
+#ifdef __EMSCRIPTEN__
+    {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
+#endif
+    {"simple_pending_call", simple_pending_call, METH_O},
+    {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2514,6 +2594,10 @@ module_exec(PyObject *module)
 
     if (PyModule_Add(module, "SHARED_KEYS_MAX_SIZE",
                         PyLong_FromLong(SHARED_KEYS_MAX_SIZE)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_AddIntMacro(module, _PY_NSMALLPOSINTS) < 0) {
         return 1;
     }
 
