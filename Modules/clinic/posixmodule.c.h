@@ -12781,7 +12781,7 @@ PyDoc_STRVAR(os__inputhook__doc__,
 "_inputhook($module, /)\n"
 "--\n"
 "\n"
-"Calls PyOS_CallInputHook droppong the GIL first");
+"Calls PyOS_InputHook dropping the GIL first");
 
 #define OS__INPUTHOOK_METHODDEF    \
     {"_inputhook", (PyCFunction)os__inputhook, METH_NOARGS, os__inputhook__doc__},
@@ -12799,7 +12799,7 @@ PyDoc_STRVAR(os__is_inputhook_installed__doc__,
 "_is_inputhook_installed($module, /)\n"
 "--\n"
 "\n"
-"Checks if PyOS_CallInputHook is set");
+"Checks if PyOS_InputHook is set");
 
 #define OS__IS_INPUTHOOK_INSTALLED_METHODDEF    \
     {"_is_inputhook_installed", (PyCFunction)os__is_inputhook_installed, METH_NOARGS, os__is_inputhook_installed__doc__},

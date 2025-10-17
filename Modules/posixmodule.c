@@ -17308,7 +17308,7 @@ os__supports_virtual_terminal_impl(PyObject *module)
 /*[clinic input]
 os._inputhook
 
-Calls PyOS_CallInputHook droppong the GIL first
+Calls PyOS_InputHook dropping the GIL first
 [clinic start generated code]*/
 
 static PyObject *
@@ -17327,7 +17327,7 @@ os__inputhook_impl(PyObject *module)
 /*[clinic input]
 os._is_inputhook_installed
 
-Checks if PyOS_CallInputHook is set
+Checks if PyOS_InputHook is set
 [clinic start generated code]*/
 
 static PyObject *
