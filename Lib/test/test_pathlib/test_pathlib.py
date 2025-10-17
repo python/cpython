@@ -293,6 +293,12 @@ class PurePathTest(unittest.TestCase):
                     self.assertEqual(hash(pp), hash(p))
                     self.assertEqual(str(pp), str(p))
 
+    def test_unpicking_3_13(self):
+        data = (b"\x80\x04\x95'\x00\x00\x00\x00\x00\x00\x00\x8c\x0e"
+                b"pathlib._local\x94\x8c\rPurePosixPath\x94\x93\x94)R\x94.")
+        p = pickle.loads(data)
+        self.assertIsInstance(p, pathlib.PurePosixPath)
+
     def test_repr_common(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
             with self.subTest(pathstr=pathstr):
