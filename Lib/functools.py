@@ -935,6 +935,31 @@ def singledispatch(func):
         return (isinstance(cls, UnionType) and
                 all(isinstance(arg, type) for arg in cls.__args__))
 
+    def _get_type_hints(func):
+        ann = getattr(func, '__annotate__', None)
+        if ann is None:
+            raise TypeError(
+                f"Invalid first argument to `register()`: {func!r}. "
+                f"Use either `@register(some_class)` or plain `@register` "
+                f"on an annotated function."
+            )
+
+        # only import typing if annotation parsing is necessary
+        from typing import get_type_hints
+        from annotationlib import Format
+
+        type_hints = get_type_hints(func, format=Format.FORWARDREF)
+        type_hints.pop("return", None)  # don't dispatch on return types
+
+        if not type_hints:
+            raise TypeError(
+                f"Invalid first argument to `register()`: {func!r}. "
+                f"Use either `@register(some_class)` or plain `@register` "
+                f"on a function with annotated parameters."
+            )
+
+        return type_hints
+
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
 
@@ -951,20 +976,14 @@ def singledispatch(func):
                     f"Invalid first argument to `register()`. "
                     f"{cls!r} is not a class or union type."
                 )
-            ann = getattr(cls, '__annotate__', None)
-            if ann is None:
-                raise TypeError(
-                    f"Invalid first argument to `register()`: {cls!r}. "
-                    f"Use either `@register(some_class)` or plain `@register` "
-                    f"on an annotated function."
-                )
             func = cls
+            type_hints = _get_type_hints(func)
 
-            # only import typing if annotation parsing is necessary
-            from typing import get_type_hints
-            from annotationlib import Format, ForwardRef
-            argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
+            argname, cls = next(iter(type_hints.items()))
+
             if not _is_valid_dispatch_type(cls):
+                from annotationlib import ForwardRef
+
                 if isinstance(cls, UnionType):
                     raise TypeError(
                         f"Invalid annotation for {argname!r}. "
