@@ -260,7 +260,8 @@ class ExecutorTest:
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_shutdown_notifies_cancelled_futures(self):
-        self.assertGreater(self.worker_count, 1)
+        if self.worker_count < 2:
+            self.skipTest("test requires more than one worker")
 
         # TODO: remove when gh-109934 is fixed
         if self.executor_type is futures.ThreadPoolExecutor:
