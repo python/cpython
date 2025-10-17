@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Python Performance Flamegraph</title>
+    <!-- INLINE_VENDOR_D3_JS -->
+    <!-- INLINE_VENDOR_FLAMEGRAPH_CSS -->
+    <!-- INLINE_VENDOR_FLAMEGRAPH_JS -->
+    <!-- INLINE_VENDOR_FLAMEGRAPH_TOOLTIP_JS -->
+    <!-- INLINE_CSS -->
+  </head>
+  <body>
+    <div class="header">
+      <div class="header-content">
+        <div class="python-logo"><!-- INLINE_LOGO --></div>
+        <div class="header-text">
+          <h1>Tachyon Profiler Performance Flamegraph</h1>
+          <div class="subtitle">
+            Interactive visualization of function call performance
+          </div>
+        </div>
+        <div class="header-search">
+          <input type="text" id="search-input" placeholder="🔍 Search functions..." />
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-section">
+      <div class="stats-container">
+        <div class="stat-card hotspot-card">
+          <div class="stat-icon">🥇</div>
+          <div class="stat-content">
+            <div class="stat-label">#1 Hot Spot</div>
+            <div class="stat-file" id="hotspot-file-1">--</div>
+            <div class="stat-value" id="hotspot-func-1">--</div>
+            <div class="stat-detail" id="hotspot-detail-1">--</div>
+          </div>
+        </div>
+        <div class="stat-card hotspot-card">
+          <div class="stat-icon">🥈</div>
+          <div class="stat-content">
+            <div class="stat-label">#2 Hot Spot</div>
+            <div class="stat-file" id="hotspot-file-2">--</div>
+            <div class="stat-value" id="hotspot-func-2">--</div>
+            <div class="stat-detail" id="hotspot-detail-2">--</div>
+          </div>
+        </div>
+        <div class="stat-card hotspot-card">
+          <div class="stat-icon">🥉</div>
+          <div class="stat-content">
+            <div class="stat-label">#3 Hot Spot</div>
+            <div class="stat-file" id="hotspot-file-3">--</div>
+            <div class="stat-value" id="hotspot-func-3">--</div>
+            <div class="stat-detail" id="hotspot-detail-3">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="controls-content">
+        <button onclick="resetZoom()">🏠 Reset Zoom</button>
+        <button onclick="exportSVG()" class="secondary">📁 Export SVG</button>
+        <button onclick="toggleLegend()">🔥 Heat Map Legend</button>
+        <div class="thread-filter-wrapper">
+          <label class="thread-filter-label">🧵 Thread:</label>
+          <select id="thread-filter" class="thread-filter-select" onchange="filterByThread()">
+            <option value="all">All Threads</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button id="show-info-btn" title="Show navigation guide">&#8505;</button>
+
+    <div class="info-panel" id="info-panel">
+      <button id="close-info-btn" title="Close">&times;</button>
+      <h3>Navigation Guide</h3>
+      <p><strong>Click:</strong> Zoom into function</p>
+      <p><strong>Hover:</strong> Show detailed information</p>
+      <p><strong>Width:</strong> Time spent in function</p>
+      <p><strong>Height:</strong> Call stack depth</p>
+      <p><strong>Color:</strong> Performance intensity</p>
+    </div>
+
+    <div class="legend-panel" id="legend-panel">
+      <h3>🔥 Performance Heat Map</h3>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #3776ab"></div>
+        <div>
+          <div class="legend-label">Hottest Functions (≥60%)</div>
+          <div class="legend-description">Highest performance impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #4584bb"></div>
+        <div>
+          <div class="legend-label">Very Hot Functions (35-60%)</div>
+          <div class="legend-description">High performance impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #5592cc"></div>
+        <div>
+          <div class="legend-label">Hot Functions (18-35%)</div>
+          <div class="legend-description">Notable performance cost</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #ffd43b"></div>
+        <div>
+          <div class="legend-label">Warm Functions (12-18%)</div>
+          <div class="legend-description">Moderate impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #ffdc5c"></div>
+        <div>
+          <div class="legend-label">Medium Functions (6-12%)</div>
+          <div class="legend-description">Some performance impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #ffe47d"></div>
+        <div>
+          <div class="legend-label">Cool Functions (3-6%)</div>
+          <div class="legend-description">Low performance impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #ffec9e"></div>
+        <div>
+          <div class="legend-label">Cold Functions (1-3%)</div>
+          <div class="legend-description">Minimal performance impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #fff4bf"></div>
+        <div>
+          <div class="legend-label">Coldest Functions (<1%)</div>
+          <div class="legend-description">Very low performance impact</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div id="chart"></div>
+    </div>
+
+    <!-- INLINE_JS -->
+  </body>
+</html>
