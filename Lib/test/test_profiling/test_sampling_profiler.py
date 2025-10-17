@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from collections import namedtuple
 from unittest import mock
 
 from profiling.sampling.pstats_collector import PstatsCollector
@@ -84,6 +85,8 @@ skip_if_not_supported = unittest.skipIf(
     "Test only runs on Linux, Windows and MacOS",
 )
 
+SubprocessInfo = namedtuple('SubprocessInfo', ['process', 'socket'])
+
 
 @contextlib.contextmanager
 def test_subprocess(script):
@@ -123,7 +126,7 @@ _test_sock.sendall(b"ready")
         if response != b"ready":
             raise RuntimeError(f"Unexpected response from subprocess: {response}")
 
-        yield proc
+        yield SubprocessInfo(proc, client_socket)
     finally:
         if client_socket is not None:
             client_socket.close()
@@ -1752,13 +1755,13 @@ if __name__ == "__main__":
 
     def test_sampling_basic_functionality(self):
         with (
-            test_subprocess(self.test_script) as proc,
+            test_subprocess(self.test_script) as subproc,
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
             try:
                 profiling.sampling.sample.sample(
-                    proc.pid,
+                    subproc.process.pid,
                     duration_sec=2,
                     sample_interval_usec=1000,  # 1ms
                     show_summary=False,
@@ -1782,7 +1785,7 @@ if __name__ == "__main__":
         )
         self.addCleanup(close_and_unlink, pstats_out)
 
-        with test_subprocess(self.test_script) as proc:
+        with test_subprocess(self.test_script) as subproc:
             # Suppress profiler output when testing file export
             with (
                 io.StringIO() as captured_output,
@@ -1790,7 +1793,7 @@ if __name__ == "__main__":
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
+                        subproc.process.pid,
                         duration_sec=1,
                         filename=pstats_out.name,
                         sample_interval_usec=10000,
@@ -1826,7 +1829,7 @@ if __name__ == "__main__":
         self.addCleanup(close_and_unlink, collapsed_file)
 
         with (
-            test_subprocess(self.test_script) as proc,
+            test_subprocess(self.test_script) as subproc,
         ):
             # Suppress profiler output when testing file export
             with (
@@ -1835,7 +1838,7 @@ if __name__ == "__main__":
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
+                        subproc.process.pid,
                         duration_sec=1,
                         filename=collapsed_file.name,
                         output_format="collapsed",
@@ -1876,14 +1879,14 @@ if __name__ == "__main__":
 
     def test_sampling_all_threads(self):
         with (
-            test_subprocess(self.test_script) as proc,
+            test_subprocess(self.test_script) as subproc,
             # Suppress profiler output
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
             try:
                 profiling.sampling.sample.sample(
-                    proc.pid,
+                    subproc.process.pid,
                     duration_sec=1,
                     all_threads=True,
                     sample_interval_usec=10000,
@@ -1969,14 +1972,14 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             profiling.sampling.sample.sample(-1, duration_sec=1)
 
     def test_process_dies_during_sampling(self):
-        with test_subprocess("import time; time.sleep(0.5); exit()") as proc:
+        with test_subprocess("import time; time.sleep(0.5); exit()") as subproc:
             with (
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
+                        subproc.process.pid,
                         duration_sec=2,  # Longer than process lifetime
                         sample_interval_usec=50000,
                     )
@@ -2018,17 +2021,17 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             )
 
     def test_is_process_running(self):
-        with test_subprocess("import time; time.sleep(1000)") as proc:
+        with test_subprocess("import time; time.sleep(1000)") as subproc:
             try:
-                profiler = SampleProfiler(pid=proc.pid, sample_interval_usec=1000, all_threads=False)
+                profiler = SampleProfiler(pid=subproc.process.pid, sample_interval_usec=1000, all_threads=False)
             except PermissionError:
                 self.skipTest(
                     "Insufficient permissions to read the stack trace"
                 )
             self.assertTrue(profiler._is_process_running())
             self.assertIsNotNone(profiler.unwinder.get_stack_trace())
-            proc.kill()
-            proc.wait()
+            subproc.process.kill()
+            subproc.process.wait()
             self.assertRaises(ProcessLookupError, profiler.unwinder.get_stack_trace)
 
         # Exit the context manager to ensure the process is terminated
@@ -2037,9 +2040,9 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_esrch_signal_handling(self):
-        with test_subprocess("import time; time.sleep(1000)") as proc:
+        with test_subprocess("import time; time.sleep(1000)") as subproc:
             try:
-                unwinder = _remote_debugging.RemoteUnwinder(proc.pid)
+                unwinder = _remote_debugging.RemoteUnwinder(subproc.process.pid)
             except PermissionError:
                 self.skipTest(
                     "Insufficient permissions to read the stack trace"
@@ -2047,10 +2050,10 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             initial_trace = unwinder.get_stack_trace()
             self.assertIsNotNone(initial_trace)
 
-            proc.kill()
+            subproc.process.kill()
 
             # Wait for the process to die and try to get another trace
-            proc.wait()
+            subproc.process.wait()
 
             with self.assertRaises(ProcessLookupError):
                 unwinder.get_stack_trace()
@@ -2644,35 +2647,47 @@ class TestCpuModeFiltering(unittest.TestCase):
 import time
 import threading
 
+cpu_ready = threading.Event()
+
 def idle_worker():
     time.sleep(999999)
 
 def cpu_active_worker():
+    cpu_ready.set()
     x = 1
     while True:
         x += 1
 
 def main():
-# Start both threads
+    # Start both threads
     idle_thread = threading.Thread(target=idle_worker)
     cpu_thread = threading.Thread(target=cpu_active_worker)
     idle_thread.start()
     cpu_thread.start()
+
+    # Wait for CPU thread to be running, then signal test
+    cpu_ready.wait()
+    _test_sock.sendall(b"threads_ready")
+
     idle_thread.join()
     cpu_thread.join()
 
 main()
 
 '''
-        with test_subprocess(cpu_vs_idle_script) as proc:
+        with test_subprocess(cpu_vs_idle_script) as subproc:
+            # Wait for signal that threads are running
+            response = subproc.socket.recv(1024)
+            self.assertEqual(response, b"threads_ready")
+
             with (
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
-                        duration_sec=0.5,
+                        subproc.process.pid,
+                        duration_sec=2.0,
                         sample_interval_usec=5000,
                         mode=1,  # CPU mode
                         show_summary=False,
@@ -2690,8 +2705,8 @@ main()
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
-                        duration_sec=0.5,
+                        subproc.process.pid,
+                        duration_sec=2.0,
                         sample_interval_usec=5000,
                         mode=0,  # Wall-clock mode
                         show_summary=False,
@@ -2715,6 +2730,37 @@ main()
             # Wall-clock mode should capture both types of work
             self.assertIn("cpu_active_worker", wall_mode_output)
             self.assertIn("idle_worker", wall_mode_output)
+
+    def test_cpu_mode_with_no_samples(self):
+        """Test that CPU mode handles no samples gracefully when no samples are collected."""
+        # Mock a collector that returns empty stats
+        mock_collector = mock.MagicMock()
+        mock_collector.stats = {}
+        mock_collector.create_stats = mock.MagicMock()
+
+        with (
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+            mock.patch("profiling.sampling.sample.PstatsCollector", return_value=mock_collector),
+            mock.patch("profiling.sampling.sample.SampleProfiler") as mock_profiler_class,
+        ):
+            mock_profiler = mock.MagicMock()
+            mock_profiler_class.return_value = mock_profiler
+
+            profiling.sampling.sample.sample(
+                12345,  # dummy PID
+                duration_sec=0.5,
+                sample_interval_usec=5000,
+                mode=1,  # CPU mode
+                show_summary=False,
+                all_threads=True,
+            )
+
+            output = captured_output.getvalue()
+
+        # Should see the "No samples were collected" message
+        self.assertIn("No samples were collected", output)
+        self.assertIn("CPU mode", output)
 
 
 class TestGilModeFiltering(unittest.TestCase):
@@ -2852,34 +2898,46 @@ class TestGilModeFiltering(unittest.TestCase):
 import time
 import threading
 
+gil_ready = threading.Event()
+
 def gil_releasing_work():
     time.sleep(999999)
 
 def gil_holding_work():
+    gil_ready.set()
     x = 1
     while True:
         x += 1
 
 def main():
-# Start both threads
+    # Start both threads
     idle_thread = threading.Thread(target=gil_releasing_work)
     cpu_thread = threading.Thread(target=gil_holding_work)
     idle_thread.start()
     cpu_thread.start()
+
+    # Wait for GIL-holding thread to be running, then signal test
+    gil_ready.wait()
+    _test_sock.sendall(b"threads_ready")
+
     idle_thread.join()
     cpu_thread.join()
 
 main()
 '''
-        with test_subprocess(gil_test_script) as proc:
+        with test_subprocess(gil_test_script) as subproc:
+            # Wait for signal that threads are running
+            response = subproc.socket.recv(1024)
+            self.assertEqual(response, b"threads_ready")
+
             with (
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
-                        duration_sec=0.5,
+                        subproc.process.pid,
+                        duration_sec=2.0,
                         sample_interval_usec=5000,
                         mode=2,  # GIL mode
                         show_summary=False,
@@ -2897,7 +2955,7 @@ main()
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
+                        subproc.process.pid,
                         duration_sec=0.5,
                         sample_interval_usec=5000,
                         mode=0,  # Wall-clock mode

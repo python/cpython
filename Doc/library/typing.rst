@@ -2243,7 +2243,7 @@ without the dedicated syntax, as documented below.
    .. versionadded:: 3.10
 
 
-.. class:: TypeAliasType(name, value, *, type_params=())
+.. class:: TypeAliasType(name, value, *, type_params=(), qualname=None)
 
    The type of type aliases created through the :keyword:`type` statement.
 
@@ -2266,6 +2266,20 @@ without the dedicated syntax, as documented below.
          >>> type Alias = int
          >>> Alias.__name__
          'Alias'
+
+   .. attribute:: __qualname__
+
+      The :term:`qualified name` of the type alias:
+
+      .. doctest::
+
+        >>> class Class:
+        ...     type Alias = int
+        ...
+        >>> Class.Alias.__qualname__
+        'Class.Alias'
+
+      .. versionadded:: 3.15
 
    .. attribute:: __module__
 

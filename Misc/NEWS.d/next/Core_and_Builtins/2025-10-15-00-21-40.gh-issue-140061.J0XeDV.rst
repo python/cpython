@@ -1,0 +1,2 @@
+Fixing the checking of whether an object is uniquely referenced to ensure
+free-threaded compatibility. Patch by Sergey Miryanov.
