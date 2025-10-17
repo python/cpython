@@ -5251,11 +5251,16 @@ AC_CHECK_FUNCS([ \
   setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
-  sigwaitinfo snprintf splice statx strftime strlcpy strsignal symlinkat sync \
+  sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
   sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
+
+# Check statx availability in Linux
+if test "$MACHDEP" = "linux"; then
+  AC_CHECK_FUNCS([statx])
+fi
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
