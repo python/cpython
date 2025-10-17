@@ -519,6 +519,7 @@ class _ExecutorManagerThread(threading.Thread):
                 new_pending_work_items = {}
                 for work_id, work_item in self.pending_work_items.items():
                     if work_item.future.cancel():
+                        # gh-136655: ensure cancelled futures are notified
                         work_item.future.set_running_or_notify_cancel()
                     else:
                         new_pending_work_items[work_id] = work_item

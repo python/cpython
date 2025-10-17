@@ -39,6 +39,16 @@ class FalseyLenException(Exception):
         return 0
 
 
+class CancelNotifyTestException(Exception):
+    pass
+
+
+def blocking_raiser(barrier=None):
+    if barrier is not None:
+        barrier.wait()
+    raise CancelNotifyTestException()
+
+
 class ExecutorTest:
 
     # Executor.shutdown() and context manager usage is tested by
@@ -250,6 +260,7 @@ class ExecutorTest:
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_shutdown_notifies_cancelled_futures(self):
+        self.assertGreater(self.worker_count, 1)
 
         # TODO: remove when gh-109934 is fixed
         if self.executor_type is futures.ThreadPoolExecutor:
@@ -271,12 +282,7 @@ class ExecutorTest:
 
             for future in fs:
                 self.assertRaises(
-                    (FalseyBoolException, futures.CancelledError, threading.BrokenBarrierError),
+                    (CancelNotifyTestException, futures.CancelledError, threading.BrokenBarrierError),
                     future.result)
 
             self.assertIn('CANCELLED_AND_NOTIFIED', [f._state for f in fs])
-
-def blocking_raiser(barrier=None):
-    if barrier is not None:
-        barrier.wait()
-    raise FalseyBoolException()
