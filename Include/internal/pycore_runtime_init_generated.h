@@ -1305,6 +1305,31 @@ extern "C" {
 }
 
 #define _Py_str_literals_INIT { \
+    INIT_STR(AMPEREQUAL, "&="), \
+    INIT_STR(ATEQUAL, "@="), \
+    INIT_STR(CIRCUMFLEXEQUAL, "^="), \
+    INIT_STR(COLONEQUAL, ":="), \
+    INIT_STR(DOUBLESLASH, "//"), \
+    INIT_STR(DOUBLESLASHEQUAL, "//="), \
+    INIT_STR(DOUBLESTAR, "**"), \
+    INIT_STR(DOUBLESTAREQUAL, "**="), \
+    INIT_STR(ELLIPSIS, "..."), \
+    INIT_STR(EQEQUAL, "=="), \
+    INIT_STR(GREATEREQUAL, ">="), \
+    INIT_STR(LEFTSHIFT, "<<"), \
+    INIT_STR(LEFTSHIFTEQUAL, "<<="), \
+    INIT_STR(LESSEQUAL, "<="), \
+    INIT_STR(MINEQUAL, "-="), \
+    INIT_STR(NOTEQUAL, "!="), \
+    INIT_STR(PERCENTEQUAL, "%="), \
+    INIT_STR(PLUSEQUAL, "+="), \
+    INIT_STR(RARROW, "->"), \
+    INIT_STR(REPLSHIFT, ">>>"), \
+    INIT_STR(RIGHTSHIFT, ">>"), \
+    INIT_STR(RIGHTSHIFTEQUAL, ">>="), \
+    INIT_STR(SLASHEQUAL, "/="), \
+    INIT_STR(STAREQUAL, "*="), \
+    INIT_STR(VBAREQUAL, "|="), \
     INIT_STR(anon_dictcomp, "<dictcomp>"), \
     INIT_STR(anon_genexpr, "<genexpr>"), \
     INIT_STR(anon_lambda, "<lambda>"), \
@@ -1331,28 +1356,6 @@ extern "C" {
 }
 
 #define _Py_str_identifiers_INIT { \
-    INIT_ID(!=), \
-    INIT_ID(%=), \
-    INIT_ID(&=), \
-    INIT_ID(**), \
-    INIT_ID(**=), \
-    INIT_ID(*=), \
-    INIT_ID(+=), \
-    INIT_ID(-=), \
-    INIT_ID(->), \
-    INIT_ID(...), \
-    INIT_ID(//), \
-    INIT_ID(//=), \
-    INIT_ID(/=), \
-    INIT_ID(:=), \
-    INIT_ID(<<), \
-    INIT_ID(<<=), \
-    INIT_ID(<=), \
-    INIT_ID(==), \
-    INIT_ID(>=), \
-    INIT_ID(>>), \
-    INIT_ID(>>=), \
-    INIT_ID(>>>), \
     INIT_ID(CANCELLED), \
     INIT_ID(Emax), \
     INIT_ID(Emin), \
@@ -1364,7 +1367,6 @@ extern "C" {
     INIT_ID(TextIOWrapper), \
     INIT_ID(True), \
     INIT_ID(WarningMessage), \
-    INIT_ID(^=), \
     INIT_ID(_WindowsConsoleIO), \
     INIT_ID(__IOBase_closed), \
     INIT_ID(__abc_tpflags__), \
@@ -2149,7 +2151,6 @@ extern "C" {
     INIT_ID(year), \
     INIT_ID(zdict), \
     INIT_ID(zstd_dict), \
-    INIT_ID(|=), \
 }
 
 #define _Py_str_ascii_INIT { \

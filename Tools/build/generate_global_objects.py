@@ -131,32 +131,6 @@ IDENTIFIERS = [
     'exc_value',
     'self',
     'traceback',
-
-    # Syntactic symbols with len() > 2
-    '...',
-    '**',
-    ':=',
-    '//',
-    '==',
-    '!=',
-    '>=',
-    '<=',
-    '+=',
-    '-=',
-    '*=',
-    '/=',
-    '//=',
-    '%=',
-    '**=',
-    '<<',
-    '>>',
-    '>>>',
-    '<<=',
-    '>>=',
-    '&=',
-    '|=',
-    '^=',
-    '->',
 ]
 
 NON_GENERATED_IMMORTAL_OBJECTS = [
@@ -479,7 +453,33 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
 
 def main() -> None:
     identifiers, strings = get_identifiers_and_strings()
-
+    strings.update([
+        ("==", "EQEQUAL"),
+        ("!=", "NOTEQUAL"),
+        ("<=", "LESSEQUAL"),
+        (">=", "GREATEREQUAL"),
+        ("<<", "LEFTSHIFT"),
+        (">>", "RIGHTSHIFT"),
+        ("**", "DOUBLESTAR"),
+        ("+=", "PLUSEQUAL"),
+        ("-=", "MINEQUAL"),
+        ("*=", "STAREQUAL"),
+        ("/=", "SLASHEQUAL"),
+        ("%=", "PERCENTEQUAL"),
+        ("&=", "AMPEREQUAL"),
+        ("|=", "VBAREQUAL"),
+        ("^=", "CIRCUMFLEXEQUAL"),
+        ("<<=", "LEFTSHIFTEQUAL"),
+        (">>=", "RIGHTSHIFTEQUAL"),
+        ("**=", "DOUBLESTAREQUAL"),
+        ("//", "DOUBLESLASH"),
+        ("//=", "DOUBLESLASHEQUAL"),
+        ("@=", "ATEQUAL"),
+        ("->", "RARROW"),
+        ("...", "ELLIPSIS"),
+        (":=", "COLONEQUAL"),
+        (">>>", "REPLSHIFT"),
+    ])
     generate_global_strings(identifiers, strings)
     generated_immortal_objects = generate_runtime_init(identifiers, strings)
     generate_static_strings_initializer(identifiers, strings)
