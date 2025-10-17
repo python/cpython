@@ -235,12 +235,6 @@ def generate_tier1_cases(
         out.emit(f"int opcode = {name};\n")
         out.emit(f"(void)(opcode);\n")
         out.emit(f"#endif\n")
-        out.emit(f"PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);\n")
-        out.emit(f"(void)old_code;\n")
-        out.emit(f"PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);\n")
-        out.emit(f"(void)old_func;\n")
-        out.emit(f"int _jump_taken = false;\n")
-        out.emit(f"(void)_jump_taken;\n")
         needs_this = is_tracing or uses_this(inst)
         unused_guard = "(void)this_instr;\n"
         if inst.properties.needs_prev:
@@ -259,6 +253,12 @@ def generate_tier1_cases(
             if needs_this:
                 out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
                 out.emit(unused_guard)
+        out.emit(f"PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);\n")
+        out.emit(f"(void)old_code;\n")
+        out.emit(f"PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);\n")
+        out.emit(f"(void)old_func;\n")
+        out.emit(f"int _jump_taken = false;\n")
+        out.emit(f"(void)_jump_taken;\n")
         if inst.properties.uses_opcode:
             out.emit(f"opcode = {name};\n")
         if inst.family is not None:
