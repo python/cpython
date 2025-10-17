@@ -3,6 +3,3 @@
 
 # https://gist.github.com/mpage/daaf32b39180c1989572957b943eb665
 thread:pthread_create
-
-# gh-140138
-race:drop_gil
