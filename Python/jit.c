@@ -167,11 +167,13 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 
 // See https://developer.arm.com/documentation/ddi0602/2023-09/Base-Instructions
 // for instruction encodings:
-#define IS_AARCH64_ADD_OR_SUB(I) (((I) & 0x11C00000) == 0x11000000)
-#define IS_AARCH64_ADRP(I)       (((I) & 0x9F000000) == 0x90000000)
-#define IS_AARCH64_BRANCH(I)     (((I) & 0x7C000000) == 0x14000000)
-#define IS_AARCH64_LDR_OR_STR(I) (((I) & 0x3B000000) == 0x39000000)
-#define IS_AARCH64_MOV(I)        (((I) & 0x9F800000) == 0x92800000)
+#define IS_AARCH64_ADD_OR_SUB(I)  (((I) & 0x11C00000) == 0x11000000)
+#define IS_AARCH64_ADRP(I)        (((I) & 0x9F000000) == 0x90000000)
+#define IS_AARCH64_BRANCH(I)      (((I) & 0x7C000000) == 0x14000000)
+#define IS_AARCH64_BRANCH_COND(I) (((I) & 0x7C000000) == 0x54000000)
+#define IS_AARCH64_TEST_AND_BRANCH(I) (((I) & 0x7E000000) == 0x36000000)
+#define IS_AARCH64_LDR_OR_STR(I)  (((I) & 0x3B000000) == 0x39000000)
+#define IS_AARCH64_MOV(I)         (((I) & 0x9F800000) == 0x92800000)
 
 // LLD is a great reference for performing relocations... just keep in
 // mind that Tools/jit/build.py does filtering and preprocessing for us!
@@ -330,6 +332,21 @@ patch_aarch64_21rx(unsigned char *location, uint64_t value)
     // calls with a single call to patch_aarch64_33rx. Otherwise, we end up
     // here, and the instruction is patched normally:
     patch_aarch64_21r(location, value);
+}
+
+// 21-bit relative branch.
+void
+patch_aarch64_19r(unsigned char *location, uint64_t value)
+{
+    uint32_t *loc32 = (uint32_t *)location;
+    assert(IS_AARCH64_BRANCH_COND(*loc32));
+    value -= (uintptr_t)location;
+    // Check that we're not out of range of 21 signed bits:
+    assert((int64_t)value >= -(1 << 20));
+    assert((int64_t)value < (1 << 20));
+    // Since instructions are 4-byte aligned, only use 19 bits:
+    assert(get_bits(value, 0, 2) == 0);
+    set_bits(loc32, 5, value, 2, 19);
 }
 
 // 28-bit relative branch.
