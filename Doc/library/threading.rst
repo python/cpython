@@ -198,7 +198,7 @@ This module defines the following functions:
    .. versionchanged:: 3.13
       Added support for GNU/kFreeBSD.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added support for Solaris.
 
 
@@ -608,7 +608,7 @@ since it is impossible to detect the termination of alien threads.
       timeout occurs.
 
       When the *timeout* argument is present and not ``None``, it should be a
-      floating-point number specifying a timeout for the operation in seconds
+      real number specifying a timeout for the operation in seconds
       (or fractions thereof). As :meth:`~Thread.join` always returns ``None``,
       you must call :meth:`~Thread.is_alive` after :meth:`~Thread.join` to
       decide whether a timeout happened -- if the thread is still alive, the
@@ -631,6 +631,9 @@ since it is impossible to detect the termination of alien threads.
       .. versionchanged:: 3.14
 
          May raise :exc:`PythonFinalizationError`.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
    .. attribute:: name
 
@@ -764,7 +767,7 @@ All methods are executed atomically.
       If a call with *blocking* set to ``True`` would block, return ``False``
       immediately; otherwise, set the lock to locked and return ``True``.
 
-      When invoked with the floating-point *timeout* argument set to a positive
+      When invoked with the *timeout* argument set to a positive
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  A *timeout* argument of ``-1``
       specifies an unbounded wait.  It is forbidden to specify a *timeout*
@@ -782,6 +785,9 @@ All methods are executed atomically.
 
       .. versionchanged:: 3.14
          Lock acquisition can now be interrupted by signals on Windows.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
 
    .. method:: release()
@@ -863,7 +869,7 @@ call release as many times the lock has been acquired can lead to deadlock.
          * If no thread owns the lock, acquire the lock and return immediately.
 
          * If another thread owns the lock, block until we are able to acquire
-           lock, or *timeout*, if set to a positive float value.
+           lock, or *timeout*, if set to a positive value.
 
          * If the same thread owns the lock, acquire the lock again, and
            return immediately. This is the difference between :class:`Lock` and
@@ -889,6 +895,9 @@ call release as many times the lock has been acquired can lead to deadlock.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
 
    .. method:: release()
@@ -1023,7 +1032,7 @@ item to the buffer only needs to wake up one consumer thread.
       occurs.  Once awakened or timed out, it re-acquires the lock and returns.
 
       When the *timeout* argument is present and not ``None``, it should be a
-      floating-point number specifying a timeout for the operation in seconds
+      real number specifying a timeout for the operation in seconds
       (or fractions thereof).
 
       When the underlying lock is an :class:`RLock`, it is not released using
@@ -1150,6 +1159,9 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
 
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
+
    .. method:: release(n=1)
 
       Release a semaphore, incrementing the internal counter by *n*.  When it
@@ -1250,7 +1262,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
       the internal flag did not become true within the given wait time.
 
       When the timeout argument is present and not ``None``, it should be a
-      floating-point number specifying a timeout for the operation in seconds,
+      real number specifying a timeout for the operation in seconds,
       or fractions thereof.
 
       .. versionchanged:: 3.1

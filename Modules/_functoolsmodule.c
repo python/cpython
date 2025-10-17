@@ -108,20 +108,13 @@ placeholder_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return placeholder;
 }
 
-static int
-placeholder_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyType_Slot placeholder_type_slots[] = {
     {Py_tp_dealloc, placeholder_dealloc},
     {Py_tp_repr, placeholder_repr},
     {Py_tp_doc, (void *)placeholder_doc},
     {Py_tp_methods, placeholder_methods},
     {Py_tp_new, placeholder_new},
-    {Py_tp_traverse, placeholder_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, 0}
 };
 
@@ -298,7 +291,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         if (kw == NULL) {
             pto->kw = PyDict_New();
         }
-        else if (Py_REFCNT(kw) == 1) {
+        else if (_PyObject_IsUniquelyReferenced(kw)) {
             pto->kw = Py_NewRef(kw);
         }
         else {
@@ -1083,7 +1076,7 @@ _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
     for (;;) {
         PyObject *op2;
 
-        if (Py_REFCNT(args) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(args)) {
             Py_DECREF(args);
             if ((args = PyTuple_New(2)) == NULL)
                 goto Fail;

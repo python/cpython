@@ -1,3 +1,0 @@
-:func:`unittest.doModuleCleanups` no longer swallows all but first exception
-raised in the cleanup code, but raises a :exc:`ExceptionGroup` if multiple
-errors occurred.
