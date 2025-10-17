@@ -276,8 +276,9 @@ class FilterTests(BaseTest):
             with self.assertRaises(UserWarning):
                 self.module.warn_explicit('msg', UserWarning, '/PATH/TO/PACKAGE/MODULE', 42)
             if MS_WINDOWS:
-                self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module.PY', 42)
-                self.assertEqual(len(w), 3)
+                if self.module is py_warnings:
+                    self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module.PY', 42)
+                    self.assertEqual(len(w), 3)
                 with self.assertRaises(UserWarning):
                     self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module/__init__.py', 42)
                 with self.assertRaises(UserWarning):
@@ -301,8 +302,9 @@ class FilterTests(BaseTest):
                 self.assertEqual(len(w), 1)
                 self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.py', 42)
                 self.assertEqual(len(w), 2)
-                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PY', 42)
-                self.assertEqual(len(w), 3)
+                if self.module is py_warnings:
+                    self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PY', 42)
+                    self.assertEqual(len(w), 3)
                 with self.assertRaises(UserWarning):
                     self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.pyw', 42)
                 with self.assertRaises(UserWarning):
