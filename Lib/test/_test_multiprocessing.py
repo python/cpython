@@ -6956,28 +6956,13 @@ class _TestSpawnedSysPath(BaseTestCase):
         if multiprocessing.get_start_method() != "forkserver":
             self.skipTest("forkserver specific test")
 
-        # Create a test module in the temporary directory on the child's path
-        # TODO: This can all be simplified once gh-126631 is fixed and we can
-        #       use __main__ instead of a module.
-        dirname = os.path.join(self._temp_dir, 'preloaded_module')
-        init_name = os.path.join(dirname, '__init__.py')
-        os.mkdir(dirname)
-        with open(init_name, "w") as f:
-            cmd = '''if 1:
-                import sys
-                print('stderr', end='', file=sys.stderr)
-                print('stdout', end='', file=sys.stdout)
-            '''
-            f.write(cmd)
-
         name = os.path.join(os.path.dirname(__file__), 'mp_preload_flush.py')
-        env = {'PYTHONPATH': self._temp_dir}
-        _, out, err = test.support.script_helper.assert_python_ok(name, **env)
+        _, out, err = test.support.script_helper.assert_python_ok(name)
 
         # Check stderr first, as it is more likely to be useful to see in the
         # event of a failure.
-        self.assertEqual(err.decode().rstrip(), 'stderr')
-        self.assertEqual(out.decode().rstrip(), 'stdout')
+        self.assertEqual(err.decode().rstrip(), '__main____mp_main__')
+        self.assertEqual(out.decode().rstrip(), '__main____mp_main__')
 
 
 class MiscTestCase(unittest.TestCase):
