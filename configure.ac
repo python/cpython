@@ -2786,14 +2786,12 @@ AS_VAR_IF([jit_flags],
           [],
           [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
-                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\""])
-           AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\" --llvm-version=\"$LLVM_VERSION\""])
            AS_VAR_IF([Py_DEBUG],
                      [true],
                      [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
                      [])])
 AC_SUBST([REGEN_JIT_COMMAND])
-AC_SUBST([JIT_STENCILS_H])
 AC_MSG_RESULT([$tier2_flags $jit_flags])
 
 if test "$disable_gil" = "yes" -a "$enable_experimental_jit" != "no"; then
@@ -5228,7 +5226,8 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS([ \
-  accept4 alarm bind_textdomain_codeset chmod chown clock closefrom close_range confstr \
+  accept4 alarm bind_textdomain_codeset chmod chown clearenv \
+  clock closefrom close_range confstr \
   copy_file_range ctermid dladdr dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
@@ -5252,7 +5251,7 @@ AC_CHECK_FUNCS([ \
   setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
-  sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
+  sigwaitinfo snprintf splice statx strftime strlcpy strsignal symlinkat sync \
   sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
@@ -5425,7 +5424,7 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 dnl detect zlib from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.2.1], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
@@ -5819,6 +5818,13 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
 ]])
 # Issue #21085: In Cygwin, siginfo_t does not have si_band field.
 AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[@%:@include <signal.h>]])
+
+if test "$ac_cv_func_statx" = yes; then
+  # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
+  # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
+  # doesn't imply having the member.
+  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_max_opt])
+fi
 
 AC_CACHE_CHECK([for time.h that defines altzone], [ac_cv_header_time_altzone], [
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <time.h>]], [[return altzone;]])],
@@ -8175,29 +8181,31 @@ PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_d
 
 # Determine JIT stencils header files based on target platform
 JIT_STENCILS_H=""
-case "$host" in
-  aarch64-apple-darwin*)
-    JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
-    ;;
-  x86_64-apple-darwin*)
-    JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
-    ;;
-  aarch64-pc-windows-msvc)
-    JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
-    ;;
-  i686-pc-windows-msvc)
-    JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
-    ;;
-  x86_64-pc-windows-msvc)
-    JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
-    ;;
-  aarch64-*-linux-gnu)
-    JIT_STENCILS_H="jit_stencils-$host.h"
-    ;;
-  x86_64-*-linux-gnu)
-    JIT_STENCILS_H="jit_stencils-$host.h"
-    ;;
-esac
+AS_VAR_IF([enable_experimental_jit], [no],
+  [],
+  [case "$host" in
+    aarch64-apple-darwin*)
+      JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
+      ;;
+    x86_64-apple-darwin*)
+      JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
+      ;;
+    aarch64-pc-windows-msvc)
+      JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
+      ;;
+    i686-pc-windows-msvc)
+      JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
+      ;;
+    x86_64-pc-windows-msvc)
+      JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
+      ;;
+    aarch64-*-linux-gnu)
+      JIT_STENCILS_H="jit_stencils-$host.h"
+      ;;
+    x86_64-*-linux-gnu)
+      JIT_STENCILS_H="jit_stencils-$host.h"
+      ;;
+  esac])
 
 AC_SUBST([JIT_STENCILS_H])
 

@@ -533,7 +533,7 @@ The :mod:`calendar` module exports the following data attributes:
    in the standalone form if the locale provides one. Else it is equivalent
    to :data:`month_name`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: standalone_month_abbr
@@ -542,7 +542,7 @@ The :mod:`calendar` module exports the following data attributes:
    locale in the standalone form if the locale provides one. Else it is
    equivalent to :data:`month_abbr`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: JANUARY
