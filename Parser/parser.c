@@ -25460,7 +25460,7 @@ invalid_class_pattern_rule(Parser *p)
 }
 
 // invalid_mapping_pattern:
-//     | '{' [(items_pattern ','?)] double_star_pattern ',' items_pattern ','? '}'
+//     | '{' [(items_pattern ',')] double_star_pattern ',' items_pattern ','? '}'
 static void *
 invalid_mapping_pattern_rule(Parser *p)
 {
@@ -25473,12 +25473,12 @@ invalid_mapping_pattern_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // '{' [(items_pattern ','?)] double_star_pattern ',' items_pattern ','? '}'
+    { // '{' [(items_pattern ',')] double_star_pattern ',' items_pattern ','? '}'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' [(items_pattern ','?)] double_star_pattern ',' items_pattern ','? '}'"));
+        D(fprintf(stderr, "%*c> invalid_mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' [(items_pattern ',')] double_star_pattern ',' items_pattern ','? '}'"));
         Token * _literal;
         Token * _literal_1;
         Token * _literal_2;
@@ -25491,7 +25491,7 @@ invalid_mapping_pattern_rule(Parser *p)
         if (
             (_literal = _PyPegen_expect_token(p, 25))  // token='{'
             &&
-            (_opt_var = _tmp_147_rule(p), !p->error_indicator)  // [(items_pattern ','?)]
+            (_opt_var = _tmp_147_rule(p), !p->error_indicator)  // [(items_pattern ',')]
             &&
             (rest = double_star_pattern_rule(p))  // double_star_pattern
             &&
@@ -25504,7 +25504,7 @@ invalid_mapping_pattern_rule(Parser *p)
             (_literal_2 = _PyPegen_expect_token(p, 26))  // token='}'
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' [(items_pattern ','?)] double_star_pattern ',' items_pattern ','? '}'"));
+            D(fprintf(stderr, "%*c+ invalid_mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' [(items_pattern ',')] double_star_pattern ',' items_pattern ','? '}'"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( rest , "double star pattern must be the last (right-most) subpattern in the mapping pattern" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -25515,7 +25515,7 @@ invalid_mapping_pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_mapping_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'{' [(items_pattern ','?)] double_star_pattern ',' items_pattern ','? '}'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'{' [(items_pattern ',')] double_star_pattern ',' items_pattern ','? '}'"));
     }
     _res = NULL;
   done:
@@ -36700,7 +36700,7 @@ _tmp_146_rule(Parser *p)
     return _res;
 }
 
-// _tmp_147: items_pattern ','?
+// _tmp_147: items_pattern ','
 static void *
 _tmp_147_rule(Parser *p)
 {
@@ -36713,28 +36713,27 @@ _tmp_147_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // items_pattern ','?
+    { // items_pattern ','
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_147[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "items_pattern ','?"));
-        void *_opt_var;
-        UNUSED(_opt_var); // Silence compiler warnings
+        D(fprintf(stderr, "%*c> _tmp_147[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "items_pattern ','"));
+        Token * _literal;
         asdl_seq* items_pattern_var;
         if (
             (items_pattern_var = items_pattern_rule(p))  // items_pattern
             &&
-            (_opt_var = _PyPegen_expect_token(p, 12), !p->error_indicator)  // ','?
+            (_literal = _PyPegen_expect_token(p, 12))  // token=','
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_147[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "items_pattern ','?"));
-            _res = _PyPegen_dummy_name(p, items_pattern_var, _opt_var);
+            D(fprintf(stderr, "%*c+ _tmp_147[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "items_pattern ','"));
+            _res = _PyPegen_dummy_name(p, items_pattern_var, _literal);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_147[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "items_pattern ','?"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "items_pattern ','"));
     }
     _res = NULL;
   done:
