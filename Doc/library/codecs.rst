@@ -997,7 +997,7 @@ order when no BOM is present. The plain ``UTF-16`` codec (without a ``-BE`` or
 practice, so native-endian data round-trips without redundant byte swapping,
 even though the Unicode Standard defaults to big-endian when the byte order is
 unspecified. When these bytes are read by a CPU with a different endianness,
-then bytes have to be swapped though. To be able to detect the endianness of a
+the bytes have to be swapped. To be able to detect the endianness of a
 ``UTF-16`` or ``UTF-32`` byte sequence, a BOM ("Byte Order Mark") is used.
 This is the Unicode character ``U+FEFF``. This character can be prepended to every
 ``UTF-16`` or ``UTF-32`` byte sequence. The byte swapped version of this character
