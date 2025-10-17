@@ -118,12 +118,12 @@ Node classes
       node = ast.UnaryOp(ast.USub(), ast.Constant(5, lineno=0, col_offset=0),
                          lineno=0, col_offset=0)
 
-    If a field that is optional in the grammar is omitted from the constructor,
-    it defaults to ``None``. If a list field is omitted, it defaults to the empty
-    list. If a field of type :class:`!ast.expr_context` is omitted, it defaults to
-    :class:`Load() <ast.Load>`. If any other field is omitted, a :exc:`DeprecationWarning` is raised
-    and the AST node will not have this field. In Python 3.15, this condition will
-    raise an error.
+   If a field that is optional in the grammar is omitted from the constructor,
+   it defaults to ``None``. If a list field is omitted, it defaults to the empty
+   list. If a field of type :class:`!ast.expr_context` is omitted, it defaults to
+   :class:`Load() <ast.Load>`. If any other field is omitted, a :exc:`DeprecationWarning` is raised
+   and the AST node will not have this field. In Python 3.15, this condition will
+   raise an error.
 
 .. versionchanged:: 3.8
 
