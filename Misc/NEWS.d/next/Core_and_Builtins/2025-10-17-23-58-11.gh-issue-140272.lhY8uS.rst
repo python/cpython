@@ -1,2 +1,1 @@
-Fix memory leak in :meth:`_gdbm.gdbm.clear` by properly freeing memory
-allocated by ``gdbm_firstkey()``.
+Fix memory leak in ``_gdbm.gdbm.clear`` by properly freeing memory allocated by ``gdbm_firstkey()``.
