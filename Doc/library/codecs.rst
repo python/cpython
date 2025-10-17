@@ -994,7 +994,7 @@ will always have to swap bytes on encoding and decoding.
 Python's ``UTF-32`` codec avoids this problem by using the platform's native byte
 order when no BOM is present. The plain ``UTF-16`` codec (without a ``-BE`` or
 ``-LE`` suffix) behaves the same way. Python follows prevailing platform
-practice so native-endian data round-trips without redundant byte swapping,
+practice, so native-endian data round-trips without redundant byte swapping,
 even though the Unicode Standard defaults to big-endian when the byte order is
 unspecified. When these bytes are read by a CPU with a different endianness,
 then bytes have to be swapped though. To be able to detect the endianness of a
