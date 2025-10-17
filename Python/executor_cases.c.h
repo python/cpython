@@ -7487,31 +7487,29 @@
         case _COLD_EXIT: {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            _Py_CODEUNIT *target = (_PyFrame_GetBytecode(frame) + exit->target);
+            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             _Py_BackoffCounter temperature = exit->temperature;
+            if (!backoff_counter_triggers(temperature)) {
+                exit->temperature = advance_backoff_counter(temperature);
+                GOTO_TIER_ONE(target, 0);
+            }
+            _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
-                _PyExecutorObject *executor = code->co_executors->executors[target->op.arg];
+                executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
-                assert(tstate->jit_exit == exit);
-                exit->executor = executor;
-                TIER2_TO_TIER2(exit->executor);
             }
             else {
-                if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
-                    GOTO_TIER_ONE(target, 0);
-                }
-                if (!backoff_counter_triggers(temperature)) {
-                    exit->temperature = advance_backoff_counter(temperature);
-                    GOTO_TIER_ONE(target, 0);
-                }
-                exit->temperature = initial_temperature_backoff_counter();
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
                 _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), chain_depth, exit);
+                exit->temperature = initial_temperature_backoff_counter();
                 GOTO_TIER_ONE(target, 1);
             }
+            assert(tstate->jit_exit == exit);
+            exit->executor = executor;
+            TIER2_TO_TIER2(exit->executor);
             break;
         }
 
@@ -7557,8 +7555,6 @@
                     GOTO_TIER_ONE(target, 0);
                 }
                 exit->temperature = initial_temperature_backoff_counter();
-                _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
-                assert(tstate->current_executor == (PyObject *)previous_executor);
                 _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), 0, NULL);
                 GOTO_TIER_ONE(target, 1);
             }

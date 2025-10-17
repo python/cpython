@@ -2993,17 +2993,17 @@ dummy_func(
             unused/1 +
             _SPECIALIZE_JUMP_BACKWARD +
             _CHECK_PERIODIC +
-            _JUMP_BACKWARD_NO_INTERRUPT;
+            JUMP_BACKWARD_NO_INTERRUPT;
 
         macro(JUMP_BACKWARD_NO_JIT) =
             unused/1 +
             _CHECK_PERIODIC +
-            _JUMP_BACKWARD_NO_INTERRUPT;
+            JUMP_BACKWARD_NO_INTERRUPT;
 
         macro(JUMP_BACKWARD_JIT) =
             unused/1 +
             _CHECK_PERIODIC +
-            _JUMP_BACKWARD_NO_INTERRUPT +
+            JUMP_BACKWARD_NO_INTERRUPT +
             _JIT;
 
         pseudo(JUMP, (--)) = {
@@ -3088,10 +3088,7 @@ dummy_func(
 
         macro(POP_JUMP_IF_NOT_NONE) = unused/1 + _IS_NONE + _POP_JUMP_IF_FALSE;
 
-        // This actually has 1 cache entry, but for some reason it's not factored in the oparg.
-        macro(JUMP_BACKWARD_NO_INTERRUPT) = _JUMP_BACKWARD_NO_INTERRUPT;
-
-        op(_JUMP_BACKWARD_NO_INTERRUPT, (--)) {
+        inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -5431,31 +5428,29 @@ dummy_func(
         tier2 op(_COLD_EXIT, ( -- )) {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            _Py_CODEUNIT *target = (_PyFrame_GetBytecode(frame) + exit->target);
+            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             _Py_BackoffCounter temperature = exit->temperature;
+            if (!backoff_counter_triggers(temperature)) {
+                exit->temperature = advance_backoff_counter(temperature);
+                GOTO_TIER_ONE(target, 0);
+            }
+            _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
-                _PyExecutorObject *executor = code->co_executors->executors[target->op.arg];
+                executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
-                assert(tstate->jit_exit == exit);
-                exit->executor = executor;
-                TIER2_TO_TIER2(exit->executor);
             }
             else {
-                if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
-                    GOTO_TIER_ONE(target, 0);
-                }
-                if (!backoff_counter_triggers(temperature)) {
-                    exit->temperature = advance_backoff_counter(temperature);
-                    GOTO_TIER_ONE(target, 0);
-                }
-                exit->temperature = initial_temperature_backoff_counter();
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
                 _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), chain_depth, exit);
+                exit->temperature = initial_temperature_backoff_counter();
                 GOTO_TIER_ONE(target, 1);
             }
+            assert(tstate->jit_exit == exit);
+            exit->executor = executor;
+            TIER2_TO_TIER2(exit->executor);
         }
 
         tier2 op(_GUARD_IP, (ip/4 --)) {
@@ -5494,8 +5489,6 @@ dummy_func(
                     GOTO_TIER_ONE(target, 0);
                 }
                 exit->temperature = initial_temperature_backoff_counter();
-                _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
-                assert(tstate->current_executor == (PyObject *)previous_executor);
                 _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), 0, NULL);
                 GOTO_TIER_ONE(target, 1);
             }

@@ -17,8 +17,6 @@ _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 from _testinternalcapi import TIER2_THRESHOLD
 
-# We need one more iteration as one iteration is spent on tracing.
-TIER2_THRESHOLD = TIER2_THRESHOLD + 1
 #For test of issue 136154
 GLOBAL_136154 = 42
 
@@ -628,7 +626,7 @@ class TestUopsOptimization(unittest.TestCase):
                 x = range(i)
             return x
 
-        testfunc(_testinternalcapi.TIER2_THRESHOLD + 1)
+        testfunc(_testinternalcapi.TIER2_THRESHOLD)
 
         ex = get_first_executor(testfunc)
         assert ex is not None
@@ -2463,7 +2461,7 @@ class TestUopsOptimization(unittest.TestCase):
                 del email.jit_testing
 
 
-        testfunc(_testinternalcapi.TIER2_THRESHOLD + 1)
+        testfunc(_testinternalcapi.TIER2_THRESHOLD)
         ex = get_first_executor(testfunc)
         assert ex is not None
         """))

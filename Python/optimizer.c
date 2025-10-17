@@ -128,7 +128,8 @@ _PyOptimizer_Optimize(
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
     // this is true, since a deopt won't infinitely re-enter the executor:
-    bool progress_needed = (chain_depth % MAX_CHAIN_DEPTH) == 0;
+    chain_depth %= MAX_CHAIN_DEPTH;
+    bool progress_needed = chain_depth == 0;
     PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_tracer_initial_code;
     _Py_CODEUNIT *start = tstate->interp->jit_tracer_initial_instr;
     // A recursive trace might've cleared the values. In that case, bail.
@@ -559,8 +560,8 @@ _PyJIT_translate_single_bytecode_to_trace(
     int oparg,
     int jump_taken)
 {
-    if (Py_IsNone((PyObject *)func)) {
-        func = NULL;
+    if (PyStackRef_IsNull(frame->f_funcobj)) {
+        goto unsupported;
     }
 
     int is_first_instr = tstate->interp->jit_tracer_initial_instr == this_instr;
@@ -596,6 +597,11 @@ _PyJIT_translate_single_bytecode_to_trace(
         (frame != tstate->interp->jit_tracer_current_frame && !needs_guard_ip) ||
         // TODO handle extended args.
         oparg > 255 || opcode == EXTENDED_ARG ||
+        // TODO handle BINARY_OP_INPLACE_ADD_UNICODE
+        opcode == BINARY_OP_INPLACE_ADD_UNICODE ||
+        // TODO (gh-140277): The constituent uops are invalid.
+        opcode == BINARY_OP_SUBSCR_GETITEM ||
+        // Exception stuff, could be handled in the future maybe?
         opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO ||
         frame->owner >= FRAME_OWNED_BY_INTERPRETER
         ) {
@@ -603,12 +609,19 @@ _PyJIT_translate_single_bytecode_to_trace(
                 {
                     // Rewind to previous instruction and replace with _EXIT_TRACE.
                     _PyUOpInstruction *curr = &trace[trace_length-1];
-                    while (curr->opcode != _SET_IP && trace_length > 1) {
+                    while (curr->opcode != _SET_IP && trace_length > 2) {
                         trace_length--;
                         curr = &trace[trace_length-1];
                     }
-                    assert(curr->opcode == _SET_IP || trace_length == 1);
-                    curr->opcode = _EXIT_TRACE;
+                    assert(curr->opcode == _SET_IP || trace_length == 2);
+                    if (curr->opcode == _SET_IP) {
+                        int32_t old_target = (int32_t)uop_get_target(curr);
+                        curr++;
+                        trace_length++;
+                        curr->opcode = _EXIT_TRACE;
+                        curr->format = UOP_FORMAT_TARGET;
+                        curr->target = old_target;
+                    }
                     goto done;
                 }
         }
@@ -618,10 +631,6 @@ _PyJIT_translate_single_bytecode_to_trace(
     DPRINTF(2, "%p %d: %s(%d)\n", old_code, target, _PyOpcode_OpName[opcode], oparg);
 
     if (opcode == NOP) {
-        return 1;
-    }
-
-    if (opcode == JUMP_BACKWARD_NO_INTERRUPT) {
         return 1;
     }
 
@@ -661,8 +670,7 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     // Loop back to the start
     if (is_first_instr && tstate->interp->jit_tracer_code_curr_size > 2) {
-        // Undo the last few instructions.
-        trace_length = tstate->interp->jit_tracer_code_curr_size;
+        ADD_TO_TRACE(_CHECK_PERIODIC, 0, 0, target);
         ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
         goto done;
     }

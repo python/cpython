@@ -2252,9 +2252,10 @@ class TestSysJIT(unittest.TestCase):
 
             def frame_3_jit() -> None:
                 # JITs just before the last loop:
-                for i in range(_testinternalcapi.TIER2_THRESHOLD + 1):
+                # 1 extra iteration for tracing.
+                for i in range(_testinternalcapi.TIER2_THRESHOLD + 2):
                     # Careful, doing this in the reverse order breaks tracing:
-                    expected = {enabled} and i == _testinternalcapi.TIER2_THRESHOLD
+                    expected = {enabled} and i >= _testinternalcapi.TIER2_THRESHOLD + 1
                     assert sys._jit.is_active() is expected
                     frame_2_jit(expected)
                     assert sys._jit.is_active() is expected

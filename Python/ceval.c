@@ -1054,10 +1054,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_CODEUNIT *next_instr;
     _PyStackRef *stack_pointer;
     entry.stack[0] = PyStackRef_NULL;
-    entry.frame.f_funcobj = PyStackRef_None;
-#ifdef Py_STACKREF_DEBUG
-    entry.frame.f_funcobj = PyStackRef_None;
-#elif defined(Py_DEBUG)
+    entry.frame.f_funcobj = PyStackRef_NULL;
+#if defined(Py_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
     entry.frame.f_locals = (PyObject*)0xaaa1;
     entry.frame.frame_obj = (PyFrameObject*)0xaaa2;
