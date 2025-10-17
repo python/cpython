@@ -1,0 +1,2 @@
+Fix memory leak in :meth:`_gdbm.gdbm.clear` by properly freeing memory
+allocated by ``gdbm_firstkey()``.
