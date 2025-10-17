@@ -763,8 +763,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    // Daemon threads may still access eval_breaker atomically via take_gil().
-    // Use atomic store to prevent data races during finalization.
+    // gh-140257: Threads have already been cleared, but daemon threads may
+    // still access eval_breaker atomically via take_gil() right before they
+    // hang. Use an atomic store to prevent data races during finalization.
     interp->ceval.instrumentation_version = 0;
     _Py_atomic_store_uintptr(&tstate->eval_breaker, 0);
 
