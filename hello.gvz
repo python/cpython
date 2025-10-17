@@ -1,0 +1,426 @@
+digraph ideal {
+
+    rankdir = "LR"
+
+executor_0x555555ebd390 [
+    shape = none
+    label = <<table border="0" cellspacing="0">
+        <tr><td port="start" border="1" ><b>Executor</b></td></tr>
+        <tr><td border="1" >No code object</td></tr>
+        <tr><td port="i0" border="1" >_START_EXECUTOR</td></tr>
+        <tr><td port="i1" border="1" >_MAKE_WARM</td></tr>
+        <tr><td port="i2" border="1" >_SET_IP</td></tr>
+        <tr><td port="i3" border="1" >_CHECK_FUNCTION_VERSION</td></tr>
+        <tr><td port="i4" border="1" >_CHECK_FUNCTION_EXACT_ARGS</td></tr>
+        <tr><td port="i5" border="1" >_CHECK_STACK_SPACE_OPERAND</td></tr>
+        <tr><td port="i6" border="1" >_CHECK_RECURSION_REMAINING</td></tr>
+        <tr><td port="i7" border="1" >_INIT_CALL_PY_EXACT_ARGS_1</td></tr>
+        <tr><td port="i8" border="1" >_SAVE_RETURN_OFFSET</td></tr>
+        <tr><td port="i9" border="1" >_PUSH_FRAME</td></tr>
+        <tr><td port="i10" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i11" border="1" >_TIER2_RESUME_CHECK</td></tr>
+        <tr><td port="i12" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i13" border="1" >_SET_IP</td></tr>
+        <tr><td port="i14" border="1" >_GUARD_TOS_TUPLE</td></tr>
+        <tr><td port="i15" border="1" >_UNPACK_SEQUENCE_TWO_TUPLE</td></tr>
+        <tr><td port="i16" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i17" border="1" >_SET_IP</td></tr>
+        <tr><td port="i18" border="1" >_STORE_FAST_1</td></tr>
+        <tr><td port="i19" border="1" >_STORE_FAST_2</td></tr>
+        <tr><td port="i20" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i21" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i22" border="1" >_SET_IP</td></tr>
+        <tr><td port="i23" border="1" >_STORE_FAST_3</td></tr>
+        <tr><td port="i24" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i25" border="1" >_GUARD_GLOBALS_VERSION</td></tr>
+        <tr><td port="i26" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i27" border="1" >_PUSH_NULL</td></tr>
+        <tr><td port="i28" border="1" >_LOAD_FAST_BORROW_2</td></tr>
+        <tr><td port="i29" border="1" >_SET_IP</td></tr>
+        <tr><td port="i30" border="1" >_CALL_BUILTIN_CLASS</td></tr>
+        <tr><td port="i31" border="1" >_TIER2_RESUME_CHECK</td></tr>
+        <tr><td port="i32" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i33" border="1" >_SET_IP</td></tr>
+        <tr><td port="i34" border="1" >_GET_ITER</td></tr>
+        <tr><td port="i35" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i36" border="1" >_SET_IP</td></tr>
+        <tr><td port="i37" border="1" >_FOR_ITER_TIER_TWO</td></tr>
+        <tr><td port="i38" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i39" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i40" border="1" >_SET_IP</td></tr>
+        <tr><td port="i41" border="1" >_GUARD_TOS_TUPLE</td></tr>
+        <tr><td port="i42" border="1" >_UNPACK_SEQUENCE_TWO_TUPLE</td></tr>
+        <tr><td port="i43" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i44" border="1" >_SET_IP</td></tr>
+        <tr><td port="i45" border="1" >_STORE_FAST_4</td></tr>
+        <tr><td port="i46" border="1" >_STORE_FAST_5</td></tr>
+        <tr><td port="i47" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i48" border="1" >_LOAD_FAST_BORROW_3</td></tr>
+        <tr><td port="i49" border="1" >_LOAD_CONST_INLINE</td></tr>
+        <tr><td port="i50" border="1" >_PUSH_NULL</td></tr>
+        <tr><td port="i51" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i52" border="1" >_LOAD_FAST_BORROW_4</td></tr>
+        <tr><td port="i53" border="1" >_SET_IP</td></tr>
+        <tr><td port="i54" border="1" >_CHECK_FUNCTION_VERSION_INLINE</td></tr>
+        <tr><td port="i55" border="1" >_CHECK_RECURSION_REMAINING</td></tr>
+        <tr><td port="i56" border="1" >_INIT_CALL_PY_EXACT_ARGS_2</td></tr>
+        <tr><td port="i57" border="1" >_SAVE_RETURN_OFFSET</td></tr>
+        <tr><td port="i58" border="1" >_PUSH_FRAME</td></tr>
+        <tr><td port="i59" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i60" border="1" >_TIER2_RESUME_CHECK</td></tr>
+        <tr><td port="i61" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i62" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i63" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i64" border="1" >_GUARD_TOS_INT</td></tr>
+        <tr><td port="i65" border="1" >_GUARD_NOS_INT</td></tr>
+        <tr><td port="i66" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i67" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i68" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i69" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i70" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i71" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i72" border="1" >_BINARY_OP_MULTIPLY_INT</td></tr>
+        <tr><td port="i73" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i74" border="1" >_SET_IP</td></tr>
+        <tr><td port="i75" border="1" >_BINARY_OP</td></tr>
+        <tr><td port="i76" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i77" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i78" border="1" >_GUARD_NOS_OVERFLOWED</td></tr>
+        <tr><td port="i79" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i80" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i81" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i82" border="1" >_SET_IP</td></tr>
+        <tr><td port="i83" border="1" >_BINARY_OP</td></tr>
+        <tr><td port="i84" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i85" border="1" >_SET_IP</td></tr>
+        <tr><td port="i86" border="1" >_RETURN_VALUE</td></tr>
+        <tr><td port="i87" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i88" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i89" border="1" >_LOAD_FAST_BORROW_5</td></tr>
+        <tr><td port="i90" border="1" >_GUARD_TOS_FLOAT</td></tr>
+        <tr><td port="i91" border="1" >_BINARY_OP_MULTIPLY_FLOAT</td></tr>
+        <tr><td port="i92" border="1" >_SET_IP</td></tr>
+        <tr><td port="i93" border="1" >_BINARY_OP</td></tr>
+        <tr><td port="i94" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i95" border="1" >_SET_IP</td></tr>
+        <tr><td port="i96" border="1" >_STORE_FAST_3</td></tr>
+        <tr><td port="i97" border="1" >_EXIT_TRACE</td></tr>
+    </table>>
+]
+
+executor_0x555555ebd390:i97 -> executor_0x555555eb9530:start
+executor_0x555555eb48f0 [
+    shape = none
+    label = <<table border="0" cellspacing="0">
+        <tr><td port="start" border="1" ><b>Executor</b></td></tr>
+        <tr><td  border="1" >part_At_times_u: 44</td></tr>
+        <tr><td port="i0" border="1" >_START_EXECUTOR</td></tr>
+        <tr><td port="i1" border="1" >_MAKE_WARM</td></tr>
+        <tr><td port="i2" border="1" >_SET_IP</td></tr>
+        <tr><td port="i3" border="1" >_POP_ITER</td></tr>
+        <tr><td port="i4" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i5" border="1" >_LOAD_FAST_BORROW_3</td></tr>
+        <tr><td port="i6" border="1" >_SET_IP</td></tr>
+        <tr><td port="i7" border="1" >_RETURN_VALUE</td></tr>
+        <tr><td port="i8" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i9" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i10" border="1" >_LIST_APPEND</td></tr>
+        <tr><td port="i11" border="1" >_EXIT_TRACE</td></tr>
+    </table>>
+]
+
+executor_0x555555eb48f0:i11 -> executor_0x555555ebc2b0:start
+executor_0x555555e0b190 [
+    shape = none
+    label = <<table border="0" cellspacing="0">
+        <tr><td port="start" border="1" ><b>Executor</b></td></tr>
+        <tr><td  border="1" >part_A_times_u: 36</td></tr>
+        <tr><td port="i0" border="1" >_START_EXECUTOR</td></tr>
+        <tr><td port="i1" border="1" >_MAKE_WARM</td></tr>
+        <tr><td port="i2" border="1" >_SET_IP</td></tr>
+        <tr><td port="i3" border="1" >_POP_ITER</td></tr>
+        <tr><td port="i4" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i5" border="1" >_LOAD_FAST_BORROW_3</td></tr>
+        <tr><td port="i6" border="1" >_SET_IP</td></tr>
+        <tr><td port="i7" border="1" >_RETURN_VALUE</td></tr>
+        <tr><td port="i8" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i9" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i10" border="1" >_LIST_APPEND</td></tr>
+        <tr><td port="i11" border="1" >_EXIT_TRACE</td></tr>
+    </table>>
+]
+
+executor_0x555555e0b190:i11 -> executor_0x555555ebc2b0:start
+executor_0x555555ebc2b0 [
+    shape = none
+    label = <<table border="0" cellspacing="0">
+        <tr><td port="start" border="1" ><b>Executor</b></td></tr>
+        <tr><td  border="1" >eval_times_u: 26</td></tr>
+        <tr><td port="i0" border="1" >_START_EXECUTOR</td></tr>
+        <tr><td port="i1" border="1" >_MAKE_WARM</td></tr>
+        <tr><td port="i2" border="1" >_ITER_CHECK_RANGE</td></tr>
+        <tr><td port="i3" border="1" >_GUARD_NOT_EXHAUSTED_RANGE</td></tr>
+        <tr><td port="i4" border="1" >_ITER_NEXT_RANGE</td></tr>
+        <tr><td port="i5" border="1" >_SET_IP</td></tr>
+        <tr><td port="i6" border="1" >_STORE_FAST_2</td></tr>
+        <tr><td port="i7" border="1" >_LOAD_FAST_0</td></tr>
+        <tr><td port="i8" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i9" border="1" >_PUSH_NULL</td></tr>
+        <tr><td port="i10" border="1" >_LOAD_FAST_BORROW_2</td></tr>
+        <tr><td port="i11" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i12" border="1" >_BUILD_TUPLE</td></tr>
+        <tr><td port="i13" border="1" >_SET_IP</td></tr>
+        <tr><td port="i14" border="1" >_CHECK_FUNCTION_VERSION</td></tr>
+        <tr><td port="i15" border="1" >_CHECK_FUNCTION_EXACT_ARGS</td></tr>
+        <tr><td port="i16" border="1" >_CHECK_STACK_SPACE_OPERAND</td></tr>
+        <tr><td port="i17" border="1" >_CHECK_RECURSION_REMAINING</td></tr>
+        <tr><td port="i18" border="1" >_INIT_CALL_PY_EXACT_ARGS_1</td></tr>
+        <tr><td port="i19" border="1" >_SAVE_RETURN_OFFSET</td></tr>
+        <tr><td port="i20" border="1" >_PUSH_FRAME</td></tr>
+        <tr><td port="i21" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i22" border="1" >_TIER2_RESUME_CHECK</td></tr>
+        <tr><td port="i23" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i24" border="1" >_SET_IP</td></tr>
+        <tr><td port="i25" border="1" >_UNPACK_SEQUENCE_TWO_TUPLE</td></tr>
+        <tr><td port="i26" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i27" border="1" >_SET_IP</td></tr>
+        <tr><td port="i28" border="1" >_STORE_FAST_1</td></tr>
+        <tr><td port="i29" border="1" >_STORE_FAST_2</td></tr>
+        <tr><td port="i30" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i31" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i32" border="1" >_SET_IP</td></tr>
+        <tr><td port="i33" border="1" >_STORE_FAST_3</td></tr>
+        <tr><td port="i34" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i35" border="1" >_GUARD_GLOBALS_VERSION</td></tr>
+        <tr><td port="i36" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i37" border="1" >_PUSH_NULL</td></tr>
+        <tr><td port="i38" border="1" >_LOAD_FAST_BORROW_2</td></tr>
+        <tr><td port="i39" border="1" >_SET_IP</td></tr>
+        <tr><td port="i40" border="1" >_CALL_BUILTIN_CLASS</td></tr>
+        <tr><td port="i41" border="1" >_TIER2_RESUME_CHECK</td></tr>
+        <tr><td port="i42" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i43" border="1" >_SET_IP</td></tr>
+        <tr><td port="i44" border="1" >_GET_ITER</td></tr>
+        <tr><td port="i45" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i46" border="1" >_SET_IP</td></tr>
+        <tr><td port="i47" border="1" >_FOR_ITER_TIER_TWO</td></tr>
+        <tr><td port="i48" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i49" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i50" border="1" >_SET_IP</td></tr>
+        <tr><td port="i51" border="1" >_GUARD_TOS_TUPLE</td></tr>
+        <tr><td port="i52" border="1" >_UNPACK_SEQUENCE_TWO_TUPLE</td></tr>
+        <tr><td port="i53" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i54" border="1" >_SET_IP</td></tr>
+        <tr><td port="i55" border="1" >_STORE_FAST_4</td></tr>
+        <tr><td port="i56" border="1" >_STORE_FAST_5</td></tr>
+        <tr><td port="i57" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i58" border="1" >_LOAD_FAST_BORROW_3</td></tr>
+        <tr><td port="i59" border="1" >_LOAD_CONST_INLINE</td></tr>
+        <tr><td port="i60" border="1" >_PUSH_NULL</td></tr>
+        <tr><td port="i61" border="1" >_LOAD_FAST_BORROW_4</td></tr>
+        <tr><td port="i62" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i63" border="1" >_SET_IP</td></tr>
+        <tr><td port="i64" border="1" >_CHECK_FUNCTION_VERSION_INLINE</td></tr>
+        <tr><td port="i65" border="1" >_CHECK_RECURSION_REMAINING</td></tr>
+        <tr><td port="i66" border="1" >_INIT_CALL_PY_EXACT_ARGS_2</td></tr>
+        <tr><td port="i67" border="1" >_SAVE_RETURN_OFFSET</td></tr>
+        <tr><td port="i68" border="1" >_PUSH_FRAME</td></tr>
+        <tr><td port="i69" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i70" border="1" >_TIER2_RESUME_CHECK</td></tr>
+        <tr><td port="i71" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i72" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i73" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i74" border="1" >_GUARD_TOS_OVERFLOWED</td></tr>
+        <tr><td port="i75" border="1" >_GUARD_NOS_INT</td></tr>
+        <tr><td port="i76" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i77" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i78" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i79" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i80" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i81" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i82" border="1" >_BINARY_OP_MULTIPLY_INT</td></tr>
+        <tr><td port="i83" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i84" border="1" >_SET_IP</td></tr>
+        <tr><td port="i85" border="1" >_BINARY_OP</td></tr>
+        <tr><td port="i86" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i87" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i88" border="1" >_GUARD_NOS_OVERFLOWED</td></tr>
+        <tr><td port="i89" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i90" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i91" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i92" border="1" >_SET_IP</td></tr>
+        <tr><td port="i93" border="1" >_BINARY_OP</td></tr>
+        <tr><td port="i94" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i95" border="1" >_SET_IP</td></tr>
+        <tr><td port="i96" border="1" >_RETURN_VALUE</td></tr>
+        <tr><td port="i97" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i98" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i99" border="1" >_LOAD_FAST_BORROW_5</td></tr>
+        <tr><td port="i100" border="1" >_GUARD_TOS_FLOAT</td></tr>
+        <tr><td port="i101" border="1" >_BINARY_OP_MULTIPLY_FLOAT</td></tr>
+        <tr><td port="i102" border="1" >_SET_IP</td></tr>
+        <tr><td port="i103" border="1" >_BINARY_OP</td></tr>
+        <tr><td port="i104" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i105" border="1" >_SET_IP</td></tr>
+        <tr><td port="i106" border="1" >_STORE_FAST_3</td></tr>
+        <tr><td port="i107" border="1" >_EXIT_TRACE</td></tr>
+    </table>>
+]
+
+executor_0x555555ebc2b0:i14 -> executor_0x555555ebd390:start
+executor_0x555555ebc2b0:i15 -> executor_0x555555ebd390:start
+executor_0x555555ebc2b0:i107 -> executor_0x555555eba4f0:start
+executor_0x555555eba4f0 [
+    shape = none
+    label = <<table border="0" cellspacing="0">
+        <tr><td port="start" border="1" ><b>Executor</b></td></tr>
+        <tr><td  border="1" >part_At_times_u: 45</td></tr>
+        <tr><td port="i0" border="1" >_START_EXECUTOR</td></tr>
+        <tr><td port="i1" border="1" >_MAKE_WARM</td></tr>
+        <tr><td port="i2" border="1" >_SET_IP</td></tr>
+        <tr><td port="i3" border="1" >_FOR_ITER_TIER_TWO</td></tr>
+        <tr><td port="i4" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i5" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i6" border="1" >_SET_IP</td></tr>
+        <tr><td port="i7" border="1" >_GUARD_TOS_TUPLE</td></tr>
+        <tr><td port="i8" border="1" >_UNPACK_SEQUENCE_TWO_TUPLE</td></tr>
+        <tr><td port="i9" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i10" border="1" >_SET_IP</td></tr>
+        <tr><td port="i11" border="1" >_STORE_FAST_4</td></tr>
+        <tr><td port="i12" border="1" >_STORE_FAST_5</td></tr>
+        <tr><td port="i13" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i14" border="1" >_LOAD_FAST_BORROW_3</td></tr>
+        <tr><td port="i15" border="1" >_GUARD_GLOBALS_VERSION</td></tr>
+        <tr><td port="i16" border="1" >_LOAD_CONST_INLINE</td></tr>
+        <tr><td port="i17" border="1" >_PUSH_NULL</td></tr>
+        <tr><td port="i18" border="1" >_LOAD_FAST_BORROW_4</td></tr>
+        <tr><td port="i19" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i20" border="1" >_SET_IP</td></tr>
+        <tr><td port="i21" border="1" >_CHECK_FUNCTION_VERSION_INLINE</td></tr>
+        <tr><td port="i22" border="1" >_CHECK_STACK_SPACE_OPERAND</td></tr>
+        <tr><td port="i23" border="1" >_CHECK_RECURSION_REMAINING</td></tr>
+        <tr><td port="i24" border="1" >_INIT_CALL_PY_EXACT_ARGS_2</td></tr>
+        <tr><td port="i25" border="1" >_SAVE_RETURN_OFFSET</td></tr>
+        <tr><td port="i26" border="1" >_PUSH_FRAME</td></tr>
+        <tr><td port="i27" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i28" border="1" >_TIER2_RESUME_CHECK</td></tr>
+        <tr><td port="i29" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i30" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i31" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i32" border="1" >_GUARD_TOS_INT</td></tr>
+        <tr><td port="i33" border="1" >_GUARD_NOS_INT</td></tr>
+        <tr><td port="i34" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i35" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i36" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i37" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i38" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i39" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i40" border="1" >_BINARY_OP_MULTIPLY_INT</td></tr>
+        <tr><td port="i41" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i42" border="1" >_SET_IP</td></tr>
+        <tr><td port="i43" border="1" >_BINARY_OP</td></tr>
+        <tr><td port="i44" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i45" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i46" border="1" >_GUARD_NOS_OVERFLOWED</td></tr>
+        <tr><td port="i47" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i48" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i49" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i50" border="1" >_SET_IP</td></tr>
+        <tr><td port="i51" border="1" >_GUARD_BINARY_OP_EXTEND</td></tr>
+        <tr><td port="i52" border="1" >_BINARY_OP_EXTEND</td></tr>
+        <tr><td port="i53" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i54" border="1" >_SET_IP</td></tr>
+        <tr><td port="i55" border="1" >_RETURN_VALUE</td></tr>
+        <tr><td port="i56" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i57" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i58" border="1" >_LOAD_FAST_BORROW_5</td></tr>
+        <tr><td port="i59" border="1" >_GUARD_TOS_FLOAT</td></tr>
+        <tr><td port="i60" border="1" >_GUARD_NOS_FLOAT</td></tr>
+        <tr><td port="i61" border="1" >_BINARY_OP_MULTIPLY_FLOAT</td></tr>
+        <tr><td port="i62" border="1" >_GUARD_NOS_FLOAT</td></tr>
+        <tr><td port="i63" border="1" >_BINARY_OP_ADD_FLOAT</td></tr>
+        <tr><td port="i64" border="1" >_SET_IP</td></tr>
+        <tr><td port="i65" border="1" >_STORE_FAST_3</td></tr>
+        <tr><td port="i66" border="1" >_JUMP_TO_TOP</td></tr>
+    </table>>
+]
+
+executor_0x555555eb9530 [
+    shape = none
+    label = <<table border="0" cellspacing="0">
+        <tr><td port="start" border="1" ><b>Executor</b></td></tr>
+        <tr><td  border="1" >part_A_times_u: 37</td></tr>
+        <tr><td port="i0" border="1" >_START_EXECUTOR</td></tr>
+        <tr><td port="i1" border="1" >_MAKE_WARM</td></tr>
+        <tr><td port="i2" border="1" >_SET_IP</td></tr>
+        <tr><td port="i3" border="1" >_FOR_ITER_TIER_TWO</td></tr>
+        <tr><td port="i4" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i5" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i6" border="1" >_SET_IP</td></tr>
+        <tr><td port="i7" border="1" >_GUARD_TOS_TUPLE</td></tr>
+        <tr><td port="i8" border="1" >_UNPACK_SEQUENCE_TWO_TUPLE</td></tr>
+        <tr><td port="i9" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i10" border="1" >_SET_IP</td></tr>
+        <tr><td port="i11" border="1" >_STORE_FAST_4</td></tr>
+        <tr><td port="i12" border="1" >_STORE_FAST_5</td></tr>
+        <tr><td port="i13" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i14" border="1" >_LOAD_FAST_BORROW_3</td></tr>
+        <tr><td port="i15" border="1" >_GUARD_GLOBALS_VERSION</td></tr>
+        <tr><td port="i16" border="1" >_LOAD_CONST_INLINE</td></tr>
+        <tr><td port="i17" border="1" >_PUSH_NULL</td></tr>
+        <tr><td port="i18" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i19" border="1" >_LOAD_FAST_BORROW_4</td></tr>
+        <tr><td port="i20" border="1" >_SET_IP</td></tr>
+        <tr><td port="i21" border="1" >_CHECK_FUNCTION_VERSION_INLINE</td></tr>
+        <tr><td port="i22" border="1" >_CHECK_STACK_SPACE_OPERAND</td></tr>
+        <tr><td port="i23" border="1" >_CHECK_RECURSION_REMAINING</td></tr>
+        <tr><td port="i24" border="1" >_INIT_CALL_PY_EXACT_ARGS_2</td></tr>
+        <tr><td port="i25" border="1" >_SAVE_RETURN_OFFSET</td></tr>
+        <tr><td port="i26" border="1" >_PUSH_FRAME</td></tr>
+        <tr><td port="i27" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i28" border="1" >_TIER2_RESUME_CHECK</td></tr>
+        <tr><td port="i29" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i30" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i31" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i32" border="1" >_GUARD_TOS_INT</td></tr>
+        <tr><td port="i33" border="1" >_GUARD_NOS_INT</td></tr>
+        <tr><td port="i34" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i35" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i36" border="1" >_LOAD_FAST_BORROW_1</td></tr>
+        <tr><td port="i37" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i38" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i39" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i40" border="1" >_BINARY_OP_MULTIPLY_INT</td></tr>
+        <tr><td port="i41" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i42" border="1" >_SET_IP</td></tr>
+        <tr><td port="i43" border="1" >_BINARY_OP</td></tr>
+        <tr><td port="i44" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i45" border="1" >_LOAD_FAST_BORROW_0</td></tr>
+        <tr><td port="i46" border="1" >_GUARD_NOS_OVERFLOWED</td></tr>
+        <tr><td port="i47" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i48" border="1" >_LOAD_CONST_INLINE_BORROW</td></tr>
+        <tr><td port="i49" border="1" >_BINARY_OP_ADD_INT</td></tr>
+        <tr><td port="i50" border="1" >_SET_IP</td></tr>
+        <tr><td port="i51" border="1" >_GUARD_BINARY_OP_EXTEND</td></tr>
+        <tr><td port="i52" border="1" >_BINARY_OP_EXTEND</td></tr>
+        <tr><td port="i53" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i54" border="1" >_SET_IP</td></tr>
+        <tr><td port="i55" border="1" >_RETURN_VALUE</td></tr>
+        <tr><td port="i56" border="1" >_GUARD_IP</td></tr>
+        <tr><td port="i57" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i58" border="1" >_LOAD_FAST_BORROW_5</td></tr>
+        <tr><td port="i59" border="1" >_SET_IP</td></tr>
+        <tr><td port="i60" border="1" >_GUARD_BINARY_OP_EXTEND</td></tr>
+        <tr><td port="i61" border="1" >_BINARY_OP_EXTEND</td></tr>
+        <tr><td port="i62" border="1" >_CHECK_VALIDITY</td></tr>
+        <tr><td port="i63" border="1" >_GUARD_TOS_FLOAT</td></tr>
+        <tr><td port="i64" border="1" >_GUARD_NOS_FLOAT</td></tr>
+        <tr><td port="i65" border="1" >_BINARY_OP_ADD_FLOAT</td></tr>
+        <tr><td port="i66" border="1" >_SET_IP</td></tr>
+        <tr><td port="i67" border="1" >_STORE_FAST_3</td></tr>
+        <tr><td port="i68" border="1" >_JUMP_TO_TOP</td></tr>
+    </table>>
+]
+
+}
+
