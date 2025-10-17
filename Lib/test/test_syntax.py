@@ -382,6 +382,8 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+# Check incorrect "case" placement with specialized error messages
+
 >>> case "pattern": ...
 Traceback (most recent call last):
 SyntaxError: case statement must be inside match statement
