@@ -253,6 +253,9 @@ def generate_tier1_cases(
             if needs_this:
                 out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
                 out.emit(unused_guard)
+        if is_tracing:
+            # This is required so that the predicted ops reflect the correct opcode.
+            out.emit(f"opcode = {name};\n")
         out.emit(f"PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);\n")
         out.emit(f"(void)old_code;\n")
         out.emit(f"PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);\n")
