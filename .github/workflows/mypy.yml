@@ -16,6 +16,7 @@ on:
       - "Tools/build/check_extension_modules.py"
       - "Tools/build/check_warnings.py"
       - "Tools/build/compute-changes.py"
+      - "Tools/build/consts_getter.py"
       - "Tools/build/deepfreeze.py"
       - "Tools/build/generate-build-details.py"
       - "Tools/build/generate_sbom.py"
