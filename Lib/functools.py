@@ -935,7 +935,8 @@ def singledispatch(func):
         return (isinstance(cls, UnionType) and
                 all(isinstance(arg, type) for arg in cls.__args__))
 
-    def _get_type_hints(func):
+    def _get_func_type_hints(func):
+        """Called when type hints are needed to choose the first argument to dispatch on."""
         ann = getattr(func, '__annotate__', None)
         if ann is None:
             raise TypeError(
@@ -977,7 +978,7 @@ def singledispatch(func):
                     f"{cls!r} is not a class or union type."
                 )
             func = cls
-            type_hints = _get_type_hints(func)
+            type_hints = _get_func_type_hints(func)
 
             argname, cls = next(iter(type_hints.items()))
 
