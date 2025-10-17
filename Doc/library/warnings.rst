@@ -491,7 +491,9 @@ Available Functions
 
    *registry*, if supplied, should be the ``__warningregistry__`` dictionary
    of the module.
-   If no registry is passed, each warning is treated as the first occurrence.
+   If no registry is passed, each warning is treated as the first occurrence,
+   that is, filter actions ``"default"``, ``"module"`` and ``"once"`` are
+   handled as ``"always"``.
 
    *module_globals*, if supplied, should be the global namespace in use by the code
    for which the warning is issued.  (This argument is used to support displaying
