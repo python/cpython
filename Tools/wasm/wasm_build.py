@@ -21,9 +21,10 @@ changes.
   ./Tools/wasm/wasm_builder.py --clean build build
 
 """
+
 import argparse
-import enum
 import dataclasses
+import enum
 import logging
 import os
 import pathlib
@@ -38,18 +39,12 @@ import tempfile
 import time
 import warnings
 import webbrowser
+from collections.abc import Callable, Iterable
 
 # for Python 3.8
 from typing import (
-    cast,
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
+    cast,
 )
 
 logger = logging.getLogger("wasm_build")
@@ -67,7 +62,9 @@ WASI_SDK_PATH = pathlib.Path(os.environ.get("WASI_SDK_PATH", "/opt/wasi-sdk"))
 
 # path to Emscripten SDK config file.
 # auto-detect's EMSDK in /opt/emsdk without ". emsdk_env.sh".
-EM_CONFIG = pathlib.Path(os.environ.setdefault("EM_CONFIG", "/opt/emsdk/.emscripten"))
+EM_CONFIG = pathlib.Path(
+    os.environ.setdefault("EM_CONFIG", "/opt/emsdk/.emscripten")
+)
 EMSDK_MIN_VERSION = (3, 1, 19)
 EMSDK_BROKEN_VERSION = {
     (3, 1, 14): "https://github.com/emscripten-core/emscripten/issues/17338",
@@ -119,7 +116,7 @@ https://wasmtime.dev/ to install wasmtime.
 
 def parse_emconfig(
     emconfig: pathlib.Path = EM_CONFIG,
-) -> Tuple[pathlib.Path, pathlib.Path]:
+) -> tuple[pathlib.Path, pathlib.Path]:
     """Parse EM_CONFIG file and lookup EMSCRIPTEN_ROOT and NODE_JS.
 
     The ".emscripten" config file is a Python snippet that uses "EM_CONFIG"
@@ -131,7 +128,7 @@ def parse_emconfig(
     with open(emconfig, encoding="utf-8") as f:
         code = f.read()
     # EM_CONFIG file is a Python snippet
-    local: Dict[str, Any] = {}
+    local: dict[str, Any] = {}
     exec(code, globals(), local)
     emscripten_root = pathlib.Path(local["EMSCRIPTEN_ROOT"])
     node_js = pathlib.Path(local["NODE_JS"])
@@ -189,16 +186,16 @@ class Platform:
 
     name: str
     pythonexe: str
-    config_site: Optional[pathlib.PurePath]
-    configure_wrapper: Optional[pathlib.Path]
-    make_wrapper: Optional[pathlib.PurePath]
-    environ: Dict[str, Any]
+    config_site: pathlib.PurePath | None
+    configure_wrapper: pathlib.Path | None
+    make_wrapper: pathlib.PurePath | None
+    environ: dict[str, Any]
     check: Callable[[], None]
     # Used for build_emports().
-    ports: Optional[pathlib.PurePath]
-    cc: Optional[pathlib.PurePath]
+    ports: pathlib.PurePath | None
+    cc: pathlib.PurePath | None
 
-    def getenv(self, profile: "BuildProfile") -> Dict[str, Any]:
+    def getenv(self, profile: "BuildProfile") -> dict[str, Any]:
         return self.environ.copy()
 
 
@@ -261,8 +258,7 @@ def _check_emscripten() -> None:
         # git / upstream / tot-upstream installation
         version = version[:-4]
     version_tuple = cast(
-        Tuple[int, int, int],
-        tuple(int(v) for v in version.split("."))
+        tuple[int, int, int], tuple(int(v) for v in version.split("."))
     )
     if version_tuple < EMSDK_MIN_VERSION:
         raise ConditionError(
@@ -386,7 +382,7 @@ class Host(enum.Enum):
             return []
 
     @property
-    def emport_args(self) -> List[str]:
+    def emport_args(self) -> list[str]:
         """Host-specific port args (Emscripten)."""
         cls = type(self)
         if self is cls.wasm64_emscripten:
@@ -397,7 +393,7 @@ class Host(enum.Enum):
             return []
 
     @property
-    def embuilder_args(self) -> List[str]:
+    def embuilder_args(self) -> list[str]:
         """Host-specific embuilder args (Emscripten)."""
         cls = type(self)
         if self is cls.wasm64_emscripten:
@@ -420,7 +416,7 @@ class EmscriptenTarget(enum.Enum):
         return self in {cls.browser, cls.browser_debug}
 
     @property
-    def emport_args(self) -> List[str]:
+    def emport_args(self) -> list[str]:
         """Target-specific port args."""
         cls = type(self)
         if self in {cls.browser_debug, cls.node_debug}:
@@ -446,9 +442,9 @@ class BuildProfile:
     name: str
     support_level: SupportLevel
     host: Host
-    target: Union[EmscriptenTarget, None] = None
-    dynamic_linking: Union[bool, None] = None
-    pthreads: Union[bool, None] = None
+    target: EmscriptenTarget | None = None
+    dynamic_linking: bool | None = None
+    pthreads: bool | None = None
     default_testopts: str = "-j2"
 
     @property
@@ -472,7 +468,7 @@ class BuildProfile:
         return self.builddir / "Makefile"
 
     @property
-    def configure_cmd(self) -> List[str]:
+    def configure_cmd(self) -> list[str]:
         """Generate configure command"""
         # use relative path, so WASI tests can find lib prefix.
         # pathlib.Path.relative_to() does not work here.
@@ -507,7 +503,7 @@ class BuildProfile:
         return cmd
 
     @property
-    def make_cmd(self) -> List[str]:
+    def make_cmd(self) -> list[str]:
         """Generate make command"""
         cmd = ["make"]
         platform = self.host.platform
@@ -515,10 +511,10 @@ class BuildProfile:
             cmd.insert(0, os.fspath(platform.make_wrapper))
         return cmd
 
-    def getenv(self) -> Dict[str, Any]:
+    def getenv(self) -> dict[str, Any]:
         """Generate environ dict for platform"""
         env = os.environ.copy()
-        if hasattr(os, 'process_cpu_count'):
+        if hasattr(os, "process_cpu_count"):
             cpu_count = os.process_cpu_count()
         else:
             cpu_count = os.cpu_count()
@@ -529,7 +525,7 @@ class BuildProfile:
                 env.pop(key, None)
             elif key == "PATH":
                 # list of path items, prefix with extra paths
-                new_path: List[pathlib.PurePath] = []
+                new_path: list[pathlib.PurePath] = []
                 new_path.extend(self.host.get_extra_paths())
                 new_path.extend(value)
                 env[key] = os.pathsep.join(os.fspath(p) for p in new_path)
@@ -547,7 +543,7 @@ class BuildProfile:
         self,
         cmd: Iterable[str],
         args: Iterable[str] = (),
-        cwd: Optional[pathlib.Path] = None,
+        cwd: pathlib.Path | None = None,
     ) -> int:
         cmd = list(cmd)
         cmd.extend(args)
@@ -585,7 +581,7 @@ class BuildProfile:
         self._check_execute()
         return self.run_make("pythoninfo", *args)
 
-    def run_test(self, target: str, testopts: Optional[str] = None) -> int:
+    def run_test(self, target: str, testopts: str | None = None) -> int:
         """Run buildbottests"""
         self._check_execute()
         if testopts is None:
@@ -596,7 +592,9 @@ class BuildProfile:
         """Run Python with hostrunner"""
         self._check_execute()
         return self.run_make(
-            "--eval", f"run: all; $(HOSTRUNNER) ./$(PYTHON) {shlex.join(args)}", "run"
+            "--eval",
+            f"run: all; $(HOSTRUNNER) ./$(PYTHON) {shlex.join(args)}",
+            "run",
         )
 
     def run_browser(self, bind: str = "127.0.0.1", port: int = 8000) -> None:
@@ -666,9 +664,12 @@ class BuildProfile:
         # Pre-build libbz2, libsqlite3, libz, and some system libs.
         ports_cmd.extend(["-sUSE_ZLIB", "-sUSE_BZIP2", "-sUSE_SQLITE3"])
         # Multi-threaded sqlite3 has different suffix
-        embuilder_cmd.extend(
-            ["build", "bzip2", "sqlite3-mt" if self.pthreads else "sqlite3", "zlib"]
-        )
+        embuilder_cmd.extend([
+            "build",
+            "bzip2",
+            "sqlite3-mt" if self.pthreads else "sqlite3",
+            "zlib",
+        ])
 
         self._run_cmd(embuilder_cmd, cwd=SRCDIR)
 
@@ -816,8 +817,8 @@ parser.add_argument(
 )
 
 # Don't list broken and experimental variants in help
-platforms_choices = list(p.name for p in _profiles) + ["cleanall"]
-platforms_help = list(p.name for p in _profiles if p.support_level) + ["cleanall"]
+platforms_choices = [p.name for p in _profiles] + ["cleanall"]
+platforms_help = [p.name for p in _profiles if p.support_level] + ["cleanall"]
 parser.add_argument(
     "platform",
     metavar="PLATFORM",
@@ -825,18 +826,18 @@ parser.add_argument(
     choices=platforms_choices,
 )
 
-ops = dict(
-    build="auto build (build 'build' Python, emports, configure, compile)",
-    configure="run ./configure",
-    compile="run 'make all'",
-    pythoninfo="run 'make pythoninfo'",
-    test="run 'make buildbottest TESTOPTS=...' (supports parallel tests)",
-    hostrunnertest="run 'make hostrunnertest TESTOPTS=...'",
-    repl="start interactive REPL / webserver + browser session",
-    clean="run 'make clean'",
-    cleanall="remove all build directories",
-    emports="build Emscripten port with embuilder (only Emscripten)",
-)
+ops = {
+    "build": "auto build (build 'build' Python, emports, configure, compile)",
+    "configure": "run ./configure",
+    "compile": "run 'make all'",
+    "pythoninfo": "run 'make pythoninfo'",
+    "test": "run 'make buildbottest TESTOPTS=...' (supports parallel tests)",
+    "hostrunnertest": "run 'make hostrunnertest TESTOPTS=...'",
+    "repl": "start interactive REPL / webserver + browser session",
+    "clean": "run 'make clean'",
+    "cleanall": "remove all build directories",
+    "emports": "build Emscripten port with embuilder (only Emscripten)",
+}
 ops_help = "\n".join(f"{op:16s} {help}" for op, help in ops.items())
 parser.add_argument(
     "ops",

@@ -757,7 +757,7 @@ class PosixTester(unittest.TestCase):
             self.assertRaises((ValueError, OverflowError), posix.makedev, x, minor)
             self.assertRaises((ValueError, OverflowError), posix.makedev, major, x)
 
-        if sys.platform == 'linux':
+        if sys.platform == 'linux' and not support.linked_to_musl():
             NODEV = -1
             self.assertEqual(posix.major(NODEV), NODEV)
             self.assertEqual(posix.minor(NODEV), NODEV)
@@ -2036,6 +2036,12 @@ class _PosixSpawnMixin:
     @requires_sched
     @unittest.skipIf(sys.platform.startswith(('freebsd', 'netbsd')),
                      "bpo-34685: test can fail on BSD")
+    @unittest.skipIf(platform.libc_ver()[0] == 'glibc' and
+                     os.sched_getscheduler(0) in [
+                        os.SCHED_BATCH,
+                        os.SCHED_IDLE,
+                        os.SCHED_DEADLINE],
+                     "Skip test due to glibc posix_spawn policy")
     def test_setscheduler_with_policy(self):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)

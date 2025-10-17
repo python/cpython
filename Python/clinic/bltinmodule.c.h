@@ -296,7 +296,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     PyObject *argsbuf[7];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *source;
-    PyObject *filename;
+    PyObject *filename = NULL;
     const char *mode;
     int flags = 0;
     int dont_inherit = 0;
@@ -367,6 +367,9 @@ skip_optional_kwonly:
     return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize, feature_version);
 
 exit:
+    /* Cleanup for filename */
+    Py_XDECREF(filename);
+
     return return_value;
 }
 
@@ -831,10 +834,16 @@ PyDoc_STRVAR(builtin_oct__doc__,
     {"oct", (PyCFunction)builtin_oct, METH_O, builtin_oct__doc__},
 
 PyDoc_STRVAR(builtin_ord__doc__,
-"ord($module, c, /)\n"
+"ord($module, character, /)\n"
 "--\n"
 "\n"
-"Return the Unicode code point for a one-character string.");
+"Return the ordinal value of a character.\n"
+"\n"
+"If the argument is a one-character string, return the Unicode code\n"
+"point of that character.\n"
+"\n"
+"If the argument is a bytes or bytearray object of length 1, return its\n"
+"single byte value.");
 
 #define BUILTIN_ORD_METHODDEF    \
     {"ord", (PyCFunction)builtin_ord, METH_O, builtin_ord__doc__},
@@ -1268,4 +1277,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e7a5d0851d7f2cfb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5d2231033c7591c input=a9049054013a1b77]*/

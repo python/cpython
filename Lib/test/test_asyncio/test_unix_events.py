@@ -1180,11 +1180,46 @@ class TestFunctional(unittest.TestCase):
 
 
 @support.requires_fork()
-class TestFork(unittest.IsolatedAsyncioTestCase):
+class TestFork(unittest.TestCase):
 
-    async def test_fork_not_share_event_loop(self):
+    def test_fork_not_share_current_task(self):
+        loop = object()
+        task = object()
+        asyncio._set_running_loop(loop)
+        self.addCleanup(asyncio._set_running_loop, None)
+        asyncio.tasks._enter_task(loop, task)
+        self.addCleanup(asyncio.tasks._leave_task, loop, task)
+        self.assertIs(asyncio.current_task(), task)
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        pid = os.fork()
+        if pid == 0:
+            # child
+            try:
+                asyncio._set_running_loop(loop)
+                current_task = asyncio.current_task()
+                if current_task is None:
+                    os.write(w, b'NO TASK')
+                else:
+                    os.write(w, b'TASK:' + str(id(current_task)).encode())
+            except BaseException as e:
+                os.write(w, b'ERROR:' + ascii(e).encode())
+            finally:
+                asyncio._set_running_loop(None)
+                os._exit(0)
+        else:
+            # parent
+            result = os.read(r, 100)
+            self.assertEqual(result, b'NO TASK')
+            wait_process(pid, exitcode=0)
+
+    def test_fork_not_share_event_loop(self):
         # The forked process should not share the event loop with the parent
-        loop = asyncio.get_running_loop()
+        loop = object()
+        asyncio._set_running_loop(loop)
+        self.assertIs(asyncio.get_running_loop(), loop)
+        self.addCleanup(asyncio._set_running_loop, None)
         r, w = os.pipe()
         self.addCleanup(os.close, r)
         self.addCleanup(os.close, w)

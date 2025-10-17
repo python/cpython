@@ -369,8 +369,8 @@ Miscellaneous options
 .. option:: -R
 
    Turn on hash randomization. This option only has an effect if the
-   :envvar:`PYTHONHASHSEED` environment variable is set to ``0``, since hash
-   randomization is enabled by default.
+   :envvar:`PYTHONHASHSEED` environment variable is set to anything other
+   than ``random``, since hash randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
    so that the :meth:`~object.__hash__` values of str and bytes objects
@@ -1256,9 +1256,8 @@ conflict.
 .. envvar:: PYTHON_BASIC_REPL
 
    If this variable is set to any value, the interpreter will not attempt to
-   load the Python-based :term:`REPL` that requires :mod:`curses` and
-   :mod:`readline`, and will instead use the traditional parser-based
-   :term:`REPL`.
+   load the Python-based :term:`REPL` that requires :mod:`readline`, and will
+   instead use the traditional parser-based :term:`REPL`.
 
    .. versionadded:: 3.13
 
