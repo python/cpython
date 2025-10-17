@@ -52,3 +52,6 @@ race:PyObject_Realloc
 race_top:update_one_slot
 race_top:set_tp_bases
 race_top:type_set_bases_unlocked
+
+# gh-140138
+race:drop_gil
