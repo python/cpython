@@ -3597,7 +3597,6 @@ def main():
         invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
         if invalid_args:
             parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
-            sys.exit(2)
 
     if opts.module:
         file = opts.module
