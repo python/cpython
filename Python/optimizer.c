@@ -597,9 +597,8 @@ _PyJIT_translate_single_bytecode_to_trace(
         // TODO handle extended args.
         oparg > 255 || opcode == EXTENDED_ARG ||
         opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO ||
-        frame->owner >= FRAME_OWNED_BY_INTERPRETER ||
-        // This can be supported, but requires a tracing shim frame.
-        opcode == CALL_ALLOC_AND_ENTER_INIT) {
+        frame->owner >= FRAME_OWNED_BY_INTERPRETER
+        ) {
         unsupported:
                 {
                     // Rewind to previous instruction and replace with _EXIT_TRACE.
