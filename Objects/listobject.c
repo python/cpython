@@ -1832,7 +1832,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             _binarysort_BISECT(aL, aR)
             _binarysort_INSORT(aL, M)
 
-            std += labs(aL - mu);
+            std += mu < aL ? aL - mu : mu - aL;
             std /= 2;    // EWMA with alpha=0.5
             mu = aL;
         }
@@ -1909,7 +1909,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             assert(aL == aR);
             _binarysort_INSORT(aL, M)
 
-            std += labs(aL - mu);
+            std += mu < aL ? aL - mu : mu - aL;
             std /= 2;               // EWMA with alpha=0.5
             mu = aL;
             std_max += !(ok % 4);   // Keep approximately equal to: ok / 4
