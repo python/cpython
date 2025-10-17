@@ -191,13 +191,13 @@ def declate_tokens(tok_name_to_string):
 
 def make_c(infile, outfile='Parser/token.c'):
     tok_names, ERRORTOKEN, string_to_tok = load_tokens(infile)
-    # string_to_tok['<>'] = string_to_tok['!=']
-    chars_to_token = {}
     tok_name_to_string = {
         tok_names[name_idx]: token
         for token, name_idx in string_to_tok.items()
         if len(token) > 1
     }
+    chars_to_token = {}
+    string_to_tok['<>'] = string_to_tok['!=']
 
     for string, value in string_to_tok.items():
         assert 1 <= len(string) <= 3
