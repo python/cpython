@@ -1662,6 +1662,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
     fprintf(out, "]\n\n");
 
     /* Write all the outgoing edges */
+    _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
     for (uint32_t i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction const *inst = &executor->trace[i];
         uint16_t flags = _PyUop_Flags[inst->opcode];
@@ -1675,7 +1676,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
             assert(exit_inst->opcode == _EXIT_TRACE || exit_inst->opcode == _DYNAMIC_EXIT);
             exit = (_PyExitData *)exit_inst->operand0;
         }
-        if (exit != NULL && exit->executor != NULL) {
+        if (exit != NULL && exit->executor != cold) {
             fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, exit->executor);
         }
         if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
