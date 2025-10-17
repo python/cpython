@@ -775,7 +775,9 @@ dummy_func(void) {
         SAVE_STACK();
         PyCodeObject *co = get_current_code_object(ctx);
         ctx->frame->stack_pointer = stack_pointer;
-        frame_pop(ctx);
+        if (frame_pop(ctx)) {
+            break;
+        }
         stack_pointer = ctx->frame->stack_pointer;
 
         /* Stack space handling */
@@ -794,7 +796,9 @@ dummy_func(void) {
         SYNC_SP();
         PyCodeObject *co = get_current_code_object(ctx);
         ctx->frame->stack_pointer = stack_pointer;
-        frame_pop(ctx);
+        if (frame_pop(ctx)) {
+            break;
+        }
         stack_pointer = ctx->frame->stack_pointer;
         res = sym_new_unknown(ctx);
 

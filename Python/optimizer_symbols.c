@@ -818,7 +818,11 @@ _Py_uop_frame_new(
     JitOptRef *args,
     int arg_len)
 {
-    assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
+    if (ctx->curr_frame_depth >= MAX_ABSTRACT_FRAME_DEPTH) {
+        ctx->done = true;
+        ctx->out_of_space = true;
+        return NULL;
+    }
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
 
     frame->stack_len = co->co_stacksize;
@@ -907,7 +911,12 @@ _Py_uop_frame_pop(JitOptContext *ctx)
     _Py_UOpsAbstractFrame *frame = ctx->frame;
     ctx->n_consumed = frame->locals;
     ctx->curr_frame_depth--;
-    assert(ctx->curr_frame_depth >= 1);
+    // TODO gh-139109: Handle trace recording underflow
+    if (ctx->curr_frame_depth == 0) {
+        ctx->done = true;
+        ctx->out_of_space = true;
+        return 1;
+    }
     ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
 
     return 0;

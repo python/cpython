@@ -854,7 +854,7 @@ _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     tstate->interp->jit_tracer_initial_code = (PyCodeObject *)Py_NewRef(code);
     tstate->interp->jit_tracer_initial_func = (PyFunctionObject *)Py_NewRef(_PyFrame_GetFunction(frame));
     tstate->interp->jit_tracer_previous_exit = exit;
-    memset(&tstate->interp->jit_tracer_dependencies.bits, 0, sizeof(tstate->interp->jit_tracer_dependencies.bits));
+    _Py_BloomFilter_Init(&tstate->interp->jit_tracer_dependencies);
     tstate->interp->jit_tracer_initial_stack_depth = curr_stackdepth;
     tstate->interp->jit_tracer_initial_chain_depth = chain_depth;
     tstate->interp->jit_tracer_current_frame = frame;
@@ -1177,8 +1177,7 @@ uop_optimize(
     _PyExecutorObject **exec_ptr,
     bool progress_needed)
 {
-    _PyBloomFilter dependencies;
-    _Py_BloomFilter_Init(&dependencies);
+    _PyBloomFilter *dependencies = &tstate->interp->jit_tracer_dependencies;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->jit_uop_buffer == NULL) {
         interp->jit_uop_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
@@ -1203,9 +1202,9 @@ uop_optimize(
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
     if (!is_noopt) {
-        length = _Py_uop_analyze_and_optimize(frame, buffer,
+        length = _Py_uop_analyze_and_optimize(tstate->interp->jit_tracer_initial_func, buffer,
                                            length,
-                                           curr_stackentries, &dependencies);
+                                           curr_stackentries, dependencies);
         if (length <= 0) {
             return length;
         }
@@ -1228,7 +1227,7 @@ uop_optimize(
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
-    _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies, tstate->interp->jit_tracer_initial_chain_depth);
+    _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  dependencies, tstate->interp->jit_tracer_initial_chain_depth);
     if (executor == NULL) {
         return -1;
     }
