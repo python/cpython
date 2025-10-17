@@ -125,6 +125,12 @@ token_c_template += """\
 
 #include "Python.h"
 #include "pycore_token.h"
+#include "pycore_global_strings.h"
+
+/* Interning tokens */
+
+%s\
+
 
 /* Token names */
 
@@ -176,10 +182,23 @@ def generate_chars_to_token(mapping, n=1):
     write('}\n')
     return ''.join(result)
 
+def declate_tokens(tok_name_to_string):
+    return "\n".join(
+        f'_Py_DECLARE_STR({name}, "{token}");'
+        for name, token in tok_name_to_string.items()
+    )
+
+
 def make_c(infile, outfile='Parser/token.c'):
     tok_names, ERRORTOKEN, string_to_tok = load_tokens(infile)
-    string_to_tok['<>'] = string_to_tok['!=']
+    # string_to_tok['<>'] = string_to_tok['!=']
     chars_to_token = {}
+    tok_name_to_string = {
+        tok_names[name_idx]: token
+        for token, name_idx in string_to_tok.items()
+        if len(token) > 1
+    }
+
     for string, value in string_to_tok.items():
         assert 1 <= len(string) <= 3
         name = tok_names[value]
@@ -196,6 +215,7 @@ def make_c(infile, outfile='Parser/token.c'):
     names.append('    "<N_TOKENS>",\n')
 
     if update_file(outfile, token_c_template % (
+            declate_tokens(tok_name_to_string),
             ''.join(names),
             generate_chars_to_token(chars_to_token[1]),
             generate_chars_to_token(chars_to_token[2]),

@@ -261,7 +261,7 @@ def generate_global_strings(identifiers, strings):
             outfile.write('\n')
             with printer.block('struct', ' identifiers;'):
                 for name in sorted(identifiers):
-                    # assert name.isidentifier(), name
+                    assert name.isidentifier(), name
                     printer.write(f'STRUCT_FOR_ID({name})')
             with printer.block('struct', ' ascii[128];'):
                 printer.write("PyASCIIObject _ascii;")
@@ -324,7 +324,7 @@ def generate_runtime_init(identifiers, strings):
         printer.write('')
         with printer.block('#define _Py_str_identifiers_INIT', continuation=True):
             for name in sorted(identifiers):
-                # assert name.isidentifier(), name
+                assert name.isidentifier(), name
                 printer.write(f'INIT_ID({name}),')
                 immortal_objects.append(f'(PyObject *)&_Py_ID({name})')
         printer.write('')
@@ -453,33 +453,6 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
 
 def main() -> None:
     identifiers, strings = get_identifiers_and_strings()
-    strings.update([
-        ("==", "EQEQUAL"),
-        ("!=", "NOTEQUAL"),
-        ("<=", "LESSEQUAL"),
-        (">=", "GREATEREQUAL"),
-        ("<<", "LEFTSHIFT"),
-        (">>", "RIGHTSHIFT"),
-        ("**", "DOUBLESTAR"),
-        ("+=", "PLUSEQUAL"),
-        ("-=", "MINEQUAL"),
-        ("*=", "STAREQUAL"),
-        ("/=", "SLASHEQUAL"),
-        ("%=", "PERCENTEQUAL"),
-        ("&=", "AMPEREQUAL"),
-        ("|=", "VBAREQUAL"),
-        ("^=", "CIRCUMFLEXEQUAL"),
-        ("<<=", "LEFTSHIFTEQUAL"),
-        (">>=", "RIGHTSHIFTEQUAL"),
-        ("**=", "DOUBLESTAREQUAL"),
-        ("//", "DOUBLESLASH"),
-        ("//=", "DOUBLESLASHEQUAL"),
-        ("@=", "ATEQUAL"),
-        ("->", "RARROW"),
-        ("...", "ELLIPSIS"),
-        (":=", "COLONEQUAL"),
-        (">>>", "REPLSHIFT"),
-    ])
     generate_global_strings(identifiers, strings)
     generated_immortal_objects = generate_runtime_init(identifiers, strings)
     generate_static_strings_initializer(identifiers, strings)

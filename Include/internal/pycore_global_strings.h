@@ -49,7 +49,6 @@ struct _Py_global_strings {
         STRUCT_FOR_STR(PERCENTEQUAL, "%=")
         STRUCT_FOR_STR(PLUSEQUAL, "+=")
         STRUCT_FOR_STR(RARROW, "->")
-        STRUCT_FOR_STR(REPLSHIFT, ">>>")
         STRUCT_FOR_STR(RIGHTSHIFT, ">>")
         STRUCT_FOR_STR(RIGHTSHIFTEQUAL, ">>=")
         STRUCT_FOR_STR(SLASHEQUAL, "/=")

@@ -1324,7 +1324,6 @@ extern "C" {
     INIT_STR(PERCENTEQUAL, "%="), \
     INIT_STR(PLUSEQUAL, "+="), \
     INIT_STR(RARROW, "->"), \
-    INIT_STR(REPLSHIFT, ">>>"), \
     INIT_STR(RIGHTSHIFT, ">>"), \
     INIT_STR(RIGHTSHIFTEQUAL, ">>="), \
     INIT_STR(SLASHEQUAL, "/="), \

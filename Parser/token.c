@@ -2,6 +2,34 @@
 
 #include "Python.h"
 #include "pycore_token.h"
+#include "pycore_global_strings.h"
+
+/* Interning tokens */
+
+_Py_DECLARE_STR(EQEQUAL, "==");
+_Py_DECLARE_STR(NOTEQUAL, "!=");
+_Py_DECLARE_STR(LESSEQUAL, "<=");
+_Py_DECLARE_STR(GREATEREQUAL, ">=");
+_Py_DECLARE_STR(LEFTSHIFT, "<<");
+_Py_DECLARE_STR(RIGHTSHIFT, ">>");
+_Py_DECLARE_STR(DOUBLESTAR, "**");
+_Py_DECLARE_STR(PLUSEQUAL, "+=");
+_Py_DECLARE_STR(MINEQUAL, "-=");
+_Py_DECLARE_STR(STAREQUAL, "*=");
+_Py_DECLARE_STR(SLASHEQUAL, "/=");
+_Py_DECLARE_STR(PERCENTEQUAL, "%=");
+_Py_DECLARE_STR(AMPEREQUAL, "&=");
+_Py_DECLARE_STR(VBAREQUAL, "|=");
+_Py_DECLARE_STR(CIRCUMFLEXEQUAL, "^=");
+_Py_DECLARE_STR(LEFTSHIFTEQUAL, "<<=");
+_Py_DECLARE_STR(RIGHTSHIFTEQUAL, ">>=");
+_Py_DECLARE_STR(DOUBLESTAREQUAL, "**=");
+_Py_DECLARE_STR(DOUBLESLASH, "//");
+_Py_DECLARE_STR(DOUBLESLASHEQUAL, "//=");
+_Py_DECLARE_STR(ATEQUAL, "@=");
+_Py_DECLARE_STR(RARROW, "->");
+_Py_DECLARE_STR(ELLIPSIS, "...");
+_Py_DECLARE_STR(COLONEQUAL, ":=");
 
 /* Token names */
 
@@ -163,7 +191,6 @@ _PyToken_TwoChars(int c1, int c2)
         switch (c2) {
         case '<': return LEFTSHIFT;
         case '=': return LESSEQUAL;
-        case '>': return NOTEQUAL;
         }
         break;
     case '=':

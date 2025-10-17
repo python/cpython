@@ -1329,7 +1329,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(PERCENTEQUAL));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(PLUSEQUAL));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(RARROW));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(REPLSHIFT));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(RIGHTSHIFT));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(RIGHTSHIFTEQUAL));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_STR(SLASHEQUAL));
