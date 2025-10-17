@@ -332,14 +332,10 @@ class ProxyAuthTests(unittest.TestCase):
 
     def setUp(self):
         super(ProxyAuthTests, self).setUp()
-        # Ignore proxy bypass settings in the environment.
-        def restore_environ(old_environ):
-            os.environ.clear()
-            os.environ.update(old_environ)
-        self.addCleanup(restore_environ, os.environ.copy())
-        self._proxy_bypass = unittest.mock.patch('urllib.request.proxy_bypass', return_value=False)
-        self._proxy_bypass.start()
-        self.addCleanup(self._proxy_bypass.stop)
+        # Patch proxy_bypass temporarily to ignore proxy bypass settings.
+        proxy_bypass = unittest.mock.patch('urllib.request.proxy_bypass', return_value=False)
+        proxy_bypass.start()
+        self.addCleanup(proxy_bypass.stop)
 
         self.digest_auth_handler = DigestAuthHandler()
         self.digest_auth_handler.set_users({self.USER: self.PASSWD})
