@@ -90,6 +90,9 @@ _PyType_GetModuleState(PyTypeObject *type)
 // function
 PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
 
+PyAPI_FUNC(PyObject *) _PyType_LookupSubclasses(PyTypeObject *);
+PyAPI_FUNC(PyObject *) _PyType_InitSubclasses(PyTypeObject *);
+
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
@@ -148,6 +151,9 @@ typedef int (*_py_validate_type)(PyTypeObject *);
 // tp_version_tag from the ``ty``.
 extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version);
 extern int _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version);
+
+// Precalculates count of non-unique slots and fills wrapperbase.name_count.
+extern int _PyType_InitSlotDefs(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }
