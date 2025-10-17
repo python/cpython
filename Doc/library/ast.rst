@@ -118,12 +118,12 @@ Node classes
       node = ast.UnaryOp(ast.USub(), ast.Constant(5, lineno=0, col_offset=0),
                          lineno=0, col_offset=0)
 
-   If a field that is optional in the grammar is omitted from the constructor,
-   it defaults to ``None``. If a list field is omitted, it defaults to the empty
-   list. If a field of type :class:`!ast.expr_context` is omitted, it defaults to
-   :class:`Load() <ast.Load>`. If any other field is omitted, a :exc:`DeprecationWarning` is raised
-   and the AST node will not have this field. In Python 3.15, this condition will
-   raise an error.
+    If a field that is optional in the grammar is omitted from the constructor,
+    it defaults to ``None``. If a list field is omitted, it defaults to the empty
+    list. If a field of type :class:`!ast.expr_context` is omitted, it defaults to
+    :class:`Load() <ast.Load>`. If any other field is omitted, a :exc:`DeprecationWarning` is raised
+    and the AST node will not have this field. In Python 3.15, this condition will
+    raise an error.
 
 .. versionchanged:: 3.8
 
@@ -133,6 +133,14 @@ Node classes
 
    Simple indices are represented by their value, extended slices are
    represented as tuples.
+
+.. versionchanged:: 3.13
+
+    AST node constructors were changed to provide sensible defaults for omitted
+    fields: optional fields now default to ``None``, list fields default to an
+    empty list, and fields of type :class:`ast.expr_context` default to
+    :class:`Load() <ast.Load>`. Previously, omitted attributes would not exist on constructed
+    nodes (accessing them raised :exc:`AttributeError`).
 
 .. versionchanged:: 3.14
 
