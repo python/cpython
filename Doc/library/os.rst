@@ -3496,7 +3496,7 @@ features:
       Maximum optimized size for direct I/O with torn-write protection.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.11.
+         userspace API headers >= 6.16.
 
    .. attribute:: stx_atomic_write_segments_max
 

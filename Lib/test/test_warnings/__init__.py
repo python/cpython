@@ -314,8 +314,10 @@ class FilterTests(BaseTest):
                 self.assertEqual(len(w), 2)
                 self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PY', 42)
                 self.assertEqual(len(w), 3)
-                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PYW', 42)
+                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module\__INIT__.PY', 42)
                 self.assertEqual(len(w), 4)
+                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PYW', 42)
+                self.assertEqual(len(w), 5)
                 with self.assertRaises(UserWarning):
                     self.module.warn_explicit('msg', UserWarning, r'C:\PATH\TO\PACKAGE\MODULE', 42)
                 with self.assertRaises(UserWarning):
