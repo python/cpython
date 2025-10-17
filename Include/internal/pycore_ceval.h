@@ -16,12 +16,6 @@ extern "C" {
 #include "pycore_stats.h"         // EVAL_CALL_STAT_INC()
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 
-/* HP PA-RISC has a stack that goes up */
-#ifdef __hppa__
-#  define _Py_STACK_GROWS_DOWN 0
-#else
-#  define _Py_STACK_GROWS_DOWN 1
-#endif
 
 /* Forward declarations */
 struct _ceval_runtime_state;
