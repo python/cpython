@@ -17313,7 +17313,7 @@ Calls PyOS_InputHook dropping the GIL first
 
 static PyObject *
 os__inputhook_impl(PyObject *module)
-/*[clinic end generated code: output=525aca4ef3c6149f input=fc531701930d064f]*/
+/*[clinic end generated code: output=525aca4ef3c6149f input=b5018fa1ec3aa440]*/
 {
      int result = 0;
      if (PyOS_InputHook) {
@@ -17332,7 +17332,7 @@ Checks if PyOS_InputHook is set
 
 static PyObject *
 os__is_inputhook_installed_impl(PyObject *module)
-/*[clinic end generated code: output=3b3eab4f672c689a input=ff177c9938dd76d8]*/
+/*[clinic end generated code: output=3b3eab4f672c689a input=757820f79f48820c]*/
 {
     return PyBool_FromLong(PyOS_InputHook != NULL);
 }

@@ -13610,4 +13610,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=44f7a1a16dad2e08 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=82f60940338c70e4 input=a9049054013a1b77]*/
