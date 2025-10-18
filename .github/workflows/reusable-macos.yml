@@ -36,11 +36,6 @@ jobs:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.config_hash }}
     - name: Install Homebrew dependencies
       run: |
         brew install pkg-config openssl@3.0 xz gdbm tcl-tk@9 make
