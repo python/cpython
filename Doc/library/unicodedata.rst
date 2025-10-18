@@ -144,6 +144,32 @@ following functions:
       1
 
 
+.. function:: isidstart(chr, /)
+
+   Return ``True`` if the character has the ``XID_Start`` property, ``False``
+   otherwise. For example::
+
+      >>> unicodedata.isidstart('S')
+      True
+      >>> unicodedata.isidstart('0')
+      False
+
+   .. versionadded:: next
+
+
+.. function:: isidcontinue(chr, /)
+
+   Return ``True`` if the character has the ``XID_Continue`` property, ``False``
+   otherwise. For example::
+
+      >>> unicodedata.isidcontinue('S')
+      True
+      >>> unicodedata.isidcontinue(' ')
+      False
+
+   .. versionadded:: next
+
+
 .. function:: decomposition(chr)
 
    Returns the character decomposition mapping assigned to the character

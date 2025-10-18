@@ -768,6 +768,10 @@ unicodedata
 
 * The Unicode database has been updated to Unicode 17.0.0.
 
+* Add :func:`unicodedata.isidstart` and :func:`unicodedata.isidcontinue`
+  functions.
+  (Contributed by Stan Ulbrych in :gh:`129117`.)
+
 
 wave
 ----

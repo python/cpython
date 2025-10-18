@@ -1526,6 +1526,62 @@ unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
 }
 
 /*[clinic input]
+unicodedata.UCD.isidstart
+
+    self: self
+    chr: int(accept={str})
+    /
+
+Return True if the character has the XID_Start property, else False.
+
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD_isidstart_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=29fbeaf6491d9f85 input=b71b6b1b2db3c16d]*/
+{
+    Py_UCS4 c = (Py_UCS4)chr;
+
+    if (UCD_Check(self)) {
+        const change_record *old = get_old_record(self, c);
+        if (old->category_changed == 0) {
+            /* unassigned */
+            Py_RETURN_FALSE;
+        }
+    }
+
+    return PyBool_FromLong(_PyUnicode_IsXidStart(c));
+}
+
+/*[clinic input]
+unicodedata.UCD.isidcontinue
+
+    self: self
+    chr: int(accept={str})
+    /
+
+Return True if the character has the XID_Continue property, else False.
+
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD_isidcontinue_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=5ae694da0ee16534 input=01b4ccd399484e6b]*/
+{
+    Py_UCS4 c = (Py_UCS4)chr;
+
+    if (UCD_Check(self)) {
+        const change_record *old = get_old_record(self, c);
+        if (old->category_changed == 0) {
+            /* unassigned */
+            Py_RETURN_FALSE;
+        }
+    }
+
+    return PyBool_FromLong(_PyUnicode_IsXidContinue(c));
+}
+
+/*[clinic input]
 unicodedata.UCD.lookup
 
     self: self
@@ -1590,6 +1646,8 @@ static PyMethodDef unicodedata_functions[] = {
     UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF
     UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
     UNICODEDATA_UCD_NAME_METHODDEF
+    UNICODEDATA_UCD_ISIDSTART_METHODDEF
+    UNICODEDATA_UCD_ISIDCONTINUE_METHODDEF
     UNICODEDATA_UCD_LOOKUP_METHODDEF
     UNICODEDATA_UCD_IS_NORMALIZED_METHODDEF
     UNICODEDATA_UCD_NORMALIZE_METHODDEF
