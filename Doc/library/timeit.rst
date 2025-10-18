@@ -68,7 +68,8 @@ The module defines three convenience functions and a public class:
    *timer* function and run its :meth:`.timeit` method with *number* executions.
    The optional *globals* argument specifies a namespace in which to execute the
    code. If *number* is 0, :meth:`.autorange` method is executed, a convenience
-   function that calls :meth:`.timeit` repeatedly so that the total time >= *target_time* second.
+   function that calls :meth:`.timeit` repeatedly so that the total time >=
+   *target_time* second.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
@@ -83,8 +84,8 @@ The module defines three convenience functions and a public class:
    *timer* function and run its :meth:`.repeat` method with the given *repeat*
    count and *number* executions.  The optional *globals* argument specifies a
    namespace in which to execute the code. If *number* is 0, :meth:`.autorange`
-   method is executed, a convenience function that calls :meth:`.timeit` repeatedly
-   so that the total time >= *target_time* second.
+   method is executed, a convenience function that calls :meth:`.timeit`
+   repeatedly so that the total time >= *target_time* second.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
@@ -256,7 +257,7 @@ Where the following options are understood:
 
    .. versionadded:: next
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    print raw timing results; repeat for more digits precision
 
