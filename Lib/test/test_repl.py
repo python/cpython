@@ -357,6 +357,18 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
 
 class TestAsyncioREPL(unittest.TestCase):
+    def test_multiline_support(self):
+        user_input = dedent("""\
+        async def spam():
+            print("eggs" + "ham")
+
+        await spam()
+        """)
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertIn("eggsham", output)
+
     def test_multiple_statements_fail_early(self):
         user_input = "1 / 0; print(f'afterwards: {1+1}')"
         p = spawn_repl("-m", "asyncio")
@@ -389,7 +401,7 @@ class TestAsyncioREPL(unittest.TestCase):
         """)
         p = spawn_repl("-m", "asyncio")
         p.stdin.write(user_input)
-        user_input2 = "async def set_var(): var.set('ok')\n"
+        user_input2 = "async def set_var(): var.set('ok')\n\n"
         p.stdin.write(user_input2)
         user_input3 = "await set_var()\n"
         p.stdin.write(user_input3)
