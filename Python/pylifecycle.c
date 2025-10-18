@@ -1960,6 +1960,8 @@ finalize_interp_delete(PyInterpreterState *interp)
        created GIL, which ensures that Py_Initialize / Py_FinalizeEx can be
        called multiple times. */
 
+    PyConfig_Clear(&interp->config);
+
     PyInterpreterState_Delete(interp);
 }
 
@@ -2505,6 +2507,7 @@ error:
     if (tstate != NULL) {
         Py_EndInterpreter(tstate);
     } else if (interp != NULL) {
+        PyConfig_Clear(&interp->config);
         PyInterpreterState_Delete(interp);
     }
     if (save_tstate != NULL) {
