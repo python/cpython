@@ -117,7 +117,6 @@ Py_NO_INLINE int
 _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, PyThreadState *tstate)
 {
-    _PyStackRef *stack_pointer = frame->stackpointer;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     int chain_depth = tstate->interp->jit_tracer_initial_chain_depth;
     assert(interp->jit);
@@ -143,7 +142,7 @@ _PyOptimizer_Optimize(
     }
     // We are the only one still holding a reference to this code object that
     // is practically dead.
-    if (_PyObject_IsUniquelyReferenced(code) || _PyObject_IsUniquelyReferenced(tstate->interp->jit_tracer_initial_func)) {
+    if (_PyObject_IsUniquelyReferenced((PyObject *)code) || _PyObject_IsUniquelyReferenced((PyObject *)tstate->interp->jit_tracer_initial_func)) {
         interp->compiling = false;
         return 0;
     }
