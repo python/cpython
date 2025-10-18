@@ -616,7 +616,60 @@ doctest decides whether actual output matches an example's expected output:
    sequence of whitespace within the actual output. By default, whitespace must
    match exactly. :const:`NORMALIZE_WHITESPACE` is especially useful when a line of
    expected output is very long, and you want to wrap it across multiple lines in
-   your source.
+   your source. If the expected output does not contain any whitespace, consider
+   using :data:`IGNORE_LINEBREAK` or :data:`ELLIPSIS`.
+
+
+.. data:: IGNORE_LINEBREAK
+
+   When specified, single line breaks in the expected output are eliminated,
+   thereby allowing strings without whitespaces to span multiple lines.
+
+   .. doctest::
+      :no-trim-doctest-flags:
+
+      >>> "foobar123456"            # doctest: +IGNORE_LINEBREAK
+      'foobar
+      123456'
+
+   Consider using :data:`NORMALIZE_WHITESPACE` when strings with whitespaces
+   need to be split across multiple lines:
+
+   .. doctest::
+      :no-trim-doctest-flags:
+
+      >>> "the string to split"     # doctest: +NORMALIZE_WHITESPACE
+      'the string
+      to split'
+
+   Note that any leading whitespaces on each expected output line are retained.
+   In other words, the following expected outputs are equivalent under
+   :data:`!IGNORE_LINEBREAK`:
+
+   .. code-block::
+
+      [
+          'a', 'b', 'c',
+        '1', '2', '3'
+      ]
+
+      [    'a', 'b', 'c',  '1', '2', '3']
+
+   To break a list-like output with :data:`!IGNORE_LINEBREAK`,
+   leading whitespaces for visual indentation purposes should
+   be avoided, for instance:
+
+   .. doctest::
+      :no-trim-doctest-flags:
+
+      >>> list("abc123")            # doctest: +IGNORE_LINEBREAK
+      ['a', 'b', 'c',
+       '1', '2', '3']
+
+   For more complex outputs, consider using :func:`pprint.pp` and matching
+   its output directly.
+
+   .. versionadded:: next
 
 
 .. index:: single: ...; in doctests
