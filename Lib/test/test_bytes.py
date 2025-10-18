@@ -2624,7 +2624,7 @@ class FreeThreadingTest(unittest.TestCase):
 
         def take_bytes(b, a):
             b.wait()
-            c = b.take_bytes()
+            c = a.take_bytes()
             assert not c or c[0] == 48  # '0'
 
         def check(funcs, a=None, *args):
