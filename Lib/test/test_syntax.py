@@ -2308,6 +2308,12 @@ Invalid pattern matching constructs:
     Traceback (most recent call last):
     SyntaxError: double star pattern must be the last (right-most) subpattern in the mapping pattern
 
+    >>> match ...:
+    ...   case {"spam": "eggs", "b": {**d, "ham": "bacon"}}:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: double star pattern must be the last (right-most) subpattern in the mapping pattern
+
 Uses of the star operator which should fail:
 
 A[:*b]
