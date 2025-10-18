@@ -545,6 +545,23 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_popstring({}, NULL)
         # CRASHES dict_popstring({"a": 1}, NULL)
 
+    def test_dict_fromitems(self):
+        dict_fromitems = _testcapi.dict_fromitems
+
+        d = dict_fromitems((), ())
+        self.assertEqual(d, {})
+
+        d = dict_fromitems(tuple(range(1, 4)), tuple('abc'))
+        self.assertEqual(d, {1: 'a', 2: 'b', 3: 'c'})
+
+        # test unicode keys
+        d = dict_fromitems(tuple('abc'), tuple(range(1, 4)))
+        self.assertEqual(d, {'a': 1, 'b': 2, 'c': 3})
+
+        # test "large" dict (1024 items)
+        d = dict_fromitems(tuple(range(1024)), tuple(map(str, range(1024))))
+        self.assertEqual(d, {i: str(i) for i in range(1024)})
+
 
 if __name__ == "__main__":
     unittest.main()
