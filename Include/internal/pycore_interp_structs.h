@@ -768,10 +768,7 @@ struct _is {
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
 
-    /* This structure is carefully allocated so that it's correctly aligned
-     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
-     * field stores the allocated pointer address that will later be freed.
-     */
+    // unused, kept for ABI compatibility
     void *_malloced;
 
     PyInterpreterState *next;
