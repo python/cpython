@@ -17,8 +17,9 @@ Options:
   -p/--process: use time.process_time() (default is time.perf_counter())
   -v/--verbose: print raw timing results; repeat for more digits precision
   -u/--unit: set the output time unit (nsec, usec, msec, or sec)
-  -t/--target_time: if number is 0 the code will run until it
-                    takes *at least* ``target_time`` seconds
+  -t/--target_time T: if number is 0 the code will run until it
+                      takes *at least* ``target_time`` seconds
+                      (default: 0.2)
   -h/--help: print this usage message and exit
   --: separate options from statement, use when statement starts with -
   statement: statement to be timed (default 'pass')
@@ -30,7 +31,7 @@ treated similarly.
 
 If -n is not given, a suitable number of loops is calculated by trying
 increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the
-total time is at least 0.2 seconds.
+total time is at least target_time seconds.
 
 Note: there is a certain baseline overhead associated with executing a
 pass statement.  It differs between versions.  The code here doesn't try
@@ -223,7 +224,7 @@ class Timer:
         total time >= target_time (default is 0.2 seconds).
 
         Calls the timeit method with increasing numbers from the sequence
-        1, 2, 5, 10, 20, 50, ... until the max_time_taken is reached.
+        1, 2, 5, 10, 20, 50, ... until the target_time is reached.
         Returns (number, time_taken).
 
         If *callback* is given and is not None, it will be called after
@@ -281,9 +282,9 @@ def main(args=None, *, _wrap_timer=None):
     colorize = _colorize.can_colorize()
 
     try:
-        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
+        opts, args = getopt.getopt(args, "n:u:s:r:pt:vh",
                                    ["number=", "setup=", "repeat=",
-                                    "process", "max_time_taken=",
+                                    "process", "target_time=",
                                     "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
@@ -319,7 +320,7 @@ def main(args=None, *, _wrap_timer=None):
         if o in ("-p", "--process"):
             timer = time.process_time
         if o in ("-t", "--target_time"):
-            target_time = a
+            target_time = float(a)
         if o in ("-v", "--verbose"):
             if verbose:
                 precision += 1
@@ -339,7 +340,7 @@ def main(args=None, *, _wrap_timer=None):
 
     t = Timer(stmt, setup, timer, target_time=target_time)
     if number == 0:
-        # determine number so that 0.2 <= total time < 2.0
+        # determine number so that total time >= target_time
         callback = None
         if verbose:
             def callback(number, time_taken):

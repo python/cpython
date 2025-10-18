@@ -151,7 +151,7 @@ class TestTimeit(unittest.TestCase):
                 timer=FakeTimer())
         self.assertEqual(delta_time, (1, 1.0))
 
-    def test_timeit_function_max_time_taken(self):
+    def test_timeit_function_target_time(self):
         delta_time = timeit.timeit(self.fake_stmt, self.fake_setup, number=0,
                 timer=FakeTimer(), target_time=1)
         self.assertEqual(delta_time, (1, 1.0))
@@ -201,7 +201,7 @@ class TestTimeit(unittest.TestCase):
         self.repeat(self.fake_callable_stmt, self.fake_setup,
                 repeat=3, number=5)
 
-    def test_repeat_callable_max_time_taken(self):
+    def test_repeat_callable_target_time(self):
         self.repeat(self.fake_callable_stmt, self.fake_setup,
                 repeat=3, number=5, target_time=1)
 
