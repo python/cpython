@@ -710,8 +710,7 @@ The following options are accepted:
 .. option:: month
 
    The month of the specified :option:`year` to print the calendar for.
-   Must be a number between 1 and 12,
-   and may only be used in text mode.
+   Must be a number between 1 and 12.
    Defaults to printing a calendar for the full year.
 
 
