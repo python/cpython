@@ -266,7 +266,7 @@ modules in your app, some additional steps will be required:
 Testing a Python package
 ------------------------
 
-The CPython source tree contains :source:`a testbed project <Apple/iOS/testbed>` that
+The CPython source tree contains :source:`a testbed project <Apple/testbed>` that
 is used to run the CPython test suite on the iOS simulator. This testbed can also
 be used as a testbed project for running your Python library's test suite on iOS.
 

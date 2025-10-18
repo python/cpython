@@ -441,7 +441,7 @@ or subtracting from an empty counter.
 
    * Wikipedia entry for `Multisets <https://en.wikipedia.org/wiki/Multiset>`_.
 
-   * `C++ multisets <http://www.java2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
+   * `C++ multisets <https://web.archive.org/web/20210108001926/http://www.java2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
      tutorial with examples.
 
    * For mathematical operations on multisets and their use cases, see

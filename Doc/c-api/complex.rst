@@ -130,7 +130,7 @@ rather than dereferencing them through pointers.
 
 Please note, that these functions are :term:`soft deprecated` since Python
 3.15.  Avoid using this API in a new code to do complex arithmetic: either use
-the `Number Protocol <number>`_ API or use native complex types, like
+the :ref:`Number Protocol <number>` API or use native complex types, like
 :c:expr:`double complex`.
 
 
