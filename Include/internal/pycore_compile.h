@@ -49,7 +49,8 @@ extern int _PyAST_Preprocess(
     PyObject *filename,
     int optimize,
     int ff_features,
-    int syntax_check_only);
+    int syntax_check_only,
+    int enable_warnings);
 
 
 typedef struct {
