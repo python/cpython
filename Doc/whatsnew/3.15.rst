@@ -96,35 +96,133 @@ performance issues in production environments.
 Key features include:
 
 * **Zero-overhead profiling**: Attach to any running Python process without
-  affecting its performance
-* **No code modification required**: Profile existing applications without restart
-* **Real-time statistics**: Monitor sampling quality during data collection
-* **Multiple output formats**: Generate both detailed statistics and flamegraph data
-* **Thread-aware profiling**: Option to profile all threads or just the main thread
+  affecting its performance. Ideal for production debugging where you can't afford
+  to restart or slow down your application.
 
-Profile process 1234 for 10 seconds with default settings:
+* **No code modification required**: Profile existing applications without restart.
+  Simply point the profiler at a running process by PID and start collecting data.
+
+* **Flexible target modes**:
+
+  * Profile running processes by PID (``-p``) - attach to already-running applications
+  * Run and profile scripts directly - profile from the very start of execution
+  * Execute and profile modules (``-m``) - profile packages run as ``python -m module``
+
+* **Multiple profiling modes**: Choose what to measure based on your performance investigation:
+
+  * **Wall-clock time** (``--mode wall``, default): Measures real elapsed time including I/O,
+    network waits, and blocking operations. Use this to understand where your program spends
+    calendar time, including when waiting for external resources.
+  * **CPU time** (``--mode cpu``): Measures only active CPU execution time, excluding I/O waits
+    and blocking. Use this to identify CPU-bound bottlenecks and optimize computational work.
+  * **GIL-holding time** (``--mode gil``): Measures time spent holding Python's Global Interpreter
+    Lock. Use this to identify which threads dominate GIL usage in multi-threaded applications.
+
+* **Thread-aware profiling**: Option to profile all threads (``-a``) or just the main thread,
+  essential for understanding multi-threaded application behavior.
+
+* **Multiple output formats**: Choose the visualization that best fits your workflow:
+
+  * ``--pstats``: Detailed tabular statistics compatible with :mod:`pstats`. Shows function-level
+    timing with direct and cumulative samples. Best for detailed analysis and integration with
+    existing Python profiling tools.
+  * ``--collapsed``: Generates collapsed stack traces (one line per stack). This format is
+    specifically designed for creating flamegraphs with external tools like Brendan Gregg's
+    FlameGraph scripts or speedscope.
+  * ``--flamegraph``: Generates a self-contained interactive HTML flamegraph using D3.js.
+    Opens directly in your browser for immediate visual analysis. Flamegraphs show the call
+    hierarchy where width represents time spent, making it easy to spot bottlenecks at a glance.
+  * ``--gecko``: Generates Gecko Profiler format compatible with Firefox Profiler
+    (https://profiler.firefox.com). Upload the output to Firefox Profiler for advanced
+    timeline-based analysis with features like stack charts, markers, and network activity.
+
+* **Advanced sorting options**: Sort by direct samples, total time, cumulative time,
+  sample percentage, cumulative percentage, or function name. Quickly identify hot spots
+  by sorting functions by where they appear most in stack traces.
+
+* **Flexible output control**: Limit results to top N functions (``-l``), customize sorting,
+  and disable summary sections for cleaner output suitable for automation.
+
+**Basic usage examples:**
+
+Attach to a running process and get quick profiling stats:
 
 .. code-block:: shell
 
-  python -m profiling.sampling 1234
+  python -m profiling.sampling -p 1234
 
-Profile with custom interval and duration, save to file:
-
-.. code-block:: shell
-
-  python -m profiling.sampling -i 50 -d 30 -o profile.stats 1234
-
-Generate collapsed stacks for flamegraph:
+Profile a script from the start of its execution:
 
 .. code-block:: shell
 
-  python -m profiling.sampling --collapsed 1234
+  python -m profiling.sampling myscript.py arg1 arg2
 
-Profile all threads and sort by total time:
+Profile a module (like profiling ``python -m http.server``):
 
 .. code-block:: shell
 
-  python -m profiling.sampling -a --sort-tottime 1234
+  python -m profiling.sampling -m http.server
+
+**Understanding different profiling modes:**
+
+Investigate why your web server feels slow (includes I/O waits):
+
+.. code-block:: shell
+
+  python -m profiling.sampling --mode wall -p 1234
+
+Find CPU-intensive functions (excludes I/O and sleep time):
+
+.. code-block:: shell
+
+  python -m profiling.sampling --mode cpu -p 1234
+
+Debug GIL contention in multi-threaded applications:
+
+.. code-block:: shell
+
+  python -m profiling.sampling --mode gil -a -p 1234
+
+**Visualization and output formats:**
+
+Generate an interactive flamegraph for visual analysis (opens in browser):
+
+.. code-block:: shell
+
+  python -m profiling.sampling --flamegraph -p 1234
+
+Upload to Firefox Profiler for timeline-based analysis:
+
+.. code-block:: shell
+
+  python -m profiling.sampling --gecko -o profile.json -p 1234
+  # Then upload profile.json to https://profiler.firefox.com
+
+Generate collapsed stacks for custom processing:
+
+.. code-block:: shell
+
+  python -m profiling.sampling --collapsed -o stacks.txt -p 1234
+
+**Advanced usage:**
+
+Profile all threads with real-time sampling statistics:
+
+.. code-block:: shell
+
+  python -m profiling.sampling -a --realtime-stats -p 1234
+
+High-frequency sampling (1ms intervals) for 60 seconds:
+
+.. code-block:: shell
+
+  python -m profiling.sampling -i 1000 -d 60 -p 1234
+
+Show only the top 20 CPU-consuming functions:
+
+.. code-block:: shell
+
+  python -m profiling.sampling --sort-tottime -l 20 -p 1234
 
 The profiler generates statistical estimates of where time is spent:
 
