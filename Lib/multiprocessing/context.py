@@ -145,9 +145,18 @@ class BaseContext(object):
         '''Check whether this is a fake forked process in a frozen executable.
         If so then run code specified by commandline and exit.
         '''
-        if self.get_start_method() == 'spawn' and getattr(sys, 'frozen', False):
-            from .spawn import freeze_support
-            freeze_support()
+        if not getattr(sys, 'frozen', False):
+            return
+
+        # GH-135726: allow_none=True prevents this "get" call from setting the
+        # default context as the selected one as a side-effect.
+        method = (self.get_start_method(allow_none=True)
+                  or _default_context.get_start_method(allow_none=True))
+        if method != "spawn":
+            return
+
+        from .spawn import freeze_support
+        freeze_support()
 
     def get_logger(self):
         '''Return package logger -- if it does not already exist then
