@@ -5049,6 +5049,16 @@ class MiscTest(unittest.TestCase):
                 b"add the site-packages directory to sys.path?"), stderr
         )
 
+    def test_missing_stdlib_package(self):
+        code = """
+            import sys
+            sys.stdlib_module_names |= {'spam'}
+            import spam
+        """
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+
+        self.assertIn(b"Standard library module 'spam' was not found", stderr)
+
 
 class TestColorizedTraceback(unittest.TestCase):
     maxDiff = None
