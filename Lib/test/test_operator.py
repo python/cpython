@@ -614,6 +614,27 @@ class OperatorTestCase:
             operator.length_hint(X(2), "abc")
         self.assertEqual(operator.length_hint(Y(), 10), 10)
 
+    def test_identity(self):
+        operator = self.module
+        a = 'spam'
+        b = []
+        b.append(b)
+        c = None
+        d = object()
+        try:
+            1/0
+        except ZeroDivisionError as exc:
+            e = exc
+        f = {a, c, d, 'ham' * 1000}
+
+        self.assertRaises(TypeError, operator.identity)
+        self.assertIs(operator.identity(a), a)
+        self.assertIs(operator.identity(b), b)
+        self.assertIs(operator.identity(c), c)
+        self.assertIs(operator.identity(d), d)
+        self.assertIs(operator.identity(e), e)
+        self.assertIs(operator.identity(f), f)
+
     def test_call(self):
         operator = self.module
 
