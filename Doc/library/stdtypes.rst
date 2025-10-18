@@ -3173,6 +3173,92 @@ objects.
 
       .. versionadded:: 3.14
 
+   .. method:: take_bytes(n=None, /)
+
+      Take the first *n* bytes as an immutable :class:`bytes`. Defaults to all
+      bytes.
+
+      If *n* is negative indexes from the end and takes the first :func:`len`
+      plus *n* bytes. If *n* is out of bounds raises :exc:`IndexError`.
+
+      Taking less than the full length will leave remaining bytes in the
+      :class:`bytearray` which requires a copy. If the remaining bytes should be
+      discarded use :func:`~bytearray.resize` or :keyword:`del` to truncate
+      then :func:`~bytearray.take_bytes` without a size.
+
+      .. impl-detail::
+
+         Taking all bytes is a zero-copy operation.
+
+      .. list-table:: Suggested Replacements
+         :header-rows: 1
+
+         * - Description
+           - Old
+           - New
+
+         * - Return :class:`bytes` after working with :class:`bytearray`
+           - .. code:: python
+
+
+                  def read() -> bytes:
+                     buffer = bytearray(1024)
+                     ...
+                     return bytes(buffer)
+           - .. code:: python
+
+                  def read() -> bytes:
+                     buffer = bytearray(1024)
+                     ...
+                     return buffer.take_bytes()
+
+         * - Empty a buffer getting the bytes
+           - .. code:: python
+
+                  buffer = bytearray(1024)
+                  ...
+                  data = bytes(buffer)
+                  buffer.clear()
+           - .. code:: python
+
+                  buffer = bytearray(1024)
+                  ...
+                  data = buffer.take_bytes()
+
+         * - Split a buffer at a specific separator
+           - .. code:: python
+
+                  buffer = bytearray(b'abc\ndef')
+                  n = buffer.find(b'\n')
+                  data = bytes(buffer[:n + 1])
+                  del buffer[:n + 1]
+                  assert buffer == bytearray(b'def')
+
+           - .. code:: python
+
+                  buffer = bytearray(b'abc\ndef')
+                  n = buffer.find(b'\n')
+                  data = buffer.take_bytes(n + 1)
+
+         * - Split a buffer at a specific separator; discard after the separator
+           - .. code:: python
+
+                  buffer = bytearray(b'abc\ndef')
+                  n = buffer.find(b'\n')
+                  data = bytes(buffer[:n])
+                  buffer.clear()
+                  assert data == b'abc'
+                  assert len(buffer) == 0
+
+           - .. code:: python
+
+                  buffer = bytearray(b'abc\ndef')
+                  n = buffer.find(b'\n')
+                  buffer.resize(n)
+                  data = buffer.take_bytes()
+
+      .. versionadded:: next
+
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
 a bytearray object of length 1.  (This contrasts with text strings, where
