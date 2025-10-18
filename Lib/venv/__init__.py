@@ -290,8 +290,8 @@ class EnvBuilder:
         ignored by git.
         """
         gitignore_path = os.path.join(context.env_dir, '.gitignore')
-        with open(gitignore_path, 'w', encoding='utf-8') as file:
-            file.write('# Created by venv; '
+        with open(gitignore_path, 'a', encoding='utf-8') as file:
+            file.write('# Added by venv; '
                        'see https://docs.python.org/3/library/venv.html\n')
             file.write('*\n')
 
