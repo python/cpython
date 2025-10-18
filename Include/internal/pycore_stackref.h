@@ -70,6 +70,9 @@ static const _PyStackRef PyStackRef_ERROR = { .index = 2 };
 #define PyStackRef_False ((_PyStackRef){ .index = 6 })
 #define PyStackRef_True ((_PyStackRef){ .index = 8 })
 
+#define PyStackRef_ZERO_BITS PyStackRef_NULL
+
+
 #define INITIAL_STACKREF_INDEX 10
 
 static inline int
@@ -264,6 +267,10 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 
 static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
 
+/* For use in the JIT to clear an unused value.
+ * PyStackRef_ZERO_BITS has no meaning and should not be used other than by the JIT. */
+static const _PyStackRef PyStackRef_ZERO_BITS = { .bits = 0 };
+
 /* Wrap a pointer in a stack ref.
  * The resulting stack reference is not safe and should only be used
  * in the interpreter to pass values from one uop to another.
@@ -301,6 +308,16 @@ PyStackRef_IsValid(_PyStackRef ref)
 {
     /* Invalid values are ERROR and NULL */
     return ref.bits >= Py_INT_TAG;
+}
+
+static inline bool
+PyStackRef_IsWrapped(_PyStackRef ref)
+{
+#ifdef Py_DEBUG
+    return (ref.bits & Py_TAG_INVALID) != 0 && !PyStackRef_IsError(ref);
+#else
+    Py_FatalError("Cannot determine if value is wrapped if Py_DEBUG is not set");
+#endif
 }
 
 static inline bool
@@ -814,6 +831,17 @@ _PyThreadState_PopCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
     tstate_impl->c_stack_refs = ref->next;
 #endif
     PyStackRef_XCLOSE(ref->ref);
+}
+
+static inline _PyStackRef
+_PyThreadState_PopCStackRefSteal(PyThreadState *tstate, _PyCStackRef *ref)
+{
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    assert(tstate_impl->c_stack_refs == ref);
+    tstate_impl->c_stack_refs = ref->next;
+#endif
+    return ref->ref;
 }
 
 #ifdef Py_GIL_DISABLED
