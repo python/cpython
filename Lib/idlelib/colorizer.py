@@ -64,7 +64,7 @@ def make_pat():
 
 
 prog = make_pat()
-idprog = re.compile(r"\s+(\w+)")
+idprog = re.compile(r"\s+([^\\\s([:]+)")
 prog_group_name_to_tag = {
     "MATCH_SOFTKW": "KEYWORD",
     "CASE_SOFTKW": "KEYWORD",
@@ -346,8 +346,9 @@ class ColorDelegator(Delegator):
                 self._add_tag(a, b, head, name)
                 if matched_text in ("def", "class"):
                     if m1 := self.idprog.match(chars, b):
-                        a, b = m1.span(1)
-                        self._add_tag(a, b, head, "DEFINITION")
+                        if m1.groups()[0].isidentifier():
+                            a, b = m1.span(1)
+                            self._add_tag(a, b, head, "DEFINITION")
 
     def removecolors(self):
         "Remove all colorizing tags."
