@@ -1171,6 +1171,8 @@
         case _YIELD_VALUE: {
             JitOptRef value;
             value = sym_new_unknown(ctx);
+            ctx->done = true;
+            ctx->out_of_space = true;
             stack_pointer[-1] = value;
             break;
         }
@@ -3011,19 +3013,10 @@
 
         case _RETURN_GENERATOR: {
             JitOptRef res;
-            PyCodeObject *co = get_current_code_object(ctx);
-            ctx->frame->stack_pointer = stack_pointer;
-            if (frame_pop(ctx)) {
-                break;
-            }
             stack_pointer = ctx->frame->stack_pointer;
             res = sym_new_unknown(ctx);
-            assert(corresponding_check_stack == NULL);
-            assert(co != NULL);
-            int framesize = co->co_framesize;
-            assert(framesize > 0);
-            assert(framesize <= curr_space);
-            curr_space -= framesize;
+            ctx->done = true;
+            ctx->out_of_space = true;
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

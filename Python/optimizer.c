@@ -794,8 +794,9 @@ _PyJIT_translate_single_bytecode_to_trace(
                 }
                 if (uop == _PUSH_FRAME || uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
                     PyCodeObject *new_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
-                    if (func != NULL) {
-                        operand = (uintptr_t)func;
+                    PyFunctionObject *new_func = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+                    if (new_func != NULL) {
+                        operand = (uintptr_t)new_func;
                     }
                     else if (new_code != NULL) {
                         operand = (uintptr_t)new_code | 1;
