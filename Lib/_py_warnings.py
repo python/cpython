@@ -520,20 +520,54 @@ def warn(message, category=None, stacklevel=1, source=None,
     )
 
 
+def _match_filename(pattern, filename, *, MS_WINDOWS=(sys.platform == 'win32')):
+    if not filename:
+        return pattern.match('<unknown>') is not None
+    if filename[0] == '<' and filename[-1] == '>':
+        return pattern.match(filename) is not None
+
+    if MS_WINDOWS:
+        if filename[-12:].lower() in (r'\__init__.py', '/__init__.py'):
+            if pattern.match(filename[:-3]): # without '.py'
+                return True
+            filename = filename[:-12]
+        elif filename[-3:].lower() == '.py':
+            filename = filename[:-3]
+        elif filename[-4:].lower() == '.pyw':
+            filename = filename[:-4]
+        if pattern.match(filename):
+            return True
+        filename = filename.replace('\\', '/')
+    else:
+        if filename.endswith('/__init__.py'):
+            if pattern.match(filename[:-3]): # without '.py'
+                return True
+            filename = filename[:-12]
+        elif filename.endswith('.py'):
+            filename = filename[:-3]
+        if pattern.match(filename):
+            return True
+    filename = filename.replace('/', '.')
+    i = 0
+    while True:
+        if pattern.match(filename, i):
+            return True
+        i = filename.find('.', i) + 1
+        if not i:
+            return False
+
+
 def warn_explicit(message, category, filename, lineno,
                   module=None, registry=None, module_globals=None,
                   source=None):
     lineno = int(lineno)
-    if module is None:
-        module = filename or "<unknown>"
-        if module[-3:].lower() == ".py":
-            module = module[:-3] # XXX What about leading pathname?
     if isinstance(message, Warning):
         text = str(message)
         category = message.__class__
     else:
         text = message
         message = category(message)
+    modules = None
     key = (text, category, lineno)
     with _wm._lock:
         if registry is None:
@@ -549,9 +583,11 @@ def warn_explicit(message, category, filename, lineno,
             action, msg, cat, mod, ln = item
             if ((msg is None or msg.match(text)) and
                 issubclass(category, cat) and
-                (mod is None or mod.match(module)) and
-                (ln == 0 or lineno == ln)):
-                break
+                (ln == 0 or lineno == ln) and
+                (mod is None or (_match_filename(mod, filename)
+                                 if module is None else
+                                 mod.match(module)))):
+                    break
         else:
             action = _wm.defaultaction
         # Early exit actions
