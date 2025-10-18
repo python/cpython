@@ -285,6 +285,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertTrue(self.db.isidstart('\uFE7B'))  # ARABIC KASRA MEDIAL FORM
 
         self.assertFalse(self.db.isidstart(' '))
+        self.assertFalse(self.db.isidstart('0'))
         self.assertRaises(TypeError, self.db.isidstart)
         self.assertRaises(TypeError, self.db.isidstart, 'xx')
 
@@ -299,7 +300,6 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertTrue(self.db.isidcontinue('\u17D7'))  # KHMER SIGN LEK TOO
 
         self.assertFalse(self.db.isidcontinue(' '))
-        self.assertFalse(self.db.isidstart('0'))
         self.assertRaises(TypeError, self.db.isidcontinue)
         self.assertRaises(TypeError, self.db.isidcontinue, 'xx')
 
