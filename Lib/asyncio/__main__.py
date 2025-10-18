@@ -106,7 +106,7 @@ class REPLThread(threading.Thread):
                     except SystemExit:
                         raise
                     except BaseException:
-                        sys.excepthook(*sys.exc_info())
+                        console.showtraceback()
 
             ps1 = getattr(sys, "ps1", ">>> ")
             if CAN_USE_PYREPL:
