@@ -133,6 +133,31 @@ IDENTIFIERS = [
     'exc_value',
     'self',
     'traceback',
+
+    "AMPEREQUAL",
+    "ATEQUAL",
+    "CIRCUMFLEXEQUAL",
+    "COLONEQUAL",
+    "DOUBLESLASH",
+    "DOUBLESLASHEQUAL",
+    "DOUBLESTAR",
+    "DOUBLESTAREQUAL",
+    "ELLIPSIS",
+    "EQEQUAL",
+    "GREATEREQUAL",
+    "LEFTSHIFT",
+    "LEFTSHIFTEQUAL",
+    "LESSEQUAL",
+    "MINEQUAL",
+    "NOTEQUAL",
+    "PERCENTEQUAL",
+    "PLUSEQUAL",
+    "RARROW",
+    "RIGHTSHIFT",
+    "RIGHTSHIFTEQUAL",
+    "SLASHEQUAL",
+    "STAREQUAL",
+    "VBAREQUAL",
 ]
 
 NON_GENERATED_IMMORTAL_OBJECTS = [
@@ -442,7 +467,6 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
 
 def main() -> None:
     identifiers, strings = get_identifiers_and_strings()
-
     generate_global_strings(identifiers, strings)
     generated_immortal_objects = generate_runtime_init(identifiers, strings)
     generate_static_strings_initializer(identifiers, strings)

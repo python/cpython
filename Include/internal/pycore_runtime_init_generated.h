@@ -1305,6 +1305,30 @@ extern "C" {
 }
 
 #define _Py_str_literals_INIT { \
+    INIT_STR(AMPEREQUAL, "&="), \
+    INIT_STR(ATEQUAL, "@="), \
+    INIT_STR(CIRCUMFLEXEQUAL, "^="), \
+    INIT_STR(COLONEQUAL, ":="), \
+    INIT_STR(DOUBLESLASH, "//"), \
+    INIT_STR(DOUBLESLASHEQUAL, "//="), \
+    INIT_STR(DOUBLESTAR, "**"), \
+    INIT_STR(DOUBLESTAREQUAL, "**="), \
+    INIT_STR(ELLIPSIS, "..."), \
+    INIT_STR(EQEQUAL, "=="), \
+    INIT_STR(GREATEREQUAL, ">="), \
+    INIT_STR(LEFTSHIFT, "<<"), \
+    INIT_STR(LEFTSHIFTEQUAL, "<<="), \
+    INIT_STR(LESSEQUAL, "<="), \
+    INIT_STR(MINEQUAL, "-="), \
+    INIT_STR(NOTEQUAL, "!="), \
+    INIT_STR(PERCENTEQUAL, "%="), \
+    INIT_STR(PLUSEQUAL, "+="), \
+    INIT_STR(RARROW, "->"), \
+    INIT_STR(RIGHTSHIFT, ">>"), \
+    INIT_STR(RIGHTSHIFTEQUAL, ">>="), \
+    INIT_STR(SLASHEQUAL, "/="), \
+    INIT_STR(STAREQUAL, "*="), \
+    INIT_STR(VBAREQUAL, "|="), \
     INIT_STR(anon_dictcomp, "<dictcomp>"), \
     INIT_STR(anon_genexpr, "<genexpr>"), \
     INIT_STR(anon_lambda, "<lambda>"), \
@@ -1331,16 +1355,40 @@ extern "C" {
 }
 
 #define _Py_str_identifiers_INIT { \
+    INIT_ID(AMPEREQUAL), \
+    INIT_ID(ATEQUAL), \
     INIT_ID(CANCELLED), \
+    INIT_ID(CIRCUMFLEXEQUAL), \
+    INIT_ID(COLONEQUAL), \
+    INIT_ID(DOUBLESLASH), \
+    INIT_ID(DOUBLESLASHEQUAL), \
+    INIT_ID(DOUBLESTAR), \
+    INIT_ID(DOUBLESTAREQUAL), \
+    INIT_ID(ELLIPSIS), \
+    INIT_ID(EQEQUAL), \
     INIT_ID(Emax), \
     INIT_ID(Emin), \
     INIT_ID(FINISHED), \
     INIT_ID(False), \
+    INIT_ID(GREATEREQUAL), \
     INIT_ID(JSONDecodeError), \
+    INIT_ID(LEFTSHIFT), \
+    INIT_ID(LEFTSHIFTEQUAL), \
+    INIT_ID(LESSEQUAL), \
+    INIT_ID(MINEQUAL), \
+    INIT_ID(NOTEQUAL), \
     INIT_ID(PENDING), \
+    INIT_ID(PERCENTEQUAL), \
+    INIT_ID(PLUSEQUAL), \
     INIT_ID(Py_Repr), \
+    INIT_ID(RARROW), \
+    INIT_ID(RIGHTSHIFT), \
+    INIT_ID(RIGHTSHIFTEQUAL), \
+    INIT_ID(SLASHEQUAL), \
+    INIT_ID(STAREQUAL), \
     INIT_ID(TextIOWrapper), \
     INIT_ID(True), \
+    INIT_ID(VBAREQUAL), \
     INIT_ID(WarningMessage), \
     INIT_ID(_WindowsConsoleIO), \
     INIT_ID(__IOBase_closed), \
