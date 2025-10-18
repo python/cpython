@@ -199,7 +199,7 @@ enum _GCPhase {
 };
 
 /* If we change this, we need to change the default value in the
-   signature of gc.collect. */
+   signature of gc.collect and change the size of PyStats.gc_stats */
 #define NUM_GENERATIONS 3
 
 struct _gc_runtime_state {
@@ -963,6 +963,18 @@ struct _is {
 #  ifdef Py_STACKREF_CLOSE_DEBUG
     _Py_hashtable_t *closed_stackrefs_table;
 #  endif
+#endif
+
+#ifdef Py_STATS
+    // true if recording of pystats is on, this is used when new threads
+    // are created to decide if recording should be on for them
+    int pystats_enabled;
+    // allocated when (and if) stats are first enabled
+    PyStats *pystats_struct;
+#ifdef Py_GIL_DISABLED
+    // held when pystats related interpreter state is being updated
+    PyMutex pystats_mutex;
+#endif
 #endif
 
     /* the initial PyInterpreterState.threads.head */
