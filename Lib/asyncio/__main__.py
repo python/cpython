@@ -101,7 +101,12 @@ class REPLThread(threading.Thread):
                 import tokenize
                 with tokenize.open(startup_path) as f:
                     startup_code = compile(f.read(), startup_path, "exec")
-                    exec(startup_code, console.locals)
+                    try:
+                        exec(startup_code, console.locals)
+                    except SystemExit:
+                        raise
+                    except BaseException:
+                        sys.excepthook(*sys.exc_info())
 
             ps1 = getattr(sys, "ps1", ">>> ")
             if CAN_USE_PYREPL:
