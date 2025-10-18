@@ -1412,7 +1412,7 @@ The :mod:`socket` module also offers various network-related services:
    :meth:`~socket.settimeout` for possible values and their respective
    meanings.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number, not only integer or float.
 
 
@@ -2088,7 +2088,7 @@ to sockets.
       The method no longer toggles :const:`SOCK_NONBLOCK` flag on
       :attr:`socket.type`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number, not only integer or float.
 
 

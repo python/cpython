@@ -1,2 +1,0 @@
-Deprecate :c:member:`PyConfig.bytes_warning` field and schedule its removal
-in 3.17.

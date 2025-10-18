@@ -164,6 +164,20 @@ class MiscTests(unittest.TestCase):
         self.assertIsInstance(cwd, bytes)
         self.assertEqual(os.fsdecode(cwd), os.getcwd())
 
+    def test_type_fqdn(self):
+        def fqdn(obj):
+            return (obj.__module__, obj.__qualname__)
+
+        native = os.name
+        self.assertEqual(fqdn(os.stat_result), ("os", "stat_result"))
+        self.assertEqual(fqdn(os.times_result), (native, "times_result"))
+        if hasattr(os, "statvfs_result"):
+            self.assertEqual(fqdn(os.statvfs_result), ("os", "statvfs_result"))
+        if hasattr(os, "sched_param"):
+            self.assertEqual(fqdn(os.sched_param), (native, "sched_param"))
+        if hasattr(os, "waitid_result"):
+            self.assertEqual(fqdn(os.waitid_result), (native, "waitid_result"))
+
 
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
@@ -630,6 +644,14 @@ class StatAttributeTests(unittest.TestCase):
         self.addCleanup(os_helper.unlink, self.fname)
         create_file(self.fname, b"ABC")
 
+    def check_timestamp_agreement(self, result, names):
+        # Make sure that the st_?time and st_?time_ns fields roughly agree
+        # (they should always agree up to around tens-of-microseconds)
+        for name in names:
+            floaty = int(getattr(result, name) * 100_000)
+            nanosecondy = getattr(result, name + "_ns") // 10_000
+            self.assertAlmostEqual(floaty, nanosecondy, delta=2, msg=name)
+
     def check_stat_attributes(self, fname):
         result = os.stat(fname)
 
@@ -650,21 +672,15 @@ class StatAttributeTests(unittest.TestCase):
                                   result[getattr(stat, name)])
                 self.assertIn(attr, members)
 
-        # Make sure that the st_?time and st_?time_ns fields roughly agree
-        # (they should always agree up to around tens-of-microseconds)
-        for name in 'st_atime st_mtime st_ctime'.split():
-            floaty = int(getattr(result, name) * 100000)
-            nanosecondy = getattr(result, name + "_ns") // 10000
-            self.assertAlmostEqual(floaty, nanosecondy, delta=2)
-
-        # Ensure both birthtime and birthtime_ns roughly agree, if present
+        time_attributes = ['st_atime', 'st_mtime', 'st_ctime']
         try:
-            floaty = int(result.st_birthtime * 100000)
-            nanosecondy = result.st_birthtime_ns // 10000
+            result.st_birthtime
+            result.st_birthtime_ns
         except AttributeError:
             pass
         else:
-            self.assertAlmostEqual(floaty, nanosecondy, delta=2)
+            time_attributes.append('st_birthtime')
+        self.check_timestamp_agreement(result, time_attributes)
 
         try:
             result[200]
@@ -724,6 +740,88 @@ class StatAttributeTests(unittest.TestCase):
                     self.assertIn(b'cos\nstat_result\n', p)
                 unpickled = pickle.loads(p)
                 self.assertEqual(result, unpickled)
+
+    def check_statx_attributes(self, fname):
+        maximal_mask = 0
+        for name in dir(os):
+            if name.startswith('STATX_'):
+                maximal_mask |= getattr(os, name)
+        result = os.statx(self.fname, maximal_mask)
+
+        time_attributes = ('st_atime', 'st_mtime', 'st_ctime', 'st_birthtime')
+        self.check_timestamp_agreement(result, time_attributes)
+
+        # Check that valid attributes match os.stat.
+        requirements = (
+            ('st_mode', os.STATX_TYPE | os.STATX_MODE),
+            ('st_nlink', os.STATX_NLINK),
+            ('st_uid', os.STATX_UID),
+            ('st_gid', os.STATX_GID),
+            ('st_atime', os.STATX_ATIME),
+            ('st_atime_ns', os.STATX_ATIME),
+            ('st_mtime', os.STATX_MTIME),
+            ('st_mtime_ns', os.STATX_MTIME),
+            ('st_ctime', os.STATX_CTIME),
+            ('st_ctime_ns', os.STATX_CTIME),
+            ('st_ino', os.STATX_INO),
+            ('st_size', os.STATX_SIZE),
+            ('st_blocks', os.STATX_BLOCKS),
+            ('st_birthtime', os.STATX_BTIME),
+            ('st_birthtime_ns', os.STATX_BTIME),
+            # unconditionally valid members
+            ('st_blksize', 0),
+            ('st_rdev', 0),
+            ('st_dev', 0),
+        )
+        basic_result = os.stat(self.fname)
+        for name, bits in requirements:
+            if result.stx_mask & bits == bits and hasattr(basic_result, name):
+                x = getattr(result, name)
+                b = getattr(basic_result, name)
+                self.assertEqual(type(x), type(b))
+                if isinstance(x, float):
+                    self.assertAlmostEqual(x, b, msg=name)
+                else:
+                    self.assertEqual(x, b, msg=name)
+
+        self.assertEqual(result.stx_rdev_major, os.major(result.st_rdev))
+        self.assertEqual(result.stx_rdev_minor, os.minor(result.st_rdev))
+        self.assertEqual(result.stx_dev_major, os.major(result.st_dev))
+        self.assertEqual(result.stx_dev_minor, os.minor(result.st_dev))
+
+        members = [name for name in dir(result)
+                   if name.startswith('st_') or name.startswith('stx_')]
+        for name in members:
+            try:
+                setattr(result, name, 1)
+                self.fail("No exception raised")
+            except AttributeError:
+                pass
+
+        self.assertEqual(result.stx_attributes & result.stx_attributes_mask,
+                         result.stx_attributes)
+
+        # statx_result is not a tuple or tuple-like object.
+        with self.assertRaisesRegex(TypeError, 'not subscriptable'):
+            result[0]
+        with self.assertRaisesRegex(TypeError, 'cannot unpack'):
+            _, _ = result
+
+    @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
+    def test_statx_attributes(self):
+        self.check_statx_attributes(self.fname)
+
+    @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
+    def test_statx_attributes_bytes(self):
+        try:
+            fname = self.fname.encode(sys.getfilesystemencoding())
+        except UnicodeEncodeError:
+            self.skipTest("cannot encode %a for the filesystem" % self.fname)
+        self.check_statx_attributes(fname)
+
+    @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
+    def test_statx_attributes_pathlike(self):
+        self.check_statx_attributes(FakePath(self.fname))
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
