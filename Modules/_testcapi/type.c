@@ -227,6 +227,31 @@ type_freeze(PyObject *module, PyObject *arg)
 }
 
 
+static PyObject *
+type_lookup(PyObject *self, PyObject *args)
+{
+    PyTypeObject *type;
+    PyObject *name, *attr = UNINITIALIZED_PTR;
+    if (!PyArg_ParseTuple(args, "O!O", &PyType_Type, &type, &name)) {
+        return NULL;
+    }
+    NULLABLE(name);
+
+    switch (PyType_Lookup(type, name, &attr)) {
+        case -1:
+            assert(attr == NULL);
+            return NULL;
+        case 0:
+            assert(attr == NULL);
+            return Py_NewRef(PyExc_AttributeError);
+        case 1:
+            return attr;
+        default:
+            Py_FatalError("PyType_Lookup() returned invalid code");
+            Py_UNREACHABLE();
+    }
+}
+
 static PyMethodDef test_methods[] = {
     {"get_heaptype_for_name", get_heaptype_for_name, METH_NOARGS},
     {"get_type_name", get_type_name, METH_O},
@@ -241,6 +266,7 @@ static PyMethodDef test_methods[] = {
     {"type_get_tp_bases", type_get_tp_bases, METH_O},
     {"type_get_tp_mro", type_get_tp_mro, METH_O},
     {"type_freeze", type_freeze, METH_O},
+    {"type_lookup", type_lookup, METH_VARARGS},
     {NULL},
 };
 
