@@ -1153,8 +1153,8 @@ _release_xid_data(_PyXIData_t *xidata, int rawfree)
 {
     PyObject *exc = PyErr_GetRaisedException();
     int res = rawfree
-        ? _PyXIData_Release(xidata)
-        : _PyXIData_ReleaseAndRawFree(xidata);
+        ? _PyXIData_ReleaseAndRawFree(xidata)
+        : _PyXIData_Release(xidata);
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
         _PyXIData_Clear(NULL, xidata);
@@ -1814,6 +1814,7 @@ _PyXI_InitFailure(_PyXI_failure *failure, _PyXI_errcode code, PyObject *obj)
     const char *msg = _copy_string_obj_raw(msgobj, NULL);
     Py_DECREF(msgobj);
     if (PyErr_Occurred()) {
+        PyMem_RawFree((void *)msg);
         return -1;
     }
     *failure = (_PyXI_failure){
