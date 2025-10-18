@@ -1811,6 +1811,7 @@ def test_pdb_skip_modules():
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()
     -> string.capwords('FOO')
     (Pdb) step
+    [... skipped 1 ignored module(s)]
     --Return--
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()->None
     -> string.capwords('FOO')
@@ -1884,6 +1885,7 @@ def test_pdb_skip_modules_with_callback():
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[0]>(5)skip_module()
     -> mod.foo_pony(callback)
     (Pdb) step
+    [... skipped 1 ignored module(s)]
     --Call--
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[0]>(2)callback()
     -> def callback():
@@ -1895,6 +1897,7 @@ def test_pdb_skip_modules_with_callback():
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[0]>(3)callback()->None
     -> return None
     (Pdb) step
+    [... skipped 1 ignored module(s)]
     --Return--
     > <doctest test.test_pdb.test_pdb_skip_modules_with_callback[0]>(5)skip_module()->None
     -> mod.foo_pony(callback)
@@ -5019,6 +5022,169 @@ def load_tests(loader, tests, pattern):
         )
     )
     return tests
+
+
+def test_ignore_module():
+    """Test the ignore_module and unignore_module commands.
+
+    >>> def test_func():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    Test basic ignore_module functionality:
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'ignore_module',  # List when empty
+    ...     'ignore_module sys',  # Ignore sys module
+    ...     'ignore_module',  # List ignored modules
+    ...     'ignore_module test.*',  # Add wildcard pattern
+    ...     'ignore_module',  # List again
+    ...     'unignore_module sys',  # Remove sys
+    ...     'ignore_module',  # List after removal
+    ...     'unignore_module nonexistent',  # Try to remove non-existent
+    ...     'unignore_module test.*',  # Remove pattern
+    ...     'ignore_module',  # List when empty again
+    ...     'continue',
+    ... ]):
+    ...     test_func()
+    > <doctest test.test_pdb.test_ignore_module[0]>(2)test_func()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) ignore_module
+    No modules are currently ignored.
+    (Pdb) ignore_module sys
+    Ignoring module: sys
+    (Pdb) ignore_module
+    Currently ignored modules: ['sys']
+    (Pdb) ignore_module test.*
+    Ignoring module: test.*
+    (Pdb) ignore_module
+    Currently ignored modules: ['sys', 'test.*']
+    (Pdb) unignore_module sys
+    No longer ignoring module: sys
+    (Pdb) ignore_module
+    Currently ignored modules: ['test.*']
+    (Pdb) unignore_module nonexistent
+    *** Module nonexistent is not currently ignored
+    Currently ignored modules: ['test.*']
+    (Pdb) unignore_module test.*
+    No longer ignoring module: test.*
+    (Pdb) ignore_module
+    No modules are currently ignored.
+    (Pdb) continue
+    """
+
+
+# Modules for testing ignore_module with up/down navigation
+ignore_test_middle = types.ModuleType('ignore_test_middle')
+exec('''
+def middle_func(inner_func):
+    return inner_func()
+''', ignore_test_middle.__dict__)
+
+
+def test_ignore_module_navigation():
+    """Test that ignore_module works with up/down commands.
+
+    Create functions in different modules to test navigation skipping:
+
+    >>> def outer_func():
+    ...     def inner_func():
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         return "done"
+    ...     return ignore_test_middle.middle_func(inner_func)
+
+    Test navigation with ignored modules:
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'up',  # Go to middle_func
+    ...     'p "at middle_func"',
+    ...     'ignore_module ignore_test_middle',  # Ignore the middle module
+    ...     'down',  # Back to inner_func
+    ...     'p "at inner_func"',
+    ...     'up',  # Should skip middle_func, go to outer_func
+    ...     'p "at outer_func"',
+    ...     'down',  # Should skip middle_func back to inner_func
+    ...     'p "back at inner_func"',
+    ...     'continue',
+    ... ]):
+    ...     outer_func()
+    > <doctest test.test_pdb.test_ignore_module_navigation[0]>(3)inner_func()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) up
+    > <string>(3)middle_func()
+    (Pdb) p "at middle_func"
+    'at middle_func'
+    (Pdb) ignore_module ignore_test_middle
+    Ignoring module: ignore_test_middle
+    (Pdb) down
+    > <doctest test.test_pdb.test_ignore_module_navigation[0]>(3)inner_func()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p "at inner_func"
+    'at inner_func'
+    (Pdb) up
+    [... skipped 1 frame(s) from ignored modules]
+    > <doctest test.test_pdb.test_ignore_module_navigation[0]>(5)outer_func()
+    -> return ignore_test_middle.middle_func(inner_func)
+    (Pdb) p "at outer_func"
+    'at outer_func'
+    (Pdb) down
+    [... skipped 1 frame(s) from ignored modules]
+    > <doctest test.test_pdb.test_ignore_module_navigation[0]>(3)inner_func()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p "back at inner_func"
+    'back at inner_func'
+    (Pdb) continue
+    'done'
+    """
+
+
+def test_ignore_module_stepping():
+    """Test that ignore_module works with step/next commands.
+
+    >>> def test_stepping():
+    ...     x = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     result = ignore_test_middle.middle_func(lambda: x + 1)
+    ...     y = result + 1
+    ...     return y
+
+    Test step command with ignored modules - should skip into ignored module
+    but show skip message:
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'ignore_module ignore_test_middle',
+    ...     'step',  # Step to the function call
+    ...     'step',  # Step into call - should skip middle_func
+    ...     'return',  # Return from lambda
+    ...     'step',  # Step to next line
+    ...     'p y',
+    ...     'continue',
+    ... ]):
+    ...     test_stepping()
+    > <doctest test.test_pdb.test_ignore_module_stepping[0]>(3)test_stepping()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) ignore_module ignore_test_middle
+    Ignoring module: ignore_test_middle
+    (Pdb) step
+    > <doctest test.test_pdb.test_ignore_module_stepping[0]>(4)test_stepping()
+    -> result = ignore_test_middle.middle_func(lambda: x + 1)
+    (Pdb) step
+    [... skipped 1 ignored module(s)]
+    --Call--
+    > <doctest test.test_pdb.test_ignore_module_stepping[0]>(4)<lambda>()
+    -> result = ignore_test_middle.middle_func(lambda: x + 1)
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_ignore_module_stepping[0]>(4)<lambda>()->2
+    -> result = ignore_test_middle.middle_func(lambda: x + 1)
+    (Pdb) step
+    [... skipped 1 ignored module(s)]
+    > <doctest test.test_pdb.test_ignore_module_stepping[0]>(5)test_stepping()
+    -> y = result + 1
+    (Pdb) p y
+    *** NameError: name 'y' is not defined
+    (Pdb) continue
+    3
+    """
 
 
 if __name__ == '__main__':
