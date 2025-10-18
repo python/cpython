@@ -1,1 +1,1 @@
-Fix memory leak in the :meth:`clear` method of the :mod:`dbm.gnu` database.
+Fix memory leak in the :meth:`!clear` method of the :mod:`dbm.gnu` database.
