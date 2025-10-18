@@ -160,6 +160,10 @@ dump_item(_PyStackRef item)
         printf("<NULL>");
         return;
     }
+    if (PyStackRef_IsMalformed(item)) {
+        printf("<INVALID>");
+        return;
+    }
     if (PyStackRef_IsTaggedInt(item)) {
         printf("%" PRId64, (int64_t)PyStackRef_UntagInt(item));
         return;
