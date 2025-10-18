@@ -998,6 +998,7 @@ add_to_code_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, PyCodeObjec
 #if _Py_TAIL_CALL_INTERP
 #include "opcode_targets.h"
 #include "generated_cases.c.h"
+#include "generated_tracer_cases.c.h"
 #endif
 
 #if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
@@ -1126,6 +1127,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #else
     goto start_frame;
 #   include "generated_cases.c.h"
+    #include "generated_tracer_cases.c.h"
 #endif
 
 

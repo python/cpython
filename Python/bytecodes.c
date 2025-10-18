@@ -2964,13 +2964,6 @@ dummy_func(
             if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) &&
                 this_instr->op.code == JUMP_BACKWARD_JIT &&
                 next_instr->op.code != ENTER_EXECUTOR) {
-                _Py_CODEUNIT *start = this_instr;
-                /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
-                int curr_oparg = oparg;
-                while (curr_oparg > 255) {
-                    curr_oparg >>= 8;
-                    start--;
-                }
                 if (tstate->interp->jit_tracer_code_buffer == NULL) {
                     tstate->interp->jit_tracer_code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
                     if (tstate->interp->jit_tracer_code_buffer == NULL) {
@@ -3046,9 +3039,9 @@ dummy_func(
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
-            if (IS_JIT_TRACING()) {
-                RECORD_TRACE_NO_DISPATCH();
-            }
+            #if TRACING_JIT
+            RECORD_TRACE_NO_DISPATCH();
+            #endif
             TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");

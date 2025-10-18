@@ -28,6 +28,9 @@ from cwriter import CWriter
 from typing import TextIO
 from lexer import Token
 from stack import Local, Stack, StackError, get_stack_effect, Storage
+from tier1_generator import generate_tier1_cases
+
+DEFAULT_OUTPUT = ROOT / "Python/generated_tracer_cases.c.h"
 
 class TracerEmitter(Emitter):
     out: CWriter
@@ -115,8 +118,51 @@ class TracerEmitter(Emitter):
 def generate_tracer_cases(
     analysis: Analysis, out: CWriter
 ):
-    # Import inside to avoid circular imports.
-    from tier1_generator import generate_tier1_cases
     out.emit(f"#ifdef _Py_TIER2 /* BEGIN TRACING INSTRUCTIONS */\n")
     generate_tier1_cases(analysis, out, TracerEmitter(out, analysis.labels), is_tracing=True)
     out.emit(f"#endif /* END TRACING INSTRUCTIONS */\n")
+
+def generate_tracer(
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
+    write_header(__file__, filenames, outfile)
+    out = CWriter(outfile, 2, lines)
+    out.emit("#define TIER_ONE 1\n")
+    out.emit("#define TRACING_JIT 1\n")
+    generate_tracer_cases(analysis, out)
+    out.emit("#undef TRACING_JIT\n")
+    out.emit("#undef TIER_ONE\n")
+
+# For use in unittest
+def generate_tracer_from_files(
+    filenames: list[str], outfilename: str, lines: bool
+) -> None:
+    data = analyze_files(filenames)
+    with open(outfilename, "w") as outfile:
+        generate_tracer(filenames, data, outfile, lines)
+
+
+arg_parser = argparse.ArgumentParser(
+    description="Generate the code for the interpreter switch.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
+
+arg_parser.add_argument(
+    "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
+)
+
+arg_parser.add_argument(
+    "-l", "--emit-line-directives", help="Emit #line directives", action="store_true"
+)
+
+arg_parser.add_argument(
+    "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
+)
+
+if __name__ == "__main__":
+    args = arg_parser.parse_args()
+    if len(args.input) == 0:
+        args.input.append(DEFAULT_INPUT)
+    data = analyze_files(args.input)
+    with open(args.output, "w") as outfile:
+        generate_tracer(args.input, data, outfile, args.emit_line_directives)
