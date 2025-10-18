@@ -1601,6 +1601,14 @@ are also included in the pure Python version for compatibility.
 
    .. versionadded:: 3.8.3
 
+.. data:: SPEC_VERSION
+
+   The highest version of the General Decimal Arithmetic
+   Specification that this implementation complies with.
+   See https://speleotrove.com/decimal/ for the specification.
+
+   .. versionadded:: next
+
 
 Rounding modes
 --------------

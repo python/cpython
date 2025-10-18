@@ -100,10 +100,17 @@ NaN
 
 try:
     from _decimal import *
-    from _decimal import __version__  # noqa: F401
     from _decimal import __libmpdec_version__  # noqa: F401
 except ImportError:
     import _pydecimal
     import sys
     _pydecimal.__doc__ = __doc__
     sys.modules[__name__] = _pydecimal
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.70"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
