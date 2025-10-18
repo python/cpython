@@ -42,3 +42,6 @@ PyTuple_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
 PyAPI_FUNC(PyObject*) PyTuple_FromArray(
     PyObject *const *array,
     Py_ssize_t size);
+
+PyAPI_FUNC(PyObject *) PyTuple_MakeSingle(PyObject *one);
+PyAPI_FUNC(PyObject *) PyTuple_MakePair(PyObject *one, PyObject *two);
