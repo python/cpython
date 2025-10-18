@@ -300,7 +300,7 @@ class MockHeaders(dict):
 class MockResponse(io.StringIO):
     def __init__(self, code, msg, headers, data, url=None):
         io.StringIO.__init__(self, data)
-        self.code, self.msg, self.headers, self.url = code, msg, headers, url
+        self.status, self.msg, self.headers, self.url = code, msg, headers, url
 
     def info(self):
         return self.headers
