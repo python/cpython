@@ -762,6 +762,21 @@ struct _Py_unique_id_pool {
 
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
+typedef struct _PyJitState {
+    int jit_tracer_code_max_size;
+    int jit_tracer_code_curr_size;
+    _PyBloomFilter jit_tracer_dependencies;
+    bool jit_tracer_dependencies_still_valid;
+    _PyUOpInstruction *jit_tracer_code_buffer;
+    _Py_CODEUNIT *jit_tracer_initial_instr;
+    int jit_tracer_initial_stack_depth;
+    int jit_tracer_initial_chain_depth;
+    PyCodeObject *jit_tracer_initial_code; // Strong
+    PyFunctionObject *jit_tracer_initial_func; // Strong
+    struct _PyExitData *jit_tracer_previous_exit;
+    _PyInterpreterFrame *jit_tracer_current_frame;
+} _PyJitState;
+
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
 
@@ -943,20 +958,7 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
-    // JIT tracing state
-    int jit_tracer_code_max_size;
-    int jit_tracer_code_curr_size;
-    _PyBloomFilter jit_tracer_dependencies;
-    bool jit_tracer_dependencies_still_valid;
-    _PyUOpInstruction *jit_tracer_code_buffer;
-    _Py_CODEUNIT *jit_tracer_initial_instr;
-    int jit_tracer_initial_stack_depth;
-    int jit_tracer_initial_chain_depth;
-    PyCodeObject *jit_tracer_initial_code; // Strong
-    PyFunctionObject *jit_tracer_initial_func; // Strong
-    struct _PyExitData *jit_tracer_previous_exit;
-    _PyInterpreterFrame *jit_tracer_current_frame;
-    // End Jit tracing state
+    _PyJitState jit_state;
     bool jit;
     bool compiling;
     struct _PyExecutorObject *executor_list_head;

@@ -7660,11 +7660,11 @@
                 if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) &&
                     this_instr->op.code == JUMP_BACKWARD_JIT &&
                     next_instr->op.code != ENTER_EXECUTOR) {
-                    if (tstate->interp->jit_tracer_code_buffer == NULL) {
+                    if (tstate->interp->jit_state.jit_tracer_code_buffer == NULL) {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
-                        tstate->interp->jit_tracer_code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
+                        tstate->interp->jit_state.jit_tracer_code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (tstate->interp->jit_tracer_code_buffer == NULL) {
+                        if (tstate->interp->jit_state.jit_tracer_code_buffer == NULL) {
                             DISPATCH();
                         }
                     }

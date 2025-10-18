@@ -434,7 +434,7 @@ do {                                                   \
     }                                                  \
     if (keep_tracing_bit) { \
         assert(next_instr->op.code != ENTER_EXECUTOR); \
-        assert(tstate->interp->jit_tracer_code_curr_size == 2); \
+        assert(tstate->interp->jit_state.jit_tracer_code_curr_size == 2); \
         ENTER_TRACING(); \
     } \
     DISPATCH();                                        \

@@ -2964,9 +2964,9 @@ dummy_func(
             if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) &&
                 this_instr->op.code == JUMP_BACKWARD_JIT &&
                 next_instr->op.code != ENTER_EXECUTOR) {
-                if (tstate->interp->jit_tracer_code_buffer == NULL) {
-                    tstate->interp->jit_tracer_code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
-                    if (tstate->interp->jit_tracer_code_buffer == NULL) {
+                if (tstate->interp->jit_state.jit_tracer_code_buffer == NULL) {
+                    tstate->interp->jit_state.jit_tracer_code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
+                    if (tstate->interp->jit_state.jit_tracer_code_buffer == NULL) {
                         // Don't error, just go to next instruction.
                         DISPATCH();
                     }
