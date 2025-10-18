@@ -684,7 +684,7 @@ _PyJIT_translate_single_bytecode_to_trace(
         max_length--;
     }
 
-    RESERVE_RAW(expansion->nuops + needs_guard_ip + 3, "uop and various checks");
+    RESERVE_RAW(expansion->nuops + needs_guard_ip + 4, "uop and various checks");
 
 
     switch (opcode) {
