@@ -157,11 +157,8 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
             Py_DECREF(new);
             return NULL;
         }
-        new->ob_bytes = PyBytes_AsString(new->ob_bytes_object);
-        if (new->ob_bytes == NULL) {
-            Py_DECREF(new);
-            return PyErr_NoMemory();
-        }
+        new->ob_bytes = PyBytes_AS_STRING(new->ob_bytes_object);
+        assert(new->ob_bytes);
         if (bytes != NULL && size > 0) {
             memcpy(new->ob_bytes, bytes, size);
         }
