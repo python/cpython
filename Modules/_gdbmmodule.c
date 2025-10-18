@@ -8,11 +8,12 @@
 #endif
 
 #include "Python.h"
-#include "pycore_pyerrors.h"        // _PyErr_SetLocaleString()
+#include "pycore_object.h"        // _PyObject_VisitType()
+#include "pycore_pyerrors.h"      // _PyErr_SetLocaleString()
 #include "gdbm.h"
 
 #include <fcntl.h>
-#include <stdlib.h>                 // free()
+#include <stdlib.h>               // free()
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -672,8 +673,10 @@ _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls)
         }
         if (gdbm_delete(self->di_dbm, key) < 0) {
             PyErr_SetString(state->gdbm_error, "cannot delete item from database");
+            free(key.dptr);
             return NULL;
         }
+        free(key.dptr);
     }
     Py_RETURN_NONE;
 }
@@ -808,11 +811,6 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
                 iflags |= GDBM_NOLOCK;
                 break;
 #endif
-#ifdef GDBM_NOMMAP
-            case 'm':
-                iflags |= GDBM_NOMMAP;
-                break;
-#endif
             default:
                 PyErr_Format(state->gdbm_error,
                              "Flag '%c' is not supported.", (unsigned char)*flags);
@@ -845,9 +843,6 @@ static const char gdbmmodule_open_flags[] = "rwcn"
 #endif
 #ifdef GDBM_NOLOCK
                                      "u"
-#endif
-#ifdef GDBM_NOMMAP
-                                     "m"
 #endif
                                      ;
 

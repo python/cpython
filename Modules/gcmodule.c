@@ -8,7 +8,6 @@
 #include "pycore_gc.h"
 #include "pycore_object.h"      // _PyObject_IS_GC()
 #include "pycore_pystate.h"     // _PyInterpreterState_GET()
-#include "pycore_tuple.h"       // _PyTuple_FromArray()
 
 typedef struct _gc_runtime_state GCState;
 

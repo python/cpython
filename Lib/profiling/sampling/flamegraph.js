@@ -2,6 +2,8 @@ const EMBEDDED_DATA = {{FLAMEGRAPH_DATA}};
 
 // Global string table for resolving string indices
 let stringTable = [];
+let originalData = null;
+let currentThreadFilter = 'all';
 
 // Function to resolve string indices to actual strings
 function resolveString(index) {
@@ -374,6 +376,12 @@ function initFlamegraph() {
     processedData = resolveStringIndices(EMBEDDED_DATA);
   }
 
+  // Store original data for filtering
+  originalData = processedData;
+
+  // Initialize thread filter dropdown
+  initThreadFilter(processedData);
+
   const tooltip = createPythonTooltip(processedData);
   const chart = createFlamegraph(tooltip, processedData.value);
   renderFlamegraph(chart, processedData);
@@ -395,10 +403,26 @@ function populateStats(data) {
   const functionMap = new Map();
 
   function collectFunctions(node) {
-    const filename = resolveString(node.filename);
-    const funcname = resolveString(node.funcname);
+    if (!node) return;
 
-    if (filename && funcname) {
+    let filename = typeof node.filename === 'number' ? resolveString(node.filename) : node.filename;
+    let funcname = typeof node.funcname === 'number' ? resolveString(node.funcname) : node.funcname;
+
+    if (!filename || !funcname) {
+      const nameStr = typeof node.name === 'number' ? resolveString(node.name) : node.name;
+      if (nameStr?.includes('(')) {
+        const match = nameStr.match(/^(.+?)\s*\((.+?):(\d+)\)$/);
+        if (match) {
+          funcname = funcname || match[1];
+          filename = filename || match[2];
+        }
+      }
+    }
+
+    filename = filename || 'unknown';
+    funcname = funcname || 'unknown';
+
+    if (filename !== 'unknown' && funcname !== 'unknown' && node.value > 0) {
       // Calculate direct samples (this node's value minus children's values)
       let childrenValue = 0;
       if (node.children) {
@@ -447,15 +471,17 @@ function populateStats(data) {
   // Populate the 3 cards
   for (let i = 0; i < 3; i++) {
     const num = i + 1;
-    if (i < hotSpots.length) {
+    if (i < hotSpots.length && hotSpots[i]) {
       const hotspot = hotSpots[i];
-      const basename = hotspot.filename.split('/').pop();
-      let funcDisplay = hotspot.funcname;
+      const filename = hotspot.filename || 'unknown';
+      const basename = filename !== 'unknown' ? filename.split('/').pop() : 'unknown';
+      const lineno = hotspot.lineno ?? '?';
+      let funcDisplay = hotspot.funcname || 'unknown';
       if (funcDisplay.length > 35) {
         funcDisplay = funcDisplay.substring(0, 32) + '...';
       }
 
-      document.getElementById(`hotspot-file-${num}`).textContent = `${basename}:${hotspot.lineno}`;
+      document.getElementById(`hotspot-file-${num}`).textContent = `${basename}:${lineno}`;
       document.getElementById(`hotspot-func-${num}`).textContent = funcDisplay;
       document.getElementById(`hotspot-detail-${num}`).textContent = `${hotspot.directPercent.toFixed(1)}% samples (${hotspot.directSamples.toLocaleString()})`;
     } else {
@@ -503,5 +529,104 @@ function clearSearch() {
       window.flamegraphChart.clear();
     }
   }
+}
+
+function initThreadFilter(data) {
+  const threadFilter = document.getElementById('thread-filter');
+  const threadWrapper = document.querySelector('.thread-filter-wrapper');
+
+  if (!threadFilter || !data.threads) {
+    return;
+  }
+
+  // Clear existing options except "All Threads"
+  threadFilter.innerHTML = '<option value="all">All Threads</option>';
+
+  // Add thread options
+  const threads = data.threads || [];
+  threads.forEach(threadId => {
+    const option = document.createElement('option');
+    option.value = threadId;
+    option.textContent = `Thread ${threadId}`;
+    threadFilter.appendChild(option);
+  });
+
+  // Show filter if more than one thread
+  if (threads.length > 1 && threadWrapper) {
+    threadWrapper.style.display = 'inline-flex';
+  }
+}
+
+function filterByThread() {
+  const threadFilter = document.getElementById('thread-filter');
+  if (!threadFilter || !originalData) return;
+
+  const selectedThread = threadFilter.value;
+  currentThreadFilter = selectedThread;
+
+  let filteredData;
+  if (selectedThread === 'all') {
+    // Show all data
+    filteredData = originalData;
+  } else {
+    // Filter data by thread
+    const threadId = parseInt(selectedThread);
+    filteredData = filterDataByThread(originalData, threadId);
+
+    if (filteredData.strings) {
+      stringTable = filteredData.strings;
+      filteredData = resolveStringIndices(filteredData);
+    }
+  }
+
+  // Re-render flamegraph with filtered data
+  const tooltip = createPythonTooltip(filteredData);
+  const chart = createFlamegraph(tooltip, filteredData.value);
+  renderFlamegraph(chart, filteredData);
+}
+
+function filterDataByThread(data, threadId) {
+  function filterNode(node) {
+    if (!node.threads || !node.threads.includes(threadId)) {
+      return null;
+    }
+
+    const filteredNode = {
+      ...node,
+      children: []
+    };
+
+    if (node.children && Array.isArray(node.children)) {
+      filteredNode.children = node.children
+        .map(child => filterNode(child))
+        .filter(child => child !== null);
+    }
+
+    return filteredNode;
+  }
+
+  const filteredRoot = {
+    ...data,
+    children: []
+  };
+
+  if (data.children && Array.isArray(data.children)) {
+    filteredRoot.children = data.children
+      .map(child => filterNode(child))
+      .filter(child => child !== null);
+  }
+
+  function recalculateValue(node) {
+    if (!node.children || node.children.length === 0) {
+      return node.value || 0;
+    }
+    const childrenValue = node.children.reduce((sum, child) => sum + recalculateValue(child), 0);
+    node.value = Math.max(node.value || 0, childrenValue);
+    return node.value;
+  }
+
+  recalculateValue(filteredRoot);
+
+  return filteredRoot;
 }
 

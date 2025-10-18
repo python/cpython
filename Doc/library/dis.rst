@@ -585,6 +585,22 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    generate line tracing events.
 
 
+.. opcode:: NOT_TAKEN
+
+   Do nothing code.
+   Used by the interpreter to record :monitoring-event:`BRANCH_LEFT`
+   and :monitoring-event:`BRANCH_RIGHT` events for :mod:`sys.monitoring`.
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: POP_ITER
+
+   Removes the iterator from the top of the stack.
+
+   .. versionadded:: 3.14
+
+
 .. opcode:: POP_TOP
 
    Removes the top-of-stack item::
@@ -1084,11 +1100,6 @@ iterations of the loop.
 .. opcode:: LOAD_CONST (consti)
 
    Pushes ``co_consts[consti]`` onto the stack.
-
-
-.. opcode:: LOAD_CONST_IMMORTAL (consti)
-
-   Works as :opcode:`LOAD_CONST`, but is more efficient for immortal objects.
 
 
 .. opcode:: LOAD_SMALL_INT (i)
@@ -1631,7 +1642,7 @@ iterations of the loop.
 
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
-   :opcode:`LOAD_METHOD` for non-method calls.
+   :opcode:`!LOAD_METHOD` for non-method calls.
 
    .. versionadded:: 3.11
 
@@ -1952,14 +1963,15 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Marks the end of the code block associated with the last ``SETUP_FINALLY``,
    ``SETUP_CLEANUP`` or ``SETUP_WITH``.
 
+
 .. opcode:: JUMP
-.. opcode:: JUMP_NO_INTERRUPT
+            JUMP_NO_INTERRUPT
 
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
 
 .. opcode:: JUMP_IF_TRUE
-.. opcode:: JUMP_IF_FALSE
+            JUMP_IF_FALSE
 
    Conditional jumps which do not impact the stack. Replaced by the sequence
    ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
@@ -1973,12 +1985,6 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    .. versionchanged:: 3.13
       This opcode is now a pseudo-instruction.
-
-
-.. opcode:: LOAD_METHOD
-
-   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
-   with a flag set in the arg.
 
 
 .. _opcode_collections:
