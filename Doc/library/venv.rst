@@ -407,6 +407,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
         * ``lib_path`` - The purelib path for the virtual environment.
 
+        * ``platlib_path`` - The platlib path for the virtual environment.
+
         * ``bin_path`` - The script path for the virtual environment.
 
         * ``bin_name`` - The name of the script path relative to the virtual
@@ -430,6 +432,9 @@ creation according to their needs, the :class:`EnvBuilder` class.
         .. versionchanged:: 3.12
            The attribute ``lib_path`` was added to the context, and the context
            object was documented.
+
+        .. versionchanged:: 3.15
+           The attribute ``platlib_path`` was added to the context.
 
     .. method:: create_configuration(context)
 
