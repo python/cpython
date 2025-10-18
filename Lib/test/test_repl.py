@@ -43,9 +43,9 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, custom=F
     # default module search path.
     stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
     cmd_line = [stdin_fname, '-I']
+    # Don't re-run the built-in REPL from interactive mode
+    # if we're testing a custom REPL (such as the asyncio REPL).
     if not custom:
-        # Don't re-run the built-in REPL from interactive mode
-        # if we're testing a custom REPL (such as the asyncio REPL).
         cmd_line.append('-i')
     cmd_line.extend(args)
 
