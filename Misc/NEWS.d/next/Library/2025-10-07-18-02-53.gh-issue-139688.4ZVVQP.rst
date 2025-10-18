@@ -1,0 +1,1 @@
+Fix: Make ``Pdb._last_pdb_instance`` to None when ``pdb`` do_quite
