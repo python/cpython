@@ -7580,7 +7580,7 @@ decimal_getattr(PyObject *self, PyObject *args)
                          1) < 0) {
             return NULL;
         }
-        return PyUnicode_FromString("1.7");
+        return PyUnicode_FromString("1.70");
     }
 
     PyErr_Format(PyExc_AttributeError, "module 'decimal' has no attribute %R", name);
