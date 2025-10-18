@@ -257,6 +257,7 @@ static void *opcode_targets_table[256] = {
     &&TARGET_INSTRUMENTED_LINE,
     &&TARGET_ENTER_EXECUTOR,
 };
+#if _Py_TIER2
 static void *opcode_tracing_targets_table[256] = {
     &&TARGET_TRACING_CACHE,
     &&TARGET_TRACING_BINARY_SLICE,
@@ -515,6 +516,7 @@ static void *opcode_tracing_targets_table[256] = {
     &&TARGET_TRACING_INSTRUMENTED_LINE,
     &&TARGET_TRACING_ENTER_EXECUTOR,
 };
+#endif
 #else /* _Py_TAIL_CALL_INTERP */
 static py_tail_call_funcptr instruction_funcptr_handler_table[256];
 

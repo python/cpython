@@ -35,10 +35,12 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
     for name, op in analysis.opmap.items():
         if op < 256:
             targets[op] = f"&&TARGET_TRACING_{name},\n"
+    out.emit("#if _Py_TIER2\n")
     out.emit("static void *opcode_tracing_targets_table[256] = {\n")
     for target in targets:
         out.emit(target)
     out.emit("};\n")
+    out.emit(f"#endif\n")
     out.emit("#else /* _Py_TAIL_CALL_INTERP */\n")
 
 def function_proto(name: str) -> str:
