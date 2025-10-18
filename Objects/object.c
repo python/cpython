@@ -1540,6 +1540,28 @@ _PyObject_ComputedDictPointer(PyObject *obj)
     return (PyObject **) ((char *)obj + dictoffset);
 }
 
+static int
+object_getdictptr(PyObject *obj, PyObject ***dict_ptr)
+{
+    if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+        *dict_ptr = _PyObject_ComputedDictPointer(obj);
+        return (*dict_ptr != NULL);
+    }
+
+    PyDictObject *dict = _PyObject_GetManagedDict(obj);
+    if (dict == NULL && Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        dict = _PyObject_MaterializeManagedDict(obj);
+        if (dict == NULL) {
+            *dict_ptr = NULL;
+            return -1;
+        }
+    }
+    *dict_ptr = (PyObject **)&_PyObject_ManagedDictPointer(obj)->dict;
+    assert(*dict_ptr != NULL);
+    return 1;
+}
+
+
 /* Helper to get a pointer to an object's __dict__ slot, if any.
  * Creates the dict from inline attributes if necessary.
  * Does not set an exception.
@@ -1550,19 +1572,30 @@ _PyObject_ComputedDictPointer(PyObject *obj)
 PyObject **
 _PyObject_GetDictPtr(PyObject *obj)
 {
-    if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
-        return _PyObject_ComputedDictPointer(obj);
+    PyObject **dict_ptr;
+    if (object_getdictptr(obj, &dict_ptr) < 0) {
+        PyErr_Clear();
     }
-    PyDictObject *dict = _PyObject_GetManagedDict(obj);
-    if (dict == NULL && Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        dict = _PyObject_MaterializeManagedDict(obj);
-        if (dict == NULL) {
-            PyErr_Clear();
-            return NULL;
-        }
-    }
-    return (PyObject **)&_PyObject_ManagedDictPointer(obj)->dict;
+    return dict_ptr;
 }
+
+
+int
+PyObject_GetDict(PyObject *obj, PyObject **dict)
+{
+    PyObject **dict_ptr;
+    int res = object_getdictptr(obj, &dict_ptr);
+    if (res == 1) {
+        assert(*dict_ptr != NULL);
+        *dict = Py_NewRef(*dict_ptr);
+    }
+    else {
+        assert(dict_ptr == NULL);
+        *dict = NULL;
+    }
+    return res;
+}
+
 
 PyObject *
 PyObject_SelfIter(PyObject *obj)
