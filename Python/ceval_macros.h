@@ -79,12 +79,15 @@
 #endif
 
 #if _Py_TAIL_CALL_INTERP
-    // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
-#   define Py_MUSTTAIL [[clang::musttail]]
-#   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
-    Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
-
-#   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
+#   if defined(_MSC_VER) && !defined(__clang__)
+#      define Py_MUSTTAIL [[msvc::musttail]]
+#      define Py_PRESERVE_NONE_CC __preserve_none
+#   else
+#       define Py_MUSTTAIL __attribute__((musttail))
+#       define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
+#   endif
+    typedef PyObject *(Py_PRESERVE_NONE_CC *py_tail_call_funcptr)(TAIL_CALL_PARAMS);
+#   define TARGET(op) Py_NO_INLINE PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_##op(TAIL_CALL_PARAMS)
 #   define DISPATCH_GOTO() \
         do { \
             Py_MUSTTAIL return (((py_tail_call_funcptr *)instruction_funcptr_table)[opcode])(TAIL_CALL_ARGS); \
@@ -390,17 +393,14 @@ do {                                                   \
 
 /* Stackref macros */
 
-/* How much scratch space to give stackref to PyObject* conversion. */
-#define MAX_STACKREF_SCRATCH 10
 
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
-    /* +1 because vectorcall might use -1 to write self */ \
-    PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
-    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate; \
+    PyObject **NAME##_temp = _tstate->stackref_scratch + _tstate->n_stackref_scratch_used;                                                  \
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(_tstate, ARGS, ARG_COUNT);
 
-#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
-    /* +1 because we +1 previously */ \
-    _PyObjectArray_Free(NAME - 1, NAME##_temp);
+#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME, ARG_COUNT) \
+    _PyObjectArray_Free(_tstate, NAME, ARG_COUNT, NAME##_temp);
 
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
 

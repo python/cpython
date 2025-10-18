@@ -303,9 +303,9 @@ PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, Py
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
 PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, _PyStackRef *sp);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
-PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
+PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyThreadStateImpl *_tstate, _PyStackRef *input, Py_ssize_t nargs);
 
-PyAPI_FUNC(void) _PyObjectArray_Free(PyObject **array, PyObject **scratch);
+PyAPI_FUNC(void) _PyObjectArray_Free(_PyThreadStateImpl *_tstate, PyObject **array, Py_ssize_t nargs, PyObject **temp_arr);
 
 PyAPI_FUNC(PyObject *) _PyEval_GetANext(PyObject *aiter);
 PyAPI_FUNC(void) _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto);
@@ -390,6 +390,28 @@ _PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame
 #define SPECIAL___AENTER__  2
 #define SPECIAL___AEXIT__   3
 #define SPECIAL_MAX   3
+
+// Special counterparts of ceval functions for performance reasons
+PyAPI_FUNC(int) _PyEval_Mapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result);
+
+#if defined(_MSC_VER) && !defined(__clang__) && _Py_TAIL_CALL_INTERP
+#  define Py_NO_INLINE_MSVC_TAILCALL Py_NO_INLINE
+#else
+#  define Py_NO_INLINE_MSVC_TAILCALL
+#endif
+
+// Tells the compiler that this variable cannot be alised.
+#if defined(_MSC_VER) && !defined(__clang__)
+#  define Py_UNALIASED(var) restrict var
+#else
+#  define Py_UNALIASED(var) var
+#endif
+
+// Just a scope. Hints to the programmer and compiler
+// That any local variable defined within this block MUST
+// not escape from the current definition.
+# define Py_BEGIN_LOCALS_MUST_NOT_ESCAPE {
+# define Py_END_LOCALS_MUST_NOT_ESCAPE }
 
 #ifdef __cplusplus
 }
