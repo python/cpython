@@ -1195,12 +1195,6 @@ uop_optimize(
 {
     _PyBloomFilter *dependencies = &tstate->interp->jit_tracer_dependencies;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->jit_uop_buffer == NULL) {
-        interp->jit_uop_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
-        if (interp->jit_uop_buffer == NULL) {
-            return 0;
-        }
-    }
     _PyUOpInstruction *buffer = interp->jit_tracer_code_buffer;
     OPT_STAT_INC(attempts);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");

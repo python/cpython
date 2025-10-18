@@ -553,8 +553,6 @@ init_interpreter(PyInterpreterState *interp,
 #endif
 
 #ifdef _Py_TIER2
-     // Ensure the buffer is to be set as NULL.
-    interp->jit_uop_buffer = NULL;
     interp->jit_tracer_code_buffer = NULL;
     interp->jit_tracer_initial_instr = NULL;
     interp->jit_tracer_initial_stack_depth = -1;
@@ -810,10 +808,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
 #ifdef _Py_TIER2
     _Py_ClearExecutorDeletionList(interp);
-    if (interp->jit_uop_buffer != NULL) {
-        _PyObject_VirtualFree(interp->jit_uop_buffer, UOP_BUFFER_SIZE);
-        interp->jit_uop_buffer = NULL;
-    }
     if (interp->jit_tracer_code_buffer != NULL) {
         _PyObject_VirtualFree(interp->jit_tracer_code_buffer, UOP_BUFFER_SIZE);
         interp->jit_tracer_code_buffer = NULL;

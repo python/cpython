@@ -959,7 +959,6 @@ struct _is {
     // End Jit tracing state
     bool jit;
     bool compiling;
-    struct _PyUOpInstruction *jit_uop_buffer;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
