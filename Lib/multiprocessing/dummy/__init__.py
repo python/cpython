@@ -33,7 +33,7 @@ from queue import Queue
 
 class DummyProcess(threading.Thread):
 
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):
         threading.Thread.__init__(self, group, target, name, args, kwargs)
         self._pid = None
         self._children = weakref.WeakKeyDictionary()
@@ -80,7 +80,7 @@ def freeze_support():
 #
 
 class Namespace(object):
-    def __init__(self, **kwds):
+    def __init__(self, /, **kwds):
         self.__dict__.update(kwds)
     def __repr__(self):
         items = list(self.__dict__.items())

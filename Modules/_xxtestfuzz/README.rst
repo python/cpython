@@ -13,6 +13,9 @@ oss-fuzz will regularly pull from CPython, discover all the tests in
 automatically be run in oss-fuzz, while also being smoke-tested as part of
 CPython's test suite.
 
+In addition, the tests are run on GitHub Actions using CIFuzz for PRs to the
+main branch changing relevant files.
+
 Adding a new fuzz test
 ----------------------
 
@@ -20,7 +23,7 @@ Add the test name on a new line in ``fuzz_tests.txt``.
 
 In ``fuzzer.c``, add a function to be run::
 
-    int $test_name (const char* data, size_t size) {
+    static int $fuzz_test_name(const char* data, size_t size) {
         ...
         return 0;
     }
@@ -28,12 +31,24 @@ In ``fuzzer.c``, add a function to be run::
 
 And invoke it from ``LLVMFuzzerTestOneInput``::
 
-    #if _Py_FUZZ_YES(fuzz_builtin_float)
-        rv |= _run_fuzz(data, size, fuzz_builtin_float);
+    #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_$fuzz_test_name)
+        rv |= _run_fuzz(data, size, $fuzz_test_name);
     #endif
+
+Don't forget to replace ``$fuzz_test_name`` with your actual test name.
 
 ``LLVMFuzzerTestOneInput`` will run in oss-fuzz, with each test in
 ``fuzz_tests.txt`` run separately.
+
+Seed data (corpus) for the test can be provided in a subfolder called
+``<test_name>_corpus`` such as ``fuzz_json_loads_corpus``. A wide variety
+of good input samples allows the fuzzer to more easily explore a diverse
+set of paths and provides a better base to find buggy input from.
+
+Dictionaries of tokens (see oss-fuzz documentation for more details) can
+be placed in the ``dictionaries`` folder with the name of the test.
+For example, ``dictionaries/fuzz_json_loads.dict`` contains JSON tokens
+to guide the fuzzer.
 
 What makes a good fuzz test
 ---------------------------

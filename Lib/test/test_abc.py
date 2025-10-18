@@ -20,7 +20,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             def foo(self): pass
             self.assertTrue(foo.__isabstractmethod__)
             def bar(self): pass
-            self.assertFalse(hasattr(bar, "__isabstractmethod__"))
+            self.assertNotHasAttr(bar, "__isabstractmethod__")
 
             class C(metaclass=abc_ABCMeta):
                 @abc.abstractproperty
@@ -89,7 +89,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             def foo(self): pass
             self.assertTrue(foo.__isabstractmethod__)
             def bar(self): pass
-            self.assertFalse(hasattr(bar, "__isabstractmethod__"))
+            self.assertNotHasAttr(bar, "__isabstractmethod__")
 
         def test_abstractproperty_basics(self):
             @property
@@ -148,6 +148,25 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 def foo(): return 4
             self.assertEqual(D.foo(), 4)
             self.assertEqual(D().foo(), 4)
+
+        def test_object_new_with_one_abstractmethod(self):
+            class C(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def method_one(self):
+                    pass
+            msg = r"class C without an implementation for abstract method 'method_one'"
+            self.assertRaisesRegex(TypeError, msg, C)
+
+        def test_object_new_with_many_abstractmethods(self):
+            class C(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def method_one(self):
+                    pass
+                @abc.abstractmethod
+                def method_two(self):
+                    pass
+            msg = r"class C without an implementation for abstract methods 'method_one', 'method_two'"
+            self.assertRaisesRegex(TypeError, msg, C)
 
         def test_abstractmethod_integration(self):
             for abstractthing in [abc.abstractmethod, abc.abstractproperty,
@@ -257,21 +276,21 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class B(object):
                 pass
             b = B()
-            self.assertFalse(issubclass(B, A))
-            self.assertFalse(issubclass(B, (A,)))
+            self.assertNotIsSubclass(B, A)
+            self.assertNotIsSubclass(B, (A,))
             self.assertNotIsInstance(b, A)
             self.assertNotIsInstance(b, (A,))
             B1 = A.register(B)
-            self.assertTrue(issubclass(B, A))
-            self.assertTrue(issubclass(B, (A,)))
+            self.assertIsSubclass(B, A)
+            self.assertIsSubclass(B, (A,))
             self.assertIsInstance(b, A)
             self.assertIsInstance(b, (A,))
             self.assertIs(B1, B)
             class C(B):
                 pass
             c = C()
-            self.assertTrue(issubclass(C, A))
-            self.assertTrue(issubclass(C, (A,)))
+            self.assertIsSubclass(C, A)
+            self.assertIsSubclass(C, (A,))
             self.assertIsInstance(c, A)
             self.assertIsInstance(c, (A,))
 
@@ -282,16 +301,16 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class B(object):
                 pass
             b = B()
-            self.assertTrue(issubclass(B, A))
-            self.assertTrue(issubclass(B, (A,)))
+            self.assertIsSubclass(B, A)
+            self.assertIsSubclass(B, (A,))
             self.assertIsInstance(b, A)
             self.assertIsInstance(b, (A,))
             @A.register
             class C(B):
                 pass
             c = C()
-            self.assertTrue(issubclass(C, A))
-            self.assertTrue(issubclass(C, (A,)))
+            self.assertIsSubclass(C, A)
+            self.assertIsSubclass(C, (A,))
             self.assertIsInstance(c, A)
             self.assertIsInstance(c, (A,))
             self.assertIs(C, A.register(C))
@@ -302,14 +321,14 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class B:
                 pass
             b = B()
-            self.assertFalse(isinstance(b, A))
-            self.assertFalse(isinstance(b, (A,)))
+            self.assertNotIsInstance(b, A)
+            self.assertNotIsInstance(b, (A,))
             token_old = abc_get_cache_token()
             A.register(B)
             token_new = abc_get_cache_token()
-            self.assertNotEqual(token_old, token_new)
-            self.assertTrue(isinstance(b, A))
-            self.assertTrue(isinstance(b, (A,)))
+            self.assertGreater(token_new, token_old)
+            self.assertIsInstance(b, A)
+            self.assertIsInstance(b, (A,))
 
         def test_registration_builtins(self):
             class A(metaclass=abc_ABCMeta):
@@ -317,18 +336,18 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             A.register(int)
             self.assertIsInstance(42, A)
             self.assertIsInstance(42, (A,))
-            self.assertTrue(issubclass(int, A))
-            self.assertTrue(issubclass(int, (A,)))
+            self.assertIsSubclass(int, A)
+            self.assertIsSubclass(int, (A,))
             class B(A):
                 pass
             B.register(str)
             class C(str): pass
             self.assertIsInstance("", A)
             self.assertIsInstance("", (A,))
-            self.assertTrue(issubclass(str, A))
-            self.assertTrue(issubclass(str, (A,)))
-            self.assertTrue(issubclass(C, A))
-            self.assertTrue(issubclass(C, (A,)))
+            self.assertIsSubclass(str, A)
+            self.assertIsSubclass(str, (A,))
+            self.assertIsSubclass(C, A)
+            self.assertIsSubclass(C, (A,))
 
         def test_registration_edge_cases(self):
             class A(metaclass=abc_ABCMeta):
@@ -356,39 +375,39 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
         def test_registration_transitiveness(self):
             class A(metaclass=abc_ABCMeta):
                 pass
-            self.assertTrue(issubclass(A, A))
-            self.assertTrue(issubclass(A, (A,)))
+            self.assertIsSubclass(A, A)
+            self.assertIsSubclass(A, (A,))
             class B(metaclass=abc_ABCMeta):
                 pass
-            self.assertFalse(issubclass(A, B))
-            self.assertFalse(issubclass(A, (B,)))
-            self.assertFalse(issubclass(B, A))
-            self.assertFalse(issubclass(B, (A,)))
+            self.assertNotIsSubclass(A, B)
+            self.assertNotIsSubclass(A, (B,))
+            self.assertNotIsSubclass(B, A)
+            self.assertNotIsSubclass(B, (A,))
             class C(metaclass=abc_ABCMeta):
                 pass
             A.register(B)
             class B1(B):
                 pass
-            self.assertTrue(issubclass(B1, A))
-            self.assertTrue(issubclass(B1, (A,)))
+            self.assertIsSubclass(B1, A)
+            self.assertIsSubclass(B1, (A,))
             class C1(C):
                 pass
             B1.register(C1)
-            self.assertFalse(issubclass(C, B))
-            self.assertFalse(issubclass(C, (B,)))
-            self.assertFalse(issubclass(C, B1))
-            self.assertFalse(issubclass(C, (B1,)))
-            self.assertTrue(issubclass(C1, A))
-            self.assertTrue(issubclass(C1, (A,)))
-            self.assertTrue(issubclass(C1, B))
-            self.assertTrue(issubclass(C1, (B,)))
-            self.assertTrue(issubclass(C1, B1))
-            self.assertTrue(issubclass(C1, (B1,)))
+            self.assertNotIsSubclass(C, B)
+            self.assertNotIsSubclass(C, (B,))
+            self.assertNotIsSubclass(C, B1)
+            self.assertNotIsSubclass(C, (B1,))
+            self.assertIsSubclass(C1, A)
+            self.assertIsSubclass(C1, (A,))
+            self.assertIsSubclass(C1, B)
+            self.assertIsSubclass(C1, (B,))
+            self.assertIsSubclass(C1, B1)
+            self.assertIsSubclass(C1, (B1,))
             C1.register(int)
             class MyInt(int):
                 pass
-            self.assertTrue(issubclass(MyInt, A))
-            self.assertTrue(issubclass(MyInt, (A,)))
+            self.assertIsSubclass(MyInt, A)
+            self.assertIsSubclass(MyInt, (A,))
             self.assertIsInstance(42, A)
             self.assertIsInstance(42, (A,))
 
@@ -429,16 +448,35 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             # Also check that issubclass() propagates exceptions raised by
             # __subclasses__.
+            class CustomError(Exception): ...
             exc_msg = "exception from __subclasses__"
 
             def raise_exc():
-                raise Exception(exc_msg)
+                raise CustomError(exc_msg)
 
             class S(metaclass=abc_ABCMeta):
                 __subclasses__ = raise_exc
 
-            with self.assertRaisesRegex(Exception, exc_msg):
+            with self.assertRaisesRegex(CustomError, exc_msg):
                 issubclass(int, S)
+
+        def test_subclasshook(self):
+            class A(metaclass=abc.ABCMeta):
+                @classmethod
+                def __subclasshook__(cls, C):
+                    if cls is A:
+                        return 'foo' in C.__dict__
+                    return NotImplemented
+            self.assertNotIsSubclass(A, A)
+            self.assertNotIsSubclass(A, (A,))
+            class B:
+                foo = 42
+            self.assertIsSubclass(B, A)
+            self.assertIsSubclass(B, (A,))
+            class C:
+                spam = 42
+            self.assertNotIsSubclass(C, A)
+            self.assertNotIsSubclass(C, (A,))
 
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):
@@ -455,7 +493,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertEqual(B.counter, 1)
 
         def test_ABC_has___slots__(self):
-            self.assertTrue(hasattr(abc.ABC, '__slots__'))
+            self.assertHasAttr(abc.ABC, '__slots__')
 
         def test_tricky_new_works(self):
             def with_metaclass(meta, *bases):
@@ -468,6 +506,155 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class C(with_metaclass(abc_ABCMeta, A, B)):
                 pass
             self.assertEqual(C.__class__, abc_ABCMeta)
+
+        def test_update_del(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            del A.foo
+            self.assertEqual(A.__abstractmethods__, {'foo'})
+            self.assertNotHasAttr(A, 'foo')
+
+            abc.update_abstractmethods(A)
+
+            self.assertEqual(A.__abstractmethods__, set())
+            A()
+
+
+        def test_update_new_abstractmethods(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def bar(self):
+                    pass
+
+            @abc.abstractmethod
+            def updated_foo(self):
+                pass
+
+            A.foo = updated_foo
+            abc.update_abstractmethods(A)
+            self.assertEqual(A.__abstractmethods__, {'foo', 'bar'})
+            msg = "class A without an implementation for abstract methods 'bar', 'foo'"
+            self.assertRaisesRegex(TypeError, msg, A)
+
+        def test_update_implementation(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            class B(A):
+                pass
+
+            msg = "class B without an implementation for abstract method 'foo'"
+            self.assertRaisesRegex(TypeError, msg, B)
+            self.assertEqual(B.__abstractmethods__, {'foo'})
+
+            B.foo = lambda self: None
+
+            abc.update_abstractmethods(B)
+
+            B()
+            self.assertEqual(B.__abstractmethods__, set())
+
+        def test_update_as_decorator(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            def class_decorator(cls):
+                cls.foo = lambda self: None
+                return cls
+
+            @abc.update_abstractmethods
+            @class_decorator
+            class B(A):
+                pass
+
+            B()
+            self.assertEqual(B.__abstractmethods__, set())
+
+        def test_update_non_abc(self):
+            class A:
+                pass
+
+            @abc.abstractmethod
+            def updated_foo(self):
+                pass
+
+            A.foo = updated_foo
+            abc.update_abstractmethods(A)
+            A()
+            self.assertNotHasAttr(A, '__abstractmethods__')
+
+        def test_update_del_implementation(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            class B(A):
+                def foo(self):
+                    pass
+
+            B()
+
+            del B.foo
+
+            abc.update_abstractmethods(B)
+
+            msg = "class B without an implementation for abstract method 'foo'"
+            self.assertRaisesRegex(TypeError, msg, B)
+
+        def test_update_layered_implementation(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            class B(A):
+                pass
+
+            class C(B):
+                def foo(self):
+                    pass
+
+            C()
+
+            del C.foo
+
+            abc.update_abstractmethods(C)
+
+            msg = "class C without an implementation for abstract method 'foo'"
+            self.assertRaisesRegex(TypeError, msg, C)
+
+        def test_update_multi_inheritance(self):
+            class A(metaclass=abc_ABCMeta):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            class B(metaclass=abc_ABCMeta):
+                def foo(self):
+                    pass
+
+            class C(B, A):
+                @abc.abstractmethod
+                def foo(self):
+                    pass
+
+            self.assertEqual(C.__abstractmethods__, {'foo'})
+
+            del C.foo
+
+            abc.update_abstractmethods(C)
+
+            self.assertEqual(C.__abstractmethods__, set())
+
+            C()
 
 
     class TestABCWithInitSubclass(unittest.TestCase):
@@ -482,12 +669,31 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             class Receiver(ReceivesClassKwargs, abc_ABC, x=1, y=2, z=3):
                 pass
             self.assertEqual(saved_kwargs, dict(x=1, y=2, z=3))
+
+        def test_positional_only_and_kwonlyargs_with_init_subclass(self):
+            saved_kwargs = {}
+
+            class A:
+                def __init_subclass__(cls, **kwargs):
+                    super().__init_subclass__()
+                    saved_kwargs.update(kwargs)
+
+            class B(A, metaclass=abc_ABCMeta, name="test"):
+                pass
+            self.assertEqual(saved_kwargs, dict(name="test"))
+
     return TestLegacyAPI, TestABC, TestABCWithInitSubclass
 
-TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(abc.ABCMeta,
-                                                                        abc.get_cache_token)
-TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(_py_abc.ABCMeta,
-                                                                     _py_abc.get_cache_token)
+TestLegacyAPI_Py, TestABC_Py, TestABCWithInitSubclass_Py = test_factory(_py_abc.ABCMeta,
+                                                                        _py_abc.get_cache_token)
+TestLegacyAPI_C, TestABC_C, TestABCWithInitSubclass_C = test_factory(abc.ABCMeta,
+                                                                     abc.get_cache_token)
+
+# gh-130095: The _py_abc tests are not thread-safe when run with
+# `--parallel-threads`
+TestLegacyAPI_Py.__unittest_thread_unsafe__ = True
+TestABC_Py.__unittest_thread_unsafe__ = True
+TestABCWithInitSubclass_Py.__unittest_thread_unsafe__ = True
 
 if __name__ == "__main__":
     unittest.main()

@@ -200,15 +200,12 @@ class ExpatBuilder:
         parser = self.getParser()
         first_buffer = True
         try:
-            while 1:
-                buffer = file.read(16*1024)
-                if not buffer:
-                    break
-                parser.Parse(buffer, 0)
+            while buffer := file.read(16*1024):
+                parser.Parse(buffer, False)
                 if first_buffer and self.document.documentElement:
                     self._setup_subset(buffer)
                 first_buffer = False
-            parser.Parse("", True)
+            parser.Parse(b"", True)
         except ParseEscape:
             pass
         doc = self.document
@@ -637,7 +634,7 @@ class FragmentBuilder(ExpatBuilder):
         nsattrs = self._getNSattrs() # get ns decls from node's ancestors
         document = _FRAGMENT_BUILDER_TEMPLATE % (ident, subset, nsattrs)
         try:
-            parser.Parse(document, 1)
+            parser.Parse(document, True)
         except:
             self.reset()
             raise
@@ -697,7 +694,7 @@ class FragmentBuilder(ExpatBuilder):
             self.fragment = self.document.createDocumentFragment()
             self.curNode = self.fragment
             try:
-                parser.Parse(self._source, 1)
+                parser.Parse(self._source, True)
             finally:
                 self.curNode = old_cur_node
                 self.document = old_document

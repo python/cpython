@@ -3,8 +3,30 @@
 import argparse
 import os
 import pathlib
+import sys
+import time
+import urllib.error
+import urllib.request
 import zipfile
-from urllib.request import urlretrieve
+
+
+def retrieve_with_retries(download_location, output_path, reporthook,
+                          max_retries=7):
+    """Download a file with exponential backoff retry and save to disk."""
+    for attempt in range(max_retries + 1):
+        try:
+            resp = urllib.request.urlretrieve(
+                download_location,
+                output_path,
+                reporthook=reporthook,
+            )
+        except (urllib.error.URLError, ConnectionError) as ex:
+            if attempt == max_retries:
+                msg = f"Download from {download_location} failed."
+                raise OSError(msg) from ex
+            time.sleep(2.25**attempt)
+        else:
+            return resp
 
 
 def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
@@ -14,10 +36,10 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
     if verbose:
         reporthook = print
     zip_dir.mkdir(parents=True, exist_ok=True)
-    filename, headers = urlretrieve(
+    filename, _headers = retrieve_with_retries(
         url,
         zip_dir / f'{commit_hash}.zip',
-        reporthook=reporthook,
+        reporthook
     )
     return filename
 
@@ -53,7 +75,22 @@ def main():
         verbose=args.verbose,
     )
     final_name = args.externals_dir / args.tag
-    extract_zip(args.externals_dir, zip_path).replace(final_name)
+    extracted = extract_zip(args.externals_dir, zip_path)
+    for wait in [1, 2, 3, 5, 8, 0]:
+        try:
+            extracted.replace(final_name)
+            break
+        except PermissionError as ex:
+            retry = f" Retrying in {wait}s..." if wait else ""
+            print(f"Encountered permission error '{ex}'.{retry}", file=sys.stderr)
+            time.sleep(wait)
+    else:
+        print(
+            f"ERROR: Failed to extract {final_name}.",
+            "You may need to restart your build",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 if __name__ == '__main__':

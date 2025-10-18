@@ -42,8 +42,8 @@ def pysiphash(uint64):
 
 def skip_unless_internalhash(test):
     """Skip decorator for tests that depend on SipHash24 or FNV"""
-    ok = sys.hash_info.algorithm in {"fnv", "siphash24"}
-    msg = "Requires SipHash24 or FNV"
+    ok = sys.hash_info.algorithm in {"fnv", "siphash13", "siphash24"}
+    msg = "Requires SipHash13, SipHash24 or FNV"
     return test if ok else unittest.skip(msg)(test)
 
 
@@ -206,6 +206,19 @@ class StringlikeHashRandomizationTests(HashRandomizationTests):
             # seed 42, 'abc'
             [-678966196, 573763426263223372, -820489388, -4282905804826039665],
             ],
+        'siphash13': [
+            # NOTE: PyUCS2 layout depends on endianness
+            # seed 0, 'abc'
+            [69611762, -4594863902769663758, 69611762, -4594863902769663758],
+            # seed 42, 'abc'
+            [-975800855, 3869580338025362921, -975800855, 3869580338025362921],
+            # seed 42, 'abcdefghijk'
+            [-595844228, 7764564197781545852, -595844228, 7764564197781545852],
+            # seed 0, 'äú∑ℇ'
+            [-1093288643, -2810468059467891395, -1041341092, 4925090034378237276],
+            # seed 42, 'äú∑ℇ'
+            [-585999602, -2845126246016066802, -817336969, -2219421378907968137],
+        ],
         'siphash24': [
             # NOTE: PyUCS2 layout depends on endianness
             # seed 0, 'abc'

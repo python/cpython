@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,11 +27,14 @@
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
+
 #include <assert.h>
-#include "numbertheory.h"
-#include "umodarith.h"
+
+#include "constants.h"
 #include "crt.h"
+#include "numbertheory.h"
+#include "typearith.h"
+#include "umodarith.h"
 
 
 /* Bignum: Chinese Remainder Theorem, extends the maximum transform length. */
@@ -59,17 +62,17 @@ static inline void
 _crt_add3(mpd_uint_t w[3], mpd_uint_t v[3])
 {
     mpd_uint_t carry;
-    mpd_uint_t s;
 
-    s = w[0] + v[0];
-    carry = (s < w[0]);
-    w[0] = s;
+    w[0] = w[0] + v[0];
+    carry = (w[0] < v[0]);
 
-    s = w[1] + (v[1] + carry);
-    carry = (s < w[1]);
-    w[1] = s;
+    w[1] = w[1] + v[1];
+    if (w[1] < v[1]) w[2]++;
 
-    w[2] = w[2] + (v[2] + carry);
+    w[1] = w[1] + carry;
+    if (w[1] < carry) w[2]++;
+
+    w[2] += v[2];
 }
 
 /* Divide 3 words in u by v, store result in w, return remainder. */
@@ -175,5 +178,3 @@ crt3(mpd_uint_t *x1, mpd_uint_t *x2, mpd_uint_t *x3, mpd_size_t rsize)
 
     assert(carry[0] == 0 && carry[1] == 0 && carry[2] == 0);
 }
-
-

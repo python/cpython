@@ -14,12 +14,25 @@ import tkinter
 _tk_type = None
 
 def _init_tk_type():
-    """
-    Initializes OS X Tk variant values for
-    isAquaTk(), isCarbonTk(), isCocoaTk(), and isXQuartz().
+    """ Initialize _tk_type for isXyzTk functions.
+
+    This function is only called once, when _tk_type is still None.
     """
     global _tk_type
     if platform == 'darwin':
+
+        # When running IDLE, GUI is present, test/* may not be.
+        # When running tests, test/* is present, GUI may not be.
+        # If not, guess most common.  Does not matter for testing.
+        from idlelib.__init__ import testing
+        if testing:
+            from test.support import requires, ResourceDenied
+            try:
+                requires('gui')
+            except ResourceDenied:
+                _tk_type = "cocoa"
+                return
+
         root = tkinter.Tk()
         ws = root.tk.call('tk', 'windowingsystem')
         if 'x11' in ws:
@@ -33,6 +46,7 @@ def _init_tk_type():
         root.destroy()
     else:
         _tk_type = "other"
+    return
 
 def isAquaTk():
     """
@@ -66,27 +80,6 @@ def isXQuartz():
     if not _tk_type:
         _init_tk_type()
     return _tk_type == "xquartz"
-
-
-def tkVersionWarning(root):
-    """
-    Returns a string warning message if the Tk version in use appears to
-    be one known to cause problems with IDLE.
-    1. Apple Cocoa-based Tk 8.5.7 shipped with Mac OS X 10.6 is unusable.
-    2. Apple Cocoa-based Tk 8.5.9 in OS X 10.7 and 10.8 is better but
-        can still crash unexpectedly.
-    """
-
-    if isCocoaTk():
-        patchlevel = root.tk.call('info', 'patchlevel')
-        if patchlevel not in ('8.5.7', '8.5.9'):
-            return False
-        return ("WARNING: The version of Tcl/Tk ({0}) in use may"
-                " be unstable.\n"
-                "Visit http://www.python.org/download/mac/tcltk/"
-                " for current information.".format(patchlevel))
-    else:
-        return False
 
 
 def readSystemPreferences():
@@ -181,9 +174,8 @@ def overrideRootMenu(root, flist):
     del mainmenu.menudefs[-3][1][0:2]
     menubar = Menu(root)
     root.configure(menu=menubar)
-    menudict = {}
 
-    menudict['window'] = menu = Menu(menubar, name='window', tearoff=0)
+    menu = Menu(menubar, name='window', tearoff=0)
     menubar.add_cascade(label='Window', menu=menu, underline=0)
 
     def postwindowsmenu(menu=menu):
@@ -229,12 +221,11 @@ def overrideRootMenu(root, flist):
         # The binding above doesn't reliably work on all versions of Tk
         # on macOS. Adding command definition below does seem to do the
         # right thing for now.
-        root.createcommand('exit', flist.close_all_callback)
+        root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
     if isCarbonTk():
         # for Carbon AquaTk, replace the default Tk apple menu
-        menudict['application'] = menu = Menu(menubar, name='apple',
-                                              tearoff=0)
+        menu = Menu(menubar, name='apple', tearoff=0)
         menubar.add_cascade(label='IDLE', menu=menu)
         mainmenu.menudefs.insert(0,
             ('application', [

@@ -1,9 +1,9 @@
-:mod:`pty` --- Pseudo-terminal utilities
-========================================
+:mod:`!pty` --- Pseudo-terminal utilities
+=========================================
 
 .. module:: pty
-   :platform: Linux
-   :synopsis: Pseudo-Terminal Handling for Linux.
+   :platform: Unix
+   :synopsis: Pseudo-Terminal Handling for Unix.
 
 .. moduleauthor:: Steen Lumholt
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
@@ -16,9 +16,11 @@ The :mod:`pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its
 controlling terminal programmatically.
 
-Because pseudo-terminal handling is highly platform dependent, there is code to
-do it only for Linux. (The Linux code is supposed to work on other platforms,
-but hasn't been tested yet.)
+.. availability:: Unix.
+
+Pseudo-terminal handling is highly platform dependent. This code is mainly
+tested on Linux, FreeBSD, and macOS (it is supposed to work on other POSIX
+platforms but it's not been thoroughly tested).
 
 The :mod:`pty` module defines the following functions:
 
@@ -30,6 +32,14 @@ The :mod:`pty` module defines the following functions:
    *invalid*. The parent's return value is the *pid* of the child, and *fd* is a
    file descriptor connected to the child's controlling terminal (and also to the
    child's standard input and output).
+
+   The returned file descriptor *fd* is :ref:`non-inheritable <fd_inheritance>`.
+
+   .. warning:: On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
+
+   .. versionchanged:: 3.15
+      The returned file descriptor is now made non-inheritable.
 
 
 .. function:: openpty()
@@ -43,11 +53,38 @@ The :mod:`pty` module defines the following functions:
 
    Spawn a process, and connect its controlling terminal with the current
    process's standard io. This is often used to baffle programs which insist on
-   reading from the controlling terminal.
+   reading from the controlling terminal. It is expected that the process
+   spawned behind the pty will eventually terminate, and when it does *spawn*
+   will return.
 
-   The functions *master_read* and *stdin_read* should be functions which read from
-   a file descriptor. The defaults try to read 1024 bytes each time they are
-   called.
+   A loop copies STDIN of the current process to the child and data received
+   from the child to STDOUT of the current process. It is not signaled to the
+   child if STDIN of the current process closes down.
+
+   The functions *master_read* and *stdin_read* are passed a file descriptor
+   which they should read from, and they should always return a byte string. In
+   order to force spawn to return before the child process exits an
+   empty byte array should be returned to signal end of file.
+
+   The default implementation for both functions will read and return up to 1024
+   bytes each time the function is called. The *master_read* callback is passed
+   the pseudoterminal’s master file descriptor to read output from the child
+   process, and *stdin_read* is passed file descriptor 0, to read from the
+   parent process's standard input.
+
+   Returning an empty byte string from either callback is interpreted as an
+   end-of-file (EOF) condition, and that callback will not be called after
+   that. If *stdin_read* signals EOF the controlling terminal can no longer
+   communicate with the parent process OR the child process. Unless the child
+   process will quit without any input, *spawn* will then loop forever. If
+   *master_read* signals EOF the same behavior results (on linux at least).
+
+   Return the exit status value from :func:`os.waitpid` on the child process.
+
+   :func:`os.waitstatus_to_exitcode` can be used to convert the exit status into
+   an exit code.
+
+   .. audit-event:: pty.spawn argv pty.spawn
 
    .. versionchanged:: 3.4
       :func:`spawn` now returns the status value from :func:`os.waitpid`

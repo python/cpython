@@ -1,4 +1,4 @@
-"""Mock socket module used by the smtpd and smtplib tests.
+"""Mock socket module used by the smtplib tests.
 """
 
 # imported for _GLOBAL_DEFAULT_TIMEOUT
@@ -33,7 +33,7 @@ class MockFile:
 
 
 class MockSocket:
-    """Mock socket object used by smtpd and smtplib tests.
+    """Mock socket object used by the smtplib tests.
     """
     def __init__(self, family=None):
         global _reply_data
@@ -91,7 +91,7 @@ class MockSocket:
         handle = MockFile(self.lines)
         return handle
 
-    def sendall(self, buffer, flags=None):
+    def sendall(self, data, flags=None):
         self.last = data
         self.output.append(data)
         return len(data)
@@ -105,6 +105,9 @@ class MockSocket:
         return ('peer-address', 'peer-port')
 
     def close(self):
+        pass
+
+    def connect(self, host):
         pass
 
 
@@ -152,8 +155,12 @@ error = socket_module.error
 
 
 # Constants
+_GLOBAL_DEFAULT_TIMEOUT = socket_module._GLOBAL_DEFAULT_TIMEOUT
 AF_INET = socket_module.AF_INET
 AF_INET6 = socket_module.AF_INET6
 SOCK_STREAM = socket_module.SOCK_STREAM
 SOL_SOCKET = None
 SO_REUSEADDR = None
+
+if hasattr(socket_module, 'AF_UNIX'):
+    AF_UNIX = socket_module.AF_UNIX

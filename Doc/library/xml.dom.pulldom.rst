@@ -1,5 +1,5 @@
-:mod:`xml.dom.pulldom` --- Support for building partial DOM trees
-=================================================================
+:mod:`!xml.dom.pulldom` --- Support for building partial DOM trees
+==================================================================
 
 .. module:: xml.dom.pulldom
    :synopsis: Support for building partial DOM trees from SAX events.
@@ -19,11 +19,10 @@ responsible for explicitly pulling events from the stream, looping over those
 events until either processing is finished or an error condition occurs.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.dom.pulldom` module is not secure against
-   maliciously constructed data.  If you need to parse untrusted or
-   unauthenticated data see :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 .. versionchanged:: 3.7.1
 
@@ -114,8 +113,8 @@ DOMEventStream Objects
 
 .. class:: DOMEventStream(stream, parser, bufsize)
 
-   .. deprecated:: 3.8
-      Support for :meth:`sequence protocol <__getitem__>` is deprecated.
+   .. versionchanged:: 3.11
+      Support for :meth:`~object.__getitem__` method has been removed.
 
    .. method:: getEvent()
 
@@ -144,4 +143,3 @@ DOMEventStream Objects
                   print(node.toxml())
 
    .. method:: DOMEventStream.reset()
-

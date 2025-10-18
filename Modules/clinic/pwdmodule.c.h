@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
+
 PyDoc_STRVAR(pwd_getpwuid__doc__,
 "getpwuid($module, uidobj, /)\n"
 "--\n"
@@ -34,10 +36,7 @@ pwd_getpwnam(PyObject *module, PyObject *arg)
     PyObject *name;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("getpwnam", 0, "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
+        _PyArg_BadArgument("getpwnam", "argument", "str", arg);
         goto exit;
     }
     name = arg;
@@ -74,4 +73,4 @@ pwd_getpwall(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef PWD_GETPWALL_METHODDEF
     #define PWD_GETPWALL_METHODDEF
 #endif /* !defined(PWD_GETPWALL_METHODDEF) */
-/*[clinic end generated code: output=f9412bdedc69706c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a8fb12939ff4ea3 input=a9049054013a1b77]*/

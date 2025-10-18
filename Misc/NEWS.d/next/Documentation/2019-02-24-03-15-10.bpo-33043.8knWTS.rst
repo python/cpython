@@ -1,1 +1,0 @@
-Updates the docs.python.org page with the addition of a 'Contributing to Docs' link at the end of the page (between 'Reporting Bugs' and 'About Documentation'). Updates the 'Found a Bug' page with additional links and information in the Documentation Bugs section.

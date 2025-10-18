@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """Tool for measuring execution time of small code snippets.
 
 This module avoids a number of common traps for measuring execution
@@ -31,7 +29,8 @@ argument in quotes and using leading spaces.  Multiple -s options are
 treated similarly.
 
 If -n is not given, a suitable number of loops is calculated by trying
-successive powers of 10 until the total time is at least 0.2 seconds.
+increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the
+total time is at least 0.2 seconds.
 
 Note: there is a certain baseline overhead associated with executing a
 pass statement.  It differs between versions.  The code here doesn't try
@@ -47,13 +46,12 @@ Functions:
     timeit(string, string) -> float
     repeat(string, string) -> list
     default_timer() -> float
-
 """
 
 import gc
+import itertools
 import sys
 import time
-import itertools
 
 __all__ = ["Timer", "timeit", "repeat", "default_timer"]
 
@@ -74,6 +72,7 @@ def inner(_it, _timer{init}):
     _t0 = _timer()
     for _i in _it:
         {stmt}
+        pass
     _t1 = _timer()
     return _t1 - _t0
 """
@@ -81,7 +80,7 @@ def inner(_it, _timer{init}):
 
 def reindent(src, indent):
     """Helper to reindent a multi-line statement."""
-    return src.replace("\n", "\n" + " "*indent)
+    return src.replace("\n", "\n" + " " * indent)
 
 
 class Timer:
@@ -138,7 +137,7 @@ class Timer:
         exec(code, global_ns, local_ns)
         self.inner = local_ns["inner"]
 
-    def print_exc(self, file=None):
+    def print_exc(self, file=None, **kwargs):
         """Helper to print a traceback from the timed code.
 
         Typical use:
@@ -154,6 +153,11 @@ class Timer:
 
         The optional file argument directs where the traceback is
         sent; it defaults to sys.stderr.
+
+        The optional colorize keyword argument controls whether the
+        traceback is colorized; it defaults to False for programmatic
+        usage. When used from the command line, this is automatically
+        set based on terminal capabilities.
         """
         import linecache, traceback
         if self.src is not None:
@@ -163,14 +167,15 @@ class Timer:
                                                dummy_src_name)
         # else the source is already stored somewhere else
 
-        traceback.print_exc(file=file)
+        kwargs['colorize'] = kwargs.get('colorize', False)
+        traceback.print_exc(file=file, **kwargs)
 
     def timeit(self, number=default_number):
         """Time 'number' executions of the main statement.
 
         To be precise, this executes the setup statement once, and
         then returns the time it takes to execute the main statement
-        a number of times, as a float measured in seconds.  The
+        a number of times, as float seconds if using the default timer.   The
         argument is the number of times through the loop, defaulting
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
@@ -269,13 +274,16 @@ def main(args=None, *, _wrap_timer=None):
     is not None, it must be a callable that accepts a timer function
     and returns another timer function (used for unit testing).
     """
+    import getopt
     if args is None:
         args = sys.argv[1:]
-    import getopt
+    import _colorize
+    colorize = _colorize.can_colorize()
+
     try:
-        opts, args = getopt.getopt(args, "n:u:s:r:tcpvh",
+        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
                                    ["number=", "setup=", "repeat=",
-                                    "time", "clock", "process", "max_time_taken="
+                                    "process", "max_time_taken=",
                                     "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
@@ -284,7 +292,7 @@ def main(args=None, *, _wrap_timer=None):
 
     timer = default_timer
     stmt = "\n".join(args) or "pass"
-    number = 0 # auto-determine
+    number = 0  # auto-determine
     target_time = default_target_time
     setup = []
     repeat = default_repeat
@@ -302,7 +310,7 @@ def main(args=None, *, _wrap_timer=None):
                 time_unit = a
             else:
                 print("Unrecognized unit. Please select nsec, usec, msec, or sec.",
-                    file=sys.stderr)
+                      file=sys.stderr)
                 return 2
         if o in ("-r", "--repeat"):
             repeat = int(a)
@@ -317,7 +325,7 @@ def main(args=None, *, _wrap_timer=None):
                 precision += 1
             verbose += 1
         if o in ("-h", "--help"):
-            print(__doc__, end=' ')
+            print(__doc__, end="")
             return 0
     setup = "\n".join(setup) or "pass"
 
@@ -338,11 +346,11 @@ def main(args=None, *, _wrap_timer=None):
                 msg = "{num} loop{s} -> {secs:.{prec}g} secs"
                 plural = (number != 1)
                 print(msg.format(num=number, s='s' if plural else '',
-                                  secs=time_taken, prec=precision))
+                                 secs=time_taken, prec=precision))
         try:
             number, _ = t.autorange(callback, target_time)
         except:
-            t.print_exc()
+            t.print_exc(colorize=colorize)
             return 1
 
         if verbose:
@@ -351,7 +359,7 @@ def main(args=None, *, _wrap_timer=None):
     try:
         raw_timings = t.repeat(repeat, number)
     except:
-        t.print_exc()
+        t.print_exc(colorize=colorize)
         return 1
 
     def format_time(dt):

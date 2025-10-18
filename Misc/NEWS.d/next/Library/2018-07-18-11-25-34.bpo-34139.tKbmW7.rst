@@ -1,1 +1,0 @@
-Remove stale unix datagram socket before binding
