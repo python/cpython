@@ -157,12 +157,18 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
          uint8_t width)
 {
     assert(loc_start + width <= 32);
+    uint32_t temp_val;
+    // Use memcpy to safely read the value, avoiding potential alignment
+    // issues and strict aliasing violations.
+    memcpy(&temp_val, loc, sizeof(temp_val));
     // Clear the bits we're about to patch:
-    *loc &= ~(((1ULL << width) - 1) << loc_start);
-    assert(get_bits(*loc, loc_start, width) == 0);
+    temp_val &= ~(((1ULL << width) - 1) << loc_start);
+    assert(get_bits(temp_val, loc_start, width) == 0);
     // Patch the bits:
-    *loc |= get_bits(value, value_start, width) << loc_start;
-    assert(get_bits(*loc, loc_start, width) == get_bits(value, value_start, width));
+    temp_val |= get_bits(value, value_start, width) << loc_start;
+    assert(get_bits(temp_val, loc_start, width) == get_bits(value, value_start, width));
+    // Safely write the modified value back to memory.
+    memcpy(loc, &temp_val, sizeof(temp_val));
 }
 
 // See https://developer.arm.com/documentation/ddi0602/2023-09/Base-Instructions
@@ -204,30 +210,29 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 void
 patch_32(unsigned char *location, uint64_t value)
 {
-    uint32_t *loc32 = (uint32_t *)location;
     // Check that we're not out of range of 32 unsigned bits:
     assert(value < (1ULL << 32));
-    *loc32 = (uint32_t)value;
+    uint32_t final_value = (uint32_t)value;
+    memcpy(location, &final_value, sizeof(final_value));
 }
 
 // 32-bit relative address.
 void
 patch_32r(unsigned char *location, uint64_t value)
 {
-    uint32_t *loc32 = (uint32_t *)location;
     value -= (uintptr_t)location;
     // Check that we're not out of range of 32 signed bits:
     assert((int64_t)value >= -(1LL << 31));
     assert((int64_t)value < (1LL << 31));
-    *loc32 = (uint32_t)value;
+    uint32_t final_value = (uint32_t)value;
+    memcpy(location, &final_value, sizeof(final_value));
 }
 
 // 64-bit absolute address.
 void
 patch_64(unsigned char *location, uint64_t value)
 {
-    uint64_t *loc64 = (uint64_t *)location;
-    *loc64 = value;
+    memcpy(location, &value, sizeof(value));
 }
 
 // 12-bit low part of an absolute address. Pairs nicely with patch_aarch64_21r
@@ -410,7 +415,10 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 {
     uint8_t *loc8 = (uint8_t *)location;
     // Try to relax the GOT load into an immediate value:
-    uint64_t relaxed = *(uint64_t *)(value + 4) - 4;
+    uint64_t relaxed;
+    memcpy(&relaxed, (void *)(value + 4), sizeof(relaxed));
+    relaxed -= 4;
+
     if ((int64_t)relaxed - (int64_t)location >= -(1LL << 31) &&
         (int64_t)relaxed - (int64_t)location + 1 < (1LL << 31))
     {
