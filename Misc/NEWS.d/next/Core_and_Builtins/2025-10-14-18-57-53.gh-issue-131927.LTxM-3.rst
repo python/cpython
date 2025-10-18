@@ -1,0 +1,2 @@
+Silence duplicate syntax warnings for ``return``/``break``/``continue`` in
+``finally`` in the REPL.
