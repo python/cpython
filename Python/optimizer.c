@@ -147,6 +147,11 @@ _PyOptimizer_Optimize(
         interp->compiling = false;
         return 0;
     }
+    // One of our depencies while tracing was invalidated. Not worth compiling.
+    if (!tstate->interp->jit_tracer_dependencies_still_valid) {
+        interp->compiling = false;
+        return 0;
+    }
     _PyExecutorObject *executor;
     int err = uop_optimize(frame, tstate, &executor, progress_needed);
     if (err <= 0) {
@@ -560,9 +565,6 @@ _PyJIT_translate_single_bytecode_to_trace(
     int oparg,
     int jump_taken)
 {
-    if (PyStackRef_IsNull(frame->f_funcobj)) {
-        goto unsupported;
-    }
 
     int is_first_instr = tstate->interp->jit_tracer_initial_instr == this_instr;
     bool progress_needed = (tstate->interp->jit_tracer_initial_chain_depth % MAX_CHAIN_DEPTH) == 0 && is_first_instr;;
@@ -794,12 +796,16 @@ _PyJIT_translate_single_bytecode_to_trace(
                 }
                 if (uop == _PUSH_FRAME || uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
                     PyCodeObject *new_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
-                    PyFunctionObject *new_func = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+                    PyFunctionObject *new_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
                     if (new_func != NULL) {
                         operand = (uintptr_t)new_func;
+                        DPRINTF(2, "Adding %p func to op\n", (void *)operand);
+                        _Py_BloomFilter_Add(dependencies, new_func);
                     }
                     else if (new_code != NULL) {
                         operand = (uintptr_t)new_code | 1;
+                        DPRINTF(2, "Adding %p code to op\n", (void *)operand);
+                        _Py_BloomFilter_Add(dependencies, new_code);
                     }
                     else {
                         operand = 0;
@@ -866,6 +872,7 @@ _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     tstate->interp->jit_tracer_initial_stack_depth = curr_stackdepth;
     tstate->interp->jit_tracer_initial_chain_depth = chain_depth;
     tstate->interp->jit_tracer_current_frame = frame;
+    tstate->interp->jit_tracer_dependencies_still_valid = true;
 }
 
 void
@@ -1530,6 +1537,25 @@ error:
     _Py_Executors_InvalidateAll(interp, is_invalidation);
 }
 
+void
+_Py_JITTracer_InvalidateDependency(PyThreadState *old_tstate, void *obj)
+{
+    _PyBloomFilter obj_filter;
+    _Py_BloomFilter_Init(&obj_filter);
+    _Py_BloomFilter_Add(&obj_filter, obj);
+    HEAD_LOCK(&_PyRuntime);
+
+    PyInterpreterState *interp = old_tstate->interp;
+
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
+        if (bloom_filter_may_contain(&tstate->interp->jit_tracer_dependencies, &obj_filter))
+        {
+            tstate->interp->jit_tracer_dependencies_still_valid = false;
+        }
+
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+}
 /* Invalidate all executors */
 void
 _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)

@@ -947,6 +947,7 @@ struct _is {
     int jit_tracer_code_max_size;
     int jit_tracer_code_curr_size;
     _PyBloomFilter jit_tracer_dependencies;
+    bool jit_tracer_dependencies_still_valid;
     _PyUOpInstruction *jit_tracer_code_buffer;
     _Py_CODEUNIT *jit_tracer_initial_instr;
     int jit_tracer_initial_stack_depth;

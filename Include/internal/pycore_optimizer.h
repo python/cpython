@@ -375,6 +375,9 @@ void
 _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit);
 
 void _PyJIT_FinalizeTracing(PyThreadState *tstate);
+
+void _Py_JITTracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);
+
 #ifdef __cplusplus
 }
 #endif

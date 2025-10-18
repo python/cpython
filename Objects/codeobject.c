@@ -2415,6 +2415,7 @@ code_dealloc(PyObject *self)
         PyMem_Free(co_extra);
     }
 #ifdef _Py_TIER2
+    _Py_JITTracer_InvalidateDependency(tstate, self);
     if (co->co_executors != NULL) {
         clear_executors(co);
     }
