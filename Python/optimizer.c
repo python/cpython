@@ -244,6 +244,7 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
         ts = PyThreadState_Next(ts);
         HEAD_UNLOCK(runtime);
     }
+    EXECUTOR_LIST_LOCK(interp);
     _PyExecutorObject **prev_to_next_ptr = &interp->executor_deletion_list_head;
     _PyExecutorObject *exec = *prev_to_next_ptr;
     while (exec != NULL) {
@@ -259,12 +260,14 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
         exec = *prev_to_next_ptr;
     }
     interp->executor_deletion_list_remaining_capacity = EXECUTOR_DELETE_LIST_MAX;
+    EXECUTOR_LIST_UNLOCK(interp);
 }
 
 static void
 add_to_pending_deletion_list(_PyExecutorObject *self)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    EXECUTOR_LIST_LOCK(interp);
     self->vm_data.links.next = interp->executor_deletion_list_head;
     interp->executor_deletion_list_head = self;
     if (interp->executor_deletion_list_remaining_capacity > 0) {
@@ -273,6 +276,7 @@ add_to_pending_deletion_list(_PyExecutorObject *self)
     else {
         _Py_ClearExecutorDeletionList(interp);
     }
+    EXECUTOR_LIST_UNLOCK(interp);
 }
 
 static void
@@ -1441,6 +1445,7 @@ static void
 link_executor(_PyExecutorObject *executor)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    EXECUTOR_LIST_LOCK(interp);
     _PyExecutorLinkListNode *links = &executor->vm_data.links;
     _PyExecutorObject *head = interp->executor_list_head;
     if (head == NULL) {
@@ -1458,6 +1463,7 @@ link_executor(_PyExecutorObject *executor)
     executor->vm_data.linked = true;
     /* executor_list_head must be first in list */
     assert(interp->executor_list_head->vm_data.links.previous == NULL);
+    EXECUTOR_LIST_UNLOCK(interp);
 }
 
 static void
@@ -1466,6 +1472,8 @@ unlink_executor(_PyExecutorObject *executor)
     if (!executor->vm_data.linked) {
         return;
     }
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    EXECUTOR_LIST_LOCK(interp);
     _PyExecutorLinkListNode *links = &executor->vm_data.links;
     assert(executor->vm_data.valid);
     _PyExecutorObject *next = links->next;
@@ -1478,11 +1486,11 @@ unlink_executor(_PyExecutorObject *executor)
     }
     else {
         // prev == NULL implies that executor is the list head
-        PyInterpreterState *interp = PyInterpreterState_Get();
         assert(interp->executor_list_head == executor);
         interp->executor_list_head = next;
     }
     executor->vm_data.linked = false;
+    EXECUTOR_LIST_UNLOCK(interp);
 }
 
 /* This must be called by optimizers before using the executor */
@@ -1607,16 +1615,19 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     }
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
+    EXECUTOR_LIST_LOCK(interp);
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
         if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter) &&
             PyList_Append(invalidate, (PyObject *)exec))
         {
+            EXECUTOR_LIST_UNLOCK(interp);
             goto error;
         }
         exec = next;
     }
+    EXECUTOR_LIST_UNLOCK(interp);
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
         PyObject *exec = PyList_GET_ITEM(invalidate, i);
         executor_clear(exec);
@@ -1637,6 +1648,7 @@ error:
 void
 _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
+    EXECUTOR_LIST_LOCK(interp);
     while (interp->executor_list_head) {
         _PyExecutorObject *executor = interp->executor_list_head;
         assert(executor->vm_data.valid == 1 && executor->vm_data.linked == 1);
@@ -1651,6 +1663,7 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
             OPT_STAT_INC(executors_invalidated);
         }
     }
+    EXECUTOR_LIST_UNLOCK(interp);
 }
 
 void
@@ -1665,11 +1678,13 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
 
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
+    EXECUTOR_LIST_LOCK(interp);
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
 
         if (!exec->vm_data.warm && PyList_Append(invalidate, (PyObject *)exec) < 0) {
+            EXECUTOR_LIST_UNLOCK(interp);
             goto error;
         }
         else {
@@ -1678,6 +1693,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
 
         exec = next;
     }
+    EXECUTOR_LIST_UNLOCK(interp);
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
         PyObject *exec = PyList_GET_ITEM(invalidate, i);
         executor_clear(exec);
@@ -1801,10 +1817,12 @@ _PyDumpExecutors(FILE *out)
     fprintf(out, "digraph ideal {\n\n");
     fprintf(out, "    rankdir = \"LR\"\n\n");
     PyInterpreterState *interp = PyInterpreterState_Get();
+    EXECUTOR_LIST_LOCK(interp);
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         executor_to_gv(exec, out);
         exec = exec->vm_data.links.next;
     }
+    EXECUTOR_LIST_UNLOCK(interp);
     fprintf(out, "}\n\n");
     return 0;
 }

@@ -29,6 +29,12 @@ extern "C" {
 #  define NUM_WEAKREF_LIST_LOCKS 127
 #endif
 
+// Executor list lock macros for thread-safe access to executor linked lists
+#define EXECUTOR_LIST_LOCK(interp) \
+    FT_MUTEX_LOCK(&(interp)->executor_list_lock)
+#define EXECUTOR_LIST_UNLOCK(interp) \
+    FT_MUTEX_UNLOCK(&(interp)->executor_list_lock)
+
 typedef int (*_Py_pending_call_func)(void *);
 
 struct _pending_call {
@@ -945,6 +951,9 @@ struct _is {
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
     int executor_deletion_list_remaining_capacity;
+#ifdef Py_GIL_DISABLED
+    PyMutex executor_list_lock;
+#endif
     size_t trace_run_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
