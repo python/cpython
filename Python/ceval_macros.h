@@ -227,6 +227,9 @@ do { \
 
 #define TRACING_DISPATCH() \
     { \
+        if (tstate->c_tracefunc || tstate->c_profilefunc) { \
+            DISPATCH(); \
+        } \
         assert(frame->stackpointer == NULL); \
         RECORD_TRACE_NO_DISPATCH(); \
         NEXTOPARG(); \
