@@ -153,6 +153,10 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
     else {
         alloc = size + 1;
         new->ob_bytes_object = PyBytes_FromStringAndSize(NULL, alloc);
+        if (new->ob_bytes_object == NULL) {
+            Py_DECREF(new);
+            return NULL;
+        }
         new->ob_bytes = PyBytes_AsString(new->ob_bytes_object);
         if (new->ob_bytes == NULL) {
             Py_DECREF(new);
