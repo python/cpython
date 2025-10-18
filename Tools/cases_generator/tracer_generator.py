@@ -117,7 +117,7 @@ class TracerEmitter(Emitter):
 
 def generate_tracer_cases(
     analysis: Analysis, out: CWriter
-):
+) -> None:
     out.emit(f"#ifdef _Py_TIER2 /* BEGIN TRACING INSTRUCTIONS */\n")
     generate_tier1_cases(analysis, out, TracerEmitter(out, analysis.labels), is_tracing=True)
     out.emit(f"#endif /* END TRACING INSTRUCTIONS */\n")
