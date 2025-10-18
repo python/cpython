@@ -73,7 +73,7 @@ The module defines three convenience functions and a public class:
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
-   .. versionchanged:: 3.8
+   .. versionchanged:: next
       The optional *target_time* parameter was added.
 
 
@@ -92,7 +92,7 @@ The module defines three convenience functions and a public class:
    .. versionchanged:: 3.7
       Default value of *repeat* changed from 3 to 5.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       The optional *target_time* parameter was added.
 
 .. function:: default_timer()
@@ -130,7 +130,7 @@ The module defines three convenience functions and a public class:
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
-   .. versionchanged:: 3.8
+   .. versionchanged:: next
       The optional *target_time* parameter was added.
 
    .. method:: Timer.timeit(number=1000000)
@@ -250,11 +250,11 @@ Where the following options are understood:
 
    .. versionadded:: 3.5
 
-.. cmdoption:: -t, --target_time=T
+.. option:: -t, --target-time=T
 
     calls :meth:`.timeit` repeatedly so that the total time >= *target_time* seconds
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 .. cmdoption:: -v, --verbose
 

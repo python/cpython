@@ -17,8 +17,8 @@ Options:
   -p/--process: use time.process_time() (default is time.perf_counter())
   -v/--verbose: print raw timing results; repeat for more digits precision
   -u/--unit: set the output time unit (nsec, usec, msec, or sec)
-  -t/--target_time T: if number is 0 the code will run until it
-                      takes *at least* ``target_time`` seconds
+  -t/--target-time T: if --number is 0 the code will run until it
+                      takes *at least* this many seconds
                       (default: 0.2)
   -h/--help: print this usage message and exit
   --: separate options from statement, use when statement starts with -
@@ -31,7 +31,7 @@ treated similarly.
 
 If -n is not given, a suitable number of loops is calculated by trying
 increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the
-total time is at least target_time seconds.
+total time is at least --target-time seconds.
 
 Note: there is a certain baseline overhead associated with executing a
 pass statement.  It differs between versions.  The code here doesn't try
@@ -319,7 +319,7 @@ def main(args=None, *, _wrap_timer=None):
                 repeat = 1
         if o in ("-p", "--process"):
             timer = time.process_time
-        if o in ("-t", "--target_time"):
+        if o in ("-t", "--target-time"):
             target_time = float(a)
         if o in ("-v", "--verbose"):
             if verbose:

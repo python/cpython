@@ -1,4 +1,4 @@
-In timeit module:
+:mod:`timeit`:
 - added a new parameter *target_time* to :func:`timeit.timeit` and
   :func:`timeit.repeat` methods and :class:`timeit.Timer` class;
 - had ``timeit`` and ``repeat`` methods (and functions) fall back
