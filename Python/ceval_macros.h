@@ -145,7 +145,7 @@
 #  define BAIL_TRACING_NO_DISPATCH() \
     do { \
         LEAVE_TRACING(); \
-        if (!_PyErr_Occurred(tstate)) { \
+        if (!_PyErr_Occurred(tstate) && !_is_sys_tracing) { \
             _PyFrame_SetStackPointer(frame, stack_pointer); \
             int _err = _PyOptimizer_Optimize(frame, tstate); \
             _PyJIT_FinalizeTracing(tstate); \
@@ -161,7 +161,8 @@
         } \
     } while (0);
 #  define RECORD_TRACE_NO_DISPATCH() do { \
-        if (IS_JIT_TRACING() && add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
+        int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc == NULL); \
+        if (_is_sys_tracing || IS_JIT_TRACING()  && add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
             BAIL_TRACING_NO_DISPATCH(); \
         } \
     } while (0);
@@ -227,9 +228,6 @@ do { \
 
 #define TRACING_DISPATCH() \
     { \
-        if (tstate->c_tracefunc || tstate->c_profilefunc) { \
-            DISPATCH(); \
-        } \
         assert(frame->stackpointer == NULL); \
         RECORD_TRACE_NO_DISPATCH(); \
         NEXTOPARG(); \
