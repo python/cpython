@@ -1956,6 +1956,143 @@ class CodecsModuleTest(unittest.TestCase):
                 self.assertFalse(unpickled_codec_info._is_text_encoding)
 
 
+    def test_rehandle_surrogatepass(self):
+        self.assertRaises(TypeError, codecs.rehandle_surrogatepass)
+        for s in ('', 'abc', '\xe0\xdf\xe7', '\u03b1\u03b2\u03b3',
+                  '\U00010480\U0001d4ff'):
+            with self.subTest(str=s):
+                self.assertEqual(codecs.rehandle_surrogatepass(s, 'strict'), s)
+        with self.assertRaises(UnicodeTranslateError) as cm:
+            codecs.rehandle_surrogatepass('a\ud801\udc80b', 'strict')
+        self.assertEqual(cm.exception.encoding, None)
+        self.assertEqual(cm.exception.object, 'a\ud801\udc80b')
+        self.assertEqual(cm.exception.start, 1)
+        self.assertEqual(cm.exception.end, 3)
+        tests = [
+            ('ignore', ('', '')),
+            ('replace', ('\ufffd','\ufffd')),
+            ('backslashreplace', ('\\ud801', '\\udc80')),
+            # ('namereplace', ('\\ud801', '\\udc80')),
+            # ('xmlcharrefreplace', ('&#55297;', '&#56448;')),
+            # ('surrogatepass', ('\ud801', '\udc80')),
+        ]
+        for (error, args) in tests:
+            for tmpl in ('a{}b', 'a{}b{}', 'a{}{}c', 'a{}b{}c'):
+                data = tmpl.format('\ud801', '\udc80')
+                expected = tmpl.format(*args)
+                with self.subTest(error=error, data=data):
+                    self.assertEqual(codecs.rehandle_surrogatepass(data, error),
+                                     expected)
+
+    def test_rehandle_surrogateescape(self):
+        self.assertRaises(TypeError, codecs.rehandle_surrogateescape)
+        for s in ('', 'abc', '\xe0\xdf\xe7', '\u03b1\u03b2\u03b3',
+                  '\U00010480\U0001d4ff'):
+            with self.subTest(str=s):
+                self.assertEqual(codecs.rehandle_surrogateescape(s, 'strict'), s)
+        with self.assertRaises(UnicodeTranslateError) as cm:
+            codecs.rehandle_surrogateescape('a\udc80\udcffb', 'strict')
+        self.assertEqual(cm.exception.encoding, None)
+        self.assertEqual(cm.exception.object, 'a\udc80\udcffb')
+        self.assertEqual(cm.exception.start, 1)
+        self.assertEqual(cm.exception.end, 3)
+        with self.assertRaises(TypeError):
+            codecs.rehandle_surrogateescape('a\udc80b', 'namereplace')
+        with self.assertRaises(TypeError):
+            codecs.rehandle_surrogateescape('a\udc80b', 'xmlcharrefreplace')
+        with self.assertRaises(UnicodeTranslateError):
+            codecs.rehandle_surrogateescape('a\udc80b', 'surrogatepass')
+        tests = [
+            ('ignore', ('', '')),
+            ('replace', ('\ufffd','\ufffd')),
+            ('backslashreplace', ('\\x80','\\xff')),
+            ('surrogateescape', ('\udc80','\udcff')),
+        ]
+        for (error, args) in tests:
+            for tmpl in ('a{}b', 'a{}b{}', 'a{}{}c', 'a{}b{}c'):
+                data = tmpl.format('\udc80', '\udcff')
+                expected = tmpl.format(*args)
+                if error == 'replace':
+                    expected = expected.replace('\ufffd\ufffd', '\ufffd')
+                with self.subTest(error=error, data=data):
+                    self.assertEqual(codecs.rehandle_surrogateescape(data, error),
+                                     expected)
+        for error in ('strict', 'ignore', 'replace',
+                      'backslashreplace', 'namereplace', 'xmlcharrefreplace',
+                      'surrogatepass', 'surrogateescape'):
+            with self.assertRaises(UnicodeTranslateError):
+                codecs.rehandle_surrogateescape('\udc7f', error)
+            with self.assertRaises(UnicodeTranslateError):
+                codecs.rehandle_surrogateescape('\udd00', error)
+
+    def test_handle_astrals(self):
+        self.assertRaises(TypeError, codecs.handle_astrals)
+        for s in ('', 'abc', '\xe0\xdf\xe7', '\u03b1\u03b2\u03b3',
+                  '\ud801\udc80', '\udc80'):
+            with self.subTest(str=s):
+                self.assertEqual(codecs.handle_astrals(s, 'strict'), s)
+        with self.assertRaises(UnicodeTranslateError) as cm:
+            codecs.handle_astrals('a\U00010480\U0001d4ffb', 'strict')
+        self.assertEqual(cm.exception.encoding, None)
+        self.assertEqual(cm.exception.object, 'a\U00010480\U0001d4ffb')
+        self.assertEqual(cm.exception.start, 1)
+        self.assertEqual(cm.exception.end, 3)
+        # with self.assertRaises(UnicodeTranslateError):
+        #     codecs.handle_astrals('a\U00010480b', 'surrogatepass')
+        with self.assertRaises(TypeError):
+            codecs.handle_astrals('a\U00010480b', 'surrogateescape')
+        tests = [
+            ('ignore', ('', '')),
+            ('replace', ('\ufffd','\ufffd')),
+            ('backslashreplace', ('\\U00010480', '\\U0001d4ff')),
+            # ('namereplace', ('\\N{OSMANYA LETTER ALEF}',
+            #                  '\\N{MATHEMATICAL BOLD SCRIPT SMALL V}')),
+            # ('xmlcharrefreplace', ('&#66688;','&#120063;')),
+        ]
+        for (error, args) in tests:
+            for tmpl in ('a{}b', 'a{}b{}', 'a{}{}c', 'a{}b{}c'):
+                data = tmpl.format('\U00010480', '\U0001d4ff')
+                expected = tmpl.format(*args)
+                with self.subTest(error=error, data=data):
+                    self.assertEqual(codecs.handle_astrals(data, error),
+                                     expected)
+
+    def test_decompose_astrals(self):
+        self.assertRaises(TypeError, codecs.decompose_astrals)
+        tests = [
+            ('abc', 'abc'),
+            ('\xe0\xdf\xe7', '\xe0\xdf\xe7'),
+            ('\u03b1\u03b2\u03b3', '\u03b1\u03b2\u03b3'),
+            ('a\U00010480b', 'a\ud801\udc80b'),
+            ('a\U00010480b\U0001d4ff', 'a\ud801\udc80b\ud835\udcff'),
+            ('a\U00010480\U0001d4ffc', 'a\ud801\udc80\ud835\udcffc'),
+            ('a\U00010480b\U0001d4ffc', 'a\ud801\udc80b\ud835\udcffc'),
+            ('a\ud801\udc80b', 'a\ud801\udc80b'),
+            ('a\udc80b', 'a\udc80b'),
+        ]
+        for s, r in tests:
+            with self.subTest(str=s):
+                self.assertEqual(codecs.decompose_astrals(s), r)
+
+    def test_compose_surrogate_pairs(self):
+        self.assertRaises(TypeError, codecs.compose_surrogate_pairs)
+        tests = [
+            ('abc', 'abc'),
+            ('\xe0\xdf\xe7', '\xe0\xdf\xe7'),
+            ('\u03b1\u03b2\u03b3', '\u03b1\u03b2\u03b3'),
+            ('a\ud801\udc80b', 'a\U00010480b'),
+            ('a\ud801\udc80b\ud835\udcff', 'a\U00010480b\U0001d4ff'),
+            ('a\ud801\udc80\ud835\udcffc', 'a\U00010480\U0001d4ffc'),
+            ('a\ud801\udc80b\ud835\udcffc', 'a\U00010480b\U0001d4ffc'),
+            ('a\udc80\ud801\ud801\udc80b', 'a\udc80\ud801\U00010480b'),
+            ('a\ud801\udc80\udc80\ud801b', 'a\U00010480\udc80\ud801b'),
+            ('a\udc80b', 'a\udc80b'),
+        ]
+        for s, r in tests:
+            with self.subTest(str=s):
+                self.assertEqual(codecs.compose_surrogate_pairs(s), r)
+
+
 class StreamReaderTest(unittest.TestCase):
 
     def setUp(self):
