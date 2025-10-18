@@ -33,7 +33,7 @@ SyntaxError: invalid syntax
 
 >>> None = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to None
+SyntaxError: cannot assign to reserved keyword 'None'
 
 >>> obj.True = 1
 Traceback (most recent call last):
@@ -41,7 +41,15 @@ SyntaxError: invalid syntax
 
 >>> True = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to True
+SyntaxError: cannot assign to reserved keyword 'True'
+
+>>> class = "Mammalia"
+Traceback (most recent call last):
+SyntaxError: cannot assign to reserved keyword 'class'
+
+>>> lambda = "λ"
+Traceback (most recent call last):
+SyntaxError: cannot assign to reserved keyword 'lambda'
 
 >>> (True := 1)
 Traceback (most recent call last):
@@ -190,7 +198,11 @@ SyntaxError: invalid syntax
 
 >>> True = True = 3
 Traceback (most recent call last):
-SyntaxError: cannot assign to True
+SyntaxError: cannot assign to reserved keyword 'True'
+
+>>> class = True = 3
+Traceback (most recent call last):
+SyntaxError: cannot assign to reserved keyword 'class'
 
 >>> x = y = True = z = 3
 Traceback (most recent call last):
@@ -810,13 +822,13 @@ Traceback (most recent call last):
 SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f(True=1)
 Traceback (most recent call last):
-SyntaxError: cannot assign to True
+SyntaxError: cannot assign to reserved keyword 'True'
 >>> f(False=1)
 Traceback (most recent call last):
-SyntaxError: cannot assign to False
+SyntaxError: cannot assign to reserved keyword 'False'
 >>> f(None=1)
 Traceback (most recent call last):
-SyntaxError: cannot assign to None
+SyntaxError: cannot assign to reserved keyword 'None'
 >>> f(__debug__=1)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
