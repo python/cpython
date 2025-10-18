@@ -467,6 +467,8 @@ class partialmethod:
             return self.func(cls_or_self, *pto_args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.__partialmethod__ = self
+        # Set __annotate__ to delegate to the partialmethod's __annotate__
+        _method.__annotate__ = self.__annotate__
         return _method
 
     def __get__(self, obj, cls=None):
@@ -492,6 +494,10 @@ class partialmethod:
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
 
+    def __annotate__(self, format):
+        """Return annotations for the partial method."""
+        return _partialmethod_annotate(self, format)
+
     __class_getitem__ = classmethod(GenericAlias)
 
 
@@ -512,6 +518,147 @@ def _unwrap_partialmethod(func):
             func = getattr(func, 'func')
         func = _unwrap_partial(func)
     return func
+
+def _partial_annotate(partial_obj, format):
+    """Helper function to compute annotations for a partial object.
+
+    This is called by the __annotate__ descriptor defined in C.
+    Returns annotations for the wrapped function, but only for parameters
+    that haven't been bound by the partial application.
+    """
+    import inspect
+    from annotationlib import get_annotations
+
+    # Get the wrapped function
+    func = partial_obj.func
+
+    # Get annotations from the wrapped function
+    func_annotations = get_annotations(func, format=format)
+
+    if not func_annotations:
+        return {}
+
+    # Get the signature to determine which parameters are bound
+    try:
+        sig = inspect.signature(partial_obj)
+    except (ValueError, TypeError) as e:
+        # If we can't get signature, we can't reliably determine which
+        # parameters are bound. Raise an error rather than returning
+        # incorrect annotations.
+        raise TypeError(
+            f"Cannot compute annotations for {partial_obj!r}: "
+            f"unable to determine signature"
+        ) from e
+
+    # Build new annotations dict with only unbound parameters
+    # (parameters first, then return)
+    new_annotations = {}
+
+    # Only include annotations for parameters that still exist in partial's signature
+    for param_name in sig.parameters:
+        if param_name in func_annotations:
+            new_annotations[param_name] = func_annotations[param_name]
+
+    # Add return annotation at the end
+    if 'return' in func_annotations:
+        new_annotations['return'] = func_annotations['return']
+
+    return new_annotations
+
+def _partialmethod_annotate(partialmethod_obj, format):
+    """Helper function to compute annotations for a partialmethod object.
+
+    This is called when accessing annotations on an unbound partialmethod
+    (via the __partialmethod__ attribute).
+    Returns annotations for the wrapped function, but only for parameters
+    that haven't been bound by the partial application. The first parameter
+    (usually 'self' or 'cls') is kept since partialmethod is unbound.
+    """
+    import inspect
+    from annotationlib import get_annotations
+
+    # Get the wrapped function
+    func = partialmethod_obj.func
+
+    # Get annotations from the wrapped function
+    func_annotations = get_annotations(func, format=format)
+
+    if not func_annotations:
+        return {}
+
+    # For partialmethod, we need to simulate the signature calculation
+    # The first parameter (self/cls) should remain, but bound args should be removed
+    try:
+        # Get the function signature
+        func_sig = inspect.signature(func)
+        func_params = list(func_sig.parameters.keys())
+
+        if not func_params:
+            return func_annotations
+
+        # Calculate which parameters are bound by the partialmethod
+        partial_args = partialmethod_obj.args or ()
+        partial_keywords = partialmethod_obj.keywords or {}
+
+        # Build new annotations dict in proper order
+        # (parameters first, then return)
+        new_annotations = {}
+
+        # The first parameter (self/cls) is always kept for unbound partialmethod
+        first_param = func_params[0]
+        if first_param in func_annotations:
+            new_annotations[first_param] = func_annotations[first_param]
+
+        # For partialmethod, positional args bind to parameters AFTER the first one
+        # So if func is (self, a, b, c) and partialmethod.args=(1,)
+        # Then 'self' stays, 'a' is bound, 'b' and 'c' remain
+
+        # We need to account for Placeholders which create "holes"
+        # For example: partialmethod(func, 1, Placeholder, 3) binds 'a' and 'c' but not 'b'
+
+        remaining_params = func_params[1:]
+
+        # Track which positions are filled by Placeholder
+        placeholder_positions = set()
+        for i, arg in enumerate(partial_args):
+            if arg is Placeholder:
+                placeholder_positions.add(i)
+
+        # Number of non-Placeholder positional args
+        # This doesn't directly tell us which params are bound due to Placeholders
+
+        for i, param_name in enumerate(remaining_params):
+            # Check if this position has a Placeholder
+            if i in placeholder_positions:
+                # This parameter is deferred by Placeholder, keep it
+                if param_name in func_annotations:
+                    new_annotations[param_name] = func_annotations[param_name]
+                continue
+
+            # Check if this position is beyond the partial_args
+            if i >= len(partial_args):
+                # This parameter is not bound at all, keep it
+                if param_name in func_annotations:
+                    new_annotations[param_name] = func_annotations[param_name]
+                continue
+
+            # Otherwise, this position is bound (not a Placeholder and within bounds)
+            # Skip it
+
+        # Add return annotation at the end
+        if 'return' in func_annotations:
+            new_annotations['return'] = func_annotations['return']
+
+        return new_annotations
+
+    except (ValueError, TypeError) as e:
+        # If we can't process the signature, we can't reliably determine
+        # which parameters are bound. Raise an error rather than returning
+        # incorrect annotations (which would include bound parameters).
+        raise TypeError(
+            f"Cannot compute annotations for {partialmethod_obj!r}: "
+            f"unable to determine which parameters are bound"
+        ) from e
 
 ################################################################################
 ### LRU Cache function decorator
