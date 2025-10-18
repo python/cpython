@@ -1560,7 +1560,7 @@ class GCTogglingTests(unittest.TestCase):
             gc.enable()
 
     # Ensure that setting *threshold0* to zero disables collection.
-    @gc_threshold(0, 0, 0)
+    @gc_threshold(0)
     def test_threshold_zero(self):
         junk = []
         i = 0
