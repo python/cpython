@@ -1251,10 +1251,12 @@ dummy_func(
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             RELOAD_STACK();
+            #if TIER_ONE
             LOAD_IP(frame->return_offset);
-#if TIER_TWO
-            frame->instr_ptr += frame->return_offset;
-#endif
+            #endif
+            #if TIER_TWO
+            TIER2_STORE_IP(frame->return_offset);
+            #endif
             res = temp;
             LLTRACE_RESUME_FRAME();
         }
@@ -1441,10 +1443,12 @@ dummy_func(
                    _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
             #endif
             RELOAD_STACK();
+            #if TIER_ONE
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-#if TIER_TWO
-            frame->instr_ptr += (1 + INLINE_CACHE_ENTRIES_SEND);
-#endif
+            #endif
+            #if TIER_TWO
+            TIER2_STORE_IP(1 + INLINE_CACHE_ENTRIES_SEND);
+            #endif
             value = PyStackRef_MakeHeapSafe(temp);
             LLTRACE_RESUME_FRAME();
         }
@@ -3084,15 +3088,13 @@ dummy_func(
 
         macro(POP_JUMP_IF_NOT_NONE) = unused/1 + _IS_NONE + _POP_JUMP_IF_FALSE;
 
-        inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
+        replaced inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
-#if TIER_ONE
             assert(oparg <= INSTR_OFFSET());
-#endif
             JUMPBY(-oparg);
         }
 
@@ -3233,15 +3235,15 @@ dummy_func(
         }
 
         op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
-            TIER2_JUMPBY(1 + INLINE_CACHE_ENTRIES_FOR_ITER);
+            TIER2_STORE_IP(1 + INLINE_CACHE_ENTRIES_FOR_ITER);
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
             if (!PyStackRef_IsValid(item)) {
                 if (PyStackRef_IsError(item)) {
                     ERROR_NO_POP();
                 }
                 /* iterator ended normally */
-                // Jump forward by oparg and skip the following END_FOR
-                TIER2_JUMPBY(oparg + 1);
+                /* This just sets the IP to what it expects */
+                TIER2_STORE_IP(oparg + 1);
                 EXIT_IF(true);
             }
             next = item;
@@ -4992,10 +4994,12 @@ dummy_func(
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
+            #if TIER_ONE
             LOAD_IP(frame->return_offset);
-#if TIER_TWO
+            #endif
+            #if TIER_TWO
             frame->instr_ptr += (frame->return_offset);
-#endif
+            #endif
             RELOAD_STACK();
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();

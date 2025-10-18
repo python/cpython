@@ -147,7 +147,7 @@ class Tier2Emitter(Emitter):
         if storage.spilled:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
         storage.stack.flush(self.out)
-        self.emit("TIER2_JUMPBY")
+        self.emit("TIER2_STORE_IP")
         emit_to(self.out, tkn_iter, "SEMI")
         self.emit(";\n")
         return True

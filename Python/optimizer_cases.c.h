@@ -2107,9 +2107,7 @@
             break;
         }
 
-        case _JUMP_BACKWARD_NO_INTERRUPT: {
-            break;
-        }
+        /* _JUMP_BACKWARD_NO_INTERRUPT is not a viable micro-op for tier 2 */
 
         case _GET_LEN: {
             JitOptRef obj;

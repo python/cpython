@@ -18,7 +18,7 @@
 #include "pycore_tuple.h"         // _PyTuple_FromArraySteal()
 
 #include "opcode_ids.h"
-#include "../Include/internal/pycore_optimizer.h"
+#include "pycore_optimizer.h"
 
 
 /* Uncomment this to dump debugging output when assertions fail */

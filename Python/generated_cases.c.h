@@ -7432,9 +7432,11 @@
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                #if TIER_ONE
                 LOAD_IP(frame->return_offset);
+                #endif
                 #if TIER_TWO
-                frame->instr_ptr += frame->return_offset;
+                TIER2_STORE_IP(frame->return_offset);
                 #endif
                 res = temp;
                 LLTRACE_RESUME_FRAME();
@@ -7503,9 +7505,11 @@
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
                 #endif
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                #if TIER_ONE
                 LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
+                #endif
                 #if TIER_TWO
-                frame->instr_ptr += (1 + INLINE_CACHE_ENTRIES_SEND);
+                TIER2_STORE_IP(1 + INLINE_CACHE_ENTRIES_SEND);
                 #endif
                 value = PyStackRef_MakeHeapSafe(temp);
                 LLTRACE_RESUME_FRAME();
@@ -7617,9 +7621,7 @@
             }
             // _JUMP_BACKWARD_NO_INTERRUPT
             {
-                #if TIER_ONE
                 assert(oparg <= INSTR_OFFSET());
-                #endif
                 JUMPBY(-oparg);
             }
             DISPATCH();
@@ -7648,9 +7650,7 @@
             }
             // _JUMP_BACKWARD_NO_INTERRUPT
             {
-                #if TIER_ONE
                 assert(oparg <= INSTR_OFFSET());
-                #endif
                 JUMPBY(-oparg);
             }
             // _JIT
@@ -7691,9 +7691,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_INTERRUPT);
-            #if TIER_ONE
             assert(oparg <= INSTR_OFFSET());
-            #endif
             JUMPBY(-oparg);
             DISPATCH();
         }
@@ -7719,9 +7717,7 @@
             }
             // _JUMP_BACKWARD_NO_INTERRUPT
             {
-                #if TIER_ONE
                 assert(oparg <= INSTR_OFFSET());
-                #endif
                 JUMPBY(-oparg);
             }
             DISPATCH();
@@ -10366,7 +10362,9 @@
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
+            #if TIER_ONE
             LOAD_IP(frame->return_offset);
+            #endif
             #if TIER_TWO
             frame->instr_ptr += (frame->return_offset);
             #endif
@@ -10401,9 +10399,11 @@
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            #if TIER_ONE
             LOAD_IP(frame->return_offset);
+            #endif
             #if TIER_TWO
-            frame->instr_ptr += frame->return_offset;
+            TIER2_STORE_IP(frame->return_offset);
             #endif
             res = temp;
             LLTRACE_RESUME_FRAME();
@@ -12092,9 +12092,11 @@
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            #if TIER_ONE
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
+            #endif
             #if TIER_TWO
-            frame->instr_ptr += (1 + INLINE_CACHE_ENTRIES_SEND);
+            TIER2_STORE_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             #endif
             value = PyStackRef_MakeHeapSafe(temp);
             LLTRACE_RESUME_FRAME();

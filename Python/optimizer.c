@@ -701,6 +701,20 @@ _PyJIT_translate_single_bytecode_to_trace(
             break;
         }
         case JUMP_BACKWARD_JIT:
+            // This is possible as the JIT might have re-activated after it was disabled.                // if (next_uop->opcode != _START_EXECUTOR) {
+            //     if (next_uop->format == UOP_FORMAT_TARGET) {
+            //         _Py_CODEUNIT *aim = _PyFrame_GetBytecode(frame) + next_uop->target;
+            //         printf("    aim=[%s]\n", _PyOpcode_OpName[aim->op.code]);
+            //     }
+            //     else if (next_uop->format == UOP_FORMAT_JUMP) {
+            //         _PyUOpInstruction *aim_uop =  current_executor->trace + next_uop->jump_target;
+            //         if (aim_uop->format == UOP_FORMAT_TARGET) {
+            //             _Py_CODEUNIT *aim = _PyFrame_GetBytecode(frame) + aim_uop->target;
+            //             printf("    aim=[%s]\n", _PyOpcode_OpName[aim->op.code]);
+            //         }
+            //     }
+            // }
+        case JUMP_BACKWARD_NO_JIT:
         case JUMP_BACKWARD:
             ADD_TO_TRACE(_CHECK_PERIODIC, 0, 0, target);
             _Py_FALLTHROUGH;

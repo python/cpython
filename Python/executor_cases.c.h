@@ -1930,9 +1930,11 @@
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            #if TIER_ONE
             LOAD_IP(frame->return_offset);
+            #endif
             #if TIER_TWO
-            frame->instr_ptr += frame->return_offset;
+            TIER2_STORE_IP(frame->return_offset);
             #endif
             res = temp;
             LLTRACE_RESUME_FRAME();
@@ -2099,9 +2101,11 @@
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            #if TIER_ONE
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
+            #endif
             #if TIER_TWO
-            frame->instr_ptr += (1 + INLINE_CACHE_ENTRIES_SEND);
+            TIER2_STORE_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             #endif
             value = PyStackRef_MakeHeapSafe(temp);
             LLTRACE_RESUME_FRAME();
@@ -4195,14 +4199,7 @@
             break;
         }
 
-        case _JUMP_BACKWARD_NO_INTERRUPT: {
-            oparg = CURRENT_OPARG();
-            #if TIER_ONE
-            assert(oparg <= INSTR_OFFSET());
-            #endif
-            TIER2_JUMPBY(-oparg);
-            break;
-        }
+        /* _JUMP_BACKWARD_NO_INTERRUPT is not a viable micro-op for tier 2 because it is replaced */
 
         case _GET_LEN: {
             _PyStackRef obj;
@@ -4401,7 +4398,7 @@
             oparg = CURRENT_OPARG();
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
-            TIER2_JUMPBY(1 + INLINE_CACHE_ENTRIES_FOR_ITER);
+            TIER2_STORE_IP(1 + INLINE_CACHE_ENTRIES_FOR_ITER);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -4409,7 +4406,7 @@
                 if (PyStackRef_IsError(item)) {
                     JUMP_TO_ERROR();
                 }
-                TIER2_JUMPBY(oparg + 1);
+                TIER2_STORE_IP(oparg + 1);
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -6766,7 +6763,9 @@
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
+            #if TIER_ONE
             LOAD_IP(frame->return_offset);
+            #endif
             #if TIER_TWO
             frame->instr_ptr += (frame->return_offset);
             #endif
