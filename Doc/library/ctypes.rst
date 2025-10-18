@@ -14,6 +14,8 @@
 data types, and allows calling functions in DLLs or shared libraries.  It can be
 used to wrap these libraries in pure Python.
 
+.. include:: ../includes/optional-module.rst
+
 
 .. _ctypes-ctypes-tutorial:
 
