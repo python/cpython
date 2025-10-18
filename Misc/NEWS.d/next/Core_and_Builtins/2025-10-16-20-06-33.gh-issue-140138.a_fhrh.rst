@@ -1,0 +1,1 @@
+Fix a TSAN-reported data race and potential use-after-free when shutting down a subinterpreter with running daemon threads in free-threaded (NOGIL) builds.

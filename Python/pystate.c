@@ -457,16 +457,19 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 static PyInterpreterState *
 alloc_interpreter(void)
 {
+    // Aligned allocation for PyInterpreterState.
+    // the first word of the memory block is used to store
+    // the original pointer to be used later to free the memory.
     size_t alignment = _Alignof(PyInterpreterState);
-    size_t allocsize = sizeof(PyInterpreterState) + alignment - 1;
+    size_t allocsize = sizeof(PyInterpreterState) + sizeof(void *) + alignment - 1;
     void *mem = PyMem_RawCalloc(1, allocsize);
     if (mem == NULL) {
         return NULL;
     }
-    PyInterpreterState *interp = _Py_ALIGN_UP(mem, alignment);
-    assert(_Py_IS_ALIGNED(interp, alignment));
-    interp->_malloced = mem;
-    return interp;
+    void *ptr = _Py_ALIGN_UP((char *)mem + sizeof(void *), alignment);
+    ((void **)ptr)[-1] = mem;
+    assert(_Py_IS_ALIGNED(ptr, alignment));
+    return ptr;
 }
 
 static void
@@ -481,7 +484,16 @@ free_interpreter(PyInterpreterState *interp)
             interp->obmalloc = NULL;
         }
         assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
-        PyMem_RawFree(interp->_malloced);
+        PyMem_RawFree(((void **)interp)[-1]);
+    }
+}
+
+static inline void
+release_interp_owner(PyInterpreterState *interp)
+{
+    Py_ssize_t prev = _Py_atomic_add_ssize(&interp->owners, -1);
+    if (prev == 1) {
+        free_interpreter(interp);
     }
 }
 
@@ -534,6 +546,7 @@ init_interpreter(PyInterpreterState *interp,
     interp->id = id;
 
     interp->id_refcount = 0;
+    interp->owners = 1;
 
     assert(runtime->interpreters.head == interp);
     assert(next != NULL || (interp == runtime->interpreters.main));
@@ -956,10 +969,8 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     HEAD_UNLOCK(runtime);
 
     _Py_qsbr_fini(interp);
-
     _PyObject_FiniState(interp);
-
-    free_interpreter(interp);
+    release_interp_owner(interp);
 }
 
 
@@ -1423,6 +1434,8 @@ free_threadstate(_PyThreadStateImpl *tstate)
     else {
         PyMem_RawFree(tstate);
     }
+
+    release_interp_owner(interp);
 }
 
 static void
@@ -1548,6 +1561,8 @@ new_threadstate(PyInterpreterState *interp, int whence)
     interp->threads.next_unique_id += 1;
     uint64_t id = interp->threads.next_unique_id;
     init_threadstate(tstate, interp, id, whence);
+
+    _Py_atomic_add_ssize(&interp->owners, 1);
 
     // Add the new thread state to the interpreter.
     PyThreadState *old_head = interp->threads.head;
