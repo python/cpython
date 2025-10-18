@@ -1825,7 +1825,27 @@ expression support in the :mod:`re` module).
 .. method:: str.capitalize()
 
    Return a copy of the string with its first character capitalized and the
-   rest lowercased.
+   rest lowercased. 
+   
+   Ǳ, ǲ, ǳ
+   Ǆ, ǅ, ǆ
+   Ĳ, ĳ
+   Ǉ, ǈ, ǉ
+   Ǌ, ǋ, ǌ
+   ᵺ
+
+   For example::
+
+      >>> 'PYTHON IS AMAZING'.capitalize()
+      'Python is amazing'
+      >>> 'ǋemačka starts With a non-ASCII digraph'.capitalize()
+      'ǋemačka starts with a non-ascii digraph'
+      >>> 'Ǳ, ǲ, ǳ Ǆ, ǅ, ǆ Ĳ, ĳ Ǉ, ǈ, ǉ Ǌ, ǋ, ǌ ᵺ'
+      'Ǳ, ǲ, ǳ Ǆ, ǅ, ǆ Ĳ, ĳ Ǉ, ǈ, ǉ Ǌ, ǋ, ǌ ᵺ'
+      
+
+
+   See also :meth:`title`.
 
    .. versionchanged:: 3.8
       The first character is now put into titlecase rather than uppercase.
