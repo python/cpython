@@ -25130,6 +25130,7 @@ invalid_except_star_stmt_indent_rule(Parser *p)
 // invalid_match_stmt:
 //     | "match" subject_expr NEWLINE
 //     | "match" subject_expr ':' NEWLINE !INDENT
+//     | "case" patterns guard? ':' block
 static void *
 invalid_match_stmt_rule(Parser *p)
 {
@@ -25206,6 +25207,43 @@ invalid_match_stmt_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_match_stmt[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"match\" subject_expr ':' NEWLINE !INDENT"));
+    }
+    { // "case" patterns guard? ':' block
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_match_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"case\" patterns guard? ':' block"));
+        void *_opt_var;
+        UNUSED(_opt_var); // Silence compiler warnings
+        expr_ty a;
+        Token * b;
+        asdl_stmt_seq* block_var;
+        pattern_ty patterns_var;
+        if (
+            (a = _PyPegen_expect_soft_keyword(p, "case"))  // soft_keyword='"case"'
+            &&
+            (patterns_var = patterns_rule(p))  // patterns
+            &&
+            (_opt_var = guard_rule(p), !p->error_indicator)  // guard?
+            &&
+            (b = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (block_var = block_rule(p))  // block
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_match_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"case\" patterns guard? ':' block"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "case statement must be inside match statement" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_match_stmt[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"case\" patterns guard? ':' block"));
     }
     _res = NULL;
   done:
