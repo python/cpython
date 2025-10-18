@@ -111,6 +111,7 @@ MOVE_RIGHT = "\x1b[{}C"
 MOVE_UP = "\x1b[{}A"
 MOVE_DOWN = "\x1b[{}B"
 CLEAR = "\x1b[H\x1b[J"
+HOME = "\x1b[H"
 
 # State of control keys: https://learn.microsoft.com/en-us/windows/console/key-event-record-str
 ALT_ACTIVE = 0x01 | 0x02
@@ -171,7 +172,7 @@ class WindowsConsole(Console):
             # Console I/O is redirected, fallback...
             self.out = None
 
-    def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
+    def refresh(self, screen: list[str], c_xy: tuple[int, int], clear_to_end: bool = False) -> None:
         """
         Refresh the console screen.
 
@@ -234,6 +235,12 @@ class WindowsConsole(Console):
             self._erase_to_end()
             y += 1
 
+        if clear_to_end:
+            self._move_relative(wlen(newscr[-1]), self.__offset + len(newscr) - 1)
+            self.posxy = wlen(newscr[-1]), self.__offset + len(newscr) - 1
+            self.__write("\x1b[J")
+            self.flushoutput()
+
         self._show_cursor()
 
         self.screen = screen
@@ -287,7 +294,7 @@ class WindowsConsole(Console):
             self._move_relative(0, y + 1)
             self.posxy = 0, y + 1
         else:
-            self.posxy = wlen(newline), y
+            self.posxy = min(wlen(newline), self.width - 1), y
 
             if "\x1b" in newline or y != self.posxy[1] or '\x1a' in newline:
                 # ANSI escape characters are present, so we can't assume
@@ -394,6 +401,10 @@ class WindowsConsole(Console):
         else:
             self._move_relative(x, y)
             self.posxy = x, y
+
+    def reset_cursor(self) -> None:
+        self.posxy = 0, self.__offset
+        self.__write(HOME)
 
     def set_cursor_vis(self, visible: bool) -> None:
         if visible:
