@@ -408,14 +408,16 @@ class WeakKeyDictionary(_collections_abc.MutableMapping):
         return self.data.setdefault(ref(key, self._remove),default)
 
     def update(self, dict=None, /, **kwargs):
+        if kwargs:
+            msg = ("Keyword arguments are not supported: "
+                   "cannot create weak reference to 'str' object")
+            raise TypeError(msg)
         d = self.data
         if dict is not None:
             if not hasattr(dict, "items"):
                 dict = type({})(dict)
             for key, value in dict.items():
                 d[ref(key, self._remove)] = value
-        if len(kwargs):
-            self.update(kwargs)
 
     def __ior__(self, other):
         self.update(other)
