@@ -3182,6 +3182,18 @@ class TestSingleDispatch(unittest.TestCase):
 
         with self.assertRaises(TypeError) as exc:
             @i.register
+            def _(arg) -> str:
+                return "I only have a return type annotation"
+        self.assertStartsWith(str(exc.exception), msg_prefix +
+            "<function TestSingleDispatch.test_invalid_registrations.<locals>._"
+        )
+        self.assertEndsWith(str(exc.exception),
+            ". Use either `@register(some_class)` or plain `@register` on "
+            "a function with annotated parameters."
+        )
+
+        with self.assertRaises(TypeError) as exc:
+            @i.register
             def _(arg: typing.Iterable[str]):
                 # At runtime, dispatching on generics is impossible.
                 # When registering implementations with singledispatch, avoid

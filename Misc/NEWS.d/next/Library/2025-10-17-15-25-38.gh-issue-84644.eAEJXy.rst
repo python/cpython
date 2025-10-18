@@ -1,0 +1,4 @@
+A :exc:`TypeError` is raised by :py:func:`functools.singledispatch`
+if it is attempted to register function that only annotates its return type.
+
+Contributed by Bartosz Sławecki in :gh:`84644`.
