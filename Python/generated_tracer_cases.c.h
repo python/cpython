@@ -8711,8 +8711,11 @@
                             TRACING_DISPATCH();
                         }
                     }
-                    _PyJIT_InitializeTracing(tstate, frame, this_instr, STACK_LEVEL(), 0, NULL);
-                    ENTER_TRACING();
+                    int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
+                    if (!_is_sys_tracing) {
+                        _PyJIT_InitializeTracing(tstate, frame, this_instr, STACK_LEVEL(), 0, NULL);
+                        ENTER_TRACING();
+                    }
                     TRACING_DISPATCH();
                 }
                 else {

@@ -649,8 +649,6 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
 
-    RESERVE_RAW(expansion->nuops + needs_guard_ip + 3, "uop and various checks");
-
     ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
 
     assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
@@ -685,6 +683,9 @@ _PyJIT_translate_single_bytecode_to_trace(
         // Make space for error stub and final _EXIT_TRACE:
         max_length--;
     }
+
+    RESERVE_RAW(expansion->nuops + needs_guard_ip + 3, "uop and various checks");
+
 
     switch (opcode) {
         case POP_JUMP_IF_NONE:
@@ -1543,7 +1544,6 @@ _Py_JITTracer_InvalidateDependency(PyThreadState *old_tstate, void *obj)
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
     _Py_BloomFilter_Add(&obj_filter, obj);
-    HEAD_LOCK(&_PyRuntime);
 
     PyInterpreterState *interp = old_tstate->interp;
 
@@ -1554,7 +1554,6 @@ _Py_JITTracer_InvalidateDependency(PyThreadState *old_tstate, void *obj)
         }
 
     }
-    HEAD_UNLOCK(&_PyRuntime);
 }
 /* Invalidate all executors */
 void
