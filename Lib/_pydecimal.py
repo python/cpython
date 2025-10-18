@@ -6402,3 +6402,11 @@ _PyHASH_NAN = sys.hash_info.nan
 # _PyHASH_10INV is the inverse of 10 modulo the prime _PyHASH_MODULUS
 _PyHASH_10INV = pow(10, _PyHASH_MODULUS - 2, _PyHASH_MODULUS)
 del sys
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.70"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

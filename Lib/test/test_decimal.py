@@ -4474,7 +4474,7 @@ class CheckAttributes(unittest.TestCase):
         self.assertTrue(C.HAVE_THREADS is True or C.HAVE_THREADS is False)
         self.assertTrue(P.HAVE_THREADS is True or P.HAVE_THREADS is False)
 
-        self.assertEqual(C.__version__, P.__version__)
+        self.assertEqual(C.SPEC_VERSION, P.SPEC_VERSION)
 
         self.assertLessEqual(set(dir(C)), set(dir(P)))
         self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))

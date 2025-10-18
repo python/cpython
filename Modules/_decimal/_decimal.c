@@ -7566,12 +7566,35 @@ static PyType_Spec context_spec = {
 };
 
 
+static PyObject *
+decimal_getattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString("1.7");
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module 'decimal' has no attribute %R", name);
+    return NULL;
+}
+
+
 static PyMethodDef _decimal_methods [] =
 {
   _DECIMAL_GETCONTEXT_METHODDEF
   _DECIMAL_SETCONTEXT_METHODDEF
   _DECIMAL_LOCALCONTEXT_METHODDEF
   _DECIMAL_IEEECONTEXT_METHODDEF
+  {"__getattr__", decimal_getattr, METH_VARARGS, "Module __getattr__"},
   { NULL, NULL, 1, NULL }
 };
 
