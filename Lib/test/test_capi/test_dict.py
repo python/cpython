@@ -545,6 +545,37 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_popstring({}, NULL)
         # CRASHES dict_popstring({"a": 1}, NULL)
 
+    def test_dict_newpresized(self):
+        # Test PyDict_NewPresized()
+        dict_newpresized = _testcapi.dict_newpresized
+
+        # non-unicode keys
+        d = dict_newpresized(3, 0)
+        d[1] = 'a'
+        d[2] = 'b'
+        d[3] = 'c'
+        self.assertEqual(d, {1: 'a', 2: 'b', 3: 'c'})
+
+        # unicode keys
+        d = dict_newpresized(3, 1)
+        d['a'] = 1
+        d['b'] = 2
+        d['c'] = 3
+        self.assertEqual(d, {'a': 1, 'b': 2, 'c': 3})
+
+        # mis-use unicode_keys parameter
+        d = dict_newpresized(3, 1)
+        d[1] = 'a'
+        d[2] = 'b'
+        d[3] = 'c'
+        self.assertEqual(d[2], 'b')
+
+        # "large" dictionary (1024 items)
+        d = dict_newpresized(3, 1)
+        for i in range(1024):
+            d[str(i)] = i
+        self.assertEqual(d, {str(i):i for i in range(1024)})
+
 
 if __name__ == "__main__":
     unittest.main()

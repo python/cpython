@@ -64,7 +64,13 @@ static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
 
 PyAPI_FUNC(int) PyDict_ContainsString(PyObject *mp, const char *key);
 
-PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
+PyAPI_FUNC(PyObject*) PyDict_NewPresized(Py_ssize_t size, int unicode_keys);
+
+Py_DEPRECATED(3.15) static inline PyObject*
+_PyDict_NewPresized(Py_ssize_t size)
+{
+    return PyDict_NewPresized(size, 0);
+}
 
 PyAPI_FUNC(int) PyDict_Pop(PyObject *dict, PyObject *key, PyObject **result);
 PyAPI_FUNC(int) PyDict_PopString(PyObject *dict, const char *key, PyObject **result);
