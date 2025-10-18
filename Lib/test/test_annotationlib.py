@@ -7,7 +7,7 @@ import collections
 import functools
 import itertools
 import pickle
-from string.templatelib import Interpolation, Template
+from string.templatelib import Template, Interpolation
 import typing
 import unittest
 from annotationlib import (
@@ -282,6 +282,7 @@ class TestStringFormat(unittest.TestCase):
             a: t"a{b}c{d}e{f}g",
             b: t"{a:{1}}",
             c: t"{a | b * c}",
+            gh138558: t"{ 0}",
         ): pass
 
         annos = get_annotations(f, format=Format.STRING)
@@ -293,6 +294,7 @@ class TestStringFormat(unittest.TestCase):
             # interpolations in the format spec are eagerly evaluated so we can't recover the source
             "b": "t'{a:1}'",
             "c": "t'{a | b * c}'",
+            "gh138558": "t'{ 0}'",
         })
 
         def g(
@@ -815,6 +817,70 @@ class TestGetAnnotations(unittest.TestCase):
             {"x": int},
         )
 
+    def test_stringized_annotation_permutations(self):
+        def define_class(name, has_future, has_annos, base_text, extra_names=None):
+            lines = []
+            if has_future:
+                lines.append("from __future__ import annotations")
+            lines.append(f"class {name}({base_text}):")
+            if has_annos:
+                lines.append(f"    {name}_attr: int")
+            else:
+                lines.append("    pass")
+            code = "\n".join(lines)
+            ns = support.run_code(code, extra_names=extra_names)
+            return ns[name]
+
+        def check_annotations(cls, has_future, has_annos):
+            if has_annos:
+                if has_future:
+                    anno = "int"
+                else:
+                    anno = int
+                self.assertEqual(get_annotations(cls), {f"{cls.__name__}_attr": anno})
+            else:
+                self.assertEqual(get_annotations(cls), {})
+
+        for meta_future, base_future, child_future, meta_has_annos, base_has_annos, child_has_annos in itertools.product(
+            (False, True),
+            (False, True),
+            (False, True),
+            (False, True),
+            (False, True),
+            (False, True),
+        ):
+            with self.subTest(
+                meta_future=meta_future,
+                base_future=base_future,
+                child_future=child_future,
+                meta_has_annos=meta_has_annos,
+                base_has_annos=base_has_annos,
+                child_has_annos=child_has_annos,
+            ):
+                meta = define_class(
+                    "Meta",
+                    has_future=meta_future,
+                    has_annos=meta_has_annos,
+                    base_text="type",
+                )
+                base = define_class(
+                    "Base",
+                    has_future=base_future,
+                    has_annos=base_has_annos,
+                    base_text="metaclass=Meta",
+                    extra_names={"Meta": meta},
+                )
+                child = define_class(
+                    "Child",
+                    has_future=child_future,
+                    has_annos=child_has_annos,
+                    base_text="Base",
+                    extra_names={"Base": base},
+                )
+                check_annotations(meta, meta_future, meta_has_annos)
+                check_annotations(base, base_future, base_has_annos)
+                check_annotations(child, child_future, child_has_annos)
+
     def test_modify_annotations(self):
         def f(x: int):
             pass
@@ -1286,6 +1352,24 @@ class TestTypeRepr(unittest.TestCase):
         self.assertEqual(type_repr("1"), "'1'")
         self.assertEqual(type_repr(Format.VALUE), repr(Format.VALUE))
         self.assertEqual(type_repr(MyClass()), "my repr")
+        # gh138558 tests
+        self.assertEqual(type_repr(t'''{ 0
+            & 1
+            | 2
+        }'''), 't"""{ 0\n            & 1\n            | 2}"""')
+        self.assertEqual(
+            type_repr(Template("hi", Interpolation(42, "42"))), "t'hi{42}'"
+        )
+        self.assertEqual(
+            type_repr(Template("hi", Interpolation(42))),
+            "Template('hi', Interpolation(42, '', None, ''))",
+        )
+        self.assertEqual(
+            type_repr(Template("hi", Interpolation(42, "   "))),
+            "Template('hi', Interpolation(42, '   ', None, ''))",
+        )
+        # gh138558: perhaps in the future, we can improve this behavior:
+        self.assertEqual(type_repr(Template(Interpolation(42, "99"))), "t'{99}'")
 
 
 class TestAnnotationsToString(unittest.TestCase):
@@ -1300,6 +1384,11 @@ class TestAnnotationsToString(unittest.TestCase):
 
 class A:
     pass
+
+TypeParamsAlias1 = int
+
+class TypeParamsSample[TypeParamsAlias1, TypeParamsAlias2]:
+    TypeParamsAlias2 = str
 
 
 class TestForwardRefClass(unittest.TestCase):
@@ -1533,6 +1622,21 @@ class TestForwardRefClass(unittest.TestCase):
             ForwardRef("alias").evaluate(owner=Gen, locals={"alias": str}), str
         )
 
+    def test_evaluate_with_type_params_and_scope_conflict(self):
+        for is_class in (False, True):
+            with self.subTest(is_class=is_class):
+                fwdref1 = ForwardRef("TypeParamsAlias1", owner=TypeParamsSample, is_class=is_class)
+                fwdref2 = ForwardRef("TypeParamsAlias2", owner=TypeParamsSample, is_class=is_class)
+
+                self.assertIs(
+                    fwdref1.evaluate(),
+                    TypeParamsSample.__type_params__[0],
+                )
+                self.assertIs(
+                    fwdref2.evaluate(),
+                    TypeParamsSample.TypeParamsAlias2,
+                )
+
     def test_fwdref_with_module(self):
         self.assertIs(ForwardRef("Format", module="annotationlib").evaluate(), Format)
         self.assertIs(
@@ -1586,8 +1690,10 @@ class TestForwardRefClass(unittest.TestCase):
         with support.swap_attr(builtins, "int", dict):
             self.assertIs(ForwardRef("int").evaluate(), dict)
 
-        with self.assertRaises(NameError):
+        with self.assertRaises(NameError, msg="name 'doesntexist' is not defined") as exc:
             ForwardRef("doesntexist").evaluate()
+
+        self.assertEqual(exc.exception.name, "doesntexist")
 
     def test_fwdref_invalid_syntax(self):
         fr = ForwardRef("if")

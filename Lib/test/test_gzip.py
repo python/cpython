@@ -9,7 +9,6 @@ import os
 import struct
 import sys
 import unittest
-import warnings
 from subprocess import PIPE, Popen
 from test.support import catch_unraisable_exception
 from test.support import import_helper
@@ -354,7 +353,7 @@ class TestGzip(BaseTest):
     def test_metadata(self):
         mtime = 123456789
 
-        with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
+        with gzip.GzipFile(self.filename, 'w', mtime = mtime, compresslevel = 9) as fWrite:
             fWrite.write(data1)
 
         with open(self.filename, 'rb') as fRead:

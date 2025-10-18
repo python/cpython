@@ -9,14 +9,12 @@
 
 For applications that require data compression, the functions in this module
 allow compression and decompression, using the zlib library. The zlib library
-has its own home page at https://www.zlib.net.   There are known
-incompatibilities between the Python module and versions of the zlib library
-earlier than 1.1.3; 1.1.3 has a `security vulnerability <https://zlib.net/zlib_faq.html#faq33>`_, so we recommend using
-1.1.4 or later.
+has its own home page at https://www.zlib.net.  zlib 1.2.2.1 is the minium
+supported version.
 
 zlib's functions have many options and often need to be used in a particular
 order.  This documentation doesn't attempt to cover all of the permutations;
-consult the zlib manual at http://www.zlib.net/manual.html for authoritative
+consult the `zlib manual <https://www.zlib.net/manual.html>`_ for authoritative
 information.
 
 For reading and writing ``.gz`` files see the :mod:`gzip` module.
@@ -43,6 +41,20 @@ The available exception and functions in this module are:
 
    .. versionchanged:: 3.0
       The result is always unsigned.
+
+.. function:: adler32_combine(adler1, adler2, len2, /)
+
+   Combine two Adler-32 checksums into one.
+
+   Given the Adler-32 checksum *adler1* of a sequence ``A`` and the
+   Adler-32 checksum *adler2* of a sequence ``B`` of length *len2*,
+   return the Adler-32 checksum of ``A`` and ``B`` concatenated.
+
+   This function is typically useful to combine Adler-32 checksums
+   that were concurrently computed. To compute checksums sequentially, use
+   :func:`adler32` with the running checksum as the ``value`` argument.
+
+   .. versionadded:: 3.15
 
 .. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
@@ -135,6 +147,20 @@ The available exception and functions in this module are:
 
    .. versionchanged:: 3.0
       The result is always unsigned.
+
+.. function:: crc32_combine(crc1, crc2, len2, /)
+
+   Combine two CRC-32 checksums into one.
+
+   Given the CRC-32 checksum *crc1* of a sequence ``A`` and the
+   CRC-32 checksum *crc2* of a sequence ``B`` of length *len2*,
+   return the CRC-32 checksum of ``A`` and ``B`` concatenated.
+
+   This function is typically useful to combine CRC-32 checksums
+   that were concurrently computed. To compute checksums sequentially, use
+   :func:`crc32` with the running checksum as the ``value`` argument.
+
+   .. versionadded:: 3.15
 
 .. function:: decompress(data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
@@ -312,6 +338,136 @@ Decompression objects support the following methods and attributes:
    objects.
 
 
+The following constants are available to configure compression and decompression
+behavior:
+
+.. data:: DEFLATED
+
+   The deflate compression method.
+
+
+.. data:: MAX_WBITS
+
+   The maximum window size, expressed as a power of 2.
+   For example, if :const:`!MAX_WBITS` is ``15`` it results in a window size
+   of ``32 KiB``.
+
+
+.. data:: DEF_MEM_LEVEL
+
+   The default memory level for compression objects.
+
+
+.. data:: DEF_BUF_SIZE
+
+   The default buffer size for decompression operations.
+
+
+.. data:: Z_NO_COMPRESSION
+
+   Compression level ``0``.
+
+   .. versionadded:: 3.6
+
+
+.. data:: Z_BEST_SPEED
+
+   Compression level ``1``.
+
+
+.. data:: Z_BEST_COMPRESSION
+
+   Compression level ``9``.
+
+
+.. data:: Z_DEFAULT_COMPRESSION
+
+   Default compression level (``-1``).
+
+
+.. data:: Z_DEFAULT_STRATEGY
+
+   Default compression strategy, for normal data.
+
+
+.. data:: Z_FILTERED
+
+   Compression strategy for data produced by a filter (or predictor).
+
+
+.. data:: Z_HUFFMAN_ONLY
+
+   Compression strategy that forces Huffman coding only.
+
+
+.. data:: Z_RLE
+
+   Compression strategy that limits match distances to one (run-length encoding).
+
+   This constant is only available if Python was compiled with zlib
+   1.2.0.1 or greater.
+
+   .. versionadded:: 3.6
+
+
+.. data:: Z_FIXED
+
+   Compression strategy that prevents the use of dynamic Huffman codes.
+
+   This constant is only available if Python was compiled with zlib
+   1.2.2.2 or greater.
+
+   .. versionadded:: 3.6
+
+
+.. data:: Z_NO_FLUSH
+
+   Flush mode ``0``. No special flushing behavior.
+
+   .. versionadded:: 3.6
+
+
+.. data:: Z_PARTIAL_FLUSH
+
+   Flush mode ``1``. Flush as much output as possible.
+
+
+.. data:: Z_SYNC_FLUSH
+
+   Flush mode ``2``. All output is flushed and the output is aligned to a byte boundary.
+
+
+.. data:: Z_FULL_FLUSH
+
+   Flush mode ``3``. All output is flushed and the compression state is reset.
+
+
+.. data:: Z_FINISH
+
+   Flush mode ``4``. All pending input is processed, no more input is expected.
+
+
+.. data:: Z_BLOCK
+
+   Flush mode ``5``. A deflate block is completed and emitted.
+
+   This constant is only available if Python was compiled with zlib
+   1.2.2.2 or greater.
+
+   .. versionadded:: 3.6
+
+
+.. data:: Z_TREES
+
+   Flush mode ``6``, for inflate operations. Instructs inflate to return when
+   it gets to the next deflate block boundary.
+
+   This constant is only available if Python was compiled with zlib
+   1.2.3.4 or greater.
+
+   .. versionadded:: 3.6
+
+
 Information about the version of the zlib library in use is available through
 the following constants:
 
@@ -347,10 +503,10 @@ the following constants:
    Module :mod:`gzip`
       Reading and writing :program:`gzip`\ -format files.
 
-   http://www.zlib.net
+   https://www.zlib.net
       The zlib library home page.
 
-   http://www.zlib.net/manual.html
+   https://www.zlib.net/manual.html
       The zlib manual explains  the semantics and usage of the library's many
       functions.
 

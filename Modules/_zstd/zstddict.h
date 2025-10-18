@@ -1,4 +1,4 @@
-/* Low level interface to the Zstandard algorthm & the zstd library. */
+/* Low level interface to the Zstandard algorithm & the zstd library. */
 
 #ifndef ZSTD_DICT_H
 #define ZSTD_DICT_H
@@ -15,8 +15,10 @@ typedef struct {
     ZSTD_DDict *d_dict;
     PyObject *c_dicts;
 
-    /* Content of the dictionary, bytes object. */
-    PyObject *dict_content;
+    /* Dictionary content. */
+    char *dict_buffer;
+    Py_ssize_t dict_len;
+
     /* Dictionary id */
     uint32_t dict_id;
 

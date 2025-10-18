@@ -224,6 +224,8 @@ class ExceptionTests(unittest.TestCase):
                 if not isinstance(src, str):
                     src = src.decode(encoding, 'replace')
                 line = src.split('\n')[lineno-1]
+                if lineno == 1:
+                    line = line.removeprefix('\ufeff')
                 self.assertIn(line, cm.exception.text)
 
     def test_error_offset_continuation_characters(self):
@@ -239,7 +241,9 @@ class ExceptionTests(unittest.TestCase):
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
         check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
               2, 19, encoding='cp1251')
-        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 10)
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 12)
+        check(b'\n\n\nPython = "\xcf\xb3\xf2\xee\xed" +', 4, 12)
+        check(b'\xef\xbb\xbfPython = "\xcf\xb3\xf2\xee\xed" +', 1, 12)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
@@ -287,7 +291,7 @@ class ExceptionTests(unittest.TestCase):
         check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
         check("(1+)", 1, 4)
         check("[interesting\nfoo()\n", 1, 1)
-        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
+        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 1, 0)
         check("""f'''
             {
             (123_a)
@@ -1445,6 +1449,7 @@ class ExceptionTests(unittest.TestCase):
         foo()
         support.gc_collect()
 
+    @support.skip_emscripten_stack_overflow()
     @cpython_only
     def test_recursion_normalizing_exception(self):
         import_module("_testinternalcapi")
@@ -1522,6 +1527,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'Done.', out)
 
 
+    @support.skip_emscripten_stack_overflow()
     def test_recursion_in_except_handler(self):
 
         def set_relative_recursion_limit(n):
@@ -2076,6 +2082,50 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.msg, 'test')
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
+
+    def test_repr(self):
+        exc = ImportError()
+        self.assertEqual(repr(exc), "ImportError()")
+
+        exc = ImportError('test')
+        self.assertEqual(repr(exc), "ImportError('test')")
+
+        exc = ImportError('test', 'case')
+        self.assertEqual(repr(exc), "ImportError('test', 'case')")
+
+        exc = ImportError(name='somemodule')
+        self.assertEqual(repr(exc), "ImportError(name='somemodule')")
+
+        exc = ImportError('test', name='somemodule')
+        self.assertEqual(repr(exc), "ImportError('test', name='somemodule')")
+
+        exc = ImportError(path='somepath')
+        self.assertEqual(repr(exc), "ImportError(path='somepath')")
+
+        exc = ImportError('test', path='somepath')
+        self.assertEqual(repr(exc), "ImportError('test', path='somepath')")
+
+        exc = ImportError(name='somename', path='somepath')
+        self.assertEqual(repr(exc),
+                "ImportError(name='somename', path='somepath')")
+
+        exc = ImportError('test', name='somename', path='somepath')
+        self.assertEqual(repr(exc),
+                "ImportError('test', name='somename', path='somepath')")
+
+        exc = ModuleNotFoundError('test', name='somename', path='somepath')
+        self.assertEqual(repr(exc),
+                "ModuleNotFoundError('test', name='somename', path='somepath')")
+
+    def test_ModuleNotFoundError_repr_with_failed_import(self):
+        with self.assertRaises(ModuleNotFoundError) as cm:
+            import does_not_exist  # type: ignore[import] # noqa: F401
+
+        self.assertEqual(cm.exception.name, "does_not_exist")
+        self.assertIsNone(cm.exception.path)
+
+        self.assertEqual(repr(cm.exception),
+            "ModuleNotFoundError(\"No module named 'does_not_exist'\", name='does_not_exist')")
 
 
 def run_script(source):

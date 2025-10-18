@@ -118,6 +118,7 @@ _Py_GetSpecializationStats(void) {
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
     err += add_stat_dict(stats, STORE_SUBSCR, "store_subscr");
     err += add_stat_dict(stats, STORE_ATTR, "store_attr");
+    err += add_stat_dict(stats, JUMP_BACKWARD, "jump_backward");
     err += add_stat_dict(stats, CALL, "call");
     err += add_stat_dict(stats, CALL_KW, "call_kw");
     err += add_stat_dict(stats, BINARY_OP, "binary_op");
@@ -629,6 +630,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_CALL_INIT_NOT_PYTHON 21
 #define SPEC_FAIL_CALL_PEP_523 22
 #define SPEC_FAIL_CALL_BOUND_METHOD 23
+#define SPEC_FAIL_CALL_VECTORCALL 24
 #define SPEC_FAIL_CALL_CLASS_MUTABLE 26
 #define SPEC_FAIL_CALL_METHOD_WRAPPER 28
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 29
@@ -934,8 +936,7 @@ analyze_descriptor_load(PyTypeObject *type, PyObject *name, PyObject **descr, un
         PyObject *getattr = _PyType_Lookup(type, &_Py_ID(__getattr__));
         has_getattr = getattr != NULL;
         if (has_custom_getattribute) {
-            if (getattro_slot == _Py_slot_tp_getattro &&
-                !has_getattr &&
+            if (!has_getattr &&
                 Py_IS_TYPE(getattribute, &PyFunction_Type)) {
                 *descr = getattribute;
                 *tp_version = ga_version;
@@ -1258,12 +1259,6 @@ do_specialize_instance_load_attr(PyObject* owner, _Py_CODEUNIT* instr, PyObject*
             return -1;
         case GETATTRIBUTE_IS_PYTHON_FUNCTION:
         {
-            #ifndef Py_GIL_DISABLED
-            // In free-threaded builds it's possible for tp_getattro to change
-            // after the call to analyze_descriptor. That is fine: the version
-            // guard will fail.
-            assert(type->tp_getattro == _Py_slot_tp_getattro);
-            #endif
             assert(Py_IS_TYPE(descr, &PyFunction_Type));
             _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
             if (!function_check_args(descr, 2, LOAD_ATTR)) {
@@ -2077,6 +2072,10 @@ specialize_py_call(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
         return -1;
     }
+    if (func->vectorcall != _PyFunction_Vectorcall) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_VECTORCALL);
+        return -1;
+    }
     int argcount = -1;
     if (kind == SPEC_FAIL_CODE_NOT_OPTIMIZED) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CODE_NOT_OPTIMIZED);
@@ -2114,6 +2113,10 @@ specialize_py_call_kw(PyFunctionObject *func, _Py_CODEUNIT *instr, int nargs,
     /* Don't specialize if PEP 523 is active */
     if (_PyInterpreterState_GET()->eval_frame) {
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_PEP_523);
+        return -1;
+    }
+    if (func->vectorcall != _PyFunction_Vectorcall) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_VECTORCALL);
         return -1;
     }
     if (kind == SPEC_FAIL_CODE_NOT_OPTIMIZED) {
@@ -2601,7 +2604,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 specialize(instr, BINARY_OP_ADD_UNICODE);
                 return;
             }
-            if (PyLong_CheckExact(lhs)) {
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
                 specialize(instr, BINARY_OP_ADD_INT);
                 return;
             }
@@ -2615,7 +2618,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
                 break;
             }
-            if (PyLong_CheckExact(lhs)) {
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
                 specialize(instr, BINARY_OP_MULTIPLY_INT);
                 return;
             }
@@ -2629,7 +2632,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
                 break;
             }
-            if (PyLong_CheckExact(lhs)) {
+            if (_PyLong_CheckExactAndCompact(lhs) && _PyLong_CheckExactAndCompact(rhs)) {
                 specialize(instr, BINARY_OP_SUBTRACT_INT);
                 return;
             }
@@ -2904,53 +2907,57 @@ int
 #endif   // Py_STATS
 
 Py_NO_INLINE void
-_Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg)
+_Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT *instr, int oparg)
 {
     assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
     PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
     PyTypeObject *tp = Py_TYPE(iter_o);
+
+    if (PyStackRef_IsNull(null_or_index)) {
 #ifdef Py_GIL_DISABLED
-    // Only specialize for uniquely referenced iterators, so that we know
-    // they're only referenced by this one thread. This is more limiting
-    // than we need (even `it = iter(mylist); for item in it:` won't get
-    // specialized) but we don't have a way to check whether we're the only
-    // _thread_ who has access to the object.
-    if (!_PyObject_IsUniquelyReferenced(iter_o))
-        goto failure;
-#endif
-    if (tp == &PyListIter_Type) {
-#ifdef Py_GIL_DISABLED
-        _PyListIterObject *it = (_PyListIterObject *)iter_o;
-        if (!_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) &&
-            !_PyObject_GC_IS_SHARED(it->it_seq)) {
-            // Maybe this should just set GC_IS_SHARED in a critical
-            // section, instead of leaving it to the first iteration?
+        // Only specialize for uniquely referenced iterators, so that we know
+        // they're only referenced by this one thread. This is more limiting
+        // than we need (even `it = iter(mylist); for item in it:` won't get
+        // specialized) but we don't have a way to check whether we're the only
+        // _thread_ who has access to the object.
+        if (!_PyObject_IsUniquelyReferenced(iter_o)) {
             goto failure;
         }
 #endif
-        specialize(instr, FOR_ITER_LIST);
-        return;
+        if (tp == &PyRangeIter_Type) {
+            specialize(instr, FOR_ITER_RANGE);
+            return;
+        }
+        else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
+            // Generators are very much not thread-safe, so don't worry about
+            // the specialization not being thread-safe.
+            assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR  ||
+                instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
+            );
+            /* Don't specialize if PEP 523 is active */
+            if (_PyInterpreterState_GET()->eval_frame) {
+                goto failure;
+            }
+            specialize(instr, FOR_ITER_GEN);
+            return;
+        }
     }
-    else if (tp == &PyTupleIter_Type) {
-        specialize(instr, FOR_ITER_TUPLE);
-        return;
-    }
-    else if (tp == &PyRangeIter_Type) {
-        specialize(instr, FOR_ITER_RANGE);
-        return;
-    }
-    else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
-        // Generators are very much not thread-safe, so don't worry about
-        // the specialization not being thread-safe.
-        assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR  ||
-            instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
-        );
-        /* Don't specialize if PEP 523 is active */
-        if (_PyInterpreterState_GET()->eval_frame)
-            goto failure;
-        specialize(instr, FOR_ITER_GEN);
-        return;
+    else {
+        if (tp == &PyList_Type) {
+#ifdef Py_GIL_DISABLED
+            // Only specialize for lists owned by this thread or shared
+            if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
+                goto failure;
+            }
+#endif
+            specialize(instr, FOR_ITER_LIST);
+            return;
+        }
+        else if (tp == &PyTuple_Type) {
+            specialize(instr, FOR_ITER_TUPLE);
+            return;
+        }
     }
 failure:
     SPECIALIZATION_FAIL(FOR_ITER,

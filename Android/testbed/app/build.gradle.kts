@@ -47,7 +47,7 @@ for ((i, prefix) in prefixes.withIndex()) {
     val libDir = file("$prefix/lib")
     val version = run {
         for (filename in libDir.list()!!) {
-            """python(\d+\.\d+)""".toRegex().matchEntire(filename)?.let {
+            """python(\d+\.\d+[a-z]*)""".toRegex().matchEntire(filename)?.let {
                 return@run it.groupValues[1]
             }
         }
@@ -64,9 +64,10 @@ for ((i, prefix) in prefixes.withIndex()) {
     val libPythonDir = file("$libDir/python$pythonVersion")
     val triplet = run {
         for (filename in libPythonDir.list()!!) {
-            """_sysconfigdata__android_(.+).py""".toRegex().matchEntire(filename)?.let {
-                return@run it.groupValues[1]
-            }
+            """_sysconfigdata_[a-z]*_android_(.+).py""".toRegex()
+                .matchEntire(filename)?.let {
+                    return@run it.groupValues[1]
+                }
         }
         throw GradleException("Failed to find Python triplet in $libPythonDir")
     }
@@ -85,7 +86,7 @@ android {
 
         minSdk = androidEnvFile.useLines {
             for (line in it) {
-                """api_level:=(\d+)""".toRegex().find(line)?.let {
+                """ANDROID_API_LEVEL:=(\d+)""".toRegex().find(line)?.let {
                     return@useLines it.groupValues[1].toInt()
                 }
             }
@@ -205,10 +206,28 @@ androidComponents.onVariants { variant ->
 
                 into("site-packages") {
                     from("$projectDir/src/main/python")
+
+                    val sitePackages = findProperty("python.sitePackages") as String?
+                    if (!sitePackages.isNullOrEmpty()) {
+                        if (!file(sitePackages).exists()) {
+                            throw GradleException("$sitePackages does not exist")
+                        }
+                        from(sitePackages)
+                    }
                 }
 
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 exclude("**/__pycache__")
+            }
+
+            into("cwd") {
+                val cwd = findProperty("python.cwd") as String?
+                if (!cwd.isNullOrEmpty()) {
+                    if (!file(cwd).exists()) {
+                        throw GradleException("$cwd does not exist")
+                    }
+                    from(cwd)
+                }
             }
         }
     }

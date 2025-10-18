@@ -64,20 +64,14 @@ _register(PathEntryFinder, machinery.FileFinder)
 class ResourceLoader(Loader):
 
     """Abstract base class for loaders which can return data from their
-    back-end storage.
+    back-end storage to facilitate reading data to perform an import.
 
     This ABC represents one of the optional protocols specified by PEP 302.
 
+    For directly loading resources, use TraversableResources instead. This class
+    primarily exists for backwards compatibility with other ABCs in this module.
+
     """
-
-    def __init__(self):
-        import warnings
-        warnings.warn('importlib.abc.ResourceLoader is deprecated in '
-                      'favour of supporting resource loading through '
-                      'importlib.resources.abc.TraversableResources.',
-                      DeprecationWarning, stacklevel=2)
-        super().__init__()
-
 
     @abc.abstractmethod
     def get_data(self, path):

@@ -1055,6 +1055,15 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         # AttributeError: 'str' object has no attribute 'is_attachment'
         m.get_body()
 
+    def test_get_bytes_payload_with_quoted_printable_encoding(self):
+        # We use a memoryview to avoid directly changing the private payload
+        # and to prevent using the dedicated paths for string or bytes objects.
+        payload = memoryview(b'Some payload')
+        m = self._make_message()
+        m.add_header('Content-Transfer-Encoding', 'quoted-printable')
+        m.set_payload(payload)
+        self.assertEqual(m.get_payload(decode=True), payload)
+
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
     # Doing the full test run here may seem a bit redundant, since the two

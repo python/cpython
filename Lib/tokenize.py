@@ -86,7 +86,7 @@ def _all_string_prefixes():
     # The valid string prefixes. Only contain the lower case versions,
     #  and don't contain any permutations (include 'fr', but not
     #  'rf'). The various permutations will be generated.
-    _valid_string_prefixes = ['b', 'r', 'u', 'f', 'br', 'fr']
+    _valid_string_prefixes = ['b', 'r', 'u', 'f', 't', 'br', 'fr', 'tr']
     # if we add binary f-strings, add: ['fb', 'fbr']
     result = {''}
     for prefix in _valid_string_prefixes:
@@ -274,7 +274,7 @@ class Untokenizer:
         toks_append = self.tokens.append
         startline = token[0] in (NEWLINE, NL)
         prevstring = False
-        in_fstring = 0
+        in_fstring_or_tstring = 0
 
         for tok in _itertools.chain([token], iterable):
             toknum, tokval = tok[:2]
@@ -293,10 +293,10 @@ class Untokenizer:
             else:
                 prevstring = False
 
-            if toknum == FSTRING_START:
-                in_fstring += 1
-            elif toknum == FSTRING_END:
-                in_fstring -= 1
+            if toknum in {FSTRING_START, TSTRING_START}:
+                in_fstring_or_tstring += 1
+            elif toknum in {FSTRING_END, TSTRING_END}:
+                in_fstring_or_tstring -= 1
             if toknum == INDENT:
                 indents.append(tokval)
                 continue
@@ -311,8 +311,8 @@ class Untokenizer:
             elif toknum in {FSTRING_MIDDLE, TSTRING_MIDDLE}:
                 tokval = self.escape_brackets(tokval)
 
-            # Insert a space between two consecutive brackets if we are in an f-string
-            if tokval in {"{", "}"} and self.tokens and self.tokens[-1] == tokval and in_fstring:
+            # Insert a space between two consecutive brackets if we are in an f-string or t-string
+            if tokval in {"{", "}"} and self.tokens and self.tokens[-1] == tokval and in_fstring_or_tstring:
                 tokval = ' ' + tokval
 
             # Insert a space between two consecutive f-strings
