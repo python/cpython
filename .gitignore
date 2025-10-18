@@ -174,6 +174,8 @@ Python/frozen_modules/MANIFEST
 # People's custom https://docs.anthropic.com/en/docs/claude-code/memory configs.
 /.claude/
 CLAUDE.local.md
+# Our AGENTS.md tells agents to store local notebooks and temporary files here.
+/.agents/
 
 #### main branch only stuff below this line, things to backport go above. ####
 # main branch only: ABI files are not checked/maintained.
