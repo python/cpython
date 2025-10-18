@@ -216,16 +216,13 @@ patch_32r(unsigned char *location, uint64_t value)
     value -= (uintptr_t)location;
     // Check that we're not out of range of 32 signed bits:
     assert((int64_t)value >= -(1LL << 31));
-#if defined(__APPLE__) && defined(Py_DEBUG)
-    // LLVM 20 on macOS debug builds: GOT entries may exceed ±2GB PC-relative
-    // range. Truncation is safe as the target is a GOT trampoline.
+    // assert((int64_t)value < (1LL << 31));
     if ((int64_t)value >= (1LL << 31)) {
-        value = (uint32_t)value;
+        __builtin_debugtrap();
     }
-#else
-    assert((int64_t)value < (1LL << 31));
-#endif
+
     *loc32 = (uint32_t)value;
+
 }
 
 // 64-bit absolute address.
