@@ -991,9 +991,9 @@ possibilities: store the bytes in big endian or in little endian order. These
 two encodings are called ``UTF-32-BE`` and ``UTF-32-LE`` respectively. Their
 disadvantage is that if, for example, you use ``UTF-32-BE`` on a little endian
 machine you will always have to swap bytes on encoding and decoding.
-Python's ``UTF-32`` codec avoids this problem by using the platform's native byte
-order when no BOM is present. The plain ``UTF-16`` codec (without a ``-BE`` or
-``-LE`` suffix) behaves the same way. Python follows prevailing platform
+Python's ``UTF-16`` and ``UTF-32`` codecs avoid this problem by using the
+platform's native byte order when no BOM is present.
+Python follows prevailing platform
 practice, so native-endian data round-trips without redundant byte swapping,
 even though the Unicode Standard defaults to big-endian when the byte order is
 unspecified. When these bytes are read by a CPU with a different endianness,
