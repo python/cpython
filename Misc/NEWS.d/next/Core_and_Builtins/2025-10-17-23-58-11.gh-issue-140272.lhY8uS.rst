@@ -1,1 +1,1 @@
-Fix memory leak in ``_gdbm.gdbm.clear`` by properly freeing memory allocated by ``gdbm_firstkey()``.
+Fix memory leak in the :meth:`clear` method of the :mod:`dbm.gnu` database.
