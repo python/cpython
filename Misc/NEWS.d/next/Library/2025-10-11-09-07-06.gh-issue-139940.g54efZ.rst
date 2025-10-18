@@ -1,0 +1,1 @@
+Print clearer error message when using pdb to attaching to a non-existing process on Linux.
