@@ -97,6 +97,7 @@ NaN
 1
 >>>
 """
+
 try:
     from _decimal import *
     from _decimal import __libmpdec_version__  # noqa: F401
