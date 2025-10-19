@@ -7546,16 +7546,7 @@
                 TIER2_TO_TIER2(executor);
             }
             else {
-                if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
-                    GOTO_TIER_ONE(target, 0);
-                }
-                if (!backoff_counter_triggers(temperature)) {
-                    exit->temperature = advance_backoff_counter(temperature);
-                    GOTO_TIER_ONE(target, 0);
-                }
-                exit->temperature = initial_temperature_backoff_counter();
-                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), 0, NULL);
-                GOTO_TIER_ONE(target, 1);
+                GOTO_TIER_ONE(target, 0);
             }
             break;
         }
