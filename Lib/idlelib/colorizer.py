@@ -575,20 +575,18 @@ class ColorDelegator(Delegator):
                      f"{head}+{end:d}c")
 
     def _add_tags_in_section(self, chars, head):
-        """Parse and add highlighting tags using pyrepl's tokenization.
+        """Parse and add highlighting tags to a given part of the text..
 
         `chars` is a string with the text to parse and to which
         highlighting is to be applied.
 
             `head` is the index in the text widget where the text is found.
         """
-        # Use pyrepl's gen_colors to get color spans
         color_spans = list(gen_colors(chars))
 
-        # Convert pyrepl spans to IDLE text widget positions and add tags
         for color_span in color_spans:
             start_pos = color_span.span.start
-            end_pos = color_span.span.end + 1  # pyrepl spans are inclusive, tkinter expects exclusive end
+            end_pos = color_span.span.end + 1
             tag = color_span.tag
             self._add_tag(start_pos, end_pos, head, tag)
 
