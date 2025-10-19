@@ -1617,7 +1617,7 @@ category.
 |                          +-------------------------------------------+---------------------------------------------------+
 |                          |  :meth:`str.casefold`                     |                                                   |
 |                          +-------------------------------------------+---------------------------------------------------+
-|                          |  :meth:`str.`                   |  :meth:`bytes.capitalize`                         |
+|                          |  :meth:`str.capitalize`                   |  :meth:`bytes.capitalize`                         |
 |                          +-------------------------------------------+---------------------------------------------------+
 |                          |  :meth:`str.title`                        |  :meth:`bytes.title`                              |
 |                          +-------------------------------------------+---------------------------------------------------+
@@ -1765,13 +1765,6 @@ expression support in the :mod:`re` module).
       'Python is amazing'
       >>> 'ǋemačka starts With a non-ASCII digraph'.capitalize()
       'ǋemačka starts with a non-ascii digraph'
-      >>> ' Ǳ, ǲ, ǳ'.title()
-      >>> 'Ǆ, ǅ, ǆ '.title()
-      >>> 'Ĳ, ĳ'.title()
-      >>> 'Ǉ, ǈ, ǉ '.title()
-      >>> 'Ǌ, ǋ, ǌ '.title()
-      >>> 'ᵺ '.title()
-
 
    See also :meth:`title`.
 
