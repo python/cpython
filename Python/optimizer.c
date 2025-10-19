@@ -710,11 +710,19 @@ _PyJIT_translate_single_bytecode_to_trace(
         case POP_JUMP_IF_FALSE:
         case POP_JUMP_IF_TRUE:
         {
+            int counter = target_instr[1].cache;
+            int bitcount = _Py_popcount32(counter);
+            int jump_likely = bitcount > 8;
             _Py_CODEUNIT *computed_next_instr_without_modifiers = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
             _Py_CODEUNIT *computed_next_instr = computed_next_instr_without_modifiers + (computed_next_instr_without_modifiers->op.code == NOT_TAKEN);
             _Py_CODEUNIT *computed_jump_instr = computed_next_instr_without_modifiers + oparg;
             assert(next_instr == computed_next_instr || next_instr == computed_jump_instr);
             int jump_happened = computed_jump_instr == next_instr;
+            // Jump is likely but it did not happen this time. Indicates we are likely tracing
+            // an uncommmon path. Stop the trace early here to prevent trace explosion.
+            if (jump_likely != jump_happened) {
+                goto unsupported;
+            }
             uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_happened];
             ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_happened ? computed_next_instr : computed_jump_instr, old_code));
             break;
@@ -1226,7 +1234,7 @@ uop_optimize(
     int curr_stackentries = tstate->interp->jit_state.jit_tracer_initial_stack_depth;
     int length = interp->jit_state.jit_tracer_code_curr_size;
     // Trace too short, don't bother.
-    if (length <= 5) {
+    if (length <= 20) {
         return 0;
     }
     assert(length > 0);

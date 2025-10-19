@@ -9977,6 +9977,8 @@
             int opcode = POP_JUMP_IF_FALSE;
             (void)(opcode);
             #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
@@ -9985,6 +9987,7 @@
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsFalse(cond);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -9996,6 +9999,8 @@
             int opcode = POP_JUMP_IF_NONE;
             (void)(opcode);
             #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NONE);
@@ -10024,6 +10029,7 @@
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsTrue(cond);
+                RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
                 JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
@@ -10036,6 +10042,8 @@
             int opcode = POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
             #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NOT_NONE);
@@ -10064,6 +10072,7 @@
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsFalse(cond);
+                RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
                 JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
@@ -10076,6 +10085,8 @@
             int opcode = POP_JUMP_IF_TRUE;
             (void)(opcode);
             #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_TRUE);
@@ -10084,6 +10095,7 @@
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsTrue(cond);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
