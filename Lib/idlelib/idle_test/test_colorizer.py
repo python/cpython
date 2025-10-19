@@ -63,39 +63,6 @@ def tearDownModule():
     colorizer.idleConf.userCfg = usercfg
 
 
-class FunctionTest(unittest.TestCase):
-
-    def test_any(self):
-        self.assertEqual(colorizer.any('test', ('a', 'b', 'cd')),
-                         '(?P<test>a|b|cd)')
-
-    def test_make_pat(self):
-        # Tested in more detail by testing prog.
-        self.assertTrue(colorizer.make_pat())
-
-    def test_prog(self):
-        prog = colorizer.prog
-        eq = self.assertEqual
-        line = 'def f():\n    print("hello")\n'
-        m = prog.search(line)
-        eq(m.groupdict()['KEYWORD'], 'def')
-        m = prog.search(line, m.end())
-        eq(m.groupdict()['SYNC'], '\n')
-        m = prog.search(line, m.end())
-        eq(m.groupdict()['BUILTIN'], 'print')
-        m = prog.search(line, m.end())
-        eq(m.groupdict()['STRING'], '"hello"')
-        m = prog.search(line, m.end())
-        eq(m.groupdict()['SYNC'], '\n')
-
-    def test_idprog(self):
-        idprog = colorizer.idprog
-        m = idprog.match('nospace')
-        self.assertIsNone(m)
-        m = idprog.match(' space')
-        self.assertEqual(m.group(0), ' space')
-
-
 class ColorConfigTest(unittest.TestCase):
 
     @classmethod

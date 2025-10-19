@@ -251,73 +251,6 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
         )
 
 
-def any(name, alternates):
-    "Return a named group pattern matching list of alternates."
-    return "(?P<%s>" % name + "|".join(alternates) + ")"
-
-
-def make_pat():
-    kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
-    match_softkw = (
-        r"^[ \t]*" +  # at beginning of line + possible indentation
-        r"(?P<MATCH_SOFTKW>match)\b" +
-        r"(?![ \t]*(?:" + "|".join([  # not followed by ...
-            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
-                                 # pattern-matching statement
-            r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
-        ]) +
-        r"))"
-    )
-    case_default = (
-        r"^[ \t]*" +  # at beginning of line + possible indentation
-        r"(?P<CASE_SOFTKW>case)" +
-        r"[ \t]+(?P<CASE_DEFAULT_UNDERSCORE>_\b)"
-    )
-    case_softkw_and_pattern = (
-        r"^[ \t]*" +  # at beginning of line + possible indentation
-        r"(?P<CASE_SOFTKW2>case)\b" +
-        r"(?![ \t]*(?:" + "|".join([  # not followed by ...
-            r"_\b",  # a lone underscore
-            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
-                                 # pattern-matching case
-            r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
-        ]) +
-        r"))"
-    )
-    builtinlist = [str(name) for name in dir(builtins)
-                   if not name.startswith('_') and
-                   name not in keyword.kwlist]
-    builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
-    comment = any("COMMENT", [r"#[^\n]*"])
-    stringprefix = r"(?i:r|u|f|fr|rf|b|br|rb|t|rt|tr)?"
-    sqstring = stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?"
-    dqstring = stringprefix + r'"[^"\\\n]*(\\.[^"\\\n]*)*"?'
-    sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
-    dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
-    string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
-    prog = re.compile("|".join([
-                                builtin, comment, string, kw,
-                                match_softkw, case_default,
-                                case_softkw_and_pattern,
-                                any("SYNC", [r"\n"]),
-                               ]),
-                      re.DOTALL | re.MULTILINE)
-    return prog
-
-
-prog = make_pat()
-idprog = re.compile(r"\s+(\w+)")
-prog_group_name_to_tag = {
-    "MATCH_SOFTKW": "KEYWORD",
-    "CASE_SOFTKW": "KEYWORD",
-    "CASE_DEFAULT_UNDERSCORE": "KEYWORD",
-    "CASE_SOFTKW2": "KEYWORD",
-}
-
-
-def matched_named_groups(re_match):
-    "Get only the non-empty named groups from an re.Match object."
-    return ((k, v) for (k, v) in re_match.groupdict().items() if v)
 
 
 def color_config(text):
@@ -360,8 +293,6 @@ class ColorDelegator(Delegator):
     def __init__(self):
         Delegator.__init__(self)
         self.init_state()
-        self.prog = prog
-        self.idprog = idprog
         self.LoadTagDefs()
 
     def init_state(self):
@@ -557,7 +488,7 @@ class ColorDelegator(Delegator):
                     if DEBUG: print("colorizing stopped")
                     return
 
-    def _add_tag(self, start, end, head, matched_group_name):
+    def _add_tag(self, start, end, head, tag):
         """Add a tag to a given range in the text widget.
 
         This is a utility function, receiving the range as `start` and
@@ -568,8 +499,6 @@ class ColorDelegator(Delegator):
         the name of a regular expression "named group" as matched by
         by the relevant highlighting regexps.
         """
-        tag = prog_group_name_to_tag.get(matched_group_name,
-                                         matched_group_name)
         self.tag_add(tag,
                      f"{head}+{start:d}c",
                      f"{head}+{end:d}c")
