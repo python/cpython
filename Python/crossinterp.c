@@ -1805,12 +1805,12 @@ _PyXI_InitFailureUTF8(_PyXI_failure *failure,
 int
 _PyXI_InitFailure(_PyXI_failure *failure, _PyXI_errcode code, PyObject *obj)
 {
+    *failure = (_PyXI_failure){
+        .code = code,
+        .msg = NULL,
+        .msg_owned = 0,
+    };
     if (obj == NULL) {
-        *failure = (_PyXI_failure){
-            .code = code,
-            .msg = NULL,
-            .msg_owned = 0,
-        };
         return 0;
     }
 
