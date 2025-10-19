@@ -283,9 +283,11 @@ class WindowsConsole(Console):
 
         self.__write(newline[x_pos:])
         if wlen(newline) == self.width:
-            # If we wrapped we want to start at the next line
-            self._move_relative(0, y + 1)
-            self.posxy = 0, y + 1
+            # Wrapping with self._move_relative(0, y+1) can't move cursor down
+            # here. Windows keeps the cursor at the end of the line. It only
+            # wraps when the next character is written.
+            # https://github.com/microsoft/terminal/issues/349
+            self.posxy = wlen(newline) - 1, y
         else:
             self.posxy = wlen(newline), y
 
