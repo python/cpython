@@ -269,7 +269,7 @@ def _add_exception_note(exc_type, exc_value, exc_tb, where,
     tb_tuple = _traceback_to_tuples(exc_tb)
     if tb_tuple not in _seen._seen and _seen.times <= _ADD_EXC_NOTE_LIMIT:
         _seen._seen.add(tb_tuple)
-        if exception_exclude:
+        if exception_exclude is not None:
             _remove_exception(exc_value, exception_exclude)
         msg = "".join(TracebackException(exc_type, exc_value, exc_tb).format())
         while msg.endswith("\n") or msg.endswith(" "):
