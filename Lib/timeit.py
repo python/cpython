@@ -284,7 +284,7 @@ def main(args=None, *, _wrap_timer=None):
     try:
         opts, args = getopt.getopt(args, "n:u:s:r:pt:vh",
                                    ["number=", "setup=", "repeat=",
-                                    "process", "target_time=",
+                                    "process", "target-time=",
                                     "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
