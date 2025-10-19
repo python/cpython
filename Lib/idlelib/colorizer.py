@@ -575,7 +575,7 @@ class ColorDelegator(Delegator):
                      f"{head}+{end:d}c")
 
     def _add_tags_in_section(self, chars, head):
-        """Parse and add highlighting tags to a given part of the text..
+        """Parse and add highlighting tags to a given part of the text.
 
         `chars` is a string with the text to parse and to which
         highlighting is to be applied.
