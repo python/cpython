@@ -1204,7 +1204,7 @@ AC_SUBST([MULTIARCH_CPPFLAGS])
 
 # Guess C stack direction
 AS_CASE([$host],
-  [hppa-*], [_Py_STACK_GROWS_DOWN=0],
+  [hppa*], [_Py_STACK_GROWS_DOWN=0],
   [_Py_STACK_GROWS_DOWN=1])
 AC_DEFINE_UNQUOTED([_Py_STACK_GROWS_DOWN], [$_Py_STACK_GROWS_DOWN],
   [Define to 1 if the machine stack grows down (default); 0 if it grows up.])

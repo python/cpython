@@ -7214,7 +7214,7 @@ fi
 
 # Guess C stack direction
 case $host in #(
-  hppa-*) :
+  hppa*) :
     _Py_STACK_GROWS_DOWN=0 ;; #(
   *) :
     _Py_STACK_GROWS_DOWN=1 ;;
