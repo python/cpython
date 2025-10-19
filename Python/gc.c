@@ -10,6 +10,7 @@
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_time.h"          // _PyTime_MonotonicRaw()
 #include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 
@@ -1816,6 +1817,7 @@ gc_collect_region(PyThreadState *tstate,
     /* Collect statistics on uncollectable objects found and print
      * debugging information. */
     Py_ssize_t n = 0;
+
     for (gc = GC_NEXT(&finalizers); gc != &finalizers; gc = GC_NEXT(gc)) {
         n++;
         if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE)
@@ -2066,6 +2068,8 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
     GCState *gcstate = &tstate->interp->gc;
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+    PyTime_t now;
+    (void)PyTime_MonotonicRaw(&now);
 
     int expected = 0;
     if (!_Py_atomic_compare_exchange_int(&gcstate->collecting, &expected, 1)) {
@@ -2115,6 +2119,17 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 #endif
     validate_spaces(gcstate);
     _Py_atomic_store_int(&gcstate->collecting, 0);
+
+    if (gcstate->debug & _PyGC_DEBUG_STATS) {
+        PyTime_t endtime;
+        (void)PyTime_MonotonicRaw(&endtime);
+        double d = PyTime_AsSecondsDouble(endtime - now);
+        PySys_WriteStderr(
+            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
+            stats.collected, stats.uncollectable, d
+        );
+    }
+
     return stats.uncollectable + stats.collected;
 }
 
