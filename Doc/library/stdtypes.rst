@@ -2196,6 +2196,7 @@ expression support in the :mod:`re` module).
    For example:
 
    .. doctest::
+
       >>> ', '.join(['spam', 'spam', 'spam'])
       'spam, spam, spam'
       >>> '-'.join('Python')
