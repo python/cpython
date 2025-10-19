@@ -56,7 +56,7 @@ __all__ = [
 __xname__ = __name__    # sys.modules lookup (--without-threads)
 __name__ = 'decimal'    # For pickling
 SPEC_VERSION = '1.70'   # Highest version of the spec this complies with
-                        # See https://speleotrove.com/decimal/
+                        # See https://speleotrove.com/decimal/decarith.html
 __libmpdec_version__ = "2.4.2" # compatible libmpdec version
 
 import math as _math
@@ -6408,5 +6408,5 @@ def __getattr__(name):
         from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
-        return "1.70"  # Do not change
+        return SPEC_VERSION
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

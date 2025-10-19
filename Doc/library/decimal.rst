@@ -1605,7 +1605,7 @@ are also included in the pure Python version for compatibility.
 
    The highest version of the General Decimal Arithmetic
    Specification that this implementation complies with.
-   See https://speleotrove.com/decimal/ for the specification.
+   See https://speleotrove.com/decimal/decarith.html for the specification.
 
    .. versionadded:: next
 
