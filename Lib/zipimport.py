@@ -18,7 +18,6 @@ import _frozen_importlib as _bootstrap  # for _verbose_message
 import _imp  # for check_hash_based_pycs
 import _io  # for open
 import marshal  # for loads
-import sys  # for modules
 import time  # for mktime
 
 __all__ = ['ZipImportError', 'zipimporter']
@@ -33,8 +32,6 @@ class ZipImportError(ImportError):
 
 # _read_directory() cache
 _zip_directory_cache = {}
-
-_module_type = type(sys)
 
 END_CENTRAL_DIR_SIZE = 22
 END_CENTRAL_DIR_SIZE_64 = 56
