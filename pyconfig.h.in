@@ -1285,6 +1285,9 @@
 /* Define to 1 if you have the 'statvfs' function. */
 #undef HAVE_STATVFS
 
+/* Define to 1 if you have the 'statx' function. */
+#undef HAVE_STATX
+
 /* Define if you have struct stat.st_mtim.tv_nsec */
 #undef HAVE_STAT_TV_NSEC
 
@@ -1326,6 +1329,10 @@
 
 /* Define to 1 if 'pw_passwd' is a member of 'struct passwd'. */
 #undef HAVE_STRUCT_PASSWD_PW_PASSWD
+
+/* Define to 1 if 'stx_atomic_write_unit_max_opt' is a member of 'struct
+   statx'. */
+#undef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT
 
 /* Define to 1 if 'st_birthtime' is a member of 'struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BIRTHTIME
