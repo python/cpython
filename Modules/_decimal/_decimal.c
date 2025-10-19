@@ -58,6 +58,8 @@
 
 #include "clinic/_decimal.c.h"
 
+#define MPD_SPEC_VERSION "1.70"
+
 /*[clinic input]
 module _decimal
 class _decimal.Decimal "PyObject *" "&dec_spec"
@@ -7580,7 +7582,7 @@ decimal_getattr(PyObject *self, PyObject *args)
                          1) < 0) {
             return NULL;
         }
-        return PyUnicode_FromString("1.70");
+        return PyUnicode_FromString(MPD_SPEC_VERSION);
     }
 
     PyErr_Format(PyExc_AttributeError, "module 'decimal' has no attribute %R", name);
@@ -7914,7 +7916,7 @@ _decimal_exec(PyObject *m)
     }
 
     /* Add specification version number */
-    CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", "1.70"));
+    CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
     CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
 
     return 0;
