@@ -428,8 +428,9 @@ void patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *st
     #define TRAMPOLINE_SIZE 16
     #define DATA_ALIGN 8
 #elif defined(__x86_64__) && defined(__APPLE__)
-    // x86_64 trampolines: jmp *(%rip); .quad address (6 bytes + 8 bytes = 14 bytes)
-    #define TRAMPOLINE_SIZE 16  // Round up to 16 for alignment
+    // LLVM 20 on macOS x86_64 debug builds: GOT entries may exceed ±2GB PC-relative
+    // range. Trampolines provide indirect jumps using 64-bit absolute addresses.
+    #define TRAMPOLINE_SIZE 16  // 14 bytes + 2 bytes padding for alignment
     #define DATA_ALIGN 16
 #else
     #define TRAMPOLINE_SIZE 0
@@ -489,7 +490,7 @@ patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state)
     uint64_t value = (uintptr_t)symbols_map[ordinal];
     int64_t range = (int64_t)value - 4 - (int64_t)location;
 
-    // If we are in range of 32 signed bits, patch directly
+    // If we are in range of 32 signed bits, we can patch directly
     if (range >= -(1LL << 31) && range < (1LL << 31)) {
         patch_32r(location, value - 4);
         return;
@@ -510,12 +511,13 @@ patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state)
     assert((size_t)(index + 1) * TRAMPOLINE_SIZE <= state->trampolines.size);
 
     /* Generate the trampoline (14 bytes, padded to 16):
-       0: ff 25 00 00 00 00    jmp *(%rip)  # Jump to address at offset 6
-       6: XX XX XX XX XX XX XX XX   .quad value (64-bit address)
+       0: ff 25 00 00 00 00    jmp *(%rip)
+       6: XX XX XX XX XX XX XX XX   (64-bit target address)
+
+       Reference: https://wiki.osdev.org/X86-64_Instruction_Encoding#FF (JMP r/m64)
     */
-    trampoline[0] = 0xFF;  // jmp opcode
-    trampoline[1] = 0x25;  // ModRM byte for jmp *disp32(%rip)
-    // Offset 0: the address is right after this instruction (at offset 6)
+    trampoline[0] = 0xFF;
+    trampoline[1] = 0x25;
     *(uint32_t *)(trampoline + 2) = 0;
     *(uint64_t *)(trampoline + 6) = value;
 
