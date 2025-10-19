@@ -1234,7 +1234,7 @@ uop_optimize(
     int curr_stackentries = tstate->interp->jit_state.jit_tracer_initial_stack_depth;
     int length = interp->jit_state.jit_tracer_code_curr_size;
     // Trace too short, don't bother.
-    if (length <= 20) {
+    if (length <= 20 && buffer[length-1].opcode != _JUMP_TO_TOP) {
         return 0;
     }
     assert(length > 0);
