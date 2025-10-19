@@ -99,6 +99,7 @@ jobs:
         with:
           python-version: '3.11'
 
+      # PCbuild downloads LLVM automatically:
       - name: Windows
         if: runner.os == 'Windows'
         run: |

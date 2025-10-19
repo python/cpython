@@ -226,7 +226,6 @@ patch_32r(unsigned char *location, uint64_t value)
     assert((int64_t)value < (1LL << 31));
     uint32_t final_value = (uint32_t)value;
     memcpy(location, &final_value, sizeof(final_value));
-
 }
 
 // 64-bit absolute address.
@@ -454,7 +453,7 @@ void patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *st
     #define DATA_ALIGN 8
 #elif defined(__x86_64__) && defined(__APPLE__)
     // LLVM 20 on macOS x86_64 debug builds: GOT entries may exceed ±2GB PC-relative
-    // range. Trampolines provide indirect jumps using 64-bit absolute addresses.
+    // range.
     #define TRAMPOLINE_SIZE 16  // 14 bytes + 2 bytes padding for alignment
     #define DATA_ALIGN 16
 #else
