@@ -10,8 +10,6 @@ used by the builtin import mechanism for sys.path items that are paths
 to Zip archives.
 """
 
-#from importlib import _bootstrap_external
-#from importlib import _bootstrap  # for _verbose_message
 import _frozen_importlib_external as _bootstrap_external
 from _frozen_importlib_external import _unpack_uint16, _unpack_uint32, _unpack_uint64
 import _frozen_importlib as _bootstrap  # for _verbose_message
