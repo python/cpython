@@ -9261,6 +9261,26 @@ printf "%s\n" "\"Found llvm-bolt\"" >&6; }
     as_fn_error $? "llvm-bolt is required for a --enable-bolt build but could not be found." "$LINENO" 5
   fi
 
+  # Check BOLT version to determine if we need to skip functions with computed gotos.
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking llvm-bolt version" >&5
+printf %s "checking llvm-bolt version... " >&6; }
+  llvm_bolt_version=$("${LLVM_BOLT}" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${llvm_bolt_version}" >&5
+printf "%s\n" "${llvm_bolt_version}" >&6; }
+
+  # Parse version
+  llvm_bolt_major=$(echo "${llvm_bolt_version}" | cut -d. -f1)
+  llvm_bolt_minor=$(echo "${llvm_bolt_version}" | cut -d. -f2)
+
+  bolt_need_skip_computed_goto="yes"
+  if test -n "${llvm_bolt_major}" && test "${llvm_bolt_major}" -ge 21; then
+    if test "${llvm_bolt_major}" -gt 21 || test "${llvm_bolt_minor}" -ge 1; then
+      bolt_need_skip_computed_goto="no"
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: LLVM ${llvm_bolt_version} supports computed gotos" >&5
+printf "%s\n" "LLVM ${llvm_bolt_version} supports computed gotos" >&6; }
+    fi
+  fi
+
 
   if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}merge-fdata", so it can be a program name with args.
@@ -9396,9 +9416,15 @@ fi
 printf %s "checking BOLT_COMMON_FLAGS... " >&6; }
 if test -z "${BOLT_COMMON_FLAGS}"
 then
-  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1 "
+  BOLT_COMMON_FLAGS=" -update-debug-sections "
 
+
+          if test "${bolt_need_skip_computed_goto}" = "yes"; then
+    BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS} -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1"
+  fi
 fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_COMMON_FLAGS" >&5
+printf "%s\n" "$BOLT_COMMON_FLAGS" >&6; }
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking BOLT_INSTRUMENT_FLAGS" >&5

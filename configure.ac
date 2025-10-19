@@ -2129,6 +2129,23 @@ if test "$Py_BOLT" = 'true' ; then
     AC_MSG_ERROR([llvm-bolt is required for a --enable-bolt build but could not be found.])
   fi
 
+  # Check BOLT version to determine if we need to skip functions with computed gotos.
+  AC_MSG_CHECKING([llvm-bolt version])
+  llvm_bolt_version=$("${LLVM_BOLT}" --version 2>/dev/null | grep -oE '[[0-9]]+\.[[0-9]]+\.[[0-9]]+' | head -1)
+  AC_MSG_RESULT([${llvm_bolt_version}])
+
+  # Parse version
+  llvm_bolt_major=$(echo "${llvm_bolt_version}" | cut -d. -f1)
+  llvm_bolt_minor=$(echo "${llvm_bolt_version}" | cut -d. -f2)
+
+  bolt_need_skip_computed_goto="yes"
+  if test -n "${llvm_bolt_major}" && test "${llvm_bolt_major}" -ge 21; then
+    if test "${llvm_bolt_major}" -gt 21 || test "${llvm_bolt_minor}" -ge 1; then
+      bolt_need_skip_computed_goto="no"
+      AC_MSG_RESULT([LLVM ${llvm_bolt_version} supports computed gotos])
+    fi
+  fi
+
   AC_SUBST([MERGE_FDATA])
   AC_PATH_TOOL([MERGE_FDATA], [merge-fdata], [''], [${llvm_path}])
   if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
@@ -2158,14 +2175,18 @@ then
     [BOLT_COMMON_FLAGS],
     [m4_normalize("
       [-update-debug-sections]
-
-      dnl At least LLVM 19.x doesn't support computed gotos in PIC compiled code.
-      dnl Exclude functions containing computed gotos.
-      dnl TODO this may be fixed in LLVM 20.x via https://github.com/llvm/llvm-project/pull/120267.
-      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1]
     ")]
   )
+
+  dnl BOLT versions before LLVM 21.1.0 don't support computed gotos in PIC compiled code.
+  dnl Exclude functions containing computed gotos for older versions.
+  dnl Fixed in LLVM 21.1.0+ via https://github.com/llvm/llvm-project/pull/120267
+  dnl GCC's LTO creates .lto_priv.0 clones of these functions.
+  if test "${bolt_need_skip_computed_goto}" = "yes"; then
+    BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS} -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1"
+  fi
 fi
+AC_MSG_RESULT([$BOLT_COMMON_FLAGS])
 
 AC_ARG_VAR(
   [BOLT_INSTRUMENT_FLAGS],
