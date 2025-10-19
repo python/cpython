@@ -1759,22 +1759,18 @@ expression support in the :mod:`re` module).
 .. method:: str.capitalize()
 
    Return a copy of the string with its first character capitalized and the
-   rest lowercased. 
-   
-   Ǳ, ǲ, ǳ
-   Ǆ, ǅ, ǆ
-   Ĳ, ĳ
-   Ǉ, ǈ, ǉ
-   Ǌ, ǋ, ǌ
-   ᵺ
-
-   For example::
+   rest lowercased. For example::
 
       >>> 'PYTHON IS AMAZING'.capitalize()
       'Python is amazing'
       >>> 'ǋemačka starts With a non-ASCII digraph'.capitalize()
       'ǋemačka starts with a non-ascii digraph'
-      
+      >>> ' Ǳ, ǲ, ǳ'.title()
+      >>> 'Ǆ, ǅ, ǆ '.title()
+      >>> 'Ĳ, ĳ'.title()
+      >>> 'Ǉ, ǈ, ǉ '.title()
+      >>> 'Ǌ, ǋ, ǌ '.title()
+      >>> 'ᵺ '.title()
 
 
    See also :meth:`title`.
