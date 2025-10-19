@@ -58,7 +58,8 @@
 
 #include "clinic/_decimal.c.h"
 
-#define MPD_SPEC_VERSION "1.70"
+#define MPD_SPEC_VERSION "1.70"  // Highest version of the spec this complies with
+                                 // See https://speleotrove.com/decimal/decarith.html
 
 /*[clinic input]
 module _decimal
