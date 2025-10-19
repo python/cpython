@@ -7,7 +7,7 @@ from typing import Any
 from libclinic import fail, Null, unspecified, unknown
 from libclinic.function import (
     Function, Parameter,
-    CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
+    CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW, METHOD_GETATTR,
     GETTER, SETTER)
 from libclinic.codegen import CRenderData, TemplateDict
 from libclinic.converter import (
@@ -1090,7 +1090,7 @@ def correct_name_for_self(
         f: Function,
         parser: bool = False
 ) -> tuple[str, str]:
-    if f.kind in {CALLABLE, METHOD_INIT, GETTER, SETTER}:
+    if f.kind in {CALLABLE, METHOD_INIT, METHOD_GETATTR, GETTER, SETTER}:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"

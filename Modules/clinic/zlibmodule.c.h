@@ -1379,6 +1379,15 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(zlib___getattr____doc__,
+"__getattr__($module, name, /)\n"
+"--\n"
+"\n"
+"Module __getattr__");
+
+#define ZLIB___GETATTR___METHODDEF    \
+    {"__getattr__", (PyCFunction)zlib___getattr__, METH_O, zlib___getattr____doc__},
+
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
@@ -1402,4 +1411,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=fa5fc356f3090cce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f4301fe20b49ba4b input=a9049054013a1b77]*/
