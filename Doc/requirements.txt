@@ -13,6 +13,7 @@ blurb
 
 sphinxext-opengraph~=0.12.0
 sphinx-notfound-page~=1.0.0
+sphinxcontrib-svg2pdfconverter~=1.3.0
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.

@@ -44,6 +44,7 @@ extensions = [
 _OPTIONAL_EXTENSIONS = (
     'notfound.extension',
     'sphinxext.opengraph',
+    'sphinxcontrib.rsvgconverter',
 )
 for optional_ext in _OPTIONAL_EXTENSIONS:
     try:
