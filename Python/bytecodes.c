@@ -2981,8 +2981,10 @@ dummy_func(
                     _PyJIT_InitializeTracing(tstate, frame, this_instr, STACK_LEVEL(), 0, NULL);
                     ENTER_TRACING();
                 }
-                // Don't add the JUMP_BACKWARD_JIT instruction to the trace.
-                DISPATCH();
+                int _jump_taken = false;
+                PyCodeObject *old_code = _PyFrame_GetCode(frame);
+                PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+                TRACING_DISPATCH();
             }
             else {
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
