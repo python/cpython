@@ -1805,6 +1805,15 @@ _PyXI_InitFailureUTF8(_PyXI_failure *failure,
 int
 _PyXI_InitFailure(_PyXI_failure *failure, _PyXI_errcode code, PyObject *obj)
 {
+    if (obj == NULL) {
+        *failure = (_PyXI_failure){
+            .code = code,
+            .msg = NULL,
+            .msg_owned = 0,
+        };
+        return 0;
+    }
+
     PyObject *msgobj = PyObject_Str(obj);
     if (msgobj == NULL) {
         return -1;
@@ -1813,8 +1822,7 @@ _PyXI_InitFailure(_PyXI_failure *failure, _PyXI_errcode code, PyObject *obj)
     // That happens automatically in _capture_current_exception().
     const char *msg = _copy_string_obj_raw(msgobj, NULL);
     Py_DECREF(msgobj);
-    if (PyErr_Occurred()) {
-        PyMem_RawFree((void *)msg);
+    if (msg == NULL) {
         return -1;
     }
     *failure = (_PyXI_failure){
