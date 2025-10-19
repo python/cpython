@@ -12162,6 +12162,7 @@
                     if (err == 0) {
                         assert(retval_o != NULL);
                         JUMPBY(oparg);
+                        RECORD_JUMP_TAKEN();
                     }
                     else {
                         stack_pointer += -1;

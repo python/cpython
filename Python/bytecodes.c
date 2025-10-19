@@ -1378,6 +1378,7 @@ dummy_func(
                 if (err == 0) {
                     assert(retval_o != NULL);
                     JUMPBY(oparg);
+                    RECORD_JUMP_TAKEN();
                 }
                 else {
                     PyStackRef_CLOSE(v);
@@ -5464,9 +5465,8 @@ dummy_func(
         // from a single exit!
         tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
             _Py_CODEUNIT *target = frame->instr_ptr;
-            _PyExitData *exit = (_PyExitData *)exit_p;
-            _Py_BackoffCounter temperature = exit->temperature;
 #if defined(Py_DEBUG) && !defined(_Py_JIT)
+            _PyExitData *exit = (_PyExitData *)exit_p;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 2) {
                 printf("DYNAMIC EXIT: [UOp ");

@@ -426,7 +426,7 @@ do {                                                   \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     int keep_tracing_bit = (uintptr_t)next_instr & 1;   \
-    next_instr = (_Py_CODEUNIT *)(((uintptr_t)next_instr) >> 1 << 1); \
+    next_instr = (_Py_CODEUNIT *)(((uintptr_t)next_instr) & (~1)); \
     if (next_instr == NULL) {                          \
         next_instr = frame->instr_ptr;                 \
         JUMP_TO_LABEL(error);                          \
