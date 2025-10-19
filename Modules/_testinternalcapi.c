@@ -1540,6 +1540,34 @@ new_hamt(PyObject *self, PyObject *args)
 
 
 static PyObject*
+context_is_tainted(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    int is_tainted = _PyContext_IsDeserializationTainted();
+    return PyBool_FromLong(is_tainted);
+}
+
+
+static PyObject*
+context_increment_taint(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    if (_PyContext_IncrementDeserializationTaint() < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
+context_decrement_taint(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    if (_PyContext_DecrementDeserializationTaint() < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
 dict_getitem_knownhash(PyObject *self, PyObject *args)
 {
     PyObject *mp, *key, *result;
@@ -2432,6 +2460,9 @@ static PyMethodDef module_functions[] = {
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
+    {"context_is_tainted", context_is_tainted, METH_NOARGS},
+    {"context_increment_taint", context_increment_taint, METH_NOARGS},
+    {"context_decrement_taint", context_decrement_taint, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
     {"create_interpreter", _PyCFunction_CAST(create_interpreter),
      METH_VARARGS | METH_KEYWORDS},

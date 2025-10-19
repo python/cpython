@@ -9,6 +9,8 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
+#include <string.h>               // strcmp()
+
 
 
 #include "clinic/context.c.h"
@@ -257,6 +259,57 @@ PyContext_Exit(PyObject *octx)
 }
 
 
+int
+_PyContext_IncrementDeserializationTaint(void)
+{
+    PyContext *ctx = context_get();
+    if (ctx == NULL) {
+        return -1;
+    }
+
+    if (ctx->security_ctx.deserialization_taint_counter == UINT_MAX) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "deserialization taint counter overflow");
+        return -1;
+    }
+    ctx->security_ctx.deserialization_taint_counter++;
+
+    return 0;
+}
+
+
+int
+_PyContext_DecrementDeserializationTaint(void)
+{
+    PyContext *ctx = context_get();
+    if (ctx == NULL) {
+        return -1;
+    }
+
+    if (ctx->security_ctx.deserialization_taint_counter == 0) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "deserialization taint counter underflow");
+        return -1;
+    }
+
+    ctx->security_ctx.deserialization_taint_counter--;
+
+    return 0;
+}
+
+
+int
+_PyContext_IsDeserializationTainted(void)
+{
+    PyContext *ctx = context_get();
+    if (ctx == NULL) {
+        return 0;
+    }
+
+    return ctx->security_ctx.deserialization_taint_counter != 0;
+}
+
+
 PyObject *
 PyContextVar_New(const char *name, PyObject *def)
 {
@@ -422,6 +475,18 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 #define _PyContext_CAST(op)     ((PyContext *)(op))
 
 
+static inline void
+_context_propagate_taint(PyContext *ctx)
+{
+    PyThreadState *ts = _PyThreadState_GET();
+    if (ts != NULL && ts->context != NULL) {
+        PyContext *current = (PyContext *)ts->context;
+        ctx->security_ctx.deserialization_taint_counter =
+            current->security_ctx.deserialization_taint_counter;
+    }
+}
+
+
 static inline PyContext *
 _context_alloc(void)
 {
@@ -437,6 +502,7 @@ _context_alloc(void)
     ctx->ctx_prev = NULL;
     ctx->ctx_entered = 0;
     ctx->ctx_weakreflist = NULL;
+    ctx->security_ctx.deserialization_taint_counter = 0;
 
     return ctx;
 }
@@ -456,6 +522,8 @@ context_new_empty(void)
         return NULL;
     }
 
+    _context_propagate_taint(ctx);
+
     _PyObject_GC_TRACK(ctx);
     return ctx;
 }
@@ -470,6 +538,8 @@ context_new_from_vars(PyHamtObject *vars)
     }
 
     ctx->ctx_vars = (PyHamtObject*)Py_NewRef(vars);
+
+    _context_propagate_taint(ctx);
 
     _PyObject_GC_TRACK(ctx);
     return ctx;
@@ -1354,6 +1424,82 @@ get_token_missing(void)
 ///////////////////////////
 
 
+static int
+_deserialization_guard_audit_hook(const char *event, PyObject *args,
+                                   void *userData)
+{
+    if (!_PyContext_IsDeserializationTainted()) {
+        return 0;
+    }
+
+    if (strncmp(event, "os.", 3) == 0 ||
+        strncmp(event, "ctypes.", 7) == 0 ||
+        strncmp(event, "_thread.", 8) == 0 ||
+        strncmp(event, "_winapi.", 8) == 0 ||
+        strncmp(event, "_posixsubprocess.", 17) == 0 ||
+        strncmp(event, "marshal.", 8) == 0 ||
+        strncmp(event, "socket.", 7) == 0 ||
+        strncmp(event, "sqlite3.", 8) == 0 ||
+        strncmp(event, "fcntl.", 6) == 0 ||
+        strncmp(event, "signal.", 7) == 0 ||
+        strncmp(event, "winreg.", 7) == 0 ||
+        strncmp(event, "syslog.", 7) == 0 ||
+        strncmp(event, "cpython.", 8) == 0 ||
+        strncmp(event, "gc.", 3) == 0 ||
+        strncmp(event, "sys.", 4) == 0 ||
+        strncmp(event, "resource.", 9) == 0 ||
+        strncmp(event, "shutil.", 7) == 0 ||
+        strncmp(event, "pathlib.", 8) == 0 ||
+        strncmp(event, "tempfile.", 9) == 0 ||
+        strncmp(event, "ftplib.", 7) == 0 ||
+        strncmp(event, "http.", 5) == 0 ||
+        strncmp(event, "imaplib.", 8) == 0 ||
+        strncmp(event, "nntplib.", 8) == 0 ||
+        strncmp(event, "poplib.", 7) == 0 ||
+        strncmp(event, "smtplib.", 8) == 0 ||
+        strncmp(event, "telnetlib.", 10) == 0 ||
+        strncmp(event, "urllib.", 7) == 0 ||
+        strncmp(event, "msvcrt.", 7) == 0 ||
+        strcmp(event, "subprocess.Popen") == 0 ||
+        strcmp(event, "exec") == 0 ||
+        strcmp(event, "compile") == 0 ||
+        strcmp(event, "code.__new__") == 0 ||
+        strcmp(event, "function.__new__") == 0 ||
+        strcmp(event, "mmap.__new__") == 0 ||
+        strcmp(event, "webbrowser.open") == 0 ||
+        strcmp(event, "pty.spawn") == 0 ||
+        strcmp(event, "ensurepip.bootstrap") == 0 ||
+        strcmp(event, "glob.glob") == 0 ||
+        strcmp(event, "setopencodehook") == 0)
+    {
+        PyErr_Format(PyExc_RuntimeError,
+                     "%s is disabled during deserialization", event);
+        return -1;
+    }
+
+    if (strcmp(event, "open") == 0) {
+        if (PyTuple_Size(args) >= 2) {
+            PyObject *mode = PyTuple_GetItem(args, 1);
+            if (mode != NULL && PyUnicode_Check(mode)) {
+                const char *mode_str = PyUnicode_AsUTF8(mode);
+                if (mode_str != NULL &&
+                    (strchr(mode_str, 'w') != NULL ||
+                     strchr(mode_str, 'a') != NULL ||
+                     strchr(mode_str, 'x') != NULL ||
+                     strchr(mode_str, '+') != NULL))
+                {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "open with write mode is disabled during deserialization");
+                    return -1;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 PyStatus
 _PyContext_Init(PyInterpreterState *interp)
 {
@@ -1366,6 +1512,10 @@ _PyContext_Init(PyInterpreterState *interp)
         return _PyStatus_ERR("can't init context types");
     }
     Py_DECREF(missing);
+
+    if (PySys_AddAuditHook(_deserialization_guard_audit_hook, NULL) < 0) {
+        return _PyStatus_ERR("can't add deserialization guard audit hook");
+    }
 
     return _PyStatus_OK();
 }

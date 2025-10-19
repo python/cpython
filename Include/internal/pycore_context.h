@@ -26,6 +26,9 @@ struct _pycontextobject {
     PyHamtObject *ctx_vars;
     PyObject *ctx_weakreflist;
     int ctx_entered;
+    struct {
+        unsigned int deserialization_taint_counter;
+    } security_ctx;
 };
 
 
@@ -54,6 +57,11 @@ struct _pycontexttokenobject {
 // _testinternalcapi.hamt() used by tests.
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyContext_NewHamtForTests(void);
+
+// Deserialization guard API
+PyAPI_FUNC(int) _PyContext_IncrementDeserializationTaint(void);
+PyAPI_FUNC(int) _PyContext_DecrementDeserializationTaint(void);
+PyAPI_FUNC(int) _PyContext_IsDeserializationTainted(void);
 
 
 #endif /* !Py_INTERNAL_CONTEXT_H */

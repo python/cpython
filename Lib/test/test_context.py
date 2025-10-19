@@ -1296,5 +1296,79 @@ class HamtTest(unittest.TestCase):
                 h[AA]
 
 
+class DeserializationGuardTest(unittest.TestCase):
+    @support.cpython_only
+    def test_deserialization_taint_basic(self):
+        import _testinternalcapi
+
+        ctx = contextvars.copy_context()
+        self.assertFalse(_testinternalcapi.context_is_tainted())
+
+        _testinternalcapi.context_increment_taint()
+        self.assertTrue(_testinternalcapi.context_is_tainted())
+
+        _testinternalcapi.context_decrement_taint()
+        self.assertFalse(_testinternalcapi.context_is_tainted())
+
+    @support.cpython_only
+    def test_deserialization_taint_underflow(self):
+        import _testinternalcapi
+
+        self.assertFalse(_testinternalcapi.context_is_tainted())
+
+        with self.assertRaisesRegex(RuntimeError, 'deserialization taint counter underflow'):
+            _testinternalcapi.context_decrement_taint()
+
+    @support.cpython_only
+    def test_deserialization_taint_inheritance_copy(self):
+        import _testinternalcapi
+
+        _testinternalcapi.context_increment_taint()
+        self.assertTrue(_testinternalcapi.context_is_tainted())
+
+        ctx = contextvars.copy_context()
+
+        def check_taint():
+            self.assertTrue(_testinternalcapi.context_is_tainted())
+
+        ctx.run(check_taint)
+
+        _testinternalcapi.context_decrement_taint()
+
+    @support.cpython_only
+    def test_deserialization_taint_inheritance_new(self):
+        import _testinternalcapi
+
+        _testinternalcapi.context_increment_taint()
+        self.assertTrue(_testinternalcapi.context_is_tainted())
+
+        ctx = contextvars.Context()
+
+        def check_taint():
+            self.assertTrue(_testinternalcapi.context_is_tainted())
+
+        ctx.run(check_taint)
+
+        _testinternalcapi.context_decrement_taint()
+
+    @support.cpython_only
+    def test_deserialization_taint_nested(self):
+        import _testinternalcapi
+
+        self.assertFalse(_testinternalcapi.context_is_tainted())
+
+        _testinternalcapi.context_increment_taint()
+        self.assertTrue(_testinternalcapi.context_is_tainted())
+
+        _testinternalcapi.context_increment_taint()
+        self.assertTrue(_testinternalcapi.context_is_tainted())
+
+        _testinternalcapi.context_decrement_taint()
+        self.assertTrue(_testinternalcapi.context_is_tainted())
+
+        _testinternalcapi.context_decrement_taint()
+        self.assertFalse(_testinternalcapi.context_is_tainted())
+
+
 if __name__ == "__main__":
     unittest.main()

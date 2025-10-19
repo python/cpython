@@ -11,6 +11,7 @@
 #include "Python.h"
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_context.h"       // _PyContext_IncrementDeserializationTaint()
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -6891,6 +6892,10 @@ load(PickleState *st, UnpicklerObject *self)
     PyObject *tmp;
     char *s = NULL;
 
+    if (_PyContext_IncrementDeserializationTaint() < 0) {
+        return NULL;
+    }
+
     self->num_marks = 0;
     self->stack->mark_set = 0;
     self->stack->fence = 0;
@@ -7019,10 +7024,17 @@ load(PickleState *st, UnpicklerObject *self)
 
     Py_CLEAR(self->persistent_load);
     PDATA_POP(st, self->stack, value);
+
+    if (_PyContext_DecrementDeserializationTaint() < 0) {
+        Py_DECREF(value);
+        return NULL;
+    }
+
     return value;
 
 error:
     Py_CLEAR(self->persistent_load);
+    _PyContext_DecrementDeserializationTaint();
     return NULL;
 }
 
