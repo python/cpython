@@ -1,0 +1,2 @@
+Make :mod:`_suggestions` thread-safe on the :term:`free threaded <free
+threading>` build.
