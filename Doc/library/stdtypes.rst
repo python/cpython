@@ -1774,8 +1774,6 @@ expression support in the :mod:`re` module).
       'Python is amazing'
       >>> 'ǋemačka starts With a non-ASCII digraph'.capitalize()
       'ǋemačka starts with a non-ascii digraph'
-      >>> 'Ǳ, ǲ, ǳ Ǆ, ǅ, ǆ Ĳ, ĳ Ǉ, ǈ, ǉ Ǌ, ǋ, ǌ ᵺ'
-      'Ǳ, ǲ, ǳ Ǆ, ǅ, ǆ Ĳ, ĳ Ǉ, ǈ, ǉ Ǌ, ǋ, ǌ ᵺ'
       
 
 
