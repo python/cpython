@@ -128,6 +128,12 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
             TI(T.NAME, string=s)
         ):
             return not keyword.iskeyword(s)
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
+            TI(string="match" | "case" | "type"),
+            None | TI(T.ENDMARKER) | TI(T.NEWLINE)
+        ):
+            return True
         case _:
             return False
 
@@ -189,9 +195,9 @@ def gen_colors_from_token_stream(
             case T.COMMENT:
                 span = Span.from_token(token, line_lengths)
                 yield ColorSpan(span, "COMMENT")
-            case T.NUMBER:
+            case T.NEWLINE:
                 span = Span.from_token(token, line_lengths)
-                yield ColorSpan(span, "STRING")
+                yield ColorSpan(span, "SYNC")
             case T.OP:
                 if token.string in "([{":
                     bracket_level += 1
@@ -243,12 +249,37 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
         for color in gen_colors_from_token_stream(gen, line_lengths):
             yield color
             last_emitted = color
-    except SyntaxError:
-        return
-    except tokenize.TokenError as te:
-        yield from recover_unterminated_string(
-            te, line_lengths, last_emitted, buffer
-        )
+    except (SyntaxError, tokenize.TokenError) as e:
+        recovered = False
+        if isinstance(e, tokenize.TokenError):
+            for recovered_color in recover_unterminated_string(
+                e, line_lengths, last_emitted, buffer
+            ):
+                yield recovered_color
+                recovered = True
+
+        # fall back to trying each line seperetly
+        if not recovered:
+            lines = buffer.split('\n')
+            current_offset = 0
+            for i, line in enumerate(lines):
+                if not line.strip():
+                    current_offset += len(line) + 1
+                    continue
+                try:
+                    line_sio = StringIO(line + '\n')
+                    line_gen = tokenize.generate_tokens(line_sio.readline)
+                    line_line_lengths = [0, len(line) + 1]
+
+                    for color in gen_colors_from_token_stream(line_gen, line_line_lengths):
+                        adjusted_span = Span(
+                            color.span.start + current_offset,
+                            color.span.end + current_offset
+                        )
+                        yield ColorSpan(adjusted_span, color.tag)
+                except Exception:
+                    pass
+                current_offset += len(line) + 1
 
 
 
@@ -511,9 +542,7 @@ class ColorDelegator(Delegator):
 
             `head` is the index in the text widget where the text is found.
         """
-        color_spans = list(gen_colors(chars))
-
-        for color_span in color_spans:
+        for color_span in gen_colors(chars):
             start_pos = color_span.span.start
             end_pos = color_span.span.end + 1
             tag = color_span.tag
