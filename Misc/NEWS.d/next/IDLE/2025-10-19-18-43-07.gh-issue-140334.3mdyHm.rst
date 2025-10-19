@@ -1,0 +1,2 @@
+Fixed syntax highlighting in IDLE where slashes at the end of lines aren't
+treated as line continuations
