@@ -83,9 +83,9 @@ The module defines three convenience functions and a public class:
    Create a :class:`Timer` instance with the given statement, *setup* code and
    *timer* function and run its :meth:`.repeat` method with the given *repeat*
    count and *number* executions.  The optional *globals* argument specifies a
-   namespace in which to execute the code. If *number* is 0, :meth:`.autorange`
-   method is executed, a convenience function that calls :meth:`.timeit`
-   repeatedly so that the total time >= *target_time* second.
+   namespace in which to execute the code. If *number* is 0, the :meth:`autorange`
+   method is executed, and a convenience function calls :meth:`timeit`
+   repeatedly so that the total time >= *target_time* seconds.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
