@@ -2128,7 +2128,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         double d = PyTime_AsSecondsDouble(endtime - now);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
-            stats.collected, stats.uncollectable, d
+            stats.collected + stats.collected, stats.uncollectable, d
         );
     }
 
