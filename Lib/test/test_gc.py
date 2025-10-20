@@ -801,6 +801,26 @@ class GCTests(unittest.TestCase):
             rc, out, err = assert_python_ok('-c', code)
             self.assertEqual(out.strip(), b'__del__ called')
 
+    def test_gc_debug_stats(self):
+        # Checks that debug information is printed to stderr
+        # when DEBUG_STATS is set.
+        code = """if 1:
+            import gc
+            gc.set_debug(%s)
+            d = {}
+            d[(1,2)] = 1
+            gc.collect()
+            """
+        _, _, err = assert_python_ok("-c", code % "gc.DEBUG_STATS")
+        self.assertIn(b"gc: collecting generation", err)
+        self.assertIn(b"gc: objects in each generation:", err)
+        self.assertIn(b"gc: objects in permanent generation:", err)
+        self.assertIn(b"gc: done", err)
+        self.assertIn(b"elapsed", err)
+
+        _, _, err = assert_python_ok("-c", code % "0")
+        self.assertNotIn(b"elapsed", err)
+
     def test_global_del_SystemExit(self):
         code = """if 1:
             class ClassWithDel:
