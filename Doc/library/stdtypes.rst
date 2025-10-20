@@ -2202,6 +2202,8 @@ expression support in the :mod:`re` module).
       >>> '-'.join('Python')
       'P-y-t-h-o-n'
 
+   See also :meth:`split`.
+
 
 .. method:: str.ljust(width, fillchar=' ', /)
 
@@ -2413,6 +2415,8 @@ expression support in the :mod:`re` module).
       []
       >>> "   foo   ".split(maxsplit=0)
       ['foo   ']
+
+   See also :meth:`join`.
 
 
 .. index::
