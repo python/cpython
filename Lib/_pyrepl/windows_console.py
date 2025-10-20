@@ -287,7 +287,7 @@ class WindowsConsole(Console):
             # here. Windows keeps the cursor at the end of the line. It only
             # wraps when the next character is written.
             # https://github.com/microsoft/terminal/issues/349
-            self.posxy = wlen(newline) - 1, y
+            self.posxy = self.screen_xy[0], y
         else:
             self.posxy = wlen(newline), y
 
