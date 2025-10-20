@@ -1657,8 +1657,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     if (gcstate->work_to_do < 0) {
         return;
     }
-    /* untrack_tuples() may reduce gcstate->young.count to less than zero.
-       This is harmless as it will merely delay the next GC a bit. */
     untrack_tuples(&gcstate->young.head);
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
