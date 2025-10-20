@@ -615,8 +615,6 @@ _PyJIT_translate_single_bytecode_to_trace(
         // If we haven't guarded the IP, then it's untraceable.
         (frame != tstate->interp->jit_state.jit_tracer_current_frame && !needs_guard_ip) ||
         (oparg > 0xFFFF) ||
-        // TODO handle BINARY_OP_INPLACE_ADD_UNICODE
-        opcode == BINARY_OP_INPLACE_ADD_UNICODE ||
         // TODO (gh-140277): The constituent uops are invalid.
         opcode == BINARY_OP_SUBSCR_GETITEM ||
         // Exception stuff, could be handled in the future maybe?
@@ -837,6 +835,12 @@ _PyJIT_translate_single_bytecode_to_trace(
                     else {
                         operand = 0;
                     }
+                }
+                if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
+                    assert(i + 1 == nuops);
+                    _Py_CODEUNIT *next_instr = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                    assert(next_instr->op.code == STORE_FAST);
+                    operand = next_instr->op.arg;
                 }
                 // All other instructions
                 ADD_TO_TRACE(uop, oparg, operand, target);
