@@ -717,19 +717,19 @@ _PyJIT_translate_single_bytecode_to_trace(
             assert(next_instr == computed_next_instr || next_instr == computed_jump_instr);
             int jump_happened = computed_jump_instr == next_instr;
             uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_happened];
-            ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_happened ? computed_next_instr : computed_jump_instr, old_code));            
+            ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_happened ? computed_next_instr : computed_jump_instr, old_code));
             // Branch is biased to jumping, but jump did not happen.
             // We are likely in a bad trace. So we should retrace later.
             if ((direction > 10 && !jump_happened) ||
             // Branch is biased to not jumping, but jump did not happen.
-            // We are likely in a bad trace. So we should retrace later.                
+            // We are likely in a bad trace. So we should retrace later
                 (direction < 6 && jump_happened) ||
             // Finally, branch is just not heavily biased.
             // So we should not trace through it anyways
-            // This prevents trace explosion.                
+            // This prevents trace explosion
                 (direction >= 6 && direction <= 10)
             ) {
-                ADD_TO_TRACE(_EXIT_TRACE, 0, 0, INSTR_IP(next_instr, old_code)); 
+                ADD_TO_TRACE(_EXIT_TRACE, 0, 0, INSTR_IP(next_instr, old_code));
                 goto full;
             }
             break;
