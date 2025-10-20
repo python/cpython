@@ -253,7 +253,7 @@ static inline void _PyObject_GC_TRACK(
     uintptr_t not_visited = 1 ^ gcstate->visited_space;
     gc->_gc_next = ((uintptr_t)generation0) | not_visited;
     generation0->_gc_prev = (uintptr_t)gc;
-    gcstate->young.count++; /* number of allocated GC objects */
+    gcstate->young.count++; /* number of tracked GC objects */
     gcstate->heap_size++;
     if (gcstate->young.count > gcstate->young.threshold) {
         _Py_TriggerGC(gcstate);

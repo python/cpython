@@ -158,7 +158,7 @@ _PyTuple_MaybeUntrack(PyObject *op)
 
 /* Fast, but conservative check if an object maybe tracked
    May return true for an object that is not tracked,
-   Will alwys return true for an object that is tracked.
+   Will always return true for an object that is tracked.
    This is a temporary workaround until _PyObject_GC_IS_TRACKED
    becomes fast and safe to call on non-GC objects.
 */
