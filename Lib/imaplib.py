@@ -1969,5 +1969,5 @@ def __getattr__(name):
         from warnings import _deprecated
 
         _deprecated("__version__", remove=(3, 20))
-        return "2.50"  # Do not change
+        return "2.60"  # Do not change
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
