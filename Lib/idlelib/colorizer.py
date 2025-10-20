@@ -14,13 +14,8 @@ from idlelib.delegator import Delegator
 
 DEBUG = False
 
-
-ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
-ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
-ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
-IDENTIFIERS_AFTER = {"def", "class"}
-KEYWORD_CONSTANTS = {"True", "False", "None"}
-BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
+IDENTIFIERS_AFTER = frozenset({"def", "class"})
+BUILTINS = frozenset({str(name) for name in dir(builtins) if not name.startswith('_')})
 
 
 class Span(NamedTuple):
@@ -76,8 +71,8 @@ def prev_next_window(iterable):
         yield tuple(window)
 
 
-keyword_first_sets_match = {"False", "None", "True", "await", "lambda", "not"}
-keyword_first_sets_case = {"False", "None", "True"}
+keyword_first_sets_match = frozenset({"False", "None", "True", "await", "lambda", "not"})
+keyword_first_sets_case = frozenset({"False", "None", "True"})
 
 
 def is_soft_keyword_used(*tokens):
