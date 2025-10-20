@@ -83,12 +83,11 @@ BOM64_BE = BOM_UTF32_BE
 class CodecInfo(tuple):
     """Codec details when looking up the codec registry"""
 
-    # Private API to allow Python 3.4 to denylist the known non-Unicode
-    # codecs in the standard library. A more general mechanism to
-    # reliably distinguish test encodings from other codecs will hopefully
-    # be defined for Python 3.5
+    # Private API to allow Python to denylist the known non-Unicode
+    # codecs in the standard library.
     #
-    # See http://bugs.python.org/issue19619
+    # TODO: A more general mechanism to reliably distinguish text encodings
+    # from other codecs. See https://github.com/python/cpython/issues/63818
     _is_text_encoding = True # Assume codecs are text encodings by default
 
     def __new__(cls, encode, decode, streamreader=None, streamwriter=None,
