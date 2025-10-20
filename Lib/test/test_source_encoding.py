@@ -521,7 +521,7 @@ class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
             line = src.splitlines()[lineno-1].decode(errors='replace')
             if lineno == 1:
                 line = line.removeprefix('\ufeff')
-            line = line.encode(sys.stderr.encoding, sys.stderr.errors)
+            line = line.encode(sys.__stderr__.encoding, sys.__stderr__.errors)
             self.assertIn(line, err)
 
 
