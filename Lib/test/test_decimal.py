@@ -3073,9 +3073,7 @@ class ContextAPItests:
     def test__clamp(self):
         # In Python 3.2, the private attribute `_clamp` was made
         # public (issue 8540), with the old `_clamp` becoming a
-        # property wrapping `clamp`.  For the duration of Python 3.2
-        # only, the attribute should be gettable/settable via both
-        # `clamp` and `_clamp`; in Python 3.3, `_clamp` should be
+        # property wrapping `clamp`.  In Python 3.3, `_clamp` was
         # removed.
         Context = self.decimal.Context
         c = Context()
