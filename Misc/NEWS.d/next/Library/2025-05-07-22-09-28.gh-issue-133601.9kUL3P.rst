@@ -1,0 +1,1 @@
+Remove deprecated :func:`!typing.no_type_check_decorator`.
