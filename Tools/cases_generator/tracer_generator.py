@@ -89,7 +89,7 @@ class TracerEmitter(Emitter):
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
         storage.stack.flush(self.out)
         self.out.start_line()
-        if "specializing" in uop.annotations:
+        if isinstance(uop, Uop) and "specializing" in uop.annotations:
             self.emit("TRACING_SPECIALIZE_DISPATCH_SAME_OPARG")
         else:
             self.emit(tkn)
