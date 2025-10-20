@@ -1524,6 +1524,20 @@ class GCTogglingTests(unittest.TestCase):
         finally:
             gc.enable()
 
+    # Ensure that setting *threshold0* to zero disables collection.
+    @gc_threshold(0)
+    def test_threshold_zero(self):
+        junk = []
+        i = 0
+        detector = GC_Detector()
+        while not detector.gc_happened:
+            i += 1
+            if i > 50000:
+                break
+            junk.append([])  # this may eventually trigger gc (if it is enabled)
+
+        self.assertEqual(i, 50001)
+
 
 class PythonFinalizationTests(unittest.TestCase):
     def test_ast_fini(self):
