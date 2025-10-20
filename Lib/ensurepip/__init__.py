@@ -130,6 +130,15 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
 
     Note that calling this function will alter both sys.path and os.environ.
     """
+
+    try:
+        import zlib
+    except ImportError:
+        raise ModuleNotFoundError(
+            "ensurepip requires the standard library module 'zlib' "
+            "to install pip."
+        ) from None
+
     if altinstall and default_pip:
         raise ValueError("Cannot use altinstall and default_pip together")
 
