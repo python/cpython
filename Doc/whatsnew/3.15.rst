@@ -682,6 +682,8 @@ mimetypes
 ---------
 
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Rename ``application/x-texinfo`` to ``application/texinfo``.
+  (Contributed by Charlie Lin in :gh:`140165`)
 
 
 pathlib
@@ -825,6 +827,7 @@ New deprecations
     - :mod:`argparse`
     - :mod:`csv`
     - :mod:`!ctypes.macholib`
+    - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`
     - :mod:`logging` (``__date__`` also deprecated)
