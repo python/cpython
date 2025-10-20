@@ -1,0 +1,1 @@
+ElementTree.find() and similar methods now properly use globally registered namespaces when resolving namespace prefixes in XPath expressions.
