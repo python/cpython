@@ -7,7 +7,7 @@ import tokenize
 from collections import deque
 from io import StringIO
 from tokenize import TokenInfo as TI
-from typing import Iterable, Iterator, Match, NamedTuple, Self
+from typing import NamedTuple
 
 from idlelib.config import idleConf
 from idlelib.delegator import Delegator
@@ -30,12 +30,12 @@ class Span(NamedTuple):
     end: int
 
     @classmethod
-    def from_re(cls, m: Match[str], group: int | str) -> Self:
+    def from_re(cls, m, group):
         re_span = m.span(group)
         return cls(re_span[0], re_span[1] - 1)
 
     @classmethod
-    def from_token(cls, token: TI, line_len: list[int]) -> Self:
+    def from_token(cls, token, line_len):
         end_offset = -1
         if (token.type in {T.FSTRING_MIDDLE, T.TSTRING_MIDDLE}
             and token.string.endswith(("{", "}"))):
@@ -53,9 +53,7 @@ class ColorSpan(NamedTuple):
     tag: str
 
 
-def prev_next_window[T](
-    iterable: Iterable[T]
-) -> Iterator[tuple[T | None, ...]]:
+def prev_next_window(iterable):
     """Generates three-tuples of (previous, current, next) items.
 
     On the first iteration previous is None. On the last iteration next
@@ -82,7 +80,7 @@ keyword_first_sets_match = {"False", "None", "True", "await", "lambda", "not"}
 keyword_first_sets_case = {"False", "None", "True"}
 
 
-def is_soft_keyword_used(*tokens: TI | None) -> bool:
+def is_soft_keyword_used(*tokens):
     """Returns True if the current token is a keyword in this context.
 
     For the `*tokens` to match anything, they have to be a three-tuple of
@@ -138,12 +136,7 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
             return False
 
 
-def recover_unterminated_string(
-    exc: tokenize.TokenError,
-    line_lengths: list[int],
-    last_emitted: ColorSpan | None,
-    buffer: str,
-) -> Iterator[ColorSpan]:
+def recover_unterminated_string(exc, line_lengths, last_emitted, buffer):
     msg, loc = exc.args
     if loc is None:
         return
@@ -171,10 +164,7 @@ def recover_unterminated_string(
         yield ColorSpan(span, "STRING")
 
 
-def gen_colors_from_token_stream(
-    token_generator: Iterator[TI],
-    line_lengths: list[int],
-) -> Iterator[ColorSpan]:
+def gen_colors_from_token_stream(token_generator, line_lengths):
     token_window = prev_next_window(token_generator)
 
     is_def_name = False
@@ -195,6 +185,7 @@ def gen_colors_from_token_stream(
             case T.COMMENT:
                 span = Span.from_token(token, line_lengths)
                 yield ColorSpan(span, "COMMENT")
+            # XXX the old colorizer added SYNC on newlines, do we still need this?
             case T.NEWLINE:
                 span = Span.from_token(token, line_lengths)
                 yield ColorSpan(span, "SYNC")
@@ -203,8 +194,7 @@ def gen_colors_from_token_stream(
                     bracket_level += 1
                 elif token.string in ")]}":
                     bracket_level -= 1
-                # span = Span.from_token(token, line_lengths)
-                # yield ColorSpan(span, "op")
+                # IDLE does not color operators
             case T.NAME:
                 if is_def_name:
                     is_def_name = False
@@ -230,7 +220,7 @@ def gen_colors_from_token_stream(
                     yield ColorSpan(span, "BUILTIN")
 
 
-def gen_colors(buffer: str) -> Iterator[ColorSpan]:
+def gen_colors(buffer):
     """Returns a list of index spans to color using the given color tag.
 
     The input `buffer` should be a valid start of a Python code block, i.e.
@@ -244,11 +234,14 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
 
     sio.seek(0)
     gen = tokenize.generate_tokens(sio.readline)
-    last_emitted: ColorSpan | None = None
+    last_emitted = None
+    maxpos = 0
+
     try:
         for color in gen_colors_from_token_stream(gen, line_lengths):
             yield color
             last_emitted = color
+            maxpos = max(maxpos, color.span.end)
     except (SyntaxError, tokenize.TokenError) as e:
         recovered = False
         if isinstance(e, tokenize.TokenError):
@@ -257,12 +250,48 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
             ):
                 yield recovered_color
                 recovered = True
+                maxpos = max(maxpos, recovered_color.span.end)
 
         # fall back to trying each line seperetly
         if not recovered:
+            bad_line = 0
+            for i, total_len in enumerate(line_lengths[1:], 1):
+                if total_len > maxpos:
+                    bad_line = i - 1
+                    break
+
             lines = buffer.split('\n')
             current_offset = 0
+            in_multiline = False
+            multiline_start = 0
+            multiline_quote = None
+
             for i, line in enumerate(lines):
+                if i < bad_line:
+                    current_offset += len(line) + 1
+                    continue
+
+                if not in_multiline:
+                    start = line.strip()[:3]
+                    rest = line.strip()[3:]
+                    if start == "'''" or start == '"""':
+                        if not (rest.endswith(start) and len(rest) > 3):
+                            in_multiline = True
+                            multiline_start = current_offset
+                            multiline_quote = start
+                            current_offset += len(line) + 1
+                            continue
+                else:
+                    if multiline_quote and line.strip().endswith(multiline_quote):
+                        string_end = current_offset + len(line)
+                        yield ColorSpan(Span(multiline_start, string_end), "STRING")
+                        in_multiline = False
+                        multiline_quote = None
+                        current_offset += len(line) + 1
+                        continue
+                    else:
+                        current_offset += len(line) + 1
+                        continue
                 if not line.strip():
                     current_offset += len(line) + 1
                     continue
@@ -280,8 +309,6 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
                 except Exception:
                     pass
                 current_offset += len(line) + 1
-
-
 
 
 def color_config(text):
