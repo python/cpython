@@ -10,7 +10,7 @@
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_time.h"          // _PyTime_MonotonicRaw()
+#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
 #include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 
@@ -2068,8 +2068,6 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     GCState *gcstate = &tstate->interp->gc;
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
 
-    PyTime_t t1;
-
     int expected = 0;
     if (!_Py_atomic_compare_exchange_int(&gcstate->collecting, &expected, 1)) {
         // Don't start a garbage collection if one is already in progress.
@@ -2080,9 +2078,10 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(gcstate, "start", generation, &stats);
     }
+    PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        (void)PyTime_MonotonicRaw(&t1);
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
+        (void)PyTime_PerfCounterRaw(&t1);
         show_stats_each_generations(gcstate);
     }
     if (PyDTrace_GC_START_ENABLED()) {
@@ -2121,8 +2120,8 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     _Py_atomic_store_int(&gcstate->collecting, 0);
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        PyTime_t t2;
-        (void)PyTime_MonotonicRaw(&t2);
+        PyTime_t t2 = 0;   /* initialize to prevent a compiler warning */
+        (void)PyTime_PerfCounterRaw(&t2);
         double d = PyTime_AsSecondsDouble(t2 - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
