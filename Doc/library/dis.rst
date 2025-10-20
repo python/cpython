@@ -1809,6 +1809,22 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
+.. opcode:: SEND_GEN (delta)
+
+   Specialized version of :opcode:`SEND` for generator and coroutine objects.
+   This is an optimized form that directly executes the generator frame without
+   the overhead of a full method call.
+
+   Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])`` when ``STACK[-2]``
+   is a generator or coroutine object in a valid state.
+
+   If the call raises :exc:`StopIteration`, pop the top value from the stack,
+   push the exception's ``value`` attribute, and increment the bytecode counter
+   by *delta*.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between
