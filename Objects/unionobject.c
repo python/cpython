@@ -256,13 +256,8 @@ is_unionable(PyObject *obj)
 PyObject *
 _Py_union_type_or(PyObject* self, PyObject* other)
 {
-    if (!is_unionable(self) || !is_unionable(other)) {
-        Py_RETURN_NOTIMPLEMENTED;
-    }
-
     unionbuilder ub;
-    // unchecked because we already checked is_unionable()
-    if (!unionbuilder_init(&ub, false)) {
+    if (!unionbuilder_init(&ub, true)) {
         return NULL;
     }
     if (!unionbuilder_add_single(&ub, self) ||
