@@ -35,7 +35,7 @@ class TestScrollEvent(unittest.TestCase):
         # Fake widget class containing `xview` and `yview` only.
         class _Widget:
             def __init__(widget, direction, *expected):
-                widget.direction = direction
+                widget.state = state
                 widget.expected = expected
             def xview(widget, *args):
                 self.assertEqual(widget.state&1, 1)
@@ -63,8 +63,8 @@ class TestScrollEvent(unittest.TestCase):
             event.delta = delta
             event.num = num
             event.state = state
-            res = tree.wheel_event(event, state,
-                                   _Widget(SCROLL, amount, "units"))
+            res = tree.wheel_event(event,
+                                   _Widget(state, SCROLL, amount, "units"))
             self.assertEqual(res, "break")
 
 
