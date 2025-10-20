@@ -2067,8 +2067,11 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
     GCState *gcstate = &tstate->interp->gc;
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+
     PyTime_t now;
-    (void)PyTime_MonotonicRaw(&now);
+    if (gcstate->debug & _PyGC_DEBUG_STATS) {
+        (void)PyTime_MonotonicRaw(&now);
+    }
 
     int expected = 0;
     if (!_Py_atomic_compare_exchange_int(&gcstate->collecting, &expected, 1)) {
