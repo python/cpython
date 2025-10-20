@@ -3341,7 +3341,7 @@ Introspection helpers
      earlier in the :term:`method resolution order` always take precedence over
      annotations on classes appearing later in the method resolution order.
    * The function recursively replaces all occurrences of
-     ``Annotated[T, ...]``, ``Required[T]`` and ``NotRequired[T]``
+     ``Annotated[T, ...]``, ``Required[T]``, ``NotRequired[T]``, and ``ReadOnly[T]``
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
 
