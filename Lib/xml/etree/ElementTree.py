@@ -102,6 +102,7 @@ import contextlib
 import weakref
 
 from . import ElementPath
+import xml.etree.ElementTree as _ET
 
 
 class ParseError(SyntaxError):
@@ -282,6 +283,8 @@ class Element:
         Return the first matching element, or None if no element was found.
 
         """
+        if namespaces is None:
+            namespaces = {v: k for k, v in _ET._namespace_map.items() if v}
         return ElementPath.find(self, path, namespaces)
 
     def findtext(self, path, default=None, namespaces=None):
@@ -296,6 +299,8 @@ class Element:
         content, the empty string is returned.
 
         """
+        if namespaces is None:
+            namespaces = {v: k for k, v in _ET._namespace_map.items() if v}
         return ElementPath.findtext(self, path, default, namespaces)
 
     def findall(self, path, namespaces=None):
@@ -307,6 +312,8 @@ class Element:
         Returns list containing all matching elements in document order.
 
         """
+        if namespaces is None:
+            namespaces = {v: k for k, v in _ET._namespace_map.items() if v}
         return ElementPath.findall(self, path, namespaces)
 
     def iterfind(self, path, namespaces=None):
@@ -318,6 +325,8 @@ class Element:
         Return an iterable yielding all matching elements in document order.
 
         """
+        if namespaces is None:
+            namespaces = {v: k for k, v in _ET._namespace_map.items() if v}
         return ElementPath.iterfind(self, path, namespaces)
 
     def clear(self):
