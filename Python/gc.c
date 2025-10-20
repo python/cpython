@@ -2068,10 +2068,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     GCState *gcstate = &tstate->interp->gc;
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
 
-    PyTime_t now;
-    if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        (void)PyTime_MonotonicRaw(&now);
-    }
+    PyTime_t t1;
 
     int expected = 0;
     if (!_Py_atomic_compare_exchange_int(&gcstate->collecting, &expected, 1)) {
@@ -2084,6 +2081,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         invoke_gc_callback(gcstate, "start", generation, &stats);
     }
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
+        (void)PyTime_MonotonicRaw(&t1);
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
     }
@@ -2123,9 +2121,9 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     _Py_atomic_store_int(&gcstate->collecting, 0);
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        PyTime_t endtime;
-        (void)PyTime_MonotonicRaw(&endtime);
-        double d = PyTime_AsSecondsDouble(endtime - now);
+        PyTime_t t2;
+        (void)PyTime_MonotonicRaw(&t2);
+        double d = PyTime_AsSecondsDouble(t2 - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
             stats.collected + stats.collected, stats.uncollectable, d
