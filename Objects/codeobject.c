@@ -2117,7 +2117,8 @@ code_returns_only_none(PyCodeObject *co)
             return 0;
         }
 
-        // There is no need of value checking in this case.
+        // We still have to find the RETURN_VALUE opcode,
+        // but there is no need to check the return value.
         none_index = -1;
     }
 
