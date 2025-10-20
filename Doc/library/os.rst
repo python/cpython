@@ -3451,7 +3451,10 @@ features:
 
    .. attribute:: stx_mnt_id
 
-      Mount ID.
+      Mount identifier.
+
+      Equal to ``None`` if :data:`STATX_MNT_ID` is missing from
+      :attr:`~os.statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 5.8.
@@ -3460,6 +3463,9 @@ features:
 
       Direct I/O memory buffer alignment requirement.
 
+      Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
+      :attr:`~os.statx_result.stx_mask`.
+
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.1.
 
@@ -3467,12 +3473,18 @@ features:
 
       Direct I/O file offset alignment requirement.
 
+      Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
+      :attr:`~os.statx_result.stx_mask`.
+
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.1.
 
    .. attribute:: stx_subvol
 
-      Subvolume ID.
+      Subvolume identifier.
+
+      Equal to ``None`` if :data:`STATX_SUBVOL` is missing from
+      :attr:`~os.statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.10.
@@ -3481,12 +3493,18 @@ features:
 
       Minimum size for direct I/O with torn-write protection.
 
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~os.statx_result.stx_mask`.
+
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.11.
 
    .. attribute:: stx_atomic_write_unit_max
 
       Maximum size for direct I/O with torn-write protection.
+
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~os.statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.11.
@@ -3495,6 +3513,9 @@ features:
 
       Maximum optimized size for direct I/O with torn-write protection.
 
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~os.statx_result.stx_mask`.
+
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.16.
 
@@ -3502,12 +3523,18 @@ features:
 
       Maximum iovecs for direct I/O with torn-write protection.
 
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~os.statx_result.stx_mask`.
+
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.11.
 
    .. attribute:: stx_dio_read_offset_align
 
       Direct I/O file offset alignment requirement for reads.
+
+      Equal to ``None`` if :data:`STATX_DIO_READ_ALIGN` is missing from
+      :attr:`~os.statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.14.
