@@ -6,6 +6,7 @@ if sys.platform != "win32":
 
 
 import itertools
+import rlcompleter
 from functools import partial
 from test.support import force_not_colorized_test_class
 from typing import Iterable
@@ -16,7 +17,10 @@ from .support import handle_all_events, code_to_events
 from .support import prepare_reader as default_prepare_reader
 
 try:
+    from _pyrepl._module_completer import ModuleCompleter
     from _pyrepl.console import Event, Console
+    from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+    from _pyrepl.utils import wlen
     from _pyrepl.windows_console import (
         WindowsConsole,
         MOVE_LEFT,
@@ -62,6 +66,45 @@ class WindowsConsoleTests(TestCase):
         prepare_console = prepare_console or partial(self.console, **kwargs)
         prepare_reader = prepare_reader or default_prepare_reader
         return handle_all_events(events, prepare_console, prepare_reader)
+
+    def test_cursor_position_console_width_completion_suggestion(self):
+        height, width = 25, 80
+        config = ReadlineConfig()
+        namespace = {"interpreter": None, "process": None, "thread": None}
+        config.module_completer = ModuleCompleter(namespace)
+        code = "from concurrent.futures import \t\tt\n"
+        con = WindowsConsole(encoding="utf-8")
+        con.getheightwidth = MagicMock(return_value=(height, width))
+        con.height = height
+        con.width = width
+
+        def assert_posxy_changed_in_parallel_with_screenxy(method):
+            def wrapper(y, oldline, newline, px_coord):
+                newline = newline.ljust(width)
+                posxy_before = con.posxy
+                screen_xy_before = con.screen_xy
+                result = method(y, oldline, newline, px_coord)
+                posxy_after = con.posxy
+                screen_xy_after = con.screen_xy
+                posxy_delta = (
+                    posxy_after[0] - posxy_before[0],
+                    posxy_after[1] - posxy_before[1],)
+                screen_xy_delta = (
+                    screen_xy_after[0] - screen_xy_before[0],
+                    screen_xy_after[1] - screen_xy_before[1],)
+                self.assertEqual(posxy_delta, screen_xy_delta)
+                return result
+            return wrapper
+
+        original_method = con._WindowsConsole__write_changed_line
+        con._WindowsConsole__write_changed_line = (
+            assert_posxy_changed_in_parallel_with_screenxy(original_method)
+        )
+
+        for c in code:
+            con.event_queue.push(bytes(c.encode("utf-8")))
+        reader = ReadlineAlikeReader(console=con, config=config)
+        reader.readline()
 
     def handle_events_narrow(self, events):
         return self.handle_events(events, width=5)
