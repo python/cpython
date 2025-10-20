@@ -1024,15 +1024,8 @@ class ForwardRef(_Final, _root=True):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
 
-        # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
-        # Unfortunately, this isn't a valid expression on its own, so we
-        # do the unpacking manually.
-        if arg.startswith('*'):
-            arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
-        else:
-            arg_to_compile = arg
         try:
-            code = compile(arg_to_compile, '<string>', 'eval')
+            code = compile(_rewrite_star_unpack(arg), '<string>', 'eval')
         except SyntaxError:
             raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
 
@@ -1117,6 +1110,16 @@ class ForwardRef(_Final, _root=True):
         else:
             module_repr = f', module={self.__forward_module__!r}'
         return f'ForwardRef({self.__forward_arg__!r}{module_repr})'
+
+
+def _rewrite_star_unpack(arg):
+    """If the given argument annotation expression is a star unpack e.g. `'*Ts'`
+       rewrite it to a valid expression.
+       """
+    if arg.startswith("*"):
+        return f"({arg},)[0]"  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
+    else:
+        return arg
 
 
 def _is_unpacked_typevartuple(x: Any) -> bool:

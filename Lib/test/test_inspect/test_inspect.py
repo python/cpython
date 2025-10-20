@@ -1859,6 +1859,10 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(inspect.get_annotations(isa2, eval_str=True), {})
         self.assertEqual(inspect.get_annotations(isa2, eval_str=False), {})
 
+        def f(*args: *tuple[int, ...]): ...
+        self.assertEqual(inspect.get_annotations(f, eval_str=True),
+                     {'args': (*tuple[int, ...],)[0]})
+
         def times_three(fn):
             @functools.wraps(fn)
             def wrapper(a, b):
