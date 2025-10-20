@@ -6,7 +6,6 @@ if sys.platform != "win32":
 
 
 import itertools
-import rlcompleter
 from functools import partial
 from test.support import force_not_colorized_test_class
 from typing import Iterable
