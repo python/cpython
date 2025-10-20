@@ -1,5 +1,0 @@
-Improve documentation on
-:doc:`XML security <../library/xml>`
-and method
-:meth:`~xml.parsers.expat.xmlparser.ExternalEntityRefHandler`.
-Patch by Sebastian Pipping.
