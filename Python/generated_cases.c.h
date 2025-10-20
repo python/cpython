@@ -7671,7 +7671,12 @@
                     }
                     int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
                     if (!_is_sys_tracing) {
-                        _PyJIT_InitializeTracing(tstate, frame, this_instr, next_instr, STACK_LEVEL(), 0, NULL);
+                        _Py_CODEUNIT *insert_exec_at = this_instr;
+                        while (oparg > 255) {
+                            oparg >>= 8;
+                            insert_exec_at--;
+                        }
+                        _PyJIT_InitializeTracing(tstate, frame, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL);
                         ENTER_TRACING();
                     }
                     int _jump_taken = false;
