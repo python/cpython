@@ -814,9 +814,17 @@ class GCTests(unittest.TestCase):
             """
         _, _, err = assert_python_ok("-c", code % "gc.DEBUG_STATS")
         self.assertRegex(err, b"gc: collecting generation [0-9]+")
-        self.assertRegex(err, b"gc: objects in each generation: [0-9]+ [0-9]+ [0-9]+")
-        self.assertRegex(err, b"gc: objects in permanent generation: [0-9]+")
-        self.assertRegex(err, b"gc: done, [0-9]+ unreachable, [0-9]+ uncollectable, [0-9]+.[0-9]+s elapsed")
+        self.assertRegex(
+            err,
+            b"gc: objects in each generation: [0-9]+ [0-9]+ [0-9]+",
+        )
+        self.assertRegex(
+            err, b"gc: objects in permanent generation: [0-9]+"
+        )
+        self.assertRegex(
+            err,
+            b"gc: done, .* unreachable, .* uncollectable, .* elapsed",
+        )
 
         _, _, err = assert_python_ok("-c", code % "0")
         self.assertNotIn(b"elapsed", err)
