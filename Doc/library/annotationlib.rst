@@ -411,7 +411,7 @@ Functions
       >>> get_annotations(f)
       {'a': <class 'int'>, 'b': <class 'str'>, 'return': <class 'float'>}
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. function:: type_repr(value)
 
