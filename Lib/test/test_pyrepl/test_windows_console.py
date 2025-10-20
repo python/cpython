@@ -20,7 +20,6 @@ try:
     from _pyrepl._module_completer import ModuleCompleter
     from _pyrepl.console import Event, Console
     from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
-    from _pyrepl.utils import wlen
     from _pyrepl.windows_console import (
         WindowsConsole,
         MOVE_LEFT,
