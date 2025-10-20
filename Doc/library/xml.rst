@@ -56,14 +56,15 @@ access local files, generate network connections to other machines, or
 circumvent firewalls when attacker-controlled XML is being parsed,
 in Python or elsewhere.
 
-The builtin XML parsers of Python rely on library `libexpat`_, commonly
+The built-in XML parsers of Python rely on the library `libexpat`_, commonly
 called Expat, for parsing XML.
 
 By default, Expat itself does not access local files or create network
 connections.
 
-Expat versions lower than 2.7.2 may be vulnerable to "billion laughs",
-"quadratic blowup" and "large tokens" or disproportional use of dynamic memory.
+Expat versions lower than 2.7.2 may be vulnerable to the "billion laughs",
+"quadratic blowup" and "large tokens" vulnerabilities, or to disproportional
+use of dynamic memory.
 Python bundles a copy of Expat, and whether the bundled or a system-wide Expat
 is being used by Python, depends on how the Python interpreter
 :option:`has been configured <--with-system-expat>` in your environment.
