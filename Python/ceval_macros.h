@@ -137,6 +137,9 @@
 
 #if _Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS
 #  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
+// tstate->interp->jit_state.last_specialized_instr != this_instr is required to not get stuck in infinite
+// specialization loops due to specialization failure.
+#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && tstate->interp->jit_state.last_specialized_instr != this_instr)
 #  define ENTER_TRACING() \
     DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
 #  define LEAVE_TRACING() \
@@ -214,6 +217,14 @@ do { \
         DISPATCH_GOTO(); \
     }
 
+#define TRACING_SPECIALIZE_DISPATCH_SAME_OPARG() \
+{ \
+    tstate->interp->jit_state.last_specialized_instr = this_instr; \
+    opcode = next_instr->op.code; \
+    PRE_DISPATCH_GOTO(); \
+    DISPATCH_GOTO(); \
+}
+
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
@@ -225,11 +236,13 @@ do { \
     } while (0)
 
 #define TRACING_DISPATCH_INLINED(NEW_FRAME) \
+    tstate->interp->jit_state.last_specialized_instr = this_instr; \
     RECORD_TRACE_NO_DISPATCH(); \
     DISPATCH_INLINED(NEW_FRAME);
 
 #define TRACING_DISPATCH() \
     { \
+        tstate->interp->jit_state.last_specialized_instr = this_instr; \
         assert(frame->stackpointer == NULL); \
         RECORD_TRACE_NO_DISPATCH(); \
         NEXTOPARG(); \
@@ -337,9 +350,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* This takes a uint16_t instead of a _Py_BackoffCounter,
  * because it is used directly on the cache entry in generated code,
  * which is always an integral type. */
+#if _Py_TIER2
+// Force re-specialization when tracing a side exit to get good side exits.
+#define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
+    backoff_counter_triggers(forge_backoff_counter((COUNTER))) || IS_JIT_TRACING_MAKING_PROGRESS()
+#else
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
     backoff_counter_triggers(forge_backoff_counter((COUNTER)))
-
+#endif
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = advance_backoff_counter((COUNTER)); \

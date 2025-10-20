@@ -904,9 +904,10 @@ _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     tstate->interp->jit_state.jit_tracer_previous_exit = exit;
     _Py_BloomFilter_Init(&tstate->interp->jit_state.jit_tracer_dependencies);
     tstate->interp->jit_state.jit_tracer_initial_stack_depth = curr_stackdepth;
-    tstate->interp->jit_state.jit_tracer_initial_chain_depth = chain_depth;
+    tstate->interp->jit_state.jit_tracer_initial_chain_depth = chain_depth % MAX_CHAIN_DEPTH;
     tstate->interp->jit_state.jit_tracer_current_frame = frame;
     tstate->interp->jit_state.jit_tracer_dependencies_still_valid = true;
+    tstate->interp->jit_state.last_specialized_instr = NULL;
 }
 
 void

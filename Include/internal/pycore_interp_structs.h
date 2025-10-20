@@ -765,6 +765,7 @@ typedef struct _PyJitState {
     _PyUOpInstruction *jit_tracer_code_buffer;
     _Py_CODEUNIT *jit_tracer_insert_exec_instr;
     _Py_CODEUNIT *jit_tracer_close_loop_instr;
+    _Py_CODEUNIT *last_specialized_instr;
     int jit_tracer_initial_stack_depth;
     int jit_tracer_initial_chain_depth;
     PyCodeObject *jit_tracer_initial_code; // Strong

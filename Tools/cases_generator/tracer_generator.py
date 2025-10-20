@@ -44,6 +44,7 @@ class TracerEmitter(Emitter):
             **self._replacers,
             "DISPATCH": self.dispatch,
             "DISPATCH_INLINED": self.dispatch_inlined,
+            "DISPATCH_SAME_OPARG": self.dispatch_same_oparg,
         }
 
     def dispatch(
@@ -75,6 +76,26 @@ class TracerEmitter(Emitter):
         self.out.start_line()
         self.emit("TRACING_DISPATCH_INLINED")
         return False
+
+    def dispatch_same_oparg(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        if storage.spilled:
+            raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
+        storage.stack.flush(self.out)
+        self.out.start_line()
+        if "specializing" in uop.annotations:
+            self.emit("TRACING_SPECIALIZE_DISPATCH_SAME_OPARG")
+        else:
+            self.emit(tkn)
+        emit_to(self.out, tkn_iter, "SEMI")
+        return False
+
     def record_jump_taken(
         self,
         tkn: Token,
