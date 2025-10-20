@@ -7677,6 +7677,7 @@
                     int _jump_taken = false;
                     PyCodeObject *old_code = _PyFrame_GetCode(frame);
                     PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+                    int _old_stack_level = 0;
                     TRACING_DISPATCH();
                 }
                 else {

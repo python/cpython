@@ -164,7 +164,7 @@
         if (_is_sys_tracing) { \
             LEAVE_TRACING(); \
         } \
-        else if ((IS_JIT_TRACING() && add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken))) { \
+        else if ((IS_JIT_TRACING() && add_to_code_trace(tstate, frame, old_code, old_func, _old_stack_level, this_instr, next_instr, opcode, oparg, _jump_taken))) { \
             BAIL_TRACING_NO_DISPATCH(); \
         } \
     } while (0);

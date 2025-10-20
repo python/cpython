@@ -564,6 +564,7 @@ _PyJIT_translate_single_bytecode_to_trace(
     _Py_CODEUNIT *next_instr,
     PyCodeObject *old_code,
     PyFunctionObject *func,
+    int old_stack_level,
     int opcode,
     int oparg,
     int jump_taken)
@@ -615,8 +616,8 @@ _PyJIT_translate_single_bytecode_to_trace(
         // If we haven't guarded the IP, then it's untraceable.
         (frame != tstate->interp->jit_state.jit_tracer_current_frame && !needs_guard_ip) ||
         (oparg > 0xFFFF) ||
-        // TODO (gh-140277): The constituent uops are invalid.
-        opcode == BINARY_OP_SUBSCR_GETITEM ||
+        // TODO (gh-140277): The constituent use one extra stack slot. So we need to check for heaedroom.
+        (opcode == BINARY_OP_SUBSCR_GETITEM && old_stack_level + 1 > old_code->co_stacksize)||
         // Exception stuff, could be handled in the future maybe?
         opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO ||
         frame->owner >= FRAME_OWNED_BY_INTERPRETER

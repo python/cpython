@@ -260,6 +260,8 @@ def generate_tier1_cases(
             out.emit(f"(void)old_func;\n")
             out.emit(f"int _jump_taken = false;\n")
             out.emit(f"(void)_jump_taken;\n")
+            out.emit(f"int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;\n")
+            out.emit(f"(void)(_old_stack_level);\n")
         if inst.properties.uses_opcode:
             out.emit(f"opcode = {name};\n")
         if inst.family is not None:

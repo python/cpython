@@ -367,6 +367,7 @@ _PyJIT_translate_single_bytecode_to_trace(
     _Py_CODEUNIT *next_instr,
     PyCodeObject *code,
     PyFunctionObject *func,
+    int old_stack_level,
     int opcode,
     int oparg,
     int jump_taken);

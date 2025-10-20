@@ -26,6 +26,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef lhs;
             _PyStackRef rhs;
             _PyStackRef res;
@@ -96,6 +98,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef left;
@@ -162,6 +166,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef left;
@@ -230,6 +236,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef nos;
@@ -298,6 +306,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef left;
             _PyStackRef right;
@@ -370,6 +380,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef nos;
@@ -461,6 +473,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef left;
@@ -527,6 +541,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef left;
@@ -595,6 +611,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef nos;
             _PyStackRef dict_st;
@@ -669,6 +687,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef container;
             _PyStackRef getitem;
@@ -761,6 +781,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef nos;
@@ -859,6 +881,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef tos;
             _PyStackRef nos;
@@ -939,6 +963,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef nos;
@@ -1025,6 +1051,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef nos;
@@ -1106,6 +1134,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef left;
@@ -1172,6 +1202,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef left;
@@ -1240,6 +1272,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef container;
             _PyStackRef start;
             _PyStackRef stop;
@@ -1306,6 +1340,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef str;
             _PyStackRef *format;
@@ -1374,6 +1410,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef *values;
             _PyStackRef list;
             values = &stack_pointer[-oparg];
@@ -1408,6 +1446,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef *values;
             _PyStackRef map;
             values = &stack_pointer[-oparg*2];
@@ -1470,6 +1510,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef *values;
             _PyStackRef set;
             values = &stack_pointer[-oparg];
@@ -1537,6 +1579,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef *args;
             _PyStackRef slice;
             args = &stack_pointer[-oparg];
@@ -1582,6 +1626,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef *pieces;
             _PyStackRef str;
             pieces = &stack_pointer[-oparg];
@@ -1639,6 +1685,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef strings;
             _PyStackRef interpolations;
             _PyStackRef template;
@@ -1687,6 +1735,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef *values;
             _PyStackRef tup;
             values = &stack_pointer[-oparg];
@@ -1719,6 +1769,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             assert(0 && "Executing a cache.");
             Py_FatalError("Executing a cache.");
             TRACING_DISPATCH();
@@ -1743,6 +1795,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = CALL;
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -1928,6 +1982,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -2057,6 +2113,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef null;
@@ -2208,6 +2266,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef null;
@@ -2344,6 +2404,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -2457,6 +2519,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -2574,6 +2638,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -2691,6 +2757,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -2783,6 +2851,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = CALL_FUNCTION_EX;
             _PyStackRef func;
             _PyStackRef callargs;
@@ -2958,6 +3028,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef res;
             value = stack_pointer[-1];
@@ -2998,6 +3070,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value2_st;
             _PyStackRef value1_st;
             _PyStackRef res;
@@ -3047,6 +3121,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef null;
             _PyStackRef callable;
@@ -3132,6 +3208,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = CALL_KW;
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -3321,6 +3399,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef null;
@@ -3459,6 +3539,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = CALL_KW_NON_PY;
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
             _PyStackRef callable;
@@ -3594,6 +3676,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -3712,6 +3796,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef null;
             _PyStackRef callable;
@@ -3792,6 +3878,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef nos;
@@ -3888,6 +3976,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -4017,6 +4107,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -4148,6 +4240,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -4249,6 +4343,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -4363,6 +4459,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = CALL_NON_PY_GENERAL;
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
@@ -4486,6 +4584,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -4607,6 +4707,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -4715,6 +4817,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef null;
             _PyStackRef callable;
@@ -4795,6 +4899,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef null;
             _PyStackRef callable;
@@ -4875,6 +4981,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef null;
             _PyStackRef callable;
@@ -4938,6 +5046,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef exc_value_st;
             _PyStackRef match_type_st;
             _PyStackRef rest;
@@ -5019,6 +5129,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef b;
@@ -5066,6 +5178,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef sub_iter;
             _PyStackRef last_sent_val;
             _PyStackRef exc_value_st;
@@ -5134,6 +5248,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
@@ -5214,6 +5330,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef left;
@@ -5277,6 +5395,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef left;
@@ -5344,6 +5464,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef nos;
@@ -5412,6 +5534,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef right;
             _PyStackRef left;
             _PyStackRef b;
@@ -5479,6 +5603,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
             _PyStackRef tos;
             _PyStackRef left;
@@ -5545,6 +5671,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
             _PyStackRef tos;
             _PyStackRef left;
@@ -5611,6 +5739,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef result;
             value = stack_pointer[-1];
@@ -5653,6 +5783,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef bottom;
             _PyStackRef top;
             bottom = stack_pointer[-1 - (oparg-1)];
@@ -5681,6 +5813,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             PyCodeObject *co = _PyFrame_GetCode(frame);
             assert(PyStackRef_FunctionCheck(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
@@ -5712,6 +5846,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef owner;
             owner = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -5747,6 +5883,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             PyObject *cell = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
             PyObject *oldobj = PyCell_SwapTakeRef((PyCellObject *)cell, NULL);
             if (oldobj == NULL) {
@@ -5779,6 +5917,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef v = GETLOCAL(oparg);
             if (PyStackRef_IsNull(v)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -5815,6 +5955,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = PyDict_Pop(GLOBALS(), name, NULL);
@@ -5850,6 +5992,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
             int err;
@@ -5892,6 +6036,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef container;
             _PyStackRef sub;
             sub = stack_pointer[-1];
@@ -5934,6 +6080,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef callable;
             _PyStackRef dict;
             _PyStackRef update;
@@ -5983,6 +6131,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef dict;
             _PyStackRef update;
             update = stack_pointer[-1];
@@ -6036,6 +6186,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef awaitable_st;
             _PyStackRef exc_st;
             exc_st = stack_pointer[-1];
@@ -6088,6 +6240,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             value = stack_pointer[-1];
             stack_pointer += -1;
@@ -6116,6 +6270,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef receiver;
             _PyStackRef value;
             _PyStackRef val;
@@ -6149,6 +6305,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = ENTER_EXECUTOR;
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -6196,6 +6354,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef should_be_none;
             should_be_none = stack_pointer[-1];
             if (!PyStackRef_IsNone(should_be_none)) {
@@ -6229,6 +6389,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = EXTENDED_ARG;
             assert(oparg);
             opcode = next_instr->op.code;
@@ -6255,6 +6417,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef res;
             value = stack_pointer[-1];
@@ -6301,6 +6465,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef fmt_spec;
             _PyStackRef res;
@@ -6348,6 +6514,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef iter;
             _PyStackRef null_or_index;
             _PyStackRef next;
@@ -6410,6 +6578,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             _PyStackRef iter;
             _PyStackRef gen_frame;
@@ -6489,6 +6659,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             _PyStackRef iter;
             _PyStackRef null_or_index;
@@ -6582,6 +6754,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             _PyStackRef iter;
             _PyStackRef next;
@@ -6658,6 +6832,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
             _PyStackRef iter;
             _PyStackRef null_or_index;
@@ -6723,6 +6899,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef obj;
             _PyStackRef iter;
             obj = stack_pointer[-1];
@@ -6794,6 +6972,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef aiter;
             _PyStackRef awaitable;
             aiter = stack_pointer[-1];
@@ -6828,6 +7008,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef iterable;
             _PyStackRef iter;
             iterable = stack_pointer[-1];
@@ -6867,6 +7049,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef iterable;
             _PyStackRef iter;
             _PyStackRef index_or_null;
@@ -6923,6 +7107,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef obj;
             _PyStackRef len;
             obj = stack_pointer[-1];
@@ -6961,6 +7147,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef iterable;
             _PyStackRef iter;
             iterable = stack_pointer[-1];
@@ -7016,6 +7204,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef from;
             _PyStackRef res;
             from = stack_pointer[-1];
@@ -7051,6 +7241,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef level;
             _PyStackRef fromlist;
             _PyStackRef res;
@@ -7100,6 +7292,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = INSTRUMENTED_CALL;
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -7296,6 +7490,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = INSTRUMENTED_CALL_FUNCTION_EX;
             _PyStackRef func;
             _PyStackRef callargs;
@@ -7471,6 +7667,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = INSTRUMENTED_CALL_KW;
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -7665,6 +7863,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef awaitable_st;
             _PyStackRef exc_st;
             // _MONITOR_END_ASYNC_FOR
@@ -7725,6 +7925,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef receiver;
             _PyStackRef value;
             value = stack_pointer[-1];
@@ -7763,6 +7965,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef receiver;
             _PyStackRef value;
             _PyStackRef val;
@@ -7805,6 +8009,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef iter;
             _PyStackRef null_or_index;
             _PyStackRef next;
@@ -7849,6 +8055,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = INSTRUMENTED_INSTRUCTION;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int next_opcode = _Py_call_instrumentation_instruction(
@@ -7884,6 +8092,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             /* Skip 1 cache entry */
             // _CHECK_PERIODIC
             {
@@ -7919,6 +8129,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_JUMP);
             TRACING_DISPATCH();
         }
@@ -7942,6 +8154,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = INSTRUMENTED_LINE;
             int original_opcode = 0;
             if (tstate->tracing) {
@@ -7989,6 +8203,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
             _PyStackRef global_super_st;
             _PyStackRef class_st;
@@ -8118,6 +8334,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             (void)this_instr;
             INSTRUMENTED_JUMP(prev_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
             TRACING_DISPATCH();
@@ -8142,6 +8360,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef iter;
             _PyStackRef index_or_null;
             index_or_null = stack_pointer[-1];
@@ -8174,6 +8394,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef cond;
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
@@ -8206,6 +8428,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             /* Skip 1 cache entry */
             value = stack_pointer[-1];
@@ -8245,6 +8469,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             /* Skip 1 cache entry */
             value = stack_pointer[-1];
@@ -8282,6 +8508,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef cond;
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
@@ -8314,6 +8542,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             // _LOAD_BYTECODE
             {
                 #ifdef Py_GIL_DISABLED
@@ -8402,6 +8632,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef val;
             _PyStackRef retval;
             _PyStackRef res;
@@ -8464,6 +8696,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef val;
             _PyStackRef retval;
             _PyStackRef value;
@@ -8545,6 +8779,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef retval;
             retval = stack_pointer[-1];
             assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
@@ -8590,6 +8826,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef b;
@@ -8634,6 +8872,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             /* Skip 1 cache entry */
             // _SPECIALIZE_JUMP_BACKWARD
             {
@@ -8681,6 +8921,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(1 == 1, "incorrect cache size");
             /* Skip 1 cache entry */
             // _CHECK_PERIODIC
@@ -8720,6 +8962,7 @@
                     int _jump_taken = false;
                     PyCodeObject *old_code = _PyFrame_GetCode(frame);
                     PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+                    int _old_stack_level = 0;
                     TRACING_DISPATCH();
                 }
                 else {
@@ -8748,6 +8991,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
             TRACING_DISPATCH();
@@ -8771,6 +9016,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(1 == 1, "incorrect cache size");
             /* Skip 1 cache entry */
             // _CHECK_PERIODIC
@@ -8808,6 +9055,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             JUMPBY(oparg);
             TRACING_DISPATCH();
         }
@@ -8830,6 +9079,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef list;
             _PyStackRef v;
             v = stack_pointer[-1];
@@ -8862,6 +9113,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef list_st;
             _PyStackRef iterable_st;
             iterable_st = stack_pointer[-1];
@@ -8920,6 +9173,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef owner;
             _PyStackRef *attr;
             _PyStackRef *self_or_null;
@@ -9008,6 +9263,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -9074,6 +9331,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -9150,6 +9409,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             /* Skip 1 cache entry */
@@ -9216,6 +9477,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -9304,6 +9567,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -9368,6 +9633,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -9422,6 +9689,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -9497,6 +9766,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -9579,6 +9850,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -9634,6 +9907,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -9710,6 +9985,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef new_frame;
@@ -9812,6 +10089,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -9889,6 +10168,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
@@ -10007,6 +10288,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef bc;
             PyObject *bc_o;
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -10047,6 +10330,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             assert(oparg < NUM_COMMON_CONSTANTS);
             value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
@@ -10074,6 +10359,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
             value = PyStackRef_FromPyObjectBorrow(obj);
@@ -10101,6 +10388,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -10139,6 +10428,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
@@ -10166,6 +10457,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             value = GETLOCAL(oparg);
             GETLOCAL(oparg) = PyStackRef_NULL;
@@ -10193,6 +10486,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_Borrow(GETLOCAL(oparg));
@@ -10220,6 +10515,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value1;
             _PyStackRef value2;
             uint32_t oparg1 = oparg >> 4;
@@ -10251,6 +10548,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef value_s = GETLOCAL(oparg);
             if (PyStackRef_IsNull(value_s)) {
@@ -10287,6 +10586,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value1;
             _PyStackRef value2;
             uint32_t oparg1 = oparg >> 4;
@@ -10318,6 +10619,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef class_dict_st;
             _PyStackRef value;
             class_dict_st = stack_pointer[-1];
@@ -10373,6 +10676,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef mod_or_class_dict;
             _PyStackRef v;
             mod_or_class_dict = stack_pointer[-1];
@@ -10459,6 +10764,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef *res;
             _PyStackRef *null;
             // _SPECIALIZE_LOAD_GLOBAL
@@ -10522,6 +10829,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             _PyStackRef res;
             _PyStackRef *null;
@@ -10610,6 +10919,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             _PyStackRef res;
             _PyStackRef *null;
@@ -10685,6 +10996,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef locals;
             PyObject *l = LOCALS();
             if (l == NULL) {
@@ -10719,6 +11032,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef v;
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -10752,6 +11067,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             assert(oparg < _PY_NSMALLPOSINTS);
             PyObject *obj = (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS + oparg];
@@ -10780,6 +11097,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef self;
             _PyStackRef *method_and_self;
             // _INSERT_NULL
@@ -10837,6 +11156,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             opcode = LOAD_SUPER_ATTR;
             _PyStackRef global_super_st;
             _PyStackRef class_st;
@@ -10981,6 +11302,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
             _PyStackRef global_super_st;
             _PyStackRef class_st;
@@ -11051,6 +11374,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
             _PyStackRef global_super_st;
             _PyStackRef class_st;
@@ -11137,6 +11462,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             PyObject *initial = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
@@ -11168,6 +11495,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef codeobj_st;
             _PyStackRef func;
             codeobj_st = stack_pointer[-1];
@@ -11211,6 +11540,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef dict_st;
             _PyStackRef key;
             _PyStackRef value;
@@ -11252,6 +11583,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef subject;
             _PyStackRef type;
             _PyStackRef names;
@@ -11314,6 +11647,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef subject;
             _PyStackRef keys;
             _PyStackRef values_or_none;
@@ -11351,6 +11686,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef subject;
             _PyStackRef res;
             subject = stack_pointer[-1];
@@ -11380,6 +11717,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef subject;
             _PyStackRef res;
             subject = stack_pointer[-1];
@@ -11409,6 +11748,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             TRACING_DISPATCH();
         }
 
@@ -11430,6 +11771,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             TRACING_DISPATCH();
         }
 
@@ -11451,6 +11794,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef exc_value;
             exc_value = stack_pointer[-1];
             _PyErr_StackItem *exc_info = tstate->exc_info;
@@ -11482,6 +11827,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef iter;
             _PyStackRef index_or_null;
             index_or_null = stack_pointer[-1];
@@ -11513,6 +11860,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef cond;
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
@@ -11543,6 +11892,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef b;
             _PyStackRef cond;
@@ -11594,6 +11945,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef b;
             _PyStackRef cond;
@@ -11645,6 +11998,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef cond;
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
@@ -11675,6 +12030,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             value = stack_pointer[-1];
             stack_pointer += -1;
@@ -11703,6 +12060,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef exc;
             _PyStackRef prev_exc;
             _PyStackRef new_exc;
@@ -11742,6 +12101,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef res;
             res = PyStackRef_NULL;
             stack_pointer[0] = res;
@@ -11768,6 +12129,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef *args;
             args = &stack_pointer[-oparg];
             assert(oparg < 3);
@@ -11805,6 +12168,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef *values;
             _PyStackRef exc_st;
             exc_st = stack_pointer[-1];
@@ -11841,6 +12206,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             assert(0 && "Executing RESERVED instruction.");
             Py_FatalError("Executing RESERVED instruction.");
             TRACING_DISPATCH();
@@ -11865,6 +12232,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             // _LOAD_BYTECODE
             {
                 #ifdef Py_GIL_DISABLED
@@ -11948,6 +12317,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(0 == 0, "incorrect cache size");
             #if defined(__EMSCRIPTEN__)
             if (_Py_emscripten_signal_clock == 0) {
@@ -11994,6 +12365,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef res;
             assert(PyStackRef_FunctionCheck(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
@@ -12048,6 +12421,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef retval;
             _PyStackRef res;
             retval = stack_pointer[-1];
@@ -12095,6 +12470,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef receiver;
             _PyStackRef v;
             _PyStackRef retval;
@@ -12208,6 +12585,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_SEND == 1, "incorrect cache size");
             _PyStackRef receiver;
             _PyStackRef v;
@@ -12285,6 +12664,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             PyObject *ann_dict;
             if (LOCALS() == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -12341,6 +12722,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef set;
             _PyStackRef v;
             v = stack_pointer[-1];
@@ -12375,6 +12758,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef attr_st;
             _PyStackRef func_in;
             _PyStackRef func_out;
@@ -12413,6 +12798,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef set;
             _PyStackRef iterable;
             iterable = stack_pointer[-1];
@@ -12451,6 +12838,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef owner;
             _PyStackRef v;
             // _SPECIALIZE_STORE_ATTR
@@ -12515,6 +12904,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef value;
@@ -12599,6 +12990,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef value;
@@ -12658,6 +13051,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef value;
@@ -12754,6 +13149,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef v;
             v = stack_pointer[-1];
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
@@ -12783,6 +13180,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             value = stack_pointer[-1];
             _PyStackRef tmp = GETLOCAL(oparg);
@@ -12813,6 +13212,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value1;
             _PyStackRef value2;
             value1 = stack_pointer[-1];
@@ -12846,6 +13247,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value2;
             _PyStackRef value1;
             value1 = stack_pointer[-1];
@@ -12887,6 +13290,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -12922,6 +13327,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef v;
             v = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -12978,6 +13385,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef v;
             _PyStackRef container;
             _PyStackRef start;
@@ -13049,6 +13458,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef container;
             _PyStackRef sub;
             _PyStackRef v;
@@ -13115,6 +13526,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             _PyStackRef nos;
             _PyStackRef value;
@@ -13174,6 +13587,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef nos;
@@ -13263,6 +13678,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef bottom;
             _PyStackRef top;
             top = stack_pointer[-1];
@@ -13294,6 +13711,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef res;
             // _SPECIALIZE_TO_BOOL
@@ -13353,6 +13772,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef value;
@@ -13404,6 +13825,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             _PyStackRef value;
             /* Skip 1 cache entry */
@@ -13436,6 +13859,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef res;
@@ -13484,6 +13909,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             _PyStackRef tos;
             _PyStackRef value;
@@ -13535,6 +13962,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef res;
@@ -13570,6 +13999,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
             _PyStackRef value;
             _PyStackRef res;
@@ -13626,6 +14057,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef res;
             value = stack_pointer[-1];
@@ -13665,6 +14098,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef res;
             value = stack_pointer[-1];
@@ -13704,6 +14139,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef value;
             _PyStackRef res;
             value = stack_pointer[-1];
@@ -13732,6 +14169,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef seq;
             _PyStackRef *top;
             seq = stack_pointer[-1];
@@ -13770,6 +14209,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef seq;
             _PyStackRef *top;
             // _SPECIALIZE_UNPACK_SEQUENCE
@@ -13828,6 +14269,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             _PyStackRef tos;
             _PyStackRef seq;
@@ -13895,6 +14338,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             _PyStackRef tos;
             _PyStackRef seq;
@@ -13953,6 +14398,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             _PyStackRef tos;
             _PyStackRef seq;
@@ -14012,6 +14459,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef exit_func;
             _PyStackRef exit_self;
             _PyStackRef lasti;
@@ -14067,6 +14516,8 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
+            int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
+            (void)(_old_stack_level);
             _PyStackRef retval;
             _PyStackRef value;
             retval = stack_pointer[-1];
