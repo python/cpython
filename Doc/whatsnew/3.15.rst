@@ -695,6 +695,18 @@ mimetypes
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`)
+* Add the following (Contributed by Charlie Lin in :gh:`140393`):
+   - ``application/efi``
+   - ``application/pem-certificate-chain``
+   - ``application/pgp-keys``
+   - ``application/sql``
+   - ``application/zstd``
+   - ``application/ocsp-request``
+   - ``application/ocsp-response``
+   - ``application/mathematica``
+   - ``application/mathml+xml``
+   - ``application/mbox``
+   - ``application/pem-certificate-chain``
 
 
 pathlib
