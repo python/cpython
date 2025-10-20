@@ -709,13 +709,29 @@ _PyJIT_translate_single_bytecode_to_trace(
         case POP_JUMP_IF_FALSE:
         case POP_JUMP_IF_TRUE:
         {
+            int counter = target_instr[1].cache;
+            int direction = _Py_popcount32(counter);
             _Py_CODEUNIT *computed_next_instr_without_modifiers = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
             _Py_CODEUNIT *computed_next_instr = computed_next_instr_without_modifiers + (computed_next_instr_without_modifiers->op.code == NOT_TAKEN);
             _Py_CODEUNIT *computed_jump_instr = computed_next_instr_without_modifiers + oparg;
             assert(next_instr == computed_next_instr || next_instr == computed_jump_instr);
             int jump_happened = computed_jump_instr == next_instr;
             uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_happened];
-            ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_happened ? computed_next_instr : computed_jump_instr, old_code));
+            ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_happened ? computed_next_instr : computed_jump_instr, old_code));            
+            // Branch is biased to jumping, but jump did not happen.
+            // We are likely in a bad trace. So we should retrace later.
+            if ((direction > 10 && !jump_happened) ||
+            // Branch is biased to not jumping, but jump did not happen.
+            // We are likely in a bad trace. So we should retrace later.                
+                (direction < 6 && jump_happened) ||
+            // Finally, branch is just not heavily biased.
+            // So we should not trace through it anyways
+            // This prevents trace explosion.                
+                (direction >= 6 && direction <= 10)
+            ) {
+                ADD_TO_TRACE(_EXIT_TRACE, 0, 0, INSTR_IP(next_instr, old_code)); 
+                goto full;
+            }
             break;
         }
         case JUMP_BACKWARD_JIT:
