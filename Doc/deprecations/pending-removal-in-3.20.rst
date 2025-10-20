@@ -8,6 +8,7 @@ Pending removal in Python 3.20
   - :mod:`argparse`
   - :mod:`csv`
   - :mod:`!ctypes.macholib`
+  - :mod:`imaplib`
   - :mod:`ipaddress`
   - :mod:`json`
   - :mod:`logging` (``__date__`` also deprecated)
