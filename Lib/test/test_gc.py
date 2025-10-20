@@ -801,6 +801,7 @@ class GCTests(unittest.TestCase):
             rc, out, err = assert_python_ok('-c', code)
             self.assertEqual(out.strip(), b'__del__ called')
 
+    @unittest.skipIf(Py_GIL_DISABLED, "requires GC generations or increments")
     def test_gc_debug_stats(self):
         # Checks that debug information is printed to stderr
         # when DEBUG_STATS is set.
