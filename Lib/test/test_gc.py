@@ -808,8 +808,6 @@ class GCTests(unittest.TestCase):
         code = """if 1:
             import gc
             gc.set_debug(%s)
-            d = {}
-            d[(1,2)] = 1
             gc.collect()
             """
         _, _, err = assert_python_ok("-c", code % "gc.DEBUG_STATS")
