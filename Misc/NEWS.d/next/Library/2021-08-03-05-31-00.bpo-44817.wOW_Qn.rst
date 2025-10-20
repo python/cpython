@@ -1,0 +1,2 @@
+Ignore WinError 53 (ERROR_BAD_NETPATH), 65 (ERROR_NETWORK_ACCESS_DENIED)
+and 161 (ERROR_BAD_PATHNAME) when using ntpath.realpath().
