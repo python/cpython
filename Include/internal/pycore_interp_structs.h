@@ -763,7 +763,8 @@ typedef struct _PyJitState {
     _PyBloomFilter jit_tracer_dependencies;
     bool jit_tracer_dependencies_still_valid;
     _PyUOpInstruction *jit_tracer_code_buffer;
-    _Py_CODEUNIT *jit_tracer_initial_instr;
+    _Py_CODEUNIT *jit_tracer_insert_exec_instr;
+    _Py_CODEUNIT *jit_tracer_close_loop_instr;
     int jit_tracer_initial_stack_depth;
     int jit_tracer_initial_chain_depth;
     PyCodeObject *jit_tracer_initial_code; // Strong

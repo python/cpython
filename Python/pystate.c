@@ -557,7 +557,6 @@ init_interpreter(PyInterpreterState *interp,
 
 #ifdef _Py_TIER2
     interp->jit_state.jit_tracer_code_buffer = NULL;
-    interp->jit_state.jit_tracer_initial_instr = NULL;
     interp->jit_state.jit_tracer_initial_stack_depth = -1;
     interp->jit_state.jit_tracer_initial_chain_depth = -1;
     interp->jit_state.jit_tracer_initial_code = NULL;

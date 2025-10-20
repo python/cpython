@@ -131,7 +131,7 @@ _PyOptimizer_Optimize(
     chain_depth %= MAX_CHAIN_DEPTH;
     bool progress_needed = chain_depth == 0;
     PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_state.jit_tracer_initial_code;
-    _Py_CODEUNIT *start = tstate->interp->jit_state.jit_tracer_initial_instr;
+    _Py_CODEUNIT *start = tstate->interp->jit_state.jit_tracer_insert_exec_instr;
     // A recursive trace might've cleared the values. In that case, bail.
     if (code == NULL) {
         interp->compiling = false;
@@ -570,7 +570,7 @@ _PyJIT_translate_single_bytecode_to_trace(
     int jump_taken)
 {
 
-    int is_first_instr = tstate->interp->jit_state.jit_tracer_initial_instr == this_instr;
+    int is_first_instr = tstate->interp->jit_state.jit_tracer_close_loop_instr == this_instr;
     bool progress_needed = (tstate->interp->jit_state.jit_tracer_initial_chain_depth % MAX_CHAIN_DEPTH) == 0;;
     _PyBloomFilter *dependencies = &tstate->interp->jit_state.jit_tracer_dependencies;
     _Py_BloomFilter_Add(dependencies, old_code);
@@ -686,7 +686,7 @@ _PyJIT_translate_single_bytecode_to_trace(
     }
 
     // Loop back to the start
-    if (is_first_instr && tstate->interp->jit_state.jit_tracer_code_curr_size > 2) {
+    if (is_first_instr && tstate->interp->jit_state.jit_tracer_code_curr_size > 5) {
         ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
         goto done;
     }
@@ -876,7 +876,7 @@ full:
 }
 
 void
-_PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit)
+_PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
 #ifdef Py_DEBUG
@@ -890,14 +890,15 @@ _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
         PyUnicode_AsUTF8(code->co_qualname),
         PyUnicode_AsUTF8(code->co_filename),
         code->co_firstlineno,
-        2 * INSTR_IP(next_instr, code),
+        2 * INSTR_IP(close_loop_instr, code),
         chain_depth);
 #endif
-    add_to_trace(tstate->interp->jit_state.jit_tracer_code_buffer, 0, _START_EXECUTOR, 0, (uintptr_t)next_instr, INSTR_IP(next_instr, code));
+    add_to_trace(tstate->interp->jit_state.jit_tracer_code_buffer, 0, _START_EXECUTOR, 0, (uintptr_t)insert_exec_instr, INSTR_IP(insert_exec_instr, code));
     add_to_trace(tstate->interp->jit_state.jit_tracer_code_buffer, 1, _MAKE_WARM, 0, 0, 0);
     tstate->interp->jit_state.jit_tracer_code_curr_size = 2;
     tstate->interp->jit_state.jit_tracer_code_max_size = UOP_MAX_TRACE_LENGTH;
-    tstate->interp->jit_state.jit_tracer_initial_instr = next_instr;
+    tstate->interp->jit_state.jit_tracer_insert_exec_instr = insert_exec_instr;
+    tstate->interp->jit_state.jit_tracer_close_loop_instr = close_loop_instr;
     tstate->interp->jit_state.jit_tracer_initial_code = (PyCodeObject *)Py_NewRef(code);
     tstate->interp->jit_state.jit_tracer_initial_func = (PyFunctionObject *)Py_NewRef(_PyFrame_GetFunction(frame));
     tstate->interp->jit_state.jit_tracer_previous_exit = exit;

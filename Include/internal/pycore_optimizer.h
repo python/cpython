@@ -373,7 +373,7 @@ _PyJIT_translate_single_bytecode_to_trace(
     int jump_taken);
 
 void
-_PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit);
+_PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit);
 
 void _PyJIT_FinalizeTracing(PyThreadState *tstate);
 
