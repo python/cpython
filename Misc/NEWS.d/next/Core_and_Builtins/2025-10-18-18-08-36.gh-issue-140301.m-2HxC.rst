@@ -1,1 +1,1 @@
-Fix memory leak in subinterpreter creation
+Fix memory leak of ``PyConfig`` in subinterpreters.
