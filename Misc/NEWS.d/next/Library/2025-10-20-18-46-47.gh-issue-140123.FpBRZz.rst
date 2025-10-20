@@ -1,0 +1,4 @@
+ElementTree.find(), ElementTree.findall(), ElementTree.findtext(), and
+ElementTree.iterfind() now automatically use globally registered namespaces
+(via xml.etree.ElementTree.register_namespace) when the *namespaces*
+argument is omitted.
