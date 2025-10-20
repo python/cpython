@@ -1910,14 +1910,17 @@ class TestFunctoolsPartial(unittest.TestCase):
 
     def test_partial_format_forwardref(self):
         """Test partial with FORWARDREF format."""
-        def foo(a: int, b: str) -> bool:
+        def foo(a: UndefinedType1, b: UndefinedType2) -> UndefinedReturnType:
             return True
 
         partial_foo = functools.partial(foo, 1)
         result = get_annotations(partial_foo, format=Format.FORWARDREF)
 
-        # Should resolve to actual types
-        expected = {'b': str, 'return': bool}
+        # Should return forward references for undefined types
+        expected = {
+            'b': support.EqualToForwardRef('UndefinedType2', owner=foo),
+            'return': support.EqualToForwardRef('UndefinedReturnType', owner=foo)
+        }
         self.assertEqual(result, expected)
 
     def test_partial_with_placeholder(self):

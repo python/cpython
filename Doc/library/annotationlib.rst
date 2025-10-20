@@ -398,7 +398,7 @@ Functions
      decorated with :func:`functools.update_wrapper`), or if it is a
      :class:`functools.partial` object, it is unwrapped by following the
      ``__wrapped__`` attribute or :attr:`~functools.partial.func` attribute
-     repeatedly until a function with :attr:`~function.__globals__` is found.
+     repeatedly to find the underlying wrapped function's globals.
 
    Calling :func:`!get_annotations` is best practice for accessing the
    annotations dict of any object. See :ref:`annotations-howto` for

@@ -540,7 +540,7 @@ def _partial_annotate(partial_obj, format):
 
     # Get the signature to determine which parameters are bound
     try:
-        sig = inspect.signature(partial_obj)
+        sig = inspect.signature(partial_obj, annotation_format=format)
     except (ValueError, TypeError) as e:
         # If we can't get signature, we can't reliably determine which
         # parameters are bound. Raise an error rather than returning
@@ -590,7 +590,7 @@ def _partialmethod_annotate(partialmethod_obj, format):
     # The first parameter (self/cls) should remain, but bound args should be removed
     try:
         # Get the function signature
-        func_sig = inspect.signature(func)
+        func_sig = inspect.signature(func, annotation_format=format)
         func_params = list(func_sig.parameters.keys())
 
         if not func_params:
