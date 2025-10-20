@@ -21,6 +21,7 @@ import unittest
 import unittest.mock as mock
 import warnings
 import weakref
+import xml.etree.ElementTree as ET
 
 from contextlib import nullcontext
 from functools import partial
