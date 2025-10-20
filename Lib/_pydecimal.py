@@ -50,7 +50,7 @@ __all__ = [
     'HAVE_CONTEXTVAR',
 
     # Highest version of the spec this module complies with
-    'SPEC_VERSION'
+    'SPEC_VERSION',
 ]
 
 __xname__ = __name__    # sys.modules lookup (--without-threads)
