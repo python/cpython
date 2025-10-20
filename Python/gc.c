@@ -1817,7 +1817,6 @@ gc_collect_region(PyThreadState *tstate,
     /* Collect statistics on uncollectable objects found and print
      * debugging information. */
     Py_ssize_t n = 0;
-
     for (gc = GC_NEXT(&finalizers); gc != &finalizers; gc = GC_NEXT(gc)) {
         n++;
         if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE)
