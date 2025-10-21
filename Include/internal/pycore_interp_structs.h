@@ -672,11 +672,6 @@ struct _Py_interp_cached_objects {
 
     /* object.__reduce__ */
     PyObject *objreduce;
-#ifndef Py_GIL_DISABLED
-    /* resolve_slotdups() */
-    PyObject *type_slots_pname;
-    pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
-#endif
 
     /* TypeVar and related types */
     PyTypeObject *generic_type;
@@ -773,12 +768,6 @@ struct _is {
      * which is by far the hottest field in this struct
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
-
-    /* This structure is carefully allocated so that it's correctly aligned
-     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
-     * field stores the allocated pointer address that will later be freed.
-     */
-    void *_malloced;
 
     PyInterpreterState *next;
 

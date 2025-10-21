@@ -216,7 +216,7 @@ decompress_lock_held(ZstdDecompressor *self, ZSTD_inBuffer *in,
 {
     size_t zstd_ret;
     ZSTD_outBuffer out;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     PyObject *ret;
 
     /* Initialize the output buffer */

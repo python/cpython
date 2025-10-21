@@ -231,7 +231,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    *linejunk*: A function that accepts a single string argument, and returns
    true if the string is junk, or false if not. The default is ``None``. There
    is also a module-level function :func:`IS_LINE_JUNK`, which filters out lines
-   without visible characters, except for at most one pound character (``'#'``)
+   without visible characters, except for at most one hash character (``'#'``)
    -- however the underlying :class:`SequenceMatcher` class does a dynamic
    analysis of which lines are so frequent as to constitute noise, and this
    usually works better than using this function.
@@ -323,7 +323,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    See :ref:`difflib-interface` for a more detailed example.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added the *color* parameter.
 
 

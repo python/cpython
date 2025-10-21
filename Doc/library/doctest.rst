@@ -1123,7 +1123,7 @@ from text files and modules with doctests:
    The global ``__file__`` is added to the globals provided to doctests loaded
    from a text file using :func:`DocFileSuite`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Run each example as a :ref:`subtest <subtests>`.
 
 
@@ -1164,7 +1164,7 @@ from text files and modules with doctests:
       :func:`DocTestSuite` returns an empty :class:`unittest.TestSuite` if *module*
       contains no docstrings instead of raising :exc:`ValueError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Run each example as a :ref:`subtest <subtests>`.
 
 Under the covers, :func:`DocTestSuite` creates a :class:`unittest.TestSuite` out
@@ -1564,7 +1564,7 @@ DocTestRunner objects
       containing *example*.  *out* is the output function that was passed to
       :meth:`DocTestRunner.run`.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
 
    .. method:: report_start(out, test, example)

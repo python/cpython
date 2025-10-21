@@ -2512,7 +2512,7 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.13
       Added the *show_empty* option.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Omit optional ``Load()`` values by default.
 
 
