@@ -5034,7 +5034,8 @@ class MiscTest(unittest.TestCase):
 
         self.assertIn(
             (b"Site initialization is disabled, did you forget to "
-                b"add the site-packages directory to sys.path?"), stderr
+             b"add the site-packages directory to sys.path "
+             b"or to enable your virtual environment?"), stderr
         )
 
         code = """
@@ -5046,7 +5047,8 @@ class MiscTest(unittest.TestCase):
 
         self.assertNotIn(
             (b"Site initialization is disabled, did you forget to "
-                b"add the site-packages directory to sys.path?"), stderr
+             b"add the site-packages directory to sys.path "
+             b"or to enable your virtual environment?"), stderr
         )
 
     def test_missing_stdlib_package(self):

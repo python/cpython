@@ -1113,7 +1113,8 @@ class TracebackException:
                 self._str = f"Standard library module '{module_name}' was not found"
             elif sys.flags.no_site:
                 self._str += (". Site initialization is disabled, did you forget to "
-                    + "add the site-packages directory to sys.path?")
+                    + "add the site-packages directory to sys.path "
+                    + "or to enable your virtual environment?")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
