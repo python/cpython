@@ -359,8 +359,8 @@ do {                                                   \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     if (next_instr == NULL) {                          \
         /* gh-140104: The exception handler expects frame->instr_ptr
-            to be pointing to next_instr, not this_instr! */ \
-        next_instr = frame->instr_ptr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[frame->instr_ptr->op.code]];                 \
+            to after this_instr, not this_instr! */ \
+        next_instr = frame->instr_ptr + 1;                 \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     DISPATCH();                                        \
