@@ -1,0 +1,221 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.hg/
+.svn/
+
+# Build artifacts
+*.o
+*.lto
+*.a
+*.so
+*.so.*
+*.dylib
+*.dSYM
+*.exe
+*.dll
+*.pyd
+*.wasm
+*.gc??
+*.prebolt
+*.fdata
+*.dyn
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Profiling data
+*.profraw
+*.profclang?
+*.profdata
+default.profraw
+gmon.out
+
+# Testing artifacts
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# IDE and editors
+.vscode/
+.idea/
+.vs/
+.cache/
+*.swp
+*.swo
+*~
+*.iml
+tags
+TAGS
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Documentation
+Doc/build/
+Doc/_build/
+Doc/venv/
+Doc/.venv/
+Doc/env/
+Doc/.env/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.log
+*.orig
+*.rej
+tmp/
+temp/
+.gdb_history
+.purify
+core
+
+# Root-level build artifacts
+/_bootstrap_python
+/Makefile
+/Makefile.pre
+/build/
+/builddir/
+/config.cache
+/config.log
+/config.status
+/config.status.lineno
+/.ccache
+/cross-build/
+/jit_stencils*.h
+/platform
+/profile-clean-stamp
+/profile-run-stamp
+/profile-bolt-stamp
+/profile-gen-stamp
+/pybuilddir.txt
+/pyconfig.h
+/python-config
+/python-config.py
+/python.bat
+/python-gdb.py
+/python.exe-gdb.py
+/reflog.txt
+/coverage/
+/externals/
+/htmlcov/
+/python
+python.exe.lto/
+*.framework/
+
+# iOS and Apple
+/iOSTestbed.*
+Apple/iOS/Frameworks/
+Apple/iOS/Resources/Info.plist
+Apple/testbed/build
+Apple/testbed/Python.xcframework/*/bin
+Apple/testbed/Python.xcframework/*/include
+Apple/testbed/Python.xcframework/*/lib
+Apple/testbed/Python.xcframework/*/Python.framework
+Apple/testbed/*Testbed.xcodeproj/project.xcworkspace
+Apple/testbed/*Testbed.xcodeproj/xcuserdata
+
+# Mac
+Mac/Makefile
+Mac/PythonLauncher/Info.plist
+Mac/PythonLauncher/Makefile
+Mac/PythonLauncher/Python Launcher
+Mac/PythonLauncher/Python Launcher.app/*
+Mac/Resources/app/Info.plist
+Mac/Resources/framework/Info.plist
+Mac/pythonw
+
+# Modules
+Modules/Setup.bootstrap
+Modules/Setup.config
+Modules/Setup.local
+Modules/Setup.stdlib
+Modules/config.c
+Modules/ld_so_aix
+Modules/python.exp
+
+# Programs
+Programs/_freeze_module
+Programs/_testembed
+
+# PC (Windows)
+PC/python_nt*.h
+PC/pythonnt_rc*.h
+PC/*/*.exp
+PC/*/*.lib
+PC/*/*.bsc
+PC/*/*.dll
+PC/*/*.pdb
+PC/*/*.user
+PC/*/*.ncb
+PC/*/*.suo
+PC/*/Win32-temp-*
+PC/*/x64-temp-*
+PC/*/amd64
+
+# PCbuild (Windows build)
+PCbuild/*.user
+PCbuild/*.suo
+PCbuild/*.*sdf
+PCbuild/*-pgi
+PCbuild/*-pgo
+PCbuild/*.VC.db
+PCbuild/*.VC.opendb
+PCbuild/amd64/
+PCbuild/arm32/
+PCbuild/arm64/
+PCbuild/obj/
+PCbuild/win32/
+
+# Tools
+Tools/unicode/data/
+Tools/msi/obj
+Tools/ssl/amd64
+Tools/ssl/win32
+Tools/freeze/test/outdir
+
+# Misc
+Misc/python.pc
+Misc/python-embed.pc
+Misc/python-config.sh
+
+# Include
+Include/pydtrace_probes.h
+
+# Lib
+Lib/site-packages/*
+!Lib/site-packages/README.txt
+Lib/test/data/*
+!Lib/test/data/README
+
+# Python frozen modules
+Python/frozen_modules/*.h
+Python/frozen_modules/MANIFEST
+
+# Claude config
+/.claude/
+CLAUDE.local.md
+
+# Docker files (avoid recursive inclusion)
+.dockerignore
+Dockerfile
+
+# Local development
+foo.py
