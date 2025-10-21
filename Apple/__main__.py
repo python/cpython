@@ -836,11 +836,39 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:
         )
 
 
+def apple_sim_host(platform_name: str) -> str:
+    """Determine the native simulator target for this platform."""
+    for _, slice_parts in HOSTS[platform_name].items():
+        for host_triple in slice_parts:
+            parts = host_triple.split('-')
+            if parts[0] == platform.machine() and parts[-1] == "simulator":
+                return host_triple
+
+    raise KeyError(platform_name)
+
+
 def ci(context: argparse.Namespace) -> None:
-    """The implementation of the "ci" command."""
+    """The implementation of the "ci" command.
+
+    In "Fast" mode, this compiles the build python, and the simulator for the
+    build machine's architecture; and runs the test suite with `--fast-ci`
+    configuration.
+
+    In "Slow" mode, it compiles the build python, plus all candidate
+    architectures (both device and simulator); then runs the test suite with
+    `--slow-ci` configuration.
+    """
     clean(context, "all")
-    build(context, host="all")
-    test(context, host="all")
+    if context.slow:
+        # In slow mode, doa. tu
+        build(context, host="all")
+        test(context, host="all")
+    else:
+        # In fast mode, just build the simulator platform.
+        sim_host = apple_sim_host(context.platform)
+        build(context, host="build")
+        build(context, host=sim_host)
+        test(context, host=sim_host)
 
 
 def parse_args() -> argparse.Namespace:
