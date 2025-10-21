@@ -671,7 +671,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         try:
             annotate(Format.VALUE_WITH_FAKE_GLOBALS)
         except NotImplementedError:
-            # Both STRING and VALUE_WITH_FAKE_GLOBALS are not implemented fallback to VALUE
+            # Both STRING and VALUE_WITH_FAKE_GLOBALS are not implemented: fallback to VALUE
             return annotations_to_string(annotate(Format.VALUE))
         except Exception:
             pass
