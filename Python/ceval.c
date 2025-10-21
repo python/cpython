@@ -990,8 +990,8 @@ static inline int
 add_to_code_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, PyCodeObject *old_code, PyFunctionObject *old_func, int old_stack_level, _Py_CODEUNIT *this_instr, _Py_CODEUNIT *next_instr, int opcode, int oparg, int jump_taken)
 {
     assert(frame != NULL);
-    assert(tstate->interp->jit_state.jit_tracer_code_curr_size < UOP_MAX_TRACE_LENGTH);
-    return !_PyJIT_translate_single_bytecode_to_trace(tstate, frame, this_instr, next_instr, old_code, old_func, old_stack_level, opcode, oparg, jump_taken);
+    assert(tstate->interp->jit_state.code_curr_size < UOP_MAX_TRACE_LENGTH);
+    return !_PyJit_translate_single_bytecode_to_trace(tstate, frame, this_instr, next_instr, old_code, old_func, old_stack_level, opcode, oparg, jump_taken);
 }
 #endif
 

@@ -7501,7 +7501,7 @@
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
-                _PyJIT_InitializeTracing(tstate, frame, target, target, STACK_LEVEL(), chain_depth, exit);
+                _PyJit_InitializeTracing(tstate, frame, target, target, STACK_LEVEL(), chain_depth, exit);
                 exit->temperature = initial_temperature_backoff_counter();
                 GOTO_TIER_ONE(target, 1);
             }

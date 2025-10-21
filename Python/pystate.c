@@ -556,11 +556,11 @@ init_interpreter(PyInterpreterState *interp,
 #endif
 
 #ifdef _Py_TIER2
-    interp->jit_state.jit_tracer_code_buffer = NULL;
-    interp->jit_state.jit_tracer_initial_stack_depth = -1;
-    interp->jit_state.jit_tracer_initial_chain_depth = -1;
-    interp->jit_state.jit_tracer_initial_code = NULL;
-    interp->jit_state.jit_tracer_initial_func = NULL;
+    interp->jit_state.code_buffer = NULL;
+    interp->jit_state.initial_stack_depth = -1;
+    interp->jit_state.initial_chain_depth = -1;
+    interp->jit_state.initial_code = NULL;
+    interp->jit_state.initial_func = NULL;
 #endif
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
@@ -811,9 +811,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
 #ifdef _Py_TIER2
     _Py_ClearExecutorDeletionList(interp);
-    if (interp->jit_state.jit_tracer_code_buffer != NULL) {
-        _PyObject_VirtualFree(interp->jit_state.jit_tracer_code_buffer, UOP_BUFFER_SIZE);
-        interp->jit_state.jit_tracer_code_buffer = NULL;
+    if (interp->jit_state.code_buffer != NULL) {
+        _PyObject_VirtualFree(interp->jit_state.code_buffer, UOP_BUFFER_SIZE);
+        interp->jit_state.code_buffer = NULL;
     }
 #endif
     _PyAST_Fini(interp);

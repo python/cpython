@@ -758,20 +758,20 @@ struct _Py_unique_id_pool {
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
 typedef struct _PyJitTracerState {
-    int jit_tracer_code_max_size;
-    int jit_tracer_code_curr_size;
-    _PyBloomFilter jit_tracer_dependencies;
-    bool jit_tracer_dependencies_still_valid;
-    _PyUOpInstruction *jit_tracer_code_buffer;
-    _Py_CODEUNIT *jit_tracer_insert_exec_instr;
-    _Py_CODEUNIT *jit_tracer_close_loop_instr;
+    bool dependencies_still_valid;
+    int code_max_size;
+    int code_curr_size;
+    int initial_stack_depth;
+    int initial_chain_depth;
+    _PyUOpInstruction *code_buffer;
+    _Py_CODEUNIT *insert_exec_instr;
+    _Py_CODEUNIT *close_loop_instr;
     _Py_CODEUNIT *last_specialized_instr;
-    int jit_tracer_initial_stack_depth;
-    int jit_tracer_initial_chain_depth;
-    PyCodeObject *jit_tracer_initial_code; // Strong
-    PyFunctionObject *jit_tracer_initial_func; // Strong
-    struct _PyExitData *jit_tracer_previous_exit;
-    _PyInterpreterFrame *jit_tracer_current_frame;
+    PyCodeObject *initial_code; // Strong
+    PyFunctionObject *initial_func; // Strong
+    struct _PyExitData *previous_exit;
+    _PyInterpreterFrame *current_frame;
+    _PyBloomFilter dependencies;
 } _PyJitTracerState;
 
 /* PyInterpreterState holds the global state for one of the runtime's

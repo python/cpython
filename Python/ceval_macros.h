@@ -150,7 +150,7 @@
         if (!_PyErr_Occurred(tstate) && !_is_sys_tracing) { \
             _PyFrame_SetStackPointer(frame, stack_pointer); \
             int _err = _PyOptimizer_Optimize(frame, tstate); \
-            _PyJIT_FinalizeTracing(tstate); \
+            _PyJit_FinalizeTracing(tstate); \
             stack_pointer = _PyFrame_GetStackPointer(frame); \
             if (_err < 0) { \
                 JUMP_TO_LABEL(error); \
@@ -158,7 +158,7 @@
         } \
         else { \
             _PyFrame_SetStackPointer(frame, stack_pointer); \
-            _PyJIT_FinalizeTracing(tstate); \
+            _PyJit_FinalizeTracing(tstate); \
             stack_pointer = _PyFrame_GetStackPointer(frame); \
         } \
     } while (0);
@@ -451,7 +451,7 @@ do {                                                   \
     }                                                  \
     if (keep_tracing_bit) { \
         assert(next_instr->op.code != ENTER_EXECUTOR); \
-        assert(tstate->interp->jit_state.jit_tracer_code_curr_size == 2); \
+        assert(tstate->interp->jit_state.code_curr_size == 2); \
         ENTER_TRACING(); \
     } \
     DISPATCH();                                        \

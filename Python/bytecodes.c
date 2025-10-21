@@ -2970,9 +2970,9 @@ dummy_func(
             if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) &&
                 this_instr->op.code == JUMP_BACKWARD_JIT &&
                 next_instr->op.code != ENTER_EXECUTOR) {
-                if (tstate->interp->jit_state.jit_tracer_code_buffer == NULL) {
-                    tstate->interp->jit_state.jit_tracer_code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
-                    if (tstate->interp->jit_state.jit_tracer_code_buffer == NULL) {
+                if (tstate->interp->jit_state.code_buffer == NULL) {
+                    tstate->interp->jit_state.code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
+                    if (tstate->interp->jit_state.code_buffer == NULL) {
                         // Don't error, just go to next instruction.
                         DISPATCH();
                     }
@@ -2985,7 +2985,7 @@ dummy_func(
                         oparg >>= 8;
                         insert_exec_at--;
                     }
-                    _PyJIT_InitializeTracing(tstate, frame, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL);
+                    _PyJit_InitializeTracing(tstate, frame, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL);
                     ENTER_TRACING();
                 }
                 int _jump_taken = false;
@@ -5456,7 +5456,7 @@ dummy_func(
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
-                _PyJIT_InitializeTracing(tstate, frame, target, target, STACK_LEVEL(), chain_depth, exit);
+                _PyJit_InitializeTracing(tstate, frame, target, target, STACK_LEVEL(), chain_depth, exit);
                 exit->temperature = initial_temperature_backoff_counter();
                 GOTO_TIER_ONE(target, 1);
             }

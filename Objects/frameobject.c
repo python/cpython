@@ -264,7 +264,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 
 #if _Py_TIER2
         _Py_Executors_InvalidateDependency(PyInterpreterState_Get(), co, 1);
-        _Py_JITTracer_InvalidateDependency(PyThreadState_GET(), co);
+        _PyJit_Tracer_InvalidateDependency(PyThreadState_GET(), co);
 #endif
 
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
