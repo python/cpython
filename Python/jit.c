@@ -455,7 +455,7 @@ void patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *st
     // LLVM 20 on macOS x86_64 debug builds: GOT entries may exceed ±2GB PC-relative
     // range.
     #define TRAMPOLINE_SIZE 16  // 14 bytes + 2 bytes padding for alignment
-    #define DATA_ALIGN 16
+    #define DATA_ALIGN 8
 #else
     #define TRAMPOLINE_SIZE 0
     #define DATA_ALIGN 1
