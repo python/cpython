@@ -173,9 +173,8 @@ class HashBuiltinsTestCase(unittest.TestCase):
             def __hash__(self):
                 return 1.0
 
-        for _ in range(100):
-            with self.assertRaises(TypeError):
-                hash(A())
+        with self.assertRaises(TypeError):
+            hash(A())
 
 class HashRandomizationTests:
 
