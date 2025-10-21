@@ -608,8 +608,8 @@ warnings
   argument is passed.
   It now tests the module regular expression in the warnings filter not only
   against the filename with ``.py`` stripped, but also against module names
-  constructed starting from different parent directories of the filename.
-  Strip also ``.pyw`` (on Windows) and ``/__init__.py``.
+  constructed starting from different parent directories of the filename
+  (with ``/__init__.py``, ``.py`` and, on Windows, ``.pyw`` stripped).
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
 
 

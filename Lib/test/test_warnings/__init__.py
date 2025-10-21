@@ -289,10 +289,10 @@ class FilterTests(BaseTest):
             if MS_WINDOWS:
                 self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module.PY', 42)
                 self.assertEqual(len(w), 3)
-                self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module/__INIT__.PY', 42)
-                self.assertEqual(len(w), 4)
-                self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module.PYW', 42)
-                self.assertEqual(len(w), 5)
+                with self.assertRaises(UserWarning):
+                    self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module/__init__.py', 42)
+                with self.assertRaises(UserWarning):
+                    self.module.warn_explicit('msg', UserWarning, r'/path/to/package/module.pyw', 42)
                 with self.assertRaises(UserWarning):
                     self.module.warn_explicit('msg', UserWarning, r'\path\to\package\module', 42)
 
@@ -314,16 +314,14 @@ class FilterTests(BaseTest):
                 self.assertEqual(len(w), 2)
                 self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PY', 42)
                 self.assertEqual(len(w), 3)
-                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module\__INIT__.PY', 42)
-                self.assertEqual(len(w), 4)
-                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PYW', 42)
-                self.assertEqual(len(w), 5)
+                with self.assertRaises(UserWarning):
+                    self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.pyw', 42)
                 with self.assertRaises(UserWarning):
                     self.module.warn_explicit('msg', UserWarning, r'C:\PATH\TO\PACKAGE\MODULE', 42)
                 with self.assertRaises(UserWarning):
                     self.module.warn_explicit('msg', UserWarning, r'C:/path/to/package/module', 42)
                 with self.assertRaises(UserWarning):
-                    self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module\__init__', 42)
+                    self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module\__init__.py', 42)
 
         with self.module.catch_warnings(record=True) as w:
             self.module.simplefilter('error')

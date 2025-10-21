@@ -526,27 +526,22 @@ def _match_filename(pattern, filename, *, MS_WINDOWS=(sys.platform == 'win32')):
     if filename[0] == '<' and filename[-1] == '>':
         return pattern.match(filename) is not None
 
+    is_py = (filename[-3:].lower() == '.py'
+             if MS_WINDOWS else
+             filename.endswith('.py'))
+    if is_py:
+        filename = filename[:-3]
+    if pattern.match(filename):  # for backward compatibility
+        return True
     if MS_WINDOWS:
-        if filename[-12:].lower() in (r'\__init__.py', '/__init__.py'):
-            if pattern.match(filename[:-3]): # without '.py'
-                return True
-            filename = filename[:-12]
-        elif filename[-3:].lower() == '.py':
-            filename = filename[:-3]
-        elif filename[-4:].lower() == '.pyw':
+        if is_py and filename[-9:].lower() in (r'\__init__', '/__init__'):
+            filename = filename[:-9]
+        elif not is_py and filename[-4:].lower() == '.pyw':
             filename = filename[:-4]
-        if pattern.match(filename):
-            return True
-        filename = filename.replace('\\', '/')
+        filename = filename.replace('\\', '.')
     else:
-        if filename.endswith('/__init__.py'):
-            if pattern.match(filename[:-3]): # without '.py'
-                return True
-            filename = filename[:-12]
-        elif filename.endswith('.py'):
-            filename = filename[:-3]
-        if pattern.match(filename):
-            return True
+        if is_py and filename.endswith('/__init__'):
+            filename = filename[:-9]
     filename = filename.replace('/', '.')
     i = 0
     while True:

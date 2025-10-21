@@ -488,14 +488,13 @@ Available Functions
 
    *module*, if supplied, should be the module name.
    If no module is passed, the module regular expression in
-   :ref:`warnings filter <warning-filter>` will be tested against the filename
-   with ``/__init__.py`` and ``.py`` (and ``.pyw`` on Windows) stripped and
-   against the module names constructed from the path components starting
-   from all parent directories.
-   For example, when filename is ``'/path/to/package/module.py'``, it will
-   be tested against ``'/path/to/package/module'``,
-   ``'path.to.package.module'``, ``'to.package.module'``
-   ``'package.module'`` and ``'module'``.
+   :ref:`warnings filter <warning-filter>` will be tested against the module
+   names constructed from the path components starting from all parent
+   directories (with ``/__init__.py``, ``.py`` and, on Windows, ``.pyw``
+   stripped) and against the filename with ``.py`` stripped.
+   For example, when the filename is ``'/path/to/package/module.py'``, it will
+   be tested against  ``'path.to.package.module'``, ``'to.package.module'``
+   ``'package.module'``, ``'module'``, and ``'/path/to/package/module'``.
 
    *registry*, if supplied, should be the ``__warningregistry__`` dictionary
    of the module.
