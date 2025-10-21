@@ -2018,17 +2018,17 @@ zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
 /*[clinic input]
 zlib.__getattr__
 
-    name: object
+    name: str
     /
 
 Module __getattr__
 [clinic start generated code]*/
 
 static PyObject *
-zlib___getattr__(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=3d0779fab979b438 input=b189297631fedd04]*/
+zlib___getattr___impl(PyObject *module, const char *name)
+/*[clinic end generated code: output=5ec48f62426a4b95 input=59a69e9dcff70564]*/
 {
-    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+    if (strcmp(name, "__version__") == 0) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                          "'__version__' is deprecated and slated for removal in Python 3.20",
                          1) < 0) {
@@ -2037,7 +2037,7 @@ zlib___getattr__(PyObject *module, PyObject *name)
         return PyUnicode_FromString("1.0");
     }
 
-    PyErr_Format(PyExc_AttributeError, "module 'zlib' has no attribute %R", name);
+    PyErr_Format(PyExc_AttributeError, "module 'zlib' has no attribute %s", name);
     return NULL;
 }
 

@@ -1388,6 +1388,34 @@ PyDoc_STRVAR(zlib___getattr____doc__,
 #define ZLIB___GETATTR___METHODDEF    \
     {"__getattr__", (PyCFunction)zlib___getattr__, METH_O, zlib___getattr____doc__},
 
+static PyObject *
+zlib___getattr___impl(PyObject *module, const char *name);
+
+static PyObject *
+zlib___getattr__(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *name;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("__getattr__", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = zlib___getattr___impl(module, name);
+
+exit:
+    return return_value;
+}
+
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
@@ -1411,4 +1439,4 @@ PyDoc_STRVAR(zlib___getattr____doc__,
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=f4301fe20b49ba4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a012669e48021aa4 input=a9049054013a1b77]*/
