@@ -63,9 +63,9 @@ Pending removal in Python 3.16
 
 * :mod:`logging`:
 
-  Support for custom logging handlers with the *strm* argument is deprecated
-  and scheduled for removal in Python 3.16. Define handlers with the *stream*
-  argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
+  * Support for custom logging handlers with the *strm* argument is deprecated
+    and scheduled for removal in Python 3.16. Define handlers with the *stream*
+    argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
 
 * :mod:`mimetypes`:
 
