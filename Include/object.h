@@ -269,12 +269,43 @@ PyAPI_DATA(PyTypeObject) PyLong_Type;
 PyAPI_DATA(PyTypeObject) PyBool_Type;
 
 /* Definitions for the stable ABI */
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
 PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
 PyAPI_FUNC(Py_ssize_t) Py_SIZE(PyObject *ob);
 PyAPI_FUNC(int) Py_IS_TYPE(PyObject *ob, PyTypeObject *type);
 PyAPI_FUNC(void) Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size);
+#endif
 
 #ifndef _Py_OPAQUE_PYOBJECT
+
+static inline void
+Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
+{
+    ob->ob_type = type;
+}
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
+// Non-limited API & limited API 3.11 & below: use static inline functions and
+// use _PyObject_CAST so that users don't need their own casts
+#  define Py_TYPE(ob) _Py_TYPE_impl(_PyObject_CAST(ob))
+#  define Py_SIZE(ob) _Py_SIZE_impl(_PyObject_CAST(ob))
+#  define Py_IS_TYPE(ob, type) _Py_IS_TYPE_impl(_PyObject_CAST(ob), (type))
+#  define Py_SET_SIZE(ob, size) _Py_SET_SIZE_impl(_PyVarObject_CAST(ob), (size))
+#  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
+#elif Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 15)
+// Limited API 3.11-3.14: use static inline functions, without casts
+#  define Py_SIZE(ob) _Py_SIZE_impl(ob)
+#  define Py_IS_TYPE(ob, type) _Py_IS_TYPE_impl((ob), (type))
+#  define Py_SET_SIZE(ob, size) _Py_SET_SIZE_impl((ob), (size))
+#  if Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 14)
+//   Py_TYPE() is static inline only on Limited API 3.13 and below
+#    define Py_TYPE(ob) _Py_TYPE_impl(ob)
+#  endif
+#else
+// Limited API 3.15+: use function calls
+#endif
 
 static inline
 PyTypeObject* _Py_TYPE_impl(PyObject *ob)
@@ -308,33 +339,6 @@ _Py_SET_SIZE_impl(PyVarObject *ob, Py_ssize_t size)
     ob->ob_size = size;
 #endif
 }
-
-static inline void
-Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
-{
-    ob->ob_type = type;
-}
-
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
-// Non-limited API & limited API 3.11 & below: use static inline functions and
-// use _PyObject_CAST so that users don't need their own casts
-#  define Py_TYPE(ob) _Py_TYPE_impl(_PyObject_CAST(ob))
-#  define Py_SIZE(ob) _Py_SIZE_impl(_PyObject_CAST(ob))
-#  define Py_IS_TYPE(ob, type) _Py_IS_TYPE_impl(_PyObject_CAST(ob), (type))
-#  define Py_SET_SIZE(ob, size) _Py_SET_SIZE_impl(_PyVarObject_CAST(ob), (size))
-#  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
-#elif Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 15)
-// Limited API 3.11-3.14: use static inline functions, without casts
-#  define Py_SIZE(ob) _Py_SIZE_impl(ob)
-#  define Py_IS_TYPE(ob, type) _Py_IS_TYPE_impl((ob), (type))
-#  define Py_SET_SIZE(ob, size) _Py_SET_SIZE_impl((ob), (size))
-#  if Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 14)
-//   Py_TYPE() is static inline only on Limited API 3.13 and below
-#    define Py_TYPE(ob) _Py_TYPE_impl(ob)
-#  endif
-#else
-// Limited API 3.15+: use function calls
-#endif
 
 #endif // !defined(_Py_OPAQUE_PYOBJECT)
 
