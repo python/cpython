@@ -28,7 +28,7 @@ from cwriter import CWriter
 from typing import TextIO
 from lexer import Token
 from stack import Local, Stack, StackError, get_stack_effect, Storage
-from tier1_generator import generate_tier1_cases
+from tier1_generator import get_popped, declare_variables, write_uop
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_tracer_cases.c.h"
 
@@ -39,7 +39,7 @@ class TracerEmitter(Emitter):
     cannot_escape: bool
 
     def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False):
-        super().__init__(out, labels, cannot_escape, is_tracing=True)
+        super().__init__(out, labels, cannot_escape, jump_prefix="TRACING_")
         self._replacers = {
             **self._replacers,
             "DISPATCH": self.dispatch,
@@ -109,38 +109,71 @@ class TracerEmitter(Emitter):
         self.out.emit(";\n")
         return True
 
-    def deopt_if(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.out.start_line()
-        self.out.emit("if (")
-        lparen = next(tkn_iter)
-        assert lparen.kind == "LPAREN"
-        first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, "RPAREN")
-        self.emit(") {\n")
-        next(tkn_iter)  # Semi colon
-        assert inst is not None
-        assert inst.family is not None
-        family_name = inst.family.name
-        self.emit(f"UPDATE_MISS_STATS({family_name});\n")
-        self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
-        self.emit(f"JUMP_TO_PREDICTED(TRACING_{family_name});\n")
-        self.emit("}\n")
-        return not always_true(first_tkn)
+def generate_tier1_tracer_cases(
+    analysis: Analysis, out: CWriter, emitter: Emitter
+) -> None:
+    out.emit("\n")
+    for name, inst in sorted(analysis.instructions.items()):
+        out.emit("\n")
+        out.emit(f"TRACING_TARGET({name}) {{\n")
+        out.emit(f"assert(IS_JIT_TRACING());\n")
+        # We need to ifdef it because this breaks platforms
+        # without computed gotos/tail calling.
+        out.emit(f"#if _Py_TAIL_CALL_INTERP\n")
+        out.emit(f"int opcode = {name};\n")
+        out.emit(f"(void)(opcode);\n")
+        out.emit(f"#endif\n")
+        unused_guard = "(void)this_instr;\n"
+        if inst.properties.needs_prev:
+            out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
+        if not inst.is_target:
+            out.emit(f"_Py_CODEUNIT* const this_instr = next_instr;\n")
+            out.emit(unused_guard)
+        if not inst.properties.no_save_ip:
+            out.emit(f"frame->instr_ptr = next_instr;\n")
 
-    exit_if = deopt_if
+        out.emit(f"next_instr += {inst.size};\n")
+        out.emit(f"INSTRUCTION_STATS({name});\n")
+        if inst.is_target:
+            out.emit(f"PREDICTED_TRACING_{name}:;\n")
+            out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
+            out.emit(unused_guard)
+        # This is required so that the predicted ops reflect the correct opcode.
+        out.emit(f"opcode = {name};\n")
+        out.emit(f"PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);\n")
+        out.emit(f"(void)old_code;\n")
+        out.emit(f"PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);\n")
+        out.emit(f"(void)old_func;\n")
+        out.emit(f"int _jump_taken = false;\n")
+        out.emit(f"(void)_jump_taken;\n")
+        out.emit(f"int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;\n")
+        out.emit(f"(void)(_old_stack_level);\n")
+        if inst.family is not None:
+            out.emit(
+                f"static_assert({inst.family.size} == {inst.size-1}"
+                ', "incorrect cache size");\n'
+            )
+        declare_variables(inst, out)
+        offset = 1  # The instruction itself
+        stack = Stack()
+        for part in inst.parts:
+            # Only emit braces if more than one uop
+            insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
+            reachable, offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
+        out.start_line()
+        if reachable: # type: ignore[possibly-undefined]
+            stack.flush(out)
+            out.emit(f"TRACING_DISPATCH();\n")
+        out.start_line()
+        out.emit("}")
+        out.emit("\n")
+
 
 def generate_tracer_cases(
     analysis: Analysis, out: CWriter
 ) -> None:
     out.emit(f"#ifdef _Py_TIER2 /* BEGIN TRACING INSTRUCTIONS */\n")
-    generate_tier1_cases(analysis, out, TracerEmitter(out, analysis.labels), is_tracing=True)
+    generate_tier1_tracer_cases(analysis, out, TracerEmitter(out, analysis.labels))
     out.emit(f"#endif /* END TRACING INSTRUCTIONS */\n")
 
 def generate_tracer(

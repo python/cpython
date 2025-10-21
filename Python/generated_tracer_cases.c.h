@@ -1797,7 +1797,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = CALL;
             _PyStackRef callable;
             _PyStackRef self_or_null;
             _PyStackRef *args;
@@ -2853,7 +2852,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = CALL_FUNCTION_EX;
             _PyStackRef func;
             _PyStackRef callargs;
             _PyStackRef func_st;
@@ -3210,7 +3208,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = CALL_KW;
             _PyStackRef callable;
             _PyStackRef self_or_null;
             _PyStackRef *args;
@@ -3541,7 +3538,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = CALL_KW_NON_PY;
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -4461,7 +4457,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = CALL_NON_PY_GENERAL;
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             _PyStackRef callable;
             _PyStackRef self_or_null;
@@ -6307,7 +6302,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = ENTER_EXECUTOR;
             #ifdef _Py_TIER2
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
@@ -6391,7 +6385,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = EXTENDED_ARG;
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
@@ -7294,7 +7287,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = INSTRUMENTED_CALL;
             _PyStackRef callable;
             _PyStackRef self_or_null;
             _PyStackRef func;
@@ -7492,7 +7484,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = INSTRUMENTED_CALL_FUNCTION_EX;
             _PyStackRef func;
             _PyStackRef callargs;
             _PyStackRef func_st;
@@ -7669,7 +7660,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = INSTRUMENTED_CALL_KW;
             _PyStackRef callable;
             _PyStackRef self_or_null;
             _PyStackRef *args;
@@ -8057,7 +8047,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = INSTRUMENTED_INSTRUCTION;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int next_opcode = _Py_call_instrumentation_instruction(
                 tstate, frame, this_instr);
@@ -8156,7 +8145,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = INSTRUMENTED_LINE;
             int original_opcode = 0;
             if (tstate->tracing) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -8205,7 +8193,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
             _PyStackRef global_super_st;
             _PyStackRef class_st;
             _PyStackRef self_st;
@@ -11163,7 +11150,6 @@
             (void)_jump_taken;
             int _old_stack_level = !PyStackRef_IsNull(frame->f_executable) ? STACK_LEVEL() : 0;
             (void)(_old_stack_level);
-            opcode = LOAD_SUPER_ATTR;
             _PyStackRef global_super_st;
             _PyStackRef class_st;
             _PyStackRef self_st;

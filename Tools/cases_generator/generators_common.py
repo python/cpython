@@ -107,9 +107,9 @@ class Emitter:
     labels: dict[str, Label]
     _replacers: dict[str, ReplacementFunctionType]
     cannot_escape: bool
-    tracing: str
+    jump_prefix: str
 
-    def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False, is_tracing: bool = False):
+    def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False, jump_prefix: str = ""):
         self._replacers = {
             "EXIT_IF": self.exit_if,
             "AT_END_EXIT_IF": self.exit_if_after,
@@ -133,7 +133,7 @@ class Emitter:
         self.out = out
         self.labels = labels
         self.cannot_escape = cannot_escape
-        self.tracing = "TRACING_" if is_tracing else ""
+        self.jump_prefix = jump_prefix
 
     def dispatch(
         self,
@@ -170,7 +170,7 @@ class Emitter:
         family_name = inst.family.name
         self.emit(f"UPDATE_MISS_STATS({family_name});\n")
         self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
-        self.emit(f"JUMP_TO_PREDICTED({family_name});\n")
+        self.emit(f"JUMP_TO_PREDICTED({self.jump_prefix}{family_name});\n")
         self.emit("}\n")
         return not always_true(first_tkn)
 
@@ -201,10 +201,10 @@ class Emitter:
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         if offset > 0:
-            return f"{self.tracing}JUMP_TO_LABEL(pop_{offset}_error);"
+            return f"{self.jump_prefix}JUMP_TO_LABEL(pop_{offset}_error);"
         if offset < 0:
             storage.copy().flush(self.out)
-        return f"{self.tracing}JUMP_TO_LABEL(error);"
+        return f"{self.jump_prefix}JUMP_TO_LABEL(error);"
 
     def error_if(
         self,
@@ -424,7 +424,7 @@ class Emitter:
         elif storage.spilled:
             raise analysis_error("Cannot jump from spilled label without reloading the stack pointer", goto)
         self.out.start_line()
-        self.out.emit(f"{self.tracing}JUMP_TO_LABEL(")
+        self.out.emit(f"{self.jump_prefix}JUMP_TO_LABEL(")
         self.out.emit(label)
         self.out.emit(")")
 
