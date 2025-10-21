@@ -130,7 +130,7 @@
 #endif
 
 #define TRACING_JUMP_TO_LABEL(label) \
-    RECORD_JUMP_TAKEN() \
+    RECORD_DYNAMIC_JUMP_TAKEN() \
     RECORD_TRACE_NO_DISPATCH() \
     assert(!IS_JIT_TRACING()); \
     JUMP_TO_LABEL(label);
@@ -381,7 +381,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define RECORD_BRANCH_TAKEN(bitset, flag)
 #endif
 
-#define RECORD_JUMP_TAKEN() _jump_taken = 1;
+#define RECORD_DYNAMIC_JUMP_TAKEN() _jump_taken = 1;
 
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"

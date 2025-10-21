@@ -141,13 +141,7 @@ _PyOptimizer_Optimize(
         interp->compiling = false;
         return 0;
     }
-    // We are the only one still holding a reference to this code object that
-    // is practically dead.
-    if (_PyObject_IsUniquelyReferenced((PyObject *)code) || _PyObject_IsUniquelyReferenced((PyObject *)tstate->interp->jit_state.jit_tracer_initial_func)) {
-        interp->compiling = false;
-        return 0;
-    }
-    // One of our depencies while tracing was invalidated. Not worth compiling.
+    // One of our dependencies while tracing was invalidated. Not worth compiling.
     if (!tstate->interp->jit_state.jit_tracer_dependencies_still_valid) {
         interp->compiling = false;
         return 0;
@@ -603,12 +597,13 @@ _PyJIT_translate_single_bytecode_to_trace(
     }
 #endif
 
+    if (!tstate->interp->jit_state.jit_tracer_dependencies_still_valid) {
+        goto done;
+    }
+
     DPRINTF(2, "%p %d: %s(%d) %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, progress_needed);
 
-    bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode] &&
-        !(opcode == FOR_ITER_RANGE || opcode == FOR_ITER_LIST || opcode == FOR_ITER_TUPLE) &&
-        !(opcode == JUMP_BACKWARD_NO_INTERRUPT || opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_JIT) &&
-        !(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_NONE || opcode == POP_JUMP_IF_NOT_NONE);
+    bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode];
 
     // Strange control-flow, unsupported opcode, etc.
     if (jump_taken ||
@@ -616,7 +611,7 @@ _PyJIT_translate_single_bytecode_to_trace(
         // If we haven't guarded the IP, then it's untraceable.
         (frame != tstate->interp->jit_state.jit_tracer_current_frame && !needs_guard_ip) ||
         (oparg > 0xFFFF) ||
-        // TODO (gh-140277): The constituent use one extra stack slot. So we need to check for heaedroom.
+        // TODO (gh-140277): The constituent use one extra stack slot. So we need to check for headroom.
         (opcode == BINARY_OP_SUBSCR_GETITEM && old_stack_level + 1 > old_code->co_stacksize)||
         // Exception stuff, could be handled in the future maybe?
         opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO ||
@@ -1155,7 +1150,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
             _PyExitData *exit = &executor->exits[next_exit];
             exit->target = buffer[i].target;
             dest->operand0 = (uint64_t)exit;
-            exit->is_dynamic = (char)(opcode == _DYNAMIC_EXIT);
             next_exit--;
         }
     }
@@ -1561,20 +1555,15 @@ error:
 }
 
 void
-_Py_JITTracer_InvalidateDependency(PyThreadState *old_tstate, void *obj)
+_Py_JITTracer_InvalidateDependency(PyThreadState *tstate, void *obj)
 {
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
     _Py_BloomFilter_Add(&obj_filter, obj);
 
-    PyInterpreterState *interp = old_tstate->interp;
-
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
-        if (bloom_filter_may_contain(&tstate->interp->jit_state.jit_tracer_dependencies, &obj_filter))
-        {
-            tstate->interp->jit_state.jit_tracer_dependencies_still_valid = false;
-        }
-
+    if (bloom_filter_may_contain(&tstate->interp->jit_state.jit_tracer_dependencies, &obj_filter))
+    {
+        tstate->interp->jit_state.jit_tracer_dependencies_still_valid = false;
     }
 }
 /* Invalidate all executors */

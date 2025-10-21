@@ -528,9 +528,13 @@ _Py_uop_analyze_and_optimize(
 {
     OPT_STAT_INC(optimizer_attempts);
 
-    optimize_uops(
+    length = optimize_uops(
          initial_func, buffer,
          length, curr_stacklen, dependencies);
+
+    if (length == 0) {
+        return length;
+    }
 
     assert(length > 0);
 

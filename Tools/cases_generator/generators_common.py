@@ -128,7 +128,7 @@ class Emitter:
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
             "stack_pointer": self.stack_pointer,
-            "RECORD_JUMP_TAKEN": self.record_jump_taken,
+            "RECORD_DYNAMIC_JUMP_TAKEN": self.record_dynamic_jump_taken,
         }
         self.out = out
         self.labels = labels
@@ -476,7 +476,7 @@ class Emitter:
         self.out.emit(f" {uop.instruction_size}u ")
         return True
 
-    def record_jump_taken(
+    def record_dynamic_jump_taken(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,

@@ -757,7 +757,7 @@ struct _Py_unique_id_pool {
 
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
-typedef struct _PyJitState {
+typedef struct _PyJitTracerState {
     int jit_tracer_code_max_size;
     int jit_tracer_code_curr_size;
     _PyBloomFilter jit_tracer_dependencies;
@@ -772,7 +772,7 @@ typedef struct _PyJitState {
     PyFunctionObject *jit_tracer_initial_func; // Strong
     struct _PyExitData *jit_tracer_previous_exit;
     _PyInterpreterFrame *jit_tracer_current_frame;
-} _PyJitState;
+} _PyJitTracerState;
 
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
@@ -949,7 +949,7 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
-    _PyJitState jit_state;
+    _PyJitTracerState jit_state;
     bool jit;
     bool compiling;
     struct _PyExecutorObject *executor_list_head;

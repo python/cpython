@@ -10388,7 +10388,7 @@
             LOAD_IP(frame->return_offset);
             #endif
             #if TIER_TWO
-            frame->instr_ptr += (frame->return_offset);
+            TIER2_STORE_IP(frame->return_offset);
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);

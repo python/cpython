@@ -1378,7 +1378,7 @@ dummy_func(
                 if (err == 0) {
                     assert(retval_o != NULL);
                     JUMPBY(oparg);
-                    RECORD_JUMP_TAKEN();
+                    RECORD_DYNAMIC_JUMP_TAKEN();
                 }
                 else {
                     PyStackRef_CLOSE(v);
@@ -3241,7 +3241,7 @@ dummy_func(
                 }
                 // Jump forward by oparg and skip the following END_FOR
                 JUMPBY(oparg + 1);
-                RECORD_JUMP_TAKEN();
+                RECORD_DYNAMIC_JUMP_TAKEN();
                 DISPATCH();
             }
             next = item;
@@ -3303,7 +3303,7 @@ dummy_func(
                 null_or_index = PyStackRef_TagInt(-1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
-                RECORD_JUMP_TAKEN();
+                RECORD_DYNAMIC_JUMP_TAKEN();
                 DISPATCH();
             }
 #endif
@@ -3381,7 +3381,7 @@ dummy_func(
                 null_or_index = PyStackRef_TagInt(-1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
-                RECORD_JUMP_TAKEN();
+                RECORD_DYNAMIC_JUMP_TAKEN();
                 DISPATCH();
             }
         }
@@ -3426,7 +3426,7 @@ dummy_func(
             if (r->len <= 0) {
                 // Jump over END_FOR instruction.
                 JUMPBY(oparg + 1);
-                RECORD_JUMP_TAKEN();
+                RECORD_DYNAMIC_JUMP_TAKEN();
                 DISPATCH();
             }
         }
@@ -5011,7 +5011,7 @@ dummy_func(
             LOAD_IP(frame->return_offset);
             #endif
             #if TIER_TWO
-            frame->instr_ptr += (frame->return_offset);
+            TIER2_STORE_IP(frame->return_offset);
             #endif
             RELOAD_STACK();
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
@@ -5278,7 +5278,6 @@ dummy_func(
 
         tier2 op(_EXIT_TRACE, (exit_p/4 --)) {
             _PyExitData *exit = (_PyExitData *)exit_p;
-            assert(!exit->is_dynamic);
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
             _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);

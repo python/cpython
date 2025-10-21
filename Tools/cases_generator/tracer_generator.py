@@ -96,7 +96,7 @@ class TracerEmitter(Emitter):
         emit_to(self.out, tkn_iter, "SEMI")
         return False
 
-    def record_jump_taken(
+    def record_dynamic_jump_taken(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,

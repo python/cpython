@@ -37,7 +37,6 @@ typedef struct {
 typedef struct _PyExitData {
     uint32_t target;
     uint16_t index;
-    char is_dynamic;
     _Py_BackoffCounter temperature;
     struct _PyExecutorObject *executor;
 } _PyExitData;

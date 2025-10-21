@@ -6767,7 +6767,7 @@
             LOAD_IP(frame->return_offset);
             #endif
             #if TIER_TWO
-            frame->instr_ptr += (frame->return_offset);
+            TIER2_STORE_IP(frame->return_offset);
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
@@ -7127,7 +7127,6 @@
         case _EXIT_TRACE: {
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND0();
             _PyExitData *exit = (_PyExitData *)exit_p;
-            assert(!exit->is_dynamic);
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
             _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
