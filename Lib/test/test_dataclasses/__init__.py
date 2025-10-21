@@ -2579,8 +2579,11 @@ class TestInitAnnotate(unittest.TestCase):
         self.assertFalse(hasattr(E.__init__.__annotate__, "_generated_by_dataclasses"))
 
     def test_init_false_forwardref(self):
-        # Currently this raises a NameError even though the ForwardRef
-        # is not in the __init__ method
+        # Test forward references in fields not required for __init__ annotations.
+
+        # At the moment this raises a NameError for VALUE annotations even though the
+        # undefined annotation is not required for the __init__ annotations.
+        # Ideally this will be fixed but currently there is no good way to resolve this
 
         @dataclass
         class F:
