@@ -156,11 +156,6 @@ jobs:
     needs: interpreter
     runs-on: ubuntu-24.04
     timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        llvm:
-          - 20
     steps:
       - uses: actions/checkout@v4
         with:
