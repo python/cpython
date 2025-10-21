@@ -11,8 +11,6 @@ import urllib.request
 import zipfile
 
 
-
-
 def request_with_retry(request_func, *args, max_retries=7,
                        err_msg='Request failed.', **kwargs):
     """Make a request using request_func with exponential backoff"""

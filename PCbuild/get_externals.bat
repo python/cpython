@@ -92,9 +92,11 @@ for %%b in (%binaries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-bin-deps --branch %%b "%EXTERNALS_DIR%\%%b"
     ) else (
         echo.Fetching %%b...
-        set "extra_flags=-b"
-        if "%%b"=="llvm-20.1.8.0" set "extra_flags=-r"
-        %PYTHON% -E "%PCBUILD%\get_external.py" %extra_flags% -O %ORG% -e "%EXTERNALS_DIR%" %%b
+        if "%%b"=="llvm-20.1.8.0" (
+            %PYTHON% -E "%PCBUILD%\get_external.py" -r -O %ORG% -e "%EXTERNALS_DIR%" %%b
+        ) else (
+            %PYTHON% -E "%PCBUILD%\get_external.py" -b -O %ORG% -e "%EXTERNALS_DIR%" %%b
+        )
     )
 )
 
