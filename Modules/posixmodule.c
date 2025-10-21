@@ -3364,15 +3364,15 @@ static PyMemberDef pystatx_result_members[] = {
 STATX_GET_UINT(st_uid, stx_uid, STATX_UID)
 STATX_GET_UINT(st_gid, stx_gid, STATX_GID)
 STATX_GET_UINT(st_nlink, stx_nlink, STATX_NLINK)
-#ifdef STATX_DIOALIGN
+#ifdef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
 STATX_GET_UINT(stx_dio_mem_align, stx_dio_mem_align, STATX_DIOALIGN)
 STATX_GET_UINT(stx_dio_offset_align, stx_dio_offset_align, STATX_DIOALIGN)
 #endif
-#ifdef STATX_DIO_READ_ALIGN
+#ifdef HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN
 STATX_GET_UINT(stx_dio_read_offset_align, stx_dio_read_offset_align,
                STATX_DIO_READ_ALIGN)
 #endif
-#ifdef STATX_WRITE_ATOMIC
+#ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
 STATX_GET_UINT(stx_atomic_write_unit_min, stx_atomic_write_unit_min,
                STATX_WRITE_ATOMIC)
 STATX_GET_UINT(stx_atomic_write_unit_max, stx_atomic_write_unit_max,
@@ -3401,10 +3401,10 @@ STATX_GET_UINT(stx_atomic_write_unit_max_opt, stx_atomic_write_unit_max_opt,
 STATX_GET_ULONGLONG(st_blocks, stx_blocks, STATX_BLOCKS)
 STATX_GET_ULONGLONG(st_ino, stx_ino, STATX_INO)
 STATX_GET_ULONGLONG(st_size, stx_size, STATX_SIZE)
-#ifdef STATX_MNT_ID
+#ifdef HAVE_STRUCT_STATX_STX_MNT_ID
 STATX_GET_ULONGLONG(stx_mnt_id, stx_mnt_id, STATX_MNT_ID)
 #endif
-#ifdef STATX_SUBVOL
+#ifdef HAVE_STRUCT_STATX_STX_SUBVOL
 STATX_GET_ULONGLONG(stx_subvol, stx_subvol, STATX_SUBVOL)
 #endif
 
@@ -3463,17 +3463,17 @@ static PyGetSetDef pystatx_result_getset[] = {
     G(st_ctime_ns, "time of last change in nanoseconds"),
     G(st_mtime, "time of last modification"),
     G(st_mtime_ns, "time of last modification in nanoseconds"),
-#ifdef STATX_MNT_ID
+#ifdef HAVE_STRUCT_STATX_STX_MNT_ID
     G(stx_mnt_id, "mount ID"),
 #endif
-#ifdef STATX_DIOALIGN
+#ifdef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
     G(stx_dio_mem_align, "direct I/O memory buffer alignment"),
     G(stx_dio_offset_align, "direct I/O file offset alignment"),
 #endif
-#ifdef STATX_SUBVOL
+#ifdef HAVE_STRUCT_STATX_STX_SUBVOL
     G(stx_subvol, "subvolume ID"),
 #endif
-#ifdef STATX_WRITE_ATOMIC
+#ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
     G(stx_atomic_write_unit_min,
       "minimum size for direct I/O with torn-write protection"),
     G(stx_atomic_write_unit_max,
@@ -3481,7 +3481,7 @@ static PyGetSetDef pystatx_result_getset[] = {
     G(stx_atomic_write_segments_max,
         "maximum iovecs for direct I/O with torn-write protection"),
 #endif
-#ifdef STATX_DIO_READ_ALIGN
+#ifdef HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN
     G(stx_dio_read_offset_align, "direct I/O file offset alignment for reads"),
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT
