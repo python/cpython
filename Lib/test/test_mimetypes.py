@@ -303,7 +303,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/vnd.avi", ".avi"),
                 ("video/x-m4v", ".m4v"),
                 ("video/x-ms-wmv", ".wmv"),
-             ):
+            ):
                 with self.subTest(mime_type=mime_type, ext=ext):
                     self.assertEqual(mimetypes.guess_extension(mime_type), ext)
 
