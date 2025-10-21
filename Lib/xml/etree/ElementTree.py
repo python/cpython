@@ -1551,7 +1551,7 @@ class XMLParser:
         parser = expat.ParserCreate(encoding, "}")
         if target is None:
             target = TreeBuilder()
-        # underscored names are provided for compatibility only
+        # both names are provided for compatibility
         self.parser = self._parser = parser
         self.target = self._target = target
         self._error = expat.error
