@@ -613,6 +613,17 @@ warnings
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
 
 
+venv
+----
+
+* On POSIX platforms, platlib directories will be created if needed when
+  creating virtual environments, instead of using ``lib64 -> lib`` symlink.
+  This means purelib and platlib of virtual environments no longer share the
+  same ``lib`` directory on platforms where :data:`sys.platlibdir` is not
+  equal to ``lib``.
+  (Contributed by Rui Xi in :gh:`133951`.)
+
+
 xml.parsers.expat
 -----------------
 
@@ -694,6 +705,8 @@ mimetypes
 ---------
 
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Rename ``application/x-texinfo`` to ``application/texinfo``.
+  (Contributed by Charlie Lin in :gh:`140165`)
 
 
 pathlib
@@ -774,6 +787,9 @@ typing
   :func:`issubclass`, but warnings were not previously emitted if it was merely
   imported or accessed from the :mod:`!typing` module.
 
+* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+  (Contributed by Nikita Sobolev in :gh:`133601`.)
+
 
 unicodedata
 -----------
@@ -837,6 +853,7 @@ New deprecations
     - :mod:`argparse`
     - :mod:`csv`
     - :mod:`!ctypes.macholib`
+    - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`
     - :mod:`logging` (``__date__`` also deprecated)
