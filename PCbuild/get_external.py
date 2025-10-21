@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import contextlib
-import hashlib
-import io
-import json
 import os
 import pathlib
 import shutil
@@ -15,10 +11,6 @@ import urllib.request
 import zipfile
 
 
-# Mapping of binary dependency tag to GitHub release asset ID
-TAG_TO_ASSET_ID = {
-    'llvm-20.1.8.0': 301710576,
-}
 
 
 def request_with_retry(request_func, *args, max_retries=7,
@@ -46,15 +38,6 @@ def retrieve_with_retries(download_location, output_path, reporthook):
     )
 
 
-def get_with_retries(url, headers):
-    req = urllib.request.Request(url=url, headers=headers, method='GET')
-    return request_with_retry(
-        urllib.request.urlopen,
-        req,
-        err_msg=f'Request to {url} failed.'
-    )
-
-
 def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose=False):
     repo = 'cpython-bin-deps' if binary else 'cpython-source-deps'
     url = f'https://github.com/{org}/{repo}/archive/{commit_hash}.zip'
@@ -70,42 +53,14 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose=False
     return filename
 
 
-def fetch_release_asset(asset_id, output_path, org):
-    """Download a GitHub release asset.
-
-    Release assets need the Content-Type header set to
-    application/octet-stream to download the binary, so we can't use
-    urlretrieve. Code here is based on urlretrieve.
-    """
-    url = f'https://api.github.com/repos/{org}/cpython-bin-deps/releases/assets/{asset_id}'
-    metadata_resp = get_with_retries(url,
-                                     headers={'Accept': 'application/vnd.github+json'})
-    json_data = json.loads(metadata_resp.read())
-    hash_info = json_data.get('digest')
-    if not hash_info:
-        raise RuntimeError(f'Release asset {asset_id} missing digest field in metadata')
-    algorithm, hashsum = hash_info.split(':')
-    if algorithm != 'sha256':
-        raise RuntimeError(f'Unknown hash algorithm {algorithm} for asset {asset_id}')
-    with contextlib.closing(
-        get_with_retries(url, headers={'Accept': 'application/octet-stream'})
-    ) as resp:
-        hasher = hashlib.sha256()
-        with open(output_path, 'wb') as fp:
-            while block := resp.read(io.DEFAULT_BUFFER_SIZE):
-                hasher.update(block)
-                fp.write(block)
-        if hasher.hexdigest() != hashsum:
-            raise RuntimeError('Downloaded content hash did not match!')
-
-
 def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
+    url = f'https://github.com/{org}/cpython-bin-deps/releases/download/{tag}/{tag}.tar.xz'
+    reporthook = None
+    if verbose:
+        reporthook = print
     tarball_dir.mkdir(parents=True, exist_ok=True)
-    asset_id = TAG_TO_ASSET_ID.get(tag)
-    if asset_id is None:
-        raise ValueError(f'Unknown tag for binary dependencies {tag}')
     output_path = tarball_dir / f'{tag}.tar.xz'
-    fetch_release_asset(asset_id, output_path, org)
+    retrieve_with_retries(url, output_path, reporthook)
     return output_path
 
 
@@ -126,6 +81,8 @@ def parse_args():
     p.add_argument('-v', '--verbose', action='store_true')
     p.add_argument('-b', '--binary', action='store_true',
                    help='Is the dependency in the binary repo?')
+    p.add_argument('-r', '--release', action='store_true',
+                   help='Download from GitHub release assets instead of branch')
     p.add_argument('-O', '--organization',
                    help='Organization owning the deps repos', default='python')
     p.add_argument('-e', '--externals-dir', type=pathlib.Path,
@@ -149,7 +106,7 @@ def main():
 
     # Determine download method: release artifacts for large deps (like LLVM),
     # otherwise zip download from GitHub branches
-    if args.tag in TAG_TO_ASSET_ID:
+    if args.release:
         tarball_path = fetch_release(
             args.tag,
             args.externals_dir / 'tarballs',
