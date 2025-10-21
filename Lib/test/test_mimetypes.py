@@ -134,7 +134,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ';1#.tar.gz',
                 ';&1=123;?.tar.gz',
                 '?k1=v1&k2=v2.tar.gz',
-            ):
+       ):
             for prefix in ('', '/', '\\',
                            'c:', 'c:/', 'c:\\', 'c:/d/', 'c:\\d\\',
                            '//share/server/', '\\\\share\\server\\'):
@@ -225,23 +225,23 @@ class MimeTypesTestCase(unittest.TestCase):
     def test_preferred_extension(self):
         def check_extensions():
             for mime_type, ext in (
-                 ('applicaion/efi','.efi'    ),
+                ('applicaion/efi', '.efi'),
                 ("application/epub+zip", ".epub"),
-                        ( 'application/json','.json'   ),
-        ( 'application/manifest+json','.webmanifest'),
-        ('applicaion/mathematica','.nb'     ),
-        ( 'application/mathml+xml','.mml'    ),
-        ( 'application/mbox','.mbox'   ),
+                ('application/json', '.json'),
+                ('application/manifest+json', '.webmanifest'),
+                ('applicaion/mathematica', '.nb'),
+                ('application/mathml+xml', '.mml'),
+                ('application/mbox', '.mbox'),
                 ("application/octet-stream", ".bin"),
                 ("application/gzip", ".gz"),
-                  ( 'application/ocsp-response','.ors'    ),
-        ( 'application/ocsp-request','.orq'    ),
-                      ('application/pem-certificate-chain','.pem'    ),
-        ('application/pgp-keys','.asc'    ),
+                ('application/ocsp-response', '.ors'),
+                ('application/ocsp-request', '.orq'),
+                ('application/pem-certificate-chain', '.pem'),
+                ('application/pgp-keys', '.asc'),
                 ("application/ogg", ".ogx"),
                 ("application/postscript", ".ps"),
-                   ( 'application/rfc+xml','.rfcxml' ),
-        ('application/sql','.sql'    ),
+                ('application/rfc+xml', '.rfcxml'),
+                ('application/sql', '.sql'),
                 ("application/texinfo", ".texi"),
                 ("application/toml", ".toml"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
@@ -263,7 +263,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
                 ("application/yaml", ".yaml"),
-                 ('application/zstd','.zst'    ),
+                ('application/zstd', '.zst'),
                 ("audio/flac", ".flac"),
                 ("audio/matroska", ".mka"),
                 ("audio/mp4", ".m4a"),
@@ -322,7 +322,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/mpeg", ".mpe"),
                 ("video/mpeg", ".mpeg"),
                 ("video/mpeg", ".mpg"),
-            ):
+       ):
                 with self.subTest(mime_type=mime_type, ext=ext):
                     result, _ = mimetypes.guess_file_type(f"filename{ext}")
                     self.assertEqual(result, mime_type)
@@ -437,10 +437,10 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         from_reg = {}
         _winapi._mimetypes_read_windows_registry(
             lambda v, k: from_accel.setdefault(k, set()).add(v)
-        )
+   )
         mimetypes.MimeTypes._read_windows_registry(
             lambda v, k: from_reg.setdefault(k, set()).add(v)
-        )
+   )
         self.assertEqual(list(from_reg), list(from_accel))
         for k in from_reg:
             self.assertEqual(from_reg[k], from_accel[k])
@@ -490,7 +490,7 @@ class CommandLineTest(unittest.TestCase):
             result,
             "type: application/pdf encoding: None\n"
             "type: image/png encoding: None"
-        )
+   )
 
     def test_multiple_inputs_error(self):
         result = "\n".join(mimetypes._main(shlex.split("foo.pdf foo.bar_ext")))
@@ -498,7 +498,7 @@ class CommandLineTest(unittest.TestCase):
             result,
             "type: application/pdf encoding: None\n"
             "error: media type unknown for foo.bar_ext"
-        )
+   )
 
 
     def test_invocation(self):
