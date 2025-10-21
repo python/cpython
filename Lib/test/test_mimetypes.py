@@ -134,7 +134,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ';1#.tar.gz',
                 ';&1=123;?.tar.gz',
                 '?k1=v1&k2=v2.tar.gz',
-        ):
+            ):
             for prefix in ('', '/', '\\',
                            'c:', 'c:/', 'c:\\', 'c:/d/', 'c:\\d\\',
                            '//share/server/', '\\\\share\\server\\'):
@@ -303,7 +303,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/vnd.avi", ".avi"),
                 ("video/x-m4v", ".m4v"),
                 ("video/x-ms-wmv", ".wmv"),
-            ):
+             ):
                 with self.subTest(mime_type=mime_type, ext=ext):
                     self.assertEqual(mimetypes.guess_extension(mime_type), ext)
 
