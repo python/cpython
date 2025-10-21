@@ -3011,10 +3011,17 @@
 
         case _RETURN_GENERATOR: {
             JitOptRef res;
+            PyCodeObject *co = get_current_code_object(ctx);
+            ctx->frame->stack_pointer = stack_pointer;
+            frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
             res = sym_new_unknown(ctx);
-            ctx->done = true;
-            ctx->out_of_space = true;
+            assert(corresponding_check_stack == NULL);
+            assert(co != NULL);
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            assert(framesize <= curr_space);
+            curr_space -= framesize;
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

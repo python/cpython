@@ -794,10 +794,18 @@ dummy_func(void) {
 
     op(_RETURN_GENERATOR, ( -- res)) {
         SYNC_SP();
+        PyCodeObject *co = get_current_code_object(ctx);
+        ctx->frame->stack_pointer = stack_pointer;
+        frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
         res = sym_new_unknown(ctx);
-        ctx->done = true;
-        ctx->out_of_space = true;
+        /* Stack space handling */
+        assert(corresponding_check_stack == NULL);
+        assert(co != NULL);
+        int framesize = co->co_framesize;
+        assert(framesize > 0);
+        assert(framesize <= curr_space);
+        curr_space -= framesize;
     }
 
     op(_YIELD_VALUE, (unused -- value)) {
