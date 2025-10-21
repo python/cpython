@@ -241,15 +241,8 @@ class ForwardRef:
         if self.__code__ is not None:
             return self.__code__
         arg = self.__forward_arg__
-        # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
-        # Unfortunately, this isn't a valid expression on its own, so we
-        # do the unpacking manually.
-        if arg.startswith("*"):
-            arg_to_compile = f"({arg},)[0]"  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
-        else:
-            arg_to_compile = arg
         try:
-            self.__code__ = compile(arg_to_compile, "<string>", "eval")
+            self.__code__ = compile(_rewrite_star_unpack(arg), "<string>", "eval")
         except SyntaxError:
             raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
         return self.__code__
@@ -560,30 +553,68 @@ class _Stringifier:
     del _make_unary_op
 
 
-def _template_to_ast(template):
+def _template_to_ast_constructor(template):
+    """Convert a `template` instance to a non-literal AST."""
+    args = []
+    for part in template:
+        match part:
+            case str():
+                args.append(ast.Constant(value=part))
+            case _:
+                interp = ast.Call(
+                    func=ast.Name(id="Interpolation"),
+                    args=[
+                        ast.Constant(value=part.value),
+                        ast.Constant(value=part.expression),
+                        ast.Constant(value=part.conversion),
+                        ast.Constant(value=part.format_spec),
+                    ]
+                )
+                args.append(interp)
+    return ast.Call(func=ast.Name(id="Template"), args=args, keywords=[])
+
+
+def _template_to_ast_literal(template, parsed):
+    """Convert a `template` instance to a t-string literal AST."""
     values = []
+    interp_count = 0
     for part in template:
         match part:
             case str():
                 values.append(ast.Constant(value=part))
-            # Interpolation, but we don't want to import the string module
             case _:
                 interp = ast.Interpolation(
                     str=part.expression,
-                    value=ast.parse(part.expression),
-                    conversion=(
-                        ord(part.conversion)
-                        if part.conversion is not None
-                        else -1
-                    ),
-                    format_spec=(
-                        ast.Constant(value=part.format_spec)
-                        if part.format_spec != ""
-                        else None
-                    ),
+                    value=parsed[interp_count],
+                    conversion=ord(part.conversion) if part.conversion else -1,
+                    format_spec=ast.Constant(value=part.format_spec)
+                    if part.format_spec
+                    else None,
                 )
                 values.append(interp)
+                interp_count += 1
     return ast.TemplateStr(values=values)
+
+
+def _template_to_ast(template):
+    """Make a best-effort conversion of a `template` instance to an AST."""
+    # gh-138558: Not all Template instances can be represented as t-string
+    # literals. Return the most accurate AST we can. See issue for details.
+
+    # If any expr is empty or whitespace only, we cannot convert to a literal.
+    if any(part.expression.strip() == "" for part in template.interpolations):
+        return _template_to_ast_constructor(template)
+
+    try:
+        # Wrap in parens to allow whitespace inside interpolation curly braces
+        parsed = tuple(
+            ast.parse(f"({part.expression})", mode="eval").body
+            for part in template.interpolations
+        )
+    except SyntaxError:
+        return _template_to_ast_constructor(template)
+
+    return _template_to_ast_literal(template, parsed)
 
 
 class _StringifierDict(dict):
@@ -987,7 +1018,8 @@ def get_annotations(
         locals = {param.__name__: param for param in type_params} | locals
 
     return_value = {
-        key: value if not isinstance(value, str) else eval(value, globals, locals)
+        key: value if not isinstance(value, str)
+        else eval(_rewrite_star_unpack(value), globals, locals)
         for key, value in ann.items()
     }
     return return_value
@@ -1022,6 +1054,16 @@ def annotations_to_string(annotations):
         n: t if isinstance(t, str) else type_repr(t)
         for n, t in annotations.items()
     }
+
+
+def _rewrite_star_unpack(arg):
+    """If the given argument annotation expression is a star unpack e.g. `'*Ts'`
+       rewrite it to a valid expression.
+       """
+    if arg.startswith("*"):
+        return f"({arg},)[0]"  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
+    else:
+        return arg
 
 
 def _get_and_call_annotate(obj, format):

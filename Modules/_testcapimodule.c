@@ -1583,9 +1583,9 @@ getitem_with_error(PyObject *self, PyObject *args)
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
 {
-    PyGenObject *gen;
+    PyObject *gen;
 
-    if (!PyArg_ParseTuple(args, "O!", &PyGen_Type, &gen))
+    if (!PyArg_ParseTuple(args, "O", &gen))
         return NULL;
 
     /* This is used in a test to check what happens if a signal arrives just
@@ -1599,7 +1599,7 @@ raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
          because we check for signals before every bytecode operation.
      */
     raise(SIGINT);
-    return PyObject_CallMethod((PyObject *)gen, "send", "O", Py_None);
+    return PyObject_CallMethod(gen, "send", "O", Py_None);
 }
 
 
@@ -2206,9 +2206,8 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
-    // Ignore PyWeakref_GetObject() deprecation, we test it on purpose
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    // Get the function (removed in 3.15) from the stable ABI.
+    PyAPI_FUNC(PyObject *) PyWeakref_GetObject(PyObject *);
 
     // Create a new heap type, create an instance of this type, and delete the
     // type. This object supports weak references.
@@ -2249,18 +2248,11 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     ref = PyWeakref_GetObject(weakref);  // borrowed ref
     assert(ref == obj);
 
-    // test PyWeakref_GET_OBJECT(), reference is alive
-    ref = PyWeakref_GET_OBJECT(weakref);  // borrowed ref
-    assert(ref == obj);
-
     // delete the referenced object: clear the weakref
     assert(Py_REFCNT(obj) == 1);
     Py_DECREF(obj);
 
     assert(PyWeakref_IsDead(weakref));
-
-    // test PyWeakref_GET_OBJECT(), reference is dead
-    assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
 
     // test PyWeakref_GetRef(), reference is dead
     ref = UNINITIALIZED_PTR;
@@ -2312,8 +2304,6 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_DECREF(weakref);
 
     Py_RETURN_NONE;
-
-    _Py_COMP_DIAG_POP
 }
 
 struct simpletracer_data {
@@ -3243,75 +3233,56 @@ create_managed_dict_type(void)
    return PyType_FromSpec(&ManagedDict_spec);
 }
 
-static struct PyModuleDef _testcapimodule = {
-    PyModuleDef_HEAD_INIT,
-    .m_name = "_testcapi",
-    .m_size = sizeof(testcapistate_t),
-    .m_methods = TestMethods,
-};
-
-/* Per PEP 489, this module will not be converted to multi-phase initialization
- */
-
-PyMODINIT_FUNC
-PyInit__testcapi(void)
+static int
+_testcapi_exec(PyObject *m)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&_testcapimodule);
-    if (m == NULL)
-        return NULL;
-#ifdef Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
-#endif
-
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
     if (PyType_Ready(&_HashInheritanceTester_Type) < 0) {
-        return NULL;
+        return -1;
     }
     if (PyType_Ready(&matmulType) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&matmulType);
     PyModule_AddObject(m, "matmulType", (PyObject *)&matmulType);
     if (PyType_Ready(&ipowType) < 0) {
-        return NULL;
+        return -1;
     }
     Py_INCREF(&ipowType);
     PyModule_AddObject(m, "ipowType", (PyObject *)&ipowType);
 
     if (PyType_Ready(&awaitType) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
 
     MyList_Type.tp_base = &PyList_Type;
     if (PyType_Ready(&MyList_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&MyList_Type);
     PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&GenericAlias_Type);
     PyModule_AddObject(m, "GenericAlias", (PyObject *)&GenericAlias_Type);
 
     if (PyType_Ready(&Generic_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&Generic_Type);
     PyModule_AddObject(m, "Generic", (PyObject *)&Generic_Type);
 
     if (PyType_Ready(&MethInstance_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&MethInstance_Type);
     PyModule_AddObject(m, "MethInstance", (PyObject *)&MethInstance_Type);
 
     if (PyType_Ready(&MethClass_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&MethClass_Type);
     PyModule_AddObject(m, "MethClass", (PyObject *)&MethClass_Type);
 
     if (PyType_Ready(&MethStatic_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&MethStatic_Type);
     PyModule_AddObject(m, "MethStatic", (PyObject *)&MethStatic_Type);
 
@@ -3354,13 +3325,13 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
     if (PyModule_AddIntMacro(m, Py_single_input)) {
-        return NULL;
+        return -1;
     }
     if (PyModule_AddIntMacro(m, Py_file_input)) {
-        return NULL;
+        return -1;
     }
     if (PyModule_AddIntMacro(m, Py_eval_input)) {
-        return NULL;
+        return -1;
     }
 
     testcapistate_t *state = get_testcapi_state(m);
@@ -3368,145 +3339,165 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "error", state->error);
 
     if (PyType_Ready(&ContainerNoGC_type) < 0) {
-        return NULL;
+        return -1;
     }
     Py_INCREF(&ContainerNoGC_type);
     if (PyModule_AddObject(m, "ContainerNoGC",
                            (PyObject *) &ContainerNoGC_type) < 0)
-        return NULL;
+        return -1;
 
     PyObject *manual_heap_type = create_manual_heap_type();
     if (manual_heap_type == NULL) {
-        return NULL;
+        return -1;
     }
     if (PyModule_Add(m, "ManualHeapType", manual_heap_type) < 0) {
-        return NULL;
+        return -1;
     }
 
     PyObject *managed_dict_type = create_managed_dict_type();
     if (managed_dict_type == NULL) {
-        return NULL;
+        return -1;
     }
     if (PyModule_Add(m, "ManagedDictType", managed_dict_type) < 0) {
-        return NULL;
+        return -1;
     }
 
     /* Include tests from the _testcapi/ directory */
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Heaptype(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Abstract(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Bytes(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_GetArgs(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_DateTime(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Docstring(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Mem(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Watchers(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Long(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Float(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Complex(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Numbers(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Dict(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Set(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_List(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Tuple(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Structmember(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Exceptions(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Code(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Buffer(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_File(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Codec(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Immortal(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_GC(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_PyAtomic(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Run(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Hash(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Time(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Modsupport(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Monitoring(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Object(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Config(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Import(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Frame(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Type(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Function(m) < 0) {
-        return NULL;
+        return -1;
     }
 
-    PyState_AddModule(m, &_testcapimodule);
-    return m;
+    return 0;
+}
+
+static PyModuleDef_Slot _testcapi_slots[] = {
+    {Py_mod_exec, _testcapi_exec},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL},
+};
+
+static struct PyModuleDef _testcapimodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testcapi",
+    .m_size = sizeof(testcapistate_t),
+    .m_methods = TestMethods,
+    .m_slots = _testcapi_slots
+};
+
+PyMODINIT_FUNC
+PyInit__testcapi(void)
+{
+    return PyModuleDef_Init(&_testcapimodule);
 }

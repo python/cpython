@@ -1,1 +1,0 @@
-Rename ``lock.h`` to ``pylock.h`` to avoid potential include conflicts.
