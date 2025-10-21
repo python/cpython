@@ -441,7 +441,7 @@ jobs:
           sudo xcode-select --switch /Applications/Xcode_15.4.app
 
       - name: Build and test
-        run: python3 Apple ci iOS --simulator 'iPhone SE 3rd generation,OS=17.5'
+        run: python3 Apple ci iOS --simulator 'iPhone SE (3rd generation),OS=17.5'
 
   build-wasi:
     name: 'WASI'
