@@ -145,6 +145,9 @@ any DWARF information available for them).
 #include <unistd.h>               // sysconf()
 #include <sys/time.h>           // gettimeofday()
 
+#if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
+#  define MAP_ANONYMOUS MAP_ANON
+#endif
 
 #if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
 #define PY_HAVE_INVALIDATE_ICACHE

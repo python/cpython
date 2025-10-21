@@ -80,6 +80,17 @@
 #  include <sys/syscall.h>        // System call interface
 #endif
 
+#if defined(__APPLE__)
+#include <AvailabilityMacros.h>
+#if defined(MAC_OS_X_VERSION_MIN_REQUIRED) \
+        && (!defined(MAC_OS_X_VERSION_10_12) || \
+        MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_12)
+#define PY_PERF_JIT_USE_MACH_TIME
+#include <inttypes.h>
+#include <mach/mach_time.h>       // mach_absolute_time
+#endif
+#endif
+
 // =============================================================================
 //                           CONSTANTS AND CONFIGURATION
 // =============================================================================
@@ -284,6 +295,12 @@ static const intptr_t nanoseconds_per_second = 1000000000;
  * Returns: Current monotonic time in nanoseconds since an arbitrary epoch
  */
 static int64_t get_current_monotonic_ticks(void) {
+#if defined(__APPLE__) && defined(PY_PERF_JIT_USE_MACH_TIME)
+    /* clock_gettime() is not available before macOS 10.12.
+     * mach_absolute_time() should always return a value in
+     * nanoseconds on x86. */
+    return (int64_t)mach_absolute_time();
+#else
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
         Py_UNREACHABLE();  // Should never fail on supported systems
@@ -295,6 +312,7 @@ static int64_t get_current_monotonic_ticks(void) {
     result *= nanoseconds_per_second;
     result += ts.tv_nsec;
     return result;
+#endif
 }
 
 /*
