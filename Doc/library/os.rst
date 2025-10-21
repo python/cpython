@@ -3497,6 +3497,9 @@ features:
       Number of 512-byte blocks allocated for file.
       This may be smaller than :attr:`stx_size`/512 when the file has holes.
 
+      Equal to ``None`` if :data:`STATX_BLOCKS` is missing from
+      :attr:`~statx_result.stx_mask`.
+
    .. attribute:: stx_btime
 
       Time of file creation expressed in seconds.
@@ -3572,9 +3575,15 @@ features:
 
       Group identifier of the file owner.
 
+      Equal to ``None`` if :data:`STATX_GID` is missing from
+      :attr:`~statx_result.stx_mask`.
+
    .. attribute:: stx_ino
 
-      The inode number.
+      Inode number.
+
+      Equal to ``None`` if :data:`STATX_INO` is missing from
+      :attr:`~statx_result.stx_mask`.
 
    .. attribute:: stx_mnt_id
 
@@ -3609,6 +3618,9 @@ features:
 
       Number of hard links.
 
+      Equal to ``None`` if :data:`STATX_NLINK` is missing from
+      :attr:`~statx_result.stx_mask`.
+
    .. attribute:: stx_rdev
 
       Type of device if an inode device.
@@ -3627,6 +3639,9 @@ features:
       The size of a symbolic link is the length of the pathname it contains,
       without a terminating null byte.
 
+      Equal to ``None`` if :data:`STATX_SIZE` is missing from
+      :attr:`~statx_result.stx_mask`.
+
    .. attribute:: stx_subvol
 
       Subvolume identifier.
@@ -3640,6 +3655,9 @@ features:
    .. attribute:: stx_uid
 
       User identifier of the file owner.
+
+      Equal to ``None`` if :data:`STATX_UID` is missing from
+      :attr:`~statx_result.stx_mask`.
 
    .. seealso:: The :manpage:`statx(2)` man page.
 

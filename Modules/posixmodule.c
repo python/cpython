@@ -3349,7 +3349,7 @@ static PyMemberDef pystatx_result_members[] = {
 #undef M
 
 
-#define STATX_GET_UINT(ATTR, MEMBER, MASK) \
+#define STATX_GET_UINT(ATTR, MASK) \
     static PyObject* \
     pystatx_result_get_##ATTR(PyObject *op, void *Py_UNUSED(context)) \
     { \
@@ -3357,36 +3357,31 @@ static PyMemberDef pystatx_result_members[] = {
         if (!(self->stx.stx_mask & MASK)) { \
             Py_RETURN_NONE; \
         } \
-        unsigned long value = self->stx.MEMBER; \
+        unsigned long value = self->stx.ATTR; \
         return PyLong_FromUnsignedLong(value); \
     }
 
-STATX_GET_UINT(stx_uid, stx_uid, STATX_UID)
-STATX_GET_UINT(stx_gid, stx_gid, STATX_GID)
-STATX_GET_UINT(stx_nlink, stx_nlink, STATX_NLINK)
+STATX_GET_UINT(stx_uid, STATX_UID)
+STATX_GET_UINT(stx_gid, STATX_GID)
+STATX_GET_UINT(stx_nlink, STATX_NLINK)
 #ifdef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
-STATX_GET_UINT(stx_dio_mem_align, stx_dio_mem_align, STATX_DIOALIGN)
-STATX_GET_UINT(stx_dio_offset_align, stx_dio_offset_align, STATX_DIOALIGN)
+STATX_GET_UINT(stx_dio_mem_align, STATX_DIOALIGN)
+STATX_GET_UINT(stx_dio_offset_align, STATX_DIOALIGN)
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN
-STATX_GET_UINT(stx_dio_read_offset_align, stx_dio_read_offset_align,
-               STATX_DIO_READ_ALIGN)
+STATX_GET_UINT(stx_dio_read_offset_align, STATX_DIO_READ_ALIGN)
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
-STATX_GET_UINT(stx_atomic_write_unit_min, stx_atomic_write_unit_min,
-               STATX_WRITE_ATOMIC)
-STATX_GET_UINT(stx_atomic_write_unit_max, stx_atomic_write_unit_max,
-               STATX_WRITE_ATOMIC)
-STATX_GET_UINT(stx_atomic_write_segments_max, stx_atomic_write_segments_max,
-               STATX_WRITE_ATOMIC)
+STATX_GET_UINT(stx_atomic_write_unit_min, STATX_WRITE_ATOMIC)
+STATX_GET_UINT(stx_atomic_write_unit_max, STATX_WRITE_ATOMIC)
+STATX_GET_UINT(stx_atomic_write_segments_max, STATX_WRITE_ATOMIC)
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT
-STATX_GET_UINT(stx_atomic_write_unit_max_opt, stx_atomic_write_unit_max_opt,
-               STATX_WRITE_ATOMIC)
+STATX_GET_UINT(stx_atomic_write_unit_max_opt, STATX_WRITE_ATOMIC)
 #endif
 
 
-#define STATX_GET_ULONGLONG(ATTR, MEMBER, MASK) \
+#define STATX_GET_ULONGLONG(ATTR, MASK) \
     static PyObject* \
     pystatx_result_get_##ATTR(PyObject *op, void *Py_UNUSED(context)) \
     { \
@@ -3394,18 +3389,18 @@ STATX_GET_UINT(stx_atomic_write_unit_max_opt, stx_atomic_write_unit_max_opt,
         if (!(self->stx.stx_mask & MASK)) { \
             Py_RETURN_NONE; \
         } \
-        unsigned long long value = self->stx.MEMBER; \
+        unsigned long long value = self->stx.ATTR; \
         return PyLong_FromUnsignedLongLong(value); \
     }
 
-STATX_GET_ULONGLONG(stx_blocks, stx_blocks, STATX_BLOCKS)
-STATX_GET_ULONGLONG(stx_ino, stx_ino, STATX_INO)
-STATX_GET_ULONGLONG(stx_size, stx_size, STATX_SIZE)
+STATX_GET_ULONGLONG(stx_blocks, STATX_BLOCKS)
+STATX_GET_ULONGLONG(stx_ino, STATX_INO)
+STATX_GET_ULONGLONG(stx_size, STATX_SIZE)
 #ifdef HAVE_STRUCT_STATX_STX_MNT_ID
-STATX_GET_ULONGLONG(stx_mnt_id, stx_mnt_id, STATX_MNT_ID)
+STATX_GET_ULONGLONG(stx_mnt_id, STATX_MNT_ID)
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_SUBVOL
-STATX_GET_ULONGLONG(stx_subvol, stx_subvol, STATX_SUBVOL)
+STATX_GET_ULONGLONG(stx_subvol, STATX_SUBVOL)
 #endif
 
 
