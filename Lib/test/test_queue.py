@@ -1,5 +1,6 @@
 # Some simple queue module tests, plus some failure conditions
 # to ensure the Queue locks remain stable.
+import itertools
 import random
 import threading
 import time
@@ -1016,27 +1017,12 @@ class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         self.type2test = self.queue._PySimpleQueue
         super().setUp()
 
-    def test_sizeof(self):
+    def test_pysimplequeue_sizeof_constant(self):
         q = self.type2test()
-
-        empty_size = q.__sizeof__()
-        self.assertGreater(empty_size, 0)
-
-        for i in range(8):
+        size0 = q.__sizeof__()
+        for _ in range(1000):
             q.put(object())
-
-        size_after_8 = q.__sizeof__()
-
-        q.put(object())  # Now 9 items
-        size_after_9 = q.__sizeof__()
-        self.assertGreaterEqual(size_after_9, size_after_8)
-
-        large_q = self.type2test()
-        for i in range(1000):
-            large_q.put(object())
-
-        large_size = large_q.__sizeof__()
-        self.assertGreater(large_size, 0)
+        self.assertEqual(q.__sizeof__(), size0)
 
 
 @need_c_queue
@@ -1048,30 +1034,60 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         self.type2test = self.queue.SimpleQueue
         super().setUp()
 
-    def test_sizeof(self):
+    def test_simplequeue_sizeof_grow(self):
         q = self.type2test()
-
         empty_size = q.__sizeof__()
-        self.assertGreater(empty_size, 0)
-
-        for i in range(8):
+        for _ in range(8):
             q.put(object())
-
         size_after_8 = q.__sizeof__()
-
-        q.put(object())  # Now 9 items - should trigger ring buffer growth
+        q.put(object())  # 9th item triggers ring buffer growth 8 -> 16
         size_after_9 = q.__sizeof__()
+        self.assertGreaterEqual(size_after_8, empty_size)
         self.assertGreater(size_after_9, size_after_8)
 
-        large_q = self.type2test()
-        for i in range(1000):
-            large_q.put(object())
+    def test_simplequeue_sizeof_shrink(self):
+        q = self.type2test()
+        for _ in range(9):
+            q.put(object())  # grow to capacity 16
+        # Drain until 3 remain (< 16/4), then next get triggers shrink to 8
+        while q.qsize() > 3:
+            q.get()
+        size_before = q.__sizeof__()
+        q.get()
+        size_after = q.__sizeof__()
+        self.assertLess(size_after, size_before)
 
-        large_size = large_q.__sizeof__()
+    def test_is_default(self):
+        self.assertIs(self.type2test, self.queue.SimpleQueue)
+        self.assertIs(self.type2test, self.queue.SimpleQueue)
 
-        self.assertGreater(large_size, empty_size)
+    def test_reentrancy(self):
+        # bpo-14976: put() may be called reentrantly in an asynchronous
+        # callback.
+        q = self.q
+        gen = itertools.count()
+        N = 10000
+        results = []
 
-        self.assertGreater(large_size, empty_size * 2)
+        # This test exploits the fact that __del__ in a reference cycle
+        # can be called any time the GC may run.
+
+        class Circular(object):
+            def __init__(self):
+                self.circular = self
+
+            def __del__(self):
+                q.put(next(gen))
+
+        while True:
+            o = Circular()
+            q.put(next(gen))
+            del o
+            results.append(q.get())
+            if results[-1] >= N:
+                break
+
+        self.assertEqual(results, list(range(N + 1)))
 
 
 if __name__ == "__main__":
