@@ -460,8 +460,8 @@ customization.
    * - ``install_dir``
      - (none)
      - Specify the root directory that runtimes will be installed into.
-       Previously installed runtimes will not be usable unless moved to the new
-       location.
+       If you change this setting, previously installed runtimes will not be
+       usable unless you move them to the new location.
 
    * - ``global_dir``
      - (none)
