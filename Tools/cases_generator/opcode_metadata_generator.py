@@ -147,7 +147,7 @@ def generate_instruction_formats(analysis: Analysis, out: CWriter) -> None:
 
 
 def generate_deopt_table(analysis: Analysis, out: CWriter) -> None:
-    out.emit("PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];\n")
+    out.emit("extern const uint8_t _PyOpcode_Deopt[256];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint8_t _PyOpcode_Deopt[256] = {\n")
     deopts: list[tuple[str, str]] = []
@@ -170,7 +170,7 @@ def generate_deopt_table(analysis: Analysis, out: CWriter) -> None:
 
 
 def generate_cache_table(analysis: Analysis, out: CWriter) -> None:
-    out.emit("PyAPI_DATA(const uint8_t) _PyOpcode_Caches[256];\n")
+    out.emit("extern const uint8_t _PyOpcode_Caches[256];\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint8_t _PyOpcode_Caches[256] = {\n")
     for inst in analysis.instructions.values():

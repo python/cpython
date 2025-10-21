@@ -7438,9 +7438,6 @@
             oparg = CURRENT_OPARG();
             uint32_t target = (uint32_t)CURRENT_OPERAND0();
             assert(oparg == 0);
-            _Py_CODEUNIT *current_instr = _PyFrame_GetBytecode(frame) + target;
-            _Py_CODEUNIT *next_instr = current_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[current_instr->op.code]];
-            frame->instr_ptr = next_instr;
             GOTO_TIER_ONE(NULL);
             break;
         }

@@ -5384,10 +5384,6 @@ dummy_func(
 
         tier2 op(_ERROR_POP_N, (target/2 --)) {
             assert(oparg == 0);
-            _Py_CODEUNIT *current_instr = _PyFrame_GetBytecode(frame) + target;
-            _Py_CODEUNIT *next_instr = current_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[current_instr->op.code]];
-            // gh-140104: The exception handler expects frame->instr_ptr to be pointing to next_instr, not this_instr!
-            frame->instr_ptr = next_instr;
             SYNC_SP();
             GOTO_TIER_ONE(NULL);
         }
