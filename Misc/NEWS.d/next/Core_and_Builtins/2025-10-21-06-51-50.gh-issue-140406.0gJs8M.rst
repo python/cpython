@@ -1,0 +1,2 @@
+Fix memory leak when an object's :meth:`~object.__hash__` method returns an
+object that isn't an :class:`int`.
