@@ -3422,7 +3422,7 @@ STATX_GET_ULONGLONG(stx_subvol, stx_subvol, STATX_SUBVOL)
     }
 
 STATX_GET_DOUBLE(stx_atime, atime_sec, STATX_ATIME)
-STATX_GET_DOUBLE(stx_birthtime, btime_sec, STATX_BTIME)
+STATX_GET_DOUBLE(stx_btime, btime_sec, STATX_BTIME)
 STATX_GET_DOUBLE(stx_ctime, ctime_sec, STATX_CTIME)
 STATX_GET_DOUBLE(stx_mtime, mtime_sec, STATX_MTIME)
 
@@ -3441,7 +3441,7 @@ STATX_GET_DOUBLE(stx_mtime, mtime_sec, STATX_MTIME)
     }
 
 STATX_GET_NSEC(stx_atime_ns, stx_atime, STATX_ATIME)
-STATX_GET_NSEC(stx_birthtime_ns, stx_btime, STATX_BTIME)
+STATX_GET_NSEC(stx_btime_ns, stx_btime, STATX_BTIME)
 STATX_GET_NSEC(stx_ctime_ns, stx_ctime, STATX_CTIME)
 STATX_GET_NSEC(stx_mtime_ns, stx_mtime, STATX_MTIME)
 
@@ -3457,8 +3457,8 @@ static PyGetSetDef pystatx_result_getset[] = {
     G(stx_blocks, "number of blocks allocated"),
     G(stx_atime, "time of last access"),
     G(stx_atime_ns, "time of last access in nanoseconds"),
-    G(stx_birthtime, "time of creation"),
-    G(stx_birthtime_ns, "time of creation in nanoseconds"),
+    G(stx_btime, "time of creation"),
+    G(stx_btime_ns, "time of creation in nanoseconds"),
     G(stx_ctime, "time of last change"),
     G(stx_ctime_ns, "time of last change in nanoseconds"),
     G(stx_mtime, "time of last modification"),

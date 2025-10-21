@@ -750,9 +750,8 @@ class StatAttributeTests(unittest.TestCase):
         result = os.statx(filename, maximal_mask)
         basic_result = os.stat(filename)
 
-        time_attributes = ('stx_atime', 'stx_mtime', 'stx_ctime',
-                           'stx_birthtime')
-        # gh-83714: st_birthtime can be None on tmpfs even if STATX_BTIME mask
+        time_attributes = ('stx_atime', 'stx_btime', 'stx_ctime', 'stx_mtime')
+        # gh-83714: stx_btime can be None on tmpfs even if STATX_BTIME mask
         # is used
         time_attributes = [name for name in time_attributes
                            if getattr(result, name) is not None]
