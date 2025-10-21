@@ -2979,7 +2979,7 @@ dummy_func(
                 }
                 int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
                 if (!_is_sys_tracing) {
-                    /* Back up over EXTENDED_ARGs so executor is inserted at the corret place */
+                    /* Back up over EXTENDED_ARGs so executor is inserted at the correct place */
                     _Py_CODEUNIT *insert_exec_at = this_instr;
                     while (oparg > 255) {
                         oparg >>= 8;

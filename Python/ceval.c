@@ -993,6 +993,20 @@ add_to_code_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, PyCodeObjec
     assert(tstate->interp->jit_state.code_curr_size < UOP_MAX_TRACE_LENGTH);
     return !_PyJit_translate_single_bytecode_to_trace(tstate, frame, this_instr, next_instr, old_code, old_func, old_stack_level, opcode, oparg, jump_taken);
 }
+
+
+// 0 for success, -1  for error.
+static int
+bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
+    int err = 0;
+    if (!_PyErr_Occurred(tstate) && !_is_sys_tracing) {
+        err = _PyOptimizer_Optimize(frame, tstate);
+    }
+    _PyJit_FinalizeTracing(tstate);
+    return err;
+}
 #endif
 
 /* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.

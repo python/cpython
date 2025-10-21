@@ -144,32 +144,19 @@
     DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
 #  define LEAVE_TRACING() \
     DISPATCH_TABLE_VAR = DISPATCH_TABLE;
-#  define BAIL_TRACING_NO_DISPATCH() \
-    do { \
-        LEAVE_TRACING(); \
-        if (!_PyErr_Occurred(tstate) && !_is_sys_tracing) { \
-            _PyFrame_SetStackPointer(frame, stack_pointer); \
-            int _err = _PyOptimizer_Optimize(frame, tstate); \
-            _PyJit_FinalizeTracing(tstate); \
-            stack_pointer = _PyFrame_GetStackPointer(frame); \
-            if (_err < 0) { \
-                JUMP_TO_LABEL(error); \
+#  define RECORD_TRACE_NO_DISPATCH() do { \
+        int err = 0; \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        /* We need to check once more here in case it swapped out halfway. */ \
+        if (IS_JIT_TRACING()) { \
+            int full = add_to_code_trace(tstate, frame, old_code, old_func, _old_stack_level, this_instr, next_instr, opcode, oparg, _jump_taken); \
+            if (full) { \
+                LEAVE_TRACING(); \
+                err = bail_tracing_and_jit(tstate, frame); \
             } \
         } \
-        else { \
-            _PyFrame_SetStackPointer(frame, stack_pointer); \
-            _PyJit_FinalizeTracing(tstate); \
-            stack_pointer = _PyFrame_GetStackPointer(frame); \
-        } \
-    } while (0);
-#  define RECORD_TRACE_NO_DISPATCH() do { \
-        int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL); \
-        if (_is_sys_tracing) { \
-            LEAVE_TRACING(); \
-        } \
-        else if ((IS_JIT_TRACING() && add_to_code_trace(tstate, frame, old_code, old_func, _old_stack_level, this_instr, next_instr, opcode, oparg, _jump_taken))) { \
-            BAIL_TRACING_NO_DISPATCH(); \
-        } \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+        if (err < 0) { JUMP_TO_LABEL(error); }  \
     } while (0);
 #endif
 

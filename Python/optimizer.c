@@ -572,6 +572,11 @@ _PyJit_translate_single_bytecode_to_trace(
     _PyUOpInstruction *trace = tstate->interp->jit_state.code_buffer;
     int max_length = tstate->interp->jit_state.code_max_size;
 
+    int is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
+    if (is_sys_tracing) {
+        goto full;
+    }
+
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
