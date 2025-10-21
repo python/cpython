@@ -823,7 +823,7 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:
             + [
                 "--",
                 "test",
-                "--slow-ci" if context.slow else "--fast-ci",
+                f"--{context.ci_mode}-ci",
                 "--single-process",
                 "--no-randomize",
                 # Timeout handling requires subprocesses; explicitly setting
@@ -859,8 +859,8 @@ def ci(context: argparse.Namespace) -> None:
     `--slow-ci` configuration.
     """
     clean(context, "all")
-    if context.slow:
-        # In slow mode, doa. tu
+    if context.ci_mode == "slow":
+        # In slow mode, build and test the full XCframework
         build(context, host="all")
         test(context, host="all")
     else:
@@ -975,11 +975,13 @@ def parse_args() -> argparse.Namespace:
                 "an ARM64 iPhone 16 Pro simulator running iOS 26.0."
             ),
         )
-        cmd.add_argument(
-            "--slow",
-            action="store_true",
-            help="Run tests with --slow-ci options.",
-        )
+        group = cmd.add_mutually_exclusive_group()
+        group.add_argument(
+            "--fast-ci", action="store_const", dest="ci_mode", const="fast",
+            help="Add test arguments for GitHub Actions")
+        group.add_argument(
+            "--slow-ci", action="store_const", dest="ci_mode", const="slow",
+            help="Add test arguments for buildbots")
 
     for subcommand in [configure_build, configure_host, build, ci]:
         subcommand.add_argument(
