@@ -1012,4 +1012,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Under the buildbot, stdout is not a TTY, but we must still flush after
+    # every line to make sure our output appears in the correct order relative
+    # to the output of our subprocesses.
+    for stream in [sys.stdout, sys.stderr]:
+        stream.reconfigure(line_buffering=True)
+
     main()
