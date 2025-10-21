@@ -241,7 +241,7 @@ class FilterTests(BaseTest):
         MS_WINDOWS = (sys.platform == 'win32')
         with self.module.catch_warnings(record=True) as w:
             self.module.simplefilter('error')
-            self.module.filterwarnings('always', module=r'package\.module\z')
+            self.module.filterwarnings('always', module=r'package\.module\Z')
             self.module.warn_explicit('msg', UserWarning, 'filename', 42,
                                       module='package.module')
             self.assertEqual(len(w), 1)
@@ -264,7 +264,7 @@ class FilterTests(BaseTest):
 
         with self.module.catch_warnings(record=True) as w:
             self.module.simplefilter('error')
-            self.module.filterwarnings('always', module=r'/path/to/package/module\z')
+            self.module.filterwarnings('always', module=r'/path/to/package/module\Z')
             self.module.warn_explicit('msg', UserWarning, '/path/to/package/module', 42)
             self.assertEqual(len(w), 1)
             self.module.warn_explicit('msg', UserWarning, '/path/to/package/module.py', 42)
@@ -284,7 +284,7 @@ class FilterTests(BaseTest):
 
         with self.module.catch_warnings(record=True) as w:
             self.module.simplefilter('error')
-            self.module.filterwarnings('always', module=r'/path/to/package/__init__\z')
+            self.module.filterwarnings('always', module=r'/path/to/package/__init__\Z')
             self.module.warn_explicit('msg', UserWarning, '/path/to/package/__init__.py', 42)
             self.assertEqual(len(w), 1)
             self.module.warn_explicit('msg', UserWarning, '/path/to/package/__init__', 42)
@@ -293,7 +293,7 @@ class FilterTests(BaseTest):
         if MS_WINDOWS:
             with self.module.catch_warnings(record=True) as w:
                 self.module.simplefilter('error')
-                self.module.filterwarnings('always', module=r'C:\\path\\to\\package\\module\z')
+                self.module.filterwarnings('always', module=r'C:\\path\\to\\package\\module\Z')
                 self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module', 42)
                 self.assertEqual(len(w), 1)
                 self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.py', 42)
@@ -312,7 +312,7 @@ class FilterTests(BaseTest):
 
         with self.module.catch_warnings(record=True) as w:
             self.module.simplefilter('error')
-            self.module.filterwarnings('always', module=r'<unknown>\z')
+            self.module.filterwarnings('always', module=r'<unknown>\Z')
             self.module.warn_explicit('msg', UserWarning, '', 42)
             self.assertEqual(len(w), 1)
 
