@@ -419,8 +419,6 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
