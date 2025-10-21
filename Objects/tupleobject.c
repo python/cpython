@@ -145,15 +145,31 @@ _PyTuple_MaybeUntrack(PyObject *op)
     t = (PyTupleObject *) op;
     n = Py_SIZE(t);
     for (i = 0; i < n; i++) {
-        PyObject *elt = PyTuple_GET_ITEM(t, i);
+        PyObject *item = t->ob_item[i];
         /* Tuple with NULL elements aren't
            fully constructed, don't untrack
            them yet. */
-        if (!elt ||
-            _PyObject_GC_MAY_BE_TRACKED(elt))
+        if (!item ||
+            _PyObject_GC_MAY_BE_TRACKED(item))
             return;
     }
     _PyObject_GC_UNTRACK(op);
+}
+
+/* gh-139951: This function helps to avoid performance issue in the GC,
+ * we don't track immutable tuples. */
+static bool
+tuple_need_tracking(PyTupleObject *self)
+{
+    Py_ssize_t n = PyTuple_GET_SIZE(self);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = self->ob_item[i];
+        assert(item);
+        if (_PyObject_GC_MAY_BE_TRACKED(item)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 PyObject *
@@ -169,19 +185,21 @@ PyTuple_Pack(Py_ssize_t n, ...)
     }
 
     va_start(vargs, n);
-    PyTupleObject *result = tuple_alloc(n);
-    if (result == NULL) {
+    PyTupleObject *tuple = tuple_alloc(n);
+    if (tuple == NULL) {
         va_end(vargs);
         return NULL;
     }
-    items = result->ob_item;
+    items = tuple->ob_item;
     for (i = 0; i < n; i++) {
         o = va_arg(vargs, PyObject *);
         items[i] = Py_NewRef(o);
     }
     va_end(vargs);
-    _PyObject_GC_TRACK(result);
-    return (PyObject *)result;
+    if (tuple_need_tracking(tuple)) {
+        _PyObject_GC_TRACK(tuple);
+    }
+    return (PyObject *)tuple;
 }
 
 
@@ -381,7 +399,9 @@ PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
         PyObject *item = src[i];
         dst[i] = Py_NewRef(item);
     }
-    _PyObject_GC_TRACK(tuple);
+    if (tuple_need_tracking(tuple)) {
+        _PyObject_GC_TRACK(tuple);
+    }
     return (PyObject *)tuple;
 }
 
@@ -399,7 +419,9 @@ _PyTuple_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
     for (Py_ssize_t i = 0; i < n; i++) {
         dst[i] = PyStackRef_AsPyObjectSteal(src[i]);
     }
-    _PyObject_GC_TRACK(tuple);
+    if (tuple_need_tracking(tuple)) {
+        _PyObject_GC_TRACK(tuple);
+    }
     return (PyObject *)tuple;
 }
 
@@ -421,7 +443,9 @@ _PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
         PyObject *item = src[i];
         dst[i] = item;
     }
-    _PyObject_GC_TRACK(tuple);
+    if (tuple_need_tracking(tuple)) {
+        _PyObject_GC_TRACK(tuple);
+    }
     return (PyObject *)tuple;
 }
 
@@ -494,7 +518,9 @@ tuple_concat(PyObject *aa, PyObject *bb)
         dest[i] = Py_NewRef(v);
     }
 
-    _PyObject_GC_TRACK(np);
+    if (_PyObject_GC_IS_TRACKED(a) || _PyObject_GC_IS_TRACKED(b)) {
+        _PyObject_GC_TRACK(np);
+    }
     return (PyObject *)np;
 }
 
@@ -543,8 +569,10 @@ tuple_repeat(PyObject *self, Py_ssize_t n)
         _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
                           sizeof(PyObject *)*input_size);
     }
-    _PyObject_GC_TRACK(np);
-    return (PyObject *) np;
+    if (_PyObject_GC_IS_TRACKED(a)) {
+        _PyObject_GC_TRACK(np);
+    }
+    return (PyObject *)np;
 }
 
 /*[clinic input]
@@ -821,7 +849,9 @@ tuple_subscript(PyObject *op, PyObject* item)
                 dest[i] = it;
             }
 
-            _PyObject_GC_TRACK(result);
+            if (tuple_need_tracking(result)) {
+                _PyObject_GC_TRACK(result);
+            }
             return (PyObject *)result;
         }
     }
