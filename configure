@@ -20392,16 +20392,21 @@ then :
 fi
 
 
-# Check statx availability in Linux
-if test "$MACHDEP" = "linux"; then
-  ac_fn_c_check_func "$LINENO" "statx" "ac_cv_func_statx"
+# os.statx uses Linux's statx function.  AIX also has a function named statx,
+# but it's unrelated.  Check only on Linux (including Android).
+case $ac_sys_system in #(
+  Linux*) :
+    ac_fn_c_check_func "$LINENO" "statx" "ac_cv_func_statx"
 if test "x$ac_cv_func_statx" = xyes
 then :
   printf "%s\n" "#define HAVE_STATX 1" >>confdefs.h
 
 fi
 
-fi
+ ;; #(
+  *) :
+     ;;
+esac
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
