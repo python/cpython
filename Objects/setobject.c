@@ -2773,17 +2773,23 @@ PySet_Discard(PyObject *set, PyObject *key)
 int
 PySet_Add(PyObject *anyset, PyObject *key)
 {
-    if (!PySet_Check(anyset) &&
-        (!PyFrozenSet_Check(anyset) || !_PyObject_IsUniquelyReferenced(anyset))) {
-        PyErr_BadInternalCall();
-        return -1;
+    if (_PyObject_IsUniquelyReferenced(anyset) && PyAnySet_Check(anyset)) {
+        // In free-threading, if the set or frozenset is uniquely referenced,
+        // no critical section is needed since only the owner thread is
+        // populating it.
+        return set_add_key((PySetObject *)anyset, key);
     }
 
-    int rv;
-    Py_BEGIN_CRITICAL_SECTION(anyset);
-    rv = set_add_key((PySetObject *)anyset, key);
-    Py_END_CRITICAL_SECTION();
-    return rv;
+    if (PySet_Check(anyset)) {
+        int rv;
+        Py_BEGIN_CRITICAL_SECTION(anyset);
+        rv = set_add_key((PySetObject *)anyset, key);
+        Py_END_CRITICAL_SECTION();
+        return rv;
+    }
+
+    PyErr_BadInternalCall();
+    return -1;
 }
 
 int
