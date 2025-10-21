@@ -415,17 +415,13 @@ jobs:
         run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
 
   build-ios:
-    name: iOS (${{ matrix.arch }})
+    name: iOS
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     timeout-minutes: 60
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - arch: aarch64
-            runs-on: macos-15
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
         with:
