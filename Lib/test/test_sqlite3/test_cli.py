@@ -307,6 +307,10 @@ class Completion(unittest.TestCase):
                 "_View",
             ],
         )
+        start, end = indices[-2], indices[-1]
+        # direct match with '_Table' completed, no candidates displayed
+        candidates = [l.strip() for l in lines[start+1:end]]
+        self.assertEqual(len(candidates), 0)
 
     @unittest.skipIf(sqlite3.sqlite_version_info < (3, 16, 0),
                      "PRAGMA table-valued function is not available until "
