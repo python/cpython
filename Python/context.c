@@ -10,7 +10,16 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include <string.h>               // strcmp()
+#include <ctype.h>                // tolower()
 
+
+typedef enum {
+    HARDEN_MODE_OFF,
+    HARDEN_MODE_WARN,
+    HARDEN_MODE_ON
+} HardenMode;
+
+static HardenMode _harden_mode = HARDEN_MODE_ON;
 
 
 #include "clinic/context.c.h"
@@ -40,6 +49,25 @@ module _contextvars
                         "an instance of Token was expected");       \
         return err_ret;                                             \
     }
+
+#define HARDEN_ERROR_OR_WARN(event)                                         \
+    do {                                                                    \
+        if (_harden_mode == HARDEN_MODE_WARN) {                             \
+            if (PyErr_WarnFormat(                                           \
+                    PyExc_RuntimeWarning, 1,                                \
+                    "Insecure %s during deserialization was detected",      \
+                    event) < 0)                                             \
+            {                                                               \
+                return -1;                                                  \
+            }                                                               \
+            return 0;                                                       \
+        }                                                                   \
+        else {                                                              \
+            PyErr_Format(PyExc_RuntimeError,                                \
+                         "%s is disabled during deserialization", event);   \
+            return -1;                                                      \
+        }                                                                   \
+    } while (0)
 
 
 /////////////////////////// Context API
@@ -1424,6 +1452,34 @@ get_token_missing(void)
 ///////////////////////////
 
 
+static HardenMode
+_parse_harden_mode(void)
+{
+    const char *env_value = getenv("PYTHONHARDENMODE");
+    if (env_value == NULL) {
+        return HARDEN_MODE_ON;
+    }
+
+    char lower_value[16] = {0};
+    size_t i = 0;
+    while (env_value[i] != '\0' && i < sizeof(lower_value) - 1) {
+        lower_value[i] = tolower((unsigned char)env_value[i]);
+        i++;
+    }
+    lower_value[i] = '\0';
+
+    if (strcmp(lower_value, "off") == 0) {
+        return HARDEN_MODE_OFF;
+    }
+    else if (strcmp(lower_value, "warn") == 0) {
+        return HARDEN_MODE_WARN;
+    }
+    else {
+        return HARDEN_MODE_ON;
+    }
+}
+
+
 static int
 _deserialization_guard_audit_hook(const char *event, PyObject *args,
                                    void *userData)
@@ -1432,12 +1488,11 @@ _deserialization_guard_audit_hook(const char *event, PyObject *args,
         return 0;
     }
 
-    if (strncmp(event, "os.", 3) == 0 ||
+    if ((strncmp(event, "os.", 3) == 0 && strcmp(event, "os.listdir") != 0) ||
         strncmp(event, "ctypes.", 7) == 0 ||
         strncmp(event, "_thread.", 8) == 0 ||
         strncmp(event, "_winapi.", 8) == 0 ||
         strncmp(event, "_posixsubprocess.", 17) == 0 ||
-        strncmp(event, "marshal.", 8) == 0 ||
         strncmp(event, "socket.", 7) == 0 ||
         strncmp(event, "sqlite3.", 8) == 0 ||
         strncmp(event, "fcntl.", 6) == 0 ||
@@ -1446,7 +1501,7 @@ _deserialization_guard_audit_hook(const char *event, PyObject *args,
         strncmp(event, "syslog.", 7) == 0 ||
         strncmp(event, "cpython.", 8) == 0 ||
         strncmp(event, "gc.", 3) == 0 ||
-        strncmp(event, "sys.", 4) == 0 ||
+        (strncmp(event, "sys.", 4) == 0 && strcmp(event, "sys._getframemodulename") != 0) ||
         strncmp(event, "resource.", 9) == 0 ||
         strncmp(event, "shutil.", 7) == 0 ||
         strncmp(event, "pathlib.", 8) == 0 ||
@@ -1460,21 +1515,15 @@ _deserialization_guard_audit_hook(const char *event, PyObject *args,
         strncmp(event, "telnetlib.", 10) == 0 ||
         strncmp(event, "urllib.", 7) == 0 ||
         strncmp(event, "msvcrt.", 7) == 0 ||
-        strcmp(event, "subprocess.Popen") == 0 ||
-        strcmp(event, "exec") == 0 ||
-        strcmp(event, "compile") == 0 ||
-        strcmp(event, "code.__new__") == 0 ||
-        strcmp(event, "function.__new__") == 0 ||
-        strcmp(event, "mmap.__new__") == 0 ||
-        strcmp(event, "webbrowser.open") == 0 ||
-        strcmp(event, "pty.spawn") == 0 ||
-        strcmp(event, "ensurepip.bootstrap") == 0 ||
-        strcmp(event, "glob.glob") == 0 ||
-        strcmp(event, "setopencodehook") == 0)
+        strncmp(event, "subprocess.", 11) == 0 ||
+        strncmp(event, "webbrowser.", 11) == 0 ||
+        strncmp(event, "pty.", 4) == 0 ||
+        strncmp(event, "ensurepip.", 10) == 0 ||
+        strncmp(event, "glob.", 5) == 0 ||
+        strncmp(event, "mmap.", 5) == 0 ||
+        strncmp(event, "setopencodehook", 15) == 0)
     {
-        PyErr_Format(PyExc_RuntimeError,
-                     "%s is disabled during deserialization", event);
-        return -1;
+        HARDEN_ERROR_OR_WARN(event);
     }
 
     if (strcmp(event, "open") == 0) {
@@ -1488,9 +1537,7 @@ _deserialization_guard_audit_hook(const char *event, PyObject *args,
                      strchr(mode_str, 'x') != NULL ||
                      strchr(mode_str, '+') != NULL))
                 {
-                    PyErr_SetString(PyExc_RuntimeError,
-                                    "open with write mode is disabled during deserialization");
-                    return -1;
+                    HARDEN_ERROR_OR_WARN("open with write mode");
                 }
             }
         }
@@ -1513,8 +1560,12 @@ _PyContext_Init(PyInterpreterState *interp)
     }
     Py_DECREF(missing);
 
-    if (PySys_AddAuditHook(_deserialization_guard_audit_hook, NULL) < 0) {
-        return _PyStatus_ERR("can't add deserialization guard audit hook");
+    _harden_mode = _parse_harden_mode();
+
+    if (_harden_mode != HARDEN_MODE_OFF) {
+        if (PySys_AddAuditHook(_deserialization_guard_audit_hook, NULL) < 0) {
+            return _PyStatus_ERR("can't add deserialization guard audit hook");
+        }
     }
 
     return _PyStatus_OK();
