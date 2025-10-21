@@ -648,9 +648,10 @@ class StatAttributeTests(unittest.TestCase):
         # Make sure that the st_?time and st_?time_ns fields roughly agree
         # (they should always agree up to around tens-of-microseconds)
         for name in names:
-            floaty = int(getattr(result, name) * 100_000)
-            nanosecondy = getattr(result, name + "_ns") // 10_000
-            self.assertAlmostEqual(floaty, nanosecondy, delta=2, msg=name)
+            with self.subTest(name=name):
+                floaty = int(getattr(result, name) * 100_000)
+                nanosecondy = getattr(result, name + "_ns") // 10_000
+                self.assertAlmostEqual(floaty, nanosecondy, delta=2, msg=name)
 
     def check_stat_attributes(self, fname):
         result = os.stat(fname)
@@ -741,14 +742,19 @@ class StatAttributeTests(unittest.TestCase):
                 unpickled = pickle.loads(p)
                 self.assertEqual(result, unpickled)
 
-    def check_statx_attributes(self, fname):
+    def check_statx_attributes(self, filename):
         maximal_mask = 0
         for name in dir(os):
             if name.startswith('STATX_'):
                 maximal_mask |= getattr(os, name)
-        result = os.statx(self.fname, maximal_mask)
+        result = os.statx(filename, maximal_mask)
+        basic_result = os.stat(filename)
 
         time_attributes = ('st_atime', 'st_mtime', 'st_ctime', 'st_birthtime')
+        # gh-83714: st_birthtime can be None on tmpfs even if STATX_BTIME mask
+        # is used
+        time_attributes = [name for name in time_attributes
+                           if getattr(result, name) is not None]
         self.check_timestamp_agreement(result, time_attributes)
 
         # Check that valid attributes match os.stat.
@@ -773,7 +779,6 @@ class StatAttributeTests(unittest.TestCase):
             ('st_rdev', 0),
             ('st_dev', 0),
         )
-        basic_result = os.stat(self.fname)
         for name, bits in requirements:
             if result.stx_mask & bits == bits and hasattr(basic_result, name):
                 x = getattr(result, name)
