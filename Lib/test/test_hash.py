@@ -166,6 +166,17 @@ class HashBuiltinsTestCase(unittest.TestCase):
         for obj in self.hashes_to_check:
             self.assertEqual(hash(obj), _default_hash(obj))
 
+    def test_invalid_hash_typeerror(self):
+        # GH-140406: The returned object from __hash__() would leak if it
+        # wasn't an integer.
+        class A:
+            def __hash__(self):
+                return 1.0
+
+        for _ in range(100):
+            with self.assertRaises(TypeError):
+                hash(A())
+
 class HashRandomizationTests:
 
     # Each subclass should define a field "repr_", containing the repr() of
