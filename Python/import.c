@@ -4135,13 +4135,24 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
     PyObject *child = NULL;
     PyObject *parent_module = NULL;
     PyObject *parent_dict = NULL;
-    PyObject *lazy_modules = tstate->interp->imports.lazy_modules;
+
+    // Acquire import lock to safely initialize lazy_modules if needed
+    // This prevents a race where multiple threads could create different dicts
+    PyInterpreterState *interp = tstate->interp;
+    _PyImport_AcquireLock(interp);
+
+    PyObject *lazy_modules = interp->imports.lazy_modules;
     if (lazy_modules == NULL) {
-        lazy_modules = tstate->interp->imports.lazy_modules = PyDict_New();
+        lazy_modules = interp->imports.lazy_modules = PyDict_New();
         if (lazy_modules == NULL) {
+            _PyImport_ReleaseLock(interp);
             return -1;
         }
     }
+
+    // Release the lock - we only needed it for initialization
+    // The dict operations below are thread-safe on their own
+    _PyImport_ReleaseLock(interp);
 
     Py_INCREF(name);
     while (true) {
