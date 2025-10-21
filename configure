@@ -9396,7 +9396,7 @@ fi
 printf %s "checking BOLT_COMMON_FLAGS... " >&6; }
 if test -z "${BOLT_COMMON_FLAGS}"
 then
-  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1 "
+  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1 "
 
 fi
 
@@ -20192,12 +20192,6 @@ then :
   printf "%s\n" "#define HAVE_SPLICE 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "statx" "ac_cv_func_statx"
-if test "x$ac_cv_func_statx" = xyes
-then :
-  printf "%s\n" "#define HAVE_STATX 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "strftime" "ac_cv_func_strftime"
 if test "x$ac_cv_func_strftime" = xyes
 then :
@@ -20397,6 +20391,17 @@ then :
 
 fi
 
+
+# Check statx availability in Linux
+if test "$MACHDEP" = "linux"; then
+  ac_fn_c_check_func "$LINENO" "statx" "ac_cv_func_statx"
+if test "x$ac_cv_func_statx" = xyes
+then :
+  printf "%s\n" "#define HAVE_STATX 1" >>confdefs.h
+
+fi
+
+fi
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
@@ -25132,6 +25137,21 @@ printf "%s\n" "#define HAVE_SIGINFO_T_SI_BAND 1" >>confdefs.h
 
 fi
 
+
+if test "$ac_cv_func_statx" = yes; then
+  # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
+  # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
+  # doesn't imply having the member.
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_atomic_write_unit_max_opt" "ac_cv_member_struct_statx_stx_atomic_write_unit_max_opt" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_atomic_write_unit_max_opt" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT 1" >>confdefs.h
+
+
+fi
+
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for time.h that defines altzone" >&5
 printf %s "checking for time.h that defines altzone... " >&6; }
