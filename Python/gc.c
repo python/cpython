@@ -2077,8 +2077,10 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(gcstate, "start", generation, &stats);
     }
+    PyTime_t t1;
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
+        (void)PyTime_PerfCounterRaw(&t1);
         show_stats_each_generations(gcstate);
     }
     if (PyDTrace_GC_START_ENABLED()) {
@@ -2115,6 +2117,17 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 #endif
     validate_spaces(gcstate);
     _Py_atomic_store_int(&gcstate->collecting, 0);
+
+    if (gcstate->debug & _PyGC_DEBUG_STATS) {
+        PyTime_t t2;
+        (void)PyTime_PerfCounterRaw(&t2);
+        double d = PyTime_AsSecondsDouble(t2 - t1);
+        PySys_WriteStderr(
+            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
+            stats.collected + stats.uncollectable, stats.uncollectable, d
+        );
+    }
+
     return stats.uncollectable + stats.collected;
 }
 

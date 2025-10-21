@@ -682,6 +682,8 @@ mimetypes
 ---------
 
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Rename ``application/x-texinfo`` to ``application/texinfo``.
+  (Contributed by Charlie Lin in :gh:`140165`)
 
 
 pathlib
@@ -762,6 +764,9 @@ typing
   :func:`issubclass`, but warnings were not previously emitted if it was merely
   imported or accessed from the :mod:`!typing` module.
 
+* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+  (Contributed by Nikita Sobolev in :gh:`133601`.)
+
 
 unicodedata
 -----------
@@ -825,6 +830,7 @@ New deprecations
     - :mod:`argparse`
     - :mod:`csv`
     - :mod:`!ctypes.macholib`
+    - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`
     - :mod:`logging` (``__date__`` also deprecated)
