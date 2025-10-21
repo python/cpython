@@ -565,7 +565,7 @@ def _make_annotate_function(__class__, method_name, annotation_fields, return_ty
 
     # This is a flag for _add_slots to know it needs to regenerate this method
     # In order to remove references to the original class when it is replaced
-    __annotate__._generated_by_dataclasses = True
+    __annotate__.__generated_by_dataclasses__ = True
     __annotate__.__qualname__ = f"{__class__.__qualname__}.{method_name}.__annotate__"
 
     return __annotate__
@@ -1399,7 +1399,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
 
     # Fix the class reference in the __annotate__ method
     init_annotate = newcls.__init__.__annotate__
-    if getattr(init_annotate, "_generated_by_dataclasses", False):
+    if getattr(init_annotate, "__generated_by_dataclasses__", False):
         _update_func_cell_for__class__(init_annotate, cls, newcls)
 
     return newcls
