@@ -38,6 +38,8 @@ The abstract grammar is currently defined as follows:
    :language: asdl
 
 
+.. _ast_nodes:
+
 Node classes
 ------------
 
