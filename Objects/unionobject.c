@@ -256,8 +256,13 @@ is_unionable(PyObject *obj)
 PyObject *
 _Py_union_type_or(PyObject* self, PyObject* other)
 {
+    if (!is_unionable(self) || !is_unionable(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
     unionbuilder ub;
-    if (!unionbuilder_init(&ub, true)) {
+    // unchecked because we already checked is_unionable()
+    if (!unionbuilder_init(&ub, false)) {
         return NULL;
     }
     if (!unionbuilder_add_single(&ub, self) ||
@@ -388,8 +393,23 @@ static PyGetSetDef union_properties[] = {
     {0}
 };
 
+static PyObject *
+union_nb_or(PyObject *a, PyObject *b)
+{
+    unionbuilder ub;
+    if (!unionbuilder_init(&ub, true)) {
+        return NULL;
+    }
+    if (!unionbuilder_add_single(&ub, a) ||
+        !unionbuilder_add_single(&ub, b)) {
+        unionbuilder_finalize(&ub);
+        return NULL;
+    }
+    return make_union(&ub);
+}
+
 static PyNumberMethods union_as_number = {
-        .nb_or = _Py_union_type_or, // Add __or__ function
+        .nb_or = union_nb_or, // Add __or__ function
 };
 
 static const char* const cls_attrs[] = {
