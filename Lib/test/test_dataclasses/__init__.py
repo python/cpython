@@ -2489,7 +2489,7 @@ class TestInitAnnotate(unittest.TestCase):
         self.assertEqual(forwardref_annos, {'a': int, 'return': None})
         self.assertEqual(string_annos, {'a': 'int', 'return': 'None'})
 
-        self.assertTrue(getattr(A.__init__.__annotate__, "_generated_by_dataclasses"))
+        self.assertTrue(getattr(A.__init__.__annotate__, "__generated_by_dataclasses__"))
 
     def test_annotate_function_forwardref(self):
         # With forward references
@@ -2576,7 +2576,7 @@ class TestInitAnnotate(unittest.TestCase):
             annotationlib.get_annotations(E.__init__), {"x": int, "return": None}
         )
 
-        self.assertFalse(hasattr(E.__init__.__annotate__, "_generated_by_dataclasses"))
+        self.assertFalse(hasattr(E.__init__.__annotate__, "__generated_by_dataclasses__"))
 
     def test_init_false_forwardref(self):
         # Test forward references in fields not required for __init__ annotations.
