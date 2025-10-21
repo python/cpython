@@ -3411,11 +3411,6 @@ features:
 
    Information about a file returned by :func:`os.statx`.
 
-   :class:`!statx_result` has all the attributes that :class:`~stat_result` has
-   on Linux, but using ``stx_`` prefix instead of ``st_``.
-   :class:`!statx_result` is not a subclass of :class:`~stat_result` and cannot
-   be used as a tuple.
-
    :class:`!statx_result` has the following attributes:
 
    .. attribute:: stx_mask
