@@ -1334,6 +1334,23 @@
    statx'. */
 #undef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT
 
+/* Define to 1 if 'stx_atomic_write_unit_min' is a member of 'struct statx'.
+   */
+#undef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
+
+/* Define to 1 if 'stx_dio_mem_align' is a member of 'struct statx'. */
+#undef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
+
+/* Define to 1 if 'stx_dio_read_offset_align' is a member of 'struct statx'.
+   */
+#undef HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN
+
+/* Define to 1 if 'stx_mnt_id' is a member of 'struct statx'. */
+#undef HAVE_STRUCT_STATX_STX_MNT_ID
+
+/* Define to 1 if 'stx_subvol' is a member of 'struct statx'. */
+#undef HAVE_STRUCT_STATX_STX_SUBVOL
+
 /* Define to 1 if 'st_birthtime' is a member of 'struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BIRTHTIME
 

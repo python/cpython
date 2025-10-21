@@ -3566,9 +3566,9 @@ features:
           STATX_WRITE_ATOMIC
           STATX_DIO_READ_ALIGN
 
-   Bitflags for use in the *mask* parameter to :func:`os.statx`.  Flags
-   including and after :const:`!STATX_MNT_ID` are only available when their
-   corresponding members in :class:`statx_result` are available.
+   Bitflags for use in the *mask* parameter to :func:`os.statx`.  Some of these
+   flags may be available even when their corresponding members in
+   :class:`statx_result` are not available.
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
