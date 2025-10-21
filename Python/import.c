@@ -3712,20 +3712,25 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     assert(PyLazyImport_CheckExact(lazy_import));
 
     PyLazyImportObject *lz = (PyLazyImportObject *)lazy_import;
+    PyInterpreterState *interp = tstate->interp;
+
+    // Acquire the global import lock to serialize reification
+    _PyImport_AcquireLock(interp);
 
     // Check if we are already importing this module, if so, then we want to return an error
     // that indicates we've hit a cycle which will indicate the value isn't yet available.
-    PyInterpreterState *interp = tstate->interp;
     PyObject *importing = interp->imports.lazy_importing_modules;
     if (importing == NULL) {
         importing = interp->imports.lazy_importing_modules = PySet_New(NULL);
         if (importing == NULL) {
+            _PyImport_ReleaseLock(interp);
             return NULL;
         }
     }
 
     int is_loading = PySet_Contains(importing, lazy_import);
     if (is_loading < 0) {
+        _PyImport_ReleaseLock(interp);
         return NULL;
     } else if (is_loading == 1) {
         PyObject *name = _PyLazyImport_GetName(lazy_import);
@@ -3735,8 +3740,10 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         PyErr_SetImportErrorSubclass(PyExc_ImportCycleError, errmsg, lz->lz_from, NULL);
         Py_XDECREF(errmsg);
         Py_XDECREF(name);
+        _PyImport_ReleaseLock(interp);
         return NULL;
     } else if (PySet_Add(importing, lazy_import) < 0) {
+        _PyImport_ReleaseLock(interp);
         goto error;
     }
 
@@ -3888,6 +3895,9 @@ ok:
         Py_DECREF(obj);
         obj = NULL;
     }
+
+    // Release the global import lock
+    _PyImport_ReleaseLock(interp);
 
     Py_XDECREF(fromlist);
     Py_XDECREF(import_func);
