@@ -1,0 +1,12 @@
+Add the following:
+   - ``application/efi``
+   - ``application/pem-certificate-chain``
+   - ``application/pgp-keys``
+   - ``application/sql``
+   - ``application/zstd``
+   - ``application/ocsp-request``
+   - ``application/ocsp-response``
+   - ``application/mathematica``
+   - ``application/mathml+xml``
+   - ``application/mbox``
+   - ``application/pem-certificate-chain``
