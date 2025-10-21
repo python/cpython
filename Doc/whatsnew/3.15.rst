@@ -707,6 +707,7 @@ mimetypes
    - ``application/mathml+xml``
    - ``application/mbox``
    - ``application/pem-certificate-chain``
+
  (Contributed by Charlie Lin in :gh:`140393`)
 
 
