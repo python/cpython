@@ -802,6 +802,16 @@ New deprecations
 
     (Contributed by Nikita Sobolev in :gh:`136355`.)
 
+* :mod:`ast`:
+
+  * Classes ``slice``, ``Index`` and ``ExtSlice``, ``Suite``, ``Param``,
+    ``AugLoad`` and ``AugStore``, deprecated since Python 3.9, are no longer
+    imported by ``from ast import *`` and issue a deprecation warning on first
+    use. The classes are slated for removal in Python 3.20.
+  * The ``dims`` property of ``ast.Tuple`` objects, deprecated since Python
+    3.9, now issues a deprecation warning on use. Thie property is slated for
+    removal in 3.20. Use ``ast.Tuple.elts`` instead.
+
 * :mod:`hashlib`:
 
   * In hash function constructors such as :func:`~hashlib.new` or the
