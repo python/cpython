@@ -171,36 +171,7 @@ _PyWarnings_InitState(PyInterpreterState *interp)
 /*************************************************************************/
 
 static int
-check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
-{
-    PyObject *result;
-    int rc;
-
-    /* A 'None' filter always matches */
-    if (obj == Py_None)
-        return 1;
-
-    /* An internal plain text default filter must match exactly */
-    if (PyUnicode_CheckExact(obj)) {
-        int cmp_result = PyUnicode_Compare(obj, arg);
-        if (cmp_result == -1 && PyErr_Occurred()) {
-            return -1;
-        }
-        return !cmp_result;
-    }
-
-    /* Otherwise assume a regex filter and call its match() method */
-    result = PyObject_CallMethodOneArg(obj, &_Py_ID(match), arg);
-    if (result == NULL)
-        return -1;
-
-    rc = PyObject_IsTrue(result);
-    Py_DECREF(result);
-    return rc;
-}
-
-static int
-check_matched_module(PyInterpreterState *interp, PyObject *obj, PyObject *arg, PyObject *arg2)
+check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg, PyObject *arg2)
 {
     PyObject *result;
     int rc;
@@ -497,14 +468,14 @@ filter_search(PyInterpreterState *interp, PyObject *category,
             break;
         }
 
-        good_msg = check_matched(interp, msg, text);
+        good_msg = check_matched(interp, msg, text, NULL);
         if (good_msg == -1) {
             Py_DECREF(tmp_item);
             result = false;
             break;
         }
 
-        good_mod = check_matched_module(interp, mod, module, filename);
+        good_mod = check_matched(interp, mod, module, filename);
         if (good_mod == -1) {
             Py_DECREF(tmp_item);
             result = false;
