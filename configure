@@ -25139,6 +25139,57 @@ fi
 
 
 if test "$ac_cv_func_statx" = yes; then
+  # Some systems have the definitions of the mask bits without having the
+  # corresponding members in struct statx.  Check for members added after Linux
+  # 4.11 (when statx itself was added).
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_mnt_id" "ac_cv_member_struct_statx_stx_mnt_id" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_mnt_id" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_MNT_ID 1" >>confdefs.h
+
+
+fi
+
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_dio_mem_align" "ac_cv_member_struct_statx_stx_dio_mem_align" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_dio_mem_align" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN 1" >>confdefs.h
+
+
+fi
+
+  # stx_dio_offset_align was added together with stx_dio_mem_align
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_subvol" "ac_cv_member_struct_statx_stx_subvol" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_subvol" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_SUBVOL 1" >>confdefs.h
+
+
+fi
+
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_atomic_write_unit_min" "ac_cv_member_struct_statx_stx_atomic_write_unit_min" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_atomic_write_unit_min" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN 1" >>confdefs.h
+
+
+fi
+
+  # stx_atomic_write_unit_max and stx_atomic_write_segments_max were added
+  # together with stx_atomic_write_unit_min
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_dio_read_offset_align" "ac_cv_member_struct_statx_stx_dio_read_offset_align" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_dio_read_offset_align" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN 1" >>confdefs.h
+
+
+fi
+
   # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
   # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
   # doesn't imply having the member.
