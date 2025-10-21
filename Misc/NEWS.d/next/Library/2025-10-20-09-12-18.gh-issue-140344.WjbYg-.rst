@@ -1,3 +1,11 @@
-The classes ``ast.Suite``, ``ast.AugLoad``, ``ast.AugStore``, and
-``ast.Param``, deprecated since Python 3.9, now issue deprecation warnings
-on use. They are now scheduled for removal in Python 3.20.
+The classes ``ast.slice``, ``ast.Index``, ``ast.Suite``, ``ast.AugLoad``,
+``ast.AugStore``, and ``ast.Param``, deprecated since Python 3.9, now issue
+deprecation warnings on use. They are now scheduled for removal in Python 3.20.
+
+The ``dims`` property of ``ast.Tuple`` objects, deprecated since Python 3.9,
+now issues a deprecation warning when accessed. The property is scheduled for
+removal in Python 3.20. Use the (non-deprecated) ``elts`` property of
+``ast.Tuple`` objects instead.
+
+The deprecated global names are also no longer imported by
+``from ast import *``.
