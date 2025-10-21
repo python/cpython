@@ -1803,6 +1803,7 @@ _windows_only_modules = ["winreg", "msvcrt", "winsound", "nt", "_winapi", "_msi"
 
 _missing_stdlib_module = {
     name: f"Windows-only standard library module '{name}' not found"
-    for name in _windows_only_modules
+    for name in _windows_only_modules,
+} | {
     # Distributors can patch this dictionary to provide installation suggestions.
 }
