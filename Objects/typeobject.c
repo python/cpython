@@ -10569,6 +10569,7 @@ slot_tp_hash(PyObject *self)
         return PyObject_HashNotImplemented(self);
     }
     if (!PyLong_Check(res)) {
+        Py_DECREF(res);
         PyErr_SetString(PyExc_TypeError,
                         "__hash__ method should return an integer");
         return -1;
