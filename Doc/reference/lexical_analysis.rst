@@ -388,10 +388,10 @@ Names (identifiers and keywords)
 
 Names are composed of the following characters:
 
-* Uppercase and lowercase letters (``A-Z`` and ``a-z``)
-* The underscore (``_``)
-* Digits (``0`` through ``9``), which cannot appear as the first character
-* Non-ASCII characters. Valid names may only contain "letter-like" and
+* uppercase and lowercase letters (``A-Z`` and ``a-z``),
+* the underscore (``_``),
+* digits (``0`` through ``9``), which cannot appear as the first character, and
+* non-ASCII characters. Valid names may only contain "letter-like" and
   "digit-like" characters; see :ref:`lexical-names-nonascii` for details.
 
 Names must contain at least one character, but have no upper length limit.
@@ -403,8 +403,8 @@ Formally, names are described by the following lexical definitions:
    :group: python-grammar
 
    NAME:          `name_start` `name_continue`*
-   name_start:    "a".."z" | "A".."Z" | "_" | <non-ASCII character>
-   name_continue: name_start | "0".."9"
+   name_start:    "a"..."z" | "A"..."Z" | "_" | <non-ASCII character>
+   name_continue: name_start | "0"..."9"
    identifier:    <`NAME`, except keywords>
 
 Note that not all names matched by this grammar are valid; see
