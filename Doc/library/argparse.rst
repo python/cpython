@@ -613,8 +613,7 @@ when the choices specified are strings::
    >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
    tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
 
-If you prefer the old behavior without suggestions, you can disable this feature
-by setting ``suggest_on_error`` to ``False``::
+You can disable suggestions by setting ``suggest_on_error`` to ``False``::
 
    >>> parser = argparse.ArgumentParser(description='Process some integers.',
                                         suggest_on_error=False)
