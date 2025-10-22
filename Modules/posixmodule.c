@@ -3386,8 +3386,7 @@ pystatx_result_get_stx_mode(PyObject *op, void *Py_UNUSED(context))
     if (!(self->stx.stx_mask & (STATX_TYPE | STATX_MODE))) {
         Py_RETURN_NONE;
     }
-    unsigned short value = self->stx.stx_mode;
-    return PyLong_FromUnsignedLong(value);
+    return PyLong_FromUnsignedLong(self->stx.stx_mode);
 }
 
 
