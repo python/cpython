@@ -101,7 +101,7 @@ Dependencies to build optional modules are:
      - :mod:`sqlite3`
    * - `Tcl/Tk <https://www.tcl-lang.org/>`_
      - 8.5.12
-     - :mod:`tkinter`
+     - :mod:`tkinter`, :ref:`IDLE <idle>`, :mod:`turtle`
    * - `zlib <https://www.zlib.net>`_
      - 1.2.2.1
      - :mod:`zlib`, :mod:`gzip`, :mod:`ensurepip`
