@@ -1212,7 +1212,7 @@ invalid_arguments:
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
     | a[Token*]=('True'|'False'|'None') b='=' {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to %s", PyBytes_AS_STRING(a->bytes)) }
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to reserved keyword '%s'", PyBytes_AS_STRING(a->bytes)) }
     | a=NAME b='=' expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
     | !(NAME '=') a=expression b='=' {
@@ -1273,6 +1273,19 @@ invalid_named_expression(memo):
                                           _PyPegen_get_expr_name(a)) }
 
 invalid_assignment:
+    # 'yield' is handled below
+    | a[Token*]=('False' | 'None' | 'True' | 'and' | 'as' | 'assert' | 'async'
+                 | 'await' | 'break' | 'class' | 'continue' | 'def' | 'del'
+                 | 'elif' | 'else' | 'except' | 'finally' | 'for' | 'from'
+                 | 'global' | 'if' | 'import' | 'in' | 'is' | 'lambda'
+                 | 'nonlocal' | 'not' | 'or' | 'pass' | 'raise' | 'return'
+                 | 'try' | 'while' | 'with') '=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a,
+            b,
+            "cannot assign to reserved keyword '%s'",
+            PyBytes_AS_STRING(a->bytes)
+        )}
     | a=invalid_ann_assign_target ':' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a,
