@@ -573,6 +573,9 @@ Note that Python does not necessarily conform to `UAX-31`_.
 A non-normative listing of all valid identifier characters as defined by
 Unicode is available in the `DerivedCoreProperties.txt`_ file in the Unicode
 Character Database.
+The properties *ID_Start* and *ID_Continue* are very similar to Python's
+``id_start`` and ``id_continue`` sets; the properties *XID_Start* and
+*XID_Continue* play similar roles for identifiers before NFKC normalization.
 
 .. _UAX-31: https://www.unicode.org/reports/tr31/
 .. _PropList.txt: https://www.unicode.org/Public/17.0.0/ucd/PropList.txt
