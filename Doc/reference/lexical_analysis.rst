@@ -518,7 +518,7 @@ Non-ASCII characters in names
 
 Besides ``A-Z``, ``a-z``, ``_`` and ``0-9``, names can use "letter-like"
 and "number-like" characters from outside the ASCII range,
-as detailed in this sections.
+as detailed in this section.
 
 All names are converted into the `normalization form`_ NFKC while parsing.
 This means that, for example, some typographic variants of characters are
@@ -533,13 +533,13 @@ converted to their "basic" form, for example::
    Normalization is done at the lexical level only.
    Run-time functions that take names as *strings* generally do not normalize
    their arguments.
-   For example, the variable defined above is accessible in the
+   For example, the variable defined above is accessible at run time in the
    :func:`globals` dictionary as ``globals()["number"]`` but not
    ``globals()["nᵘₘᵇₑʳ"]``.
 
 The first character of a normalized identifier must be "letter-like".
 Formally, this means it must belong to the set ``id_start``,
-which is the union of:
+which is defined as the union of:
 
 * Unicode category ``<Lu>`` - uppercase letters (includes ``A`` to ``Z``)
 * Unicode category ``<Ll>`` - lowercase letters (includes ``a`` to ``z``)
@@ -552,7 +552,8 @@ which is the union of:
   to support backwards compatibility
 
 The remaining characters must be "letter-like" or "digit-like".
-Formally, they must belong to the set ``id_continue``, which is the union of:
+Formally, they must belong to the set ``id_continue``, which is defined as
+the union of:
 
 * ``id_start`` (see above)
 * Unicode category ``<Nd>`` - decimal numbers (includes ``0`` to ``9``)
@@ -565,13 +566,13 @@ Formally, they must belong to the set ``id_continue``, which is the union of:
 Unicode categories use the version of the Unicode Character Database as
 included in the :mod:`unicodedata` module.
 
-These sets are based on the Unicode standard annex `UAX-31`_.
-See also :pep:`3131` for further details.
+The ``id_start`` and ``id_continue`` sets are based on the Unicode standard
+annex `UAX-31`_. See also :pep:`3131` for further details.
+Note that Python does not necessarily conform to `UAX-31`_.
 
 A non-normative listing of all valid identifier characters as defined by
 Unicode is available in the `DerivedCoreProperties.txt`_ file in the Unicode
 Character Database.
-
 
 .. _UAX-31: https://www.unicode.org/reports/tr31/
 .. _PropList.txt: https://www.unicode.org/Public/17.0.0/ucd/PropList.txt
