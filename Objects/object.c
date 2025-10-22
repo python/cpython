@@ -2419,13 +2419,6 @@ _PyObject_InitState(PyInterpreterState *interp)
         return _PyStatus_NO_MEMORY();
     }
 #endif
-#ifdef Py_STATS
-    if (interp->config._pystats) {
-        // start with pystats enabled, can be disabled via sys._stats_off()
-        // this needs to be set before the first tstate is created
-        interp->pystats_enabled = 1;
-    }
-#endif
     return _PyStatus_OK();
 }
 

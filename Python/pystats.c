@@ -4,6 +4,7 @@
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_pylifecycle.h"     // _PyOS_URandomNonblock()
 #include "pycore_tstate.h"
+#include "pycore_initconfig.h"      // _PyStatus_OK()
 #include "pycore_uop_metadata.h"    // _PyOpcode_uop_name
 #include "pycore_uop_ids.h"         // MAX_UOP_ID
 #include "pycore_pystate.h"         // _PyThreadState_GET()
@@ -725,23 +726,31 @@ _Py_PrintSpecializationStats(int to_file)
     return 1;
 }
 
+PyStatus
+_PyStats_InterpInit(PyInterpreterState *interp)
+{
+    if (interp->config._pystats) {
+        // start with pystats enabled, can be disabled via sys._stats_off()
+        // this needs to be set before the first tstate is created
+        interp->pystats_enabled = 1;
+        interp->pystats_struct = PyMem_RawCalloc(1, sizeof(PyStats));
+        if (interp->pystats_struct == NULL) {
+            return _PyStatus_ERR("out-of-memory while initializing interpreter");
+        }
+    }
+    return _PyStatus_OK();
+}
+
 bool
 _PyStats_ThreadInit(PyInterpreterState *interp, _PyThreadStateImpl *tstate)
 {
-    STATS_LOCK(interp);
-    if (interp->pystats_enabled) {
-        PyStats *s = PyMem_RawCalloc(1, sizeof(PyStats));
-        if (s == NULL) {
-            STATS_UNLOCK(interp);
+#ifdef Py_GIL_DISABLED
+    if (FT_ATOMIC_LOAD_INT_RELAXED(interp->pystats_enabled)) {
+        assert(interp->pystats_struct != NULL);
+        tstate->pystats_struct = PyMem_RawCalloc(1, sizeof(PyStats));
+        if (tstate->pystats_struct == NULL) {
             return false;
         }
-        FT_ATOMIC_STORE_PTR_RELAXED(interp->pystats_struct, s);
-    }
-    STATS_UNLOCK(interp);
-#ifdef Py_GIL_DISABLED
-    tstate->pystats_struct = PyMem_RawCalloc(1, sizeof(PyStats));
-    if (tstate->pystats_struct == NULL) {
-        return false;
     }
 #endif
     return true;
