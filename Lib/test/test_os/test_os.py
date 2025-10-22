@@ -757,13 +757,16 @@ class StatAttributeTests(unittest.TestCase):
                            if getattr(result, name) is not None]
         self.check_timestamp_agreement(result, time_attributes)
 
+        def getmask(name):
+            return getattr(os, name, 0)
+
         requirements = (
             ('stx_atime', os.STATX_ATIME),
             ('stx_atime_ns', os.STATX_ATIME),
-            ('stx_atomic_write_segments_max', os.STATX_WRITE_ATOMIC),
-            ('stx_atomic_write_unit_max', os.STATX_WRITE_ATOMIC),
-            ('stx_atomic_write_unit_max_opt', os.STATX_WRITE_ATOMIC),
-            ('stx_atomic_write_unit_min', os.STATX_WRITE_ATOMIC),
+            ('stx_atomic_write_segments_max', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_atomic_write_unit_max', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_atomic_write_unit_max_opt', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_atomic_write_unit_min', getmask('STATX_WRITE_ATOMIC')),
             ('stx_attributes', 0),
             ('stx_attributes_mask', 0),
             ('stx_blksize', 0),
@@ -775,13 +778,13 @@ class StatAttributeTests(unittest.TestCase):
             ('stx_dev', 0),
             ('stx_dev_major', 0),
             ('stx_dev_minor', 0),
-            ('stx_dio_mem_align', os.STATX_DIOALIGN),
-            ('stx_dio_offset_align', os.STATX_DIOALIGN),
-            ('stx_dio_read_offset_align', os.STATX_DIO_READ_ALIGN),
+            ('stx_dio_mem_align', getmask('STATX_DIOALIGN')),
+            ('stx_dio_offset_align', getmask('STATX_DIOALIGN')),
+            ('stx_dio_read_offset_align', getmask('STATX_DIO_READ_ALIGN')),
             ('stx_gid', os.STATX_GID),
             ('stx_ino', os.STATX_INO),
             ('stx_mask', 0),
-            ('stx_mnt_id', os.STATX_MNT_ID),
+            ('stx_mnt_id', getmask('STATX_MNT_ID')),
             ('stx_mode', os.STATX_TYPE | os.STATX_MODE),
             ('stx_mtime', os.STATX_MTIME),
             ('stx_mtime_ns', os.STATX_MTIME),
@@ -790,7 +793,7 @@ class StatAttributeTests(unittest.TestCase):
             ('stx_rdev_major', 0),
             ('stx_rdev_minor', 0),
             ('stx_size', os.STATX_SIZE),
-            ('stx_subvol', os.STATX_SUBVOL),
+            ('stx_subvol', getmask('STATX_SUBVOL')),
             ('stx_uid', os.STATX_UID),
         )
         optional_members = {
