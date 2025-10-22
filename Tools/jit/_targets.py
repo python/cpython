@@ -335,7 +335,8 @@ class _COFF(
                 "Offset": offset,
                 "Symbol": s,
                 "Type": {
-                    "Name": "IMAGE_REL_ARM64_BRANCH26"
+                    "Name": "IMAGE_REL_ARM64_BRANCH19"
+                    | "IMAGE_REL_ARM64_BRANCH26"
                     | "IMAGE_REL_ARM64_PAGEBASE_REL21"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12A"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12L" as kind
@@ -564,7 +565,7 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         host = "aarch64-apple-darwin"
         condition = "defined(__aarch64__) && defined(__APPLE__)"
-        optimizer = _optimizers.OptimizerAArch64
+        optimizer = _optimizers.OptimizerAArch64_MachO
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         host = "aarch64-pc-windows-msvc"
