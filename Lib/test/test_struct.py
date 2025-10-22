@@ -920,6 +920,7 @@ class UnpackIteratorTest(unittest.TestCase):
         # all exponent bits and the msb of the fraction should all be 1.
         if platform.machine().startswith('parisc'):
             # HP PA RISC uses 0 for quiet
+            # https://en.wikipedia.org/wiki/NaN#Encoding
             expected = 0x7c
         else:
             expected = 0x7e
