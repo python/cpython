@@ -2774,9 +2774,9 @@ int
 PySet_Add(PyObject *anyset, PyObject *key)
 {
     if (_PyObject_IsUniquelyReferenced(anyset) && PyAnySet_Check(anyset)) {
-        // In free-threading, if the set or frozenset is uniquely referenced,
-        // no critical section is needed since only the owner thread is
-        // populating it.
+        // We can only change frozensets if they are uniquely referenced,
+        // and we can avoid locking sets even in free-threaded build if they
+        // are uniquely referenced.
         return set_add_key((PySetObject *)anyset, key);
     }
 
