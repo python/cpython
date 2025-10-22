@@ -3411,90 +3411,43 @@ features:
 
    Information about a file returned by :func:`os.statx`.
 
-   :class:`!statx_result` has all the attributes that :class:`~stat_result` has
-   on Linux, making it :term:`duck-typing` compatible, but
-   :class:`!statx_result` is not a subclass of :class:`~stat_result` and cannot
-   be used as a tuple.
-
-   :class:`!statx_result` has the following additional attributes:
+   :class:`!statx_result` has the following attributes:
 
    .. attribute:: stx_mask
 
       Bitmask of :const:`STATX_* <STATX_TYPE>` constants specifying the
       information retrieved, which may differ from what was requested.
 
-   .. attribute:: stx_attributes_mask
+   .. attribute:: stx_atime
 
-      Bitmask of :const:`STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
-      specifying the attributes bits supported for this file.
+      Time of most recent access expressed in seconds.
 
-   .. attribute:: stx_attributes
+      Equal to ``None`` if :data:`STATX_ATIME` is missing from
+      :attr:`~statx_result.stx_mask`.
 
-      Bitmask of :const:`STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
-      specifying the attributes of this file.
+   .. attribute:: stx_atime_ns
 
-   .. attribute:: stx_dev_major
+      Time of most recent access expressed in nanoseconds as an integer.
 
-      Major number of the device on which this file resides.
+      Equal to ``None`` if :data:`STATX_ATIME` is missing from
+      :attr:`~statx_result.stx_mask`.
 
-   .. attribute:: stx_dev_minor
+   .. attribute:: stx_atomic_write_segments_max
 
-      Minor number of the device on which this file resides.
+      Maximum iovecs for direct I/O with torn-write protection.
 
-   .. attribute:: stx_rdev_major
-
-      Major number of the device this file represents.
-
-   .. attribute:: stx_rdev_minor
-
-      Minor number of the device this file represents.
-
-   .. attribute:: stx_mnt_id
-
-      Mount identifier.
-
-      Equal to ``None`` if :data:`STATX_MNT_ID` is missing from
-      :attr:`~os.statx_result.stx_mask`.
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 5.8.
-
-   .. attribute:: stx_dio_mem_align
-
-      Direct I/O memory buffer alignment requirement.
-
-      Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
-      :attr:`~os.statx_result.stx_mask`.
-
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.1.
-
-   .. attribute:: stx_dio_offset_align
-
-      Direct I/O file offset alignment requirement.
-
-      Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
-      :attr:`~os.statx_result.stx_mask`.
-
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.1.
-
-   .. attribute:: stx_subvol
-
-      Subvolume identifier.
-
-      Equal to ``None`` if :data:`STATX_SUBVOL` is missing from
-      :attr:`~os.statx_result.stx_mask`.
-
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.10.
+         userspace API headers >= 6.11.
 
    .. attribute:: stx_atomic_write_unit_min
 
       Minimum size for direct I/O with torn-write protection.
 
       Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
-      :attr:`~os.statx_result.stx_mask`.
+      :attr:`~statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.11.
@@ -3504,7 +3457,7 @@ features:
       Maximum size for direct I/O with torn-write protection.
 
       Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
-      :attr:`~os.statx_result.stx_mask`.
+      :attr:`~statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.11.
@@ -3514,30 +3467,192 @@ features:
       Maximum optimized size for direct I/O with torn-write protection.
 
       Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
-      :attr:`~os.statx_result.stx_mask`.
+      :attr:`~statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.16.
 
-   .. attribute:: stx_atomic_write_segments_max
+   .. attribute:: stx_attributes
 
-      Maximum iovecs for direct I/O with torn-write protection.
+      Bitmask of :const:`STATX_ATTR_* <stat.STATX_ATTR_COMPRESSED>` constants
+      specifying the attributes of this file.
 
-      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
-      :attr:`~os.statx_result.stx_mask`.
+   .. attribute:: stx_attributes_mask
+
+      A mask indicating which bits in :attr:`stx_attributes` are supported by
+      the VFS and the filesystem.
+
+   .. attribute:: stx_blksize
+
+      "Preferred" blocksize for efficient file system I/O. Writing to a file in
+      smaller chunks may cause an inefficient read-modify-rewrite.
+
+   .. attribute:: stx_blocks
+
+      Number of 512-byte blocks allocated for file.
+      This may be smaller than :attr:`stx_size`/512 when the file has holes.
+
+      Equal to ``None`` if :data:`STATX_BLOCKS` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_btime
+
+      Time of file creation expressed in seconds.
+
+      Equal to ``None`` if :data:`STATX_BTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_btime_ns
+
+      Time of file creation expressed in nanoseconds as an integer.
+
+      Equal to ``None`` if :data:`STATX_BTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_ctime
+
+      Time of most recent metadata change expressed in seconds.
+
+      Equal to ``None`` if :data:`STATX_CTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_ctime_ns
+
+      Time of most recent metadata change expressed in nanoseconds as an
+      integer.
+
+      Equal to ``None`` if :data:`STATX_CTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_dev
+
+      Identifier of the device on which this file resides.
+
+   .. attribute:: stx_dev_major
+
+      Major number of the device on which this file resides.
+
+   .. attribute:: stx_dev_minor
+
+      Minor number of the device on which this file resides.
+
+   .. attribute:: stx_dio_offset_align
+
+      Direct I/O file offset alignment requirement.
+
+      Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
+      :attr:`~statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.11.
+         userspace API headers >= 6.1.
+
+   .. attribute:: stx_dio_mem_align
+
+      Direct I/O memory buffer alignment requirement.
+
+      Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.1.
 
    .. attribute:: stx_dio_read_offset_align
 
       Direct I/O file offset alignment requirement for reads.
 
       Equal to ``None`` if :data:`STATX_DIO_READ_ALIGN` is missing from
-      :attr:`~os.statx_result.stx_mask`.
+      :attr:`~statx_result.stx_mask`.
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.14.
+
+   .. attribute:: stx_gid
+
+      Group identifier of the file owner.
+
+      Equal to ``None`` if :data:`STATX_GID` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_ino
+
+      Inode number.
+
+      Equal to ``None`` if :data:`STATX_INO` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_mnt_id
+
+      Mount identifier.
+
+      Equal to ``None`` if :data:`STATX_MNT_ID` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 5.8.
+
+   .. attribute:: stx_mode
+
+      File mode: file type and file mode bits (permissions).
+
+   .. attribute:: stx_mtime
+
+      Time of most recent content modification expressed in seconds.
+
+      Equal to ``None`` if :data:`STATX_MTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_mtime_ns
+
+      Time of most recent content modification expressed in nanoseconds as an
+      integer.
+
+      Equal to ``None`` if :data:`STATX_MTIME` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_nlink
+
+      Number of hard links.
+
+      Equal to ``None`` if :data:`STATX_NLINK` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_rdev
+
+      Type of device if an inode device.
+
+   .. attribute:: stx_rdev_major
+
+      Major number of the device this file represents.
+
+   .. attribute:: stx_rdev_minor
+
+      Minor number of the device this file represents.
+
+   .. attribute:: stx_size
+
+      Size of the file in bytes, if it is a regular file or a symbolic link.
+      The size of a symbolic link is the length of the pathname it contains,
+      without a terminating null byte.
+
+      Equal to ``None`` if :data:`STATX_SIZE` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+   .. attribute:: stx_subvol
+
+      Subvolume identifier.
+
+      Equal to ``None`` if :data:`STATX_SUBVOL` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.10.
+
+   .. attribute:: stx_uid
+
+      User identifier of the file owner.
+
+      Equal to ``None`` if :data:`STATX_UID` is missing from
+      :attr:`~statx_result.stx_mask`.
 
    .. seealso:: The :manpage:`statx(2)` man page.
 

@@ -750,8 +750,8 @@ class StatAttributeTests(unittest.TestCase):
         result = os.statx(filename, maximal_mask)
         basic_result = os.stat(filename)
 
-        time_attributes = ('st_atime', 'st_mtime', 'st_ctime', 'st_birthtime')
-        # gh-83714: st_birthtime can be None on tmpfs even if STATX_BTIME mask
+        time_attributes = ('stx_atime', 'stx_btime', 'stx_ctime', 'stx_mtime')
+        # gh-83714: stx_btime can be None on tmpfs even if STATX_BTIME mask
         # is used
         time_attributes = [name for name in time_attributes
                            if getattr(result, name) is not None]
@@ -759,43 +759,44 @@ class StatAttributeTests(unittest.TestCase):
 
         # Check that valid attributes match os.stat.
         requirements = (
-            ('st_mode', os.STATX_TYPE | os.STATX_MODE),
-            ('st_nlink', os.STATX_NLINK),
-            ('st_uid', os.STATX_UID),
-            ('st_gid', os.STATX_GID),
-            ('st_atime', os.STATX_ATIME),
-            ('st_atime_ns', os.STATX_ATIME),
-            ('st_mtime', os.STATX_MTIME),
-            ('st_mtime_ns', os.STATX_MTIME),
-            ('st_ctime', os.STATX_CTIME),
-            ('st_ctime_ns', os.STATX_CTIME),
-            ('st_ino', os.STATX_INO),
-            ('st_size', os.STATX_SIZE),
-            ('st_blocks', os.STATX_BLOCKS),
-            ('st_birthtime', os.STATX_BTIME),
-            ('st_birthtime_ns', os.STATX_BTIME),
+            ('stx_mode', os.STATX_TYPE | os.STATX_MODE),
+            ('stx_nlink', os.STATX_NLINK),
+            ('stx_uid', os.STATX_UID),
+            ('stx_gid', os.STATX_GID),
+            ('stx_atime', os.STATX_ATIME),
+            ('stx_atime_ns', os.STATX_ATIME),
+            ('stx_mtime', os.STATX_MTIME),
+            ('stx_mtime_ns', os.STATX_MTIME),
+            ('stx_ctime', os.STATX_CTIME),
+            ('stx_ctime_ns', os.STATX_CTIME),
+            ('stx_ino', os.STATX_INO),
+            ('stx_size', os.STATX_SIZE),
+            ('stx_blocks', os.STATX_BLOCKS),
+            ('stx_birthtime', os.STATX_BTIME),
+            ('stx_birthtime_ns', os.STATX_BTIME),
             # unconditionally valid members
-            ('st_blksize', 0),
-            ('st_rdev', 0),
-            ('st_dev', 0),
+            ('stx_blksize', 0),
+            ('stx_rdev', 0),
+            ('stx_dev', 0),
         )
         for name, bits in requirements:
-            if result.stx_mask & bits == bits and hasattr(basic_result, name):
+            st_name = "st_" + name[4:]
+            if result.stx_mask & bits == bits and hasattr(basic_result, st_name):
                 x = getattr(result, name)
-                b = getattr(basic_result, name)
+                b = getattr(basic_result, st_name)
                 self.assertEqual(type(x), type(b))
                 if isinstance(x, float):
                     self.assertAlmostEqual(x, b, msg=name)
                 else:
                     self.assertEqual(x, b, msg=name)
 
-        self.assertEqual(result.stx_rdev_major, os.major(result.st_rdev))
-        self.assertEqual(result.stx_rdev_minor, os.minor(result.st_rdev))
-        self.assertEqual(result.stx_dev_major, os.major(result.st_dev))
-        self.assertEqual(result.stx_dev_minor, os.minor(result.st_dev))
+        self.assertEqual(result.stx_rdev_major, os.major(result.stx_rdev))
+        self.assertEqual(result.stx_rdev_minor, os.minor(result.stx_rdev))
+        self.assertEqual(result.stx_dev_major, os.major(result.stx_dev))
+        self.assertEqual(result.stx_dev_minor, os.minor(result.stx_dev))
 
         members = [name for name in dir(result)
-                   if name.startswith('st_') or name.startswith('stx_')]
+                   if name.startswith('stx_')]
         for name in members:
             try:
                 setattr(result, name, 1)
