@@ -515,8 +515,7 @@ Available Functions
 
    .. versionchanged:: next
       If no module is passed, test the filter regular expression against
-      module names created from the path, not only the path itself;
-      strip also ``.pyw`` (on Windows) and ``/__init__.py``.
+      module names created from the path, not only the path itself.
 
 
 .. function:: showwarning(message, category, filename, lineno, file=None, line=None)
