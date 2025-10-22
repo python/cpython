@@ -109,12 +109,9 @@ Dependencies to build optional modules are:
      - 1.4.5
      - :mod:`compression.zstd`
 
-.. [1] If *libmpdec* is not available, CPython will use a bundled copy.
-   This is deprecated; see :option:`--with-system-libmpdec` for details.
-
-   .. when the bundled libmpdec is removed, we should instead note that
-      :mod:`decimal` will fall back to a pure-Python implementation.
-
+.. [1] If *libmpdec* is not available, the :mod:`decimal` module will use
+   a pure-Python implementation.
+   See :option:`--with-system-libmpdec` for details.
 .. [2] See :option:`--with-readline` for choosing the backend for the
    :mod:`readline` module.
 .. [3] The :mod:`uuid` module uses ``_uuid`` to generate "safe" UUIDs.
@@ -963,6 +960,13 @@ Libraries options
 
    .. versionchanged:: 3.13
       Default to using the installed ``mpdecimal`` library.
+
+   .. versionchanged:: 3.15
+
+      A bundled copy of the library will no longer be selected
+      implicitly if an installed ``mpdecimal`` library is not found.
+      In Python 3.15 only, it can still be selected explicitly using
+      ``--with-system-libmpdec=no`` or ``--without-system-libmpdec``.
 
    .. deprecated-removed:: 3.13 3.16
       A copy of the ``mpdecimal`` library sources will no longer be distributed
