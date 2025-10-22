@@ -115,8 +115,8 @@ def from_package(package: types.ModuleType):
 
     if package.__spec__ is None:
         raise TypeError(
-            f"Cannot access resources for '{package.__name__}' "
-            "as it does not correspond to an importable module."
+            f"Cannot access resources for '{package.__name__ or package!r}' "
+            "as it does not appear to correspond to an importable module (its __spec__ is None)."
         )
 
     spec = wrap_spec(package.__spec__)

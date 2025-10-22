@@ -241,7 +241,7 @@ class ResourceFromMainModuleWithNoneSpecTests(unittest.TestCase):
 
         self.assertIsNone(mainmodule.__spec__)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError, msg="Cannot access resources for '__main__' as it does not appear to correspond to an importable module (its __spec__ is None)."):
             resources.files(mainmodule)
 
 
