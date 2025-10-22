@@ -14,6 +14,11 @@ import _colorize
 
 from contextlib import suppress
 
+try:
+    from _stdlib_modules_info import MISSING_STDLIB_MODULE_MESSAGES
+except ImportError:
+    MISSING_STDLIB_MODULE_MESSAGES = None
+
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
@@ -1110,11 +1115,14 @@ class TracebackException:
         elif exc_type and issubclass(exc_type, ModuleNotFoundError):
             module_name = getattr(exc_value, "name", None)
             if module_name in sys.stdlib_module_names:
-                message = _missing_stdlib_module.get(
-                    module_name,
-                    f"Standard library module '{module_name}' was not found"
-                )
-                self._str = message
+                if MISSING_STDLIB_MODULE_MESSAGES is not None:
+                    message = MISSING_STDLIB_MODULE_MESSAGES.get(
+                        module_name,
+                        f"Standard library module '{module_name}' was not found"
+                    )
+                    self._str = message
+                else:
+                    self._str = f"Standard library module '{module_name}' was not found"
             elif sys.flags.no_site:
                 self._str += (". Site initialization is disabled, did you forget to "
                     + "add the site-packages directory to sys.path "
@@ -1798,12 +1806,3 @@ def _levenshtein_distance(a, b, max_cost):
             # Everything in this row is too big, so bail early.
             return max_cost + 1
     return result
-
-_windows_only_modules = ["winreg", "msvcrt", "winsound", "nt", "_winapi", "_msi"]
-
-_missing_stdlib_module = {
-    name: f"Windows-only standard library module '{name}' not found"
-    for name in _windows_only_modules
-} | {
-    # Distributors can patch this dictionary to provide installation suggestions.
-}
