@@ -626,6 +626,7 @@ mapping_pattern[pattern_ty]:
             CHECK(asdl_pattern_seq*, _PyPegen_get_patterns(p, items)),
             NULL,
             EXTRA) }
+    | invalid_mapping_pattern
 
 items_pattern[asdl_seq*]:
     | ','.key_value_pattern+
@@ -1490,6 +1491,10 @@ invalid_class_pattern:
         PyPegen_first_item(a, pattern_ty),
         PyPegen_last_item(a, pattern_ty),
         "positional patterns follow keyword patterns") }
+invalid_mapping_pattern:
+    | '{' (items_pattern ',')? rest=double_star_pattern ',' items_pattern ','? '}' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+        rest,
+        "double star pattern must be the last (right-most) subpattern in the mapping pattern") }
 invalid_class_argument_pattern[asdl_pattern_seq*]:
     | [positional_patterns ','] keyword_patterns ',' a=positional_patterns { a }
 invalid_if_stmt:
