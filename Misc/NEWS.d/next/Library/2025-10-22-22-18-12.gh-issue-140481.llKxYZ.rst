@@ -1,0 +1,1 @@
+fixed misleading error and added ``__contain__`` method in ``tkinter.Misc``
