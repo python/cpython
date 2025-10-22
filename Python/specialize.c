@@ -1708,10 +1708,14 @@ specialize_load_global_lock_held(
         goto fail;
     }
     PyObject *value = NULL;
-    if (PyDict_GetItemRef(globals, name, &value) < 0 ||
-        (value != NULL && PyLazyImport_CheckExact(value))) {
+    if (PyDict_GetItemRef(globals, name, &value) < 0) {
+        SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
+        goto fail;
+    }
+    if (value != NULL && PyLazyImport_CheckExact(value)) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_ATTR_MODULE_LAZY_VALUE);
         Py_DECREF(value);
+        goto fail;
     }
     Py_XDECREF(value);
     Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
