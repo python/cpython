@@ -322,7 +322,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/mpeg", ".mpe"),
                 ("video/mpeg", ".mpeg"),
                 ("video/mpeg", ".mpg"),
-             ):
+            ):
                 with self.subTest(mime_type=mime_type, ext=ext):
                     result, _ = mimetypes.guess_file_type(f"filename{ext}")
                     self.assertEqual(result, mime_type)
