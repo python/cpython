@@ -74,7 +74,7 @@ ArgumentParser objects
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
                           add_help=True, allow_abbrev=True, exit_on_error=True, \
-                          *, suggest_on_error=False, color=True)
+                          *, suggest_on_error=True, color=True)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -117,7 +117,7 @@ ArgumentParser objects
      error info when an error occurs. (default: ``True``)
 
    * suggest_on_error_ - Enables suggestions for mistyped argument choices
-     and subparser names (default: ``False``)
+     and subparser names (default: ``True``)
 
    * color_ - Allow color output (default: ``True``)
 
@@ -133,6 +133,9 @@ ArgumentParser objects
 
    .. versionchanged:: 3.14
       *suggest_on_error* and *color* parameters were added.
+
+   .. versionchanged:: 3.15
+      *suggest_on_error* default changed to ``True``.
 
 The following sections describe how each of these are used.
 
@@ -596,13 +599,11 @@ suggest_on_error
 ^^^^^^^^^^^^^^^^
 
 By default, when a user passes an invalid argument choice or subparser name,
-:class:`ArgumentParser` will exit with error info and list the permissible
-argument choices (if specified) or subparser names as part of the error message.
-
-If the user would like to enable suggestions for mistyped argument choices and
-subparser names, the feature can be enabled by setting ``suggest_on_error`` to
-``True``. Note that this only applies for arguments when the choices specified
-are strings::
+:class:`ArgumentParser` will exit with error info and provide suggestions for
+mistyped arguments. The error message will list the permissible argument
+choices (if specified) or subparser names, along with a "maybe you meant"
+suggestion if a close match is found. Note that this only applies for arguments
+when the choices specified are strings::
 
    >>> parser = argparse.ArgumentParser(description='Process some integers.',
                                         suggest_on_error=True)
@@ -612,16 +613,14 @@ are strings::
    >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
    tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
 
-If you're writing code that needs to be compatible with older Python versions
-and want to opportunistically use ``suggest_on_error`` when it's available, you
-can set it as an attribute after initializing the parser instead of using the
-keyword argument::
+You can disable suggestions by setting ``suggest_on_error`` to ``False``::
 
-   >>> parser = argparse.ArgumentParser(description='Process some integers.')
-   >>> parser.suggest_on_error = True
+   >>> parser = argparse.ArgumentParser(description='Process some integers.',
+                                        suggest_on_error=False)
 
 .. versionadded:: 3.14
-
+.. versionchanged:: 3.15
+   Changed default value of ``suggest_on_error`` from ``False`` to ``True``.
 
 color
 ^^^^^
