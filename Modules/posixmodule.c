@@ -3396,10 +3396,10 @@ STATX_GET_UINT(stx_atomic_write_unit_max_opt, STATX_WRITE_ATOMIC)
 STATX_GET_ULONGLONG(stx_blocks, STATX_BLOCKS)
 STATX_GET_ULONGLONG(stx_ino, STATX_INO)
 STATX_GET_ULONGLONG(stx_size, STATX_SIZE)
-#ifdef HAVE_STRUCT_STATX_STX_MNT_ID
+#if defined(STATX_MNT_ID) && defined(HAVE_STRUCT_STATX_STX_MNT_ID)
 STATX_GET_ULONGLONG(stx_mnt_id, STATX_MNT_ID)
 #endif
-#ifdef HAVE_STRUCT_STATX_STX_SUBVOL
+#if defined(STATX_SUBVOL) && defined(HAVE_STRUCT_STATX_STX_SUBVOL)
 STATX_GET_ULONGLONG(stx_subvol, STATX_SUBVOL)
 #endif
 
@@ -3458,14 +3458,14 @@ static PyGetSetDef pystatx_result_getset[] = {
     G(stx_ctime_ns, "time of last change in nanoseconds"),
     G(stx_mtime, "time of last modification"),
     G(stx_mtime_ns, "time of last modification in nanoseconds"),
-#ifdef HAVE_STRUCT_STATX_STX_MNT_ID
+#if defined(STATX_MNT_ID) && defined(HAVE_STRUCT_STATX_STX_MNT_ID)
     G(stx_mnt_id, "mount ID"),
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
     G(stx_dio_mem_align, "direct I/O memory buffer alignment"),
     G(stx_dio_offset_align, "direct I/O file offset alignment"),
 #endif
-#ifdef HAVE_STRUCT_STATX_STX_SUBVOL
+#if defined(STATX_SUBVOL) && defined(HAVE_STRUCT_STATX_STX_SUBVOL)
     G(stx_subvol, "subvolume ID"),
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
