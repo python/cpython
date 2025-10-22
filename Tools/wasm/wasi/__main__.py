@@ -31,7 +31,7 @@ LOCAL_SETUP_MARKER = (
     b"# Required to statically build extension modules."
 )
 
-WASI_SDK_VERSION = 24
+WASI_SDK_VERSION = 25
 
 WASMTIME_VAR_NAME = "WASMTIME"
 WASMTIME_HOST_RUNNER_VAR = f"{{{WASMTIME_VAR_NAME}}}"
