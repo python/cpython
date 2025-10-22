@@ -21,11 +21,17 @@ from profiling.sampling.stack_collector import (
 )
 from profiling.sampling.gecko_collector import GeckoCollector
 
+from test.support import (
+    SHORT_TIMEOUT,
+    captured_stderr,
+    captured_stdout,
+    force_not_colorized_test_class,
+    is_emscripten,
+    is_slow_machine,
+    requires_subprocess,
+)
 from test.support.os_helper import unlink
-from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
 from test.support.socket_helper import find_unused_port
-from test.support import requires_subprocess, is_emscripten
-from test.support import captured_stdout, captured_stderr, is_slow_machine
 
 PROCESS_VM_READV_SUPPORTED = False
 
