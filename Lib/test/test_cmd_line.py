@@ -198,7 +198,7 @@ class CmdLineTest(unittest.TestCase):
         p.stdin.write(b'Timer\n')
         p.stdin.write(b'exit()\n')
         data = kill_python(p)
-        self.assertTrue(data.find(b'1 loop') != -1)
+        self.assertIn(b'1 loop', data)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
 
     def test_relativedir_bug46421(self):

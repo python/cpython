@@ -180,17 +180,17 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg, PyObject
     if (obj == Py_None)
         return 1;
 
-    /* An internal plain text default filter must match exactly */
-    if (PyUnicode_CheckExact(obj)) {
-        int cmp_result = PyUnicode_Compare(obj, arg);
-        if (cmp_result == -1 && PyErr_Occurred()) {
-            return -1;
-        }
-        return !cmp_result;
-    }
-
-    /* Otherwise assume a regex filter and call its match() method */
     if (arg != NULL) {
+        /* An internal plain text default filter must match exactly */
+        if (PyUnicode_CheckExact(obj)) {
+            int cmp_result = PyUnicode_Compare(obj, arg);
+            if (cmp_result == -1 && PyErr_Occurred()) {
+                return -1;
+            }
+            return !cmp_result;
+        }
+
+        /* Otherwise assume a regex filter and call its match() method */
         result = PyObject_CallMethodOneArg(obj, &_Py_ID(match), arg);
     }
     else {
