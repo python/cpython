@@ -3463,14 +3463,14 @@ static PyGetSetDef pystatx_result_getset[] = {
     G(st_ctime_ns, "time of last change in nanoseconds"),
     G(st_mtime, "time of last modification"),
     G(st_mtime_ns, "time of last modification in nanoseconds"),
-#ifdef HAVE_STRUCT_STATX_STX_MNT_ID
+#if defined(STATX_MNT_ID) && defined(HAVE_STRUCT_STATX_STX_MNT_ID)
     G(stx_mnt_id, "mount ID"),
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
     G(stx_dio_mem_align, "direct I/O memory buffer alignment"),
     G(stx_dio_offset_align, "direct I/O file offset alignment"),
 #endif
-#ifdef HAVE_STRUCT_STATX_STX_SUBVOL
+#if defined(STATX_SUBVOL) && defined(HAVE_STRUCT_STATX_STX_SUBVOL)
     G(stx_subvol, "subvolume ID"),
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
