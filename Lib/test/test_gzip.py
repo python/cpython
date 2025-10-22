@@ -499,6 +499,25 @@ class TestGzip(BaseTest):
             self.assertEqual(f.read(100), b'')
             self.assertEqual(nread, len(uncompressed))
 
+    def test_no_refloop_with_writestream(self):
+        """GH-129640 and GH-129726: Test that the _WriteBufferStream reference cycle method prevents reference loops."""
+        import gc
+
+        gc.collect()
+
+        before_count = len(gc.get_objects())
+
+        with io.BytesIO() as bio:
+            with gzip.GzipFile(fileobj=bio, mode="wb") as f:
+                f.write(b"test data")
+
+        gc.collect(0)
+
+        # Check that all objects were properly cleaned up
+        after_count = len(gc.get_objects())
+        self.assertLess(after_count - before_count, 10,
+                        "Too many objects remain after GzipFile cleanup")
+
     def test_textio_readlines(self):
         # Issue #10791: TextIOWrapper.readlines() fails when wrapping GzipFile.
         lines = (data1 * 50).decode("ascii").splitlines(keepends=True)
