@@ -10,6 +10,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import timeit
 import unittest
 from collections import namedtuple
 from unittest import mock
@@ -28,6 +29,8 @@ from test.support import requires_subprocess, is_emscripten
 from test.support import captured_stdout, captured_stderr
 
 PROCESS_VM_READV_SUPPORTED = False
+
+SLOW_MACHINE = timeit.timeit("2*2", number=10_000) > 0.0001
 
 try:
     from _remote_debugging import PROCESS_VM_READV_SUPPORTED
@@ -1754,6 +1757,7 @@ if __name__ == "__main__":
 '''
 
     def test_sampling_basic_functionality(self):
+        duration_sec = 10 if SLOW_MACHINE else 2
         with (
             test_subprocess(self.test_script) as subproc,
             io.StringIO() as captured_output,
@@ -1762,7 +1766,7 @@ if __name__ == "__main__":
             try:
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
-                    duration_sec=2,
+                    duration_sec=duration_sec,
                     sample_interval_usec=1000,  # 1ms
                     show_summary=False,
                 )
@@ -1904,7 +1908,10 @@ if __name__ == "__main__":
         script_file.flush()
         self.addCleanup(close_and_unlink, script_file)
 
-        test_args = ["profiling.sampling.sample", "-d", "1", script_file.name]
+        duration = 10 if SLOW_MACHINE else 1
+        test_args = [
+            "profiling.sampling.sample", "-d", str(duration), script_file.name
+        ]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -1936,7 +1943,12 @@ if __name__ == "__main__":
         with open(module_path, "w") as f:
             f.write(self.test_script)
 
-        test_args = ["profiling.sampling.sample", "-d", "1", "-m", "test_module"]
+        duration = 10 if SLOW_MACHINE else 1
+        test_args = [
+            "profiling.sampling.sample",
+            "-d", str(duration),
+            "-m", "test_module"
+        ]
 
         with (
             mock.patch("sys.argv", test_args),
