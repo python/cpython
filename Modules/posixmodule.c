@@ -3330,17 +3330,17 @@ typedef struct {
 
 static PyMemberDef pystatx_result_members[] = {
     MM(stx_mask, Py_T_UINT, mask, "member validity mask"),
-    MM(st_blksize, Py_T_UINT, blksize, "blocksize for filesystem I/O"),
+    MM(stx_blksize, Py_T_UINT, blksize, "blocksize for filesystem I/O"),
     MM(stx_attributes, Py_T_ULONGLONG, attributes, "Linux inode attribute bits"),
-    MM(st_mode, Py_T_USHORT, mode, "protection bits"),
+    MM(stx_mode, Py_T_USHORT, mode, "protection bits"),
     MM(stx_attributes_mask, Py_T_ULONGLONG, attributes_mask,
         "Mask of supported bits in stx_attributes"),
     MM(stx_rdev_major, Py_T_UINT, rdev_major, "represented device major number"),
     MM(stx_rdev_minor, Py_T_UINT, rdev_minor, "represented device minor number"),
-    MX(st_rdev, Py_T_ULONGLONG, rdev, "device type (if inode device)"),
+    MX(stx_rdev, Py_T_ULONGLONG, rdev, "device type (if inode device)"),
     MM(stx_dev_major, Py_T_UINT, dev_major, "containing device major number"),
     MM(stx_dev_minor, Py_T_UINT, dev_minor, "containing device minor number"),
-    MX(st_dev, Py_T_ULONGLONG, dev, "device"),
+    MX(stx_dev, Py_T_ULONGLONG, dev, "device"),
     {NULL},
 };
 
@@ -3349,7 +3349,7 @@ static PyMemberDef pystatx_result_members[] = {
 #undef M
 
 
-#define STATX_GET_UINT(ATTR, MEMBER, MASK) \
+#define STATX_GET_UINT(ATTR, MASK) \
     static PyObject* \
     pystatx_result_get_##ATTR(PyObject *op, void *Py_UNUSED(context)) \
     { \
@@ -3357,36 +3357,31 @@ static PyMemberDef pystatx_result_members[] = {
         if (!(self->stx.stx_mask & MASK)) { \
             Py_RETURN_NONE; \
         } \
-        unsigned long value = self->stx.MEMBER; \
+        unsigned long value = self->stx.ATTR; \
         return PyLong_FromUnsignedLong(value); \
     }
 
-STATX_GET_UINT(st_uid, stx_uid, STATX_UID)
-STATX_GET_UINT(st_gid, stx_gid, STATX_GID)
-STATX_GET_UINT(st_nlink, stx_nlink, STATX_NLINK)
+STATX_GET_UINT(stx_uid, STATX_UID)
+STATX_GET_UINT(stx_gid, STATX_GID)
+STATX_GET_UINT(stx_nlink, STATX_NLINK)
 #ifdef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
-STATX_GET_UINT(stx_dio_mem_align, stx_dio_mem_align, STATX_DIOALIGN)
-STATX_GET_UINT(stx_dio_offset_align, stx_dio_offset_align, STATX_DIOALIGN)
+STATX_GET_UINT(stx_dio_mem_align, STATX_DIOALIGN)
+STATX_GET_UINT(stx_dio_offset_align, STATX_DIOALIGN)
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN
-STATX_GET_UINT(stx_dio_read_offset_align, stx_dio_read_offset_align,
-               STATX_DIO_READ_ALIGN)
+STATX_GET_UINT(stx_dio_read_offset_align, STATX_DIO_READ_ALIGN)
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
-STATX_GET_UINT(stx_atomic_write_unit_min, stx_atomic_write_unit_min,
-               STATX_WRITE_ATOMIC)
-STATX_GET_UINT(stx_atomic_write_unit_max, stx_atomic_write_unit_max,
-               STATX_WRITE_ATOMIC)
-STATX_GET_UINT(stx_atomic_write_segments_max, stx_atomic_write_segments_max,
-               STATX_WRITE_ATOMIC)
+STATX_GET_UINT(stx_atomic_write_unit_min, STATX_WRITE_ATOMIC)
+STATX_GET_UINT(stx_atomic_write_unit_max, STATX_WRITE_ATOMIC)
+STATX_GET_UINT(stx_atomic_write_segments_max, STATX_WRITE_ATOMIC)
 #endif
 #ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT
-STATX_GET_UINT(stx_atomic_write_unit_max_opt, stx_atomic_write_unit_max_opt,
-               STATX_WRITE_ATOMIC)
+STATX_GET_UINT(stx_atomic_write_unit_max_opt, STATX_WRITE_ATOMIC)
 #endif
 
 
-#define STATX_GET_ULONGLONG(ATTR, MEMBER, MASK) \
+#define STATX_GET_ULONGLONG(ATTR, MASK) \
     static PyObject* \
     pystatx_result_get_##ATTR(PyObject *op, void *Py_UNUSED(context)) \
     { \
@@ -3394,18 +3389,18 @@ STATX_GET_UINT(stx_atomic_write_unit_max_opt, stx_atomic_write_unit_max_opt,
         if (!(self->stx.stx_mask & MASK)) { \
             Py_RETURN_NONE; \
         } \
-        unsigned long long value = self->stx.MEMBER; \
+        unsigned long long value = self->stx.ATTR; \
         return PyLong_FromUnsignedLongLong(value); \
     }
 
-STATX_GET_ULONGLONG(st_blocks, stx_blocks, STATX_BLOCKS)
-STATX_GET_ULONGLONG(st_ino, stx_ino, STATX_INO)
-STATX_GET_ULONGLONG(st_size, stx_size, STATX_SIZE)
+STATX_GET_ULONGLONG(stx_blocks, STATX_BLOCKS)
+STATX_GET_ULONGLONG(stx_ino, STATX_INO)
+STATX_GET_ULONGLONG(stx_size, STATX_SIZE)
 #if defined(STATX_MNT_ID) && defined(HAVE_STRUCT_STATX_STX_MNT_ID)
-STATX_GET_ULONGLONG(stx_mnt_id, stx_mnt_id, STATX_MNT_ID)
+STATX_GET_ULONGLONG(stx_mnt_id, STATX_MNT_ID)
 #endif
 #if defined(STATX_SUBVOL) && defined(HAVE_STRUCT_STATX_STX_SUBVOL)
-STATX_GET_ULONGLONG(stx_subvol, stx_subvol, STATX_SUBVOL)
+STATX_GET_ULONGLONG(stx_subvol, STATX_SUBVOL)
 #endif
 
 
@@ -3421,10 +3416,10 @@ STATX_GET_ULONGLONG(stx_subvol, stx_subvol, STATX_SUBVOL)
         return PyFloat_FromDouble(sec); \
     }
 
-STATX_GET_DOUBLE(st_atime, atime_sec, STATX_ATIME)
-STATX_GET_DOUBLE(st_birthtime, btime_sec, STATX_BTIME)
-STATX_GET_DOUBLE(st_ctime, ctime_sec, STATX_CTIME)
-STATX_GET_DOUBLE(st_mtime, mtime_sec, STATX_MTIME)
+STATX_GET_DOUBLE(stx_atime, atime_sec, STATX_ATIME)
+STATX_GET_DOUBLE(stx_btime, btime_sec, STATX_BTIME)
+STATX_GET_DOUBLE(stx_ctime, ctime_sec, STATX_CTIME)
+STATX_GET_DOUBLE(stx_mtime, mtime_sec, STATX_MTIME)
 
 #define STATX_GET_NSEC(ATTR, MEMBER, MASK) \
     static PyObject* \
@@ -3440,29 +3435,29 @@ STATX_GET_DOUBLE(st_mtime, mtime_sec, STATX_MTIME)
         return stat_nanosecond_timestamp(state, ts->tv_sec, ts->tv_nsec); \
     }
 
-STATX_GET_NSEC(st_atime_ns, stx_atime, STATX_ATIME)
-STATX_GET_NSEC(st_birthtime_ns, stx_btime, STATX_BTIME)
-STATX_GET_NSEC(st_ctime_ns, stx_ctime, STATX_CTIME)
-STATX_GET_NSEC(st_mtime_ns, stx_mtime, STATX_MTIME)
+STATX_GET_NSEC(stx_atime_ns, stx_atime, STATX_ATIME)
+STATX_GET_NSEC(stx_btime_ns, stx_btime, STATX_BTIME)
+STATX_GET_NSEC(stx_ctime_ns, stx_ctime, STATX_CTIME)
+STATX_GET_NSEC(stx_mtime_ns, stx_mtime, STATX_MTIME)
 
 #define G(attr, doc) \
     {#attr, pystatx_result_get_##attr, NULL, PyDoc_STR(doc), NULL}
 
 static PyGetSetDef pystatx_result_getset[] = {
-    G(st_nlink, "number of hard links"),
-    G(st_uid, "user ID of owner"),
-    G(st_gid, "group ID of owner"),
-    G(st_ino, "inode"),
-    G(st_size, "total size, in bytes"),
-    G(st_blocks, "number of blocks allocated"),
-    G(st_atime, "time of last access"),
-    G(st_atime_ns, "time of last access in nanoseconds"),
-    G(st_birthtime, "time of creation"),
-    G(st_birthtime_ns, "time of creation in nanoseconds"),
-    G(st_ctime, "time of last change"),
-    G(st_ctime_ns, "time of last change in nanoseconds"),
-    G(st_mtime, "time of last modification"),
-    G(st_mtime_ns, "time of last modification in nanoseconds"),
+    G(stx_nlink, "number of hard links"),
+    G(stx_uid, "user ID of owner"),
+    G(stx_gid, "group ID of owner"),
+    G(stx_ino, "inode"),
+    G(stx_size, "total size, in bytes"),
+    G(stx_blocks, "number of blocks allocated"),
+    G(stx_atime, "time of last access"),
+    G(stx_atime_ns, "time of last access in nanoseconds"),
+    G(stx_btime, "time of creation"),
+    G(stx_btime_ns, "time of creation in nanoseconds"),
+    G(stx_ctime, "time of last change"),
+    G(stx_ctime_ns, "time of last change in nanoseconds"),
+    G(stx_mtime, "time of last modification"),
+    G(stx_mtime_ns, "time of last modification in nanoseconds"),
 #if defined(STATX_MNT_ID) && defined(HAVE_STRUCT_STATX_STX_MNT_ID)
     G(stx_mnt_id, "mount ID"),
 #endif
