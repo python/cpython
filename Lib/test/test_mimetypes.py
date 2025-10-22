@@ -229,7 +229,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/epub+zip", ".epub"),
                 ('application/json', '.json'),
                 ('application/manifest+json', '.webmanifest'),
-                ('applicaion/mathematica', '.nb'),
+                ('application/mathematica', '.nb'),
                 ('application/mathml+xml', '.mml'),
                 ('application/mbox', '.mbox'),
                 ("application/octet-stream", ".bin"),
