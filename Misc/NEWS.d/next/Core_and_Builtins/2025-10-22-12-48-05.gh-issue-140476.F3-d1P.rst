@@ -1,0 +1,2 @@
+Optimize :c:func:`PySet_Add` for uniquely referenced sets in :term:`free
+threaded <free threading>` build.
