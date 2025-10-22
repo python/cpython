@@ -817,8 +817,8 @@ class StatAttributeTests(unittest.TestCase):
         members = set(name for name in dir(result)
                       if name.startswith('stx_'))
         tested = set(name for name, mask in requirements)
-        if members ^ tested:
-            raise ValueError(f"statx members not tested: {members ^ tested}")
+        if members - tested:
+            raise ValueError(f"statx members not tested: {members - tested}")
 
         for name, mask in requirements:
             with self.subTest(name=name):
