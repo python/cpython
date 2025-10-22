@@ -2331,13 +2331,14 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             excinfo.exception.stderr,
         )
 
-    def test_wrong_argument_no_suggestion_implicit(self):
+    def test_wrong_argument_with_suggestion_implicit(self):
         parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "error: argument foo: invalid choice: 'bazz' (choose from bar, baz)",
+            "error: argument foo: invalid choice: 'bazz', maybe you meant"
+             " 'baz'? (choose from bar, baz)",
             excinfo.exception.stderr,
         )
 
