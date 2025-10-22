@@ -115,8 +115,8 @@ def from_package(package: types.ModuleType):
 
     if package.__spec__ is None:
         raise TypeError(
-            f"Cannot access resources because the code used to populate '{package.__name__}' "
-            "does not correspond directly with an importable module."
+            f"Cannot access resources for '{package.__name__}' "
+            "as it does not correspond to an importable module."
         )
 
     spec = wrap_spec(package.__spec__)
