@@ -199,7 +199,7 @@ class CAPIFloatTest(unittest.TestCase):
                     # e.g. https://developercommunity.visualstudio.com/t/155064
                     signaling = 0
                     if platform.machine().startswith('parisc'):
-                        # HP PA RISC uses 0 for quiet
+                        # HP PA RISC uses 0 for quiet, see:
                         # https://en.wikipedia.org/wiki/NaN#Encoding
                         signaling = 1
                 quiet = int(not signaling)
