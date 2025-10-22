@@ -603,9 +603,9 @@ class HTMLCalendar(Calendar):
         return ''.join(v).encode(encoding, "xmlcharrefreplace")
 
 
-    def formatmonthpage(self, theyear, themonth, width=3, css='calendar.css', encoding=None):
+    def _format_html_page(self, theyear, content, css, encoding):
         """
-        Return a formatted month as a complete HTML page.
+        Return a complete HTML page with the given content.
         """
         if encoding is None:
             encoding = 'utf-8'
@@ -626,10 +626,24 @@ class HTMLCalendar(Calendar):
             a(f'<link rel="stylesheet" href="{css}">\n')
         a('</head>\n')
         a('<body>\n')
-        a(self.formatmonth(theyear, themonth, width))
+        a(content)
         a('</body>\n')
         a('</html>\n')
         return ''.join(v).encode(encoding, "xmlcharrefreplace")
+
+    def formatyearpage(self, theyear, width=3, css='calendar.css', encoding=None):
+        """
+        Return a formatted year as a complete HTML page.
+        """
+        content = self.formatyear(theyear, width)
+        return self._format_html_page(theyear, content, css, encoding)
+
+    def formatmonthpage(self, theyear, themonth, width=3, css='calendar.css', encoding=None):
+        """
+        Return a formatted month as a complete HTML page.
+        """
+        content = self.formatmonth(theyear, themonth, width)
+        return self._format_html_page(theyear, content, css, encoding)
 
 
 class different_locale:
