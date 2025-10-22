@@ -10,7 +10,7 @@
     ],
     "updateContentCommand": {
         // Using the shell for `nproc` usage.
-        "python": "python3 Tools/wasm/wasi build -- --with-pydebug -C"
+        "python": "python3 Tools/wasm/wasi build --quiet -- --with-pydebug -C"
     },
     "postCreateCommand": {
         // https://github.com/orgs/community/discussions/26026
