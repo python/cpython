@@ -1,0 +1,2 @@
+Fix memory leak in :func:`array.array` when creating arrays from empty
+:class:`str`.
