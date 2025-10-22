@@ -45,7 +45,7 @@ support".
 
 .. _optional-module-requirements:
 
-Requirements for Optional Modules
+Requirements for optional modules
 ---------------------------------
 
 To build :term:`optional modules <optional module>` of the standard library,
@@ -143,7 +143,7 @@ Dependencies to build optional modules are:
    Tcl/Tk version 8.4 is now required for :mod:`tkinter`.
 
 .. versionchanged:: 3.7
-   OpenSSL 1.0.2 are now required for :mod:`hashlib`.
+   OpenSSL 1.0.2 is now required for :mod:`hashlib`.
 
 .. versionchanged:: 3.10
    OpenSSL 1.1.1 is now required for :mod:`hashlib`.

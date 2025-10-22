@@ -1026,9 +1026,9 @@ Glossary
       and nonlocal variable names are restricted to optimized scopes.
 
    optional module
-      An extension module that is part of the :term:`standard library`, but
-      may be missing in some builds of CPython, usually due to missing
-      third-party libraries.
+      An :term:`extension module` that is part of the :term:`standard library`,
+      but may be absent in some builds of :term:`CPython`,
+      usually due to missing third-party libraries.
       See :ref:`optional-module-requirements` for a list of optional modules
       and the required libraries.
 
