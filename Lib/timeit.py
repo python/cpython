@@ -103,10 +103,9 @@ class Timer:
     """
 
     def __init__(self, stmt="pass", setup="pass", timer=default_timer,
-                 globals=None, target_time=default_target_time):
+                 globals=None):
         """Constructor.  See class doc string."""
         self.timer = timer
-        self.target_time = target_time
         local_ns = {}
         global_ns = _globals() if globals is None else globals
         init = ''
@@ -181,8 +180,6 @@ class Timer:
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
         """
-        if not number:
-            return self.autorange()
         it = itertools.repeat(None, number)
         gcold = gc.isenabled()
         gc.disable()
@@ -219,7 +216,7 @@ class Timer:
             r.append(t)
         return r
 
-    def autorange(self, callback=None, target_time=None):
+    def autorange(self, callback=None, target_time=default_target_time):
         """Return the number of loops and time taken so that
         total time >= target_time (default is 0.2 seconds).
 
@@ -230,8 +227,6 @@ class Timer:
         If *callback* is given and is not None, it will be called after
         each trial with two arguments: ``callback(number, time_taken)``.
         """
-        if target_time is None:
-            target_time = self.target_time
         i = 1
         while True:
             for j in 1, 2, 5:
@@ -245,17 +240,15 @@ class Timer:
 
 
 def timeit(stmt="pass", setup="pass", timer=default_timer,
-           number=default_number, globals=None,
-           target_time=default_target_time):
+           number=default_number, globals=None):
     """Convenience function to create Timer object and call timeit method."""
-    return Timer(stmt, setup, timer, globals, target_time).timeit(number)
+    return Timer(stmt, setup, timer, globals).timeit(number)
 
 
 def repeat(stmt="pass", setup="pass", timer=default_timer,
-           repeat=default_repeat, number=default_number,
-           globals=None, target_time=default_target_time):
+           repeat=default_repeat, number=default_number, globals=None):
     """Convenience function to create Timer object and call repeat method."""
-    return Timer(stmt, setup, timer, globals, target_time).repeat(repeat, number)
+    return Timer(stmt, setup, timer, globals).repeat(repeat, number)
 
 
 def main(args=None, *, _wrap_timer=None):
@@ -338,7 +331,7 @@ def main(args=None, *, _wrap_timer=None):
     if _wrap_timer is not None:
         timer = _wrap_timer(timer)
 
-    t = Timer(stmt, setup, timer, target_time=target_time)
+    t = Timer(stmt, setup, timer)
     if number == 0:
         # determine number so that total time >= target_time
         callback = None

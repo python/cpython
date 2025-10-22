@@ -62,30 +62,23 @@ Python Interface
 The module defines three convenience functions and a public class:
 
 
-.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000, globals=None, target_time=0.2)
+.. function:: timeit(stmt='pass', setup='pass', timer=<default timer>, number=1000000, globals=None)
 
    Create a :class:`Timer` instance with the given statement, *setup* code and
    *timer* function and run its :meth:`.timeit` method with *number* executions.
    The optional *globals* argument specifies a namespace in which to execute the
-   code. If *number* is 0, :meth:`.autorange` method is executed, a convenience
-   function that calls :meth:`.timeit` repeatedly so that the total time >=
-   *target_time* second.
+   code.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
-   .. versionchanged:: next
-      The optional *target_time* parameter was added.
 
-
-.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=5, number=1000000, globals=None, target_time=0.2)
+.. function:: repeat(stmt='pass', setup='pass', timer=<default timer>, repeat=5, number=1000000, globals=None)
 
    Create a :class:`Timer` instance with the given statement, *setup* code and
    *timer* function and run its :meth:`.repeat` method with the given *repeat*
    count and *number* executions.  The optional *globals* argument specifies a
-   namespace in which to execute the code. If *number* is 0, the :meth:`autorange`
-   method is executed, and a convenience function calls :meth:`timeit`
-   repeatedly so that the total time >= *target_time* seconds.
+   namespace in which to execute the code.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
@@ -93,8 +86,6 @@ The module defines three convenience functions and a public class:
    .. versionchanged:: 3.7
       Default value of *repeat* changed from 3 to 5.
 
-   .. versionchanged:: next
-      The optional *target_time* parameter was added.
 
 .. function:: default_timer()
 
@@ -105,7 +96,7 @@ The module defines three convenience functions and a public class:
       :func:`time.perf_counter` is now the default timer.
 
 
-.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None, target_time=0.2)
+.. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None)
 
    Class for timing execution speed of small code snippets.
 
@@ -130,9 +121,6 @@ The module defines three convenience functions and a public class:
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
-
-   .. versionchanged:: next
-      The optional *target_time* parameter was added.
 
    .. method:: Timer.timeit(number=1000000)
 
@@ -170,6 +158,8 @@ The module defines three convenience functions and a public class:
 
       .. versionadded:: 3.6
 
+      .. versionchanged:: next
+         The optional *target_time* parameter was added.
 
    .. method:: Timer.repeat(repeat=5, number=1000000)
 
@@ -253,7 +243,8 @@ Where the following options are understood:
 
 .. option:: -t, --target-time=T
 
-    calls :meth:`.timeit` repeatedly so that the total time >= *target_time* seconds
+   if :option:`--number` is 0, the code will run until it takes at
+   least this many seconds (default: 0.2)
 
    .. versionadded:: next
 
@@ -272,7 +263,7 @@ similarly.
 
 If :option:`-n` is not given, a suitable number of loops is calculated by trying
 increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the total
-time is at least 0.2 seconds.
+time is at least :option:`--target-time` seconds (default: 0.2).
 
 :func:`default_timer` measurements can be affected by other programs running on
 the same machine, so the best thing to do when accurate timing is necessary is
