@@ -328,6 +328,9 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
         support.junit_xml_list = None
 
 
+import termios
+import subprocess
+
 def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     """Run a single test.
 
@@ -346,6 +349,21 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     pgo = runtests.pgo
     try:
         _runtest(result, runtests)
+        try:
+            attrs = termios.tcgetattr(sys.__stdin__.fileno())
+            lflags = attrs[3]
+            echo = lflags & termios.ECHO
+        except termios.error:
+            state = subprocess.run(['stty', '-a'], capture_output=True, text=True)
+            for word in state.stdout.split():
+                if word in ('echo', '-echo'):
+                    echo = (word == 'echo')
+                    break
+            else:
+                print(f'{red}test {test_name} MAYBE - {state.stdout}')
+                echo = False
+        if not echo:
+            print(f"{red}test {test_name} BROKE -ECHO")
     except:
         if not pgo:
             msg = traceback.format_exc()
