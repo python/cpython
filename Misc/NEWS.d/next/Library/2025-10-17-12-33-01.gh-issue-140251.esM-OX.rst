@@ -1,0 +1,1 @@
+Colorize the default import statement ``import asyncio`` in asyncio REPL.

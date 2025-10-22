@@ -450,7 +450,7 @@ The following exceptions are the exceptions that are usually raised.
 
       :meth:`threading.Thread.join` can now raise this exception.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       This exception may be raised when acquiring :meth:`threading.Lock`
       or :meth:`threading.RLock`.
