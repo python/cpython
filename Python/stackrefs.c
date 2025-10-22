@@ -116,7 +116,7 @@ _Py_stackref_create(PyObject *obj, uint16_t flags, const char *filename, int lin
     }
     PyInterpreterState *interp = PyInterpreterState_Get();
     uint64_t new_id = interp->next_stackref;
-    interp->next_stackref = new_id + 4;
+    interp->next_stackref = new_id + (1 << Py_TAGGED_SHIFT);
     TableEntry *entry = make_table_entry(obj, filename, linenumber);
     if (entry == NULL) {
         Py_FatalError("No memory left for stackref debug table");
@@ -197,8 +197,8 @@ _Py_stackref_report_leaks(PyInterpreterState *interp)
 
 _PyStackRef PyStackRef_TagInt(intptr_t i)
 {
-    assert(Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (i << 2), 2) == i);
-    return (_PyStackRef){ .index = (i << 2) | Py_INT_TAG };
+    assert(Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (i << Py_TAGGED_SHIFT), Py_TAGGED_SHIFT) == i);
+    return (_PyStackRef){ .index = (i << Py_TAGGED_SHIFT) | Py_INT_TAG };
 }
 
 intptr_t
@@ -206,7 +206,7 @@ PyStackRef_UntagInt(_PyStackRef i)
 {
     assert(PyStackRef_IsTaggedInt(i));
     intptr_t val = (intptr_t)i.index;
-    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, 2);
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, Py_TAGGED_SHIFT);
 }
 
 bool
@@ -219,8 +219,8 @@ _PyStackRef
 PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
 {
     assert(PyStackRef_IsTaggedInt(ref));
-    assert((ref.index & (~Py_TAG_BITS)) != (INT_MAX & (~Py_TAG_BITS))); // Isn't about to overflow
-    return (_PyStackRef){ .index = ref.index + 4 };
+    assert((ref.index & (~Py_TAG_BITS)) != (INTPTR_MAX & (~Py_TAG_BITS))); // Isn't about to overflow
+    return (_PyStackRef){ .index = ref.index + (1 << Py_TAGGED_SHIFT) };
 }
 
 

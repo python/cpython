@@ -50,13 +50,14 @@ extern "C" {
    CPython refcounting operations on it!
 */
 
-
-#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
-
 #define Py_INT_TAG 3
 #define Py_TAG_INVALID 2
 #define Py_TAG_REFCNT 1
 #define Py_TAG_BITS 3
+
+#define Py_TAGGED_SHIFT 2
+
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
 PyAPI_FUNC(PyObject *) _Py_stackref_get_object(_PyStackRef ref);
 PyAPI_FUNC(PyObject *) _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber);
@@ -65,13 +66,13 @@ PyAPI_FUNC(void) _Py_stackref_record_borrow(_PyStackRef ref, const char *filenam
 extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref);
 
 static const _PyStackRef PyStackRef_NULL = { .index = 0 };
-static const _PyStackRef PyStackRef_ERROR = { .index = 4 };
+static const _PyStackRef PyStackRef_ERROR = { .index = (1 << Py_TAGGED_SHIFT) };
 
-#define PyStackRef_None ((_PyStackRef){ .index = 8 } )
-#define PyStackRef_False ((_PyStackRef){ .index = 12 })
-#define PyStackRef_True ((_PyStackRef){ .index = 16 })
+#define PyStackRef_None ((_PyStackRef){ .index = (2 << Py_TAGGED_SHIFT) } )
+#define PyStackRef_False ((_PyStackRef){ .index = (3 << Py_TAGGED_SHIFT) })
+#define PyStackRef_True ((_PyStackRef){ .index = (4 << Py_TAGGED_SHIFT) })
 
-#define INITIAL_STACKREF_INDEX 20
+#define INITIAL_STACKREF_INDEX (5 << Py_TAGGED_SHIFT)
 
 static inline _PyStackRef
 PyStackRef_Wrap(void *ptr)
@@ -111,7 +112,13 @@ PyStackRef_IsNull(_PyStackRef ref)
 static inline bool
 PyStackRef_IsError(_PyStackRef ref)
 {
-    return ref.index == 4;
+    return ref.index == (1 << Py_TAGGED_SHIFT);
+}
+
+static inline bool
+PyStackRef_IsMalformed(_PyStackRef ref)
+{
+    return (ref.index & Py_TAG_BITS) == Py_TAG_INVALID;
 }
 
 static inline bool
@@ -315,6 +322,7 @@ _PyStackRef_MakeHeapSafe(_PyStackRef ref, const char *filename, int linenumber)
 static inline _PyStackRef
 _PyStackRef_FromPyObjectNewMortal(PyObject *obj, const char *filename, int linenumber)
 {
+    assert(obj != NULL);
     assert(!_Py_IsStaticImmortal(obj));
     Py_XINCREF(obj);
     return _Py_stackref_create(obj, 0, filename, linenumber);
@@ -336,11 +344,6 @@ extern bool
 PyStackRef_IsNullOrInt(_PyStackRef ref);
 
 #else
-
-#define Py_INT_TAG 3
-#define Py_TAG_INVALID 2
-#define Py_TAG_REFCNT 1
-#define Py_TAG_BITS 3
 
 static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
 
@@ -399,8 +402,8 @@ PyStackRef_IsTaggedInt(_PyStackRef i)
 static inline _PyStackRef
 PyStackRef_TagInt(intptr_t i)
 {
-    assert(Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (i << 2), 2) == i);
-    return (_PyStackRef){ .bits = ((((uintptr_t)i) << 2) | Py_INT_TAG) };
+    assert(Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (i << Py_TAGGED_SHIFT), Py_TAGGED_SHIFT) == i);
+    return (_PyStackRef){ .bits = ((((uintptr_t)i) << Py_TAGGED_SHIFT) | Py_INT_TAG) };
 }
 
 static inline intptr_t
@@ -408,7 +411,7 @@ PyStackRef_UntagInt(_PyStackRef i)
 {
     assert(PyStackRef_IsTaggedInt(i));
     intptr_t val = (intptr_t)i.bits;
-    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, 2);
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, Py_TAGGED_SHIFT);
 }
 
 
@@ -416,8 +419,8 @@ static inline _PyStackRef
 PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
 {
     assert((ref.bits & Py_TAG_BITS) == Py_INT_TAG); // Is tagged int
-    assert((ref.bits & (~Py_TAG_BITS)) != (INT_MAX & (~Py_TAG_BITS))); // Isn't about to overflow
-    return (_PyStackRef){ .bits = ref.bits + 4 };
+    assert((ref.bits & (~Py_TAG_BITS)) != (INTPTR_MAX & (~Py_TAG_BITS))); // Isn't about to overflow
+    return (_PyStackRef){ .bits = ref.bits + (1 << Py_TAGGED_SHIFT) };
 }
 
 #define PyStackRef_IsDeferredOrTaggedInt(ref) (((ref).bits & Py_TAG_REFCNT) != 0)
