@@ -1,4 +1,5 @@
-Add the following:
+Add the following MIME types:
+
    - ``application/efi``
    - ``application/mathematica``
    - ``application/mathml+xml``
