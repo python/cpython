@@ -574,35 +574,6 @@ class HTMLCalendar(Calendar):
         a('</table>')
         return ''.join(v)
 
-    def formatyearpage(self, theyear, width=3, css='calendar.css', encoding=None):
-        """
-        Return a formatted year as a complete HTML page.
-        """
-        if encoding is None:
-            encoding = 'utf-8'
-        v = []
-        a = v.append
-        a('<!DOCTYPE html>\n')
-        a('<html lang="en">\n')
-        a('<head>\n')
-        a(f'<meta charset="{encoding}">\n')
-        a('<meta name="viewport" content="width=device-width, initial-scale=1">\n')
-        a(f'<title>Calendar for {theyear}</title>\n')
-        a('<style>\n')
-        a(':root { color-scheme: light dark; }\n')
-        a('table.year { border: solid; }\n')
-        a('table.year > tbody > tr > td { border: solid; vertical-align: top; }\n')
-        a('</style>\n')
-        if css is not None:
-            a(f'<link rel="stylesheet" href="{css}">\n')
-        a('</head>\n')
-        a('<body>\n')
-        a(self.formatyear(theyear, width))
-        a('</body>\n')
-        a('</html>\n')
-        return ''.join(v).encode(encoding, "xmlcharrefreplace")
-
-
     def _format_html_page(self, theyear, content, css, encoding):
         """
         Return a complete HTML page with the given content.
