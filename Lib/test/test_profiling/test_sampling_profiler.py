@@ -10,7 +10,6 @@ import socket
 import subprocess
 import sys
 import tempfile
-import timeit
 import unittest
 from collections import namedtuple
 from unittest import mock
@@ -26,11 +25,9 @@ from test.support.os_helper import unlink
 from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
 from test.support.socket_helper import find_unused_port
 from test.support import requires_subprocess, is_emscripten
-from test.support import captured_stdout, captured_stderr
+from test.support import captured_stdout, captured_stderr, is_slow_machine
 
 PROCESS_VM_READV_SUPPORTED = False
-
-SLOW_MACHINE = timeit.timeit("2*2", number=10_000) > 0.0001
 
 try:
     from _remote_debugging import PROCESS_VM_READV_SUPPORTED
@@ -1757,7 +1754,7 @@ if __name__ == "__main__":
 '''
 
     def test_sampling_basic_functionality(self):
-        duration_sec = 10 if SLOW_MACHINE else 2
+        duration_sec = 10 if is_slow_machine else 2
         with (
             test_subprocess(self.test_script) as subproc,
             io.StringIO() as captured_output,
@@ -1908,7 +1905,7 @@ if __name__ == "__main__":
         script_file.flush()
         self.addCleanup(close_and_unlink, script_file)
 
-        duration = 10 if SLOW_MACHINE else 1
+        duration = 10 if is_slow_machine else 1
         test_args = [
             "profiling.sampling.sample", "-d", str(duration), script_file.name
         ]
@@ -1943,7 +1940,7 @@ if __name__ == "__main__":
         with open(module_path, "w") as f:
             f.write(self.test_script)
 
-        duration = 10 if SLOW_MACHINE else 1
+        duration = 10 if is_slow_machine else 1
         test_args = [
             "profiling.sampling.sample",
             "-d", str(duration),

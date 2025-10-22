@@ -16,6 +16,7 @@ import sys
 import sysconfig
 import textwrap
 import time
+import timeit
 import types
 import unittest
 import warnings
@@ -2693,6 +2694,9 @@ def exceeds_recursion_limit():
     """For recursion tests, easily exceeds default recursion limit."""
     return 150_000
 
+
+# Is the host running the tests significantly slower than a typical PC?
+is_slow_machine = timeit.timeit("2*2", number=10_000) > 0.0001
 
 # Windows doesn't have os.uname() but it doesn't support s390x.
 is_s390x = hasattr(os, 'uname') and os.uname().machine == 's390x'
