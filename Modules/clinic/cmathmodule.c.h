@@ -744,7 +744,7 @@ PyDoc_STRVAR(cmath_rect__doc__,
 #define CMATH_RECT_METHODDEF    \
     {"rect", _PyCFunction_CAST(cmath_rect), METH_FASTCALL, cmath_rect__doc__},
 
-static PyObject *
+static Py_complex
 cmath_rect_impl(PyObject *module, double r, double phi);
 
 static PyObject *
@@ -753,6 +753,7 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     double r;
     double phi;
+    Py_complex _return_value;
 
     if (!_PyArg_CheckPositional("rect", nargs, 2, 2)) {
         goto exit;
@@ -777,7 +778,18 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
     }
-    return_value = cmath_rect_impl(module, r, phi);
+    _return_value = cmath_rect_impl(module, r, phi);
+    if (errno == EDOM) {
+        PyErr_SetString(PyExc_ValueError, "math domain error");
+        goto exit;
+    }
+    else if (errno == ERANGE) {
+        PyErr_SetString(PyExc_OverflowError, "math range error");
+        goto exit;
+    }
+    else {
+        return_value = PyComplex_FromCComplex(_return_value);
+    }
 
 exit:
     return return_value;
@@ -985,4 +997,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=631db17fb1c79d66 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7b68f197b24bcb78 input=a9049054013a1b77]*/
