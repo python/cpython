@@ -1,12 +1,12 @@
 Add the following MIME types:
 
-   - ``application/efi``
-   - ``application/mathematica``
-   - ``application/mathml+xml``
-   - ``application/mbox``
-   - ``application/ocsp-request``
-   - ``application/ocsp-response``
-   - ``application/pem-certificate-chain``
-   - ``application/pgp-keys``
-   - ``application/sql``
-   - ``application/zstd``
+- ``application/efi``
+- ``application/mathematica``
+- ``application/mathml+xml``
+- ``application/mbox``
+- ``application/ocsp-request``
+- ``application/ocsp-response``
+- ``application/pem-certificate-chain``
+- ``application/pgp-keys``
+- ``application/sql``
+- ``application/zstd``
