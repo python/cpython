@@ -3401,10 +3401,10 @@ STATX_GET_UINT(stx_atomic_write_unit_max_opt, stx_atomic_write_unit_max_opt,
 STATX_GET_ULONGLONG(st_blocks, stx_blocks, STATX_BLOCKS)
 STATX_GET_ULONGLONG(st_ino, stx_ino, STATX_INO)
 STATX_GET_ULONGLONG(st_size, stx_size, STATX_SIZE)
-#ifdef HAVE_STRUCT_STATX_STX_MNT_ID
+#if defined(STATX_MNT_ID) && defined(HAVE_STRUCT_STATX_STX_MNT_ID)
 STATX_GET_ULONGLONG(stx_mnt_id, stx_mnt_id, STATX_MNT_ID)
 #endif
-#ifdef HAVE_STRUCT_STATX_STX_SUBVOL
+#if defined(STATX_SUBVOL) && defined(HAVE_STRUCT_STATX_STX_SUBVOL)
 STATX_GET_ULONGLONG(stx_subvol, stx_subvol, STATX_SUBVOL)
 #endif
 
