@@ -15,7 +15,7 @@ class MyIndexable(object):
     def __index__(self):
         return self.value
 
-# Here's a pure Python version of the intmath.factorial algorithm, for
+# Here's a pure Python version of the math.integer.factorial algorithm, for
 # documentation and comparison purposes.
 #
 # Formula:
@@ -67,7 +67,7 @@ def py_factorial(n):
 
 
 class IntMathTests(unittest.TestCase):
-    import intmath as module
+    import math.integer as module
 
     def assertIntEqual(self, actual, expected):
         self.assertEqual(actual, expected)

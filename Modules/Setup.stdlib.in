@@ -32,12 +32,12 @@
 ############################################################################
 # Modules that should always be present (POSIX and Windows):
 @MODULE_ARRAY_TRUE@array arraymodule.c
-@MODULE_INTMATH_TRUE@intmath intmathmodule.c
 @MODULE__BISECT_TRUE@_bisect _bisectmodule.c
 @MODULE__CSV_TRUE@_csv _csv.c
 @MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
 @MODULE__JSON_TRUE@_json _json.c
 @MODULE__LSPROF_TRUE@_lsprof _lsprof.c rotatingtree.c
+@MODULE__MATH_INTEGER_TRUE@_math_integer mathintegermodule.c
 @MODULE__PICKLE_TRUE@_pickle _pickle.c
 @MODULE__QUEUE_TRUE@_queue _queuemodule.c
 @MODULE__RANDOM_TRUE@_random _randommodule.c

@@ -130,18 +130,18 @@ Number-theoretic functions
 --------------------------
 
 These functions are aliases of corresponding functions in the
-:mod:`intmath` module.
+:mod:`math.integer` module.
 
 .. function:: comb(n, k)
 
-   An alias of :func:`intmath.comb`.
+   An alias of :func:`math.integer.comb`.
 
    .. versionadded:: 3.8
 
 
 .. function:: factorial(n)
 
-   An alias of :func:`intmath.factorial`.
+   An alias of :func:`math.integer.factorial`.
 
    .. versionchanged:: 3.10
       Floats with integral values (like ``5.0``) are no longer accepted.
@@ -149,7 +149,7 @@ These functions are aliases of corresponding functions in the
 
 .. function:: gcd(*integers)
 
-   An alias of :func:`intmath.gcd`.
+   An alias of :func:`math.integer.gcd`.
 
    .. versionadded:: 3.5
 
@@ -160,21 +160,21 @@ These functions are aliases of corresponding functions in the
 
 .. function:: isqrt(n)
 
-   An alias of :func:`intmath.isqrt`.
+   An alias of :func:`math.integer.isqrt`.
 
    .. versionadded:: 3.8
 
 
 .. function:: lcm(*integers)
 
-   An alias of :func:`intmath.lcm`.
+   An alias of :func:`math.integer.lcm`.
 
    .. versionadded:: 3.9
 
 
 .. function:: perm(n, k=None)
 
-   An alias of :func:`intmath.perm`.
+   An alias of :func:`math.integer.perm`.
 
    .. versionadded:: 3.8
 

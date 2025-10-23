@@ -1,4 +1,4 @@
-/* intmath module -- integer-related mathematical functions */
+/* math.integer module -- integer-related mathematical functions */
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -9,16 +9,17 @@
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_long.h"          // _PyLong_GetZero()
 
-#include "clinic/intmathmodule.c.h"
+#include "clinic/mathintegermodule.c.h"
 
 /*[clinic input]
-module intmath
+module math
+module math.integer
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fe698f4f0fdf7eb0]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e3d09c1c90de7fa8]*/
 
 
 /*[clinic input]
-intmath.gcd
+math.integer.gcd
 
     *integers as args: array
 
@@ -26,9 +27,9 @@ Greatest Common Divisor.
 [clinic start generated code]*/
 
 static PyObject *
-intmath_gcd_impl(PyObject *module, PyObject * const *args,
-                 Py_ssize_t args_length)
-/*[clinic end generated code: output=717798b27635de1f input=7378b12d8bbb322d]*/
+math_integer_gcd_impl(PyObject *module, PyObject * const *args,
+                      Py_ssize_t args_length)
+/*[clinic end generated code: output=8e9c5bab06bea203 input=a90cde2ac5281551]*/
 {
     // Fast-path for the common case: gcd(int, int)
     if (args_length == 2 && PyLong_CheckExact(args[0]) && PyLong_CheckExact(args[1]))
@@ -101,7 +102,7 @@ long_lcm(PyObject *a, PyObject *b)
 
 
 /*[clinic input]
-intmath.lcm
+math.integer.lcm
 
     *integers as args: array
 
@@ -109,9 +110,9 @@ Least Common Multiple.
 [clinic start generated code]*/
 
 static PyObject *
-intmath_lcm_impl(PyObject *module, PyObject * const *args,
-                 Py_ssize_t args_length)
-/*[clinic end generated code: output=f785925ee8145649 input=27187d7fe1ba020a]*/
+math_integer_lcm_impl(PyObject *module, PyObject * const *args,
+                      Py_ssize_t args_length)
+/*[clinic end generated code: output=3e88889b866ccc28 input=261bddc85a136bdf]*/
 {
     PyObject *res, *x;
     Py_ssize_t i;
@@ -341,7 +342,7 @@ _approximate_isqrt(uint64_t n)
 }
 
 /*[clinic input]
-intmath.isqrt
+math.integer.isqrt
 
     n: object
     /
@@ -350,8 +351,8 @@ Return the integer part of the square root of the input.
 [clinic start generated code]*/
 
 static PyObject *
-intmath_isqrt(PyObject *module, PyObject *n)
-/*[clinic end generated code: output=bb2a4f845f33866a input=25a063a118a2d7cf]*/
+math_integer_isqrt(PyObject *module, PyObject *n)
+/*[clinic end generated code: output=551031e41a0f5d9e input=921ddd9853133d8d]*/
 {
     int a_too_large, c_bit_length;
     int64_t c, d;
@@ -544,7 +545,7 @@ count_set_bits(unsigned long n)
  * integer arithmetic.
  *
  * The two-valuation k (i.e., the exponent of the largest power of 2 dividing
- * the factorial) is computed independently in the main intmath_factorial
+ * the factorial) is computed independently in the main math_integer_factorial
  * function.  By standard results, its value is:
  *
  *    two_valuation = n//2 + n//4 + n//8 + ....
@@ -675,7 +676,7 @@ static const unsigned long SmallFactorials[] = {
 };
 
 /*[clinic input]
-intmath.factorial
+math.integer.factorial
 
     n as arg: object
     /
@@ -684,8 +685,8 @@ Find n!.
 [clinic start generated code]*/
 
 static PyObject *
-intmath_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=9a6c770c0b2a3603 input=3861cbcc5842057f]*/
+math_integer_factorial(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=131c23fd48650414 input=742f4dfa490a1b07]*/
 {
     long x, two_valuation;
     int overflow;
@@ -727,10 +728,10 @@ intmath_factorial(PyObject *module, PyObject *arg)
 
 Python code to generate the values:
 
-    import intmath
+    import math.integer
 
     for n in range(128):
-        fac = intmath.factorial(n)
+        fac = math.integer.factorial(n)
         fac_odd_part = fac // (fac & -fac)
         reduced_fac_odd_part = fac_odd_part % (2**64)
         print(f"{reduced_fac_odd_part:#018x}u")
@@ -774,10 +775,10 @@ static const uint64_t reduced_factorial_odd_part[] = {
 
 Python code to generate the values:
 
-    import intmath
+    import math.integer
 
     for n in range(128):
-        fac = intmath.factorial(n)
+        fac = math.integer.factorial(n)
         fac_odd_part = fac // (fac & -fac)
         inverted_fac_odd_part = pow(fac_odd_part, -1, 2**64)
         print(f"{inverted_fac_odd_part:#018x}u")
@@ -821,10 +822,10 @@ static const uint64_t inverted_factorial_odd_part[] = {
 
 Python code to generate the values:
 
-import intmath
+import math.integer
 
 for n in range(128):
-    fac = intmath.factorial(n)
+    fac = math.integer.factorial(n)
     fac_trailing_zeros = (fac & -fac).bit_length() - 1
     print(fac_trailing_zeros)
 */
@@ -1016,7 +1017,7 @@ error:
 
 /*[clinic input]
 @permit_long_summary
-intmath.perm
+math.integer.perm
 
     n: object
     k: object = None
@@ -1034,15 +1035,15 @@ Raises ValueError if either of the arguments are negative.
 [clinic start generated code]*/
 
 static PyObject *
-intmath_perm_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=2293544c3bed417c input=8fcc590d77942560]*/
+math_integer_perm_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=9f9b96cd73a94de4 input=fd627e5a09dd5116]*/
 {
     PyObject *result = NULL;
     int overflow, cmp;
     long long ki, ni;
 
     if (k == Py_None) {
-        return intmath_factorial(module, n);
+        return math_integer_factorial(module, n);
     }
     n = PyNumber_Index(n);
     if (n == NULL) {
@@ -1109,7 +1110,7 @@ error:
 
 /*[clinic input]
 @permit_long_summary
-intmath.comb
+math.integer.comb
 
     n: object
     k: object
@@ -1128,8 +1129,8 @@ Raises ValueError if either of the arguments are negative.
 [clinic start generated code]*/
 
 static PyObject *
-intmath_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=0182ad8aadc2d30a input=09a3cc7f1c5d144c]*/
+math_integer_comb_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=c2c9cdfe0d5dd43f input=8cc12726b682c4a5]*/
 {
     PyObject *result = NULL, *temp;
     int overflow, cmp;
@@ -1225,17 +1226,17 @@ error:
 }
 
 
-static PyMethodDef intmath_methods[] = {
-    INTMATH_COMB_METHODDEF
-    INTMATH_FACTORIAL_METHODDEF
-    INTMATH_GCD_METHODDEF
-    INTMATH_ISQRT_METHODDEF
-    INTMATH_LCM_METHODDEF
-    INTMATH_PERM_METHODDEF
+static PyMethodDef math_integer_methods[] = {
+    MATH_INTEGER_COMB_METHODDEF
+    MATH_INTEGER_FACTORIAL_METHODDEF
+    MATH_INTEGER_GCD_METHODDEF
+    MATH_INTEGER_ISQRT_METHODDEF
+    MATH_INTEGER_LCM_METHODDEF
+    MATH_INTEGER_PERM_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyModuleDef_Slot intmath_slots[] = {
+static PyModuleDef_Slot math_integer_slots[] = {
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
@@ -1244,17 +1245,17 @@ static PyModuleDef_Slot intmath_slots[] = {
 PyDoc_STRVAR(module_doc,
 "This module provides access to integer related mathematical functions.");
 
-static struct PyModuleDef intmathmodule = {
+static struct PyModuleDef math_integer_module = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "intmath",
+    .m_name = "math.integer",
     .m_doc = module_doc,
     .m_size = 0,
-    .m_methods = intmath_methods,
-    .m_slots = intmath_slots,
+    .m_methods = math_integer_methods,
+    .m_slots = math_integer_slots,
 };
 
 PyMODINIT_FUNC
-PyInit_intmath(void)
+PyInit__math_integer(void)
 {
-    return PyModuleDef_Init(&intmathmodule);
+    return PyModuleDef_Init(&math_integer_module);
 }

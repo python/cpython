@@ -814,8 +814,8 @@ MODULE__BISECT_FALSE
 MODULE__BISECT_TRUE
 MODULE__ASYNCIO_FALSE
 MODULE__ASYNCIO_TRUE
-MODULE_INTMATH_FALSE
-MODULE_INTMATH_TRUE
+MODULE__MATH_INTEGER_FALSE
+MODULE__MATH_INTEGER_TRUE
 MODULE_ARRAY_FALSE
 MODULE_ARRAY_TRUE
 MODULE_TIME_FALSE
@@ -31339,20 +31339,20 @@ then :
 fi
 
 
-        if test "$py_cv_module_intmath" != "n/a"
+        if test "$py_cv_module__math_integer" != "n/a"
 then :
-  py_cv_module_intmath=yes
+  py_cv_module__math_integer=yes
 fi
-   if test "$py_cv_module_intmath" = yes; then
-  MODULE_INTMATH_TRUE=
-  MODULE_INTMATH_FALSE='#'
+   if test "$py_cv_module__math_integer" = yes; then
+  MODULE__MATH_INTEGER_TRUE=
+  MODULE__MATH_INTEGER_FALSE='#'
 else
-  MODULE_INTMATH_TRUE='#'
-  MODULE_INTMATH_FALSE=
+  MODULE__MATH_INTEGER_TRUE='#'
+  MODULE__MATH_INTEGER_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_INTMATH_STATE=$py_cv_module_intmath$as_nl"
-  if test "x$py_cv_module_intmath" = xyes
+  as_fn_append MODULE_BLOCK "MODULE__MATH_INTEGER_STATE=$py_cv_module__math_integer$as_nl"
+  if test "x$py_cv_module__math_integer" = xyes
 then :
 
 
@@ -34471,8 +34471,8 @@ if test -z "${MODULE_ARRAY_TRUE}" && test -z "${MODULE_ARRAY_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_ARRAY\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE_INTMATH_TRUE}" && test -z "${MODULE_INTMATH_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE_INTMATH\" was never defined.
+if test -z "${MODULE__MATH_INTEGER_TRUE}" && test -z "${MODULE__MATH_INTEGER_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MATH_INTEGER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ASYNCIO_TRUE}" && test -z "${MODULE__ASYNCIO_FALSE}"; then

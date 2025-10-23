@@ -311,8 +311,8 @@ Other language changes
 New modules
 ===========
 
-intmath
--------
+math.integer
+------------
 
 This module provides access to the mathematical functions for integer
 arguments (:pep:`791`).

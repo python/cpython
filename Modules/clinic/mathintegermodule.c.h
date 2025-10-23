@@ -4,21 +4,21 @@ preserve
 
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
-PyDoc_STRVAR(intmath_gcd__doc__,
+PyDoc_STRVAR(math_integer_gcd__doc__,
 "gcd($module, /, *integers)\n"
 "--\n"
 "\n"
 "Greatest Common Divisor.");
 
-#define INTMATH_GCD_METHODDEF    \
-    {"gcd", _PyCFunction_CAST(intmath_gcd), METH_FASTCALL, intmath_gcd__doc__},
+#define MATH_INTEGER_GCD_METHODDEF    \
+    {"gcd", _PyCFunction_CAST(math_integer_gcd), METH_FASTCALL, math_integer_gcd__doc__},
 
 static PyObject *
-intmath_gcd_impl(PyObject *module, PyObject * const *args,
-                 Py_ssize_t args_length);
+math_integer_gcd_impl(PyObject *module, PyObject * const *args,
+                      Py_ssize_t args_length);
 
 static PyObject *
-intmath_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+math_integer_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject * const *__clinic_args;
@@ -26,26 +26,26 @@ intmath_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 
     __clinic_args = args;
     args_length = nargs;
-    return_value = intmath_gcd_impl(module, __clinic_args, args_length);
+    return_value = math_integer_gcd_impl(module, __clinic_args, args_length);
 
     return return_value;
 }
 
-PyDoc_STRVAR(intmath_lcm__doc__,
+PyDoc_STRVAR(math_integer_lcm__doc__,
 "lcm($module, /, *integers)\n"
 "--\n"
 "\n"
 "Least Common Multiple.");
 
-#define INTMATH_LCM_METHODDEF    \
-    {"lcm", _PyCFunction_CAST(intmath_lcm), METH_FASTCALL, intmath_lcm__doc__},
+#define MATH_INTEGER_LCM_METHODDEF    \
+    {"lcm", _PyCFunction_CAST(math_integer_lcm), METH_FASTCALL, math_integer_lcm__doc__},
 
 static PyObject *
-intmath_lcm_impl(PyObject *module, PyObject * const *args,
-                 Py_ssize_t args_length);
+math_integer_lcm_impl(PyObject *module, PyObject * const *args,
+                      Py_ssize_t args_length);
 
 static PyObject *
-intmath_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+math_integer_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject * const *__clinic_args;
@@ -53,30 +53,30 @@ intmath_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 
     __clinic_args = args;
     args_length = nargs;
-    return_value = intmath_lcm_impl(module, __clinic_args, args_length);
+    return_value = math_integer_lcm_impl(module, __clinic_args, args_length);
 
     return return_value;
 }
 
-PyDoc_STRVAR(intmath_isqrt__doc__,
+PyDoc_STRVAR(math_integer_isqrt__doc__,
 "isqrt($module, n, /)\n"
 "--\n"
 "\n"
 "Return the integer part of the square root of the input.");
 
-#define INTMATH_ISQRT_METHODDEF    \
-    {"isqrt", (PyCFunction)intmath_isqrt, METH_O, intmath_isqrt__doc__},
+#define MATH_INTEGER_ISQRT_METHODDEF    \
+    {"isqrt", (PyCFunction)math_integer_isqrt, METH_O, math_integer_isqrt__doc__},
 
-PyDoc_STRVAR(intmath_factorial__doc__,
+PyDoc_STRVAR(math_integer_factorial__doc__,
 "factorial($module, n, /)\n"
 "--\n"
 "\n"
 "Find n!.");
 
-#define INTMATH_FACTORIAL_METHODDEF    \
-    {"factorial", (PyCFunction)intmath_factorial, METH_O, intmath_factorial__doc__},
+#define MATH_INTEGER_FACTORIAL_METHODDEF    \
+    {"factorial", (PyCFunction)math_integer_factorial, METH_O, math_integer_factorial__doc__},
 
-PyDoc_STRVAR(intmath_perm__doc__,
+PyDoc_STRVAR(math_integer_perm__doc__,
 "perm($module, n, k=None, /)\n"
 "--\n"
 "\n"
@@ -90,14 +90,14 @@ PyDoc_STRVAR(intmath_perm__doc__,
 "\n"
 "Raises ValueError if either of the arguments are negative.");
 
-#define INTMATH_PERM_METHODDEF    \
-    {"perm", _PyCFunction_CAST(intmath_perm), METH_FASTCALL, intmath_perm__doc__},
+#define MATH_INTEGER_PERM_METHODDEF    \
+    {"perm", _PyCFunction_CAST(math_integer_perm), METH_FASTCALL, math_integer_perm__doc__},
 
 static PyObject *
-intmath_perm_impl(PyObject *module, PyObject *n, PyObject *k);
+math_integer_perm_impl(PyObject *module, PyObject *n, PyObject *k);
 
 static PyObject *
-intmath_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+math_integer_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *n;
@@ -112,13 +112,13 @@ intmath_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     k = args[1];
 skip_optional:
-    return_value = intmath_perm_impl(module, n, k);
+    return_value = math_integer_perm_impl(module, n, k);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(intmath_comb__doc__,
+PyDoc_STRVAR(math_integer_comb__doc__,
 "comb($module, n, k, /)\n"
 "--\n"
 "\n"
@@ -133,14 +133,14 @@ PyDoc_STRVAR(intmath_comb__doc__,
 "\n"
 "Raises ValueError if either of the arguments are negative.");
 
-#define INTMATH_COMB_METHODDEF    \
-    {"comb", _PyCFunction_CAST(intmath_comb), METH_FASTCALL, intmath_comb__doc__},
+#define MATH_INTEGER_COMB_METHODDEF    \
+    {"comb", _PyCFunction_CAST(math_integer_comb), METH_FASTCALL, math_integer_comb__doc__},
 
 static PyObject *
-intmath_comb_impl(PyObject *module, PyObject *n, PyObject *k);
+math_integer_comb_impl(PyObject *module, PyObject *n, PyObject *k);
 
 static PyObject *
-intmath_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+math_integer_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *n;
@@ -151,9 +151,9 @@ intmath_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     n = args[0];
     k = args[1];
-    return_value = intmath_comb_impl(module, n, k);
+    return_value = math_integer_comb_impl(module, n, k);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0ac3ed6e119d79de input=a9049054013a1b77]*/
+/*[clinic end generated code: output=34697570c923a3af input=a9049054013a1b77]*/

@@ -59,6 +59,7 @@ raised for division by zero and mod by zero.
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_import.h"        // _PyImport_SetModuleString()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
@@ -2993,14 +2994,14 @@ math_exec(PyObject *module)
         return -1;
     }
 
-    PyObject *intmath = PyImport_ImportModule("intmath");
+    PyObject *intmath = PyImport_ImportModule("_math_integer");
     if (!intmath) {
         return -1;
     }
-#define IMPORT_FROM_INTMATH(NAME) do {                            \
+#define IMPORT_FROM_INTMATH(NAME) do {                          \
         if (PyModule_Add(module, #NAME,                         \
-                PyObject_GetAttrString(intmath, #NAME)) < 0) {    \
-            Py_DECREF(intmath);                                   \
+                PyObject_GetAttrString(intmath, #NAME)) < 0) {  \
+            Py_DECREF(intmath);                                 \
             return -1;                                          \
         }                                                       \
     } while(0)
@@ -3011,7 +3012,13 @@ math_exec(PyObject *module)
     IMPORT_FROM_INTMATH(isqrt);
     IMPORT_FROM_INTMATH(lcm);
     IMPORT_FROM_INTMATH(perm);
-    Py_DECREF(intmath);
+    if (_PyImport_SetModuleString("math.integer", intmath) < 0) {
+        Py_DECREF(intmath);
+        return -1;
+    }
+    if (PyModule_Add(module, "integer", intmath) < 0) {
+        return -1;
+    }
     return 0;
 }
 
