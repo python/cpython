@@ -10199,6 +10199,7 @@
 
         TARGET(RECORD_PREVIOUS_INST) {
             INSTRUCTION_STATS(RECORD_PREVIOUS_INST);
+            #if _Py_TIER2
             assert(IS_JIT_TRACING());
             int opcode = next_instr->op.code;
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -10224,6 +10225,9 @@
             tstate->interp->jit_state.prev_instr_oparg = oparg;
             tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();
             DISPATCH_GOTO_NON_TRACING();
+            #else
+            Py_FatalError("JIT instruction executed in non-jit build.");
+            #endif
         }
 
         TARGET(RERAISE) {

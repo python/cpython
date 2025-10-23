@@ -5219,6 +5219,7 @@ dummy_func(
         }
 
         tier1 no_save_ip inst(RECORD_PREVIOUS_INST, (--)) {
+#if _Py_TIER2
             assert(IS_JIT_TRACING());
             int opcode = next_instr->op.code;
             int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
@@ -5236,6 +5237,9 @@ dummy_func(
             tstate->interp->jit_state.prev_instr_oparg = oparg;
             tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();
             DISPATCH_GOTO_NON_TRACING();
+#else
+            Py_FatalError("JIT instruction executed in non-jit build.");
+#endif
         }
         ///////// Tier-2 only opcodes /////////
 

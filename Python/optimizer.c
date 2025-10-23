@@ -884,14 +884,17 @@ _PyJit_translate_single_bytecode_to_trace(
         ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
         goto done;
     }
+    DPRINTF(2, "Trace continuing\n");
     tstate->interp->jit_state.code_curr_size = trace_length;
     tstate->interp->jit_state.code_max_size = max_length;
     return 1;
 done:
+    DPRINTF(2, "Trace done\n");
     tstate->interp->jit_state.code_curr_size = trace_length;
     tstate->interp->jit_state.code_max_size = max_length;
     return 0;
 full:
+    DPRINTF(2, "Trace full\n");
     if (!is_terminator(&tstate->interp->jit_state.code_buffer[trace_length-1])) {
         // Undo the last few instructions.
         trace_length = tstate->interp->jit_state.code_curr_size;

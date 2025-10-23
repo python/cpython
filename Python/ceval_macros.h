@@ -413,7 +413,6 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 
 #define TIER1_TO_TIER2(EXECUTOR)                        \
 do {                                                   \
-    LEAVE_TRACING(); \
     OPT_STAT_INC(traces_executed);                     \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
