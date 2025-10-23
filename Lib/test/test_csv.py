@@ -1437,6 +1437,56 @@ ghi\0jkl
         dialect = sniffer.sniff(self.sample9)
         self.assertTrue(dialect.doublequote)
 
+    def test_guess_delimiter_crlf_not_chosen(self):
+        # Ensure that we pick the real delimiter ("|") over "\r" in a tie.
+        sniffer = csv.Sniffer()
+        sample = "a|b\r\nc|d\r\ne|f\r\n"
+        self.assertEqual(sniffer.sniff(sample).delimiter, "|")
+        self.assertNotEqual(sniffer.sniff(sample).delimiter, "\r")
+
+    def test_zero_mode_tie_order_independence(self):
+        sniffer = csv.Sniffer()
+        # ":" appears in half the rows (1, 0, 1, 0) - a tie between
+        #     0 and 1 per line.
+        # "," appears once every row (true delimiter).
+        #
+        # Even if the zero-frequency bucket is appended vs. inserted, the tie
+        # yields an adjusted score of 0, so ":" should not be promoted and
+        # "," must be selected.
+        sample = (
+            "a,b:c\n"
+            "d,e\n"
+            "f,g:c\n"
+            "h,i\n"
+        )
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ",")
+
+    def test_zero_mode_tie_order_comma_first(self):
+        sniffer = csv.Sniffer()
+        pattern = (
+            "a,b\n"
+            "c:d\n"
+            "e,f\n"
+            "g:h\n"
+        )
+        sample = pattern * 10
+        with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
+            sniffer.sniff(sample)
+
+    def test_zero_mode_tie_order_colon_first(self):
+        sniffer = csv.Sniffer()
+        pattern = (
+            "a:b\n"
+            "c,d\n"
+            "e:f\n"
+            "g,h\n"
+        )
+        sample = pattern * 10
+        with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
+            sniffer.sniff(sample)
+
+
 class NUL:
     def write(s, *args):
         pass

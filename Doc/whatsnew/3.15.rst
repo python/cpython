@@ -652,11 +652,11 @@ zlib
 Optimizations
 =============
 
-module_name
------------
+csv
+---
 
-* TODO
-
+* :meth:`csv.Sniffer.sniff` delimiter detection is now up to 1.6x faster.
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
 
 
 Removed
