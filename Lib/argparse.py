@@ -191,10 +191,10 @@ class HelpFormatter(object):
         self._whitespace_matcher = _re.compile(r'\s+', _re.ASCII)
         self._long_break_matcher = _re.compile(r'\n\n\n+')
 
-    def _set_color(self, color):
+    def _set_color(self, color, *, file=None):
         from _colorize import can_colorize, decolor, get_theme
 
-        if color and can_colorize():
+        if color and can_colorize(file=file):
             self._theme = get_theme(force_color=True).argparse
             self._decolor = decolor
         else:
@@ -2693,14 +2693,16 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Help-formatting methods
     # =======================
 
-    def format_usage(self):
-        formatter = self._get_formatter()
+    def format_usage(self, formatter=None):
+        if formatter is None:
+            formatter = self._get_formatter()
         formatter.add_usage(self.usage, self._actions,
                             self._mutually_exclusive_groups)
         return formatter.format_help()
 
-    def format_help(self):
-        formatter = self._get_formatter()
+    def format_help(self, formatter=None):
+        if formatter is None:
+            formatter = self._get_formatter()
 
         # usage
         formatter.add_usage(self.usage, self._actions,
@@ -2734,12 +2736,16 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def print_usage(self, file=None):
         if file is None:
             file = _sys.stdout
-        self._print_message(self.format_usage(), file)
+        formatter = self._get_formatter()
+        formatter._set_color(self.color, file=file)
+        self._print_message(self.format_usage(formatter=formatter), file)
 
     def print_help(self, file=None):
         if file is None:
             file = _sys.stdout
-        self._print_message(self.format_help(), file)
+        formatter = self._get_formatter()
+        formatter._set_color(self.color, file=file)
+        self._print_message(self.format_help(formatter=formatter), file)
 
     def _print_message(self, message, file=None):
         if message:
