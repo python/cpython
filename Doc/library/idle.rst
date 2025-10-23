@@ -39,7 +39,6 @@ IDLE has the following features:
 
 .. include:: ../includes/optional-module.rst
 
-
 Menus
 -----
 
