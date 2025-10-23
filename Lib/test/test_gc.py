@@ -776,6 +776,32 @@ class GCTests(unittest.TestCase):
             rc, out, err = assert_python_ok('-c', code)
             self.assertEqual(out.strip(), b'__del__ called')
 
+    @unittest.skipIf(Py_GIL_DISABLED, "requires GC generations or increments")
+    def test_gc_debug_stats(self):
+        # Checks that debug information is printed to stderr
+        # when DEBUG_STATS is set.
+        code = """if 1:
+            import gc
+            gc.set_debug(%s)
+            gc.collect()
+            """
+        _, _, err = assert_python_ok("-c", code % "gc.DEBUG_STATS")
+        self.assertRegex(err, b"gc: collecting generation [0-9]+")
+        self.assertRegex(
+            err,
+            b"gc: objects in each generation: [0-9]+ [0-9]+ [0-9]+",
+        )
+        self.assertRegex(
+            err, b"gc: objects in permanent generation: [0-9]+"
+        )
+        self.assertRegex(
+            err,
+            b"gc: done, .* unreachable, .* uncollectable, .* elapsed",
+        )
+
+        _, _, err = assert_python_ok("-c", code % "0")
+        self.assertNotIn(b"elapsed", err)
+
     def test_global_del_SystemExit(self):
         code = """if 1:
             class ClassWithDel:
