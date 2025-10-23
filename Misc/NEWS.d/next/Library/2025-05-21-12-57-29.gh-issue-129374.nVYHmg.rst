@@ -1,0 +1,1 @@
+csv sniffer gains support for detecting quoting policy
