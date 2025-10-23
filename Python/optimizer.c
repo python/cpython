@@ -172,7 +172,7 @@ _PyOptimizer_Optimize(
         executor->vm_data.code = NULL;
     }
     if (chain_depth > 0) {
-        _PyExitData *prev_exit = tstate->interp->jit_state.previous_exit;
+        _PyExitData *prev_exit = tstate->interp->jit_state.prev_exit;
         assert(prev_exit != NULL);
         prev_exit->executor = executor;;
     }
@@ -554,16 +554,16 @@ int
 _PyJit_translate_single_bytecode_to_trace(
     PyThreadState *tstate,
     _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *this_instr,
-    _Py_CODEUNIT *next_instr,
-    PyCodeObject *old_code,
-    PyFunctionObject *func,
-    int old_stack_level,
-    int opcode,
-    int oparg,
-    int jump_taken)
+    _Py_CODEUNIT *next_instr)
 {
 
+    PyCodeObject *old_code = tstate->interp->jit_state.prev_instr_code;
+    // Something else finalized the trace. This can happen in multi-threaded scenarios as our trace
+    // addition from bytecode execution to here is not atomic.
+    // Though in GIL builds, the GIL protects the rest.
+    if (old_code == NULL) {
+        return 0;
+    }
     bool progress_needed = (tstate->interp->jit_state.initial_chain_depth % MAX_CHAIN_DEPTH) == 0;;
     _PyBloomFilter *dependencies = &tstate->interp->jit_state.dependencies;
     _Py_BloomFilter_Add(dependencies, old_code);
@@ -583,6 +583,7 @@ _PyJit_translate_single_bytecode_to_trace(
         lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
     }
 #endif
+    _Py_CODEUNIT *this_instr =  tstate->interp->jit_state.prev_instr;
     _Py_CODEUNIT *target_instr = this_instr;
     uint32_t target = 0;
 
@@ -590,11 +591,17 @@ _PyJit_translate_single_bytecode_to_trace(
 
     // Rewind EXTENDED_ARG so that we see the whole thing.
     // We must point to the first EXTENDED_ARG when deopting.
+    int oparg = tstate->interp->jit_state.prev_instr_oparg;
+    int opcode = this_instr->op.code;
     int rewind_oparg = oparg;
     while (rewind_oparg > 255) {
         rewind_oparg >>= 8;
         target--;
     }
+
+    bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode];
+    DPRINTF(2, "%p %d: %s(%d) %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, needs_guard_ip);
+
 #ifdef Py_DEBUG
     if (oparg > 255) {
         assert(_Py_GetBaseCodeUnit(old_code, target).op.code == EXTENDED_ARG);
@@ -605,44 +612,52 @@ _PyJit_translate_single_bytecode_to_trace(
         goto done;
     }
 
-    DPRINTF(2, "%p %d: %s(%d) %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, progress_needed);
-
-    bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode];
-
+    int old_stack_level = tstate->interp->jit_state.prev_instr_oparg;
     // Strange control-flow, unsupported opcode, etc.
-    if (jump_taken ||
-        // This happens when a recursive call happens that we can't trace. Such as Python -> C -> Python calls
-        // If we haven't guarded the IP, then it's untraceable.
-        (frame != tstate->interp->jit_state.current_frame && !needs_guard_ip) ||
-        (oparg > 0xFFFF) ||
-        // TODO (gh-140277): The constituent use one extra stack slot. So we need to check for headroom.
-        (opcode == BINARY_OP_SUBSCR_GETITEM && old_stack_level + 1 > old_code->co_stacksize)||
-        // Exception stuff, could be handled in the future maybe?
-        opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO ||
-        frame->owner >= FRAME_OWNED_BY_INTERPRETER
-        ) {
-        unsupported:
-                {
-                    // Rewind to previous instruction and replace with _EXIT_TRACE.
-                    _PyUOpInstruction *curr = &trace[trace_length-1];
-                    while (curr->opcode != _SET_IP && trace_length > 2) {
-                        trace_length--;
-                        curr = &trace[trace_length-1];
-                    }
-                    assert(curr->opcode == _SET_IP || trace_length == 2);
-                    if (curr->opcode == _SET_IP) {
-                        int32_t old_target = (int32_t)uop_get_target(curr);
-                        curr++;
-                        trace_length++;
-                        curr->opcode = _EXIT_TRACE;
-                        curr->format = UOP_FORMAT_TARGET;
-                        curr->target = old_target;
-                    }
-                    goto done;
-                }
-        }
+    if (tstate->interp->jit_state.dynamic_jump_taken) {
+        goto unsupported;
+    }
 
-    tstate->interp->jit_state.current_frame = frame;
+    // This happens when a recursive call happens that we can't trace. Such as Python -> C -> Python calls
+    // If we haven't guarded the IP, then it's untraceable.
+    if (frame != tstate->interp->jit_state.prev_instr_frame && !needs_guard_ip) {
+        goto unsupported;
+    }
+
+    if (oparg > 0xFFFF) {
+        goto unsupported;
+    }
+
+    // TODO (gh-140277): The constituent use one extra stack slot. So we need to check for headroom.
+    if (opcode == BINARY_OP_SUBSCR_GETITEM && old_stack_level + 1 > old_code->co_stacksize) {
+        goto unsupported;
+    }
+
+    if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
+        goto unsupported;
+    }
+
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+        unsupported:
+        {
+            // Rewind to previous instruction and replace with _EXIT_TRACE.
+            _PyUOpInstruction *curr = &trace[trace_length-1];
+            while (curr->opcode != _SET_IP && trace_length > 2) {
+                trace_length--;
+                curr = &trace[trace_length-1];
+            }
+            assert(curr->opcode == _SET_IP || trace_length == 2);
+            if (curr->opcode == _SET_IP) {
+                int32_t old_target = (int32_t)uop_get_target(curr);
+                curr++;
+                trace_length++;
+                curr->opcode = _EXIT_TRACE;
+                curr->format = UOP_FORMAT_TARGET;
+                curr->target = old_target;
+            }
+            goto done;
+        }
+    }
 
     if (opcode == NOP) {
         return 1;
@@ -721,7 +736,9 @@ _PyJit_translate_single_bytecode_to_trace(
         {
             if ((next_instr != tstate->interp->jit_state.close_loop_instr) &&
                 (next_instr != tstate->interp->jit_state.insert_exec_instr) &&
-                tstate->interp->jit_state.code_curr_size > 5) {
+                tstate->interp->jit_state.code_curr_size > 5 &&
+                // These are coroutines, and we want to unroll those usually.
+                opcode != JUMP_BACKWARD_NO_INTERRUPT) {
                 // We encountered a JUMP_BACKWARD but not to the top of our own loop.
                 // We don't want to continue tracing as we might get stuck in the
                 // inner loop. Instead, end the trace where the executor of the
@@ -846,9 +863,9 @@ _PyJit_translate_single_bytecode_to_trace(
                 }
                 if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
                     assert(i + 1 == nuops);
-                    _Py_CODEUNIT *next_instr = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-                    assert(next_instr->op.code == STORE_FAST);
-                    operand = next_instr->op.arg;
+                    _Py_CODEUNIT *next = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                    assert(next->op.code == STORE_FAST);
+                    operand = next->op.arg;
                 }
                 // All other instructions
                 ADD_TO_TRACE(uop, oparg, operand, target);
@@ -889,7 +906,7 @@ full:
 }
 
 void
-_PyJit_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit)
+_PyJit_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit, int oparg)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
 #ifdef Py_DEBUG
@@ -914,13 +931,19 @@ _PyJit_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     tstate->interp->jit_state.close_loop_instr = close_loop_instr;
     tstate->interp->jit_state.initial_code = (PyCodeObject *)Py_NewRef(code);
     tstate->interp->jit_state.initial_func = (PyFunctionObject *)Py_NewRef(_PyFrame_GetFunction(frame));
-    tstate->interp->jit_state.previous_exit = exit;
-    _Py_BloomFilter_Init(&tstate->interp->jit_state.dependencies);
+    tstate->interp->jit_state.prev_exit = exit;
     tstate->interp->jit_state.initial_stack_depth = curr_stackdepth;
     tstate->interp->jit_state.initial_chain_depth = chain_depth % MAX_CHAIN_DEPTH;
-    tstate->interp->jit_state.current_frame = frame;
+    tstate->interp->jit_state.prev_instr_frame = frame;
     tstate->interp->jit_state.dependencies_still_valid = true;
-    tstate->interp->jit_state.last_specialized_instr = NULL;
+    tstate->interp->jit_state.do_not_specialize = false;
+    tstate->interp->jit_state.prev_instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
+    tstate->interp->jit_state.prev_instr = curr_instr;
+    tstate->interp->jit_state.prev_instr_frame = frame;
+    tstate->interp->jit_state.prev_instr_oparg = oparg;
+    tstate->interp->jit_state.prev_instr_stacklevel = curr_stackdepth;
+    tstate->interp->jit_state.dynamic_jump_taken = false;
+    _Py_BloomFilter_Init(&tstate->interp->jit_state.dependencies);
 }
 
 void
@@ -928,6 +951,7 @@ _PyJit_FinalizeTracing(PyThreadState *tstate)
 {
     Py_CLEAR(tstate->interp->jit_state.initial_code);
     Py_CLEAR(tstate->interp->jit_state.initial_func);
+    Py_CLEAR(tstate->interp->jit_state.prev_instr_code);
     tstate->interp->jit_state.code_curr_size = 2;
     tstate->interp->jit_state.code_max_size = UOP_MAX_TRACE_LENGTH - 1;
 }

@@ -94,6 +94,10 @@
         do { \
             Py_MUSTTAIL return (((py_tail_call_funcptr *)instruction_funcptr_table)[opcode])(TAIL_CALL_ARGS); \
         } while (0)
+#   define DISPATCH_GOTO_NON_TRACING() \
+        do { \
+            Py_MUSTTAIL return (((py_tail_call_funcptr *)DISPATCH_TABLE)[opcode])(TAIL_CALL_ARGS); \
+        } while (0)
 #   define JUMP_TO_LABEL(name) \
         do { \
             Py_MUSTTAIL return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
@@ -117,7 +121,7 @@
 #  define TARGET(op) TARGET_##op:
 #  define TRACING_TARGET(op) TARGET_TRACING_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
-
+#  define DISPATCH_GOTO_NON_TRACING() goto *DISPATCH_TABLE[opcode];
 #  define JUMP_TO_LABEL(name) goto name;
 #  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
 #  define LABEL(name) name:
@@ -129,35 +133,14 @@
 #  define LABEL(name) name:
 #endif
 
-#define TRACING_JUMP_TO_LABEL(label) \
-    RECORD_DYNAMIC_JUMP_TAKEN() \
-    RECORD_TRACE_NO_DISPATCH() \
-    assert(!IS_JIT_TRACING()); \
-    JUMP_TO_LABEL(label);
-
 #if _Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS
 #  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
-// tstate->interp->jit_state.last_specialized_instr != this_instr is required to not get stuck in infinite
-// specialization loops due to specialization failure.
-#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && tstate->interp->jit_state.last_specialized_instr != this_instr)
+// Required to not get stuck in infinite pecialization loops due to specialization failure.
+#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && !tstate->interp->jit_state.do_not_specialize)
 #  define ENTER_TRACING() \
     DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
 #  define LEAVE_TRACING() \
     DISPATCH_TABLE_VAR = DISPATCH_TABLE;
-#  define RECORD_TRACE_NO_DISPATCH() do { \
-        int err = 0; \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        /* We need to check once more here in case it swapped out halfway. */ \
-        if (IS_JIT_TRACING()) { \
-            int full = add_to_code_trace(tstate, frame, old_code, old_func, _old_stack_level, this_instr, next_instr, opcode, oparg, _jump_taken); \
-            if (full) { \
-                LEAVE_TRACING(); \
-                err = bail_tracing_and_jit(tstate, frame); \
-            } \
-        } \
-        stack_pointer = _PyFrame_GetStackPointer(frame); \
-        if (err < 0) { JUMP_TO_LABEL(error); }  \
-    } while (0);
 #endif
 
 
@@ -197,21 +180,22 @@ do { \
         DISPATCH_GOTO(); \
     }
 
-#define DISPATCH_SAME_OPARG() \
+#define DISPATCH_NON_TRACING() \
     { \
-        opcode = next_instr->op.code; \
+        assert(frame->stackpointer == NULL); \
+        NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
-        DISPATCH_GOTO(); \
+        DISPATCH_GOTO_NON_TRACING(); \
     }
 
-#define TRACING_SPECIALIZE_DISPATCH_SAME_OPARG() \
-{ \
-    tstate->interp->jit_state.last_specialized_instr = this_instr; \
-    opcode = next_instr->op.code; \
-    PRE_DISPATCH_GOTO(); \
-    DISPATCH_GOTO(); \
-}
-
+#if _Py_TIER2
+#define DISPATCH_SAME_OPARG() \
+    { \
+        tstate->interp->jit_state.do_not_specialize = true; \
+        opcode = next_instr->op.code; \
+        PRE_DISPATCH_GOTO(); \
+        DISPATCH_GOTO_NON_TRACING(); \
+    }
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
@@ -221,21 +205,24 @@ do { \
         CALL_STAT_INC(inlined_py_calls);                \
         JUMP_TO_LABEL(start_frame);                      \
     } while (0)
-
-#define TRACING_DISPATCH_INLINED(NEW_FRAME) \
-    tstate->interp->jit_state.last_specialized_instr = this_instr; \
-    RECORD_TRACE_NO_DISPATCH(); \
-    DISPATCH_INLINED(NEW_FRAME);
-
-#define TRACING_DISPATCH() \
+#else
+#define DISPATCH_SAME_OPARG() \
     { \
-        tstate->interp->jit_state.last_specialized_instr = this_instr; \
-        assert(frame->stackpointer == NULL); \
-        RECORD_TRACE_NO_DISPATCH(); \
-        NEXTOPARG(); \
+        opcode = next_instr->op.code; \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
     }
+#define DISPATCH_INLINED(NEW_FRAME)                     \
+    do {                                                \
+        assert(tstate->interp->eval_frame == NULL);     \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        assert((NEW_FRAME)->previous == frame);         \
+        frame = tstate->current_frame = (NEW_FRAME);     \
+        CALL_STAT_INC(inlined_py_calls);                \
+        JUMP_TO_LABEL(start_frame);                      \
+    } while (0)
+#endif
+
 
 /* Tuple access macros */
 
@@ -368,7 +355,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define RECORD_BRANCH_TAKEN(bitset, flag)
 #endif
 
-#define RECORD_DYNAMIC_JUMP_TAKEN() _jump_taken = 1;
+#define RECORD_DYNAMIC_JUMP_TAKEN() tstate->interp->jit_state.dynamic_jump_taken = true;
 
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"
@@ -426,6 +413,7 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 
 #define TIER1_TO_TIER2(EXECUTOR)                        \
 do {                                                   \
+    LEAVE_TRACING(); \
     OPT_STAT_INC(traces_executed);                     \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
@@ -440,6 +428,7 @@ do {                                                   \
         assert(next_instr->op.code != ENTER_EXECUTOR); \
         assert(tstate->interp->jit_state.code_curr_size == 2); \
         ENTER_TRACING(); \
+        DISPATCH_NON_TRACING(); \
     } \
     DISPATCH();                                        \
 } while (0)

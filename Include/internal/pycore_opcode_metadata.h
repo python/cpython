@@ -412,6 +412,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 0;
         case RAISE_VARARGS:
             return oparg;
+        case RECORD_PREVIOUS_INST:
+            return 0;
         case RERAISE:
             return 1 + oparg;
         case RESERVED:
@@ -895,6 +897,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case RAISE_VARARGS:
             return 0;
+        case RECORD_PREVIOUS_INST:
+            return 0;
         case RERAISE:
             return oparg;
         case RESERVED:
@@ -1249,6 +1253,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [PUSH_EXC_INFO] = { true, INSTR_FMT_IX, 0 },
     [PUSH_NULL] = { true, INSTR_FMT_IX, HAS_PURE_FLAG },
     [RAISE_VARARGS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
+    [RECORD_PREVIOUS_INST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG },
     [RERAISE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -1695,6 +1700,7 @@ const char *_PyOpcode_OpName[267] = {
     [PUSH_EXC_INFO] = "PUSH_EXC_INFO",
     [PUSH_NULL] = "PUSH_NULL",
     [RAISE_VARARGS] = "RAISE_VARARGS",
+    [RECORD_PREVIOUS_INST] = "RECORD_PREVIOUS_INST",
     [RERAISE] = "RERAISE",
     [RESERVED] = "RESERVED",
     [RESUME] = "RESUME",
@@ -1805,7 +1811,6 @@ const uint8_t _PyOpcode_NeedsGuardIp[256] = {
 extern const uint8_t _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
-    [121] = 121,
     [122] = 122,
     [123] = 123,
     [124] = 124,
@@ -2017,6 +2022,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [PUSH_EXC_INFO] = PUSH_EXC_INFO,
     [PUSH_NULL] = PUSH_NULL,
     [RAISE_VARARGS] = RAISE_VARARGS,
+    [RECORD_PREVIOUS_INST] = RECORD_PREVIOUS_INST,
     [RERAISE] = RERAISE,
     [RESERVED] = RESERVED,
     [RESUME] = RESUME,
@@ -2066,7 +2072,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 121: \
     case 122: \
     case 123: \
     case 124: \

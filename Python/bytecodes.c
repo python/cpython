@@ -45,6 +45,8 @@
 
 #define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"
+#include "ceval_macros.h"
+#include "ceval_macros.h"
 #include "../Include/internal/pycore_code.h"
 #include "../Include/internal/pycore_stackref.h"
 
@@ -2985,14 +2987,9 @@ dummy_func(
                         oparg >>= 8;
                         insert_exec_at--;
                     }
-                    _PyJit_InitializeTracing(tstate, frame, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL);
+                    _PyJit_InitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg);
                     ENTER_TRACING();
                 }
-                int _jump_taken = false;
-                PyCodeObject *old_code = _PyFrame_GetCode(frame);
-                PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-                int _old_stack_level = 0;
-                TRACING_DISPATCH();
             }
             else {
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
@@ -3057,9 +3054,6 @@ dummy_func(
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
-            #if TRACING_JIT
-            RECORD_TRACE_NO_DISPATCH();
-            #endif
             TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
@@ -5224,6 +5218,25 @@ dummy_func(
             Py_FatalError("Executing RESERVED instruction.");
         }
 
+        tier1 no_save_ip inst(RECORD_PREVIOUS_INST, (--)) {
+            assert(IS_JIT_TRACING());
+            int opcode = next_instr->op.code;
+            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
+            if (full) {
+                LEAVE_TRACING();
+                int err = bail_tracing_and_jit(tstate, frame);
+                ERROR_IF(err < 0);
+                DISPATCH_GOTO_NON_TRACING();
+            }
+            tstate->interp->jit_state.do_not_specialize = false;
+            PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
+            Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
+            tstate->interp->jit_state.prev_instr = next_instr;
+            tstate->interp->jit_state.prev_instr_frame = frame;
+            tstate->interp->jit_state.prev_instr_oparg = oparg;
+            tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();
+            DISPATCH_GOTO_NON_TRACING();
+        }
         ///////// Tier-2 only opcodes /////////
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
@@ -5456,7 +5469,10 @@ dummy_func(
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
-                _PyJit_InitializeTracing(tstate, frame, target, target, STACK_LEVEL(), chain_depth, exit);
+                // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
+                // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
+                // So setting it to anything else is wrong.
+                _PyJit_InitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg);
                 exit->temperature = initial_temperature_backoff_counter();
                 GOTO_TIER_ONE(target, 1);
             }

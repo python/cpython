@@ -759,18 +759,23 @@ typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyI
 
 typedef struct _PyJitTracerState {
     bool dependencies_still_valid;
+    bool do_not_specialize;
+    bool dynamic_jump_taken;
     int code_max_size;
     int code_curr_size;
     int initial_stack_depth;
     int initial_chain_depth;
+    int prev_instr_oparg;
+    int prev_instr_stacklevel;
     _PyUOpInstruction *code_buffer;
     _Py_CODEUNIT *insert_exec_instr;
     _Py_CODEUNIT *close_loop_instr;
-    _Py_CODEUNIT *last_specialized_instr;
     PyCodeObject *initial_code; // Strong
     PyFunctionObject *initial_func; // Strong
-    struct _PyExitData *previous_exit;
-    _PyInterpreterFrame *current_frame;
+    _Py_CODEUNIT *prev_instr;
+    PyCodeObject *prev_instr_code; // Strong
+    struct _PyExitData *prev_exit;
+    _PyInterpreterFrame *prev_instr_frame;
     _PyBloomFilter dependencies;
 } _PyJitTracerState;
 
