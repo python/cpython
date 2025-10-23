@@ -3314,7 +3314,6 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 #ifdef HAVE_STATX
 typedef struct {
     PyObject_HEAD
-    double atime_sec, btime_sec, ctime_sec, mtime_sec;
     dev_t rdev, dev;
     struct statx stx;
 } Py_statx_result;
@@ -3332,7 +3331,6 @@ static PyMemberDef pystatx_result_members[] = {
     MM(stx_mask, Py_T_UINT, mask, "member validity mask"),
     MM(stx_blksize, Py_T_UINT, blksize, "blocksize for filesystem I/O"),
     MM(stx_attributes, Py_T_ULONGLONG, attributes, "Linux inode attribute bits"),
-    MM(stx_mode, Py_T_USHORT, mode, "protection bits"),
     MM(stx_attributes_mask, Py_T_ULONGLONG, attributes_mask,
         "Mask of supported bits in stx_attributes"),
     MM(stx_rdev_major, Py_T_UINT, rdev_major, "represented device major number"),
@@ -3381,6 +3379,17 @@ STATX_GET_UINT(stx_atomic_write_unit_max_opt, STATX_WRITE_ATOMIC)
 #endif
 
 
+static PyObject*
+pystatx_result_get_stx_mode(PyObject *op, void *Py_UNUSED(context))
+{
+    Py_statx_result *self = Py_statx_result_CAST(op);
+    if (!(self->stx.stx_mask & (STATX_TYPE | STATX_MODE))) {
+        Py_RETURN_NONE;
+    }
+    return PyLong_FromUnsignedLong(self->stx.stx_mode);
+}
+
+
 #define STATX_GET_ULONGLONG(ATTR, MASK) \
     static PyObject* \
     pystatx_result_get_##ATTR(PyObject *op, void *Py_UNUSED(context)) \
@@ -3404,7 +3413,7 @@ STATX_GET_ULONGLONG(stx_subvol, STATX_SUBVOL)
 #endif
 
 
-#define STATX_GET_DOUBLE(ATTR, MEMBER, MASK) \
+#define STATX_GET_DOUBLE(ATTR, MASK) \
     static PyObject* \
     pystatx_result_get_##ATTR(PyObject *op, void *Py_UNUSED(context)) \
     { \
@@ -3412,14 +3421,15 @@ STATX_GET_ULONGLONG(stx_subvol, STATX_SUBVOL)
         if (!(self->stx.stx_mask & MASK)) { \
             Py_RETURN_NONE; \
         } \
-        double sec = self->MEMBER; \
+        struct statx_timestamp *ts = &self->stx.ATTR; \
+        double sec = ((double)ts->tv_sec + ts->tv_nsec * 1e-9); \
         return PyFloat_FromDouble(sec); \
     }
 
-STATX_GET_DOUBLE(stx_atime, atime_sec, STATX_ATIME)
-STATX_GET_DOUBLE(stx_btime, btime_sec, STATX_BTIME)
-STATX_GET_DOUBLE(stx_ctime, ctime_sec, STATX_CTIME)
-STATX_GET_DOUBLE(stx_mtime, mtime_sec, STATX_MTIME)
+STATX_GET_DOUBLE(stx_atime, STATX_ATIME)
+STATX_GET_DOUBLE(stx_btime, STATX_BTIME)
+STATX_GET_DOUBLE(stx_ctime, STATX_CTIME)
+STATX_GET_DOUBLE(stx_mtime, STATX_MTIME)
 
 #define STATX_GET_NSEC(ATTR, MEMBER, MASK) \
     static PyObject* \
@@ -3444,6 +3454,7 @@ STATX_GET_NSEC(stx_mtime_ns, stx_mtime, STATX_MTIME)
     {#attr, pystatx_result_get_##attr, NULL, PyDoc_STR(doc), NULL}
 
 static PyGetSetDef pystatx_result_getset[] = {
+    G(stx_mode, "protection bits"),
     G(stx_nlink, "number of hard links"),
     G(stx_uid, "user ID of owner"),
     G(stx_gid, "group ID of owner"),
@@ -3670,14 +3681,6 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
         return path_error(path);
     }
 
-    v->atime_sec = ((double)v->stx.stx_atime.tv_sec
-                    + 1e-9 * v->stx.stx_atime.tv_nsec);
-    v->btime_sec = ((double)v->stx.stx_btime.tv_sec
-                    + 1e-9 * v->stx.stx_btime.tv_nsec);
-    v->ctime_sec = ((double)v->stx.stx_ctime.tv_sec
-                    + 1e-9 * v->stx.stx_ctime.tv_nsec);
-    v->mtime_sec = ((double)v->stx.stx_mtime.tv_sec
-                    + 1e-9 * v->stx.stx_mtime.tv_nsec);
     v->rdev = makedev(v->stx.stx_rdev_major, v->stx.stx_rdev_minor);
     v->dev = makedev(v->stx.stx_dev_major, v->stx.stx_dev_minor);
 
