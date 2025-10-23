@@ -2309,7 +2309,7 @@ loghelper(PyObject* arg, double (*func)(double))
             assert(e >= 0);
             assert(!PyErr_Occurred());
             /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
-            result = func(x) + func(2.0) * e;
+            result = fma(func(2.0), (double)e, func(x));
         }
         else
             /* Successfully converted x to a double. */
