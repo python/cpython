@@ -5420,12 +5420,12 @@ dummy_func(
         }
 
         tier2 op(_DEOPT, (--)) {
-            GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET(), 0);
+            GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
         }
 
         tier2 op(_HANDLE_PENDING_AND_DEOPT, (--)) {
             int err = _Py_HandlePending(tstate);
-            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET(), 0);
+            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
         }
 
         tier2 op(_ERROR_POP_N, (target/2 --)) {
@@ -5435,7 +5435,7 @@ dummy_func(
             // gh-140104: The exception handler expects frame->instr_ptr to be pointing to next_instr, not this_instr!
             frame->instr_ptr = next_instr;
             SYNC_SP();
-            GOTO_TIER_ONE(NULL, 0);
+            GOTO_TIER_ONE(NULL);
         }
 
         /* Progress is guaranteed if we DEOPT on the eval breaker, because
@@ -5457,7 +5457,7 @@ dummy_func(
             _Py_BackoffCounter temperature = exit->temperature;
             if (!backoff_counter_triggers(temperature)) {
                 exit->temperature = advance_backoff_counter(temperature);
-                GOTO_TIER_ONE(target, 0);
+                GOTO_TIER_ONE(target);
             }
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
@@ -5474,7 +5474,7 @@ dummy_func(
                 // So setting it to anything else is wrong.
                 _PyJit_InitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg);
                 exit->temperature = initial_temperature_backoff_counter();
-                GOTO_TIER_ONE(target, 1);
+                GOTO_TIER_ONE_CONTINUE_TRACING(target);
             }
             assert(tstate->jit_exit == exit);
             exit->executor = executor;
@@ -5508,7 +5508,7 @@ dummy_func(
                 TIER2_TO_TIER2(executor);
             }
             else {
-                GOTO_TIER_ONE(target, 0);
+                GOTO_TIER_ONE(target);
             }
         }
 

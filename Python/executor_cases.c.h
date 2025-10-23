@@ -7442,7 +7442,7 @@
         }
 
         case _DEOPT: {
-            GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET(), 0);
+            GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
             break;
         }
 
@@ -7450,7 +7450,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _Py_HandlePending(tstate);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET(), 0);
+            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
             break;
         }
 
@@ -7461,7 +7461,7 @@
             _Py_CODEUNIT *current_instr = _PyFrame_GetBytecode(frame) + target;
             _Py_CODEUNIT *next_instr = current_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[current_instr->op.code]];
             frame->instr_ptr = next_instr;
-            GOTO_TIER_ONE(NULL, 0);
+            GOTO_TIER_ONE(NULL);
             break;
         }
 
@@ -7489,7 +7489,7 @@
             _Py_BackoffCounter temperature = exit->temperature;
             if (!backoff_counter_triggers(temperature)) {
                 exit->temperature = advance_backoff_counter(temperature);
-                GOTO_TIER_ONE(target, 0);
+                GOTO_TIER_ONE(target);
             }
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
@@ -7503,7 +7503,7 @@
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
                 _PyJit_InitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg);
                 exit->temperature = initial_temperature_backoff_counter();
-                GOTO_TIER_ONE(target, 1);
+                GOTO_TIER_ONE_CONTINUE_TRACING(target);
             }
             assert(tstate->jit_exit == exit);
             exit->executor = executor;
@@ -7544,7 +7544,7 @@
                 TIER2_TO_TIER2(executor);
             }
             else {
-                GOTO_TIER_ONE(target, 0);
+                GOTO_TIER_ONE(target);
             }
             break;
         }

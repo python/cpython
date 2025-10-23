@@ -440,13 +440,23 @@ do {                                                   \
     goto tier2_start;                                  \
 } while (0)
 
-#define GOTO_TIER_ONE(TARGET, SHOULD_CONTINUE_TRACING)                \
-    do                                                                \
-    {                                                                 \
-        tstate->current_executor = NULL;                              \
-        OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
-        _PyFrame_SetStackPointer(frame, stack_pointer);               \
-        return (_Py_CODEUNIT *)(((uintptr_t)(TARGET)) | SHOULD_CONTINUE_TRACING); \
+#define GOTO_TIER_ONE_SETUP \
+    tstate->current_executor = NULL;                              \
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+
+#define GOTO_TIER_ONE(TARGET) \
+    do \
+    { \
+        GOTO_TIER_ONE_SETUP \
+        return (_Py_CODEUNIT *)(TARGET); \
+    } while (0)
+
+#define GOTO_TIER_ONE_CONTINUE_TRACING(TARGET) \
+    do \
+    { \
+        GOTO_TIER_ONE_SETUP \
+        return (_Py_CODEUNIT *)(((uintptr_t)(TARGET))| 1); \
     } while (0)
 
 #define CURRENT_OPARG()    (next_uop[-1].oparg)
