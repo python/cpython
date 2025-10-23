@@ -2,6 +2,7 @@
 
 import contextlib
 import io
+import json
 import marshal
 import os
 import shutil
@@ -10,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from collections import namedtuple
 from unittest import mock
 
 from profiling.sampling.pstats_collector import PstatsCollector
@@ -17,6 +19,7 @@ from profiling.sampling.stack_collector import (
     CollapsedStackCollector,
     FlamegraphCollector,
 )
+from profiling.sampling.gecko_collector import GeckoCollector
 
 from test.support.os_helper import unlink
 from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
@@ -82,6 +85,8 @@ skip_if_not_supported = unittest.skipIf(
     "Test only runs on Linux, Windows and MacOS",
 )
 
+SubprocessInfo = namedtuple('SubprocessInfo', ['process', 'socket'])
+
 
 @contextlib.contextmanager
 def test_subprocess(script):
@@ -121,7 +126,7 @@ _test_sock.sendall(b"ready")
         if response != b"ready":
             raise RuntimeError(f"Unexpected response from subprocess: {response}")
 
-        yield proc
+        yield SubprocessInfo(proc, client_socket)
     finally:
         if client_socket is not None:
             client_socket.close()
@@ -526,6 +531,142 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn('"name":', content)
         self.assertIn('"value":', content)
         self.assertIn('"children":', content)
+
+    def test_gecko_collector_basic(self):
+        """Test basic GeckoCollector functionality."""
+        collector = GeckoCollector()
+
+        # Test empty state
+        self.assertEqual(len(collector.threads), 0)
+        self.assertEqual(collector.sample_count, 0)
+        self.assertEqual(len(collector.global_strings), 1)  # "(root)"
+
+        # Test collecting sample data
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [("file.py", 10, "func1"), ("file.py", 20, "func2")],
+                )]
+            )
+        ]
+        collector.collect(test_frames)
+
+        # Should have recorded one thread and one sample
+        self.assertEqual(len(collector.threads), 1)
+        self.assertEqual(collector.sample_count, 1)
+        self.assertIn(1, collector.threads)
+
+        profile_data = collector._build_profile()
+
+        # Verify profile structure
+        self.assertIn("meta", profile_data)
+        self.assertIn("threads", profile_data)
+        self.assertIn("shared", profile_data)
+
+        # Check shared string table
+        shared = profile_data["shared"]
+        self.assertIn("stringArray", shared)
+        string_array = shared["stringArray"]
+        self.assertGreater(len(string_array), 0)
+
+        # Should contain our functions in the string array
+        self.assertIn("func1", string_array)
+        self.assertIn("func2", string_array)
+
+        # Check thread data structure
+        threads = profile_data["threads"]
+        self.assertEqual(len(threads), 1)
+        thread_data = threads[0]
+
+        # Verify thread structure
+        self.assertIn("samples", thread_data)
+        self.assertIn("funcTable", thread_data)
+        self.assertIn("frameTable", thread_data)
+        self.assertIn("stackTable", thread_data)
+
+        # Verify samples
+        samples = thread_data["samples"]
+        self.assertEqual(len(samples["stack"]), 1)
+        self.assertEqual(len(samples["time"]), 1)
+        self.assertEqual(samples["length"], 1)
+
+        # Verify function table structure and content
+        func_table = thread_data["funcTable"]
+        self.assertIn("name", func_table)
+        self.assertIn("fileName", func_table)
+        self.assertIn("lineNumber", func_table)
+        self.assertEqual(func_table["length"], 2)  # Should have 2 functions
+
+        # Verify actual function content through string array indices
+        func_names = []
+        for idx in func_table["name"]:
+            func_name = string_array[idx] if isinstance(idx, int) and 0 <= idx < len(string_array) else str(idx)
+            func_names.append(func_name)
+
+        self.assertIn("func1", func_names, f"func1 not found in {func_names}")
+        self.assertIn("func2", func_names, f"func2 not found in {func_names}")
+
+        # Verify frame table
+        frame_table = thread_data["frameTable"]
+        self.assertEqual(frame_table["length"], 2)  # Should have frames for both functions
+        self.assertEqual(len(frame_table["func"]), 2)
+
+        # Verify stack structure
+        stack_table = thread_data["stackTable"]
+        self.assertGreater(stack_table["length"], 0)
+        self.assertGreater(len(stack_table["frame"]), 0)
+
+    def test_gecko_collector_export(self):
+        """Test Gecko profile export functionality."""
+        gecko_out = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
+        self.addCleanup(close_and_unlink, gecko_out)
+
+        collector = GeckoCollector()
+
+        test_frames1 = [
+            MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])])
+        ]
+        test_frames2 = [
+            MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])])
+        ]  # Same stack
+        test_frames3 = [MockInterpreterInfo(0, [MockThreadInfo(1, [("other.py", 5, "other_func")])])]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        # Export gecko profile
+        with (captured_stdout(), captured_stderr()):
+            collector.export(gecko_out.name)
+
+        # Verify file was created and contains valid data
+        self.assertTrue(os.path.exists(gecko_out.name))
+        self.assertGreater(os.path.getsize(gecko_out.name), 0)
+
+        # Check file contains valid JSON
+        with open(gecko_out.name, "r") as f:
+            profile_data = json.load(f)
+
+        # Should be valid Gecko profile format
+        self.assertIn("meta", profile_data)
+        self.assertIn("threads", profile_data)
+        self.assertIn("shared", profile_data)
+
+        # Check meta information
+        self.assertIn("categories", profile_data["meta"])
+        self.assertIn("interval", profile_data["meta"])
+
+        # Check shared string table
+        self.assertIn("stringArray", profile_data["shared"])
+        self.assertGreater(len(profile_data["shared"]["stringArray"]), 0)
+
+        # Should contain our functions
+        string_array = profile_data["shared"]["stringArray"]
+        self.assertIn("func1", string_array)
+        self.assertIn("func2", string_array)
+        self.assertIn("other_func", string_array)
 
     def test_pstats_collector_export(self):
         collector = PstatsCollector(
@@ -1614,13 +1755,13 @@ if __name__ == "__main__":
 
     def test_sampling_basic_functionality(self):
         with (
-            test_subprocess(self.test_script) as proc,
+            test_subprocess(self.test_script) as subproc,
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
             try:
                 profiling.sampling.sample.sample(
-                    proc.pid,
+                    subproc.process.pid,
                     duration_sec=2,
                     sample_interval_usec=1000,  # 1ms
                     show_summary=False,
@@ -1644,7 +1785,7 @@ if __name__ == "__main__":
         )
         self.addCleanup(close_and_unlink, pstats_out)
 
-        with test_subprocess(self.test_script) as proc:
+        with test_subprocess(self.test_script) as subproc:
             # Suppress profiler output when testing file export
             with (
                 io.StringIO() as captured_output,
@@ -1652,7 +1793,7 @@ if __name__ == "__main__":
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
+                        subproc.process.pid,
                         duration_sec=1,
                         filename=pstats_out.name,
                         sample_interval_usec=10000,
@@ -1688,7 +1829,7 @@ if __name__ == "__main__":
         self.addCleanup(close_and_unlink, collapsed_file)
 
         with (
-            test_subprocess(self.test_script) as proc,
+            test_subprocess(self.test_script) as subproc,
         ):
             # Suppress profiler output when testing file export
             with (
@@ -1697,7 +1838,7 @@ if __name__ == "__main__":
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
+                        subproc.process.pid,
                         duration_sec=1,
                         filename=collapsed_file.name,
                         output_format="collapsed",
@@ -1738,14 +1879,14 @@ if __name__ == "__main__":
 
     def test_sampling_all_threads(self):
         with (
-            test_subprocess(self.test_script) as proc,
+            test_subprocess(self.test_script) as subproc,
             # Suppress profiler output
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
             try:
                 profiling.sampling.sample.sample(
-                    proc.pid,
+                    subproc.process.pid,
                     duration_sec=1,
                     all_threads=True,
                     sample_interval_usec=10000,
@@ -1831,14 +1972,14 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             profiling.sampling.sample.sample(-1, duration_sec=1)
 
     def test_process_dies_during_sampling(self):
-        with test_subprocess("import time; time.sleep(0.5); exit()") as proc:
+        with test_subprocess("import time; time.sleep(0.5); exit()") as subproc:
             with (
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
+                        subproc.process.pid,
                         duration_sec=2,  # Longer than process lifetime
                         sample_interval_usec=50000,
                     )
@@ -1880,17 +2021,17 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             )
 
     def test_is_process_running(self):
-        with test_subprocess("import time; time.sleep(1000)") as proc:
+        with test_subprocess("import time; time.sleep(1000)") as subproc:
             try:
-                profiler = SampleProfiler(pid=proc.pid, sample_interval_usec=1000, all_threads=False)
+                profiler = SampleProfiler(pid=subproc.process.pid, sample_interval_usec=1000, all_threads=False)
             except PermissionError:
                 self.skipTest(
                     "Insufficient permissions to read the stack trace"
                 )
             self.assertTrue(profiler._is_process_running())
             self.assertIsNotNone(profiler.unwinder.get_stack_trace())
-            proc.kill()
-            proc.wait()
+            subproc.process.kill()
+            subproc.process.wait()
             self.assertRaises(ProcessLookupError, profiler.unwinder.get_stack_trace)
 
         # Exit the context manager to ensure the process is terminated
@@ -1899,9 +2040,9 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_esrch_signal_handling(self):
-        with test_subprocess("import time; time.sleep(1000)") as proc:
+        with test_subprocess("import time; time.sleep(1000)") as subproc:
             try:
-                unwinder = _remote_debugging.RemoteUnwinder(proc.pid)
+                unwinder = _remote_debugging.RemoteUnwinder(subproc.process.pid)
             except PermissionError:
                 self.skipTest(
                     "Insufficient permissions to read the stack trace"
@@ -1909,17 +2050,17 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             initial_trace = unwinder.get_stack_trace()
             self.assertIsNotNone(initial_trace)
 
-            proc.kill()
+            subproc.process.kill()
 
             # Wait for the process to die and try to get another trace
-            proc.wait()
+            subproc.process.wait()
 
             with self.assertRaises(ProcessLookupError):
                 unwinder.get_stack_trace()
 
     def test_valid_output_formats(self):
         """Test that all valid output formats are accepted."""
-        valid_formats = ["pstats", "collapsed", "flamegraph"]
+        valid_formats = ["pstats", "collapsed", "flamegraph", "gecko"]
 
         tempdir = tempfile.TemporaryDirectory(delete=False)
         self.addCleanup(shutil.rmtree, tempdir.name)
@@ -2506,35 +2647,47 @@ class TestCpuModeFiltering(unittest.TestCase):
 import time
 import threading
 
+cpu_ready = threading.Event()
+
 def idle_worker():
     time.sleep(999999)
 
 def cpu_active_worker():
+    cpu_ready.set()
     x = 1
     while True:
         x += 1
 
 def main():
-# Start both threads
+    # Start both threads
     idle_thread = threading.Thread(target=idle_worker)
     cpu_thread = threading.Thread(target=cpu_active_worker)
     idle_thread.start()
     cpu_thread.start()
+
+    # Wait for CPU thread to be running, then signal test
+    cpu_ready.wait()
+    _test_sock.sendall(b"threads_ready")
+
     idle_thread.join()
     cpu_thread.join()
 
 main()
 
 '''
-        with test_subprocess(cpu_vs_idle_script) as proc:
+        with test_subprocess(cpu_vs_idle_script) as subproc:
+            # Wait for signal that threads are running
+            response = subproc.socket.recv(1024)
+            self.assertEqual(response, b"threads_ready")
+
             with (
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
-                        duration_sec=0.5,
+                        subproc.process.pid,
+                        duration_sec=2.0,
                         sample_interval_usec=5000,
                         mode=1,  # CPU mode
                         show_summary=False,
@@ -2552,8 +2705,8 @@ main()
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
-                        duration_sec=0.5,
+                        subproc.process.pid,
+                        duration_sec=2.0,
                         sample_interval_usec=5000,
                         mode=0,  # Wall-clock mode
                         show_summary=False,
@@ -2577,6 +2730,37 @@ main()
             # Wall-clock mode should capture both types of work
             self.assertIn("cpu_active_worker", wall_mode_output)
             self.assertIn("idle_worker", wall_mode_output)
+
+    def test_cpu_mode_with_no_samples(self):
+        """Test that CPU mode handles no samples gracefully when no samples are collected."""
+        # Mock a collector that returns empty stats
+        mock_collector = mock.MagicMock()
+        mock_collector.stats = {}
+        mock_collector.create_stats = mock.MagicMock()
+
+        with (
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+            mock.patch("profiling.sampling.sample.PstatsCollector", return_value=mock_collector),
+            mock.patch("profiling.sampling.sample.SampleProfiler") as mock_profiler_class,
+        ):
+            mock_profiler = mock.MagicMock()
+            mock_profiler_class.return_value = mock_profiler
+
+            profiling.sampling.sample.sample(
+                12345,  # dummy PID
+                duration_sec=0.5,
+                sample_interval_usec=5000,
+                mode=1,  # CPU mode
+                show_summary=False,
+                all_threads=True,
+            )
+
+            output = captured_output.getvalue()
+
+        # Should see the "No samples were collected" message
+        self.assertIn("No samples were collected", output)
+        self.assertIn("CPU mode", output)
 
 
 class TestGilModeFiltering(unittest.TestCase):
@@ -2714,34 +2898,46 @@ class TestGilModeFiltering(unittest.TestCase):
 import time
 import threading
 
+gil_ready = threading.Event()
+
 def gil_releasing_work():
     time.sleep(999999)
 
 def gil_holding_work():
+    gil_ready.set()
     x = 1
     while True:
         x += 1
 
 def main():
-# Start both threads
+    # Start both threads
     idle_thread = threading.Thread(target=gil_releasing_work)
     cpu_thread = threading.Thread(target=gil_holding_work)
     idle_thread.start()
     cpu_thread.start()
+
+    # Wait for GIL-holding thread to be running, then signal test
+    gil_ready.wait()
+    _test_sock.sendall(b"threads_ready")
+
     idle_thread.join()
     cpu_thread.join()
 
 main()
 '''
-        with test_subprocess(gil_test_script) as proc:
+        with test_subprocess(gil_test_script) as subproc:
+            # Wait for signal that threads are running
+            response = subproc.socket.recv(1024)
+            self.assertEqual(response, b"threads_ready")
+
             with (
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
-                        duration_sec=0.5,
+                        subproc.process.pid,
+                        duration_sec=2.0,
                         sample_interval_usec=5000,
                         mode=2,  # GIL mode
                         show_summary=False,
@@ -2759,7 +2955,7 @@ main()
             ):
                 try:
                     profiling.sampling.sample.sample(
-                        proc.pid,
+                        subproc.process.pid,
                         duration_sec=0.5,
                         sample_interval_usec=5000,
                         mode=0,  # Wall-clock mode

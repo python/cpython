@@ -1,2 +1,0 @@
-:mod:`!_hashlib`: Rename internal C functions for :class:`!_hashlib.HASH`
-and :class:`!_hashlib.HASHXOF` objects. Patch by Bénédikt Tran.
