@@ -2781,7 +2781,7 @@ PySet_Add(PyObject *anyset, PyObject *key)
         return rv;
     }
 
-    if (PyFrozenSet_Check(anyset) || _PyObject_IsUniquelyReferenced(anyset)) {
+    if (PyFrozenSet_Check(anyset) && _PyObject_IsUniquelyReferenced(anyset)) {
         // We can only change frozensets if they are uniquely referenced. The
         // API limits the usage of `PySet_Add` to "fill in the values of brand
         // new frozensets before they are exposed to other code". In this case,
