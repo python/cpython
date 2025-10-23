@@ -31,6 +31,7 @@ from operator import neg
 from test import support
 from test.support import cpython_only, swap_attr
 from test.support import async_yield, run_yielding_async_fn
+from test.support import warnings_helper
 from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
@@ -1182,6 +1183,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             def __hash__(self):
                 return self
         self.assertEqual(hash(Z(42)), hash(42))
+
+    def test_invalid_hash_typeerror(self):
+        # GH-140406: The returned object from __hash__() would leak if it
+        # wasn't an integer.
+        class A:
+            def __hash__(self):
+                return 1.0
+
+        with self.assertRaises(TypeError):
+            hash(A())
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
@@ -2545,6 +2556,7 @@ class PtyTests(unittest.TestCase):
         finally:
             signal.signal(signal.SIGHUP, old_sighup)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def _run_child(self, child, terminal_input):
         r, w = os.pipe()  # Pipe test results from child back to parent
         try:

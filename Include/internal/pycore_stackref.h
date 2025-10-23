@@ -297,6 +297,12 @@ PyStackRef_IsError(_PyStackRef ref)
 }
 
 static inline bool
+PyStackRef_IsMalformed(_PyStackRef ref)
+{
+    return (ref.bits & Py_TAG_BITS) == Py_TAG_INVALID;
+}
+
+static inline bool
 PyStackRef_IsValid(_PyStackRef ref)
 {
     /* Invalid values are ERROR and NULL */
@@ -462,6 +468,12 @@ PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
 {
     (void)destruct;
     PyStackRef_CLOSE(ref);
+}
+
+static inline int
+PyStackRef_RefcountOnObject(_PyStackRef ref)
+{
+    return (ref.bits & Py_TAG_REFCNT) == 0;
 }
 
 static inline _PyStackRef
