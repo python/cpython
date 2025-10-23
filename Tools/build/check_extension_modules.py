@@ -23,6 +23,7 @@ from __future__ import annotations
 import _imp
 import argparse
 import enum
+import json
 import logging
 import os
 import pathlib
@@ -118,8 +119,9 @@ parser.add_argument(
 
 parser.add_argument(
     "--generate-stdlib-info",
-    action="store_true",
-    help="Generate file with stdlib module info",
+    nargs="?",
+    const=True,
+    help="Generate file with stdlib module info, with optional config file",
 )
 
 
@@ -287,7 +289,7 @@ class ModuleChecker:
             names.update(WINDOWS_MODULES)
         return names
 
-    def generate_stdlib_info(self) -> None:
+    def generate_stdlib_info(self, config_path: str | None = None) -> None:
 
         disabled_modules = {modinfo.name for modinfo in self.modules
                            if modinfo.state in (ModuleState.DISABLED, ModuleState.DISABLED_SETUP)}
@@ -295,6 +297,25 @@ class ModuleChecker:
                           if modinfo.state == ModuleState.MISSING}
         na_modules = {modinfo.name for modinfo in self.modules
                      if modinfo.state == ModuleState.NA}
+
+        config_messages = {}
+        if config_path:
+            try:
+                with open(config_path, encoding='utf-8') as f:
+                    config_messages = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                logger.error("Failed to load distributor config %s: %s", config_path, e)
+
+        default_messages = {
+            **{name: f"Windows-only standard library module '{name}' was not found"
+               for name in WINDOWS_MODULES},
+            **{name: f"Standard library module disabled during build '{name}' was not found"
+               for name in disabled_modules},
+            **{name: f"Unsupported platform for standard library module '{name}'"
+               for name in na_modules},
+        }
+
+        messages = {**default_messages, **config_messages}
 
         content = f'''\
 # Standard library information used by the traceback module for more informative
@@ -305,14 +326,7 @@ MISSING_MODULES = {sorted(missing_modules)!r}
 NOT_AVAILABLE_MODULES = {sorted(na_modules)!r}
 WINDOWS_ONLY_MODULES = {sorted(WINDOWS_MODULES)!r}
 
-MISSING_STDLIB_MODULE_MESSAGES = {{
-    **{{name: f"Windows-only standard library module '{{name}}' was not found"
-        for name in WINDOWS_ONLY_MODULES}},
-    **{{name: f"Standard library module disabled during build '{{name}}' was not found"
-        for name in DISABLED_MODULES}},
-    **{{name: f"Unsupported platform for standard library module '{{name}}'"
-        for name in NOT_AVAILABLE_MODULES}},
-}}
+MISSING_STDLIB_MODULE_MESSAGES = {messages!r}
 '''
 
         output_path = self.builddir / "_stdlib_modules_info.py"
@@ -539,7 +553,8 @@ def main() -> None:
             print(name)
     elif args.generate_stdlib_info:
         checker.check()
-        checker.generate_stdlib_info()
+        config_path = None if args.generate_stdlib_info is True else args.generate_stdlib_info
+        checker.generate_stdlib_info(config_path)
     else:
         checker.check()
         checker.summary(verbose=args.verbose)
