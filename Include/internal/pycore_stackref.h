@@ -289,6 +289,7 @@ _PyStackRef_Borrow(_PyStackRef ref, const char *filename, int linenumber)
 static inline _PyStackRef
 _PyStackRef_FromPyObjectStealMortal(PyObject *obj, const char *filename, int linenumber)
 {
+    assert(obj != NULL);
     assert(!_Py_IsImmortal(obj));
     return _Py_stackref_create(obj, 0, filename, linenumber);
 }
@@ -324,7 +325,7 @@ _PyStackRef_FromPyObjectNewMortal(PyObject *obj, const char *filename, int linen
 {
     assert(obj != NULL);
     assert(!_Py_IsStaticImmortal(obj));
-    Py_XINCREF(obj);
+    Py_INCREF(obj);
     return _Py_stackref_create(obj, 0, filename, linenumber);
 }
 #define PyStackRef_FromPyObjectNewMortal(obj) _PyStackRef_FromPyObjectNewMortal(_PyObject_CAST(obj), __FILE__, __LINE__)
