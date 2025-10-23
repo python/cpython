@@ -564,7 +564,6 @@ _PyJit_translate_single_bytecode_to_trace(
     int jump_taken)
 {
 
-    int is_first_instr = tstate->interp->jit_state.close_loop_instr == this_instr;
     bool progress_needed = (tstate->interp->jit_state.initial_chain_depth % MAX_CHAIN_DEPTH) == 0;;
     _PyBloomFilter *dependencies = &tstate->interp->jit_state.dependencies;
     _Py_BloomFilter_Add(dependencies, old_code);
@@ -685,12 +684,6 @@ _PyJit_translate_single_bytecode_to_trace(
         assert(!OPCODE_HAS_DEOPT(opcode));
     }
 
-    // Loop back to the start
-    if (is_first_instr && tstate->interp->jit_state.code_curr_size > 5) {
-        ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
-        goto done;
-    }
-
     if (OPCODE_HAS_EXIT(opcode)) {
         // Make space for side exit and final _EXIT_TRACE:
         max_length--;
@@ -725,7 +718,21 @@ _PyJit_translate_single_bytecode_to_trace(
             ADD_TO_TRACE(_CHECK_PERIODIC, 0, 0, target);
             _Py_FALLTHROUGH;
         case JUMP_BACKWARD_NO_INTERRUPT:
+        {
+            if ((next_instr != tstate->interp->jit_state.close_loop_instr) &&
+                (next_instr != tstate->interp->jit_state.insert_exec_instr) &&
+                tstate->interp->jit_state.code_curr_size > 5) {
+                // We encountered a JUMP_BACKWARD but not to the top of our own loop.
+                // We don't want to continue tracing as we might get stuck in the
+                // inner loop. Instead, end the trace where the executor of the
+                // inner loop might start and let the traces rejoin.
+                OPT_STAT_INC(inner_loop);
+                ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
+                DPRINTF(2, "JUMP_BACKWARD not to top ends trace %p %p %p\n", next_instr, tstate->interp->jit_state.close_loop_instr, tstate->interp->jit_state.insert_exec_instr);
+                goto done;
+            }
             break;
+        }
 
         case RESUME:
         case RESUME_CHECK:
@@ -853,6 +860,12 @@ _PyJit_translate_single_bytecode_to_trace(
 
     if (needs_guard_ip) {
         ADD_TO_TRACE(_GUARD_IP, 0, (uintptr_t)next_instr, 0);
+    }
+    // Loop back to the start
+    int is_first_instr = tstate->interp->jit_state.close_loop_instr == next_instr || tstate->interp->jit_state.insert_exec_instr == next_instr;
+    if (is_first_instr && tstate->interp->jit_state.code_curr_size > 5) {
+        ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
+        goto done;
     }
     tstate->interp->jit_state.code_curr_size = trace_length;
     tstate->interp->jit_state.code_max_size = max_length;
