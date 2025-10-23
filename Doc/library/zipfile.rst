@@ -27,7 +27,7 @@ implemented in native Python rather than C.
    The following paragraph should be similar to ../includes/optional-module.rst
 
 Handling compressed archives requires :term:`optional modules <optional module>`
-such as :mod:`zlib`, :mod:`bz2`, :mod:`lzma`, :mod:`~compression.zstd`.
+such as :mod:`zlib`, :mod:`bz2`, :mod:`lzma`, and :mod:`compression.zstd`.
 If any of them are missing from your copy of CPython,
 look for documentation from your distributor (that is,
 whoever provided Python to you).

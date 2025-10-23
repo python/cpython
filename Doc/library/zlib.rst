@@ -8,7 +8,7 @@
 --------------
 
 For applications that require data compression, the functions in this module
-allow compression and decompression, using the zlib library.
+allow compression and decompression, using the `zlib library <https://www.zlib.net>`_.
 
 .. include:: ../includes/optional-module.rst
 
