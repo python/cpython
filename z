@@ -343,17 +343,17 @@ main() {
         }
     fi
 
-    # Source files in ${SYSROOT_DIR}/etc/scripts/.
-    if [ -d "${SYSROOT_DIR}/${SCRIPTS_DIR}/" ]; then
-        for script in "${SYSROOT_DIR}/${SCRIPTS_DIR}/"*.sh; do
-            if [ -f "$script" ]; then
-                # shellcheck source=/dev/null
-                source "$script"
-            fi
-        done
-    else
-        panic "Cannot source scripts in '${SYSROOT_DIR}/${SCRIPTS_DIR}/'."
-    fi
+    # Source specific scripts from ${SYSROOT_DIR}/etc/scripts/.
+    local scripts_to_source=("logging.sh" "utils.sh")
+    for script_name in "${scripts_to_source[@]}"; do
+        local script_path="${SYSROOT_DIR}/${SCRIPTS_DIR}/${script_name}"
+        if [ -f "${script_path}" ]; then
+            # shellcheck source=/dev/null
+            source "${script_path}"
+        else
+            panic "Cannot source script '${script_path}'."
+        fi
+    done
 
     # Detect sccache utility.
     detect_sccache
