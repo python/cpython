@@ -212,7 +212,9 @@ PyTuple_MakeSingle(PyObject *one)
         return NULL;
     }
     op->ob_item[0] = Py_NewRef(one);
-    _PyObject_GC_TRACK(op);
+    if (maybe_tracked(one)) {
+        _PyObject_GC_TRACK(op);
+    }
     return (PyObject *)op;
 }
 
@@ -228,7 +230,9 @@ PyTuple_MakePair(PyObject *one, PyObject *two)
     }
     op->ob_item[0] = Py_NewRef(one);
     op->ob_item[1] = Py_NewRef(two);
-    _PyObject_GC_TRACK(op);
+    if (maybe_tracked(one) || maybe_tracked(two)) {
+        _PyObject_GC_TRACK(op);
+    }
     return (PyObject *)op;
 }
 
