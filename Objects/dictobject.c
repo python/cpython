@@ -2225,7 +2225,7 @@ _PyDict_NewPresized(Py_ssize_t minused)
     return dict_new_presized(minused, false);
 }
 
-Py_NO_INLINE_MSVC_TAILCALL PyObject *
+PyObject *
 _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
                   PyObject *const *values, Py_ssize_t values_offset,
                   Py_ssize_t length)

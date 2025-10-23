@@ -391,28 +391,6 @@ _PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame
 #define SPECIAL___AEXIT__   3
 #define SPECIAL_MAX   3
 
-// Special counterparts of ceval functions for performance reasons
-PyAPI_FUNC(int) _PyEval_Mapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result);
-
-#if defined(_MSC_VER) && !defined(__clang__) && _Py_TAIL_CALL_INTERP
-#  define Py_NO_INLINE_MSVC_TAILCALL Py_NO_INLINE
-#else
-#  define Py_NO_INLINE_MSVC_TAILCALL
-#endif
-
-// Tells the compiler that this variable cannot be alised.
-#if defined(_MSC_VER) && !defined(__clang__)
-#  define Py_UNALIASED(var) restrict var
-#else
-#  define Py_UNALIASED(var) var
-#endif
-
-// Just a scope. Hints to the programmer and compiler
-// That any local variable defined within this block MUST
-// not escape from the current definition.
-# define Py_BEGIN_LOCALS_MUST_NOT_ESCAPE {
-# define Py_END_LOCALS_MUST_NOT_ESCAPE }
-
 #ifdef __cplusplus
 }
 #endif

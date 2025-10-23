@@ -2134,7 +2134,7 @@
             _PyStackRef bc;
             PyObject *bc_o;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = _PyEval_Mapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
+            int err = PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 JUMP_TO_ERROR();
@@ -2647,7 +2647,7 @@
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = _PyEval_Mapping_GetOptionalItem(class_dict, name, &value_o);
+            int err = PyMapping_GetOptionalItem(class_dict, name, &value_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 JUMP_TO_ERROR();
@@ -3051,7 +3051,7 @@
                 JUMP_TO_ERROR();
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = _PyEval_Mapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict);
+            int err = PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 JUMP_TO_ERROR();
@@ -3254,13 +3254,13 @@
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
             PyObject *attr_o;
-            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
-            int *method_found_ptr = &method_found;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            attr_o = _PySuper_Lookup(cls, self, name,
-                                     Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            Py_END_LOCALS_MUST_NOT_ESCAPE;
+            {
+                int *method_found_ptr = &method_found;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                attr_o = _PySuper_Lookup(cls, self, name,
+                    Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             if (attr_o == NULL) {
                 JUMP_TO_ERROR();
             }
@@ -4683,14 +4683,14 @@
             assert(PyStackRef_IsTaggedInt(lasti));
             (void)lasti;
             PyObject* res_o;
-            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE;
-            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
-            int has_self = !PyStackRef_IsNull(exit_self);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
-                                        (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            Py_END_LOCALS_MUST_NOT_ESCAPE;
+            {
+                PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
+                int has_self = !PyStackRef_IsNull(exit_self);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
+                    (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_XDECREF(original_tb);
             stack_pointer = _PyFrame_GetStackPointer(frame);
