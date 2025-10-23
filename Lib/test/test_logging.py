@@ -7221,14 +7221,14 @@ class NTEventLogHandlerTest(BaseTest):
         self.assertTrue(found, msg=msg)
 
     @unittest.skipUnless(sys.platform == "win32", "Windows required for this test")
-    def test_updated_implementation(self):
-        h = logging.handlers.NTEventLogHandler('test_updated')
+    def test_without_pywin32(self):
+        h = logging.handlers.NTEventLogHandler('python_test')
         self.addCleanup(h.close)
 
         # Verify that the handler uses _winapi module
         self.assertIsNotNone(h._winapi, "_winapi module should be available")
 
-        r = logging.makeLogRecord({'msg': 'Test Updated Implementation'})
+        r = logging.makeLogRecord({'msg': 'Hello!'})
         h.emit(r)
 
 

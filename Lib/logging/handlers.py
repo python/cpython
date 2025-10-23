@@ -1156,14 +1156,15 @@ class NTEventLogHandler(logging.Handler):
             pass
         self.deftype = _winapi.EVENTLOG_ERROR_TYPE
         self.typemap = {
-            logging.DEBUG   : _winapi.EVENTLOG_INFORMATION_TYPE,
-            logging.INFO    : _winapi.EVENTLOG_INFORMATION_TYPE,
-            logging.WARNING : _winapi.EVENTLOG_WARNING_TYPE,
-            logging.ERROR   : _winapi.EVENTLOG_ERROR_TYPE,
+            logging.DEBUG: _winapi.EVENTLOG_INFORMATION_TYPE,
+            logging.INFO: _winapi.EVENTLOG_INFORMATION_TYPE,
+            logging.WARNING: _winapi.EVENTLOG_WARNING_TYPE,
+            logging.ERROR: _winapi.EVENTLOG_ERROR_TYPE,
             logging.CRITICAL: _winapi.EVENTLOG_ERROR_TYPE,
         }
 
-    def _add_source_to_registry(self, appname, dllname, logtype):
+    @staticmethod
+    def _add_source_to_registry(appname, dllname, logtype):
         import winreg
 
         key_path = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\{logtype}\\{appname}"
@@ -1212,22 +1213,21 @@ class NTEventLogHandler(logging.Handler):
         Determine the message ID, event category and event type. Then
         log the message in the NT event log.
         """
-        if self._winapi:
-            try:
-                id = self.getMessageID(record)
-                cat = self.getEventCategory(record)
-                type = self.getEventType(record)
-                msg = self.format(record)
+        try:
+            id = self.getMessageID(record)
+            cat = self.getEventCategory(record)
+            type = self.getEventType(record)
+            msg = self.format(record)
 
-                # Get a handle to the event log
-                handle = self._winapi.RegisterEventSource(None, self.appname)
-                if handle != self._winapi.INVALID_HANDLE_VALUE:
-                    try:
-                        self._winapi.ReportEvent(handle, type, cat, id, [msg])
-                    finally:
-                        self._winapi.DeregisterEventSource(handle)
-            except Exception:
-                self.handleError(record)
+            # Get a handle to the event log
+            handle = self._winapi.RegisterEventSource(None, self.appname)
+            if handle != self._winapi.INVALID_HANDLE_VALUE:
+                try:
+                    self._winapi.ReportEvent(handle, type, cat, id, [msg])
+                finally:
+                    self._winapi.DeregisterEventSource(handle)
+        except Exception:
+            self.handleError(record)
 
     def close(self):
         """
