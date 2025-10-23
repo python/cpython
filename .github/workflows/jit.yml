@@ -57,6 +57,7 @@ jobs:
       fail-fast: false
       matrix:
         target:
+# To re-enable later when we support thesee.
 #          - i686-pc-windows-msvc/msvc
 #          - x86_64-pc-windows-msvc/msvc
 #          - aarch64-pc-windows-msvc/msvc
@@ -70,6 +71,7 @@ jobs:
         llvm:
           - 19
         include:
+# To re-enable later when we support thesee.
 #          - target: i686-pc-windows-msvc/msvc
 #            architecture: Win32
 #            runner: windows-2022
