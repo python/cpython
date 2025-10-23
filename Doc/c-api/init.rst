@@ -41,7 +41,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyObject_SetArenaAllocator`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
-  * :c:func:`PySys_ResetWarnOptions`
   * the configuration functions covered in :ref:`init-config`
 
 * Informative functions:
@@ -1020,6 +1019,12 @@ code, or when embedding the Python interpreter:
    interpreter lock is also shared by all threads, regardless of to which
    interpreter they belong.
 
+   .. versionchanged:: 3.12
+
+      :pep:`684` introduced the possibility
+      of a :ref:`per-interpreter GIL <per-interpreter-gil>`.
+      See :c:func:`Py_NewInterpreterFromConfig`.
+
 
 .. c:type:: PyThreadState
 
@@ -1108,7 +1113,7 @@ code, or when embedding the Python interpreter:
    This function is safe to call without an :term:`attached thread state`; it
    will simply return ``NULL`` indicating that there was no prior thread state.
 
-   .. seealso:
+   .. seealso::
       :c:func:`PyEval_ReleaseThread`
 
    .. note::
@@ -1118,6 +1123,19 @@ code, or when embedding the Python interpreter:
 
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
+
+.. c:type:: PyGILState_STATE
+
+   The type of the value returned by :c:func:`PyGILState_Ensure` and passed to
+   :c:func:`PyGILState_Release`.
+
+   .. c:enumerator:: PyGILState_LOCKED
+
+      The GIL was already held when :c:func:`PyGILState_Ensure` was called.
+
+   .. c:enumerator:: PyGILState_UNLOCKED
+
+      The GIL was not held when :c:func:`PyGILState_Ensure` was called.
 
 .. c:function:: PyGILState_STATE PyGILState_Ensure()
 
@@ -1169,12 +1187,12 @@ with sub-interpreters:
    made on the main thread.  This is mainly a helper/diagnostic function.
 
    .. note::
-      This function does not account for :term:`thread states <thread state>` created
-      by something other than :c:func:`PyGILState_Ensure` (such as :c:func:`PyThreadState_New`).
+      This function may return non-``NULL`` even when the :term:`thread state`
+      is detached.
       Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
       for most cases.
 
-   .. seealso: :c:func:`PyThreadState_Get``
+   .. seealso:: :c:func:`PyThreadState_Get`
 
 .. c:function:: int PyGILState_Check()
 
@@ -1273,11 +1291,11 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    must be :term:`attached <attached thread state>`
 
    .. versionchanged:: 3.9
-      This function now calls the :c:member:`PyThreadState.on_delete` callback.
+      This function now calls the :c:member:`!PyThreadState.on_delete` callback.
       Previously, that happened in :c:func:`PyThreadState_Delete`.
 
    .. versionchanged:: 3.13
-      The :c:member:`PyThreadState.on_delete` callback was removed.
+      The :c:member:`!PyThreadState.on_delete` callback was removed.
 
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
@@ -1376,6 +1394,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    This is not a replacement for :c:func:`PyModule_GetState()`, which
    extensions should use to store interpreter-specific state information.
+
+   The returned dictionary is borrowed from the interpreter and is valid until
+   interpreter shutdown.
 
    .. versionadded:: 3.8
 
@@ -1711,6 +1732,8 @@ function. You can create and destroy them using the following functions:
    haven't been explicitly destroyed at that point.
 
 
+.. _per-interpreter-gil:
+
 A Per-Interpreter GIL
 ---------------------
 
@@ -1722,7 +1745,7 @@ being blocked by other interpreters or blocking any others.  Thus a
 single Python process can truly take advantage of multiple CPU cores
 when running Python code.  The isolation also encourages a different
 approach to concurrency than that of just using threads.
-(See :pep:`554`.)
+(See :pep:`554` and :pep:`684`.)
 
 Using an isolated interpreter requires vigilance in preserving that
 isolation.  That especially means not sharing any objects or mutable
@@ -1826,6 +1849,10 @@ pointer and a void pointer argument.
       now scheduled to be called from the subinterpreter, rather than being
       called from the main interpreter. Each subinterpreter now has its own
       list of scheduled calls.
+
+   .. versionchanged:: 3.12
+      This function now always schedules *func* to be run in the main
+      interpreter.
 
 .. _profiling:
 
@@ -2003,6 +2030,11 @@ Reference tracing
    is set to :c:data:`PyRefTracer_DESTROY`). The **data** argument is the opaque pointer
    that was provided when :c:func:`PyRefTracer_SetTracer` was called.
 
+   If a new tracing function is registered replacing the current a call to the
+   trace function will be made with the object set to **NULL** and **event** set to
+   :c:data:`PyRefTracer_TRACKER_REMOVED`. This will happen just before the new
+   function is registered.
+
 .. versionadded:: 3.13
 
 .. c:var:: int PyRefTracer_CREATE
@@ -2014,6 +2046,13 @@ Reference tracing
 
    The value for the *event* parameter to :c:type:`PyRefTracer` functions when a Python
    object has been destroyed.
+
+.. c:var:: int PyRefTracer_TRACKER_REMOVED
+
+   The value for the *event* parameter to :c:type:`PyRefTracer` functions when the
+   current tracer is about to be replaced by a new one.
+
+   .. versionadded:: 3.14
 
 .. c:function:: int PyRefTracer_SetTracer(PyRefTracer tracer, void *data)
 
@@ -2029,6 +2068,10 @@ Reference tracing
    every time the tracer function is called.
 
    There must be an :term:`attached thread state` when calling this function.
+
+   If another tracer function was already registered, the old function will be
+   called with **event** set to :c:data:`PyRefTracer_TRACKER_REMOVED` just before
+   the new function is registered.
 
 .. versionadded:: 3.13
 
@@ -2299,12 +2342,20 @@ per-object locks for :term:`free-threaded <free threading>` CPython.  They are
 intended to replace reliance on the :term:`global interpreter lock`, and are
 no-ops in versions of Python with the global interpreter lock.
 
+Critical sections are intended to be used for custom types implemented
+in C-API extensions. They should generally not be used with built-in types like
+:class:`list` and :class:`dict` because their public C-APIs
+already use critical sections internally, with the notable
+exception of :c:func:`PyDict_Next`, which requires critical section
+to be acquired externally.
+
 Critical sections avoid deadlocks by implicitly suspending active critical
-sections and releasing the locks during calls to :c:func:`PyEval_SaveThread`.
-When :c:func:`PyEval_RestoreThread` is called, the most recent critical section
-is resumed, and its locks reacquired.  This means the critical section API
-provides weaker guarantees than traditional locks -- they are useful because
-their behavior is similar to the :term:`GIL`.
+sections, hence, they do not provide exclusive access such as provided by
+traditional locks like :c:type:`PyMutex`.  When a critical section is started,
+the per-object lock for the object is acquired. If the code executed inside the
+critical section calls C-API functions then it can suspend the critical section thereby
+releasing the per-object lock, so other threads can acquire the per-object lock
+for the same object.
 
 Variants that accept :c:type:`PyMutex` pointers rather than Python objects are also
 available. Use these variants to start a critical section in a situation where

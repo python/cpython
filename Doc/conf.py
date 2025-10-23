@@ -221,13 +221,6 @@ nitpick_ignore = [
     ('envvar', 'USER'),
     ('envvar', 'USERNAME'),
     ('envvar', 'USERPROFILE'),
-    # Deprecated function that was never documented:
-    ('py:func', 'getargspec'),
-    ('py:func', 'inspect.getargspec'),
-    # Undocumented modules that users shouldn't have to worry about
-    # (implementation details of `os.path`):
-    ('py:mod', 'ntpath'),
-    ('py:mod', 'posixpath'),
 ]
 
 # Temporary undocumented names.
@@ -242,10 +235,7 @@ nitpick_ignore += [
     ('py:meth', '_SubParsersAction.add_parser'),
     # Attributes/methods/etc. that definitely should be documented better,
     # but are deferred for now:
-    ('py:attr', '__annotations__'),
-    ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
-    ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
 # gh-106948: Copy standard C types declared in the "c:type" domain and C
@@ -453,6 +443,25 @@ epub_exclude_files = ('index.xhtml', 'download.xhtml')
 # index pages are not valid xhtml
 # https://github.com/sphinx-doc/sphinx/issues/12359
 epub_use_index = False
+
+# translation tag
+# ---------------
+
+language_code = None
+for arg in sys.argv:
+    if arg.startswith('language='):
+        language_code = arg.split('=', 1)[1]
+
+if language_code:
+    tags.add('translation')  # noqa: F821
+
+    rst_epilog += f"""\
+.. _TRANSLATION_REPO: https://github.com/python/python-docs-{language_code.replace("_", "-").lower()}
+"""  # noqa: F821
+else:
+    rst_epilog += """\
+.. _TRANSLATION_REPO: https://github.com/python
+"""
 
 # Options for the coverage checker
 # --------------------------------
