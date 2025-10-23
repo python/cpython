@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 
+from importlib import import_module
 from test import support
 from test.support import os_helper
 
@@ -65,17 +66,23 @@ class saved_test_environment:
                  'shutil_archive_formats', 'shutil_unpack_formats',
                  'asyncio.events._event_loop_policy',
                  'urllib.requests._url_tempfiles', 'urllib.requests._opener',
+                 'stty_echo',
                 )
 
     def get_module(self, name):
         # function for restore() methods
         return sys.modules[name]
 
-    def try_get_module(self, name):
+    def try_get_module(self, name, *, demand=False):
         # function for get() methods
         try:
             return self.get_module(name)
         except KeyError:
+            if demand:
+                try:
+                    return import_module(name)
+                except ModuleNotFoundError:
+                    pass
             raise SkipTestEnvironment
 
     def get_urllib_requests__url_tempfiles(self):
@@ -291,6 +298,25 @@ class saved_test_environment:
     def restore_warnings_showwarning(self, fxn):
         warnings = self.get_module('warnings')
         warnings.showwarning = fxn
+
+    def get_stty_echo(self):
+        termios = self.try_get_module('termios', demand=True)
+        if not os.isatty(fd := sys.__stdin__.fileno()):
+            return None
+        attrs = termios.tcgetattr(fd)
+        lflags = attrs[3]
+        return bool(lflags & termios.ECHO)
+
+    def restore_stty_echo(self, echo):
+        termios = self.get_module('termios')
+        attrs = termios.tcgetattr(fd := sys.__stdin__.fileno())
+        if echo:
+            # Turn echo on.
+            attrs[3] |= termios.ECHO
+        else:
+            # Turn echo off.
+            attrs[3] &= ~termios.ECHO
+        termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
 
     def resource_info(self):
         for name in self.resources:
