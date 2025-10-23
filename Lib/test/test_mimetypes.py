@@ -225,7 +225,7 @@ class MimeTypesTestCase(unittest.TestCase):
     def test_preferred_extension(self):
         def check_extensions():
             for mime_type, ext in (
-                ('applicaion/efi', '.efi'),
+                ('application/efi', '.efi'),
                 ("application/epub+zip", ".epub"),
                 ('application/json', '.json'),
                 ('application/manifest+json', '.webmanifest'),
