@@ -107,11 +107,26 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(make_single(None), (None,))
         self.assertEqual(make_single(True), (True,))
 
-        temp = object()
+        # user class supports gc
+        class Temp:
+            pass
+
+        temp = Temp()
         self.assertEqual(make_single(temp), (temp,))
 
         self.assertRaises(TypeError, make_single, 1, 2)
         self.assertRaises(TypeError, make_single)
+
+        self.assertFalse(gc.is_tracked(make_single(1)))
+        self.assertFalse(gc.is_tracked(make_single(None)))
+        self.assertFalse(gc.is_tracked(make_single(True)))
+        self.assertTrue(gc.is_tracked(make_single(temp)))
+        self.assertTrue(gc.is_tracked(make_single([])))
+        self.assertTrue(gc.is_tracked(make_single({})))
+
+        # because we only check type for gc support can't untrack tuple of
+        # immutable tuples, see maybe_tracked
+        self.assertTrue(gc.is_tracked(make_single((1, 2))))
 
     def test_tuple_make_pair(self):
         # Test PyTuple_MakePair()
@@ -121,12 +136,26 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(make_pair(None, None), (None, None))
         self.assertEqual(make_pair(True, False), (True, False))
 
-        temp = object()
+        # user class supports gc
+        class Temp:
+            pass
+        temp = Temp()
         self.assertEqual(make_pair(temp, temp), (temp, temp))
 
         self.assertRaises(TypeError, make_pair, 1, 2, 3)
         self.assertRaises(TypeError, make_pair, 1)
         self.assertRaises(TypeError, make_pair)
+
+        self.assertFalse(gc.is_tracked(make_pair(1, 2)))
+        self.assertFalse(gc.is_tracked(make_pair(None, None)))
+        self.assertFalse(gc.is_tracked(make_pair(True, False)))
+        self.assertTrue(gc.is_tracked(make_pair(temp, (1, 2))))
+        self.assertTrue(gc.is_tracked(make_pair(temp, 1)))
+        self.assertTrue(gc.is_tracked(make_pair([], {})))
+
+        # because we only check type for gc support can't untrack tuple of
+        # immutable tuples, see maybe_tracked
+        self.assertTrue(gc.is_tracked(make_pair((1, 2), (1, 2))))
 
     def test_tuple_size(self):
         # Test PyTuple_Size()
