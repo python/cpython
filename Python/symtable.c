@@ -142,7 +142,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_has_conditional_annotations = 0;
     ste->ste_in_conditional_block = 0;
     ste->ste_in_try_block = 0;
-    ste->ste_in_with_block = 0;
     ste->ste_in_unevaluated_annotation = 0;
     ste->ste_annotation_block = NULL;
 
@@ -1756,13 +1755,6 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
 #define LEAVE_TRY_BLOCK(ST) \
     (ST)->st_cur->ste_in_try_block = in_try_block;
 
-#define ENTER_WITH_BLOCK(ST) \
-    int in_with_block = (ST)->st_cur->ste_in_with_block; \
-    (ST)->st_cur->ste_in_with_block = 1;
-
-#define LEAVE_WITH_BLOCK(ST) \
-    (ST)->st_cur->ste_in_with_block = in_with_block;
-
 #define ENTER_RECURSIVE() \
 if (Py_EnterRecursiveCall(" during compilation")) { \
     return 0; \
@@ -1831,14 +1823,6 @@ check_lazy_import_context(struct symtable *st, stmt_ty s, const char* import_typ
     if (st->st_cur->ste_in_try_block) {
         PyErr_Format(PyExc_SyntaxError,
                     "lazy %s not allowed inside try/except blocks", import_type);
-        SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
-        return 0;
-    }
-
-    /* Check if inside with block */
-    if (st->st_cur->ste_in_with_block) {
-        PyErr_Format(PyExc_SyntaxError,
-                    "lazy %s not allowed inside with blocks", import_type);
         SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
         return 0;
     }
@@ -2258,10 +2242,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case With_kind: {
         ENTER_CONDITIONAL_BLOCK(st);
-        ENTER_WITH_BLOCK(st);
         VISIT_SEQ(st, withitem, s->v.With.items);
         VISIT_SEQ(st, stmt, s->v.With.body);
-        LEAVE_WITH_BLOCK(st);
         LEAVE_CONDITIONAL_BLOCK(st);
         break;
     }
@@ -2326,10 +2308,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
         ENTER_CONDITIONAL_BLOCK(st);
-        ENTER_WITH_BLOCK(st);
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
         VISIT_SEQ(st, stmt, s->v.AsyncWith.body);
-        LEAVE_WITH_BLOCK(st);
         LEAVE_CONDITIONAL_BLOCK(st);
         break;
     }

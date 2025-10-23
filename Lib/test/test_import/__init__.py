@@ -2756,6 +2756,22 @@ class LazyImportTests(unittest.TestCase):
 
         self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
 
+    def test_lazy_with(self):
+        try:
+            import test.test_import.data.lazy_imports.lazy_with
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_lazy_with_from(self):
+        try:
+            import test.test_import.data.lazy_imports.lazy_with_from
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
     def test_lazy_import_func(self):
         with self.assertRaises(SyntaxError):
             import test.test_import.data.lazy_imports.lazy_import_func

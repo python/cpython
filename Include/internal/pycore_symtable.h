@@ -127,7 +127,6 @@ typedef struct _symtable_entry {
     unsigned ste_has_conditional_annotations : 1; /* true if block has conditionally executed annotations */
     unsigned ste_in_conditional_block : 1; /* set while we are inside a conditionally executed block */
     unsigned ste_in_try_block : 1; /* set while we are inside a try/except block */
-    unsigned ste_in_with_block : 1; /* set while we are inside a with block */
     unsigned ste_in_unevaluated_annotation : 1; /* set while we are processing an annotation that will not be evaluated */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     _Py_SourceLocation ste_loc; /* source location of block */
