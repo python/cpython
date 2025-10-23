@@ -55,14 +55,6 @@ do {                                                                       \
     __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
 } while (0)
 
-#undef GOTO_TIER_ONE
-#define GOTO_TIER_ONE(TARGET, SHOULD_CONTINUE_TRACING)                       \
-do {                                                \
-    tstate->current_executor = NULL;                \
-    _PyFrame_SetStackPointer(frame, stack_pointer); \
-    return (_Py_CODEUNIT *)(((uintptr_t)(TARGET)) | SHOULD_CONTINUE_TRACING); \
-} while (0)
-
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) \
     do {                \
