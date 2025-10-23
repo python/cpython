@@ -3413,11 +3413,6 @@ features:
 
    :class:`!statx_result` has the following attributes:
 
-   .. attribute:: stx_mask
-
-      Bitmask of :const:`STATX_* <STATX_TYPE>` constants specifying the
-      information retrieved, which may differ from what was requested.
-
    .. attribute:: stx_atime
 
       Time of most recent access expressed in seconds.
@@ -3435,16 +3430,6 @@ features:
    .. attribute:: stx_atomic_write_segments_max
 
       Maximum iovecs for direct I/O with torn-write protection.
-
-      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
-      :attr:`~statx_result.stx_mask`.
-
-      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
-         userspace API headers >= 6.11.
-
-   .. attribute:: stx_atomic_write_unit_min
-
-      Minimum size for direct I/O with torn-write protection.
 
       Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
       :attr:`~statx_result.stx_mask`.
@@ -3471,6 +3456,16 @@ features:
 
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.16.
+
+   .. attribute:: stx_atomic_write_unit_min
+
+      Minimum size for direct I/O with torn-write protection.
+
+      Equal to ``None`` if :data:`STATX_WRITE_ATOMIC` is missing from
+      :attr:`~statx_result.stx_mask`.
+
+      .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
+         userspace API headers >= 6.11.
 
    .. attribute:: stx_attributes
 
@@ -3536,9 +3531,9 @@ features:
 
       Minor number of the device on which this file resides.
 
-   .. attribute:: stx_dio_offset_align
+   .. attribute:: stx_dio_mem_align
 
-      Direct I/O file offset alignment requirement.
+      Direct I/O memory buffer alignment requirement.
 
       Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
       :attr:`~statx_result.stx_mask`.
@@ -3546,9 +3541,9 @@ features:
       .. availability:: Linux >= 4.11 with glibc >= 2.28 and build-time kernel
          userspace API headers >= 6.1.
 
-   .. attribute:: stx_dio_mem_align
+   .. attribute:: stx_dio_offset_align
 
-      Direct I/O memory buffer alignment requirement.
+      Direct I/O file offset alignment requirement.
 
       Equal to ``None`` if :data:`STATX_DIOALIGN` is missing from
       :attr:`~statx_result.stx_mask`.
@@ -3580,6 +3575,11 @@ features:
       Equal to ``None`` if :data:`STATX_INO` is missing from
       :attr:`~statx_result.stx_mask`.
 
+   .. attribute:: stx_mask
+
+      Bitmask of :const:`STATX_* <STATX_TYPE>` constants specifying the
+      information retrieved, which may differ from what was requested.
+
    .. attribute:: stx_mnt_id
 
       Mount identifier.
@@ -3593,6 +3593,9 @@ features:
    .. attribute:: stx_mode
 
       File mode: file type and file mode bits (permissions).
+
+      Equal to ``None`` if :data:`STATX_TYPE | STATX_MODE <STATX_TYPE>`
+      is missing from :attr:`~statx_result.stx_mask`.
 
    .. attribute:: stx_mtime
 
