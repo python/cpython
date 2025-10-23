@@ -1,0 +1,2 @@
+Fix potential buffer overflow in :class:`ast.AST` node initialization when
+encountering malformed :attr:`~ast.AST._fields` containing non-:class:`str`.
