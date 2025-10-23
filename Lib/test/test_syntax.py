@@ -371,12 +371,6 @@ Traceback (most recent call last):
 SyntaxError: invalid syntax
 
 >>> match ...:
-...     case {**rest, "key": value}:
-...        ...
-Traceback (most recent call last):
-SyntaxError: invalid syntax
-
->>> match ...:
 ...     case {**_}:
 ...        ...
 Traceback (most recent call last):
@@ -2240,7 +2234,7 @@ Corner-cases that used to crash:
     Traceback (most recent call last):
     SyntaxError: invalid character '£' (U+00A3)
 
-  Invalid pattern matching constructs:
+Invalid pattern matching constructs:
 
     >>> match ...:
     ...   case 42 as _:
@@ -2301,6 +2295,24 @@ Corner-cases that used to crash:
     ...     ...
     Traceback (most recent call last):
     SyntaxError: positional patterns follow keyword patterns
+
+    >>> match ...:
+    ...   case {**double_star, "spam": "eggs"}:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: double star pattern must be the last (right-most) subpattern in the mapping pattern
+
+    >>> match ...:
+    ...   case {"foo": 1, **double_star, "spam": "eggs"}:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: double star pattern must be the last (right-most) subpattern in the mapping pattern
+
+    >>> match ...:
+    ...   case {"spam": "eggs", "b": {**d, "ham": "bacon"}}:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: double star pattern must be the last (right-most) subpattern in the mapping pattern
 
 Uses of the star operator which should fail:
 
