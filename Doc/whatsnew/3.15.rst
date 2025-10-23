@@ -324,6 +324,10 @@ calendar
   dark mode and have been migrated to the HTML5 standard for improved accessibility.
   (Contributed by Jiahao Li and Hugo van Kemenade in :gh:`137634`.)
 
+* The :mod:`calendar`'s :ref:`command-line <calendar-cli>` HTML output now
+  accepts the year-month option: ``python -m calendar -t html 2009 06``.
+  (Contributed by Pål Grønås Drange in :gh:`140212`.)
+
 
 collections
 -----------
