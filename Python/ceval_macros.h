@@ -133,7 +133,7 @@
 #  define LABEL(name) name:
 #endif
 
-#if _Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS
+#if (_Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS) && _Py_TIER2
 #  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
 // Required to not get stuck in infinite pecialization loops due to specialization failure.
 #  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && !tstate->interp->jit_state.do_not_specialize)
@@ -141,8 +141,12 @@
     DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
 #  define LEAVE_TRACING() \
     DISPATCH_TABLE_VAR = DISPATCH_TABLE;
+#else
+#  define IS_JIT_TRACING() (0)
+#  define IS_JIT_TRACING_MAKING_PROGRESS() (0)
+#  define ENTER_TRACING()
+#  define LEAVE_TRACING()
 #endif
-
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
@@ -324,14 +328,10 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* This takes a uint16_t instead of a _Py_BackoffCounter,
  * because it is used directly on the cache entry in generated code,
  * which is always an integral type. */
-#if _Py_TIER2
 // Force re-specialization when tracing a side exit to get good side exits.
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
     backoff_counter_triggers(forge_backoff_counter((COUNTER))) || IS_JIT_TRACING_MAKING_PROGRESS()
-#else
-#define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
-    backoff_counter_triggers(forge_backoff_counter((COUNTER)))
-#endif
+
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = advance_backoff_counter((COUNTER)); \
