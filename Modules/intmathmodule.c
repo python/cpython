@@ -1125,7 +1125,6 @@ to the coefficient of k-th term in polynomial expansion of the
 expression (1 + x)**n.
 
 Raises ValueError if either of the arguments are negative.
-
 [clinic start generated code]*/
 
 static PyObject *
