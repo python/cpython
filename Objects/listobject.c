@@ -3863,6 +3863,14 @@ list_ass_subscript(PyObject *self, PyObject *item, PyObject *value)
     return res;
 }
 
+
+static PyObject *
+list_iterindex(PyObject *self, Py_ssize_t index)
+{
+    return list_get_item_ref((PyListObject *)self, index);
+
+}
+
 static PyMappingMethods list_as_mapping = {
     list_length,
     list_subscript,
@@ -3913,6 +3921,7 @@ PyTypeObject PyList_Type = {
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = list_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_LIST,
+    .tp_iterindex = list_iterindex,
 };
 
 /*********************** List Iterator **************************/

@@ -3561,47 +3561,62 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
 }
 
 static _PyStackRef
-foriter_next(PyObject *seq, _PyStackRef index)
+not_iterator(PyObject *obj)
 {
-    assert(PyStackRef_IsTaggedInt(index));
-    assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
-    intptr_t i = PyStackRef_UntagInt(index);
-    if (PyTuple_CheckExact(seq)) {
-        size_t size = PyTuple_GET_SIZE(seq);
-        if ((size_t)i >= size) {
-            return PyStackRef_NULL;
-        }
-        return PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, i));
-    }
-    PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
-    if (item == NULL) {
-        return PyStackRef_NULL;
-    }
-    return PyStackRef_FromPyObjectSteal(item);
+    PyErr_Format(PyExc_TypeError,
+        "'%.200s' object is not an async iterator",
+        Py_TYPE(obj)->tp_name);
+    return PyStackRef_ERROR;
 }
 
-_PyStackRef _PyForIter_VirtualIteratorNext(PyThreadState* tstate, _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef* index_ptr)
-{
-    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+_PyStackRef
+_PyForIter_VirtualIteratorNext(
+    PyThreadState* tstate, _PyInterpreterFrame* frame,
+    _PyStackRef iter, _PyStackRef* index_ptr
+) {
     _PyStackRef index = *index_ptr;
-    if (PyStackRef_IsTaggedInt(index)) {
-        *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
-        return foriter_next(iter_o, index);
-    }
-    PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
-    if (next_o == NULL) {
-        if (_PyErr_Occurred(tstate)) {
-            if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
-                _PyErr_Clear(tstate);
-            }
-            else {
-                return PyStackRef_ERROR;
-            }
+    if (PyStackRef_IsNull(index)) {
+        PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+        iternextfunc func = Py_TYPE(iter_o)->tp_iternext;
+        if (func == NULL) {
+            return not_iterator(iter_o);
         }
-        return PyStackRef_NULL;
+        PyObject *next_o = func(iter_o);
+        if (next_o == NULL) {
+            if (_PyErr_Occurred(tstate)) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                    _PyEval_MonitorRaise(tstate, frame, frame->instr_ptr);
+                    _PyErr_Clear(tstate);
+                }
+                else {
+                    return PyStackRef_ERROR;
+                }
+            }
+            return PyStackRef_NULL;
+        }
+        return PyStackRef_FromPyObjectSteal(next_o);
     }
-    return PyStackRef_FromPyObjectSteal(next_o);
+    else {
+        assert(PyStackRef_IsTaggedInt(index));
+        if (PyStackRef_IsTaggedInt(iter)) {
+            if (!PyStackRef_TaggedIntLessThan(index, iter)) {
+                return PyStackRef_NULL;
+            }
+            *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
+            return PyStackRef_BoxInt(index);
+        }
+        else {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            assert(Py_TYPE(iter_o)->tp_iterindex != NULL);
+            PyObject *item = Py_TYPE(iter_o)->tp_iterindex(iter_o, PyStackRef_UntagInt(index));
+            *index_ptr = PyStackRef_IncrementTaggedIntNoOverflow(index);
+            if (item == NULL) {
+                assert(!_PyErr_Occurred(tstate));
+                return PyStackRef_NULL;
+            }
+            return PyStackRef_FromPyObjectSteal(item);
+        }
+    }
 }
 
 /* Check if a 'cls' provides the given special method. */

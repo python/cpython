@@ -17,6 +17,7 @@
 #include "pycore_uop_ids.h"       // MAX_UOP_ID
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
+#include "pycore_range.h"         // _PyRange_IsSimpleCompact()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_unicodeobject.h" // _PyUnicodeASCIIIter_Type
 
@@ -2911,11 +2912,11 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
 {
     assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
-    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-    PyTypeObject *tp = Py_TYPE(iter_o);
+    PyTypeObject *tp = PyStackRef_TYPE(iter);
 
     if (PyStackRef_IsNull(null_or_index)) {
 #ifdef Py_GIL_DISABLED
+        PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
         // Only specialize for uniquely referenced iterators, so that we know
         // they're only referenced by this one thread. This is more limiting
         // than we need (even `it = iter(mylist); for item in it:` won't get
@@ -2925,11 +2926,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
             goto failure;
         }
 #endif
-        if (tp == &PyRangeIter_Type) {
-            specialize(instr, FOR_ITER_RANGE);
-            return;
-        }
-        else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
+        if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
             // Generators are very much not thread-safe, so don't worry about
             // the specialization not being thread-safe.
             assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR  ||
@@ -2944,8 +2941,13 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
         }
     }
     else {
+        if (tp == &PyLong_Type) {
+            specialize(instr, FOR_ITER_RANGE);
+            return;
+        }
         if (tp == &PyList_Type) {
 #ifdef Py_GIL_DISABLED
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             // Only specialize for lists owned by this thread or shared
             if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
                 goto failure;
@@ -2961,7 +2963,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
     }
 failure:
     SPECIALIZATION_FAIL(FOR_ITER,
-                        _PySpecialization_ClassifyIterator(iter_o));
+                        _PySpecialization_ClassifyIterator(PyStackRef_AsPyObjectBorrow(iter)));
     unspecialize(instr);
 }
 
@@ -3176,6 +3178,31 @@ _Py_GatherStats_GetIter(_PyStackRef iterable)
 }
 #endif
 
+
+Py_NO_INLINE void
+_Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr)
+{
+    PyTypeObject *tp = PyStackRef_TYPE(iterable);
+    if (tp->tp_iterindex != NULL) {
+        specialize(instr, GET_ITER_INDEX);
+        return;
+    }
+    if (tp->tp_iter == PyObject_SelfIter) {
+        specialize(instr, GET_ITER_SELF);
+        return;
+    }
+    if (tp == &PyRange_Type) {
+        if (_PyRange_IsSimpleCompact(PyStackRef_AsPyObjectBorrow(iterable))) {
+            specialize(instr, GET_ITER_RANGE);
+            return;
+        }
+    }
+#ifdef Py_STATS
+    _Py_GatherStats_GetIter(iterable);
+#endif
+    unspecialize(instr);
+    return;
+}
 
 /* Code init cleanup.
  * CALL_ALLOC_AND_ENTER_INIT will set up
