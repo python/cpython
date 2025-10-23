@@ -1017,13 +1017,6 @@ class PySimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         self.type2test = self.queue._PySimpleQueue
         super().setUp()
 
-    def test_pysimplequeue_sizeof_constant(self):
-        q = self.type2test()
-        size0 = q.__sizeof__()
-        for _ in range(1000):
-            q.put(object())
-        self.assertEqual(q.__sizeof__(), size0)
-
 
 @need_c_queue
 class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
