@@ -530,9 +530,16 @@ merge_gc_stats_array(GCStats *dest, const GCStats *src)
     }
 }
 
+void
+stats_zero_thread(_PyThreadStateImpl *tstate)
+{
+    // Zero the thread local stat counters
+    memset(tstate->pystats_struct, 0, sizeof(PyStats));
+}
+
 // merge stats for a single thread into the global structure
 void
-stats_merge_thread(_PyThreadStateImpl *tstate, bool zero)
+stats_merge_thread(_PyThreadStateImpl *tstate)
 {
     PyStats *src = tstate->pystats_struct;
     PyStats *dest = ((PyThreadState *)tstate)->interp->pystats_struct;
@@ -549,11 +556,6 @@ stats_merge_thread(_PyThreadStateImpl *tstate, bool zero)
     merge_ft_stats(&dest->ft_stats, &src->ft_stats);
     merge_rare_event_stats(&dest->rare_event_stats, &src->rare_event_stats);
     merge_gc_stats_array(dest->gc_stats, src->gc_stats);
-
-    if (zero) {
-        // Zero the source stat counters
-        memset(src, 0, sizeof(PyStats));
-    }
 }
 #endif // Py_GIL_DISABLED
 
@@ -602,10 +604,9 @@ stats_toggle_on_off(PyThreadState *tstate, int on)
     return 0;
 }
 
-// merge stats for all threads into the per-interpreter structure
-// if 'zero' is true then the per-interpreter stats are zeroed after merging
+// zero stats for all threads and for the interpreter
 static void
-stats_merge_all(bool zero)
+stats_zero_all(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
@@ -618,12 +619,32 @@ stats_merge_all(bool zero)
     _PyEval_StopTheWorld(interp);
 #ifdef Py_GIL_DISABLED
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, ts) {
-        stats_merge_thread((_PyThreadStateImpl *)ts, true);
+        stats_zero_thread((_PyThreadStateImpl *)ts);
     }
 #endif
-    if (zero) {
-        memset(interp->pystats_struct, 0, sizeof(PyStats));
+    memset(interp->pystats_struct, 0, sizeof(PyStats));
+    _PyEval_StartTheWorld(interp);
+}
+
+// merge stats for all threads into the per-interpreter structure
+static void
+stats_merge_all(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate == NULL) {
+        return;
     }
+    if (FT_ATOMIC_LOAD_PTR_RELAXED(tstate->interp->pystats_struct) == NULL) {
+        return;
+    }
+    PyInterpreterState *interp = tstate->interp;
+    _PyEval_StopTheWorld(interp);
+#ifdef Py_GIL_DISABLED
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, ts) {
+        stats_merge_thread((_PyThreadStateImpl *)ts);
+        stats_zero_thread((_PyThreadStateImpl *)ts);
+    }
+#endif
     _PyEval_StartTheWorld(interp);
 }
 
@@ -644,7 +665,7 @@ _Py_StatsOff(void)
 void
 _Py_StatsClear(void)
 {
-    stats_merge_all(true);
+    stats_zero_all();
 }
 
 static int
@@ -663,7 +684,7 @@ int
 _Py_PrintSpecializationStats(int to_file)
 {
     assert(to_file);
-    stats_merge_all(false);
+    stats_merge_all();
     PyThreadState *tstate = _PyThreadState_GET();
     STATS_LOCK(tstate->interp);
     PyStats *stats = tstate->interp->pystats_struct;
@@ -761,7 +782,7 @@ _PyStats_ThreadFini(_PyThreadStateImpl *tstate)
 {
 #ifdef Py_GIL_DISABLED
     STATS_LOCK(((PyThreadState *)tstate)->interp);
-    stats_merge_thread(tstate, false);
+    stats_merge_thread(tstate);
     STATS_UNLOCK(((PyThreadState *)tstate)->interp);
     PyMem_RawFree(tstate->pystats_struct);
 #endif
