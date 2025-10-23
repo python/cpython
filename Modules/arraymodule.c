@@ -3204,6 +3204,9 @@ array_new_internal_lock_held(PyTypeObject *type, PyObject *initial, int c)
                         PyMem_Free(ustr);
                         Py_SET_SIZE(self, n);
                     }
+                    else {
+                        PyMem_Free(ustr);
+                    }
                 }
                 else { // c == 'w'
                     Py_ssize_t n = PyUnicode_GET_LENGTH(initial);
