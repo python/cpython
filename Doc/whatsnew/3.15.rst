@@ -314,7 +314,8 @@ New modules
 intmath
 -------
 
-This module provides access to the mathematical functions for integer arguments.
+This module provides access to the mathematical functions for integer
+arguments (:pep:`791`).
 (Contributed by Serhiy Storchaka in :gh:`81313`.)
 
 

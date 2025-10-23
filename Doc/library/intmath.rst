@@ -38,7 +38,7 @@ computed exactly and are integers.
    Return factorial of the nonnegative integer *n*.
 
 
-.. function:: gcd(a, b)
+.. function:: gcd(*integers)
 
    Return the greatest common divisor of the specified integer arguments.
    If any of the arguments is nonzero, then the returned value is the largest
