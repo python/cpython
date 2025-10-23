@@ -652,11 +652,11 @@ zlib
 Optimizations
 =============
 
-module_name
------------
+csv
+---
 
-* TODO
-
+* The :func:`csv.reader` has been optimized, and is around 2x faster.
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`138214`.)
 
 
 Removed

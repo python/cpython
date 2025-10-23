@@ -373,6 +373,7 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(csv.Error, self._read_test,
                           ['"ab"c'], None, strict = 1)
         self._read_test(['"ab"c'], [['abc']], doublequote = 0)
+        self._read_test([",,,"], [["", "", "", ""]])
 
         self.assertRaises(csv.Error, self._read_test,
                           [b'abc'], None)
@@ -423,6 +424,10 @@ class Test_Csv(unittest.TestCase):
         self._read_test(['a,\0b,c'], [['a', 'b', 'c']], escapechar='\0')
         self._read_test(['a,\\b,c'], [['a', '\\b', 'c']], escapechar=None)
         self._read_test(['a,\\b,c'], [['a', '\\b', 'c']])
+        # '"abc\" with escapechar='\' -> ESCAPE_IN_QUOTED_FIELD + EOL -> '\n' appended
+        self._read_test(['"abc\\'], [["abc\n"]], escapechar="\\")
+        with self.assertRaises(csv.Error):
+            self._read_test(['"abc\\'], None, escapechar="\\", strict=True)
 
     def test_read_quoting(self):
         self._read_test(['1,",3,",5'], [['1', ',3,', '5']])
@@ -512,6 +517,31 @@ class Test_Csv(unittest.TestCase):
         self.assertEqual(r.line_num, 3)
         self.assertRaises(StopIteration, next, r)
         self.assertEqual(r.line_num, 3)
+
+    def test_read_linenum_multiline_record(self):
+        r = csv.reader(['"a', 'b",c', "d,e"])
+        self.assertEqual(next(r), ["ab", "c"])
+        self.assertEqual(r.line_num, 2)
+        self.assertEqual(next(r), ["d", "e"])
+        self.assertEqual(r.line_num, 3)
+        with self.assertRaises(StopIteration):
+            next(r)
+        self.assertEqual(r.line_num, 3)
+
+    def test_read_with_unicode_delimiter_and_quotechar(self):
+        self._read_test(["αλβλγ"], [["α", "β", "γ"]], delimiter="λ")
+        self._read_test(
+            ["אαאλאβאλאγא"], [["α", "β", "γ"]], delimiter="λ", quotechar="א"
+        )
+
+        # non-BMP
+        delim, quote = "😂", "😺"
+        self._read_test(
+            [f"{quote}a{quote}{delim}{quote}b{quote}"],
+            [["a", "b"]],
+            delimiter=delim,
+            quotechar=quote,
+        )
 
     def test_roundtrip_quoteed_newlines(self):
         rows = [
