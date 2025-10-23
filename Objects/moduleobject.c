@@ -23,6 +23,11 @@
     (assert(PyModule_Check(op)), _Py_CAST(PyModuleObject*, (op)))
 
 
+static PyMemberDef module_members[] = {
+    {"__dict__", _Py_T_OBJECT, offsetof(PyModuleObject, md_dict), Py_READONLY},
+    {0}
+};
+
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */
@@ -1484,52 +1489,9 @@ module_set_annotations(PyObject *self, PyObject *value, void *Py_UNUSED(ignored)
     return ret;
 }
 
-static PyObject *
-module_get_dict(PyObject *mod, void *Py_UNUSED(ignored))
-{
-    PyModuleObject *self = (PyModuleObject *)mod;
-    PyThreadState *tstate = PyThreadState_GET();
-    Py_BEGIN_CRITICAL_SECTION(self->md_dict);
-    uint32_t version = _PyDict_GetKeysVersionForCurrentState(tstate->interp,
-                                                             (PyDictObject *)self->md_dict);
-    // Check if the dict has been updated since we last checked to see if
-    // it has lazy values.
-    if (self->m_dict_version != version || version == 0) {
-        // Scan for lazy values...
-        bool retry;
-        do {
-            retry = false;
-            Py_ssize_t pos = 0;
-            PyObject *key, *value;
-            while (PyDict_Next(self->md_dict, &pos, &key, &value)) {
-                if (PyLazyImport_CheckExact(value)) {
-                    PyObject *new_value = _PyImport_LoadLazyImportTstate(tstate, value);
-                    if (new_value == NULL) {
-                        return NULL;
-                    }
-                    if (_PyModule_ReplaceLazyValue(self->md_dict, key, new_value) < 0) {
-                        Py_DECREF(new_value);
-                        return NULL;
-                    }
-                    if (!PyLazyImport_CheckExact(value)) {
-                        // Only force a retry if we actually made forward progress
-                        retry = true;
-                    }
-                    Py_DECREF(new_value);
-                }
-            }
-        } while(retry);
-        self->m_dict_version = _PyDict_GetKeysVersionForCurrentState(tstate->interp,
-                                                                     (PyDictObject *)self->md_dict);
-    }
-    Py_END_CRITICAL_SECTION();
-    return Py_NewRef(self->md_dict);
-}
-
 static PyGetSetDef module_getsets[] = {
     {"__annotations__", module_get_annotations, module_set_annotations},
     {"__annotate__", module_get_annotate, module_set_annotate},
-    {"__dict__", (getter)module_get_dict, NULL},
     {NULL}
 };
 
@@ -1563,7 +1525,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     module_methods,                             /* tp_methods */
-    0,                                          /* tp_members */
+    module_members,                             /* tp_members */
     module_getsets,                             /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
