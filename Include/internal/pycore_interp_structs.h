@@ -16,7 +16,6 @@ extern "C" {
 #include "pycore_typedefs.h"      // _PyRuntimeState
 #include "pycore_uop.h"           // struct _PyUOpInstruction
 
-
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
 #define FUNC_MAX_WATCHERS 8

@@ -527,7 +527,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
         data_size += group->data_size;
         combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     }
-    group = &stencil_groups[_FATAL_ERROR];
+    group = &stencil_groups[_FATAL_ERROR_r00];
     code_size += group->code_size;
     data_size += group->data_size;
     combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
@@ -560,7 +560,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     unsigned char *code = memory;
     state.trampolines.mem = memory + code_size;
     unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
-    assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
+    assert(trace[0].opcode == _START_EXECUTOR_r00 || trace[0].opcode == _COLD_EXIT_r00);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
@@ -569,7 +569,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
         data += group->data_size;
     }
     // Protect against accidental buffer overrun into data:
-    group = &stencil_groups[_FATAL_ERROR];
+    group = &stencil_groups[_FATAL_ERROR_r00];
     group->emit(code, data, executor, NULL, &state);
     code += group->code_size;
     data += group->data_size;
