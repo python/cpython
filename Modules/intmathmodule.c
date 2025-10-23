@@ -1129,7 +1129,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 intmath_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=0182ad8aadc2d30a input=6675e0cf42a106c2]*/
+/*[clinic end generated code: output=0182ad8aadc2d30a input=09a3cc7f1c5d144c]*/
 {
     PyObject *result = NULL, *temp;
     int overflow, cmp;
