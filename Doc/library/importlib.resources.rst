@@ -16,11 +16,12 @@ within *packages*.
 "Resources" are file-like resources associated with a module or package in
 Python. The resources may be contained directly in a package, within a
 subdirectory contained in that package, or adjacent to modules outside a
-package. Resources may be text or binary. As a result, Python module sources
-(.py) of a package and compilation artifacts (pycache) are technically
-de-facto resources of that package. In practice, however, resources are
-primarily those non-Python artifacts exposed specifically by the package
-author.
+package. Resources may be text or binary. As a result, a package's Python
+module sources (.py), compilation artifacts (pycache), and installation
+artifacts (like :func:`reserved filenames <os.path.isreserved>`
+in directories) are technically de-facto resources of that package.
+In practice, however, resources are primarily those non-Python artifacts
+exposed specifically by the package author.
 
 Resources can be opened or read in either binary or text mode.
 
@@ -72,12 +73,15 @@ for example, a package and its resources can be imported from a zip file using
     .. versionadded:: 3.9
 
     .. versionchanged:: 3.12
-       *package* parameter was renamed to *anchor*. *anchor* can now
-       be a non-package module and if omitted will default to the caller's
-       module. *package* is still accepted for compatibility but will raise
-       a :exc:`DeprecationWarning`. Consider passing the anchor positionally or
-       using ``importlib_resources >= 5.10`` for a compatible interface
-       on older Pythons.
+      *package* parameter was renamed to *anchor*.
+      *package* was still accepted, but deprecated.
+
+    .. versionchanged:: 3.15
+       *package* parameter was fully removed. *anchor* can now be a
+       non-package module and if omitted will default to the caller's module.
+       *package* is no longer accepted since Python 3.15. Consider passing the
+       anchor positionally or using ``importlib_resources >= 5.10`` for a
+       compatible interface on older Pythons.
 
 .. function:: as_file(traversable)
 

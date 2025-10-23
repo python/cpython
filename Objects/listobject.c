@@ -6,16 +6,16 @@
 #include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_dict.h"          // _PyDictViewObject
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
-#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_interp.h"        // PyInterpreterState.list
 #include "pycore_list.h"          // struct _Py_list_freelist, _PyListIterObject
 #include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
-#include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
-#include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
+#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
+#include "pycore_tuple.h"         // _PyTuple_FromArraySteal()
+#include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
 #include <stddef.h>
 
 /*[clinic input]
@@ -61,7 +61,8 @@ free_list_items(PyObject** items, bool use_qsbr)
 #ifdef Py_GIL_DISABLED
     _PyListArray *array = _Py_CONTAINER_OF(items, _PyListArray, ob_item);
     if (use_qsbr) {
-        _PyMem_FreeDelayed(array);
+        size_t size = sizeof(_PyListArray) + array->allocated * sizeof(PyObject *);
+        _PyMem_FreeDelayed(array, size);
     }
     else {
         PyMem_Free(array);
@@ -1381,9 +1382,9 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     Py_ssize_t i = 0;
-    PyObject *key, *value;
-    while (_PyDict_Next((PyObject *)dict, &pos, &key, &value, NULL)) {
-        PyObject *item = PyTuple_Pack(2, key, value);
+    PyObject *key_value[2];
+    while (_PyDict_Next((PyObject *)dict, &pos, &key_value[0], &key_value[1], NULL)) {
+        PyObject *item = PyTuple_FromArray(key_value, 2);
         if (item == NULL) {
             Py_SET_SIZE(self, m + i);
             return -1;
@@ -1684,10 +1685,7 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
 /* Avoid malloc for small temp arrays. */
 #define MERGESTATE_TEMP_SIZE 256
 
-/* The largest value of minrun. This must be a power of 2, and >= 1, so that
- * the compute_minrun() algorithm guarantees to return a result no larger than
- * this,
- */
+/* The largest value of minrun. This must be a power of 2, and >= 1 */
 #define MAX_MINRUN 64
 #if ((MAX_MINRUN) < 1) || ((MAX_MINRUN) & ((MAX_MINRUN) - 1))
 #error "MAX_MINRUN must be a power of 2, and >= 1"
@@ -1748,6 +1746,11 @@ struct s_MergeState {
      * of tuples. It may be set to safe_object_compare, but the idea is that hopefully
      * we can assume more, and use one of the special-case compares. */
     int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
+
+    /* Varisbles used for minrun computation. The "ideal" minrun length is
+     * the infinite precision listlen / 2**e. See listsort.txt.
+     */
+     Py_ssize_t mr_current, mr_e, mr_mask;
 };
 
 /* binarysort is the best method for sorting small arrays: it does few
@@ -2209,6 +2212,14 @@ merge_init(MergeState *ms, Py_ssize_t list_size, int has_keyfunc,
     ms->min_gallop = MIN_GALLOP;
     ms->listlen = list_size;
     ms->basekeys = lo->keys;
+
+    /* State for generating minrun values. See listsort.txt. */
+    ms->mr_e = 0;
+    while (list_size >> ms->mr_e >= MAX_MINRUN) {
+        ++ms->mr_e;
+    }
+    ms->mr_mask = (1 << ms->mr_e) - 1;
+    ms->mr_current = 0;
 }
 
 /* Free all the temp memory owned by the MergeState.  This must be called
@@ -2686,27 +2697,15 @@ merge_force_collapse(MergeState *ms)
     return 0;
 }
 
-/* Compute a good value for the minimum run length; natural runs shorter
- * than this are boosted artificially via binary insertion.
- *
- * If n < MAX_MINRUN return n (it's too small to bother with fancy stuff).
- * Else if n is an exact power of 2, return MAX_MINRUN / 2.
- * Else return an int k, MAX_MINRUN / 2 <= k <= MAX_MINRUN, such that n/k is
- * close to, but strictly less than, an exact power of 2.
- *
- * See listsort.txt for more info.
- */
-static Py_ssize_t
-merge_compute_minrun(Py_ssize_t n)
+/* Return the next minrun value to use. See listsort.txt. */
+Py_LOCAL_INLINE(Py_ssize_t)
+minrun_next(MergeState *ms)
 {
-    Py_ssize_t r = 0;           /* becomes 1 if any 1 bits are shifted off */
-
-    assert(n >= 0);
-    while (n >= MAX_MINRUN) {
-        r |= n & 1;
-        n >>= 1;
-    }
-    return n + r;
+    ms->mr_current += ms->listlen;
+    assert(ms->mr_current >= 0); /* no overflow */
+    Py_ssize_t result = ms->mr_current >> ms->mr_e;
+    ms->mr_current &= ms->mr_mask;
+    return result;
 }
 
 /* Here we define custom comparison functions to optimize for the cases one commonly
@@ -2877,6 +2876,7 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
  * duplicated).
  */
 /*[clinic input]
+@permit_long_docstring_body
 @critical_section
 list.sort
 
@@ -2897,7 +2897,7 @@ The reverse flag can be set to sort in descending order.
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=667bf25d0e3a3676]*/
+/*[clinic end generated code: output=57b9f9c5e23fbe42 input=e4f6b6069181ad7d]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
@@ -3074,7 +3074,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     /* March over the array once, left to right, finding natural runs,
      * and extending short natural runs to minrun elements.
      */
-    minrun = merge_compute_minrun(nremaining);
     do {
         Py_ssize_t n;
 
@@ -3083,6 +3082,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         if (n < 0)
             goto fail;
         /* If short, extend to min(minrun, nremaining). */
+        minrun = minrun_next(&ms);
         if (n < minrun) {
             const Py_ssize_t force = nremaining <= minrun ?
                               nremaining : minrun;
@@ -3221,7 +3221,7 @@ PyList_AsTuple(PyObject *v)
     PyObject *ret;
     PyListObject *self = (PyListObject *)v;
     Py_BEGIN_CRITICAL_SECTION(self);
-    ret = _PyTuple_FromArray(self->ob_item, Py_SIZE(v));
+    ret = PyTuple_FromArray(self->ob_item, Py_SIZE(v));
     Py_END_CRITICAL_SECTION();
     return ret;
 }

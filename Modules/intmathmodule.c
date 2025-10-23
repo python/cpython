@@ -1015,6 +1015,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 intmath.perm
 
     n: object
@@ -1034,7 +1035,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 intmath_perm_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=2293544c3bed417c input=f9637e7171c40bec]*/
+/*[clinic end generated code: output=2293544c3bed417c input=8fcc590d77942560]*/
 {
     PyObject *result = NULL;
     int overflow, cmp;
@@ -1107,6 +1108,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 intmath.comb
 
     n: object
@@ -1128,7 +1130,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 intmath_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=0182ad8aadc2d30a input=afe1bf86859c5c13]*/
+/*[clinic end generated code: output=0182ad8aadc2d30a input=6675e0cf42a106c2]*/
 {
     PyObject *result = NULL, *temp;
     int overflow, cmp;

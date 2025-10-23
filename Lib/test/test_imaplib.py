@@ -12,8 +12,7 @@ import re
 import socket
 
 from test.support import verbose, run_with_tz, run_with_locale, cpython_only
-from test.support import hashlib_helper
-from test.support import threading_helper
+from test.support import hashlib_helper, threading_helper
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -256,7 +255,20 @@ class IdleCmdDelayedPacketHandler(SimpleIMAPHandler):
             self._send_tagged(tag, 'BAD', 'Expected DONE')
 
 
-class NewIMAPTestsMixin():
+class AuthHandler_CRAM_MD5(SimpleIMAPHandler):
+    capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
+    def cmd_AUTHENTICATE(self, tag, args):
+        self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
+                            'VzdG9uLm1jaS5uZXQ=')
+        r = yield
+        if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
+                 b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
+            self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
+        else:
+            self._send_tagged(tag, 'NO', 'No access')
+
+
+class NewIMAPTestsMixin:
     client = None
 
     def _setup(self, imap_handler, connect=True):
@@ -360,7 +372,11 @@ class NewIMAPTestsMixin():
                 self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
             def cmd_APPEND(self, tag, args):
                 self._send_textline('+')
-                self.server.response = yield
+                self.server.response = args
+                literal = yield
+                self.server.response.append(literal)
+                literal = yield
+                self.server.response.append(literal)
                 self._send_tagged(tag, 'OK', 'okay')
         client, server = self._setup(UTF8AppendServer)
         self.assertEqual(client._encoding, 'ascii')
@@ -371,10 +387,13 @@ class NewIMAPTestsMixin():
         self.assertEqual(code, 'OK')
         self.assertEqual(client._encoding, 'utf-8')
         msg_string = 'Subject: üñí©öðé'
-        typ, data = client.append(None, None, None, msg_string.encode('utf-8'))
+        typ, data = client.append(
+            None, None, None, (msg_string + '\n').encode('utf-8'))
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.response,
-            ('UTF8 (%s)\r\n' % msg_string).encode('utf-8'))
+            ['INBOX', 'UTF8',
+             '(~{25}', ('%s\r\n' % msg_string).encode('utf-8'),
+             b')\r\n' ])
 
     def test_search_disallows_charset_in_utf8_mode(self):
         class UTF8Server(SimpleIMAPHandler):
@@ -439,39 +458,25 @@ class NewIMAPTestsMixin():
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_bytes(self):
-        class AuthHandler(SimpleIMAPHandler):
-            capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
-                                    'VzdG9uLm1jaS5uZXQ=')
-                r = yield
-                if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
-                         b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
-                    self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-        client, _ = self._setup(AuthHandler)
-        self.assertTrue('AUTH=CRAM-MD5' in client.capabilities)
+        client, _ = self._setup(AuthHandler_CRAM_MD5)
+        self.assertIn('AUTH=CRAM-MD5', client.capabilities)
         ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_plain_text(self):
-        class AuthHandler(SimpleIMAPHandler):
-            capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
-                                    'VzdG9uLm1jaS5uZXQ=')
-                r = yield
-                if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
-                         b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
-                    self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-        client, _ = self._setup(AuthHandler)
-        self.assertTrue('AUTH=CRAM-MD5' in client.capabilities)
+        client, _ = self._setup(AuthHandler_CRAM_MD5)
+        self.assertIn('AUTH=CRAM-MD5', client.capabilities)
         ret, _ = client.login_cram_md5("tim", "tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
+
+    @hashlib_helper.block_algorithm("md5")
+    def test_login_cram_md5_blocked(self):
+        client, _ = self._setup(AuthHandler_CRAM_MD5)
+        self.assertIn('AUTH=CRAM-MD5', client.capabilities)
+        msg = re.escape("CRAM-MD5 authentication is not supported")
+        with self.assertRaisesRegex(imaplib.IMAP4.error, msg):
+            client.login_cram_md5("tim", b"tanstaaftanstaaf")
 
     def test_aborted_authentication(self):
         class MyServer(SimpleIMAPHandler):
@@ -883,7 +888,11 @@ class ThreadedNetworkedTests(unittest.TestCase):
         class UTF8AppendServer(self.UTF8Server):
             def cmd_APPEND(self, tag, args):
                 self._send_textline('+')
-                self.server.response = yield
+                self.server.response = args
+                literal = yield
+                self.server.response.append(literal)
+                literal = yield
+                self.server.response.append(literal)
                 self._send_tagged(tag, 'OK', 'okay')
 
         with self.reaped_pair(UTF8AppendServer) as (server, client):
@@ -897,12 +906,12 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertEqual(client._encoding, 'utf-8')
             msg_string = 'Subject: üñí©öðé'
             typ, data = client.append(
-                None, None, None, msg_string.encode('utf-8'))
+                None, None, None, (msg_string + '\n').encode('utf-8'))
             self.assertEqual(typ, 'OK')
-            self.assertEqual(
-                server.response,
-                ('UTF8 (%s)\r\n' % msg_string).encode('utf-8')
-            )
+            self.assertEqual(server.response,
+                ['INBOX', 'UTF8',
+                 '(~{25}', ('%s\r\n' % msg_string).encode('utf-8'),
+                 b')\r\n' ])
 
     # XXX also need a test that makes sure that the Literal and Untagged_status
     # regexes uses unicode in UTF8 mode instead of the default ASCII.
@@ -1106,6 +1115,16 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
             client = self.imap_class("localhost", server.server_address[1],
                                      ssl_context=ssl_context)
             client.shutdown()
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(imaplib, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

@@ -60,7 +60,7 @@ Summary -- Release Highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-Python 3.13 is the latest stable release of the Python programming
+Python 3.13 is a stable release of the Python programming
 language, with a mix of changes to the language, the implementation
 and the standard library.
 The biggest changes include a new `interactive interpreter
@@ -834,7 +834,7 @@ dbm
   (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 * Allow removing all items from the database through
-  the new :meth:`.gdbm.clear` and :meth:`.ndbm.clear` methods.
+  the new :meth:`!clear` methods of the GDBM and NDBM database objects.
   (Contributed by Donghee Na in :gh:`107122`.)
 
 
@@ -1569,8 +1569,6 @@ and are now removed:
 
   * :pypi:`bcrypt`:
     Modern password hashing for your software and your servers.
-  * :pypi:`passlib`:
-    Comprehensive password hashing framework supporting over 30 schemes.
   * :pypi:`argon2-cffi`:
     The secure Argon2 password hashing algorithm.
   * :pypi:`legacycrypt`:
@@ -1917,7 +1915,7 @@ New Deprecations
 
 * :mod:`pathlib`:
 
-  * Deprecate :meth:`.PurePath.is_reserved`,
+  * Deprecate :meth:`!.PurePath.is_reserved`,
     to be removed in Python 3.15.
     Use :func:`os.path.isreserved` to detect reserved paths on Windows.
     (Contributed by Barney Gale in :gh:`88569`.)
@@ -1995,8 +1993,8 @@ New Deprecations
     use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
     (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
 
-  * Deprecate the :func:`typing.no_type_check_decorator` decorator function,
-    to be removed in in Python 3.15.
+  * Deprecate the :func:`!typing.no_type_check_decorator` decorator function,
+    to be removed in Python 3.15.
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.
     (Contributed by Alex Waygood in :gh:`106309`.)
@@ -2025,6 +2023,10 @@ New Deprecations
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -2176,7 +2178,7 @@ New Features
   (Contributed by Sam Gross in :gh:`114329`.)
 
 * Add the :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions,
-  mirroring the Python :meth:`!list.extend` and :meth:`!list.clear` methods.
+  mirroring the Python :meth:`list.extend` and :meth:`list.clear` methods.
   (Contributed by Victor Stinner in :gh:`111138`.)
 
 * Add the :c:func:`PyLong_AsInt` function.
@@ -2246,7 +2248,7 @@ New Features
   (Contributed by Serhiy Storchaka in :gh:`110289`.)
 
 * Add the :c:func:`PyWeakref_GetRef` function
-  as an alternative to  :c:func:`PyWeakref_GetObject`
+  as an alternative to  :c:func:`!PyWeakref_GetObject`
   that returns a :term:`strong reference`
   or ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
@@ -2490,7 +2492,7 @@ Deprecated C APIs
 
 * Deprecate old Python initialization functions:
 
-  * :c:func:`PySys_ResetWarnOptions`:
+  * :c:func:`!PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
   * :c:func:`!Py_GetExecPrefix`:
     Get :data:`sys.exec_prefix` instead.
@@ -2531,8 +2533,8 @@ Deprecated C APIs
   are just aliases to :c:type:`!wchar_t`.
   (Contributed by Victor Stinner in :gh:`105156`.)
 
-* Deprecate the :c:func:`PyWeakref_GetObject` and
-  :c:func:`PyWeakref_GET_OBJECT` functions,
+* Deprecate the :c:func:`!PyWeakref_GetObject` and
+  :c:func:`!PyWeakref_GET_OBJECT` functions,
   which return a :term:`borrowed reference`.
   Replace them with the new :c:func:`PyWeakref_GetRef` function,
   which returns a :term:`strong reference`.
@@ -2545,6 +2547,8 @@ Deprecated C APIs
 .. include:: ../deprecations/c-api-pending-removal-in-3.14.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 
@@ -2592,7 +2596,7 @@ Build Changes
 
 * The :file:`configure` option :option:`--with-system-libmpdec`
   now defaults to ``yes``.
-  The bundled copy of ``libmpdecimal`` will be removed in Python 3.15.
+  The bundled copy of ``libmpdec`` will be removed in Python 3.16.
 
 * Python built with :file:`configure` :option:`--with-trace-refs`
   (tracing references) is now ABI compatible with the Python release build
