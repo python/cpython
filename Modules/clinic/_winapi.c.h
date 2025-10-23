@@ -2284,8 +2284,7 @@ exit:
 }
 
 PyDoc_STRVAR(_winapi_ReportEvent__doc__,
-"ReportEvent($module, /, handle, type, category, event_id, strings,\n"
-"            raw_data=None)\n"
+"ReportEvent($module, handle, type, category, event_id, string, /)\n"
 "--\n"
 "\n"
 "Writes an entry at the end of the specified event log.\n"
@@ -2298,74 +2297,38 @@ PyDoc_STRVAR(_winapi_ReportEvent__doc__,
 "    The event category.\n"
 "  event_id\n"
 "    The event identifier.\n"
-"  strings\n"
-"    A list of strings to be inserted into the event message.\n"
-"  raw_data\n"
-"    The raw data for the event.");
+"  string\n"
+"    A string to be inserted into the event message.");
 
 #define _WINAPI_REPORTEVENT_METHODDEF    \
-    {"ReportEvent", _PyCFunction_CAST(_winapi_ReportEvent), METH_FASTCALL|METH_KEYWORDS, _winapi_ReportEvent__doc__},
+    {"ReportEvent", _PyCFunction_CAST(_winapi_ReportEvent), METH_FASTCALL, _winapi_ReportEvent__doc__},
 
 static PyObject *
 _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
                          unsigned short type, unsigned short category,
-                         unsigned int event_id, PyObject *strings,
-                         Py_buffer *raw_data);
+                         unsigned int event_id, PyObject *string);
 
 static PyObject *
-_winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 6
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(handle), &_Py_ID(type), &_Py_ID(category), &_Py_ID(event_id), &_Py_ID(strings), &_Py_ID(raw_data), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"handle", "type", "category", "event_id", "strings", "raw_data", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .format = "" F_HANDLE "O&O&O&O!|z*:ReportEvent",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
     HANDLE handle;
     unsigned short type;
     unsigned short category;
     unsigned int event_id;
-    PyObject *strings;
-    Py_buffer raw_data = {NULL, NULL};
+    PyObject *string;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &handle, _PyLong_UnsignedShort_Converter, &type, _PyLong_UnsignedShort_Converter, &category, _PyLong_UnsignedInt_Converter, &event_id, &PyList_Type, &strings, &raw_data)) {
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "O&O&O&O:ReportEvent",
+        &handle, _PyLong_UnsignedShort_Converter, &type, _PyLong_UnsignedShort_Converter, &category, _PyLong_UnsignedInt_Converter, &event_id, &string)) {
         goto exit;
     }
-    return_value = _winapi_ReportEvent_impl(module, handle, type, category, event_id, strings, &raw_data);
+    return_value = _winapi_ReportEvent_impl(module, handle, type, category, event_id, string);
 
 exit:
-    /* Cleanup for raw_data */
-    if (raw_data.obj) {
-       PyBuffer_Release(&raw_data);
-    }
-
     return return_value;
 }
 
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=ce2a43d4766a0d4c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=63733d12831693e1 input=a9049054013a1b77]*/

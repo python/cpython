@@ -1528,10 +1528,6 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
-    string = &_Py_ID(event_id);
-    _PyUnicode_InternStatic(interp, &string);
-    assert(_PyUnicode_CheckConsistency(string, 1));
-    assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_ID(eventmask);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
@@ -2556,10 +2552,6 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
-    string = &_Py_ID(raw_data);
-    _PyUnicode_InternStatic(interp, &string);
-    assert(_PyUnicode_CheckConsistency(string, 1));
-    assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_ID(read);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
@@ -2877,10 +2869,6 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);
     string = &_Py_ID(string);
-    _PyUnicode_InternStatic(interp, &string);
-    assert(_PyUnicode_CheckConsistency(string, 1));
-    assert(PyUnicode_GET_LENGTH(string) != 1);
-    string = &_Py_ID(strings);
     _PyUnicode_InternStatic(interp, &string);
     assert(_PyUnicode_CheckConsistency(string, 1));
     assert(PyUnicode_GET_LENGTH(string) != 1);

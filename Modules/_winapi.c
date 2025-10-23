@@ -3046,10 +3046,9 @@ _winapi.ReportEvent
         The event category.
     event_id: unsigned_int(bitwise=False)
         The event identifier.
-    strings: object(subclass_of='&PyList_Type')
-        A list of strings to be inserted into the event message.
-    raw_data: Py_buffer(accept={str, buffer, NoneType}) = None
-        The raw data for the event.
+    string: object
+        A string to be inserted into the event message.
+    /
 
 Writes an entry at the end of the specified event log.
 [clinic start generated code]*/
@@ -3057,88 +3056,34 @@ Writes an entry at the end of the specified event log.
 static PyObject *
 _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
                          unsigned short type, unsigned short category,
-                         unsigned int event_id, PyObject *strings,
-                         Py_buffer *raw_data)
-/*[clinic end generated code: output=fc3bbbde78cffd6c input=abcc01d4fc284975]*/
+                         unsigned int event_id, PyObject *string)
+/*[clinic end generated code: output=8eb5e919369c9c6d input=6db2c51252f95b93]*/
 {
     BOOL success;
-    LPCWSTR *string_array = NULL;
-    WORD num_strings = 0;
-    LPVOID data = NULL;
-    DWORD data_size = 0;
+    LPCWSTR wide_string = NULL;
 
-    // Handle strings list
-    Py_ssize_t size = PyList_Size(strings);
-    if (size > USHRT_MAX) {
-        PyErr_SetString(PyExc_ValueError, "strings is too long");
+    if (!PyUnicode_Check(string)) {
+        PyErr_SetString(PyExc_TypeError, "string must be a str");
         return NULL;
     }
-    num_strings = (WORD)size;
 
-    // Handle raw data
-    if (raw_data->len > PY_DWORD_MAX) {
-        PyErr_SetString(PyExc_ValueError, "raw_data is too large");
+    wide_string = PyUnicode_AsWideCharString(string, NULL);
+    if (!wide_string) {
         return NULL;
-    }
-    if (raw_data->obj != NULL) {
-        data = raw_data->buf;
-        data_size = (DWORD)raw_data->len;
-    }
-
-    if (num_strings > 0) {
-        string_array = (LPCWSTR *)PyMem_New(LPCWSTR, num_strings);
-        if (string_array == NULL) {
-            return PyErr_NoMemory();
-        }
-
-        for (WORD i = 0; i < num_strings; i++) {
-            PyObject *item = PyList_GetItemRef(strings, i);
-            if (item == NULL) {
-                // Clean up already allocated strings
-                for (WORD j = 0; j < i; j++) {
-                    PyMem_Free((void *)string_array[j]);
-                }
-                PyMem_Free(string_array);
-                return NULL;
-            }
-            if (!PyUnicode_Check(item)) {
-                for (WORD j = 0; j < i; j++) {
-                    PyMem_Free((void *)string_array[j]);
-                }
-                PyMem_Free(string_array);
-                PyErr_Format(PyExc_TypeError,
-                             "expected a list of strings, not %T", item);
-                return NULL;
-            }
-            string_array[i] = PyUnicode_AsWideCharString(item, NULL);
-            Py_DECREF(item);
-            if (!string_array[i]) {
-                for (WORD j = 0; j < i; j++) {
-                    PyMem_Free((void *)string_array[j]);
-                }
-                PyMem_Free(string_array);
-                return NULL;
-            }
-        }
     }
 
     Py_BEGIN_ALLOW_THREADS
-    success = ReportEventW(handle, type, category, event_id,
-                          NULL, num_strings, data_size,
-                          string_array, data);
+    success = ReportEventW(handle, type, category, event_id, NULL, 1, 0,
+                           &wide_string, NULL);
     Py_END_ALLOW_THREADS
 
     int ret = GetLastError();
-    // Clean up allocated strings
-    if (string_array) {
-        for (WORD i = 0; i < num_strings; i++) {
-            PyMem_Free((void *)string_array[i]);
-        }
-        PyMem_Free(string_array);
-    }
 
-    if (!success)
+    PyMem_Free((void *)wide_string);
+
+    if (!success) {
         return PyErr_SetFromWindowsErr(ret);
+    }
 
     Py_RETURN_NONE;
 }
