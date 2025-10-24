@@ -20,7 +20,7 @@ are available, however.
 .. c:function:: int PyBool_Check(PyObject *o)
 
    Return true if *o* is of type :c:data:`PyBool_Type`.  This function always
-   succeeds.
+   succeeds and always returns a valid boolean value.
 
 
 .. c:var:: PyObject* Py_False
