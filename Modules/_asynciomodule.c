@@ -4091,7 +4091,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         }
     } else {
         // Slow path for loop running in different thread
-        PyInterpreterState *interp = PyInterpreterState_Get();
+        PyInterpreterState *interp = ts->base.interp;
         // Stop the world and traverse the per-thread linked list
         // of asyncio tasks for every thread, as well as the
         // interpreter's linked list, and add them to `tasks`.
