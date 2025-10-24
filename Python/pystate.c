@@ -966,6 +966,8 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 
     _PyObject_FiniState(interp);
 
+    PyConfig_Clear(&interp->config);
+
     free_interpreter(interp);
 }
 

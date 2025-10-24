@@ -9396,7 +9396,7 @@ fi
 printf %s "checking BOLT_COMMON_FLAGS... " >&6; }
 if test -z "${BOLT_COMMON_FLAGS}"
 then
-  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1 "
+  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1 "
 
 fi
 
@@ -20392,16 +20392,21 @@ then :
 fi
 
 
-# Check statx availability in Linux
-if test "$MACHDEP" = "linux"; then
-  ac_fn_c_check_func "$LINENO" "statx" "ac_cv_func_statx"
+# os.statx uses Linux's statx function.  AIX also has a function named statx,
+# but it's unrelated.  Check only on Linux (including Android).
+case $ac_sys_system in #(
+  Linux*) :
+    ac_fn_c_check_func "$LINENO" "statx" "ac_cv_func_statx"
 if test "x$ac_cv_func_statx" = xyes
 then :
   printf "%s\n" "#define HAVE_STATX 1" >>confdefs.h
 
 fi
 
-fi
+ ;; #(
+  *) :
+     ;;
+esac
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
@@ -25139,6 +25144,57 @@ fi
 
 
 if test "$ac_cv_func_statx" = yes; then
+  # Some systems have the definitions of the mask bits without having the
+  # corresponding members in struct statx.  Check for members added after Linux
+  # 4.11 (when statx itself was added).
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_mnt_id" "ac_cv_member_struct_statx_stx_mnt_id" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_mnt_id" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_MNT_ID 1" >>confdefs.h
+
+
+fi
+
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_dio_mem_align" "ac_cv_member_struct_statx_stx_dio_mem_align" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_dio_mem_align" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN 1" >>confdefs.h
+
+
+fi
+
+  # stx_dio_offset_align was added together with stx_dio_mem_align
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_subvol" "ac_cv_member_struct_statx_stx_subvol" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_subvol" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_SUBVOL 1" >>confdefs.h
+
+
+fi
+
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_atomic_write_unit_min" "ac_cv_member_struct_statx_stx_atomic_write_unit_min" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_atomic_write_unit_min" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN 1" >>confdefs.h
+
+
+fi
+
+  # stx_atomic_write_unit_max and stx_atomic_write_segments_max were added
+  # together with stx_atomic_write_unit_min
+  ac_fn_c_check_member "$LINENO" "struct statx" "stx_dio_read_offset_align" "ac_cv_member_struct_statx_stx_dio_read_offset_align" "$ac_includes_default"
+if test "x$ac_cv_member_struct_statx_stx_dio_read_offset_align" = xyes
+then :
+
+printf "%s\n" "#define HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN 1" >>confdefs.h
+
+
+fi
+
   # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
   # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
   # doesn't imply having the member.
