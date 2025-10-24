@@ -55,6 +55,11 @@ do {                                                                       \
     __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
 } while (0)
 
+#undef GOTO_TIER_ONE_SETUP
+#define GOTO_TIER_ONE_SETUP \
+    tstate->current_executor = NULL;                              \
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) \
     do {                \
