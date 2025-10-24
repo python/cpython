@@ -4089,7 +4089,8 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
             Py_DECREF(loop);
             return NULL;
         }
-    } else {
+    }
+    else {
         // Slow path for loop running in different thread
         PyInterpreterState *interp = ts->base.interp;
         // Stop the world and traverse the per-thread linked list
