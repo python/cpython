@@ -166,7 +166,7 @@ class WinAPITests(unittest.TestCase):
 
         with self.assertRaises(OSError) as cm:
             _winapi.RegisterEventSource(None, "")
-        self.assertEqual(cm.exception.winerror, 87)
+        self.assertEqual(cm.exception.errno, errno.EINVAL)
 
         with self.assertRaises(OSError) as cm:
             _winapi.DeregisterEventSource(_winapi.INVALID_HANDLE_VALUE)
