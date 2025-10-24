@@ -4,11 +4,17 @@ import os
 import sys
 import threading
 
-from importlib import import_module
 from test import support
 from test.support import os_helper
 
 from .utils import print_warning
+
+# Import termios to save and restore the tty.  This is only available on
+# Unix, and it's fine if the module can't be found.
+try:
+    import termios
+except ModuleNotFoundError:
+    pass
 
 
 class SkipTestEnvironment(Exception):
@@ -73,16 +79,11 @@ class saved_test_environment:
         # function for restore() methods
         return sys.modules[name]
 
-    def try_get_module(self, name, *, demand=False):
+    def try_get_module(self, name):
         # function for get() methods
         try:
             return self.get_module(name)
         except KeyError:
-            if demand:
-                try:
-                    return import_module(name)
-                except ModuleNotFoundError:
-                    pass
             raise SkipTestEnvironment
 
     def get_urllib_requests__url_tempfiles(self):
@@ -300,13 +301,12 @@ class saved_test_environment:
         warnings.showwarning = fxn
 
     def get_stty_echo(self):
-        termios = self.try_get_module('termios', demand=True)
+        termios = self.try_get_module('termios')
         if not os.isatty(fd := sys.__stdin__.fileno()):
             return None
         attrs = termios.tcgetattr(fd)
         lflags = attrs[3]
         return bool(lflags & termios.ECHO)
-
     def restore_stty_echo(self, echo):
         termios = self.get_module('termios')
         attrs = termios.tcgetattr(fd := sys.__stdin__.fileno())
