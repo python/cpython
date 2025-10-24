@@ -1,1 +1,1 @@
-Print clearer error message when using pdb to attaching to a non-existing process on Linux.
+Print clearer error message when using ``pdb`` to attach to a non-existing process.
