@@ -711,22 +711,20 @@ def _is_kw_only(a_type, dataclasses):
     return a_type is dataclasses.KW_ONLY
 
 
-def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
-    # Given a type annotation string, does it refer to a_type in
-    # a_module?  For example, when checking that annotation denotes a
-    # ClassVar, then a_module is typing, and a_type is
-    # typing.ClassVar.
+def _is_type(annotation, cls, is_type_predicate, *is_type_predicate_args):
+    # Loosely parse a string annotation and pass the result to is_type_predicate,
+    # along with any additional arguments it might require.
 
-    # It's possible to look up a_module given a_type, but it involves
-    # looking in sys.modules (again!), and seems like a waste since
-    # the caller already knows a_module.
+    # We can't perform a full type hint evaluation at the point where @dataclass
+    # was invoked because class's module is not fully initialized yet. So we resort
+    # to parsing string annotation using regexp, and extracting a type before
+    # the first square bracket.
 
     # - annotation is a string type annotation
     # - cls is the class that this annotation was found in
-    # - a_module is the module we want to match
-    # - a_type is the type in that module we want to match
-    # - is_type_predicate is a function called with (obj, a_module)
+    # - is_type_predicate is a function called with (obj, *is_type_predicate_args)
     #   that determines if obj is of the desired type.
+    # - is_type_predicate_args is additional arguments forwarded to is_type_predicate
 
     # Since this test does not do a local namespace lookup (and
     # instead only a module (global) lookup), there are some things it
@@ -756,30 +754,19 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     if not match:
         return False
 
-    ns = None
     module_name = match.group(1)
     type_name = match.group(2)
 
     if not module_name:
         # No module name, assume the class's module did
         # "from dataclasses import InitVar".
-        ns = sys.modules.get(cls.__module__).__dict__
+        ns = sys.modules.get(cls.__module__)
     else:
         # Look up module_name in the class's module.
         cls_module = sys.modules.get(cls.__module__)
-        if not cls_module:
-            return False
+        ns = cls_module.__dict__.get(module_name)
 
-        a_type_module = cls_module.__dict__.get(module_name)
-        if (
-            isinstance(a_type_module, types.ModuleType)
-            # Handle cases when a_type is not defined in
-            # the referenced module, e.g. 'dataclasses.ClassVar[int]'
-            and a_type_module.__dict__.get(type_name) is a_type
-        ):
-            ns = sys.modules.get(a_type.__module__).__dict__
-
-    return ns and is_type_predicate(ns.get(type_name), a_module)
+    return is_type_predicate(getattr(ns, type_name, None), *is_type_predicate_args)
 
 
 def _get_field(cls, a_name, a_type, default_kw_only):
@@ -826,8 +813,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     if typing:
         if (_is_classvar(a_type, typing)
             or (isinstance(f.type, str)
-                and _is_type(f.type, cls, typing, typing.ClassVar,
-                             _is_classvar))):
+                and _is_type(f.type, cls, _is_classvar, typing))):
             f._field_type = _FIELD_CLASSVAR
 
     # If the type is InitVar, or if it's a matching string annotation,
@@ -838,8 +824,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
         dataclasses = sys.modules[__name__]
         if (_is_initvar(a_type, dataclasses)
             or (isinstance(f.type, str)
-                and _is_type(f.type, cls, dataclasses, dataclasses.InitVar,
-                             _is_initvar))):
+                and _is_type(f.type, cls, _is_initvar, dataclasses))):
             f._field_type = _FIELD_INITVAR
 
     # Validations for individual fields.  This is delayed until now,
@@ -1012,8 +997,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         # See if this is a marker to change the value of kw_only.
         if (_is_kw_only(type, dataclasses)
             or (isinstance(type, str)
-                and _is_type(type, cls, dataclasses, dataclasses.KW_ONLY,
-                             _is_kw_only))):
+                and _is_type(type, cls, _is_kw_only, dataclasses))):
             # Switch the default to kw_only=True, and ignore this
             # annotation: it's not a real field.
             if KW_ONLY_seen:
