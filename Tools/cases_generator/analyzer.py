@@ -890,7 +890,7 @@ def stmt_escapes(stmt: Stmt) -> bool:
     else:
         assert False, "Unexpected statement type"
 
-def stmt_has_jump_on_unpredictable_path_body(stmts: list[Stmt] | None, branches_seen: int) -> bool:
+def stmt_has_jump_on_unpredictable_path_body(stmts: list[Stmt] | None, branches_seen: int) -> tuple[bool, int]:
     if not stmts:
         return False, branches_seen
     predict = False
@@ -901,7 +901,7 @@ def stmt_has_jump_on_unpredictable_path_body(stmts: list[Stmt] | None, branches_
         seen += seen_body
     return predict, seen
 
-def stmt_has_jump_on_unpredictable_path(stmt: Stmt, branches_seen: int) -> bool:
+def stmt_has_jump_on_unpredictable_path(stmt: Stmt, branches_seen: int) -> tuple[bool, int]:
     if isinstance(stmt, BlockStmt):
         return stmt_has_jump_on_unpredictable_path_body(stmt.body, branches_seen)
     elif isinstance(stmt, SimpleStmt):
