@@ -278,6 +278,7 @@ module_from_def_multiple_exec(PyObject *self, PyObject *spec)
     static PyModuleDef_Slot slots[] = {
         {Py_mod_exec, simple_exec},
         {Py_mod_exec, another_exec},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     static PyModuleDef def = {

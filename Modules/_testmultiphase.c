@@ -861,6 +861,7 @@ PyInit__testmultiphase_exec_multiple(void)
         {Py_mod_exec, execfunc_a1},
         {Py_mod_exec, execfunc_b2},
         {Py_mod_exec, execfunc_c3},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0}
     };
     static PyModuleDef def = {
