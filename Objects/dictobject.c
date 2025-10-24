@@ -1899,6 +1899,14 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     if (ix == DKIX_ERROR)
         goto Fail;
 
+    // gh-140551: If dict was cleaned in _Py_dict_lookup,
+    // we have to resize one more time to force general key kind.
+    if (DK_IS_UNICODE(mp->ma_keys) && !PyUnicode_CheckExact(key)) {
+        if (insertion_resize(mp, 0) < 0)
+            goto Fail;
+        assert(mp->ma_keys->dk_kind == DICT_KEYS_GENERAL);
+    }
+
     if (ix == DKIX_EMPTY) {
         assert(!_PyDict_HasSplitTable(mp));
         /* Insert into new slot. */

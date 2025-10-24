@@ -1601,6 +1601,21 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             d.get(key2)
 
+    def test_clear_at_lookup(self):
+        d = {}
+
+        class X(object):
+            def __hash__(self):
+                return 1
+            def __eq__(self, other):
+                nonlocal d
+                d.clear()
+
+        for _ in range(10):
+            d[X()] = None
+
+        self.assertEqual(len(d), 1)
+
 
 class CAPITest(unittest.TestCase):
 
