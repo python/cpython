@@ -80,7 +80,7 @@ You can experiment with an ``asyncio`` concurrent context in the :term:`REPL`:
    'hello'
 
 It is highly recommended to use the asyncio REPL in
-:envvar:`the Python-based REPL mode <PYTHON_BASIC_REPL>`
+:ref:`the Python-based REPL mode <envvar-PYTHON_BASIC_REPL>`
 for optimal experience and new features.
 
 .. audit-event:: cpython.run_stdin "" ""
