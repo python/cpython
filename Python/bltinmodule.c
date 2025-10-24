@@ -1515,7 +1515,48 @@ map_next(PyObject *self)
     }
 
     result = _PyObject_VectorcallTstate(tstate, lz->func, stack, nargs, NULL);
+    goto exit;
 
+check:
+    if (PyErr_Occurred()) {
+        if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            // next() on argument i raised an exception (not StopIteration)
+            // result is NULL;
+            goto exit;
+        }
+        PyErr_Clear();
+    }
+    if (i) {
+        // ValueError: map() argument 2 is shorter than argument 1
+        // ValueError: map() argument 3 is shorter than arguments 1-2
+        const char* plural = i == 1 ? " " : "s 1-";
+        result = PyErr_Format(PyExc_ValueError,
+                              "map() argument %d is shorter than argument%s%d",
+                              i + 1, plural, i);
+        goto exit;
+    }
+    for (i = 1; i < niters; i++) {
+        PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
+        PyObject *val = (*Py_TYPE(it)->tp_iternext)(it);
+        if (val) {
+            Py_DECREF(val);
+            const char* plural = i == 1 ? " " : "s 1-";
+            result = PyErr_Format(PyExc_ValueError,
+                                  "map() argument %d is longer than argument%s%d",
+                                  i + 1, plural, i);
+            goto exit;
+        }
+        if (PyErr_Occurred()) {
+            if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
+                // next() on argument i raised an exception (not StopIteration)
+                // result is NULL;
+                goto exit;
+            }
+            PyErr_Clear();
+        }
+        // Argument i is exhausted. So far so good...
+    }
+    // All arguments are exhausted. Success!
 exit:
     for (i=0; i < nargs; i++) {
         Py_DECREF(stack[i]);
@@ -1524,43 +1565,6 @@ exit:
         PyMem_Free(stack);
     }
     return result;
-check:
-    if (PyErr_Occurred()) {
-        if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
-            // next() on argument i raised an exception (not StopIteration)
-            return NULL;
-        }
-        PyErr_Clear();
-    }
-    if (i) {
-        // ValueError: map() argument 2 is shorter than argument 1
-        // ValueError: map() argument 3 is shorter than arguments 1-2
-        const char* plural = i == 1 ? " " : "s 1-";
-        return PyErr_Format(PyExc_ValueError,
-                            "map() argument %d is shorter than argument%s%d",
-                            i + 1, plural, i);
-    }
-    for (i = 1; i < niters; i++) {
-        PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
-        PyObject *val = (*Py_TYPE(it)->tp_iternext)(it);
-        if (val) {
-            Py_DECREF(val);
-            const char* plural = i == 1 ? " " : "s 1-";
-            return PyErr_Format(PyExc_ValueError,
-                                "map() argument %d is longer than argument%s%d",
-                                i + 1, plural, i);
-        }
-        if (PyErr_Occurred()) {
-            if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
-                // next() on argument i raised an exception (not StopIteration)
-                return NULL;
-            }
-            PyErr_Clear();
-        }
-        // Argument i is exhausted. So far so good...
-    }
-    // All arguments are exhausted. Success!
-    goto exit;
 }
 
 static PyObject *
