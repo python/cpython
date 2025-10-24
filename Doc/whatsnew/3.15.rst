@@ -498,6 +498,9 @@ sqlite3
      details.
      (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
 
+   * Table, index, trigger, view, column, function, and schema completion on <tab>.
+     (Contributed by Long Tan in :gh:`136101`.)
+
 
 ssl
 ---
@@ -652,11 +655,11 @@ zlib
 Optimizations
 =============
 
-module_name
------------
+csv
+---
 
-* TODO
-
+* :meth:`csv.Sniffer.sniff` delimiter detection is now up to 1.6x faster.
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
 
 
 Removed
