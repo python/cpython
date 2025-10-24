@@ -13836,7 +13836,15 @@ case $PLATFORM_TRIPLET in #(
   aarch64-linux-gnu) :
     perf_trampoline=yes ;; #(
   darwin) :
-    perf_trampoline=yes ;; #(
+    case $host_cpu in #(
+  p*pc*) :
+    perf_trampoline=no ;; #(
+  *) :
+    perf_trampoline=yes
+                 ;; #(
+  *) :
+     ;;
+esac ;; #(
   *) :
     perf_trampoline=no
  ;;
