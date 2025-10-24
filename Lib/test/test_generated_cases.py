@@ -329,6 +329,9 @@ class TestGeneratedCases(unittest.TestCase):
             if (xxx) {
                 UPDATE_MISS_STATS(OP1);
                 assert(_PyOpcode_Deopt[opcode] == (OP1));
+                #if _Py_TIER2
+                tstate->interp->jit_state.specialize_counter++;
+                #endif
                 JUMP_TO_PREDICTED(OP1);
             }
             res = Py_None;
