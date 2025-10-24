@@ -1775,6 +1775,14 @@ static inline int
 insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
                      Py_hash_t hash, PyObject *key, PyObject *value)
 {
+    // gh-140551: If dict was cleaned in _Py_dict_lookup,
+    // we have to resize one more time to force general key kind.
+    if (DK_IS_UNICODE(mp->ma_keys) && !PyUnicode_CheckExact(key)) {
+        if (insertion_resize(mp, 0) < 0)
+            return -1;
+        assert(mp->ma_keys->dk_kind == DICT_KEYS_GENERAL);
+    }
+
     if (mp->ma_keys->dk_usable <= 0) {
         /* Need to resize. */
         if (insertion_resize(mp, 1) < 0) {
@@ -1898,14 +1906,6 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &old_value);
     if (ix == DKIX_ERROR)
         goto Fail;
-
-    // gh-140551: If dict was cleaned in _Py_dict_lookup,
-    // we have to resize one more time to force general key kind.
-    if (DK_IS_UNICODE(mp->ma_keys) && !PyUnicode_CheckExact(key)) {
-        if (insertion_resize(mp, 0) < 0)
-            goto Fail;
-        assert(mp->ma_keys->dk_kind == DICT_KEYS_GENERAL);
-    }
 
     if (ix == DKIX_EMPTY) {
         assert(!_PyDict_HasSplitTable(mp));

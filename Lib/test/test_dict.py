@@ -1602,8 +1602,6 @@ class DictTest(unittest.TestCase):
             d.get(key2)
 
     def test_clear_at_lookup(self):
-        d = {}
-
         class X(object):
             def __hash__(self):
                 return 1
@@ -1611,8 +1609,15 @@ class DictTest(unittest.TestCase):
                 nonlocal d
                 d.clear()
 
+        d = {}
         for _ in range(10):
             d[X()] = None
+
+        self.assertEqual(len(d), 1)
+
+        d = {}
+        for _ in range(10):
+            d.setdefault(X(), None)
 
         self.assertEqual(len(d), 1)
 
