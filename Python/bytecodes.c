@@ -2939,7 +2939,7 @@ dummy_func(
             JUMP_BACKWARD_JIT,
         };
 
-        tier1 op(_SPECIALIZE_JUMP_BACKWARD, (--)) {
+        specializing tier1 op(_SPECIALIZE_JUMP_BACKWARD, (--)) {
         #if ENABLE_SPECIALIZATION
             if (this_instr->op.code == JUMP_BACKWARD) {
                 uint8_t desired = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;

@@ -7,6 +7,7 @@ from analyzer import (
     analysis_error,
     Label,
     CodeSection,
+    Uop,
 )
 from cwriter import CWriter
 from typing import Callable, TextIO, Iterator, Iterable
@@ -129,6 +130,7 @@ class Emitter:
             "INSTRUCTION_SIZE": self.instruction_size,
             "stack_pointer": self.stack_pointer,
             "JUMPBY": self.jumpby,
+            "DISPATCH_SAME_OPARG": self.dispatch_same_oparg,
         }
         self.out = out
         self.labels = labels
@@ -147,6 +149,26 @@ class Emitter:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
         storage.stack.flush(self.out)
         self.emit(tkn)
+        return False
+
+    def dispatch_same_oparg(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        assert isinstance(uop, Uop)
+        assert "specializing" in uop.annotations, uop.name
+        self.out.start_line()
+        self.emit("#if _Py_TIER2\n")
+        self.emit("tstate->interp->jit_state.specialize_counter++;\n")
+        self.emit("#endif\n")
+        self.emit(tkn)
+        emit_to(self.out, tkn_iter, "SEMI")
+        self.emit(";\n")
+        self.out.start_line()
         return False
 
     def deopt_if(
@@ -170,9 +192,6 @@ class Emitter:
         family_name = inst.family.name
         self.emit(f"UPDATE_MISS_STATS({family_name});\n")
         self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
-        self.emit(f"#if _Py_TIER2\n")
-        self.emit(f"tstate->interp->jit_state.specialize_counter++;\n")
-        self.emit(f"#endif\n")
         self.emit(f"JUMP_TO_PREDICTED({self.jump_prefix}{family_name});\n")
         self.emit("}\n")
         return not always_true(first_tkn)

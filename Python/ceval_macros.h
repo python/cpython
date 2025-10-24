@@ -136,7 +136,7 @@
 #if (_Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS) && _Py_TIER2
 #  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
 // Required to not get stuck in infinite specialization loops due to specialization failure.
-#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && tstate->interp->jit_state.specialize_counter <= 2)
+#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && tstate->interp->jit_state.specialize_counter < 1)
 #  define ENTER_TRACING() \
     DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
 #  define LEAVE_TRACING() \
@@ -192,31 +192,12 @@ do { \
         DISPATCH_GOTO_NON_TRACING(); \
     }
 
-#if _Py_TIER2
 #define DISPATCH_SAME_OPARG() \
     { \
-        tstate->interp->jit_state.specialize_counter++; \
         opcode = next_instr->op.code; \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO_NON_TRACING(); \
     }
-#define DISPATCH_INLINED(NEW_FRAME)                     \
-    do {                                                \
-        assert(tstate->interp->eval_frame == NULL);     \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
-        assert((NEW_FRAME)->previous == frame);         \
-        frame = tstate->current_frame = (NEW_FRAME);     \
-        CALL_STAT_INC(inlined_py_calls);                \
-        JUMP_TO_LABEL(start_frame);                      \
-    } while (0)
-#else
-
-#define DISPATCH_SAME_OPARG() \
-    { \
-        opcode = next_instr->op.code; \
-        PRE_DISPATCH_GOTO(); \
-        DISPATCH_GOTO(); \
-    }
 
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
@@ -227,7 +208,6 @@ do { \
         CALL_STAT_INC(inlined_py_calls);                \
         JUMP_TO_LABEL(start_frame);                      \
     } while (0)
-#endif
 
 
 /* Tuple access macros */

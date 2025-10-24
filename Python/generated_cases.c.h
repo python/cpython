@@ -44,6 +44,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(BINARY_OP);
@@ -103,9 +106,6 @@
                 if (!PyFloat_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -116,9 +116,6 @@
                 if (!PyFloat_CheckExact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -167,9 +164,6 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -180,9 +174,6 @@
                 if (!_PyLong_CheckExactAndCompact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -200,9 +191,6 @@
                 if (PyStackRef_IsNull(res)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
@@ -237,9 +225,6 @@
                 if (!PyUnicode_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -250,9 +235,6 @@
                 if (!PyUnicode_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -311,9 +293,6 @@
                 if (!res) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -369,9 +348,6 @@
                 if (!PyUnicode_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -382,9 +358,6 @@
                 if (!PyUnicode_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -408,9 +381,6 @@
                 if (PyStackRef_AsPyObjectBorrow(*target_local) != left_o) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 STAT_INC(BINARY_OP, hit);
@@ -461,9 +431,6 @@
                 if (!PyFloat_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -474,9 +441,6 @@
                 if (!PyFloat_CheckExact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -525,9 +489,6 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -538,9 +499,6 @@
                 if (!_PyLong_CheckExactAndCompact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -558,9 +516,6 @@
                 if (PyStackRef_IsNull(res)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
@@ -594,9 +549,6 @@
                 if (!PyDict_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -662,9 +614,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -675,9 +624,6 @@
                 if (!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
@@ -685,9 +631,6 @@
                 if (getitem_o == NULL) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 assert(PyFunction_Check(getitem_o));
@@ -695,9 +638,6 @@
                 if (((PyFunctionObject *)getitem_o)->func_version != cached_version) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem_o);
@@ -705,9 +645,6 @@
                 if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 getitem = PyStackRef_FromPyObjectNew(getitem_o);
@@ -763,9 +700,6 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -776,9 +710,6 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -794,9 +725,6 @@
                 if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
@@ -807,9 +735,6 @@
                 if (res_o == NULL) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 STAT_INC(BINARY_OP, hit);
@@ -818,9 +743,6 @@
                 if (index >= PyList_GET_SIZE(list)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 STAT_INC(BINARY_OP, hit);
@@ -868,9 +790,6 @@
                 if (!PySlice_Check(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -881,9 +800,6 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -946,9 +862,6 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -959,9 +872,6 @@
                 if (!PyUnicode_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -977,27 +887,18 @@
                 if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 if (PyUnicode_GET_LENGTH(str) <= index) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
                 if (Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 STAT_INC(BINARY_OP, hit);
@@ -1039,9 +940,6 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -1052,9 +950,6 @@
                 if (!PyTuple_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -1070,18 +965,12 @@
                 if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 if (index >= PyTuple_GET_SIZE(tuple)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 STAT_INC(BINARY_OP, hit);
@@ -1123,9 +1012,6 @@
                 if (!PyFloat_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -1136,9 +1022,6 @@
                 if (!PyFloat_CheckExact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -1187,9 +1070,6 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -1200,9 +1080,6 @@
                 if (!_PyLong_CheckExactAndCompact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
@@ -1220,9 +1097,6 @@
                 if (PyStackRef_IsNull(res)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
@@ -1664,6 +1538,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_Call(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(CALL);
@@ -1838,9 +1715,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -1853,26 +1727,17 @@
                 if (!PyStackRef_IsNull(self_or_null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (!PyType_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyTypeObject *tp = (PyTypeObject *)callable_o;
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 assert(tp->tp_new == PyBaseObject_Type.tp_new);
@@ -1884,9 +1749,6 @@
                 if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
@@ -1972,9 +1834,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -1985,17 +1844,11 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (Py_TYPE(PyStackRef_AsPyObjectBorrow(callable)) != &PyMethod_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -2022,18 +1875,12 @@
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -2046,9 +1893,6 @@
                 if (code->co_argcount != oparg + (!PyStackRef_IsNull(self_or_null))) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -2060,9 +1904,6 @@
                 if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -2071,9 +1912,6 @@
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -2139,9 +1977,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -2154,34 +1989,22 @@
                 if (Py_TYPE(callable_o) != &PyMethod_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyObject *func = ((PyMethodObject *)callable_o)->im_func;
                 if (!PyFunction_Check(func)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (((PyFunctionObject *)func)->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -2207,9 +2030,6 @@
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -2289,9 +2109,6 @@
                 if (!PyType_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyTypeObject *tp = (PyTypeObject *)callable_o;
@@ -2304,9 +2121,6 @@
                 if (tp->tp_vectorcall == NULL) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
@@ -2406,17 +2220,11 @@
                 if (!PyCFunction_CheckExact(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
@@ -2521,17 +2329,11 @@
                 if (!PyCFunction_CheckExact(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
@@ -2635,33 +2437,21 @@
                 if (total_args != 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (!PyCFunction_CheckExact(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (PyCFunction_GET_FLAGS(callable_o) != METH_O) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (_Py_ReachedRecursionLimit(tstate)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
@@ -2960,9 +2750,6 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -2974,9 +2761,6 @@
                 if (callable_o != interp->callable_cache.isinstance) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -3047,6 +2831,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_CallKw(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(CALL_KW);
@@ -3223,9 +3010,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
             }
@@ -3238,34 +3022,22 @@
                 if (Py_TYPE(callable_o) != &PyMethod_Type) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
                 PyObject *func = ((PyMethodObject *)callable_o)->im_func;
                 if (!PyFunction_Check(func)) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
                 if (((PyFunctionObject *)func)->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
             }
@@ -3371,17 +3143,11 @@
                 if (PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
                 if (Py_TYPE(callable_o) == &PyMethod_Type) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
             }
@@ -3500,9 +3266,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
             }
@@ -3514,18 +3277,12 @@
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
             }
@@ -3534,9 +3291,6 @@
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL_KW);
                 }
             }
@@ -3623,9 +3377,6 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -3637,9 +3388,6 @@
                 if (callable_o != interp->callable_cache.len) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -3703,9 +3451,6 @@
                 if (callable_o != interp->callable_cache.list_append) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -3716,9 +3461,6 @@
                 if (o == NULL) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -3728,9 +3470,6 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -3743,17 +3482,11 @@
                 if (!PyList_CheckExact(self_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (!LOCK_OBJECT(self_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
@@ -3813,27 +3546,18 @@
                 if (total_args == 0) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
                 if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyMethodDef *meth = method->d_method;
                 if (meth->ml_flags != METH_FASTCALL) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
@@ -3841,9 +3565,6 @@
                 if (!Py_IS_TYPE(self, method->d_common.d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
@@ -3946,27 +3667,18 @@
                 if (total_args == 0) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
                 if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyMethodDef *meth = method->d_method;
                 if (meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyTypeObject *d_type = method->d_common.d_type;
@@ -3975,9 +3687,6 @@
                 if (!Py_IS_TYPE(self, d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
@@ -4081,18 +3790,12 @@
                 if (total_args != 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
                 if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyMethodDef *meth = method->d_method;
@@ -4101,25 +3804,16 @@
                 if (!Py_IS_TYPE(self, method->d_common.d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (meth->ml_flags != METH_NOARGS) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (_Py_ReachedRecursionLimit(tstate)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
@@ -4190,34 +3884,22 @@
                 if (total_args != 2) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyMethodDef *meth = method->d_method;
                 if (meth->ml_flags != METH_O) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (_Py_ReachedRecursionLimit(tstate)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 _PyStackRef arg_stackref = arguments[1];
@@ -4226,9 +3908,6 @@
                                 method->d_common.d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 STAT_INC(CALL, hit);
@@ -4303,17 +3982,11 @@
                 if (PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 if (Py_TYPE(callable_o) == &PyMethod_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4420,9 +4093,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4434,18 +4104,12 @@
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4459,9 +4123,6 @@
                 if (code->co_argcount != oparg + (!PyStackRef_IsNull(self_or_null))) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4473,9 +4134,6 @@
                 if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4484,9 +4142,6 @@
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4551,9 +4206,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4565,18 +4217,12 @@
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4585,9 +4231,6 @@
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4665,9 +4308,6 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4678,9 +4318,6 @@
                 if (callable_o != (PyObject *)&PyUnicode_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4743,9 +4380,6 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4756,9 +4390,6 @@
                 if (callable_o != (PyObject *)&PyTuple_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4821,9 +4452,6 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -4834,9 +4462,6 @@
                 if (callable_o != (PyObject *)&PyType_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
@@ -5052,6 +4677,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(COMPARE_OP);
@@ -5121,9 +4749,6 @@
                 if (!PyFloat_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(COMPARE_OP);
                 }
             }
@@ -5134,9 +4759,6 @@
                 if (!PyFloat_CheckExact(left_o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(COMPARE_OP);
                 }
             }
@@ -5182,9 +4804,6 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(COMPARE_OP);
                 }
             }
@@ -5195,9 +4814,6 @@
                 if (!_PyLong_CheckExactAndCompact(left_o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(COMPARE_OP);
                 }
             }
@@ -5248,9 +4864,6 @@
                 if (!PyUnicode_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(COMPARE_OP);
                 }
             }
@@ -5261,9 +4874,6 @@
                 if (!PyUnicode_CheckExact(o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(COMPARE_OP);
                 }
             }
@@ -5315,6 +4925,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_ContainsOp(right, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(CONTAINS_OP);
@@ -5372,9 +4985,6 @@
                 if (!PyDict_CheckExact(o)) {
                     UPDATE_MISS_STATS(CONTAINS_OP);
                     assert(_PyOpcode_Deopt[opcode] == (CONTAINS_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CONTAINS_OP);
                 }
             }
@@ -5433,9 +5043,6 @@
                 if (!PyAnySet_CheckExact(o)) {
                     UPDATE_MISS_STATS(CONTAINS_OP);
                     assert(_PyOpcode_Deopt[opcode] == (CONTAINS_OP));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(CONTAINS_OP);
                 }
             }
@@ -6045,6 +5652,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_ForIter(iter, null_or_index, next_instr, oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(FOR_ITER);
@@ -6094,9 +5704,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
             }
@@ -6107,27 +5714,18 @@
                 if (Py_TYPE(gen) != &PyGen_Type) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
                 #ifdef Py_GIL_DISABLED
                 if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
                 #endif
                 if (gen->gi_frame_state >= FRAME_EXECUTING) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
                 STAT_INC(FOR_ITER, hit);
@@ -6180,9 +5778,6 @@
                 if (Py_TYPE(iter_o) != &PyList_Type) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
                 assert(PyStackRef_IsTaggedInt(null_or_index));
@@ -6190,9 +5785,6 @@
                 if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
                 #endif
@@ -6228,9 +5820,6 @@
                 if (result < 0) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
                 if (result == 0) {
@@ -6273,18 +5862,12 @@
                 if (Py_TYPE(r) != &PyRangeIter_Type) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
                 #ifdef Py_GIL_DISABLED
                 if (!_PyObject_IsUniquelyReferenced((PyObject *)r)) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
                 #endif
@@ -6349,9 +5932,6 @@
                 if (Py_TYPE(iter_o) != &PyTuple_Type) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
                 assert(PyStackRef_IsTaggedInt(null_or_index));
@@ -8038,6 +7618,9 @@
                     uint8_t desired = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
                     FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, desired);
                     next_instr = this_instr;
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 #endif
@@ -8266,6 +7849,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_LoadAttr(owner, next_instr, name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(LOAD_ATTR);
@@ -8344,18 +7930,12 @@
                 if (!PyType_Check(owner_o)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 assert(type_version != 0);
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8408,18 +7988,12 @@
                 if (!PyType_Check(owner_o)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 assert(type_version != 0);
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8431,9 +8005,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8484,9 +8055,6 @@
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(LOAD_ATTR);
             }
             PyTypeObject *cls = Py_TYPE(owner_o);
@@ -8494,9 +8062,6 @@
             if (FT_ATOMIC_LOAD_UINT_RELAXED(cls->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(LOAD_ATTR);
             }
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
@@ -8505,9 +8070,6 @@
             if (f->func_version != func_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(LOAD_ATTR);
             }
             PyCodeObject *code = (PyCodeObject *)f->func_code;
@@ -8515,9 +8077,6 @@
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(LOAD_ATTR);
             }
             STAT_INC(LOAD_ATTR, hit);
@@ -8556,9 +8115,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8570,9 +8126,6 @@
                 if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8585,9 +8138,6 @@
                 if (attr_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 #ifdef Py_GIL_DISABLED
@@ -8596,9 +8146,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(LOAD_ATTR);
                     }
                 }
@@ -8648,9 +8195,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8662,9 +8206,6 @@
                 if (dict != NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8710,9 +8251,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8759,9 +8297,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8773,9 +8308,6 @@
                 if (!FT_ATOMIC_LOAD_UINT8(ivs->valid)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8788,9 +8320,6 @@
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8835,9 +8364,6 @@
                 if (Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
@@ -8846,9 +8372,6 @@
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != dict_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 assert(keys->dk_kind == DICT_KEYS_UNICODE);
@@ -8858,9 +8381,6 @@
                 if (attr_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 #ifdef Py_GIL_DISABLED
@@ -8869,9 +8389,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(LOAD_ATTR);
                     }
                 }
@@ -8920,9 +8437,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8970,9 +8484,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8984,9 +8495,6 @@
                 if (!FT_ATOMIC_LOAD_UINT8(ivs->valid)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -8999,9 +8507,6 @@
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -9043,9 +8548,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -9058,9 +8560,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -9075,33 +8574,21 @@
                 if ((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 if (code->co_kwonlyargcount) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 if (code->co_argcount != 1) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 STAT_INC(LOAD_ATTR, hit);
@@ -9160,9 +8647,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -9175,9 +8659,6 @@
                 if (attr_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 #ifdef Py_GIL_DISABLED
@@ -9185,9 +8666,6 @@
                 if (!increfed) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 #else
@@ -9238,9 +8716,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
@@ -9253,9 +8728,6 @@
                 if (dict == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 PyDictKeysObject *dk = FT_ATOMIC_LOAD_PTR(dict->ma_keys);
@@ -9264,9 +8736,6 @@
                 if (!_Py_IsOwnedByCurrentThread((PyObject *)dict) && !_PyObject_GC_IS_SHARED(dict)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
                 #endif
@@ -9275,9 +8744,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(LOAD_ATTR);
                     }
                 }
@@ -9286,9 +8752,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(LOAD_ATTR);
                     }
                 }
@@ -9297,9 +8760,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(LOAD_ATTR);
                     }
                 }
@@ -9308,9 +8768,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(LOAD_ATTR);
                     }
                 }
@@ -9321,9 +8778,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(LOAD_ATTR);
                     }
                 }
@@ -9703,6 +9157,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(LOAD_GLOBAL);
@@ -9756,18 +9213,12 @@
                 if (!PyDict_CheckExact(dict)) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
                 PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
                 assert(DK_IS_UNICODE(keys));
@@ -9780,18 +9231,12 @@
                 if (!PyDict_CheckExact(dict)) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
                 PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
                 assert(DK_IS_UNICODE(keys));
@@ -9800,9 +9245,6 @@
                 if (res_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
                 #if Py_GIL_DISABLED
@@ -9810,9 +9252,6 @@
                 if (!increfed) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
                 #else
@@ -9858,18 +9297,12 @@
                 if (!PyDict_CheckExact(dict)) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
                 PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
                 assert(DK_IS_UNICODE(keys));
@@ -9879,9 +9312,6 @@
                 if (res_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
                 #if Py_GIL_DISABLED
@@ -9889,9 +9319,6 @@
                 if (!increfed) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
                 #else
@@ -10053,6 +9480,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_LoadSuperAttr(global_super_st, class_st, next_instr, load_method);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(LOAD_SUPER_ATTR);
@@ -10186,17 +9616,11 @@
             if (global_super != (PyObject *)&PySuper_Type) {
                 UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(LOAD_SUPER_ATTR);
             }
             if (!PyType_Check(class)) {
                 UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(LOAD_SUPER_ATTR);
             }
             STAT_INC(LOAD_SUPER_ATTR, hit);
@@ -10255,17 +9679,11 @@
             if (global_super != (PyObject *)&PySuper_Type) {
                 UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(LOAD_SUPER_ATTR);
             }
             if (!PyType_Check(class)) {
                 UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(LOAD_SUPER_ATTR);
             }
             STAT_INC(LOAD_SUPER_ATTR, hit);
@@ -10974,9 +10392,6 @@
             if (_Py_emscripten_signal_clock == 0) {
                 UPDATE_MISS_STATS(RESUME);
                 assert(_PyOpcode_Deopt[opcode] == (RESUME));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(RESUME);
             }
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
@@ -10987,9 +10402,6 @@
             if (eval_breaker != version) {
                 UPDATE_MISS_STATS(RESUME);
                 assert(_PyOpcode_Deopt[opcode] == (RESUME));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(RESUME);
             }
             #ifdef Py_GIL_DISABLED
@@ -10997,9 +10409,6 @@
                 ((_PyThreadStateImpl *)tstate)->tlbc_index) {
                 UPDATE_MISS_STATS(RESUME);
                 assert(_PyOpcode_Deopt[opcode] == (RESUME));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(RESUME);
             }
             #endif
@@ -11101,6 +10510,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_Send(receiver, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(SEND);
@@ -11203,9 +10615,6 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(SEND);
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(SEND);
                 }
             }
@@ -11217,17 +10626,11 @@
                 if (Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type) {
                     UPDATE_MISS_STATS(SEND);
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(SEND);
                 }
                 if (gen->gi_frame_state >= FRAME_EXECUTING) {
                     UPDATE_MISS_STATS(SEND);
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(SEND);
                 }
                 STAT_INC(SEND, hit);
@@ -11410,6 +10813,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_StoreAttr(owner, next_instr, name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(STORE_ATTR);
@@ -11465,9 +10871,6 @@
                 if (!LOCK_OBJECT(owner_o)) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_ATTR);
                 }
                 PyTypeObject *tp = Py_TYPE(owner_o);
@@ -11476,9 +10879,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(STORE_ATTR);
                     }
                 }
@@ -11494,9 +10894,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(STORE_ATTR);
                     }
                 }
@@ -11550,9 +10947,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_ATTR);
                 }
             }
@@ -11564,9 +10958,6 @@
                 if (!LOCK_OBJECT(owner_o)) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_ATTR);
                 }
                 char *addr = (char *)owner_o + index;
@@ -11607,9 +10998,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_ATTR);
                 }
             }
@@ -11623,17 +11011,11 @@
                 if (dict == NULL) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_ATTR);
                 }
                 if (!LOCK_OBJECT(dict)) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_ATTR);
                 }
                 assert(PyDict_CheckExact((PyObject *)dict));
@@ -11644,9 +11026,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(STORE_ATTR);
                     }
                 }
@@ -11656,9 +11035,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(STORE_ATTR);
                     }
                 }
@@ -11668,9 +11044,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(STORE_ATTR);
                     }
                 }
@@ -11940,6 +11313,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_StoreSubscr(container, sub, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(STORE_SUBSCR);
@@ -11995,9 +11371,6 @@
                 if (!PyDict_CheckExact(o)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
                 }
             }
@@ -12049,9 +11422,6 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
                 }
             }
@@ -12062,9 +11432,6 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
                 }
             }
@@ -12081,18 +11448,12 @@
                 if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
                 }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 if (!LOCK_OBJECT(list)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(STORE_SUBSCR);
                 }
                 if (index >= PyList_GET_SIZE(list)) {
@@ -12100,9 +11461,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_SUBSCR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(STORE_SUBSCR);
                     }
                 }
@@ -12167,6 +11525,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_ToBool(value, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(TO_BOOL);
@@ -12219,9 +11580,6 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(TO_BOOL);
                     assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(TO_BOOL);
                 }
             }
@@ -12259,9 +11617,6 @@
             if (!PyStackRef_BoolCheck(value)) {
                 UPDATE_MISS_STATS(TO_BOOL);
                 assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(TO_BOOL);
             }
             STAT_INC(TO_BOOL, hit);
@@ -12288,9 +11643,6 @@
             if (!PyLong_CheckExact(value_o)) {
                 UPDATE_MISS_STATS(TO_BOOL);
                 assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(TO_BOOL);
             }
             STAT_INC(TO_BOOL, hit);
@@ -12332,9 +11684,6 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(TO_BOOL);
                     assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(TO_BOOL);
                 }
             }
@@ -12376,9 +11725,6 @@
             if (!PyStackRef_IsNone(value)) {
                 UPDATE_MISS_STATS(TO_BOOL);
                 assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                #if _Py_TIER2
-                tstate->interp->jit_state.specialize_counter++;
-                #endif
                 JUMP_TO_PREDICTED(TO_BOOL);
             }
             STAT_INC(TO_BOOL, hit);
@@ -12407,9 +11753,6 @@
                 if (!PyUnicode_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(TO_BOOL);
                     assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(TO_BOOL);
                 }
             }
@@ -12565,6 +11908,9 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    #if _Py_TIER2
+                    tstate->interp->jit_state.specialize_counter++;
+                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(UNPACK_SEQUENCE);
@@ -12613,9 +11959,6 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
                 }
             }
@@ -12629,9 +11972,6 @@
                 if (!LOCK_OBJECT(seq_o)) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
                 }
                 if (PyList_GET_SIZE(seq_o) != oparg) {
@@ -12639,9 +11979,6 @@
                     if (true) {
                         UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                         assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                        #if _Py_TIER2
-                        tstate->interp->jit_state.specialize_counter++;
-                        #endif
                         JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
                     }
                 }
@@ -12681,9 +12018,6 @@
                 if (!PyTuple_CheckExact(o)) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
                 }
             }
@@ -12697,9 +12031,6 @@
                 if (PyTuple_GET_SIZE(seq_o) != oparg) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
                 }
                 STAT_INC(UNPACK_SEQUENCE, hit);
@@ -12738,9 +12069,6 @@
                 if (!PyTuple_CheckExact(o)) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
                 }
             }
@@ -12754,9 +12082,6 @@
                 if (PyTuple_GET_SIZE(seq_o) != 2) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
-                    #endif
                     JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
                 }
                 STAT_INC(UNPACK_SEQUENCE, hit);

@@ -594,7 +594,7 @@ _PyJit_translate_single_bytecode_to_trace(
     int oparg = tstate->interp->jit_state.prev_instr_oparg;
     int opcode = this_instr->op.code;
     // Failed specialization twice in a row. Deopt!
-    if (tstate->interp->jit_state.specialize_counter >= 3) {
+    if (tstate->interp->jit_state.specialize_counter >= 1) {
         opcode = _PyOpcode_Deopt[opcode];
     }
     int rewind_oparg = oparg;
