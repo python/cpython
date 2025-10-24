@@ -3577,10 +3577,11 @@ def main():
             parser.error("argument -m: not allowed with argument --pid")
         try:
             attach(opts.pid, opts.commands)
-        except RuntimeError as exc:
-            while exc.__context__ is not None:
-                exc = exc.__context__
-            print(f"Error attaching to process: {exc}")
+        except RuntimeError:
+            print(
+                f"Cannot attach to pid {opts.pid}, please make sure that the process exists "
+                "and is using the same Python version."
+            )
             sys.exit(1)
         except PermissionError:
             exit_with_permission_help_text()
