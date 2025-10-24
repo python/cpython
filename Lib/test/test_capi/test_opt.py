@@ -2642,7 +2642,7 @@ class TestUopsOptimization(unittest.TestCase):
         def f():
             for i in range(TIER2_THRESHOLD + 3):
                 try:
-                    g(i)
+                    undefined_variable(i)
                 except Exception:
                     pass
 

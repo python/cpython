@@ -5384,6 +5384,7 @@ dummy_func(
 
         tier2 op(_ERROR_POP_N, (target/2 --)) {
             assert(oparg == 0);
+            frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
             SYNC_SP();
             GOTO_TIER_ONE(NULL);
         }
