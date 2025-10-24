@@ -2162,7 +2162,8 @@ then
       dnl At least LLVM 19.x doesn't support computed gotos in PIC compiled code.
       dnl Exclude functions containing computed gotos.
       dnl TODO this may be fixed in LLVM 20.x via https://github.com/llvm/llvm-project/pull/120267.
-      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1]
+      dnl GCC's LTO creates .lto_priv.0 clones of these functions.
+      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1]
     ")]
   )
 fi
@@ -5257,10 +5258,11 @@ AC_CHECK_FUNCS([ \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
-# Check statx availability in Linux
-if test "$MACHDEP" = "linux"; then
-  AC_CHECK_FUNCS([statx])
-fi
+# os.statx uses Linux's statx function.  AIX also has a function named statx,
+# but it's unrelated.  Check only on Linux (including Android).
+AS_CASE([$ac_sys_system],
+  [Linux*], [AC_CHECK_FUNCS([statx])]
+)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
@@ -5825,6 +5827,17 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
 AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[@%:@include <signal.h>]])
 
 if test "$ac_cv_func_statx" = yes; then
+  # Some systems have the definitions of the mask bits without having the
+  # corresponding members in struct statx.  Check for members added after Linux
+  # 4.11 (when statx itself was added).
+  AC_CHECK_MEMBERS([struct statx.stx_mnt_id])
+  AC_CHECK_MEMBERS([struct statx.stx_dio_mem_align])
+  # stx_dio_offset_align was added together with stx_dio_mem_align
+  AC_CHECK_MEMBERS([struct statx.stx_subvol])
+  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_min])
+  # stx_atomic_write_unit_max and stx_atomic_write_segments_max were added
+  # together with stx_atomic_write_unit_min
+  AC_CHECK_MEMBERS([struct statx.stx_dio_read_offset_align])
   # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
   # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
   # doesn't imply having the member.
