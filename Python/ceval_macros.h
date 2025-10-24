@@ -355,7 +355,11 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define RECORD_BRANCH_TAKEN(bitset, flag)
 #endif
 
-#define RECORD_DYNAMIC_JUMP_TAKEN() tstate->interp->jit_state.dynamic_jump_taken = true;
+#if _Py_TIER2
+#   define RECORD_DYNAMIC_JUMP_TAKEN() tstate->interp->jit_state.dynamic_jump_taken = true;
+#else
+#   define RECORD_DYNAMIC_JUMP_TAKEN()
+#endif
 
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"

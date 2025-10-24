@@ -5229,7 +5229,7 @@ dummy_func(
                 ERROR_IF(err < 0);
                 DISPATCH_GOTO_NON_TRACING();
             }
-            // Super instructions. Instruction deopted, There's a mismatch in what the stack expects
+            // Super instructions. Instruction deopted. There's a mismatch in what the stack expects
             // in the optimizer. So we have to reflect in the trace correctly.
             if ((tstate->interp->jit_state.prev_instr->op.code == CALL_LIST_APPEND &&
                 opcode == POP_TOP) ||
@@ -5470,10 +5470,6 @@ dummy_func(
             assert(exit != NULL);
             _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             _Py_BackoffCounter temperature = exit->temperature;
-            if (!backoff_counter_triggers(temperature)) {
-                exit->temperature = advance_backoff_counter(temperature);
-                GOTO_TIER_ONE(target);
-            }
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -5481,6 +5477,10 @@ dummy_func(
                 Py_INCREF(executor);
             }
             else {
+                if (!backoff_counter_triggers(temperature)) {
+                    exit->temperature = advance_backoff_counter(temperature);
+                    GOTO_TIER_ONE(target);
+                }
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
