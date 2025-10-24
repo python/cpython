@@ -5767,7 +5767,7 @@ PyType_GetModuleState(PyTypeObject *type)
 /* Return borrowed ref to the module of the first superclass where the module
  * has the given token.
  */
-PyObject *
+static PyObject *
 borrow_module_by_token(PyTypeObject *type, const void *token)
 {
     assert(PyType_Check(type));

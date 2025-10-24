@@ -362,7 +362,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
     return (PyObject*)m;
 }
 
-PyObject *
+static PyObject *
 module_from_def_and_spec(
     PyModuleDef* def_like, /* not necessarily a valid Python object */
     PyObject *spec,
