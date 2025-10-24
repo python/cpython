@@ -58,6 +58,9 @@
 
 #include "clinic/_decimal.c.h"
 
+#define MPD_SPEC_VERSION "1.70"  // Highest version of the spec this complies with
+                                 // See https://speleotrove.com/decimal/decarith.html
+
 /*[clinic input]
 module _decimal
 class _decimal.Decimal "PyObject *" "&dec_spec"
@@ -7566,12 +7569,35 @@ static PyType_Spec context_spec = {
 };
 
 
+static PyObject *
+decimal_getattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString(MPD_SPEC_VERSION);
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module 'decimal' has no attribute %R", name);
+    return NULL;
+}
+
+
 static PyMethodDef _decimal_methods [] =
 {
   _DECIMAL_GETCONTEXT_METHODDEF
   _DECIMAL_SETCONTEXT_METHODDEF
   _DECIMAL_LOCALCONTEXT_METHODDEF
   _DECIMAL_IEEECONTEXT_METHODDEF
+  {"__getattr__", decimal_getattr, METH_VARARGS, "Module __getattr__"},
   { NULL, NULL, 1, NULL }
 };
 
@@ -7891,7 +7917,7 @@ _decimal_exec(PyObject *m)
     }
 
     /* Add specification version number */
-    CHECK_INT(PyModule_AddStringConstant(m, "__version__", "1.70"));
+    CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
     CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
 
     return 0;

@@ -851,6 +851,7 @@ New deprecations
     - :mod:`argparse`
     - :mod:`csv`
     - :mod:`!ctypes.macholib`
+    - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
     - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`

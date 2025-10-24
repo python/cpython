@@ -1569,7 +1569,16 @@ In addition to the three supplied contexts, new contexts can be created with the
 Constants
 ---------
 
-The constants in this section are only relevant for the C module. They
+.. data:: SPEC_VERSION
+
+   The highest version of the General Decimal Arithmetic
+   Specification that this implementation complies with.
+   See https://speleotrove.com/decimal/decarith.html for the specification.
+
+   .. versionadded:: next
+
+
+The following constants are only relevant for the C module. They
 are also included in the pure Python version for compatibility.
 
 +---------------------------------+---------------------+-------------------------------+
