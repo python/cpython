@@ -1,0 +1,4 @@
+Fixed a refcount leak when iterating over the result of the
+built-in ``map`` function. It was possible if input ``iterables``
+have different lengths and ``strict`` is ``True``.
+Patch by Mikhail Efimov.
