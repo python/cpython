@@ -1,2 +1,2 @@
-Fixed crash in ``dict`` if ``clear`` is called at the lookup stage. Patch by
+Fixed crash in :class:`dict` if :meth:`clear` is called at the lookup stage. Patch by
 Mikhail Efimov.
