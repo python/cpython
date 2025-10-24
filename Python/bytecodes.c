@@ -5229,10 +5229,21 @@ dummy_func(
                 ERROR_IF(err < 0);
                 DISPATCH_GOTO_NON_TRACING();
             }
-            tstate->interp->jit_state.do_not_specialize = false;
+            // Super instructions. Instruction deopted, There's a mismatch in what the stack expects
+            // in the optimizer. So we have to reflect in the trace correctly.
+            if ((tstate->interp->jit_state.prev_instr->op.code == CALL_LIST_APPEND &&
+                opcode == POP_TOP) ||
+                (tstate->interp->jit_state.prev_instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
+                opcode == STORE_FAST)) {
+                tstate->interp->jit_state.prev_instr_is_super = true;
+            }
+            else {
+                tstate->interp->jit_state.prev_instr = next_instr;
+            }
+            tstate->interp->jit_state.specialize_counter = 0;
             PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
             Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
-            tstate->interp->jit_state.prev_instr = next_instr;
+
             tstate->interp->jit_state.prev_instr_frame = frame;
             tstate->interp->jit_state.prev_instr_oparg = oparg;
             tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();

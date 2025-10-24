@@ -593,14 +593,20 @@ _PyJit_translate_single_bytecode_to_trace(
     // We must point to the first EXTENDED_ARG when deopting.
     int oparg = tstate->interp->jit_state.prev_instr_oparg;
     int opcode = this_instr->op.code;
+    // Failed specialization twice in a row. Deopt!
+    if (tstate->interp->jit_state.specialize_counter >= 3) {
+        opcode = _PyOpcode_Deopt[opcode];
+    }
     int rewind_oparg = oparg;
     while (rewind_oparg > 255) {
         rewind_oparg >>= 8;
         target--;
     }
 
+    int old_stack_level = tstate->interp->jit_state.prev_instr_stacklevel;
+
     bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode];
-    DPRINTF(2, "%p %d: %s(%d) %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, needs_guard_ip);
+    DPRINTF(2, "%p %d: %s(%d) %d %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, needs_guard_ip, old_stack_level);
 
 #ifdef Py_DEBUG
     if (oparg > 255) {
@@ -608,11 +614,16 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 #endif
 
+    // Skip over super instructions.
+    if (tstate->interp->jit_state.prev_instr_is_super) {
+        tstate->interp->jit_state.prev_instr_is_super = false;
+        return 1;
+    }
+
     if (!tstate->interp->jit_state.dependencies_still_valid) {
         goto done;
     }
 
-    int old_stack_level = tstate->interp->jit_state.prev_instr_oparg;
     // Strange control-flow, unsupported opcode, etc.
     if (tstate->interp->jit_state.dynamic_jump_taken) {
         goto unsupported;
@@ -939,13 +950,14 @@ _PyJit_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     tstate->interp->jit_state.initial_chain_depth = chain_depth % MAX_CHAIN_DEPTH;
     tstate->interp->jit_state.prev_instr_frame = frame;
     tstate->interp->jit_state.dependencies_still_valid = true;
-    tstate->interp->jit_state.do_not_specialize = false;
+    tstate->interp->jit_state.specialize_counter = 0;
     tstate->interp->jit_state.prev_instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
     tstate->interp->jit_state.prev_instr = curr_instr;
     tstate->interp->jit_state.prev_instr_frame = frame;
     tstate->interp->jit_state.prev_instr_oparg = oparg;
     tstate->interp->jit_state.prev_instr_stacklevel = curr_stackdepth;
     tstate->interp->jit_state.dynamic_jump_taken = false;
+    tstate->interp->jit_state.prev_instr_is_super = false;
     _Py_BloomFilter_Init(&tstate->interp->jit_state.dependencies);
 }
 
@@ -1740,7 +1752,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
 #ifdef Py_STATS
         fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s -- %" PRIu64 "</td></tr>\n", i, opname, inst->execution_count);
 #else
-        fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s</td></tr>\n", i, opname);
+        fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s op0=%" PRIu64 "</td></tr>\n", i, opname, inst->operand0);
 #endif
         if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
             break;
