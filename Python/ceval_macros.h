@@ -78,10 +78,14 @@
 #   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg
 #endif
 
-#if _Py_TAIL_CALL_INTERP && (defined(__clang__) || defined(__GNUC__))
-#    if !_Py__has_attribute(preserve_none) || !_Py__has_attribute(musttail)
-#        error "This compiler does not have support for efficient tail calling."
+#if _Py_TAIL_CALL_INTERP
+#    if defined(__clang__) || defined(__GNUC__)
+#        if !_Py__has_attribute(preserve_none) || !_Py__has_attribute(musttail)
+#            error "This compiler does not have support for efficient tail calling."
+#        endif
 #    endif
+#elif defined(_MSC_VER) && (_MSC_VER < 1950)
+#    error "You need atleast VS 2026 / PlatformToolset v145 for tail calling."
 #endif
 
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
