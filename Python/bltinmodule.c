@@ -1501,14 +1501,14 @@ map_next(PyObject *self)
     }
 
     Py_ssize_t nargs = 0;
-    for (i=0; i < niters; i++) {
+    for (i = 0; i < niters; i++) {
         PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
         PyObject *val = Py_TYPE(it)->tp_iternext(it);
         if (val == NULL) {
             if (lz->strict) {
                 goto check;
             }
-            goto exit;
+            goto exit_no_result;
         }
         stack[i] = val;
         nargs++;
@@ -1521,8 +1521,7 @@ check:
     if (PyErr_Occurred()) {
         if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
             // next() on argument i raised an exception (not StopIteration)
-            assert(result == NULL);
-            goto exit;
+            goto exit_no_result;
         }
         PyErr_Clear();
     }
@@ -1530,10 +1529,10 @@ check:
         // ValueError: map() argument 2 is shorter than argument 1
         // ValueError: map() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
-        result = PyErr_Format(PyExc_ValueError,
-                              "map() argument %d is shorter than argument%s%d",
-                              i + 1, plural, i);
-        goto exit;
+        PyErr_Format(PyExc_ValueError,
+                     "map() argument %d is shorter than argument%s%d",
+                     i + 1, plural, i);
+        goto exit_no_result;
     }
     for (i = 1; i < niters; i++) {
         PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
@@ -1541,26 +1540,27 @@ check:
         if (val) {
             Py_DECREF(val);
             const char* plural = i == 1 ? " " : "s 1-";
-            result = PyErr_Format(PyExc_ValueError,
-                                  "map() argument %d is longer than argument%s%d",
-                                  i + 1, plural, i);
-            goto exit;
+            PyErr_Format(PyExc_ValueError,
+                         "map() argument %d is longer than argument%s%d",
+                         i + 1, plural, i);
+            goto exit_no_result;
         }
         if (PyErr_Occurred()) {
             if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
                 // next() on argument i raised an exception (not StopIteration)
-                assert(result == NULL);
-                goto exit;
+                goto exit_no_result;
             }
             PyErr_Clear();
         }
         // Argument i is exhausted. So far so good...
     }
     // All arguments are exhausted. Success!
+
+exit_no_result:
     assert(result == NULL);
 
 exit:
-    for (i=0; i < nargs; i++) {
+    for (i = 0; i < nargs; i++) {
         Py_DECREF(stack[i]);
     }
     if (stack != small_stack) {

@@ -1385,6 +1385,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(ValueError, tuple,
                           map(pack, (1, 2), (1, 2), 'abc', strict=True))
 
+        # gh-140517: Testing refleaks with mortal objects.
         t1 = (None, object())
         t2 = (object(), object())
         t3 = (object(),)
