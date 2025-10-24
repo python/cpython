@@ -79,7 +79,7 @@
 #endif
 
 #if _Py_TAIL_CALL_INTERP && (defined(__clang__) || defined(__GNUC__))
-#    if !_Py__has_attribute(preserve_none) || !!_Py__has_attribute(musttail)
+#    if !_Py__has_attribute(preserve_none) || !_Py__has_attribute(musttail)
 #        error "This compiler does not have support for efficient tail calling."
 #    endif
 #endif
