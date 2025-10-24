@@ -4,3 +4,5 @@
 # https://github.com/python/cpython/issues/133956
 from typing import ClassVar
 from dataclasses import InitVar
+
+__all__ = ["ClassVar", "InitVar"]
