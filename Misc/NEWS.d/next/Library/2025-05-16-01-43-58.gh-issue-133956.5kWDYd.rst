@@ -1,1 +1,4 @@
-Fix bug where ``ClassVar`` string annotation in :func:`@dataclass <dataclasses.dataclass>` caused incorrect __init__ generation
+Fix bug where :func:`@dataclass <dataclasses.dataclass>`
+wouldn't detect ``ClassVar`` fields
+if ``ClassVar`` was re-exported from a module
+other than :mod:`typing`.

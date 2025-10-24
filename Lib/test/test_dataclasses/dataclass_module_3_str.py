@@ -1,7 +1,7 @@
 from __future__ import annotations
 USING_STRINGS = True
 
-# dataclass_module_3.py and dataclass_module_2_str.py are identical
+# dataclass_module_3.py and dataclass_module_3_str.py are identical
 # except only the latter uses string annotations.
 
 from dataclasses import dataclass
