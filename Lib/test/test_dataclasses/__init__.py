@@ -4643,6 +4643,14 @@ class TestMakeDataclass(unittest.TestCase):
         self.assertEqual(c.x, 10)
         self.assertEqual(c.__custom__, True)
 
+    def test_empty_annotation_string(self):
+        @dataclass
+        class DataclassWithEmptyTypeAnnotation:
+            x: ""
+
+        c = DataclassWithEmptyTypeAnnotation(10)
+        self.assertEqual(c.x, 10)
+
 
 class TestReplace(unittest.TestCase):
     def test(self):
