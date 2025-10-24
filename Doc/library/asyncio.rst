@@ -79,6 +79,10 @@ You can experiment with an ``asyncio`` concurrent context in the :term:`REPL`:
    >>> await asyncio.sleep(10, result='hello')
    'hello'
 
+It is highly recommended to use the asyncio REPL in
+:envvar:`the Python-based REPL mode <PYTHON_BASIC_REPL>`
+for optimal experience and new features.
+
 .. audit-event:: cpython.run_stdin "" ""
 
 .. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
