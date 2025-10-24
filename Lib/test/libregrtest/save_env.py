@@ -9,7 +9,7 @@ from test.support import os_helper
 
 from .utils import print_warning
 
-# Import termios to save and restore the tty.  This is only available on
+# Import termios to save and restore terminal echo.  This is only available on
 # Unix, and it's fine if the module can't be found.
 try:
     import termios
