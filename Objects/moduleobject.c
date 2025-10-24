@@ -531,6 +531,14 @@ error:
     return NULL;
 }
 
+PyObject *
+PyModule_FromSlotsAndSpec(PyModuleDef_Slot *slots, PyObject *spec)
+{
+    PyObject *result = NULL;
+    return result;
+}
+
+
 #ifdef Py_GIL_DISABLED
 int
 PyUnstable_Module_SetGIL(PyObject *module, void *gil)
