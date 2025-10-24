@@ -20,11 +20,11 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
    Create a parser instance able to parse invalid markup.
 
    If *convert_charrefs* is ``True`` (the default), all character
-   references (except the ones in ``script``/``style`` elements) are
+   references (except the ones in RAWTEXT tags) are
    automatically converted to the corresponding Unicode characters.
 
-   If *scripting* is true, the ``noscript`` element is parsed in the
-   RAWTEXT mode.
+   If *scripting* is false (the default), the content of the ``noscript`` element
+   is parsed normally; if it's true, it's parsed in RAWTEXT mode.
 
    An :class:`.HTMLParser` instance is fed HTML data and calls handler methods
    when start tags, end tags, text, comments, and other markup elements are

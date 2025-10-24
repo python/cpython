@@ -129,6 +129,7 @@ class HTMLParser(_markupbase.ParserBase):
 
     # See the HTML5 specs section "13.4 Parsing HTML fragments".
     # https://html.spec.whatwg.org/multipage/parsing.html#parsing-html-fragments
+    # CDATA_CONTENT_ELEMENTS are parsed in RAWTEXT mode
     CDATA_CONTENT_ELEMENTS = ("script", "style", "xmp", "iframe", "noembed", "noframes")
     RCDATA_CONTENT_ELEMENTS = ("textarea", "title")
 
@@ -138,8 +139,9 @@ class HTMLParser(_markupbase.ParserBase):
         If convert_charrefs is true (the default), all character references
         are automatically converted to the corresponding Unicode characters.
 
-        If scripting is true, the noscript element is parsed in the
-        RAWTEXT mode.
+        If *scripting* is false (the default), the content of the
+        ``noscript`` element is parsed normally; if it's true,
+        it's parsed in RAWTEXT mode.
         """
         super().__init__()
         self.convert_charrefs = convert_charrefs
