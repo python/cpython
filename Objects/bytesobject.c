@@ -3171,7 +3171,7 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         return;
     }
 
-    if (Py_REFCNT(*pv) == 1 && PyBytes_CheckExact(*pv)) {
+    if (_PyObject_IsUniquelyReferenced(*pv) && PyBytes_CheckExact(*pv)) {
         /* Only one reference, so we can resize in place */
         Py_ssize_t oldsize;
         Py_buffer wb;
@@ -3256,7 +3256,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         return 0;
     }
-    if (Py_REFCNT(v) != 1) {
+    if (!_PyObject_IsUniquelyReferenced(v)) {
         if (oldsize < newsize) {
             *pv = _PyBytes_FromSize(newsize, 0);
             if (*pv) {
@@ -3480,15 +3480,7 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
 static inline char*
 byteswriter_data(PyBytesWriter *writer)
 {
-    if (writer->obj == NULL) {
-        return writer->small_buffer;
-    }
-    else if (writer->use_bytearray) {
-        return PyByteArray_AS_STRING(writer->obj);
-    }
-    else {
-        return PyBytes_AS_STRING(writer->obj);
-    }
+    return _PyBytesWriter_GetData(writer);
 }
 
 
@@ -3710,7 +3702,7 @@ PyBytesWriter_GetData(PyBytesWriter *writer)
 Py_ssize_t
 PyBytesWriter_GetSize(PyBytesWriter *writer)
 {
-    return writer->size;
+    return _PyBytesWriter_GetSize(writer);
 }
 
 

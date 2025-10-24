@@ -8,9 +8,6 @@ and networks.
 
 """
 
-__version__ = '1.0'
-
-
 import functools
 
 IPV4LENGTH = 32
@@ -2419,3 +2416,12 @@ class _IPv6Constants:
 
 IPv6Address._constants = _IPv6Constants
 IPv6Network._constants = _IPv6Constants
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -74,7 +74,8 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             return
         except BaseException:
             if keyboard_interrupted:
-                self.write("\nKeyboardInterrupt\n")
+                if not CAN_USE_PYREPL:
+                    self.write("\nKeyboardInterrupt\n")
             else:
                 self.showtraceback()
             return self.STATEMENT_FAILED
@@ -106,13 +107,17 @@ class REPLThread(threading.Thread):
             if CAN_USE_PYREPL:
                 theme = get_theme().syntax
                 ps1 = f"{theme.prompt}{ps1}{theme.reset}"
-            console.write(f"{ps1}import asyncio\n")
+                import_line = f'{theme.keyword}import{theme.reset} asyncio'
+            else:
+                import_line = "import asyncio"
+            console.write(f"{ps1}{import_line}\n")
 
             if CAN_USE_PYREPL:
                 from _pyrepl.simple_interact import (
                     run_multiline_interactive_console,
                 )
                 try:
+                    sys.ps1 = ps1
                     run_multiline_interactive_console(console)
                 except SystemExit:
                     # expected via the `exit` and `quit` commands

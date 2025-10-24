@@ -344,7 +344,7 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
     PyObject *return_value;
     int flush;
     z_stream zst;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     zlibstate *state = get_zlib_state(module);
 
@@ -445,7 +445,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
     Py_ssize_t ibuflen;
     int err, flush;
     z_stream zst;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     zlibstate *state = get_zlib_state(module);
@@ -774,7 +774,7 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 {
     PyObject *return_value;
     int err;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     zlibstate *state = PyType_GetModuleState(cls);
 
     ENTER_ZLIB(self);
@@ -898,7 +898,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     int err = Z_OK;
     Py_ssize_t ibuflen;
     PyObject *return_value;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     PyObject *module = PyType_GetModule(cls);
     if (module == NULL)
@@ -1005,7 +1005,7 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 {
     int err;
     PyObject *return_value;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     zlibstate *state = PyType_GetModuleState(cls);
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
@@ -1267,7 +1267,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     Py_buffer data;
     PyObject *return_value;
     Py_ssize_t ibuflen;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     PyObject *module = PyType_GetModule(cls);
@@ -2015,6 +2015,27 @@ zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
     return crc32_combine(crc1, crc2, len);
 }
 
+static PyObject *
+zlib_getattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString("1.0");
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module 'zlib' has no attribute %R", name);
+    return NULL;
+}
+
 static PyMethodDef zlib_methods[] =
 {
     ZLIB_ADLER32_METHODDEF
@@ -2025,6 +2046,7 @@ static PyMethodDef zlib_methods[] =
     ZLIB_CRC32_COMBINE_METHODDEF
     ZLIB_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESSOBJ_METHODDEF
+    {"__getattr__", zlib_getattr, METH_VARARGS, "Module __getattr__"},
     {NULL, NULL}
 };
 
@@ -2221,9 +2243,6 @@ zlib_exec(PyObject *mod)
         return -1;
     }
 #endif
-    if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
-        return -1;
-    }
     return 0;
 }
 
