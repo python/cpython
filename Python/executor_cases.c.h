@@ -1930,12 +1930,7 @@
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if TIER_ONE
-            LOAD_IP(frame->return_offset);
-            #endif
-            #if TIER_TWO
-            TIER2_STORE_IP(frame->return_offset);
-            #endif
+            frame->instr_ptr += (frame->return_offset);
             res = temp;
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = res;
@@ -2101,12 +2096,7 @@
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #if TIER_ONE
-            LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            #endif
-            #if TIER_TWO
-            TIER2_STORE_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            #endif
+            frame->instr_ptr += (1 + INLINE_CACHE_ENTRIES_SEND);
             value = PyStackRef_MakeHeapSafe(temp);
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = value;
@@ -4398,7 +4388,6 @@
             oparg = CURRENT_OPARG();
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
-            TIER2_STORE_IP(1 + INLINE_CACHE_ENTRIES_FOR_ITER);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -4406,7 +4395,7 @@
                 if (PyStackRef_IsError(item)) {
                     JUMP_TO_ERROR();
                 }
-                TIER2_STORE_IP(oparg + 1);
+                frame->instr_ptr += (oparg + 2 + INLINE_CACHE_ENTRIES_FOR_ITER);
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -5358,7 +5347,7 @@
             frame = tstate->current_frame = temp;
             tstate->py_recursion_remaining--;
             LOAD_SP();
-            LOAD_IP(0);
+            frame->instr_ptr += (0);
             LLTRACE_RESUME_FRAME();
             break;
         }
@@ -6763,12 +6752,7 @@
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
-            #if TIER_ONE
-            LOAD_IP(frame->return_offset);
-            #endif
-            #if TIER_TWO
-            TIER2_STORE_IP(frame->return_offset);
-            #endif
+            frame->instr_ptr += (frame->return_offset);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();

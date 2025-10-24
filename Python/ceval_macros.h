@@ -210,12 +210,14 @@ do { \
         JUMP_TO_LABEL(start_frame);                      \
     } while (0)
 #else
+
 #define DISPATCH_SAME_OPARG() \
     { \
         opcode = next_instr->op.code; \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
     }
+
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
@@ -257,7 +259,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
  * and skipped instructions.
  */
 #define JUMPBY(x)       (next_instr += (x))
-#define TIER2_STORE_IP(x) (frame->instr_ptr += (x))
 #define SKIP_OVER(x)    (next_instr += (x))
 
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
