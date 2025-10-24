@@ -614,6 +614,8 @@ NON_ESCAPING_FUNCTIONS = (
     "PyUnicode_Concat",
     "PyUnicode_GET_LENGTH",
     "PyUnicode_READ_CHAR",
+    "PyUnicode_IS_COMPACT_ASCII",
+    "PyUnicode_1BYTE_DATA",
     "Py_ARRAY_LENGTH",
     "Py_FatalError",
     "Py_INCREF",
