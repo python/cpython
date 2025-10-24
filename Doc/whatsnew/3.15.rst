@@ -317,6 +317,13 @@ New modules
 Improved modules
 ================
 
+argparse
+--------
+
+* Changed the *suggest_on_error* parameter of :class:`argparse.ArgumentParser` to
+  default to ``True``. This enables suggestions for mistyped arguments by default.
+  (Contributed by Jakob Schluse in :gh:`140450`.)
+
 calendar
 --------
 
@@ -433,6 +440,14 @@ mmap
   (Contributed by Serhiy Storchaka in :gh:`78502`.)
 
 
+os
+--
+
+* Add :func:`os.statx` on Linux kernel versions 4.11 and later with
+  glibc versions 2.28 and later.
+  (Contributed by Jeffrey Bosboom and Victor Stinner in :gh:`83714`.)
+
+
 os.path
 -------
 
@@ -482,6 +497,9 @@ sqlite3
      This is enabled by default, see :ref:`using-on-controlling-color` for
      details.
      (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
+
+   * Table, index, trigger, view, column, function, and schema completion on <tab>.
+     (Contributed by Long Tan in :gh:`136101`.)
 
 
 ssl
@@ -593,6 +611,17 @@ unittest
   (Contributed by Garry Cairns in :gh:`134567`.)
 
 
+venv
+----
+
+* On POSIX platforms, platlib directories will be created if needed when
+  creating virtual environments, instead of using ``lib64 -> lib`` symlink.
+  This means purelib and platlib of virtual environments no longer share the
+  same ``lib`` directory on platforms where :data:`sys.platlibdir` is not
+  equal to ``lib``.
+  (Contributed by Rui Xi in :gh:`133951`.)
+
+
 xml.parsers.expat
 -----------------
 
@@ -626,11 +655,11 @@ zlib
 Optimizations
 =============
 
-module_name
------------
+csv
+---
 
-* TODO
-
+* :meth:`csv.Sniffer.sniff` delimiter detection is now up to 1.6x faster.
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
 
 
 Removed
@@ -674,6 +703,8 @@ mimetypes
 ---------
 
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Rename ``application/x-texinfo`` to ``application/texinfo``.
+  (Contributed by Charlie Lin in :gh:`140165`)
 
 
 pathlib
@@ -754,6 +785,9 @@ typing
   :func:`issubclass`, but warnings were not previously emitted if it was merely
   imported or accessed from the :mod:`!typing` module.
 
+* Deprecated :func:`!typing.no_type_check_decorator` has been removed.
+  (Contributed by Nikita Sobolev in :gh:`133601`.)
+
 
 unicodedata
 -----------
@@ -817,6 +851,7 @@ New deprecations
     - :mod:`argparse`
     - :mod:`csv`
     - :mod:`!ctypes.macholib`
+    - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`
     - :mod:`logging` (``__date__`` also deprecated)
@@ -828,8 +863,9 @@ New deprecations
     - :mod:`tabnanny`
     - :mod:`tkinter.font`
     - :mod:`tkinter.ttk`
+    - :mod:`zlib`
 
-    (Contributed by Hugo van Kemenade in :gh:`76007`.)
+    (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
 
 .. Add deprecations above alphabetically, not here at the end.
 
@@ -1001,7 +1037,7 @@ Deprecated C APIs
   use the :c:type:`PyBytesWriter` API instead.
   (Contributed by Victor Stinner in :gh:`129813`.)
 
-* Deprecate :c:member:`~PyComplexObject.cval` field of the the
+* Deprecate :c:member:`~PyComplexObject.cval` field of the
   :c:type:`PyComplexObject` type.
   Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
   to convert a Python complex number to/from the C :c:type:`Py_complex`

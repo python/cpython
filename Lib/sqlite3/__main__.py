@@ -143,7 +143,7 @@ def main(*args):
             execute(con, args.sql, suppress_errors=False, theme=theme)
         else:
             # No SQL provided; start the REPL.
-            with completer():
+            with completer(con):
                 console = SqliteInteractiveConsole(con, use_color=True)
                 console.interact(banner, exitmsg="")
     finally:
