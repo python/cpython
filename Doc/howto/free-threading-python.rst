@@ -116,11 +116,11 @@ after the main thread is running.  The following objects are immortalized:
 * :ref:`classes <classes>` (type objects)
 
 Because immortal objects are never deallocated, applications that create many
-objects of these types may see increased memory usage. Work to further reduce 
+objects of these types may see increased memory usage. Work to further reduce
 this overhead continued in the 3.14 release.
 
 Additionally, numeric and string literals in the code as well as strings
-returned by :func:`sys.intern` are also immortalized.  This behavior remains 
+returned by :func:`sys.intern` are also immortalized.  This behavior remains
 in the 3.14 free-threaded build.
 
 
@@ -154,8 +154,8 @@ interpreter (:pep:`659`) is disabled in the free-threaded build.  We expect
 to re-enable it in a thread-safe way in the 3.14 release.  This overhead is
 expected to be reduced in upcoming Python release. This overhead was reduced
 in the 3.14 release. Reducing overhead further remains an active development goal,
-with an aim for 10% or less on the pyperformance suite compared to the default GIL-enabled 
-build. 
+with an aim for 10% or less on the pyperformance suite compared to the default GIL-enabled
+build.
 
 
 Behavioral changes
