@@ -534,7 +534,9 @@ void
 stats_zero_thread(_PyThreadStateImpl *tstate)
 {
     // Zero the thread local stat counters
-    memset(tstate->pystats_struct, 0, sizeof(PyStats));
+    if (tstate->pystats_struct) {
+        memset(tstate->pystats_struct, 0, sizeof(PyStats));
+    }
 }
 
 // merge stats for a single thread into the global structure
@@ -575,7 +577,7 @@ stats_toggle_on_off(PyThreadState *tstate, int on)
         FT_ATOMIC_STORE_PTR_RELAXED(interp->pystats_struct, s);
     }
     if (tstate->interp->pystats_enabled != on) {
-        FT_ATOMIC_STORE_INT_RELAXED(tstate->interp->pystats_enabled, on);
+        FT_ATOMIC_STORE_INT_RELAXED(interp->pystats_enabled, on);
         changed = true;
     }
     STATS_UNLOCK(interp);
@@ -584,19 +586,18 @@ stats_toggle_on_off(PyThreadState *tstate, int on)
     }
     _PyEval_StopTheWorld(interp);
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, ts) {
-        if (!ts->_status.active) {
-            continue;
-        }
-        PyStats *s;
+        PyStats *s = NULL;
         if (interp->pystats_enabled) {
 #ifdef Py_GIL_DISABLED
-            s = ((_PyThreadStateImpl *)ts)->pystats_struct;
+            _PyThreadStateImpl *ts_impl = (_PyThreadStateImpl *)ts;
+            if (ts_impl->pystats_struct == NULL) {
+                // first activation for this thread, allocate structure
+                ts_impl->pystats_struct = PyMem_RawCalloc(1, sizeof(PyStats));
+            }
+            s = ts_impl->pystats_struct;
 #else
-            s = ((PyThreadState *)tstate)->interp->pystats_struct;
+            s = ts->interp->pystats_struct;
 #endif
-        }
-        else {
-            s = NULL;
         }
         ts->pystats = s;
     }
@@ -622,7 +623,9 @@ stats_zero_all(void)
         stats_zero_thread((_PyThreadStateImpl *)ts);
     }
 #endif
-    memset(interp->pystats_struct, 0, sizeof(PyStats));
+    if (interp->pystats_struct) {
+        memset(interp->pystats_struct, 0, sizeof(PyStats));
+    }
     _PyEval_StartTheWorld(interp);
 }
 
