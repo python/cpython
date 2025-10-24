@@ -984,6 +984,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
     }
 }
 
+#if _Py_TIER2
 // 0 for success, -1  for error.
 static int
 bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
@@ -996,6 +997,7 @@ bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
     _PyJit_FinalizeTracing(tstate);
     return err;
 }
+#endif
 
 /* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.
  */
