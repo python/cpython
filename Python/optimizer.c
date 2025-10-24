@@ -557,6 +557,14 @@ _PyJit_translate_single_bytecode_to_trace(
     _Py_CODEUNIT *next_instr)
 {
 
+#ifdef Py_DEBUG
+    char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
+    int lltrace = 0;
+    if (python_lltrace != NULL && *python_lltrace >= '0') {
+        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+    }
+#endif
+
     PyCodeObject *old_code = tstate->interp->jit_state.prev_instr_code;
     // Something else finalized the trace. This can happen in multi-threaded scenarios as our trace
     // addition from bytecode execution to here is not atomic.
@@ -576,13 +584,6 @@ _PyJit_translate_single_bytecode_to_trace(
         goto full;
     }
 
-#ifdef Py_DEBUG
-    char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
-    int lltrace = 0;
-    if (python_lltrace != NULL && *python_lltrace >= '0') {
-        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
-    }
-#endif
     _Py_CODEUNIT *this_instr =  tstate->interp->jit_state.prev_instr;
     _Py_CODEUNIT *target_instr = this_instr;
     uint32_t target = 0;
@@ -593,8 +594,8 @@ _PyJit_translate_single_bytecode_to_trace(
     // We must point to the first EXTENDED_ARG when deopting.
     int oparg = tstate->interp->jit_state.prev_instr_oparg;
     int opcode = this_instr->op.code;
-    // Failed specialization twice in a row. Deopt!
-    if (tstate->interp->jit_state.specialize_counter >= 1) {
+    // Failed specialization many times. Deopt!
+    if (tstate->interp->jit_state.specialize_counter >= MAX_SPECIALIZATION_TRIES) {
         opcode = _PyOpcode_Deopt[opcode];
     }
     int rewind_oparg = oparg;

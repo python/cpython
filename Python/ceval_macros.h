@@ -135,8 +135,7 @@
 
 #if (_Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS) && _Py_TIER2
 #  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
-// Required to not get stuck in infinite specialization loops due to specialization failure.
-#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && tstate->interp->jit_state.specialize_counter < 1)
+#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && tstate->interp->jit_state.specialize_counter < MAX_SPECIALIZATION_TRIES)
 #  define ENTER_TRACING() \
     DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
 #  define LEAVE_TRACING() \

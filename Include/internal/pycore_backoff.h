@@ -129,6 +129,14 @@ initial_unreachable_backoff_counter(void)
     return make_backoff_counter(0, UNREACHABLE_BACKOFF);
 }
 
+// Required to not get stuck in infinite specialization loops due to specialization failure.
+// We use 2 here as tnere are a few scenarios:
+// 1. Freshly specialized from unspecialized, in which case the counter will be 1.
+// 2. Re-specialized from deopt, in which case the counter will be 1.
+// 3. Deopt -> Specialize -> Deopt -> Specialize, in which case the counter will be 2.
+// We do not want the 3rd case.
+#define MAX_SPECIALIZATION_TRIES 2
+
 #ifdef __cplusplus
 }
 #endif
