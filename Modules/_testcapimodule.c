@@ -2435,6 +2435,66 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
 }
 
 
+
+static PyObject *
+test_pyset_add(PyObject* self, PyObject *Py_UNUSED(args))
+{
+
+    PyObject *set = NULL, *empty_tuple=NULL, *tracked_object;
+
+
+    tracked_object = PyImport_ImportModule("sys");
+    if (tracked_object == NULL) {
+        goto failed;
+    }
+    if (!PyObject_GC_IsTracked(tracked_object)) {
+        PyErr_SetString(PyExc_ValueError, "Test item is not tracked by GC");
+        goto failed;
+    }
+
+
+    int return_value;
+    empty_tuple = PyTuple_New(0);
+    if (empty_tuple == NULL) {
+        goto failed;
+    }
+    set = PyFrozenSet_New(empty_tuple);
+    if (set == NULL) {
+        return NULL;
+    }
+
+    if (PyObject_GC_IsTracked(set)) {
+        PyErr_SetString(PyExc_ValueError, "Empty frozenset object is tracked by GC");
+        goto failed;
+    }
+    return_value = PySet_Add(set, empty_tuple);
+    if (return_value<0) {
+        goto failed;
+    }
+    if (PyObject_GC_IsTracked(set)) {
+        PyErr_SetString(PyExc_ValueError, "Frozenset object with immutable is tracked by GC");
+        goto failed;
+    }
+
+    PySet_Add(set, tracked_object);
+    if (return_value<0) {
+        goto failed;
+    }
+    if (!PyObject_GC_IsTracked(set)) {
+        PyErr_SetString(PyExc_ValueError, "Frozenset object with tracked objects is not tracked by GC");
+        goto failed;
+    }
+
+    Py_RETURN_NONE;
+
+failed:
+    Py_XDECREF(tracked_object);
+    Py_XDECREF(empty_tuple);
+    Py_XDECREF(set);
+    return NULL;
+
+}
+
 // Used by `finalize_thread_hang`.
 #if defined(_POSIX_THREADS) && !defined(__wasi__)
 static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
@@ -2625,7 +2685,7 @@ static PyMethodDef TestMethods[] = {
     {"return_null_without_error", return_null_without_error, METH_NOARGS},
     {"return_result_with_error", return_result_with_error, METH_NOARGS},
     {"getitem_with_error", getitem_with_error, METH_VARARGS},
-    {"Py_CompileString",     pycompilestring, METH_O},
+    {"Py_CompileString", pycompilestring, METH_O},
     {"raise_SIGINT_then_send_None", raise_SIGINT_then_send_None, METH_VARARGS},
     {"stack_pointer", stack_pointer, METH_NOARGS},
 #ifdef W_STOPCODE
@@ -2646,6 +2706,7 @@ static PyMethodDef TestMethods[] = {
     {"gen_get_code", gen_get_code, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
+    {"test_pyset_add", test_pyset_add, METH_NOARGS, NULL},
     {"settrace_to_error", settrace_to_error, METH_O, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"test_macros", test_macros, METH_NOARGS, NULL},
