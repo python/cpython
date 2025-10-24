@@ -1654,13 +1654,16 @@ def url2pathname(url, *, require_scheme=False, resolve_host=False):
     The URL authority may be resolved with gethostbyname() if
     *resolve_host* is set to true.
     """
-    if require_scheme:
-        scheme, url = _splittype(url)
-        if scheme != 'file':
-            raise URLError("URL is missing a 'file:' scheme")
-    authority, url = _splithost(url)
+    if not require_scheme:
+        url = 'file:' + url
+    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    if scheme != 'file':
+        raise URLError("URL is missing a 'file:' scheme")
     if os.name == 'nt':
-        if not _is_local_authority(authority, resolve_host):
+        if authority[1:2] == ':':
+            # e.g. file://c:/file.txt
+            url = authority + url
+        elif not _is_local_authority(authority, resolve_host):
             # e.g. file://server/share/file.txt
             url = '//' + authority + url
         elif url[:3] == '///':

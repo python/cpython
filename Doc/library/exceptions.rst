@@ -450,7 +450,7 @@ The following exceptions are the exceptions that are usually raised.
 
       :meth:`threading.Thread.join` can now raise this exception.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       This exception may be raised when acquiring :meth:`threading.Lock`
       or :meth:`threading.RLock`.
@@ -896,6 +896,9 @@ The following exceptions are used as warning categories; see the
 .. exception:: SyntaxWarning
 
    Base class for warnings about dubious syntax.
+
+   This warning is typically emitted when compiling Python source code, and usually won't be reported
+   when running already compiled code.
 
 
 .. exception:: RuntimeWarning

@@ -1,4 +1,9 @@
 #include "emscripten.h"
+#include "stdio.h"
+
+// All system calls: return nonnegative number on success, return -errno on
+// failure. Negative results get stored back into errno here:
+// https://github.com/emscripten-core/emscripten/blob/main/system/lib/libc/musl/src/internal/syscall_ret.c#L7
 
 // If we're running in node, report the UID of the user in the native system as
 // the UID of the user. Since the nodefs will report the uid correctly, if we
@@ -40,7 +45,7 @@ int __syscall_umask(int mask) {
 
 #include <wasi/api.h>
 #include <errno.h>
-#undef errno
+#include <fcntl.h>
 
 // Variant of EM_JS that does C preprocessor substitution on the body
 #define EM_JS_MACROS(ret, func_name, args, body...)                            \
@@ -100,7 +105,7 @@ EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
         return;
     }
     const origResolveGlobalSymbol = resolveGlobalSymbol;
-    if (!Module.onExit && process?.exit) {
+    if (ENVIRONMENT_IS_NODE && !Module.onExit) {
         Module.onExit = (code) => process.exit(code);
     }
     // * wrap the main symbol with WebAssembly.promising,
@@ -115,7 +120,7 @@ EM_JS_MACROS(void, _emscripten_promising_main_js, (void), {
             orig.sym = (...args) => {
                 (async () => {
                     const ret = await main(...args);
-                    process?.exit?.(ret);
+                    Module.onExit?.(ret);
                 })();
                 _emscripten_exit_with_live_runtime();
             };
@@ -185,7 +190,7 @@ EM_JS_MACROS(__externref_t, __maybe_fd_read_async, (
             if (e.name !== 'ErrnoError') {
                 throw e;
             }
-            return e.errno;
+            return e["errno"];
         }
     })();
 };
@@ -199,16 +204,16 @@ __wasi_errno_t __wasi_fd_read_orig(__wasi_fd_t fd, const __wasi_iovec_t *iovs,
 
 // Take a promise that resolves to __wasi_errno_t and suspend until it resolves,
 // get the output.
-EM_JS(__wasi_errno_t, __block_for_errno, (__externref_t p), {
+EM_JS(int, __block_for_int, (__externref_t p), {
     return p;
 }
 if (WebAssembly.Suspending) {
-    __block_for_errno = new WebAssembly.Suspending(__block_for_errno);
+    __block_for_int = new WebAssembly.Suspending(__block_for_int);
 }
 )
 
 // Replacement for fd_read syscall. Call __maybe_fd_read_async. If it returned
-// null, delegate back to __wasi_fd_read_orig. Otherwise, use __block_for_errno
+// null, delegate back to __wasi_fd_read_orig. Otherwise, use __block_for_int
 // to get the result.
 __wasi_errno_t __wasi_fd_read(__wasi_fd_t fd, const __wasi_iovec_t *iovs,
                               size_t iovs_len, __wasi_size_t *nread) {
@@ -216,6 +221,103 @@ __wasi_errno_t __wasi_fd_read(__wasi_fd_t fd, const __wasi_iovec_t *iovs,
   if (__builtin_wasm_ref_is_null_extern(p)) {
     return __wasi_fd_read_orig(fd, iovs, iovs_len, nread);
   }
-  __wasi_errno_t res = __block_for_errno(p);
-  return res;
+  return __block_for_int(p);
+}
+
+#include <poll.h>
+#define POLLFD_FD 0
+#define POLLFD_EVENTS 4
+#define POLLFD_REVENTS 6
+#define POLLFD_SIZE 8
+_Static_assert(offsetof(struct pollfd, fd) == 0, "Unepxected pollfd struct layout");
+_Static_assert(offsetof(struct pollfd, events) == 4, "Unepxected pollfd struct layout");
+_Static_assert(offsetof(struct pollfd, revents) == 6, "Unepxected pollfd struct layout");
+_Static_assert(sizeof(struct pollfd) == 8, "Unepxected pollfd struct layout");
+
+EM_JS_MACROS(__externref_t, __maybe_poll_async, (intptr_t fds, int nfds, int timeout), {
+    if (!WebAssembly.promising) {
+        return null;
+    }
+    return (async function() {
+        try {
+            var nonzero = 0;
+            var promises = [];
+            for (var i = 0; i < nfds; i++) {
+                var pollfd = fds + POLLFD_SIZE * i;
+                var fd = HEAP32[(pollfd + POLLFD_FD)/4];
+                var events = HEAP16[(pollfd + POLLFD_EVENTS)/2];
+                var mask = POLLNVAL;
+                var stream = FS.getStream(fd);
+                if (stream) {
+                    mask = POLLIN | POLLOUT;
+                    if (stream.stream_ops.pollAsync) {
+                        promises.push(stream.stream_ops.pollAsync(stream, timeout).then((mask) => {
+                            mask &= events | POLLERR | POLLHUP;
+                            HEAP16[(pollfd + POLLFD_REVENTS)/2] = mask;
+                            if (mask) {
+                                nonzero ++;
+                            }
+                        }));
+                    } else if (stream.stream_ops.poll) {
+                        var mask = stream.stream_ops.poll(stream, timeout);
+                        mask &= events | POLLERR | POLLHUP;
+                        HEAP16[(pollfd + POLLFD_REVENTS)/2] = mask;
+                        if (mask) {
+                            nonzero ++;
+                        }
+                    }
+                }
+            }
+            await Promise.all(promises);
+            return nonzero;
+        } catch(e) {
+            if (e?.name !== "ErrnoError") throw e;
+            return -e["errno"];
+        }
+    })();
+});
+
+// Bind original poll syscall to syscall_poll_orig().
+int syscall_poll_orig(intptr_t fds, int nfds, int timeout)
+    __attribute__((__import_module__("env"),
+                   __import_name__("__syscall_poll"), __warn_unused_result__));
+
+int __syscall_poll(intptr_t fds, int nfds, int timeout) {
+    __externref_t p = __maybe_poll_async(fds, nfds, timeout);
+    if (__builtin_wasm_ref_is_null_extern(p)) {
+        return syscall_poll_orig(fds, nfds, timeout);
+    }
+    return __block_for_int(p);
+}
+
+#include <sys/ioctl.h>
+
+int syscall_ioctl_orig(int fd, int request, void* varargs)
+    __attribute__((__import_module__("env"),
+                   __import_name__("__syscall_ioctl"), __warn_unused_result__));
+
+int __syscall_ioctl(int fd, int request, void* varargs) {
+    if (request == FIOCLEX || request == FIONCLEX) {
+        return 0;
+    }
+    if (request == FIONBIO) {
+        // Implement FIONBIO via fcntl.
+        // TODO: Upstream this.
+        int flags = fcntl(fd, F_GETFL, 0);
+        int nonblock = **((int**)varargs);
+        if (flags < 0) {
+            return -errno;
+        }
+        if (nonblock) {
+            flags |= O_NONBLOCK;
+        } else {
+            flags &= (~O_NONBLOCK);
+        }
+        int res = fcntl(fd, F_SETFL, flags);
+        if (res < 0) {
+            return -errno;
+        }
+        return res;
+    }
+    return syscall_ioctl_orig(fd, request, varargs);
 }

@@ -113,18 +113,14 @@ There are three ways strings and buffers can be converted to C:
 ``z`` (:class:`str` or ``None``) [const char \*]
    Like ``s``, but the Python object may also be ``None``, in which case the C
    pointer is set to ``NULL``.
-   It is the same as ``s?`` with the C pointer was initialized to ``NULL``.
 
 ``z*`` (:class:`str`, :term:`bytes-like object` or ``None``) [Py_buffer]
    Like ``s*``, but the Python object may also be ``None``, in which case the
    ``buf`` member of the :c:type:`Py_buffer` structure is set to ``NULL``.
-   It is the same as ``s*?`` with the ``buf`` member of the :c:type:`Py_buffer`
-   structure was initialized to ``NULL``.
 
 ``z#`` (:class:`str`, read-only :term:`bytes-like object` or ``None``) [const char \*, :c:type:`Py_ssize_t`]
    Like ``s#``, but the Python object may also be ``None``, in which case the C
    pointer is set to ``NULL``.
-   It is the same as ``s#?`` with the C pointer was initialized to ``NULL``.
 
 ``y`` (read-only :term:`bytes-like object`) [const char \*]
    This format converts a bytes-like object to a C pointer to a
@@ -164,7 +160,7 @@ There are three ways strings and buffers can be converted to C:
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
    interface. It fills a :c:type:`Py_buffer` structure provided by the caller.
-   The buffer may contain embedded null bytes. The caller have to call
+   The buffer may contain embedded null bytes. The caller has to call
    :c:func:`PyBuffer_Release` when it is done with the buffer.
 
 ``es`` (:class:`str`) [const char \*encoding, char \*\*buffer]
@@ -309,7 +305,7 @@ the minimal value for the corresponding signed integer type of the same size.
 ``D`` (:class:`complex`) [Py_complex]
    Convert a Python complex number to a C :c:type:`Py_complex` structure.
 
-.. deprecated:: next
+.. deprecated:: 3.15
 
    For unsigned integer formats ``B``, ``H``, ``I``, ``k`` and ``K``,
    :exc:`DeprecationWarning` is emitted when the value is larger than
@@ -393,17 +389,6 @@ Other objects
    .. deprecated:: 3.14
       Non-tuple sequences are deprecated if *items* contains format units
       which store a borrowed buffer or a borrowed reference.
-
-``unit?`` (anything or ``None``) [*matching-variable(s)*]
-   ``?`` modifies the behavior of the preceding format unit.
-   The C variable(s) corresponding to that parameter should be initialized
-   to their default value --- when the argument is ``None``,
-   :c:func:`PyArg_ParseTuple` does not touch the contents of the corresponding
-   C variable(s).
-   If the argument is not ``None``, it is parsed according to the specified
-   format unit.
-
-   .. versionadded:: 3.14
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:

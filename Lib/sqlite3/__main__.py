@@ -60,6 +60,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
         if not source or source.isspace():
             return False
+        # Remember to update CLI_COMMANDS in _completer.py
         if source[0] == ".":
             match source[1:].strip():
                 case "version":
@@ -142,7 +143,7 @@ def main(*args):
             execute(con, args.sql, suppress_errors=False, theme=theme)
         else:
             # No SQL provided; start the REPL.
-            with completer():
+            with completer(con):
                 console = SqliteInteractiveConsole(con, use_color=True)
                 console.interact(banner, exitmsg="")
     finally:

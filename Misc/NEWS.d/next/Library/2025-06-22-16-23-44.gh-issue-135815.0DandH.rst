@@ -1,2 +1,0 @@
-:mod:`netrc`: skip security checks if :func:`os.getuid` is missing.
-Patch by Bénédikt Tran.
