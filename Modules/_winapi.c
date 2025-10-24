@@ -3057,33 +3057,18 @@ Writes an entry at the end of the specified event log.
 static PyObject *
 _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
                          unsigned short type, unsigned short category,
-                         unsigned int event_id, PyObject *string)
-/*[clinic end generated code: output=8eb5e919369c9c6d input=6db2c51252f95b93]*/
+                         unsigned int event_id, LPCWSTR string)
+/*[clinic end generated code: output=4281230b70a2470a input=8fb3385b8e7a6d3d]*/
 {
     BOOL success;
-    LPCWSTR wide_string = NULL;
-
-    if (!PyUnicode_Check(string)) {
-        PyErr_SetString(PyExc_TypeError, "string must be a str");
-        return NULL;
-    }
-
-    wide_string = PyUnicode_AsWideCharString(string, NULL);
-    if (!wide_string) {
-        return NULL;
-    }
 
     Py_BEGIN_ALLOW_THREADS
     success = ReportEventW(handle, type, category, event_id, NULL, 1, 0,
-                           &wide_string, NULL);
+                           &string, NULL);
     Py_END_ALLOW_THREADS
 
-    int ret = GetLastError();
-
-    PyMem_Free((void *)wide_string);
-
     if (!success) {
-        return PyErr_SetFromWindowsErr(ret);
+        return PyErr_SetFromWindowsErr(0);
     }
 
     Py_RETURN_NONE;

@@ -2306,7 +2306,7 @@ PyDoc_STRVAR(_winapi_ReportEvent__doc__,
 static PyObject *
 _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
                          unsigned short type, unsigned short category,
-                         unsigned int event_id, PyObject *string);
+                         unsigned int event_id, LPCWSTR string);
 
 static PyObject *
 _winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -2316,19 +2316,22 @@ _winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     unsigned short type;
     unsigned short category;
     unsigned int event_id;
-    PyObject *string;
+    LPCWSTR string = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "O&O&O&O:ReportEvent",
-        &handle, _PyLong_UnsignedShort_Converter, &type, _PyLong_UnsignedShort_Converter, &category, _PyLong_UnsignedInt_Converter, &event_id, &string)) {
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "O&O&O&O&:ReportEvent",
+        &handle, _PyLong_UnsignedShort_Converter, &type, _PyLong_UnsignedShort_Converter, &category, _PyLong_UnsignedInt_Converter, &event_id, _PyUnicode_WideCharString_Converter, &string)) {
         goto exit;
     }
     return_value = _winapi_ReportEvent_impl(module, handle, type, category, event_id, string);
 
 exit:
+    /* Cleanup for string */
+    PyMem_Free((void *)string);
+
     return return_value;
 }
 
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=63733d12831693e1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4ab94eaee93a0a90 input=a9049054013a1b77]*/
