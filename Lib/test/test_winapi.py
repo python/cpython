@@ -161,13 +161,16 @@ class WinAPITests(unittest.TestCase):
         source_name = "PythonTestEventSource"
 
         handle = _winapi.RegisterEventSource(None, source_name)
+        self.addCleanup(_winapi.DeregisterEventSource, handle)
         self.assertNotEqual(handle, _winapi.INVALID_HANDLE_VALUE)
 
-        with self.assertRaisesRegex(OSError, '[WinError 87]'):
+        with self.assertRaises(OSError) as cm:
             _winapi.RegisterEventSource(None, "")
+        self.assertEqual(cm.exception.winerror, 87)
 
-        with self.assertRaisesRegex(OSError, '[WinError 6]'):
+        with self.assertRaises(OSError) as cm:
             _winapi.DeregisterEventSource(_winapi.INVALID_HANDLE_VALUE)
+        self.assertEqual(cm.exception.winerror, 6)
 
     def test_report_event(self):
         source_name = "PythonTestEventSource"
@@ -176,15 +179,15 @@ class WinAPITests(unittest.TestCase):
         self.assertNotEqual(handle, _winapi.INVALID_HANDLE_VALUE)
         self.addCleanup(_winapi.DeregisterEventSource, handle)
 
-        # Test with strings and raw data
-        test_strings = ["Test message 1", "Test message 2"]
-        test_data = b"test raw data"
         _winapi.ReportEvent(handle, _winapi.EVENTLOG_SUCCESS, 1, 1002,
-                            test_strings, test_data)
+                            "Test message 1")
 
-        # Test with empty strings list
-        _winapi.ReportEvent(handle, _winapi.EVENTLOG_AUDIT_FAILURE, 2, 1003, [])
+        with self.assertRaises(TypeError):
+            _winapi.ReportEvent(handle, _winapi.EVENTLOG_SUCCESS, 1, 1002, 42)
 
-        with self.assertRaisesRegex(TypeError, 'expected a list of strings, not int'):
-            _winapi.ReportEvent(handle, _winapi.EVENTLOG_ERROR_TYPE, 0, 1001,
-                                ["string", 123])
+        with self.assertRaises(TypeError):
+            _winapi.ReportEvent(handle, _winapi.EVENTLOG_SUCCESS, 1, 1002, None)
+
+        with self.assertRaises(ValueError):
+            _winapi.ReportEvent(handle, _winapi.EVENTLOG_SUCCESS, 1, 1002,
+                                "Test message \0 with embedded null character")

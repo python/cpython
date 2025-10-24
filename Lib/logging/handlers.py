@@ -1221,11 +1221,10 @@ class NTEventLogHandler(logging.Handler):
 
             # Get a handle to the event log
             handle = self._winapi.RegisterEventSource(None, self.appname)
-            if handle != self._winapi.INVALID_HANDLE_VALUE:
-                try:
-                    self._winapi.ReportEvent(handle, type, cat, id, msg)
-                finally:
-                    self._winapi.DeregisterEventSource(handle)
+            try:
+                self._winapi.ReportEvent(handle, type, cat, id, msg)
+            finally:
+                self._winapi.DeregisterEventSource(handle)
         except Exception:
             self.handleError(record)
 

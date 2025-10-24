@@ -3029,8 +3029,9 @@ _winapi_DeregisterEventSource_impl(PyObject *module, HANDLE handle)
     success = DeregisterEventSource(handle);
     Py_END_ALLOW_THREADS
 
-    if (!success)
+    if (!success) {
         return PyErr_SetFromWindowsErr(0);
+    }
 
     Py_RETURN_NONE;
 }
