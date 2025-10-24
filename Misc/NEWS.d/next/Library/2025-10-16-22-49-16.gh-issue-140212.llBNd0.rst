@@ -1,0 +1,5 @@
+Calendar's HTML formatting now accepts year and month as options.
+Previously, running ``python -m calendar -t html 2025 10`` would result in an
+error message. It now generates an HTML document displaying the calendar for
+the specified month.
+Contributed by Pål Grønås Drange.
