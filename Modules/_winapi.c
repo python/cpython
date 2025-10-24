@@ -3047,7 +3047,7 @@ _winapi.ReportEvent
         The event category.
     event_id: unsigned_int(bitwise=False)
         The event identifier.
-    string: object
+    string: LPCWSTR
         A string to be inserted into the event message.
     /
 
