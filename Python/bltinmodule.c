@@ -1521,7 +1521,7 @@ check:
     if (PyErr_Occurred()) {
         if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
             // next() on argument i raised an exception (not StopIteration)
-            // result is NULL;
+            assert(result == NULL);
             goto exit;
         }
         PyErr_Clear();
@@ -1549,7 +1549,7 @@ check:
         if (PyErr_Occurred()) {
             if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
                 // next() on argument i raised an exception (not StopIteration)
-                // result is NULL;
+                assert(result == NULL);
                 goto exit;
             }
             PyErr_Clear();
@@ -1557,6 +1557,8 @@ check:
         // Argument i is exhausted. So far so good...
     }
     // All arguments are exhausted. Success!
+    assert(result == NULL);
+
 exit:
     for (i=0; i < nargs; i++) {
         Py_DECREF(stack[i]);

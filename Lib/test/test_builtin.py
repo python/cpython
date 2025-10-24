@@ -1385,6 +1385,21 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(ValueError, tuple,
                           map(pack, (1, 2), (1, 2), 'abc', strict=True))
 
+        t1 = (None, object())
+        t2 = (object(), object())
+        t3 = (object(),)
+
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, t3, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t1, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t2, t3, strict=True))
+
     def test_map_strict_iterators(self):
         x = iter(range(5))
         y = [0]
@@ -1456,23 +1471,6 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(l7, [(1, "A"), (0, "B")])
         l8 = self.iter_error(map(pack, Iter(3), "AB", strict=True), ValueError)
         self.assertEqual(l8, [(2, "A"), (1, "B")])
-
-    # gh-140517: fix refcount leak
-    def test_map_strict_noleak(self):
-        t1 = (None, object())
-        t2 = (object(), object())
-        t3 = (object(),)
-
-        self.assertRaises(ValueError, tuple,
-                          map(pack, t1, 'a', strict=True))
-        self.assertRaises(ValueError, tuple,
-                          map(pack, t1, t2, 'a', strict=True))
-        self.assertRaises(ValueError, tuple,
-                          map(pack, t1, t2, t3, strict=True))
-        self.assertRaises(ValueError, tuple,
-                          map(pack, 'a', t1, strict=True))
-        self.assertRaises(ValueError, tuple,
-                          map(pack, 'a', t2, t3, strict=True))
 
     def test_max(self):
         self.assertEqual(max('123123'), '3')
