@@ -2857,8 +2857,6 @@ codegen_validate_lazy_import(compiler *c, location loc)
 {
     if (_PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE) {
         return _PyCompile_Error(c, loc, "lazy imports only allowed in module scope");
-    } else if (_PyCompile_TopFBlock(c)) {
-        return _PyCompile_Error(c, loc, "cannot lazy import in a nested scope");
     }
 
     return SUCCESS;
@@ -2888,7 +2886,7 @@ codegen_import(compiler *c, stmt_ty s)
             RETURN_IF_ERROR(codegen_validate_lazy_import(c, loc));
             ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 1);
         } else {
-            if (_PyCompile_TopFBlock(c) || _PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE) {
+            if (_PyCompile_InExceptionHandler(c) || _PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE) {
                 // force eager import in try/except block
                 ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 2);
             } else {
@@ -2953,7 +2951,8 @@ codegen_from_import(compiler *c, stmt_ty s)
         ADDOP_NAME_CUSTOM(c, LOC(s), IMPORT_NAME, from, names, 2, 1);
     } else {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, 0);
-        if (_PyCompile_TopFBlock(c) || _PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE ||
+        if (_PyCompile_InExceptionHandler(c) ||
+            _PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE ||
             PyUnicode_READ_CHAR(alias->name, 0) == '*') {
             // forced non-lazy import due to try/except or import *
             ADDOP_NAME_CUSTOM(c, LOC(s), IMPORT_NAME, from, names, 2, 2);
