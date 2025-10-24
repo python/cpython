@@ -1,0 +1,2 @@
+Fixed crash in ``dict`` if ``clear`` is called at the lookup stage. Patch by
+Mikhail Efimov.
