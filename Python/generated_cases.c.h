@@ -6236,6 +6236,7 @@
                 if (result == 0) {
                     null_or_index = PyStackRef_TagInt(-1);
                     JUMPBY(oparg + 1);
+                    RECORD_DYNAMIC_JUMP_TAKEN();
                     stack_pointer[-1] = null_or_index;
                     DISPATCH();
                 }
@@ -7363,6 +7364,7 @@
                     JUMP_TO_LABEL(error);
                 }
                 JUMPBY(oparg + 1);
+                RECORD_DYNAMIC_JUMP_TAKEN();
                 stack_pointer[-1] = null_or_index;
                 DISPATCH();
             }

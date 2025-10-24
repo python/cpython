@@ -128,6 +128,7 @@ class Emitter:
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
             "stack_pointer": self.stack_pointer,
+            "JUMPBY": self.jumpby,
         }
         self.out = out
         self.labels = labels
@@ -400,6 +401,30 @@ class Emitter:
         storage.clear_inputs("when syncing stack")
         storage.flush(self.out)
         storage.stack.clear(self.out)
+        return True
+
+    def jumpby(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.start_line()
+        self.emit(tkn)
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        jump = next(tkn_iter)
+        self.emit(jump)
+        emit_to(self.out, tkn_iter, "RPAREN")
+        next(tkn_iter)
+        self.emit(");\n")
+
+
+        if uop.properties.unpredictable_jump and jump.text != "0":
+            self.out.start_line()
+            self.emit("RECORD_DYNAMIC_JUMP_TAKEN();\n")
         return True
 
     def stack_pointer(

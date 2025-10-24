@@ -35,6 +35,7 @@ class Properties:
     pure: bool
     uses_opcode: bool
     needs_guard_ip: bool
+    unpredictable_jump: bool
     tier: int | None = None
     const_oparg: int = -1
     needs_prev: bool = False
@@ -76,7 +77,8 @@ class Properties:
             pure=all(p.pure for p in properties),
             needs_prev=any(p.needs_prev for p in properties),
             no_save_ip=all(p.no_save_ip for p in properties),
-            needs_guard_ip=any(p.needs_guard_ip for p in properties)
+            needs_guard_ip=any(p.needs_guard_ip for p in properties),
+            unpredictable_jump=any(p.unpredictable_jump for p in properties),
         )
 
     @property
@@ -105,6 +107,7 @@ SKIP_PROPERTIES = Properties(
     pure=True,
     no_save_ip=False,
     needs_guard_ip=False,
+    unpredictable_jump=False,
 )
 
 
@@ -887,6 +890,42 @@ def stmt_escapes(stmt: Stmt) -> bool:
     else:
         assert False, "Unexpected statement type"
 
+def stmt_has_jump_on_unpredictable_path_body(stmts: list[Stmt] | None, branches_seen: int) -> bool:
+    if not stmts:
+        return False, branches_seen
+    predict = False
+    seen = 0
+    for st in stmts:
+        predict_body, seen_body = stmt_has_jump_on_unpredictable_path(st, branches_seen)
+        predict = predict or predict_body
+        seen += seen_body
+    return predict, seen
+
+def stmt_has_jump_on_unpredictable_path(stmt: Stmt, branches_seen: int) -> bool:
+    if isinstance(stmt, BlockStmt):
+        return stmt_has_jump_on_unpredictable_path_body(stmt.body, branches_seen)
+    elif isinstance(stmt, SimpleStmt):
+        for tkn in stmt.contents:
+            if tkn.text == "JUMPBY":
+                return True, branches_seen
+        return False, branches_seen
+    elif isinstance(stmt, IfStmt):
+        return True, branches_seen + 1
+    elif isinstance(stmt, MacroIfStmt):
+        predict, seen = stmt_has_jump_on_unpredictable_path_body(stmt.body, branches_seen)
+        if stmt.else_body:
+            predict_else, seen_else = stmt_has_jump_on_unpredictable_path_body(stmt.else_body, branches_seen)
+            return predict != predict_else, seen + seen_else
+        return predict, seen
+    elif isinstance(stmt, ForStmt):
+        unpredictable, branches_seen = stmt_has_jump_on_unpredictable_path(stmt.body, branches_seen)
+        return unpredictable, branches_seen + 1
+    elif isinstance(stmt, WhileStmt):
+        unpredictable, branches_seen = stmt_has_jump_on_unpredictable_path(stmt.body, branches_seen)
+        return unpredictable, branches_seen + 1
+    else:
+        assert False, f"Unexpected statement type {stmt}"
+
 
 def compute_properties(op: parser.CodeDef) -> Properties:
     escaping_calls = find_escaping_api_calls(op)
@@ -914,6 +953,8 @@ def compute_properties(op: parser.CodeDef) -> Properties:
     escapes = stmt_escapes(op.block)
     pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
     no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
+    unpredictable, branches_seen = stmt_has_jump_on_unpredictable_path(op.block, 0)
+    unpredictable_jump = False if isinstance(op, parser.LabelDef) else (unpredictable and branches_seen > 0)
     return Properties(
         escaping_calls=escaping_calls,
         escapes=escapes,
@@ -938,6 +979,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
         needs_guard_ip=variable_used(op, "TIER2_STORE_IP") or variable_used(op, "LLTRACE_RESUME_FRAME") or variable_used(op, "DISPATCH_INLINED"),
+        unpredictable_jump=unpredictable_jump,
     )
 
 def expand(items: list[StackItem], oparg: int) -> list[StackItem]:

@@ -45,10 +45,6 @@
 
 #define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"
-#include "ceval_macros.h"
-#include "ceval_macros.h"
-#include "../Include/internal/pycore_code.h"
-#include "../Include/internal/pycore_stackref.h"
 
 /* Flow control macros */
 
@@ -1380,7 +1376,6 @@ dummy_func(
                 if (err == 0) {
                     assert(retval_o != NULL);
                     JUMPBY(oparg);
-                    RECORD_DYNAMIC_JUMP_TAKEN();
                 }
                 else {
                     PyStackRef_CLOSE(v);
@@ -3235,7 +3230,6 @@ dummy_func(
                 }
                 // Jump forward by oparg and skip the following END_FOR
                 JUMPBY(oparg + 1);
-                RECORD_DYNAMIC_JUMP_TAKEN();
                 DISPATCH();
             }
             next = item;
@@ -3297,7 +3291,6 @@ dummy_func(
                 null_or_index = PyStackRef_TagInt(-1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
-                RECORD_DYNAMIC_JUMP_TAKEN();
                 DISPATCH();
             }
 #endif
@@ -3375,7 +3368,6 @@ dummy_func(
                 null_or_index = PyStackRef_TagInt(-1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
-                RECORD_DYNAMIC_JUMP_TAKEN();
                 DISPATCH();
             }
         }
@@ -3420,7 +3412,6 @@ dummy_func(
             if (r->len <= 0) {
                 // Jump over END_FOR instruction.
                 JUMPBY(oparg + 1);
-                RECORD_DYNAMIC_JUMP_TAKEN();
                 DISPATCH();
             }
         }
