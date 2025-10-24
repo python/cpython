@@ -2441,7 +2441,7 @@ test_pyset_add(PyObject* self, PyObject *Py_UNUSED(args))
 {
 
     PyObject *set = NULL, *empty_tuple=NULL, *tracked_object;
-
+    int return_value;
 
     tracked_object = PyImport_ImportModule("sys");
     if (tracked_object == NULL) {
@@ -2452,15 +2452,13 @@ test_pyset_add(PyObject* self, PyObject *Py_UNUSED(args))
         goto failed;
     }
 
-
-    int return_value;
     empty_tuple = PyTuple_New(0);
     if (empty_tuple == NULL) {
         goto failed;
     }
     set = PyFrozenSet_New(empty_tuple);
     if (set == NULL) {
-        return NULL;
+        goto failed;
     }
 
     if (PyObject_GC_IsTracked(set)) {
