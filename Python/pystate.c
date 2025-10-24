@@ -67,48 +67,34 @@ to avoid the expense of doing their own locking).
    For each of these functions, the GIL must be held by the current thread.
  */
 
+#ifndef HAVE_THREAD_LOCAL
+#  error "no supported thread-local variable storage classifier"
+#endif
 
-#ifdef HAVE_THREAD_LOCAL
 /* The attached thread state for the current thread. */
 _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
 
 /* The "bound" thread state used by PyGILState_Ensure(),
    also known as a "gilstate." */
 _Py_thread_local PyThreadState *_Py_tss_gilstate = NULL;
-#endif
 
 static inline PyThreadState *
 current_fast_get(void)
 {
-#ifdef HAVE_THREAD_LOCAL
     return _Py_tss_tstate;
-#else
-    // XXX Fall back to the PyThread_tss_*() API.
-#  error "no supported thread-local variable storage classifier"
-#endif
 }
 
 static inline void
 current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
 {
     assert(tstate != NULL);
-#ifdef HAVE_THREAD_LOCAL
     _Py_tss_tstate = tstate;
-#else
-    // XXX Fall back to the PyThread_tss_*() API.
-#  error "no supported thread-local variable storage classifier"
-#endif
 }
 
 static inline void
 current_fast_clear(_PyRuntimeState *Py_UNUSED(runtime))
 {
-#ifdef HAVE_THREAD_LOCAL
     _Py_tss_tstate = NULL;
-#else
-    // XXX Fall back to the PyThread_tss_*() API.
-#  error "no supported thread-local variable storage classifier"
-#endif
 }
 
 #define tstate_verify_not_active(tstate) \
@@ -2494,14 +2480,10 @@ _PyThreadState_Bind(PyThreadState *tstate)
 uintptr_t
 _Py_GetThreadLocal_Addr(void)
 {
-#ifdef HAVE_THREAD_LOCAL
     // gh-112535: Use the address of the thread-local PyThreadState variable as
     // a unique identifier for the current thread. Each thread has a unique
     // _Py_tss_tstate variable with a unique address.
     return (uintptr_t)&_Py_tss_tstate;
-#else
-#  error "no supported thread-local variable storage classifier"
-#endif
 }
 #endif
 
