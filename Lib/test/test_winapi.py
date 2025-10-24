@@ -1,5 +1,6 @@
 # Test the Windows-only _winapi module
 
+import errno
 import os
 import pathlib
 import re
@@ -170,7 +171,7 @@ class WinAPITests(unittest.TestCase):
 
         with self.assertRaises(OSError) as cm:
             _winapi.DeregisterEventSource(_winapi.INVALID_HANDLE_VALUE)
-        self.assertEqual(cm.exception.winerror, 6)
+        self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_report_event(self):
         source_name = "PythonTestEventSource"
