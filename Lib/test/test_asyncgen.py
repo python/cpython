@@ -1811,7 +1811,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 yield i
 
         def make_arange(n):
-            # This syntax is legal starting with Python 3.7
             return (i * 2 async for i in arange(n))
 
         async def run():
@@ -1826,7 +1825,6 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             return n
 
         def make_arange(n):
-            # This syntax is legal starting with Python 3.7
             return (i * 2 for i in range(n) if await wrap(i))
 
         async def run():
