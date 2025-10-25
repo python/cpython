@@ -692,28 +692,31 @@ class ElementTreeTest(unittest.TestCase):
         it = iterparse(TESTFN)
         action, elem = next(it)
         self.assertEqual((action, elem.tag), ('end', 'document'))
-        with warnings_helper.check_no_resource_warning(self):
-            with self.assertRaises(ET.ParseError) as cm:
-                next(it)
-            self.assertEqual(str(cm.exception),
-                    'junk after document element: line 1, column 12')
-            del cm, it
+        with self.assertRaises(ET.ParseError) as cm:
+            next(it)
+        self.assertEqual(str(cm.exception),
+                'junk after document element: line 1, column 12')
+        it.close()  # Close to avoid ResourceWarning
+        del cm, it
 
-        # Not exhausting the iterator still closes the resource (bpo-43292)
-        with warnings_helper.check_no_resource_warning(self):
-            it = iterparse(SIMPLE_XMLFILE)
-            del it
+        # Deleting iterator without close() should emit ResourceWarning (bpo-43292)
+        it = iterparse(SIMPLE_XMLFILE)
+        del it
+        import gc
+        gc.collect()  # Ensure previous iterator is cleaned up
 
+        # Explicitly calling close() should not emit warning
         with warnings_helper.check_no_resource_warning(self):
             it = iterparse(SIMPLE_XMLFILE)
             it.close()
             del it
 
-        with warnings_helper.check_no_resource_warning(self):
-            it = iterparse(SIMPLE_XMLFILE)
-            action, elem = next(it)
-            self.assertEqual((action, elem.tag), ('end', 'element'))
-            del it, elem
+        # Not closing before del should emit ResourceWarning
+        it = iterparse(SIMPLE_XMLFILE)
+        action, elem = next(it)
+        self.assertEqual((action, elem.tag), ('end', 'element'))
+        del it, elem
+        gc.collect()  # Ensure previous iterator is cleaned up
 
         with warnings_helper.check_no_resource_warning(self):
             it = iterparse(SIMPLE_XMLFILE)
@@ -724,6 +727,63 @@ class ElementTreeTest(unittest.TestCase):
 
         with self.assertRaises(FileNotFoundError):
             iterparse("nonexistent")
+
+    def test_iterparse_resource_warning(self):
+        # Test ResourceWarning when iterparse with filename is not closed
+        import gc
+        import warnings
+
+        # Should emit warning when not closed
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", ResourceWarning)
+
+            def create_unclosed():
+                context = ET.iterparse(SIMPLE_XMLFILE)
+                next(context)
+                # Don't close - should warn
+
+            create_unclosed()
+            gc.collect()
+
+            resource_warnings = [x for x in w
+                               if issubclass(x.category, ResourceWarning)]
+            self.assertGreater(len(resource_warnings), 0,
+                              "Expected ResourceWarning when iterparse is not closed")
+
+        # Should NOT warn when explicitly closed
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always", ResourceWarning)
+
+            def create_closed():
+                context = ET.iterparse(SIMPLE_XMLFILE)
+                next(context)
+                context.close()
+
+            create_closed()
+            gc.collect()
+
+            resource_warnings = [x for x in w
+                               if issubclass(x.category, ResourceWarning)]
+            self.assertEqual(len(resource_warnings), 0,
+                            "No warning expected when iterparse is properly closed")
+
+        # Should NOT warn for file objects (externally managed)
+        with open(SIMPLE_XMLFILE, 'rb') as source:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always", ResourceWarning)
+
+                def create_with_fileobj():
+                    context = ET.iterparse(source)
+                    next(context)
+                    # Don't close - file object managed externally
+
+                create_with_fileobj()
+                gc.collect()
+
+                resource_warnings = [x for x in w
+                                   if issubclass(x.category, ResourceWarning)]
+                self.assertEqual(len(resource_warnings), 0,
+                                "No warning for file objects managed externally")
 
     def test_iterparse_close(self):
         iterparse = ET.iterparse
