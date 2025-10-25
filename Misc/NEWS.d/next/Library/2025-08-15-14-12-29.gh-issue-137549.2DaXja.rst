@@ -1,0 +1,2 @@
+Modify ``__aexit__`` method of ``asyncio.Timeout`` class to handle the superclass of ExceptionGroup object.
+Patch by gunyu1019.

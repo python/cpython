@@ -114,7 +114,7 @@ class Timeout:
                     raise TimeoutError from exc_val
                 elif exc_val is not None:
                     self._insert_timeout_error(exc_val)
-                    if isinstance(exc_val, ExceptionGroup):
+                    if isinstance(exc_val, BaseExceptionGroup):
                         for exc in exc_val.exceptions:
                             self._insert_timeout_error(exc)
         elif self._state is _State.ENTERED:
