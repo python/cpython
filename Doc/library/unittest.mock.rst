@@ -1420,7 +1420,7 @@ patch
 
     The key is to do the patching in the right namespace. See the section `where to patch`_.
 
-.. function:: patch(target, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs)
+.. function:: patch(target, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, *, unsafe=False, **kwargs)
 
     :func:`patch` acts as a function decorator, class decorator or a context
     manager. Inside the body of the function or with statement, the *target*
@@ -1484,6 +1484,10 @@ patch
     tests by looking for method names that start with ``patch.TEST_PREFIX``.
     By default this is ``'test'``, which matches the way :mod:`unittest` finds tests.
     You can specify an alternative prefix by setting ``patch.TEST_PREFIX``.
+
+    Patch will raise a :exc:`RuntimeError` if passed some common misspellings of
+    the arguments autospec and spec_set. Pass the argument *unsafe* with the
+    value ``True`` to disable that check.
 
     Patch can be used as a context manager, with the with statement. Here the
     patching applies to the indented block after the with statement. If you
@@ -1622,7 +1626,7 @@ work as expected::
 patch.object
 ~~~~~~~~~~~~
 
-.. function:: patch.object(target, attribute, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs)
+.. function:: patch.object(target, attribute, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, *, unsafe=False, **kwargs)
 
     patch the named member (*attribute*) on an object (*target*) with a mock
     object.
@@ -2404,7 +2408,7 @@ arguments are a dictionary:
 create_autospec
 ~~~~~~~~~~~~~~~
 
-.. function:: create_autospec(spec, spec_set=False, instance=False, **kwargs)
+.. function:: create_autospec(spec, spec_set=False, instance=False, *, unsafe=False, **kwargs)
 
     Create a mock object using another object as a spec. Attributes on the
     mock will use the corresponding attribute on the *spec* object as their
@@ -2420,6 +2424,10 @@ create_autospec
     instance of the class) will have the same spec. You can use a class as the
     spec for an instance object by passing ``instance=True``. The returned mock
     will only be callable if instances of the mock are callable.
+
+    :func:`create_autospec` will raise a :exc:`RuntimeError` if passed some common
+    misspellings of the arguments autospec and spec_set. Pass the argument
+    *unsafe* with the value ``True`` to disable that check.
 
     :func:`create_autospec` also takes arbitrary keyword arguments that are passed to
     the constructor of the created mock.
