@@ -544,9 +544,6 @@ add_to_trace(
         goto full; \
     }
 
-// Reserve space for N uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
-#define RESERVE(needed) RESERVE_RAW((needed) + 3, _PyUOpName(opcode))
-
 
 /* Returns 1 on success (added to trace), 0 on trace end.
  */
@@ -688,18 +685,12 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
-    max_length -= 2;
+    max_length -= 1;
 
     const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
 
-    ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
-
     assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
     assert(!_PyErr_Occurred(tstate));
-
-    if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
-        ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
-    }
 
     /* Special case the first instruction,
      * so that we can guarantee forward progress */
@@ -720,7 +711,13 @@ _PyJit_translate_single_bytecode_to_trace(
         max_length--;
     }
 
-    RESERVE_RAW(expansion->nuops + needs_guard_ip + 4, "uop and various checks");
+    RESERVE_RAW(expansion->nuops + needs_guard_ip + 3 + (!OPCODE_HAS_NO_SAVE_IP(opcode)), "uop and various checks");
+
+    ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+
+    if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
+        ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
+    }
 
 
     switch (opcode) {
@@ -780,7 +777,6 @@ _PyJit_translate_single_bytecode_to_trace(
                 goto unsupported;
             }
             assert(nuops > 0);
-            RESERVE(nuops + 1); /* One extra for exit */
             uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
             uint32_t orig_target = target;
             for (int i = 0; i < nuops; i++) {
