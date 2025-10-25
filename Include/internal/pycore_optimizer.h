@@ -250,6 +250,7 @@ struct _Py_UOpsAbstractFrame {
     int stack_len;
     int locals_len;
     PyFunctionObject *func;
+    PyCodeObject *code;
 
     JitOptRef *stack_pointer;
     JitOptRef *stack;
@@ -325,7 +326,7 @@ extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     int curr_stackentries,
     JitOptRef *args,
     int arg_len);
-extern int _Py_uop_frame_pop(JitOptContext *ctx);
+extern int _Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 

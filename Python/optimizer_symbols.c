@@ -824,6 +824,7 @@ _Py_uop_frame_new(
     }
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
 
+    frame->code = co;
     frame->stack_len = co->co_stacksize;
     frame->locals_len = co->co_nlocalsplus;
 
@@ -905,18 +906,41 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
 }
 
 int
-_Py_uop_frame_pop(JitOptContext *ctx)
+_Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries)
 {
     _Py_UOpsAbstractFrame *frame = ctx->frame;
     ctx->n_consumed = frame->locals;
+
     ctx->curr_frame_depth--;
-    // TODO gh-139109: Handle trace recording underflow
-    if (ctx->curr_frame_depth == 0) {
-        ctx->done = true;
-        ctx->out_of_space = true;
+
+    if (ctx->curr_frame_depth >= 1) {
+        ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
+
+        // We returned to the correct code. Nothing to do here.
+        if (co == ctx->frame->code) {
+            return 0;
+        }
+        // Else: the code we recorded doesn't match the code we *think* we're
+        // returning to. We could trace anything, we can't just return to the
+        // old frame. We have to restore what the tracer recorded
+        // as the traced next frame.
+        // Remove the current frame, and later swap it out with the right one.
+        else {
+            ctx->curr_frame_depth--;
+        }
+    }
+    // Else: trace stack underflow.
+
+    // This handles swapping out frames.
+    assert(curr_stackentries >= 1);
+    // -1 to stackentries as we push to the stack our return value after this.
+    _Py_UOpsAbstractFrame *new_frame = _Py_uop_frame_new(ctx, co, curr_stackentries - 1, NULL, 0);
+    if (new_frame == NULL) {
         return 1;
     }
-    ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
+
+    ctx->curr_frame_depth++;
+    ctx->frame = new_frame;
 
     return 0;
 }

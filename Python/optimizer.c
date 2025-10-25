@@ -872,6 +872,9 @@ _PyJit_translate_single_bytecode_to_trace(
                     else {
                         operand = 0;
                     }
+                    ADD_TO_TRACE(uop, oparg, operand, target);
+                    trace[trace_length - 1].operand1 = ((int)(frame->stackpointer - _PyFrame_Stackbase(frame)));
+                    break;
                 }
                 if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
                     assert(i + 1 == nuops);
