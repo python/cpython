@@ -1,4 +1,5 @@
 import unittest
+import types
 
 from . import util
 from importlib import resources, import_module
@@ -230,6 +231,18 @@ class ResourceFromNamespaceZipTests(
     unittest.TestCase,
 ):
     MODULE = 'namespacedata01'
+
+
+class ResourceFromMainModuleWithNoneSpecTests(unittest.TestCase):
+    # `__main__.__spec__` can be `None` depending on how it is populated.
+    # https://docs.python.org/3/reference/import.html#main-spec
+    def test_main_module_with_none_spec(self):
+        mainmodule = types.ModuleType("__main__")
+
+        self.assertIsNone(mainmodule.__spec__)
+
+        with self.assertRaises(TypeError, msg="Cannot access resources for '__main__' as it does not appear to correspond to an importable module (its __spec__ is None)."):
+            resources.files(mainmodule)
 
 
 if __name__ == '__main__':
