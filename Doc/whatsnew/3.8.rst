@@ -1332,14 +1332,14 @@ The :mod:`typing` module incorporates several new features:
           ...
 
 * "Final" variables, functions, methods and classes.  See :pep:`591`,
-  :class:`typing.Final` and :func:`typing.final`.
+  :class:`typing.Final` and :deco:`typing.final`.
   The final qualifier instructs a static type checker to restrict
   subclassing, overriding, or reassignment::
 
       pi: Final[float] = 3.1415926536
 
 * Protocol definitions.  See :pep:`544`, :class:`typing.Protocol` and
-  :func:`typing.runtime_checkable`.  Simple ABCs like
+  :deco:`typing.runtime_checkable`.  Simple ABCs like
   :class:`typing.SupportsInt` are now ``Protocol`` subclasses.
 
 * New protocol class :class:`typing.SupportsIndex`.

@@ -622,7 +622,7 @@ Glossary
       determined by the dispatch algorithm.
 
       See also the :term:`single dispatch` glossary entry, the
-      :func:`functools.singledispatch` decorator, and :pep:`443`.
+      :deco:`functools.singledispatch` decorator, and :pep:`443`.
 
    generic type
       A :term:`type` that can be parameterized; typically a

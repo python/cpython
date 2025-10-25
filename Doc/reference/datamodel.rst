@@ -2143,7 +2143,7 @@ Basic customization
    :data:`!NotImplemented`.  There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
-   operations from a single root operation, see :func:`functools.total_ordering`.
+   operations from a single root operation, see :deco:`functools.total_ordering`.
 
    By default, the :class:`object` class provides implementations consistent
    with :ref:`expressions-value-comparisons`: equality compares according to

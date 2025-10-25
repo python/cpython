@@ -431,7 +431,7 @@ The contextlib module
 The :mod:`contextlib` module provides some functions and a decorator that
 are useful when writing objects for use with the ':keyword:`with`' statement.
 
-The decorator is called :func:`~contextlib.contextmanager`, and lets you write
+The decorator is called :deco:`~contextlib.contextmanager`, and lets you write
 a single generator function instead of defining a new class.  The generator
 should yield exactly one value.  The code up to the :keyword:`yield` will be
 executed as the :meth:`~object.__enter__` method, and the value yielded will
@@ -1557,8 +1557,9 @@ Some smaller changes made to the core Python language are:
 
   .. Revision 57619
 
-* Properties now have three attributes, :attr:`getter`, :attr:`setter`
-  and :attr:`deleter`, that are decorators providing useful shortcuts
+* Properties now have three decorators, :deco:`~property.getter`,
+  :deco:`~property.setter` and :deco:`~property.deleter`, that are
+  decorators providing useful shortcuts
   for adding a getter, setter or deleter function to an existing
   property. You would use them like this::
 

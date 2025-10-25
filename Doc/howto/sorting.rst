@@ -375,7 +375,7 @@ Odds and Ends
   :meth:`~object.__lt__` is not implemented (see :func:`object.__lt__`
   for details on the mechanics).  To avoid surprises, :pep:`8`
   recommends that all six comparison methods be implemented.
-  The :func:`~functools.total_ordering` decorator is provided to make that
+  The :deco:`~functools.total_ordering` decorator is provided to make that
   task easier.
 
 * Key functions need not depend directly on the objects being sorted. A key

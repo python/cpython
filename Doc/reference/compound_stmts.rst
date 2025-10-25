@@ -2006,7 +2006,7 @@ Annotations are conventionally used for :term:`type hints <type hint>`, but this
 is not enforced by the language, and in general annotations may contain arbitrary
 expressions. The presence of annotations does not change the runtime semantics of
 the code, except if some mechanism is used that introspects and uses the annotations
-(such as :mod:`dataclasses` or :func:`functools.singledispatch`).
+(such as :mod:`dataclasses` or :deco:`functools.singledispatch`).
 
 By default, annotations are lazily evaluated in an :ref:`annotation scope <annotation-scopes>`.
 This means that they are not evaluated when the code containing the annotation is evaluated.

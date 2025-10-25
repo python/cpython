@@ -283,8 +283,8 @@ The :mod:`!abc` module also supports the following legacy decorators:
 .. decorator:: abstractproperty
 
    .. deprecated:: 3.3
-       It is now possible to use :deco:`property`, :meth:`property.getter`,
-       :meth:`property.setter` and :meth:`property.deleter` with
+       It is now possible to use :deco:`property`, :deco:`property.getter`,
+       :deco:`property.setter` and :deco:`property.deleter` with
        :deco:`abstractmethod`, making this decorator redundant.
 
    A subclass of the built-in :class:`property`, indicating an abstract
