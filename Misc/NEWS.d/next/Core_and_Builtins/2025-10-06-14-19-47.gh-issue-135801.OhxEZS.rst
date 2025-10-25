@@ -1,0 +1,4 @@
+Many functions related to compiling or parsing Python code, such as
+:func:`compile`, :func:`ast.parse`, :func:`symtable.symtable`, and
+:func:`importlib.InspectLoader.source_to_code` now allow to pass the module
+name used when filtering syntax warnings.

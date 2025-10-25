@@ -6,6 +6,7 @@ import math
 import opcode
 import os
 import unittest
+import re
 import sys
 import ast
 import _ast
@@ -1744,6 +1745,29 @@ class TestSpecifics(unittest.TestCase):
         for wm in caught:
             self.assertEqual(wm.category, SyntaxWarning)
             self.assertIn("\"is\" with 'int' literal", str(wm.message))
+
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        module_re = re.escape(filename.removesuffix('.py')) + r'\z'
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            compile(source, filename, 'exec')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.module\z')
+            compile(source, filename, 'exec', module='package.module')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
 
 
 class TestBooleanExpression(unittest.TestCase):

@@ -1010,6 +1010,11 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     // From here on we need to clean up even if there's an error
     mod_ty result = NULL;
 
+    tok->module = PyUnicode_FromString("__main__");
+    if (tok->module == NULL) {
+        goto error;
+    }
+
     int parser_flags = compute_parser_flags(flags);
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, PY_MINOR_VERSION,
                                     errcode, NULL, arena);
@@ -1036,7 +1041,7 @@ error:
 
 mod_ty
 _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
-                       PyCompilerFlags *flags, PyArena *arena)
+                       PyCompilerFlags *flags, PyArena *arena, PyObject *module)
 {
     int exec_input = start_rule == Py_file_input;
 
@@ -1054,6 +1059,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     }
     // This transfers the ownership to the tokenizer
     tok->filename = Py_NewRef(filename_ob);
+    tok->module = Py_XNewRef(module);
 
     // We need to clear up from here on
     mod_ty result = NULL;

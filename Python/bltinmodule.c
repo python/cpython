@@ -751,6 +751,7 @@ compile as builtin_compile
     dont_inherit: bool = False
     optimize: int = -1
     *
+    module as modname: object = None
     _feature_version as feature_version: int = -1
 
 Compile source into a code object that can be executed by exec() or eval().
@@ -770,8 +771,8 @@ in addition to any features explicitly specified.
 static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
-                     int optimize, int feature_version)
-/*[clinic end generated code: output=b0c09c84f116d3d7 input=8f0069edbdac381b]*/
+                     int optimize, PyObject *modname, int feature_version)
+/*[clinic end generated code: output=9a0dce1945917a86 input=ddeae1e0253459dc]*/
 {
     PyObject *source_copy;
     const char *str;
@@ -798,6 +799,15 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (optimize < -1 || optimize > 2) {
         PyErr_SetString(PyExc_ValueError,
                         "compile(): invalid optimize value");
+        goto error;
+    }
+    if (modname == Py_None) {
+        modname = NULL;
+    }
+    else if (!PyUnicode_Check(modname)) {
+        PyErr_Format(PyExc_TypeError,
+                     "compile() argument 'module' must be str or None, not %T",
+                     modname);
         goto error;
     }
 
@@ -845,8 +855,9 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                 goto error;
             }
             int syntax_check_only = ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
-            if (_PyCompile_AstPreprocess(mod, filename, &cf, optimize,
-                                           arena, syntax_check_only) < 0) {
+            if (_PyCompile_AstPreprocess(mod, filename, &cf, optimize, arena,
+                                         syntax_check_only, modname) < 0)
+            {
                 _PyArena_Free(arena);
                 goto error;
             }
@@ -859,7 +870,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                 goto error;
             }
             result = (PyObject*)_PyAST_Compile(mod, filename,
-                                               &cf, optimize, arena);
+                                               &cf, optimize, arena, modname);
         }
         _PyArena_Free(arena);
         goto finally;
@@ -877,7 +888,9 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     tstate->suppress_co_const_immortalization++;
 #endif
 
-    result = Py_CompileStringObject(str, filename, start[compile_mode], &cf, optimize);
+    result = _Py_CompileStringObjectWithModule(str, filename,
+                                               start[compile_mode], &cf,
+                                               optimize, modname);
 
 #ifdef Py_GIL_DISABLED
     tstate->suppress_co_const_immortalization--;

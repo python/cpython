@@ -16,6 +16,7 @@ typedef struct {
 
 typedef struct {
     PyObject *filename;
+    PyObject *module;
     int optimize;
     int ff_features;
     int syntax_check_only;
@@ -70,7 +71,8 @@ control_flow_in_finally_warning(const char *kw, stmt_ty n, _PyASTPreprocessState
     }
     int ret = _PyErr_EmitSyntaxWarning(msg, state->filename, n->lineno,
                                        n->col_offset + 1, n->end_lineno,
-                                       n->end_col_offset + 1);
+                                       n->end_col_offset + 1,
+                                       state->module);
     Py_DECREF(msg);
     return ret < 0 ? 0 : 1;
 }
@@ -968,11 +970,13 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTPreprocessState *st
 
 int
 _PyAST_Preprocess(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
-                  int ff_features, int syntax_check_only)
+                  int ff_features, int syntax_check_only,
+                  PyObject *module)
 {
     _PyASTPreprocessState state;
     memset(&state, 0, sizeof(_PyASTPreprocessState));
     state.filename = filename;
+    state.module = module;
     state.optimize = optimize;
     state.ff_features = ff_features;
     state.syntax_check_only = syntax_check_only;
