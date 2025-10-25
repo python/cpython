@@ -8,7 +8,8 @@
 #include "internal/pycore_interp.h"
 #include "internal/pycore_typevarobject.h"
 #include "internal/pycore_unionobject.h"  // _PyUnion_Type
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pystate.h"               // _PyInterpreterState_GET()
+#include "pycore_runtime.h"               // _Py_ID()
 #include "clinic/_typingmodule.c.h"
 
 /*[clinic input]
@@ -35,8 +36,34 @@ _typing__idfunc(PyObject *module, PyObject *x)
 }
 
 
+/*[clinic input]
+_typing._restore_anonymous_typeparam -> object
+
+    owner: object
+    index: object
+    /
+
+Restore previously pickled anonymous type param from object.__type_params__.
+[clinic start generated code]*/
+
+static PyObject *
+_typing__restore_anonymous_typeparam_impl(PyObject *module, PyObject *owner,
+                                          PyObject *index)
+/*[clinic end generated code: output=00baec27dbf8d2d9 input=2f048db28d8124fb]*/
+{
+    PyObject *type_params = PyObject_GetAttr(owner, &_Py_ID(__type_params__));
+    if (type_params == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyObject_GetItem(type_params, index);
+    Py_DECREF(type_params);
+    return res;
+}
+
+
 static PyMethodDef typing_methods[] = {
     _TYPING__IDFUNC_METHODDEF
+    _TYPING__RESTORE_ANONYMOUS_TYPEPARAM_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
