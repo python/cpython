@@ -18,7 +18,7 @@ on:
       - "Tools/build/compute-changes.py"
       - "Tools/build/consts_getter.py"
       - "Tools/build/deepfreeze.py"
-      - "Tools/build/generate-build-details.py"
+      - "Tools/build/generate_build_details.py"
       - "Tools/build/generate_sbom.py"
       - "Tools/build/generate_stdlib_module_names.py"
       - "Tools/build/mypy.ini"
