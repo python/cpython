@@ -1,0 +1,1 @@
+The peephole optimizer now converts LOAD_FAST to LOAD_FAST_BORROW more aggressively. This optimization is applied even if the loaded variable remains live on the stack at the end of a basic block, as long as the borrow is otherwise determined to be safe. This can reduce reference counting overhead in certain code patterns, such as with iterables in loops.
