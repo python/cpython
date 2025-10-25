@@ -1,0 +1,113 @@
+import os
+import tkinter as tk
+from tkinter import scrolledtext, messagebox
+from google import genai
+from google.genai import types
+
+# --- إعدادات الذكاء الاصطناعي (كما في الكود الأصلي) ---
+MODEL = 'gemini-2.5-flash'
+SYSTEM_INSTRUCTION = "أنت مساعد ذكاء اصطناعي ودود ومفيد، تجيب على جميع الأسئلة باللغة العربية الفصحى. كن مختصراً وواضحاً."
+client = None
+chat = None
+
+def setup_ai():
+    """تهيئة اتصال Gemini وبدء جلسة المحادثة."""
+    global client, chat
+    try:
+        # محاولة تهيئة العميل
+        client = genai.Client()
+        
+        # إنشاء جلسة المحادثة
+        chat = client.chats.create(
+            model=MODEL,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_INSTRUCTION
+            )
+        )
+        return True
+    except Exception as e:
+        messagebox.showerror("خطأ في التهيئة", 
+                             f"فشل في إعداد الذكاء الاصطناعي. تأكد من تعيين متغير البيئة GEMINI_API_KEY. التفاصيل: {e}")
+        return False
+
+# --- وظائف واجهة المستخدم (GUI Functions) ---
+
+def send_message():
+    """إرسال رسالة المستخدم وعرض رد الروبوت."""
+    user_input = user_entry.get()
+    if not user_input.strip():
+        return
+
+    # مسح مربع الإدخال
+    user_entry.delete(0, tk.END)
+
+    # عرض رسالة المستخدم
+    chat_history.config(state=tk.NORMAL)
+    chat_history.insert(tk.END, f"أنت: {user_input}\n", 'user')
+    chat_history.config(state=tk.DISABLED)
+    chat_history.see(tk.END)
+
+    # الحصول على الرد من Gemini
+    try:
+        response = chat.send_message(user_input)
+        
+        # عرض رد الروبوت
+        chat_history.config(state=tk.NORMAL)
+        chat_history.insert(tk.END, f"الروبوت: {response.text}\n\n", 'bot')
+        chat_history.config(state=tk.DISABLED)
+        chat_history.see(tk.END)
+        
+    except Exception as e:
+        chat_history.config(state=tk.NORMAL)
+        chat_history.insert(tk.END, f"❌ خطأ: حدثت مشكلة أثناء الاتصال.\n\n", 'error')
+        chat_history.config(state=tk.DISABLED)
+        messagebox.showerror("خطأ", f"حدث خطأ أثناء معالجة الرسالة: {e}")
+
+# --- إعداد الواجهة الرسومية (GUI Setup) ---
+
+# تهيئة نافذة Tkinter
+root = tk.Tk()
+root.title("🤖 روبوت المحادثة العربي")
+root.geometry("600x500")
+root.option_add('*Font', 'Arial 12') # تعيين الخط الافتراضي
+
+# تعيين الواجهة لتدعم اللغة العربية (من اليمين لليسار)
+root.tk_setPalette(background='#f0f0f0')
+
+# مربع عرض المحادثة (ScrolledText)
+chat_history = scrolledtext.ScrolledText(root, wrap=tk.WORD, state=tk.DISABLED, 
+                                         bg='white', bd=1, relief=tk.FLAT)
+chat_history.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+
+# إضافة وسوم للألوان (Tags for colors)
+chat_history.tag_config('user', foreground='blue')
+chat_history.tag_config('bot', foreground='black', font=('Arial', 12, 'bold'))
+chat_history.tag_config('error', foreground='red')
+
+# إطار الإدخال والزر
+input_frame = tk.Frame(root, padx=10, pady=5)
+input_frame.pack(fill=tk.X)
+
+# مربع إدخال المستخدم
+user_entry = tk.Entry(input_frame, bd=1, relief=tk.SOLID, justify='right') # محاذاة لليمين
+user_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=5)
+user_entry.bind("<Return>", lambda event: send_message()) # إرسال عند الضغط على Enter
+
+# زر الإرسال
+send_button = tk.Button(input_frame, text="إرسال", command=send_message, bg='#4CAF50', fg='white', 
+                        relief=tk.FLAT)
+send_button.pack(side=tk.LEFT, padx=(5, 0), ipady=5)
+
+# --- بدء التطبيق ---
+
+# 1. تهيئة الذكاء الاصطناعي عند بدء التشغيل
+if setup_ai():
+    # رسالة ترحيب أولى
+    chat_history.config(state=tk.NORMAL)
+    chat_history.insert(tk.END, "🤖 الروبوت: مرحباً! كيف يمكنني مساعدتك اليوم؟\n\n", 'bot')
+    chat_history.config(state=tk.DISABLED)
+    
+    # 2. تشغيل الحلقة الرئيسية للواجهة
+    root.mainloop()
+pip install pyinstaller
+ pyinstaller --onefile --windowed tkinter_chatbot.py
