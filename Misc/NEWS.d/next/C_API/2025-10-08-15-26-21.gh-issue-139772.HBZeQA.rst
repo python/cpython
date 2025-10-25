@@ -1,0 +1,2 @@
+Add :c:func:`PyDict_NewPresized` function to create a dictionary with
+preallocated items. Patch by Victor Stinner.

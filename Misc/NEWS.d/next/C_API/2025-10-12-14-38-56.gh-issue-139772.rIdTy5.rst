@@ -1,0 +1,2 @@
+Deprecate the private :c:func:`!_PyDict_NewPresized` function: use the new
+public :c:func:`PyDict_NewPresized` instead. Patch by Victor Stinner.
