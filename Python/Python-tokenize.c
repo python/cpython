@@ -251,7 +251,7 @@ tokenizeriter_next(PyObject *op)
 
     int type = _PyTokenizer_Get(it->tok, &token);
     if (type == ERRORTOKEN) {
-        if(!PyErr_Occurred()) {
+        if (!PyErr_Occurred()) {
             _tokenizer_error(it);
             assert(PyErr_Occurred());
         }
@@ -268,6 +268,9 @@ tokenizeriter_next(PyObject *op)
     }
     else {
         str = PyUnicode_FromStringAndSize(token.start, token.end - token.start);
+        if (PyErr_Occurred()) {
+            goto exit;
+        }
     }
     if (str == NULL) {
         goto exit;
@@ -337,7 +340,9 @@ tokenizeriter_next(PyObject *op)
         }
     }
 
+    assert(!PyErr_Occurred());
     result = Py_BuildValue("(iN(nn)(nn)O)", type, str, lineno, col_offset, end_lineno, end_col_offset, line);
+
 exit:
     _PyToken_Free(&token);
     if (type == ENDMARKER) {
