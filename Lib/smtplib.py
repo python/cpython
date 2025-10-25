@@ -1,7 +1,8 @@
 '''SMTP/ESMTP client class.
 
-This should follow RFC 821 (SMTP), RFC 1869 (ESMTP), RFC 2554 (SMTP
-Authentication) and RFC 2487 (Secure SMTP over TLS).
+This should follow RFC 5321 (SMTP which obsoletes RFC 821), RFC 1869
+(ESMTP), RFC 2554 (SMTP Authentication) and RFC 2487 (Secure SMTP
+over TLS).
 
 Notes:
 
@@ -36,6 +37,8 @@ Example:
 # Better RFC 821 compliance (MAIL and RCPT, and CRLF in data)
 #     by Carey Evans <c.evans@clear.net.nz>, for picky mail servers.
 # RFC 2554 (authentication) support by Gerhard Haering <gerhard@bigfoot.de>.
+# Upper case commands for wider support as enumerated in section 2.4 of RFC 5321
+#     by Steve Jacob <steve@mymangomail.com>
 #
 # This was modified from the Python 1.5 library HTTP lib.
 
@@ -228,7 +231,7 @@ class SMTP:
     sock = None
     file = None
     helo_resp = None
-    ehlo_msg = "ehlo"
+    ehlo_msg = "EHLO"
     ehlo_resp = None
     does_esmtp = False
     default_port = SMTP_PORT
@@ -444,7 +447,7 @@ class SMTP:
         Hostname to send for this command defaults to the FQDN of the local
         host.
         """
-        self.putcmd("helo", name or self.local_hostname)
+        self.putcmd("HELO", name or self.local_hostname)
         (code, msg) = self.getreply()
         self.helo_resp = msg
         return (code, msg)
@@ -507,13 +510,13 @@ class SMTP:
     def help(self, args=''):
         """SMTP 'help' command.
         Returns help text from server."""
-        self.putcmd("help", args)
+        self.putcmd("HELP", args)
         return self.getreply()[1]
 
     def rset(self):
         """SMTP 'rset' command -- resets session."""
         self.command_encoding = 'ascii'
-        return self.docmd("rset")
+        return self.docmd("RSET")
 
     def _rset(self):
         """Internal 'rset' command which ignores any SMTPServerDisconnected error.
@@ -529,7 +532,7 @@ class SMTP:
 
     def noop(self):
         """SMTP 'noop' command -- doesn't do anything :>"""
-        return self.docmd("noop")
+        return self.docmd("NOOP")
 
     def mail(self, sender, options=()):
         """SMTP 'mail' command -- begins mail xfer session.
@@ -549,7 +552,7 @@ class SMTP:
                     raise SMTPNotSupportedError(
                         'SMTPUTF8 not supported by server')
             optionlist = ' ' + ' '.join(options)
-        self.putcmd("mail", "from:%s%s" % (quoteaddr(sender), optionlist))
+        self.putcmd("MAIL", "FROM:%s%s" % (quoteaddr(sender), optionlist))
         return self.getreply()
 
     def rcpt(self, recip, options=()):
@@ -557,7 +560,7 @@ class SMTP:
         optionlist = ''
         if options and self.does_esmtp:
             optionlist = ' ' + ' '.join(options)
-        self.putcmd("rcpt", "to:%s%s" % (quoteaddr(recip), optionlist))
+        self.putcmd("RCPT", "TO:%s%s" % (quoteaddr(recip), optionlist))
         return self.getreply()
 
     def data(self, msg):
@@ -570,7 +573,7 @@ class SMTP:
         is a string, lone '\\r' and '\\n' characters are converted to
         '\\r\\n' characters.  If msg is bytes, it is transmitted as is.
         """
-        self.putcmd("data")
+        self.putcmd("DATA")
         (code, repl) = self.getreply()
         if self.debuglevel > 0:
             self._print_debug('data:', (code, repl))
@@ -591,14 +594,14 @@ class SMTP:
 
     def verify(self, address):
         """SMTP 'verify' command -- checks for address validity."""
-        self.putcmd("vrfy", _addr_only(address))
+        self.putcmd("VRFY", _addr_only(address))
         return self.getreply()
     # a.k.a.
     vrfy = verify
 
     def expn(self, address):
         """SMTP 'expn' command -- expands a mailing list."""
-        self.putcmd("expn", _addr_only(address))
+        self.putcmd("EXPN", _addr_only(address))
         return self.getreply()
 
     # some useful methods
@@ -876,7 +879,7 @@ class SMTP:
             msg = _fix_eols(msg).encode('ascii')
         if self.does_esmtp:
             if self.has_extn('size'):
-                esmtp_opts.append("size=%d" % len(msg))
+                esmtp_opts.append("SIZE=%d" % len(msg))
             for option in mail_options:
                 esmtp_opts.append(option)
         (code, resp) = self.mail(from_addr, esmtp_opts)
@@ -1002,7 +1005,7 @@ class SMTP:
 
     def quit(self):
         """Terminate the SMTP session."""
-        res = self.docmd("quit")
+        res = self.docmd("QUIT")
         # A new EHLO is required after reconnecting with connect()
         self.ehlo_resp = self.helo_resp = None
         self.esmtp_features = {}
@@ -1063,7 +1066,7 @@ class LMTP(SMTP):
     using a Unix socket, LMTP generally don't support or require any
     authentication, but your mileage might vary."""
 
-    ehlo_msg = "lhlo"
+    ehlo_msg = "LHLO"
 
     def __init__(self, host='', port=LMTP_PORT, local_hostname=None,
                  source_address=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
