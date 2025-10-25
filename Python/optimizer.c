@@ -690,7 +690,7 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
-    max_length -= 1;
+    max_length -= 2;
 
     const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
 
