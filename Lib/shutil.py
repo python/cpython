@@ -946,7 +946,7 @@ def _destinsrc(src, dst):
         src += os.path.sep
     if not dst.endswith(os.path.sep):
         dst += os.path.sep
-    return dst.startswith(src)
+    return os.path.normcase(dst).startswith(os.path.normcase(src))
 
 def _is_immutable(src):
     st = _stat(src)
