@@ -212,7 +212,7 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
     return _Py_tss_interp;
 #else
-    return PyInterpreterState_Get();
+    return _PyThreadState_GET()->interp;
 #endif
 }
 

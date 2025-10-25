@@ -1287,9 +1287,8 @@ _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
 PyInterpreterState*
 PyInterpreterState_Get(void)
 {
-    PyThreadState *tstate = current_fast_get();
-    _Py_EnsureTstateNotNULL(tstate);
-    PyInterpreterState *interp = tstate->interp;
+    _Py_AssertHoldsTstate();
+    PyInterpreterState *interp = _Py_tss_interp;
     if (interp == NULL) {
         Py_FatalError("no current interpreter");
     }
