@@ -14,13 +14,28 @@ def load_tzdata(key):
         if path.is_dir():
             raise IsADirectoryError
         return path.open("rb")
-    except (ImportError, FileNotFoundError, UnicodeEncodeError, IsADirectoryError):
-        # There are four types of exception that can be raised that all amount
-        # to "we cannot find this key":
+    except ImportError:
+        # If package_name doesn't exist, it means tzdata is not installed
+        # or there's an error in the folder name like Amrica/New_York
+        exc = ZoneInfoNotFoundError(f"No time zone found with key {key}")
+        
+        # Check if tzdata is actually missing
+        try:
+            import tzdata
+        except ImportError:
+            # tzdata is not installed, provide installation instructions
+            exc.add_note("This error may occur if timezone data is not available.")
+            exc.add_note("Try:")
+            exc.add_note("  - Installing the tzdata package: python -m pip install tzdata")
+            exc.add_note("  - Verifying the timezone key is correct (for example, 'America/New_York')")
+            exc.add_note("")
+            exc.add_note("For more information, see:")
+            exc.add_note("https://docs.python.org/3/library/zoneinfo.html")
+        
+        raise exc
+    except (FileNotFoundError, UnicodeEncodeError, IsADirectoryError):
+        # Other errors that amount to "we cannot find this key":
         #
-        # ImportError: If package_name doesn't exist (e.g. if tzdata is not
-        #   installed, or if there's an error in the folder name like
-        #   Amrica/New_York)
         # FileNotFoundError: If resource_name doesn't exist in the package
         #   (e.g. Europe/Krasnoy)
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
