@@ -59,6 +59,7 @@ import builtins
 import importlib._bootstrap
 import importlib._bootstrap_external
 import importlib.machinery
+import importlib.resources
 import importlib.util
 import inspect
 import io
@@ -642,15 +643,19 @@ class HTMLDoc(Doc):
 
     def page(self, title, contents):
         """Format an HTML page."""
+        css_data = importlib.resources.files('pydoc_data').joinpath('_pydoc.css').read_text()
         return '''\
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Python: %s</title>
+<style>
+%s
+</style>
 </head><body>
 %s
-</body></html>''' % (title, contents)
+</body></html>''' % (title, css_data, contents)
 
     def heading(self, title, extras=''):
         """Format a page heading."""
