@@ -1921,7 +1921,11 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
     PyTypeObject *old_base = type->tp_base;
 
     set_tp_bases(type, Py_NewRef(new_bases), 0);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
     type->tp_base = (PyTypeObject *)Py_NewRef(best_base);
+    _PyEval_StartTheWorld(interp);
 
     PyObject *temp = PyList_New(0);
     if (temp == NULL) {
@@ -1983,7 +1987,9 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
         assert(type->tp_base == best_base);
 
         set_tp_bases(type, old_bases, 0);
+        _PyEval_StopTheWorld(interp);
         type->tp_base = old_base;
+        _PyEval_StartTheWorld(interp);
 
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
