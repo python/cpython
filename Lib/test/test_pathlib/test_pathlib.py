@@ -590,8 +590,15 @@ class PurePathTest(unittest.TestCase):
         self.assertFalse(P('/ab.py').match('/a/*.py'))
         self.assertFalse(P('/a/b/c.py').match('/a/*.py'))
         # Multi-part glob-style pattern.
-        self.assertFalse(P('/a/b/c.py').match('/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').match('/**/*.py'))
         self.assertTrue(P('/a/b/c.py').match('/a/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').match('/a/b/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').match('/**/**/**/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').match('/**'))
+        self.assertTrue(P('/a/b/c.py').match('/a/**'))
+        self.assertFalse(P('a/b/c.py').match('/a/b/c.py/**'))
+        self.assertFalse(P('a/b/c.py').match('/**/a/b/c.py'))
+        self.assertFalse(P('c.py').match('c/**'))
         # Case-sensitive flag
         self.assertFalse(P('A.py').match('a.PY', case_sensitive=True))
         self.assertTrue(P('A.py').match('a.PY', case_sensitive=False))
@@ -599,7 +606,7 @@ class PurePathTest(unittest.TestCase):
         self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
         # Matching against empty path
         self.assertFalse(P('').match('*'))
-        self.assertFalse(P('').match('**'))
+        self.assertTrue(P('').match('**'))
         self.assertFalse(P('').match('**/*'))
 
     @needs_posix
