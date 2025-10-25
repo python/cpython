@@ -396,6 +396,12 @@ class ZipAppCmdlineTest(unittest.TestCase):
         zipapp.create_archive(source, target)
         return target
 
+    def _make_tree(self, root: pathlib.Path, files: list[str]) -> None:
+        for rel in files:
+            p = root / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.touch()
+
     def test_cmdline_create(self):
         # Test the basic command line API.
         source = self.tmpdir / 'source'
@@ -453,6 +459,98 @@ class ZipAppCmdlineTest(unittest.TestCase):
             zipapp.main(args)
         # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
+
+    def test_cmdline_include_then_exclude(self):
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        self._make_tree(source, [
+            '__main__.py',
+            'foo/a.py',
+            'foo/b.pyc',
+            'bar/c.txt',
+        ])
+
+        # Include 'foo' (directory implies subtree), then exclude *.pyc
+        args = [
+            str(source),
+            '--include', '*.py',
+            '--include', 'foo',
+            '--exclude', '**/*.pyc']
+        zipapp.main(args)
+
+        target = source.with_suffix('.pyz')
+        with zipfile.ZipFile(target, 'r') as z:
+            names = set(z.namelist())
+            # Always contains __main__.py unless overridden by -m
+            self.assertIn('__main__.py', names)
+            self.assertIn('foo/', names)
+            self.assertIn('foo/a.py', names)
+            # Excluded by pattern
+            self.assertNotIn('foo/b.pyc', names)
+            # Not included at all since include restricted to 'foo'
+            self.assertNotIn('bar/', names)
+            self.assertNotIn('bar/c.txt', names)
+
+    def test_cmdline_multiple_includes_commas_and_extend(self):
+        source = self.tmpdir / 'src'
+        source.mkdir()
+        self._make_tree(source, [
+            '__main__.py',
+            'pkg/x.py',
+            'pkg/y.txt',
+            'data/readme.txt',
+            'data/keep.bin',
+        ])
+
+        args = [
+            str(source),
+            '--include', 'pkg/**',
+            '--include', 'data/*.txt',
+            '--include', 'data/keep.bin',
+        ]
+        zipapp.main(args)
+
+        target = source.with_suffix('.pyz')
+        with zipfile.ZipFile(target, 'r') as z:
+            names = set(z.namelist())
+            # did not include root files
+            self.assertNotIn('__main__.py', names)
+            # from "pkg"
+            self.assertIn('pkg/x.py', names)
+            self.assertIn('pkg/y.txt', names)
+            # from "data/*.txt"
+            self.assertIn('data/readme.txt', names)
+            # from the second --include
+            self.assertIn('data/keep.bin', names)
+
+    def test_cmdline_exclude_directory_over_included_files(self):
+        source = self.tmpdir / 'tree'
+        source.mkdir()
+        self._make_tree(source, [
+            '__main__.py',
+            'foo/a.py',
+            'foo/b.py',
+            'bar/c.py',
+        ])
+
+        # Include all *.py, but exclude 'foo/**' entirely
+        args = [
+            str(source),
+            '--include', '*.py',
+            '--exclude', 'foo/**',
+        ]
+        zipapp.main(args)
+
+        target = source.with_suffix('.pyz')
+        with zipfile.ZipFile(target, 'r') as z:
+            names = set(z.namelist())
+            self.assertIn('__main__.py', names)
+            # foo is excluded even though files match *.py
+            self.assertNotIn('foo/', names)
+            self.assertNotIn('foo/a.py', names)
+            self.assertNotIn('foo/b.py', names)
+            # bar/c.py remains
+            self.assertIn('bar/c.py', names)
 
 
 if __name__ == "__main__":
