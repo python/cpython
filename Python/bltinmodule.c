@@ -2268,9 +2268,7 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
     if (pretty == Py_True) {
         /* Use default `pprint.PrettyPrinter` */
         PyObject *printer_factory = PyImport_ImportModuleAttrString("pprint", "PrettyPrinter");
-        PyObject *printer = NULL;
 
-        PyObject_Print(printer_factory, stderr, 0);
         if (!printer_factory) {
             Py_DECREF(file);
             return NULL;
@@ -2282,7 +2280,6 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
             Py_DECREF(file);
             return NULL;
         }
-        PyObject_Print(printer, stderr, 0);
     }
     else if (pretty == Py_None) {
         /* Don't use a pretty printer */
@@ -2319,7 +2316,6 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
            Or, this currently calls `printer.pformat(object)` so a pretty printing protocol could
            be implemented there.  Or maybe we want a more generic method name.
          */
-        PyObject_Print(printer, stderr, 0);
         if (printer) {
             PyObject *prettified = PyObject_CallMethod(printer, "pformat", "O", objects[i]);
 
