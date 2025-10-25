@@ -496,7 +496,22 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
         PyErr_SetString(PyExc_ValueError, "code: co_varnames is too small");
         return -1;
     }
-
+    /*
+     * Since framesize = stacksize + nlocalsplus + FRAME_SPECIALS_SIZE is used
+     * as framesize * sizeof(PyObject *) and assumed to be < INT_MAX in many
+     * other places, we need to limit stacksize + nlocalsplus in order to
+     * avoid overflows.
+     *
+     * See https://github.com/python/cpython/issues/126119 for details
+     * and corresponding PR for the rationale on the upper limit value.
+     */
+    Py_ssize_t limit = (Py_ssize_t)(INT_MAX / 16);
+    Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(con->localsplusnames);
+    if (nlocalsplus >= limit || con->stacksize >= limit - nlocalsplus) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "code: locals + stack size is too large");
+        return -1;
+    }
     return 0;
 }
 
