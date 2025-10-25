@@ -19,6 +19,8 @@ typedef struct _table_entry {
     int linenumber;
     const char *filename_borrow;
     int linenumber_borrow;
+    int borrows;
+    _PyStackRef borrowed_from;
 } TableEntry;
 
 TableEntry *
@@ -34,6 +36,8 @@ make_table_entry(PyObject *obj, const char *filename, int linenumber)
     result->linenumber = linenumber;
     result->filename_borrow = NULL;
     result->linenumber_borrow = 0;
+    result->borrows = 0;
+    result->borrowed_from = PyStackRef_NULL;
     return result;
 }
 
@@ -68,13 +72,12 @@ _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
     assert(!PyStackRef_IsError(ref));
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (ref.index >= interp->next_stackref) {
-        _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 " at %s:%d\n", (void *)ref.index, filename, linenumber);
-
+        _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 " at %s:%d\n", ref.index, filename, linenumber);
     }
     PyObject *obj;
     if (ref.index < INITIAL_STACKREF_INDEX) {
         if (ref.index == 0) {
-            _Py_FatalErrorFormat(__func__, "Passing NULL to PyStackRef_CLOSE at %s:%d\n", filename, linenumber);
+            _Py_FatalErrorFormat(__func__, "Passing NULL to _Py_stackref_close at %s:%d\n", filename, linenumber);
         }
         // Pre-allocated reference to None, False or True -- Do not clear
         TableEntry *entry = _Py_hashtable_get(interp->open_stackrefs_table, (void *)ref.index);
@@ -88,10 +91,10 @@ _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
             if (entry != NULL) {
                 _Py_FatalErrorFormat(__func__,
                     "Double close of ref ID %" PRIu64 " at %s:%d. Referred to instance of %s at %p. Closed at %s:%d\n",
-                    (void *)ref.index, filename, linenumber, entry->classname, entry->obj, entry->filename, entry->linenumber);
+                    ref.index, filename, linenumber, entry->classname, entry->obj, entry->filename, entry->linenumber);
             }
 #endif
-            _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 "\n", (void *)ref.index);
+            _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 "\n", ref.index);
         }
         obj = entry->obj;
         free(entry);
@@ -143,10 +146,10 @@ _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber
         if (entry != NULL) {
             _Py_FatalErrorFormat(__func__,
                 "Borrow of closed ref ID %" PRIu64 " at %s:%d. Referred to instance of %s at %p. Closed at %s:%d\n",
-                (void *)ref.index, filename, linenumber, entry->classname, entry->obj, entry->filename, entry->linenumber);
+                ref.index, filename, linenumber, entry->classname, entry->obj, entry->filename, entry->linenumber);
         }
 #endif
-        _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 " at %s:%d\n", (void *)ref.index, filename, linenumber);
+        _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 " at %s:%d\n", ref.index, filename, linenumber);
     }
     entry->filename_borrow = filename;
     entry->linenumber_borrow = linenumber;
