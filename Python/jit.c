@@ -444,11 +444,17 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 }
 
 void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state);
+void patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state);
 
 #include "jit_stencils.h"
 
 #if defined(__aarch64__) || defined(_M_ARM64)
     #define TRAMPOLINE_SIZE 16
+    #define DATA_ALIGN 8
+#elif defined(__x86_64__) && defined(__APPLE__)
+    // LLVM 20 on macOS x86_64 debug builds: GOT entries may exceed ±2GB PC-relative
+    // range.
+    #define TRAMPOLINE_SIZE 16  // 14 bytes + 2 bytes padding for alignment
     #define DATA_ALIGN 8
 #else
     #define TRAMPOLINE_SIZE 0
@@ -499,6 +505,48 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
     p[3] = value >> 32;
 
     patch_aarch64_26r(location, (uintptr_t)p);
+}
+
+// Generate and patch x86_64 trampolines.
+void
+patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state)
+{
+    uint64_t value = (uintptr_t)symbols_map[ordinal];
+    int64_t range = (int64_t)value - 4 - (int64_t)location;
+
+    // If we are in range of 32 signed bits, we can patch directly
+    if (range >= -(1LL << 31) && range < (1LL << 31)) {
+        patch_32r(location, value - 4);
+        return;
+    }
+
+    // Out of range - need a trampoline
+    const uint32_t symbol_mask = 1 << (ordinal % 32);
+    const uint32_t trampoline_mask = state->trampolines.mask[ordinal / 32];
+    assert(symbol_mask & trampoline_mask);
+
+    // Count the number of set bits in the trampoline mask lower than ordinal
+    int index = _Py_popcount32(trampoline_mask & (symbol_mask - 1));
+    for (int i = 0; i < ordinal / 32; i++) {
+        index += _Py_popcount32(state->trampolines.mask[i]);
+    }
+
+    unsigned char *trampoline = state->trampolines.mem + index * TRAMPOLINE_SIZE;
+    assert((size_t)(index + 1) * TRAMPOLINE_SIZE <= state->trampolines.size);
+
+    /* Generate the trampoline (14 bytes, padded to 16):
+       0: ff 25 00 00 00 00    jmp *(%rip)
+       6: XX XX XX XX XX XX XX XX   (64-bit target address)
+
+       Reference: https://wiki.osdev.org/X86-64_Instruction_Encoding#FF (JMP r/m64)
+    */
+    trampoline[0] = 0xFF;
+    trampoline[1] = 0x25;
+    *(uint32_t *)(trampoline + 2) = 0;
+    *(uint64_t *)(trampoline + 6) = value;
+
+    // Patch the call site to call the trampoline instead
+    patch_32r(location, (uintptr_t)trampoline - 4);
 }
 
 static void
