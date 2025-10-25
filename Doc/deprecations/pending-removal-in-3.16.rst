@@ -82,6 +82,10 @@ Pending removal in Python 3.16
     It has not been used by any function in :mod:`!shutil` since Python 3.4,
     and is now an alias of :exc:`RuntimeError`.
 
+* :mod:`socket`:
+  :class:`socket.SocketType`: use :class:`socket.socket` type instead.
+  (Contributed by James Roy in :gh:`88427`.)
+
 * :mod:`symtable`:
 
   * The :meth:`Class.get_methods <symtable.Class.get_methods>` method
