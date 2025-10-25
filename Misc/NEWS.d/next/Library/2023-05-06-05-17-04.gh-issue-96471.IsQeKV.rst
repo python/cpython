@@ -1,0 +1,2 @@
+Add :class:`multiprocessing.Queue` and :class:`multiprocessing.JoinableQueue`
+termination with :py:meth:`~multiprocessing.Queue.shutdown` method.
