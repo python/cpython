@@ -1,0 +1,2 @@
+Ensure that the build fails if ``_Py_TAIL_CALL_INTERP`` is enabled but either
+``preserve_none`` or ``musttail`` is not supported.
