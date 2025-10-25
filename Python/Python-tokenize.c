@@ -251,7 +251,7 @@ tokenizeriter_next(PyObject *op)
 
     int type = _PyTokenizer_Get(it->tok, &token);
     if (type == ERRORTOKEN) {
-        if(!PyErr_Occurred()) {
+        if (!PyErr_Occurred()) {
             _tokenizer_error(it);
             assert(PyErr_Occurred());
         }
@@ -337,7 +337,10 @@ tokenizeriter_next(PyObject *op)
         }
     }
 
-    result = Py_BuildValue("(iN(nn)(nn)O)", type, str, lineno, col_offset, end_lineno, end_col_offset, line);
+    if (!PyErr_Occurred()) {
+        result = Py_BuildValue("(iN(nn)(nn)O)", type, str, lineno, col_offset, end_lineno, end_col_offset, line);
+    }
+
 exit:
     _PyToken_Free(&token);
     if (type == ENDMARKER) {
