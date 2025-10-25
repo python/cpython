@@ -4630,6 +4630,72 @@ class BaseTestBytesGeneratorIdempotent:
         g.flatten(msg, unixfrom=unixfrom, linesep=self.linesep)
         self.assertEqual(data, b.getvalue())
 
+class TestFeedParserTrickle(TestEmailBase):
+    @staticmethod
+    def _msgobj_trickle(filename, trickle_size=2, force_linetype="\r\n"):
+        # Trickle data into the feed parser, one character at a time
+        with openfile(filename, encoding="utf-8") as fp:
+            file_str = fp.read()
+            file_str = file_str.replace("\r\n", "\n").replace("\r", "\n") \
+                               .replace("\n", force_linetype)
+
+            feedparser = FeedParser()
+            for index in range(0, len(file_str), trickle_size):
+                feedparser.feed(file_str[index:index + trickle_size])
+            return feedparser.close()
+
+    def _validate_msg10_msgobj(self, msg, line_end):
+        if isinstance(line_end, str):
+            line_end = line_end.encode()
+        eq = self.assertEqual
+        eq(msg.get_payload(decode=True), None)
+        eq(msg.get_payload(0).get_payload(decode=True),
+           b'This is a 7bit encoded message.' + line_end)
+        eq(msg.get_payload(1).get_payload(decode=True),
+           b'\xa1This is a Quoted Printable encoded message!' + line_end)
+        eq(msg.get_payload(2).get_payload(decode=True),
+           b'This is a Base64 encoded message.')
+        eq(msg.get_payload(3).get_payload(decode=True),
+           b'This is a Base64 encoded message.\n')
+        eq(msg.get_payload(4).get_payload(decode=True),
+           b'This has no Content-Transfer-Encoding: header.' + line_end)
+
+    def test_trickle_1chr_crlf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 1, '\r\n')
+        self._validate_msg10_msgobj(msg, '\r\n')
+
+    def test_trickle_1chr_cr(self):
+        msg = self._msgobj_trickle('msg_10.txt', 1, '\r')
+        self._validate_msg10_msgobj(msg, '\r')
+
+    def test_trickle_1chr_lf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 1, '\n')
+        self._validate_msg10_msgobj(msg, '\n')
+
+    def test_trickle_2chr_crlf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 2, '\r\n')
+        self._validate_msg10_msgobj(msg, '\r\n')
+
+    def test_trickle_2chr_cr(self):
+        msg = self._msgobj_trickle('msg_10.txt', 2, '\r')
+        self._validate_msg10_msgobj(msg, '\r')
+
+    def test_trickle_2chr_lf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 2, '\n')
+        self._validate_msg10_msgobj(msg, '\n')
+
+    def test_trickle_3chr_crlf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 3, '\r\n')
+        self._validate_msg10_msgobj(msg, '\r\n')
+
+    def test_trickle_3chr_cr(self):
+        msg = self._msgobj_trickle('msg_10.txt', 3, '\r')
+        self._validate_msg10_msgobj(msg, '\r')
+
+    def test_trickle_3chr_lf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 3, '\n')
+        self._validate_msg10_msgobj(msg, '\n')
+
 
 class TestBytesGeneratorIdempotentNL(BaseTestBytesGeneratorIdempotent,
                                     TestIdempotent):
