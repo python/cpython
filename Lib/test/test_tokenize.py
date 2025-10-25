@@ -3183,6 +3183,8 @@ async def f():
             f'__{
                 x:d
             }__'""",
+            "def f():\n if x\n\x00"
+            "class C:\n a\n\x00",
         ]:
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)

@@ -268,9 +268,6 @@ tokenizeriter_next(PyObject *op)
     }
     else {
         str = PyUnicode_FromStringAndSize(token.start, token.end - token.start);
-        if (PyErr_Occurred()) {
-            goto exit;
-        }
     }
     if (str == NULL) {
         goto exit;
@@ -340,8 +337,9 @@ tokenizeriter_next(PyObject *op)
         }
     }
 
-    assert(!PyErr_Occurred());
-    result = Py_BuildValue("(iN(nn)(nn)O)", type, str, lineno, col_offset, end_lineno, end_col_offset, line);
+    if (!PyErr_Occurred()) {
+        result = Py_BuildValue("(iN(nn)(nn)O)", type, str, lineno, col_offset, end_lineno, end_col_offset, line);
+    }
 
 exit:
     _PyToken_Free(&token);
