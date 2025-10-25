@@ -78,7 +78,7 @@ _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
    also known as a "gilstate." */
 _Py_thread_local PyThreadState *_Py_tss_gilstate = NULL;
 
-/* The interpreter of the attached thread state */
+/* The interpreter of the attached thread state. */
 _Py_thread_local PyInterpreterState *_Py_tss_interp = NULL;
 
 static inline PyThreadState *

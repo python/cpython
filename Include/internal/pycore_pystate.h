@@ -209,7 +209,7 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
 #endif
-#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+#if !defined(Py_BUILD_CORE_MODULE)
     return _Py_tss_interp;
 #else
     return _PyThreadState_GET()->interp;
