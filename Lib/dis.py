@@ -586,7 +586,7 @@ class ArgResolver:
             #    _disassemble_bytes needs the string repr of the
             #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
             argval = arg
-            if deop in hasconst:
+            if deop in hasconst or deop == LOAD_SMALL_INT:
                 argval, argrepr = _get_const_info(deop, arg, self.co_consts)
             elif deop in hasname:
                 if deop == LOAD_GLOBAL:
