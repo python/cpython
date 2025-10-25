@@ -1,0 +1,3 @@
+Add support of the "plaintext" element, RAWTEXT elements "xmp", "iframe",
+"noembed" and "noframes", and optionally RAWTEXT element "noscript" in
+:class:`html.parser.HTMLParser`.
