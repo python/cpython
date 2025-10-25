@@ -790,7 +790,7 @@ _PyCompile_TopFBlock(compiler *c)
 bool
 _PyCompile_InExceptionHandler(compiler *c)
 {
-    for (Py_ssize_t i = c->u->u_nfblocks; i < c->u->u_nfblocks; i++) {
+    for (Py_ssize_t i = 0; i < c->u->u_nfblocks; i++) {
         fblockinfo *block = &c->u->u_fblock[i];
         switch (block->fb_type) {
             case COMPILE_FBLOCK_TRY_EXCEPT:
