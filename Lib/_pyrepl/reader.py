@@ -75,6 +75,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\<return>", "accept"),
         (r"\C-k", "kill-line"),
         (r"\C-l", "clear-screen"),
+        (r"\C-\M-l", "clear-display"),
         (r"\C-m", "accept"),
         (r"\C-t", "transpose-characters"),
         (r"\C-u", "unix-line-discard"),

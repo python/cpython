@@ -115,6 +115,11 @@ class Console(ABC):
         ...
 
     @abstractmethod
+    def clear_all(self) -> None:
+        """Clear screen and scrollback buffer."""
+        ...
+
+    @abstractmethod
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
         ready for end.  XXX could be merged with restore?  Hmm."""
