@@ -372,8 +372,8 @@ class TimeRE(dict):
             'y': r"(?P<y>\d\d)",
             'Y': r"(?P<Y>\d\d\d\d)",
             # See gh-121237: "z" must support colons for backwards compatibility.
-            'z': r"(?P<z>([+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
-            ':z': r"(?P<colon_z>([+-]\d\d:[0-5]\d(:[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
+            'z': r"(?P<z>([+-]\d\d(:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)?)|(?-i:Z))?",
+            ':z': r"(?P<colon_z>([+-]\d\d(:[0-5]\d(:[0-5]\d(\.\d{1,6})?)?)?)|(?-i:Z))?",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(_fixmonths(self.locale_time.f_month[1:]), 'B'),
@@ -679,7 +679,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 if z == 'Z':
                     gmtoff = 0
                 else:
-                    if z[3] == ':':
+                    if len(z) != 3 and z[3] == ':':
                         z = z[:3] + z[4:]
                         if len(z) > 5:
                             if z[5] != ':':
@@ -687,7 +687,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                                 raise ValueError(msg)
                             z = z[:5] + z[6:]
                     hours = int(z[1:3])
-                    minutes = int(z[3:5])
+                    minutes = int(z[3:5] or 0)
                     seconds = int(z[5:7] or 0)
                     gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
                     gmtoff_remainder = z[8:]
