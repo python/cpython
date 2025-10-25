@@ -30,6 +30,8 @@ distributing the input data across processes (data parallelism).  The following
 example demonstrates the common practice of defining such functions in a module
 so that child processes can successfully import that module.  This basic example
 of data parallelism using :class:`~multiprocessing.pool.Pool`, ::
+Note that a similar high-level interface for thread-based parallelism is provided by the :class:`concurrent.futures.ThreadPoolExecutor` class in the :mod:`concurrent.futures` module.
+
 
    from multiprocessing import Pool
 
