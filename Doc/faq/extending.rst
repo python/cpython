@@ -2,9 +2,7 @@
 Extending/Embedding FAQ
 =======================
 
-.. only:: html
-
-   .. contents::
+.. contents::
 
 .. highlight:: c
 
