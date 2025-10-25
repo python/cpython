@@ -18,8 +18,7 @@ static inline struct _Py_freelists *
 _Py_freelists_GET(void)
 {
 #ifdef Py_DEBUG
-    PyThreadState *tstate = _PyThreadState_GET();
-    _Py_EnsureTstateNotNULL(tstate);
+    _Py_AssertHoldsTstate();
 #endif
 
 #ifdef Py_GIL_DISABLED
