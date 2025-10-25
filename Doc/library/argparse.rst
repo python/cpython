@@ -1676,19 +1676,19 @@ Sub-commands
 
    .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, **kwargs)
 
-   Creates and returns a new :class:`!ArgumentParser` object for the
-   subcommand *name*.
+      Creates and returns a new :class:`!ArgumentParser` object for the
+      subcommand *name*.
 
-   :param name: The name of the sub-command.
-   :param help: A short description for this sub-command. If provided,
-                it will be listed next to the command in the main
-                parser's help message (e.g., ``PROG --help``).
-   :param aliases: A list or sequence of strings that can be used as
-                   alternative names for this sub-command (e.g., ``aliases=['r']``
-                   for a ``'run'`` command).
-   :param kwargs: All other keyword arguments are passed directly to the
-                  :class:`!ArgumentParser` constructor.
-   This returned :class:`!ArgumentParser` object can be modified as usual.
+      :param name: The name of the sub-command.
+      :param help: A short description for this sub-command. If provided,
+                  it will be listed next to the command in the main
+                  parser's help message (e.g., ``PROG --help``).
+      :param aliases: A list or sequence of strings that can be used as
+                     alternative names for this sub-command (e.g., ``aliases=['r']``
+                     for a ``'run'`` command).
+      :param kwargs: All other keyword arguments are passed directly to the
+                     :class:`!ArgumentParser` constructor.
+      This returned :class:`!ArgumentParser` object can be modified as usual.
    Description of parameters:
 
    * *title* - title for the sub-parser group in help output; by default
