@@ -1687,8 +1687,7 @@ Sub-commands
                    alternative names for this sub-command (e.g., ``aliases=['r']``
                    for a ``'run'`` command).
    :param kwargs: All other keyword arguments are passed directly to the
-                  :class:`!ArgumentParser` constructor.
-                  
+                  :class:`!ArgumentParser` constructor.              
    This returned :class:`!ArgumentParser` object can be modified as usual.
    Description of parameters:
 
