@@ -3477,6 +3477,9 @@ _testcapi_exec(PyObject *m)
     if (_PyTestCapi_Init_Function(m) < 0) {
         return -1;
     }
+    if (_PyTestCapi_Init_Module(m) < 0) {
+        return -1;
+    }
 
     return 0;
 }
