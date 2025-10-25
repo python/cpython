@@ -68,8 +68,13 @@ class AuditEvents:
             logger.warning(msg)
             return
 
-    def id_for(self, name) -> str:
-        source_count = len(self.sources.get(name, set()))
+    def _source_count(self, name, docname) -> int:
+        """Count the event name in the same source"""
+        sources = self.sources.get(name, set())
+        return len([s for s, t in sources if s == docname])
+
+    def id_for(self, name, docname) -> str:
+        source_count = self._source_count(name, docname)
         name_clean = re.sub(r"\W", "_", name)
         return f"audit_event_{name_clean}_{source_count}"
 
@@ -142,7 +147,7 @@ class AuditEvent(SphinxDirective):
         except (IndexError, TypeError):
             target = None
         if not target:
-            target = self.env.audit_events.id_for(name)
+            target = self.env.audit_events.id_for(name, self.env.docname)
             ids.append(target)
         self.env.audit_events.add_event(name, args, (self.env.docname, target))
 
