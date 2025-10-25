@@ -7,13 +7,18 @@ the Python Cookbook, published by O'Reilly.
 Library usage: see the Timer class.
 
 Command line usage:
-    python timeit.py [-n N] [-r N] [-s S] [-p] [-h] [--] [statement]
+    python timeit.py [-n N] [-r N] [-s S] [-g S] [-p] [-h] [--] [statement]
 
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
   -r/--repeat N: how many times to repeat the timer (default 5)
   -s/--setup S: statement to be executed once initially (default 'pass').
                 Execution time of this setup statement is NOT timed.
+                This statement is executed at each timer repetition.
+  -g/--global-setup S: statements to be executed once globally (default 'pass').
+                Execution time of this setup statement is NOT timed.
+                This statement is executed for the first time repetition
+                and its side effects remain active for all repetitions.
   -p/--process: use time.process_time() (default is time.perf_counter())
   -v/--verbose: print raw timing results; repeat for more digits precision
   -u/--unit: set the output time unit (nsec, usec, msec, or sec)
@@ -64,6 +69,8 @@ _globals = globals
 # in Timer.__init__() depend on setup being indented 4 spaces and stmt
 # being indented 8 spaces.
 template = """
+{global_setup}
+
 def inner(_it, _timer{init}):
     {setup}
     _t0 = _timer()
@@ -99,15 +106,30 @@ class Timer:
     """
 
     def __init__(self, stmt="pass", setup="pass", timer=default_timer,
-                 globals=None):
+                 globals=None, *, global_setup="pass"):
         """Constructor.  See class doc string."""
         self.timer = timer
         local_ns = {}
         global_ns = _globals() if globals is None else globals
+        local_setup_ns = {}
+        compile_options = {}
         init = ''
+        if isinstance(global_setup, str):
+            # Check that the code can be compiled outside a function.
+            code = compile(global_setup, dummy_src_name, "exec")
+            exec(global_setup, global_ns, local_setup_ns)
+            # The global setup statements may have future statements.
+            compile_options['flags'] = code.co_flags
+            # The side-effects have been saved; nothing else to do.
+            global_setup = ''
+        elif callable(global_setup):
+            local_ns['_global_setup'] = global_setup
+            global_setup = '_global_setup(); del _global_setup'
+        else:
+            raise ValueError("global_setup is neither a string nor callable")
         if isinstance(setup, str):
             # Check that the code can be compiled outside a function
-            compile(setup, dummy_src_name, "exec")
+            compile(setup, dummy_src_name, "exec", **compile_options)
             stmtprefix = setup + '\n'
             setup = reindent(setup, 4)
         elif callable(setup):
@@ -119,7 +141,7 @@ class Timer:
             raise ValueError("setup is neither a string nor callable")
         if isinstance(stmt, str):
             # Check that the code can be compiled outside a function
-            compile(stmtprefix + stmt, dummy_src_name, "exec")
+            compile(stmtprefix + stmt, dummy_src_name, "exec", **compile_options)
             stmt = reindent(stmt, 8)
         elif callable(stmt):
             local_ns['_stmt'] = stmt
@@ -127,10 +149,11 @@ class Timer:
             stmt = '_stmt()'
         else:
             raise ValueError("stmt is neither a string nor callable")
-        src = template.format(stmt=stmt, setup=setup, init=init)
+        src = template.format(stmt=stmt, setup=setup, init=init,
+                              global_setup=global_setup).strip()
         self.src = src  # Save for traceback display
-        code = compile(src, dummy_src_name, "exec")
-        exec(code, global_ns, local_ns)
+        code = compile(src, dummy_src_name, "exec", **compile_options)
+        exec(code, global_ns | local_setup_ns, local_ns)
         self.inner = local_ns["inner"]
 
     def print_exc(self, file=None, **kwargs):
@@ -235,15 +258,17 @@ class Timer:
 
 
 def timeit(stmt="pass", setup="pass", timer=default_timer,
-           number=default_number, globals=None):
+           number=default_number, globals=None,
+           *, global_setup="pass"):
     """Convenience function to create Timer object and call timeit method."""
-    return Timer(stmt, setup, timer, globals).timeit(number)
+    return Timer(stmt, setup, timer, globals, global_setup=global_setup).timeit(number)
 
 
 def repeat(stmt="pass", setup="pass", timer=default_timer,
-           repeat=default_repeat, number=default_number, globals=None):
+           repeat=default_repeat, number=default_number, globals=None,
+           *, global_setup="pass"):
     """Convenience function to create Timer object and call repeat method."""
-    return Timer(stmt, setup, timer, globals).repeat(repeat, number)
+    return Timer(stmt, setup, timer, globals, global_setup=global_setup).repeat(repeat, number)
 
 
 def main(args=None, *, _wrap_timer=None):
@@ -270,8 +295,8 @@ def main(args=None, *, _wrap_timer=None):
     colorize = _colorize.can_colorize()
 
     try:
-        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
-                                   ["number=", "setup=", "repeat=",
+        opts, args = getopt.getopt(args, "n:u:s:g:r:pvh",
+                                   ["number=", "setup=",  "global-setup=", "repeat=",
                                     "process", "verbose", "unit=", "help"])
     except getopt.error as err:
         print(err)
@@ -282,6 +307,7 @@ def main(args=None, *, _wrap_timer=None):
     stmt = "\n".join(args) or "pass"
     number = 0  # auto-determine
     setup = []
+    global_setup = []
     repeat = default_repeat
     verbose = 0
     time_unit = None
@@ -292,6 +318,8 @@ def main(args=None, *, _wrap_timer=None):
             number = int(a)
         if o in ("-s", "--setup"):
             setup.append(a)
+        if o in ("-g", "--global-setup"):
+            global_setup.append(a)
         if o in ("-u", "--unit"):
             if a in units:
                 time_unit = a
@@ -313,6 +341,7 @@ def main(args=None, *, _wrap_timer=None):
             print(__doc__, end="")
             return 0
     setup = "\n".join(setup) or "pass"
+    global_setup = "\n".join(global_setup) or "pass"
 
     # Include the current directory, so that local imports work (sys.path
     # contains the directory of this script, rather than the current
@@ -322,7 +351,7 @@ def main(args=None, *, _wrap_timer=None):
     if _wrap_timer is not None:
         timer = _wrap_timer(timer)
 
-    t = Timer(stmt, setup, timer)
+    t = Timer(stmt, setup, timer, global_setup=global_setup)
     if number == 0:
         # determine number so that 0.2 <= total time < 2.0
         callback = None
