@@ -2352,7 +2352,7 @@ From: aperson@dom.ain
 To: bperson@dom.ain
 Subject: here's something interesting
 
-counter to RFC 2822, there's no separating newline here
+counter to RFC 5322, there's no separating newline here
 """)
 
     # test_defect_handling
@@ -3252,8 +3252,8 @@ class TestMiscellaneous(TestEmailBase):
         """Test for parsing a date with a two-digit year.
 
         Parsing a date with a two-digit year should return the correct
-        four-digit year. RFC822 allows two-digit years, but RFC2822 (which
-        obsoletes RFC822) requires four-digit years.
+        four-digit year. RFC822 allows two-digit years, but RFC5322 (which
+        obsoletes RFC2822, which obsoletes RFC822) requires four-digit years.
 
         """
         self.assertEqual(utils.parsedate_tz('25 Feb 03 13:47:26 -0800'),
