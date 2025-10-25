@@ -18,7 +18,7 @@ class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5535b77c37a119e0]*/
 
 /* For PyByteArray_AS_STRING(). */
-char _PyByteArray_empty_string[] = "";
+_Py_ALIGNED_DEF(ALIGNOF_MAX_ALIGN_T, char) _PyByteArray_empty_string[] = "";
 
 /* Helpers */
 

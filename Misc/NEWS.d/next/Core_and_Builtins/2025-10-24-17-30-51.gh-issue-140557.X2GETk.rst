@@ -1,0 +1,3 @@
+The empty instances of :func:`bytearray` and :func:`array.array` now produce
+buffers that are aligned for any data type.  This is a convenience for
+interoperation with other languages.
