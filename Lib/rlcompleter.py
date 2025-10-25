@@ -39,6 +39,9 @@ import warnings
 
 __all__ = ["Completer"]
 
+# Sentinel object to distinguish "missing" from "present but None"
+_SENTINEL = object()
+
 class Completer:
     def __init__(self, namespace = None):
         """Create a new completer for the command line.
@@ -188,9 +191,9 @@ class Completer:
                         # property method, which is not desirable.
                         matches.append(match)
                         continue
-                    if (value := getattr(thisobject, word, None)) is not None:
+                    if (value := getattr(thisobject, word, _SENTINEL)) is not _SENTINEL:
                         matches.append(self._callable_postfix(value, match))
-                    else:
+                    elif word in getattr(type(thisobject), '__slots__', ()):
                         matches.append(match)
             if matches or not noprefix:
                 break

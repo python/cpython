@@ -106,19 +106,35 @@ class TestRlcompleter(unittest.TestCase):
         # we use __dir__ and __getattr__ in class Foo to create a "magic"
         # class attribute 'bar'. This forces `getattr` to call __getattr__
         # (which is doesn't necessarily do).
-        class Foo:
+        # Test 1: Attribute returns None
+        class FooReturnsNone:
             calls = 0
-            bar = ''
+            bar = None
             def __getattribute__(self, name):
                 if name == 'bar':
                     self.calls += 1
                     return None
                 return super().__getattribute__(name)
 
-        f = Foo()
-        completer = rlcompleter.Completer(dict(f=f))
-        self.assertEqual(completer.complete('f.b', 0), 'f.bar')
-        self.assertEqual(f.calls, 1)
+        f1 = FooReturnsNone()
+        completer1 = rlcompleter.Completer(dict(f=f1))
+        self.assertEqual(completer1.complete('f.b', 0), 'f.bar')
+        self.assertEqual(f1.calls, 1)
+
+        # Test 2: Attribute returns non-None value
+        class FooReturnsValue:
+            calls = 0
+            bar = ''
+            def __getattribute__(self, name):
+                if name == 'bar':
+                    self.calls += 1
+                    return ''
+                return super().__getattribute__(name)
+
+        f2 = FooReturnsValue()
+        completer2 = rlcompleter.Completer(dict(f=f2))
+        self.assertEqual(completer2.complete('f.b', 0), 'f.bar')
+        self.assertEqual(f2.calls, 1)
 
     def test_property_method_not_called(self):
         class Foo:
@@ -143,6 +159,7 @@ class TestRlcompleter(unittest.TestCase):
             __slots__ = ("bar",)
         completer = rlcompleter.Completer(dict(f=Foo()))
         self.assertEqual(completer.complete('f.', 0), 'f.bar')
+
 
     @unittest.mock.patch('rlcompleter._readline_available', False)
     def test_complete(self):
