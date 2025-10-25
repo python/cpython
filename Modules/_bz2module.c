@@ -96,9 +96,6 @@ OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 #define BZ2_bzDecompressEnd bzDecompressEnd
 #endif  /* ! BZ_CONFIG_ERROR */
 
-#define ACQUIRE_LOCK(obj) PyMutex_Lock(&(obj)->mutex)
-#define RELEASE_LOCK(obj) PyMutex_Unlock(&(obj)->mutex)
-
 
 typedef struct {
     PyObject_HEAD
@@ -265,12 +262,12 @@ _bz2_BZ2Compressor_compress_impl(BZ2Compressor *self, Py_buffer *data)
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->flushed)
         PyErr_SetString(PyExc_ValueError, "Compressor has been flushed");
     else
         result = compress(self, data->buf, data->len, BZ_RUN);
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -290,14 +287,14 @@ _bz2_BZ2Compressor_flush_impl(BZ2Compressor *self)
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->flushed)
         PyErr_SetString(PyExc_ValueError, "Repeated call to flush()");
     else {
         self->flushed = 1;
         result = compress(self, NULL, 0, BZ_FINISH);
     }
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -604,12 +601,12 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->eof)
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
     else
         result = decompress(self, data->buf, data->len, max_length);
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
