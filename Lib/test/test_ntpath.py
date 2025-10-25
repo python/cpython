@@ -9,7 +9,7 @@ import unittest
 import warnings
 from ntpath import ALL_BUT_LAST, ALLOW_MISSING
 from test import support
-from test.support import TestFailed, cpython_only, os_helper
+from test.support import os_helper
 from test.support.os_helper import FakePath
 from test import test_genericpath
 from tempfile import TemporaryFile
@@ -59,7 +59,7 @@ def tester(fn, wantResult):
     fn = fn.replace("\\", "\\\\")
     gotResult = eval(fn)
     if wantResult != gotResult and _norm(wantResult) != _norm(gotResult):
-        raise TestFailed("%s should return: %s but returned: %s" \
+        raise support.TestFailed("%s should return: %s but returned: %s" \
               %(str(fn), str(wantResult), str(gotResult)))
 
     # then with bytes
@@ -75,7 +75,7 @@ def tester(fn, wantResult):
         warnings.simplefilter("ignore", DeprecationWarning)
         gotResult = eval(fn)
     if _norm(wantResult) != _norm(gotResult):
-        raise TestFailed("%s should return: %s but returned: %s" \
+        raise support.TestFailed("%s should return: %s but returned: %s" \
               %(str(fn), str(wantResult), repr(gotResult)))
 
 
@@ -1133,6 +1133,19 @@ class TestNtpath(NtpathTestCase):
             check('%spam%bar', '%sbar' % nonascii)
             check('%{}%bar'.format(nonascii), 'ham%sbar' % nonascii)
 
+    @support.requires_resource('cpu')
+    def test_expandvars_large(self):
+        expandvars = ntpath.expandvars
+        with os_helper.EnvironmentVarGuard() as env:
+            env.clear()
+            env["A"] = "B"
+            n = 100_000
+            self.assertEqual(expandvars('%A%'*n), 'B'*n)
+            self.assertEqual(expandvars('%A%A'*n), 'BA'*n)
+            self.assertEqual(expandvars("''"*n + '%%'), "''"*n + '%')
+            self.assertEqual(expandvars("%%"*n), "%"*n)
+            self.assertEqual(expandvars("$$"*n), "$"*n)
+
     def test_expanduser(self):
         tester('ntpath.expanduser("test")', 'test')
 
@@ -1550,7 +1563,7 @@ class TestNtpath(NtpathTestCase):
         self.assertTrue(os.path.exists(r"\\.\CON"))
 
     @unittest.skipIf(sys.platform != 'win32', "Fast paths are only for win32")
-    @cpython_only
+    @support.cpython_only
     def test_fast_paths_in_use(self):
         # There are fast paths of these functions implemented in posixmodule.c.
         # Confirm that they are being used, and not the Python fallbacks in
