@@ -367,6 +367,7 @@ static void
 BZ2Compressor_dealloc(PyObject *op)
 {
     BZ2Compressor *self = _BZ2Compressor_CAST(op);
+    assert(!PyMutex_IsLocked(&self->mutex));
     BZ2_bzCompressEnd(&self->bzs);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject *)self);
@@ -654,6 +655,7 @@ static void
 BZ2Decompressor_dealloc(PyObject *op)
 {
     BZ2Decompressor *self = _BZ2Decompressor_CAST(op);
+    assert(!PyMutex_IsLocked(&self->mutex));
 
     if(self->input_buffer != NULL) {
         PyMem_Free(self->input_buffer);
