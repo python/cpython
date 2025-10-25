@@ -1,0 +1,19 @@
+# Activate base provider only, with default properties fips=yes. It
+# means that fips mode is on, and no digest implementations are
+# available. Perfect for mock testing builtin FIPS wrappers.
+
+config_diagnostics = 1
+openssl_conf = openssl_init
+
+[openssl_init]
+providers = provider_sect
+alg_section = algorithm_sect
+
+[provider_sect]
+null = null_sect
+
+[null_sect]
+activate = 1
+
+[algorithm_sect]
+default_properties = fips=yes
