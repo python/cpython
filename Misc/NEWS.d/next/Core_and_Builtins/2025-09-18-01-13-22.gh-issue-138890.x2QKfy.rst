@@ -1,0 +1,1 @@
+Deleting built-in names with :keyword:`del` now gives a clearer error message.
