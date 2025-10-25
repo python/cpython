@@ -1877,6 +1877,32 @@ class TestForwardRefClass(unittest.TestCase):
 
         self.assertEqual(exc.exception.name, "doesntexist")
 
+    def test_evaluate_undefined_generic(self):
+        # Test the codepath where have to eval() with undefined variables.
+        class C:
+            x: alias[int, undef]
+
+        generic = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            format=Format.FORWARDREF,
+            globals={"alias": dict}
+        )
+        self.assertNotIsInstance(generic, ForwardRef)
+        self.assertIs(generic.__origin__, dict)
+        self.assertEqual(len(generic.__args__), 2)
+        self.assertIs(generic.__args__[0], int)
+        self.assertIsInstance(generic.__args__[1], ForwardRef)
+
+        generic = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            format=Format.FORWARDREF,
+            globals={"alias": Union},
+            locals={"alias": dict}
+        )
+        self.assertNotIsInstance(generic, ForwardRef)
+        self.assertIs(generic.__origin__, dict)
+        self.assertEqual(len(generic.__args__), 2)
+        self.assertIs(generic.__args__[0], int)
+        self.assertIsInstance(generic.__args__[1], ForwardRef)
+
     def test_fwdref_invalid_syntax(self):
         fr = ForwardRef("if")
         with self.assertRaises(SyntaxError):
