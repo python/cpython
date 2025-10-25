@@ -1,0 +1,3 @@
+Document ``help`` and ``aliases`` parameters for
+:meth:`argparse._SubParsersAction.add_parser` in the :mod:`argparse`
+documentation.
