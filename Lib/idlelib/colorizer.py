@@ -2,80 +2,308 @@ import builtins
 import keyword
 import re
 import time
+import token as T
+import tokenize
+from collections import deque
+from io import StringIO
+from tokenize import TokenInfo as TI
+from typing import NamedTuple
 
 from idlelib.config import idleConf
 from idlelib.delegator import Delegator
 
 DEBUG = False
 
-
-def any(name, alternates):
-    "Return a named group pattern matching list of alternates."
-    return "(?P<%s>" % name + "|".join(alternates) + ")"
+IDENTIFIERS_AFTER = frozenset({"def", "class"})
+BUILTINS = frozenset({str(name) for name in dir(builtins) if not name.startswith('_')})
 
 
-def make_pat():
-    kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
-    match_softkw = (
-        r"^[ \t]*" +  # at beginning of line + possible indentation
-        r"(?P<MATCH_SOFTKW>match)\b" +
-        r"(?![ \t]*(?:" + "|".join([  # not followed by ...
-            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
-                                 # pattern-matching statement
-            r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
-        ]) +
-        r"))"
-    )
-    case_default = (
-        r"^[ \t]*" +  # at beginning of line + possible indentation
-        r"(?P<CASE_SOFTKW>case)" +
-        r"[ \t]+(?P<CASE_DEFAULT_UNDERSCORE>_\b)"
-    )
-    case_softkw_and_pattern = (
-        r"^[ \t]*" +  # at beginning of line + possible indentation
-        r"(?P<CASE_SOFTKW2>case)\b" +
-        r"(?![ \t]*(?:" + "|".join([  # not followed by ...
-            r"_\b",  # a lone underscore
-            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
-                                 # pattern-matching case
-            r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
-        ]) +
-        r"))"
-    )
-    builtinlist = [str(name) for name in dir(builtins)
-                   if not name.startswith('_') and
-                   name not in keyword.kwlist]
-    builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
-    comment = any("COMMENT", [r"#[^\n]*"])
-    stringprefix = r"(?i:r|u|f|fr|rf|b|br|rb|t|rt|tr)?"
-    sqstring = stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?"
-    dqstring = stringprefix + r'"[^"\\\n]*(\\.[^"\\\n]*)*"?'
-    sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
-    dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
-    string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
-    prog = re.compile("|".join([
-                                builtin, comment, string, kw,
-                                match_softkw, case_default,
-                                case_softkw_and_pattern,
-                                any("SYNC", [r"\n"]),
-                               ]),
-                      re.DOTALL | re.MULTILINE)
-    return prog
+class Span(NamedTuple):
+    """Span indexing that's inclusive on both ends."""
+
+    start: int
+    end: int
+
+    @classmethod
+    def from_re(cls, m, group):
+        re_span = m.span(group)
+        return cls(re_span[0], re_span[1] - 1)
+
+    @classmethod
+    def from_token(cls, token, line_len):
+        end_offset = -1
+        if (token.type in {T.FSTRING_MIDDLE, T.TSTRING_MIDDLE}
+            and token.string.endswith(("{", "}"))):
+            # gh-134158: a visible trailing brace comes from a double brace in input
+            end_offset += 1
+
+        return cls(
+            line_len[token.start[0] - 1] + token.start[1],
+            line_len[token.end[0] - 1] + token.end[1] + end_offset,
+        )
 
 
-prog = make_pat()
-idprog = re.compile(r"\s+(\w+)")
-prog_group_name_to_tag = {
-    "MATCH_SOFTKW": "KEYWORD",
-    "CASE_SOFTKW": "KEYWORD",
-    "CASE_DEFAULT_UNDERSCORE": "KEYWORD",
-    "CASE_SOFTKW2": "KEYWORD",
-}
+class ColorSpan(NamedTuple):
+    span: Span
+    tag: str
 
 
-def matched_named_groups(re_match):
-    "Get only the non-empty named groups from an re.Match object."
-    return ((k, v) for (k, v) in re_match.groupdict().items() if v)
+def prev_next_window(iterable):
+    """Generates three-tuples of (previous, current, next) items.
+
+    On the first iteration previous is None. On the last iteration next
+    is None. In case of exception next is None and the exception is re-raised
+    on a subsequent next() call.
+
+    Inspired by `sliding_window` from `itertools` recipes.
+    """
+
+    iterator = iter(iterable)
+    window = deque((None, next(iterator)), maxlen=3)
+    try:
+        for x in iterator:
+            window.append(x)
+            yield tuple(window)
+    except Exception:
+        raise
+    finally:
+        window.append(None)
+        yield tuple(window)
+
+
+keyword_first_sets_match = frozenset({"False", "None", "True", "await", "lambda", "not"})
+keyword_first_sets_case = frozenset({"False", "None", "True"})
+
+
+def is_soft_keyword_used(*tokens):
+    """Returns True if the current token is a keyword in this context.
+
+    For the `*tokens` to match anything, they have to be a three-tuple of
+    (previous, current, next).
+    """
+    #trace("is_soft_keyword_used{t}", t=tokens)
+    match tokens:
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
+            TI(string="match"),
+            TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
+            | TI(T.OP, string="(" | "*" | "[" | "{" | "~" | "...")
+        ):
+            return True
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
+            TI(string="match"),
+            TI(T.NAME, string=s)
+        ):
+            if keyword.iskeyword(s):
+                return s in keyword_first_sets_match
+            return True
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
+            TI(string="case"),
+            TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
+            | TI(T.OP, string="(" | "*" | "-" | "[" | "{")
+        ):
+            return True
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
+            TI(string="case"),
+            TI(T.NAME, string=s)
+        ):
+            if keyword.iskeyword(s):
+                return s in keyword_first_sets_case
+            return True
+        case (TI(string="case"), TI(string="_"), TI(string=":")):
+            return True
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
+            TI(string="type"),
+            TI(T.NAME, string=s)
+        ):
+            return not keyword.iskeyword(s)
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
+            TI(string="match" | "case" | "type"),
+            None | TI(T.ENDMARKER) | TI(T.NEWLINE)
+        ):
+            return True
+        case _:
+            return False
+
+
+def recover_unterminated_string(exc, line_lengths, last_emitted, buffer):
+    msg, loc = exc.args
+    if loc is None:
+        return
+
+    line_no, column = loc
+
+    if msg.startswith(
+        (
+            "unterminated string literal",
+            "unterminated f-string literal",
+            "unterminated t-string literal",
+            "EOF in multi-line string",
+            "unterminated triple-quoted f-string literal",
+            "unterminated triple-quoted t-string literal",
+        )
+    ):
+        start = line_lengths[line_no - 1] + column - 1
+        end = line_lengths[-1] - 1
+
+        # in case FSTRING_START was already emitted
+        if last_emitted and start <= last_emitted.span.start:
+            start = last_emitted.span.end + 1
+
+        span = Span(start, end)
+        yield ColorSpan(span, "STRING")
+
+
+def gen_colors_from_token_stream(token_generator, line_lengths):
+    token_window = prev_next_window(token_generator)
+
+    is_def_name = False
+    bracket_level = 0
+    for prev_token, token, next_token in token_window:
+        assert token is not None
+        if token.start == token.end:
+            continue
+
+        match token.type:
+            case (
+                T.STRING
+                | T.FSTRING_START | T.FSTRING_MIDDLE | T.FSTRING_END
+                | T.TSTRING_START | T.TSTRING_MIDDLE | T.TSTRING_END
+            ):
+                span = Span.from_token(token, line_lengths)
+                yield ColorSpan(span, "STRING")
+            case T.COMMENT:
+                span = Span.from_token(token, line_lengths)
+                yield ColorSpan(span, "COMMENT")
+            # XXX the old colorizer added SYNC on newlines, do we still need this?
+            case T.NEWLINE:
+                span = Span.from_token(token, line_lengths)
+                yield ColorSpan(span, "SYNC")
+            case T.OP:
+                if token.string in "([{":
+                    bracket_level += 1
+                elif token.string in ")]}":
+                    bracket_level -= 1
+                # IDLE does not color operators
+            case T.NAME:
+                if is_def_name:
+                    is_def_name = False
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "DEFINITION")
+                elif keyword.iskeyword(token.string):
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "KEYWORD")
+                    if token.string in IDENTIFIERS_AFTER:
+                        is_def_name = True
+                elif (
+                    keyword.issoftkeyword(token.string)
+                    and bracket_level == 0
+                    and is_soft_keyword_used(prev_token, token, next_token)
+                ):
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "KEYWORD")
+                elif (
+                    token.string in BUILTINS
+                    and not (prev_token and prev_token.exact_type == T.DOT)
+                ):
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "BUILTIN")
+
+
+def gen_colors(buffer):
+    """Returns a list of index spans to color using the given color tag.
+
+    The input `buffer` should be a valid start of a Python code block, i.e.
+    it cannot be a block starting in the middle of a multiline string.
+    """
+    sio = StringIO(buffer)
+    line_lengths = [0] + [len(line) for line in sio.readlines()]
+    # make line_lengths cumulative
+    for i in range(1, len(line_lengths)):
+        line_lengths[i] += line_lengths[i-1]
+
+    sio.seek(0)
+    gen = tokenize.generate_tokens(sio.readline)
+    last_emitted = None
+    maxpos = 0
+
+    try:
+        for color in gen_colors_from_token_stream(gen, line_lengths):
+            yield color
+            last_emitted = color
+            maxpos = max(maxpos, color.span.end)
+    except (SyntaxError, tokenize.TokenError) as e:
+        recovered = False
+        if isinstance(e, tokenize.TokenError):
+            for recovered_color in recover_unterminated_string(
+                e, line_lengths, last_emitted, buffer
+            ):
+                yield recovered_color
+                recovered = True
+                maxpos = max(maxpos, recovered_color.span.end)
+
+        # fall back to trying each line seperetly
+        if not recovered:
+            bad_line = 0
+            for i, total_len in enumerate(line_lengths[1:], 1):
+                if total_len > maxpos:
+                    bad_line = i - 1
+                    break
+
+            lines = buffer.split('\n')
+            current_offset = 0
+            in_multiline = False
+            multiline_start = 0
+            multiline_quote = None
+
+            for i, line in enumerate(lines):
+                if i < bad_line:
+                    current_offset += len(line) + 1
+                    continue
+
+                if not in_multiline:
+                    start = line.strip()[:3]
+                    rest = line.strip()[3:]
+                    if start == "'''" or start == '"""':
+                        if not (rest.endswith(start) and len(rest) > 3):
+                            in_multiline = True
+                            multiline_start = current_offset
+                            multiline_quote = start
+                            current_offset += len(line) + 1
+                            continue
+                else:
+                    if multiline_quote and line.strip().endswith(multiline_quote):
+                        string_end = current_offset + len(line)
+                        yield ColorSpan(Span(multiline_start, string_end), "STRING")
+                        in_multiline = False
+                        multiline_quote = None
+                        current_offset += len(line) + 1
+                        continue
+                    else:
+                        current_offset += len(line) + 1
+                        continue
+                if not line.strip():
+                    current_offset += len(line) + 1
+                    continue
+                try:
+                    line_sio = StringIO(line + '\n')
+                    line_gen = tokenize.generate_tokens(line_sio.readline)
+                    line_line_lengths = [0, len(line) + 1]
+
+                    for color in gen_colors_from_token_stream(line_gen, line_line_lengths):
+                        adjusted_span = Span(
+                            color.span.start + current_offset,
+                            color.span.end + current_offset
+                        )
+                        yield ColorSpan(adjusted_span, color.tag)
+                except Exception:
+                    pass
+                current_offset += len(line) + 1
 
 
 def color_config(text):
@@ -118,8 +346,6 @@ class ColorDelegator(Delegator):
     def __init__(self):
         Delegator.__init__(self)
         self.init_state()
-        self.prog = prog
-        self.idprog = idprog
         self.LoadTagDefs()
 
     def init_state(self):
@@ -315,7 +541,7 @@ class ColorDelegator(Delegator):
                     if DEBUG: print("colorizing stopped")
                     return
 
-    def _add_tag(self, start, end, head, matched_group_name):
+    def _add_tag(self, start, end, head, tag):
         """Add a tag to a given range in the text widget.
 
         This is a utility function, receiving the range as `start` and
@@ -326,8 +552,6 @@ class ColorDelegator(Delegator):
         the name of a regular expression "named group" as matched by
         by the relevant highlighting regexps.
         """
-        tag = prog_group_name_to_tag.get(matched_group_name,
-                                         matched_group_name)
         self.tag_add(tag,
                      f"{head}+{start:d}c",
                      f"{head}+{end:d}c")
@@ -340,14 +564,11 @@ class ColorDelegator(Delegator):
 
             `head` is the index in the text widget where the text is found.
         """
-        for m in self.prog.finditer(chars):
-            for name, matched_text in matched_named_groups(m):
-                a, b = m.span(name)
-                self._add_tag(a, b, head, name)
-                if matched_text in ("def", "class"):
-                    if m1 := self.idprog.match(chars, b):
-                        a, b = m1.span(1)
-                        self._add_tag(a, b, head, "DEFINITION")
+        for color_span in gen_colors(chars):
+            start_pos = color_span.span.start
+            end_pos = color_span.span.end + 1
+            tag = color_span.tag
+            self._add_tag(start_pos, end_pos, head, tag)
 
     def removecolors(self):
         "Remove all colorizing tags."
