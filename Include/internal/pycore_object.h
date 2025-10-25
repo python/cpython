@@ -272,17 +272,93 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
 }
 
 #else
-// TODO: implement Py_DECREF specializations for Py_GIL_DISABLED build
+
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
-    Py_DECREF(op);
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+#ifdef Py_REF_DEBUG
+    _Py_DECREF_DecRefTotal();
+#endif
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        local--;
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
+        if (local == 0) {
+            _Py_MergeZeroLocalRefcount(op);
+        }
+    }
+    else {
+        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+        for (;;) {
+            Py_ssize_t new_shared = shared - (1 << _Py_REF_SHARED_SHIFT);
+            if (_Py_atomic_compare_exchange_ssize(
+                    &op->ob_ref_shared,
+                    &shared,
+                    new_shared)) {
+                if (new_shared == 0) {
+#ifdef Py_TRACE_REFS
+                    _Py_ForgetReference(op);
+#endif
+                    _PyReftracerTrack(op, PyRefTracer_DESTROY);
+                    destruct(op);
+                }
+                break;
+            }
+        }
+    }
 }
 
 static inline void
 _Py_DECREF_NO_DEALLOC(PyObject *op)
 {
-    Py_DECREF(op);
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+        _Py_DECREF_IMMORTAL_STAT_INC();
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+#ifdef Py_REF_DEBUG
+    _Py_DECREF_DecRefTotal();
+#endif
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        local--;
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
+        if (local == 0) {
+            _Py_MergeZeroLocalRefcount(op);
+        }
+    }
+    else {
+        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+        for (;;) {
+            Py_ssize_t new_shared = shared - (1 << _Py_REF_SHARED_SHIFT);
+            if (_Py_atomic_compare_exchange_ssize(
+                    &op->ob_ref_shared,
+                    &shared,
+                    new_shared)) {
+                break;
+            }
+        }
+    }
+#ifdef Py_DEBUG
+    // Check that the refcount is still positive after decrement
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        uint32_t final_local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+        if (final_local == 0) {
+            _Py_FatalRefcountError("Expected a positive remaining refcount");
+        }
+    }
+    else {
+        Py_ssize_t final_shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+        if ((final_shared >> _Py_REF_SHARED_SHIFT) <= 0) {
+            _Py_FatalRefcountError("Expected a positive remaining refcount");
+        }
+    }
+#endif
 }
 
 static inline int
