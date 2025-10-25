@@ -621,6 +621,10 @@ _PyJit_translate_single_bytecode_to_trace(
         return 1;
     }
 
+    if (opcode == ENTER_EXECUTOR) {
+        goto full;
+    }
+
     if (!tstate->interp->jit_state.dependencies_still_valid) {
         goto done;
     }
@@ -685,10 +689,6 @@ _PyJit_translate_single_bytecode_to_trace(
 
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
     max_length -= 2;
-
-    if (opcode == ENTER_EXECUTOR) {
-        goto full;
-    }
 
     const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
 
