@@ -1845,9 +1845,17 @@ class Misc:
 
     def cget(self, key):
         """Return the current value of the configuration option."""
-        return self.tk.call(self._w, 'cget', '-' + key)
+        return self.tk.call(self._w, 'cget', f'-{key}')
 
     __getitem__ = cget
+
+    def __contains__(self, option):
+        """Check if the given option exists in this widget"""
+        try:
+            self.cget(option)
+            return True
+        except TclError:
+            return False
 
     def __setitem__(self, key, value):
         self.configure({key: value})
@@ -4322,11 +4330,18 @@ class PhotoImage(Image):
 
     def cget(self, option):
         """Return the value of OPTION."""
-        return self.tk.call(self.name, 'cget', '-' + option)
+        return self.tk.call(self.name, 'cget', f'-{option}')
     # XXX config
 
-    def __getitem__(self, key):
-        return self.tk.call(self.name, 'cget', '-' + key)
+    __getitem__ = cget
+
+    def __contains__(self, option):
+        """Check if the given option exists in this widget"""
+        try:
+            self.cget(option)
+            return True
+        except TclError:
+            return False
 
     def copy(self, *, from_coords=None, zoom=None, subsample=None):
         """Return a new PhotoImage with the same image as this widget.

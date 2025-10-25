@@ -60,6 +60,8 @@ class AbstractWidgetTest(AbstractTkTest):
         t = widget.configure(name)
         self.assertEqual(len(t), 5)
         self.assertEqual2(t[4], expected, eq=eq)
+        self.assertEqual(name in widget, True)
+        self.assertEqual("invalid-option-tkinter" in widget, False)
 
     def checkInvalidParam(self, widget, name, value, errmsg=None):
         orig = widget[name]
