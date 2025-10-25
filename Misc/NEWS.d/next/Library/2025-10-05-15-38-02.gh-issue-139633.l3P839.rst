@@ -1,0 +1,2 @@
+The :mod:`netrc` security check is now run once per parse rather than once
+per entry.
