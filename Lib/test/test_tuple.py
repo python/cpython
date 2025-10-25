@@ -290,15 +290,18 @@ class TupleTest(seq_tests.CommonTest):
         self.assertEqual(repr(a0), "()")
         self.assertEqual(repr(a2), "(0, 1, 2)")
 
+    # Checks that t is not tracked without any GC collections.
     def _not_tracked_instantly(self, t):
         self.assertFalse(gc.is_tracked(t), t)
 
+    # Checks that t is not tracked after GC collection.
     def _not_tracked(self, t):
         # Nested tuples can take several collections to untrack
         gc.collect()
         gc.collect()
         self.assertFalse(gc.is_tracked(t), t)
 
+    # Checks that t continues to be tracked even after GC collection.
     def _tracked(self, t):
         self.assertTrue(gc.is_tracked(t), t)
         gc.collect()
@@ -310,6 +313,8 @@ class TupleTest(seq_tests.CommonTest):
         # Test GC-optimization of tuple literals
         x, y, z = 1.5, "a", []
 
+        # We check that those objects aren't tracked at all.
+        # It's essential for the GC performance, see gh-139951.
         self._not_tracked_instantly(())
         self._not_tracked_instantly((1,))
         self._not_tracked_instantly((1, 2))
