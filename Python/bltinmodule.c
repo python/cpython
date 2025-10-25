@@ -318,9 +318,18 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
         locals = globals;
     }
 
-    if (PyMapping_GetOptionalItem(globals, &_Py_ID(__builtins__), &builtins) < 0) {
+    builtins = PyMapping_GetItemString(globals, "__builtins__");
+    if (builtins == NULL) {
         PyErr_SetString(PyExc_ValueError, "unable to get builtins for lazy import");
         return NULL;
+    } else if (PyModule_Check(builtins)) {
+        PyObject *builtins_dict = Py_XNewRef(PyModule_GetDict(builtins));
+        if (builtins_dict == NULL) {
+            PyErr_SetString(PyExc_AttributeError, "builtins module has no dict");
+            return NULL;
+        }
+        Py_DECREF(builtins);
+        builtins = builtins_dict;
     }
 
     PyObject *res = _PyImport_LazyImportModuleLevelObject(tstate, name, builtins,
