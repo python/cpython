@@ -177,6 +177,7 @@ static const char* _Py_stdlib_module_names[] = {
 "imaplib",
 "importlib",
 "inspect",
+"intmath",
 "io",
 "ipaddress",
 "itertools",
