@@ -718,6 +718,24 @@ class ErrorMessageTest(unittest.TestCase):
             self.assertEqual(e.code,
                              errors.codes[errors.XML_ERROR_UNCLOSED_TOKEN])
 
+class ElementDeclHandlerCleanUpLeakTest(unittest.TestCase):
+
+    def test_trigger_leak(self):
+        # Unfixed, this test would leak 32 to 56 bytes of memory
+        # https://github.com/python/cpython/issues/140593
+        data = textwrap.dedent('''\
+            <!DOCTYPE quotations SYSTEM "quotations.dtd" [
+                <!ELEMENT root ANY>
+            ]>
+            <root/>
+        ''').encode('UTF-8')
+
+        parser = expat.ParserCreate()
+        parser.NotStandaloneHandler = lambda: 1.234  # arbitrary float
+        parser.ElementDeclHandler = lambda _1, _2: None
+        with self.assertRaises(TypeError):
+            parser.Parse(data, True)
+
 
 class ForeignDTDTests(unittest.TestCase):
     """
