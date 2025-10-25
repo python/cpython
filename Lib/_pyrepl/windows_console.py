@@ -446,6 +446,24 @@ class WindowsConsole(Console):
             return None
 
         while self.event_queue.empty():
+            # Check if we have a pending escape sequence that needs timeout handling
+            if self.event_queue.has_pending_escape_sequence():
+                import time
+                current_time_ms = time.monotonic() * 1000
+
+                if self.event_queue.should_emit_standalone_escape(current_time_ms):
+                    # Timeout expired - emit the ESC as a standalone key
+                    self.event_queue.emit_standalone_escape()
+                    break
+
+                # Wait for a short time to check for more input
+                if not self.wait(timeout=10):
+                    # Check again after timeout
+                    current_time_ms = time.monotonic() * 1000
+                    if self.event_queue.should_emit_standalone_escape(current_time_ms):
+                        self.event_queue.emit_standalone_escape()
+                    continue
+
             rec = self._read_input()
             if rec is None:
                 return None
@@ -581,6 +599,7 @@ class WindowsConsole(Console):
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")
+
 
 
 # Windows interop
