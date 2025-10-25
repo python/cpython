@@ -936,6 +936,7 @@ _Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries)
     // -1 to stackentries as we push to the stack our return value after this.
     _Py_UOpsAbstractFrame *new_frame = _Py_uop_frame_new(ctx, co, curr_stackentries - 1, NULL, 0);
     if (new_frame == NULL) {
+        ctx->done = true;
         return 1;
     }
 
