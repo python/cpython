@@ -1044,6 +1044,8 @@ Functions
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
 
+   .. versionchanged:: 3.13
+      Negative start and end indices will no longer be truncated to zero in Python 3.15.
 
 .. function:: finditer(pattern, string, flags=0)
 
@@ -1059,6 +1061,8 @@ Functions
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
 
+   .. versionchanged:: 3.13
+      Negative start and end indices will no longer be truncated to zero in Python 3.15.
 
 .. function:: sub(pattern, repl, string, count=0, flags=0)
 
