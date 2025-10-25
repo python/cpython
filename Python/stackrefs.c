@@ -152,6 +152,11 @@ _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber
     entry->linenumber_borrow = linenumber;
 }
 
+void
+_Py_stackref_set_borrowed_from(_PyStackRef ref, _PyStackRef borrowed_from, const char *filename, int linenumber)
+{
+    assert(!PyStackRef_IsError(ref));
+}
 
 void
 _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref)
