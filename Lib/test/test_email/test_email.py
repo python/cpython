@@ -3388,6 +3388,12 @@ class TestMiscellaneous(TestEmailBase):
         self.assertEqual(('', 'merwok.wok.wok@xample.com'),
             utils.parseaddr('merwok. wok .  wok@xample.com'))
 
+    def test_parseaddr_handles_obsolete_addressing(self):
+        self.assertEqual(('foobar', 'foo@bar.com'),
+            utils.parseaddr('"foobar" <@hop.org:foo@bar.com>'))
+        self.assertEqual(('foobar', 'foo@bar.com'),
+            utils.parseaddr('"foobar" <@hop1.org,@hop2.org:foo@bar.com>'))
+
     def test_formataddr_does_not_quote_parens_in_quoted_string(self):
         addr = ("'foo@example.com' (foo@example.com)",
                 'foo@example.com')
