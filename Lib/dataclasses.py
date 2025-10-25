@@ -1013,6 +1013,10 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             # Otherwise it's a field of some type.
             cls_fields.append(_get_field(cls, name, type, kw_only))
 
+    # Test whether '__init__' is to be auto-generated or if
+    # it is provided explicitly by the user.
+    has_init_method = init or '__init__' in cls.__dict__
+
     for f in cls_fields:
         fields[f.name] = f
 
@@ -1022,6 +1026,15 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         # sees a real default value, not a Field.
         if isinstance(getattr(cls, f.name, None), Field):
             if f.default is MISSING:
+                # https://github.com/python/cpython/issues/89529
+                if f.default_factory is not MISSING and not has_init_method:
+                    raise ValueError(
+                        f'specifying default_factory for {f.name!r}'
+                        f' requires the @dataclass decorator to be'
+                        f' called with init=True or to implement'
+                        f' an __init__ method'
+                    )
+
                 # If there's no default, delete the class attribute.
                 # This happens if we specify field(repr=False), for
                 # example (that is, we specified a field object, but

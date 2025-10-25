@@ -10,6 +10,7 @@ import io
 import pickle
 import inspect
 import builtins
+import re
 import types
 import weakref
 import traceback
@@ -21,6 +22,7 @@ from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Op
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple, defaultdict
 from copy import deepcopy
+from itertools import product
 from functools import total_ordering, wraps
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
@@ -1416,6 +1418,71 @@ class TestCase(unittest.TestCase):
         self.assertEqual(factory.call_count, 1)
         C().x
         self.assertEqual(factory.call_count, 2)
+
+    def test_default_factory_and_init_method_interaction(self):
+        # See https://github.com/python/cpython/issues/89529.
+
+        @dataclass
+        class BaseWithInit:
+            x: list
+
+        @dataclass(slots=True)
+        class BaseWithSlots:
+            x: list
+
+        @dataclass(init=False)
+        class BaseWithOutInit:
+            x: list
+
+        @dataclass(init=False, slots=True)
+        class BaseWithOutInitWithSlots:
+            x: list
+
+        err = re.escape(
+            "specifying default_factory for 'x' requires the "
+            "@dataclass decorator to be called with init=True "
+            "or to implement an __init__ method"
+        )
+
+        for base_class, slots, field_init in product(
+            (object, BaseWithInit, BaseWithSlots,
+             BaseWithOutInit, BaseWithOutInitWithSlots),
+            (True, False),
+            (True, False),
+        ):
+            with self.subTest('generated __init__', base_class=base_class,
+                              init=True, slots=slots, field_init=field_init):
+                @dataclass(init=True, slots=slots)
+                class C(base_class):
+                    x: list = field(init=field_init, default_factory=list)
+                self.assertListEqual(C().x, [])
+
+            with self.subTest('user-defined __init__', base_class=base_class,
+                              init=True, slots=slots, field_init=field_init):
+                @dataclass(init=True, slots=slots)
+                class C(base_class):
+                    x: list = field(init=field_init, default_factory=list)
+                    def __init__(self, *a, **kw):
+                        # deliberately use something else
+                        self.x = 'hello'
+                self.assertEqual(C().x, 'hello')
+
+            with self.subTest('no generated __init__', base_class=base_class,
+                              init=False, slots=slots, field_init=field_init):
+                with self.assertRaisesRegex(ValueError, err):
+                    @dataclass(init=False, slots=slots)
+                    class C(base_class):
+                        x: list = field(init=field_init, default_factory=list)
+
+            with self.subTest('user-defined __init__', base_class=base_class,
+                              init=False, slots=slots, field_init=field_init):
+                @dataclass(init=False, slots=slots)
+                class C(base_class):
+                    x: list = field(init=field_init, default_factory=list)
+                    def __init__(self, *a, **kw):
+                        # deliberately use something else
+                        self.x = 'world'
+                self.assertEqual(C().x, 'world')
 
     def test_default_factory_not_called_if_value_given(self):
         # We need a factory that we can test if it's been called.
