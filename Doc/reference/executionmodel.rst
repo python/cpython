@@ -412,9 +412,9 @@ its operating system (OS), if there is one.  When a program runs,
 the conceptual layers of how it runs on the host look something
 like this:
 
-   | **host machine**
-   |   **process** (global resources)
-   |     **thread** (runs machine code)
+   | 1. **host machine**
+   | 2. **process** (global resources)
+   | 3. **thread** (runs machine code)
 
 Each process represents a program running on the host.  Think of each
 process itself as the data part of its program.  Think of the process'
@@ -471,12 +471,12 @@ Python Runtime Model
 The same conceptual layers apply to each Python program, with some
 extra data layers specific to Python:
 
-   | **host machine**
-   |   **process** (global resources)
-   |     Python global runtime (*state*)
-   |       Python interpreter (*state*)
-   |         **thread** (runs Python bytecode and "C-API")
-   |           Python thread *state*
+   | 1. **host machine**
+   | 2. **process** (global resources)
+   | 3. Python global runtime (*state*)
+   | 4. Python interpreter (*state*)
+   | 5. **thread** (runs Python bytecode and "C-API")
+   | 6. Python thread *state*
 
 At the conceptual level: when a Python program starts, it looks exactly
 like that diagram, with one of each.  The runtime may grow to include
