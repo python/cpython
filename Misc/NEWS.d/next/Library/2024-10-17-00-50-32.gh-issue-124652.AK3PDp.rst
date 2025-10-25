@@ -1,0 +1,1 @@
+:func:`functools.partialmethod` is now faster by making use of new :func:`functools.partial` placeholder functionality.
