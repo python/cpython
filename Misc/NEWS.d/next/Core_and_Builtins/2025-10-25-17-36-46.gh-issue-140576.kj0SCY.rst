@@ -1,2 +1,2 @@
-Fixed crash produced by incorrect result of c:func:`tokenizeriter_next` in
+Fixed crash produced by incorrect result of :c:func:`tokenizeriter_next` in
 case of error occurred. Patch by Mikhail Efimov.
