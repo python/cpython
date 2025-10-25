@@ -1673,6 +1673,7 @@ Sub-commands
    :meth:`!add_subparsers` method.  The :meth:`!add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
    has a single method, :meth:`~_SubParsersAction.add_parser`:
+
    .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, **kwargs)
 
    Creates and returns a new :class:`!ArgumentParser` object for the
@@ -1687,7 +1688,7 @@ Sub-commands
                    for a ``'run'`` command).
    :param kwargs: All other keyword arguments are passed directly to the
                   :class:`!ArgumentParser` constructor.
-
+                  
    This returned :class:`!ArgumentParser` object can be modified as usual.
  
    Description of parameters:
