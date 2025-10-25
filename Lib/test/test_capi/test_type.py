@@ -274,3 +274,37 @@ class TypeTests(unittest.TestCase):
         obj.__dict__ = {'bar': 3}
         self.assertEqual(obj.__dict__, {'bar': 3})
         self.assertEqual(obj.bar, 3)
+
+    def test_type_lookup(self):
+        type_lookup = _testcapi.type_lookup
+
+        class Meta(type):
+            def __getattr__(self, name):
+                if name == "meta_attr":
+                    return "meta attr"
+                else:
+                    raise AttributeError
+
+        class Ten:
+            def __get__(self, obj, objtype=None):
+                return 10
+
+        class Parent(metaclass=Meta):
+            parent_attr = "parent"
+            attr = "parent"
+
+        class Child(Parent):
+            attr = "child"
+            descr = Ten()
+
+        self.assertEqual(type_lookup(Child, "parent_attr"), "parent")
+        self.assertEqual(type_lookup(Child, "attr"), "child")
+        self.assertEqual(type_lookup(Child, "descr"), Child.__dict__['descr'])
+        self.assertEqual(Child.descr, 10)
+        self.assertEqual(type_lookup(Child, "meta_attr"), AttributeError)
+        self.assertEqual(Child.meta_attr, "meta attr")
+        self.assertEqual(type_lookup(Child, "xxx"), AttributeError)
+
+        # name parameter must be a str
+        self.assertRaises(TypeError, type_lookup, Child, b'name')
+        self.assertRaises(TypeError, type_lookup, Child, 123)
