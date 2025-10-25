@@ -1174,6 +1174,23 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
     return make_new_set(type, iterable);
 }
 
+void
+_PyFrozenSet_MaybeUntrack(PyObject *op)
+{
+    if ((op == NULL) || !(PyFrozenSet_CheckExact(op))) {
+        return;
+    }
+    // if all elements of a frozenset are not tracked, we untrack the object
+    Py_ssize_t pos = 0;
+    setentry *entry;
+    while (set_next((PySetObject *)op, &pos, &entry)) {
+        if (_PyObject_GC_MAY_BE_TRACKED(entry->key)) {
+            return;
+        }
+    }
+    _PyObject_GC_UNTRACK(op);
+}
+
 static PyObject *
 make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 {
@@ -1185,7 +1202,9 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         /* frozenset(f) is idempotent */
         return Py_NewRef(iterable);
     }
-    return make_new_set(type, iterable);
+    PyObject *obj = make_new_set(type, iterable);
+    _PyFrozenSet_MaybeUntrack(obj);
+    return obj;
 }
 
 static PyObject *
@@ -2710,7 +2729,9 @@ PySet_New(PyObject *iterable)
 PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
-    return make_new_set(&PyFrozenSet_Type, iterable);
+    PyObject *result = make_new_set(&PyFrozenSet_Type, iterable);
+    _PyFrozenSet_MaybeUntrack(result);
+    return result;
 }
 
 Py_ssize_t
@@ -2779,6 +2800,9 @@ PySet_Add(PyObject *anyset, PyObject *key)
         return -1;
     }
 
+    if (PyFrozenSet_Check(anyset) && PyObject_GC_IsTracked(key) && !PyObject_GC_IsTracked(anyset) ) {
+        _PyObject_GC_TRACK(anyset);
+    }
     int rv;
     Py_BEGIN_CRITICAL_SECTION(anyset);
     rv = set_add_key((PySetObject *)anyset, key);
