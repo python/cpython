@@ -628,16 +628,19 @@ _PyJit_translate_single_bytecode_to_trace(
 
     // Strange control-flow, unsupported opcode, etc.
     if (tstate->interp->jit_state.dynamic_jump_taken) {
+        DPRINTF(2, "Unsupported: dynamic jump taken\n");
         goto unsupported;
     }
 
     // This happens when a recursive call happens that we can't trace. Such as Python -> C -> Python calls
     // If we haven't guarded the IP, then it's untraceable.
     if (frame != tstate->interp->jit_state.prev_instr_frame && !needs_guard_ip) {
+        DPRINTF(2, "Unsupported: unguardable jump taken\n");
         goto unsupported;
     }
 
     if (oparg > 0xFFFF) {
+        DPRINTF(2, "Unsupported: oparg too large\n");
         goto unsupported;
     }
 
@@ -647,10 +650,12 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
+        DPRINTF(2, "Unsupported: strange control-flow\n");
         goto unsupported;
     }
 
     if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+        DPRINTF(2, "Unsupported: frame owned by interpreter\n");
         unsupported:
         {
             // Rewind to previous instruction and replace with _EXIT_TRACE.
