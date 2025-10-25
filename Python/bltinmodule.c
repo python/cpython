@@ -2270,6 +2270,7 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
         PyObject *printer_factory = PyImport_ImportModuleAttrString("pprint", "PrettyPrinter");
         PyObject *printer = NULL;
 
+        PyObject_Print(printer_factory, stderr, 0);
         if (!printer_factory) {
             Py_DECREF(file);
             return NULL;
@@ -2281,6 +2282,7 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
             Py_DECREF(file);
             return NULL;
         }
+        PyObject_Print(printer, stderr, 0);
     }
     else if (pretty == Py_None) {
         /* Don't use a pretty printer */
@@ -2305,7 +2307,33 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
                 return NULL;
             }
         }
-        err = PyFile_WriteObject(objects[i], file, Py_PRINT_RAW);
+        /* XXX: I have a couple of thoughts about how this could be handled.  We could add a
+           PyFile_WriteObjectEx() function which would look largely like PyFile_WriteObject() but
+           would take a pretty printer object (or None, in which case it would just fall back to
+           PyFile_WriteObject()).  Then we could put the logic for the (TBD) "pretty printing
+           protocol" in there.
+
+           For now though, let's keep things localized so all the logic is in the print() function's
+           implementation.  Maybe a better way will come to mind as we pan this idea out.
+
+           Or, this currently calls `printer.pformat(object)` so a pretty printing protocol could
+           be implemented there.  Or maybe we want a more generic method name.
+         */
+        PyObject_Print(printer, stderr, 0);
+        if (printer) {
+            PyObject *prettified = PyObject_CallMethod(printer, "pformat", "O", objects[i]);
+
+            if (!prettified) {
+                Py_DECREF(file);
+                Py_DECREF(printer);
+                return NULL;
+            }
+            err = PyFile_WriteObject(prettified, file, Py_PRINT_RAW);
+            Py_XDECREF(prettified);
+        }
+        else {
+            err = PyFile_WriteObject(objects[i], file, Py_PRINT_RAW);
+        }
         if (err) {
             Py_DECREF(file);
             Py_XDECREF(printer);
