@@ -195,7 +195,7 @@ grouped under the reserved :attr:`~ServerProxy.system` attribute:
 
 .. method:: ServerProxy.system.methodSignature(name)
 
-   This method takes one parameter, the name of a method implemented by the XML-RPC
+   This method takes one argument, the name of a method implemented by the XML-RPC
    server. It returns an array of possible signatures for this method. A signature
    is an array of types. The first of these types is the return type of the method,
    the rest are parameters.
@@ -204,7 +204,7 @@ grouped under the reserved :attr:`~ServerProxy.system` attribute:
    a list of signatures rather than a singleton.
 
    Signatures themselves are restricted to the top level parameters expected by a
-   method. For instance if a method expects one array of structs as a parameter,
+   method. For instance if a method expects one array of structs as a argument,
    and it returns a string, its signature is simply "string, array". If it expects
    three integers and returns a string, its signature is "string, int, int, int".
 
@@ -215,7 +215,7 @@ grouped under the reserved :attr:`~ServerProxy.system` attribute:
 
 .. method:: ServerProxy.system.methodHelp(name)
 
-   This method takes one parameter, the name of a method implemented by the XML-RPC
+   This method takes one argument, the name of a method implemented by the XML-RPC
    server.  It returns a documentation string describing the use of that method. If
    no such string is available, an empty string is returned. The documentation
    string may contain HTML markup.
