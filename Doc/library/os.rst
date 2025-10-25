@@ -1294,8 +1294,8 @@ as internal buffering of data.
 
       This function is intended for low-level I/O.  For normal usage, use the
       built-in function :func:`open`, which returns a :term:`file object` with
-      :meth:`~io.BufferedIOBase.read` and :meth:`~io.BufferedIOBase.write` methods (and many
-      more).  To wrap a file descriptor in a file object, use :func:`fdopen`.
+      :meth:`~io.BufferedIOBase.read` and :meth:`~io.BufferedIOBase.write` methods.
+      To wrap a file descriptor in a file object, use :func:`fdopen`.
 
    .. versionchanged:: 3.3
       Added the *dir_fd* parameter.
