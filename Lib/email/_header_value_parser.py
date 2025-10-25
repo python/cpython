@@ -874,6 +874,12 @@ class MessageID(MsgID):
 class InvalidMessageID(MessageID):
     token_type = 'invalid-message-id'
 
+class MessageIDList(TokenList):
+    token_type = 'message-id-list'
+
+    @property
+    def message_ids(self):
+        return [x for x in self if x.token_type=='msg-id']
 
 class Header(TokenList):
     token_type = 'header'
@@ -2170,6 +2176,32 @@ def parse_message_id(value):
                 "Unexpected {!r}".format(value)))
 
     return message_id
+
+def parse_message_ids(value):
+    """in-reply-to     =   "In-Reply-To:" 1*msg-id CRLF
+       references      =   "References:" 1*msg-id CRLF
+    """
+    message_ids = MessageIDList()
+    while value:
+        # message id list separated with commas - this is invalid,
+        # but happens rather frequently in the wild
+        if value and value[0] == ',':
+            message_ids.defects.append(
+                errors.InvalidHeaderDefect("msg-id separated with comma"))
+            value = value[1:]
+            continue
+
+        try:
+            token, value = get_msg_id(value)
+            message_ids.append(token)
+        except errors.HeaderParseError as ex:
+            token = get_unstructured(value)
+            message_ids.append(InvalidMessageID(token))
+            message_ids.defects.append(
+                errors.InvalidHeaderDefect("Invalid msg-id: {!r}".format(ex)))
+            break
+
+    return message_ids
 
 #
 # XXX: As I begin to add additional header parsers, I'm realizing we probably

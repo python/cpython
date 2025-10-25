@@ -1,0 +1,2 @@
+Add parsing for References/In-Reply-To email headers, preventing them from
+being folded.
