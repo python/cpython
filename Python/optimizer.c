@@ -33,6 +33,9 @@
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
 {
+    if (code == (PyCodeObject *)&_Py_InitCleanup) {
+        return false;
+    }
     if (instr->op.code == ENTER_EXECUTOR) {
         return true;
     }
@@ -99,11 +102,11 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
 }
 
 static _PyExecutorObject *
-make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
+make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies, int chain_depth);
 
 static int
-uop_optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *instr,
-             _PyExecutorObject **exec_ptr, int curr_stackentries,
+uop_optimize(_PyInterpreterFrame *frame, PyThreadState *tstate,
+             _PyExecutorObject **exec_ptr,
              bool progress_needed);
 
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
@@ -112,13 +115,13 @@ uop_optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *instr,
 // gh-137573: inlining this function causes stack overflows
 Py_NO_INLINE int
 _PyOptimizer_Optimize(
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
-    _PyExecutorObject **executor_ptr, int chain_depth)
+    _PyInterpreterFrame *frame, PyThreadState *tstate)
 {
-    _PyStackRef *stack_pointer = frame->stackpointer;
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    int chain_depth = tstate->interp->jit_state.initial_chain_depth;
     assert(interp->jit);
     assert(!interp->compiling);
+    assert(tstate->interp->jit_state.initial_stack_depth >= 0);
 #ifndef Py_GIL_DISABLED
     interp->compiling = true;
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
@@ -127,18 +130,29 @@ _PyOptimizer_Optimize(
     // this is true, since a deopt won't infinitely re-enter the executor:
     chain_depth %= MAX_CHAIN_DEPTH;
     bool progress_needed = chain_depth == 0;
-    PyCodeObject *code = _PyFrame_GetCode(frame);
-    assert(PyCode_Check(code));
+    PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_state.initial_code;
+    _Py_CODEUNIT *start = tstate->interp->jit_state.insert_exec_instr;
+    // A recursive trace might've cleared the values. In that case, bail.
+    if (code == NULL) {
+        interp->compiling = false;
+        return 0;
+    }
     if (progress_needed && !has_space_for_executor(code, start)) {
         interp->compiling = false;
         return 0;
     }
-    int err = uop_optimize(frame, start, executor_ptr, (int)(stack_pointer - _PyFrame_Stackbase(frame)), progress_needed);
+    // One of our dependencies while tracing was invalidated. Not worth compiling.
+    if (!tstate->interp->jit_state.dependencies_still_valid) {
+        interp->compiling = false;
+        return 0;
+    }
+    _PyExecutorObject *executor;
+    int err = uop_optimize(frame, tstate, &executor, progress_needed);
     if (err <= 0) {
         interp->compiling = false;
         return err;
     }
-    assert(*executor_ptr != NULL);
+    assert(executor != NULL);
     if (progress_needed) {
         int index = get_index_for_executor(code, start);
         if (index < 0) {
@@ -148,17 +162,22 @@ _PyOptimizer_Optimize(
              * If an optimizer has already produced an executor,
              * it might get confused by the executor disappearing,
              * but there is not much we can do about that here. */
-            Py_DECREF(*executor_ptr);
+            Py_DECREF(executor);
             interp->compiling = false;
             return 0;
         }
-        insert_executor(code, start, index, *executor_ptr);
+        insert_executor(code, start, index, executor);
     }
     else {
-        (*executor_ptr)->vm_data.code = NULL;
+        executor->vm_data.code = NULL;
     }
-    (*executor_ptr)->vm_data.chain_depth = chain_depth;
-    assert((*executor_ptr)->vm_data.valid);
+    if (chain_depth > 0) {
+        _PyExitData *prev_exit = tstate->interp->jit_state.prev_exit;
+        assert(prev_exit != NULL);
+        prev_exit->executor = executor;;
+    }
+    executor->vm_data.chain_depth = chain_depth;
+    assert(executor->vm_data.valid);
     interp->compiling = false;
     return 1;
 #else
@@ -452,7 +471,6 @@ is_for_iter_test[MAX_UOP_ID + 1] = {
     [_GUARD_NOT_EXHAUSTED_RANGE] = 1,
     [_GUARD_NOT_EXHAUSTED_LIST] = 1,
     [_GUARD_NOT_EXHAUSTED_TUPLE] = 1,
-    [_FOR_ITER_TIER_TWO] = 1,
 };
 
 static const uint16_t
@@ -523,64 +541,21 @@ add_to_trace(
         DPRINTF(2, "No room for %s (need %d, got %d)\n", \
                 (opname), (n), max_length - trace_length); \
         OPT_STAT_INC(trace_too_long); \
-        goto done; \
+        goto full; \
     }
 
 // Reserve space for N uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
 #define RESERVE(needed) RESERVE_RAW((needed) + 3, _PyUOpName(opcode))
 
-// Trace stack operations (used by _PUSH_FRAME, _RETURN_VALUE)
-#define TRACE_STACK_PUSH() \
-    if (trace_stack_depth >= TRACE_STACK_SIZE) { \
-        DPRINTF(2, "Trace stack overflow\n"); \
-        OPT_STAT_INC(trace_stack_overflow); \
-        return 0; \
-    } \
-    assert(func == NULL || func->func_code == (PyObject *)code); \
-    trace_stack[trace_stack_depth].func = func; \
-    trace_stack[trace_stack_depth].code = code; \
-    trace_stack[trace_stack_depth].instr = instr; \
-    trace_stack_depth++;
-#define TRACE_STACK_POP() \
-    if (trace_stack_depth <= 0) { \
-        Py_FatalError("Trace stack underflow\n"); \
-    } \
-    trace_stack_depth--; \
-    func = trace_stack[trace_stack_depth].func; \
-    code = trace_stack[trace_stack_depth].code; \
-    assert(func == NULL || func->func_code == (PyObject *)code); \
-    instr = trace_stack[trace_stack_depth].instr;
 
-/* Returns the length of the trace on success,
- * 0 if it failed to produce a worthwhile trace,
- * and -1 on an error.
+/* Returns 1 on success (added to trace), 0 on trace end.
  */
-static int
-translate_bytecode_to_trace(
+int
+_PyJit_translate_single_bytecode_to_trace(
+    PyThreadState *tstate,
     _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *instr,
-    _PyUOpInstruction *trace,
-    int buffer_size,
-    _PyBloomFilter *dependencies, bool progress_needed)
+    _Py_CODEUNIT *next_instr)
 {
-    bool first = true;
-    PyCodeObject *code = _PyFrame_GetCode(frame);
-    PyFunctionObject *func = _PyFrame_GetFunction(frame);
-    assert(PyFunction_Check(func));
-    PyCodeObject *initial_code = code;
-    _Py_BloomFilter_Add(dependencies, initial_code);
-    _Py_CODEUNIT *initial_instr = instr;
-    int trace_length = 0;
-    // Leave space for possible trailing _EXIT_TRACE
-    int max_length = buffer_size-2;
-    struct {
-        PyFunctionObject *func;
-        PyCodeObject *code;
-        _Py_CODEUNIT *instr;
-    } trace_stack[TRACE_STACK_SIZE];
-    int trace_stack_depth = 0;
-    int confidence = CONFIDENCE_RANGE;  // Adjusted by branch instructions
-    bool jump_seen = false;
 
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -590,408 +565,413 @@ translate_bytecode_to_trace(
     }
 #endif
 
-    DPRINTF(2,
-            "Optimizing %s (%s:%d) at byte offset %d\n",
-            PyUnicode_AsUTF8(code->co_qualname),
-            PyUnicode_AsUTF8(code->co_filename),
-            code->co_firstlineno,
-            2 * INSTR_IP(initial_instr, code));
-    ADD_TO_TRACE(_START_EXECUTOR, 0, (uintptr_t)instr, INSTR_IP(instr, code));
-    ADD_TO_TRACE(_MAKE_WARM, 0, 0, 0);
-    uint32_t target = 0;
-
-    for (;;) {
-        target = INSTR_IP(instr, code);
-        // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
-        max_length-=2;
-        uint32_t opcode = instr->op.code;
-        uint32_t oparg = instr->op.arg;
-
-        if (!first && instr == initial_instr) {
-            // We have looped around to the start:
-            RESERVE(1);
-            ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
-            goto done;
-        }
-
-        DPRINTF(2, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
-
-        if (opcode == EXTENDED_ARG) {
-            instr++;
-            opcode = instr->op.code;
-            oparg = (oparg << 8) | instr->op.arg;
-            if (opcode == EXTENDED_ARG) {
-                instr--;
-                goto done;
-            }
-        }
-        if (opcode == ENTER_EXECUTOR) {
-            // We have a couple of options here. We *could* peek "underneath"
-            // this executor and continue tracing, which could give us a longer,
-            // more optimizeable trace (at the expense of lots of duplicated
-            // tier two code). Instead, we choose to just end here and stitch to
-            // the other trace, which allows a side-exit traces to rejoin the
-            // "main" trace periodically (and also helps protect us against
-            // pathological behavior where the amount of tier two code explodes
-            // for a medium-length, branchy code path). This seems to work
-            // better in practice, but in the future we could be smarter about
-            // what we do here:
-            goto done;
-        }
-        assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
-        RESERVE_RAW(2, "_CHECK_VALIDITY");
-        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
-        if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
-            RESERVE_RAW(2, "_SET_IP");
-            ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)instr, target);
-        }
-
-        /* Special case the first instruction,
-         * so that we can guarantee forward progress */
-        if (first && progress_needed) {
-            assert(first);
-            if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
-                opcode = _PyOpcode_Deopt[opcode];
-            }
-            assert(!OPCODE_HAS_EXIT(opcode));
-            assert(!OPCODE_HAS_DEOPT(opcode));
-        }
-
-        if (OPCODE_HAS_EXIT(opcode)) {
-            // Make space for side exit and final _EXIT_TRACE:
-            RESERVE_RAW(2, "_EXIT_TRACE");
-            max_length--;
-        }
-        if (OPCODE_HAS_ERROR(opcode)) {
-            // Make space for error stub and final _EXIT_TRACE:
-            RESERVE_RAW(2, "_ERROR_POP_N");
-            max_length--;
-        }
-        switch (opcode) {
-            case POP_JUMP_IF_NONE:
-            case POP_JUMP_IF_NOT_NONE:
-            case POP_JUMP_IF_FALSE:
-            case POP_JUMP_IF_TRUE:
-            {
-                RESERVE(1);
-                int counter = instr[1].cache;
-                int bitcount = _Py_popcount32(counter);
-                int jump_likely = bitcount > 8;
-                /* If bitcount is 8 (half the jumps were taken), adjust confidence by 50%.
-                   For values in between, adjust proportionally. */
-                if (jump_likely) {
-                    confidence = confidence * bitcount / 16;
-                }
-                else {
-                    confidence = confidence * (16 - bitcount) / 16;
-                }
-                uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
-                DPRINTF(2, "%d: %s(%d): counter=%04x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
-                        target, _PyOpcode_OpName[opcode], oparg,
-                        counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
-                if (confidence < CONFIDENCE_CUTOFF) {
-                    DPRINTF(2, "Confidence too low (%d < %d)\n", confidence, CONFIDENCE_CUTOFF);
-                    OPT_STAT_INC(low_confidence);
-                    goto done;
-                }
-                _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-                _Py_CODEUNIT *target_instr = next_instr + oparg;
-                if (jump_likely) {
-                    DPRINTF(2, "Jump likely (%04x = %d bits), continue at byte offset %d\n",
-                            instr[1].cache, bitcount, 2 * INSTR_IP(target_instr, code));
-                    instr = target_instr;
-                    ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(next_instr, code));
-                    goto top;
-                }
-                ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(target_instr, code));
-                break;
-            }
-
-            case JUMP_BACKWARD:
-            case JUMP_BACKWARD_JIT:
-                ADD_TO_TRACE(_CHECK_PERIODIC, 0, 0, target);
-                _Py_FALLTHROUGH;
-            case JUMP_BACKWARD_NO_INTERRUPT:
-            {
-                instr += 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] - (int)oparg;
-                if (jump_seen) {
-                    OPT_STAT_INC(inner_loop);
-                    DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
-                    goto done;
-                }
-                jump_seen = true;
-                goto top;
-            }
-
-            case JUMP_FORWARD:
-            {
-                RESERVE(0);
-                // This will emit two _SET_IP instructions; leave it to the optimizer
-                instr += oparg;
-                break;
-            }
-
-            case RESUME:
-                /* Use a special tier 2 version of RESUME_CHECK to allow traces to
-                 *  start with RESUME_CHECK */
-                ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
-                break;
-
-            default:
-            {
-                const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
-                if (expansion->nuops > 0) {
-                    // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
-                    int nuops = expansion->nuops;
-                    RESERVE(nuops + 1); /* One extra for exit */
-                    int16_t last_op = expansion->uops[nuops-1].uop;
-                    if (last_op == _RETURN_VALUE || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
-                        // Check for trace stack underflow now:
-                        // We can't bail e.g. in the middle of
-                        // LOAD_CONST + _RETURN_VALUE.
-                        if (trace_stack_depth == 0) {
-                            DPRINTF(2, "Trace stack underflow\n");
-                            OPT_STAT_INC(trace_stack_underflow);
-                            return 0;
-                        }
-                    }
-                    uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
-                    for (int i = 0; i < nuops; i++) {
-                        oparg = orig_oparg;
-                        uint32_t uop = expansion->uops[i].uop;
-                        uint64_t operand = 0;
-                        // Add one to account for the actual opcode/oparg pair:
-                        int offset = expansion->uops[i].offset + 1;
-                        switch (expansion->uops[i].size) {
-                            case OPARG_SIMPLE:
-                                assert(opcode != JUMP_BACKWARD_NO_INTERRUPT && opcode != JUMP_BACKWARD);
-                                break;
-                            case OPARG_CACHE_1:
-                                operand = read_u16(&instr[offset].cache);
-                                break;
-                            case OPARG_CACHE_2:
-                                operand = read_u32(&instr[offset].cache);
-                                break;
-                            case OPARG_CACHE_4:
-                                operand = read_u64(&instr[offset].cache);
-                                break;
-                            case OPARG_TOP:  // First half of super-instr
-                                oparg = orig_oparg >> 4;
-                                break;
-                            case OPARG_BOTTOM:  // Second half of super-instr
-                                oparg = orig_oparg & 0xF;
-                                break;
-                            case OPARG_SAVE_RETURN_OFFSET:  // op=_SAVE_RETURN_OFFSET; oparg=return_offset
-                                oparg = offset;
-                                assert(uop == _SAVE_RETURN_OFFSET);
-                                break;
-                            case OPARG_REPLACED:
-                                uop = _PyUOp_Replacements[uop];
-                                assert(uop != 0);
-                                uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + (oparg > 255);
-                                if (uop == _TIER2_RESUME_CHECK) {
-                                    target = next_inst;
-                                }
-#ifdef Py_DEBUG
-                                else {
-                                    uint32_t jump_target = next_inst + oparg;
-                                    assert(_Py_GetBaseCodeUnit(code, jump_target).op.code == END_FOR);
-                                    assert(_Py_GetBaseCodeUnit(code, jump_target+1).op.code == POP_ITER);
-                                }
-#endif
-                                break;
-                            case OPERAND1_1:
-                                assert(trace[trace_length-1].opcode == uop);
-                                operand = read_u16(&instr[offset].cache);
-                                trace[trace_length-1].operand1 = operand;
-                                continue;
-                            case OPERAND1_2:
-                                assert(trace[trace_length-1].opcode == uop);
-                                operand = read_u32(&instr[offset].cache);
-                                trace[trace_length-1].operand1 = operand;
-                                continue;
-                            case OPERAND1_4:
-                                assert(trace[trace_length-1].opcode == uop);
-                                operand = read_u64(&instr[offset].cache);
-                                trace[trace_length-1].operand1 = operand;
-                                continue;
-                            default:
-                                fprintf(stderr,
-                                        "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
-                                        opcode, oparg, nuops, i,
-                                        expansion->uops[i].size,
-                                        expansion->uops[i].offset);
-                                Py_FatalError("garbled expansion");
-                        }
-
-                        if (uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
-                            TRACE_STACK_POP();
-                            /* Set the operand to the function or code object returned to,
-                             * to assist optimization passes. (See _PUSH_FRAME below.)
-                             */
-                            if (func != NULL) {
-                                operand = (uintptr_t)func;
-                            }
-                            else if (code != NULL) {
-                                operand = (uintptr_t)code | 1;
-                            }
-                            else {
-                                operand = 0;
-                            }
-                            ADD_TO_TRACE(uop, oparg, operand, target);
-                            DPRINTF(2,
-                                "Returning to %s (%s:%d) at byte offset %d\n",
-                                PyUnicode_AsUTF8(code->co_qualname),
-                                PyUnicode_AsUTF8(code->co_filename),
-                                code->co_firstlineno,
-                                2 * INSTR_IP(instr, code));
-                            goto top;
-                        }
-
-                        if (uop == _PUSH_FRAME) {
-                            assert(i + 1 == nuops);
-                            if (opcode == FOR_ITER_GEN ||
-                                opcode == LOAD_ATTR_PROPERTY ||
-                                opcode == BINARY_OP_SUBSCR_GETITEM ||
-                                opcode == SEND_GEN)
-                            {
-                                DPRINTF(2, "Bailing due to dynamic target\n");
-                                OPT_STAT_INC(unknown_callee);
-                                return 0;
-                            }
-                            assert(_PyOpcode_Deopt[opcode] == CALL || _PyOpcode_Deopt[opcode] == CALL_KW);
-                            int func_version_offset =
-                                offsetof(_PyCallCache, func_version)/sizeof(_Py_CODEUNIT)
-                                // Add one to account for the actual opcode/oparg pair:
-                                + 1;
-                            uint32_t func_version = read_u32(&instr[func_version_offset].cache);
-                            PyCodeObject *new_code = NULL;
-                            PyFunctionObject *new_func =
-                                _PyFunction_LookupByVersion(func_version, (PyObject **) &new_code);
-                            DPRINTF(2, "Function: version=%#x; new_func=%p, new_code=%p\n",
-                                    (int)func_version, new_func, new_code);
-                            if (new_code != NULL) {
-                                if (new_code == code) {
-                                    // Recursive call, bail (we could be here forever).
-                                    DPRINTF(2, "Bailing on recursive call to %s (%s:%d)\n",
-                                            PyUnicode_AsUTF8(new_code->co_qualname),
-                                            PyUnicode_AsUTF8(new_code->co_filename),
-                                            new_code->co_firstlineno);
-                                    OPT_STAT_INC(recursive_call);
-                                    ADD_TO_TRACE(uop, oparg, 0, target);
-                                    ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
-                                    goto done;
-                                }
-                                if (new_code->co_version != func_version) {
-                                    // func.__code__ was updated.
-                                    // Perhaps it may happen again, so don't bother tracing.
-                                    // TODO: Reason about this -- is it better to bail or not?
-                                    DPRINTF(2, "Bailing because co_version != func_version\n");
-                                    ADD_TO_TRACE(uop, oparg, 0, target);
-                                    ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
-                                    goto done;
-                                }
-                                // Increment IP to the return address
-                                instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
-                                TRACE_STACK_PUSH();
-                                _Py_BloomFilter_Add(dependencies, new_code);
-                                /* Set the operand to the callee's function or code object,
-                                 * to assist optimization passes.
-                                 * We prefer setting it to the function
-                                 * but if that's not available but the code is available,
-                                 * use the code, setting the low bit so the optimizer knows.
-                                 */
-                                if (new_func != NULL) {
-                                    operand = (uintptr_t)new_func;
-                                }
-                                else if (new_code != NULL) {
-                                    operand = (uintptr_t)new_code | 1;
-                                }
-                                else {
-                                    operand = 0;
-                                }
-                                ADD_TO_TRACE(uop, oparg, operand, target);
-                                code = new_code;
-                                func = new_func;
-                                instr = _PyCode_CODE(code);
-                                DPRINTF(2,
-                                    "Continuing in %s (%s:%d) at byte offset %d\n",
-                                    PyUnicode_AsUTF8(code->co_qualname),
-                                    PyUnicode_AsUTF8(code->co_filename),
-                                    code->co_firstlineno,
-                                    2 * INSTR_IP(instr, code));
-                                goto top;
-                            }
-                            DPRINTF(2, "Bail, new_code == NULL\n");
-                            OPT_STAT_INC(unknown_callee);
-                            return 0;
-                        }
-
-                        if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
-                            assert(i + 1 == nuops);
-                            _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-                            assert(next_instr->op.code == STORE_FAST);
-                            operand = next_instr->op.arg;
-                            // Skip the STORE_FAST:
-                            instr++;
-                        }
-
-                        // All other instructions
-                        ADD_TO_TRACE(uop, oparg, operand, target);
-                    }
-                    break;
-                }
-                DPRINTF(2, "Unsupported opcode %s\n", _PyOpcode_OpName[opcode]);
-                OPT_UNSUPPORTED_OPCODE(opcode);
-                goto done;  // Break out of loop
-            }  // End default
-
-        }  // End switch (opcode)
-
-        instr++;
-        // Add cache size for opcode
-        instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-
-        if (opcode == CALL_LIST_APPEND) {
-            assert(instr->op.code == POP_TOP);
-            instr++;
-        }
-    top:
-        // Jump here after _PUSH_FRAME or likely branches.
-        first = false;
-    }  // End for (;;)
-
-done:
-    while (trace_stack_depth > 0) {
-        TRACE_STACK_POP();
-    }
-    assert(code == initial_code);
-    // Skip short traces where we can't even translate a single instruction:
-    if (first) {
-        OPT_STAT_INC(trace_too_short);
-        DPRINTF(2,
-                "No trace for %s (%s:%d) at byte offset %d (no progress)\n",
-                PyUnicode_AsUTF8(code->co_qualname),
-                PyUnicode_AsUTF8(code->co_filename),
-                code->co_firstlineno,
-                2 * INSTR_IP(initial_instr, code));
+    PyCodeObject *old_code = tstate->interp->jit_state.prev_instr_code;
+    // Something else finalized the trace. This can happen in multi-threaded scenarios as our trace
+    // addition from bytecode execution to here is not atomic.
+    // Though in GIL builds, the GIL protects the rest.
+    if (old_code == NULL) {
         return 0;
     }
-    if (!is_terminator(&trace[trace_length-1])) {
-        /* Allow space for _EXIT_TRACE */
-        max_length += 2;
+    bool progress_needed = (tstate->interp->jit_state.initial_chain_depth % MAX_CHAIN_DEPTH) == 0;;
+    _PyBloomFilter *dependencies = &tstate->interp->jit_state.dependencies;
+    _Py_BloomFilter_Add(dependencies, old_code);
+    int trace_length = tstate->interp->jit_state.code_curr_size;
+    _PyUOpInstruction *trace = tstate->interp->jit_state.code_buffer;
+    int max_length = tstate->interp->jit_state.code_max_size;
+
+    int is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
+    if (is_sys_tracing) {
+        goto full;
+    }
+
+    _Py_CODEUNIT *this_instr =  tstate->interp->jit_state.prev_instr;
+    _Py_CODEUNIT *target_instr = this_instr;
+    uint32_t target = 0;
+
+    target = INSTR_IP(target_instr, old_code);
+
+    // Rewind EXTENDED_ARG so that we see the whole thing.
+    // We must point to the first EXTENDED_ARG when deopting.
+    int oparg = tstate->interp->jit_state.prev_instr_oparg;
+    int opcode = this_instr->op.code;
+    // Failed specialization many times. Deopt!
+    if (tstate->interp->jit_state.specialize_counter >= MAX_SPECIALIZATION_TRIES) {
+        opcode = _PyOpcode_Deopt[opcode];
+    }
+    int rewind_oparg = oparg;
+    while (rewind_oparg > 255) {
+        rewind_oparg >>= 8;
+        target--;
+    }
+
+    int old_stack_level = tstate->interp->jit_state.prev_instr_stacklevel;
+
+    bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode];
+    DPRINTF(2, "%p %d: %s(%d) %d %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, needs_guard_ip, old_stack_level);
+
+#ifdef Py_DEBUG
+    if (oparg > 255) {
+        assert(_Py_GetBaseCodeUnit(old_code, target).op.code == EXTENDED_ARG);
+    }
+#endif
+
+    // Skip over super instructions.
+    if (tstate->interp->jit_state.prev_instr_is_super) {
+        tstate->interp->jit_state.prev_instr_is_super = false;
+        return 1;
+    }
+
+    if (!tstate->interp->jit_state.dependencies_still_valid) {
+        goto done;
+    }
+
+    // Strange control-flow, unsupported opcode, etc.
+    if (tstate->interp->jit_state.dynamic_jump_taken) {
+        goto unsupported;
+    }
+
+    // This happens when a recursive call happens that we can't trace. Such as Python -> C -> Python calls
+    // If we haven't guarded the IP, then it's untraceable.
+    if (frame != tstate->interp->jit_state.prev_instr_frame && !needs_guard_ip) {
+        goto unsupported;
+    }
+
+    if (oparg > 0xFFFF) {
+        goto unsupported;
+    }
+
+    // TODO (gh-140277): The constituent use one extra stack slot. So we need to check for headroom.
+    if (opcode == BINARY_OP_SUBSCR_GETITEM && old_stack_level + 1 > old_code->co_stacksize) {
+        goto unsupported;
+    }
+
+    if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
+        goto unsupported;
+    }
+
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+        unsupported:
+        {
+            // Rewind to previous instruction and replace with _EXIT_TRACE.
+            _PyUOpInstruction *curr = &trace[trace_length-1];
+            while (curr->opcode != _SET_IP && trace_length > 2) {
+                trace_length--;
+                curr = &trace[trace_length-1];
+            }
+            assert(curr->opcode == _SET_IP || trace_length == 2);
+            if (curr->opcode == _SET_IP) {
+                int32_t old_target = (int32_t)uop_get_target(curr);
+                curr++;
+                trace_length++;
+                curr->opcode = _EXIT_TRACE;
+                curr->format = UOP_FORMAT_TARGET;
+                curr->target = old_target;
+            }
+            goto done;
+        }
+    }
+
+    if (opcode == NOP) {
+        return 1;
+    }
+
+    if (opcode == JUMP_FORWARD) {
+        return 1;
+    }
+
+    if (opcode == EXTENDED_ARG) {
+        return 1;
+    }
+
+    // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
+    max_length -= 2;
+
+    if (opcode == ENTER_EXECUTOR) {
+        goto full;
+    }
+
+    const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
+
+    ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+
+    assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
+    assert(!_PyErr_Occurred(tstate));
+
+    if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
+        ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
+    }
+
+    /* Special case the first instruction,
+     * so that we can guarantee forward progress */
+    if (progress_needed && tstate->interp->jit_state.code_curr_size <= 2) {
+        if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
+            opcode = _PyOpcode_Deopt[opcode];
+        }
+        assert(!OPCODE_HAS_EXIT(opcode));
+        assert(!OPCODE_HAS_DEOPT(opcode));
+    }
+
+    if (OPCODE_HAS_EXIT(opcode)) {
+        // Make space for side exit and final _EXIT_TRACE:
+        max_length--;
+    }
+    if (OPCODE_HAS_ERROR(opcode)) {
+        // Make space for error stub and final _EXIT_TRACE:
+        max_length--;
+    }
+
+    RESERVE_RAW(expansion->nuops + needs_guard_ip + 4, "uop and various checks");
+
+
+    switch (opcode) {
+        case POP_JUMP_IF_NONE:
+        case POP_JUMP_IF_NOT_NONE:
+        case POP_JUMP_IF_FALSE:
+        case POP_JUMP_IF_TRUE:
+        {
+            _Py_CODEUNIT *computed_next_instr_without_modifiers = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+            _Py_CODEUNIT *computed_next_instr = computed_next_instr_without_modifiers + (computed_next_instr_without_modifiers->op.code == NOT_TAKEN);
+            _Py_CODEUNIT *computed_jump_instr = computed_next_instr_without_modifiers + oparg;
+            assert(next_instr == computed_next_instr || next_instr == computed_jump_instr);
+            int jump_happened = computed_jump_instr == next_instr;
+            uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_happened];
+            ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_happened ? computed_next_instr : computed_jump_instr, old_code));
+            break;
+        }
+        case JUMP_BACKWARD_JIT:
+            // This is possible as the JIT might have re-activated after it was disabled
+        case JUMP_BACKWARD_NO_JIT:
+        case JUMP_BACKWARD:
+            ADD_TO_TRACE(_CHECK_PERIODIC, 0, 0, target);
+            _Py_FALLTHROUGH;
+        case JUMP_BACKWARD_NO_INTERRUPT:
+        {
+            if ((next_instr != tstate->interp->jit_state.close_loop_instr) &&
+                (next_instr != tstate->interp->jit_state.insert_exec_instr) &&
+                tstate->interp->jit_state.code_curr_size > 5 &&
+                // These are coroutines, and we want to unroll those usually.
+                opcode != JUMP_BACKWARD_NO_INTERRUPT) {
+                // We encountered a JUMP_BACKWARD but not to the top of our own loop.
+                // We don't want to continue tracing as we might get stuck in the
+                // inner loop. Instead, end the trace where the executor of the
+                // inner loop might start and let the traces rejoin.
+                OPT_STAT_INC(inner_loop);
+                ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
+                DPRINTF(2, "JUMP_BACKWARD not to top ends trace %p %p %p\n", next_instr, tstate->interp->jit_state.close_loop_instr, tstate->interp->jit_state.insert_exec_instr);
+                goto done;
+            }
+            break;
+        }
+
+        case RESUME:
+        case RESUME_CHECK:
+            /* Use a special tier 2 version of RESUME_CHECK to allow traces to
+             *  start with RESUME_CHECK */
+            ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
+            break;
+
+        default:
+        {
+            const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
+            // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
+            int nuops = expansion->nuops;
+            if (nuops == 0) {
+                DPRINTF(2, "Unsupported opcode %s\n", _PyOpcode_OpName[opcode]);
+                goto unsupported;
+            }
+            assert(nuops > 0);
+            RESERVE(nuops + 1); /* One extra for exit */
+            uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
+            uint32_t orig_target = target;
+            for (int i = 0; i < nuops; i++) {
+                oparg = orig_oparg;
+                target = orig_target;
+                uint32_t uop = expansion->uops[i].uop;
+                uint64_t operand = 0;
+                // Add one to account for the actual opcode/oparg pair:
+                int offset = expansion->uops[i].offset + 1;
+                switch (expansion->uops[i].size) {
+                    case OPARG_SIMPLE:
+                        assert(opcode != _JUMP_BACKWARD_NO_INTERRUPT && opcode != JUMP_BACKWARD);
+                        break;
+                    case OPARG_CACHE_1:
+                        operand = read_u16(&this_instr[offset].cache);
+                        break;
+                    case OPARG_CACHE_2:
+                        operand = read_u32(&this_instr[offset].cache);
+                        break;
+                    case OPARG_CACHE_4:
+                        operand = read_u64(&this_instr[offset].cache);
+                        break;
+                    case OPARG_TOP:  // First half of super-instr
+                        assert(orig_oparg <= 255);
+                        oparg = orig_oparg >> 4;
+                        break;
+                    case OPARG_BOTTOM:  // Second half of super-instr
+                        assert(orig_oparg <= 255);
+                        oparg = orig_oparg & 0xF;
+                        break;
+                    case OPARG_SAVE_RETURN_OFFSET:  // op=_SAVE_RETURN_OFFSET; oparg=return_offset
+                        oparg = offset;
+                        assert(uop == _SAVE_RETURN_OFFSET);
+                        break;
+                    case OPARG_REPLACED:
+                        uop = _PyUOp_Replacements[uop];
+                        assert(uop != 0);
+
+                        uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                        if (uop == _TIER2_RESUME_CHECK) {
+                            target = next_inst;
+                        }
+                        else if (uop != _FOR_ITER_TIER_TWO) {
+                            int extended_arg = orig_oparg > 255;
+                            uint32_t jump_target = next_inst + orig_oparg + extended_arg;
+                            assert(_Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR);
+                            assert(_Py_GetBaseCodeUnit(old_code, jump_target+1).op.code == POP_ITER);
+                            if (is_for_iter_test[uop]) {
+                                target = jump_target + 1;
+                            }
+                        }
+                        break;
+                    case OPERAND1_1:
+                        assert(trace[trace_length-1].opcode == uop);
+                        operand = read_u16(&this_instr[offset].cache);
+                        trace[trace_length-1].operand1 = operand;
+                        continue;
+                    case OPERAND1_2:
+                        assert(trace[trace_length-1].opcode == uop);
+                        operand = read_u32(&this_instr[offset].cache);
+                        trace[trace_length-1].operand1 = operand;
+                        continue;
+                    case OPERAND1_4:
+                        assert(trace[trace_length-1].opcode == uop);
+                        operand = read_u64(&this_instr[offset].cache);
+                        trace[trace_length-1].operand1 = operand;
+                        continue;
+                    default:
+                        fprintf(stderr,
+                                "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
+                                opcode, oparg, nuops, i,
+                                expansion->uops[i].size,
+                                expansion->uops[i].offset);
+                        Py_FatalError("garbled expansion");
+                }
+                if (uop == _PUSH_FRAME || uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
+                    PyCodeObject *new_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+                    PyFunctionObject *new_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+                    if (new_func != NULL) {
+                        operand = (uintptr_t)new_func;
+                        DPRINTF(2, "Adding %p func to op\n", (void *)operand);
+                        _Py_BloomFilter_Add(dependencies, new_func);
+                    }
+                    else if (new_code != NULL) {
+                        operand = (uintptr_t)new_code | 1;
+                        DPRINTF(2, "Adding %p code to op\n", (void *)operand);
+                        _Py_BloomFilter_Add(dependencies, new_code);
+                    }
+                    else {
+                        operand = 0;
+                    }
+                }
+                if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
+                    assert(i + 1 == nuops);
+                    _Py_CODEUNIT *next = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                    assert(next->op.code == STORE_FAST);
+                    operand = next->op.arg;
+                }
+                // All other instructions
+                ADD_TO_TRACE(uop, oparg, operand, target);
+            }
+            break;
+        }  // End default
+
+    }  // End switch (opcode)
+
+    if (needs_guard_ip) {
+        ADD_TO_TRACE(_GUARD_IP, 0, (uintptr_t)next_instr, 0);
+    }
+    // Loop back to the start
+    int is_first_instr = tstate->interp->jit_state.close_loop_instr == next_instr || tstate->interp->jit_state.insert_exec_instr == next_instr;
+    if (is_first_instr && tstate->interp->jit_state.code_curr_size > 5) {
+        ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
+        goto done;
+    }
+    DPRINTF(2, "Trace continuing\n");
+    tstate->interp->jit_state.code_curr_size = trace_length;
+    tstate->interp->jit_state.code_max_size = max_length;
+    return 1;
+done:
+    DPRINTF(2, "Trace done\n");
+    tstate->interp->jit_state.code_curr_size = trace_length;
+    tstate->interp->jit_state.code_max_size = max_length;
+    return 0;
+full:
+    DPRINTF(2, "Trace full\n");
+    if (!is_terminator(&tstate->interp->jit_state.code_buffer[trace_length-1])) {
+        // Undo the last few instructions.
+        trace_length = tstate->interp->jit_state.code_curr_size;
+        max_length = tstate->interp->jit_state.code_max_size;
+        // We previously reversed one.
+        max_length += 1;
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
     }
-    DPRINTF(1,
-            "Created a proto-trace for %s (%s:%d) at byte offset %d -- length %d\n",
-            PyUnicode_AsUTF8(code->co_qualname),
-            PyUnicode_AsUTF8(code->co_filename),
-            code->co_firstlineno,
-            2 * INSTR_IP(initial_instr, code),
-            trace_length);
-    OPT_HIST(trace_length, trace_length_hist);
-    return trace_length;
+    tstate->interp->jit_state.code_curr_size = trace_length;
+    tstate->interp->jit_state.code_max_size = max_length;
+    return 0;
 }
+
+void
+_PyJit_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit, int oparg)
+{
+    PyCodeObject *code = _PyFrame_GetCode(frame);
+#ifdef Py_DEBUG
+    char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
+    int lltrace = 0;
+    if (python_lltrace != NULL && *python_lltrace >= '0') {
+        lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
+    }
+    DPRINTF(2,
+        "Tracing %s (%s:%d) at byte offset %d at chain depth %d\n",
+        PyUnicode_AsUTF8(code->co_qualname),
+        PyUnicode_AsUTF8(code->co_filename),
+        code->co_firstlineno,
+        2 * INSTR_IP(close_loop_instr, code),
+        chain_depth);
+#endif
+    add_to_trace(tstate->interp->jit_state.code_buffer, 0, _START_EXECUTOR, 0, (uintptr_t)insert_exec_instr, INSTR_IP(insert_exec_instr, code));
+    add_to_trace(tstate->interp->jit_state.code_buffer, 1, _MAKE_WARM, 0, 0, 0);
+    tstate->interp->jit_state.code_curr_size = 2;
+    tstate->interp->jit_state.code_max_size = UOP_MAX_TRACE_LENGTH;
+    tstate->interp->jit_state.insert_exec_instr = insert_exec_instr;
+    tstate->interp->jit_state.close_loop_instr = close_loop_instr;
+    tstate->interp->jit_state.initial_code = (PyCodeObject *)Py_NewRef(code);
+    tstate->interp->jit_state.initial_func = (PyFunctionObject *)Py_NewRef(_PyFrame_GetFunction(frame));
+    tstate->interp->jit_state.prev_exit = exit;
+    tstate->interp->jit_state.initial_stack_depth = curr_stackdepth;
+    tstate->interp->jit_state.initial_chain_depth = chain_depth % MAX_CHAIN_DEPTH;
+    tstate->interp->jit_state.prev_instr_frame = frame;
+    tstate->interp->jit_state.dependencies_still_valid = true;
+    tstate->interp->jit_state.specialize_counter = 0;
+    tstate->interp->jit_state.prev_instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
+    tstate->interp->jit_state.prev_instr = curr_instr;
+    tstate->interp->jit_state.prev_instr_frame = frame;
+    tstate->interp->jit_state.prev_instr_oparg = oparg;
+    tstate->interp->jit_state.prev_instr_stacklevel = curr_stackdepth;
+    tstate->interp->jit_state.dynamic_jump_taken = false;
+    tstate->interp->jit_state.prev_instr_is_super = false;
+    _Py_BloomFilter_Init(&tstate->interp->jit_state.dependencies);
+}
+
+void
+_PyJit_FinalizeTracing(PyThreadState *tstate)
+{
+    Py_CLEAR(tstate->interp->jit_state.initial_code);
+    Py_CLEAR(tstate->interp->jit_state.initial_func);
+    Py_CLEAR(tstate->interp->jit_state.prev_instr_code);
+    tstate->interp->jit_state.code_curr_size = 2;
+    tstate->interp->jit_state.code_max_size = UOP_MAX_TRACE_LENGTH - 1;
+}
+
 
 #undef RESERVE
 #undef RESERVE_RAW
@@ -1011,7 +991,7 @@ count_exits(_PyUOpInstruction *buffer, int length)
     int exit_count = 0;
     for (int i = 0; i < length; i++) {
         int opcode = buffer[i].opcode;
-        if (opcode == _EXIT_TRACE) {
+        if (opcode == _EXIT_TRACE || opcode == _DYNAMIC_EXIT) {
             exit_count++;
         }
     }
@@ -1057,6 +1037,9 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
     for (int i = 0; i < length; i++) {
         _PyUOpInstruction *inst = &buffer[i];
         int opcode = inst->opcode;
+        if (inst->format != UOP_FORMAT_TARGET) {
+            fprintf(stdout, "I: %d\n", i);
+        }
         int32_t target = (int32_t)uop_get_target(inst);
         uint16_t exit_flags = _PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG | HAS_PERIODIC_FLAG);
         if (exit_flags) {
@@ -1068,14 +1051,15 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 exit_op = _HANDLE_PENDING_AND_DEOPT;
             }
             int32_t jump_target = target;
-            if (is_for_iter_test[opcode]) {
-                /* Target the POP_TOP immediately after the END_FOR,
-                 * leaving only the iterator on the stack. */
-                int extended_arg = inst->oparg > 255;
-                int32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + extended_arg;
-                jump_target = next_inst + inst->oparg + 1;
+            bool unique_target = false;
+            if (opcode == _FOR_ITER_TIER_TWO) {
+                exit_op = _DYNAMIC_EXIT;
             }
-            if (jump_target != current_jump_target || current_exit_op != exit_op) {
+            else if (opcode == _GUARD_IP) {
+                exit_op = _DYNAMIC_EXIT;
+                unique_target = true;
+            }
+            if (unique_target || jump_target != current_jump_target || current_exit_op != exit_op) {
                 make_exit(&buffer[next_spare], exit_op, jump_target);
                 current_exit_op = exit_op;
                 current_jump_target = jump_target;
@@ -1182,7 +1166,8 @@ sanity_check(_PyExecutorObject *executor)
             opcode == _DEOPT ||
             opcode == _HANDLE_PENDING_AND_DEOPT ||
             opcode == _EXIT_TRACE ||
-            opcode == _ERROR_POP_N);
+            opcode == _ERROR_POP_N ||
+            opcode == _DYNAMIC_EXIT);
     }
 }
 
@@ -1195,7 +1180,7 @@ sanity_check(_PyExecutorObject *executor)
  * and not a NOP.
  */
 static _PyExecutorObject *
-make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies)
+make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies, int chain_depth)
 {
     int exit_count = count_exits(buffer, length);
     _PyExecutorObject *executor = allocate_executor(exit_count, length);
@@ -1205,6 +1190,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
 
     /* Initialize exits */
     _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
+    cold->vm_data.chain_depth = chain_depth;
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].index = i;
         executor->exits[i].temperature = initial_temperature_backoff_counter();
@@ -1218,8 +1204,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         int opcode = buffer[i].opcode;
         dest--;
         *dest = buffer[i];
-        assert(opcode != _POP_JUMP_IF_FALSE && opcode != _POP_JUMP_IF_TRUE);
-        if (opcode == _EXIT_TRACE) {
+        if (opcode == _EXIT_TRACE || opcode == _DYNAMIC_EXIT) {
             _PyExitData *exit = &executor->exits[next_exit];
             exit->target = buffer[i].target;
             dest->operand0 = (uint64_t)exit;
@@ -1284,38 +1269,32 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
 static int
 uop_optimize(
     _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *instr,
+    PyThreadState *tstate,
     _PyExecutorObject **exec_ptr,
-    int curr_stackentries,
     bool progress_needed)
 {
-    _PyBloomFilter dependencies;
-    _Py_BloomFilter_Init(&dependencies);
+    _PyBloomFilter *dependencies = &tstate->interp->jit_state.dependencies;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->jit_uop_buffer == NULL) {
-        interp->jit_uop_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
-        if (interp->jit_uop_buffer == NULL) {
-            return 0;
-        }
-    }
-    _PyUOpInstruction *buffer = interp->jit_uop_buffer;
+    _PyUOpInstruction *buffer = interp->jit_state.code_buffer;
     OPT_STAT_INC(attempts);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
     bool is_noopt = true;
     if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
         is_noopt = false;
     }
-    int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies, progress_needed);
-    if (length <= 0) {
-        // Error or nothing translated
-        return length;
+    int curr_stackentries = tstate->interp->jit_state.initial_stack_depth;
+    int length = interp->jit_state.code_curr_size;
+    // Trace too short, don't bother.
+    if (length <= 5) {
+        return 0;
     }
+    assert(length > 0);
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
     if (!is_noopt) {
-        length = _Py_uop_analyze_and_optimize(frame, buffer,
+        length = _Py_uop_analyze_and_optimize(tstate->interp->jit_state.initial_func, buffer,
                                            length,
-                                           curr_stackentries, &dependencies);
+                                           curr_stackentries, dependencies);
         if (length <= 0) {
             return length;
         }
@@ -1338,7 +1317,7 @@ uop_optimize(
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
-    _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies);
+    _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  dependencies, tstate->interp->jit_state.initial_chain_depth);
     if (executor == NULL) {
         return -1;
     }
@@ -1633,6 +1612,18 @@ error:
     _Py_Executors_InvalidateAll(interp, is_invalidation);
 }
 
+void
+_PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
+{
+    _PyBloomFilter obj_filter;
+    _Py_BloomFilter_Init(&obj_filter);
+    _Py_BloomFilter_Add(&obj_filter, obj);
+
+    if (bloom_filter_may_contain(&tstate->interp->jit_state.dependencies, &obj_filter))
+    {
+        tstate->interp->jit_state.dependencies_still_valid = false;
+    }
+}
 /* Invalidate all executors */
 void
 _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
@@ -1762,7 +1753,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
 #ifdef Py_STATS
         fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s -- %" PRIu64 "</td></tr>\n", i, opname, inst->execution_count);
 #else
-        fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s</td></tr>\n", i, opname);
+        fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s op0=%" PRIu64 "</td></tr>\n", i, opname, inst->operand0);
 #endif
         if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
             break;
@@ -1772,6 +1763,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
     fprintf(out, "]\n\n");
 
     /* Write all the outgoing edges */
+    _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
     for (uint32_t i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction const *inst = &executor->trace[i];
         uint16_t flags = _PyUop_Flags[inst->opcode];
@@ -1782,10 +1774,10 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
         else if (flags & HAS_EXIT_FLAG) {
             assert(inst->format == UOP_FORMAT_JUMP);
             _PyUOpInstruction const *exit_inst = &executor->trace[inst->jump_target];
-            assert(exit_inst->opcode == _EXIT_TRACE);
+            assert(exit_inst->opcode == _EXIT_TRACE || exit_inst->opcode == _DYNAMIC_EXIT);
             exit = (_PyExitData *)exit_inst->operand0;
         }
-        if (exit != NULL && exit->executor != NULL) {
+        if (exit != NULL && exit->executor != cold) {
             fprintf(out, "executor_%p:i%d -> executor_%p:start\n", executor, i, exit->executor);
         }
         if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {

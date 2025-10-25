@@ -1118,7 +1118,9 @@
             assert(WITHIN_STACK_BOUNDS());
             PyCodeObject *co = get_current_code_object(ctx);
             ctx->frame->stack_pointer = stack_pointer;
-            frame_pop(ctx);
+            if (frame_pop(ctx)) {
+                break;
+            }
             stack_pointer = ctx->frame->stack_pointer;
             assert(corresponding_check_stack == NULL);
             assert(co != NULL);
@@ -1169,6 +1171,8 @@
         case _YIELD_VALUE: {
             JitOptRef value;
             value = sym_new_unknown(ctx);
+            ctx->done = true;
+            ctx->out_of_space = true;
             stack_pointer[-1] = value;
             break;
         }
@@ -2102,6 +2106,8 @@
             stack_pointer[-1] = b;
             break;
         }
+
+        /* _JUMP_BACKWARD_NO_INTERRUPT is not a viable micro-op for tier 2 */
 
         case _GET_LEN: {
             JitOptRef obj;
@@ -3415,6 +3421,14 @@
         }
 
         case _COLD_EXIT: {
+            break;
+        }
+
+        case _GUARD_IP: {
+            break;
+        }
+
+        case _DYNAMIC_EXIT: {
             break;
         }
 

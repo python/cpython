@@ -84,10 +84,19 @@
 #   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
     Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
 
+#   define DISPATCH_TABLE_VAR instruction_funcptr_table
+#   define DISPATCH_TABLE instruction_funcptr_handler_table
+#   define TRACING_DISPATCH_TABLE instruction_funcptr_tracing_table
 #   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
+#   define TRACING_TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_TRACING_##op(TAIL_CALL_PARAMS)
+
 #   define DISPATCH_GOTO() \
         do { \
             Py_MUSTTAIL return (((py_tail_call_funcptr *)instruction_funcptr_table)[opcode])(TAIL_CALL_ARGS); \
+        } while (0)
+#   define DISPATCH_GOTO_NON_TRACING() \
+        do { \
+            Py_MUSTTAIL return (((py_tail_call_funcptr *)DISPATCH_TABLE)[opcode])(TAIL_CALL_ARGS); \
         } while (0)
 #   define JUMP_TO_LABEL(name) \
         do { \
@@ -106,17 +115,37 @@
 #   endif
 #    define LABEL(name) TARGET(name)
 #elif USE_COMPUTED_GOTOS
+#  define DISPATCH_TABLE_VAR opcode_targets
+#  define DISPATCH_TABLE opcode_targets_table
+#  define TRACING_DISPATCH_TABLE opcode_tracing_targets_table
 #  define TARGET(op) TARGET_##op:
+#  define TRACING_TARGET(op) TARGET_TRACING_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
+#  define DISPATCH_GOTO_NON_TRACING() goto *DISPATCH_TABLE[opcode];
 #  define JUMP_TO_LABEL(name) goto name;
 #  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
 #  define LABEL(name) name:
 #else
 #  define TARGET(op) case op: TARGET_##op:
 #  define DISPATCH_GOTO() goto dispatch_opcode
+#  define DISPATCH_GOTO_NON_TRACING() goto dispatch_opcode
 #  define JUMP_TO_LABEL(name) goto name;
 #  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
 #  define LABEL(name) name:
+#endif
+
+#if (_Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS) && _Py_TIER2
+#  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
+#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && tstate->interp->jit_state.specialize_counter < MAX_SPECIALIZATION_TRIES)
+#  define ENTER_TRACING() \
+    DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
+#  define LEAVE_TRACING() \
+    DISPATCH_TABLE_VAR = DISPATCH_TABLE;
+#else
+#  define IS_JIT_TRACING() (0)
+#  define IS_JIT_TRACING_MAKING_PROGRESS() (0)
+#  define ENTER_TRACING()
+#  define LEAVE_TRACING()
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
@@ -155,11 +184,19 @@ do { \
         DISPATCH_GOTO(); \
     }
 
+#define DISPATCH_NON_TRACING() \
+    { \
+        assert(frame->stackpointer == NULL); \
+        NEXTOPARG(); \
+        PRE_DISPATCH_GOTO(); \
+        DISPATCH_GOTO_NON_TRACING(); \
+    }
+
 #define DISPATCH_SAME_OPARG() \
     { \
         opcode = next_instr->op.code; \
         PRE_DISPATCH_GOTO(); \
-        DISPATCH_GOTO(); \
+        DISPATCH_GOTO_NON_TRACING(); \
     }
 
 #define DISPATCH_INLINED(NEW_FRAME)                     \
@@ -171,6 +208,7 @@ do { \
         CALL_STAT_INC(inlined_py_calls);                \
         JUMP_TO_LABEL(start_frame);                      \
     } while (0)
+
 
 /* Tuple access macros */
 
@@ -271,8 +309,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* This takes a uint16_t instead of a _Py_BackoffCounter,
  * because it is used directly on the cache entry in generated code,
  * which is always an integral type. */
+// Force re-specialization when tracing a side exit to get good side exits.
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
-    backoff_counter_triggers(forge_backoff_counter((COUNTER)))
+    backoff_counter_triggers(forge_backoff_counter((COUNTER))) || IS_JIT_TRACING_MAKING_PROGRESS()
 
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
@@ -295,6 +334,12 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         bitset, (FT_ATOMIC_LOAD_UINT16_RELAXED(bitset) << 1) | (flag))
 #else
 #define RECORD_BRANCH_TAKEN(bitset, flag)
+#endif
+
+#if _Py_TIER2
+#   define RECORD_DYNAMIC_JUMP_TAKEN() tstate->interp->jit_state.dynamic_jump_taken = true;
+#else
+#   define RECORD_DYNAMIC_JUMP_TAKEN()
 #endif
 
 #define UNBOUNDLOCAL_ERROR_MSG \
@@ -357,10 +402,18 @@ do {                                                   \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
+    int keep_tracing_bit = (uintptr_t)next_instr & 1;   \
+    next_instr = (_Py_CODEUNIT *)(((uintptr_t)next_instr) & (~1)); \
     if (next_instr == NULL) {                          \
         next_instr = frame->instr_ptr;                 \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
+    if (keep_tracing_bit) { \
+        assert(next_instr->op.code != ENTER_EXECUTOR); \
+        assert(tstate->interp->jit_state.code_curr_size == 2); \
+        ENTER_TRACING(); \
+        DISPATCH_NON_TRACING(); \
+    } \
     DISPATCH();                                        \
 } while (0)
 
@@ -371,13 +424,23 @@ do {                                                   \
     goto tier2_start;                                  \
 } while (0)
 
-#define GOTO_TIER_ONE(TARGET)                                         \
-    do                                                                \
-    {                                                                 \
-        tstate->current_executor = NULL;                              \
-        OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
-        _PyFrame_SetStackPointer(frame, stack_pointer);               \
-        return TARGET;                                                \
+#define GOTO_TIER_ONE_SETUP \
+    tstate->current_executor = NULL;                              \
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
+    _PyFrame_SetStackPointer(frame, stack_pointer);
+
+#define GOTO_TIER_ONE(TARGET) \
+    do \
+    { \
+        GOTO_TIER_ONE_SETUP \
+        return (_Py_CODEUNIT *)(TARGET); \
+    } while (0)
+
+#define GOTO_TIER_ONE_CONTINUE_TRACING(TARGET) \
+    do \
+    { \
+        GOTO_TIER_ONE_SETUP \
+        return (_Py_CODEUNIT *)(((uintptr_t)(TARGET))| 1); \
     } while (0)
 
 #define CURRENT_OPARG()    (next_uop[-1].oparg)

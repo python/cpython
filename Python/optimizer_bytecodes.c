@@ -775,7 +775,9 @@ dummy_func(void) {
         SAVE_STACK();
         PyCodeObject *co = get_current_code_object(ctx);
         ctx->frame->stack_pointer = stack_pointer;
-        frame_pop(ctx);
+        if (frame_pop(ctx)) {
+            break;
+        }
         stack_pointer = ctx->frame->stack_pointer;
 
         /* Stack space handling */
@@ -797,7 +799,6 @@ dummy_func(void) {
         frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
         res = sym_new_unknown(ctx);
-
         /* Stack space handling */
         assert(corresponding_check_stack == NULL);
         assert(co != NULL);
@@ -808,7 +809,14 @@ dummy_func(void) {
     }
 
     op(_YIELD_VALUE, (unused -- value)) {
+        // TODO (gh-139109): handle this properly in a future optimization.
+        // A possibility to handle underflows is to just restore the current frame information
+        // from whatever is stored in the trace we record at that point of time.
+        // E.g. we record at this YIELD_VALUE, func_obj=x , stack_level=4
+        // We can restore it to there.
         value = sym_new_unknown(ctx);
+        ctx->done = true;
+        ctx->out_of_space = true;
     }
 
     op(_GET_ITER, (iterable -- iter, index_or_null)) {

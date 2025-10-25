@@ -412,6 +412,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 0;
         case RAISE_VARARGS:
             return oparg;
+        case RECORD_PREVIOUS_INST:
+            return 0;
         case RERAISE:
             return 1 + oparg;
         case RESERVED:
@@ -895,6 +897,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case RAISE_VARARGS:
             return 0;
+        case RECORD_PREVIOUS_INST:
+            return 0;
         case RERAISE:
             return oparg;
         case RESERVED:
@@ -1249,6 +1253,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [PUSH_EXC_INFO] = { true, INSTR_FMT_IX, 0 },
     [PUSH_NULL] = { true, INSTR_FMT_IX, HAS_PURE_FLAG },
     [RAISE_VARARGS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
+    [RECORD_PREVIOUS_INST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG },
     [RERAISE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -1406,6 +1411,9 @@ _PyOpcode_macro_expansion[256] = {
     [IMPORT_FROM] = { .nuops = 1, .uops = { { _IMPORT_FROM, OPARG_SIMPLE, 0 } } },
     [IMPORT_NAME] = { .nuops = 1, .uops = { { _IMPORT_NAME, OPARG_SIMPLE, 0 } } },
     [IS_OP] = { .nuops = 1, .uops = { { _IS_OP, OPARG_SIMPLE, 0 } } },
+    [JUMP_BACKWARD] = { .nuops = 2, .uops = { { _CHECK_PERIODIC, OPARG_SIMPLE, 1 }, { _JUMP_BACKWARD_NO_INTERRUPT, OPARG_REPLACED, 1 } } },
+    [JUMP_BACKWARD_NO_INTERRUPT] = { .nuops = 1, .uops = { { _JUMP_BACKWARD_NO_INTERRUPT, OPARG_REPLACED, 0 } } },
+    [JUMP_BACKWARD_NO_JIT] = { .nuops = 2, .uops = { { _CHECK_PERIODIC, OPARG_SIMPLE, 1 }, { _JUMP_BACKWARD_NO_INTERRUPT, OPARG_REPLACED, 1 } } },
     [LIST_APPEND] = { .nuops = 1, .uops = { { _LIST_APPEND, OPARG_SIMPLE, 0 } } },
     [LIST_EXTEND] = { .nuops = 1, .uops = { { _LIST_EXTEND, OPARG_SIMPLE, 0 } } },
     [LOAD_ATTR] = { .nuops = 1, .uops = { { _LOAD_ATTR, OPARG_SIMPLE, 8 } } },
@@ -1693,6 +1701,7 @@ const char *_PyOpcode_OpName[267] = {
     [PUSH_EXC_INFO] = "PUSH_EXC_INFO",
     [PUSH_NULL] = "PUSH_NULL",
     [RAISE_VARARGS] = "RAISE_VARARGS",
+    [RECORD_PREVIOUS_INST] = "RECORD_PREVIOUS_INST",
     [RERAISE] = "RERAISE",
     [RESERVED] = "RESERVED",
     [RESUME] = "RESUME",
@@ -1769,10 +1778,40 @@ const uint8_t _PyOpcode_Caches[256] = {
 };
 #endif
 
+extern const uint8_t _PyOpcode_NeedsGuardIp[256];
+#ifdef NEED_OPCODE_METADATA
+const uint8_t _PyOpcode_NeedsGuardIp[256] = {
+    [INTERPRETER_EXIT] = 1,
+    [RETURN_VALUE] = 1,
+    [YIELD_VALUE] = 1,
+    [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = 1,
+    [RETURN_GENERATOR] = 1,
+    [BINARY_OP_SUBSCR_GETITEM] = 1,
+    [INSTRUMENTED_RETURN_VALUE] = 1,
+    [SEND] = 1,
+    [SEND_GEN] = 1,
+    [INSTRUMENTED_YIELD_VALUE] = 1,
+    [LOAD_ATTR_PROPERTY] = 1,
+    [FOR_ITER_GEN] = 1,
+    [CALL] = 1,
+    [INSTRUMENTED_CALL] = 1,
+    [CALL_PY_GENERAL] = 1,
+    [CALL_BOUND_METHOD_GENERAL] = 1,
+    [CALL_BOUND_METHOD_EXACT_ARGS] = 1,
+    [CALL_PY_EXACT_ARGS] = 1,
+    [CALL_ALLOC_AND_ENTER_INIT] = 1,
+    [CALL_KW_PY] = 1,
+    [CALL_KW_BOUND_METHOD] = 1,
+    [CALL_KW] = 1,
+    [INSTRUMENTED_CALL_KW] = 1,
+    [CALL_FUNCTION_EX] = 1,
+    [INSTRUMENTED_CALL_FUNCTION_EX] = 1,
+};
+#endif
+
 extern const uint8_t _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
-    [121] = 121,
     [122] = 122,
     [123] = 123,
     [124] = 124,
@@ -1984,6 +2023,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [PUSH_EXC_INFO] = PUSH_EXC_INFO,
     [PUSH_NULL] = PUSH_NULL,
     [RAISE_VARARGS] = RAISE_VARARGS,
+    [RECORD_PREVIOUS_INST] = RECORD_PREVIOUS_INST,
     [RERAISE] = RERAISE,
     [RESERVED] = RESERVED,
     [RESUME] = RESUME,
@@ -2033,7 +2073,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 121: \
     case 122: \
     case 123: \
     case 124: \

@@ -213,7 +213,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_MATCH_KEYS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_YIELD_FROM_ITER] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
-    [_FOR_ITER_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_FOR_ITER_TIER_TWO] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_LIST] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_LIST] = HAS_EXIT_FLAG,
     [_ITER_NEXT_LIST_TIER_TWO] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
@@ -336,7 +336,9 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_HANDLE_PENDING_AND_DEOPT] = HAS_ESCAPES_FLAG,
     [_ERROR_POP_N] = HAS_ARG_FLAG,
     [_TIER2_RESUME_CHECK] = HAS_PERIODIC_FLAG,
-    [_COLD_EXIT] = HAS_ESCAPES_FLAG,
+    [_COLD_EXIT] = 0,
+    [_GUARD_IP] = HAS_EXIT_FLAG,
+    [_DYNAMIC_EXIT] = HAS_ESCAPES_FLAG,
 };
 
 const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -443,6 +445,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DEOPT] = "_DEOPT",
     [_DICT_MERGE] = "_DICT_MERGE",
     [_DICT_UPDATE] = "_DICT_UPDATE",
+    [_DYNAMIC_EXIT] = "_DYNAMIC_EXIT",
     [_END_FOR] = "_END_FOR",
     [_END_SEND] = "_END_SEND",
     [_ERROR_POP_N] = "_ERROR_POP_N",
@@ -471,6 +474,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_DORV_NO_DICT] = "_GUARD_DORV_NO_DICT",
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
+    [_GUARD_IP] = "_GUARD_IP",
     [_GUARD_IS_FALSE_POP] = "_GUARD_IS_FALSE_POP",
     [_GUARD_IS_NONE_POP] = "_GUARD_IS_NONE_POP",
     [_GUARD_IS_NOT_NONE_POP] = "_GUARD_IS_NOT_NONE_POP",
@@ -1304,6 +1308,10 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _TIER2_RESUME_CHECK:
             return 0;
         case _COLD_EXIT:
+            return 0;
+        case _GUARD_IP:
+            return 0;
+        case _DYNAMIC_EXIT:
             return 0;
         default:
             return -1;

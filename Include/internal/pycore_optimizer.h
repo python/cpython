@@ -21,14 +21,6 @@ typedef struct _PyExecutorLinkListNode {
 } _PyExecutorLinkListNode;
 
 
-/* Bloom filter with m = 256
- * https://en.wikipedia.org/wiki/Bloom_filter */
-#define _Py_BLOOM_FILTER_WORDS 8
-
-typedef struct {
-    uint32_t bits[_Py_BLOOM_FILTER_WORDS];
-} _PyBloomFilter;
-
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
@@ -95,7 +87,8 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 
 #define TRACE_STACK_SIZE 5
 
-int _Py_uop_analyze_and_optimize(_PyInterpreterFrame *frame,
+int _Py_uop_analyze_and_optimize(
+    PyFunctionObject *initial_func,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
@@ -336,7 +329,7 @@ extern int _Py_uop_frame_pop(JitOptContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
-PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyExecutorObject **exec_ptr, int chain_depth);
+PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, PyThreadState *tstate);
 
 static inline _PyExecutorObject *_PyExecutor_FromExit(_PyExitData *exit)
 {
@@ -353,7 +346,8 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
     int opcode = uop->opcode;
     return (
         opcode == _EXIT_TRACE ||
-        opcode == _JUMP_TO_TOP
+        opcode == _JUMP_TO_TOP ||
+        opcode == _DYNAMIC_EXIT
     );
 }
 
@@ -363,6 +357,17 @@ PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 #ifdef _Py_TIER2
 extern void _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
 #endif
+
+int _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr);
+
+void
+_PyJit_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
+    _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr,
+    _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit, int oparg);
+
+void _PyJit_FinalizeTracing(PyThreadState *tstate);
+
+void _PyJit_Tracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);
 
 #ifdef __cplusplus
 }

@@ -7,6 +7,7 @@ from analyzer import (
     analysis_error,
     Label,
     CodeSection,
+    Uop,
 )
 from cwriter import CWriter
 from typing import Callable, TextIO, Iterator, Iterable
@@ -107,8 +108,9 @@ class Emitter:
     labels: dict[str, Label]
     _replacers: dict[str, ReplacementFunctionType]
     cannot_escape: bool
+    jump_prefix: str
 
-    def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False):
+    def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False, jump_prefix: str = ""):
         self._replacers = {
             "EXIT_IF": self.exit_if,
             "AT_END_EXIT_IF": self.exit_if_after,
@@ -127,10 +129,13 @@ class Emitter:
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
             "stack_pointer": self.stack_pointer,
+            "JUMPBY": self.jumpby,
+            "DISPATCH_SAME_OPARG": self.dispatch_same_oparg,
         }
         self.out = out
         self.labels = labels
         self.cannot_escape = cannot_escape
+        self.jump_prefix = jump_prefix
 
     def dispatch(
         self,
@@ -144,6 +149,26 @@ class Emitter:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
         storage.stack.flush(self.out)
         self.emit(tkn)
+        return False
+
+    def dispatch_same_oparg(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        assert isinstance(uop, Uop)
+        assert "specializing" in uop.annotations, uop.name
+        self.out.start_line()
+        self.emit("#if _Py_TIER2\n")
+        self.emit("tstate->interp->jit_state.specialize_counter++;\n")
+        self.emit("#endif\n")
+        self.emit(tkn)
+        emit_to(self.out, tkn_iter, "SEMI")
+        self.emit(";\n")
+        self.out.start_line()
         return False
 
     def deopt_if(
@@ -167,7 +192,7 @@ class Emitter:
         family_name = inst.family.name
         self.emit(f"UPDATE_MISS_STATS({family_name});\n")
         self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
-        self.emit(f"JUMP_TO_PREDICTED({family_name});\n")
+        self.emit(f"JUMP_TO_PREDICTED({self.jump_prefix}{family_name});\n")
         self.emit("}\n")
         return not always_true(first_tkn)
 
@@ -198,10 +223,10 @@ class Emitter:
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         if offset > 0:
-            return f"JUMP_TO_LABEL(pop_{offset}_error);"
+            return f"{self.jump_prefix}JUMP_TO_LABEL(pop_{offset}_error);"
         if offset < 0:
             storage.copy().flush(self.out)
-        return f"JUMP_TO_LABEL(error);"
+        return f"{self.jump_prefix}JUMP_TO_LABEL(error);"
 
     def error_if(
         self,
@@ -397,6 +422,30 @@ class Emitter:
         storage.stack.clear(self.out)
         return True
 
+    def jumpby(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.start_line()
+        self.emit(tkn)
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        jump = next(tkn_iter)
+        self.emit(jump)
+        emit_to(self.out, tkn_iter, "RPAREN")
+        next(tkn_iter)
+        self.emit(");\n")
+
+
+        if uop.properties.unpredictable_jump and jump.text != "0":
+            self.out.start_line()
+            self.emit("RECORD_DYNAMIC_JUMP_TAKEN();\n")
+        return True
+
     def stack_pointer(
         self,
         tkn: Token,
@@ -421,7 +470,7 @@ class Emitter:
         elif storage.spilled:
             raise analysis_error("Cannot jump from spilled label without reloading the stack pointer", goto)
         self.out.start_line()
-        self.out.emit("JUMP_TO_LABEL(")
+        self.out.emit(f"{self.jump_prefix}JUMP_TO_LABEL(")
         self.out.emit(label)
         self.out.emit(")")
 
