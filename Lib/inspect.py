@@ -819,6 +819,9 @@ def getfile(object):
     if ismodule(object):
         if getattr(object, '__file__', None):
             return object.__file__
+        if getattr(object, '__path__', None):
+            # Implicit namespace package. See PEP 420.
+            return object.__path__[0]
         raise TypeError('{!r} is a built-in module'.format(object))
     if isclass(object):
         if hasattr(object, '__module__'):
