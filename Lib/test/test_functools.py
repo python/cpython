@@ -3482,6 +3482,62 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(str(Signature.from_callable(A.static_func)),
                          '(item, arg: int) -> str')
 
+    def test_typing_self(self):
+        # gh-130827: typing.Self with singledispatchmethod() didn't work
+        class Foo:
+            @functools.singledispatchmethod
+            def bar(self: typing.Self, arg: int | str) -> int | str: ...
+
+            @bar.register
+            def _(self: typing.Self, arg: int) -> int:
+                return arg
+
+
+        foo = Foo()
+        self.assertEqual(foo.bar(42), 42)
+
+        # But, it shouldn't work on singledispatch()
+        @functools.singledispatch
+        def test(self: typing.Self, arg: int | str) -> int | str:
+            pass
+        with self.assertRaises(TypeError):
+            @test.register
+            def silly(self: typing.Self, arg: int | str) -> int | str:
+                pass
+
+        # typing.Self cannot be the only annotation
+        with self.assertRaises(TypeError):
+            class Foo:
+                @functools.singledispatchmethod
+                def bar(self: typing.Self, arg: int | str):
+                    pass
+
+                @bar.register
+                def _(self: typing.Self, arg):
+                    return arg
+
+        # typing.Self can only be used in the first parameter
+        with self.assertRaises(TypeError):
+            class Foo:
+                @functools.singledispatchmethod
+                def bar(self, arg: int | str):
+                    pass
+
+                @bar.register
+                def _(self, arg: typing.Self):
+                    return arg
+
+        # 'self' cannot be the only parameter
+        with self.assertRaises(TypeError):
+            class Foo:
+                @functools.singledispatchmethod
+                def bar(self: typing.Self, arg: int | str):
+                    pass
+
+                @bar.register
+                def _(self: typing.Self):
+                    pass
+
 
 class CachedCostItem:
     _cost = 1
