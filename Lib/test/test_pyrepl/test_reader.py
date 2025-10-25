@@ -551,6 +551,22 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         self.maxDiff=None
         self.assert_screen_equal(reader, expected)
 
+    def test_vi_escape_switches_to_normal_mode(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),
+                Event(evt="key", data="h", raw=bytearray(b"h")),
+            ],
+        )
+        reader, _ = handle_all_events(
+            events,
+            prepare_reader=prepare_vi_reader,
+        )
+        self.assertEqual(reader.get_unicode(), "hello")
+        self.assertTrue(reader.editor_mode.is_normal())
+        self.assertEqual(reader.pos, len("hello") - 2)  # After 'h' left movement
+
     def test_control_characters(self):
         code = 'flag = "🏳️‍🌈"'
         events = code_to_events(code)
