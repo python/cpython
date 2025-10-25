@@ -217,8 +217,26 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             wrapper = ast.Interactive if stmt is last_stmt else ast.Module
             the_symbol = symbol if stmt is last_stmt else "exec"
             item = wrapper([stmt])
+            import warnings
             try:
-                code = self.compile.compiler(item, filename, the_symbol)
+                with warnings.catch_warnings(record=True) as caught_warnings:
+                    # Enable all warnings
+                    warnings.simplefilter("always")
+                    code = self.compile.compiler(item, filename, the_symbol)
+                for warning in caught_warnings:
+                    if issubclass(warning.category, SyntaxWarning) and "in a 'finally' block" in str(warning.message):
+                        # Ignore this warning as it would've alread been raised
+                        # when compiling the code above
+                        pass
+                    else:
+                        # Re-emit other warnings
+                        warnings.warn_explicit(
+                            message=warning.message,
+                            category=warning.category,
+                            filename=warning.filename,
+                            lineno=warning.lineno,
+                            source=warning.source
+                        )
                 linecache._register_code(code, source, filename)
             except SyntaxError as e:
                 if e.args[0] == "'await' outside function":
