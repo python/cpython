@@ -1690,6 +1690,7 @@ Sub-commands
                      :class:`!ArgumentParser` constructor.
 
       This returned :class:`!ArgumentParser` object can be modified as usual.
+      
    Description of parameters:
 
    * *title* - title for the sub-parser group in help output; by default
