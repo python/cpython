@@ -688,6 +688,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(posix)
         STRUCT_FOR_ID(prec)
         STRUCT_FOR_ID(preserve_exc)
+        STRUCT_FOR_ID(pretty)
         STRUCT_FOR_ID(print_file_and_line)
         STRUCT_FOR_ID(priority)
         STRUCT_FOR_ID(progress)
