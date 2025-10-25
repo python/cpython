@@ -642,7 +642,7 @@ Signal Handling
    This function interacts with Python's signal handling.
 
    If the function is called from the main thread and under the main Python
-   interpreter, it checks whether a signal has been sent to the processes
+   interpreter, it checks whether a signal has been sent to the process
    and if so, invokes the corresponding signal handler.  If the :mod:`signal`
    module is supported, this can invoke a signal handler written in Python.
 
@@ -653,7 +653,11 @@ Signal Handling
    next :c:func:`PyErr_CheckSignals()` invocation).
 
    If the function is called from a non-main thread, or under a non-main
-   Python interpreter, it does nothing and returns ``0``.
+   Python interpreter, it does not check for pending signals, and always
+   returns ``0``.
+
+   Regardless of calling context, this function may, as a side effect,
+   run the cyclic garbage collector (see :ref:`supporting-cycle-detection`).
 
    This function can be called by long-running C code that wants to
    be interruptible by user requests (such as by pressing Ctrl-C).
@@ -662,6 +666,47 @@ Signal Handling
       The default Python signal handler for :c:macro:`!SIGINT` raises the
       :exc:`KeyboardInterrupt` exception.
 
+.. c:function:: int PyErr_CheckSignalsDetached(PyThreadState *tstate)
+
+   .. index::
+      pair: module; signal
+      single: SIGINT (C macro)
+      single: KeyboardInterrupt (built-in exception)
+
+   This function is similar to :c:func:`PyErr_CheckSignals`.  However, unlike
+   that function, it must be called **without** an :term:`attached thread state`.
+   The ``tstate`` argument must be the thread state that was formerly attached to
+   the calling context (this is the value returned by :c:func:`PyEval_SaveThread`)
+   and it must be safe to re-attach the thread state briefly.
+
+   If the ``tstate`` argument refers to the main thread and the main Python
+   interpreter, this function checks whether any signals have been sent to the
+   process, and if so, invokes the corresponding signal handlers.  Otherwise it
+   does nothing.  If signal handlers do need to be run, the supplied thread state
+   will be attached while they are run, then detached again afterward.
+
+   The return value is the same as for :c:func:`PyErr_CheckSignals`,
+   i.e. ``-1`` if a signal handler raised an exception, ``0`` otherwise.
+
+   Unlike :c:func:`PyErr_CheckSignals`, this function never runs the cyclic
+   garbage collector.
+
+   This function can be called by long-running C code that wants to
+   be interruptible by user requests from within regions where it has
+   detached the thread state, while minimizing the overhead of the check
+   in the normal case of no pending signals.
+
+.. c:function:: int PyErr_AreSignalsPending(PyThreadState *tstate)
+
+   This function returns a nonzero value if the execution context ``tstate``
+   needs to process signals soon: that is, ``tstate`` refers to the main thread
+   and the main Python interpreter, and signals have been sent to the process,
+   and their handlers have not yet been run.  Otherwise, it returns zero.  It has
+   no side effects.
+
+   .. note::
+      This function may be called either with or without
+      an :term:`attached thread state`.
 
 .. c:function:: void PyErr_SetInterrupt()
 
