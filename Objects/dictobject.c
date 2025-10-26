@@ -2770,8 +2770,8 @@ PyDict_DelItem(PyObject *op, PyObject *key)
     return _PyDict_DelItem_KnownHash(op, key, hash);
 }
 
-static int
-delitem_knownhash_lock_held(PyObject *op, PyObject *key, Py_hash_t hash)
+int
+_PyDict_DelItem_KnownHash_LockHeld(PyObject *op, PyObject *key, Py_hash_t hash)
 {
     Py_ssize_t ix;
     PyDictObject *mp;
@@ -2806,7 +2806,7 @@ _PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 {
     int res;
     Py_BEGIN_CRITICAL_SECTION(op);
-    res = delitem_knownhash_lock_held(op, key, hash);
+    res = _PyDict_DelItem_KnownHash_LockHeld(op, key, hash);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -4654,9 +4654,11 @@ dict_tp_clear(PyObject *op)
 
 static PyObject *dictiter_new(PyDictObject *, PyTypeObject *);
 
-static Py_ssize_t
-sizeof_lock_held(PyDictObject *mp)
+Py_ssize_t
+_PyDict_SizeOf_LockHeld(PyDictObject *mp)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+
     size_t res = _PyObject_SIZE(Py_TYPE(mp));
     if (_PyDict_HasSplitTable(mp)) {
         res += shared_keys_usable_size(mp->ma_keys) * sizeof(PyObject*);
@@ -4675,7 +4677,7 @@ _PyDict_SizeOf(PyDictObject *mp)
 {
     Py_ssize_t res;
     Py_BEGIN_CRITICAL_SECTION(mp);
-    res = sizeof_lock_held(mp);
+    res = _PyDict_SizeOf_LockHeld(mp);
     Py_END_CRITICAL_SECTION();
 
     return res;
@@ -5617,21 +5619,9 @@ try_locked:
 #endif
 
 static bool
-has_unique_reference(PyObject *op)
-{
-#ifdef Py_GIL_DISABLED
-    return (_Py_IsOwnedByCurrentThread(op) &&
-            op->ob_ref_local == 1 &&
-            _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared) == 0);
-#else
-    return Py_REFCNT(op) == 1;
-#endif
-}
-
-static bool
 acquire_iter_result(PyObject *result)
 {
-    if (has_unique_reference(result)) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         return true;
     }
@@ -5668,8 +5658,11 @@ dictiter_iternextitem(PyObject *self)
         }
         else {
             result = PyTuple_New(2);
-            if (result == NULL)
+            if (result == NULL) {
+                Py_DECREF(key);
+                Py_DECREF(value);
                 return NULL;
+            }
             PyTuple_SET_ITEM(result, 0, key);
             PyTuple_SET_ITEM(result, 1, value);
         }
@@ -5777,7 +5770,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
     }
     else if (Py_IS_TYPE(di, &PyDictRevIterItem_Type)) {
         result = di->di_result;
-        if (Py_REFCNT(result) == 1) {
+        if (_PyObject_IsUniquelyReferenced(result)) {
             PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
             PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
             PyTuple_SET_ITEM(result, 0, Py_NewRef(key));
@@ -6865,7 +6858,7 @@ _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
             dict_unhashable_type(name);
             return -1;
         }
-        return delitem_knownhash_lock_held((PyObject *)dict, name, hash);
+        return _PyDict_DelItem_KnownHash_LockHeld((PyObject *)dict, name, hash);
     } else {
         return setitem_lock_held(dict, name, value);
     }

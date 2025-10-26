@@ -1999,7 +1999,7 @@ with an escape character.
 .. nonce: vi2bP-
 .. section: Library
 
-:func:`@warnings.deprecated <warnings.deprecated>` now copies the coroutine
+:deco:`warnings.deprecated` now copies the coroutine
 status of functions and methods so that :func:`inspect.iscoroutinefunction`
 returns the correct result.
 
