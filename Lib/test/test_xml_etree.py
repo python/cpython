@@ -696,14 +696,15 @@ class ElementTreeTest(unittest.TestCase):
             next(it)
         self.assertEqual(str(cm.exception),
                 'junk after document element: line 1, column 12')
-        it.close()  # Close to avoid ResourceWarning
-        del cm, it
+        with self.assertWarns(ResourceWarning):
+            del cm, it
+            support.gc_collect()
 
         # Deleting iterator without close() should emit ResourceWarning (bpo-43292)
-        it = iterparse(SIMPLE_XMLFILE)
-        del it
-        import gc
-        gc.collect()  # Ensure previous iterator is cleaned up
+        with self.assertWarns(ResourceWarning):
+            it = iterparse(SIMPLE_XMLFILE)
+            del it
+            support.gc_collect()
 
         # Explicitly calling close() should not emit warning
         with warnings_helper.check_no_resource_warning(self):
@@ -712,11 +713,12 @@ class ElementTreeTest(unittest.TestCase):
             del it
 
         # Not closing before del should emit ResourceWarning
-        it = iterparse(SIMPLE_XMLFILE)
-        action, elem = next(it)
-        self.assertEqual((action, elem.tag), ('end', 'element'))
-        del it, elem
-        gc.collect()  # Ensure previous iterator is cleaned up
+        with self.assertWarns(ResourceWarning):
+            it = iterparse(SIMPLE_XMLFILE)
+            action, elem = next(it)
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            del it, elem
+            support.gc_collect()
 
         with warnings_helper.check_no_resource_warning(self):
             it = iterparse(SIMPLE_XMLFILE)
@@ -743,7 +745,7 @@ class ElementTreeTest(unittest.TestCase):
                 # Don't close - should warn
 
             create_unclosed()
-            gc.collect()
+            support.gc_collect()
 
             resource_warnings = [x for x in w
                                if issubclass(x.category, ResourceWarning)]
@@ -760,7 +762,7 @@ class ElementTreeTest(unittest.TestCase):
                 context.close()
 
             create_closed()
-            gc.collect()
+            support.gc_collect()
 
             resource_warnings = [x for x in w
                                if issubclass(x.category, ResourceWarning)]
@@ -778,7 +780,7 @@ class ElementTreeTest(unittest.TestCase):
                     # Don't close - file object managed externally
 
                 create_with_fileobj()
-                gc.collect()
+                support.gc_collect()
 
                 resource_warnings = [x for x in w
                                    if issubclass(x.category, ResourceWarning)]

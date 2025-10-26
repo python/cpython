@@ -1261,35 +1261,21 @@ def iterparse(source, events=None, parser=None):
     gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
         __next__ = gen.__next__
-
+        
         def close(self):
+            nonlocal close_source
             if close_source:
                 source.close()
             gen.close()
-            self._closed = True
+            close_source = False
 
-        def __del__(self):
-            if close_source and not getattr(self, '_closed', False):
-                try:
-                    warnings.warn(
-                        f"unclosed file {source!r}",
-                        ResourceWarning,
-                        stacklevel=2,
-                        source=self
-                    )
-                except:
-                    # Ignore errors during warning emission in __del__
-                    # This can happen during interpreter shutdown
-                    pass
+        def __del__(self, _warn=warnings.warn):
             if close_source:
-                try:
-                    source.close()
-                except:
-                    # Ignore errors when closing during __del__
-                    pass
+                _warn(f"unclosed file {source!r}",
+                      ResourceWarning, source=self)
+                source.close()
 
     it = IterParseIterator()
-    it._closed = False
     it.root = None
     wr = weakref.ref(it)
     return it
