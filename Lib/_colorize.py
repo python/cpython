@@ -155,7 +155,7 @@ class ThemeSection(Mapping[str, str]):
         return iter(self.__dataclass_fields__)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Argparse(ThemeSection):
     usage: str = ANSIColors.BOLD_BLUE
     prog: str = ANSIColors.BOLD_MAGENTA
