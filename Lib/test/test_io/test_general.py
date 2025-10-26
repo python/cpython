@@ -592,6 +592,23 @@ class IOTest:
         self.assertEqual(rawio.read(2), None)
         self.assertEqual(rawio.read(2), b"")
 
+    def test_RawIOBase_read_bounds_checking(self):
+        # Make sure a `.readinto` call which returns a value oustside
+        # (0, len(buffer)) raises.
+        class Misbehaved(io.RawIOBase):
+            def __init__(self, readinto_return) -> None:
+                self._readinto_return = readinto_return
+            def readinto(self, b):
+                return self._readinto_return
+
+        with self.assertRaises(ValueError) as cm:
+            Misbehaved(2).read(1)
+        self.assertEqual(str(cm.exception), "readinto returned '2' oustside buffer size '1'")
+        self.assertRaises(ValueError, Misbehaved(2147483647).read)
+        self.assertRaises(ValueError, Misbehaved(sys.maxsize).read)
+        self.assertRaises(ValueError, Misbehaved(-1).read)
+        self.assertRaises(ValueError, Misbehaved(-1000).read)
+
     def test_types_have_dict(self):
         test = (
             self.IOBase(),
