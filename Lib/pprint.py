@@ -615,6 +615,9 @@ class PrettyPrinter:
         if typ in _builtin_scalars:
             return repr(object), True, False
 
+        if (p := getattr(typ, "__pprint__", None)):
+            return p(object, context, maxlevels, level), True, False
+
         r = getattr(typ, "__repr__", None)
 
         if issubclass(typ, int) and r is int.__repr__:
