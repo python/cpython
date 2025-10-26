@@ -1602,7 +1602,7 @@ class DictTest(unittest.TestCase):
             d.get(key2)
 
     def test_clear_at_lookup(self):
-        class X(object):
+        class X:
             def __hash__(self):
                 return 1
             def __eq__(self, other):
