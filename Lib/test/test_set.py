@@ -2163,7 +2163,7 @@ class TestPySet_Add(unittest.TestCase):
         self.assertRaises(TypeError, _testcapi.pyset_add, s, [])
 
     def test_frozenset(self):
-        # Test the PySet_Add c-api for fronzetset objects
+        # Test the PySet_Add c-api for frozenset objects
         assert _testcapi.pyset_add(frozenset(), 1) == frozenset([1])
         frozen_set = frozenset()
         self.assertRaises(SystemError, _testcapi.pyset_add, frozen_set, 1)
