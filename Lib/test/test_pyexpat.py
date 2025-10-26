@@ -686,7 +686,8 @@ class ChardataBufferTest(unittest.TestCase):
 
 class ElementDeclHandlerTest(unittest.TestCase):
     def test_trigger_leak(self):
-        # Unfixed, this test would leak 32 to 56 bytes of memory.
+        # Unfixed, this test would leak the memory of the so-called
+        # "content model" in function ``my_ElementDeclHandler`` of pyexpat.
         # See https://github.com/python/cpython/issues/140593.
         data = textwrap.dedent('''\
             <!DOCTYPE quotations SYSTEM "quotations.dtd" [
