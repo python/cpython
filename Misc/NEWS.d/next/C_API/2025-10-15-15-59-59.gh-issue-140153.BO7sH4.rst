@@ -1,0 +1,2 @@
+Fix :c:func:`Py_REFCNT` definition on limited C API 3.11-3.13. Patch by
+Victor Stinner.

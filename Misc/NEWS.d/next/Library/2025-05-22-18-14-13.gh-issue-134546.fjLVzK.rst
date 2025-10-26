@@ -1,1 +1,0 @@
-Ensure :mod:`pdb` remote debugging script is readable by remote Python process.
