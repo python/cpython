@@ -2800,7 +2800,7 @@ PySet_Add(PyObject *anyset, PyObject *key)
         return -1;
     }
 
-    if (PyFrozenSet_Check(anyset) && PyObject_GC_IsTracked(key) && !PyObject_GC_IsTracked(anyset) ) {
+    if (PyFrozenSet_CheckExact(anyset) && PyObject_GC_IsTracked(key) && !PyObject_GC_IsTracked(anyset) ) {
         _PyObject_GC_TRACK(anyset);
     }
     int rv;
