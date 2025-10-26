@@ -5,6 +5,7 @@ import os
 import sys
 import sysconfig
 import unittest
+import textwrap
 import traceback
 from io import BytesIO
 from test import support
