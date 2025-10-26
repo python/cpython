@@ -604,10 +604,9 @@ class IOTest:
         with self.assertRaises(ValueError) as cm:
             Misbehaved(2).read(1)
         self.assertEqual(str(cm.exception), "readinto returned '2' oustside buffer size '1'")
-        self.assertRaises(ValueError, Misbehaved(2147483647).read)
-        self.assertRaises(ValueError, Misbehaved(sys.maxsize).read)
-        self.assertRaises(ValueError, Misbehaved(-1).read)
-        self.assertRaises(ValueError, Misbehaved(-1000).read)
+        for bad_size in (2147483647, sys.maxsize, -1, -1000):
+          with self.assertRaises(ValueError):
+              Misbehaved(bad_size).read()
 
     def test_types_have_dict(self):
         test = (
