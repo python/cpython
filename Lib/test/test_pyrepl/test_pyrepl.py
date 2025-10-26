@@ -1069,6 +1069,9 @@ class TestPasteEvent(TestCase):
 class TestDumbTerminal(ReplTestCase):
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
+        # Ignore PYTHONSTARTUP to not pollute the output
+        # with an unrelated traceback. See GH-137568.
+        env.pop('PYTHONSTARTUP', None)
         env.update({"TERM": "dumb"})
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
