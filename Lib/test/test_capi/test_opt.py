@@ -1241,14 +1241,8 @@ class TestUopsOptimization(unittest.TestCase):
             pass
 
         res, ex = self._run_with_optimizer(thing, Foo())
-        opnames = list(iter_opnames(ex))
-        self.assertIsNotNone(ex)
-        self.assertEqual(res, TIER2_THRESHOLD * 6 + 1)
-        call = opnames.index("_CALL_BUILTIN_FAST")
-        load_attr_top = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", 0, call)
-        load_attr_bottom = opnames.index("_POP_TOP_LOAD_CONST_INLINE_BORROW", call)
-        self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
-        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
+        # Cleaned up by the invalidation.
+        self.assertIsNone(ex)
 
     def test_guard_type_version_removed_escaping(self):
 
