@@ -242,7 +242,7 @@ Signature algorithms
 
    .. availability:: OpenSSL >= 3.4
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 Exceptions
@@ -364,9 +364,8 @@ Random generation
 .. function:: RAND_status()
 
    Return ``True`` if the SSL pseudo-random number generator has been seeded
-   with 'enough' randomness, and ``False`` otherwise.  You can use
-   :func:`ssl.RAND_egd` and :func:`ssl.RAND_add` to increase the randomness of
-   the pseudo-random number generator.
+   with 'enough' randomness, and ``False`` otherwise.  Use :func:`ssl.RAND_add`
+   to increase the randomness of the pseudo-random number generator.
 
 .. function:: RAND_add(bytes, entropy, /)
 
@@ -969,7 +968,7 @@ Constants
    Whether the OpenSSL library has built-in support for External PSKs in TLS
    1.3 as described in :rfc:`9258`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: HAS_PHA
 
@@ -1144,7 +1143,7 @@ SSL Sockets
       functions support reading and writing of data larger than 2 GB. Writing
       zero-length data no longer fails with a protocol violation error.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Python now uses ``SSL_sendfile`` internally when possible. The
       function sends a file more efficiently because it performs TLS encryption
       in the kernel to avoid additional context switches.
@@ -1330,7 +1329,7 @@ SSL sockets also have the following additional methods and attributes:
 
    .. availability:: OpenSSL >= 3.2
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLSocket.client_sigalg()
 
@@ -1340,7 +1339,7 @@ SSL sockets also have the following additional methods and attributes:
 
    .. availability:: OpenSSL >= 3.5
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLSocket.server_sigalg()
 
@@ -1350,7 +1349,7 @@ SSL sockets also have the following additional methods and attributes:
 
    .. availability:: OpenSSL >= 3.5
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLSocket.compression()
 
@@ -1728,7 +1727,7 @@ to speed up repeated connections from the same clients.
 
    .. availability:: OpenSSL >= 3.5
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_default_verify_paths()
 
@@ -1767,7 +1766,7 @@ to speed up repeated connections from the same clients.
       When connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       return details about the negotiated cipher.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_groups(groups, /)
 
@@ -1780,7 +1779,7 @@ to speed up repeated connections from the same clients.
       When connected, the :meth:`SSLSocket.group` method of SSL sockets will
       return the group used for key agreement on that connection.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_client_sigalgs(sigalgs, /)
 
@@ -1797,7 +1796,7 @@ to speed up repeated connections from the same clients.
 
    .. availability:: not AWS-LC
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_server_sigalgs(sigalgs, /)
 
@@ -1811,7 +1810,7 @@ to speed up repeated connections from the same clients.
       sockets will return the signature algorithm used by the server to
       complete the TLS handshake on that connection.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: SSLContext.set_alpn_protocols(alpn_protocols)
 

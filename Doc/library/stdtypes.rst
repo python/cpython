@@ -1843,9 +1843,9 @@ expression support in the :mod:`re` module).
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
 
-   The casefolding algorithm is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
+   The casefolding algorithm is `described in section 3.13.3 'Default Case
+   Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G53253>`__.
 
    .. versionadded:: 3.3
 
@@ -2056,7 +2056,7 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G91002>`_.
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
 
 
 .. method:: str.isascii()
@@ -2157,6 +2157,19 @@ expression support in the :mod:`re` module).
    character, for example uppercase characters may only follow uncased characters
    and lowercase characters only cased ones.  Return ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Spam, Spam, Spam'.istitle()
+      True
+      >>> 'spam, spam, spam'.istitle()
+      False
+      >>> 'SPAM, SPAM, SPAM'.istitle()
+      False
+
+   See also :meth:`title`.
+
 
 .. method:: str.isupper()
 
@@ -2196,9 +2209,9 @@ expression support in the :mod:`re` module).
    Return a copy of the string with all the cased characters [4]_ converted to
    lowercase.
 
-   The lowercasing algorithm used is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
+   The lowercasing algorithm used is `described in section 3.13.2 'Default Case
+   Conversion' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
 
 
 .. method:: str.lstrip(chars=None, /)
@@ -2534,6 +2547,8 @@ expression support in the :mod:`re` module).
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
+   See also :meth:`istitle`.
+
 
 .. method:: str.translate(table, /)
 
@@ -2561,9 +2576,9 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
-   The uppercasing algorithm used is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
+   The uppercasing algorithm used is `described in section 3.13.2 'Default Case
+   Conversion' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
 
 
 .. method:: str.zfill(width, /)
@@ -5014,13 +5029,13 @@ can be used interchangeably to index the same dictionary entry.
 
       .. index:: __missing__()
 
-      If a subclass of dict defines a method :meth:`__missing__` and *key*
+      If a subclass of dict defines a method :meth:`~object.__missing__` and *key*
       is not present, the ``d[key]`` operation calls that method with the key *key*
       as argument.  The ``d[key]`` operation then returns or raises whatever is
       returned or raised by the ``__missing__(key)`` call.
-      No other operations or methods invoke :meth:`__missing__`. If
-      :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
-      :meth:`__missing__` must be a method; it cannot be an instance variable::
+      No other operations or methods invoke :meth:`~object.__missing__`. If
+      :meth:`~object.__missing__` is not defined, :exc:`KeyError` is raised.
+      :meth:`~object.__missing__` must be a method; it cannot be an instance variable::
 
           >>> class Counter(dict):
           ...     def __missing__(self, key):
@@ -5034,7 +5049,8 @@ can be used interchangeably to index the same dictionary entry.
           1
 
       The example above shows part of the implementation of
-      :class:`collections.Counter`.  A different ``__missing__`` method is used
+      :class:`collections.Counter`.
+      A different :meth:`!__missing__` method is used
       by :class:`collections.defaultdict`.
 
    .. describe:: d[key] = value
@@ -5543,6 +5559,7 @@ list is non-exhaustive.
 * :class:`collections.abc.MutableMapping`
 * :class:`collections.abc.Sequence`
 * :class:`collections.abc.MutableSequence`
+* :class:`collections.abc.ByteString`
 * :class:`collections.abc.MappingView`
 * :class:`collections.abc.KeysView`
 * :class:`collections.abc.ItemsView`
@@ -5927,7 +5944,7 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is commonly used used to indicate that something is omitted.
+This object is commonly used to indicate that something is omitted.
 It supports no special operations.  There is exactly one ellipsis object, named
 :const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()`` produces the
 :const:`Ellipsis` singleton.

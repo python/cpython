@@ -524,7 +524,7 @@ Convenience Functions
 
 .. function:: dumps(params, methodname=None, methodresponse=None, encoding=None, allow_none=False)
 
-   Convert *params* into an XML-RPC request. or into a response if *methodresponse*
+   Convert *params* into an XML-RPC request, or into a response if *methodresponse*
    is true. *params* can be either a tuple of arguments or an instance of the
    :exc:`Fault` exception class.  If *methodresponse* is true, only a single value
    can be returned, meaning that *params* must be of length 1. *encoding*, if

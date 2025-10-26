@@ -190,7 +190,7 @@ static PyObject *
 compress(BZ2Compressor *c, char *data, size_t len, int action)
 {
     PyObject *result;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     if (OutputBuffer_InitAndGrow(&buffer, -1, &c->bzs.next_out, &c->bzs.avail_out) < 0) {
         goto error;
@@ -391,13 +391,6 @@ BZ2Compressor_dealloc(PyObject *op)
     Py_DECREF(tp);
 }
 
-static int
-BZ2Compressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyMethodDef BZ2Compressor_methods[] = {
     _BZ2_BZ2COMPRESSOR_COMPRESS_METHODDEF
     _BZ2_BZ2COMPRESSOR_FLUSH_METHODDEF
@@ -409,7 +402,6 @@ static PyType_Slot bz2_compressor_type_slots[] = {
     {Py_tp_methods, BZ2Compressor_methods},
     {Py_tp_new, _bz2_BZ2Compressor},
     {Py_tp_doc, (char *)_bz2_BZ2Compressor__doc__},
-    {Py_tp_traverse, BZ2Compressor_traverse},
     {0, 0}
 };
 
@@ -437,7 +429,7 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
        compare against max_length and PyBytes_GET_SIZE we declare it as
        signed */
     PyObject *result;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     bz_stream *bzs = &d->bzs;
 
     if (OutputBuffer_InitAndGrow(&buffer, max_length, &bzs->next_out, &bzs->avail_out) < 0) {
@@ -669,9 +661,7 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
-    if (self->unused_data == NULL)
-        goto error;
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
     bzerror = BZ2_bzDecompressInit(&self->bzs, 0, 0);
     if (catch_bz2_error(bzerror))
@@ -701,13 +691,6 @@ BZ2Decompressor_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
-}
-
-static int
-BZ2Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
 }
 
 static PyMethodDef BZ2Decompressor_methods[] = {
@@ -740,7 +723,6 @@ static PyType_Slot bz2_decompressor_type_slots[] = {
     {Py_tp_doc, (char *)_bz2_BZ2Decompressor__doc__},
     {Py_tp_members, BZ2Decompressor_members},
     {Py_tp_new, _bz2_BZ2Decompressor},
-    {Py_tp_traverse, BZ2Decompressor_traverse},
     {0, 0}
 };
 
