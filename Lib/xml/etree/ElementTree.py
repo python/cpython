@@ -1261,7 +1261,7 @@ def iterparse(source, events=None, parser=None):
     gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
         __next__ = gen.__next__
-        
+
         def close(self):
             nonlocal close_source
             if close_source:
