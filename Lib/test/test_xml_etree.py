@@ -696,15 +696,19 @@ class ElementTreeTest(unittest.TestCase):
             next(it)
         self.assertEqual(str(cm.exception),
                 'junk after document element: line 1, column 12')
-        with self.assertWarns(ResourceWarning):
+        with self.assertWarns(ResourceWarning) as wm:
             del cm, it
             gc_collect()
+        self.assertIn('unclosed file', str(wm.warning))
+        self.assertIn(TESTFN, str(wm.warning))
 
-        # Deleting iterator without close() should emit ResourceWarning (bpo-43292)
-        with self.assertWarns(ResourceWarning):
+        # Not exhausting the iterator still closes the resource (bpo-43292)
+        with self.assertWarns(ResourceWarning) as wm:
             it = iterparse(SIMPLE_XMLFILE)
             del it
             gc_collect()
+        self.assertIn('unclosed file', str(wm.warning))
+        self.assertIn(SIMPLE_XMLFILE, str(wm.warning))
 
         # Explicitly calling close() should not emit warning
         with warnings_helper.check_no_resource_warning(self):
@@ -713,12 +717,14 @@ class ElementTreeTest(unittest.TestCase):
             del it
 
         # Not closing before del should emit ResourceWarning
-        with self.assertWarns(ResourceWarning):
+        with self.assertWarns(ResourceWarning) as wm:
             it = iterparse(SIMPLE_XMLFILE)
             action, elem = next(it)
             self.assertEqual((action, elem.tag), ('end', 'element'))
             del it, elem
             gc_collect()
+        self.assertIn('unclosed file', str(wm.warning))
+        self.assertIn(SIMPLE_XMLFILE, str(wm.warning))
 
         with warnings_helper.check_no_resource_warning(self):
             it = iterparse(SIMPLE_XMLFILE)
