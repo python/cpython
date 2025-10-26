@@ -698,8 +698,7 @@ class ElementDeclHandlerTest(unittest.TestCase):
         parser = expat.ParserCreate()
         parser.NotStandaloneHandler = lambda: 1.234  # arbitrary float
         parser.ElementDeclHandler = lambda _1, _2: None
-        with self.assertRaises(TypeError):
-            parser.Parse(data, True)
+        self.assertRaises(TypeError, parser.Parse, data, True)
 
 class MalformedInputTest(unittest.TestCase):
     def test1(self):
