@@ -687,7 +687,7 @@ class ChardataBufferTest(unittest.TestCase):
 class ElementDeclHandlerTest(unittest.TestCase):
     def test_trigger_leak(self):
         # Unfixed, this test would leak 32 to 56 bytes of memory.
-        # https://github.com/python/cpython/issues/140593
+        # See https://github.com/python/cpython/issues/140593.
         data = textwrap.dedent('''\
             <!DOCTYPE quotations SYSTEM "quotations.dtd" [
                 <!ELEMENT root ANY>
