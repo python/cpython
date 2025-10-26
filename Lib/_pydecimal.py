@@ -450,18 +450,83 @@ def IEEEContext(bits, /):
 #
 # See https://github.com/python/cpython/issues/140036 for details.
 
-# Claim: If 0 < z <= log2(10) and q.bit_length() < a*z, then q < 10**a.
-# Proof: By contradiction, q >= 10**a. By definition,
-#   log2(q) >= a*log2(10) >= a*z > q.bit_length().
-# In particular, q > 2**q.bit_length(), which is impossible.
 _LOG_10_BASE_2_LO = float.fromhex('0x1.a934f0979a371p+1')
 assert pow(2, _LOG_10_BASE_2_LO) < 10
 
-# Claim: If z > log2(10) and q.bit_length() >= 1 + a*z, then q > 10**a.
-# Proof: Since q >= 2**(q.bit_length()-1), we have
-#   q >= 2**(q.bit_length()-1) >= 2**(a*z) > 2**(a*log2(10)) = 10**a.
 _LOG_10_BASE_2_HI = float.fromhex('0x1.a934f0979a372p+1')
 assert pow(2, _LOG_10_BASE_2_HI) > 10
+
+
+def _tento(n):
+    """Compute 10 ** n with 1 base-5 exponentiation and 1 bit-shift."""
+    return (5 ** n) << n
+
+
+def _is_leq_than_pow10a_use_str(q, a):
+    """Try to efficiently check len(str(q)) <= a, or equivalently q < 10**a.
+
+    If it is not possible to efficiently compute len(str(q)),
+    this explicitly compute str(q) instead.
+
+    Return (len(str(q)) <= a, None) or (len(str(q)) <= a, str(q)).
+    """
+    if q.bit_length() < a * _LOG_10_BASE_2_LO:
+        # Claim: If 0 < z <= log2(10) and q.bit_length() < a*z, then q < 10**a.
+        # Proof: By contradiction, q >= 10**a. By definition,
+        #   log2(q) >= a*log2(10) >= a*z > q.bit_length().
+        # In particular, q > 2**q.bit_length(), which is impossible.
+
+        # assert q < 10 ** context.prec
+        return True, None
+    elif q.bit_length() >= 1 + a * _LOG_10_BASE_2_HI:
+        # Claim: If z > log2(10) and q.bit_length() >= 1 + a*z, then q > 10**a.
+        # Proof: Since q >= 2**(q.bit_length()-1), we have
+        #   q >= 2**(q.bit_length()-1) >= 2**(a*z) > 2**(a*log2(10)) = 10**a.
+
+        # assert q > 10 ** context.prec
+        return False, None
+    # Handles other cases due to floating point precision loss
+    # when computing _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
+    str_q = str(q)  # can raise a ValueError
+    is_valid = len(str_q) <= a
+    return is_valid, str_q
+
+
+def _is_leq_than_pow10a(q, a, *, exact=True, ulp_order=20):
+    """Check that len(str(q)) <= a without computing str(q).
+
+    When *exact* is false, computing len(str(q)) is replaced by f(q):
+
+        f(q) = floor(log10(q) + ulp(log10(q)) * ulp_order + 1.0)
+
+    Most of the time, f(q) = len(str(q)) but in some cases, it may
+    happen that f(q) > len(str(q)).
+
+    When *exact* is true, computing len(str(q)) requires one bigint
+    exponentiation that only depends on q.
+    """
+
+    if q < 10:
+        return a >= 1
+
+    z = _math.log10(q)
+    t = _math.ulp(z) * ulp_order
+
+    if exact:
+        intlo = int(z - t)
+        inthi = int(z + t)
+        diff = inthi - intlo
+        assert diff in (0, 1)
+        if diff == 1:
+            lo = _tento(inthi)  # may be slow
+            if q < lo:
+                inthi -= 1
+                assert q >= (lo // 10)
+        ndigits = inthi + 1
+    else:
+        ndigits = int(z + t + 1.0)
+    return ndigits <= a
+
 
 # Do not subclass Decimal from numbers.Real and do not register it as such
 # (because Decimals are not interoperable with floats).  See the notes in
