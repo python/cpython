@@ -23692,7 +23692,7 @@ invalid_import_rule(Parser *p)
     return _res;
 }
 
-// invalid_dotted_as_name: dotted_name 'as' !(NAME (',' | ')' | NEWLINE)) expression
+// invalid_dotted_as_name: dotted_name 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression
 static void *
 invalid_dotted_as_name_rule(Parser *p)
 {
@@ -23705,12 +23705,12 @@ invalid_dotted_as_name_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // dotted_name 'as' !(NAME (',' | ')' | NEWLINE)) expression
+    { // dotted_name 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_dotted_as_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "dotted_name 'as' !(NAME (',' | ')' | NEWLINE)) expression"));
+        D(fprintf(stderr, "%*c> invalid_dotted_as_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "dotted_name 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression"));
         Token * _keyword;
         expr_ty a;
         expr_ty dotted_name_var;
@@ -23724,7 +23724,7 @@ invalid_dotted_as_name_rule(Parser *p)
             (a = expression_rule(p))  // expression
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_dotted_as_name[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "dotted_name 'as' !(NAME (',' | ')' | NEWLINE)) expression"));
+            D(fprintf(stderr, "%*c+ invalid_dotted_as_name[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "dotted_name 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use %s as import target" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -23735,7 +23735,7 @@ invalid_dotted_as_name_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_dotted_as_name[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "dotted_name 'as' !(NAME (',' | ')' | NEWLINE)) expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "dotted_name 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression"));
     }
     _res = NULL;
   done:
@@ -23743,7 +23743,7 @@ invalid_dotted_as_name_rule(Parser *p)
     return _res;
 }
 
-// invalid_import_from_as_name: NAME 'as' !(NAME (',' | ')' | NEWLINE)) expression
+// invalid_import_from_as_name: NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression
 static void *
 invalid_import_from_as_name_rule(Parser *p)
 {
@@ -23756,12 +23756,12 @@ invalid_import_from_as_name_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // NAME 'as' !(NAME (',' | ')' | NEWLINE)) expression
+    { // NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_import_from_as_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME 'as' !(NAME (',' | ')' | NEWLINE)) expression"));
+        D(fprintf(stderr, "%*c> invalid_import_from_as_name[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression"));
         Token * _keyword;
         expr_ty a;
         expr_ty name_var;
@@ -23775,7 +23775,7 @@ invalid_import_from_as_name_rule(Parser *p)
             (a = expression_rule(p))  // expression
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_import_from_as_name[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME 'as' !(NAME (',' | ')' | NEWLINE)) expression"));
+            D(fprintf(stderr, "%*c+ invalid_import_from_as_name[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use %s as import target" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -23786,7 +23786,7 @@ invalid_import_from_as_name_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_import_from_as_name[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME 'as' !(NAME (',' | ')' | NEWLINE)) expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME 'as' !(NAME (',' | ')' | ';' | NEWLINE)) expression"));
     }
     _res = NULL;
   done:
@@ -35834,7 +35834,7 @@ _gather_138_rule(Parser *p)
     return _res;
 }
 
-// _tmp_139: NAME (',' | ')' | NEWLINE)
+// _tmp_139: NAME (',' | ')' | ';' | NEWLINE)
 static void *
 _tmp_139_rule(Parser *p)
 {
@@ -35847,27 +35847,27 @@ _tmp_139_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // NAME (',' | ')' | NEWLINE)
+    { // NAME (',' | ')' | ';' | NEWLINE)
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_139[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME (',' | ')' | NEWLINE)"));
+        D(fprintf(stderr, "%*c> _tmp_139[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "NAME (',' | ')' | ';' | NEWLINE)"));
         void *_tmp_173_var;
         expr_ty name_var;
         if (
             (name_var = _PyPegen_name_token(p))  // NAME
             &&
-            (_tmp_173_var = _tmp_173_rule(p))  // ',' | ')' | NEWLINE
+            (_tmp_173_var = _tmp_173_rule(p))  // ',' | ')' | ';' | NEWLINE
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_139[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME (',' | ')' | NEWLINE)"));
+            D(fprintf(stderr, "%*c+ _tmp_139[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NAME (',' | ')' | ';' | NEWLINE)"));
             _res = _PyPegen_dummy_name(p, name_var, _tmp_173_var);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_139[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME (',' | ')' | NEWLINE)"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "NAME (',' | ')' | ';' | NEWLINE)"));
     }
     _res = NULL;
   done:
@@ -37788,7 +37788,7 @@ _loop0_172_rule(Parser *p)
     return _seq;
 }
 
-// _tmp_173: ',' | ')' | NEWLINE
+// _tmp_173: ',' | ')' | ';' | NEWLINE
 static void *
 _tmp_173_rule(Parser *p)
 {
@@ -37838,6 +37838,25 @@ _tmp_173_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_173[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "')'"));
+    }
+    { // ';'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> _tmp_173[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "';'"));
+        Token * _literal;
+        if (
+            (_literal = _PyPegen_expect_token(p, 13))  // token=';'
+        )
+        {
+            D(fprintf(stderr, "%*c+ _tmp_173[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "';'"));
+            _res = _literal;
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s _tmp_173[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "';'"));
     }
     { // NEWLINE
         if (p->error_indicator) {
