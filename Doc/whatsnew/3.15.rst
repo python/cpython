@@ -317,6 +317,13 @@ New modules
 Improved modules
 ================
 
+argparse
+--------
+
+* Changed the *suggest_on_error* parameter of :class:`argparse.ArgumentParser` to
+  default to ``True``. This enables suggestions for mistyped arguments by default.
+  (Contributed by Jakob Schluse in :gh:`140450`.)
+
 calendar
 --------
 
@@ -438,7 +445,7 @@ os
 
 * Add :func:`os.statx` on Linux kernel versions 4.11 and later with
   glibc versions 2.28 and later.
-  (Contributed by Jeffrey Bosboom in :gh:`83714`.)
+  (Contributed by Jeffrey Bosboom and Victor Stinner in :gh:`83714`.)
 
 
 os.path
@@ -490,6 +497,9 @@ sqlite3
      This is enabled by default, see :ref:`using-on-controlling-color` for
      details.
      (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
+
+   * Table, index, trigger, view, column, function, and schema completion on <tab>.
+     (Contributed by Long Tan in :gh:`136101`.)
 
 
 ssl
@@ -601,6 +611,17 @@ unittest
   (Contributed by Garry Cairns in :gh:`134567`.)
 
 
+venv
+----
+
+* On POSIX platforms, platlib directories will be created if needed when
+  creating virtual environments, instead of using ``lib64 -> lib`` symlink.
+  This means purelib and platlib of virtual environments no longer share the
+  same ``lib`` directory on platforms where :data:`sys.platlibdir` is not
+  equal to ``lib``.
+  (Contributed by Rui Xi in :gh:`133951`.)
+
+
 xml.parsers.expat
 -----------------
 
@@ -634,11 +655,11 @@ zlib
 Optimizations
 =============
 
-module_name
------------
+csv
+---
 
-* TODO
-
+* :meth:`csv.Sniffer.sniff` delimiter detection is now up to 1.6x faster.
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
 
 
 Removed
@@ -830,6 +851,7 @@ New deprecations
     - :mod:`argparse`
     - :mod:`csv`
     - :mod:`!ctypes.macholib`
+    - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
     - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`
