@@ -2437,60 +2437,23 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
 
 
 static PyObject *
-test_pyset_add(PyObject* self, PyObject *Py_UNUSED(args))
+// Interface to pyset_add, returning the set
+pyset_add(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 {
-
-    PyObject *set = NULL, *empty_tuple=NULL, *tracked_object;
-    int return_value;
-
-    tracked_object = PyImport_ImportModule("sys");
-    if (tracked_object == NULL) {
-        goto failed;
+    Py_ssize_t nargs = _PyVectorcall_NARGS(nargsf);
+    if (nargs != 2) {
+        PyErr_SetString(PyExc_ValueError, "pyset_add requires exactly two arguments");
+        return NULL;
     }
-    if (!PyObject_GC_IsTracked(tracked_object)) {
-        PyErr_SetString(PyExc_ValueError, "Test item is not tracked by GC");
-        goto failed;
-    }
+    PyObject *set = args[0];
+    PyObject *item = args[1];
 
-    empty_tuple = PyTuple_New(0);
-    if (empty_tuple == NULL) {
-        goto failed;
-    }
-    set = PyFrozenSet_New(empty_tuple);
-    if (set == NULL) {
-        goto failed;
+    int return_value = PySet_Add(set, item);
+    if (return_value < 0) {
+        return NULL;
     }
 
-    if (PyObject_GC_IsTracked(set)) {
-        PyErr_SetString(PyExc_ValueError, "Empty frozenset object is tracked by GC");
-        goto failed;
-    }
-    return_value = PySet_Add(set, empty_tuple);
-    if (return_value<0) {
-        goto failed;
-    }
-    if (PyObject_GC_IsTracked(set)) {
-        PyErr_SetString(PyExc_ValueError, "Frozenset object with immutable is tracked by GC");
-        goto failed;
-    }
-
-    PySet_Add(set, tracked_object);
-    if (return_value<0) {
-        goto failed;
-    }
-    if (!PyObject_GC_IsTracked(set)) {
-        PyErr_SetString(PyExc_ValueError, "Frozenset object with tracked objects is not tracked by GC");
-        goto failed;
-    }
-
-    Py_RETURN_NONE;
-
-failed:
-    Py_XDECREF(tracked_object);
-    Py_XDECREF(empty_tuple);
-    Py_XDECREF(set);
-    return NULL;
-
+    return Py_NewRef(set);
 }
 
 // Used by `finalize_thread_hang`.
@@ -2704,7 +2667,7 @@ static PyMethodDef TestMethods[] = {
     {"gen_get_code", gen_get_code, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
-    {"test_pyset_add", test_pyset_add, METH_NOARGS, NULL},
+    {"pyset_add", _PyCFunction_CAST(pyset_add), METH_FASTCALL, NULL},
     {"settrace_to_error", settrace_to_error, METH_O, NULL},
     {"settrace_to_record", settrace_to_record, METH_O, NULL},
     {"test_macros", test_macros, METH_NOARGS, NULL},
