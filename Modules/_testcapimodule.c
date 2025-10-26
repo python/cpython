@@ -2437,7 +2437,7 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
 
 
 static PyObject *
-// Interface to pyset_add, returning the set
+// Interface to PySet_Add, returning the set
 pyset_add(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 {
     Py_ssize_t nargs = _PyVectorcall_NARGS(nargsf);

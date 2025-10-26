@@ -1180,7 +1180,7 @@ _PyFrozenSet_MaybeUntrack(PyObject *op)
     if ((op == NULL) || !(PyFrozenSet_CheckExact(op))) {
         return;
     }
-    // if all elements of a frozenset are not tracked, we untrack the object
+    // if no elements of a frozenset are tracked, we untrack the object
     Py_ssize_t pos = 0;
     setentry *entry;
     while (set_next((PySetObject *)op, &pos, &entry)) {

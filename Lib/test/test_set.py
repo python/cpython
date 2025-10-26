@@ -2164,7 +2164,6 @@ class TestPySet_Add(unittest.TestCase):
 
     def test_frozenset(self):
         # Test the PySet_Add c-api for fronzetset objects
-
         assert _testcapi.pyset_add(frozenset(), 1) == frozenset([1])
         frozen_set = frozenset()
         self.assertRaises(SystemError, _testcapi.pyset_add, frozen_set, 1)
