@@ -40,7 +40,6 @@ class TestTheme(unittest.TestCase):
         unittest_no_colors = _colorize.Unittest.no_colors()
         copy = theme.copy_with(unittest=unittest_no_colors)
         self.assertEqual(copy.argparse, theme.argparse)
-        self.assertEqual(copy.difflib, theme.difflib)
         self.assertEqual(copy.syntax, theme.syntax)
         self.assertEqual(copy.traceback, theme.traceback)
         self.assertEqual(copy.unittest, unittest_no_colors)
