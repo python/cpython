@@ -698,13 +698,13 @@ class ElementTreeTest(unittest.TestCase):
                 'junk after document element: line 1, column 12')
         with self.assertWarns(ResourceWarning):
             del cm, it
-            support.gc_collect()
+            gc_collect()
 
         # Deleting iterator without close() should emit ResourceWarning (bpo-43292)
         with self.assertWarns(ResourceWarning):
             it = iterparse(SIMPLE_XMLFILE)
             del it
-            support.gc_collect()
+            gc_collect()
 
         # Explicitly calling close() should not emit warning
         with warnings_helper.check_no_resource_warning(self):
@@ -718,7 +718,7 @@ class ElementTreeTest(unittest.TestCase):
             action, elem = next(it)
             self.assertEqual((action, elem.tag), ('end', 'element'))
             del it, elem
-            support.gc_collect()
+            gc_collect()
 
         with warnings_helper.check_no_resource_warning(self):
             it = iterparse(SIMPLE_XMLFILE)
@@ -732,7 +732,6 @@ class ElementTreeTest(unittest.TestCase):
 
     def test_iterparse_resource_warning(self):
         # Test ResourceWarning when iterparse with filename is not closed
-        import gc
         import warnings
 
         # Should emit warning when not closed
@@ -745,7 +744,7 @@ class ElementTreeTest(unittest.TestCase):
                 # Don't close - should warn
 
             create_unclosed()
-            support.gc_collect()
+            gc_collect()
 
             resource_warnings = [x for x in w
                                if issubclass(x.category, ResourceWarning)]
@@ -762,7 +761,7 @@ class ElementTreeTest(unittest.TestCase):
                 context.close()
 
             create_closed()
-            support.gc_collect()
+            gc_collect()
 
             resource_warnings = [x for x in w
                                if issubclass(x.category, ResourceWarning)]
@@ -780,7 +779,7 @@ class ElementTreeTest(unittest.TestCase):
                     # Don't close - file object managed externally
 
                 create_with_fileobj()
-                support.gc_collect()
+                gc_collect()
 
                 resource_warnings = [x for x in w
                                    if issubclass(x.category, ResourceWarning)]
