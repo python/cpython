@@ -209,7 +209,6 @@ do { \
         JUMP_TO_LABEL(start_frame);                      \
     } while (0)
 
-
 /* Tuple access macros */
 
 #ifndef Py_DEBUG

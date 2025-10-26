@@ -135,7 +135,7 @@ initial_unreachable_backoff_counter(void)
 }
 
 // Required to not get stuck in infinite specialization loops due to specialization failure.
-// We use 2 here as tnere are a few scenarios:
+// We use 2 here as there are a few scenarios:
 // 1. Freshly specialized from unspecialized, in which case the counter will be 1.
 // 2. Re-specialized from deopt, in which case the counter will be 1.
 // 3. Deopt -> Specialize -> Deopt -> Specialize, in which case the counter will be 2.

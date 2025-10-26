@@ -3232,7 +3232,7 @@ dummy_func(
                     ERROR_NO_POP();
                 }
                 /* iterator ended normally */
-                /* This just sets the IP to what it expects (see normal _FOR_ITER */
+                /* This just sets the IP to what it expects (see normal _FOR_ITER) */
                 frame->instr_ptr += (oparg + 2 + INLINE_CACHE_ENTRIES_FOR_ITER);
                 EXIT_IF(true);
             }

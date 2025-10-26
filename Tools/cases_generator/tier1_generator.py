@@ -288,7 +288,7 @@ def generate_tier1_cases(
         out.start_line()
         if reachable: # type: ignore[possibly-undefined]
             stack.flush(out)
-            out.emit(f"DISPATCH();\n")
+            out.emit("DISPATCH();\n")
         out.start_line()
         out.emit("}")
         out.emit("\n")
