@@ -4,6 +4,7 @@
 import os
 import sys
 import sysconfig
+import textwrap
 import unittest
 import traceback
 from io import BytesIO
@@ -667,6 +668,23 @@ class ChardataBufferTest(unittest.TestCase):
         self.assertEqual(parser.buffer_size, 1024)
         parser.Parse(xml2, True)
         self.assertEqual(self.n, 4)
+
+class ElementDeclHandlerTest(unittest.TestCase):
+    def test_trigger_leak(self):
+        # Unfixed, this test would leak the memory of the so-called
+        # "content model" in function ``my_ElementDeclHandler`` of pyexpat.
+        # See https://github.com/python/cpython/issues/140593.
+        data = textwrap.dedent('''\
+            <!DOCTYPE quotations SYSTEM "quotations.dtd" [
+                <!ELEMENT root ANY>
+            ]>
+            <root/>
+        ''').encode('UTF-8')
+
+        parser = expat.ParserCreate()
+        parser.NotStandaloneHandler = lambda: 1.234  # arbitrary float
+        parser.ElementDeclHandler = lambda _1, _2: None
+        self.assertRaises(TypeError, parser.Parse, data, True)
 
 class MalformedInputTest(unittest.TestCase):
     def test1(self):
