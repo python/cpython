@@ -78,7 +78,6 @@ EXCLUDED = format_conf_lines([
     'Python/deepfreeze/*.c',
     'Python/frozen_modules/*.h',
     'Python/generated_cases.c.h',
-    'Python/generated_tracer_cases.c.h',
     'Python/executor_cases.c.h',
     'Python/optimizer_cases.c.h',
     'Python/opcode_targets.h',
