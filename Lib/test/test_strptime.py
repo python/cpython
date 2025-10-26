@@ -649,6 +649,32 @@ class StrptimeTests(unittest.TestCase):
                 time.strptime("Feb 29", "%b %d"),
                 time.strptime("Mar 1", "%b %d"))
 
+    def test_shorthand_year_month_day(self):
+        # Test that token '%F' is equivalent to '%Y-%m-%d'
+        formats = dict(short="%F",long="%Y-%m-%d")
+        test_date = "2025-10-26"
+        shorthand = time.strptime(test_date,formats["short"])
+        long_hand = time.strptime(test_date,formats["long"])
+        self.assertEqual(shorthand,long_hand)
+        # ensure datetime functionality
+        import datetime
+        shorthand = datetime.datetime.strptime(test_date,formats["short"])
+        long_hand = datetime.datetime.strptime(test_date,formats["long"])
+        assert shorthand == long_hand
+
+    def test_shorthand_hour_minute_second(self):
+        # Test that token '%T' is equivalent to '%H:%M:%S'
+        formats = dict(short="%T",long="%H:%M:%S")
+        test_time = "15:00:00"
+        shorthand = time.strptime(test_time,formats["short"])
+        long_hand = time.strptime(test_time,formats["long"])
+        self.assertEqual(shorthand,long_hand)
+        # ensure datetime functionality
+        import datetime
+        shorthand = datetime.datetime.strptime(test_time,formats["short"])
+        long_hand = datetime.datetime.strptime(test_time,formats["long"])
+        assert shorthand == long_hand
+
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
 
