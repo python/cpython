@@ -88,7 +88,6 @@
 #   define DISPATCH_TABLE instruction_funcptr_handler_table
 #   define TRACING_DISPATCH_TABLE instruction_funcptr_tracing_table
 #   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
-#   define TRACING_TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_TRACING_##op(TAIL_CALL_PARAMS)
 
 #   define DISPATCH_GOTO() \
         do { \
@@ -119,7 +118,6 @@
 #  define DISPATCH_TABLE opcode_targets_table
 #  define TRACING_DISPATCH_TABLE opcode_tracing_targets_table
 #  define TARGET(op) TARGET_##op:
-#  define TRACING_TARGET(op) TARGET_TRACING_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #  define DISPATCH_GOTO_NON_TRACING() goto *DISPATCH_TABLE[opcode];
 #  define JUMP_TO_LABEL(name) goto name;
