@@ -1441,20 +1441,7 @@ class Decimal(object):
             else:
                 op2.int *= 10**(op2.exp - op1.exp)
             q, r = divmod(op1.int, op2.int)
-            # See notes for _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
-            str_q = None  # to cache str(q) when possible
-            if q.bit_length() < context.prec * _LOG_10_BASE_2_LO:
-                # assert q < 10 ** context.prec
-                is_valid = True
-            elif q.bit_length() >= 1 + context.prec * _LOG_10_BASE_2_HI:
-                # assert q > 10 ** context.prec
-                is_valid = False
-            else:
-                # Handles other cases due to floating point precision loss
-                # when computing _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
-                # Computation of str(q) may fail!
-                str_q = str(q)  # we need to compute this in case of success
-                is_valid = len(str_q) <= context.prec
+            is_valid, str_q = _is_leq_than_pow10a_use_str(q, context.prec)
             if is_valid:
                 if str_q is None:
                     str_q = str(q)
@@ -1615,24 +1602,7 @@ class Decimal(object):
             r -= op2.int
             q += 1
 
-        # See notes for _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
-        if q.bit_length() < context.prec * _LOG_10_BASE_2_LO:
-            # assert q < 10 ** context.prec
-            is_valid = True
-        elif q.bit_length() >= 1 + context.prec * _LOG_10_BASE_2_HI:
-            # assert q > 10 ** context.prec
-            is_valid = False
-        else:
-            # Handles other cases due to floating point precision loss
-            # when computing _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
-            # Computation of str(q) or 10 ** context.prec may be slow!
-            try:
-                str_q = str(q)
-            except ValueError:
-                is_valid = q < 10 ** context.prec
-            else:
-                is_valid = len(str_q) <= context.prec
-        if not is_valid:
+        if not _is_leq_than_pow10a(q, context.prec):
             # assert q >= 10 ** context.prec
             # assert len(str(q)) > context.prec
             return context._raise_error(DivisionImpossible)
