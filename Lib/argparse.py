@@ -2748,9 +2748,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # determine help from format above
         return formatter.format_help()
 
-    def _get_formatter(self):
+    def _get_formatter(self, file=None):
         formatter = self.formatter_class(prog=self.prog)
-        formatter._set_color(self.color)
+        formatter._set_color(self.color, file=file)
         return formatter
 
     def _get_validation_formatter(self):
@@ -2767,15 +2767,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def print_usage(self, file=None):
         if file is None:
             file = _sys.stdout
-        formatter = self._get_formatter()
-        formatter._set_color(self.color, file=file)
+        formatter = self._get_formatter(file=file)
         self._print_message(self.format_usage(formatter=formatter), file)
 
     def print_help(self, file=None):
         if file is None:
             file = _sys.stdout
-        formatter = self._get_formatter()
-        formatter._set_color(self.color, file=file)
+        formatter = self._get_formatter(file=file)
         self._print_message(self.format_help(formatter=formatter), file)
 
     def _print_message(self, message, file=None):
