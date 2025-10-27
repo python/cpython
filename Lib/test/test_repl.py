@@ -296,7 +296,7 @@ class TestPythonStartup(unittest.TestCase):
                 self.subTest(repl_name),
                 pythonstartup_env(script="print('from pythonstartup')", histfile=histfile) as env
             ):
-                p = repl_factory(env=env, isolated=False)
+                p = repl_factory(env=env, isolated=False, timeout=SHORT_TIMEOUT)
                 p.stdin.write("1/0")
                 output = kill_python(p)
 
@@ -319,7 +319,7 @@ class TestPythonStartup(unittest.TestCase):
                 self.subTest(repl_name),
                 pythonstartup_env(script="def foo():\n    1/0\n", histfile=histfile) as env
             ):
-                p = repl_factory(env=env, isolated=False)
+                p = repl_factory(env=env, isolated=False, timeout=SHORT_TIMEOUT)
                 p.stdin.write('foo()')
                 output = kill_python(p)
 
