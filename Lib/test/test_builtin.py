@@ -1094,6 +1094,16 @@ class BuiltinTest(unittest.TestCase):
                 return self
         self.assertEqual(hash(Z(42)), hash(42))
 
+    def test_invalid_hash_typeerror(self):
+        # GH-140406: The returned object from __hash__() would leak if it
+        # wasn't an integer.
+        class A:
+            def __hash__(self):
+                return 1.0
+
+        with self.assertRaises(TypeError):
+            hash(A())
+
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
         self.assertEqual(hex(-16), '-0x10')
