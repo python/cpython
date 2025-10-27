@@ -82,7 +82,7 @@
 #   if defined(__clang__) || defined(__GNUC__)
 #       if !_Py__has_attribute(preserve_none) || !_Py__has_attribute(musttail)
 #           error "This compiler does not have support for efficient tail calling."
-#   endif
+#       endif
 #   elif defined(_MSC_VER) && (_MSC_VER < 1950)
 #       error "You need at least VS 2026 / PlatformToolset v145 for tail calling."
 #   endif
