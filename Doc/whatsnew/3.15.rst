@@ -498,6 +498,9 @@ sqlite3
      details.
      (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
 
+   * Table, index, trigger, view, column, function, and schema completion on <tab>.
+     (Contributed by Long Tan in :gh:`136101`.)
+
 
 ssl
 ---
@@ -848,6 +851,7 @@ New deprecations
     - :mod:`argparse`
     - :mod:`csv`
     - :mod:`!ctypes.macholib`
+    - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
     - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`

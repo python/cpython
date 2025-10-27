@@ -5409,7 +5409,6 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     if (maxchr <= 255) {
         memcpy(PyUnicode_1BYTE_DATA(u), s, pos);
         s += pos;
-        size -= pos;
         writer.pos = pos;
     }
 
@@ -5457,7 +5456,6 @@ unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
             return 0;
         }
         s += decoded;
-        size -= decoded;
     }
 
     return unicode_decode_utf8_impl(writer, starts, s, end,
