@@ -12,7 +12,9 @@
 #define INSIDE_FSTRING_EXPR_AT_TOP(tok) \
     (tok->curly_bracket_depth - tok->curly_bracket_expr_start_depth == 1)
 #define INSIDE_PYX_BLOCK(tok) (tok->pyx_mode && tok->pyx_block_depth > 0)
-
+#define IS_PY_IDENTIFIER_START_ASCII(ch) \
+    (isalpha((unsigned char)(ch)) || ((ch) == '_'))
+    
 enum decoding_state {
     STATE_INIT,
     STATE_SEEK_CODING,

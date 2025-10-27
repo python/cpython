@@ -501,7 +501,7 @@ static int
 tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct token *token)
 {
     int c;
-    int blankline, nonascii;
+    int blankline, nonascii, pyx_col_count;
 
     const char *p_start = NULL;
     const char *p_end = NULL;
@@ -509,7 +509,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     tok->start = NULL;
     tok->starting_col_offset = -1;
     blankline = 0;
-
+    pyx_col_count = 0;
 
     /* Get indentation level */
     if (tok->atbol) {
@@ -520,12 +520,27 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         for (;;) {
             c = tok_nextc(tok);
 
-            if(INSIDE_PYX_BLOCK(tok) && c == '}'){
-                 tok->pyx_block_depth--;
-                 continue;
-            }
+            if(INSIDE_PYX_BLOCK(tok)){
+                if(c == '}'){
+                    tok->pyx_block_depth--;
+                    continue;
+                }
 
+                // Handle missing indentation inside Pyx blocks
+                if(pyx_col_count < tok->pyx_block_depth && c != ' ' && IS_PY_IDENTIFIER_START_ASCII(c)){
+                    tok_backup(tok, c);
+                    c = ' ';
+                }
+            }
+            
             if (c == ' ') {
+                if(INSIDE_PYX_BLOCK(tok)){
+                    if(tok->pyx_mode && pyx_col_count >= tok->pyx_block_depth){
+                        continue;
+                    }
+
+                    pyx_col_count++;
+                }
                 col++, altcol++;
             }
             else if (c == '\t') {
