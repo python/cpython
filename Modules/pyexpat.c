@@ -642,7 +642,7 @@ my_ElementDeclHandler(void *userData,
         PyObject *modelobj, *nameobj;
 
         if (PyErr_Occurred())
-            return;
+            goto finally;
 
         if (flush_character_buffer(self) < 0)
             goto finally;

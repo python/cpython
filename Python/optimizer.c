@@ -6,6 +6,7 @@
 #include "pycore_interp.h"
 #include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
+#include "pycore_ceval.h"       // _Py_set_eval_breaker_bit
 #include "pycore_code.h"            // _Py_GetBaseCodeUnit
 #include "pycore_function.h"        // _PyFunction_LookupByVersion()
 #include "pycore_interpframe.h"
@@ -1343,6 +1344,14 @@ uop_optimize(
         return -1;
     }
     assert(length <= UOP_MAX_TRACE_LENGTH);
+
+    // Check executor coldness
+    PyThreadState *tstate = PyThreadState_Get();
+    // It's okay if this ends up going negative.
+    if (--tstate->interp->executor_creation_counter == 0) {
+        _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
+    }
+
     *exec_ptr = executor;
     return 1;
 }
