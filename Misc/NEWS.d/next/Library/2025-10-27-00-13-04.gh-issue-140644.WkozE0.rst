@@ -1,0 +1,1 @@
+Add `'%F'` support to `datetime.datetime.strptime`, a C99+ `time.h` format token.
