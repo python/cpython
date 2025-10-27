@@ -1,5 +1,5 @@
 # Configuration for the zizmor static analysis tool, run via pre-commit in CI
-# https://woodruffw.github.io/zizmor/configuration/
+# https://docs.zizmor.sh/configuration/
 rules:
   dangerous-triggers:
     ignore:
