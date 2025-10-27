@@ -230,7 +230,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
             alloc = size + (size >> 3) + (size < 9 ? 3 : 6);
         }
         else {
-            /* Major upsize; resize up to exact size. Upsize always means size > 0 */
+            /* Major upsize; resize up to exact size */
             alloc = size;
         }
     }
@@ -246,18 +246,24 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
                 Py_MIN(requested_size, Py_SIZE(self)));
     }
 
+    int ret;
     if (obj->ob_bytes_object == NULL) {
         obj->ob_bytes_object = PyBytes_FromStringAndSize(NULL, alloc);
         if (obj->ob_bytes_object == NULL) {
+            /* Object state valid and resize failed. */
             return -1;
         }
+        ret = 0;
     }
     else {
         if (_PyBytes_Resize(&obj->ob_bytes_object, alloc) == -1) {
-            Py_SET_SIZE(self, 0);
-            obj->ob_bytes = obj->ob_start = NULL;
-            FT_ATOMIC_STORE_SSIZE_RELAXED(obj->ob_alloc, 0);
-            return -1;
+            /* storage gone and resize failed. */
+            obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+            size = alloc = 0;
+            ret = -1;
+        }
+        else {
+            ret = 0;
         }
     }
 
@@ -269,7 +275,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         obj->ob_bytes[size] = '\0';
     }
 
-    return 0;
+    return ret;
 }
 
 int
