@@ -1152,6 +1152,7 @@ func_dealloc(PyObject *self)
         return;
     }
 #if _Py_TIER2
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), self, 1);
     _PyJit_Tracer_InvalidateDependency(_PyThreadState_GET(), self);
 #endif
     _PyObject_GC_UNTRACK(op);

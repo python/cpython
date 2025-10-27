@@ -34,7 +34,7 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
     targets = ["&&_unknown_opcode,\n"] * 256
     for name, op in analysis.opmap.items():
         if op < 256:
-            targets[op] = f"&&TARGET_record_previous_inst,\n"
+            targets[op] = f"&&record_previous_inst,\n"
     out.emit("#if _Py_TIER2\n")
     out.emit("static void *opcode_tracing_targets_table[256] = {\n")
     for target in targets:
