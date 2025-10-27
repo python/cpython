@@ -1,1 +1,1 @@
-Fix a reference counting bug in :meth:`posix.sched_param.__reduce__`.
+Fix a reference counting bug in :meth:`!os.sched_param.__reduce__`.
