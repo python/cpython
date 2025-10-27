@@ -203,10 +203,13 @@ grouped under the reserved :attr:`~ServerProxy.system` attribute:
    Because multiple signatures (ie. overloading) is permitted, this method returns
    a list of signatures rather than a singleton.
 
-   Signatures themselves are restricted to the top level parameters expected by a
-   method. For instance if a method expects one array of structs as a argument,
-   and it returns a string, its signature is simply "string, array". If it expects
-   three integers and returns a string, its signature is "string, int, int, int".
+   Note that a signature does not give details of a complex type; it just gives the
+   basic XML-RPC type — array or structure. This applies to both arguments and the
+   return value. For example, if a method expects one array of structs as an argument
+   and returns a string, its signature is simply "string, array". Here, "string" is
+   the return type, and "array" indicates the argument type without showing the structure
+   of its elements. If a method expects three integers and returns an array of strings,
+   its signature is "array, int, int, int".
 
    If no signature is defined for the method, a non-array value is returned. In
    Python this means that the type of the returned  value will be something other
