@@ -282,6 +282,7 @@ def pythonstartup_env(*, script: str, histfile: str = ".pythonhist", env=None):
         yield env | {"PYTHONSTARTUP": filename, "PYTHON_HISTORY": os.path.join(tmpdir, histfile)}
 
 
+@support.force_not_colorized_test_class
 class TestPythonStartup(unittest.TestCase):
     REPLS = [
         ("REPL", spawn_repl, ".pythonhist"),
