@@ -224,6 +224,10 @@ class BaseTestUUID:
                       self.uuid.UUID(urn)]:
                 # Test all conversions and properties of the UUID object.
                 equal(str(u), string)
+                if hasattr(self.uuid, "_c_uuid_str_method"):
+                    # If we have the C accelerator, test both implementations.
+                    equal(self.uuid._py_uuid_str_method(u), string)
+                    equal(self.uuid._c_uuid_str_method(u), string)
                 equal(int(u), integer)
                 equal(u.bytes, bytes)
                 equal(u.bytes_le, bytes_le)

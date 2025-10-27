@@ -3,13 +3,9 @@
  * DCE compatible Universally Unique Identifier library.
  */
 
-// Need limited C API version 3.13 for Py_mod_gil
-#include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030d0000
-#endif
-
+#define Py_BUILD_CORE_MODULE
 #include "Python.h"
+#include "pycore_long.h"  // _PyLong_AsByteArray
 #if defined(HAVE_UUID_H)
   // AIX, FreeBSD, libuuid with pkgconf
   #include <uuid.h>
@@ -90,6 +86,42 @@ py_windows_has_stable_node(void)
 }
 #endif /* MS_WINDOWS */
 
+static PyObject *
+py_uuid_int_to_str(PyObject *Py_UNUSED(context), PyObject *uuid_int)
+{
+    if (!PyLong_Check(uuid_int)) {
+        PyErr_SetString(PyExc_TypeError, "uuid_int must be an integer");
+        return NULL;
+    }
+
+    unsigned char bytes[16];
+    if (_PyLong_AsByteArray((PyLongObject *)uuid_int, bytes, 16, 0, 0, 1) < 0) {
+        return NULL;
+    }
+
+    PyObject *result = PyUnicode_New(36, 127);
+    if (result == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_KIND(result) == PyUnicode_1BYTE_KIND);
+    Py_UCS1 *str = PyUnicode_1BYTE_DATA(result);
+    static const Py_UCS1 hex_digits[] = "0123456789abcdef";
+
+    int pos = 0;
+    for (int i = 0; i < 16; i++) {
+        if (i == 4 || i == 6 || i == 8 || i == 10) {
+            str[pos++] = '-';
+        }
+        unsigned char byte = bytes[i];
+        str[pos++] = hex_digits[byte >> 4];
+        str[pos++] = hex_digits[byte & 0x0f];
+    }
+#ifdef Py_DEBUG
+    assert(pos == 36);
+    assert(_PyUnicode_CheckConsistency(result, 1));
+#endif
+    return result;
+}
 
 static int
 uuid_exec(PyObject *module)
@@ -129,6 +161,7 @@ static PyMethodDef uuid_methods[] = {
 #if defined(MS_WINDOWS)
     {"UuidCreate", py_UuidCreate, METH_NOARGS, NULL},
 #endif
+    {"uuid_int_to_str", py_uuid_int_to_str, METH_O, NULL},
     {NULL, NULL, 0, NULL}           /* sentinel */
 };
 

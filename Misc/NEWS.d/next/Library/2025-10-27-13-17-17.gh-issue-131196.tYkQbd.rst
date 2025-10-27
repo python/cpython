@@ -1,0 +1,2 @@
+Improve performance of :meth:`uuid.UUID.__str__ <object.__str__>` by adding
+a C implementation in _uuidmodule.

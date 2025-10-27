@@ -635,6 +635,12 @@ try:
     _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
     _has_stable_extractable_node = _uuid.has_stable_extractable_node
     _UuidCreate = getattr(_uuid, "UuidCreate", None)
+    _uuid_int_to_str = getattr(_uuid, "uuid_int_to_str", None)
+    _py_uuid_str_method = UUID.__str__
+    if _uuid_int_to_str is not None:
+        def _c_uuid_str_method(self):
+            return _uuid_int_to_str(self.int)
+        UUID.__str__ = _c_uuid_str_method
 except ImportError:
     _uuid = None
     _generate_time_safe = None
