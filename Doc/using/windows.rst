@@ -418,21 +418,21 @@ customization.
 
    * - ``automatic_install``
      - ``PYTHON_MANAGER_AUTOMATIC_INSTALL``
-     - True to allow automatic installs when specifying a particular runtime
+     - ``True`` to allow automatic installs when specifying a particular runtime
        to launch.
-       By default, true.
+       By default, ``True``.
 
    * - ``include_unmanaged``
      - ``PYTHON_MANAGER_INCLUDE_UNMANAGED``
-     - True to allow listing and launching runtimes that were not installed
-       by the Python install manager, or false to exclude them.
-       By default, true.
+     - ``True`` to allow listing and launching runtimes that were not installed
+       by the Python install manager, or ``False`` to exclude them.
+       By default, ``True``.
 
    * - ``shebang_can_run_anything``
      - ``PYTHON_MANAGER_SHEBANG_CAN_RUN_ANYTHING``
-     - True to allow shebangs in ``.py`` files to launch applications other than
-       Python runtimes, or false to prevent it.
-       By default, true.
+     - ``True`` to allow shebangs in ``.py`` files to launch applications other than
+       Python runtimes, or ``False`` to prevent it.
+       By default, ``True``.
 
    * - ``log_level``
      - ``PYMANAGER_VERBOSE``, ``PYMANAGER_DEBUG``
@@ -444,9 +444,9 @@ customization.
 
    * - ``confirm``
      - ``PYTHON_MANAGER_CONFIRM``
-     - True to confirm certain actions before taking them (such as uninstall),
-       or false to skip the confirmation.
-       By default, true.
+     - ``True`` to confirm certain actions before taking them (such as uninstall),
+       or ``False`` to skip the confirmation.
+       By default, ``True``.
 
    * - ``install.source``
      - ``PYTHON_MANAGER_SOURCE_URL``
