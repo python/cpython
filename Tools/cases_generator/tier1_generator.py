@@ -167,9 +167,7 @@ def generate_tier1(
             {INSTRUCTION_START_MARKER}
 """
     )
-    out = CWriter(outfile, 2, lines)
-    emitter = Emitter(out, analysis.labels)
-    generate_tier1_cases(analysis, out, emitter)
+    generate_tier1_cases(analysis, outfile, lines)
     outfile.write(f"""
             {INSTRUCTION_END_MARKER}
 #if !_Py_TAIL_CALL_INTERP
@@ -216,35 +214,14 @@ def get_popped(inst: Instruction, analysis: Analysis) -> str:
     stack = get_stack_effect(inst)
     return (-stack.base_offset).to_c()
 
-
-def generate_record_previous_inst(out: CWriter, emitter: Emitter, inst: Instruction) -> None:
-    out.emit("\n")
-    out.emit(f"TARGET(RECORD_PREVIOUS_INST) {{\n")
-    out.emit(f"INSTRUCTION_STATS(RECORD_PREVIOUS_INST);\n")
-    declare_variables(inst, out)
-    offset = 1  # The instruction itself
-    stack = Stack()
-    for part in inst.parts:
-        # Only emit braces if more than one uop
-        insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
-        reachable, offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
-    out.start_line()
-    if reachable: # type: ignore[possibly-undefined]
-        stack.flush(out)
-        out.emit(f"DISPATCH();\n")
-    out.start_line()
-    out.emit("}")
-    out.emit("\n")
-
 def generate_tier1_cases(
-    analysis: Analysis, out: CWriter, emitter: Emitter
+    analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
+    out = CWriter(outfile, 2, lines)
+    emitter = Emitter(out, analysis.labels)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")
-        if name == "RECORD_PREVIOUS_INST":
-            generate_record_previous_inst(out, emitter, inst)
-            continue
         out.emit(f"TARGET({name}) {{\n")
         popped = get_popped(inst, analysis)
         # We need to ifdef it because this breaks platforms

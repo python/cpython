@@ -10218,48 +10218,6 @@
             JUMP_TO_LABEL(error);
         }
 
-
-        TARGET(RECORD_PREVIOUS_INST) {
-            INSTRUCTION_STATS(RECORD_PREVIOUS_INST);
-            #if _Py_TIER2
-            assert(IS_JIT_TRACING());
-            int opcode = next_instr->op.code;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (full) {
-                LEAVE_TRACING();
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = bail_tracing_and_jit(tstate, frame);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err < 0) {
-                    JUMP_TO_LABEL(error);
-                }
-                DISPATCH_GOTO_NON_TRACING();
-            }
-            if ((tstate->interp->jit_state.prev_instr->op.code == CALL_LIST_APPEND &&
-                 opcode == POP_TOP) ||
-                (tstate->interp->jit_state.prev_instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
-                 opcode == STORE_FAST)) {
-                tstate->interp->jit_state.prev_instr_is_super = true;
-            }
-            else {
-                tstate->interp->jit_state.prev_instr = next_instr;
-            }
-            tstate->interp->jit_state.specialize_counter = 0;
-            PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            tstate->interp->jit_state.prev_instr_frame = frame;
-            tstate->interp->jit_state.prev_instr_oparg = oparg;
-            tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();
-            DISPATCH_GOTO_NON_TRACING();
-            #else
-            Py_FatalError("JIT instruction executed in non-jit build.");
-            #endif
-        }
-
         TARGET(RERAISE) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = RERAISE;
@@ -12353,6 +12311,47 @@ JUMP_TO_LABEL(error);
             int opcode;
             #endif
             DISPATCH();
+        }
+
+        LABEL(record_previous_inst)
+        {
+            #if _Py_TIER2
+            assert(IS_JIT_TRACING());
+            int opcode = next_instr->op.code;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (full) {
+                LEAVE_TRACING();
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = bail_tracing_and_jit(tstate, frame);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+                DISPATCH_GOTO_NON_TRACING();
+            }
+            if ((tstate->interp->jit_state.prev_instr->op.code == CALL_LIST_APPEND &&
+                 opcode == POP_TOP) ||
+                (tstate->interp->jit_state.prev_instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
+                 opcode == STORE_FAST)) {
+                tstate->interp->jit_state.prev_instr_is_super = true;
+            }
+            else {
+                tstate->interp->jit_state.prev_instr = next_instr;
+            }
+            tstate->interp->jit_state.specialize_counter = 0;
+            PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            tstate->interp->jit_state.prev_instr_frame = frame;
+            tstate->interp->jit_state.prev_instr_oparg = oparg;
+            tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();
+            DISPATCH_GOTO_NON_TRACING();
+            #else
+            Py_FatalError("JIT label executed in non-jit build.");
+            #endif
         }
 
 /* END LABELS */

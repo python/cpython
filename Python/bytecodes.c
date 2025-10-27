@@ -5193,40 +5193,6 @@ dummy_func(
             Py_FatalError("Executing RESERVED instruction.");
         }
 
-        tier1 no_save_ip inst(RECORD_PREVIOUS_INST, (--)) {
-#if _Py_TIER2
-            assert(IS_JIT_TRACING());
-            int opcode = next_instr->op.code;
-            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
-            if (full) {
-                LEAVE_TRACING();
-                int err = bail_tracing_and_jit(tstate, frame);
-                ERROR_IF(err < 0);
-                DISPATCH_GOTO_NON_TRACING();
-            }
-            // Super instructions. Instruction deopted. There's a mismatch in what the stack expects
-            // in the optimizer. So we have to reflect in the trace correctly.
-            if ((tstate->interp->jit_state.prev_instr->op.code == CALL_LIST_APPEND &&
-                opcode == POP_TOP) ||
-                (tstate->interp->jit_state.prev_instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
-                opcode == STORE_FAST)) {
-                tstate->interp->jit_state.prev_instr_is_super = true;
-            }
-            else {
-                tstate->interp->jit_state.prev_instr = next_instr;
-            }
-            tstate->interp->jit_state.specialize_counter = 0;
-            PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
-            Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
-
-            tstate->interp->jit_state.prev_instr_frame = frame;
-            tstate->interp->jit_state.prev_instr_oparg = oparg;
-            tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();
-            DISPATCH_GOTO_NON_TRACING();
-#else
-            Py_FatalError("JIT instruction executed in non-jit build.");
-#endif
-        }
         ///////// Tier-2 only opcodes /////////
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
@@ -5646,6 +5612,40 @@ dummy_func(
             DISPATCH();
         }
 
+        label(record_previous_inst) {
+#if _Py_TIER2
+            assert(IS_JIT_TRACING());
+            int opcode = next_instr->op.code;
+            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
+            if (full) {
+                LEAVE_TRACING();
+                int err = bail_tracing_and_jit(tstate, frame);
+                ERROR_IF(err < 0);
+                DISPATCH_GOTO_NON_TRACING();
+            }
+            // Super instructions. Instruction deopted. There's a mismatch in what the stack expects
+            // in the optimizer. So we have to reflect in the trace correctly.
+            if ((tstate->interp->jit_state.prev_instr->op.code == CALL_LIST_APPEND &&
+                opcode == POP_TOP) ||
+                (tstate->interp->jit_state.prev_instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
+                opcode == STORE_FAST)) {
+                tstate->interp->jit_state.prev_instr_is_super = true;
+            }
+            else {
+                tstate->interp->jit_state.prev_instr = next_instr;
+            }
+            tstate->interp->jit_state.specialize_counter = 0;
+            PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
+            Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
+
+            tstate->interp->jit_state.prev_instr_frame = frame;
+            tstate->interp->jit_state.prev_instr_oparg = oparg;
+            tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();
+            DISPATCH_GOTO_NON_TRACING();
+#else
+            Py_FatalError("JIT label executed in non-jit build.");
+#endif
+        }
 
 
 // END BYTECODES //
