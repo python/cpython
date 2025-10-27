@@ -1498,6 +1498,7 @@ class FileIO(RawIOBase):
     _writable = False
     _appending = False
     _seekable = None
+    _truncate = False
     _closefd = True
 
     def __init__(self, file, mode='r', closefd=True, opener=None):
@@ -1553,6 +1554,7 @@ class FileIO(RawIOBase):
             flags = 0
         elif 'w' in mode:
             self._writable = True
+            self._truncate = True
             flags = os.O_CREAT | os.O_TRUNC
         elif 'a' in mode:
             self._writable = True
@@ -1877,7 +1879,10 @@ class FileIO(RawIOBase):
                 return 'ab'
         elif self._readable:
             if self._writable:
-                return 'rb+'
+                if self._truncate:
+                    return 'wb+'
+                else:
+                    return 'rb+'
             else:
                 return 'rb'
         else:

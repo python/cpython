@@ -1469,14 +1469,14 @@ bytearray_removesuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
 /*[clinic input]
 bytearray.resize
     size: Py_ssize_t
-        New size to resize to..
+        New size to resize to.
     /
 Resize the internal buffer of bytearray to len.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_resize_impl(PyByteArrayObject *self, Py_ssize_t size)
-/*[clinic end generated code: output=f73524922990b2d9 input=75fd4d17c4aa47d3]*/
+/*[clinic end generated code: output=f73524922990b2d9 input=6c9a260ca7f72071]*/
 {
     Py_ssize_t start_size = PyByteArray_GET_SIZE(self);
     int result = PyByteArray_Resize((PyObject *)self, size);
