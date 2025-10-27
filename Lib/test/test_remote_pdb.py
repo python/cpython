@@ -1594,11 +1594,11 @@ class PdbAttachTestCase(unittest.TestCase):
         with force_color(False):
             result = subprocess.run([sys.executable, "-m", "pdb", "-p", "999999"], text=True, capture_output=True)
         self.assertNotEqual(result.returncode, 0)
-        error = (
-            "The specified process cannot be attached to due to insufficient permissions."
-            if sys.platform == "darwin" else
-            "Cannot attach to pid 999999, please make sure that the process exists"
-        )
+        if sys.platform == "darwin":
+            # On MacOS, attaching to a non-existent process gives PermissionError
+            error = "The specified process cannot be attached to due to insufficient permissions"
+        else:
+            error = "Cannot attach to pid 999999, please make sure that the process exists"
         self.assertIn(error, result.stdout)
 
 
