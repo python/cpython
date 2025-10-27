@@ -50,7 +50,7 @@ Dictionary Objects
 
 .. c:function:: int PyDict_Contains(PyObject *p, PyObject *key)
 
-   Determine if dictionary *p* contains *key*.  If an item in *p* is matches
+   Determine if dictionary *p* contains *key*.  If an item in *p* matches
    *key*, return ``1``, otherwise return ``0``.  On error, return ``-1``.
    This is equivalent to the Python expression ``key in p``.
 

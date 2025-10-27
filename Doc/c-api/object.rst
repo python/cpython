@@ -73,7 +73,7 @@ Object Protocol
 
    Flag to be used with multiple functions that print the object (like
    :c:func:`PyObject_Print` and :c:func:`PyFile_WriteObject`).
-   If passed, these function would use the :func:`str` of the object
+   If passed, these functions use the :func:`str` of the object
    instead of the :func:`repr`.
 
 
