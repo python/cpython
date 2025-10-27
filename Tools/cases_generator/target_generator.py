@@ -58,7 +58,7 @@ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
         out.emit(f"{function_proto(name)};\n")
     out.emit("\n")
 
-   # Emit function prototypes for opcode handlers.
+    # Emit function prototypes for opcode handlers.
     for name in sorted(analysis.instructions.keys()):
         out.emit(f"{function_proto(name)};\n")
     out.emit("\n")
