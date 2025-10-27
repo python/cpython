@@ -644,14 +644,14 @@ static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 #define PyStackRef_IsFalse(REF) ((REF).bits == (((uintptr_t)&_Py_FalseStruct) | Py_TAG_REFCNT))
 #define PyStackRef_IsNone(REF) ((REF).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT))
 
-#ifdef Py_DEBUG
-
 static inline PyObject *
 _PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
 {
     int flags = ref.bits & Py_TAG_BITS;
     return Py_BuildValue("(Ii)", Py_REFCNT(op), flags);
 }
+
+#ifdef Py_DEBUG
 
 static inline void PyStackRef_CheckValid(_PyStackRef ref) {
     assert(ref.bits != 0);
