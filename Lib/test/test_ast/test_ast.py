@@ -424,7 +424,7 @@ class AST_Tests(unittest.TestCase):
                 continue
             if self._is_ast_node(name, item):
                 x = self._construct_ast_class(item)
-                # Random attribute assignment is allowed
+                # Custom attribute assignment is allowed
                 x.foo = 5
                 self.assertEqual(x.foo, 5)
                 del x.foo
