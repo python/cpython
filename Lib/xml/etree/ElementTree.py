@@ -1255,8 +1255,10 @@ def iterparse(source, events=None, parser=None):
             if it is not None:
                 it.root = root
         finally:
+            nonlocal close_source
             if close_source:
                 source.close()
+                close_source = False
 
     gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
