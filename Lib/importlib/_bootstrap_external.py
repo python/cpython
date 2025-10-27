@@ -1506,7 +1506,13 @@ class AppleFrameworkLoader(ExtensionFileLoader):
         )
 
         # Ensure that the __file__ points at the .fwork location
-        module.__file__ = path
+        try:
+            module.__file__ = path
+        except AttributeError:
+            # Not important enough to report.
+            # (The error is also ignored in _bootstrap._init_module_attrs or
+            # import_run_extension in import.c)
+            pass
 
         return module
 
