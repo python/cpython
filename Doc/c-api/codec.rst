@@ -39,7 +39,7 @@ Codec registry and support functions
    *object* is passed through the decoder function found for the given
    *encoding* using the error handling method defined by *errors*.  *errors* may
    be ``NULL`` to use the default method defined for the codec.  Raises a
-   :exc:`LookupError` if no encoder can be found.
+   :exc:`LookupError` if no decoder can be found.
 
 
 Codec lookup API
