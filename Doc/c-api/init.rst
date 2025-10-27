@@ -2140,7 +2140,7 @@ use a thread key and functions to associate a :c:expr:`void*` value per
 thread.
 
 A :term:`thread state` does *not* need to be :term:`attached <attached thread state>`
-when calling these functions; they suppl their own locking.
+when calling these functions; they supply their own locking.
 
 Note that :file:`Python.h` does not include the declaration of the TLS APIs,
 you need to include :file:`pythread.h` to use thread-local storage.
