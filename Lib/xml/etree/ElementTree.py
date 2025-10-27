@@ -1271,8 +1271,10 @@ def iterparse(source, events=None, parser=None):
 
         def __del__(self, _warn=warnings.warn):
             if close_source:
-                _warn("unclosed file %r" % (source,), ResourceWarning)
-                source.close()
+                try:
+                    _warn(f"unclosed file {source.name!r}", ResourceWarning, stacklevel=2)
+                finally:
+                    source.close()
 
     it = IterParseIterator()
     it.root = None
