@@ -38,7 +38,7 @@ class TestDefinition(unittest.TestCase):
                 results.add(res)
             self.assertEqual(len(results), 1)
 
-        mortal_objs = (5000, 3+2j, range(10))
+        mortal_objs = (5000, 3+2j, range(10), object())
 
         for obj in mortal_objs:
             results = set()

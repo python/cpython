@@ -2420,23 +2420,10 @@ set_vectorcall_nop(PyObject *self, PyObject *func)
 }
 
 static PyObject *
-stackref_to_tuple(_PyStackRef ref, PyObject *op)
-{
-#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
-    int flags = ref.index & Py_TAG_BITS;
-#elif defined(Py_GIL_DISABLED)
-    int flags = 0;
-#else
-    int flags = ref.bits & Py_TAG_BITS;
-#endif
-    return Py_BuildValue("(Ii)", Py_REFCNT(op), flags);
-}
-
-static PyObject *
 stackref_from_object_new(PyObject *self, PyObject *op)
 {
     _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
-    PyObject *obj = stackref_to_tuple(ref, op);
+    PyObject *obj = _PyStackRef_AsTuple(ref, op);
     PyStackRef_CLOSE(ref);
     return obj;
 }
@@ -2446,7 +2433,7 @@ stackref_from_object_steal_with_incref(PyObject *self, PyObject *op)
 {
     Py_INCREF(op);
     _PyStackRef ref = PyStackRef_FromPyObjectSteal(op);
-    PyObject *obj = stackref_to_tuple(ref, op);
+    PyObject *obj = _PyStackRef_AsTuple(ref, op);
     PyObject *op2 = PyStackRef_AsPyObjectSteal(ref);
     Py_DECREF(op2);
     return obj;
@@ -2457,7 +2444,7 @@ stackref_make_heap_safe(PyObject *self, PyObject *op)
 {
     _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
     _PyStackRef ref2 = PyStackRef_MakeHeapSafe(ref);
-    PyObject *obj = stackref_to_tuple(ref2, op);
+    PyObject *obj = _PyStackRef_AsTuple(ref2, op);
     PyStackRef_CLOSE(ref2);
     return obj;
 }
@@ -2469,7 +2456,7 @@ stackref_make_heap_safe_with_borrow(PyObject *self, PyObject *op)
     _PyStackRef ref2 = PyStackRef_Borrow(ref);
     _PyStackRef ref3 = PyStackRef_MakeHeapSafe(ref2);
     PyStackRef_CLOSE(ref);
-    PyObject *obj = stackref_to_tuple(ref3, op);
+    PyObject *obj = _PyStackRef_AsTuple(ref3, op);
     PyStackRef_CLOSE(ref3);
     return obj;
 }
@@ -2480,7 +2467,7 @@ stackref_strong_reference(PyObject *self, PyObject *op)
     _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
     PyObject *op2 = PyStackRef_AsPyObjectSteal(ref);
     _PyStackRef ref2 = PyStackRef_FromPyObjectSteal(op2);
-    PyObject *obj = stackref_to_tuple(ref2, op);
+    PyObject *obj = _PyStackRef_AsTuple(ref2, op);
     PyStackRef_CLOSE(ref2);
     return obj;
 }
@@ -2489,7 +2476,7 @@ static PyObject *
 stackref_from_object_borrow(PyObject *self, PyObject *op)
 {
     _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
-    PyObject *obj = stackref_to_tuple(ref, op);
+    PyObject *obj = _PyStackRef_AsTuple(ref, op);
     PyStackRef_CLOSE(ref);
     return obj;
 }
@@ -2500,7 +2487,7 @@ stackref_dup_borrowed_with_close(PyObject *self, PyObject *op)
     _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
     _PyStackRef ref2 = PyStackRef_DUP(ref);
     PyStackRef_XCLOSE(ref);
-    PyObject *obj = stackref_to_tuple(ref2, op);
+    PyObject *obj = _PyStackRef_AsTuple(ref2, op);
     PyStackRef_XCLOSE(ref2);
     return obj;
 }

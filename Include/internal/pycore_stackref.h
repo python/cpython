@@ -74,6 +74,13 @@ static const _PyStackRef PyStackRef_ERROR = { .index = (1 << Py_TAGGED_SHIFT) };
 
 #define INITIAL_STACKREF_INDEX (5 << Py_TAGGED_SHIFT)
 
+static inline PyObject *
+_PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
+{
+    int flags = ref.index & Py_TAG_BITS;
+    return Py_BuildValue("(Ii)", Py_REFCNT(op), flags);
+}
+
 static inline _PyStackRef
 PyStackRef_Wrap(void *ptr)
 {
@@ -448,6 +455,12 @@ static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
 #define PyStackRef_IsNullOrInt(stackref) (PyStackRef_IsNull(stackref) || PyStackRef_IsTaggedInt(stackref))
 
 static inline PyObject *
+_PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
+{
+    return Py_BuildValue("(Ii)", Py_REFCNT(op), 0);
+}
+
+static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 {
     assert(!PyStackRef_IsTaggedInt(stackref));
@@ -632,6 +645,13 @@ static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 #define PyStackRef_IsNone(REF) ((REF).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT))
 
 #ifdef Py_DEBUG
+
+static inline PyObject *
+_PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
+{
+    int flags = ref.bits & Py_TAG_BITS;
+    return Py_BuildValue("(Ii)", Py_REFCNT(op), flags);
+}
 
 static inline void PyStackRef_CheckValid(_PyStackRef ref) {
     assert(ref.bits != 0);
