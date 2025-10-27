@@ -246,25 +246,21 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
                 Py_MIN(requested_size, Py_SIZE(self)));
     }
 
-    int ret;
     if (obj->ob_bytes_object == NULL) {
         obj->ob_bytes_object = PyBytes_FromStringAndSize(NULL, alloc);
-        if (obj->ob_bytes_object == NULL) {
-            /* Object state valid and resize failed. */
-            return -1;
-        }
-        ret = 0;
     }
     else {
-        if (_PyBytes_Resize(&obj->ob_bytes_object, alloc) == -1) {
-            /* storage gone and resize failed. */
-            obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-            size = alloc = 0;
-            ret = -1;
-        }
-        else {
-            ret = 0;
-        }
+        _PyBytes_Resize(&obj->ob_bytes_object, alloc);
+    }
+
+    int ret;
+    if (obj->ob_bytes_object == NULL) {
+        obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+        size = alloc = 0;
+        ret = -1;
+    }
+    else {
+        ret = 0;
     }
 
     obj->ob_bytes = obj->ob_start = PyBytes_AS_STRING(obj->ob_bytes_object);
