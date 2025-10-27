@@ -510,9 +510,7 @@ extern "C" {
 
 #ifdef WITH_THREAD
 #  ifdef Py_BUILD_CORE
-#    ifdef HAVE_THREAD_LOCAL
-#      error "HAVE_THREAD_LOCAL is already defined"
-#    endif
+// HAVE_THREAD_LOCAL is just defined here for compatibility's sake
 #    define HAVE_THREAD_LOCAL 1
 #    ifdef thread_local
 #      define _Py_thread_local thread_local
@@ -523,8 +521,7 @@ extern "C" {
 #    elif defined(__GNUC__)  /* includes clang */
 #      define _Py_thread_local __thread
 #    else
-       // fall back to the PyThread_tss_*() API, or ignore.
-#      undef HAVE_THREAD_LOCAL
+#      error "no supported thread-local variable storage classifier"
 #    endif
 #  endif
 #endif
