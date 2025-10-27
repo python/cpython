@@ -5443,8 +5443,22 @@ dummy_func(
             TIER2_TO_TIER2(exit->executor);
         }
 
-        tier2 op(_GUARD_IP, (ip/4 --)) {
+        tier2 op(_GUARD_IP_PUSH_FRAME, (ip/4 --)) {
             EXIT_IF(frame->instr_ptr != (_Py_CODEUNIT *)ip);
+        }
+
+        tier2 op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
+            if (frame->instr_ptr + 1 + INLINE_CACHE_ENTRIES_SEND != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                EXIT_IF(true);
+            }
+        }
+
+        tier2 op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
+            if (frame->instr_ptr + frame->return_offset != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += frame->return_offset;
+                EXIT_IF(true);
+            }
         }
 
         // Note: this is different than _COLD_EXIT/_EXIT_TRACE, as it may lead to multiple executors

@@ -1930,7 +1930,7 @@
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            frame->instr_ptr += (frame->return_offset);
+            LOAD_IP(frame->return_offset);
             res = temp;
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = res;
@@ -2096,7 +2096,7 @@
                   _PyOpcode_Deopt[frame->instr_ptr->op.code] == ENTER_EXECUTOR);
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            frame->instr_ptr += (1 + INLINE_CACHE_ENTRIES_SEND);
+            LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             value = PyStackRef_MakeHeapSafe(temp);
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = value;
@@ -5347,7 +5347,7 @@
             frame = tstate->current_frame = temp;
             tstate->py_recursion_remaining--;
             LOAD_SP();
-            frame->instr_ptr += (0);
+            LOAD_IP(0);
             LLTRACE_RESUME_FRAME();
             break;
         }
@@ -6752,7 +6752,7 @@
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
-            frame->instr_ptr += (frame->return_offset);
+            LOAD_IP(frame->return_offset);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
@@ -7493,11 +7493,35 @@
             break;
         }
 
-        case _GUARD_IP: {
+        case _GUARD_IP_PUSH_FRAME: {
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
             if (frame->instr_ptr != (_Py_CODEUNIT *)ip) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
+        case _GUARD_IP_YIELD_VALUE: {
+            PyObject *ip = (PyObject *)CURRENT_OPERAND0();
+            if (frame->instr_ptr + 1 + INLINE_CACHE_ENTRIES_SEND != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            break;
+        }
+
+        case _GUARD_IP_RETURN_VALUE: {
+            PyObject *ip = (PyObject *)CURRENT_OPERAND0();
+            if (frame->instr_ptr + frame->return_offset != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += frame->return_offset;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             break;
         }

@@ -65,7 +65,6 @@ class Tier2Emitter(Emitter):
         self._replacers["oparg"] = self.oparg
         self._replacers["JUMPBY"] = self.jumpby
         self._replacers["DISPATCH"] = self.dispatch
-        self._replacers["LOAD_IP"] = self.load_ip
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
@@ -170,19 +169,6 @@ class Tier2Emitter(Emitter):
         next(tkn_iter)
         return False
 
-    def load_ip(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.out.start_line()
-        self.emit("frame->instr_ptr += ")
-        emit_to(self.out, tkn_iter, "SEMI")
-        self.emit(";\n")
-        return True
 
 def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
     locals: dict[str, Local] = {}

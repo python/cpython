@@ -3426,7 +3426,15 @@
             break;
         }
 
-        case _GUARD_IP: {
+        case _GUARD_IP_PUSH_FRAME: {
+            break;
+        }
+
+        case _GUARD_IP_YIELD_VALUE: {
+            break;
+        }
+
+        case _GUARD_IP_RETURN_VALUE: {
             break;
         }
 

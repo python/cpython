@@ -901,7 +901,21 @@ _PyJit_translate_single_bytecode_to_trace(
     }  // End switch (opcode)
 
     if (needs_guard_ip) {
-        ADD_TO_TRACE(_GUARD_IP, 0, (uintptr_t)next_instr, 0);
+        switch (trace[trace_length-1].opcode) {
+            case _PUSH_FRAME:
+                ADD_TO_TRACE(_GUARD_IP_PUSH_FRAME, 0, (uintptr_t)next_instr, 0);
+                break;
+            case _RETURN_GENERATOR:
+            case _RETURN_VALUE:
+                ADD_TO_TRACE(_GUARD_IP_RETURN_VALUE, 0, (uintptr_t)next_instr, 0);
+                break;
+            case _YIELD_VALUE:
+                ADD_TO_TRACE(_GUARD_IP_YIELD_VALUE, 0, (uintptr_t)next_instr, 0);
+                break;
+            default:
+                DPRINTF(1, "Unknown uop needing guard ip %s\n", _PyOpcode_uop_name[trace[trace_length-1].opcode]);
+                Py_UNREACHABLE();
+        }
     }
     // Loop back to the start
     int is_first_instr = tstate->interp->jit_state.close_loop_instr == next_instr || tstate->interp->jit_state.insert_exec_instr == next_instr;
@@ -1074,7 +1088,10 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             if (opcode == _FOR_ITER_TIER_TWO) {
                 exit_op = _DYNAMIC_EXIT;
             }
-            else if (opcode == _GUARD_IP) {
+            else if (
+                opcode == _GUARD_IP_PUSH_FRAME ||
+                opcode == _GUARD_IP_RETURN_VALUE ||
+                opcode == _GUARD_IP_YIELD_VALUE) {
                 exit_op = _DYNAMIC_EXIT;
                 unique_target = true;
             }
