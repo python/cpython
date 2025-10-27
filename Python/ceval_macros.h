@@ -402,7 +402,9 @@ do {                                                   \
     int keep_tracing_bit = (uintptr_t)next_instr & 1;   \
     next_instr = (_Py_CODEUNIT *)(((uintptr_t)next_instr) & (~1)); \
     if (next_instr == NULL) {                          \
-        next_instr = frame->instr_ptr;                 \
+        /* gh-140104: The exception handler expects frame->instr_ptr
+            to after this_instr, not this_instr! */ \
+        next_instr = frame->instr_ptr + 1;                 \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
