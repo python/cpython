@@ -109,13 +109,13 @@ module_from_slots_gc(PyObject *self, PyObject *spec)
     return mod;
 }
 
-static char test_token;
+static const char test_token;
 
 static PyObject *
 module_from_slots_token(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
-        {Py_mod_token, &test_token},
+        {Py_mod_token, (void*)&test_token},
         {0},
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
@@ -368,7 +368,7 @@ _PyTestCapi_Init_Module(PyObject *m)
     ADD_INT_MACRO(Py_mod_token);
 #undef ADD_INT_MACRO
     if (PyModule_Add(m, "module_test_token",
-                     PyLong_FromVoidPtr(&test_token)) < 0)
+                     PyLong_FromVoidPtr((void*)&test_token)) < 0)
     {
         return -1;
     }

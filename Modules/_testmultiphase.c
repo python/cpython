@@ -1119,7 +1119,7 @@ modexport_smoke_get_state_int(PyObject *mod, PyObject *arg)
     return PyLong_FromLong(*state);
 }
 
-static char modexport_smoke_test_token;
+static const char modexport_smoke_test_token;
 
 static PyObject *
 modexport_smoke_get_test_token(PyObject *mod, PyObject *arg)
