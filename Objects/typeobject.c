@@ -72,7 +72,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 // the type has been revealed to other threads or we only do those updates
 // while the stop-the-world mechanism is active.  The slots and flags are read
 // in many places without holding a lock and without atomics.
-#define TYPE_LOCK &PyInterpreterState_Get()->types.mutex
+#define TYPE_LOCK &_PyInterpreterState_GET()->types.mutex
 #define BEGIN_TYPE_LOCK() Py_BEGIN_CRITICAL_SECTION_MUTEX(TYPE_LOCK)
 #define END_TYPE_LOCK() Py_END_CRITICAL_SECTION()
 

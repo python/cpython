@@ -78,6 +78,10 @@ _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
    also known as a "gilstate." */
 _Py_thread_local PyThreadState *_Py_tss_gilstate = NULL;
 
+/* The interpreter of the attached thread state,
+   and is same as tstate->interp. */
+_Py_thread_local PyInterpreterState *_Py_tss_interp = NULL;
+
 static inline PyThreadState *
 current_fast_get(void)
 {
@@ -89,12 +93,15 @@ current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
 {
     assert(tstate != NULL);
     _Py_tss_tstate = tstate;
+    assert(tstate->interp != NULL);
+    _Py_tss_interp = tstate->interp;
 }
 
 static inline void
 current_fast_clear(_PyRuntimeState *Py_UNUSED(runtime))
 {
     _Py_tss_tstate = NULL;
+    _Py_tss_interp = NULL;
 }
 
 #define tstate_verify_not_active(tstate) \
@@ -1281,9 +1288,8 @@ _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
 PyInterpreterState*
 PyInterpreterState_Get(void)
 {
-    PyThreadState *tstate = current_fast_get();
-    _Py_EnsureTstateNotNULL(tstate);
-    PyInterpreterState *interp = tstate->interp;
+    _Py_AssertHoldsTstate();
+    PyInterpreterState *interp = _Py_tss_interp;
     if (interp == NULL) {
         Py_FatalError("no current interpreter");
     }
