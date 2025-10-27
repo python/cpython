@@ -618,7 +618,7 @@ class RawIOBase(IOBase):
         if n is None:
             return None
         if n < 0 or n > len(b):
-            raise ValueError(f"readinto returned '{n}' outside buffer size '{len(b)}'")
+            raise ValueError(f"readinto returned {n} outside buffer size {len(b)}")
         del b[n:]
         return bytes(b)
 
