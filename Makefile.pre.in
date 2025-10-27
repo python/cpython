@@ -501,7 +501,6 @@ PYTHON_OBJS=	\
 		Python/pystrtod.o \
 		Python/pystrhex.o \
 		Python/dtoa.o \
-		Python/formatter_unicode.o \
 		Python/fileutils.o \
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
@@ -558,8 +557,10 @@ OBJECT_OBJS=	\
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
 		Objects/typevarobject.o \
-		Objects/unicodeobject.o \
+		Objects/unicode_format.o \
+		Objects/unicode_formatter.o \
 		Objects/unicodectype.o \
+		Objects/unicodeobject.o \
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
 		@PERF_TRAMPOLINE_OBJ@
@@ -801,7 +802,7 @@ build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sh
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
-		python-config checksharedmods
+		python-config checksharedmods build-details.json
 
 .PHONY: build_emscripten
 build_emscripten: build_wasm web_example web_example_pyrepl_jspi
@@ -1191,14 +1192,12 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
-		$(srcdir)/Include/pylock.h \
 		$(srcdir)/Include/longobject.h \
 		$(srcdir)/Include/marshal.h \
 		$(srcdir)/Include/memoryobject.h \
 		$(srcdir)/Include/methodobject.h \
 		$(srcdir)/Include/modsupport.h \
 		$(srcdir)/Include/moduleobject.h \
-		$(srcdir)/Include/monitoring.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/opcode.h \
@@ -1271,6 +1270,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pylock.h \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
+		$(srcdir)/Include/cpython/marshal.h \
 		$(srcdir)/Include/cpython/memoryobject.h \
 		$(srcdir)/Include/cpython/methodobject.h \
 		$(srcdir)/Include/cpython/modsupport.h \
@@ -1296,6 +1296,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/pythread.h \
 		$(srcdir)/Include/cpython/setobject.h \
+		$(srcdir)/Include/cpython/sliceobject.h \
+		$(srcdir)/Include/cpython/structseq.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tracemalloc.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
@@ -2090,7 +2092,6 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/fastsearch.h \
 		$(srcdir)/Objects/stringlib/find.h \
 		$(srcdir)/Objects/stringlib/find_max_char.h \
-		$(srcdir)/Objects/stringlib/localeutil.h \
 		$(srcdir)/Objects/stringlib/partition.h \
 		$(srcdir)/Objects/stringlib/replace.h \
 		$(srcdir)/Objects/stringlib/repr.h \
@@ -2105,6 +2106,7 @@ Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
 Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
 Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
 
+Objects/unicode_format.o: $(srcdir)/Objects/unicode_format.c $(UNICODE_DEPS)
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
@@ -2682,6 +2684,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \
 		test/test_multiprocessing_spawn \
+		test/test_os \
 		test/test_pathlib \
 		test/test_pathlib/support \
 		test/test_peg_generator \
@@ -3127,27 +3130,11 @@ JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.py \
 		$(srcdir)/Python/executor_cases.c.h \
 		pyconfig.h
-		
-ifneq ($(filter aarch64-apple-darwin%,$(HOST_GNU_TYPE)),)
-JIT_STENCIL_HEADER := jit_stencils-aarch64-apple-darwin.h
-else ifneq ($(filter x86_64-apple-darwin%,$(HOST_GNU_TYPE)),)
-JIT_STENCIL_HEADER := jit_stencils-x86_64-apple-darwin.h
-else ifeq ($(HOST_GNU_TYPE), aarch64-pc-windows-msvc)
-JIT_STENCIL_HEADER := jit_stencils-aarch64-pc-windows-msvc.h
-else ifeq ($(HOST_GNU_TYPE), i686-pc-windows-msvc)
-JIT_STENCIL_HEADER := jit_stencils-i686-pc-windows-msvc.h
-else ifeq ($(HOST_GNU_TYPE), x86_64-pc-windows-msvc)
-JIT_STENCIL_HEADER := jit_stencils-x86_64-pc-windows-msvc.h
-else ifneq ($(filter aarch64-%-linux-gnu,$(HOST_GNU_TYPE)),)
-JIT_STENCIL_HEADER := jit_stencils-$(HOST_GNU_TYPE).h
-else ifneq ($(filter x86_64-%-linux-gnu,$(HOST_GNU_TYPE)),)
-JIT_STENCIL_HEADER := jit_stencils-$(HOST_GNU_TYPE).h
-endif
 
-jit_stencils.h $(JIT_STENCIL_HEADER): $(JIT_DEPS)
+jit_stencils.h @JIT_STENCILS_H@: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
-Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h $(JIT_STENCIL_HEADER)
+Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit

@@ -13,7 +13,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: abi_info
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
    An object containing information about the ABI of the currently running
    Python interpreter.
@@ -2205,7 +2205,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Exceptions are now printed with colorful text.
 
    .. seealso::

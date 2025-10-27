@@ -209,7 +209,10 @@ _Py_LegacyLocaleDetected(int warn)
      *                 we may also want to check for that explicitly.
      */
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-    return ctype_loc != NULL && strcmp(ctype_loc, "C") == 0;
+    if (ctype_loc == NULL) {
+        return 0;
+    }
+    return (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0);
 #else
     /* Windows uses code pages instead of locales, so no locale is legacy */
     return 0;
@@ -832,6 +835,10 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
     interp->callable_cache.object__getattribute__ = object__getattribute__;
+
+    if (_PyType_InitSlotDefs(interp) < 0) {
+        return _PyStatus_ERR("failed to init slotdefs");
+    }
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");

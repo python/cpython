@@ -118,7 +118,9 @@ static void
 blob_seterror(pysqlite_Blob *self, int rc)
 {
     assert(self->connection != NULL);
-    set_error_from_db(self->connection->state, self->connection->db);
+    assert(rc != SQLITE_OK);
+    set_error_from_code(self->connection->state, rc);
+    assert(PyErr_Occurred());
 }
 
 static PyObject *
