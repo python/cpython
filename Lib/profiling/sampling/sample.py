@@ -12,7 +12,7 @@ from collections import deque
 from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
-from .stack_collector import CollapsedStackCollector, FlamegraphCollector
+from .stack_collector import CollapsedStackCollector, FlamegraphCollector, HeatmapCollector
 from .gecko_collector import GeckoCollector
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
@@ -41,6 +41,7 @@ Supports the following output formats:
   - --pstats: Detailed profiling statistics with sorting options
   - --collapsed: Stack traces for generating flamegraphs
   - --flamegraph Interactive HTML flamegraph visualization (requires web browser)
+  - --heatmap: Coverage.py-style HTML heatmap showing line-by-line sample intensity
 
 Examples:
   # Profile process 1234 for 10 seconds with default settings
@@ -60,6 +61,9 @@ Examples:
 
   # Generate a HTML flamegraph
   python -m profiling.sampling --flamegraph -p 1234
+
+  # Generate a heatmap report with line-by-line sample intensity
+  python -m profiling.sampling --heatmap -o results -p 1234
 
   # Profile all threads, sort by total time
   python -m profiling.sampling -a --sort-tottime -p 1234
@@ -632,6 +636,9 @@ def sample(
         case "flamegraph":
             collector = FlamegraphCollector(skip_idle=skip_idle)
             filename = filename or f"flamegraph.{pid}.html"
+        case "heatmap":
+            collector = HeatmapCollector(skip_idle=skip_idle)
+            filename = filename or f"heatmap_{pid}"
         case "gecko":
             collector = GeckoCollector(skip_idle=skip_idle)
             filename = filename or f"gecko.{pid}.json"
@@ -676,10 +683,13 @@ def _validate_collapsed_format_args(args, parser):
             f"The following options are only valid with --pstats format: {', '.join(invalid_opts)}"
         )
 
-    # Set default output filename for collapsed format only if we have a PID
+    # Set default output filename for the format only if we have a PID
     # For module/script execution, this will be set later with the subprocess PID
     if not args.outfile and args.pid is not None:
-        args.outfile = f"collapsed.{args.pid}.txt"
+        if args.format == "collapsed":
+            args.outfile = f"collapsed.{args.pid}.txt"
+        elif args.format == "heatmap":
+            args.outfile = f"heatmap_{args.pid}"
 
 
 def wait_for_process_and_sample(pid, sort_value, args):
@@ -691,6 +701,10 @@ def wait_for_process_and_sample(pid, sort_value, args):
             filename = f"collapsed.{pid}.txt"
         elif args.format == "gecko":
             filename = f"gecko.{pid}.json"
+        elif args.format == "flamegraph":
+            filename = f"flamegraph.{pid}.html"
+        elif args.format == "heatmap":
+            filename = f"heatmap_{pid}"
 
     mode = _parse_mode(args.mode)
 
@@ -795,6 +809,13 @@ def main():
         help="Generate HTML flamegraph visualization",
     )
     output_format.add_argument(
+        "--heatmap",
+        action="store_const",
+        const="heatmap",
+        dest="format",
+        help="Generate coverage.py-style HTML heatmap with line-by-line sample intensity",
+    )
+    output_format.add_argument(
         "--gecko",
         action="store_const",
         const="gecko",
@@ -806,8 +827,8 @@ def main():
         "-o",
         "--outfile",
         help="Save output to a file (if omitted, prints to stdout for pstats, "
-        "or saves to collapsed.<pid>.txt or flamegraph.<pid>.html for the "
-        "respective output formats)"
+        "or saves to collapsed.<pid>.txt, flamegraph.<pid>.html, or heatmap_<pid>/ "
+        "for the respective output formats)"
     )
 
     # pstats-specific options
@@ -879,7 +900,7 @@ def main():
     args = parser.parse_args()
 
     # Validate format-specific arguments
-    if args.format in ("collapsed", "gecko"):
+    if args.format in ("collapsed", "gecko", "heatmap"):
         _validate_collapsed_format_args(args, parser)
 
     sort_value = args.sort if args.sort is not None else 2
