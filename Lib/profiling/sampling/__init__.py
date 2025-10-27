@@ -8,6 +8,7 @@ from .collector import Collector
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector
 from .gecko_collector import GeckoCollector
+from .heatmap_collector import HeatmapCollector
 from .string_table import StringTable
 
-__all__ = ("Collector", "PstatsCollector", "CollapsedStackCollector", "GeckoCollector", "StringTable")
+__all__ = ("Collector", "PstatsCollector", "CollapsedStackCollector", "GeckoCollector", "HeatmapCollector", "StringTable")

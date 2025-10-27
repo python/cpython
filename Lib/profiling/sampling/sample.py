@@ -14,6 +14,7 @@ from _colorize import ANSIColors
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .gecko_collector import GeckoCollector
+from .heatmap_collector import HeatmapCollector
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 
@@ -41,6 +42,7 @@ Supports the following output formats:
   - --pstats: Detailed profiling statistics with sorting options
   - --collapsed: Stack traces for generating flamegraphs
   - --flamegraph Interactive HTML flamegraph visualization (requires web browser)
+  - --heatmap: Line-by-line heatmap showing sample intensity (hot spots)
 
 Examples:
   # Profile process 1234 for 10 seconds with default settings
@@ -635,6 +637,9 @@ def sample(
         case "gecko":
             collector = GeckoCollector(skip_idle=skip_idle)
             filename = filename or f"gecko.{pid}.json"
+        case "heatmap":
+            collector = HeatmapCollector(skip_idle=skip_idle)
+            filename = filename or f"heatmap.{pid}.html"
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
 
@@ -676,10 +681,13 @@ def _validate_collapsed_format_args(args, parser):
             f"The following options are only valid with --pstats format: {', '.join(invalid_opts)}"
         )
 
-    # Set default output filename for collapsed format only if we have a PID
+    # Set default output filename for non-pstats formats only if we have a PID
     # For module/script execution, this will be set later with the subprocess PID
     if not args.outfile and args.pid is not None:
-        args.outfile = f"collapsed.{args.pid}.txt"
+        if args.format == "collapsed":
+            args.outfile = f"collapsed.{args.pid}.txt"
+        elif args.format == "heatmap":
+            args.outfile = f"heatmap.{args.pid}.html"
 
 
 def wait_for_process_and_sample(pid, sort_value, args):
@@ -691,6 +699,8 @@ def wait_for_process_and_sample(pid, sort_value, args):
             filename = f"collapsed.{pid}.txt"
         elif args.format == "gecko":
             filename = f"gecko.{pid}.json"
+        elif args.format == "heatmap":
+            filename = f"heatmap.{pid}.html"
 
     mode = _parse_mode(args.mode)
 
@@ -801,6 +811,13 @@ def main():
         dest="format",
         help="Generate Gecko format for Firefox Profiler",
     )
+    output_format.add_argument(
+        "--heatmap",
+        action="store_const",
+        const="heatmap",
+        dest="format",
+        help="Generate HTML heatmap with line-by-line sample intensity",
+    )
 
     output_group.add_argument(
         "-o",
@@ -879,7 +896,7 @@ def main():
     args = parser.parse_args()
 
     # Validate format-specific arguments
-    if args.format in ("collapsed", "gecko"):
+    if args.format in ("collapsed", "gecko", "heatmap"):
         _validate_collapsed_format_args(args, parser)
 
     sort_value = args.sort if args.sort is not None else 2
