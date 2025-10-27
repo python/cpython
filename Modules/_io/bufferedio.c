@@ -362,7 +362,7 @@ _enter_buffered_busy(buffered *self)
     }
 
 #define IS_CLOSED(self) \
-    (!self->buffer ? !self->buffer : \
+    (!self->buffer || \
     (self->fast_closed_checks \
      ? _PyFileIO_closed(self->raw) \
      : buffered_closed(self)))
@@ -555,10 +555,9 @@ _io__Buffered_close_impl(buffered *self)
     }
     /* gh-138720: Use IS_CLOSED to match flush CHECK_CLOSED. */
     r = IS_CLOSED(self);
-    if (r < 0)
-        goto end;
     if (r > 0) {
-        res = Py_NewRef(Py_None);
+        if (!PyErr_Occurred())
+            res = Py_NewRef(Py_None);
         goto end;
     }
 
