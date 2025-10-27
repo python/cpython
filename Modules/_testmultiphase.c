@@ -1124,7 +1124,7 @@ static const char modexport_smoke_test_token;
 static PyObject *
 modexport_smoke_get_test_token(PyObject *mod, PyObject *arg)
 {
-    return PyLong_FromVoidPtr(&modexport_smoke_test_token);
+    return PyLong_FromVoidPtr((void*)&modexport_smoke_test_token);
 }
 
 static PyObject *
