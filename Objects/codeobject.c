@@ -198,10 +198,6 @@ intern_strings(PyObject *tuple)
 
 static inline PyObject*
 get_interned_string(PyObject *interned_dict, PyObject *s) {
-    if (!PyUnicode_CheckExact(s)) {
-        return NULL;
-    }
-
     PyObject *existing = PyDict_GetItemWithError(interned_dict, s);
     if (existing == NULL) {
         if (PyErr_Occurred()) {
