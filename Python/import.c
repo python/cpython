@@ -2358,6 +2358,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(info.name, p->name)) {
             found = p;
+            break;
         }
     }
     if (found == NULL) {
