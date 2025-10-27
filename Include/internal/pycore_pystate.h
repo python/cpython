@@ -85,6 +85,21 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
     return (_Py_IsMainThread() && _Py_IsMainInterpreter(interp));
 }
 
+/* Definition of the _Py_thread_local macro. In reality, this should really be
+ * in pyport.h, but some extensions define Py_BUILD_CORE after including that.
+ * So, instead of breaking things, we just put this here for now. */
+
+#ifdef thread_local
+#  define _Py_thread_local thread_local
+#elif __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_THREADS__)
+#  define _Py_thread_local _Thread_local
+#elif defined(_MSC_VER)  /* AKA NT_THREADS */
+#  define _Py_thread_local __declspec(thread)
+#elif defined(__GNUC__)  /* includes clang */
+#  define _Py_thread_local __thread
+#else
+#  error "no supported thread-local variable storage classifier"
+#endif
 
 /* Variable and static inline functions for in-line access to current thread
    and interpreter state */
