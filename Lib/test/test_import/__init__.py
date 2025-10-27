@@ -2467,6 +2467,30 @@ class SubinterpImportTests(unittest.TestCase):
                         self.check_compatible_here(
                             modname, filename, strict=False, isolated=False)
 
+    def test_extra_A(self):
+        return
+
+    def test_extra_B(self):
+        return
+
+    def test_extra_C(self):
+        return
+
+    def test_extra_D(self):
+        return
+
+    def test_extra_E(self):
+        return
+
+    def test_extra_F(self):
+        return
+
+    def test_extra_G(self):
+        return
+
+    def test_extra_H(self):
+        return
+
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_python_compat(self):
         module = 'threading'
