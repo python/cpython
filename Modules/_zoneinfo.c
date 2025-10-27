@@ -123,6 +123,9 @@ static const int SOURCE_FILE = 2;
 
 static const size_t ZONEINFO_STRONG_CACHE_MAX_SIZE = 8;
 
+static const int MINYEAR = 1;
+static const int MAXYEAR = 9999;
+
 // Forward declarations
 static int
 load_data(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self,
@@ -2200,17 +2203,24 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
     unsigned char fold;
     if (PyDateTime_Check(dt)) {
         fold = PyDateTime_DATE_GET_FOLD(dt);
-    } else {
+    }
+    else {
         PyObject *fold_obj = PyObject_GetAttrString(dt, "fold");
         if (fold_obj == NULL) {
             return NULL;
         }
 
-        fold = (unsigned char)PyLong_AsLong(fold_obj);
+        long fold_int = PyLong_AsLong(fold_obj);
         Py_DECREF(fold_obj);
         if (PyErr_Occurred()) {
             return NULL;
         }
+        if (fold_int < 0 || fold_int > 2) {
+            PyErr_Format(PyExc_ValueError,
+                         "fold must be 0 or 1, got %d", fold_int);
+            return NULL;
+        }
+        fold = (unsigned char)fold_int;
     }
 
     assert(fold < 2);
@@ -2224,20 +2234,32 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
         int year;
         if (PyDateTime_Check(dt)) {
             year = PyDateTime_GET_YEAR(dt);
-        } else {
+        }
+        else {
             PyObject *year_obj = PyObject_GetAttrString(dt, "year");
             if (year_obj == NULL) {
                 return NULL;
             }
 
-            year = PyLong_AsLong(year_obj);
+            year = PyLong_AsInt(year_obj);
             Py_DECREF(year_obj);
             if (PyErr_Occurred()) {
                 return NULL;
             }
+
+            if (year < MINYEAR || year > 9999) {
+                PyErr_Format(PyExc_ValueError,
+                        "year out of range, should be in (%d, %d) but got %d",
+                        MINYEAR,
+                        MAXYEAR,
+                        year
+                );
+                return NULL;
+            }
         }
         return find_tzrule_ttinfo(&(self->tzrule_after), ts, fold, year);
-    } else {
+    }
+    else {
         size_t idx = _bisect(ts, local_transitions, self->num_transitions) - 1;
         assert(idx < self->num_transitions);
         return self->trans_ttinfos[idx];
