@@ -922,6 +922,14 @@ class BufferedWriterTest(CommonBufferedTests):
         self.assertTrue(bufio.closed)
         t.join()
 
+    def test_close_without_closed(self):
+        # gh-140650: check TypeError is raised
+        class MockRawIOWithoutClosed(self.MockRawIO):
+            closed = NotImplemented
+
+        bufio = self.tp(MockRawIOWithoutClosed())
+        self.assertRaises(TypeError, bufio.close)
+
 
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest, CTestCase):
     tp = io.BufferedWriter

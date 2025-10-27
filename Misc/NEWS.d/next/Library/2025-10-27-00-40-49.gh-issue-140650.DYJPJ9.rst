@@ -1,0 +1,2 @@
+Fix an issue where :meth:`io.BufferedWriter.close` would crash when "closed"
+was not implemented.
