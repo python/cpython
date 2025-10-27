@@ -7558,6 +7558,40 @@ class TestColorized(TestCase):
         self.assertNotIn('\x1b[', warn)
         self.assertIn('warning:', warn)
 
+    def test_print_help_uses_target_file_for_color_decision(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--opt')
+        output = io.StringIO()
+        calls = []
+
+        def fake_can_colorize(*, file=None):
+            calls.append(file)
+            return file is None
+
+        with swap_attr(_colorize, 'can_colorize', fake_can_colorize):
+            parser.print_help(file=output)
+
+        self.assertIs(calls[-1], output)
+        self.assertIn(output, calls)
+        self.assertNotIn('\x1b[', output.getvalue())
+
+    def test_print_usage_uses_target_file_for_color_decision(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--opt')
+        output = io.StringIO()
+        calls = []
+
+        def fake_can_colorize(*, file=None):
+            calls.append(file)
+            return file is None
+
+        with swap_attr(_colorize, 'can_colorize', fake_can_colorize):
+            parser.print_usage(file=output)
+
+        self.assertIs(calls[-1], output)
+        self.assertIn(output, calls)
+        self.assertNotIn('\x1b[', output.getvalue())
+
 
 class TestModule(unittest.TestCase):
     def test_deprecated__version__(self):
