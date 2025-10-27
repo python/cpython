@@ -1,0 +1,1 @@
+Add :option:`--heatmap` output format to :mod:`profiling.sampling` that generates an HTML visualization showing line-by-line sample intensity with color coding from blue (cold) to red (hot).
