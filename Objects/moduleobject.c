@@ -304,7 +304,6 @@ module_copy_members_from_deflike(
     PyModuleObject *md,
     PyModuleDef *def_like /* not necessarily a valid Python object */)
 {
-    /* def may not be a valid PyObject*, see */
     md->md_state_size = def_like->m_size;
     md->md_state_traverse = def_like->m_traverse;
     md->md_state_clear = def_like->m_clear;
