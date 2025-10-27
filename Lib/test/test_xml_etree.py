@@ -590,6 +590,7 @@ class ElementTreeTest(unittest.TestCase):
                 ('end', 'root'),
             ])
         self.assertEqual(context.root.tag, 'root')
+        context.close()
 
         context = iterparse(SIMPLE_NS_XMLFILE)
         self.assertEqual([(action, elem.tag) for action, elem in context], [
@@ -598,6 +599,7 @@ class ElementTreeTest(unittest.TestCase):
                 ('end', '{namespace}empty-element'),
                 ('end', '{namespace}root'),
             ])
+        context.close()
 
         with open(SIMPLE_XMLFILE, 'rb') as source:
             context = iterparse(source)
@@ -613,10 +615,12 @@ class ElementTreeTest(unittest.TestCase):
         events = ()
         context = iterparse(SIMPLE_XMLFILE, events)
         self.assertEqual([(action, elem.tag) for action, elem in context], [])
+        context.close()
 
         events = ()
         context = iterparse(SIMPLE_XMLFILE, events=events)
         self.assertEqual([(action, elem.tag) for action, elem in context], [])
+        context.close()
 
         events = ("start", "end")
         context = iterparse(SIMPLE_XMLFILE, events)
@@ -630,6 +634,7 @@ class ElementTreeTest(unittest.TestCase):
                 ('end', 'empty-element'),
                 ('end', 'root'),
             ])
+        context.close()
 
         events = ("start", "end", "start-ns", "end-ns")
         context = iterparse(SIMPLE_NS_XMLFILE, events)
@@ -647,6 +652,7 @@ class ElementTreeTest(unittest.TestCase):
                 ('end', '{namespace}root'),
                 ('end-ns', None),
             ])
+        context.close()
 
         events = ('start-ns', 'end-ns')
         context = iterparse(io.StringIO(r"<root xmlns=''/>"), events)
