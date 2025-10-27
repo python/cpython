@@ -2681,7 +2681,7 @@ bytearray_sizeof_impl(PyByteArrayObject *self)
         res += alloc;
     }
 
-    return PyLong_FromSize_t(res);
+    return PyLong_FromSsize_t(res);
 }
 
 static PySequenceMethods bytearray_as_sequence = {
