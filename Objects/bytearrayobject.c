@@ -1181,7 +1181,7 @@ bytearray_dealloc(PyObject *op)
                         "deallocated bytearray object has exported buffers");
         PyErr_Print();
     }
-    Py_CLEAR(self->ob_bytes_object);
+    Py_XDECREF(self->ob_bytes_object);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
