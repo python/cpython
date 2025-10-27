@@ -417,6 +417,18 @@ class AST_Tests(unittest.TestCase):
                 if isinstance(x, ast.AST):
                     self.assertIs(type(x._fields), tuple)
 
+    def test_dynamic_attr(self):
+        for name, item in ast.__dict__.items():
+            # constructor has a different signature
+            if name == 'Index':
+                continue
+            if self._is_ast_node(name, item):
+                x = self._construct_ast_class(item)
+                # Random attribute assignment is allowed
+                x.foo = 5
+                self.assertEqual(x.foo, 5)
+                del x.foo
+
     def _construct_ast_class(self, cls):
         kwargs = {}
         for name, typ in cls.__annotations__.items():
