@@ -334,6 +334,8 @@ class TestGenerator(TestGeneratorBase, TestEmailBase):
 
                 with self.assertRaises(email.errors.HeaderWriteError):
                     message.as_string()
+                with self.assertRaises(email.errors.HeaderWriteError):
+                    message.as_bytes()
 
 
 class TestBytesGenerator(TestGeneratorBase, TestEmailBase):

@@ -319,6 +319,10 @@ class PolicyAPITests(unittest.TestCase):
                     message.as_string(),
                     f"{text}\nBody",
                 )
+                self.assertEqual(
+                    message.as_bytes(),
+                    f"{text}\nBody".encode(),
+                )
 
     # XXX: Need subclassing tests.
     # For adding subclassed objects, make sure the usual rules apply (subclass
