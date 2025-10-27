@@ -5684,7 +5684,6 @@
                         JUMP_TO_LABEL(error);
                     }
                     JUMPBY(oparg + 1);
-                    RECORD_DYNAMIC_JUMP_TAKEN();
                     stack_pointer[-1] = null_or_index;
                     DISPATCH();
                 }
@@ -5813,7 +5812,6 @@
                 if ((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyList_GET_SIZE(list_o)) {
                     null_or_index = PyStackRef_TagInt(-1);
                     JUMPBY(oparg + 1);
-                    RECORD_DYNAMIC_JUMP_TAKEN();
                     stack_pointer[-1] = null_or_index;
                     DISPATCH();
                 }
@@ -5838,7 +5836,6 @@
                 if (result == 0) {
                     null_or_index = PyStackRef_TagInt(-1);
                     JUMPBY(oparg + 1);
-                    RECORD_DYNAMIC_JUMP_TAKEN();
                     stack_pointer[-1] = null_or_index;
                     DISPATCH();
                 }
@@ -5895,7 +5892,6 @@
                 STAT_INC(FOR_ITER, hit);
                 if (r->len <= 0) {
                     JUMPBY(oparg + 1);
-                    RECORD_DYNAMIC_JUMP_TAKEN();
                     DISPATCH();
                 }
             }
@@ -5958,7 +5954,6 @@
                 if ((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyTuple_GET_SIZE(tuple_o)) {
                     null_or_index = PyStackRef_TagInt(-1);
                     JUMPBY(oparg + 1);
-                    RECORD_DYNAMIC_JUMP_TAKEN();
                     stack_pointer[-1] = null_or_index;
                     DISPATCH();
                 }
@@ -6957,7 +6952,6 @@
                     JUMP_TO_LABEL(error);
                 }
                 JUMPBY(oparg + 1);
-                RECORD_DYNAMIC_JUMP_TAKEN();
                 stack_pointer[-1] = null_or_index;
                 DISPATCH();
             }
@@ -10543,7 +10537,6 @@
                     if (err == 0) {
                         assert(retval_o != NULL);
                         JUMPBY(oparg);
-                        RECORD_DYNAMIC_JUMP_TAKEN();
                     }
                     else {
                         stack_pointer += -1;

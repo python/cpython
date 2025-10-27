@@ -759,7 +759,6 @@ typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyI
 
 typedef struct _PyJitTracerState {
     bool dependencies_still_valid;
-    bool dynamic_jump_taken;
     bool prev_instr_is_super;
     int code_max_size;
     int code_curr_size;

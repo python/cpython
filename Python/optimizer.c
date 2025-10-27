@@ -632,8 +632,10 @@ _PyJit_translate_single_bytecode_to_trace(
         goto done;
     }
 
-    // Strange control-flow, unsupported opcode, etc.
-    if (tstate->interp->jit_state.dynamic_jump_taken) {
+    // Strange control-flow
+    bool has_dynamic_jump_taken = OPCODE_HAS_UNPREDICTABLE_JUMP(opcode) &&
+        (next_instr != this_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]]);
+    if (has_dynamic_jump_taken) {
         DPRINTF(2, "Unsupported: dynamic jump taken\n");
         goto unsupported;
     }
@@ -974,7 +976,6 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _
     tstate->interp->jit_state.prev_instr_frame = frame;
     tstate->interp->jit_state.prev_instr_oparg = oparg;
     tstate->interp->jit_state.prev_instr_stacklevel = curr_stackdepth;
-    tstate->interp->jit_state.dynamic_jump_taken = false;
     tstate->interp->jit_state.prev_instr_is_super = false;
     _Py_BloomFilter_Init(&tstate->interp->jit_state.dependencies);
     return 1;
