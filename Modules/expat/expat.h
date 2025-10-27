@@ -11,7 +11,7 @@
    Copyright (c) 2000-2005 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2001-2002 Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2016-2024 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2025 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Cristian Rodríguez <crrodriguez@opensuse.org>
    Copyright (c) 2016      Thomas Beutlich <tc@tbeu.de>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
@@ -19,6 +19,7 @@
    Copyright (c) 2023      Hanno Böck <hanno@gentoo.org>
    Copyright (c) 2023      Sony Corporation / Snild Dolkow <snild@sony.com>
    Copyright (c) 2024      Taichi Haradaguchi <20001722@ymail.ne.jp>
+   Copyright (c) 2025      Matthew Fernandez <matthew.fernandez@gmail.com>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -42,21 +43,21 @@
 */
 
 #ifndef Expat_INCLUDED
-#define Expat_INCLUDED 1
+#  define Expat_INCLUDED 1
 
-#include <stdlib.h>
-#include "expat_external.h"
+#  include <stdlib.h>
+#  include "expat_external.h"
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 extern "C" {
-#endif
+#  endif
 
 struct XML_ParserStruct;
 typedef struct XML_ParserStruct *XML_Parser;
 
 typedef unsigned char XML_Bool;
-#define XML_TRUE ((XML_Bool)1)
-#define XML_FALSE ((XML_Bool)0)
+#  define XML_TRUE ((XML_Bool)1)
+#  define XML_FALSE ((XML_Bool)0)
 
 /* The XML_Status enum gives the possible return values for several
    API functions.  The preprocessor #defines are included so this
@@ -73,11 +74,11 @@ typedef unsigned char XML_Bool;
 */
 enum XML_Status {
   XML_STATUS_ERROR = 0,
-#define XML_STATUS_ERROR XML_STATUS_ERROR
+#  define XML_STATUS_ERROR XML_STATUS_ERROR
   XML_STATUS_OK = 1,
-#define XML_STATUS_OK XML_STATUS_OK
+#  define XML_STATUS_OK XML_STATUS_OK
   XML_STATUS_SUSPENDED = 2
-#define XML_STATUS_SUSPENDED XML_STATUS_SUSPENDED
+#  define XML_STATUS_SUSPENDED XML_STATUS_SUSPENDED
 };
 
 enum XML_Error {
@@ -130,7 +131,9 @@ enum XML_Error {
   /* Added in 2.3.0. */
   XML_ERROR_NO_BUFFER,
   /* Added in 2.4.0. */
-  XML_ERROR_AMPLIFICATION_LIMIT_BREACH
+  XML_ERROR_AMPLIFICATION_LIMIT_BREACH,
+  /* Added in 2.6.4. */
+  XML_ERROR_NOT_STARTED,
 };
 
 enum XML_Content_Type {
@@ -274,7 +277,7 @@ XML_ParserCreate_MM(const XML_Char *encoding,
 
 /* Prepare a parser object to be reused.  This is particularly
    valuable when memory allocation overhead is disproportionately high,
-   such as when a large number of small documnents need to be parsed.
+   such as when a large number of small documents need to be parsed.
    All handlers are cleared from the parser, except for the
    unknownEncodingHandler. The parser's external state is re-initialized
    except for the values of ns and ns_triplets.
@@ -678,7 +681,7 @@ XMLPARSEAPI(void)
 XML_SetUserData(XML_Parser parser, void *userData);
 
 /* Returns the last value set by XML_SetUserData or NULL. */
-#define XML_GetUserData(parser) (*(void **)(parser))
+#  define XML_GetUserData(parser) (*(void **)(parser))
 
 /* This is equivalent to supplying an encoding argument to
    XML_ParserCreate. On success XML_SetEncoding returns non-zero,
@@ -750,7 +753,7 @@ XML_GetSpecifiedAttributeCount(XML_Parser parser);
 XMLPARSEAPI(int)
 XML_GetIdAttributeIndex(XML_Parser parser);
 
-#ifdef XML_ATTR_INFO
+#  ifdef XML_ATTR_INFO
 /* Source file byte offsets for the start and end of attribute names and values.
    The value indices are exclusive of surrounding quotes; thus in a UTF-8 source
    file an attribute value of "blah" will yield:
@@ -771,7 +774,7 @@ typedef struct {
 */
 XMLPARSEAPI(const XML_AttrInfo *)
 XML_GetAttributeInfo(XML_Parser parser);
-#endif
+#  endif
 
 /* Parses some input. Returns XML_STATUS_ERROR if a fatal error is
    detected.  The last call to XML_Parse must have isFinal true; len
@@ -968,9 +971,9 @@ XMLPARSEAPI(const char *)
 XML_GetInputContext(XML_Parser parser, int *offset, int *size);
 
 /* For backwards compatibility with previous versions. */
-#define XML_GetErrorLineNumber XML_GetCurrentLineNumber
-#define XML_GetErrorColumnNumber XML_GetCurrentColumnNumber
-#define XML_GetErrorByteIndex XML_GetCurrentByteIndex
+#  define XML_GetErrorLineNumber XML_GetCurrentLineNumber
+#  define XML_GetErrorColumnNumber XML_GetCurrentColumnNumber
+#  define XML_GetErrorByteIndex XML_GetCurrentByteIndex
 
 /* Frees the content model passed to the element declaration handler */
 XMLPARSEAPI(void)
@@ -1030,7 +1033,10 @@ enum XML_FeatureEnum {
   XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_MAXIMUM_AMPLIFICATION_DEFAULT,
   XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT,
   /* Added in Expat 2.6.0. */
-  XML_FEATURE_GE
+  XML_FEATURE_GE,
+  /* Added in Expat 2.7.2. */
+  XML_FEATURE_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION_DEFAULT,
+  XML_FEATURE_ALLOC_TRACKER_ACTIVATION_THRESHOLD_DEFAULT,
   /* Additional features must be added to the end of this enum. */
 };
 
@@ -1043,7 +1049,7 @@ typedef struct {
 XMLPARSEAPI(const XML_Feature *)
 XML_GetFeatureList(void);
 
-#if defined(XML_DTD) || (defined(XML_GE) && XML_GE == 1)
+#  if defined(XML_DTD) || (defined(XML_GE) && XML_GE == 1)
 /* Added in Expat 2.4.0 for XML_DTD defined and
  * added in Expat 2.6.0 for XML_GE == 1. */
 XMLPARSEAPI(XML_Bool)
@@ -1055,7 +1061,17 @@ XML_SetBillionLaughsAttackProtectionMaximumAmplification(
 XMLPARSEAPI(XML_Bool)
 XML_SetBillionLaughsAttackProtectionActivationThreshold(
     XML_Parser parser, unsigned long long activationThresholdBytes);
-#endif
+
+/* Added in Expat 2.7.2. */
+XMLPARSEAPI(XML_Bool)
+XML_SetAllocTrackerMaximumAmplification(XML_Parser parser,
+                                        float maximumAmplificationFactor);
+
+/* Added in Expat 2.7.2. */
+XMLPARSEAPI(XML_Bool)
+XML_SetAllocTrackerActivationThreshold(
+    XML_Parser parser, unsigned long long activationThresholdBytes);
+#  endif
 
 /* Added in Expat 2.6.0. */
 XMLPARSEAPI(XML_Bool)
@@ -1064,12 +1080,12 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
 /* Expat follows the semantic versioning convention.
    See https://semver.org
 */
-#define XML_MAJOR_VERSION 2
-#define XML_MINOR_VERSION 6
-#define XML_MICRO_VERSION 2
+#  define XML_MAJOR_VERSION 2
+#  define XML_MINOR_VERSION 7
+#  define XML_MICRO_VERSION 3
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
-#endif
+#  endif
 
 #endif /* not Expat_INCLUDED */

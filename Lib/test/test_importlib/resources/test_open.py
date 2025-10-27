@@ -1,7 +1,6 @@
 import unittest
 
 from importlib import resources
-from . import data01
 from . import util
 
 
@@ -24,7 +23,7 @@ class OpenTests:
         target = resources.files(self.data) / 'binary.file'
         with target.open('rb') as fp:
             result = fp.read()
-            self.assertEqual(result, b'\x00\x01\x02\x03')
+            self.assertEqual(result, bytes(range(4)))
 
     def test_open_text_default_encoding(self):
         target = resources.files(self.data) / 'utf-8.file'
@@ -65,20 +64,20 @@ class OpenTests:
             target.open(encoding='utf-8')
 
 
-class OpenDiskTests(OpenTests, unittest.TestCase):
-    def setUp(self):
-        self.data = data01
+class OpenDiskTests(OpenTests, util.DiskSetup, unittest.TestCase):
+    pass
 
 
-class OpenDiskNamespaceTests(OpenTests, unittest.TestCase):
-    def setUp(self):
-        from . import namespacedata01
-
-        self.data = namespacedata01
+class OpenDiskNamespaceTests(OpenTests, util.DiskSetup, unittest.TestCase):
+    MODULE = 'namespacedata01'
 
 
 class OpenZipTests(OpenTests, util.ZipSetup, unittest.TestCase):
     pass
+
+
+class OpenNamespaceZipTests(OpenTests, util.ZipSetup, unittest.TestCase):
+    MODULE = 'namespacedata01'
 
 
 if __name__ == '__main__':

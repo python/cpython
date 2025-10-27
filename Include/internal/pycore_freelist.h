@@ -8,144 +8,103 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-// PyTuple_MAXSAVESIZE - largest tuple to save on free list
-// PyTuple_MAXFREELIST - maximum number of tuples of each size to save
+#include "pycore_freelist_state.h"      // struct _Py_freelists
+#include "pycore_interp_structs.h"      // PyInterpreterState
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_PTR_RELAXED()
+#include "pycore_pystate.h"             // _PyThreadState_GET
+#include "pycore_stats.h"               // OBJECT_STAT_INC
 
-#ifdef WITH_FREELISTS
-// with freelists
-#  define PyTuple_MAXSAVESIZE 20
-#  define PyTuple_NFREELISTS PyTuple_MAXSAVESIZE
-#  define PyTuple_MAXFREELIST 2000
-#  define PyList_MAXFREELIST 80
-#  define PyDict_MAXFREELIST 80
-#  define PyFloat_MAXFREELIST 100
-#  define PyContext_MAXFREELIST 255
-# define _PyAsyncGen_MAXFREELIST 80
-#  define _PyObjectStackChunk_MAXFREELIST 4
+static inline struct _Py_freelists *
+_Py_freelists_GET(void)
+{
+#ifdef Py_DEBUG
+    _Py_AssertHoldsTstate();
+#endif
+
+#ifdef Py_GIL_DISABLED
+    PyThreadState *tstate = _PyThreadState_GET();
+    return &((_PyThreadStateImpl*)tstate)->freelists;
 #else
-#  define PyTuple_NFREELISTS 0
-#  define PyTuple_MAXFREELIST 0
-#  define PyList_MAXFREELIST 0
-#  define PyDict_MAXFREELIST 0
-#  define PyFloat_MAXFREELIST 0
-#  define PyContext_MAXFREELIST 0
-#  define _PyAsyncGen_MAXFREELIST 0
-#  define _PyObjectStackChunk_MAXFREELIST 0
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->object_state.freelists;
 #endif
+}
 
-struct _Py_list_freelist {
-#ifdef WITH_FREELISTS
-    PyListObject *items[PyList_MAXFREELIST];
-    int numfree;
-#endif
-};
+// Pushes `op` to the freelist, calls `freefunc` if the freelist is full
+#define _Py_FREELIST_FREE(NAME, op, freefunc) \
+    _PyFreeList_Free(&_Py_freelists_GET()->NAME, _PyObject_CAST(op), \
+                     Py_ ## NAME ## _MAXFREELIST, freefunc)
+// Pushes `op` to the freelist, returns 1 if successful, 0 if the freelist is full
+#define _Py_FREELIST_PUSH(NAME, op, limit) \
+    _PyFreeList_Push(&_Py_freelists_GET()->NAME, _PyObject_CAST(op), limit)
 
-struct _Py_tuple_freelist {
-#if WITH_FREELISTS
-    /* There is one freelist for each size from 1 to PyTuple_MAXSAVESIZE.
-       The empty tuple is handled separately.
+// Pops a PyObject from the freelist, returns NULL if the freelist is empty.
+#define _Py_FREELIST_POP(TYPE, NAME) \
+    _Py_CAST(TYPE*, _PyFreeList_Pop(&_Py_freelists_GET()->NAME))
 
-       Each tuple stored in the array is the head of the linked list
-       (and the next available tuple) for that size.  The actual tuple
-       object is used as the linked list node, with its first item
-       (ob_item[0]) pointing to the next node (i.e. the previous head).
-       Each linked list is initially NULL. */
-    PyTupleObject *items[PyTuple_NFREELISTS];
-    int numfree[PyTuple_NFREELISTS];
-#else
-    char _unused;  // Empty structs are not allowed.
-#endif
-};
+// Pops a non-PyObject data structure from the freelist, returns NULL if the
+// freelist is empty.
+#define _Py_FREELIST_POP_MEM(NAME) \
+    _PyFreeList_PopMem(&_Py_freelists_GET()->NAME)
 
-struct _Py_float_freelist {
-#ifdef WITH_FREELISTS
-    /* Special free list
-       free_list is a singly-linked list of available PyFloatObjects,
-       linked via abuse of their ob_type members. */
-    int numfree;
-    PyFloatObject *items;
-#endif
-};
+#define _Py_FREELIST_SIZE(NAME) (int)((_Py_freelists_GET()->NAME).size)
 
-struct _Py_dict_freelist {
-#ifdef WITH_FREELISTS
-    /* Dictionary reuse scheme to save calls to malloc and free */
-    PyDictObject *items[PyDict_MAXFREELIST];
-    int numfree;
-#endif
-};
+static inline int
+_PyFreeList_Push(struct _Py_freelist *fl, void *obj, Py_ssize_t maxsize)
+{
+    if (fl->size < maxsize && fl->size >= 0) {
+        FT_ATOMIC_STORE_PTR_RELAXED(*(void **)obj, fl->freelist);
+        fl->freelist = obj;
+        fl->size++;
+        OBJECT_STAT_INC(to_freelist);
+        return 1;
+    }
+    return 0;
+}
 
-struct _Py_dictkeys_freelist {
-#ifdef WITH_FREELISTS
-    /* Dictionary keys reuse scheme to save calls to malloc and free */
-    PyDictKeysObject *items[PyDict_MAXFREELIST];
-    int numfree;
-#endif
-};
+static inline void
+_PyFreeList_Free(struct _Py_freelist *fl, void *obj, Py_ssize_t maxsize,
+                 freefunc dofree)
+{
+    if (!_PyFreeList_Push(fl, obj, maxsize)) {
+        dofree(obj);
+    }
+}
 
-struct _Py_slice_freelist {
-#ifdef WITH_FREELISTS
-    /* Using a cache is very effective since typically only a single slice is
-       created and then deleted again. */
-    PySliceObject *slice_cache;
-#endif
-};
+static inline void *
+_PyFreeList_PopNoStats(struct _Py_freelist *fl)
+{
+    void *obj = fl->freelist;
+    if (obj != NULL) {
+        assert(fl->size > 0);
+        fl->freelist = *(void **)obj;
+        fl->size--;
+    }
+    return obj;
+}
 
-struct _Py_context_freelist {
-#ifdef WITH_FREELISTS
-    // List of free PyContext objects
-    PyContext *items;
-    int numfree;
-#endif
-};
+static inline PyObject *
+_PyFreeList_Pop(struct _Py_freelist *fl)
+{
+    PyObject *op = _PyFreeList_PopNoStats(fl);
+    if (op != NULL) {
+        OBJECT_STAT_INC(from_freelist);
+        _Py_NewReference(op);
+    }
+    return op;
+}
 
-struct _Py_async_gen_freelist {
-#ifdef WITH_FREELISTS
-    /* Freelists boost performance 6-10%; they also reduce memory
-       fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
-       are short-living objects that are instantiated for every
-       __anext__() call. */
-    struct _PyAsyncGenWrappedValue* items[_PyAsyncGen_MAXFREELIST];
-    int numfree;
-#endif
-};
+static inline void *
+_PyFreeList_PopMem(struct _Py_freelist *fl)
+{
+    void *op = _PyFreeList_PopNoStats(fl);
+    if (op != NULL) {
+        OBJECT_STAT_INC(from_freelist);
+    }
+    return op;
+}
 
-struct _Py_async_gen_asend_freelist {
-#ifdef WITH_FREELISTS
-    struct PyAsyncGenASend* items[_PyAsyncGen_MAXFREELIST];
-    int numfree;
-#endif
-};
-
-struct _PyObjectStackChunk;
-
-struct _Py_object_stack_freelist {
-    struct _PyObjectStackChunk *items;
-    Py_ssize_t numfree;
-};
-
-struct _Py_object_freelists {
-    struct _Py_float_freelist floats;
-    struct _Py_tuple_freelist tuples;
-    struct _Py_list_freelist lists;
-    struct _Py_dict_freelist dicts;
-    struct _Py_dictkeys_freelist dictkeys;
-    struct _Py_slice_freelist slices;
-    struct _Py_context_freelist contexts;
-    struct _Py_async_gen_freelist async_gens;
-    struct _Py_async_gen_asend_freelist async_gen_asends;
-    struct _Py_object_stack_freelist object_stacks;
-};
-
-extern void _PyObject_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization);
-extern void _PyTuple_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
-extern void _PyFloat_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
-extern void _PyList_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
-extern void _PySlice_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
-extern void _PyDict_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
-extern void _PyAsyncGen_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization);
-extern void _PyContext_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
-extern void _PyObjectStackChunk_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
+extern void _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization);
 
 #ifdef __cplusplus
 }

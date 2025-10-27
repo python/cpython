@@ -202,7 +202,7 @@ the mean and standard deviation of measurement data as single entity.
 .. nonce: V88MCD
 .. section: Library
 
-Added statistics.fmean() as a faster, floating point variant of the existing
+Added statistics.fmean() as a faster, floating-point variant of the existing
 mean() function.
 
 ..

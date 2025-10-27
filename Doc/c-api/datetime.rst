@@ -318,10 +318,10 @@ Macros for the convenience of modules implementing the DB API:
 .. c:function:: PyObject* PyDateTime_FromTimestamp(PyObject *args)
 
    Create and return a new :class:`datetime.datetime` object given an argument
-   tuple suitable for passing to :meth:`datetime.datetime.fromtimestamp()`.
+   tuple suitable for passing to :meth:`datetime.datetime.fromtimestamp`.
 
 
 .. c:function:: PyObject* PyDate_FromTimestamp(PyObject *args)
 
    Create and return a new :class:`datetime.date` object given an argument
-   tuple suitable for passing to :meth:`datetime.date.fromtimestamp()`.
+   tuple suitable for passing to :meth:`datetime.date.fromtimestamp`.

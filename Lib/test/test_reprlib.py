@@ -3,6 +3,7 @@
   Nick Mathewson
 """
 
+import annotationlib
 import sys
 import os
 import shutil
@@ -11,7 +12,7 @@ import importlib.util
 import unittest
 import textwrap
 
-from test.support import verbose
+from test.support import verbose, EqualToForwardRef
 from test.support.os_helper import create_empty_file
 from reprlib import repr as r # Don't shadow builtin repr
 from reprlib import Repr
@@ -150,14 +151,38 @@ class ReprTests(unittest.TestCase):
         eq(r(frozenset({1, 2, 3, 4, 5, 6, 7})), "frozenset({1, 2, 3, 4, 5, 6, ...})")
 
     def test_numbers(self):
-        eq = self.assertEqual
-        eq(r(123), repr(123))
-        eq(r(123), repr(123))
-        eq(r(1.0/3), repr(1.0/3))
+        for x in [123, 1.0 / 3]:
+            self.assertEqual(r(x), repr(x))
 
-        n = 10**100
-        expected = repr(n)[:18] + "..." + repr(n)[-19:]
-        eq(r(n), expected)
+        max_digits = sys.get_int_max_str_digits()
+        for k in [100, max_digits - 1]:
+            with self.subTest(f'10 ** {k}', k=k):
+                n = 10 ** k
+                expected = repr(n)[:18] + "..." + repr(n)[-19:]
+                self.assertEqual(r(n), expected)
+
+        def re_msg(n, d):
+            return (rf'<{n.__class__.__name__} instance with roughly {d} '
+                    rf'digits \(limit at {max_digits}\) at 0x[a-f0-9]+>')
+
+        k = max_digits
+        with self.subTest(f'10 ** {k}', k=k):
+            n = 10 ** k
+            self.assertRaises(ValueError, repr, n)
+            self.assertRegex(r(n), re_msg(n, k + 1))
+
+        for k in [max_digits + 1, 2 * max_digits]:
+            self.assertGreater(k, 100)
+            with self.subTest(f'10 ** {k}', k=k):
+                n = 10 ** k
+                self.assertRaises(ValueError, repr, n)
+                self.assertRegex(r(n), re_msg(n, k + 1))
+            with self.subTest(f'10 ** {k} - 1', k=k):
+                n = 10 ** k - 1
+                # Here, since math.log10(n) == math.log10(n-1),
+                # the number of digits of n - 1 is overestimated.
+                self.assertRaises(ValueError, repr, n)
+                self.assertRegex(r(n), re_msg(n, k + 1))
 
     def test_instance(self):
         eq = self.assertEqual
@@ -172,13 +197,13 @@ class ReprTests(unittest.TestCase):
         eq(r(i3), ("<ClassWithFailingRepr instance at %#x>"%id(i3)))
 
         s = r(ClassWithFailingRepr)
-        self.assertTrue(s.startswith("<class "))
-        self.assertTrue(s.endswith(">"))
+        self.assertStartsWith(s, "<class ")
+        self.assertEndsWith(s, ">")
         self.assertIn(s.find("..."), [12, 13])
 
     def test_lambda(self):
         r = repr(lambda x: x)
-        self.assertTrue(r.startswith("<function ReprTests.test_lambda.<locals>.<lambda"), r)
+        self.assertStartsWith(r, "<function ReprTests.test_lambda.<locals>.<lambda")
         # XXX anonymous functions?  see func_repr
 
     def test_builtin_function(self):
@@ -186,8 +211,8 @@ class ReprTests(unittest.TestCase):
         # Functions
         eq(repr(hash), '<built-in function hash>')
         # Methods
-        self.assertTrue(repr(''.split).startswith(
-            '<built-in method split of str object at 0x'))
+        self.assertStartsWith(repr(''.split),
+            '<built-in method split of str object at 0x')
 
     def test_range(self):
         eq = self.assertEqual
@@ -372,20 +397,20 @@ class ReprTests(unittest.TestCase):
                 'object': {
                     1: 'two',
                     b'three': [
-                        (4.5, 6.7),
+                        (4.5, 6.25),
                         [set((8, 9)), frozenset((10, 11))],
                     ],
                 },
                 'tests': (
                     (dict(indent=None), '''\
-                        {1: 'two', b'three': [(4.5, 6.7), [{8, 9}, frozenset({10, 11})]]}'''),
+                        {1: 'two', b'three': [(4.5, 6.25), [{8, 9}, frozenset({10, 11})]]}'''),
                     (dict(indent=False), '''\
                         {
                         1: 'two',
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -405,7 +430,7 @@ class ReprTests(unittest.TestCase):
                          b'three': [
                           (
                            4.5,
-                           6.7,
+                           6.25,
                           ),
                           [
                            {
@@ -425,7 +450,7 @@ class ReprTests(unittest.TestCase):
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -445,7 +470,7 @@ class ReprTests(unittest.TestCase):
                          b'three': [
                           (
                            4.5,
-                           6.7,
+                           6.25,
                           ),
                           [
                            {
@@ -465,7 +490,7 @@ class ReprTests(unittest.TestCase):
                             b'three': [
                                 (
                                     4.5,
-                                    6.7,
+                                    6.25,
                                 ),
                                 [
                                     {
@@ -493,7 +518,7 @@ class ReprTests(unittest.TestCase):
                         b'three': [
                         (
                         4.5,
-                        6.7,
+                        6.25,
                         ),
                         [
                         {
@@ -513,7 +538,7 @@ class ReprTests(unittest.TestCase):
                         -->b'three': [
                         -->-->(
                         -->-->-->4.5,
-                        -->-->-->6.7,
+                        -->-->-->6.25,
                         -->-->),
                         -->-->[
                         -->-->-->{
@@ -533,7 +558,7 @@ class ReprTests(unittest.TestCase):
                         ....b'three': [
                         ........(
                         ............4.5,
-                        ............6.7,
+                        ............6.25,
                         ........),
                         ........[
                         ............{
@@ -579,6 +604,50 @@ class ReprTests(unittest.TestCase):
                 expected_msg = expected_msg or f'{type(indent)}'
                 with self.assertRaisesRegex(expected_error, expected_msg):
                     r.repr(test_object)
+
+    def test_shadowed_stdlib_array(self):
+        # Issue #113570: repr() should not be fooled by an array
+        class array:
+            def __repr__(self):
+                return "not array.array"
+
+        self.assertEqual(r(array()), "not array.array")
+
+    def test_shadowed_builtin(self):
+        # Issue #113570: repr() should not be fooled
+        # by a shadowed builtin function
+        class list:
+            def __repr__(self):
+                return "not builtins.list"
+
+        self.assertEqual(r(list()), "not builtins.list")
+
+    def test_custom_repr(self):
+        class MyRepr(Repr):
+
+            def repr_TextIOWrapper(self, obj, level):
+                if obj.name in {'<stdin>', '<stdout>', '<stderr>'}:
+                    return obj.name
+                return repr(obj)
+
+        aRepr = MyRepr()
+        self.assertEqual(aRepr.repr(sys.stdin), "<stdin>")
+
+    def test_custom_repr_class_with_spaces(self):
+        class TypeWithSpaces:
+            pass
+
+        t = TypeWithSpaces()
+        type(t).__name__ = "type with spaces"
+        self.assertEqual(type(t).__name__, "type with spaces")
+
+        class MyRepr(Repr):
+            def repr_type_with_spaces(self, obj, level):
+                return "Type With Spaces"
+
+
+        aRepr = MyRepr()
+        self.assertEqual(aRepr.repr(t), "Type With Spaces")
 
 def write_file(path, text):
     with open(path, 'w', encoding='ASCII') as fp:
@@ -685,8 +754,8 @@ class baz:
         importlib.invalidate_caches()
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import baz
         ibaz = baz.baz()
-        self.assertTrue(repr(ibaz).startswith(
-            "<%s.baz object at 0x" % baz.__name__))
+        self.assertStartsWith(repr(ibaz),
+            "<%s.baz object at 0x" % baz.__name__)
 
     def test_method(self):
         self._check_path_limitations('qux')
@@ -699,13 +768,13 @@ class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import qux
         # Unbound methods first
         r = repr(qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod)
-        self.assertTrue(r.startswith('<function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod'), r)
+        self.assertStartsWith(r, '<function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod')
         # Bound method next
         iqux = qux.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa()
         r = repr(iqux.amethod)
-        self.assertTrue(r.startswith(
+        self.assertStartsWith(r,
             '<bound method aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod of <%s.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa object at 0x' \
-            % (qux.__name__,) ), r)
+            % (qux.__name__,) )
 
     @unittest.skip('needs a built-in function with a really long name')
     def test_builtin_function(self):
@@ -784,6 +853,20 @@ class TestRecursiveRepr(unittest.TestCase):
         self.assertEqual(len(type_params), 1)
         self.assertEqual(type_params[0].__name__, 'T')
         self.assertEqual(type_params[0].__bound__, str)
+
+    def test_annotations(self):
+        class My:
+            @recursive_repr()
+            def __repr__(self, default: undefined = ...):
+                return default
+
+        annotations = annotationlib.get_annotations(
+            My.__repr__, format=annotationlib.Format.FORWARDREF
+        )
+        self.assertEqual(
+            annotations,
+            {'default': EqualToForwardRef("undefined", owner=My.__repr__)}
+        )
 
 if __name__ == "__main__":
     unittest.main()

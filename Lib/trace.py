@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # portions copyright 2001, Autonomous Zones Industries, Inc., all rights...
 # err...  reserved and offered to the public under the terms of the
 # Python 2.2 license.
@@ -281,14 +279,13 @@ class CoverageResults:
             n_hits, n_lines = self.write_results_file(coverpath, source,
                                                       lnotab, count, encoding)
             if summary and n_lines:
-                percent = int(100 * n_hits / n_lines)
-                sums[modulename] = n_lines, percent, modulename, filename
+                sums[modulename] = n_lines, n_hits, modulename, filename
 
         if summary and sums:
             print("lines   cov%   module   (path)")
             for m in sorted(sums):
-                n_lines, percent, modulename, filename = sums[m]
-                print("%5d   %3d%%   %s   (%s)" % sums[m])
+                n_lines, n_hits, modulename, filename = sums[m]
+                print(f"{n_lines:5d}   {n_hits/n_lines:.1%}   {modulename}   ({filename})")
 
         if self.outfile:
             # try and store counts and module info into self.outfile
@@ -402,7 +399,7 @@ class Trace:
         @param countfuncs true iff it should just output a list of
                      (filename, modulename, funcname,) for functions
                      that were called at least once;  This overrides
-                     `count' and `trace'
+                     'count' and 'trace'
         @param ignoremods a list of the names of modules to ignore
         @param ignoredirs a list of the names of directories to ignore
                      all of the (recursive) contents of
@@ -534,7 +531,7 @@ class Trace:
     def globaltrace_lt(self, frame, why, arg):
         """Handler for call events.
 
-        If the code block being entered is to be ignored, returns `None',
+        If the code block being entered is to be ignored, returns 'None',
         else returns self.localtrace.
         """
         if why == 'call':
@@ -607,7 +604,7 @@ class Trace:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('--version', action='version', version='trace 2.0')
 
     grp = parser.add_argument_group('Main options',

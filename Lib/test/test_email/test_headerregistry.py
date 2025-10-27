@@ -837,6 +837,11 @@ class TestContentTransferEncoding(TestHeaderBase):
             '7bit',
             [errors.InvalidHeaderDefect]),
 
+        'extra_space_after_cte': (
+            'base64 ',
+            'base64',
+            []),
+
     }
 
 
@@ -1648,7 +1653,7 @@ class TestFolding(TestHeaderBase):
                     'Lôrem ipsum dôlôr sit amet, cônsectetuer adipiscing. '
                     'Suspendisse pôtenti. Aliquam nibh. Suspendisse pôtenti.',
                     '=?utf-8?q?L=C3=B4rem_ipsum_d=C3=B4l=C3=B4r_sit_amet=2C_c'
-                    '=C3=B4nsectetuer?=\n =?utf-8?q?adipiscing=2E_Suspendisse'
+                    '=C3=B4nsectetuer?=\n =?utf-8?q?_adipiscing=2E_Suspendisse'
                     '_p=C3=B4tenti=2E_Aliquam_nibh=2E?=\n Suspendisse =?utf-8'
                     '?q?p=C3=B4tenti=2E?=',
                     ),

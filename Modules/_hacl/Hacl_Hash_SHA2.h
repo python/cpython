@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __Hacl_Hash_SHA2_H
-#define __Hacl_Hash_SHA2_H
+#ifndef Hacl_Hash_SHA2_H
+#define Hacl_Hash_SHA2_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -32,12 +32,11 @@ extern "C" {
 
 #include <string.h>
 #include "python_hacl_namespaces.h"
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
 #include "Hacl_Streaming_Types.h"
-
 
 typedef Hacl_Streaming_MD_state_32 Hacl_Hash_SHA2_state_t_224;
 
@@ -200,5 +199,5 @@ void Hacl_Hash_SHA2_hash_384(uint8_t *output, uint8_t *input, uint32_t input_len
 }
 #endif
 
-#define __Hacl_Hash_SHA2_H_DEFINED
-#endif
+#define Hacl_Hash_SHA2_H_DEFINED
+#endif /* Hacl_Hash_SHA2_H */

@@ -22,6 +22,7 @@ defpath = '/bin:/usr/bin'
 altsep = None
 devnull = '/dev/null'
 
+import errno
 import os
 import sys
 import stat
@@ -35,7 +36,8 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "isjunction","isdevdrive"]
+           "commonpath","isjunction","isdevdrive",
+           "ALL_BUT_LAST","ALLOW_MISSING"]
 
 
 def _get_sep(path):
@@ -49,7 +51,7 @@ def _get_sep(path):
 # normalizations (such as optimizing '../' away) are not allowed
 # (another function should be defined to do that).
 
-def normcase(s):
+def normcase(s, /):
     """Normalize case of pathname.  Has no effect under Posix"""
     return os.fspath(s)
 
@@ -57,7 +59,7 @@ def normcase(s):
 # Return whether a path is absolute.
 # Trivial in Posix, harder on the Mac or MS-DOS.
 
-def isabs(s):
+def isabs(s, /):
     """Test whether a path is absolute"""
     s = os.fspath(s)
     sep = _get_sep(s)
@@ -68,7 +70,7 @@ def isabs(s):
 # Ignore the previous parts if a part is absolute.
 # Insert a '/' unless the first part is empty or already ends in '/'.
 
-def join(a, *p):
+def join(a, /, *p):
     """Join two or more pathname components, inserting '/' as needed.
     If any component is an absolute path, all previous path components
     will be discarded.  An empty last part will result in a path that
@@ -96,7 +98,7 @@ def join(a, *p):
 # '/' in the path, head  will be empty.
 # Trailing '/'es are stripped from head unless it is the root.
 
-def split(p):
+def split(p, /):
     """Split a pathname.  Returns tuple "(head, tail)" where "tail" is
     everything after the final slash.  Either part may be empty."""
     p = os.fspath(p)
@@ -113,7 +115,7 @@ def split(p):
 # pathname component; the root is everything before that.
 # It is always true that root + ext == p.
 
-def splitext(p):
+def splitext(p, /):
     p = os.fspath(p)
     if isinstance(p, bytes):
         sep = b'/'
@@ -127,7 +129,7 @@ splitext.__doc__ = genericpath._splitext.__doc__
 # Split a pathname into a drive specification and the rest of the
 # path.  Useful on DOS/Windows/NT; on Unix, the drive is always empty.
 
-def splitdrive(p):
+def splitdrive(p, /):
     """Split a pathname into drive and path. On Posix, drive is always
     empty."""
     p = os.fspath(p)
@@ -135,18 +137,12 @@ def splitdrive(p):
 
 
 try:
-    from posix import _path_splitroot_ex
+    from posix import _path_splitroot_ex as splitroot
 except ImportError:
-    def splitroot(p):
-        """Split a pathname into drive, root and tail. On Posix, drive is always
-        empty; the root may be empty, a single slash, or two slashes. The tail
-        contains anything after the root. For example:
+    def splitroot(p, /):
+        """Split a pathname into drive, root and tail.
 
-            splitroot('foo/bar') == ('', '', 'foo/bar')
-            splitroot('/foo/bar') == ('', '/', 'foo/bar')
-            splitroot('//foo/bar') == ('', '//', 'foo/bar')
-            splitroot('///foo/bar') == ('', '/', '//foo/bar')
-        """
+        The tail contains anything after the root."""
         p = os.fspath(p)
         if isinstance(p, bytes):
             sep = b'/'
@@ -164,28 +160,11 @@ except ImportError:
             # Precisely two leading slashes, e.g.: '//foo'. Implementation defined per POSIX, see
             # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13
             return empty, p[:2], p[2:]
-else:
-    def splitroot(p):
-        """Split a pathname into drive, root and tail. On Posix, drive is always
-        empty; the root may be empty, a single slash, or two slashes. The tail
-        contains anything after the root. For example:
-
-            splitroot('foo/bar') == ('', '', 'foo/bar')
-            splitroot('/foo/bar') == ('', '/', 'foo/bar')
-            splitroot('//foo/bar') == ('', '//', 'foo/bar')
-            splitroot('///foo/bar') == ('', '/', '//foo/bar')
-        """
-        p = os.fspath(p)
-        if isinstance(p, bytes):
-            # Optimisation: the drive is always empty
-            _, root, tail = _path_splitroot_ex(os.fsdecode(p))
-            return b'', os.fsencode(root), os.fsencode(tail)
-        return _path_splitroot_ex(p)
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
 
-def basename(p):
+def basename(p, /):
     """Returns the final component of a pathname"""
     p = os.fspath(p)
     sep = _get_sep(p)
@@ -195,7 +174,7 @@ def basename(p):
 
 # Return the head (dirname) part of a path, same as split(path)[0].
 
-def dirname(p):
+def dirname(p, /):
     """Returns the directory component of a pathname"""
     p = os.fspath(p)
     sep = _get_sep(p)
@@ -363,7 +342,7 @@ def expandvars(path):
 # if it contains symbolic links!
 
 try:
-    from posix import _path_normpath
+    from posix import _path_normpath as normpath
 
 except ImportError:
     def normpath(path):
@@ -394,14 +373,6 @@ except ImportError:
         path = initial_slashes + sep.join(comps)
         return path or dot
 
-else:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
-        return _path_normpath(path) or "."
-
 
 def abspath(path):
     """Return an absolute path."""
@@ -418,7 +389,7 @@ def abspath(path):
 # Return a canonical path (i.e. the absolute location of a file on the
 # filesystem).
 
-def realpath(filename, *, strict=False):
+def realpath(filename, /, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
@@ -432,16 +403,33 @@ symbolic links encountered in the path."""
         curdir = '.'
         pardir = '..'
         getcwd = os.getcwd
+    if strict is ALLOW_MISSING:
+        ignored_error = FileNotFoundError
+    elif strict is ALL_BUT_LAST:
+        ignored_error = FileNotFoundError
+    elif strict:
+        ignored_error = ()
+    else:
+        ignored_error = OSError
+
+    lstat = os.lstat
+    readlink = os.readlink
+    maxlinks = None
 
     # The stack of unresolved path parts. When popped, a special value of None
     # indicates that a symlink target has been resolved, and that the original
     # symlink path can be retrieved by popping again. The [::-1] slice is a
     # very fast way of spelling list(reversed(...)).
-    rest = filename.split(sep)[::-1]
+    rest = filename.rstrip(sep).split(sep)[::-1]
+
+    # Number of unprocessed parts in 'rest'. This can differ from len(rest)
+    # later, because 'rest' might contain markers for unresolved symlinks.
+    part_count = len(rest)
 
     # The resolved path, which is absolute throughout this function.
     # Note: getcwd() returns a normalized and symlink-free path.
     path = sep if filename.startswith(sep) else getcwd()
+    trailing_sep = filename.endswith(sep)
 
     # Mapping from symlink paths to *fully resolved* symlink targets. If a
     # symlink is encountered but not yet resolved, the value is None. This is
@@ -449,12 +437,17 @@ symbolic links encountered in the path."""
     # the same links.
     seen = {}
 
-    while rest:
+    # Number of symlinks traversed. When the number of traversals is limited
+    # by *maxlinks*, this is used instead of *seen* to detect symlink loops.
+    link_count = 0
+
+    while part_count:
         name = rest.pop()
         if name is None:
             # resolved symlink target
             seen[rest.pop()] = path
             continue
+        part_count -= 1
         if not name or name == curdir:
             # current dir
             continue
@@ -467,40 +460,58 @@ symbolic links encountered in the path."""
         else:
             newpath = path + sep + name
         try:
-            st = os.lstat(newpath)
-            if not stat.S_ISLNK(st.st_mode):
+            st_mode = lstat(newpath).st_mode
+            if not stat.S_ISLNK(st_mode):
+                if (strict and (part_count or trailing_sep)
+                    and not stat.S_ISDIR(st_mode)):
+                    raise OSError(errno.ENOTDIR, os.strerror(errno.ENOTDIR),
+                                  newpath)
                 path = newpath
                 continue
-        except OSError:
-            if strict:
-                raise
-            path = newpath
-            continue
-        # Resolve the symbolic link
-        if newpath in seen:
-            # Already seen this path
-            path = seen[newpath]
-            if path is not None:
-                # use cached value
+            elif maxlinks is not None:
+                link_count += 1
+                if link_count > maxlinks:
+                    if strict:
+                        raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
+                                      newpath)
+                    path = newpath
+                    continue
+            elif newpath in seen:
+                # Already seen this path
+                path = seen[newpath]
+                if path is not None:
+                    # use cached value
+                    continue
+                # The symlink is not resolved, so we must have a symlink loop.
+                if strict:
+                    raise OSError(errno.ELOOP, os.strerror(errno.ELOOP),
+                                  newpath)
+                path = newpath
                 continue
-            # The symlink is not resolved, so we must have a symlink loop.
-            if strict:
-                # Raise OSError(errno.ELOOP)
-                os.stat(newpath)
-            path = newpath
+            target = readlink(newpath)
+        except ignored_error:
+            if strict is ALL_BUT_LAST and part_count:
+                raise
+        else:
+            # Resolve the symbolic link
+            if target.startswith(sep):
+                # Symlink target is absolute; reset resolved path.
+                path = sep
+            if maxlinks is None:
+                # Mark this symlink as seen but not fully resolved.
+                seen[newpath] = None
+                # Push the symlink path onto the stack, and signal its specialness
+                # by also pushing None. When these entries are popped, we'll
+                # record the fully-resolved symlink target in the 'seen' mapping.
+                rest.append(newpath)
+                rest.append(None)
+            # Push the unresolved symlink target parts onto the stack.
+            target_parts = target.split(sep)[::-1]
+            rest.extend(target_parts)
+            part_count += len(target_parts)
             continue
-        seen[newpath] = None # not resolved symlink
-        target = os.readlink(newpath)
-        if target.startswith(sep):
-            # Symlink target is absolute; reset resolved path.
-            path = sep
-        # Push the symlink path onto the stack, and signal its specialness by
-        # also pushing None. When these entries are popped, we'll record the
-        # fully-resolved symlink target in the 'seen' mapping.
-        rest.append(newpath)
-        rest.append(None)
-        # Push the unresolved symlink target parts onto the stack.
-        rest.extend(target.split(sep)[::-1])
+        # An error occurred and was ignored.
+        path = newpath
 
     return path
 

@@ -17,8 +17,6 @@ class HoleValue(enum.Enum):
 
     # The base address of the machine code for the current uop (exposed as _JIT_ENTRY):
     CODE = enum.auto()
-    # The base address of the machine code for the next uop (exposed as _JIT_CONTINUE):
-    CONTINUE = enum.auto()
     # The base address of the read-only data for this uop:
     DATA = enum.auto()
     # The address of the current executor (exposed as _JIT_EXECUTOR):
@@ -29,21 +27,22 @@ class HoleValue(enum.Enum):
     GOT = enum.auto()
     # The current uop's oparg (exposed as _JIT_OPARG):
     OPARG = enum.auto()
-    # The current uop's operand on 64-bit platforms (exposed as _JIT_OPERAND):
-    OPERAND = enum.auto()
-    # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
-    OPERAND_HI = enum.auto()
-    OPERAND_LO = enum.auto()
+    # The current uop's operand0 on 64-bit platforms (exposed as _JIT_OPERAND0):
+    OPERAND0 = enum.auto()
+    # The current uop's operand0 on 32-bit platforms (exposed as _JIT_OPERAND0_HI/LO):
+    OPERAND0_HI = enum.auto()
+    OPERAND0_LO = enum.auto()
+    # The current uop's operand1 on 64-bit platforms (exposed as _JIT_OPERAND1):
+    OPERAND1 = enum.auto()
+    # The current uop's operand1 on 32-bit platforms (exposed as _JIT_OPERAND1_HI/LO):
+    OPERAND1_HI = enum.auto()
+    OPERAND1_LO = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
     TARGET = enum.auto()
     # The base address of the machine code for the jump target (exposed as _JIT_JUMP_TARGET):
     JUMP_TARGET = enum.auto()
     # The base address of the machine code for the error jump target (exposed as _JIT_ERROR_TARGET):
     ERROR_TARGET = enum.auto()
-    # The index of the exit to be jumped through (exposed as _JIT_EXIT_INDEX):
-    EXIT_INDEX = enum.auto()
-    # The base address of the machine code for the first uop (exposed as _JIT_TOP):
-    TOP = enum.auto()
     # A hardcoded value of zero (used for symbol lookups):
     ZERO = enum.auto()
 
@@ -59,9 +58,11 @@ _PATCH_FUNCS = {
     "ARM64_RELOC_PAGE21": "patch_aarch64_21r",
     "ARM64_RELOC_PAGEOFF12": "patch_aarch64_12",
     "ARM64_RELOC_UNSIGNED": "patch_64",
+    "CUSTOM_AARCH64_BRANCH19": "patch_aarch64_19r",
     # x86_64-pc-windows-msvc:
     "IMAGE_REL_AMD64_REL32": "patch_x86_64_32rx",
     # aarch64-pc-windows-msvc:
+    "IMAGE_REL_ARM64_BRANCH19": "patch_aarch64_19r",
     "IMAGE_REL_ARM64_BRANCH26": "patch_aarch64_26r",
     "IMAGE_REL_ARM64_PAGEBASE_REL21": "patch_aarch64_21rx",
     "IMAGE_REL_ARM64_PAGEOFFSET_12A": "patch_aarch64_12",
@@ -75,6 +76,7 @@ _PATCH_FUNCS = {
     "R_AARCH64_ADR_GOT_PAGE": "patch_aarch64_21rx",
     "R_AARCH64_ADR_PREL_PG_HI21": "patch_aarch64_21r",
     "R_AARCH64_CALL26": "patch_aarch64_26r",
+    "R_AARCH64_CONDBR19": "patch_aarch64_19r",
     "R_AARCH64_JUMP26": "patch_aarch64_26r",
     "R_AARCH64_LD64_GOT_LO12_NC": "patch_aarch64_12x",
     "R_AARCH64_MOVW_UABS_G0_NC": "patch_aarch64_16a",
@@ -83,9 +85,8 @@ _PATCH_FUNCS = {
     "R_AARCH64_MOVW_UABS_G3": "patch_aarch64_16d",
     # x86_64-unknown-linux-gnu:
     "R_X86_64_64": "patch_64",
-    "R_X86_64_GOTPCREL": "patch_32r",
     "R_X86_64_GOTPCRELX": "patch_x86_64_32rx",
-    "R_X86_64_PC32": "patch_32r",
+    "R_X86_64_PLT32": "patch_32r",
     "R_X86_64_REX_GOTPCRELX": "patch_x86_64_32rx",
     # x86_64-apple-darwin:
     "X86_64_RELOC_BRANCH": "patch_32r",
@@ -97,20 +98,20 @@ _PATCH_FUNCS = {
 # Translate HoleValues to C expressions:
 _HOLE_EXPRS = {
     HoleValue.CODE: "(uintptr_t)code",
-    HoleValue.CONTINUE: "(uintptr_t)code + sizeof(code_body)",
     HoleValue.DATA: "(uintptr_t)data",
     HoleValue.EXECUTOR: "(uintptr_t)executor",
     # These should all have been turned into DATA values by process_relocations:
     # HoleValue.GOT: "",
     HoleValue.OPARG: "instruction->oparg",
-    HoleValue.OPERAND: "instruction->operand",
-    HoleValue.OPERAND_HI: "(instruction->operand >> 32)",
-    HoleValue.OPERAND_LO: "(instruction->operand & UINT32_MAX)",
+    HoleValue.OPERAND0: "instruction->operand0",
+    HoleValue.OPERAND0_HI: "(instruction->operand0 >> 32)",
+    HoleValue.OPERAND0_LO: "(instruction->operand0 & UINT32_MAX)",
+    HoleValue.OPERAND1: "instruction->operand1",
+    HoleValue.OPERAND1_HI: "(instruction->operand1 >> 32)",
+    HoleValue.OPERAND1_LO: "(instruction->operand1 & UINT32_MAX)",
     HoleValue.TARGET: "instruction->target",
-    HoleValue.JUMP_TARGET: "instruction_starts[instruction->jump_target]",
-    HoleValue.ERROR_TARGET: "instruction_starts[instruction->error_target]",
-    HoleValue.EXIT_INDEX: "instruction->exit_index",
-    HoleValue.TOP: "instruction_starts[1]",
+    HoleValue.JUMP_TARGET: "state->instruction_starts[instruction->jump_target]",
+    HoleValue.ERROR_TARGET: "state->instruction_starts[instruction->error_target]",
     HoleValue.ZERO: "",
 }
 
@@ -131,6 +132,7 @@ class Hole:
     symbol: str | None
     # ...plus this addend:
     addend: int
+    need_state: bool = False
     func: str = dataclasses.field(init=False)
     # Convenience method:
     replace = dataclasses.replace
@@ -138,8 +140,18 @@ class Hole:
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
 
-    def fold(self, other: typing.Self) -> typing.Self | None:
+    def fold(self, other: typing.Self, body: bytearray) -> typing.Self | None:
         """Combine two holes into a single hole, if possible."""
+        instruction_a = int.from_bytes(
+            body[self.offset : self.offset + 4], byteorder=sys.byteorder
+        )
+        instruction_b = int.from_bytes(
+            body[other.offset : other.offset + 4], byteorder=sys.byteorder
+        )
+        reg_a = instruction_a & 0b11111
+        reg_b1 = instruction_b & 0b11111
+        reg_b2 = (instruction_b >> 5) & 0b11111
+
         if (
             self.offset + 4 == other.offset
             and self.value == other.value
@@ -147,6 +159,7 @@ class Hole:
             and self.addend == other.addend
             and self.func == "patch_aarch64_21rx"
             and other.func == "patch_aarch64_12x"
+            and reg_a == reg_b1 == reg_b2
         ):
             # These can *only* be properly relaxed when they appear together and
             # patch the same value:
@@ -163,10 +176,12 @@ class Hole:
             if value:
                 value += " + "
             value += f"(uintptr_t)&{self.symbol}"
-        if _signed(self.addend):
+        if _signed(self.addend) or not value:
             if value:
                 value += " + "
             value += f"{_signed(self.addend):#x}"
+        if self.need_state:
+            return f"{self.func}({location}, {value}, state);"
         return f"{self.func}({location}, {value});"
 
 
@@ -186,95 +201,9 @@ class Stencil:
         """Pad the stencil to the given alignment."""
         offset = len(self.body)
         padding = -offset % alignment
-        self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
+        if padding:
+            self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
-
-    def emit_aarch64_trampoline(self, hole: Hole) -> None:
-        """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
-        base = len(self.body)
-        where = slice(hole.offset, hole.offset + 4)
-        instruction = int.from_bytes(self.body[where], sys.byteorder)
-        instruction &= 0xFC000000
-        instruction |= ((base - hole.offset) >> 2) & 0x03FFFFFF
-        self.body[where] = instruction.to_bytes(4, sys.byteorder)
-        self.disassembly += [
-            f"{base + 4 * 0:x}: d2800008      mov     x8, #0x0",
-            f"{base + 4 * 0:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
-            f"{base + 4 * 1:x}: f2a00008      movk    x8, #0x0, lsl #16",
-            f"{base + 4 * 1:016x}:  R_AARCH64_MOVW_UABS_G1_NC    {hole.symbol}",
-            f"{base + 4 * 2:x}: f2c00008      movk    x8, #0x0, lsl #32",
-            f"{base + 4 * 2:016x}:  R_AARCH64_MOVW_UABS_G2_NC    {hole.symbol}",
-            f"{base + 4 * 3:x}: f2e00008      movk    x8, #0x0, lsl #48",
-            f"{base + 4 * 3:016x}:  R_AARCH64_MOVW_UABS_G3       {hole.symbol}",
-            f"{base + 4 * 4:x}: d61f0100      br      x8",
-        ]
-        for code in [
-            0xD2800008.to_bytes(4, sys.byteorder),
-            0xF2A00008.to_bytes(4, sys.byteorder),
-            0xF2C00008.to_bytes(4, sys.byteorder),
-            0xF2E00008.to_bytes(4, sys.byteorder),
-            0xD61F0100.to_bytes(4, sys.byteorder),
-        ]:
-            self.body.extend(code)
-        for i, kind in enumerate(
-            [
-                "R_AARCH64_MOVW_UABS_G0_NC",
-                "R_AARCH64_MOVW_UABS_G1_NC",
-                "R_AARCH64_MOVW_UABS_G2_NC",
-                "R_AARCH64_MOVW_UABS_G3",
-            ]
-        ):
-            self.holes.append(hole.replace(offset=base + 4 * i, kind=kind))
-
-    def remove_jump(self, *, alignment: int = 1) -> None:
-        """Remove a zero-length continuation jump, if it exists."""
-        hole = max(self.holes, key=lambda hole: hole.offset)
-        match hole:
-            case Hole(
-                offset=offset,
-                kind="IMAGE_REL_AMD64_REL32",
-                value=HoleValue.GOT,
-                symbol="_JIT_CONTINUE",
-                addend=-4,
-            ) as hole:
-                # jmp qword ptr [rip]
-                jump = b"\x48\xFF\x25\x00\x00\x00\x00"
-                offset -= 3
-            case Hole(
-                offset=offset,
-                kind="IMAGE_REL_I386_REL32" | "X86_64_RELOC_BRANCH",
-                value=HoleValue.CONTINUE,
-                symbol=None,
-                addend=-4,
-            ) as hole:
-                # jmp 5
-                jump = b"\xE9\x00\x00\x00\x00"
-                offset -= 1
-            case Hole(
-                offset=offset,
-                kind="R_AARCH64_JUMP26",
-                value=HoleValue.CONTINUE,
-                symbol=None,
-                addend=0,
-            ) as hole:
-                # b #4
-                jump = b"\x00\x00\x00\x14"
-            case Hole(
-                offset=offset,
-                kind="R_X86_64_GOTPCRELX",
-                value=HoleValue.GOT,
-                symbol="_JIT_CONTINUE",
-                addend=addend,
-            ) as hole:
-                assert _signed(addend) == -4
-                # jmp qword ptr [rip]
-                jump = b"\xFF\x25\x00\x00\x00\x00"
-                offset -= 2
-            case _:
-                return
-        if self.body[offset:] == jump and offset % alignment == 0:
-            self.body = self.body[:offset]
-            self.holes.remove(hole)
 
 
 @dataclasses.dataclass
@@ -291,20 +220,39 @@ class StencilGroup:
         default_factory=dict, init=False
     )
     _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
+    _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
 
-    def process_relocations(self, *, alignment: int = 1) -> None:
+    def convert_labels_to_relocations(self) -> None:
+        for name, hole_plus in self.symbols.items():
+            if isinstance(name, str) and "_JIT_RELOCATION_" in name:
+                _, offset = hole_plus
+                reloc, target = name.split("_JIT_RELOCATION_")
+                value, symbol = symbol_to_value(target)
+                hole = Hole(
+                    int(offset), typing.cast(_schema.HoleKind, reloc), value, symbol, 0
+                )
+                self.code.holes.append(hole)
+
+    def process_relocations(self, known_symbols: dict[str, int]) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
             if (
                 hole.kind
                 in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
                 and hole.value is HoleValue.ZERO
+                and hole.symbol not in self.symbols
             ):
-                self.code.pad(alignment)
-                self.code.emit_aarch64_trampoline(hole)
-                self.code.holes.remove(hole)
-        self.code.remove_jump(alignment=alignment)
-        self.code.pad(alignment)
+                hole.func = "patch_aarch64_trampoline"
+                hole.need_state = True
+                assert hole.symbol is not None
+                if hole.symbol in known_symbols:
+                    ordinal = known_symbols[hole.symbol]
+                else:
+                    ordinal = len(known_symbols)
+                    known_symbols[hole.symbol] = ordinal
+                self._trampolines.add(ordinal)
+                hole.addend = ordinal
+                hole.symbol = None
         self.data.pad(8)
         for stencil in [self.code, self.data]:
             for hole in stencil.holes:
@@ -357,9 +305,20 @@ class StencilGroup:
             )
             self.data.body.extend([0] * 8)
 
+    def _get_trampoline_mask(self) -> str:
+        bitmask: int = 0
+        trampoline_mask: list[str] = []
+        for ordinal in self._trampolines:
+            bitmask |= 1 << ordinal
+        while bitmask:
+            word = bitmask & ((1 << 32) - 1)
+            trampoline_mask.append(f"{word:#04x}")
+            bitmask >>= 32
+        return "{" + (", ".join(trampoline_mask) or "0") + "}"
+
     def as_c(self, opname: str) -> str:
         """Dump this hole as a StencilGroup initializer."""
-        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}}}"
+        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}, {self._get_trampoline_mask()}}}"
 
 
 def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:

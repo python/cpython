@@ -73,7 +73,7 @@ or sample.
 
 =======================  ===============================================================
 :func:`mean`             Arithmetic mean ("average") of data.
-:func:`fmean`            Fast, floating point arithmetic mean, with optional weighting.
+:func:`fmean`            Fast, floating-point arithmetic mean, with optional weighting.
 :func:`geometric_mean`   Geometric mean of data.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`kde`              Estimate the probability density distribution of the data.
@@ -484,6 +484,12 @@ However, for reading convenience, most of the examples show sorted sequences.
 
       >>> mode(["red", "blue", "blue", "red", "green", "red", "red"])
       'red'
+
+   Only hashable inputs are supported.  To handle type :class:`set`,
+   consider casting to :class:`frozenset`.  To handle type :class:`list`,
+   consider casting to :class:`tuple`.  For mixed or nested inputs, consider
+   using this slower quadratic algorithm that only depends on equality tests:
+   ``max(data, key=data.count)``.
 
    .. versionchanged:: 3.8
       Now handles multimodal datasets by returning the first mode encountered.

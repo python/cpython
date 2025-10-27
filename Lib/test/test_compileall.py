@@ -4,7 +4,6 @@ import filecmp
 import importlib.util
 import io
 import os
-import pathlib
 import py_compile
 import shutil
 import struct
@@ -19,7 +18,7 @@ try:
     # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
     # and it can function.
     from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
-    from concurrent.futures import ProcessPoolExecutor
+    from concurrent.futures import ProcessPoolExecutor  # noqa: F401
     from concurrent.futures.process import _check_system_limits
     _check_system_limits()
     _have_multiprocessing = True
@@ -31,6 +30,7 @@ from test.support import os_helper
 from test.support import script_helper
 from test.test_py_compile import without_source_date_epoch
 from test.test_py_compile import SourceDateEpochTestMeta
+from test.support.os_helper import FakePath
 
 
 def get_pyc(script, opt):
@@ -156,28 +156,28 @@ class CompileallTestsBase:
         self.assertFalse(os.path.isfile(self.bc_path))
         # we should also test the output
         with support.captured_stdout() as stdout:
-            self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path)))
+            self.assertTrue(compileall.compile_file(FakePath(self.source_path)))
         self.assertRegex(stdout.getvalue(), r'Compiling ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_ddir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                ddir=pathlib.Path('ddir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                ddir=FakePath('ddir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_stripdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                stripdir=pathlib.Path('stripdir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                stripdir=FakePath('stripdir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_file_pathlike_prependdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_file(pathlib.Path(self.source_path),
-                                                prependdir=pathlib.Path('prependdir_path'),
+        self.assertTrue(compileall.compile_file(FakePath(self.source_path),
+                                                prependdir=FakePath('prependdir_path'),
                                                 quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
@@ -228,22 +228,22 @@ class CompileallTestsBase:
     def test_compile_dir_pathlike(self):
         self.assertFalse(os.path.isfile(self.bc_path))
         with support.captured_stdout() as stdout:
-            compileall.compile_dir(pathlib.Path(self.directory))
+            compileall.compile_dir(FakePath(self.directory))
         line = stdout.getvalue().splitlines()[0]
         self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_dir_pathlike_stripdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_dir(pathlib.Path(self.directory),
-                                               stripdir=pathlib.Path('stripdir_path'),
+        self.assertTrue(compileall.compile_dir(FakePath(self.directory),
+                                               stripdir=FakePath('stripdir_path'),
                                                quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
     def test_compile_dir_pathlike_prependdir(self):
         self.assertFalse(os.path.isfile(self.bc_path))
-        self.assertTrue(compileall.compile_dir(pathlib.Path(self.directory),
-                                               prependdir=pathlib.Path('prependdir_path'),
+        self.assertTrue(compileall.compile_dir(FakePath(self.directory),
+                                               prependdir=FakePath('prependdir_path'),
                                                quiet=2))
         self.assertTrue(os.path.isfile(self.bc_path))
 
@@ -316,7 +316,7 @@ class CompileallTestsBase:
 
         self.assertTrue(mods)
         for mod in mods:
-            self.assertTrue(mod.startswith(self.directory), mod)
+            self.assertStartsWith(mod, self.directory)
             modcode = importlib.util.cache_from_source(mod)
             modpath = mod[len(self.directory+os.sep):]
             _, _, err = script_helper.assert_python_failure(modcode)
@@ -766,6 +766,7 @@ class CommandLineTestsBase:
         rc, out, err = self.assertRunNotOK('-q', '-d', 'dinsdale', self.pkgdir)
         self.assertRegex(out, b'File "dinsdale')
 
+    @support.force_not_colorized
     def test_d_runtime_error(self):
         bazfn = script_helper.make_script(self.pkgdir, 'baz', 'raise Exception')
         self.assertRunOK('-q', '-d', 'dinsdale', self.pkgdir)
