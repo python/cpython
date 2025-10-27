@@ -1,0 +1,1 @@
+Fix hang during finalization when attempting to call :mod:`atexit` handlers under no memory.

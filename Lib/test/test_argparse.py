@@ -2287,7 +2287,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
     """Test error handling and suggestion when a user makes a typo"""
 
     def test_wrong_argument_error_with_suggestions(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
@@ -2307,7 +2307,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_wrong_argument_subparsers_with_suggestions(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers(required=True)
         subparsers.add_parser('foo')
         subparsers.add_parser('bar')
@@ -2331,18 +2331,19 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             excinfo.exception.stderr,
         )
 
-    def test_wrong_argument_no_suggestion_implicit(self):
-        parser = ErrorRaisingArgumentParser()
+    def test_wrong_argument_with_suggestion_explicit(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "error: argument foo: invalid choice: 'bazz' (choose from bar, baz)",
+            "error: argument foo: invalid choice: 'bazz', maybe you meant"
+             " 'baz'? (choose from bar, baz)",
             excinfo.exception.stderr,
         )
 
     def test_suggestions_choices_empty(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
@@ -2352,7 +2353,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_suggestions_choices_int(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[1, 2])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
@@ -2362,7 +2363,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_suggestions_choices_mixed_types(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[1, '2'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))

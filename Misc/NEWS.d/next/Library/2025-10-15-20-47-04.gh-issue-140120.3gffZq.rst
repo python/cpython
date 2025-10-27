@@ -1,0 +1,2 @@
+Fixed a memory leak in :mod:`hmac` when it was using the hacl-star backend.
+Discovered by ``@ashm-dev`` using AddressSanitizer.
