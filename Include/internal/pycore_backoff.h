@@ -101,7 +101,7 @@ backoff_counter_triggers(_Py_BackoffCounter counter)
 // re-specialized:
 // Note: this should be a prime number-1. This increases the likelihood of
 // finding a "good" loop iteration to trace.
-// For example, 4095 does not work for the nqueens benchmark on pyperformanc
+// For example, 4095 does not work for the nqueens benchmark on pyperformance
 // as we always end up tracing the loop iteration's
 // exhaustion iteration. Which aborts our current tracer.
 #define JUMP_BACKWARD_INITIAL_VALUE 4000

@@ -1152,7 +1152,7 @@ func_dealloc(PyObject *self)
         return;
     }
 #if _Py_TIER2
-    _PyJit_Tracer_InvalidateDependency(PyThreadState_GET(), self);
+    _PyJit_Tracer_InvalidateDependency(_PyThreadState_GET(), self);
 #endif
     _PyObject_GC_UNTRACK(op);
     FT_CLEAR_WEAKREFS(self, op->func_weakreflist);
