@@ -127,7 +127,6 @@ PyObject *
 PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
 {
     PyByteArrayObject *new;
-    Py_ssize_t alloc;
 
     if (size < 0) {
         PyErr_SetString(PyExc_SystemError,
@@ -135,7 +134,7 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
         return NULL;
     }
 
-    /* Prevent buffer overflow when setting alloc to size+1. */
+    /* Prevent buffer overflow when setting alloc to size. */
     if (size == PY_SSIZE_T_MAX) {
         return PyErr_NoMemory();
     }
@@ -145,27 +144,18 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
         return NULL;
     }
 
-    if (size == 0) {
-        new->ob_bytes_object = NULL;
-        new->ob_bytes = NULL;
-        alloc = 0;
+    new->ob_bytes_object = PyBytes_FromStringAndSize(NULL, size);
+    if (new->ob_bytes_object == NULL) {
+        Py_DECREF(new);
+        return NULL;
     }
-    else {
-        alloc = size + 1;
-        new->ob_bytes_object = PyBytes_FromStringAndSize(NULL, alloc);
-        if (new->ob_bytes_object == NULL) {
-            Py_DECREF(new);
-            return NULL;
-        }
-        new->ob_bytes = PyBytes_AS_STRING(new->ob_bytes_object);
-        assert(new->ob_bytes);
-        if (bytes != NULL && size > 0) {
-            memcpy(new->ob_bytes, bytes, size);
-        }
-        new->ob_bytes[size] = '\0';  /* Trailing null byte */
+    new->ob_bytes = PyBytes_AS_STRING(new->ob_bytes_object);
+    assert(new->ob_bytes);
+    if (bytes != NULL && size > 0) {
+        memcpy(new->ob_bytes, bytes, size);
     }
     Py_SET_SIZE(new, size);
-    new->ob_alloc = alloc;
+    new->ob_alloc = size;
     new->ob_start = new->ob_bytes;
     new->ob_exports = 0;
 
@@ -218,21 +208,17 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         return -1;
     }
 
-    if (size + logical_offset + 1 <= alloc) {
+    if (size + logical_offset <= alloc) {
         /* Current buffer is large enough to host the requested size,
            decide on a strategy. */
         if (size < alloc / 2) {
             /* Major downsize; resize down to exact size */
-            alloc = size + 1;
-
-            /* If new size is 0; don't need to allocate one byte for null. */
-            if (size == 0) {
-                alloc = 0;
-            }
+            alloc = size;
         }
         else {
             /* Minor downsize; quick exit */
             Py_SET_SIZE(self, size);
+            /* Add mid-buffer null; end provided by bytes. */
             PyByteArray_AS_STRING(self)[size] = '\0'; /* Trailing null */
             return 0;
         }
@@ -245,10 +231,11 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         }
         else {
             /* Major upsize; resize up to exact size. Upsize always means size > 0 */
-            alloc = size + 1;
+            alloc = size;
         }
     }
-    if (alloc > PY_SSIZE_T_MAX) {
+    // NOTE: offsetof() logic copied from PyBytesObject_SIZE in bytesobject.c
+    if (alloc > PY_SSIZE_T_MAX - (offsetof(PyBytesObject, ob_sval) + 1)) {
         PyErr_NoMemory();
         return -1;
     }
@@ -277,7 +264,10 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
     obj->ob_bytes = obj->ob_start = PyBytes_AS_STRING(obj->ob_bytes_object);
     Py_SET_SIZE(self, size);
     FT_ATOMIC_STORE_SSIZE_RELAXED(obj->ob_alloc, alloc);
-    obj->ob_bytes[size] = '\0'; /* Trailing null byte */
+    if (alloc != size) {
+        /* Add mid-buffer null; end provided by bytes. */
+        obj->ob_bytes[size] = '\0';
+    }
 
     return 0;
 }
@@ -1550,15 +1540,11 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     }
 
     // Copy remaining bytes to a new bytes.
-    PyObject *remaining = NULL;
     Py_ssize_t remaining_length = size - to_take;
-    if (remaining_length > 0) {
-        // +1 to copy across the null which always ends a bytearray.
-        remaining = PyBytes_FromStringAndSize(self->ob_start + to_take,
-                                              remaining_length + 1);
-        if (remaining == NULL) {
-            return NULL;
-        }
+    PyObject *remaining = PyBytes_FromStringAndSize(self->ob_start + to_take,
+                                                    remaining_length);
+    if (remaining == NULL) {
+        return NULL;
     }
 
     // If the bytes are offset inside the buffer must first align.
@@ -1575,17 +1561,9 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     // Point the bytearray towards the buffer with the remaining data.
     PyObject *result = self->ob_bytes_object;
     self->ob_bytes_object = remaining;
-    if (remaining) {
-        self->ob_bytes = self->ob_start = PyBytes_AS_STRING(self->ob_bytes_object);
-        Py_SET_SIZE(self, size - to_take);
-        FT_ATOMIC_STORE_SSIZE_RELAXED(self->ob_alloc, size - to_take + 1);
-    }
-    else {
-        self->ob_bytes = self->ob_start = NULL;
-        Py_SET_SIZE(self, 0);
-        FT_ATOMIC_STORE_SSIZE_RELAXED(self->ob_alloc, 0);
-    }
-
+    self->ob_bytes = self->ob_start = PyBytes_AS_STRING(self->ob_bytes_object);
+    Py_SET_SIZE(self, remaining_length);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(self->ob_alloc, remaining_length);
     return result;
 }
 
@@ -1967,11 +1945,6 @@ bytearray_insert_impl(PyByteArrayObject *self, Py_ssize_t index, int item)
     Py_ssize_t n = Py_SIZE(self);
     char *buf;
 
-    if (n == PY_SSIZE_T_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "cannot add more objects to bytearray");
-        return NULL;
-    }
     if (bytearray_resize_lock_held((PyObject *)self, n + 1) < 0)
         return NULL;
     buf = PyByteArray_AS_STRING(self);
@@ -2086,11 +2059,6 @@ bytearray_append_impl(PyByteArrayObject *self, int item)
 {
     Py_ssize_t n = Py_SIZE(self);
 
-    if (n == PY_SSIZE_T_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "cannot add more objects to bytearray");
-        return NULL;
-    }
     if (bytearray_resize_lock_held((PyObject *)self, n + 1) < 0)
         return NULL;
 
