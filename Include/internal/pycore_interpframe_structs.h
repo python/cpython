@@ -24,7 +24,7 @@ enum _frameowner {
     FRAME_OWNED_BY_GENERATOR = 1,
     FRAME_OWNED_BY_FRAME_OBJECT = 2,
     FRAME_OWNED_BY_INTERPRETER = 3,
-    FRAME_OWNED_BY_CSTACK = 4,
+    FRAME_OWNED_BY_CSTACK = 4,  // XXX: Unused.
 };
 
 struct _PyInterpreterFrame {
