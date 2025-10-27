@@ -362,16 +362,24 @@ _enter_buffered_busy(buffered *self)
     }
 
 #define IS_CLOSED(self) \
-    (!self->buffer || \
+    (!self->buffer ? !self->buffer : \
     (self->fast_closed_checks \
      ? _PyFileIO_closed(self->raw) \
      : buffered_closed(self)))
 
 #define CHECK_CLOSED(self, error_msg) \
-    if (IS_CLOSED(self) && (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) { \
-        PyErr_SetString(PyExc_ValueError, error_msg); \
-        return NULL; \
-    } \
+    do { \
+        int _closed = IS_CLOSED(self); \
+        if (_closed < 0) { \
+            return NULL; \
+        } \
+        if (_closed && \
+            (Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t) == 0)) \
+        { \
+            PyErr_SetString(PyExc_ValueError, error_msg); \
+            return NULL; \
+        } \
+    } while (0);
 
 #define VALID_READ_BUFFER(self) \
     (self->readable && self->read_end != -1)
@@ -555,9 +563,11 @@ _io__Buffered_close_impl(buffered *self)
     }
     /* gh-138720: Use IS_CLOSED to match flush CHECK_CLOSED. */
     r = IS_CLOSED(self);
+    if (r < 0) {
+        goto end;
+    }
     if (r > 0) {
-        if (!PyErr_Occurred())
-            res = Py_NewRef(Py_None);
+        res = Py_None;
         goto end;
     }
 
@@ -2078,6 +2088,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     PyObject *res = NULL;
     Py_ssize_t written, avail, remaining;
     Py_off_t offset;
+    int r;
 
     CHECK_INITIALIZED(self)
 
@@ -2086,7 +2097,11 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
 
     /* Issue #31976: Check for closed file after acquiring the lock. Another
        thread could be holding the lock while closing the file. */
-    if (IS_CLOSED(self)) {
+    r = IS_CLOSED(self);
+    if (r < 0) {
+        goto error;
+    }
+    if (r > 0) {
         PyErr_SetString(PyExc_ValueError, "write to closed file");
         goto error;
     }
