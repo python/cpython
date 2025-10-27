@@ -695,8 +695,13 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #  define Py_NotImplemented (&_Py_NotImplementedStruct)
 #endif
 
-/* Macro for returning Py_NotImplemented from a function */
-#define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
+/* Macro for returning Py_NotImplemented from a function. Only treat
+ * Py_NotImplemented as immortal in the limited C API 3.12 and newer. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#  define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
+#else
+#  define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
+#endif
 
 /* Rich comparison opcodes */
 #define Py_LT 0
