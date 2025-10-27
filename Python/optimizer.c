@@ -1352,7 +1352,6 @@ uop_optimize(
     assert(length <= UOP_MAX_TRACE_LENGTH);
 
     // Check executor coldness
-    PyThreadState *tstate = PyThreadState_Get();
     // It's okay if this ends up going negative.
     if (--tstate->interp->executor_creation_counter == 0) {
         _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
