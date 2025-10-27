@@ -779,6 +779,7 @@ dummy_func(void) {
             ctx->done = true;
             break;
         }
+        _Py_BloomFilter_Add(dependencies, returning_code);
         int returning_stacklevel = this_instr->operand1;
         if (frame_pop(ctx, returning_code, returning_stacklevel)) {
             break;
@@ -797,6 +798,7 @@ dummy_func(void) {
             ctx->done = true;
             break;
         }
+        _Py_BloomFilter_Add(dependencies, returning_code);
         int returning_stacklevel = this_instr->operand1;
         if (frame_pop(ctx, returning_code, returning_stacklevel)) {
             break;
@@ -815,6 +817,7 @@ dummy_func(void) {
             ctx->done = true;
             break;
         }
+        _Py_BloomFilter_Add(dependencies, returning_code);
         int returning_stacklevel = this_instr->operand1;
         if (frame_pop(ctx, returning_code, returning_stacklevel)) {
             break;
@@ -871,6 +874,7 @@ dummy_func(void) {
         }
         PyFunctionObject *func = (PyFunctionObject *)operand;
         PyCodeObject *co = (PyCodeObject *)func->func_code;
+        _Py_BloomFilter_Add(dependencies, co);
         assert(PyFunction_Check(func));
         ctx->frame->func = func;
     }
