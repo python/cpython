@@ -1903,7 +1903,7 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         // insert_combined_dict() will convert from non DICT_KEYS_GENERAL table
         // into DICT_KEYS_GENERAL table if key is not Unicode.
         // We don't convert it before _Py_dict_lookup because non-Unicode key
-        // may change generic table into Unicode/split table.
+        // may change generic table into Unicode table.
         if (insert_combined_dict(interp, mp, hash, key, value) < 0) {
             goto Fail;
         }
@@ -4440,6 +4440,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
     if (ix == DKIX_EMPTY) {
         value = default_value;
 
+        // See comment to this function in insertdict.
         if (insert_combined_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value)) < 0) {
             Py_DECREF(key);
             Py_DECREF(value);
