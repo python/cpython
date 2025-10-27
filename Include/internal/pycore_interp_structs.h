@@ -968,7 +968,7 @@ struct _is {
     struct {
         _PyRWMutex lock;
         Py_ssize_t countdown;
-    } finalization_locks;
+    } finalization_guards;
 
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;

@@ -3147,19 +3147,19 @@ Py_ssize_t
 _PyInterpreterState_LockCountdown(PyInterpreterState *interp)
 {
     assert(interp != NULL);
-    return _Py_atomic_load_ssize_relaxed(&interp->finalization_locks.countdown);
+    return _Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown);
 }
 
 static PyInterpreterGuard
 try_acquire_interp_guard(PyInterpreterState *interp)
 {
-    _PyRWMutex_RLock(&interp->finalization_locks.lock);
+    _PyRWMutex_RLock(&interp->finalization_guards.lock);
     if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
-        _PyRWMutex_RUnlock(&interp->finalization_locks.lock);
+        _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
         return (PyInterpreterGuard)interp;
     }
-    _Py_atomic_add_ssize(&interp->finalization_locks.countdown, 1);
-    _PyRWMutex_RUnlock(&interp->finalization_locks.lock);
+    _Py_atomic_add_ssize(&interp->finalization_guards.countdown, 1);
+    _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
     return (PyInterpreterGuard)interp;
 }
 
@@ -3204,9 +3204,9 @@ PyInterpreterGuard_Release(PyInterpreterGuard guard)
 {
     PyInterpreterState *interp = guard_as_interp(guard);
     assert(interp != NULL);
-    _PyRWMutex_RLock(&interp->finalization_locks.lock);
-    Py_ssize_t old = _Py_atomic_add_ssize(&interp->finalization_locks.countdown, -1);
-    _PyRWMutex_RUnlock(&interp->finalization_locks.lock);
+    _PyRWMutex_RLock(&interp->finalization_guards.lock);
+    Py_ssize_t old = _Py_atomic_add_ssize(&interp->finalization_guards.countdown, -1);
+    _PyRWMutex_RUnlock(&interp->finalization_guards.lock);
     if (old <= 0) {
         Py_FatalError("interpreter has negative guard count, likely due"
                       " to an extra PyInterpreterGuard_Release() call");
