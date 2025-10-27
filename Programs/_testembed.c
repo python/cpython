@@ -2319,7 +2319,7 @@ const char *THREAD_CODE = \
     "fib(10)";
 
 typedef struct {
-    PyInterpreterLock lock;
+    PyInterpreterGuard guard;
     int done;
 } ThreadData;
 
@@ -2328,11 +2328,11 @@ do_tstate_ensure(void *arg)
 {
     ThreadData *data = (ThreadData *)arg;
     PyThreadView refs[4];
-    refs[0] = PyThreadState_Ensure(data->lock);
-    refs[1] = PyThreadState_Ensure(data->lock);
-    refs[2] = PyThreadState_Ensure(data->lock);
+    refs[0] = PyThreadState_Ensure(data->guard);
+    refs[1] = PyThreadState_Ensure(data->guard);
+    refs[2] = PyThreadState_Ensure(data->guard);
     PyGILState_STATE gstate = PyGILState_Ensure();
-    refs[3] = PyThreadState_Ensure(data->lock);
+    refs[3] = PyThreadState_Ensure(data->guard);
     assert(refs[0] != 0);
     assert(refs[1] != 0);
     assert(refs[2] != 0);
@@ -2344,7 +2344,7 @@ do_tstate_ensure(void *arg)
     PyThreadState_Release(refs[2]);
     PyThreadState_Release(refs[1]);
     PyThreadState_Release(refs[0]);
-    PyInterpreterLock_Release(data->lock);
+    PyInterpreterGuard_Release(data->guard);
     data->done = 1;
 }
 
@@ -2354,17 +2354,17 @@ test_thread_state_ensure(void)
     _testembed_initialize();
     PyThread_handle_t handle;
     PyThread_ident_t ident;
-    PyInterpreterLock ref = PyInterpreterLock_FromCurrent();
-    if (ref == 0) {
+    PyInterpreterGuard guard = PyInterpreterGuard_FromCurrent();
+    if (guard == 0) {
         return -1;
     };
-    ThreadData data = { ref };
+    ThreadData data = { guard };
     if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
                                        &ident, &handle) < 0) {
-        PyInterpreterLock_Release(ref);
+        PyInterpreterGuard_Release(guard);
         return -1;
     }
-    // We hold a strong interpreter reference, so we don't
+    // We hold an interpreter guard, so we don't
     // have to worry about the interpreter shutting down before
     // we finalize.
     Py_Finalize();
@@ -2381,15 +2381,15 @@ test_main_interpreter_view(void)
     PyInterpreterView view = PyUnstable_InterpreterView_FromDefault();
     assert(view != 0);
 
-    PyInterpreterLock lock = PyInterpreterLock_FromView(view);
-    assert(lock != 0);
-    PyInterpreterLock_Release(lock);
+    PyInterpreterGuard guard = PyInterpreterGuard_FromView(view);
+    assert(guard != 0);
+    PyInterpreterGuard_Release(guard);
 
     Py_Finalize();
 
     // We shouldn't be able to get locks for the interpreter now
-    lock = PyInterpreterLock_FromView(view);
-    assert(lock == 0);
+    guard = PyInterpreterGuard_FromView(view);
+    assert(guard == 0);
 
     PyInterpreterView_Close(view);
 

@@ -2418,23 +2418,23 @@ set_vectorcall_nop(PyObject *self, PyObject *func)
     Py_RETURN_NONE;
 }
 
-#define NUM_LOCKS 100
+#define NUM_GUARDS 100
 
 static PyObject *
-test_interp_lock_countdown(PyObject *self, PyObject *unused)
+test_interp_guard_countdown(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     assert(_PyInterpreterState_LockCountdown(interp) == 0);
-    PyInterpreterLock locks[NUM_LOCKS];
-    for (int i = 0; i < NUM_LOCKS; ++i) {
-        locks[i] = PyInterpreterLock_FromCurrent();
-        assert(locks[i] != 0);
+    PyInterpreterGuard guards[NUM_GUARDS];
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        guards[i] = PyInterpreterGuard_FromCurrent();
+        assert(guards[i] != 0);
         assert(_PyInterpreterState_LockCountdown(interp) == i + 1);
     }
 
-    for (int i = 0; i < NUM_LOCKS; ++i) {
-        PyInterpreterLock_Release(locks[i]);
-        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_LOCKS - i - 1));
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        PyInterpreterGuard_Release(guards[i]);
+        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_GUARDS - i - 1));
     }
 
     Py_RETURN_NONE;
@@ -2450,18 +2450,18 @@ test_interp_view_countdown(PyObject *self, PyObject *unused)
     }
     assert(_PyInterpreterState_LockCountdown(interp) == 0);
 
-    PyInterpreterLock locks[NUM_LOCKS];
+    PyInterpreterGuard guards[NUM_GUARDS];
 
-    for (int i = 0; i < NUM_LOCKS; ++i) {
-        locks[i] = PyInterpreterLock_FromView(view);
-        assert(locks[i] != 0);
-        assert(PyInterpreterLock_GetInterpreter(locks[i]) == interp);
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        guards[i] = PyInterpreterGuard_FromView(view);
+        assert(guards[i] != 0);
+        assert(PyInterpreterGuard_GetInterpreter(guards[i]) == interp);
         assert(_PyInterpreterState_LockCountdown(interp) == i + 1);
     }
 
-    for (int i = 0; i < NUM_LOCKS; ++i) {
-        PyInterpreterLock_Release(locks[i]);
-        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_LOCKS - i - 1));
+    for (int i = 0; i < NUM_GUARDS; ++i) {
+        PyInterpreterGuard_Release(guards[i]);
+        assert(_PyInterpreterState_LockCountdown(interp) == (NUM_GUARDS - i - 1));
     }
 
     PyInterpreterView_Close(view);
@@ -2579,7 +2579,7 @@ static PyMethodDef module_functions[] = {
 #endif
     {"simple_pending_call", simple_pending_call, METH_O},
     {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
-    {"test_interp_lock_countdown", test_interp_lock_countdown, METH_NOARGS},
+    {"test_interp_guard_countdown", test_interp_guard_countdown, METH_NOARGS},
     {"test_interp_view_countdown", test_interp_view_countdown, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
