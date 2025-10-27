@@ -2972,8 +2972,10 @@ dummy_func(
                         oparg >>= 8;
                         insert_exec_at--;
                     }
-                    _PyJit_InitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg);
-                    ENTER_TRACING();
+                    int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg);
+                    if (succ) {
+                        ENTER_TRACING();
+                    }
                 }
             }
             else {
@@ -3019,6 +3021,15 @@ dummy_func(
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
+            // We want to end any current trace here, before we possibly need
+            // to start tracing new ones due to recursive traces in any inner C functions
+            // in tier2 code.
+            if (IS_JIT_TRACING()) {
+                _PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
+                LEAVE_TRACING();
+                int err = bail_tracing_and_jit(tstate, frame);
+                ERROR_IF(err < 0);
+            }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
@@ -5428,9 +5439,12 @@ dummy_func(
                 // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.
-                _PyJit_InitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg);
                 exit->temperature = initial_temperature_backoff_counter();
-                GOTO_TIER_ONE_CONTINUE_TRACING(target);
+                if (succ) {
+                    GOTO_TIER_ONE_CONTINUE_TRACING(target);
+                }
+                GOTO_TIER_ONE(target);
             }
             assert(tstate->jit_exit == exit);
             exit->executor = executor;
@@ -5636,7 +5650,9 @@ dummy_func(
             }
             tstate->interp->jit_state.specialize_counter = 0;
             PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
-            Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
+            if (tstate->interp->jit_state.prev_instr_code != prev_code) {
+                Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
+            }
 
             tstate->interp->jit_state.prev_instr_frame = frame;
             tstate->interp->jit_state.prev_instr_oparg = oparg;

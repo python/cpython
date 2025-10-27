@@ -361,8 +361,8 @@ extern void _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
 
 int _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr);
 
-void
-_PyJit_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
+int
+_PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr,
     _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit, int oparg);
 

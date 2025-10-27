@@ -619,6 +619,11 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (opcode == ENTER_EXECUTOR) {
+        int is_first_instr = tstate->interp->jit_state.close_loop_instr == next_instr || tstate->interp->jit_state.insert_exec_instr == next_instr;
+        if (is_first_instr && tstate->interp->jit_state.code_curr_size > 5) {
+            ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
+            goto done;
+        }
         goto full;
     }
 
@@ -925,9 +930,15 @@ full:
     return 0;
 }
 
-void
-_PyJit_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit, int oparg)
+// Returns 0 for do not enter tracing, 1 on enter tracing.
+int
+_PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit, int oparg)
 {
+    // A recursive trace.
+    // Don't trace into the inner call because it will stomp on the previous trace, causing endless retraces.
+    if (tstate->interp->jit_state.code_curr_size > 2) {
+        return 0;
+    }
     PyCodeObject *code = _PyFrame_GetCode(frame);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -965,6 +976,7 @@ _PyJit_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     tstate->interp->jit_state.dynamic_jump_taken = false;
     tstate->interp->jit_state.prev_instr_is_super = false;
     _Py_BloomFilter_Init(&tstate->interp->jit_state.dependencies);
+    return 1;
 }
 
 void

@@ -5491,6 +5491,19 @@
             INSTRUCTION_STATS(ENTER_EXECUTOR);
             opcode = ENTER_EXECUTOR;
             #ifdef _Py_TIER2
+
+            if (IS_JIT_TRACING()) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                LEAVE_TRACING();
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = bail_tracing_and_jit(tstate, frame);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+            }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
@@ -7690,8 +7703,10 @@
                             oparg >>= 8;
                             insert_exec_at--;
                         }
-                        _PyJit_InitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg);
-                        ENTER_TRACING();
+                        int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg);
+                        if (succ) {
+                            ENTER_TRACING();
+                        }
                     }
                 }
                 else {
@@ -12342,9 +12357,11 @@ JUMP_TO_LABEL(error);
             }
             tstate->interp->jit_state.specialize_counter = 0;
             PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (tstate->interp->jit_state.prev_instr_code != prev_code) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             tstate->interp->jit_state.prev_instr_frame = frame;
             tstate->interp->jit_state.prev_instr_oparg = oparg;
             tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();
