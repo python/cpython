@@ -603,7 +603,7 @@ class IOTest:
 
         with self.assertRaises(ValueError) as cm:
             Misbehaved(2).read(1)
-        self.assertEqual(str(cm.exception), "readinto returned '2' outside buffer size '1'")
+        self.assertEqual(str(cm.exception), "readinto returned 2 outside buffer size 1")
         for bad_size in (2147483647, sys.maxsize, -1, -1000):
             with self.assertRaises(ValueError):
                 Misbehaved(bad_size).read()

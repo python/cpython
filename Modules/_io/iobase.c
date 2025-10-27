@@ -948,7 +948,7 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
     if (bytes_filled < 0 || bytes_filled > n) {
         Py_DECREF(b);
         PyErr_Format(PyExc_ValueError,
-                     "readinto returned '%zd' outside buffer size '%zd'",
+                     "readinto returned %zd outside buffer size %zd",
                      bytes_filled, n);
         return NULL;
     }
