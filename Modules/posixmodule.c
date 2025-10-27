@@ -8724,7 +8724,7 @@ os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
 static PyObject *
 os_sched_param_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
-    return Py_BuildValue("(O(N))", Py_TYPE(self), PyStructSequence_GetItem(self, 0));
+    return Py_BuildValue("(O(O))", Py_TYPE(self), PyStructSequence_GetItem(self, 0));
 }
 
 static PyMethodDef os_sched_param_reduce_method = {
