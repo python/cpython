@@ -1000,6 +1000,12 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
                              PyObject **interactive_src, PyArena *arena)
 {
     struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
+    if (filename_ob && PyUnicode_Check(filename_ob)) {
+        const char *filename_str = PyUnicode_AsUTF8(filename_ob);
+        if (filename_str && strcmp(filename_str + strlen(filename_str) - 4, ".pyx") == 0) {
+            tok->pyx_mode = 1;
+        }
+    }
     if (tok == NULL) {
         if (PyErr_Occurred()) {
             _PyPegen_raise_tokenizer_init_error(filename_ob);

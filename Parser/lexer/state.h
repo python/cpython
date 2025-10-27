@@ -11,6 +11,7 @@
 #define INSIDE_FSTRING_EXPR(tok) (tok->curly_bracket_expr_start_depth >= 0)
 #define INSIDE_FSTRING_EXPR_AT_TOP(tok) \
     (tok->curly_bracket_depth - tok->curly_bracket_expr_start_depth == 1)
+#define INSIDE_PYX_BLOCK(tok) (tok->pyx_mode && tok->pyx_block_depth > 0)
 
 enum decoding_state {
     STATE_INIT,
@@ -133,6 +134,8 @@ struct tok_state {
     int tok_extra_tokens;
     int comment_newline;
     int implicit_newline;
+    int pyx_mode;
+    int pyx_block_depth;
 #ifdef Py_DEBUG
     int debug;
 #endif

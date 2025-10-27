@@ -519,6 +519,12 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         int cont_line_col = 0;
         for (;;) {
             c = tok_nextc(tok);
+
+            if(INSIDE_PYX_BLOCK(tok) && c == '}'){
+                 tok->pyx_block_depth--;
+                 continue;
+            }
+
             if (c == ' ') {
                 col++, altcol++;
             }
@@ -1292,6 +1298,14 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             return MAKE_TOKEN(current_token);
         }
         tok_backup(tok, c2);
+    }
+
+    /* Handle .pyx mode conversions before normal processing */
+    if (tok->pyx_mode) {
+        if (!INSIDE_FSTRING(tok) && c == '{') {
+            tok->pyx_block_depth++;
+            return MAKE_TOKEN(COLON);
+        }
     }
 
     /* Keep track of parentheses nesting level */
