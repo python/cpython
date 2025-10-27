@@ -1,2 +1,0 @@
-Fix race condition in :class:`pathlib.Path` on the internal ``_raw_paths``
-field.

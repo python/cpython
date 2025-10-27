@@ -135,14 +135,14 @@ set_error_from_code(pysqlite_state *state, int code)
 /**
  * Checks the SQLite error code and sets the appropriate DB-API exception.
  */
-void
+int
 set_error_from_db(pysqlite_state *state, sqlite3 *db)
 {
     int errorcode = sqlite3_errcode(db);
     PyObject *exc_class = get_exception_class(state, errorcode);
     if (exc_class == NULL) {
         // No new exception need be raised.
-        return;
+        return SQLITE_OK;
     }
 
     /* Create and set the exception. */
@@ -150,6 +150,7 @@ set_error_from_db(pysqlite_state *state, sqlite3 *db)
     // sqlite3_errmsg() always returns an UTF-8 encoded message
     const char *errmsg = sqlite3_errmsg(db);
     raise_exception(exc_class, extended_errcode, errmsg);
+    return errorcode;
 }
 
 #ifdef WORDS_BIGENDIAN

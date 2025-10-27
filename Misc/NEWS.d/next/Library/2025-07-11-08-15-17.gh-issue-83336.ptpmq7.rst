@@ -1,1 +1,0 @@
-``utf8_sig`` is now aliased to :mod:`encodings.utf_8_sig`

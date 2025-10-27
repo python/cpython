@@ -27,9 +27,7 @@ Doc/library/os.rst
 Doc/library/pickletools.rst
 Doc/library/profile.rst
 Doc/library/pyexpat.rst
-Doc/library/resource.rst
 Doc/library/select.rst
-Doc/library/smtplib.rst
 Doc/library/socket.rst
 Doc/library/ssl.rst
 Doc/library/stdtypes.rst

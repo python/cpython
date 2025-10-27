@@ -1,3 +1,0 @@
-Add back :class:`collections.abc.ByteString` and :class:`typing.ByteString`.
-Both had been removed in prior alpha, beta and release candidates for Python
-3.14, but their removal has now been postponed to Python 3.17.

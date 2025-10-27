@@ -1,5 +1,0 @@
-Support non-UTF-8 shebang and comments in Python source files if non-UTF-8
-encoding is specified. Detect decoding error in comments for default (UTF-8)
-encoding. Show the line and position of decoding error for default encoding
-in a traceback. Show the line containing the coding cookie when it conflicts
-with the BOM in a traceback.

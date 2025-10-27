@@ -436,7 +436,7 @@ _queueitem_clear_data(_queueitem *item)
         return;
     }
     // It was allocated in queue_put().
-    (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
+    (void)_release_xid_data(item->data, XID_IGNORE_EXC | XID_FREE);
     item->data = NULL;
 }
 

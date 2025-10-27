@@ -1071,7 +1071,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
                 else {
                     PyErr_Format(PyExc_TypeError,
-                        "Field '%U' is missing from %T._field_types",
+                        "Field %R is missing from %T._field_types",
                         name, self);
                     goto set_remaining_cleanup;
                 }
