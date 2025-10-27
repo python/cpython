@@ -2809,6 +2809,33 @@ class LazyImportTests(unittest.TestCase):
         self.assertEqual(type(g["x"]), int)
         self.assertEqual(type(g["b"]), types.LazyImportType)
 
+    def test_dunder_lazy_import(self):
+        try:
+            import test.test_import.data.lazy_imports.dunder_lazy_import
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_dunder_lazy_import_used(self):
+        try:
+            import test.test_import.data.lazy_imports.dunder_lazy_import_used
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_dunder_lazy_import_builtins(self):
+        """__lazy_import__ uses modules __builtins__ to get __import__"""
+        try:
+            from test.test_import.data.lazy_imports import dunder_lazy_import_builtins
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+        self.assertEqual(dunder_lazy_import_builtins.basic, 42)
+
+
 class TestSinglePhaseSnapshot(ModuleSnapshot):
     """A representation of a single-phase init module for testing.
 
