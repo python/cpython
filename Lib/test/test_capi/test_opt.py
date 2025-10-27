@@ -2648,6 +2648,19 @@ class TestUopsOptimization(unittest.TestCase):
 
         f()
 
+    def test_next_instr_for_exception_handler_set_lasts_instr(self):
+        # gh-140104: We just want the exception to be caught properly.
+        def f():
+            a_list = []
+            for _ in range(TIER2_THRESHOLD + 3):
+                try:
+                    a_list[""] = 0
+                except Exception:
+                    pass
+
+        f()
+
+
 
 def global_identity(x):
     return x
