@@ -105,7 +105,7 @@ backoff_counter_triggers(_Py_BackoffCounter counter)
 // as we always end up tracing the loop iteration's
 // exhaustion iteration. Which aborts our current tracer.
 #define JUMP_BACKWARD_INITIAL_VALUE 4000
-#define JUMP_BACKWARD_INITIAL_BACKOFF 14
+#define JUMP_BACKWARD_INITIAL_BACKOFF 12
 static inline _Py_BackoffCounter
 initial_jump_backoff_counter(void)
 {
