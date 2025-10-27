@@ -113,7 +113,7 @@ PyCode_ClearWatcher(int watcher_id)
 
 #define _PyCodeObject_CAST(op)  (assert(PyCode_Check(op)), (PyCodeObject *)(op))
 
-static int
+static inline int
 should_intern_string(PyObject *o)
 {
 #ifdef Py_GIL_DISABLED
@@ -196,6 +196,22 @@ intern_strings(PyObject *tuple)
     return 0;
 }
 
+static inline PyObject*
+get_interned_string(PyObject *interned_dict, PyObject *s) {
+    if (!PyUnicode_CheckExact(s)) {
+        return NULL;
+    }
+
+    PyObject *existing = PyDict_GetItemWithError(interned_dict, s);
+    if (existing == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        return NULL;
+    }
+    return existing;
+}
+
 /* Intern constants. In the default build, this interns selected string
    constants. In the free-threaded build, this also interns non-string
    constants. */
@@ -203,10 +219,22 @@ static int
 intern_constants(PyObject *tuple, int *modified)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *interned_dict = _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
-        if (PyUnicode_CheckExact(v)) {
-            if (should_intern_string(v)) {
+        if (PyUnicode_CheckExact(v) && PyUnicode_GET_LENGTH(v) > 1) {
+            if (PyUnicode_CHECK_INTERNED(v) != 0) {
+                continue;
+            }
+            PyObject *interned = get_interned_string(interned_dict, v);
+            if (interned != NULL && interned != v) {
+                Py_INCREF(interned);
+                PyTuple_SET_ITEM(tuple, i, interned);
+                Py_DECREF(v);
+                if (modified) {
+                    *modified = 1;
+                }
+            } else if (should_intern_string(v)) {
                 PyObject *w = v;
                 _PyUnicode_InternMortal(interp, &v);
                 if (w != v) {
