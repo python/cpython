@@ -689,7 +689,7 @@ class TestPyReplAutoindent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
-    def test_auto_indent_hashtag(self):
+    def test_dont_indent_hashtag(self):
         # fmt: off
         events = code_to_events(
             "if ' ' == '#':\n"
@@ -707,7 +707,7 @@ class TestPyReplAutoindent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
-    def test_auto_indent_multiline_string(self):
+    def test_dont_indent_in_multiline_string(self):
         # fmt: off
         events = code_to_events(
             "s = '''\n"
@@ -719,6 +719,26 @@ class TestPyReplAutoindent(TestCase):
             "s = '''\n"
             "Note:\n"
             "'''"
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
+    def test_dont_indent_already_indented(self):
+        # fmt: off
+        events = code_to_events(
+            "def f():\n"
+            "# foo\n"
+            "pass\n\n"
+        )
+
+        output_code = (
+            "def f():\n"
+            "    # foo\n"
+            "    pass\n"
+            "    "
         )
         # fmt: on
 
