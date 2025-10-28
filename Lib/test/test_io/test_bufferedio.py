@@ -969,6 +969,7 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest, CTestCase):
 
         bufio = self.tp(MockRawIOWithoutClosed())
         self.assertRaises(TypeError, bufio.write, b"")
+        self.assertRaises(TypeError, bufio.flush)
         self.assertRaises(TypeError, bufio.close)
 
 
