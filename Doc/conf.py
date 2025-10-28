@@ -359,7 +359,7 @@ latex_elements = {
     'papersize': 'a4paper',
     # The font size ('10pt', '11pt' or '12pt').
     'pointsize': '10pt',
-    'maxlistdepth': 7,
+    'maxlistdepth': 7,  # for layers in reference/executionmodel.rst#Python Runtime Model, see #gh-139588
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
