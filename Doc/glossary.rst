@@ -375,9 +375,8 @@ Glossary
       executed by multiple threads simultaneously.  Critical sections are
       typically protected using :term:`locks <lock>` or other
       :term:`synchronization primitives <synchronization primitive>` to
-      ensure :term:`thread-safe` access.  In the C API, critical sections
-      on shared objects can be protected using :c:macro:`Py_BEGIN_CRITICAL_SECTION`
-      and :c:macro:`Py_END_CRITICAL_SECTION`.  See also :term:`lock` and
+      ensure :term:`thread-safe` access.  Critical section are purely a concept
+      in the C API and are not exposed in Python.  See also :term:`lock` and
       :term:`race condition`.
 
    CPython
@@ -413,10 +412,11 @@ Glossary
       A situation where two or more threads are unable to proceed because
       each is waiting for the other to release a resource.  For example,
       if thread A holds lock 1 and waits for lock 2, while thread B holds
-      lock 2 and waits for lock 1, both threads will wait indefinitely.
-      Deadlocks can be avoided by always acquiring multiple :term:`locks <lock>`
-      in a consistent order or by using timeout-based locking.  See also
-      :term:`lock` and :term:`reentrant`.
+      lock 2 and waits for lock 1, both threads will wait indefinitely.  Any
+      program that makes blocking calls using more than one lock is possibly
+      susceptible to deadlocks. Deadlocks can be avoided by always acquiring
+      multiple :term:`locks <lock>` in a consistent order or by using
+      timeout-based locking.  See also :term:`lock` and :term:`reentrant`.
 
    decorator
       A function returning another function, usually applied as a function
@@ -935,8 +935,10 @@ Glossary
       module provides :class:`~threading.Lock` (a basic lock) and
       :class:`~threading.RLock` (a :term:`reentrant` lock).  Locks are used
       to prevent :term:`race conditions <race condition>` and ensure
-      :term:`thread-safe` access to shared data.  See also
-      :term:`critical section`, :term:`deadlock`, and :term:`reentrant`.
+      :term:`thread-safe` access to shared data.  Alternative design patterns
+      to locks exist such as queues, producer/consumer patterns, and
+      thread-local state. See also :term:`critical section`, :term:`deadlock`,
+      and :term:`reentrant`.
 
    loader
       An object that loads a module.
@@ -1023,11 +1025,11 @@ Glossary
       See :term:`method resolution order`.
 
    mutable
-      Mutable objects can change their value but keep their :func:`id`.
-      In multi-threaded programs, mutable objects that are shared between
-      threads require careful synchronization to avoid :term:`concurrent modification`
-      issues.  See also :term:`immutable`, :term:`thread-safe`, and
-      :term:`concurrent modification`.
+      An :term:`object` with state that is allowed to change during the course
+      of the program.  In multi-threaded programs, mutable objects that are
+      shared between threads require careful synchronization to avoid
+      :term:`concurrent modification` issues.  See also :term:`immutable`,
+      :term:`thread-safe`, and :term:`concurrent modification`.
 
    named tuple
       The term "named tuple" applies to any type or class that inherits from
@@ -1100,8 +1102,7 @@ Glossary
       the same inputs.  In multi-threaded programs, non-deterministic behavior
       often results from :term:`race conditions <race condition>` where the
       relative timing or interleaving of threads affects the result.
-      :term:`Data races <data race>` are a common cause of non-deterministic
-      bugs.  Proper synchronization using :term:`locks <lock>` and other
+      Proper synchronization using :term:`locks <lock>` and other
       :term:`synchronization primitives <synchronization primitive>` helps
       ensure deterministic behavior.
 
@@ -1128,12 +1129,13 @@ Glossary
 
    parallelism
       The simultaneous execution of multiple operations on different CPU cores.
-      True parallelism requires multiple processors or processor cores and
-      allows operations to run at exactly the same time, not just interleaved.
+      True parallelism requires multiple processors or processor cores where
+      operations run at exactly the same time and are not just interleaved.
       In Python, the :term:`free-threaded <free threading>` build enables
-      parallelism for multi-threaded programs by removing the :term:`global
-      interpreter lock`.  The :mod:`multiprocessing` module also enables
-      parallelism by using separate processes.  See also :term:`concurrency`.
+      parallelism for multi-threaded programs that access state stored in the
+      interpreter by disabling the :term:`global interpreter lock`.  The
+      :mod:`multiprocessing` module also enables parallelism by using separate
+      processes.  See also :term:`concurrency`.
 
    parameter
       A named entity in a :term:`function` (or method) definition that
@@ -1221,13 +1223,10 @@ Glossary
 
    per-module state
       State that is stored separately for each instance of a module, rather
-      than in :term:`global state`.  For :term:`extension modules <extension module>`
-      written in C, per-module state helps support multiple interpreters and
-      is safer in :term:`free-threaded <free threading>` builds because each
-      module instance can have its own data without requiring global
-      synchronization.  Per-module state is accessed through the module object
-      rather than through C static variables.  See :ref:`isolating-extensions-howto`
-      for more information.  See also :term:`global state`.
+      than in :term:`global state`.  Per-module state is accessed through the
+      module object rather than through C static variables.
+      See :ref:`isolating-extensions-howto` for more information.  See also
+      :term:`global state`.
 
    PEP
       Python Enhancement Proposal. A PEP is a design document
@@ -1320,7 +1319,7 @@ Glossary
          'email.mime.text'
 
    race condition
-      A flaw in the design or implementation of a program where the correctness
+      A condition of a program where the its behavior
       depends on the relative timing or ordering of events, particularly in
       multi-threaded programs.  Race conditions can lead to
       :term:`non-deterministic` behavior and bugs that are difficult to
@@ -1359,7 +1358,9 @@ Glossary
 
       For functions, reentrancy means the function can be safely called again
       before a previous invocation has completed, which is important when
-      functions may be called recursively or from signal handlers.
+      functions may be called recursively or from signal handlers. Thread-unsafe
+      functions may be :term:`non-deterministic` if they're called reentrantly in a
+      multithreaded program.
 
       For locks, Python's :class:`threading.RLock` (reentrant lock) is
       reentrant, meaning a thread that already holds the lock can acquire it
@@ -1479,7 +1480,9 @@ Glossary
       :mod:`threading` module provides several synchronization primitives
       including :class:`~threading.Lock`, :class:`~threading.RLock`,
       :class:`~threading.Semaphore`, :class:`~threading.Condition`,
-      :class:`~threading.Event`, and :class:`~threading.Barrier`.  These
+      :class:`~threading.Event`, and :class:`~threading.Barrier`.  Additionally,
+      the :mod:`queue` module provides multi-producer, multi-consumer queues
+      that are especially usedul in multithreaded programs. These
       primitives help prevent :term:`race conditions <race condition>` and
       coordinate thread execution.  See also :term:`lock` and
       :term:`critical section`.
