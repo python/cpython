@@ -77,19 +77,19 @@ module_from_slots_methods(PyObject *self, PyObject *spec)
     return PyModule_FromSlotsAndSpec(slots, spec);
 }
 
-static int trivial_traverse(PyObject *self, visitproc visit, void *arg) {
+static int noop_traverse(PyObject *self, visitproc visit, void *arg) {
     return 0;
 }
-static int trivial_clear(PyObject *self) { return 0; }
-static void trivial_free(void *self) { }
+static int noop_clear(PyObject *self) { return 0; }
+static void noop_free(void *self) { }
 
 static PyObject *
 module_from_slots_gc(PyObject *self, PyObject *spec)
 {
     PyModuleDef_Slot slots[] = {
-        {Py_mod_state_traverse, trivial_traverse},
-        {Py_mod_state_clear, trivial_clear},
-        {Py_mod_state_free, trivial_free},
+        {Py_mod_state_traverse, noop_traverse},
+        {Py_mod_state_clear, noop_clear},
+        {Py_mod_state_free, noop_free},
         {0},
     };
     PyObject *mod = PyModule_FromSlotsAndSpec(slots, spec);
@@ -103,9 +103,9 @@ module_from_slots_gc(PyObject *self, PyObject *spec)
         Py_DECREF(mod);
         return NULL;
     }
-    assert(traverse == &trivial_traverse);
-    assert(clear == &trivial_clear);
-    assert(free == &trivial_free);
+    assert(traverse == &noop_traverse);
+    assert(clear == &noop_clear);
+    assert(free == &noop_free);
     return mod;
 }
 
