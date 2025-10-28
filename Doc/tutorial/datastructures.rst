@@ -444,7 +444,7 @@ packing and sequence unpacking.
 Sets
 ====
 
-Python also includes a data type for *sets* (see :ref:`types-set`).  A set is
+Python also includes a data type for :ref:`sets <types-set>`.  A set is
 an unordered collection with no duplicate elements.  Basic uses include
 membership testing and eliminating duplicate entries.  Set objects also
 support mathematical operations like union, intersection, difference, and
