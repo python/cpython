@@ -67,9 +67,6 @@ to avoid the expense of doing their own locking).
    For each of these functions, the GIL must be held by the current thread.
  */
 
-#ifndef HAVE_THREAD_LOCAL
-#  error "no supported thread-local variable storage classifier"
-#endif
 
 /* The attached thread state for the current thread. */
 _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
