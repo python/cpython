@@ -660,7 +660,7 @@ class StrptimeTests(unittest.TestCase):
         import datetime
         shorthand = datetime.datetime.strptime(test_date,formats["short"])
         long_hand = datetime.datetime.strptime(test_date,formats["long"])
-        assert shorthand == long_hand
+        self.assertEqual(shorthand,long_hand)
 
     def test_shorthand_hour_minute_second(self):
         # Test that token '%T' is equivalent to '%H:%M:%S'
@@ -673,7 +673,7 @@ class StrptimeTests(unittest.TestCase):
         import datetime
         shorthand = datetime.datetime.strptime(test_time,formats["short"])
         long_hand = datetime.datetime.strptime(test_time,formats["long"])
-        assert shorthand == long_hand
+        self.assertEqual(shorthand,long_hand)
 
 class Strptime12AMPMTests(unittest.TestCase):
     """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
