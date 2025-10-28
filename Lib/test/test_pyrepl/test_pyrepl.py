@@ -40,7 +40,6 @@ from _pyrepl.readline import (
 from _pyrepl.utils import disp_str
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
-
 try:
     import pty
 except ImportError:
