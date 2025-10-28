@@ -170,6 +170,8 @@ class Argparse(ThemeSection):
     label: str = ANSIColors.BOLD_YELLOW
     action: str = ANSIColors.BOLD_GREEN
     reset: str = ANSIColors.RESET
+    error: str = ANSIColors.BOLD_RED
+    warning: str = ANSIColors.BOLD_YELLOW
 
 
 @dataclass(frozen=True, kw_only=True)
