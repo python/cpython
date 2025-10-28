@@ -66,7 +66,7 @@ def _find_spec_from_path(name, path=None):
             return spec
 
 
-def find_spec(name, package=None):
+def _find_spec_generic(name, package=None, *, lazy=0):
     """Return the spec for the specified module.
 
     First, sys.modules is checked to see if the module was already imported. If
@@ -83,11 +83,15 @@ def find_spec(name, package=None):
     In other words, relative module names (with leading dots) work.
 
     """
+    assert lazy in (0, 1, 2)
     fullname = resolve_name(name, package) if name.startswith('.') else name
     if fullname not in sys.modules:
         parent_name = fullname.rpartition('.')[0]
         if parent_name:
-            parent = __import__(parent_name, fromlist=['__path__'])
+            if lazy:
+                parent = _lazy_import_func(parent_name, bg=lazy == 2)
+            else:
+                parent = __import__(parent_name, fromlist=['__path__'])
             try:
                 parent_path = parent.__path__
             except AttributeError as e:
@@ -109,6 +113,10 @@ def find_spec(name, package=None):
             if spec is None:
                 raise ValueError(f'{name}.__spec__ is None')
             return spec
+
+
+def find_spec(name, package=None):
+    return _find_spec_generic(name, package, lazy=0)
 
 
 # Normally we would use contextlib.contextmanager.  However, this module
@@ -175,7 +183,7 @@ class _LazyModule(types.ModuleType):
         with loader_state['lock']:
             # Only the first thread to get the lock should trigger the load
             # and reset the module's class. The rest can now getattr().
-            if object.__getattribute__(self, '__class__') is _LazyModule:
+            if _LazyModule in object.__getattribute__(self, '__class__').__mro__:
                 __class__ = loader_state['__class__']
 
                 # Reentrant calls from the same thread must be allowed to proceed without
@@ -273,7 +281,96 @@ class LazyLoader(Loader):
         module.__class__ = _LazyModule
 
 
+from ._bootstrap import _gcd_import
+from ._bootstrap_external import NamespaceLoader
+
+
+def find_spec_lazy(name, package=None, *, bg=False):
+    assert bg in (0, 1)
+    return _find_spec_generic(name, package, lazy=1 + bg)
+
+
+class _lazymodulemeta(type):
+    def __repr__(cls):
+        return f'<class {repr(cls.__name__)}>'
+
+
+class lazymodule(_LazyModule, metaclass=_lazymodulemeta):
+    def __getattribute__(self, attr):
+        if attr in ('__spec__', '__path__'):
+            return object.__getattribute__(self, attr)
+        return _LazyModule.__getattribute__(self, attr)
+
+
+class LazySimpleLoader(LazyLoader):
+    def exec_module(self, module):
+        super().exec_module(module)
+        module.__class__ = lazymodule
+
+
+class LazyBackgroundLoader(LazyLoader):
+    def exec_module(self, module):
+        import threading
+        super().exec_module(module)
+        module.__class__ = lazymodule
+        threading.Thread(target=lambda m: repr(m), args=(module,)).start()
+
+
+_FORBID_LAZY = frozenset({'threading'})
+
+
+def exclude_lazy(*names):
+    global _FORBID_LAZY
+    _FORBID_LAZY = frozenset(_FORBID_LAZY | set(names))
+
+
+def _lazy_import_func(name, package=None, *, bg=False):
+    fullname = resolve_name(name, package) if name.startswith('.') else name
+    if fullname.partition('.')[0] in _FORBID_LAZY:
+        return eager_import(fullname)
+    spec = find_spec_lazy(fullname, bg=bg)
+    if spec is None:
+        raise ModuleNotFoundError(f'No module named {fullname!r}')
+    if spec.loader is None:
+        NamespaceLoader = _frozen_importlib_external.NamespaceLoader
+        loader = NamespaceLoader.__new__(NamespaceLoader)
+        loader._path = spec.submodule_search_locations
+        spec.loader = loader
+    lazy_loader_cls = LazyBackgroundLoader if bg else LazySimpleLoader
+    loader = lazy_loader_cls(spec.loader)
+    spec.loader = loader
+    mod = module_from_spec(spec)
+    sys.modules[fullname] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def lazy_import(name, package=None):
+    return _lazy_import_func(name, package, bg=False)
+
+
+def background_import(name, package=None):
+    return _lazy_import_func(name, package, bg=True)
+
+
+def eager_import(name, package=None):
+    level = 0
+    if name.startswith('.'):
+        if not package:
+            raise TypeError("the 'package' argument is required to perform a "
+                            f"relative import for {name!r}")
+        for character in name:
+            if character != '.':
+                break
+            level += 1
+    mod = _gcd_import(name[level:], package, level)
+    if type(mod) is lazymodule:
+        repr(mod)
+    return mod
+
+
 __all__ = ['LazyLoader', 'Loader', 'MAGIC_NUMBER',
            'cache_from_source', 'decode_source', 'find_spec',
            'module_from_spec', 'resolve_name', 'source_from_cache',
-           'source_hash', 'spec_from_file_location', 'spec_from_loader']
+           'source_hash', 'spec_from_file_location', 'spec_from_loader',
+           'lazy_import', 'background_import', 'eager_import', 'exclude_lazy']
