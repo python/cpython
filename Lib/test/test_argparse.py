@@ -2283,6 +2283,7 @@ class TestNegativeNumber(ParserTestCase):
         ('--complex -1e-3j', NS(int=None, float=None, complex=-0.001j)),
     ]
 
+@force_not_colorized_test_class
 class TestArgumentAndSubparserSuggestions(TestCase):
     """Test error handling and suggestion when a user makes a typo"""
 
@@ -6147,6 +6148,7 @@ class TestTypeFunctionCallOnlyOnce(TestCase):
 # Check that deprecated arguments output warning
 # ==============================================
 
+@force_not_colorized_test_class
 class TestDeprecatedArguments(TestCase):
 
     def test_deprecated_option(self):

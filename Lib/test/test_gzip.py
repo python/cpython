@@ -11,7 +11,7 @@ import sys
 import unittest
 from subprocess import PIPE, Popen
 from test.support import catch_unraisable_exception
-from test.support import import_helper
+from test.support import force_not_colorized_test_class, import_helper
 from test.support import os_helper
 from test.support import _4G, bigmemtest, requires_subprocess
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -1057,6 +1057,7 @@ def create_and_remove_directory(directory):
     return decorator
 
 
+@force_not_colorized_test_class
 class TestCommandLine(unittest.TestCase):
     data = b'This is a simple test with gzip'
 
