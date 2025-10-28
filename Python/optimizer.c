@@ -172,10 +172,9 @@ _PyOptimizer_Optimize(
     else {
         executor->vm_data.code = NULL;
     }
-    if (chain_depth > 0) {
-        _PyExitData *prev_exit = tstate->interp->jit_state.prev_exit;
-        assert(prev_exit != NULL);
-        prev_exit->executor = executor;;
+    _PyExitData *prev_exit = tstate->interp->jit_state.prev_exit;
+    if (prev_exit != NULL) {
+        prev_exit->executor = executor;
     }
     executor->vm_data.chain_depth = chain_depth;
     assert(executor->vm_data.valid);
@@ -981,7 +980,7 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _
     tstate->interp->jit_state.initial_func = (PyFunctionObject *)Py_NewRef(_PyFrame_GetFunction(frame));
     tstate->interp->jit_state.prev_exit = exit;
     tstate->interp->jit_state.initial_stack_depth = curr_stackdepth;
-    tstate->interp->jit_state.initial_chain_depth = chain_depth % MAX_CHAIN_DEPTH;
+    tstate->interp->jit_state.initial_chain_depth = chain_depth;
     tstate->interp->jit_state.prev_instr_frame = frame;
     tstate->interp->jit_state.dependencies_still_valid = true;
     tstate->interp->jit_state.specialize_counter = 0;
