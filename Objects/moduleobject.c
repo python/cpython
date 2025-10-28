@@ -698,7 +698,7 @@ run_exec_func(PyObject *module, int (*exec)(PyObject *))
 static int
 alloc_state(PyObject *module)
 {
-    if(!PyModule_Check(module)) {
+    if (!PyModule_Check(module)) {
         PyErr_Format(PyExc_TypeError, "expected module, got %T", module);
         return -1;
     }
@@ -732,7 +732,7 @@ PyModule_Exec(PyObject *module)
     }
 
     PyModuleDef *def = _PyModule_GetDefOrNull(module);
-    if(def) {
+    if (def) {
         return PyModule_ExecDef(module, def);
     }
     return 0;
