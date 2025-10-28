@@ -85,6 +85,7 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
     return (_Py_IsMainThread() && _Py_IsMainInterpreter(interp));
 }
 
+
 /* Variable and static inline functions for in-line access to current thread
    and interpreter state */
 
