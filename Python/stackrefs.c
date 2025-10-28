@@ -1,4 +1,3 @@
-
 #include "Python.h"
 
 #include "pycore_object.h"
@@ -34,12 +33,14 @@ make_table_entry(PyObject *obj, const char *filename, int linenumber)
     result->filename = filename;
     result->linenumber = linenumber;
     result->filename_borrow = NULL;
+    result->linenumber_borrow = 0;
     return result;
 }
 
 PyObject *
 _Py_stackref_get_object(_PyStackRef ref)
 {
+    assert(!PyStackRef_IsError(ref));
     if (ref.index == 0) {
         return NULL;
     }
@@ -64,6 +65,7 @@ PyStackRef_Is(_PyStackRef a, _PyStackRef b)
 PyObject *
 _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert(!PyStackRef_IsError(ref));
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (ref.index >= interp->next_stackref) {
         _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 " at %s:%d\n", (void *)ref.index, filename, linenumber);
@@ -107,18 +109,19 @@ _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
 }
 
 _PyStackRef
-_Py_stackref_create(PyObject *obj, const char *filename, int linenumber)
+_Py_stackref_create(PyObject *obj, uint16_t flags, const char *filename, int linenumber)
 {
     if (obj == NULL) {
         Py_FatalError("Cannot create a stackref for NULL");
     }
     PyInterpreterState *interp = PyInterpreterState_Get();
     uint64_t new_id = interp->next_stackref;
-    interp->next_stackref = new_id + 2;
+    interp->next_stackref = new_id + (1 << Py_TAGGED_SHIFT);
     TableEntry *entry = make_table_entry(obj, filename, linenumber);
     if (entry == NULL) {
         Py_FatalError("No memory left for stackref debug table");
     }
+    new_id |= flags;
     if (_Py_hashtable_set(interp->open_stackrefs_table, (void *)new_id, entry) < 0) {
         Py_FatalError("No memory left for stackref debug table");
     }
@@ -128,6 +131,7 @@ _Py_stackref_create(PyObject *obj, const char *filename, int linenumber)
 void
 _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert(!PyStackRef_IsError(ref));
     if (ref.index < INITIAL_STACKREF_INDEX) {
         return;
     }
@@ -152,6 +156,7 @@ _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber
 void
 _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref)
 {
+    assert(!PyStackRef_IsError(ref));
     assert(ref.index < INITIAL_STACKREF_INDEX);
     TableEntry *entry = make_table_entry(obj, "builtin-object", 0);
     if (entry == NULL) {
@@ -190,16 +195,10 @@ _Py_stackref_report_leaks(PyInterpreterState *interp)
     }
 }
 
-void
-_PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct, const char *filename, int linenumber)
-{
-    PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
-    _Py_DECREF_SPECIALIZED(obj, destruct);
-}
-
 _PyStackRef PyStackRef_TagInt(intptr_t i)
 {
-    return (_PyStackRef){ .index = (i << 1) + 1 };
+    assert(Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (i << Py_TAGGED_SHIFT), Py_TAGGED_SHIFT) == i);
+    return (_PyStackRef){ .index = (i << Py_TAGGED_SHIFT) | Py_INT_TAG };
 }
 
 intptr_t
@@ -207,7 +206,7 @@ PyStackRef_UntagInt(_PyStackRef i)
 {
     assert(PyStackRef_IsTaggedInt(i));
     intptr_t val = (intptr_t)i.index;
-    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, 1);
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, Py_TAGGED_SHIFT);
 }
 
 bool
@@ -215,5 +214,14 @@ PyStackRef_IsNullOrInt(_PyStackRef ref)
 {
     return PyStackRef_IsNull(ref) || PyStackRef_IsTaggedInt(ref);
 }
+
+_PyStackRef
+PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
+{
+    assert(PyStackRef_IsTaggedInt(ref));
+    assert((ref.index & (~Py_TAG_BITS)) != (INTPTR_MAX & (~Py_TAG_BITS))); // Isn't about to overflow
+    return (_PyStackRef){ .index = ref.index + (1 << Py_TAGGED_SHIFT) };
+}
+
 
 #endif

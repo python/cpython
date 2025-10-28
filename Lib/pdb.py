@@ -75,6 +75,7 @@ import dis
 import code
 import glob
 import json
+import stat
 import token
 import types
 import atexit
@@ -99,7 +100,6 @@ import _colorize
 import _pyrepl.utils
 
 from contextlib import ExitStack, closing, contextmanager
-from rlcompleter import Completer
 from types import CodeType
 from warnings import deprecated
 
@@ -363,6 +363,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
         except ImportError:
             pass
+
         self.allow_kbdint = False
         self.nosigint = nosigint
         # Consider these characters as part of the command so when the users type
@@ -1091,6 +1092,31 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
 
+    @property
+    def rlcompleter(self):
+        """Return the `Completer` class from `rlcompleter`, while avoiding the
+        side effects of changing the completer from `import rlcompleter`.
+
+        This is a compromise between GH-138860 and GH-139289. If GH-139289 is
+        fixed, then we don't need this and we can just `import rlcompleter` in
+        `Pdb.__init__`.
+        """
+        if not hasattr(self, "_rlcompleter"):
+            try:
+                import readline
+            except ImportError:
+                # readline is not available, just get the Completer
+                from rlcompleter import Completer
+                self._rlcompleter = Completer
+            else:
+                # importing rlcompleter could have side effect of changing
+                # the current completer, we need to restore it
+                prev_completer = readline.get_completer()
+                from rlcompleter import Completer
+                self._rlcompleter = Completer
+                readline.set_completer(prev_completer)
+        return self._rlcompleter
+
     def completenames(self, text, line, begidx, endidx):
         # Overwrite completenames() of cmd so for the command completion,
         # if no current command matches, check for expressions as well
@@ -1185,10 +1211,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
             return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
 
-        # Use rlcompleter to do the completion
         state = 0
         matches = []
-        completer = Completer(self.curframe.f_globals | self.curframe.f_locals)
+        completer = self.rlcompleter(self.curframe.f_globals | self.curframe.f_locals)
         while (match := completer.complete(text, state)) is not None:
             matches.append(match)
             state += 1
@@ -1203,8 +1228,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
 
         try:
+            completer = self.rlcompleter(ns)
             old_completer = readline.get_completer()
-            completer = Completer(ns)
             readline.set_completer(completer.complete)
             yield
         finally:
@@ -3383,8 +3408,7 @@ def _connect(
             f"\nLocal pdb module's protocol version: {attach_ver}"
         )
     else:
-        remote_pdb.rcLines.extend(commands.splitlines())
-        remote_pdb.set_trace(frame=frame)
+        remote_pdb.set_trace(frame=frame, commands=commands.splitlines())
 
 
 def attach(pid, commands=()):
@@ -3419,6 +3443,8 @@ def attach(pid, commands=()):
             )
         )
         connect_script.close()
+        orig_mode = os.stat(connect_script.name).st_mode
+        os.chmod(connect_script.name, orig_mode | stat.S_IROTH | stat.S_IRGRP)
         sys.remote_exec(pid, connect_script.name)
 
         # TODO Add a timeout? Or don't bother since the user can ^C?
@@ -3490,7 +3516,8 @@ def help():
 _usage = """\
 Debug the Python program given by pyfile. Alternatively,
 an executable module or package to debug can be specified using
-the -m switch.
+the -m switch. You can also attach to a running Python process
+using the -p option with its PID.
 
 Initial commands are read from .pdbrc files in your home directory
 and in the current directory, if they exist.  Commands supplied with
@@ -3499,6 +3526,20 @@ and in the current directory, if they exist.  Commands supplied with
 To let the script run until an exception occurs, use "-c continue".
 To let the script run up to a given line X in the debugged file, use
 "-c 'until X'"."""
+
+
+def exit_with_permission_help_text():
+    """
+    Prints a message pointing to platform-specific permission help text and exits the program.
+    This function is called when a PermissionError is encountered while trying
+    to attach to a process.
+    """
+    print(
+        "Error: The specified process cannot be attached to due to insufficient permissions.\n"
+        "See the Python documentation for details on required privileges and troubleshooting:\n"
+        "https://docs.python.org/3.14/howto/remote_debugging.html#permission-requirements\n"
+    )
+    sys.exit(1)
 
 
 def main():
@@ -3534,7 +3575,10 @@ def main():
         opts = parser.parse_args()
         if opts.module:
             parser.error("argument -m: not allowed with argument --pid")
-        attach(opts.pid, opts.commands)
+        try:
+            attach(opts.pid, opts.commands)
+        except PermissionError as e:
+            exit_with_permission_help_text()
         return
     elif opts.module:
         # If a module is being debugged, we consider the arguments after "-m module" to

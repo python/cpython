@@ -124,15 +124,15 @@ There are two problems on non-IEEE platforms:
 * What this does is undefined if *x* is a NaN or infinity.
 * ``-0.0`` and ``+0.0`` produce the same bytes string.
 
-.. c:function:: int PyFloat_Pack2(double x, unsigned char *p, int le)
+.. c:function:: int PyFloat_Pack2(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary16 half-precision format.
 
-.. c:function:: int PyFloat_Pack4(double x, unsigned char *p, int le)
+.. c:function:: int PyFloat_Pack4(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary32 single precision format.
 
-.. c:function:: int PyFloat_Pack8(double x, unsigned char *p, int le)
+.. c:function:: int PyFloat_Pack8(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary64 double precision format.
 
@@ -154,14 +154,14 @@ Return value: The unpacked double.  On error, this is ``-1.0`` and
 Note that on a non-IEEE platform this will refuse to unpack a bytes string that
 represents a NaN or infinity.
 
-.. c:function:: double PyFloat_Unpack2(const unsigned char *p, int le)
+.. c:function:: double PyFloat_Unpack2(const char *p, int le)
 
    Unpack the IEEE 754 binary16 half-precision format as a C double.
 
-.. c:function:: double PyFloat_Unpack4(const unsigned char *p, int le)
+.. c:function:: double PyFloat_Unpack4(const char *p, int le)
 
    Unpack the IEEE 754 binary32 single precision format as a C double.
 
-.. c:function:: double PyFloat_Unpack8(const unsigned char *p, int le)
+.. c:function:: double PyFloat_Unpack8(const char *p, int le)
 
    Unpack the IEEE 754 binary64 double precision format as a C double.

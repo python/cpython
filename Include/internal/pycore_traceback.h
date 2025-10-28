@@ -100,7 +100,10 @@ extern int _Py_WriteIndentedMargin(int, const char*, PyObject *);
 extern int _Py_WriteIndent(int, PyObject *);
 
 // Export for the faulthandler module
+PyAPI_FUNC(void) _Py_InitDumpStack(void);
 PyAPI_FUNC(void) _Py_DumpStack(int fd);
+
+extern void _Py_DumpTraceback_Init(void);
 
 #ifdef __cplusplus
 }
