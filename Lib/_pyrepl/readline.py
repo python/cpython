@@ -256,12 +256,11 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
     # check if last character before "pos" is a colon, ignoring
     # whitespaces and comments.
     last_char = None
-    # A stack to keep track of string delimiters (quotes). Push a quote when
-    # entering a string, and pop it when the string ends. When the stack is
-    # empty, we're not inside a string. If encounter a '#' while not inside a
-    # string, it's a comment start; otherwise, it's just a '#' character within
-    # a string.
-    in_string: list[str] = []
+    # A stack to keep track of string delimiters. Push a quote when entering a
+    # string, pop it when the string ends. If the stack is empty, we're not
+    # inside a string. When see a '#', it's a comment start if we're not inside
+    # a string; otherwise, it's just a '#' character within a string.
+    str_delims: list[str] = []
     in_comment = False
     char_line_indent_start = None
     char_line_indent = 0
@@ -275,7 +274,7 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
 
         # update last_char
         if char == "#":
-            if in_string:
+            if str_delims:
                 last_char = char # '#' inside a string is just a character
             else:
                 in_comment = True
@@ -290,17 +289,17 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
         elif char not in " \t":
             if char_line_indent_start is not None:
                 char_line_indent = i - char_line_indent_start
-            if not in_comment and not in_string:
+            if not in_comment and not str_delims:
                 # update last_char with non-whitespace chars outside comments and strings
                 last_char = char
                 lastchar_line_indent = char_line_indent
 
         # update stack
         if char in "\"'" and (i == 0 or buffer[i - 1] != "\\"):
-            if in_string and in_string[-1] == char:
-                in_string.pop()
+            if str_delims and str_delims[-1] == char:
+                str_delims.pop()
             else:
-                in_string.append(char)
+                str_delims.append(char)
     cursor_line_indent = char_line_indent
     return last_char == ":" and cursor_line_indent <= lastchar_line_indent
 
