@@ -802,9 +802,8 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
-            Py_NewRef(subject);
             assert(PyTuple_GET_ITEM(attrs, 0) == NULL);
-            PyTuple_SET_ITEM(attrs, 0, subject);
+            PyTuple_SET_ITEM(attrs, 0, Py_NewRef(subject));
         }
         else {
             for (Py_ssize_t i = 0; i < nargs; i++) {
