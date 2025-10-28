@@ -186,7 +186,7 @@ slot_from_object(PyObject *obj)
     if (slot_id_obj == NULL) {
         return -1;
     }
-    int slot_id = PyLong_AsLong(slot_id_obj);
+    int slot_id = PyLong_AsInt(slot_id_obj);
     if (PyErr_Occurred()) {
         return -1;
     }
