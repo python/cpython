@@ -2445,7 +2445,7 @@ static PyObject *
 stackref_make_heap_safe(PyObject *self, PyObject *op)
 {
     _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
-    // In no-GIL production build ref2 is equal to ref.
+    // For no-GIL release build ref2 is equal to ref.
     _PyStackRef ref2 = PyStackRef_MakeHeapSafe(ref);
     PyObject *obj = _PyStackRef_AsTuple(ref2, op);
     PyStackRef_CLOSE(ref2);
@@ -2490,9 +2490,9 @@ static PyObject *
 stackref_dup_borrowed_with_close(PyObject *self, PyObject *op)
 {
     _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
-    // In no-GIL production build ref2 is equal to ref.
+    // For no-GIL release build ref2 is equal to ref.
     _PyStackRef ref2 = PyStackRef_DUP(ref);
-    // In production build closing borrowed ref is no-op.
+    // For release build closing borrowed ref is no-op.
     PyStackRef_XCLOSE(ref);
     PyObject *obj = _PyStackRef_AsTuple(ref2, op);
     PyStackRef_XCLOSE(ref2);
