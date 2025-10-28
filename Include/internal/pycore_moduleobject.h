@@ -40,9 +40,11 @@ typedef struct {
     _Py_modexecfunc md_exec;  /* only set if md_token_is_def is true */
 } PyModuleObject;
 
+#define _PyModule_CAST(op) \
+    (assert(PyModule_Check(op)), _Py_CAST(PyModuleObject*, (op)))
+
 static inline PyModuleDef* _PyModule_GetDefOrNull(PyObject *arg) {
-    assert(PyModule_Check(arg));
-    PyModuleObject *mod = (PyModuleObject *)arg;
+    PyModuleObject *mod = _PyModule_CAST(arg);
     if (mod->md_token_is_def) {
         return (PyModuleDef*)((PyModuleObject *)mod)->md_token;
     }
@@ -50,19 +52,16 @@ static inline PyModuleDef* _PyModule_GetDefOrNull(PyObject *arg) {
 }
 
 static inline PyModuleDef* _PyModule_GetToken(PyObject *arg) {
-    assert(PyModule_Check(arg));
-    PyModuleObject *mod = (PyModuleObject *)arg;
+    PyModuleObject *mod = _PyModule_CAST(arg);
     return mod->md_token;
 }
 
 static inline void* _PyModule_GetState(PyObject* mod) {
-    assert(PyModule_Check(mod));
-    return ((PyModuleObject *)mod)->md_state;
+    return _PyModule_CAST(mod)->md_state;
 }
 
 static inline PyObject* _PyModule_GetDict(PyObject *mod) {
-    assert(PyModule_Check(mod));
-    PyObject *dict = ((PyModuleObject *)mod) -> md_dict;
+    PyObject *dict = _PyModule_CAST(mod)->md_dict;
     // _PyModule_GetDict(mod) must not be used after calling module_clear(mod)
     assert(dict != NULL);
     return dict;  // borrowed reference
