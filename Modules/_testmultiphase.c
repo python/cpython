@@ -850,17 +850,17 @@ PyInit__testmultiphase_exec_unreported_exception(void)
     return PyModuleDef_Init(&def_exec_unreported_exception);
 }
 
-static int execfunc_a1(PyObject*m) {return PyModule_AddIntConstant(m, "a", 1);}
-static int execfunc_b2(PyObject*m) {return PyModule_AddIntConstant(m, "b", 2);}
-static int execfunc_c3(PyObject*m) {return PyModule_AddIntConstant(m, "c", 3);}
+static int execfn_a1(PyObject*m) { return PyModule_AddIntConstant(m, "a", 1); }
+static int execfn_b2(PyObject*m) { return PyModule_AddIntConstant(m, "b", 2); }
+static int execfn_c3(PyObject*m) { return PyModule_AddIntConstant(m, "c", 3); }
 
 PyMODINIT_FUNC
 PyInit__testmultiphase_exec_multiple(void)
 {
     static PyModuleDef_Slot slots[] = {
-        {Py_mod_exec, execfunc_a1},
-        {Py_mod_exec, execfunc_b2},
-        {Py_mod_exec, execfunc_c3},
+        {Py_mod_exec, execfn_a1},
+        {Py_mod_exec, execfn_b2},
+        {Py_mod_exec, execfn_c3},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0}
     };
