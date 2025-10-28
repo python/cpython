@@ -1003,7 +1003,6 @@ bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
     if (exit == NULL) {
         // We hold a strong reference to the code object, so the instruction won't be freed.
         if (err <= 0) {
-            assert(tstate->interp->jit_state.jump_backward_instr->op.code == JUMP_BACKWARD_JIT);
             _Py_BackoffCounter counter = tstate->interp->jit_state.jump_backward_instr[1].counter;
             tstate->interp->jit_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
         }
