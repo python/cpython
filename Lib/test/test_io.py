@@ -896,7 +896,7 @@ class IOTest(unittest.TestCase):
     def test_RawIOBase_read_bounds_checking(self):
         # Make sure a `.readinto` call which returns a value outside
         # (0, len(buffer)) raises.
-        class Misbehaved(self.io.RawIOBase):
+        class Misbehaved(self.RawIOBase):
             def __init__(self, readinto_return) -> None:
                 self._readinto_return = readinto_return
             def readinto(self, b):
