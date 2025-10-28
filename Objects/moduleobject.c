@@ -647,7 +647,7 @@ PyObject *
 PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *slots, PyObject *spec)
 {
     if (!slots) {
-        PyErr_Format(
+        PyErr_SetString(
             PyExc_SystemError,
             "PyModule_FromSlotsAndSpec called with NULL slots");
         return NULL;
