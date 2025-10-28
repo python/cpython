@@ -509,10 +509,8 @@ extern "C" {
 #endif
 
 #ifdef WITH_THREAD
-#  ifdef Py_BUILD_CORE
 // HAVE_THREAD_LOCAL is just defined here for compatibility's sake
-#    define HAVE_THREAD_LOCAL 1
-#  endif
+#  define HAVE_THREAD_LOCAL 1
 #endif
 
 #if defined(__ANDROID__) || defined(__VXWORKS__)
