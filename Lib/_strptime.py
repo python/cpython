@@ -418,7 +418,6 @@ class TimeRE(dict):
         mapping['W'] = mapping['U'].replace('U', 'W')
 
         base.__init__(mapping)
-        # %F %T %R %r %X %x %c (some shorthands and locales)
         base.__setitem__('F', self.pattern('%Y-%m-%d'))
         base.__setitem__('T', self.pattern('%H:%M:%S'))
         base.__setitem__('R', self.pattern('%H:%M'))
