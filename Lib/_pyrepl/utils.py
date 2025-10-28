@@ -330,7 +330,11 @@ def disp_str(
         if colors and colors[0].span.start == i:  # new color starts now
             pre_color = theme[colors[0].tag]
 
-        if c == "\x1a":  # CTRL-Z on Windows
+        if c == "\t":  # gh-140502: handle tabs
+            width = 8 - (sum(char_widths) % 8)
+            chars.append(" " * width)
+            char_widths.append(width)
+        elif c == "\x1a":  # CTRL-Z on Windows
             chars.append(c)
             char_widths.append(2)
         elif ord(c) < 128:

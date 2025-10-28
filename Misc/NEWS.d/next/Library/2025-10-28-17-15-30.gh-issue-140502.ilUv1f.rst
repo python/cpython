@@ -1,0 +1,1 @@
+Fix: default REPL ``disp_str`` does not handle tab right.
