@@ -2164,8 +2164,9 @@ class TestPySet_Add(unittest.TestCase):
 
     def test_frozenset(self):
         # Test the PySet_Add c-api for frozenset objects
-        assert _testcapi.pyset_add(frozenset(), 1) == frozenset([1])
+        self.assertEqual(_testcapi.pyset_add(frozenset(), 1), frozenset([1]))
         frozen_set = frozenset()
+        # if the argument to PySet_Add is a frozenset that is not uniquely references an error is generated
         self.assertRaises(SystemError, _testcapi.pyset_add, frozen_set, 1)
 
     def test_frozenset_gc_tracking(self):
