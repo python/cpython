@@ -680,7 +680,7 @@ run_exec_func(PyObject *module, int (*exec)(PyObject *))
         if (!PyErr_Occurred()) {
             PyErr_Format(
                 PyExc_SystemError,
-                "execution of %S failed without setting an exception",
+                "execution of %R failed without setting an exception",
                 module);
         }
         return -1;
@@ -688,7 +688,7 @@ run_exec_func(PyObject *module, int (*exec)(PyObject *))
     if (PyErr_Occurred()) {
         _PyErr_FormatFromCause(
             PyExc_SystemError,
-            "execution of module %S raised unreported exception",
+            "execution of module %R raised unreported exception",
             module);
         return -1;
     }
