@@ -1212,6 +1212,20 @@ class TestDateOnly(unittest.TestCase):
             date.strptime('20-03-14', '%y-%m-%d')
             date.strptime('02-29,2024', '%m-%d,%Y')
 
+    def test_strptime_C99_shorthand_year_month_day(self):
+        formats = dict(short="%F",long="%Y-%m-%d")
+        test_date = "2025-10-26"
+        shorthand = datetime.strptime(test_date,formats["short"])
+        long_hand = datetime.strptime(test_date,formats["long"])
+        self.assertEqual(shorthand,long_hand)
+
+    def test_strptime_C99_shorthand_hour_minute_second(self):
+        formats = dict(short="%T",long="%H:%M:%S")
+        test_time = "15:00:00"
+        shorthand = datetime.strptime(test_time,formats["short"])
+        long_hand = datetime.strptime(test_time,formats["long"])
+        self.assertEqual(shorthand,long_hand)
+
 class SubclassDate(date):
     sub_var = 1
 
