@@ -1,1 +1,1 @@
-Add `'%F'` support to `datetime.datetime.strptime`, a C99+ `time.h` format token.
+Add `'%F'` support to :meth:`~datetime.datetime.strptime`, a C99+ ``time.h`` format code.
