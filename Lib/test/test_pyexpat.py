@@ -684,6 +684,23 @@ class ChardataBufferTest(unittest.TestCase):
         parser.Parse(xml2, True)
         self.assertEqual(self.n, 4)
 
+class ElementDeclHandlerTest(unittest.TestCase):
+    def test_trigger_leak(self):
+        # Unfixed, this test would leak the memory of the so-called
+        # "content model" in function ``my_ElementDeclHandler`` of pyexpat.
+        # See https://github.com/python/cpython/issues/140593.
+        data = textwrap.dedent('''\
+            <!DOCTYPE quotations SYSTEM "quotations.dtd" [
+                <!ELEMENT root ANY>
+            ]>
+            <root/>
+        ''').encode('UTF-8')
+
+        parser = expat.ParserCreate()
+        parser.NotStandaloneHandler = lambda: 1.234  # arbitrary float
+        parser.ElementDeclHandler = lambda _1, _2: None
+        self.assertRaises(TypeError, parser.Parse, data, True)
+
 class MalformedInputTest(unittest.TestCase):
     def test1(self):
         xml = b"\0\r\n"
@@ -769,6 +786,42 @@ class ForeignDTDTests(unittest.TestCase):
         parser.Parse(
             b"<?xml version='1.0'?><!DOCTYPE foo PUBLIC 'bar' 'baz'><element/>")
         self.assertEqual(handler_call_args, [("bar", "baz")])
+
+
+class ParentParserLifetimeTest(unittest.TestCase):
+    """
+    Subparsers make use of their parent XML_Parser inside of Expat.
+    As a result, parent parsers need to outlive subparsers.
+
+    See https://github.com/python/cpython/issues/139400.
+    """
+
+    def test_parent_parser_outlives_its_subparsers__single(self):
+        parser = expat.ParserCreate()
+        subparser = parser.ExternalEntityParserCreate(None)
+
+        # Now try to cause garbage collection of the parent parser
+        # while it's still being referenced by a related subparser.
+        del parser
+
+    def test_parent_parser_outlives_its_subparsers__multiple(self):
+        parser = expat.ParserCreate()
+        subparser_one = parser.ExternalEntityParserCreate(None)
+        subparser_two = parser.ExternalEntityParserCreate(None)
+
+        # Now try to cause garbage collection of the parent parser
+        # while it's still being referenced by a related subparser.
+        del parser
+
+    def test_parent_parser_outlives_its_subparsers__chain(self):
+        parser = expat.ParserCreate()
+        subparser = parser.ExternalEntityParserCreate(None)
+        subsubparser = subparser.ExternalEntityParserCreate(None)
+
+        # Now try to cause garbage collection of the parent parsers
+        # while they are still being referenced by a related subparser.
+        del parser
+        del subparser
 
 
 class ReparseDeferralTest(unittest.TestCase):
@@ -956,6 +1009,64 @@ class AttackProtectionTestBase(abc.ABC):
         subparser = parser.ExternalEntityParserCreate(None)
         setter = functools.partial(self.set_maximum_amplification, subparser)
         self.assert_root_parser_failure(setter, 123.45)
+
+
+@unittest.skipIf(expat.version_info < (2, 4, 0), "requires Expat >= 2.4.0")
+class ExpansionProtectionTest(AttackProtectionTestBase, unittest.TestCase):
+
+    def assert_rejected(self, func, /, *args, **kwargs):
+        """Check that func(*args, **kwargs) hits the allocation limit."""
+        msg = (
+            r"limit on input amplification factor \(from DTD and entities\) "
+            r"breached: line \d+, column \d+"
+        )
+        self.assertRaisesRegex(expat.ExpatError, msg, func, *args, **kwargs)
+
+    def set_activation_threshold(self, parser, threshold):
+        return parser.SetBillionLaughsAttackProtectionActivationThreshold(threshold)
+
+    def set_maximum_amplification(self, parser, max_factor):
+        return parser.SetBillionLaughsAttackProtectionMaximumAmplification(max_factor)
+
+    def test_set_activation_threshold__threshold_reached(self):
+        parser = expat.ParserCreate()
+        # Choose a threshold expected to be always reached.
+        self.set_activation_threshold(parser, 3)
+        # Check that the threshold is reached by choosing a small factor
+        # and a payload whose peak amplification factor exceeds it.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
+        payload = self.exponential_expansion_payload(ncols=10, nrows=4)
+        self.assert_rejected(parser.Parse, payload, True)
+
+    def test_set_activation_threshold__threshold_not_reached(self):
+        parser = expat.ParserCreate()
+        # Choose a threshold expected to be never reached.
+        self.set_activation_threshold(parser, pow(10, 5))
+        # Check that the threshold is reached by choosing a small factor
+        # and a payload whose peak amplification factor exceeds it.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
+        payload = self.exponential_expansion_payload(ncols=10, nrows=4)
+        self.assertIsNotNone(parser.Parse(payload, True))
+
+    def test_set_maximum_amplification__amplification_exceeded(self):
+        parser = expat.ParserCreate()
+        # Unconditionally enable maximum activation factor.
+        self.set_activation_threshold(parser, 0)
+        # Choose a max amplification factor expected to always be exceeded.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
+        # Craft a payload for which the peak amplification factor is > 1.0.
+        payload = self.exponential_expansion_payload(ncols=1, nrows=2)
+        self.assert_rejected(parser.Parse, payload, True)
+
+    def test_set_maximum_amplification__amplification_not_exceeded(self):
+        parser = expat.ParserCreate()
+        # Unconditionally enable maximum activation factor.
+        self.set_activation_threshold(parser, 0)
+        # Choose a max amplification factor expected to never be exceeded.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1e4))
+        # Craft a payload for which the peak amplification factor is < 1e4.
+        payload = self.exponential_expansion_payload(ncols=1, nrows=2)
+        self.assertIsNotNone(parser.Parse(payload, True))
 
 
 @unittest.skipIf(expat.version_info < (2, 7, 2), "requires Expat >= 2.7.2")

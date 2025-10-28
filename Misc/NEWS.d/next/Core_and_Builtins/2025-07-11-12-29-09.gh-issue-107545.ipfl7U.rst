@@ -1,2 +1,0 @@
-Improve the error messages that may be raised by
-:meth:`~socket.socket.setsockopt`.

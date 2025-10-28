@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_Validate()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_fileutils.h"     // _PyFile_Flush
@@ -14,8 +15,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
-#include "pycore_cell.h"          // PyCell_GetRef()
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
 
 #include "clinic/bltinmodule.c.h"
 
@@ -123,7 +123,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         "__build_class__: name is not a string");
         return NULL;
     }
-    orig_bases = _PyTuple_FromArray(args + 2, nargs - 2);
+    orig_bases = PyTuple_FromArray(args + 2, nargs - 2);
     if (orig_bases == NULL)
         return NULL;
 
@@ -745,7 +745,7 @@ builtin_chr(PyObject *module, PyObject *i)
 compile as builtin_compile
 
     source: object
-    filename: object(converter="PyUnicode_FSDecoder")
+    filename: unicode_fs_decoded
     mode: str
     flags: int = 0
     dont_inherit: bool = False
@@ -771,7 +771,7 @@ static PyObject *
 builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                      const char *mode, int flags, int dont_inherit,
                      int optimize, int feature_version)
-/*[clinic end generated code: output=b0c09c84f116d3d7 input=cc78e20e7c7682ba]*/
+/*[clinic end generated code: output=b0c09c84f116d3d7 input=8f0069edbdac381b]*/
 {
     PyObject *source_copy;
     const char *str;
@@ -889,7 +889,6 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
 error:
     result = NULL;
 finally:
-    Py_DECREF(filename);
     return result;
 }
 
@@ -1502,34 +1501,27 @@ map_next(PyObject *self)
     }
 
     Py_ssize_t nargs = 0;
-    for (i=0; i < niters; i++) {
+    for (i = 0; i < niters; i++) {
         PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
         PyObject *val = Py_TYPE(it)->tp_iternext(it);
         if (val == NULL) {
             if (lz->strict) {
                 goto check;
             }
-            goto exit;
+            goto exit_no_result;
         }
         stack[i] = val;
         nargs++;
     }
 
     result = _PyObject_VectorcallTstate(tstate, lz->func, stack, nargs, NULL);
+    goto exit;
 
-exit:
-    for (i=0; i < nargs; i++) {
-        Py_DECREF(stack[i]);
-    }
-    if (stack != small_stack) {
-        PyMem_Free(stack);
-    }
-    return result;
 check:
     if (PyErr_Occurred()) {
         if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
             // next() on argument i raised an exception (not StopIteration)
-            return NULL;
+            goto exit_no_result;
         }
         PyErr_Clear();
     }
@@ -1537,9 +1529,10 @@ check:
         // ValueError: map() argument 2 is shorter than argument 1
         // ValueError: map() argument 3 is shorter than arguments 1-2
         const char* plural = i == 1 ? " " : "s 1-";
-        return PyErr_Format(PyExc_ValueError,
-                            "map() argument %d is shorter than argument%s%d",
-                            i + 1, plural, i);
+        PyErr_Format(PyExc_ValueError,
+                     "map() argument %d is shorter than argument%s%d",
+                     i + 1, plural, i);
+        goto exit_no_result;
     }
     for (i = 1; i < niters; i++) {
         PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
@@ -1547,21 +1540,33 @@ check:
         if (val) {
             Py_DECREF(val);
             const char* plural = i == 1 ? " " : "s 1-";
-            return PyErr_Format(PyExc_ValueError,
-                                "map() argument %d is longer than argument%s%d",
-                                i + 1, plural, i);
+            PyErr_Format(PyExc_ValueError,
+                         "map() argument %d is longer than argument%s%d",
+                         i + 1, plural, i);
+            goto exit_no_result;
         }
         if (PyErr_Occurred()) {
             if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
                 // next() on argument i raised an exception (not StopIteration)
-                return NULL;
+                goto exit_no_result;
             }
             PyErr_Clear();
         }
         // Argument i is exhausted. So far so good...
     }
     // All arguments are exhausted. Success!
-    goto exit;
+
+exit_no_result:
+    assert(result == NULL);
+
+exit:
+    for (i = 0; i < nargs; i++) {
+        Py_DECREF(stack[i]);
+    }
+    if (stack != small_stack) {
+        PyMem_Free(stack);
+    }
+    return result;
 }
 
 static PyObject *

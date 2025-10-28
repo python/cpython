@@ -7236,6 +7236,16 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, logging, not_exported=not_exported)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__and__date__(self):
+        msg = "is deprecated and slated for removal in Python 3.20"
+        for attr in ("__version__", "__date__"):
+            with self.subTest(attr=attr):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(logging, attr)
+                self.assertEqual(cm.filename, __file__)
+
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.

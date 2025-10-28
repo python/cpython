@@ -312,11 +312,18 @@ def unpack_deps(
     On iOS, as a safety mechanism, any dynamic libraries will be purged from
     the unpacked dependencies.
     """
+    # To create new builds of these dependencies, usually all that's necessary
+    # is to push a tag to the cpython-apple-source-deps repository, and GitHub
+    # Actions will do the rest.
+    #
+    # If you're a member of the Python core team, and you'd like to be able to
+    # push these tags yourself, please contact Malcolm Smith or Russell
+    # Keith-Magee.
     deps_url = "https://github.com/beeware/cpython-apple-source-deps/releases/download"
     for name_ver in [
         "BZip2-1.0.8-2",
         "libFFI-3.4.7-2",
-        "OpenSSL-3.0.16-2",
+        "OpenSSL-3.0.18-1",
         "XZ-5.6.4-2",
         "mpdecimal-4.0.0-2",
         "zstd-1.5.7-1",
@@ -577,6 +584,7 @@ def create_xcframework(platform: str) -> str:
 
     # Extract the package version from the merged framework
     version = package_version(package_path / "Python.xcframework")
+    version_tag = ".".join(version.split(".")[:2])
 
     # On non-macOS platforms, each framework in XCframework only contains the
     # headers, libPython, plus an Info.plist. Other resources like the standard
@@ -646,6 +654,23 @@ def create_xcframework(platform: str) -> str:
                 host_framework / "Headers/pyconfig.h",
                 slice_framework / f"Headers/pyconfig-{arch}.h",
             )
+
+            # Apple identifies certain libraries as "security risks"; if you
+            # statically link those libraries into a Framework, you become
+            # responsible for providing a privacy manifest for that framework.
+            xcprivacy_file = {
+                "OpenSSL": subdir(host_triple) / "prefix/share/OpenSSL.xcprivacy"
+            }
+            print(f"   - {multiarch} xcprivacy files")
+            for module, lib in [
+                ("_hashlib", "OpenSSL"),
+                ("_ssl", "OpenSSL"),
+            ]:
+                shutil.copy(
+                    xcprivacy_file[lib],
+                    slice_path
+                    / f"lib-{arch}/python{version_tag}/lib-dynload/{module}.xcprivacy",
+                )
 
     print(" - build tools")
     shutil.copytree(
@@ -798,7 +823,7 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:
             + [
                 "--",
                 "test",
-                "--slow-ci" if context.slow else "--fast-ci",
+                f"--{context.ci_mode}-ci",
                 "--single-process",
                 "--no-randomize",
                 # Timeout handling requires subprocesses; explicitly setting
@@ -811,11 +836,39 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:
         )
 
 
+def apple_sim_host(platform_name: str) -> str:
+    """Determine the native simulator target for this platform."""
+    for _, slice_parts in HOSTS[platform_name].items():
+        for host_triple in slice_parts:
+            parts = host_triple.split('-')
+            if parts[0] == platform.machine() and parts[-1] == "simulator":
+                return host_triple
+
+    raise KeyError(platform_name)
+
+
 def ci(context: argparse.Namespace) -> None:
-    """The implementation of the "ci" command."""
+    """The implementation of the "ci" command.
+
+    In "Fast" mode, this compiles the build python, and the simulator for the
+    build machine's architecture; and runs the test suite with `--fast-ci`
+    configuration.
+
+    In "Slow" mode, it compiles the build python, plus all candidate
+    architectures (both device and simulator); then runs the test suite with
+    `--slow-ci` configuration.
+    """
     clean(context, "all")
-    build(context, host="all")
-    test(context, host="all")
+    if context.ci_mode == "slow":
+        # In slow mode, build and test the full XCframework
+        build(context, host="all")
+        test(context, host="all")
+    else:
+        # In fast mode, just build the simulator platform.
+        sim_host = apple_sim_host(context.platform)
+        build(context, host="build")
+        build(context, host=sim_host)
+        test(context, host=sim_host)
 
 
 def parse_args() -> argparse.Namespace:
@@ -922,11 +975,13 @@ def parse_args() -> argparse.Namespace:
                 "an ARM64 iPhone 16 Pro simulator running iOS 26.0."
             ),
         )
-        cmd.add_argument(
-            "--slow",
-            action="store_true",
-            help="Run tests with --slow-ci options.",
-        )
+        group = cmd.add_mutually_exclusive_group()
+        group.add_argument(
+            "--fast-ci", action="store_const", dest="ci_mode", const="fast",
+            help="Add test arguments for GitHub Actions")
+        group.add_argument(
+            "--slow-ci", action="store_const", dest="ci_mode", const="slow",
+            help="Add test arguments for buildbots")
 
     for subcommand in [configure_build, configure_host, build, ci]:
         subcommand.add_argument(
@@ -987,4 +1042,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Under the buildbot, stdout is not a TTY, but we must still flush after
+    # every line to make sure our output appears in the correct order relative
+    # to the output of our subprocesses.
+    for stream in [sys.stdout, sys.stderr]:
+        stream.reconfigure(line_buffering=True)
+
     main()

@@ -20,7 +20,7 @@ class PythonSuite {
             val status = PythonTestRunner(
                 InstrumentationRegistry.getInstrumentation().targetContext
             ).run(
-                InstrumentationRegistry.getArguments()
+                InstrumentationRegistry.getArguments().getString("pythonArgs")!!,
             )
             assertEquals(0, status)
         } finally {
