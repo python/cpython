@@ -1,3 +1,6 @@
+# The C functions used by this module are in:
+#   Modules/_testcapi/module.c
+
 import unittest
 import types
 from test.support import import_helper, subTests
@@ -14,9 +17,6 @@ DEF_SLOTS = (
     'Py_mod_state_traverse', 'Py_mod_state_clear', 'Py_mod_state_free',
     'Py_mod_token',
 )
-
-# The C functions used by this module are in:
-#   Modules/_testcapi/module.c
 
 def def_and_token(mod):
     return (
