@@ -2589,7 +2589,7 @@ static PyType_Spec ManagedWeakrefNoGC_spec = {
 };
 
 static PyObject *
-test_create_managed_weakref_nogc_type(PyObject *self, PyObject *Py_UNUSED(args))
+create_managed_weakref_nogc_type(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return PyType_FromSpec(&ManagedWeakrefNoGC_spec);
 }
@@ -2690,7 +2690,7 @@ static PyMethodDef TestMethods[] = {
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {"create_managed_weakref_nogc_type",
-        test_create_managed_weakref_nogc_type, METH_NOARGS},
+        create_managed_weakref_nogc_type, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
