@@ -71,6 +71,8 @@ whose size is determined when the object is allocated.
  *
  * Statically allocated objects might be shared between
  * interpreters, so must be marked as immortal.
+ *
+ * Before changing this, see the check in PyModuleDef_Init().
  */
 #if defined(Py_GIL_DISABLED)
 #define PyObject_HEAD_INIT(type)    \
@@ -634,6 +636,7 @@ given type object has a specified feature.
 
 // Flag values for ob_flags (16 bits available, if SIZEOF_VOID_P > 4).
 #define _Py_IMMORTAL_FLAGS (1 << 0)
+#define _Py_LEGACY_ABI_CHECK_FLAG (1 << 1) /* see PyModuleDef_Init() */
 #define _Py_STATICALLY_ALLOCATED_FLAG (1 << 2)
 #if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
 #define _Py_TYPE_REVEALED_FLAG (1 << 3)
@@ -692,8 +695,13 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #  define Py_NotImplemented (&_Py_NotImplementedStruct)
 #endif
 
-/* Macro for returning Py_NotImplemented from a function */
-#define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
+/* Macro for returning Py_NotImplemented from a function. Only treat
+ * Py_NotImplemented as immortal in the limited C API 3.12 and newer. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#  define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
+#else
+#  define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
+#endif
 
 /* Rich comparison opcodes */
 #define Py_LT 0

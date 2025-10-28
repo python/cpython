@@ -511,5 +511,15 @@ class MiscTestCase(unittest.TestCase):
         server.server_close()
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(socketserver, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
 if __name__ == "__main__":
     unittest.main()

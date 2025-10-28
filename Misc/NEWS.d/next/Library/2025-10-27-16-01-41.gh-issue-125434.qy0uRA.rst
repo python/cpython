@@ -1,0 +1,2 @@
+Display thread name in :mod:`faulthandler` on Windows. Patch by Victor
+Stinner.

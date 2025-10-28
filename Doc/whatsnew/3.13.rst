@@ -60,7 +60,7 @@ Summary -- Release Highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-Python 3.13 is the latest stable release of the Python programming
+Python 3.13 is a stable release of the Python programming
 language, with a mix of changes to the language, the implementation
 and the standard library.
 The biggest changes include a new `interactive interpreter
@@ -1569,8 +1569,6 @@ and are now removed:
 
   * :pypi:`bcrypt`:
     Modern password hashing for your software and your servers.
-  * :pypi:`passlib`:
-    Comprehensive password hashing framework supporting over 30 schemes.
   * :pypi:`argon2-cffi`:
     The secure Argon2 password hashing algorithm.
   * :pypi:`legacycrypt`:
@@ -1995,7 +1993,7 @@ New Deprecations
     use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
     (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
 
-  * Deprecate the :func:`typing.no_type_check_decorator` decorator function,
+  * Deprecate the :func:`!typing.no_type_check_decorator` decorator function,
     to be removed in Python 3.15.
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.
@@ -2025,6 +2023,10 @@ New Deprecations
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -2246,7 +2248,7 @@ New Features
   (Contributed by Serhiy Storchaka in :gh:`110289`.)
 
 * Add the :c:func:`PyWeakref_GetRef` function
-  as an alternative to  :c:func:`PyWeakref_GetObject`
+  as an alternative to  :c:func:`!PyWeakref_GetObject`
   that returns a :term:`strong reference`
   or ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
@@ -2531,8 +2533,8 @@ Deprecated C APIs
   are just aliases to :c:type:`!wchar_t`.
   (Contributed by Victor Stinner in :gh:`105156`.)
 
-* Deprecate the :c:func:`PyWeakref_GetObject` and
-  :c:func:`PyWeakref_GET_OBJECT` functions,
+* Deprecate the :c:func:`!PyWeakref_GetObject` and
+  :c:func:`!PyWeakref_GET_OBJECT` functions,
   which return a :term:`borrowed reference`.
   Replace them with the new :c:func:`PyWeakref_GetRef` function,
   which returns a :term:`strong reference`.
