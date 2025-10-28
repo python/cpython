@@ -311,10 +311,7 @@ Glossary
    concurrent modification
       When multiple threads modify shared data at the same time without
       proper synchronization.  Concurrent modification can lead to
-      :term:`data races <data race>` and corrupted data.  In the
-      :term:`free-threaded <free threading>` build, built-in types like
-      :class:`dict`, :class:`list`, and :class:`set` use internal locks
-      to protect against concurrent modifications.
+      :term:`data races <data race>` and corrupted data.
 
    context
       This term has different meanings depending on where and how it is used.
