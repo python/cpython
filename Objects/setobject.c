@@ -1180,7 +1180,7 @@ _PyFrozenSet_MaybeUntrack(PyObject *op)
     if (op == NULL || !PyFrozenSet_CheckExact(op)) {
         return;
     }
-    // if no elements of a frozenset are tracked, we untrack the object
+    // if no elements of a frozenset are tracked by the GC, we untrack the object
     Py_ssize_t pos = 0;
     setentry *entry;
     while (set_next((PySetObject *)op, &pos, &entry)) {
@@ -1203,7 +1203,9 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
         return Py_NewRef(iterable);
     }
     PyObject *obj = make_new_set(type, iterable);
-    _PyFrozenSet_MaybeUntrack(obj);
+    if (obj != NULL) {
+        _PyFrozenSet_MaybeUntrack(obj);
+    }
     return obj;
 }
 

@@ -2159,7 +2159,7 @@ class TestPySet_Add(unittest.TestCase):
     def test_set(self):
         # Test the PySet_Add c-api for set objects
         s = set()
-        assert _testcapi.pyset_add(s, 1) == {1}
+        self.assertEqual(_testcapi.pyset_add(s, 1), {1})
         self.assertRaises(TypeError, _testcapi.pyset_add, s, [])
 
     def test_frozenset(self):
@@ -2175,9 +2175,9 @@ class TestPySet_Add(unittest.TestCase):
 
         a = TrackedHashableClass()
         result_set = _testcapi.pyset_add(frozenset(), 1)
-        assert not gc.is_tracked(result_set)
+        self.assertFalse(gc.is_tracked(result_set))
         result_set = _testcapi.pyset_add(frozenset(), a)
-        assert gc.is_tracked(result_set)
+        self.assertTrue(gc.is_tracked(result_set))
 
 
 #==============================================================================

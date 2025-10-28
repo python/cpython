@@ -2452,7 +2452,6 @@ pyset_add(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
     if (return_value < 0) {
         return NULL;
     }
-
     return Py_NewRef(set);
 }
 
