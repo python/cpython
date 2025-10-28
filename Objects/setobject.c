@@ -1175,9 +1175,12 @@ make_new_set_basetype(PyTypeObject *type, PyObject *iterable)
 }
 
 void
+// gh-140232: check whether a frozenset can be untracked from the GC
 _PyFrozenSet_MaybeUntrack(PyObject *op)
 {
-    if (op == NULL || !PyFrozenSet_CheckExact(op)) {
+    assert(op != NULL);
+    // subclasses of a frozenset can generate reference cycles, so do not untrack
+    if (!PyFrozenSet_CheckExact(op)) {
         return;
     }
     // if no elements of a frozenset are tracked by the GC, we untrack the object
@@ -2732,7 +2735,9 @@ PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
     PyObject *result = make_new_set(&PyFrozenSet_Type, iterable);
-    _PyFrozenSet_MaybeUntrack(result);
+    if (result != 0) {
+        _PyFrozenSet_MaybeUntrack(result);
+    }
     return result;
 }
 
