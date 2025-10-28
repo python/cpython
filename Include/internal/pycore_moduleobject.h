@@ -37,7 +37,7 @@ typedef struct {
     inquiry md_state_clear;
     freefunc md_state_free;
     void *md_token;
-    _Py_modexecfunc md_exec;  /* only set if md_def_or_null is NULL */
+    _Py_modexecfunc md_exec;  /* only set if md_token_is_def is true */
 } PyModuleObject;
 
 static inline PyModuleDef* _PyModule_GetDefOrNull(PyObject *arg) {
