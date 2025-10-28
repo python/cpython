@@ -931,14 +931,39 @@ int _Py_CheckRecursiveCallPy(
     return 0;
 }
 
-static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
-    /* Put a NOP at the start, so that the IP points into
-    * the code, rather than before it */
-    { .op.code = NOP, .op.arg = 0 },
-    { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on return */
-    { .op.code = NOP, .op.arg = 0 },
-    { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on yield */
-    { .op.code = RESUME, .op.arg = RESUME_OPARG_DEPTH1_MASK | RESUME_AT_FUNC_START }
+
+#ifdef Py_GIL_DISABLED
+static _PyCodeArray emtry_cleanup_tlbc = {
+    .size = 1,
+    .entries = {(char*) &_PyEntryFrameCode.co_code_adaptive},
+};
+#endif
+
+const struct _PyCode12 _PyEntryFrameCode = {
+    _PyVarObject_HEAD_INIT(&PyCode_Type, 5),
+    .co_consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
+    .co_names = (PyObject *)&_Py_SINGLETON(tuple_empty),
+    .co_exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),
+    .co_flags = CO_OPTIMIZED | CO_NO_MONITORING_EVENTS,
+    .co_localsplusnames = (PyObject *)&_Py_SINGLETON(tuple_empty),
+    .co_localspluskinds = (PyObject *)&_Py_SINGLETON(bytes_empty),
+    .co_filename = &_Py_ID(_PyEval_EvalFrameDefault),
+    .co_name = &_Py_ID(_PyEval_EvalFrameDefault),
+    .co_qualname = &_Py_ID(_PyEval_EvalFrameDefault),
+    .co_linetable = (PyObject *)&no_location,
+    ._co_firsttraceable = 4,
+    .co_stacksize = 2,
+    .co_framesize = 2 + FRAME_SPECIALS_SIZE,
+#ifdef Py_GIL_DISABLED
+    .co_tlbc = &emtry_cleanup_tlbc,
+#endif
+    .co_code_adaptive = {
+        NOP, 0,
+        INTERPRETER_EXIT, 0, /* reached on return */
+        NOP, 0,
+        INTERPRETER_EXIT, 0, /* reached on yield */
+        RESUME, RESUME_OPARG_DEPTH1_MASK | RESUME_AT_FUNC_START
+    }
 };
 
 #ifdef Py_DEBUG
@@ -1014,7 +1039,13 @@ bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
         // Likewise, we hold a strong reference to the executor containing this exit, so the exit is guaranteed
         // to be valid to access.
         if (err <= 0) {
-            exit->temperature = restart_backoff_counter(exit->temperature);
+            // Some opcodes will forever be unchanged. Don't ever bother specializing for them ever again.
+            if (tstate->interp->jit_state.prev_instr->op.code == INTERPRETER_EXIT) {
+                exit->temperature = initial_unreachable_backoff_counter();
+            }
+            else {
+                exit->temperature = restart_backoff_counter(exit->temperature);
+            }
         }
         else {
             exit->temperature = initial_temperature_backoff_counter();
@@ -1105,8 +1136,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry.frame.f_globals = (PyObject*)0xaaa3;
     entry.frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry.frame.f_executable = PyStackRef_None;
-    entry.frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
+    entry.frame.f_executable = PyStackRef_FromPyObjectBorrow((PyObject *)&_PyEntryFrameCode);
+    entry.frame.instr_ptr = ((_Py_CODEUNIT *)_PyEntryFrameCode.co_code_adaptive) + 1;
     entry.frame.stackpointer = entry.stack;
     entry.frame.owner = FRAME_OWNED_BY_INTERPRETER;
     entry.frame.visited = 0;

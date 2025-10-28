@@ -34,7 +34,7 @@
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
 {
-    if (code == (PyCodeObject *)&_Py_InitCleanup) {
+    if (code == (PyCodeObject *)&_Py_InitCleanup || code == (PyCodeObject *)&_PyEntryFrameCode) {
         return false;
     }
     if (instr->op.code == ENTER_EXECUTOR) {
@@ -133,11 +133,6 @@ _PyOptimizer_Optimize(
     bool progress_needed = chain_depth == 0;
     PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_state.initial_code;
     _Py_CODEUNIT *start = tstate->interp->jit_state.insert_exec_instr;
-    // A recursive trace might've cleared the values. In that case, bail.
-    if (code == NULL) {
-        interp->compiling = false;
-        return 0;
-    }
     if (progress_needed && !has_space_for_executor(code, start)) {
         interp->compiling = false;
         return 0;
@@ -619,11 +614,6 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (opcode == ENTER_EXECUTOR) {
-        int is_first_instr = tstate->interp->jit_state.close_loop_instr == next_instr || tstate->interp->jit_state.insert_exec_instr == next_instr;
-        if (is_first_instr && tstate->interp->jit_state.code_curr_size > 5) {
-            ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
-            goto done;
-        }
         goto full;
     }
 
@@ -658,11 +648,6 @@ _PyJit_translate_single_bytecode_to_trace(
 
     if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
         DPRINTF(2, "Unsupported: strange control-flow\n");
-        goto unsupported;
-    }
-
-    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
-        DPRINTF(2, "Unsupported: frame owned by interpreter\n");
         unsupported:
         {
             // Rewind to previous instruction and replace with _EXIT_TRACE.
@@ -977,7 +962,7 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _
     tstate->interp->jit_state.insert_exec_instr = insert_exec_instr;
     tstate->interp->jit_state.close_loop_instr = close_loop_instr;
     tstate->interp->jit_state.initial_code = (PyCodeObject *)Py_NewRef(code);
-    tstate->interp->jit_state.initial_func = (PyFunctionObject *)Py_NewRef(_PyFrame_GetFunction(frame));
+    tstate->interp->jit_state.initial_func = (PyFunctionObject *)Py_XNewRef(PyStackRef_AsPyObjectBorrow(frame->f_funcobj));
     tstate->interp->jit_state.prev_exit = exit;
     tstate->interp->jit_state.initial_stack_depth = curr_stackdepth;
     tstate->interp->jit_state.initial_chain_depth = chain_depth;
@@ -1580,11 +1565,15 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
         return;
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
-    assert(instruction->op.code == ENTER_EXECUTOR);
     int index = instruction->op.arg;
-    assert(code->co_executors->executors[index] == executor);
-    instruction->op.code = executor->vm_data.opcode;
-    instruction->op.arg = executor->vm_data.oparg;
+    // Due to a combination of re-entrancy and tracing, it's possible for an
+    // instruction to no longer be ENTER_EXECUTOR. In which case, no-op.
+    if (instruction->op.code == ENTER_EXECUTOR) {
+        assert(instruction->op.code == ENTER_EXECUTOR);
+        assert(code->co_executors->executors[index] == executor);
+        instruction->op.code = executor->vm_data.opcode;
+        instruction->op.arg = executor->vm_data.oparg;
+    }
     executor->vm_data.code = NULL;
     code->co_executors->executors[index] = NULL;
     Py_DECREF(executor);

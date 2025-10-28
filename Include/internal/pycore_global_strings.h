@@ -67,6 +67,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(TextIOWrapper)
         STRUCT_FOR_ID(True)
         STRUCT_FOR_ID(WarningMessage)
+        STRUCT_FOR_ID(_PyEval_EvalFrameDefault)
         STRUCT_FOR_ID(_WindowsConsoleIO)
         STRUCT_FOR_ID(__IOBase_closed)
         STRUCT_FOR_ID(__abc_tpflags__)

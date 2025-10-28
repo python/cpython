@@ -170,7 +170,9 @@ dummy_func(
 
         op(_QUICKEN_RESUME, (--)) {
             #if ENABLE_SPECIALIZATION_FT
-            if (tstate->tracing == 0 && this_instr->op.code == RESUME) {
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            if (tstate->tracing == 0 && this_instr->op.code == RESUME &&
+                code != (PyCodeObject *)&_Py_InitCleanup && code != (PyCodeObject *)&_PyEntryFrameCode) {
                 FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
             }
             #endif  /* ENABLE_SPECIALIZATION_FT */
@@ -1218,19 +1220,33 @@ dummy_func(
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
+            if (IS_JIT_TRACING()) {
+#if _Py_TIER2
+                _PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
+                LEAVE_TRACING();
+                int err = bail_tracing_and_jit(tstate, frame);
+                if (err < 0) {
+                    Py_DECREF(result);
+                    ERROR_IF(true);
+                }
+                return result;
+#endif
+            }
+            else {
 #if !_Py_TAIL_CALL_INTERP
-            assert(frame == &entry.frame);
+                assert(frame == &entry.frame);
 #endif
 #ifdef _Py_TIER2
-            _PyStackRef executor = frame->localsplus[0];
-            assert(tstate->current_executor == NULL);
-            if (!PyStackRef_IsNull(executor)) {
-                tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
-                PyStackRef_CLOSE(executor);
-            }
+                _PyStackRef executor = frame->localsplus[0];
+                assert(tstate->current_executor == NULL);
+                if (!PyStackRef_IsNull(executor)) {
+                    tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
+                    PyStackRef_CLOSE(executor);
+                }
 #endif
-            LLTRACE_RESUME_FRAME();
-            return result;
+                LLTRACE_RESUME_FRAME();
+                return result;
+            }
         }
 
         // The stack effect here is a bit misleading.
@@ -3020,15 +3036,6 @@ dummy_func(
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
-            // We want to end any current trace here, before we possibly need
-            // to start tracing new ones due to recursive traces in any inner C functions
-            // in tier2 code.
-            if (IS_JIT_TRACING()) {
-                _PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
-                LEAVE_TRACING();
-                int err = bail_tracing_and_jit(tstate, frame);
-                ERROR_IF(err < 0);
-            }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
@@ -3038,14 +3045,19 @@ dummy_func(
             /* If the eval breaker is set then stay in tier 1.
              * This avoids any potentially infinite loops
              * involving _RESUME_CHECK */
-            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+            if (IS_JIT_TRACING() || _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
                 if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                     PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
-                DISPATCH_GOTO();
+                if (IS_JIT_TRACING()) {
+                    DISPATCH_GOTO_NON_TRACING();
+                }
+                else {
+                    DISPATCH_GOTO();
+                }
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;

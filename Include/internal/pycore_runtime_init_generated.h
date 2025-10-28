@@ -1342,6 +1342,7 @@ extern "C" {
     INIT_ID(TextIOWrapper), \
     INIT_ID(True), \
     INIT_ID(WarningMessage), \
+    INIT_ID(_PyEval_EvalFrameDefault), \
     INIT_ID(_WindowsConsoleIO), \
     INIT_ID(__IOBase_closed), \
     INIT_ID(__abc_tpflags__), \

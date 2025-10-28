@@ -3196,12 +3196,6 @@ _Py_GatherStats_GetIter(_PyStackRef iterable)
  * be lifted.
  */
 
-#define NO_LOC_4 (128 | (PY_CODE_LOCATION_INFO_NONE << 3) | 3)
-
-static const PyBytesObject no_location = {
-    PyVarObject_HEAD_INIT(&PyBytes_Type, 1)
-    .ob_sval = { NO_LOC_4 }
-};
 
 #ifdef Py_GIL_DISABLED
 static _PyCodeArray init_cleanup_tlbc = {
