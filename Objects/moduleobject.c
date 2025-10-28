@@ -411,30 +411,32 @@ module_from_def_and_spec(
     for (cur_slot = def_like->m_slots; cur_slot && cur_slot->slot; cur_slot++) {
         // Macro to copy a non-NULL, non-repeatable slot that's unusable with
         // PyModuleDef. The destination must be initially NULL.
-#define COPY_COMMON_SLOT(SLOT, TYPE, DEST)                          \
-        if (!(TYPE)(cur_slot->value)) {                             \
-            PyErr_Format(                                           \
-                PyExc_SystemError,                                  \
-                "module %s: " #SLOT " must not be NULL",            \
-                name);                                              \
-            goto error;                                             \
-        }                                                           \
-        if (original_def) {                                         \
-            PyErr_Format(                                           \
-                PyExc_SystemError,                                  \
-                "module %s: " #SLOT " used with PyModuleDef",       \
-                name);                                              \
-            goto error;                                             \
-        }                                                           \
-        if (DEST) {                                                 \
-            PyErr_Format(                                           \
-                PyExc_SystemError,                                  \
-                "module %s has more than one " #SLOT " slot",       \
-                name);                                              \
-            goto error;                                             \
-        }                                                           \
-        DEST = (TYPE)(cur_slot->value);                             \
-        /////////////////////////////////////////////////////////////
+#define COPY_COMMON_SLOT(SLOT, TYPE, DEST)                              \
+        do {                                                            \
+            if (!(TYPE)(cur_slot->value)) {                             \
+                PyErr_Format(                                           \
+                    PyExc_SystemError,                                  \
+                    "module %s: " #SLOT " must not be NULL",            \
+                    name);                                              \
+                goto error;                                             \
+            }                                                           \
+            if (original_def) {                                         \
+                PyErr_Format(                                           \
+                    PyExc_SystemError,                                  \
+                    "module %s: " #SLOT " used with PyModuleDef",       \
+                    name);                                              \
+                goto error;                                             \
+            }                                                           \
+            if (DEST) {                                                 \
+                PyErr_Format(                                           \
+                    PyExc_SystemError,                                  \
+                    "module %s has more than one " #SLOT " slot",       \
+                    name);                                              \
+                goto error;                                             \
+            }                                                           \
+            DEST = (TYPE)(cur_slot->value);                             \
+        } while (0);                                                    \
+        /////////////////////////////////////////////////////////////////
         switch (cur_slot->slot) {
             case Py_mod_create:
                 if (create) {
