@@ -457,7 +457,8 @@ static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
 static inline PyObject *
 _PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
 {
-    return Py_BuildValue("(Ii)", Py_REFCNT(op), 0);
+    // Do not check StackRef flags in the free threading build.
+    return Py_BuildValue("(Ii)", Py_REFCNT(op), -1);
 }
 
 static inline PyObject *
