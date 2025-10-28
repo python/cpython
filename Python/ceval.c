@@ -998,6 +998,29 @@ bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
     if (!_PyErr_Occurred(tstate) && !_is_sys_tracing) {
         err = _PyOptimizer_Optimize(frame, tstate);
     }
+    // Deal with backoffs
+    _PyExitData *exit = tstate->interp->jit_state.prev_exit;
+    if (exit == NULL) {
+        // We hold a strong reference to the code object, so the instruction won't be freed.
+        if (err <= 0) {
+            assert(tstate->interp->jit_state.jump_backward_instr->op.code == JUMP_BACKWARD_JIT);
+            _Py_BackoffCounter counter = tstate->interp->jit_state.jump_backward_instr[1].counter;
+            tstate->interp->jit_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
+        }
+        else {
+            tstate->interp->jit_state.jump_backward_instr[1].counter = initial_jump_backoff_counter();
+        }
+    }
+    else {
+        // Likewise, we hold a strong reference to the executor containing this exit, so the exit is guaranteed
+        // to be valid to access.
+        if (err <= 0) {
+            exit->temperature = restart_backoff_counter(exit->temperature);
+        }
+        else {
+            exit->temperature = initial_temperature_backoff_counter();
+        }
+    }
     _PyJit_FinalizeTracing(tstate);
     return err;
 }

@@ -7682,7 +7682,6 @@
                 if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) &&
                     this_instr->op.code == JUMP_BACKWARD_JIT &&
                     next_instr->op.code != ENTER_EXECUTOR) {
-                    this_instr[1].counter = restart_backoff_counter(counter);
                     if (tstate->interp->jit_state.code_buffer == NULL) {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         tstate->interp->jit_state.code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
@@ -7698,7 +7697,7 @@
                             oparg >>= 8;
                             insert_exec_at--;
                         }
-                        int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg);
+                        int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, NULL, oparg);
                         if (succ) {
                             ENTER_TRACING();
                         }

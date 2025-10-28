@@ -949,7 +949,7 @@ full:
 
 // Returns 0 for do not enter tracing, 1 on enter tracing.
 int
-_PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit, int oparg)
+_PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit, _PyExecutorObject *prev_exec, int oparg)
 {
     // A recursive trace.
     // Don't trace into the inner call because it will stomp on the previous trace, causing endless retraces.
@@ -991,6 +991,9 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _
     tstate->interp->jit_state.prev_instr_oparg = oparg;
     tstate->interp->jit_state.prev_instr_stacklevel = curr_stackdepth;
     tstate->interp->jit_state.prev_instr_is_super = false;
+    assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (prev_exec != NULL && exit != NULL));
+    tstate->interp->jit_state.jump_backward_instr = curr_instr;
+    tstate->interp->jit_state.prev_executor = (_PyExecutorObject *)Py_XNewRef(prev_exec);
     _Py_BloomFilter_Init(&tstate->interp->jit_state.dependencies);
     return 1;
 }
@@ -1001,6 +1004,7 @@ _PyJit_FinalizeTracing(PyThreadState *tstate)
     Py_CLEAR(tstate->interp->jit_state.initial_code);
     Py_CLEAR(tstate->interp->jit_state.initial_func);
     Py_CLEAR(tstate->interp->jit_state.prev_instr_code);
+    Py_CLEAR(tstate->interp->jit_state.prev_executor);
     tstate->interp->jit_state.code_curr_size = 2;
     tstate->interp->jit_state.code_max_size = UOP_MAX_TRACE_LENGTH - 1;
 }
