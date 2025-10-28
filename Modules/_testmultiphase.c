@@ -1142,7 +1142,7 @@ modexport_smoke_free(PyObject *mod)
 {
     int *state = PyModule_GetState(mod);
     if (!state) {
-        PyErr_WriteUnraisable(mod);
+        PyErr_FormatUnraisable("Exception ignored in module %R free", mod);
     }
     assert(*state == 258);
 }
