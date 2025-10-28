@@ -1,0 +1,1 @@
+LineCache - Avoid making useless filesystem calls for frozen modules when the global module cache is not present.
