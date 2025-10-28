@@ -33,7 +33,7 @@ assert_def_missing_or_redundant(PyModuleObject *m) {
      * Modules created using a def keep a reference to that (statically
      * allocated) def; the info there should match what we have in the module.
      */
-#ifdef Py_DEBUG
+#ifdef NDEBUG
     if (m->md_token_is_def) {
         PyModuleDef *def = (PyModuleDef *)m->md_token;
         assert(def);
@@ -44,7 +44,7 @@ assert_def_missing_or_redundant(PyModuleObject *m) {
         DO_ASSERT(free);
 #undef DO_ASSERT
     }
-#endif // Py_DEBUG
+#endif // NDEBUG
 }
 
 
