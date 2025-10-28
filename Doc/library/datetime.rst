@@ -2643,8 +2643,12 @@ requires, and these work on all supported platforms.
 |  ``%%``   | A literal ``'%'`` character.   | %                      |     Yes      |       |
 +-----------+--------------------------------+------------------------+--------------+-------+
 
-Several additional directives not required by the C89 standard are included for
-convenience. These parameters all correspond to ISO 8601 date values.
+The ISO 8601 year and ISO 8601 week directives are not interchangeable
+with the year and week number directives above. Calling :meth:`~.datetime.strptime` with
+incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
+
+Several additional directives not required by the C11 standard are included for
+convenience.
 
 +-----------+--------------------------------+------------------------+-------+
 | Directive | Meaning                        | Example                | Notes |
@@ -2658,11 +2662,6 @@ convenience. These parameters all correspond to ISO 8601 date values.
 |           | (empty string if the object is | +06:34:15,             |       |
 |           | naive).                        | -03:07:12.345216       |       |
 +-----------+--------------------------------+------------------------+-------+
-
-These may not be available on all platforms when used with the :meth:`~.datetime.strftime`
-method. The ISO 8601 year and ISO 8601 week directives are not interchangeable
-with the year and week number directives above. Calling :meth:`~.datetime.strptime` with
-incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
 
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :c:func:`strftime` function, and platform
