@@ -141,5 +141,9 @@ def setup_tests(runtests: RunTests) -> None:
 
     random.seed(runtests.random_seed)
 
+    # sys.stdout is redirected to a StringIO in single process mode on which
+    # color auto-detect fails as StringIO is not a TTY. If the original
+    # sys.stdout supports color pass that through with FORCE_COLOR so that when
+    # results are printed, such as with -W, they get color.
     if can_colorize(file=sys.stdout):
         os.environ['FORCE_COLOR'] = "1"
