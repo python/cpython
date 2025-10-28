@@ -1,1 +1,1 @@
-Enhance auto-indent in :mod:!`_pyrepl`.
+Enhance auto-indent in :mod:`!_pyrepl`.
