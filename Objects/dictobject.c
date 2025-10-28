@@ -1775,7 +1775,7 @@ static inline int
 insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
                      Py_hash_t hash, PyObject *key, PyObject *value)
 {
-    // gh-140551: If dict was cleaned in _Py_dict_lookup,
+    // gh-140551: If dict was cleared in _Py_dict_lookup,
     // we have to resize one more time to force general key kind.
     if (DK_IS_UNICODE(mp->ma_keys) && !PyUnicode_CheckExact(key)) {
         if (insertion_resize(mp, 0) < 0)
