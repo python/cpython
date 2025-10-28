@@ -395,10 +395,11 @@ findfuncptr(const char *prefix, const char *name_buf,
 }
 
 int
-_PyImport_GetModInitFunc2(struct _Py_ext_module_loader_info *info,
-                          FILE *fp,
-                          PyModInitFunction *modinit,
-                          PyModExportFunction *modexport)
+_PyImport_GetModuleExportHooks(
+    struct _Py_ext_module_loader_info *info,
+    FILE *fp,
+    PyModInitFunction *modinit,
+    PyModExportFunction *modexport)
 {
     *modinit = NULL;
     *modexport = NULL;

@@ -672,8 +672,8 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). first time  (not found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
-       C.   _PyImport_GetModInitFunc():  load <module init func>
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModuleExportHooks()
+       C.   _PyImport_GetModuleExportHooks():  load <module init func>
        D. _imp_create_dynamic_impl() -> import_run_extension()
        E.   import_run_extension() -> _PyImport_RunModInitFunc()
        F.     _PyImport_RunModInitFunc():  call <module init func>
@@ -747,8 +747,8 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). every time:
        A. _imp_create_dynamic_impl() -> import_find_extension()  (not found)
-       B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
-       C.   _PyImport_GetModInitFunc():  load <module init func>
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModuleExportHooks()
+       C.   _PyImport_GetModuleExportHooks():  load <module init func>
        D. _imp_create_dynamic_impl() -> import_run_extension()
        E.   import_run_extension() -> _PyImport_RunModInitFunc()
        F.     _PyImport_RunModInitFunc():  call <module init func>
@@ -779,8 +779,8 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     (6). every time:
 
        A. _imp_create_dynamic_impl() -> import_find_extension()  (not found)
-       B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
-       C.   _PyImport_GetModInitFunc():  load <module export func>
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModuleExportHooks()
+       C.   _PyImport_GetModuleExportHooks():  load <module export func>
        D. _imp_create_dynamic_impl() -> import_run_modexport()
        E.     import_run_modexport():  call <module init func>
        F.   import_run_modexport() -> PyModule_FromSlotsAndSpec()
@@ -2192,7 +2192,7 @@ main_finally:
         assert_multiphase_def(def);
         assert(mod == NULL);
         /* Note that we cheat a little by not repeating the calls
-         * to _PyImport_GetModInitFunc() and _PyImport_RunModInitFunc(). */
+         * to _PyImport_GetModuleExportHooks() and _PyImport_RunModInitFunc(). */
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
             goto error;
@@ -4747,7 +4747,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 
     /* We would move this (and the fclose() below) into
-     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
+     * _PyImport_GetModuleExportHooks(), but it isn't clear if the intervening
      * code relies on fp still being open. */
     FILE *fp;
     if (file != NULL) {
@@ -4762,7 +4762,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 
     PyModInitFunction p0 = NULL;
     PyModExportFunction ex0 = NULL;
-    _PyImport_GetModInitFunc2(&info, fp, &p0, &ex0);
+    _PyImport_GetModuleExportHooks(&info, fp, &p0, &ex0);
     if (ex0) {
         mod = import_run_modexport(tstate, ex0, &info, spec);
         goto cleanup;
