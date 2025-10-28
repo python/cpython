@@ -321,7 +321,7 @@ except for a few breakpoints.
 
 If :data:`DISABLE` is returned by a callback for a
 :ref:`global event <monitoring-event-global>`, :exc:`ValueError` will be raised
-by the interpreter in a non-specific location (i.e. no traceback will be
+by the interpreter in a non-specific location (that is, no traceback will be
 provided).
 
 .. function:: restart_events() -> None
