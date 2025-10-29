@@ -620,7 +620,7 @@ otherwise stated.
       may create a vulnerabilitiy to
       `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
       if :class:`xmlparser` is used with user-provided XML content.
-      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>_`
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
       before implementing this handler.
       By default, :class:`xmlparser` is safe from these threats.
 
