@@ -272,14 +272,12 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
 
 @contextmanager
-def pythonstartup_env(*, script: str, histfile: str = ".pythonhist", env=None):
+def new_startup_env(*, code: str, histfile: str = ".pythonhist"):
     with os_helper.temp_dir() as tmpdir:
         filename = os.path.join(tmpdir, "pythonstartup.py")
         with open(filename, "w") as f:
-            f.write(os.linesep.join(script.splitlines()))
-        if env is None:
-            env = os.environ.copy()
-        yield env | {"PYTHONSTARTUP": filename, "PYTHON_HISTORY": os.path.join(tmpdir, histfile)}
+            f.write(os.linesep.join(code.splitlines()))
+        yield {"PYTHONSTARTUP": filename, "PYTHON_HISTORY": os.path.join(tmpdir, histfile)}
 
 
 @support.force_not_colorized_test_class
@@ -292,12 +290,13 @@ class TestPythonStartup(unittest.TestCase):
     def test_pythonstartup_success(self):
         # errors based on https://github.com/python/cpython/issues/137576
         # case 1: error in user input, but PYTHONSTARTUP is fine
+        startup_code = "print('from pythonstartup')"
         for repl_name, repl_factory, histfile in self.REPLS:
             with (
                 self.subTest(repl_name),
-                pythonstartup_env(script="print('from pythonstartup')", histfile=histfile) as env
+                new_startup_env(code=startup_code, histfile=histfile) as startup_env
             ):
-                p = repl_factory(env=env, isolated=False)
+                p = repl_factory(env=os.environ | startup_env, isolated=False)
                 p.stdin.write("1/0")
                 output = kill_python(p)
 
@@ -311,19 +310,20 @@ class TestPythonStartup(unittest.TestCase):
 
     def test_pythonstartup_failure(self):
         # case 2: error in PYTHONSTARTUP triggered by user input
+        startup_code = "def foo():\n    1/0\n"
         for repl_name, repl_factory, histfile in self.REPLS:
             with (
                 self.subTest(repl_name),
-                pythonstartup_env(script="def foo():\n    1/0\n", histfile=histfile) as env
+                new_startup_env(code=startup_code, histfile=histfile) as startup_env
             ):
-                p = repl_factory(env=env, isolated=False)
+                p = repl_factory(env=os.environ | startup_env, isolated=False)
                 p.stdin.write('foo()')
                 output = kill_python(p)
 
                 for expected in (
                     "Traceback (most recent call last):",
                     'File "<stdin>", line 1, in <module>',
-                    f'File "{env['PYTHONSTARTUP']}", line ',
+                    f'File "{startup_env['PYTHONSTARTUP']}", line ',
                     "ZeroDivisionError: division by zero",
                 ):
                     self.assertIn(expected, output)
