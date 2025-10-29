@@ -539,6 +539,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
             }
+            else if (c == EOF && PyErr_Occurred()) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
             else {
                 break;
             }
