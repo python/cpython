@@ -638,6 +638,17 @@ by setting ``color`` to ``False``::
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--help'])
 
+Note that the environment variables take precedence over ``color=True``, but
+``color=False`` takes precedence over the environment variables.  For
+instance, if the environment variable ``NO_COLOR`` is set then there will be
+no colored output even if the ``color`` parameter is explicitly set to
+``True``.  If the environment variable ``FORCE_COLOR`` is set then colored
+output will be depending on the ``color`` parameter.  If both are set then
+``NO_COLOR`` takes precedence.
+
+See :ref:`controlling color <using-on-controlling-color>` for more information
+on controlling colored output globally.
+
 .. versionadded:: 3.14
 
 
