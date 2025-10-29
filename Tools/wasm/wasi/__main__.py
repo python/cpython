@@ -84,7 +84,9 @@ def updated_env(updates={}):
         if os.environ.get(key) != value:
             env_diff[key] = value
 
-    env_vars = [f"\n     {key}={item}" for key, item in sorted(env_diff.items())]
+    env_vars = (
+        f"\n     {key}={item}" for key, item in sorted(env_diff.items())
+    )
     log("🌎", f"Environment changes:{''.join(env_vars)}")
 
     return environment
