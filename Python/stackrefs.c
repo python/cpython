@@ -111,9 +111,8 @@ _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
                 _Py_FatalErrorFormat(__func__,
                     "Invalid borrowed StackRef with ID %" PRIu64 " at %s:%d\n",
                     borrowed_from.index, filename, linenumber);
-            } else {
-                entry_borrowed->borrows--;
             }
+            entry_borrowed->borrows--;
         }
         if (entry->borrows > 0) {
             _Py_FatalErrorFormat(__func__,
@@ -182,8 +181,31 @@ _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber
 }
 
 void
+_Py_stackref_get_borrowed_from(_PyStackRef ref, _PyStackRef *p_borrowed_from, const char *filename, int linenumber)
+{
+    assert(!PyStackRef_IsError(ref));
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    TableEntry *entry = _Py_hashtable_get(interp->open_stackrefs_table, (void *)ref.index);
+    if (entry == NULL) {
+        _Py_FatalErrorFormat(__func__,
+            "Invalid StackRef with ID %" PRIu64 " at %s:%d\n",
+            ref.index, filename, linenumber);
+    }
+
+    if (p_borrowed_from != NULL) {
+        *p_borrowed_from = entry->borrowed_from;
+    }
+}
+
+// This function should be used no more than once per ref.
+void
 _Py_stackref_set_borrowed_from(_PyStackRef ref, _PyStackRef borrowed_from, const char *filename, int linenumber)
 {
+    if (PyStackRef_IsNull(borrowed_from)) {
+        return;
+    }
+
     assert(!PyStackRef_IsError(ref));
     PyInterpreterState *interp = PyInterpreterState_Get();
 
@@ -203,11 +225,6 @@ _Py_stackref_set_borrowed_from(_PyStackRef ref, _PyStackRef borrowed_from, const
 
     entry->borrowed_from = borrowed_from;
     entry_borrowed->borrows++;
-}
-
-void
-_Py_stackref_copy_borrowed_from(_PyStackRef ref, _PyStackRef ref_orig, const char *filename, int linenumber)
-{
 }
 
 void

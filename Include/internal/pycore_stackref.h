@@ -63,6 +63,7 @@ PyAPI_FUNC(PyObject *) _Py_stackref_get_object(_PyStackRef ref);
 PyAPI_FUNC(PyObject *) _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber);
 PyAPI_FUNC(_PyStackRef) _Py_stackref_create(PyObject *obj, uint16_t flags, const char *filename, int linenumber);
 PyAPI_FUNC(void) _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber);
+PyAPI_FUNC(void) _Py_stackref_get_borrowed_from(_PyStackRef ref, _PyStackRef *p_borrowed_from, const char *filename, int linenumber);
 PyAPI_FUNC(void) _Py_stackref_set_borrowed_from(_PyStackRef ref, _PyStackRef borrowed_from, const char *filename, int linenumber);
 PyAPI_FUNC(void) _Py_stackref_copy_borrowed_from(_PyStackRef ref, _PyStackRef ref_orig, const char *filename, int linenumber);
 extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref);
@@ -252,7 +253,9 @@ _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
     }
     _PyStackRef new_ref = _Py_stackref_create(obj, flags, filename, linenumber);
     if (flags == Py_TAG_REFCNT && !_Py_IsImmortal(obj)) {
-        _Py_stackref_copy_borrowed_from(new_ref, ref, filename, linenumber);
+        _PyStackRef borrowed_from;
+        _Py_stackref_get_borrowed_from(ref, &borrowed_from, filename, linenumber);
+        _Py_stackref_set_borrowed_from(new_ref, borrowed_from, filename, linenumber);
     }
     return new_ref;
 }
