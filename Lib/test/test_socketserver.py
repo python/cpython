@@ -204,15 +204,11 @@ class SocketServerTest(unittest.TestCase):
                             socketserver.StreamRequestHandler,
                             self.stream_examine)
 
-    @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
-                     "Test fails regularly on iOS simulator on Github Actions - See #140702")
     def test_UDPServer(self):
         self.run_server(socketserver.UDPServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
-    @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
-                     "Test fails regularly on iOS simulator on Github Actions - See #140702")
     def test_ThreadingUDPServer(self):
         self.run_server(socketserver.ThreadingUDPServer,
                         socketserver.DatagramRequestHandler,
@@ -227,12 +223,16 @@ class SocketServerTest(unittest.TestCase):
                             self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
+                     "Test fails regularly on iOS simulator on Github Actions - See #140702")
     def test_UnixDatagramServer(self):
         self.run_server(socketserver.UnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
+                     "Test fails regularly on iOS simulator on Github Actions - See #140702")
     def test_ThreadingUnixDatagramServer(self):
         self.run_server(socketserver.ThreadingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
