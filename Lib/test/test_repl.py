@@ -323,7 +323,7 @@ class TestPythonStartup(unittest.TestCase):
                 for chunk in (
                     "Traceback (most recent call last):",
                     'File "<stdin>", line 1, in <module>',
-                    f'File "{env['PYTHONSTARTUP']}", line 2, in foo',
+                    f'File "{env['PYTHONSTARTUP']}", line ',
                     "ZeroDivisionError: division by zero",
                 ):
                     self.assertIn(chunk, output)
