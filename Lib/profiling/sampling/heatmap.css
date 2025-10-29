@@ -617,6 +617,8 @@ footer {
   z-index: 1000;
   min-width: 250px;
   max-width: 400px;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .callee-menu-header {
@@ -652,6 +654,26 @@ footer {
 .callee-menu-file {
   font-size: 0.85em;
   color: var(--color-text-muted);
+}
+
+/* Callee menu scrollbar styling */
+.callee-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.callee-menu::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.callee-menu::-webkit-scrollbar-thumb {
+  background: var(--code-border);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-base);
+}
+
+.callee-menu::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }
 
 /* ========================================
