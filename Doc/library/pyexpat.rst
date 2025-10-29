@@ -617,7 +617,7 @@ otherwise stated.
    .. warning::
 
       Implementing a handler that accesses local files and/or the network
-      may create a vulnerabilitiy to
+      may create a vulnerability to
       `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
       if :class:`xmlparser` is used with user-provided XML content.
       Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
