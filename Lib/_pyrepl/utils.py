@@ -331,6 +331,7 @@ def disp_str(
             pre_color = theme[colors[0].tag]
 
         if c == "\t":  # gh-140502: handle tabs
+        if c == "\t":  # gh-140502: properly handle tabs when pasting multiline text
             width = 8 - (sum(char_widths) % 8)
             chars.append(" " * width)
             char_widths.append(width)
