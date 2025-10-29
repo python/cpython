@@ -148,7 +148,8 @@ following functions:
 
    Return ``True`` if *chr* is a valid identifier start per the
    `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_,
-   that is, it has the ``XID_Start`` property, ``False`` otherwise. For example::
+   that is, it has the ``XID_Start`` property. Return ``False`` otherwise.
+   For example::
 
       >>> unicodedata.isidstart('S')
       True
@@ -162,7 +163,8 @@ following functions:
 
    Return ``True`` if *chr* is a valid identifier charcter per the
    `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_,
-   that is, it has the ``XID_Continue`` property, ``False`` otherwise. For example::
+   that is, it has the ``XID_Continue`` property. Return ``False`` otherwise.
+   For example::
 
       >>> unicodedata.isidcontinue('S')
       True
