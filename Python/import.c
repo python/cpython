@@ -782,18 +782,13 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
    substitute this (if the name actually matches).
 */
 
-#ifdef HAVE_THREAD_LOCAL
 _Py_thread_local const char *pkgcontext = NULL;
 # undef PKGCONTEXT
 # define PKGCONTEXT pkgcontext
-#endif
 
 const char *
 _PyImport_ResolveNameWithPackageContext(const char *name)
 {
-#ifndef HAVE_THREAD_LOCAL
-    PyMutex_Lock(&EXTENSIONS.mutex);
-#endif
     if (PKGCONTEXT != NULL) {
         const char *p = strrchr(PKGCONTEXT, '.');
         if (p != NULL && strcmp(name, p+1) == 0) {
@@ -801,23 +796,14 @@ _PyImport_ResolveNameWithPackageContext(const char *name)
             PKGCONTEXT = NULL;
         }
     }
-#ifndef HAVE_THREAD_LOCAL
-    PyMutex_Unlock(&EXTENSIONS.mutex);
-#endif
     return name;
 }
 
 const char *
 _PyImport_SwapPackageContext(const char *newcontext)
 {
-#ifndef HAVE_THREAD_LOCAL
-    PyMutex_Lock(&EXTENSIONS.mutex);
-#endif
     const char *oldcontext = PKGCONTEXT;
     PKGCONTEXT = newcontext;
-#ifndef HAVE_THREAD_LOCAL
-    PyMutex_Unlock(&EXTENSIONS.mutex);
-#endif
     return oldcontext;
 }
 
@@ -2358,6 +2344,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(info.name, p->name)) {
             found = p;
+            break;
         }
     }
     if (found == NULL) {
@@ -3680,33 +3667,6 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 #define accumulated FIND_AND_LOAD(interp).accumulated
 
     PyTime_t t1 = 0, accumulated_copy = accumulated;
-
-    PyObject *sys_path, *sys_meta_path, *sys_path_hooks;
-    if (PySys_GetOptionalAttrString("path", &sys_path) < 0) {
-        return NULL;
-    }
-    if (PySys_GetOptionalAttrString("meta_path", &sys_meta_path) < 0) {
-        Py_XDECREF(sys_path);
-        return NULL;
-    }
-    if (PySys_GetOptionalAttrString("path_hooks", &sys_path_hooks) < 0) {
-        Py_XDECREF(sys_meta_path);
-        Py_XDECREF(sys_path);
-        return NULL;
-    }
-    if (_PySys_Audit(tstate, "import", "OOOOO",
-                     abs_name, Py_None, sys_path ? sys_path : Py_None,
-                     sys_meta_path ? sys_meta_path : Py_None,
-                     sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
-        Py_XDECREF(sys_path_hooks);
-        Py_XDECREF(sys_meta_path);
-        Py_XDECREF(sys_path);
-        return NULL;
-    }
-    Py_XDECREF(sys_path_hooks);
-    Py_XDECREF(sys_meta_path);
-    Py_XDECREF(sys_path);
-
 
     /* XOptions is initialized after first some imports.
      * So we can't have negative cache before completed initialization.

@@ -1,0 +1,2 @@
+Fix arguments checking for the :meth:`!functools.partial.__setstate__` that
+may lead to internal state corruption and crash. Patch by Sergey Miryanov.

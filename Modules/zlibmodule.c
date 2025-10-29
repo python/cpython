@@ -344,7 +344,7 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
     PyObject *return_value;
     int flush;
     z_stream zst;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     zlibstate *state = get_zlib_state(module);
 
@@ -445,7 +445,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
     Py_ssize_t ibuflen;
     int err, flush;
     z_stream zst;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     zlibstate *state = get_zlib_state(module);
@@ -774,7 +774,7 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 {
     PyObject *return_value;
     int err;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     zlibstate *state = PyType_GetModuleState(cls);
 
     ENTER_ZLIB(self);
@@ -833,22 +833,24 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
            input data in self->unused_data. */
         if (self->zst.avail_in > 0) {
             Py_ssize_t old_size = PyBytes_GET_SIZE(self->unused_data);
-            Py_ssize_t new_size, left_size;
-            PyObject *new_data;
+            Py_ssize_t left_size;
             left_size = (Byte *)data->buf + data->len - self->zst.next_in;
             if (left_size > (PY_SSIZE_T_MAX - old_size)) {
                 PyErr_NoMemory();
                 return -1;
             }
-            new_size = old_size + left_size;
-            new_data = PyBytes_FromStringAndSize(NULL, new_size);
-            if (new_data == NULL)
+            PyBytesWriter *writer = PyBytesWriter_Create(old_size + left_size);
+            if (writer == NULL) {
                 return -1;
-            memcpy(PyBytes_AS_STRING(new_data),
-                      PyBytes_AS_STRING(self->unused_data), old_size);
-            memcpy(PyBytes_AS_STRING(new_data) + old_size,
-                      self->zst.next_in, left_size);
-            Py_SETREF(self->unused_data, new_data);
+            }
+            char *new_data = PyBytesWriter_GetData(writer);
+            memcpy(new_data, PyBytes_AS_STRING(self->unused_data), old_size);
+            memcpy(new_data + old_size, self->zst.next_in, left_size);
+            PyObject *new_unused_data = PyBytesWriter_Finish(writer);
+            if (new_unused_data == NULL) {
+                return -1;
+            }
+            Py_SETREF(self->unused_data, new_unused_data);
             self->zst.avail_in = 0;
         }
     }
@@ -896,7 +898,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     int err = Z_OK;
     Py_ssize_t ibuflen;
     PyObject *return_value;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     PyObject *module = PyType_GetModule(cls);
     if (module == NULL)
@@ -1003,13 +1005,13 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 {
     int err;
     PyObject *return_value;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     zlibstate *state = PyType_GetModuleState(cls);
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
        doing any work at all; just return an empty string. */
     if (mode == Z_NO_FLUSH) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     ENTER_ZLIB(self);
@@ -1265,7 +1267,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     Py_buffer data;
     PyObject *return_value;
     Py_ssize_t ibuflen;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     _Uint32Window window;  // output buffer's UINT32_MAX sliding window
 
     PyObject *module = PyType_GetModule(cls);
@@ -1764,11 +1766,7 @@ zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
     self->zst.zfree = PyZlib_Free;
     self->zst.next_in = NULL;
     self->zst.avail_in = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
-    if (self->unused_data == NULL) {
-        Py_CLEAR(self);
-        return NULL;
-    }
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
         Py_DECREF(self);
@@ -2017,6 +2015,27 @@ zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
     return crc32_combine(crc1, crc2, len);
 }
 
+static PyObject *
+zlib_getattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString("1.0");
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module 'zlib' has no attribute %R", name);
+    return NULL;
+}
+
 static PyMethodDef zlib_methods[] =
 {
     ZLIB_ADLER32_METHODDEF
@@ -2027,6 +2046,7 @@ static PyMethodDef zlib_methods[] =
     ZLIB_CRC32_COMBINE_METHODDEF
     ZLIB_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESSOBJ_METHODDEF
+    {"__getattr__", zlib_getattr, METH_VARARGS, "Module __getattr__"},
     {NULL, NULL}
 };
 
@@ -2223,9 +2243,6 @@ zlib_exec(PyObject *mod)
         return -1;
     }
 #endif
-    if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
-        return -1;
-    }
     return 0;
 }
 

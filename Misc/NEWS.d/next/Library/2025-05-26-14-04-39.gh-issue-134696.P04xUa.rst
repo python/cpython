@@ -1,5 +1,0 @@
-Built-in HACL* and OpenSSL implementations of hash function constructors
-now correctly accept the same *documented* named arguments. For instance,
-:func:`~hashlib.md5` could be previously invoked as ``md5(data=data)``
-or ``md5(string=string)`` depending on the underlying implementation
-but these calls were not compatible. Patch by Bénédikt Tran.

@@ -63,7 +63,7 @@ pack_arguments_2pos_varpos(PyObject *a, PyObject *b,
                            PyObject * const *args, Py_ssize_t args_length)
 /*[clinic end generated code: output=267032f41bd039cc input=86ee3064b7853e86]*/
 {
-    PyObject *tuple = _PyTuple_FromArray(args, args_length);
+    PyObject *tuple = PyTuple_FromArray(args, args_length);
     if (tuple == NULL) {
         return NULL;
     }
@@ -663,16 +663,16 @@ error:
 static PyObject *
 bytes_from_buffer(Py_buffer *buf)
 {
-    PyObject *bytes_obj = PyBytes_FromStringAndSize(NULL, buf->len);
-    if (!bytes_obj) {
+    PyBytesWriter *writer = PyBytesWriter_Create(buf->len);
+    if (writer == NULL) {
         return NULL;
     }
-    void *bytes_obj_buf = ((PyBytesObject *)bytes_obj)->ob_sval;
-    if (PyBuffer_ToContiguous(bytes_obj_buf, buf, buf->len, 'C') < 0) {
-        Py_DECREF(bytes_obj);
+    void *data = PyBytesWriter_GetData(writer);
+    if (PyBuffer_ToContiguous(data, buf, buf->len, 'C') < 0) {
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
-    return bytes_obj;
+    return PyBytesWriter_Finish(writer);
 }
 
 /*[clinic input]
@@ -1174,7 +1174,7 @@ varpos_array_impl(PyObject *module, PyObject * const *args,
                   Py_ssize_t args_length)
 /*[clinic end generated code: output=a25f42f39c9b13ad input=97b8bdcf87e019c7]*/
 {
-    return _PyTuple_FromArray(args, args_length);
+    return PyTuple_FromArray(args, args_length);
 }
 
 
@@ -1610,7 +1610,7 @@ _testclinic_TestClass_varpos_array_no_fastcall_impl(PyTypeObject *type,
                                                     Py_ssize_t args_length)
 /*[clinic end generated code: output=27c9da663e942617 input=9ba5ae1f1eb58777]*/
 {
-    return _PyTuple_FromArray(args, args_length);
+    return PyTuple_FromArray(args, args_length);
 }
 
 
@@ -2313,6 +2313,88 @@ output pop
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e7c7c42daced52b0]*/
 
+
+/*[clinic input]
+output push
+destination kwarg new file '{dirname}/clinic/_testclinic_kwds.c.h'
+output everything kwarg
+output docstring_prototype suppress
+output parser_prototype suppress
+output impl_definition block
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=02965b54b3981cc4]*/
+
+#include "clinic/_testclinic_kwds.c.h"
+
+
+/*[clinic input]
+lone_kwds
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+lone_kwds_impl(PyObject *module, PyObject *kwds)
+/*[clinic end generated code: output=572549c687a0432e input=6ef338b913ecae17]*/
+{
+    return pack_arguments_newref(1, kwds);
+}
+
+
+/*[clinic input]
+kwds_with_pos_only
+    a: object
+    b: object
+    /
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+kwds_with_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
+                        PyObject *kwds)
+/*[clinic end generated code: output=573096d3a7efcce5 input=da081a5d9ae8878a]*/
+{
+    return pack_arguments_newref(3, a, b, kwds);
+}
+
+
+/*[clinic input]
+kwds_with_stararg
+    *args: tuple
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+kwds_with_stararg_impl(PyObject *module, PyObject *args, PyObject *kwds)
+/*[clinic end generated code: output=d4b0064626a25208 input=1be404572d685859]*/
+{
+    return pack_arguments_newref(2, args, kwds);
+}
+
+
+/*[clinic input]
+kwds_with_pos_only_and_stararg
+    a: object
+    b: object
+    /
+    *args: tuple
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+kwds_with_pos_only_and_stararg_impl(PyObject *module, PyObject *a,
+                                    PyObject *b, PyObject *args,
+                                    PyObject *kwds)
+/*[clinic end generated code: output=af7df7640c792246 input=2fe330c7981f0829]*/
+{
+    return pack_arguments_newref(4, a, b, args, kwds);
+}
+
+
+/*[clinic input]
+output pop
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e7c7c42daced52b0]*/
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     OBJECTS_CONVERTER_METHODDEF
@@ -2404,6 +2486,12 @@ static PyMethodDef tester_methods[] = {
     DEPR_KWD_NOINLINE_METHODDEF
     DEPR_KWD_MULTI_METHODDEF
     DEPR_MULTI_METHODDEF
+
+    LONE_KWDS_METHODDEF
+    KWDS_WITH_POS_ONLY_METHODDEF
+    KWDS_WITH_STARARG_METHODDEF
+    KWDS_WITH_POS_ONLY_AND_STARARG_METHODDEF
+
     {NULL, NULL}
 };
 
