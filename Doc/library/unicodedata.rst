@@ -144,7 +144,7 @@ following functions:
       1
 
 
-.. function:: isidstart(chr, /)
+.. function:: isxidstart(chr, /)
 
    Return ``True`` if *chr* is a valid identifier start per the
    `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_,
@@ -159,7 +159,7 @@ following functions:
    .. versionadded:: next
 
 
-.. function:: isidcontinue(chr, /)
+.. function:: isxidcontinue(chr, /)
 
    Return ``True`` if *chr* is a valid identifier charcter per the
    `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_,

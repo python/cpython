@@ -1527,7 +1527,7 @@ unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
 }
 
 /*[clinic input]
-unicodedata.UCD.isidstart
+unicodedata.UCD.isxidstart
 
     self: self
     chr: int(accept={str})
@@ -1538,8 +1538,8 @@ Return True if the character has the XID_Start property, else False.
 [clinic start generated code]*/
 
 static PyObject *
-unicodedata_UCD_isidstart_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=29fbeaf6491d9f85 input=b71b6b1b2db3c16d]*/
+unicodedata_UCD_isxidstart_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=944005823c72c3ef input=9353f88d709c21fb]*/
 {
     if (UCD_Check(self)) {
         const change_record *old = get_old_record(self, chr);
@@ -1553,7 +1553,7 @@ unicodedata_UCD_isidstart_impl(PyObject *self, int chr)
 }
 
 /*[clinic input]
-unicodedata.UCD.isidcontinue
+unicodedata.UCD.isxidcontinue
 
     self: self
     chr: int(accept={str})
@@ -1564,8 +1564,8 @@ Return True if the character has the XID_Continue property, else False.
 [clinic start generated code]*/
 
 static PyObject *
-unicodedata_UCD_isidcontinue_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=5ae694da0ee16534 input=01b4ccd399484e6b]*/
+unicodedata_UCD_isxidcontinue_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=9438dcbff5ca3e41 input=bbb8dd3ac0d2d709]*/
 {
     if (UCD_Check(self)) {
         const change_record *old = get_old_record(self, chr);
@@ -1643,8 +1643,8 @@ static PyMethodDef unicodedata_functions[] = {
     UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF
     UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
     UNICODEDATA_UCD_NAME_METHODDEF
-    UNICODEDATA_UCD_ISIDSTART_METHODDEF
-    UNICODEDATA_UCD_ISIDCONTINUE_METHODDEF
+    UNICODEDATA_UCD_ISXIDSTART_METHODDEF
+    UNICODEDATA_UCD_ISXIDCONTINUE_METHODDEF
     UNICODEDATA_UCD_LOOKUP_METHODDEF
     UNICODEDATA_UCD_IS_NORMALIZED_METHODDEF
     UNICODEDATA_UCD_NORMALIZE_METHODDEF
