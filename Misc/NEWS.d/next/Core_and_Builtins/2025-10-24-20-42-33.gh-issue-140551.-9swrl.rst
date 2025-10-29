@@ -1,0 +1,2 @@
+Fixed crash in :class:`dict` if :meth:`dict.clear` is called at the lookup
+stage. Patch by Mikhail Efimov and Inada Naoki.
