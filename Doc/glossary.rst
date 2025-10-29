@@ -307,8 +307,9 @@ Glossary
 
    concurrent modification
       When multiple threads modify shared data at the same time without
-      proper synchronization.  Concurrent modification can lead to
-      :term:`data races <data race>` and corrupted data.
+      proper synchronization.  Concurrent modification can cause
+      :term:`race conditions <race condition>`, and might also trigger a 
+      :term:`data race <data race>`, data corruption, or both.
 
    context
       This term has different meanings depending on where and how it is used.
@@ -399,8 +400,10 @@ Glossary
       do not use any synchronization to control their access.  Data races
       lead to :term:`non-deterministic` behavior and can cause data corruption.
       Proper use of :term:`locks <lock>` and other :term:`synchronization primitives
-      <synchronization primitive>` prevents data races.  See also
-      :term:`race condition` and :term:`thread-safe`.
+      <synchronization primitive>` prevents data races.  Note that data races
+      can only happen in native code, but that :term:`native code` might be
+      exposed in a Python API.  See also :term:`race condition` and
+      :term:`thread-safe`.
 
    deadlock
       A situation where two or more threads are unable to proceed because
@@ -716,7 +719,8 @@ Glossary
       variables, class variables, or C static variables in :term:`extension modules
       <extension module>`.  In multi-threaded programs, global state shared
       between threads typically requires synchronization to avoid
-      :term:`race conditions <race condition>`. In the
+      :term:`race conditions <race condition>` and
+      :term:`data races <data race>`.  In the
       :term:`free-threaded <free threading>` build, :term:`per-module state`
       is often preferred over global state for C extension modules.
       See also :term:`per-module state`.
@@ -1075,6 +1079,13 @@ Glossary
 
       See also :term:`module`.
 
+   native code
+      Code that is compiled to machine instructions and runs directly on the
+      processor, as opposed to code that is interpreted or runs in a virtual
+      machine.  In the context of Python, native code typically refers to
+      C, C++, Rust of Fortran code in :term:`extension modules <extension module>`
+      that can be called from Python.  See also :term:`extension module`.
+
    nested scope
       The ability to refer to a variable in an enclosing definition.  For
       instance, a function defined inside another function can refer to
@@ -1122,7 +1133,7 @@ Glossary
       See also :term:`regular package` and :term:`namespace package`.
 
    parallelism
-      The simultaneous execution of multiple operations on different CPU cores.
+      The simultaneous execution of operations on multiple processors.
       True parallelism requires multiple processors or processor cores where
       operations run at exactly the same time and are not just interleaved.
       In Python, the :term:`free-threaded <free threading>` build enables
@@ -1476,7 +1487,7 @@ Glossary
       :class:`~threading.Semaphore`, :class:`~threading.Condition`,
       :class:`~threading.Event`, and :class:`~threading.Barrier`.  Additionally,
       the :mod:`queue` module provides multi-producer, multi-consumer queues
-      that are especially usedul in multithreaded programs. These
+      that are especially useful in multithreaded programs. These
       primitives help prevent :term:`race conditions <race condition>` and
       coordinate thread execution.  See also :term:`lock` and
       :term:`critical section`.
@@ -1541,8 +1552,8 @@ Glossary
       to avoid shared mutable state entirely.  In the
       :term:`free-threaded <free threading>` build, built-in types like
       :class:`dict`, :class:`list`, and :class:`set` use internal locking
-      to provide thread-safe operations, though this doesn't guarantee safety
-      for all use patterns.  Code that is not thread-safe may experience
+      to make many operations thread-safe, although thread safety is not
+      necessarily guaranteed.  Code that is not thread-safe may experience
       :term:`race conditions <race condition>` and :term:`data races <data race>`
       when used in multi-threaded programs.
 
