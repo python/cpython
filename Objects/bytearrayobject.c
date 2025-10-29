@@ -1557,7 +1557,7 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     }
 
     if (_PyBytes_Resize(&self->ob_bytes_object, to_take) == -1) {
-        Py_CLEAR(remaining);
+        Py_DECREF(remaining);
         return NULL;
     }
 
