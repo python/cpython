@@ -3097,6 +3097,7 @@ async def f():
             f'__{
                 x:d
             }__'""",
+            " a\n\x00",
         ]:
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)
