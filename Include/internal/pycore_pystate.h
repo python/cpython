@@ -89,8 +89,9 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 /* Variable and static inline functions for in-line access to current thread
    and interpreter state */
 
-#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+#if !defined(Py_BUILD_CORE_MODULE)
 extern _Py_thread_local PyThreadState *_Py_tss_tstate;
+extern _Py_thread_local PyInterpreterState *_Py_tss_interp;
 #endif
 
 #ifndef NDEBUG
@@ -114,7 +115,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
-#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+#if !defined(Py_BUILD_CORE_MODULE)
     return _Py_tss_tstate;
 #else
     return _PyThreadState_GetCurrent();
@@ -204,11 +205,15 @@ _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
    See also PyInterpreterState_Get()
    and _PyGILState_GetInterpreterStateUnsafe(). */
 static inline PyInterpreterState* _PyInterpreterState_GET(void) {
-    PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
 #endif
-    return tstate->interp;
+#if !defined(Py_BUILD_CORE_MODULE)
+    return _Py_tss_interp;
+#else
+    return _PyThreadState_GET()->interp;
+#endif
 }
 
 
