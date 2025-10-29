@@ -12,6 +12,10 @@ typedef struct {
     PyObject *ob_bytes_object;  /* PyBytes for zero-copy bytes conversion */
 } PyByteArrayObject;
 
+/* Part of the stable ABI; used to be used as a fallback in
+   PyByteArray_AS_STRING. */
+PyAPI_DATA(char) _PyByteArray_empty_string[];
+
 /* Macros and static inline functions, trading safety for speed */
 #define _PyByteArray_CAST(op) \
     (assert(PyByteArray_Check(op)), _Py_CAST(PyByteArrayObject*, op))
