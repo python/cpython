@@ -171,8 +171,7 @@ dummy_func(
         op(_QUICKEN_RESUME, (--)) {
             #if ENABLE_SPECIALIZATION_FT
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            if (tstate->tracing == 0 && this_instr->op.code == RESUME &&
-                code != (PyCodeObject *)&_Py_InitCleanup && code != (PyCodeObject *)&_PyEntryFrameCode) {
+            if (tstate->tracing == 0 && this_instr->op.code == RESUME) {
                 FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
             }
             #endif  /* ENABLE_SPECIALIZATION_FT */
