@@ -224,7 +224,7 @@ class SocketServerTest(unittest.TestCase):
 
     @requires_unix_sockets
     @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
-                     "Test fails regularly on iOS simulator on Github Actions - See #140702")
+                     "gh-140702: Test fails regularly on iOS simulator on Github Actions")
     def test_UnixDatagramServer(self):
         self.run_server(socketserver.UnixDatagramServer,
                         socketserver.DatagramRequestHandler,
@@ -232,7 +232,7 @@ class SocketServerTest(unittest.TestCase):
 
     @requires_unix_sockets
     @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
-                     "Test fails regularly on iOS simulator on Github Actions - See #140702")
+                     "gh-140702: Test fails regularly on iOS simulator on Github Actions")
     def test_ThreadingUnixDatagramServer(self):
         self.run_server(socketserver.ThreadingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
