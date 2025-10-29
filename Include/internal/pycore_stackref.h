@@ -65,7 +65,6 @@ PyAPI_FUNC(_PyStackRef) _Py_stackref_create(PyObject *obj, uint16_t flags, const
 PyAPI_FUNC(void) _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber);
 PyAPI_FUNC(void) _Py_stackref_get_borrowed_from(_PyStackRef ref, _PyStackRef *p_borrowed_from, const char *filename, int linenumber);
 PyAPI_FUNC(void) _Py_stackref_set_borrowed_from(_PyStackRef ref, _PyStackRef borrowed_from, const char *filename, int linenumber);
-PyAPI_FUNC(void) _Py_stackref_copy_borrowed_from(_PyStackRef ref, _PyStackRef ref_orig, const char *filename, int linenumber);
 extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref);
 
 static const _PyStackRef PyStackRef_NULL = { .index = 0 };
