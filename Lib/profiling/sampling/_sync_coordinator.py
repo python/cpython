@@ -10,6 +10,7 @@ import sys
 import socket
 import runpy
 import time
+import types
 from typing import List, NoReturn
 
 
@@ -176,9 +177,15 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
         with open(script_path, 'rb') as f:
             source_code = f.read()
 
-        # Compile and execute the script
+        # gh-140729: Create a __mp_main__ module to allow pickling
+        main_module = types.ModuleType("__main__")
+        main_module.__file__ = script_path
+        main_module.__builtins__ = __builtins__
+        sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
+
         code = compile(source_code, script_path, 'exec')
-        exec(code, {'__name__': '__main__', '__file__': script_path})
+        exec(code, main_module.__dict__)
+
     except FileNotFoundError as e:
         raise TargetError(f"Script file not found: {script_path}") from e
     except PermissionError as e:

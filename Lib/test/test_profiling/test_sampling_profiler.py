@@ -2991,5 +2991,49 @@ main()
             profiling.sampling.sample._parse_mode("invalid")
 
 
+@requires_subprocess()
+@skip_if_not_supported
+class TestProcessPoolExecutorSupport(unittest.TestCase):
+    """
+    Test that ProcessPoolExecutor works correctly with profiling.sampling.
+    """
+
+    def test_process_pool_executor_pickle(self):
+        # gh-140729: test use ProcessPoolExecutor.map() can sampling
+        test_script = '''
+import concurrent.futures
+
+def worker(x):
+    return x * 2
+
+if __name__ == "__main__":
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        results = list(executor.map(worker, [1, 2, 3]))
+        print(f"Results: {results}")
+'''
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.py', delete=False
+        ) as script_file:
+            script_file.write(test_script)
+            script_file.flush()
+            script_name = script_file.name
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m", "profiling.sampling.sample",
+                "-d", "1",
+                "-i", "100000",
+                script_name
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        self.assertIn("Results: [2, 4, 6]", result.stdout)
+        self.assertNotIn("Can't pickle", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
