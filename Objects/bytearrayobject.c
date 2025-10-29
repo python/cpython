@@ -142,7 +142,7 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
         return NULL;
     }
 
-    /* optimization: size=0 bytearray should not allocate space
+    /* Optimization: size=0 bytearray should not allocate space
 
        PyBytes_FromStringAndSize returns the empty bytes global when size=0 so
        no allocation occurs. */
@@ -241,7 +241,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
         return -1;
     }
 
-    /* re-align data to the start of the allocation. */
+    /* Re-align data to the start of the allocation. */
     if (logical_offset > 0) {
         memmove(obj->ob_bytes, obj->ob_start,
                 Py_MIN(requested_size, Py_SIZE(self)));
@@ -1533,7 +1533,7 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
         return NULL;
     }
 
-    // Exports may change the contents, No mutable bytes allowed.
+    // Exports may change the contents. No mutable bytes allowed.
     if (!_canresize(self)) {
         return NULL;
     }

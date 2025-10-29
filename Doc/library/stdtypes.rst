@@ -3200,11 +3200,11 @@ objects.
          * - Return :class:`bytes` after working with :class:`bytearray`
            - .. code:: python
 
-
                   def read() -> bytes:
                      buffer = bytearray(1024)
                      ...
                      return bytes(buffer)
+
            - .. code:: python
 
                   def read() -> bytes:
@@ -3219,6 +3219,7 @@ objects.
                   ...
                   data = bytes(buffer)
                   buffer.clear()
+
            - .. code:: python
 
                   buffer = bytearray(1024)
@@ -3232,6 +3233,7 @@ objects.
                   n = buffer.find(b'\n')
                   data = bytes(buffer[:n + 1])
                   del buffer[:n + 1]
+                  assert data == b'abc'
                   assert buffer == bytearray(b'def')
 
            - .. code:: python
