@@ -301,13 +301,13 @@ class TestPythonStartup(unittest.TestCase):
                 p.stdin.write("1/0")
                 output = kill_python(p)
 
-                for chunk in (
+                for expected in (
                     "from pythonstartup",
                     "Traceback (most recent call last):",
                     'File "<stdin>", line 1, in <module>',
                     "ZeroDivisionError: division by zero",
                 ):
-                    self.assertIn(chunk, output)
+                    self.assertIn(expected, output)
 
     def test_pythonstartup_failure(self):
         # case 2: error in PYTHONSTARTUP triggered by user input
@@ -320,13 +320,13 @@ class TestPythonStartup(unittest.TestCase):
                 p.stdin.write('foo()')
                 output = kill_python(p)
 
-                for chunk in (
+                for expected in (
                     "Traceback (most recent call last):",
                     'File "<stdin>", line 1, in <module>',
                     f'File "{env['PYTHONSTARTUP']}", line ',
                     "ZeroDivisionError: division by zero",
                 ):
-                    self.assertIn(chunk, output)
+                    self.assertIn(expected, output)
 
 
 @support.force_not_colorized_test_class
