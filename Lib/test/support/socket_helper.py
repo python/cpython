@@ -261,7 +261,7 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
                 err = a[1]
             # The error can also be wrapped as __cause__:
             #    raise URLError(f"ftp error: {exp}") from exp
-            elif isinstance(err, urllib.error.UrlError) and err.__cause__:
+            elif isinstance(err, urllib.error.URLError) and err.__cause__:
                 err = err.__cause__
             else:
                 break
