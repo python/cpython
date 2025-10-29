@@ -2086,6 +2086,22 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                     # Expected errors - we just want to test format validation
                     pass
 
+    def test_script_error_treatment(self):
+        script_file = tempfile.NamedTemporaryFile("w", delete=False, suffix=".py")
+        script_file.write("open('nonexistent_file.txt')\n")
+        script_file.close()
+        self.addCleanup(os.unlink, script_file.name)
+
+        result = subprocess.run(
+            [sys.executable, "-m", "profiling.sampling.sample", "-d", "1", script_file.name],
+            capture_output=True,
+            text=True,
+        )
+        output = result.stdout + result.stderr
+
+        self.assertNotIn("Script file not found", output)
+        self.assertIn("No such file or directory: 'nonexistent_file.txt'", output)
+
 
 class TestSampleProfilerCLI(unittest.TestCase):
     def _setup_sync_mocks(self, mock_socket, mock_popen):

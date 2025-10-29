@@ -177,6 +177,12 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
         with open(script_path, 'rb') as f:
             source_code = f.read()
 
+    except FileNotFoundError as e:
+        raise TargetError(f"Script file not found: {script_path}") from e
+    except PermissionError as e:
+        raise TargetError(f"Permission denied reading script: {script_path}") from e
+
+    try:
         # gh-140729: Create a __mp_main__ module to allow pickling
         main_module = types.ModuleType("__main__")
         main_module.__file__ = script_path
@@ -185,11 +191,6 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
 
         code = compile(source_code, script_path, 'exec')
         exec(code, main_module.__dict__)
-
-    except FileNotFoundError as e:
-        raise TargetError(f"Script file not found: {script_path}") from e
-    except PermissionError as e:
-        raise TargetError(f"Permission denied reading script: {script_path}") from e
     except SyntaxError as e:
         raise TargetError(f"Syntax error in script {script_path}: {e}") from e
     except SystemExit:
