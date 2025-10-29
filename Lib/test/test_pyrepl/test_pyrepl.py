@@ -1917,12 +1917,12 @@ class TestPyReplCtrlD(TestCase):
 class TestDispStr(TestCase):
     def test_disp_str_width_calculation(self):
         test_cases = [
-            ("\tX", [8, 1]),           # column 0 -> 8 spaces
-            ("X\t", [1, 7]),           # column 1 -> 7 spaces to column 8
-            ("ABC\tX", [1, 1, 1, 5, 1]),  # column 3 -> 5 spaces to column 8
-            ("XXXXXXX\t", [1, 1, 1, 1, 1, 1, 1, 1]),  # column 7 -> 1 space
+            ("\tX", [8, 1]),                              # column 0 -> 8 spaces
+            ("X\t", [1, 7]),                              # column 1 -> 7 spaces
+            ("ABC\tX", [1, 1, 1, 5, 1]),                  # column 3 -> 5 spaces
+            ("XXXXXXX\t", [1, 1, 1, 1, 1, 1, 1, 1]),      # column 7 -> 1 space
             ("XXXXXXXX\t", [1, 1, 1, 1, 1, 1, 1, 1, 8]),  # column 8 -> 8 spaces
-            ("中\tX", [2, 6, 1]),      # wide char + tab
+            ("中\tX", [2, 6, 1]),                         # wide char + tab
         ]
         for buffer, expected_widths in test_cases:
             with self.subTest(buffer=repr(buffer)):
