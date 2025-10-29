@@ -179,9 +179,9 @@ ServerProxy Objects
 A :class:`ServerProxy` instance has a method corresponding to each remote
 procedure call accepted by the XML-RPC server.  Calling the method performs an
 RPC, dispatched by both name and argument signature (e.g. the same method name
-can be overloaded with multiple argument signatures).  The RPC finishes by
-returning a value, which may be either returned data in a conformant type or a
-:class:`Fault` or :class:`ProtocolError` object indicating an error.
+can be overloaded with multiple argument signatures).  The RPC finishes either
+by returning data in a conformant type or by raising a :class:`Fault` or
+:class:`ProtocolError` exception indicating an error.
 
 Servers that support the XML introspection API support some common methods
 grouped under the reserved :attr:`~ServerProxy.system` attribute:
