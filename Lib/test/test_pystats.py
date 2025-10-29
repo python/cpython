@@ -3,7 +3,7 @@ import textwrap
 import unittest
 from test.support import script_helper
 
-# This function is availible for the --enable-pystats config.
+# This function is available for the --enable-pystats config.
 HAVE_PYSTATS = hasattr(sys, '_stats_on')
 
 TEST_TEMPLATE = """
