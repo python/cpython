@@ -832,6 +832,7 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:
                 # Adding Python options requires the use of a subprocess to
                 # start a new Python interpreter.
                 "--dont-add-python-opts",
+                "test_socketserver"
             ]
         )
 
