@@ -206,6 +206,11 @@ _Py_stackref_set_borrowed_from(_PyStackRef ref, _PyStackRef borrowed_from, const
 }
 
 void
+_Py_stackref_copy_borrowed_from(_PyStackRef ref, _PyStackRef ref_orig, const char *filename, int linenumber)
+{
+}
+
+void
 _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref)
 {
     assert(!PyStackRef_IsError(ref));
