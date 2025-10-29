@@ -1,0 +1,2 @@
+Fixed crash in :func:`tokenize.generate_tokens` in case of
+specific incorrect input. Patch by Mikhail Efimov.
