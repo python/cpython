@@ -832,6 +832,7 @@ if _exists("_create_environ"):
         env_data.clear()
         env_data.update(data)
 
+    __all__.append("reload_environ")
 
 def getenv(key, default=None):
     """Get an environment variable, return None if it doesn't exist.
