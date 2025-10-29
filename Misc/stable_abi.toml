@@ -1762,6 +1762,9 @@
 [function._Py_VaBuildValue_SizeT]
     added = '3.2'
     abi_only = true
+[data._PyByteArray_empty_string]
+    added = '3.2'
+    abi_only = true
 
 # Old buffer protocol support (deprecated)
 
