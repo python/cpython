@@ -931,7 +931,6 @@ If an :exc:`AttributeError` is raised and the object has a :meth:`!__getattr__`
 method, that method is called as a fallback.
 
 .. _subscriptions:
-.. _slicings:
 
 Subscriptions and slicing
 -------------------------
@@ -958,42 +957,31 @@ a :class:`dict`::
    2
 
 In the subscription syntax, the object being subscribed -- a
-:ref:`primary <primaries>` -- is followed by square brackets.
-In the simplest case, the brackets contain a single expression.
+:ref:`primary <primaries>` -- is followed by a :dfn:`subscript` in
+square brackets.
+In the simplest case, the subscript is single expression.
 
-When getting a value from a :ref:`mapping <datamodel-mappings>`, like in the
-:class:`~dict` example above, the expression in brackets is called a *key*.
-When when getting an item from a :ref:`sequence <datamodel-sequences>`,
-the expression is called an *index*::
+Depending on the type of the object being subscribed, the subscript is
+sometimes called a *key* (for mappings), *index* (for sequences),
+or *type argument* (for :term:`generic types <generic type>`).
+Syntacticall, these are all equivalent::
 
    >>> number_names = ['zero', 'one', 'two', 'three', 'four', 'five']
    >>> number_names[2]  # Subscripting a list using the index 2
    'two'
-   >>> number_names[-2]
-   'four'
-
-Syntactically, there's no difference between a *key* and an *index*.
-
-The subscription syntax is also used to provide type arguments for
-:term:`generic types <generic type>`, even though types are not (necessarily)
-sequences::
 
    >>> list[str]  # Parameterizing `list` using the type argument `str`
    list[str]
 
-Syntactically, there's also no difference between a *type argument* and a
-key or index.
-
 At runtime, the interpreter will evaluate the primary and
-the expression in the square brackets, and call the primary's
-:meth:`~object.__getitem__` or :meth:`~object.__class_getitem__` method
-with the contents of the square brackets as argument.
+the subscript, and call the primary's :meth:`~object.__getitem__` or
+:meth:`~object.__class_getitem__` method with the subscript as argument.
 For more details on which of these methods is called, see
 :ref:`classgetitem-versus-getitem`.
 
 To show how subscription works, we can define a custom object that
-implements :meth:`~object.__getitem__` and prints out the key it
-was subscripted with::
+implements :meth:`~object.__getitem__` and prints out the value of
+the subscript::
 
    >>> class SubscriptionDemo:
    ...     def __getitem__(self, key):
@@ -1006,7 +994,7 @@ was subscripted with::
    subscripted with: 'aaa'
 
 See :meth:`~object.__getitem__` documentation for how built-in types handle
-subscription, including support for negative indices.
+subscription, including support for negative subscripts.
 
 
 .. index::
@@ -1028,7 +1016,7 @@ Slicing
 
 A more advanced form of subscription, :dfn:`slicing`, is commonly used
 to extract a portion of a :ref:`sequence <datamodel-sequences>`.
-In this form, the square brackets contain a :term:`slice`: up to three
+In this form, the subscript is a :term:`slice`: up to three
 expressions separated by colons.
 Any of the expressions may be omitted, but a slice must contain at least one
 colon::
@@ -1062,11 +1050,13 @@ or :meth:`~object.__class_getitem__` method, as above. ::
 Tuple subscription
 ^^^^^^^^^^^^^^^^^^
 
-The square brackets used for subscription can also contain two or more
-comma-separated expressions or slices::
+The subscript can also be given as two or more comma-separated expressions
+or slices::
 
    >>> demo[1, 2, 3]
    subscripted with (1, 2, 3)
+   >>> demo[1:2, 3]
+   subscripted with (slice(1, 2, None), 3)
 
 This form is commonly used with numerical libraries for slicing
 multi-dimensional data.
@@ -1074,7 +1064,7 @@ In this case, the interpreter constructs a :class:`tuple` of the results of the
 expressions or slices, and passes this tuple to the :meth:`~object.__getitem__`
 or :meth:`~object.__class_getitem__` method, as above.
 
-The square brackets may also contain one expression or slice followed
+The subscript may also be given as a single expression or slice followed
 by a comma, to specify a one-element tuple::
 
    >>> demo['spam',]
@@ -1087,7 +1077,7 @@ by a comma, to specify a one-element tuple::
 .. versionadded:: 3.11
    Expressions in *tuple_slices* may be starred. See :pep:`646`.
 
-The square brackets can also contain a starred expression.
+The subscript can also contain a starred expression.
 In this case, the interpreter unpacks the result into a tuple, and passes
 this tuple to :meth:`~object.__getitem__` or :meth:`~object.__class_getitem__`::
 
@@ -1107,8 +1097,8 @@ Formal subscription grammar
 .. grammar-snippet::
    :group: python-grammar
 
-   subscription: `primary` '[' `slices` ']'
-   slices:       `slice` | `tuple_slices`
+   subscription: `primary` '[' `subscript` ']'
+   subscript:    `slice` | `tuple_slices`
    tuple_slices: ','.(`slice` | `starred_expression`)+ [',']
    slice:        `proper_slice` | `assignment_expression`
    proper_slice: [`lower_bound`] ":" [`upper_bound`] [ ":" [`stride`] ]
@@ -1116,10 +1106,10 @@ Formal subscription grammar
    upper_bound:  `expression`
    stride:       `expression`
 
-If *slices* contains ony one unstarred *slice* without a trailing comma,
+If *subscript* contains ony one unstarred *slice* without a trailing comma,
 it will evaluate to the value of that *slice*.
-Otherwise, *slices* will evaluate to a :class:`tuple` containing
-the items of *slices*.
+Otherwise, *subscript* will evaluate to a :class:`tuple` containing
+the items of *subscript*.
 
 .. index::
    pair: object; callable

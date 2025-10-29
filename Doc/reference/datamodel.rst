@@ -314,12 +314,22 @@ including built-in sequences, interpret negative subscripts by adding the
 sequence length. For example, ``a[-2]`` equals ``a[n-2]``, the second to last
 item of sequence a with length ``n``.
 
-.. index:: single: slicing
+.. index::
+   single: slicing
+   single: start (slice object attribute)
+   single: stop (slice object attribute)
+   single: step (slice object attribute)
 
-Sequences also support slicing: ``a[i:j]`` selects all items with index *k* such
-that *i* ``<=`` *k* ``<`` *j*.  When used as an expression, a slice is a
-sequence of the same type. The comment above about negative indexes also applies
+Sequences also support slicing: ``a[start:stop]`` selects all items with index *k* such
+that *start* ``<=`` *k* ``<`` *stop*.  When used as an expression, a slice is a
+sequence of the same type. The comment above about negative subscripts also applies
 to negative slice positions.
+Note that no error is raised if a slice positions is larger than the length
+of the sequence.
+
+If *start* is missing or ``None``, slicing behaves as if *start* was zero.
+If *stop* is missing or ``None``, slicing behaves as if *stop* was equal to
+the length of the sequence.
 
 Some sequences also support "extended slicing" with a third "step" parameter:
 ``a[i:j:k]`` selects all items of *a* with index *x* where ``x = i + n*k``, *n*
@@ -3203,21 +3213,28 @@ through the object's keys; for sequences, it should iterate through the values.
    and so forth.  Missing slice items are always filled in with ``None``.
 
 
-.. method:: object.__getitem__(self, key)
+.. method:: object.__getitem__(self, subscript)
+
+   Called to implement *subscription*, that is, ``self[subscript]``.
+   See :ref:`subscriptions` for details on the syntax.
+
+   There are two types of built-in objects that support subscription
+   via :meth:`~object.__getitem__`:
+   - **sequences**, where *subscript* (also called
+     *index*) should be an integer or a :class:`slice` object.
+     See :ref:`sequence documentation <datamodel-sequences>` for the expected
+     behavior, including handling :class:`slice` objects and negative indices.
+   - **mappings**, where *subscript* is also called the *key*.
+     See :ref:`mapping documentation <datamodel-mappings>` for the expected
+     behavior.
+
+   If *subscript* is of an inappropriate type, :meth:`~object.__getitem__`
+   should raise :exc:`TypeError`.
+   If *subscript* has an inappropriate value, :meth:`~object.__getitem__`
+   should raise an :exc:`LookupError` or one of its subclasses
+   (:exc:`IndexError` for sequences; :exc:`KeyError` for mappings).
 
 <<<<
-
-For built-in objects, there are two types of objects that support subscription
-via :meth:`~object.__getitem__`:
-
-1. Mappings. If the primary is a :term:`mapping`, the expression list must
-   evaluate to an object whose value is one of the keys of the mapping, and the
-   subscription selects the value in the mapping that corresponds to that key.
-   An example of a builtin mapping class is the :class:`dict` class.
-2. Sequences. If the primary is a :term:`sequence`, the expression list must
-   evaluate to an :class:`int` or a :class:`slice` (as discussed in the
-   following section). Examples of builtin sequence classes include the
-   :class:`str`, :class:`list` and :class:`tuple` classes.
 
 The formal syntax makes no special provision for negative indices in
 :term:`sequences <sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
@@ -3263,17 +3280,6 @@ expressions given as lower bound, upper bound and stride, respectively,
 substituting ``None`` for missing expressions.
 
 
-====
-
-   Called to implement evaluation of ``self[key]``. For :term:`sequence` types,
-   the accepted keys should be integers. Optionally, they may support
-   :class:`slice` objects as well.  Negative index support is also optional.
-   If *key* is
-   of an inappropriate type, :exc:`TypeError` may be raised; if *key* is a value
-   outside the set of indexes for the sequence (after any special
-   interpretation of negative values), :exc:`IndexError` should be raised. For
-   :term:`mapping` types, if *key* is missing (not in the container),
-   :exc:`KeyError` should be raised.
 
 >>>>>>
 

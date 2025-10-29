@@ -1822,8 +1822,8 @@ are always available.  They are listed here in alphabetical order.
    .. attribute:: slice.stop
    .. attribute:: slice.step
 
-   Slice objects are also generated when extended indexing syntax is used.  For
-   example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
+   Slice objects are also generated when :ref:`slicing syntax <slicings>`
+   is used.  For example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
    :func:`itertools.islice` for an alternate version that returns an
    :term:`iterator`.
 
