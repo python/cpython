@@ -2087,8 +2087,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
         self.addCleanup(os.unlink, script_file.name)
 
         result = subprocess.run(
-            [sys.executable, "-m", "profiling.sampling.sample", "-d", "1",
-             script_file.name],
+            [sys.executable, "-m", "profiling.sampling.sample", "-d", "1", script_file.name],
             capture_output=True,
             text=True,
         )

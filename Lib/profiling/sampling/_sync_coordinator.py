@@ -178,8 +178,7 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
     except FileNotFoundError as e:
         raise TargetError(f"Script file not found: {script_path}") from e
     except PermissionError as e:
-        raise TargetError(
-            f"Permission denied reading script: {script_path}") from e
+        raise TargetError(f"Permission denied reading script: {script_path}") from e
 
     try:
         # Compile and execute the script
