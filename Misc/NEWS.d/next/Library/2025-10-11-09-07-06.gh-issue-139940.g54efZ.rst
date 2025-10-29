@@ -1,0 +1,1 @@
+Print clearer error message when using ``pdb`` to attach to a non-existing process.
