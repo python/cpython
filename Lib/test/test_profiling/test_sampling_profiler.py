@@ -3017,9 +3017,6 @@ if __name__ == "__main__":
         results = list(executor.map(worker, [1, 2, 3]))
         print(f"Results: {results}")
 '''
-        # Use test helpers to spawn a real Python subprocess so that
-        # PermissionError (if any) is emitted by the child on stderr and
-        # can be handled consistently with other tests.
         with os_helper.temp_dir() as temp_dir:
             script = script_helper.make_script(
                 temp_dir, 'test_process_pool_executor_pickle', test_script
