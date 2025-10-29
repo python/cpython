@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -78,6 +79,13 @@ def xcode_test(location: Path, platform: str, simulator: str, verbose: bool):
         check=True,
     )
 
+    # Any environment variable prefixed with TEST_RUNNER_ is exposed into the
+    # test runner environment. There are some variables (like those identifying
+    # CI platforms) that can be useful to have access to.
+    test_env = os.environ.copy()
+    if "GITHUB_ACTIONS" in os.environ:
+        test_env["TEST_RUNNER_GITHUB_ACTIONS"] = os.environ["GITHUB_ACTIONS"]
+
     print("Running test project...")
     # Test execution *can't* be run -quiet; verbose mode
     # is how we see the output of the test output.
@@ -85,6 +93,7 @@ def xcode_test(location: Path, platform: str, simulator: str, verbose: bool):
         ["xcodebuild", "test-without-building"] + args,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        env=test_env,
     )
     while line := (process.stdout.readline()).decode(*DECODE_ARGS):
         # Strip the timestamp/process prefix from each log line
@@ -412,4 +421,9 @@ def main():
 
 
 if __name__ == "__main__":
+    # Under the buildbot, stdout is not a TTY, but we must still flush after
+    # every line to make sure our output appears in the correct order relative
+    # to the output of our subprocesses.
+    for stream in [sys.stdout, sys.stderr]:
+        stream.reconfigure(line_buffering=True)
     main()
