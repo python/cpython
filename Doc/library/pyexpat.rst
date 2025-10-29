@@ -616,9 +616,12 @@ otherwise stated.
 
    .. warning::
 
-      Registering a handler for external entity references may allow
-      attacker-controller XML to access local files and/or the network,
-      and thus create new security risks.
+      Implementing a handler that accesses local files and/or the network
+      may create a vulnerabilitiy to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if :class:`xmlparser` is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>_`
+      before implementing this handler.
       By default, :class:`xmlparser` is safe from these threats.
 
    Called for references to external entities.  *base* is the current base, as set
