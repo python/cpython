@@ -109,6 +109,7 @@ Local naming conventions:
 #include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_time.h"          // _PyTime_AsMilliseconds()
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 
@@ -4191,6 +4192,7 @@ sock_recvfrom(PyObject *self, PyObject *args)
     }
 
     ret = PyTuple_Pack(2, buf, addr);
+    Py_DECREF(buf);
 
 finally:
     Py_XDECREF(addr);
@@ -4425,11 +4427,10 @@ err_closefds:
 static PyObject *
 makeval_recvmsg(ssize_t received, void *data)
 {
-    PyObject **buf = data;
-
-    if (received < PyBytes_GET_SIZE(*buf))
-        _PyBytes_Resize(buf, received);
-    return Py_XNewRef(*buf);
+    PyBytesWriter **writer = data;
+    PyObject *buf = PyBytesWriter_FinishWithSize(*writer, received);
+    *writer = NULL;
+    return buf;
 }
 
 /* s.recvmsg(bufsize[, ancbufsize[, flags]]) method */
@@ -4437,13 +4438,8 @@ makeval_recvmsg(ssize_t received, void *data)
 static PyObject *
 sock_recvmsg(PyObject *self, PyObject *args)
 {
-    PySocketSockObject *s = _PySocketSockObject_CAST(self);
-
     Py_ssize_t bufsize, ancbufsize = 0;
     int flags = 0;
-    struct iovec iov;
-    PyObject *buf = NULL, *retval = NULL;
-
     if (!PyArg_ParseTuple(args, "n|ni:recvmsg", &bufsize, &ancbufsize, &flags))
         return NULL;
 
@@ -4451,17 +4447,23 @@ sock_recvmsg(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "negative buffer size in recvmsg()");
         return NULL;
     }
-    if ((buf = PyBytes_FromStringAndSize(NULL, bufsize)) == NULL)
+
+    PyBytesWriter *writer = PyBytesWriter_Create(bufsize);
+    if (writer == NULL) {
         return NULL;
-    iov.iov_base = PyBytes_AS_STRING(buf);
+    }
+    struct iovec iov;
+    iov.iov_base = PyBytesWriter_GetData(writer);
     iov.iov_len = bufsize;
 
     /* Note that we're passing a pointer to *our pointer* to the bytes
-       object here (&buf); makeval_recvmsg() may incref the object, or
-       deallocate it and set our pointer to NULL. */
+       writer (&writer); makeval_recvmsg() finish it and set our pointer to
+       NULL. */
+    PyObject *retval;
+    PySocketSockObject *s = _PySocketSockObject_CAST(self);
     retval = sock_recvmsg_guts(s, &iov, 1, flags, ancbufsize,
-                               &makeval_recvmsg, &buf);
-    Py_XDECREF(buf);
+                               &makeval_recvmsg, &writer);
+    PyBytesWriter_Discard(writer);
     return retval;
 }
 
@@ -7181,7 +7183,7 @@ socket_setdefaulttimeout(PyObject *self, PyObject *arg)
 PyDoc_STRVAR(setdefaulttimeout_doc,
 "setdefaulttimeout(timeout)\n\
 \n\
-Set the default timeout in seconds (float) for new socket objects.\n\
+Set the default timeout in seconds (real number) for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 
@@ -7276,7 +7278,7 @@ Returns a list of network interface information (index, name) tuples.");
 
 /*[clinic input]
 _socket.if_nametoindex
-    oname: object(converter="PyUnicode_FSConverter")
+    oname: unicode_fs_encoded
     /
 
 Returns the interface index corresponding to the interface name if_name.
@@ -7284,7 +7286,7 @@ Returns the interface index corresponding to the interface name if_name.
 
 static PyObject *
 _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
-/*[clinic end generated code: output=289a411614f30244 input=01e0f1205307fb77]*/
+/*[clinic end generated code: output=289a411614f30244 input=6125dc20683560cf]*/
 {
 #ifdef MS_WINDOWS
     NET_IFINDEX index;
@@ -7293,7 +7295,6 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
 #endif
 
     index = if_nametoindex(PyBytes_AS_STRING(oname));
-    Py_DECREF(oname);
     if (index == 0) {
         /* if_nametoindex() doesn't set errno */
         PyErr_SetString(PyExc_OSError, "no interface with this name");

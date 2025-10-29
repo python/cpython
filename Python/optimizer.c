@@ -6,6 +6,7 @@
 #include "pycore_interp.h"
 #include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
+#include "pycore_ceval.h"       // _Py_set_eval_breaker_bit
 #include "pycore_code.h"            // _Py_GetBaseCodeUnit
 #include "pycore_function.h"        // _PyFunction_LookupByVersion()
 #include "pycore_interpframe.h"
@@ -14,7 +15,7 @@
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_tuple.h" // _PyTuple_FromArraySteal
+#include "pycore_tuple.h"         // _PyTuple_FromArraySteal
 #include "pycore_unicodeobject.h" // _PyUnicode_FromASCII
 #include "pycore_uop_ids.h"
 #include "pycore_jit.h"
@@ -119,6 +120,7 @@ _PyOptimizer_Optimize(
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(interp->jit);
     assert(!interp->compiling);
+#ifndef Py_GIL_DISABLED
     interp->compiling = true;
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
     // make progress in order to avoid infinite loops or excessively-long
@@ -160,6 +162,9 @@ _PyOptimizer_Optimize(
     assert((*executor_ptr)->vm_data.valid);
     interp->compiling = false;
     return 1;
+#else
+    return 0;
+#endif
 }
 
 static _PyExecutorObject *
@@ -358,7 +363,7 @@ uop_item(PyObject *op, Py_ssize_t index)
         return NULL;
     }
     PyObject *target = PyLong_FromUnsignedLong(self->trace[index].target);
-    if (oparg == NULL) {
+    if (target == NULL) {
         Py_DECREF(oparg);
         Py_DECREF(oname);
         return NULL;
@@ -1339,6 +1344,14 @@ uop_optimize(
         return -1;
     }
     assert(length <= UOP_MAX_TRACE_LENGTH);
+
+    // Check executor coldness
+    PyThreadState *tstate = PyThreadState_Get();
+    // It's okay if this ends up going negative.
+    if (--tstate->interp->executor_creation_counter == 0) {
+        _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
+    }
+
     *exec_ptr = executor;
     return 1;
 }

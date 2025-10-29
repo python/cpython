@@ -68,47 +68,37 @@ to avoid the expense of doing their own locking).
  */
 
 
-#ifdef HAVE_THREAD_LOCAL
 /* The attached thread state for the current thread. */
 _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
 
 /* The "bound" thread state used by PyGILState_Ensure(),
    also known as a "gilstate." */
 _Py_thread_local PyThreadState *_Py_tss_gilstate = NULL;
-#endif
+
+/* The interpreter of the attached thread state,
+   and is same as tstate->interp. */
+_Py_thread_local PyInterpreterState *_Py_tss_interp = NULL;
 
 static inline PyThreadState *
 current_fast_get(void)
 {
-#ifdef HAVE_THREAD_LOCAL
     return _Py_tss_tstate;
-#else
-    // XXX Fall back to the PyThread_tss_*() API.
-#  error "no supported thread-local variable storage classifier"
-#endif
 }
 
 static inline void
 current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
 {
     assert(tstate != NULL);
-#ifdef HAVE_THREAD_LOCAL
     _Py_tss_tstate = tstate;
-#else
-    // XXX Fall back to the PyThread_tss_*() API.
-#  error "no supported thread-local variable storage classifier"
-#endif
+    assert(tstate->interp != NULL);
+    _Py_tss_interp = tstate->interp;
 }
 
 static inline void
 current_fast_clear(_PyRuntimeState *Py_UNUSED(runtime))
 {
-#ifdef HAVE_THREAD_LOCAL
     _Py_tss_tstate = NULL;
-#else
-    // XXX Fall back to the PyThread_tss_*() API.
-#  error "no supported thread-local variable storage classifier"
-#endif
+    _Py_tss_interp = NULL;
 }
 
 #define tstate_verify_not_active(tstate) \
@@ -457,16 +447,19 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 static PyInterpreterState *
 alloc_interpreter(void)
 {
+    // Aligned allocation for PyInterpreterState.
+    // the first word of the memory block is used to store
+    // the original pointer to be used later to free the memory.
     size_t alignment = _Alignof(PyInterpreterState);
-    size_t allocsize = sizeof(PyInterpreterState) + alignment - 1;
+    size_t allocsize = sizeof(PyInterpreterState) + sizeof(void *) + alignment - 1;
     void *mem = PyMem_RawCalloc(1, allocsize);
     if (mem == NULL) {
         return NULL;
     }
-    PyInterpreterState *interp = _Py_ALIGN_UP(mem, alignment);
-    assert(_Py_IS_ALIGNED(interp, alignment));
-    interp->_malloced = mem;
-    return interp;
+    void *ptr = _Py_ALIGN_UP((char *)mem + sizeof(void *), alignment);
+    ((void **)ptr)[-1] = mem;
+    assert(_Py_IS_ALIGNED(ptr, alignment));
+    return ptr;
 }
 
 static void
@@ -481,7 +474,7 @@ free_interpreter(PyInterpreterState *interp)
             interp->obmalloc = NULL;
         }
         assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
-        PyMem_RawFree(interp->_malloced);
+        PyMem_RawFree(((void **)interp)[-1]);
     }
 }
 
@@ -575,7 +568,7 @@ init_interpreter(PyInterpreterState *interp,
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
     interp->executor_deletion_list_remaining_capacity = 0;
-    interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
+    interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -763,10 +756,11 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    // At this time, all the threads should be cleared so we don't need atomic
-    // operations for instrumentation_version or eval_breaker.
+    // gh-140257: Threads have already been cleared, but daemon threads may
+    // still access eval_breaker atomically via take_gil() right before they
+    // hang. Use an atomic store to prevent data races during finalization.
     interp->ceval.instrumentation_version = 0;
-    tstate->eval_breaker = 0;
+    _Py_atomic_store_uintptr(&tstate->eval_breaker, 0);
 
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
@@ -958,6 +952,8 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     _Py_qsbr_fini(interp);
 
     _PyObject_FiniState(interp);
+
+    PyConfig_Clear(&interp->config);
 
     free_interpreter(interp);
 }
@@ -1289,9 +1285,8 @@ _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
 PyInterpreterState*
 PyInterpreterState_Get(void)
 {
-    PyThreadState *tstate = current_fast_get();
-    _Py_EnsureTstateNotNULL(tstate);
-    PyInterpreterState *interp = tstate->interp;
+    _Py_AssertHoldsTstate();
+    PyInterpreterState *interp = _Py_tss_interp;
     if (interp == NULL) {
         Py_FatalError("no current interpreter");
     }
@@ -1625,7 +1620,11 @@ PyThreadState_Clear(PyThreadState *tstate)
 {
     assert(tstate->_status.initialized && !tstate->_status.cleared);
     assert(current_fast_get()->interp == tstate->interp);
-    assert(!_PyThreadState_IsRunningMain(tstate));
+    // GH-126016: In the _interpreters module, KeyboardInterrupt exceptions
+    // during PyEval_EvalCode() are sent to finalization, which doesn't let us
+    // mark threads as "not running main". So, for now this assertion is
+    // disabled.
+    // XXX assert(!_PyThreadState_IsRunningMain(tstate));
     // XXX assert(!tstate->_status.bound || tstate->_status.unbound);
     tstate->_status.finalizing = 1;  // just in case
 
@@ -2484,14 +2483,10 @@ _PyThreadState_Bind(PyThreadState *tstate)
 uintptr_t
 _Py_GetThreadLocal_Addr(void)
 {
-#ifdef HAVE_THREAD_LOCAL
     // gh-112535: Use the address of the thread-local PyThreadState variable as
     // a unique identifier for the current thread. Each thread has a unique
     // _Py_tss_tstate variable with a unique address.
     return (uintptr_t)&_Py_tss_tstate;
-#else
-#  error "no supported thread-local variable storage classifier"
-#endif
 }
 #endif
 
