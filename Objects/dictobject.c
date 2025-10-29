@@ -1837,6 +1837,8 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
 
     ASSERT_DICT_LOCKED(mp);
 
+    MAINTAIN_TRACKING(mp, key, value);
+
     if (_PyDict_HasSplitTable(mp) && PyUnicode_CheckExact(key)) {
         ix = insert_split_key(mp->ma_keys, key, hash);
         if (ix != DKIX_EMPTY) {
@@ -1852,7 +1854,6 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         if (ix == DKIX_ERROR)
             goto Fail;
 
-        MAINTAIN_TRACKING(mp, key, value);
     }
 
     if (ix == DKIX_EMPTY) {
