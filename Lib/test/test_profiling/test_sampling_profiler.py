@@ -22,7 +22,13 @@ from profiling.sampling.stack_collector import (
 from profiling.sampling.gecko_collector import GeckoCollector
 
 from test.support.os_helper import unlink
-from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
+from test.support import (
+    force_not_colorized_test_class,
+    SHORT_TIMEOUT,
+    script_helper,
+    os_helper,
+    SuppressCrashReport,
+)
 from test.support.socket_helper import find_unused_port
 from test.support import requires_subprocess, is_emscripten
 from test.support import captured_stdout, captured_stderr
@@ -3011,33 +3017,24 @@ if __name__ == "__main__":
         results = list(executor.map(worker, [1, 2, 3]))
         print(f"Results: {results}")
 '''
-        with tempfile.NamedTemporaryFile(
-            mode='w', suffix='.py', delete=False
-        ) as script_file:
-            script_file.write(test_script)
-            script_file.flush()
-            script_name = script_file.name
+        # Use test helpers to spawn a real Python subprocess so that
+        # PermissionError (if any) is emitted by the child on stderr and
+        # can be handled consistently with other tests.
+        with os_helper.temp_dir() as temp_dir:
+            script = script_helper.make_script(
+                temp_dir, 'test_process_pool_executor_pickle', test_script
+            )
+            with SuppressCrashReport():
+                with script_helper.spawn_python(script, stderr=subprocess.PIPE) as proc:
+                    proc.wait()
+                    stdout = proc.stdout.read()
+                    stderr = proc.stderr.read()
 
-        self.addCleanup(os.unlink, script_name)
-
-        result = subprocess.run(
-            [
-                sys.executable,
-                "-m", "profiling.sampling.sample",
-                "-d", "1",
-                "-i", "100000",
-                script_name,
-            ],
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-
-        if "PermissionError" in result.stderr:
+        if b"PermissionError" in stderr:
             self.skipTest("Insufficient permissions for remote profiling")
 
-        self.assertIn("Results: [2, 4, 6]", result.stdout)
-        self.assertNotIn("Can't pickle", result.stderr)
+        self.assertIn(b"Results: [2, 4, 6]", stdout)
+        self.assertNotIn(b"Can't pickle", stderr)
 
 
 if __name__ == "__main__":
