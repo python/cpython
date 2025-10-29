@@ -324,7 +324,6 @@ Modules/pyexpat.c	-	error_info_of	-
 Modules/pyexpat.c	-	handler_info	-
 Modules/termios.c	-	termios_constants	-
 Modules/timemodule.c	init_timezone	YEAR	-
-Objects/bytearrayobject.c	-	_PyByteArray_empty_string	-
 Objects/complexobject.c	-	c_1	-
 Objects/exceptions.c	-	static_exceptions	-
 Objects/genobject.c	-	ASYNC_GEN_IGNORED_EXIT_MSG	-

@@ -17,9 +17,6 @@ class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5535b77c37a119e0]*/
 
-/* For PyByteArray_AS_STRING(). */
-char _PyByteArray_empty_string[] = "";
-
 /* Max number of bytes a bytearray can contain */
 #define PyByteArray_SIZE_MAX ((Py_ssize_t)(PY_SSIZE_T_MAX - _PyBytesObject_SIZE))
 
@@ -44,6 +41,14 @@ _getbytevalue(PyObject* arg, int *value)
 
     *value = face_value;
     return 1;
+}
+
+static void
+bytearray_reinit_from_bytes(PyByteArrayObject *self, Py_ssize_t size,
+                            Py_ssize_t alloc) {
+    self->ob_bytes = self->ob_start = PyBytes_AS_STRING(self->ob_bytes_object);
+    Py_SET_SIZE(self, size);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(self->ob_alloc, alloc);
 }
 
 static int
@@ -151,14 +156,10 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
         Py_DECREF(new);
         return NULL;
     }
-    new->ob_bytes = PyBytes_AS_STRING(new->ob_bytes_object);
-    assert(new->ob_bytes);
+    bytearray_reinit_from_bytes(new, size, size);
     if (bytes != NULL && size > 0) {
         memcpy(new->ob_bytes, bytes, size);
     }
-    Py_SET_SIZE(new, size);
-    new->ob_alloc = size;
-    new->ob_start = new->ob_bytes;
     new->ob_exports = 0;
 
     return (PyObject *)new;
@@ -247,26 +248,12 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
                 Py_MIN(requested_size, Py_SIZE(self)));
     }
 
-    if (obj->ob_bytes_object == NULL) {
-        obj->ob_bytes_object = PyBytes_FromStringAndSize(NULL, alloc);
-    }
-    else {
-        _PyBytes_Resize(&obj->ob_bytes_object, alloc);
-    }
-
-    int ret;
-    if (obj->ob_bytes_object == NULL) {
+    int ret = _PyBytes_Resize(&obj->ob_bytes_object, alloc);
+    if (ret == -1) {
         obj->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         size = alloc = 0;
-        ret = -1;
     }
-    else {
-        ret = 0;
-    }
-
-    obj->ob_bytes = obj->ob_start = PyBytes_AS_STRING(obj->ob_bytes_object);
-    Py_SET_SIZE(self, size);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(obj->ob_alloc, alloc);
+    bytearray_reinit_from_bytes(obj, size, alloc);
     if (alloc != size) {
         /* Add mid-buffer null; end provided by bytes. */
         obj->ob_bytes[size] = '\0';
@@ -903,6 +890,13 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
     Py_ssize_t count;
     PyObject *it;
     PyObject *(*iternext)(PyObject *);
+
+    /* First __init__; set ob_bytes_object so ob_bytes is always non-null. */
+    if (self->ob_bytes_object == NULL) {
+        self->ob_bytes_object = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+        bytearray_reinit_from_bytes(self, 0, 0);
+        self->ob_exports = 0;
+    }
 
     if (Py_SIZE(self) != 0) {
         /* Empty previous contents (yes, do this first of all!) */
@@ -1564,9 +1558,7 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     // Point the bytearray towards the buffer with the remaining data.
     PyObject *result = self->ob_bytes_object;
     self->ob_bytes_object = remaining;
-    self->ob_bytes = self->ob_start = PyBytes_AS_STRING(self->ob_bytes_object);
-    Py_SET_SIZE(self, remaining_length);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(self->ob_alloc, remaining_length);
+    bytearray_reinit_from_bytes(self, remaining_length, remaining_length);
     return result;
 }
 
