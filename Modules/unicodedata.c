@@ -1541,17 +1541,15 @@ static PyObject *
 unicodedata_UCD_isidstart_impl(PyObject *self, int chr)
 /*[clinic end generated code: output=29fbeaf6491d9f85 input=b71b6b1b2db3c16d]*/
 {
-    Py_UCS4 c = (Py_UCS4)chr;
-
     if (UCD_Check(self)) {
-        const change_record *old = get_old_record(self, c);
+        const change_record *old = get_old_record(self, chr);
         if (old->category_changed == 0) {
             /* unassigned */
             Py_RETURN_FALSE;
         }
     }
 
-    return PyBool_FromLong(_PyUnicode_IsXidStart(c));
+    return PyBool_FromLong(_PyUnicode_IsXidStart(chr));
 }
 
 /*[clinic input]
@@ -1569,17 +1567,15 @@ static PyObject *
 unicodedata_UCD_isidcontinue_impl(PyObject *self, int chr)
 /*[clinic end generated code: output=5ae694da0ee16534 input=01b4ccd399484e6b]*/
 {
-    Py_UCS4 c = (Py_UCS4)chr;
-
     if (UCD_Check(self)) {
-        const change_record *old = get_old_record(self, c);
+        const change_record *old = get_old_record(self, chr);
         if (old->category_changed == 0) {
             /* unassigned */
             Py_RETURN_FALSE;
         }
     }
 
-    return PyBool_FromLong(_PyUnicode_IsXidContinue(c));
+    return PyBool_FromLong(_PyUnicode_IsXidContinue(chr));
 }
 
 /*[clinic input]
