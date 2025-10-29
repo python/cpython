@@ -773,12 +773,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       * - .. attribute:: float_info.stdc_iec_559
         - :c:macro:`!__STDC_IEC_559__`
-        - A boolean, indicating support the IEC 60559 floating-point
-          standard (the Annex F of C99).  If true, the
-          :class:`float` type characteristics matches the IEC
-          60559 double format and exceptional cases for
-          the :mod:`math` functions follow to the section F.10
-          of the C99 standard.
+        - A boolean, indicating support the IEC 60559 floating-point standard.
+          If true, the :class:`float` type characteristics and behavior matches
+          the IEC 60559 double format.
 
    The attribute :attr:`sys.float_info.dig` needs further explanation.  If
    ``s`` is any string representing a decimal number with at most
