@@ -236,7 +236,6 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
             alloc = size;
         }
     }
-    // NOTE: offsetof() logic copied from PyBytesObject_SIZE in bytesobject.c
     if (alloc > PyByteArray_SIZE_MAX) {
         PyErr_NoMemory();
         return -1;
