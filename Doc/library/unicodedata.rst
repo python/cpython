@@ -151,9 +151,9 @@ following functions:
    that is, it has the ``XID_Start`` property. Return ``False`` otherwise.
    For example::
 
-      >>> unicodedata.isidstart('S')
+      >>> unicodedata.isxidstart('S')
       True
-      >>> unicodedata.isidstart('0')
+      >>> unicodedata.isxidstart('0')
       False
 
    .. versionadded:: next
@@ -166,9 +166,9 @@ following functions:
    that is, it has the ``XID_Continue`` property. Return ``False`` otherwise.
    For example::
 
-      >>> unicodedata.isidcontinue('S')
+      >>> unicodedata.isxidcontinue('S')
       True
-      >>> unicodedata.isidcontinue(' ')
+      >>> unicodedata.isxidcontinue(' ')
       False
 
    .. versionadded:: next

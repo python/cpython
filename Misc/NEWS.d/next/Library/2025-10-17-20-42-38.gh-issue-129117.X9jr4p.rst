@@ -1,2 +1,2 @@
-:mod:`unicodedata`: Add :func:`~unicodedata.isidstart` and
-:func:`~unicodedata.isidcontinue` functions.
+:mod:`unicodedata`: Add :func:`~unicodedata.isxidstart` and
+:func:`~unicodedata.isxidcontinue` functions.
