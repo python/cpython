@@ -1882,7 +1882,7 @@ class LoggerAdapter(object):
         Normally, you'll only need to override this one method in a
         LoggerAdapter subclass for your specific needs.
         """
-        if self.merge_extra and "extra" in kwargs:
+        if self.merge_extra and kwargs.get("extra") is not None:
             if self.extra is not None:
                 kwargs["extra"] = {**self.extra, **kwargs["extra"]}
         else:
