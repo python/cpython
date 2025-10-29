@@ -522,7 +522,8 @@ as detailed in this section.
 
 All names are converted into the `normalization form`_ NFKC while parsing.
 This means that, for example, some typographic variants of characters are
-converted to their "basic" form, for example::
+converted to their "basic" form. For example, ``nᵘₘᵇₑʳ`` normalizes to
+``number``, so Python treats them as the same name::
 
    >>> nᵘₘᵇₑʳ = 3
    >>> number
