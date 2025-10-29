@@ -1,8 +1,9 @@
 // Tachyon Profiler - Heatmap JavaScript
 // Interactive features for the heatmap visualization
 
-// Apply background colors from data attributes on page load
+// Apply background colors on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Apply background colors
     document.querySelectorAll('.code-line[data-bg-color]').forEach(line => {
         const bgColor = line.getAttribute('data-bg-color');
         if (bgColor) {
