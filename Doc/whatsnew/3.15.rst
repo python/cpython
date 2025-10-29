@@ -769,7 +769,8 @@ unicodedata
 * The Unicode database has been updated to Unicode 17.0.0.
 
 * Add :func:`unicodedata.isxidstart` and :func:`unicodedata.isxidcontinue`
-  functions.
+  functions to check whether a character can start or continue a
+  `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_ identifier.
   (Contributed by Stan Ulbrych in :gh:`129117`.)
 
 
