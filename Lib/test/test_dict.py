@@ -1654,6 +1654,26 @@ class DictTest(unittest.TestCase):
                 self.assertEqual(d.get(key3_3), 44)
                 self.assertGreaterEqual(eq_count, 1)
 
+    def test_clear_at_lookup(self):
+        class X:
+            def __hash__(self):
+                return 1
+            def __eq__(self, other):
+                nonlocal d
+                d.clear()
+
+        d = {}
+        for _ in range(10):
+            d[X()] = None
+
+        self.assertEqual(len(d), 1)
+
+        d = {}
+        for _ in range(10):
+            d.setdefault(X(), None)
+
+        self.assertEqual(len(d), 1)
+
 
 class CAPITest(unittest.TestCase):
 
