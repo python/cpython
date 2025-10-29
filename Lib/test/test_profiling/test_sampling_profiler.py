@@ -3018,13 +3018,15 @@ if __name__ == "__main__":
             script_file.flush()
             script_name = script_file.name
 
+        self.addCleanup(os.unlink, script_name)
+
         result = subprocess.run(
             [
                 sys.executable,
                 "-m", "profiling.sampling.sample",
                 "-d", "1",
                 "-i", "100000",
-                script_name
+                script_name,
             ],
             capture_output=True,
             text=True,
