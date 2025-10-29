@@ -388,5 +388,16 @@ class MathTests(IntMathTests):
     import math as module
 
 
+class MiscTests(unittest.TestCase):
+
+    def test_module_name(self):
+        import math.integer
+        self.assertEqual(math.integer.__name__, 'math.integer')
+        for name in dir(math.integer):
+            if not name.startswith('_'):
+                obj = getattr(math.integer, name)
+                self.assertEqual(obj.__module__, 'math.integer')
+
+
 if __name__ == '__main__':
     unittest.main()

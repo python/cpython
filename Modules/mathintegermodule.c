@@ -1236,7 +1236,39 @@ static PyMethodDef math_integer_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static int
+math_integer_exec(PyObject *module)
+{
+    /* Fix the __name__ attribute of the module and the __module__ attribute
+     * of its functions.
+     */
+    PyObject *name = PyUnicode_FromString("math.integer");
+    if (name == NULL) {
+        return -1;
+    }
+    if (PyObject_SetAttrString(module, "__name__", name) < 0) {
+        Py_DECREF(name);
+        return -1;
+    }
+    for (const PyMethodDef *m = math_integer_methods; m->ml_name; m++) {
+        PyObject *obj = PyObject_GetAttrString(module, m->ml_name);
+        if (obj == NULL) {
+            Py_DECREF(name);
+            return -1;
+        }
+        if (PyObject_SetAttrString(obj, "__module__", name) < 0) {
+            Py_DECREF(name);
+            Py_DECREF(obj);
+            return -1;
+        }
+        Py_DECREF(obj);
+    }
+    Py_DECREF(name);
+    return 0;
+}
+
 static PyModuleDef_Slot math_integer_slots[] = {
+    {Py_mod_exec, math_integer_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
