@@ -63,8 +63,6 @@ class Tier2Emitter(Emitter):
     def __init__(self, out: CWriter, labels: dict[str, Label]):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
-        self._replacers["JUMPBY"] = self.jumpby
-        self._replacers["DISPATCH"] = self.dispatch
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
@@ -135,39 +133,6 @@ class Tier2Emitter(Emitter):
         assert one.text == "1"
         self.out.emit_at(uop.name[-1], tkn)
         return True
-
-    def jumpby(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        if storage.spilled:
-            raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
-        storage.stack.flush(self.out)
-        self.emit("TIER2_STORE_IP")
-        emit_to(self.out, tkn_iter, "SEMI")
-        self.emit(";\n")
-        return True
-
-    def dispatch(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        if storage.spilled:
-            raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
-        storage.stack.flush(self.out)
-        self.emit("break;\n")
-        next(tkn_iter)
-        next(tkn_iter)
-        next(tkn_iter)
-        return False
 
 
 def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
