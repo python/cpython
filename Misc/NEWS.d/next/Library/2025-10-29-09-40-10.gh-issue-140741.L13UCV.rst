@@ -1,0 +1,2 @@
+Fix :func:`profiling.sampling.sample` incorrectly handling a
+:exc:`FileNotFoundError` or :exc:`PermissionError`.

@@ -175,14 +175,15 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
     try:
         with open(script_path, 'rb') as f:
             source_code = f.read()
-
-        # Compile and execute the script
-        code = compile(source_code, script_path, 'exec')
-        exec(code, {'__name__': '__main__', '__file__': script_path})
     except FileNotFoundError as e:
         raise TargetError(f"Script file not found: {script_path}") from e
     except PermissionError as e:
         raise TargetError(f"Permission denied reading script: {script_path}") from e
+
+    try:
+        # Compile and execute the script
+        code = compile(source_code, script_path, 'exec')
+        exec(code, {'__name__': '__main__', '__file__': script_path})
     except SyntaxError as e:
         raise TargetError(f"Syntax error in script {script_path}: {e}") from e
     except SystemExit:
