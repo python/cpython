@@ -931,6 +931,10 @@ int _Py_CheckRecursiveCallPy(
     return 0;
 }
 
+static const PyBytesObject no_location = {
+    PyVarObject_HEAD_INIT(&PyBytes_Type, 1)
+    .ob_sval = { NO_LOC_4 }
+};
 
 #ifdef Py_GIL_DISABLED
 static _PyCodeArray emtry_cleanup_tlbc = {

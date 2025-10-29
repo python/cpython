@@ -3204,6 +3204,11 @@ static _PyCodeArray init_cleanup_tlbc = {
 };
 #endif
 
+static const PyBytesObject no_location = {
+    PyVarObject_HEAD_INIT(&PyBytes_Type, 1)
+    .ob_sval = { NO_LOC_4 }
+};
+
 const struct _PyCode8 _Py_InitCleanup = {
     _PyVarObject_HEAD_INIT(&PyCode_Type, 3),
     .co_consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
