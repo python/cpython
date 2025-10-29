@@ -27,15 +27,6 @@ noted otherwise, all return values are floats.
 
 
 ====================================================  ============================================
-**Number-theoretic functions**
---------------------------------------------------------------------------------------------------
-:func:`comb(n, k) <comb>`                             Number of ways to choose *k* items from *n* items without repetition and without order
-:func:`factorial(n) <factorial>`                      *n* factorial
-:func:`gcd(*integers) <gcd>`                          Greatest common divisor of the integer arguments
-:func:`isqrt(n) <isqrt>`                              Integer square root of a nonnegative integer *n*
-:func:`lcm(*integers) <lcm>`                          Least common multiple of the integer arguments
-:func:`perm(n, k) <perm>`                             Number of ways to choose *k* items from *n* items without repetition and with order
-
 **Floating point arithmetic**
 --------------------------------------------------------------------------------------------------
 :func:`ceil(x) <ceil>`                                Ceiling of *x*, the smallest integer greater than or equal to *x*
@@ -124,59 +115,6 @@ noted otherwise, all return values are floats.
 :data:`inf`                                           Positive infinity
 :data:`nan`                                           "Not a number" (NaN)
 ====================================================  ============================================
-
-
-Number-theoretic functions
---------------------------
-
-These functions are aliases of corresponding functions in the
-:mod:`math.integer` module.
-
-.. function:: comb(n, k)
-
-   An alias of :func:`math.integer.comb`.
-
-   .. versionadded:: 3.8
-
-
-.. function:: factorial(n)
-
-   An alias of :func:`math.integer.factorial`.
-
-   .. versionchanged:: 3.10
-      Floats with integral values (like ``5.0``) are no longer accepted.
-
-
-.. function:: gcd(*integers)
-
-   An alias of :func:`math.integer.gcd`.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.9
-      Added support for an arbitrary number of arguments. Formerly, only two
-      arguments were supported.
-
-
-.. function:: isqrt(n)
-
-   An alias of :func:`math.integer.isqrt`.
-
-   .. versionadded:: 3.8
-
-
-.. function:: lcm(*integers)
-
-   An alias of :func:`math.integer.lcm`.
-
-   .. versionadded:: 3.9
-
-
-.. function:: perm(n, k=None)
-
-   An alias of :func:`math.integer.perm`.
-
-   .. versionadded:: 3.8
 
 
 Floating point arithmetic
@@ -779,6 +717,69 @@ Special functions
    .. versionadded:: 3.2
 
 
+Number-theoretic functions
+--------------------------
+
+For backward compatibility, the :mod:`math` module provides also aliases of
+the following functions from the :mod:`math.integer` module:
+
+.. list-table:: **Number-theoretic functions**
+
+   * - .. function:: comb(n, k)
+          :no-typesetting:
+
+       :func:`comb(n, k) <math.integer.comb>`
+     - Number of ways to choose *k* items from *n* items without repetition and without order
+
+   * - .. function:: factorial(n)
+          :no-typesetting:
+
+       :func:`factorial(n) <math.integer.factorial>`
+     - *n* factorial
+
+   * - .. function:: gcd(*integers)
+          :no-typesetting:
+
+       :func:`gcd(*integers) <math.integer.gcd>`
+     - Greatest common divisor of the integer arguments
+
+   * - .. function:: isqrt(n)
+          :no-typesetting:
+
+       :func:`isqrt(n) <math.integer.isqrt>`
+     - Integer square root of a nonnegative integer *n*
+
+   * - .. function:: lcm(*integers)
+          :no-typesetting:
+
+       :func:`lcm(*integers) <math.integer.lcm>`
+     - Least common multiple of the integer arguments
+
+   * - .. function:: perm(n, k)
+          :no-typesetting:
+
+       :func:`perm(n, k) <math.integer.perm>`
+     - Number of ways to choose *k* items from *n* items without repetition and with order
+
+.. versionadded:: 3.5
+   The :func:`gcd` function.
+
+.. versionadded:: 3.8
+   The :func:`comb`, :func:`perm` and :func:`isqrt` functions.
+
+.. versionadded:: 3.9
+   The :func:`lcm` function.
+
+.. versionchanged:: 3.9
+   Added support for an arbitrary number of arguments in the :func:`gcd`
+   function.
+   Formerly, only two arguments were supported.
+
+.. versionchanged:: 3.10
+   Floats with integral values (like ``5.0``) are no longer accepted in the
+   :func:`factorial` function.
+
+
 Constants
 ---------
 
@@ -860,3 +861,6 @@ Constants
 
    Module :mod:`cmath`
       Complex number versions of many of these functions.
+
+   Module :mod:`math.integer`
+      Integer-specific mathematics functions.
