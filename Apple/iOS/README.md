@@ -224,6 +224,17 @@ Once you have a built an XCframework, you can test that framework by running:
 
   $ python Apple test iOS
 
+This test will attempt to find an "SE-class" simulator (i.e., an iPhone SE, or
+iPhone 16e, or similar), and run the test suite on the most recent version of
+iOS that is available. You can specify a simulator using the `--simulator`
+command line argument, providing the name of the simulator (e.g., `--simulator
+'iPhone 16 Pro'`). You can also use this argument to control the OS version used
+for testing; `--simulator 'iPhone 16 Pro,OS=18.2'` would attempt to run the
+tests on an iPhone 16 Pro running iOS 18.2.
+
+If the test runner is executed on GitHub Actions, the `GITHUB_ACTIONS`
+environment variable will be exposed to the iOS process at runtime.
+
 ### Testing a single-architecture framework
 
 The `Apple/testbed` folder that contains an Xcode project that is able to run
