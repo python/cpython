@@ -74,16 +74,6 @@ _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
     return 0;
 }
 
-
-/* --- Characters Type APIs ----------------------------------------------- */
-
-extern int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_ToFoldedFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_IsCaseIgnorable(Py_UCS4 ch);
-extern int _PyUnicode_IsCased(Py_UCS4 ch);
-
 /* --- Unicode API -------------------------------------------------------- */
 
 // Export for '_json' shared extension
