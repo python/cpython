@@ -1,1 +1,1 @@
-Add :func:`os.reload_environ` to `__all__`
+Add :func:`os.reload_environ` to ` `os.__all__``.
