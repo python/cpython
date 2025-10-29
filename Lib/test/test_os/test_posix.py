@@ -668,22 +668,65 @@ class PosixTester(unittest.TestCase):
         finally:
             fp.close()
 
-    def test_stat(self):
-        self.assertTrue(posix.stat(os_helper.TESTFN))
-        self.assertTrue(posix.stat(os.fsencode(os_helper.TESTFN)))
+    def check_statlike_path(self, func):
+        self.assertTrue(func(os_helper.TESTFN))
+        self.assertTrue(func(os.fsencode(os_helper.TESTFN)))
+        self.assertTrue(func(os_helper.FakePath(os_helper.TESTFN)))
 
         self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
-                posix.stat, bytearray(os.fsencode(os_helper.TESTFN)))
+                func, bytearray(os.fsencode(os_helper.TESTFN)))
         self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
-                posix.stat, None)
+                func, None)
         self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
-                posix.stat, list(os_helper.TESTFN))
+                func, list(os_helper.TESTFN))
         self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
-                posix.stat, list(os.fsencode(os_helper.TESTFN)))
+                func, list(os.fsencode(os_helper.TESTFN)))
+
+    def test_stat(self):
+        self.check_statlike_path(posix.stat)
+
+    @unittest.skipUnless(hasattr(posix, 'statx'), 'test needs posix.statx()')
+    def test_statx(self):
+        def func(path, **kwargs):
+            return posix.statx(path, posix.STATX_BASIC_STATS, **kwargs)
+        self.check_statlike_path(func)
+
+    @unittest.skipUnless(hasattr(posix, 'statx'), 'test needs posix.statx()')
+    def test_statx_flags(self):
+        # glibc's fallback implementation of statx via the stat family fails
+        # with EINVAL on the (nonzero) sync flags.  If you see this failure,
+        # update your kernel and/or seccomp syscall filter.
+        valid_flag_names = ('AT_NO_AUTOMOUNT', 'AT_STATX_SYNC_AS_STAT',
+                            'AT_STATX_FORCE_SYNC', 'AT_STATX_DONT_SYNC')
+        for flag_name in valid_flag_names:
+            flag = getattr(posix, flag_name)
+            with self.subTest(msg=flag_name, flags=flag):
+                posix.statx(os_helper.TESTFN, posix.STATX_BASIC_STATS,
+                            flags=flag)
+
+        # These flags are not exposed to Python because their functionality is
+        # implemented via kwargs instead.
+        kwarg_equivalent_flags = (
+            (0x0100, 'AT_SYMLINK_NOFOLLOW', 'follow_symlinks'),
+            (0x0400, 'AT_SYMLINK_FOLLOW', 'follow_symlinks'),
+            (0x1000, 'AT_EMPTY_PATH', 'dir_fd'),
+        )
+        for flag, flag_name, kwarg_name in kwarg_equivalent_flags:
+            with self.subTest(msg=flag_name, flags=flag):
+                with self.assertRaisesRegex(ValueError, kwarg_name):
+                    posix.statx(os_helper.TESTFN, posix.STATX_BASIC_STATS,
+                                flags=flag)
+
+        with self.subTest(msg="AT_STATX_FORCE_SYNC | AT_STATX_DONT_SYNC"):
+            with self.assertRaises(OSError) as ctx:
+                flags = posix.AT_STATX_FORCE_SYNC | posix.AT_STATX_DONT_SYNC
+                posix.statx(os_helper.TESTFN, posix.STATX_BASIC_STATS,
+                            flags=flags)
+            self.assertEqual(ctx.exception.errno, errno.EINVAL)
 
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")
     def test_mkfifo(self):
@@ -1384,6 +1427,14 @@ class PosixTester(unittest.TestCase):
         self.assertNotEqual(newparam, param)
         self.assertEqual(newparam.sched_priority, 0)
 
+    @requires_sched
+    def test_bug_140634(self):
+        sched_priority = float('inf')  # any new reference
+        param = posix.sched_param(sched_priority)
+        param.__reduce__()
+        del sched_priority, param  # should not crash
+        support.gc_collect()  # just to be sure
+
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):
         try:
@@ -1629,32 +1680,46 @@ class TestPosixDirFd(unittest.TestCase):
         with self.prepare_file() as (dir_fd, name, fullname):
             posix.chown(name, os.getuid(), os.getgid(), dir_fd=dir_fd)
 
-    @unittest.skipUnless(os.stat in os.supports_dir_fd, "test needs dir_fd support in os.stat()")
-    def test_stat_dir_fd(self):
+    def check_statlike_dir_fd(self, func, prefix):
         with self.prepare() as (dir_fd, name, fullname):
             with open(fullname, 'w') as outfile:
                 outfile.write("testline\n")
             self.addCleanup(posix.unlink, fullname)
 
-            s1 = posix.stat(fullname)
-            s2 = posix.stat(name, dir_fd=dir_fd)
-            self.assertEqual(s1, s2)
-            s2 = posix.stat(fullname, dir_fd=None)
-            self.assertEqual(s1, s2)
+            def get(result, attr):
+                return getattr(result, prefix + attr)
+
+            s1 = func(fullname)
+            s2 = func(name, dir_fd=dir_fd)
+            self.assertEqual((get(s1, "dev"), get(s1, "ino")),
+                             (get(s2, "dev"), get(s2, "ino")))
+            s2 = func(fullname, dir_fd=None)
+            self.assertEqual((get(s1, "dev"), get(s1, "ino")),
+                             (get(s2, "dev"), get(s2, "ino")))
 
             self.assertRaisesRegex(TypeError, 'should be integer or None, not',
-                    posix.stat, name, dir_fd=posix.getcwd())
+                    func, name, dir_fd=posix.getcwd())
             self.assertRaisesRegex(TypeError, 'should be integer or None, not',
-                    posix.stat, name, dir_fd=float(dir_fd))
+                    func, name, dir_fd=float(dir_fd))
             self.assertRaises(OverflowError,
-                    posix.stat, name, dir_fd=10**20)
+                    func, name, dir_fd=10**20)
 
             for fd in False, True:
                 with self.assertWarnsRegex(RuntimeWarning,
                         'bool is used as a file descriptor') as cm:
                     with self.assertRaises(OSError):
-                        posix.stat('nonexisting', dir_fd=fd)
+                        func('nonexisting', dir_fd=fd)
                 self.assertEqual(cm.filename, __file__)
+
+    @unittest.skipUnless(os.stat in os.supports_dir_fd, "test needs dir_fd support in os.stat()")
+    def test_stat_dir_fd(self):
+        self.check_statlike_dir_fd(posix.stat, prefix="st_")
+
+    @unittest.skipUnless(hasattr(posix, 'statx'), "test needs os.statx()")
+    def test_statx_dir_fd(self):
+        def func(path, **kwargs):
+            return posix.statx(path, os.STATX_INO, **kwargs)
+        self.check_statlike_dir_fd(func, prefix="stx_")
 
     @unittest.skipUnless(os.utime in os.supports_dir_fd, "test needs dir_fd support in os.utime()")
     def test_utime_dir_fd(self):
