@@ -17,6 +17,11 @@ class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5535b77c37a119e0]*/
 
+/* Part of the stable ABI; used to be used as a fallback in
+   PyByteArray_AS_STRING. */
+PyAPI_DATA(char) _PyByteArray_empty_string[];
+char _PyByteArray_empty_string[] = "";
+
 /* Max number of bytes a bytearray can contain */
 #define PyByteArray_SIZE_MAX ((Py_ssize_t)(PY_SSIZE_T_MAX - _PyBytesObject_SIZE))
 
