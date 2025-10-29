@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_UNICODEDATA_H
-#define Py_INTERNAL_UNICODEDATA_H
+#ifndef Py_INTERNAL_UNICODECTYPE_H
+#define Py_INTERNAL_UNICODECTYPE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,4 +14,4 @@ PyAPI_FUNC(int) _PyUnicode_IsXidContinue(Py_UCS4 ch);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_INTERNAL_UNICODEDATA_H */
+#endif /* !Py_INTERNAL_UNICODECTYPE_H */

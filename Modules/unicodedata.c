@@ -19,7 +19,7 @@
 #include "Python.h"
 #include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "pycore_unicodedata.h"   // _PyUnicode_IsXidStart, _PyUnicode_IsXidContinue
+#include "pycore_unicodectype.h"   // _PyUnicode_IsXidStart, _PyUnicode_IsXidContinue
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
