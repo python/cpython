@@ -3031,6 +3031,9 @@ if __name__ == "__main__":
             timeout=10
         )
 
+        if "PermissionError" in result.stderr:
+            self.skipTest("Insufficient permissions for remote profiling")
+
         self.assertIn("Results: [2, 4, 6]", result.stdout)
         self.assertNotIn("Can't pickle", result.stderr)
 
