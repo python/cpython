@@ -2477,7 +2477,7 @@ bytearray_alloc(PyObject *op, PyObject *Py_UNUSED(ignored))
     PyByteArrayObject *self = _PyByteArray_CAST(op);
     Py_ssize_t alloc = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ob_alloc);
     if (alloc > 0) {
-        alloc += sizeof(PyBytesObject);
+        alloc += _PyBytesObject_SIZE;
     }
     return PyLong_FromSsize_t(alloc);
 }
@@ -2678,8 +2678,7 @@ bytearray_sizeof_impl(PyByteArrayObject *self)
     Py_ssize_t res = _PyObject_SIZE(Py_TYPE(self));
     Py_ssize_t alloc = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ob_alloc);
     if (alloc > 0) {
-        res += sizeof(PyBytesObject);
-        res += alloc;
+        res += _PyBytesObject_SIZE + alloc;
     }
 
     return PyLong_FromSsize_t(res);
