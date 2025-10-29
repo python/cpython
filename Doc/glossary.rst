@@ -138,11 +138,8 @@ Glossary
       An operation that completes as a single indivisible unit without
       interruption from other threads.  Atomic operations are critical for
       :term:`thread-safe` programming because they cannot be observed in a
-      partially completed state by other threads.  In the
-      :term:`free-threaded <free threading>` build, elementary operations
-      should generally be assumed to be atomic unless the documentation
-      explicitly states otherwise.  See also :term:`race condition` and
-      :term:`data race`.
+      partially completed state by other threads.  See also
+      :term:`race condition` and :term:`data race`.
 
    attached thread state
 
