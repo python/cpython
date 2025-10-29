@@ -77,10 +77,8 @@ _PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
 
 /* --- Characters Type APIs ----------------------------------------------- */
 
-// Export for 'unicodedata' shared extension.
-PyAPI_FUNC(int) _PyUnicode_IsXidStart(Py_UCS4 ch);
-PyAPI_FUNC(int) _PyUnicode_IsXidContinue(Py_UCS4 ch);
-
+extern int _PyUnicode_IsXidStart(Py_UCS4 ch);
+extern int _PyUnicode_IsXidContinue(Py_UCS4 ch);
 extern int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res);
 extern int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res);
 extern int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res);
