@@ -157,19 +157,19 @@ class SocketServerTest(unittest.TestCase):
     def dgram_examine(self, proto, addr):
         with socket.socket(proto, socket.SOCK_DGRAM) as s:
             if HAVE_UNIX_SOCKETS and proto == socket.AF_UNIX:
-                print(f"dg  - BIND {proto!r}")
+                # print(f"dg  - BIND {proto!r}")
                 s.bind(self.pickaddr(proto))
-            print("dg  - SEND")
+            # print("dg  - SEND")
             s.sendto(TEST_STR, addr)
-            print("dg  - RECEIVE")
+            # print("dg  - RECEIVE")
             buf = data = receive(s, 100)
-            print(f"dg  - INITIAL GOT {data!r}")
+            # print(f"dg  - INITIAL GOT {data!r}")
             while data and b'\n' not in buf:
-                print("dg    - RECEIVE")
+                # print("dg    - RECEIVE")
                 data = receive(s, 100)
-                print(f"dg    - GOT {data!r}")
+                # print(f"dg    - GOT {data!r}")
                 buf += data
-            print("dg  - END LOOP")
+            # print("dg  - END LOOP")
             self.assertEqual(buf, TEST_STR)
 
     def test_TCPServer(self):
