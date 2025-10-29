@@ -200,6 +200,33 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
 SKIPS = ("_EXTENDED_ARG",)
 
 
+def generate_guard_ips(
+    analysis: Analysis,
+    emitter: Tier2Emitter,
+) -> None:
+    for name, uop in analysis.uops.items():
+        for stmt in uop.body.body:
+            tkn_iter = iter(stmt.tokens())
+            for token in tkn_iter:
+                if token.kind == "IDENTIFIER" and token.text == "LOAD_IP":
+                    offset = []
+                    while token.kind != "SEMI":
+                        offset.append(token.text)
+                        token = next(tkn_iter)
+                    # 1: to remove the LOAD_IP text
+                    offset_str = "".join(offset[1:])
+                    emitter.emit(f"case _GUARD_IP_{name}: {{\n")
+                    emitter.emit("PyObject *ip = (PyObject *)CURRENT_OPERAND0();\n")
+                    emitter.emit(f"if (frame->instr_ptr + {offset_str} != (_Py_CODEUNIT *)ip) {{\n")
+                    emitter.emit(f"frame->instr_ptr += {offset_str};\n")
+                    emitter.emit(f"UOP_STAT_INC(uopcode, miss);\n")
+                    emitter.emit("JUMP_TO_JUMP_TARGET();\n")
+                    emitter.emit("}\n")
+                    emitter.emit("break;\n")
+                    emitter.emit("}\n")
+                    emitter.emit("\n")
+
+
 def generate_tier2(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
@@ -220,6 +247,8 @@ def generate_tier2(
             continue
         if uop.is_super():
             continue
+        if name.startswith("_GUARD_IP"):
+            continue
         why_not_viable = uop.why_not_viable()
         if why_not_viable is not None:
             out.emit(
@@ -236,6 +265,8 @@ def generate_tier2(
         out.start_line()
         out.emit("}")
         out.emit("\n\n")
+
+    generate_guard_ips(analysis, emitter)
     outfile.write("#undef TIER_TWO\n")
 
 

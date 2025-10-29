@@ -337,9 +337,10 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_ERROR_POP_N] = HAS_ARG_FLAG,
     [_TIER2_RESUME_CHECK] = HAS_PERIODIC_FLAG,
     [_COLD_EXIT] = 0,
-    [_GUARD_IP_PUSH_FRAME] = HAS_EXIT_FLAG,
+    [_GUARD_IP__PUSH_FRAME] = HAS_EXIT_FLAG,
     [_GUARD_IP_YIELD_VALUE] = HAS_EXIT_FLAG,
     [_GUARD_IP_RETURN_VALUE] = HAS_EXIT_FLAG,
+    [_GUARD_IP_RETURN_GENERATOR] = HAS_EXIT_FLAG,
     [_DYNAMIC_EXIT] = HAS_ESCAPES_FLAG,
 };
 
@@ -476,9 +477,10 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_DORV_NO_DICT] = "_GUARD_DORV_NO_DICT",
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
-    [_GUARD_IP_PUSH_FRAME] = "_GUARD_IP_PUSH_FRAME",
+    [_GUARD_IP_RETURN_GENERATOR] = "_GUARD_IP_RETURN_GENERATOR",
     [_GUARD_IP_RETURN_VALUE] = "_GUARD_IP_RETURN_VALUE",
     [_GUARD_IP_YIELD_VALUE] = "_GUARD_IP_YIELD_VALUE",
+    [_GUARD_IP__PUSH_FRAME] = "_GUARD_IP__PUSH_FRAME",
     [_GUARD_IS_FALSE_POP] = "_GUARD_IS_FALSE_POP",
     [_GUARD_IS_NONE_POP] = "_GUARD_IS_NONE_POP",
     [_GUARD_IS_NOT_NONE_POP] = "_GUARD_IS_NOT_NONE_POP",
@@ -1313,11 +1315,13 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _COLD_EXIT:
             return 0;
-        case _GUARD_IP_PUSH_FRAME:
+        case _GUARD_IP__PUSH_FRAME:
             return 0;
         case _GUARD_IP_YIELD_VALUE:
             return 0;
         case _GUARD_IP_RETURN_VALUE:
+            return 0;
+        case _GUARD_IP_RETURN_GENERATOR:
             return 0;
         case _DYNAMIC_EXIT:
             return 0;

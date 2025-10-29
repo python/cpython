@@ -2979,18 +2979,15 @@ dummy_func(
                         DISPATCH();
                     }
                 }
-                int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
-                if (!_is_sys_tracing) {
-                    /* Back up over EXTENDED_ARGs so executor is inserted at the correct place */
-                    _Py_CODEUNIT *insert_exec_at = this_instr;
-                    while (oparg > 255) {
-                        oparg >>= 8;
-                        insert_exec_at--;
-                    }
-                    int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, NULL, oparg);
-                    if (succ) {
-                        ENTER_TRACING();
-                    }
+                /* Back up over EXTENDED_ARGs so executor is inserted at the correct place */
+                _Py_CODEUNIT *insert_exec_at = this_instr;
+                while (oparg > 255) {
+                    oparg >>= 8;
+                    insert_exec_at--;
+                }
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, NULL, oparg);
+                if (succ) {
+                    ENTER_TRACING();
                 }
             }
             else {
@@ -3036,6 +3033,12 @@ dummy_func(
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
+            if (IS_JIT_TRACING()) {
+                _PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
+                LEAVE_TRACING();
+                int err = bail_tracing_and_jit(tstate, frame);
+                ERROR_IF(err < 0);
+            }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
@@ -3045,19 +3048,14 @@ dummy_func(
             /* If the eval breaker is set then stay in tier 1.
              * This avoids any potentially infinite loops
              * involving _RESUME_CHECK */
-            if (IS_JIT_TRACING() || _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
                 if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                     PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
-                if (IS_JIT_TRACING()) {
-                    DISPATCH_GOTO_NON_TRACING();
-                }
-                else {
-                    DISPATCH_GOTO();
-                }
+                DISPATCH_GOTO();
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
@@ -5454,22 +5452,24 @@ dummy_func(
             TIER2_TO_TIER2(exit->executor);
         }
 
-        tier2 op(_GUARD_IP_PUSH_FRAME, (ip/4 --)) {
-            EXIT_IF(frame->instr_ptr != (_Py_CODEUNIT *)ip);
+        tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
+            // Implementation automatically inserted by Tools/cases/tier2_generator.py
+            EXIT_IF(true);
         }
 
         tier2 op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
-            if (frame->instr_ptr + 1 + INLINE_CACHE_ENTRIES_SEND != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
-                EXIT_IF(true);
-            }
+            // Implementation automatically inserted by Tools/cases/tier2_generator.py
+            EXIT_IF(true);
         }
 
         tier2 op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
-            if (frame->instr_ptr + frame->return_offset != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += frame->return_offset;
-                EXIT_IF(true);
-            }
+            // Implementation automatically inserted by Tools/cases/tier2_generator.py
+            EXIT_IF(true);
+        }
+
+        tier2 op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
+            // Implementation automatically inserted by Tools/cases/tier2_generator.py
+            EXIT_IF(true);
         }
 
         // Note: this is different than _COLD_EXIT/_EXIT_TRACE, as it may lead to multiple executors

@@ -3426,7 +3426,7 @@
             break;
         }
 
-        case _GUARD_IP_PUSH_FRAME: {
+        case _GUARD_IP__PUSH_FRAME: {
             break;
         }
 
@@ -3435,6 +3435,10 @@
         }
 
         case _GUARD_IP_RETURN_VALUE: {
+            break;
+        }
+
+        case _GUARD_IP_RETURN_GENERATOR: {
             break;
         }
 

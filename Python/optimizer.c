@@ -887,9 +887,11 @@ _PyJit_translate_single_bytecode_to_trace(
     if (needs_guard_ip) {
         switch (trace[trace_length-1].opcode) {
             case _PUSH_FRAME:
-                ADD_TO_TRACE(_GUARD_IP_PUSH_FRAME, 0, (uintptr_t)next_instr, 0);
+                ADD_TO_TRACE(_GUARD_IP__PUSH_FRAME, 0, (uintptr_t)next_instr, 0);
                 break;
             case _RETURN_GENERATOR:
+                ADD_TO_TRACE(_GUARD_IP_RETURN_GENERATOR, 0, (uintptr_t)next_instr, 0);
+                break;
             case _RETURN_VALUE:
                 ADD_TO_TRACE(_GUARD_IP_RETURN_VALUE, 0, (uintptr_t)next_instr, 0);
                 break;
@@ -1077,9 +1079,11 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 exit_op = _DYNAMIC_EXIT;
             }
             else if (
-                opcode == _GUARD_IP_PUSH_FRAME ||
+                opcode == _GUARD_IP__PUSH_FRAME ||
                 opcode == _GUARD_IP_RETURN_VALUE ||
-                opcode == _GUARD_IP_YIELD_VALUE) {
+                opcode == _GUARD_IP_YIELD_VALUE ||
+                opcode == _GUARD_IP_RETURN_GENERATOR
+            ) {
                 exit_op = _DYNAMIC_EXIT;
                 unique_target = true;
             }
@@ -1565,15 +1569,11 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
         return;
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
+    assert(instruction->op.code == ENTER_EXECUTOR);
     int index = instruction->op.arg;
-    // Due to a combination of re-entrancy and tracing, it's possible for an
-    // instruction to no longer be ENTER_EXECUTOR. In which case, no-op.
-    if (instruction->op.code == ENTER_EXECUTOR) {
-        assert(instruction->op.code == ENTER_EXECUTOR);
-        assert(code->co_executors->executors[index] == executor);
-        instruction->op.code = executor->vm_data.opcode;
-        instruction->op.arg = executor->vm_data.oparg;
-    }
+    assert(code->co_executors->executors[index] == executor);
+    instruction->op.code = executor->vm_data.opcode;
+    instruction->op.arg = executor->vm_data.oparg;
     executor->vm_data.code = NULL;
     code->co_executors->executors[index] = NULL;
     Py_DECREF(executor);
