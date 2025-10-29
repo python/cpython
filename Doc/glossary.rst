@@ -308,7 +308,7 @@ Glossary
    concurrent modification
       When multiple threads modify shared data at the same time without
       proper synchronization.  Concurrent modification can cause
-      :term:`race conditions <race condition>`, and might also trigger a 
+      :term:`race conditions <race condition>`, and might also trigger a
       :term:`data race <data race>`, data corruption, or both.
 
    context
