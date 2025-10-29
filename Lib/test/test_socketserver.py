@@ -8,6 +8,7 @@ import os
 import select
 import signal
 import socket
+import sys
 import threading
 import unittest
 import socketserver
@@ -223,12 +224,16 @@ class SocketServerTest(unittest.TestCase):
                             self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(sys.platform=="win32",
+                     "Unix with Dadagram is not supported on Windows")
     def test_UnixDatagramServer(self):
         self.run_server(socketserver.UnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(sys.platform=="win32",
+                     "Unix with Dadagram is not supported on Windows")
     def test_ThreadingUnixDatagramServer(self):
         self.run_server(socketserver.ThreadingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
@@ -236,6 +241,8 @@ class SocketServerTest(unittest.TestCase):
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_unix_sockets
+    @unittest.skipIf(sys.platform=="win32",
+                     "Unix with Dadagram is not supported on Windows")
     @requires_forking
     def test_ForkingUnixDatagramServer(self):
         self.run_server(socketserver.ForkingUnixDatagramServer,

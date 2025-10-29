@@ -117,6 +117,14 @@ class HTTPServer(socketserver.TCPServer):
     allow_reuse_address = True    # Seems to make sense in testing environment
     allow_reuse_port = False
 
+    def __init__(self, *args, **kwargs):
+        if sys.platform == 'win32' and hasattr(socket, 'AF_UNIX') and\
+                self.address_family == socket.AF_UNIX:
+            # reuse address with AF_UNIX is not supported on Windows
+            self.allow_reuse_address = False
+
+        super().__init__(*args, **kwargs)
+
     def server_bind(self):
         """Override server_bind to store the server name."""
         socketserver.TCPServer.server_bind(self)
