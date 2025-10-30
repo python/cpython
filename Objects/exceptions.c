@@ -2518,7 +2518,7 @@ NameError_init(PyObject *op, PyObject *args, PyObject *kwds)
     if (!empty_tuple) {
         return -1;
     }
-    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$O:NameError", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OO:NameError", kwlist,
                                      &name ,&op_type)) {
         Py_DECREF(empty_tuple);
         return -1;
