@@ -1759,6 +1759,66 @@ class TestSpecifics(unittest.TestCase):
             self.assertEqual(wm.filename, filename)
             self.assertIs(wm.category, SyntaxWarning)
 
+    @support.subTests('src', [
+        textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    return 42
+            """),
+        textwrap.dedent("""
+            for x in y:
+                try:
+                    pass
+                finally:
+                    break
+            """),
+        textwrap.dedent("""
+            for x in y:
+                try:
+                    pass
+                finally:
+                    continue
+            """),
+    ])
+    def test_pep_765_warnings(self, src):
+        with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+            compile(src, '<string>', 'exec')
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            tree = ast.parse(src)
+        with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+            compile(tree, '<string>', 'exec')
+
+    @support.subTests('src', [
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                def f():
+                    return 42
+            """),
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                for x in y:
+                    break
+            """),
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                for x in y:
+                    continue
+            """),
+    ])
+    def test_pep_765_no_warnings(self, src):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            compile(src, '<string>', 'exec')
+
 
 class TestBooleanExpression(unittest.TestCase):
     class Value:
