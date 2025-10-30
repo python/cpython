@@ -196,25 +196,44 @@ def make_build_python(context, working_dir):
 
 def find_wasi_sdk():
     """Find the path to the WASI SDK."""
-    if wasi_sdk_path := os.environ.get("WASI_SDK_PATH"):
-        return pathlib.Path(wasi_sdk_path)
+    wasi_sdk_path = None
 
-    opt_path = pathlib.Path("/opt")
-    # WASI SDK versions have a ``.0`` suffix, but it's a constant; the WASI SDK team
-    # has said they don't plan to ever do a point release and all of their Git tags
-    # lack the ``.0`` suffix.
-    # Starting with WASI SDK 23, the tarballs went from containing a directory named
-    # ``wasi-sdk-{WASI_SDK_VERSION}.0`` to e.g.
-    # ``wasi-sdk-{WASI_SDK_VERSION}.0-x86_64-linux``.
-    potential_sdks = [
-        path
-        for path in opt_path.glob(f"wasi-sdk-{WASI_SDK_VERSION}.0*")
-        if path.is_dir()
-    ]
-    if len(potential_sdks) == 1:
-        return potential_sdks[0]
-    elif (default_path := opt_path / "wasi-sdk").is_dir():
-        return default_path
+    if wasi_sdk_path_env_var := os.environ.get("WASI_SDK_PATH"):
+        wasi_sdk_path = pathlib.Path(wasi_sdk_path_env_var)
+    else:
+        opt_path = pathlib.Path("/opt")
+        # WASI SDK versions have a ``.0`` suffix, but it's a constant; the WASI SDK team
+        # has said they don't plan to ever do a point release and all of their Git tags
+        # lack the ``.0`` suffix.
+        # Starting with WASI SDK 23, the tarballs went from containing a directory named
+        # ``wasi-sdk-{WASI_SDK_VERSION}.0`` to e.g.
+        # ``wasi-sdk-{WASI_SDK_VERSION}.0-x86_64-linux``.
+        potential_sdks = [
+            path
+            for path in opt_path.glob(f"wasi-sdk-{WASI_SDK_VERSION}.0*")
+            if path.is_dir()
+        ]
+        if len(potential_sdks) == 1:
+            wasi_sdk_path = potential_sdks[0]
+        elif (default_path := opt_path / "wasi-sdk").is_dir():
+            wasi_sdk_path = default_path
+
+    # Starting with WASI SDK 25, a VERSION file is included in the root
+    # of the SDK directory that we can read to warn folks when they are using
+    # an unsupported version.
+    if wasi_sdk_path and (version_file := wasi_sdk_path / "VERSION").is_file():
+        version_details = version_file.read_text(encoding="utf-8")
+        found_version = version_details.splitlines()[0]
+        # Make sure there's a trailing dot to avoid false positives if somehow the
+        # supported version is a prefix of the found version (e.g. `25` and `2567`).
+        if not found_version.startswith(f"{WASI_SDK_VERSION}."):
+            major_version = found_version.partition(".")[0]
+            print(
+                f"⚠️ Found WASI SDK {major_version}, "
+                f"but WASI SDK {WASI_SDK_VERSION} is the supported version"
+            )
+
+    return wasi_sdk_path
 
 
 def wasi_sdk_env(context):
