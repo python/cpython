@@ -44,8 +44,7 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, custom=F
     # default module search path.
     stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
     cmd_line = [stdin_fname]
-    # Isolated mode implies -E, -P and -s, purifies sys.path and ignores PYTHON*
-    # variables.
+    # Isolated mode implies -EPs and ignores PYTHON* variables.
     if isolated:
         cmd_line.append('-I')
     # Don't re-run the built-in REPL from interactive mode
