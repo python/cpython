@@ -37,6 +37,10 @@ py_scanstring(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("scanstring", nargs, 2, 3)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("scanstring", "argument 1", "str", args[0]);
+        goto exit;
+    }
     pystr = args[0];
     {
         Py_ssize_t ival = -1;
@@ -121,4 +125,4 @@ py_encode_basestring(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ae8a23d72a2cc4bf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5bdd16375c95a4d9 input=a9049054013a1b77]*/

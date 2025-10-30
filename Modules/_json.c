@@ -645,7 +645,7 @@ bail:
 
 /*[clinic input]
 _json.scanstring as py_scanstring
-    pystr: object
+    pystr: unicode
     end: Py_ssize_t
     strict: bool = True
     /
@@ -664,13 +664,10 @@ after the end quote.
 static PyObject *
 py_scanstring_impl(PyObject *module, PyObject *pystr, Py_ssize_t end,
                    int strict)
-/*[clinic end generated code: output=961740cfae07cdb3 input=9d46d7df7ac749b0]*/
+/*[clinic end generated code: output=961740cfae07cdb3 input=cff59e47498f4d8e]*/
 {
-    PyObject *rval = NULL;
     Py_ssize_t next_end = -1;
-    if (PyUnicode_Check(pystr)) {
-        rval = scanstring_unicode(pystr, end, strict, &next_end);
-    }
+    PyObject *rval = scanstring_unicode(pystr, end, strict, &next_end);
     return _build_rval_index_tuple(rval, next_end);
 }
 
