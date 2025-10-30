@@ -18,6 +18,12 @@
 
 #include <stdbool.h>              // bool
 
+#include "clinic/_json.c.h"
+
+/*[clinic input]
+module _json
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=549fa53592c925b2]*/
 
 typedef struct _PyScannerObject {
     PyObject_HEAD
@@ -650,17 +656,26 @@ PyDoc_STRVAR(pydoc_scanstring,
     "after the end quote."
 );
 
+/*[clinic input]
+_json.scanstring as py_scanstring
+    pystr: object
+    end: Py_ssize_t
+    strict: bool = True
+    /
+
+Scan the string s for a JSON string.
+
+Return a tuple of the decoded string and the index of the character in s
+after the end quote.
+[clinic start generated code]*/
+
 static PyObject *
-py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
+py_scanstring_impl(PyObject *module, PyObject *pystr, Py_ssize_t end,
+                   int strict)
+/*[clinic end generated code: output=961740cfae07cdb3 input=d9077453fa0ca27c]*/
 {
-    PyObject *pystr;
     PyObject *rval;
-    Py_ssize_t end;
-    Py_ssize_t next_end = -1;
-    int strict = 1;
-    if (!PyArg_ParseTuple(args, "On|p:scanstring", &pystr, &end, &strict)) {
-        return NULL;
-    }
+    Py_ssize_t next_end;
     if (PyUnicode_Check(pystr)) {
         rval = scanstring_unicode(pystr, end, strict, &next_end);
     }
@@ -673,14 +688,17 @@ py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
     return _build_rval_index_tuple(rval, next_end);
 }
 
-PyDoc_STRVAR(pydoc_encode_basestring_ascii,
-    "encode_basestring_ascii(string) -> string\n"
-    "\n"
-    "Return an ASCII-only JSON representation of a Python string"
-);
+/*[clinic input]
+_json.encode_basestring_ascii as py_encode_basestring_ascii
+    pystr: object
+    /
+
+Return an ASCII-only JSON representation of a Python string
+[clinic start generated code]*/
 
 static PyObject *
-py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr)
+py_encode_basestring_ascii(PyObject *module, PyObject *pystr)
+/*[clinic end generated code: output=a8afcd88eba0b572 input=f4085ccd5928ea55]*/
 {
     PyObject *rval;
     /* Return an ASCII-only JSON representation of a Python string */
@@ -697,15 +715,17 @@ py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr)
     return rval;
 }
 
+/*[clinic input]
+_json.encode_basestring as py_encode_basestring
+    pystr: object
+    /
 
-PyDoc_STRVAR(pydoc_encode_basestring,
-    "encode_basestring(string) -> string\n"
-    "\n"
-    "Return a JSON representation of a Python string"
-);
+Return a JSON representation of a Python string
+[clinic start generated code]*/
 
 static PyObject *
-py_encode_basestring(PyObject* Py_UNUSED(self), PyObject *pystr)
+py_encode_basestring(PyObject *module, PyObject *pystr)
+/*[clinic end generated code: output=c87752300776d3b1 input=c3c7ef6e72624f6e]*/
 {
     PyObject *rval;
     /* Return a JSON representation of a Python string */
@@ -2080,18 +2100,9 @@ static PyType_Spec PyEncoderType_spec = {
 };
 
 static PyMethodDef speedups_methods[] = {
-    {"encode_basestring_ascii",
-        py_encode_basestring_ascii,
-        METH_O,
-        pydoc_encode_basestring_ascii},
-    {"encode_basestring",
-        py_encode_basestring,
-        METH_O,
-        pydoc_encode_basestring},
-    {"scanstring",
-        py_scanstring,
-        METH_VARARGS,
-        pydoc_scanstring},
+    PY_ENCODE_BASESTRING_ASCII_METHODDEF
+    PY_ENCODE_BASESTRING_METHODDEF
+    PY_SCANSTRING_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
