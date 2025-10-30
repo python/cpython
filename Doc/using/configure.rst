@@ -267,11 +267,11 @@ General Options
    The JSON file should map missing module names to custom error message strings.
    For example, a configuration for the :mod:`tkinter` module:
 
-   .. code-block::json
+   .. code-block:: json
 
       {
           "tkinter": "Install the python-tk package to use tkinter",
-          "_tkinter": "Install the python-tk package to use tkinter"
+          "_tkinter": "Install the python-tk package to use tkinter",
       }
 
    .. versionadded:: next
