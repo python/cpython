@@ -4,4 +4,3 @@ warnings filter not only against the filename with ``.py`` stripped, but
 also against module names constructed starting from different parent
 directories of the filename (with ``/__init__.py``, ``.py`` and, on Windows,
 ``.pyw`` stripped).
-``/__init__.py``.

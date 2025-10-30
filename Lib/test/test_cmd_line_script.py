@@ -812,9 +812,16 @@ class CmdLineTest(unittest.TestCase):
 
     def test_filter_syntax_warnings_by_module(self):
         filename = support.findfile('test_import/data/syntax_warnings.py')
-        rc, out, err = assert_python_ok('-Werror', '-Walways:::test.test_import.data.syntax_warnings', filename)
+        rc, out, err = assert_python_ok(
+            '-Werror',
+            '-Walways:::test.test_import.data.syntax_warnings',
+            filename)
         self.assertEqual(err.count(b': SyntaxWarning: '), 6)
-        rc, out, err = assert_python_ok('-Werror', '-Walways:::syntax_warnings', filename)
+
+        rc, out, err = assert_python_ok(
+            '-Werror',
+            '-Walways:::syntax_warnings',
+            filename)
         self.assertEqual(err.count(b': SyntaxWarning: '), 6)
 
 
