@@ -1001,7 +1001,14 @@ class Thread:
             with _active_limbo_lock:
                 del _limbo[self]
             raise
-        self._started.wait()  # Will set ident and native_id
+        # It's possible that the _started event never occurs from the new Thread;
+        # e.g., it didn't have enough memory to call the initialization part of _bootstrap_inner.
+        while not self._started.wait(0.000001):
+            if self._os_thread_handle.is_done():
+                self._started.set()
+                with _active_limbo_lock:
+                    _limbo.pop(self, None)
+                break
 
     def run(self):
         """Method representing the thread's activity.
@@ -1081,11 +1088,7 @@ class Thread:
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
         with _active_limbo_lock:
-            del _active[get_ident()]
-            # There must not be any python code between the previous line
-            # and after the lock is released.  Otherwise a tracing function
-            # could try to acquire the lock again in the same thread, (in
-            # current_thread()), and would block.
+            _active.pop(self._ident, None)
 
     def join(self, timeout=None):
         """Wait until the thread terminates.

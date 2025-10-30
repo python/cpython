@@ -1457,6 +1457,32 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertEqual(out.strip(), b"Exiting...")
 
+    def test_memory_error_bootstrap(self):
+        # gh-140746: Test that Thread.start() doesn't hang indefinitely if
+        # the new thread fails (MemoryError) during its initialization
+
+        def serving_thread():
+
+            def nothing():
+                pass
+
+            def _set_ident_memory_error():
+                raise MemoryError()
+
+            thread = threading.Thread(target=nothing)
+            with (
+                support.catch_unraisable_exception(),
+                mock.patch.object(thread, '_set_ident', _set_ident_memory_error)
+            ):
+                thread.start()
+                self.assertFalse(thread in threading._limbo)
+                self.assertFalse(thread.is_alive())
+
+        serving_thread = threading.Thread(target=serving_thread)
+        serving_thread.start()
+        serving_thread.join(0.1)
+        self.assertFalse(serving_thread.is_alive())
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
