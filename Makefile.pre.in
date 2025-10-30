@@ -559,6 +559,7 @@ OBJECT_OBJS=	\
 		Objects/typevarobject.o \
 		Objects/unicode_format.o \
 		Objects/unicode_formatter.o \
+		Objects/unicode_writer.o \
 		Objects/unicodectype.o \
 		Objects/unicodeobject.o \
 		Objects/unionobject.o \
@@ -1433,6 +1434,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_typevarobject.h \
 		$(srcdir)/Include/internal/pycore_ucnhash.h \
+		$(srcdir)/Include/internal/pycore_unicodectype.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject_generated.h \
 		$(srcdir)/Include/internal/pycore_unionobject.h \

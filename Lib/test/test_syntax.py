@@ -371,16 +371,46 @@ Traceback (most recent call last):
 SyntaxError: invalid syntax
 
 >>> match ...:
-...     case {**rest, "key": value}:
-...        ...
-Traceback (most recent call last):
-SyntaxError: invalid syntax
-
->>> match ...:
 ...     case {**_}:
 ...        ...
 Traceback (most recent call last):
 SyntaxError: invalid syntax
+
+# Check incorrect "case" placement with specialized error messages
+
+>>> case "pattern": ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case 1 | 2: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case klass(attr=1) | {}: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case [] if x > 1: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case match: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case case: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> if some:
+...     case 1: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case some:
+...     case 1: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
 
 # But prefixes of soft keywords should
 # still raise specialized errors
@@ -2133,6 +2163,25 @@ SyntaxError: cannot use subscript as import target
 Traceback (most recent call last):
 SyntaxError: cannot use subscript as import target
 
+# Check that we don't raise a "cannot use name as import target" error
+# if there is an error in an unrelated statement after ';'
+
+>>> import a as b; None = 1
+Traceback (most recent call last):
+SyntaxError: cannot assign to None
+
+>>> import a, b as c; d = 1; None = 1
+Traceback (most recent call last):
+SyntaxError: cannot assign to None
+
+>>> from a import b as c; None = 1
+Traceback (most recent call last):
+SyntaxError: cannot assign to None
+
+>>> from a import b, c as d; e = 1; None = 1
+Traceback (most recent call last):
+SyntaxError: cannot assign to None
+
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
 
@@ -2240,7 +2289,7 @@ Corner-cases that used to crash:
     Traceback (most recent call last):
     SyntaxError: invalid character '£' (U+00A3)
 
-  Invalid pattern matching constructs:
+Invalid pattern matching constructs:
 
     >>> match ...:
     ...   case 42 as _:
@@ -2301,6 +2350,24 @@ Corner-cases that used to crash:
     ...     ...
     Traceback (most recent call last):
     SyntaxError: positional patterns follow keyword patterns
+
+    >>> match ...:
+    ...   case {**double_star, "spam": "eggs"}:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: double star pattern must be the last (right-most) subpattern in the mapping pattern
+
+    >>> match ...:
+    ...   case {"foo": 1, **double_star, "spam": "eggs"}:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: double star pattern must be the last (right-most) subpattern in the mapping pattern
+
+    >>> match ...:
+    ...   case {"spam": "eggs", "b": {**d, "ham": "bacon"}}:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: double star pattern must be the last (right-most) subpattern in the mapping pattern
 
 Uses of the star operator which should fail:
 

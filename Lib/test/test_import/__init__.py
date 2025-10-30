@@ -15,6 +15,7 @@ import marshal
 import os
 import py_compile
 import random
+import re
 import shutil
 import stat
 import subprocess
@@ -413,7 +414,6 @@ class ImportTests(unittest.TestCase):
         self.assertIsNotNone(cm.exception)
 
     def test_from_import_star_invalid_type(self):
-        import re
         with ready_to_import() as (name, path):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("__all__ = [b'invalid_type']")
@@ -3177,6 +3177,7 @@ class SinglephaseInitTests(unittest.TestCase):
     # Also, we test with a single-phase module that has global state,
     # which is shared by all interpreters.
 
+    @no_rerun(reason="module state is not cleared (see gh-140657)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_main_no_reset(self):
         # without resetting; already loaded in main interpreter

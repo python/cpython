@@ -591,7 +591,7 @@ class SymtableTest(unittest.TestCase):
         filename = support.findfile('test_import/data/syntax_warnings.py')
         with open(filename, 'rb') as f:
             source = f.read()
-        module_re = re.escape(filename.removesuffix('.py')) + r'\z'
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
         with warnings.catch_warnings(record=True) as wlog:
             warnings.simplefilter('error')
             warnings.filterwarnings('always', module=module_re)
@@ -604,6 +604,7 @@ class SymtableTest(unittest.TestCase):
         with warnings.catch_warnings(record=True) as wlog:
             warnings.simplefilter('error')
             warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=module_re)
             symtable.symtable(source, filename, 'exec', module='package.module')
         self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
         for wm in wlog:

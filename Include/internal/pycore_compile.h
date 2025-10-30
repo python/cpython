@@ -52,6 +52,7 @@ extern int _PyAST_Preprocess(
     int optimize,
     int ff_features,
     int syntax_check_only,
+    int enable_warnings,
     PyObject *module);
 
 

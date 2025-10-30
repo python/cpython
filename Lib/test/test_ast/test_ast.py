@@ -1058,61 +1058,6 @@ class AST_Tests(unittest.TestCase):
                                     r"Exceeds the limit \(\d+ digits\)"):
             repr(ast.Constant(value=eval(source)))
 
-    def test_pep_765_warnings(self):
-        srcs = [
-            textwrap.dedent("""
-                 def f():
-                     try:
-                         pass
-                     finally:
-                         return 42
-                 """),
-            textwrap.dedent("""
-                 for x in y:
-                     try:
-                         pass
-                     finally:
-                         break
-                 """),
-            textwrap.dedent("""
-                 for x in y:
-                     try:
-                         pass
-                     finally:
-                         continue
-                 """),
-        ]
-        for src in srcs:
-            with self.assertWarnsRegex(SyntaxWarning, 'finally'):
-                ast.parse(src)
-
-    def test_pep_765_no_warnings(self):
-        srcs = [
-            textwrap.dedent("""
-                 try:
-                     pass
-                 finally:
-                     def f():
-                         return 42
-                 """),
-            textwrap.dedent("""
-                 try:
-                     pass
-                 finally:
-                     for x in y:
-                         break
-                 """),
-            textwrap.dedent("""
-                 try:
-                     pass
-                 finally:
-                     for x in y:
-                         continue
-                 """),
-        ]
-        for src in srcs:
-            ast.parse(src)
-
     def test_tstring(self):
         # Test AST structure for simple t-string
         tree = ast.parse('t"Hello"')
@@ -1133,7 +1078,7 @@ class AST_Tests(unittest.TestCase):
             warnings.simplefilter('error')
             warnings.filterwarnings('always', module=r'<unknown>\z')
             ast.parse(source)
-        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 21])
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
         for wm in wlog:
             self.assertEqual(wm.filename, '<unknown>')
             self.assertIs(wm.category, SyntaxWarning)
@@ -1141,8 +1086,9 @@ class AST_Tests(unittest.TestCase):
         with warnings.catch_warnings(record=True) as wlog:
             warnings.simplefilter('error')
             warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=r'<unknown>')
             ast.parse(source, filename, module='package.module')
-        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 21])
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
         for wm in wlog:
             self.assertEqual(wm.filename, filename)
             self.assertIs(wm.category, SyntaxWarning)
@@ -3330,6 +3276,15 @@ class ASTConstructorTests(unittest.TestCase):
         obj = MoreFieldsThanTypes(a=1, b=2)
         self.assertEqual(obj.a, 1)
         self.assertEqual(obj.b, 2)
+
+    def test_malformed_fields_with_bytes(self):
+        class BadFields(ast.AST):
+            _fields = (b'\xff'*64,)
+            _field_types = {'a': int}
+
+        # This should not crash
+        with self.assertWarnsRegex(DeprecationWarning, r"Field b'\\xff\\xff.*' .*"):
+            obj = BadFields()
 
     def test_complete_field_types(self):
         class _AllFieldTypes(ast.AST):

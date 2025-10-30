@@ -932,6 +932,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_weakreflist = NULL;
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.previous_item = NULL;
+    gen->gi_iframe.f_executable = PyStackRef_None;
     assert(func->func_name != NULL);
     gen->gi_name = Py_NewRef(func->func_name);
     assert(func->func_qualname != NULL);

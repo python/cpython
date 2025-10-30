@@ -241,15 +241,8 @@ class ForwardRef:
         if self.__code__ is not None:
             return self.__code__
         arg = self.__forward_arg__
-        # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
-        # Unfortunately, this isn't a valid expression on its own, so we
-        # do the unpacking manually.
-        if arg.startswith("*"):
-            arg_to_compile = f"({arg},)[0]"  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
-        else:
-            arg_to_compile = arg
         try:
-            self.__code__ = compile(arg_to_compile, "<string>", "eval")
+            self.__code__ = compile(_rewrite_star_unpack(arg), "<string>", "eval")
         except SyntaxError:
             raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
         return self.__code__
@@ -702,6 +695,18 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # possibly constants if the annotate function uses them directly). We then
         # convert each of those into a string to get an approximation of the
         # original source.
+
+        # Attempt to call with VALUE_WITH_FAKE_GLOBALS to check if it is implemented
+        # See: https://github.com/python/cpython/issues/138764
+        # Only fail on NotImplementedError
+        try:
+            annotate(Format.VALUE_WITH_FAKE_GLOBALS)
+        except NotImplementedError:
+            # Both STRING and VALUE_WITH_FAKE_GLOBALS are not implemented: fallback to VALUE
+            return annotations_to_string(annotate(Format.VALUE))
+        except Exception:
+            pass
+
         globals = _StringifierDict({}, format=format)
         is_class = isinstance(owner, type)
         closure = _build_closure(
@@ -760,6 +765,9 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         )
         try:
             result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        except NotImplementedError:
+            # FORWARDREF and VALUE_WITH_FAKE_GLOBALS not supported, fall back to VALUE
+            return annotate(Format.VALUE)
         except Exception:
             pass
         else:
@@ -1025,7 +1033,8 @@ def get_annotations(
         locals = {param.__name__: param for param in type_params} | locals
 
     return_value = {
-        key: value if not isinstance(value, str) else eval(value, globals, locals)
+        key: value if not isinstance(value, str)
+        else eval(_rewrite_star_unpack(value), globals, locals)
         for key, value in ann.items()
     }
     return return_value
@@ -1060,6 +1069,16 @@ def annotations_to_string(annotations):
         n: t if isinstance(t, str) else type_repr(t)
         for n, t in annotations.items()
     }
+
+
+def _rewrite_star_unpack(arg):
+    """If the given argument annotation expression is a star unpack e.g. `'*Ts'`
+       rewrite it to a valid expression.
+       """
+    if arg.startswith("*"):
+        return f"({arg},)[0]"  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
+    else:
+        return arg
 
 
 def _get_and_call_annotate(obj, format):

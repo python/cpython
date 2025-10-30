@@ -33,7 +33,7 @@ from typing import override
 from typing import is_typeddict, is_protocol
 from typing import reveal_type
 from typing import dataclass_transform
-from typing import no_type_check, no_type_check_decorator
+from typing import no_type_check
 from typing import Type
 from typing import NamedTuple, NotRequired, Required, ReadOnly, TypedDict, NoExtraItems
 from typing import IO, TextIO, BinaryIO
@@ -759,6 +759,16 @@ class TypeParameterDefaultsTests(BaseTestCase):
         self.assertEqual(P.__default__, [str, int])
         class A(Generic[T, P, U]): ...
         self.assertEqual(A[float].__args__, (float, (str, int), float))
+        self.assertEqual(A[float, [range]].__args__, (float, (range,), float))
+        self.assertEqual(A[float, [range], int].__args__, (float, (range,), int))
+
+    def test_paramspec_and_typevar_specialization_2(self):
+        T = TypeVar("T")
+        P = ParamSpec('P', default=...)
+        U = TypeVar("U", default=float)
+        self.assertEqual(P.__default__, ...)
+        class A(Generic[T, P, U]): ...
+        self.assertEqual(A[float].__args__, (float, ..., float))
         self.assertEqual(A[float, [range]].__args__, (float, (range,), float))
         self.assertEqual(A[float, [range], int].__args__, (float, (range,), int))
 
@@ -6365,35 +6375,6 @@ class NoTypeCheckTests(BaseTestCase):
         expected_result = {'foo': typing.ClassVar[int]}
         for clazz in [C, D, E, F]:
             self.assertEqual(get_type_hints(clazz), expected_result)
-
-    def test_meta_no_type_check(self):
-        depr_msg = (
-            "'typing.no_type_check_decorator' is deprecated "
-            "and slated for removal in Python 3.15"
-        )
-        with self.assertWarnsRegex(DeprecationWarning, depr_msg):
-            @no_type_check_decorator
-            def magic_decorator(func):
-                return func
-
-        self.assertEqual(magic_decorator.__name__, 'magic_decorator')
-
-        @magic_decorator
-        def foo(a: 'whatevers') -> {}:
-            pass
-
-        @magic_decorator
-        class C:
-            def foo(a: 'whatevers') -> {}:
-                pass
-
-        self.assertEqual(foo.__name__, 'foo')
-        th = get_type_hints(foo)
-        self.assertEqual(th, {})
-        cth = get_type_hints(C.foo)
-        self.assertEqual(cth, {})
-        ith = get_type_hints(C().foo)
-        self.assertEqual(ith, {})
 
 
 class InternalsTests(BaseTestCase):
