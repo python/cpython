@@ -144,6 +144,36 @@ following functions:
       1
 
 
+.. function:: isxidstart(chr, /)
+
+   Return ``True`` if *chr* is a valid identifier start per the
+   `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_,
+   that is, it has the ``XID_Start`` property. Return ``False`` otherwise.
+   For example::
+
+      >>> unicodedata.isxidstart('S')
+      True
+      >>> unicodedata.isxidstart('0')
+      False
+
+   .. versionadded:: next
+
+
+.. function:: isxidcontinue(chr, /)
+
+   Return ``True`` if *chr* is a valid identifier character per the
+   `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_,
+   that is, it has the ``XID_Continue`` property. Return ``False`` otherwise.
+   For example::
+
+      >>> unicodedata.isxidcontinue('S')
+      True
+      >>> unicodedata.isxidcontinue(' ')
+      False
+
+   .. versionadded:: next
+
+
 .. function:: decomposition(chr)
 
    Returns the character decomposition mapping assigned to the character
