@@ -645,7 +645,7 @@ bail:
 
 /*[clinic input]
 _json.scanstring as py_scanstring
-    pystr: object
+    pystr: unicode
     end: Py_ssize_t
     strict: bool = True
     /
@@ -664,74 +664,41 @@ after the end quote.
 static PyObject *
 py_scanstring_impl(PyObject *module, PyObject *pystr, Py_ssize_t end,
                    int strict)
-/*[clinic end generated code: output=961740cfae07cdb3 input=9d46d7df7ac749b0]*/
+/*[clinic end generated code: output=961740cfae07cdb3 input=cff59e47498f4d8e]*/
 {
-    PyObject *rval;
     Py_ssize_t next_end = -1;
-    if (PyUnicode_Check(pystr)) {
-        rval = scanstring_unicode(pystr, end, strict, &next_end);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
-        return NULL;
-    }
+    PyObject *rval = scanstring_unicode(pystr, end, strict, &next_end);
     return _build_rval_index_tuple(rval, next_end);
 }
 
 /*[clinic input]
 _json.encode_basestring_ascii as py_encode_basestring_ascii
-    pystr: object
+    pystr: unicode
     /
 
 Return an ASCII-only JSON representation of a Python string
 [clinic start generated code]*/
 
 static PyObject *
-py_encode_basestring_ascii(PyObject *module, PyObject *pystr)
-/*[clinic end generated code: output=a8afcd88eba0b572 input=f4085ccd5928ea55]*/
+py_encode_basestring_ascii_impl(PyObject *module, PyObject *pystr)
+/*[clinic end generated code: output=7b3841287cf211df input=4f3609498aff2de5]*/
 {
-    PyObject *rval;
-    /* Return an ASCII-only JSON representation of a Python string */
-    /* METH_O */
-    if (PyUnicode_Check(pystr)) {
-        rval = ascii_escape_unicode(pystr);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
-        return NULL;
-    }
-    return rval;
+    return ascii_escape_unicode(pystr);
 }
 
 /*[clinic input]
 _json.encode_basestring as py_encode_basestring
-    pystr: object
+    pystr: unicode
     /
 
 Return a JSON representation of a Python string
 [clinic start generated code]*/
 
 static PyObject *
-py_encode_basestring(PyObject *module, PyObject *pystr)
-/*[clinic end generated code: output=c87752300776d3b1 input=c3c7ef6e72624f6e]*/
+py_encode_basestring_impl(PyObject *module, PyObject *pystr)
+/*[clinic end generated code: output=900950f95df3f1c9 input=d42ef714b2c07386]*/
 {
-    PyObject *rval;
-    /* Return a JSON representation of a Python string */
-    /* METH_O */
-    if (PyUnicode_Check(pystr)) {
-        rval = escape_unicode(pystr);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
-        return NULL;
-    }
-    return rval;
+    return escape_unicode(pystr);
 }
 
 static void
