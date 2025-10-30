@@ -1,0 +1,2 @@
+:mod:`json`: Fix inconsistency where U+007F was incorrectly escaped by
+:meth:`JSONEncoder.encode` with ``ensure_ascii=True``.

@@ -116,7 +116,7 @@ encoder_write_string(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj)
 static PyObject *
 encoder_encode_float(PyEncoderObject *s, PyObject *obj);
 
-#define S_CHAR(c) (c >= ' ' && c <= '~' && c != '\\' && c != '"')
+#define S_CHAR(c) (c >= ' ' && c <= 0x7F && c != '\\' && c != '"')
 #define IS_WHITESPACE(c) (((c) == ' ') || ((c) == '\t') || ((c) == '\n') || ((c) == '\r'))
 
 static Py_ssize_t
