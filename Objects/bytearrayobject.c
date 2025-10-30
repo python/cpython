@@ -1527,8 +1527,8 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
 
     if (to_take < 0 || to_take > size) {
         PyErr_Format(PyExc_IndexError,
-            "can't take %zd(%zd) outside size %zd",
-            original, to_take, size);
+            "can't take %zd bytes outside size %zd",
+            to_take, size);
         return NULL;
     }
 
