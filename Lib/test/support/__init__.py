@@ -5,7 +5,6 @@ if __name__ != 'test.support':
 
 import annotationlib
 import contextlib
-import ctypes
 import functools
 import inspect
 import logging
@@ -3187,20 +3186,25 @@ def linked_to_musl():
     return _linked_to_musl
 
 
-class _py_buffer(ctypes.Structure):
-    _fields_ = [
-        ("buf", ctypes.c_void_p),
-        ("obj", ctypes.py_object),
-        ("len", ctypes.c_ssize_t),
-        ("itemsize", ctypes.c_ssize_t),
-        ("readonly", ctypes.c_int),
-        ("ndim", ctypes.c_int),
-        ("format", ctypes.c_char_p),
-        ("shape", ctypes.POINTER(ctypes.c_ssize_t)),
-        ("strides", ctypes.POINTER(ctypes.c_ssize_t)),
-        ("suboffsets", ctypes.POINTER(ctypes.c_ssize_t)),
-        ("internal", ctypes.c_void_p),
-    ]
+try:
+    import ctypes
+
+    class _py_buffer(ctypes.Structure):
+        _fields_ = [
+            ("buf", ctypes.c_void_p),
+            ("obj", ctypes.py_object),
+            ("len", ctypes.c_ssize_t),
+            ("itemsize", ctypes.c_ssize_t),
+            ("readonly", ctypes.c_int),
+            ("ndim", ctypes.c_int),
+            ("format", ctypes.c_char_p),
+            ("shape", ctypes.POINTER(ctypes.c_ssize_t)),
+            ("strides", ctypes.POINTER(ctypes.c_ssize_t)),
+            ("suboffsets", ctypes.POINTER(ctypes.c_ssize_t)),
+            ("internal", ctypes.c_void_p),
+        ]
+except ImportError:
+    _py_buffer = None
 
 
 @contextlib.contextmanager
@@ -3210,7 +3214,12 @@ def ctypes_py_buffer(ob, flags=inspect.BufferFlags.SIMPLE):
 
     `ob` must implement the buffer protocol, and the retrieved buffer is
     released on exit of the context manager.
+
+    Skips any test using it if `ctypes` is unavailable.
     """
+    from .import_helper import import_module
+
+    ctypes = import_module("ctypes")
     buf = _py_buffer()
     ctypes.pythonapi.PyObject_GetBuffer(ctypes.py_object(ob),
                                         ctypes.byref(buf),

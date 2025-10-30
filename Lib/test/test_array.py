@@ -9,7 +9,6 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support import _2G
 from test.support import ctypes_py_buffer
-import ctypes
 import weakref
 import pickle
 import operator
@@ -71,6 +70,7 @@ class MiscTest(unittest.TestCase):
 
     def test_empty_alignment(self):
         # gh-140557: pointer alignment of empty allocation
+        ctypes = import_helper.import_module("ctypes")
         self.enterContext(warnings.catch_warnings())
         warnings.filterwarnings(
             "ignore",

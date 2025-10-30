@@ -4,7 +4,6 @@ import ast
 import builtins
 import collections
 import contextlib
-import ctypes
 import decimal
 import fractions
 import gc
@@ -2408,6 +2407,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def test_bytearray_empty_alignment(self):
         # gh-140557: alignment of pointer in empty allocation
+        ctypes = import_module("ctypes")
         max_align = ctypes.alignment(ctypes.c_longdouble)
         array = bytearray()
         with ctypes_py_buffer(array) as buf:
