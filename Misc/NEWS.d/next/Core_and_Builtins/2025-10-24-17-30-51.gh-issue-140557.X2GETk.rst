@@ -1,3 +1,2 @@
-The empty instances of :func:`bytearray` and :func:`array.array` now produce
-buffers that are aligned for any data type.  This is a convenience for
-interoperation with other languages.
+:func:`bytearray` and :func:`array.array` now default to aligned buffers when
+empty.  Unaligned buffers can still be created by slicing.
