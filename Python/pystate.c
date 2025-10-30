@@ -67,9 +67,6 @@ to avoid the expense of doing their own locking).
    For each of these functions, the GIL must be held by the current thread.
  */
 
-#ifndef HAVE_THREAD_LOCAL
-#  error "no supported thread-local variable storage classifier"
-#endif
 
 /* The attached thread state for the current thread. */
 _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
@@ -77,6 +74,10 @@ _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
 /* The "bound" thread state used by PyGILState_Ensure(),
    also known as a "gilstate." */
 _Py_thread_local PyThreadState *_Py_tss_gilstate = NULL;
+
+/* The interpreter of the attached thread state,
+   and is same as tstate->interp. */
+_Py_thread_local PyInterpreterState *_Py_tss_interp = NULL;
 
 static inline PyThreadState *
 current_fast_get(void)
@@ -89,12 +90,15 @@ current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
 {
     assert(tstate != NULL);
     _Py_tss_tstate = tstate;
+    assert(tstate->interp != NULL);
+    _Py_tss_interp = tstate->interp;
 }
 
 static inline void
 current_fast_clear(_PyRuntimeState *Py_UNUSED(runtime))
 {
     _Py_tss_tstate = NULL;
+    _Py_tss_interp = NULL;
 }
 
 #define tstate_verify_not_active(tstate) \
@@ -564,7 +568,7 @@ init_interpreter(PyInterpreterState *interp,
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
     interp->executor_deletion_list_remaining_capacity = 0;
-    interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
+    interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -1281,9 +1285,8 @@ _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
 PyInterpreterState*
 PyInterpreterState_Get(void)
 {
-    PyThreadState *tstate = current_fast_get();
-    _Py_EnsureTstateNotNULL(tstate);
-    PyInterpreterState *interp = tstate->interp;
+    _Py_AssertHoldsTstate();
+    PyInterpreterState *interp = _Py_tss_interp;
     if (interp == NULL) {
         Py_FatalError("no current interpreter");
     }
