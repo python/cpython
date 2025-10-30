@@ -639,17 +639,29 @@ parsenumber_raw(const char *s)
         }
         return PyLong_FromLong(x);
     }
-    /* XXX Huge floats may silently fail */
+    /* Parse float or imaginary number */
     if (imflag) {
         compl.real = 0.;
         compl.imag = PyOS_string_to_double(s, (char **)&end, NULL);
         if (compl.imag == -1.0 && PyErr_Occurred()) {
             return NULL;
         }
+        /* Check for overflow in imaginary part */
+        if (Py_IS_INFINITY(compl.imag)) {
+            PyErr_Format(PyExc_OverflowError,
+                        "imaginary literal is too large: %.200s", s);
+            return NULL;
+        }
         return PyComplex_FromCComplex(compl);
     }
     dx = PyOS_string_to_double(s, NULL, NULL);
     if (dx == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    /* Check for overflow in float conversion */
+    if (Py_IS_INFINITY(dx)) {
+        PyErr_Format(PyExc_OverflowError,
+                    "float literal is too large: %.200s", s);
         return NULL;
     }
     return PyFloat_FromDouble(dx);

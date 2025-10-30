@@ -2,15 +2,10 @@
 #define _PY_LEXER_H_
 
 #include "object.h"
+#include "tokenizer_mode.h"
 
 #define MAXINDENT 100       /* Max indentation level */
 #define MAXLEVEL 200        /* Max parentheses level */
-#define MAXFSTRINGLEVEL 150 /* Max f-string nesting level */
-
-#define INSIDE_FSTRING(tok) (tok->tok_mode_stack_index > 0)
-#define INSIDE_FSTRING_EXPR(tok) (tok->curly_bracket_expr_start_depth >= 0)
-#define INSIDE_FSTRING_EXPR_AT_TOP(tok) \
-    (tok->curly_bracket_depth - tok->curly_bracket_expr_start_depth == 1)
 
 enum decoding_state {
     STATE_INIT,
@@ -32,43 +27,6 @@ struct token {
     const char *start, *end;
     PyObject *metadata;
 };
-
-enum tokenizer_mode_kind_t {
-    TOK_REGULAR_MODE,
-    TOK_FSTRING_MODE,
-};
-
-enum string_kind_t {
-    FSTRING,
-    TSTRING,
-};
-
-#define MAX_EXPR_NESTING 3
-
-typedef struct _tokenizer_mode {
-    enum tokenizer_mode_kind_t kind;
-
-    int curly_bracket_depth;
-    int curly_bracket_expr_start_depth;
-
-    char quote;
-    int quote_size;
-    int raw;
-    const char* start;
-    const char* multi_line_start;
-    int first_line;
-
-    Py_ssize_t start_offset;
-    Py_ssize_t multi_line_start_offset;
-
-    Py_ssize_t last_expr_size;
-    Py_ssize_t last_expr_end;
-    char* last_expr_buffer;
-    int in_debug;
-    int in_format_spec;
-
-    enum string_kind_t string_kind;
-} tokenizer_mode;
 
 /* Tokenizer state */
 struct tok_state {
@@ -127,7 +85,8 @@ struct tok_state {
     int (*underflow)(struct tok_state *); /* Function to call when buffer is empty and we need to refill it*/
 
     int report_warnings;
-    // TODO: Factor this into its own thing
+    /* Tokenizer mode stack for handling nested f-strings and t-strings.
+     * See tokenizer_mode.h for details. */
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
     int tok_mode_stack_index;
     int tok_extra_tokens;

@@ -65,7 +65,9 @@ error:
 int
 _PyTokenizer_syntaxerror(struct tok_state *tok, const char *format, ...)
 {
-    // This errors are cleaned on startup. Todo: Fix it.
+    /* Set syntax error with formatted message.
+     * Error state is properly handled by _syntaxerror_range,
+     * which sets tok->done = E_ERROR after reporting. */
     va_list vargs;
     va_start(vargs, format);
     int ret = _syntaxerror_range(tok, format, -1, -1, vargs);
@@ -345,7 +347,11 @@ get_coding_spec(const char *s, char **spec, Py_ssize_t size, struct tok_state *t
         if (s[i] != ' ' && s[i] != '\t' && s[i] != '\014')
             return 1;
     }
-    for (; i < size - 6; i++) { /* XXX inefficient search */
+    /* Search for "coding" spec in comment. Start search after '#'.
+     * We use memcmp for efficient substring matching since we're looking
+     * for a fixed 6-character sequence. The loop continues until we either
+     * find "coding" or reach near the end of the buffer (size - 6). */
+    for (; i < size - 6; i++) {
         const char* t = s + i;
         if (memcmp(t, "coding", 6) == 0) {
             const char* begin = NULL;

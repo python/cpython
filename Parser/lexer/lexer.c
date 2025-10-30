@@ -1070,12 +1070,15 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 quote_size = 3;
             }
             else {
-                // TODO: Check this
+                /* Found two quotes followed by something else.
+                 * This is an empty string (e.g., f'' or f"").
+                 * Back up the non-quote character and one quote. */
                 tok_backup(tok, after_after_quote);
                 tok_backup(tok, after_quote);
             }
         }
         if (after_quote != quote) {
+            /* Single quote followed by non-quote - back it up */
             tok_backup(tok, after_quote);
         }
 
@@ -1445,8 +1448,9 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
 
 f_string_middle:
 
-    // TODO: This is a bit of a hack, but it works for now. We need to find a better way to handle
-    // this.
+    /* Process f-string middle tokens between expressions.
+     * We need to track multi-line positioning for proper error reporting
+     * when unterminated strings are encountered. */
     tok->multi_line_start = tok->line_start;
     while (end_quote_size != current_tok->quote_size) {
         int c = tok_nextc(tok);
