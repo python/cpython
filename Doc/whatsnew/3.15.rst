@@ -233,6 +233,7 @@ Improved error messages
   distributors to pass a `JSON <https://www.json.org/json-en.html>`_
   configuration file containing custom error messages for missing
   :term:`standard library` modules.
+  (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`139707`.)
 
 
 Other language changes
