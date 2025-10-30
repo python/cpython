@@ -643,19 +643,6 @@ bail:
     return NULL;
 }
 
-PyDoc_STRVAR(pydoc_scanstring,
-    "scanstring(string, end, strict=True) -> (string, end)\n"
-    "\n"
-    "Scan the string s for a JSON string. End is the index of the\n"
-    "character in s after the quote that started the JSON string.\n"
-    "Unescapes all valid JSON string escape sequences and raises ValueError\n"
-    "on attempt to decode an invalid string. If strict is False then literal\n"
-    "control characters are allowed in the string.\n"
-    "\n"
-    "Returns a tuple of the decoded string and the index of the character in s\n"
-    "after the end quote."
-);
-
 /*[clinic input]
 _json.scanstring as py_scanstring
     pystr: object
