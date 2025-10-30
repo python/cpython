@@ -1,1 +1,1 @@
-Check ``statx`` availability only in Linux platforms
+Check ``statx`` availability only on Linux (including Android).
