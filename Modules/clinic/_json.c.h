@@ -37,6 +37,10 @@ py_scanstring(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("scanstring", nargs, 2, 3)) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("scanstring", "argument 1", "str", args[0]);
+        goto exit;
+    }
     pystr = args[0];
     {
         Py_ssize_t ival = -1;
@@ -73,6 +77,26 @@ PyDoc_STRVAR(py_encode_basestring_ascii__doc__,
 #define PY_ENCODE_BASESTRING_ASCII_METHODDEF    \
     {"encode_basestring_ascii", (PyCFunction)py_encode_basestring_ascii, METH_O, py_encode_basestring_ascii__doc__},
 
+static PyObject *
+py_encode_basestring_ascii_impl(PyObject *module, PyObject *pystr);
+
+static PyObject *
+py_encode_basestring_ascii(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *pystr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("encode_basestring_ascii", "argument", "str", arg);
+        goto exit;
+    }
+    pystr = arg;
+    return_value = py_encode_basestring_ascii_impl(module, pystr);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(py_encode_basestring__doc__,
 "encode_basestring($module, pystr, /)\n"
 "--\n"
@@ -81,4 +105,24 @@ PyDoc_STRVAR(py_encode_basestring__doc__,
 
 #define PY_ENCODE_BASESTRING_METHODDEF    \
     {"encode_basestring", (PyCFunction)py_encode_basestring, METH_O, py_encode_basestring__doc__},
-/*[clinic end generated code: output=d3aa505efc0acb3f input=a9049054013a1b77]*/
+
+static PyObject *
+py_encode_basestring_impl(PyObject *module, PyObject *pystr);
+
+static PyObject *
+py_encode_basestring(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *pystr;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("encode_basestring", "argument", "str", arg);
+        goto exit;
+    }
+    pystr = arg;
+    return_value = py_encode_basestring_impl(module, pystr);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=5bdd16375c95a4d9 input=a9049054013a1b77]*/
