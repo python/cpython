@@ -2506,8 +2506,9 @@ PyNameErrorObject_CAST(PyObject *self)
 static int
 NameError_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"name", NULL};
+    static char *kwlist[] = {"name", "op", NULL};
     PyObject *name = NULL;
+    PyObject* op_type = NULL;
 
     if (BaseException_init(op, args, NULL) == -1) {
         return -1;
@@ -2518,7 +2519,7 @@ NameError_init(PyObject *op, PyObject *args, PyObject *kwds)
         return -1;
     }
     if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$O:NameError", kwlist,
-                                     &name)) {
+                                     &name ,&op_type)) {
         Py_DECREF(empty_tuple);
         return -1;
     }
@@ -2526,6 +2527,7 @@ NameError_init(PyObject *op, PyObject *args, PyObject *kwds)
 
     PyNameErrorObject *self = PyNameErrorObject_CAST(op);
     Py_XSETREF(self->name, Py_XNewRef(name));
+    Py_XSETREF(self->op, Py_XNewRef(op_type));
 
     return 0;
 }
@@ -2535,6 +2537,7 @@ NameError_clear(PyObject *op)
 {
     PyNameErrorObject *self = PyNameErrorObject_CAST(op);
     Py_CLEAR(self->name);
+    Py_CLEAR(self->op);
     return BaseException_clear(op);
 }
 
@@ -2551,11 +2554,14 @@ NameError_traverse(PyObject *op, visitproc visit, void *arg)
 {
     PyNameErrorObject *self = PyNameErrorObject_CAST(op);
     Py_VISIT(self->name);
+    Py_VISIT(self->op);
     return BaseException_traverse(op, visit, arg);
 }
 
 static PyMemberDef NameError_members[] = {
         {"name", _Py_T_OBJECT, offsetof(PyNameErrorObject, name), 0, PyDoc_STR("name")},
+        {"op", _Py_T_OBJECT, offsetof(PyNameErrorObject, op), 0,
+        PyDoc_STR("operation that caused the NameError ('getting' or 'deleting')")},
         {NULL}  /* Sentinel */
 };
 
