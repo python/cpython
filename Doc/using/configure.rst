@@ -255,6 +255,27 @@ General Options
 
    .. versionadded:: 3.11
 
+.. option:: --with-missing-stdlib-config=FILE
+
+   Path to a `JSON <https://www.json.org/json-en.html>`_ configuration file
+   containing custom error messages for missing :term:`standard library` modules.
+
+   This option is intended for Python distributors who wish to provide
+   distribution-specific guidance when users encounter missing standard library
+   modules that are packaged separately.
+
+   The JSON file should map missing module names to custom error message strings.
+   For example, a configuration for the :mod:`tkinter` module:
+
+   .. code-block::json
+
+      {
+          "tkinter": "Install the python-tk package to use tkinter",
+          "_tkinter": "Install the python-tk package to use tkinter"
+      }
+
+   .. versionadded:: next
+
 .. option:: --enable-pystats
 
    Turn on internal Python performance statistics gathering.
