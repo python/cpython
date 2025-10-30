@@ -351,7 +351,7 @@ Traceback (most recent call last):
 SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 # Make sure soft keywords constructs don't raise specialized
-# errors regarding missing commas or other spezialiced errors
+# errors regarding missing commas or other specialized errors
 
 >>> match x:
 ...     y = 3
