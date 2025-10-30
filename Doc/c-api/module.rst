@@ -96,6 +96,7 @@ Module Objects
    allocated at module creation time, or ``NULL``.  See
    :c:member:`PyModuleDef.m_size`.
 
+   See :PEP:`489` for more details.
 
 .. c:function:: PyModuleDef* PyModule_GetDef(PyObject *module)
 
