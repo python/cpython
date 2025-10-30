@@ -1506,14 +1506,14 @@ static PyObject *
 bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
 /*[clinic end generated code: output=3147fbc0bbbe8d94 input=b15b5172cdc6deda]*/
 {
-    Py_ssize_t to_take, original;
+    Py_ssize_t to_take;
     Py_ssize_t size = Py_SIZE(self);
     if (Py_IsNone(n)) {
-        to_take = original = size;
+        to_take = size;
     }
     // Integer index, from start (zero, positive) or end (negative).
     else if (_PyIndex_Check(n)) {
-        to_take = original = PyNumber_AsSsize_t(n, PyExc_IndexError);
+        to_take = PyNumber_AsSsize_t(n, PyExc_IndexError);
         if (to_take == -1 && PyErr_Occurred()) {
             return NULL;
         }
