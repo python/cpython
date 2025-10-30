@@ -4385,7 +4385,6 @@
             _PyStackRef null_or_index;
             _PyStackRef iter;
             _PyStackRef next;
-            oparg = CURRENT_OPARG();
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4395,7 +4394,6 @@
                 if (PyStackRef_IsError(item)) {
                     JUMP_TO_ERROR();
                 }
-                frame->instr_ptr += (oparg + 2 + INLINE_CACHE_ENTRIES_FOR_ITER);
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();

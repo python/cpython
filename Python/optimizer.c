@@ -1075,10 +1075,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             }
             int32_t jump_target = target;
             bool unique_target = false;
-            if (opcode == _FOR_ITER_TIER_TWO) {
-                exit_op = _DYNAMIC_EXIT;
-            }
-            else if (
+            if (
                 opcode == _GUARD_IP__PUSH_FRAME ||
                 opcode == _GUARD_IP_RETURN_VALUE ||
                 opcode == _GUARD_IP_YIELD_VALUE ||
