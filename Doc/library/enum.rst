@@ -1043,7 +1043,7 @@ Utilities and Decorators
 .. function:: bin(num, max_bits=None)
 
    Like built-in :func:`bin`, except negative values are represented in
-   two's-complement, and the leading bit always indicates sign
+   two's complement, and the leading bit always indicates sign
    (``0`` implies positive, ``1`` implies negative).
 
       >>> import enum
