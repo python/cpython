@@ -638,9 +638,10 @@ by setting ``color`` to ``False``::
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--help'])
 
-When ``color=True``, colored output depends on both the environment variables
-and the terminal capabilities.  But when ``color=False``, colored output is
-always disabled.
+Note that when ``color=True``, colored output depends on both environment
+variables and terminal capabilities.  However, if ``color=False``, colored
+output is always disabled, even if environment variables like ``FORCE_COLOR``
+are set.
 
 .. versionadded:: 3.14
 
