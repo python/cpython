@@ -72,11 +72,13 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             _PyStackRef value_s = GETLOCAL(oparg);
+            PyObject* op = PyUnicode_FromString("getting");
             if (PyStackRef_IsNull(value_s)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg),
+                    op
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_ERROR();
@@ -2197,6 +2199,7 @@
             oparg = CURRENT_OPARG();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
+            PyObject* op = PyUnicode_FromString("deleting");
             int err;
             if (ns == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -2212,7 +2215,8 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                     NAME_ERROR_MSG,
-                    name);
+                    name,
+                    op);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_ERROR();
             }
@@ -2413,6 +2417,7 @@
         case _DELETE_GLOBAL: {
             oparg = CURRENT_OPARG();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject* op = PyUnicode_FromString("deleting");
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = PyDict_Pop(GLOBALS(), name, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2422,7 +2427,7 @@
             if (err == 0) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                    NAME_ERROR_MSG, name);
+                    NAME_ERROR_MSG, name, op);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_ERROR();
             }
@@ -2587,11 +2592,13 @@
         case _DELETE_FAST: {
             oparg = CURRENT_OPARG();
             _PyStackRef v = GETLOCAL(oparg);
+            PyObject* op = PyUnicode_FromString("deleting");
             if (PyStackRef_IsNull(v)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg),
+                    op
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_ERROR();
