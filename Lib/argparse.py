@@ -2778,7 +2778,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.print_usage(_sys.stderr)
         theme = self._get_theme(file=_sys.stderr)
         fmt = _('%(prog)s: error: %(message)s\n')
-        fmt = fmt.replace('error:', f'{theme.error}error:{theme.reset}')
+        fmt = fmt.replace('error: %(message)s',
+                        f'{theme.error}error:{theme.reset} {theme.message}%(message)s{theme.reset}')
 
         args = {'prog': self.prog, 'message': message}
         self.exit(2, fmt % args)
@@ -2786,7 +2787,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _warning(self, message):
         theme = self._get_theme(file=_sys.stderr)
         fmt = _('%(prog)s: warning: %(message)s\n')
-        fmt = fmt.replace('warning:', f'{theme.warning}warning:{theme.reset}')
+        fmt = fmt.replace('warning: %(message)s',
+                        f'{theme.warning}warning:{theme.reset} {theme.message}%(message)s{theme.reset}')
         args = {'prog': self.prog, 'message': message}
         self._print_message(fmt % args, _sys.stderr)
 
