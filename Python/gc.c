@@ -1639,7 +1639,7 @@ assess_work_to_do(GCState *gcstate)
         scale_factor = 2;
     }
     intptr_t new_objects = gcstate->young.count;
-    intptr_t max_heap_fraction = new_objects*3/2;
+    intptr_t max_heap_fraction = new_objects*2;
     intptr_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     if (heap_fraction > max_heap_fraction) {
         heap_fraction = max_heap_fraction;
@@ -1654,6 +1654,9 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     GC_STAT_ADD(1, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
     gcstate->work_to_do += assess_work_to_do(gcstate);
+    if (gcstate->work_to_do < 0) {
+        return;
+    }
     untrack_tuples(&gcstate->young.head);
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
@@ -1696,7 +1699,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_collect_region(tstate, &increment, &survivors, stats);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     gcstate->work_to_do -= increment_size;
 
     add_stats(gcstate, 1, stats);
@@ -2077,8 +2079,10 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(gcstate, "start", generation, &stats);
     }
+    PyTime_t t1;
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
+        (void)PyTime_PerfCounterRaw(&t1);
         show_stats_each_generations(gcstate);
     }
     if (PyDTrace_GC_START_ENABLED()) {
@@ -2115,6 +2119,17 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 #endif
     validate_spaces(gcstate);
     _Py_atomic_store_int(&gcstate->collecting, 0);
+
+    if (gcstate->debug & _PyGC_DEBUG_STATS) {
+        PyTime_t t2;
+        (void)PyTime_PerfCounterRaw(&t2);
+        double d = PyTime_AsSecondsDouble(t2 - t1);
+        PySys_WriteStderr(
+            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
+            stats.collected + stats.uncollectable, stats.uncollectable, d
+        );
+    }
+
     return stats.uncollectable + stats.collected;
 }
 
@@ -2286,26 +2301,27 @@ _Py_ScheduleGC(PyThreadState *tstate)
 }
 
 void
-_PyObject_GC_Link(PyObject *op)
+_Py_TriggerGC(struct _gc_runtime_state *gcstate)
 {
-    PyGC_Head *gc = AS_GC(op);
-    // gc must be correctly aligned
-    _PyObject_ASSERT(op, ((uintptr_t)gc & (sizeof(uintptr_t)-1)) == 0);
-
     PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
-    gc->_gc_next = 0;
-    gc->_gc_prev = 0;
-    gcstate->young.count++; /* number of allocated GC objects */
-    gcstate->heap_size++;
-    if (gcstate->young.count > gcstate->young.threshold &&
-        gcstate->enabled &&
-        gcstate->young.threshold &&
+    if (gcstate->enabled &&
+        gcstate->young.threshold != 0 &&
         !_Py_atomic_load_int_relaxed(&gcstate->collecting) &&
         !_PyErr_Occurred(tstate))
     {
         _Py_ScheduleGC(tstate);
     }
+}
+
+void
+_PyObject_GC_Link(PyObject *op)
+{
+    PyGC_Head *gc = AS_GC(op);
+    // gc must be correctly aligned
+    _PyObject_ASSERT(op, ((uintptr_t)gc & (sizeof(uintptr_t)-1)) == 0);
+    gc->_gc_next = 0;
+    gc->_gc_prev = 0;
+
 }
 
 void
@@ -2414,6 +2430,11 @@ PyObject_GC_Del(void *op)
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
+        GCState *gcstate = get_gc_state();
+        if (gcstate->young.count > 0) {
+            gcstate->young.count--;
+        }
+        gcstate->heap_size--;
 #ifdef Py_DEBUG
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
@@ -2427,11 +2448,6 @@ PyObject_GC_Del(void *op)
         PyErr_SetRaisedException(exc);
 #endif
     }
-    GCState *gcstate = get_gc_state();
-    if (gcstate->young.count > 0) {
-        gcstate->young.count--;
-    }
-    gcstate->heap_size--;
     PyObject_Free(((char *)op)-presize);
 }
 

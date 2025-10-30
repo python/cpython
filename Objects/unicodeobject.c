@@ -57,6 +57,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "pycore_unicodectype.h"  // _PyUnicode_IsXidStart
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_unicodeobject_generated.h"  // _PyUnicode_InitStaticStrings()
 
@@ -5409,7 +5410,6 @@ unicode_decode_utf8(const char *s, Py_ssize_t size,
     if (maxchr <= 255) {
         memcpy(PyUnicode_1BYTE_DATA(u), s, pos);
         s += pos;
-        size -= pos;
         writer.pos = pos;
     }
 
@@ -5457,7 +5457,6 @@ unicode_decode_utf8_writer(_PyUnicodeWriter *writer,
             return 0;
         }
         s += decoded;
-        size -= decoded;
     }
 
     return unicode_decode_utf8_impl(writer, starts, s, end,

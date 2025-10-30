@@ -3308,6 +3308,15 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertEqual(obj.a, 1)
         self.assertEqual(obj.b, 2)
 
+    def test_malformed_fields_with_bytes(self):
+        class BadFields(ast.AST):
+            _fields = (b'\xff'*64,)
+            _field_types = {'a': int}
+
+        # This should not crash
+        with self.assertWarnsRegex(DeprecationWarning, r"Field b'\\xff\\xff.*' .*"):
+            obj = BadFields()
+
     def test_complete_field_types(self):
         class _AllFieldTypes(ast.AST):
             _fields = ('a', 'b')
