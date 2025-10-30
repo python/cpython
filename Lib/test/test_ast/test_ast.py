@@ -1078,7 +1078,7 @@ class AST_Tests(unittest.TestCase):
             warnings.simplefilter('error')
             warnings.filterwarnings('always', module=r'<unknown>\z')
             ast.parse(source)
-        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 21])
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
         for wm in wlog:
             self.assertEqual(wm.filename, '<unknown>')
             self.assertIs(wm.category, SyntaxWarning)
