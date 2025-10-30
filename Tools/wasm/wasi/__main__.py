@@ -245,9 +245,10 @@ def find_wasi_sdk():
         # supported version is a prefix of the found version (e.g. `25` and `2567`).
         if not found_version.startswith(f"{WASI_SDK_VERSION}."):
             major_version = found_version.partition(".")[0]
-            print(
-                f"⚠️ Found WASI SDK {major_version}, "
-                f"but WASI SDK {WASI_SDK_VERSION} is the supported version"
+            log(
+                "⚠️",
+                f" Found WASI SDK {major_version}, "
+                f"but WASI SDK {WASI_SDK_VERSION} is the supported version",
             )
 
     return wasi_sdk_path
