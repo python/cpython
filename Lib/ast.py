@@ -22,7 +22,6 @@ that work tightly with the python syntax (template engines for example).
 """
 from _ast import *
 
-
 def parse(source, filename='<unknown>', mode='exec', *,
           type_comments=False, feature_version=None, optimize=-1):
     """
@@ -607,9 +606,13 @@ if not hasattr(Tuple, 'dims'):
 
     def _dims_getter(self):
         """Deprecated. Use elts instead."""
+        import warnings
+        warnings._deprecated(f"ast.Tuple.dims", remove=(3, 20))
         return self.elts
 
     def _dims_setter(self, value):
+        import warnings
+        warnings._deprecated(f"ast.Tuple.dims", remove=(3, 20))
         self.elts = value
 
     Tuple.dims = property(_dims_getter, _dims_setter)
@@ -688,6 +691,24 @@ def main(args=None):
                  feature_version=feature_version, optimize=args.optimize)
     print(dump(tree, include_attributes=args.include_attributes,
                indent=args.indent, show_empty=args.show_empty))
+
+_deprecated = {
+        'slice': globals().pop("slice"),
+        'Index': globals().pop("Index"),
+        'ExtSlice': globals().pop("ExtSlice"),
+        'Suite': globals().pop("Suite"),
+        'AugLoad': globals().pop("AugLoad"),
+        'AugStore': globals().pop("AugStore"),
+        'Param': globals().pop("Param")
+}
+
+def __getattr__(attr):
+    if val := _deprecated.get(attr, None):
+        import warnings
+        warnings._deprecated(f"ast.{attr}", remove=(3, 20))
+        globals()[attr] = val
+        return val
+    raise AttributeError(f"module 'ast' has no attribute {attr!r}")
 
 if __name__ == '__main__':
     main()
