@@ -156,7 +156,7 @@ Module Contents
    :func:`enum.bin`
 
       Like built-in :func:`bin`, except negative values are represented in
-      two's-complement, and the leading bit always indicates sign
+      two's complement, and the leading bit always indicates sign
       (0=positive, 1=negative).
 
 
