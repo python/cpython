@@ -57,7 +57,7 @@ def log(emoji, message, *, spacing=None):
     in the emoji as terminals "eat" a space when the emoji has multiple code points.
     """
     if spacing is None:
-        spacing = " " * len(emoji)
+        spacing = " " if len(emoji) == 1 else "  "
     print("".join([emoji, spacing, message]))
 
 
