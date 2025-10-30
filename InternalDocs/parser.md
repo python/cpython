@@ -820,8 +820,9 @@ $ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
 ```
 
 > [!CAUTION]
-> This grammar file has to be specific to Python and does not work with the existing
-> C language based `Grammar/python.gram` file.
+> Python's grammar (the `Grammar/python.gram` file) is written for the
+> C backend. To experiment, you will need to write a grammar
+> without C-specific parts like actions and the trailer.
 > See [#133560](https://github.com/python/cpython/issues/133560) 
 > and [#96424](https://github.com/python/cpython/issues/96424) for more information.
 
