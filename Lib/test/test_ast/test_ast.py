@@ -13,6 +13,7 @@ import tempfile
 import textwrap
 import types
 import unittest
+import warnings
 import weakref
 from io import StringIO
 from pathlib import Path
@@ -1068,6 +1069,19 @@ class AST_Tests(unittest.TestCase):
         self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
         self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
         self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<unknown>\z')
+            ast.parse(source)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<unknown>')
+            self.assertIs(wm.category, SyntaxWarning)
 
 
 class CopyTests(unittest.TestCase):

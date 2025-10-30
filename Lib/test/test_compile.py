@@ -1745,6 +1745,20 @@ class TestSpecifics(unittest.TestCase):
             self.assertEqual(wm.category, SyntaxWarning)
             self.assertIn("\"is\" with 'int' literal", str(wm.message))
 
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            compile(source, filename, 'exec')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
     @support.subTests('src', [
         textwrap.dedent("""
             def f():
