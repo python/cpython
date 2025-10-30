@@ -259,6 +259,7 @@ Create, Finish, Discard
    If *size* is greater than zero, allocate *size* bytes, and set the
    writer size to *size*. The caller is responsible to write *size*
    bytes using :c:func:`PyBytesWriter_GetData`.
+   This function does not overallocate.
 
    On error, set an exception and return ``NULL``.
 
@@ -349,6 +350,8 @@ Low-level API
 
    Resize the writer to *size* bytes. It can be used to enlarge or to
    shrink the writer.
+   This function typically overallocates to achieve amortized performance when
+   resizing multiple times.
 
    Newly allocated bytes are left uninitialized.
 
@@ -360,6 +363,8 @@ Low-level API
 .. c:function:: int PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t grow)
 
    Resize the writer by adding *grow* bytes to the current writer size.
+   This function typically overallocates to achieve amortized performance when
+   resizing multiple times.
 
    Newly allocated bytes are left uninitialized.
 
