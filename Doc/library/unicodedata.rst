@@ -161,7 +161,7 @@ following functions:
 
 .. function:: isxidcontinue(chr, /)
 
-   Return ``True`` if *chr* is a valid identifier charcter per the
+   Return ``True`` if *chr* is a valid identifier character per the
    `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_,
    that is, it has the ``XID_Continue`` property. Return ``False`` otherwise.
    For example::
