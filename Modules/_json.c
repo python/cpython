@@ -667,7 +667,7 @@ py_scanstring_impl(PyObject *module, PyObject *pystr, Py_ssize_t end,
 /*[clinic end generated code: output=961740cfae07cdb3 input=9d46d7df7ac749b0]*/
 {
     PyObject *rval;
-    Py_ssize_t next_end;
+    Py_ssize_t next_end = -1;
     if (PyUnicode_Check(pystr)) {
         rval = scanstring_unicode(pystr, end, strict, &next_end);
     }
