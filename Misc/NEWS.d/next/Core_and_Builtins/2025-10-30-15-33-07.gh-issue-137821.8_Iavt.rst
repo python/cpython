@@ -1,1 +1,1 @@
-Convert _json module to use Argument Clinic
+Convert ``_json`` module to use Argument Clinic
