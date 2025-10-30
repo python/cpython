@@ -23,8 +23,6 @@ class TestUtils(TestCase):
         zero_width_characters = [
             '\N{COMBINING ACUTE ACCENT}',
             '\N{ZERO WIDTH JOINER}',
-            '\u2028',
-            '\u2029',
         ]
         for c in zero_width_characters:
             with self.subTest(character=c):

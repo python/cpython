@@ -69,8 +69,6 @@ def str_width(c: str) -> int:
     category = unicodedata.category(c)
     if category == "Cf" and c != "\u00ad":
         return 0
-    if "\u2028" <= c <= "\u2029":
-        return 0
     w = unicodedata.east_asian_width(c)
     if w in ("N", "Na", "H", "A"):
         return 1
