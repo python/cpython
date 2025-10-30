@@ -1,0 +1,1 @@
+Improve performance of :func:`dataclasses.asdict` up to 40% by caching the field names on dataclass classes.
