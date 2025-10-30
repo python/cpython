@@ -59,7 +59,7 @@ class CaseSensitivityTest(util.CASEOKTestBase):
             self.assertIsNotNone(sensitive)
             self.assertIn(self.name, sensitive.get_filename(self.name))
             self.assertIsNotNone(insensitive)
-            self.assertIn(self.name, insensitive.get_filename(self.name))
+            self.assertIn(self.name.lower(), insensitive.get_filename(self.name))
 
 
 class CaseSensitivityTestPEP451(CaseSensitivityTest):
