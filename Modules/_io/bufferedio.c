@@ -563,11 +563,10 @@ _io__Buffered_close_impl(buffered *self)
     }
     /* gh-138720: Use IS_CLOSED to match flush CHECK_CLOSED. */
     r = IS_CLOSED(self);
-    if (r < 0) {
+    if (r < 0)
         goto end;
-    }
     if (r > 0) {
-        res = Py_None;
+        res = Py_NewRef(Py_None);
         goto end;
     }
 
