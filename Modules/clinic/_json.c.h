@@ -11,7 +11,12 @@ PyDoc_STRVAR(py_scanstring__doc__,
 "\n"
 "Scan the string s for a JSON string.\n"
 "\n"
-"Return a tuple of the decoded string and the index of the character in s\n"
+"End is the index of the character in s after the quote that started the\n"
+"JSON string. Unescapes all valid JSON string escape sequences and raises\n"
+"ValueError on attempt to decode an invalid string. If strict is False\n"
+"then literal control characters are allowed in the string.\n"
+"\n"
+"Returns a tuple of the decoded string and the index of the character in s\n"
 "after the end quote.");
 
 #define PY_SCANSTRING_METHODDEF    \
@@ -76,4 +81,4 @@ PyDoc_STRVAR(py_encode_basestring__doc__,
 
 #define PY_ENCODE_BASESTRING_METHODDEF    \
     {"encode_basestring", (PyCFunction)py_encode_basestring, METH_O, py_encode_basestring__doc__},
-/*[clinic end generated code: output=c123de56c1cf4ff2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3aa505efc0acb3f input=a9049054013a1b77]*/

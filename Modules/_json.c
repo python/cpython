@@ -652,14 +652,19 @@ _json.scanstring as py_scanstring
 
 Scan the string s for a JSON string.
 
-Return a tuple of the decoded string and the index of the character in s
+End is the index of the character in s after the quote that started the
+JSON string. Unescapes all valid JSON string escape sequences and raises
+ValueError on attempt to decode an invalid string. If strict is False
+then literal control characters are allowed in the string.
+
+Returns a tuple of the decoded string and the index of the character in s
 after the end quote.
 [clinic start generated code]*/
 
 static PyObject *
 py_scanstring_impl(PyObject *module, PyObject *pystr, Py_ssize_t end,
                    int strict)
-/*[clinic end generated code: output=961740cfae07cdb3 input=d9077453fa0ca27c]*/
+/*[clinic end generated code: output=961740cfae07cdb3 input=9d46d7df7ac749b0]*/
 {
     PyObject *rval;
     Py_ssize_t next_end;
