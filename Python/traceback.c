@@ -980,6 +980,52 @@ done:
     }
 }
 
+
+#ifdef MS_WINDOWS
+static void
+_Py_DumpWideString(int fd, wchar_t *str)
+{
+    Py_ssize_t size = wcslen(str);
+    int truncated;
+    if (MAX_STRING_LENGTH < size) {
+        size = MAX_STRING_LENGTH;
+        truncated = 1;
+    }
+    else {
+        truncated = 0;
+    }
+
+    for (Py_ssize_t i=0; i < size; i++) {
+        Py_UCS4 ch = str[i];
+        if (' ' <= ch && ch <= 126) {
+            /* printable ASCII character */
+            dump_char(fd, (char)ch);
+        }
+        else if (ch <= 0xff) {
+            PUTS(fd, "\\x");
+            _Py_DumpHexadecimal(fd, ch, 2);
+        }
+        else if (Py_UNICODE_IS_HIGH_SURROGATE(ch)
+                 && Py_UNICODE_IS_LOW_SURROGATE(str[i+1])) {
+            ch = Py_UNICODE_JOIN_SURROGATES(ch, str[i+1]);
+            i++;  // Skip the low surrogate character
+            PUTS(fd, "\\U");
+            _Py_DumpHexadecimal(fd, ch, 8);
+        }
+        else {
+            Py_BUILD_ASSERT(sizeof(wchar_t) == 2);
+            PUTS(fd, "\\u");
+            _Py_DumpHexadecimal(fd, ch, 4);
+        }
+    }
+
+    if (truncated) {
+        PUTS(fd, "...");
+    }
+}
+#endif
+
+
 /* Write a frame into the file fd: "File "xxx", line xxx in xxx".
 
    This function is signal safe. */
@@ -1149,20 +1195,15 @@ write_thread_name(int fd, PyThreadState *tstate)
         return;
     }
 
-    wchar_t *wname;
-    HRESULT hr = pGetThreadDescription(thread, &wname);
+    wchar_t *name;
+    HRESULT hr = pGetThreadDescription(thread, &name);
     if (!FAILED(hr)) {
-        char *name = _Py_EncodeLocaleRaw(wname, NULL);
-        if (name != NULL) {
-            size_t len = strlen(name);
-            if (len) {
-                PUTS(fd, " [");
-                (void)_Py_write_noraise(fd, name, len);
-                PUTS(fd, "]");
-            }
-            PyMem_RawFree(name);
+        if (name[0] != 0) {
+            PUTS(fd, " [");
+            _Py_DumpWideString(fd, name);
+            PUTS(fd, "]");
         }
-        LocalFree(wname);
+        LocalFree(name);
     }
     CloseHandle(thread);
 #endif
