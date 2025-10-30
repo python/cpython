@@ -292,8 +292,8 @@ are always available.  They are listed here in alphabetical order.
       :func:`property`.
 
 
-.. function:: compile(source, filename, mode, flags=0,
-                      dont_inherit=False, optimize=-1,
+.. function:: compile(source, filename, mode, flags=0, \
+                      dont_inherit=False, optimize=-1, \
                       *, module=None)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
