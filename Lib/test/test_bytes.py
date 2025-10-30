@@ -2622,10 +2622,17 @@ class FreeThreadingTest(unittest.TestCase):
             c = a.zfill(0x400000)
             assert not c or c[-1] not in (0xdd, 0xcd)
 
-        def take_bytes(b, a):
+        def take_bytes(b, a):  # MODIFIES!
             b.wait()
             c = a.take_bytes()
             assert not c or c[0] == 48  # '0'
+
+        def take_bytes_n(b, a):  # MODIFIES!
+            b.wait()
+            try:
+                c = a.take_bytes(10)
+                assert c == b'0123456789'
+            except IndexError: pass
 
         def check(funcs, a=None, *args):
             if a is None:
@@ -2687,7 +2694,10 @@ class FreeThreadingTest(unittest.TestCase):
         check([clear] + [splitlines] * 10, bytearray(b'\n' * 0x400))
         check([clear] + [startswith] * 10)
         check([clear] + [strip] * 10)
+
         check([clear] + [take_bytes] * 10)
+        check([take_bytes_n] * 10, bytearray(b'0123456789' * 0x400))
+        check([take_bytes_n] * 10, bytearray(b'0123456789' * 5))
 
         check([clear] + [contains] * 10)
         check([clear] + [subscript] * 10)
