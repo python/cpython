@@ -8,6 +8,8 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import _2G
+from test.support import ctypes_py_buffer
+import ctypes
 import weakref
 import pickle
 import operator
@@ -66,6 +68,20 @@ class MiscTest(unittest.TestCase):
         self.assertEqual(len(a * 3), 0)
         a += a
         self.assertEqual(len(a), 0)
+
+    def test_empty_alignment(self):
+        # gh-140557: pointer alignment of empty allocation
+        self.enterContext(warnings.catch_warnings())
+        warnings.filterwarnings(
+            "ignore",
+            message="The 'u' type code is deprecated and "
+                    "will be removed in Python 3.16",
+            category=DeprecationWarning)
+        max_align = ctypes.alignment(ctypes.c_longdouble)
+        for typecode in typecodes:
+            a = array.array(typecode)
+            with ctypes_py_buffer(a) as buf:
+                self.assertEqual(buf.buf % max_align, 0)
 
 
 # Machine format codes.

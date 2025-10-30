@@ -4,6 +4,7 @@ import ast
 import builtins
 import collections
 import contextlib
+import ctypes
 import decimal
 import fractions
 import gc
@@ -38,6 +39,7 @@ from test.support.script_helper import assert_python_ok
 from test.support.testcase import ComplexesAreIdenticalMixin
 from test.support.warnings_helper import check_warnings
 from test.support import requires_IEEE_754
+from test.support import ctypes_py_buffer
 from unittest.mock import MagicMock, patch
 try:
     import pty, signal
@@ -2403,6 +2405,13 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             yield b'A'
             yield b'B'
         self.assertEqual(bytearray(b'A,B'), array.join(iterator()))
+
+    def test_bytearray_empty_alignment(self):
+        # gh-140557: alignment of pointer in empty allocation
+        max_align = ctypes.alignment(ctypes.c_longdouble)
+        array = bytearray()
+        with ctypes_py_buffer(array) as buf:
+            self.assertEqual(buf.buf % max_align, 0)
 
     def test_construct_singletons(self):
         for const in None, Ellipsis, NotImplemented:
