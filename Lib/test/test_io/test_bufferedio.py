@@ -962,7 +962,7 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest, CTestCase):
         with self.assertRaisesRegex(TypeError, "BufferedWriter"):
             self.tp(self.BytesIO(), 1024, 1024, 1024)
 
-    def test_closed_errors(self):
+    def test_non_boolean_closed_attr(self):
         # gh-140650: check TypeError is raised
         class MockRawIOWithoutClosed(self.MockRawIO):
             closed = NotImplemented
@@ -971,6 +971,17 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest, CTestCase):
         self.assertRaises(TypeError, bufio.write, b"")
         self.assertRaises(TypeError, bufio.flush)
         self.assertRaises(TypeError, bufio.close)
+
+    def test_closed_attr_raises(self):
+        class MockRawIOClosedRaises(self.MockRawIO):
+            @property
+            def closed(self):
+                raise ValueError("test")
+
+        bufio = self.tp(MockRawIOClosedRaises())
+        self.assertRaisesRegex(ValueError, "test", bufio.write, b"")
+        self.assertRaisesRegex(ValueError, "test", bufio.flush)
+        self.assertRaisesRegex(ValueError, "test", bufio.close)
 
 
 class PyBufferedWriterTest(BufferedWriterTest, PyTestCase):
