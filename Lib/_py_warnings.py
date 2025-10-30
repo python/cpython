@@ -534,11 +534,12 @@ def _match_filename(pattern, filename, *, MS_WINDOWS=(sys.platform == 'win32')):
     if pattern.match(filename):  # for backward compatibility
         return True
     if MS_WINDOWS:
+        if not is_py and filename[-4:].lower() == '.pyw':
+            filename = filename[:-4]
+            is_py = True
         if is_py and filename[-9:].lower() in (r'\__init__', '/__init__'):
             filename = filename[:-9]
-        elif not is_py and filename[-4:].lower() == '.pyw':
-            filename = filename[:-4]
-        filename = filename.replace('\\', '.')
+        filename = filename.replace('\\', '/')
     else:
         if is_py and filename.endswith('/__init__'):
             filename = filename[:-9]

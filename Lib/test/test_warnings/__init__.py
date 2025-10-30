@@ -264,6 +264,8 @@ class FilterTests(BaseTest):
                 self.assertEqual(len(w), 6)
                 self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module.PYW', 42)
                 self.assertEqual(len(w), 7)
+                self.module.warn_explicit('msg', UserWarning, r'C:\path\to\package\module\__INIT__.PYW', 42)
+                self.assertEqual(len(w), 8)
 
         with self.module.catch_warnings(record=True) as w:
             self.module.simplefilter('error')
