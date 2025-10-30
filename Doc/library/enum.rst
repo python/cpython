@@ -1046,7 +1046,7 @@ Utilities and Decorators
    two's-complement, and the leading bit always indicates sign
    (0=positive, 1=negative).
 
-      >>> from enum import enum
+      >>> import enum
       >>> enum.bin(10)
       '0b0 1010'
       >>> enum.bin(~10)   # ~10 is -11
