@@ -521,14 +521,18 @@ _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *sub,
 
 PyObject *
 _Py_bytes_index(const char *str, Py_ssize_t len, PyObject *sub,
-                Py_ssize_t start, Py_ssize_t end)
+                Py_ssize_t start, Py_ssize_t end, const char *classname)
 {
     Py_ssize_t result = find_internal(str, len, "index", sub, start, end, +1);
     if (result == -2)
         return NULL;
     if (result == -1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "subsection not found");
+        if (PyIndex_Check(sub)) {
+            PyErr_Format(PyExc_ValueError, "value not in %s", classname);
+        }
+        else {
+            PyErr_SetString(PyExc_ValueError, "subsection not found");
+        }
         return NULL;
     }
     return PyLong_FromSsize_t(result);
@@ -546,14 +550,15 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *sub,
 
 PyObject *
 _Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *sub,
-                 Py_ssize_t start, Py_ssize_t end)
+                 Py_ssize_t start, Py_ssize_t end, const char *classname)
 {
     Py_ssize_t result = find_internal(str, len, "rindex", sub, start, end, -1);
     if (result == -2)
         return NULL;
     if (result == -1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "subsection not found");
+        PyErr_Format(PyExc_ValueError, "%s not in %s",
+                     PyIndex_Check(sub) ? "value" : "subsection",
+                     classname);
         return NULL;
     }
     return PyLong_FromSsize_t(result);
