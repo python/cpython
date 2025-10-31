@@ -561,7 +561,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Returns True if the normal interaction function must be called,
         False otherwise."""
         # self.currentbp is set in bdb in Bdb.break_here if a breakpoint was hit
-        if self.currentbp and \
+        if getattr(self, "currentbp", False) and \
                self.currentbp in self.commands:
             currentbp = self.currentbp
             self.currentbp = 0
