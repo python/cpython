@@ -1255,22 +1255,28 @@ def iterparse(source, events=None, parser=None):
             if it is not None:
                 it.root = root
         finally:
+            nonlocal close_source
             if close_source:
                 source.close()
+                close_source = False
 
     gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
         __next__ = gen.__next__
+
         def close(self):
+            nonlocal close_source
             if close_source:
                 source.close()
             gen.close()
+            close_source = False
 
-        def __del__(self):
-            # TODO: Emit a ResourceWarning if it was not explicitly closed.
-            # (When the close() method will be supported in all maintained Python versions.)
+        def __del__(self, _warn=warnings.warn):
             if close_source:
-                source.close()
+                try:
+                    _warn(f"unclosed file {source.name!r}", ResourceWarning, stacklevel=2)
+                finally:
+                    source.close()
 
     it = IterParseIterator()
     it.root = None

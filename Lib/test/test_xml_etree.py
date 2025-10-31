@@ -698,32 +698,46 @@ class ElementTreeTest(unittest.TestCase):
             self.assertEqual(str(cm.exception),
                     'junk after document element: line 1, column 12')
             del cm, it
-
-        # Not exhausting the iterator still closes the resource (bpo-43292)
-        with warnings_helper.check_no_resource_warning(self):
-            it = iterparse(SIMPLE_XMLFILE)
-            del it
-
-        with warnings_helper.check_no_resource_warning(self):
-            it = iterparse(SIMPLE_XMLFILE)
-            it.close()
-            del it
-
-        with warnings_helper.check_no_resource_warning(self):
-            it = iterparse(SIMPLE_XMLFILE)
-            action, elem = next(it)
-            self.assertEqual((action, elem.tag), ('end', 'element'))
-            del it, elem
-
-        with warnings_helper.check_no_resource_warning(self):
-            it = iterparse(SIMPLE_XMLFILE)
-            action, elem = next(it)
-            it.close()
-            self.assertEqual((action, elem.tag), ('end', 'element'))
-            del it, elem
+            gc_collect()
 
         with self.assertRaises(FileNotFoundError):
             iterparse("nonexistent")
+
+    def test_iterparse_not_close(self):
+        # Not closing before del should emit ResourceWarning
+        iterparse = ET.iterparse
+
+        # Not exhausting the iterator still closes the resource (bpo-43292)
+        with self.assertWarns(ResourceWarning) as wm:
+            it = iterparse(SIMPLE_XMLFILE)
+            del it
+            gc_collect()
+        self.assertIn('unclosed file', str(wm.warning))
+        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
+
+        # Explicitly calling close() should not emit warning
+        with warnings_helper.check_no_resource_warning(self):
+            it = iterparse(SIMPLE_XMLFILE)
+            it.close()
+            del it
+
+        with self.assertWarns(ResourceWarning) as wm:
+            it = iterparse(SIMPLE_XMLFILE)
+            action, elem = next(it)
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            del it, elem
+            gc_collect()
+        self.assertIn('unclosed file', str(wm.warning))
+        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
+
+        with warnings_helper.check_no_resource_warning(self):
+            it = iterparse(SIMPLE_XMLFILE)
+            action, elem = next(it)
+            it.close()
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            del it, elem
 
     def test_iterparse_close(self):
         iterparse = ET.iterparse
