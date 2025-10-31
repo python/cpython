@@ -1,0 +1,1 @@
+Fixed an out-of-bounds read in the generic implementation of ``mi_clz32`` and ``mi_ctz32`` in the integrated mimalloc allocator. This bug could occur on platforms with 64-bit ``unsigned long`` values. Based on upstream fix from microsoft/mimalloc.
