@@ -8,6 +8,7 @@ import sys
 import unittest
 import warnings
 from test import support
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 from test.support import FakePath
 
@@ -428,6 +429,19 @@ class CommonTest(GenericTest):
             check(os.fsencode('$bar%s bar' % nonascii),
                   os.fsencode('$bar%s bar' % nonascii))
             check(b'$spam}bar', os.fsencode('%s}bar' % nonascii))
+
+    @support.requires_resource('cpu')
+    def test_expandvars_large(self):
+        expandvars = self.pathmodule.expandvars
+        with os_helper.EnvironmentVarGuard() as env:
+            env.clear()
+            env["A"] = "B"
+            n = 100_000
+            self.assertEqual(expandvars('$A'*n), 'B'*n)
+            self.assertEqual(expandvars('${A}'*n), 'B'*n)
+            self.assertEqual(expandvars('$A!'*n), 'B!'*n)
+            self.assertEqual(expandvars('${A}A'*n), 'BA'*n)
+            self.assertEqual(expandvars('${'*10*n), '${'*10*n)
 
     def test_abspath(self):
         self.assertIn("foo", self.pathmodule.abspath("foo"))

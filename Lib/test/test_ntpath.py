@@ -1,11 +1,10 @@
 import ntpath
 import os
-import subprocess
 import sys
 import unittest
 import warnings
 from ntpath import ALLOW_MISSING
-from test.support import TestFailed, FakePath
+from test.support import TestFailed, FakePath, os_helper
 from test import support, test_genericpath
 from tempfile import TemporaryFile
 
@@ -687,6 +686,19 @@ class TestNtpath(NtpathTestCase):
             check('%spam%bar', '%sbar' % nonascii)
             check('%{}%bar'.format(nonascii), 'ham%sbar' % nonascii)
 
+    @support.requires_resource('cpu')
+    def test_expandvars_large(self):
+        expandvars = ntpath.expandvars
+        with os_helper.EnvironmentVarGuard() as env:
+            env.clear()
+            env["A"] = "B"
+            n = 100_000
+            self.assertEqual(expandvars('%A%'*n), 'B'*n)
+            self.assertEqual(expandvars('%A%A'*n), 'BA'*n)
+            self.assertEqual(expandvars("''"*n + '%%'), "''"*n + '%')
+            self.assertEqual(expandvars("%%"*n), "%"*n)
+            self.assertEqual(expandvars("$$"*n), "$"*n)
+
     def test_expanduser(self):
         tester('ntpath.expanduser("test")', 'test')
 
@@ -907,6 +919,7 @@ class TestNtpath(NtpathTestCase):
             b_final_path = nt._getfinalpathname(path.encode())
             self.assertIsInstance(b_final_path, bytes)
             self.assertGreater(len(b_final_path), 0)
+
 
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = ntpath
