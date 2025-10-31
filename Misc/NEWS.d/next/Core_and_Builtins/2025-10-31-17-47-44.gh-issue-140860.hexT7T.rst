@@ -1,0 +1,2 @@
+Fix memory leak where modules that create types during initialization
+leak those types when audit hooks are active.

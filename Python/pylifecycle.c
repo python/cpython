@@ -2251,6 +2251,11 @@ _Py_Finalize(_PyRuntimeState *runtime)
      */
     PyGC_Collect();
 
+    /* Clear audit hooks before destroying modules to avoid reference cycles */
+    if (_Py_IsMainInterpreter(tstate->interp)) {
+        Py_CLEAR(tstate->interp->audit_hooks);
+    }
+
     /* Destroy all modules */
     _PyImport_FiniExternal(tstate->interp);
     finalize_modules(tstate);
