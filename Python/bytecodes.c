@@ -1899,7 +1899,7 @@ dummy_func(
             if (PyStackRef_IsNull(v)) {
                 PyObject *localsplusnames = _PyFrame_GetCode(frame)->co_localsplusnames;
                 PyObject *name = PyTuple_GetItem(localsplusnames, oparg);
-                if (PyMapping_HasKeyWithError(BUILTINS(), name) == 1) {
+                if (name && PyMapping_HasKeyWithError(BUILTINS(), name) == 1) {
                     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                                               CANNOT_DELETE_BUILTIN_ERROR_MSG, name);
                 } else {
