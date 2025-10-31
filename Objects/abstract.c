@@ -1996,8 +1996,6 @@ PySequence_DelSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 PyObject *
 PySequence_Tuple(PyObject *v)
 {
-    PyObject *it;  /* iter(v) */
-
     if (v == NULL) {
         return null_error();
     }
@@ -2010,62 +2008,36 @@ PySequence_Tuple(PyObject *v)
            a copy, so there's no need for exactness below. */
         return Py_NewRef(v);
     }
-    if (PyList_CheckExact(v))
+    if (PyList_CheckExact(v)) {
         return PyList_AsTuple(v);
+    }
 
     /* Get iterator. */
-    it = PyObject_GetIter(v);
-    if (it == NULL)
+    PyObject *it = PyObject_GetIter(v);
+    if (it == NULL) {
         return NULL;
-
-    Py_ssize_t n;
-    PyObject *buffer[8];
-    for (n = 0; n < 8; n++) {
-        PyObject *item = PyIter_Next(it);
-        if (item == NULL) {
-            if (PyErr_Occurred()) {
-                goto fail;
-            }
-            Py_DECREF(it);
-            return _PyTuple_FromArraySteal(buffer, n);
-        }
-        buffer[n] = item;
     }
-    PyListObject *list = (PyListObject *)PyList_New(16);
-    if (list == NULL) {
+
+    PyTupleWriter writer;
+    if (PyTupleWriter_Init(&writer, 0) < 0) {
         goto fail;
     }
-    assert(n == 8);
-    Py_SET_SIZE(list, n);
-    for (Py_ssize_t j = 0; j < n; j++) {
-        PyList_SET_ITEM(list, j, buffer[j]);
-    }
+
     for (;;) {
-        PyObject *item = PyIter_Next(it);
-        if (item == NULL) {
-            if (PyErr_Occurred()) {
-                Py_DECREF(list);
-                Py_DECREF(it);
-                return NULL;
-            }
+        PyObject *item;
+        if (PyIter_NextItem(it, &item) == 0) {
             break;
         }
-        if (_PyList_AppendTakeRef(list, item) < 0) {
-            Py_DECREF(list);
-            Py_DECREF(it);
-            return NULL;
+        if (PyTupleWriter_AddSteal(&writer, item) < 0) {
+            goto fail;
         }
     }
     Py_DECREF(it);
-    PyObject *res = _PyList_AsTupleAndClear(list);
-    Py_DECREF(list);
-    return res;
+    return PyTupleWriter_Finish(&writer);
+
 fail:
     Py_DECREF(it);
-    while (n > 0) {
-        n--;
-        Py_DECREF(buffer[n]);
-    }
+    PyTupleWriter_Discard(&writer);
     return NULL;
 }
 
