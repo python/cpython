@@ -1,0 +1,1 @@
+Add a ``flags`` parameter to :meth:`mmap.mmap.flush` to control synchronization behavior.
