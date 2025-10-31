@@ -224,7 +224,7 @@ class BaseLocalTest:
             loop.__setattr__(NameCompareTrue(), 2)
 
     def test_settrace_leak(self):
-        # See https://github.com/python/cpython/issues/100892
+        # See https://github.com/python/cpython/issues/140798
 
         local = self._local()
 
