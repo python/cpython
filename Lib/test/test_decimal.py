@@ -24,6 +24,7 @@ you're working through IDLE, you can import this test module and call test()
 with the corresponding argument.
 """
 
+import contextlib
 import logging
 import math
 import os, sys
@@ -4493,6 +4494,15 @@ class CheckAttributes(unittest.TestCase):
 
 class Coverage:
 
+    @contextlib.contextmanager
+    def unbound_context(self, prec=None, Emax=None, Emin=None):
+        with self.decimal.localcontext() as c:
+            c.prec = self.decimal.MAX_PREC if prec is None else prec
+            c.Emax = self.decimal.MAX_EMAX if Emax is None else Emax
+            c.Emin = self.decimal.MIN_EMIN if Emin is None else Emin
+            c.traps[self.decimal.Inexact] = 1
+            yield c
+
     def test_adjusted(self):
         Decimal = self.decimal.Decimal
 
@@ -4659,6 +4669,22 @@ class Coverage:
             self.assertTrue(q.is_infinite() and r.is_nan())
             self.assertTrue(c.flags[InvalidOperation] and
                             c.flags[DivisionByZero])
+
+    def test_divide_unbound_context(self):
+        with self.unbound_context() as c:
+            x = self.decimal.Decimal('1')
+            y = x // 1  # should be fast
+
+    def test_remainder_near(self):
+        L = 1000
+        limit = sys.get_int_max_str_digits()
+        sys.set_int_max_str_digits(L)
+        self.addCleanup(sys.set_int_max_str_digits, limit)
+
+        with self.unbound_context(prec=2 * L) as c:
+            self.assertEqual(c.prec, 2 * L)
+            x = self.decimal.Decimal(f'1e{L}')
+            y = x.remainder_near(1)  # must not raise a ValueError
 
     def test_power(self):
         Decimal = self.decimal.Decimal
