@@ -1,0 +1,3 @@
+:class:`~timeit.Timer` now support global setup statements which are
+typically useful for top-level-only statements such as future statements or
+wildcard imports. Patch by Bénédikt Tran.
