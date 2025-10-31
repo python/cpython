@@ -21,19 +21,6 @@ __all__ = ["RobotFileParser"]
 RequestRate = collections.namedtuple("RequestRate", "requests seconds")
 
 
-def normalize(path):
-    unquoted = urllib.parse.unquote(path, errors='surrogateescape')
-    return urllib.parse.quote(unquoted, errors='surrogateescape')
-
-def normalize_path(path):
-    path, sep, query = path.partition('?')
-    path = normalize(path)
-    if sep:
-        query = re.sub(r'[^=&]+', lambda m: normalize(m[0]), query)
-        path += '?' + query
-    return path
-
-
 class RobotFileParser:
     """ This class provides a set of methods to read, parse and answer
     questions about a single robots.txt file.
@@ -42,6 +29,7 @@ class RobotFileParser:
 
     def __init__(self, url=''):
         self.entries = []
+        self.groups = {}
         self.sitemaps = []
         self.default_entry = None
         self.disallow_all = False
@@ -86,13 +74,13 @@ class RobotFileParser:
             self.parse(raw.decode("utf-8", "surrogateescape").splitlines())
 
     def _add_entry(self, entry):
-        if "*" in entry.useragents:
-            # the default entry is considered last
-            if self.default_entry is None:
-                # the first default entry wins
-                self.default_entry = entry
-        else:
-            self.entries.append(entry)
+        self.entries.append(entry)
+        for agent in entry.useragents:
+            if agent not in self.groups:
+                self.groups[agent] = entry
+            else:
+                self.groups[agent] = merge_entries(self.groups[agent], entry)
+            sort_rulelines(self.groups[agent].rulelines)
 
     def parse(self, lines):
         """Parse the input lines from a robots.txt file.
@@ -100,6 +88,7 @@ class RobotFileParser:
         We allow that a user-agent: line is not preceded by
         one or more blank lines.
         """
+        entries = []
         # states:
         #   0: start state
         #   1: saw user-agent line
@@ -109,14 +98,6 @@ class RobotFileParser:
 
         self.modified()
         for line in lines:
-            if not line:
-                if state == 1:
-                    entry = Entry()
-                    state = 0
-                elif state == 2:
-                    self._add_entry(entry)
-                    entry = Entry()
-                    state = 0
             # remove optional comment and strip line
             i = line.find('#')
             if i >= 0:
@@ -132,16 +113,23 @@ class RobotFileParser:
                     if state == 2:
                         self._add_entry(entry)
                         entry = Entry()
-                    entry.useragents.append(line[1])
+                    product_token = line[1]
+                    entry.useragents.append(product_token)
                     state = 1
                 elif line[0] == "disallow":
                     if state != 0:
-                        entry.rulelines.append(RuleLine(line[1], False))
                         state = 2
+                        try:
+                            entry.rulelines.append(RuleLine(line[1], False))
+                        except ValueError:
+                            pass
                 elif line[0] == "allow":
                     if state != 0:
-                        entry.rulelines.append(RuleLine(line[1], True))
                         state = 2
+                        try:
+                            entry.rulelines.append(RuleLine(line[1], True))
+                        except ValueError:
+                            pass
                 elif line[0] == "crawl-delay":
                     if state != 0:
                         # before trying to convert to int we need to make
@@ -164,8 +152,14 @@ class RobotFileParser:
                     #  so it doesn't matter where you place it in your file."
                     # Therefore we do not change the state of the parser.
                     self.sitemaps.append(line[1])
-        if state == 2:
+        if state != 0:
             self._add_entry(entry)
+
+    def _find_entry(self, useragent):
+        for entry in self.groups.values():
+            if entry.applies_to(useragent):
+                return entry
+        return self.groups.get('*')
 
     def can_fetch(self, useragent, url):
         """using the parsed robots.txt decide if useragent can fetch url"""
@@ -179,43 +173,33 @@ class RobotFileParser:
         # calls can_fetch() before calling read().
         if not self.last_checked:
             return False
-        # search for given user agent matches
-        # the first match counts
         # TODO: The private API is used in order to preserve an empty query.
         # This is temporary until the public API starts supporting this feature.
         parsed_url = urllib.parse._urlsplit(url, '')
         url = urllib.parse._urlunsplit(None, None, *parsed_url[2:])
-        url = normalize_path(url)
+        url = normalize_uri(url)
         if not url:
             url = "/"
-        for entry in self.entries:
-            if entry.applies_to(useragent):
-                return entry.allowance(url)
-        # try the default entry last
-        if self.default_entry:
-            return self.default_entry.allowance(url)
-        # agent not found ==> access granted
-        return True
+        entry = self._find_entry(useragent)
+        if entry is None:
+            return True
+        return entry.allowance(url)
 
     def crawl_delay(self, useragent):
         if not self.mtime():
             return None
-        for entry in self.entries:
-            if entry.applies_to(useragent):
-                return entry.delay
-        if self.default_entry:
-            return self.default_entry.delay
-        return None
+        entry = self._find_entry(useragent)
+        if entry is None:
+            return None
+        return entry.delay
 
     def request_rate(self, useragent):
         if not self.mtime():
             return None
-        for entry in self.entries:
-            if entry.applies_to(useragent):
-                return entry.req_rate
-        if self.default_entry:
-            return self.default_entry.req_rate
-        return None
+        entry = self._find_entry(useragent)
+        if entry is None:
+            return None
+        return entry.req_rate
 
     def site_maps(self):
         if not self.sitemaps:
@@ -226,7 +210,7 @@ class RobotFileParser:
         entries = self.entries
         if self.default_entry is not None:
             entries = entries + [self.default_entry]
-        return '\n\n'.join(map(str, entries))
+        return '\n\n'.join(filter(None, map(str, entries)))
 
 class RuleLine:
     """A rule line is a single "Allow:" (allowance==True) or "Disallow:"
@@ -235,14 +219,40 @@ class RuleLine:
         if path == '' and not allowance:
             # an empty value means allow all
             allowance = True
-        self.path = normalize_path(path)
+        path = re.sub(r'[*]{2,}', '*', path)
+        path = re.sub(r'[$][$*]+', '$', path)
+        path = normalize_pattern(path)
+        self.fullmatch = path.endswith('$')
+        path = path.rstrip('$')
+        if '$' in path:
+            raise ValueError('$ not at the end of path')
+        self.matcher = None
+        if '*' in path:
+            pattern = re.compile(translite_pattern(path), re.DOTALL)
+            if self.fullmatch:
+                self.matcher = pattern.fullmatch
+            else:
+                self.matcher = pattern.match
+        self.path = path
         self.allowance = allowance
 
     def applies_to(self, filename):
-        return self.path == "*" or filename.startswith(self.path)
+        if self.matcher is not None:
+            m = self.matcher(filename)
+            if m:
+                return m.end() + 1
+        else:
+            if self.fullmatch:
+                if filename == self.path:
+                    return len(self.path) + 1
+            else:
+                if filename.startswith(self.path):
+                    return len(self.path) + 1
+        return 0
 
     def __str__(self):
-        return ("Allow" if self.allowance else "Disallow") + ": " + self.path
+        return (("Allow" if self.allowance else "Disallow") + ": " + self.path
+                + ('$' if self.fullmatch else ''))
 
 
 class Entry:
@@ -254,6 +264,8 @@ class Entry:
         self.req_rate = None
 
     def __str__(self):
+        if not self.useragents:
+            return ''
         ret = []
         for agent in self.useragents:
             ret.append(f"User-agent: {agent}")
@@ -262,27 +274,86 @@ class Entry:
         if self.req_rate is not None:
             rate = self.req_rate
             ret.append(f"Request-rate: {rate.requests}/{rate.seconds}")
-        ret.extend(map(str, self.rulelines))
+        if self.rulelines:
+            ret.extend(map(str, self.rulelines))
+        else:
+            ret.append("Allow:")
         return '\n'.join(ret)
 
     def applies_to(self, useragent):
         """check if this entry applies to the specified agent"""
+        if useragent is None:
+            return '*' in self.useragents
         # split the name token and make it lower case
         useragent = useragent.split("/")[0].lower()
         for agent in self.useragents:
-            if agent == '*':
-                # we have the catch-all agent
-                return True
-            agent = agent.lower()
-            if agent in useragent:
-                return True
+            if agent != '*':
+                agent = agent.lower()
+                if agent in useragent:
+                    return True
         return False
 
     def allowance(self, filename):
         """Preconditions:
+        - rules without wildcards are sorted from longest to shortest,
+          "Allow" before "Disallow"
         - our agent applies to this entry
         - filename is URL encoded"""
+        best_match = -1
+        allowance = True
         for line in self.rulelines:
-            if line.applies_to(filename):
-                return line.allowance
-        return True
+            m = line.applies_to(filename)
+            if m:
+                if m > best_match:
+                    best_match = m
+                    allowance = line.allowance
+                elif m == best_match and not allowance:
+                    allowance = line.allowance
+            # Optimization.
+            if line.matcher is None and (m or len(line.path) + 1 < best_match):
+                break
+        return allowance
+
+
+def normalize(path):
+    unquoted = urllib.parse.unquote(path, errors='surrogateescape')
+    return urllib.parse.quote(unquoted, errors='surrogateescape')
+
+def normalize_uri(path):
+    path, sep, query = path.partition('?')
+    path = normalize(path)
+    if sep:
+        query = re.sub(r'[^=&]+', lambda m: normalize(m[0]), query)
+        path += '?' + query
+    return path
+
+def normalize_pattern(path):
+    path, sep, query = path.partition('?')
+    path = re.sub(r'[^*$]+', lambda m: normalize(m[0]), path)
+    if sep:
+        query = re.sub(r'[^=&*$]+', lambda m: normalize(m[0]), query)
+        path += '?' + query
+    return path
+
+def translite_pattern(path):
+    parts = list(map(re.escape, path.split('*')))
+    for i in range(1, len(parts)-1):
+        parts[i] = f'(?>.*?{parts[i]})'
+    parts[-1] = f'.*{parts[-1]}'
+    return ''.join(parts)
+
+def merge_entries(e1, e2):
+    entry = Entry()
+    entry.useragents = list(filter(set(e2.useragents).__contains__, e1.useragents))
+    entry.rulelines = e1.rulelines + e2.rulelines
+    entry.delay = e1.delay if e2.delay is None else e2.delay
+    entry.req_rate = e1.req_rate if e2.req_rate is None else e2.req_rate
+    return entry
+
+def sort_rulelines(rulelines):
+    def sortkey(line):
+        if line.matcher is not None:
+            return (True,)
+        else:
+            return (False, len(line.path), line.allowance)
+    rulelines.sort(key=sortkey, reverse=True)
