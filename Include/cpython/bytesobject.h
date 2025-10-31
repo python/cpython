@@ -41,6 +41,7 @@ _PyBytes_Join(PyObject *sep, PyObject *iterable)
     return PyBytes_Join(sep, iterable);
 }
 
+
 // --- PyBytesWriter API -----------------------------------------------------
 
 typedef struct PyBytesWriter PyBytesWriter;
