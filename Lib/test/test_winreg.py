@@ -213,13 +213,17 @@ class BaseWinregTests(unittest.TestCase):
         """Test HKEY comparison by handle value rather than object identity."""
         key1 = OpenKey(HKEY_CURRENT_USER, None)
         key2 = OpenKey(HKEY_CURRENT_USER, None)
+        key3 = OpenKey(HKEY_LOCAL_MACHINE, None)
+
+        self.addCleanup(CloseKey, key1)
+        self.addCleanup(CloseKey, key2)
+        self.addCleanup(CloseKey, key3)
 
         self.assertEqual(key1.handle, key2.handle)
         self.assertEqual(key1, key2)
         self.assertTrue(key1 == key2)
         self.assertFalse(key1 != key2)
 
-        key3 = OpenKey(HKEY_LOCAL_MACHINE, None)
         self.assertNotEqual(key1, key3)
         self.assertTrue(key1 != key3)
         self.assertFalse(key1 == key3)
