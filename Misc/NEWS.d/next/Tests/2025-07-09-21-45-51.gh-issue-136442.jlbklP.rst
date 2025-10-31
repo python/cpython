@@ -1,0 +1,1 @@
+unittest runner: Don't exit 5 if setUpClass raises an exception
