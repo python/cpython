@@ -2497,6 +2497,21 @@ class SubinterpImportTests(unittest.TestCase):
                         self.check_compatible_here(
                             modname, filename, strict=False, isolated=False)
 
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_testmultiphase_exec_multiple(self):
+        modname = '_testmultiphase_exec_multiple'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        # All three exec's were called.
+        self.assertEqual(module.a, 1)
+        self.assertEqual(module.b, 2)
+        self.assertEqual(module.c, 3)
+        # They were called in order.
+        keys = list(module.__dict__)
+        self.assertLess(keys.index('a'), keys.index('b'))
+        self.assertLess(keys.index('b'), keys.index('c'))
+
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_python_compat(self):
         module = 'threading'
@@ -3393,6 +3408,83 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was initialized, not reset
 
+
+@unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+class ModexportTests(unittest.TestCase):
+    def test_from_modexport(self):
+        modname = '_test_from_modexport'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+
+        self.assertEqual(module.__name__, modname)
+
+    def test_from_modexport_null(self):
+        modname = '_test_from_modexport_null'
+        filename = _testmultiphase.__file__
+        with self.assertRaises(SystemError):
+            import_extension_from_file(modname, filename,
+                                       put_in_sys_modules=False)
+
+    def test_from_modexport_exception(self):
+        modname = '_test_from_modexport_exception'
+        filename = _testmultiphase.__file__
+        with self.assertRaises(ValueError):
+            import_extension_from_file(modname, filename,
+                                       put_in_sys_modules=False)
+
+    def test_from_modexport_create_nonmodule(self):
+        modname = '_test_from_modexport_create_nonmodule'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        self.assertIsInstance(module, str)
+
+    def test_from_modexport_smoke(self):
+        # General positive test for sundry features
+        # (PyModule_FromSlotsAndSpec tests exercise these more carefully)
+        modname = '_test_from_modexport_smoke'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        self.assertEqual(module.__doc__, "the expected docstring")
+        self.assertEqual(module.number, 147)
+        self.assertEqual(module.get_state_int(), 258)
+        self.assertGreater(module.get_test_token(), 0)
+
+    def test_from_modexport_smoke_token(self):
+        _testcapi = import_module("_testcapi")
+
+        modname = '_test_from_modexport_smoke'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        token = module.get_test_token()
+        self.assertEqual(_testcapi.pymodule_get_token(module), token)
+
+        tp = module.Example
+        self.assertEqual(_testcapi.pytype_getmodulebytoken(tp, token), module)
+        class Sub(tp):
+            pass
+        self.assertEqual(_testcapi.pytype_getmodulebytoken(Sub, token), module)
+
+    def test_from_modexport_empty_slots(self):
+        # Module to test that:
+        # - no slots are mandatory for PyModExport
+        # - the slots array is used as the default token
+        modname = '_test_from_modexport_empty_slots'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(
+            modname, filename, put_in_sys_modules=False)
+
+        self.assertEqual(module.__name__, modname)
+        self.assertEqual(module.__doc__, None)
+
+        _testcapi = import_module("_testcapi")
+        smoke_mod = import_extension_from_file(
+            '_test_from_modexport_smoke', filename, put_in_sys_modules=False)
+        self.assertEqual(_testcapi.pymodule_get_token(module),
+                         smoke_mod.get_modexport_empty_slots())
 
 @cpython_only
 class TestMagicNumber(unittest.TestCase):

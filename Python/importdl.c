@@ -5,7 +5,7 @@
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_import.h"        // _PyImport_SwapPackageContext()
 #include "pycore_importdl.h"
-#include "pycore_moduleobject.h"  // _PyModule_GetDef()
+#include "pycore_moduleobject.h"  // _PyModule_GetDefOrNull()
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_runtime.h"       // _Py_ID()
 
@@ -35,8 +35,10 @@ extern dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
 /* module info to use when loading */
 /***********************************/
 
-static const char * const ascii_only_prefix = "PyInit";
-static const char * const nonascii_prefix = "PyInitU";
+static const struct hook_prefixes ascii_only_prefixes = {
+    "PyInit", "PyModExport"};
+static const struct hook_prefixes nonascii_prefixes = {
+    "PyInitU", "PyModExportU"};
 
 /* Get the variable part of a module's export symbol name.
  * Returns a bytes instance. For non-ASCII-named modules, the name is
@@ -45,7 +47,7 @@ static const char * const nonascii_prefix = "PyInitU";
  * nonascii_prefix, as appropriate.
  */
 static PyObject *
-get_encoded_name(PyObject *name, const char **hook_prefix) {
+get_encoded_name(PyObject *name, const struct hook_prefixes **hook_prefixes) {
     PyObject *tmp;
     PyObject *encoded = NULL;
     PyObject *modname = NULL;
@@ -72,7 +74,7 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     /* Encode to ASCII or Punycode, as needed */
     encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
     if (encoded != NULL) {
-        *hook_prefix = ascii_only_prefix;
+        *hook_prefixes = &ascii_only_prefixes;
     } else {
         if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
             PyErr_Clear();
@@ -80,7 +82,7 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
             if (encoded == NULL) {
                 goto error;
             }
-            *hook_prefix = nonascii_prefix;
+            *hook_prefixes = &nonascii_prefixes;
         } else {
             goto error;
         }
@@ -130,7 +132,7 @@ _Py_ext_module_loader_info_init(struct _Py_ext_module_loader_info *p_info,
     assert(PyUnicode_GetLength(name) > 0);
     info.name = Py_NewRef(name);
 
-    info.name_encoded = get_encoded_name(info.name, &info.hook_prefix);
+    info.name_encoded = get_encoded_name(info.name, &info.hook_prefixes);
     if (info.name_encoded == NULL) {
         _Py_ext_module_loader_info_clear(&info);
         return -1;
@@ -189,7 +191,7 @@ _Py_ext_module_loader_info_init_for_builtin(
         /* We won't need filename. */
         .path=name,
         .origin=_Py_ext_module_origin_BUILTIN,
-        .hook_prefix=ascii_only_prefix,
+        .hook_prefixes=&ascii_only_prefixes,
         .newcontext=NULL,
     };
     return 0;
@@ -377,39 +379,63 @@ _Py_ext_module_loader_result_apply_error(
 /********************************************/
 
 #ifdef HAVE_DYNAMIC_LOADING
-PyModInitFunction
-_PyImport_GetModInitFunc(struct _Py_ext_module_loader_info *info,
-                         FILE *fp)
+static dl_funcptr
+findfuncptr(const char *prefix, const char *name_buf,
+            struct _Py_ext_module_loader_info *info,
+            FILE *fp)
 {
+#ifdef MS_WINDOWS
+    return _PyImport_FindSharedFuncptrWindows(
+            prefix, name_buf, info->filename, fp);
+#else
+    const char *path_buf = PyBytes_AS_STRING(info->filename_encoded);
+    return _PyImport_FindSharedFuncptr(
+            prefix, name_buf, path_buf, fp);
+#endif
+}
+
+int
+_PyImport_GetModuleExportHooks(
+    struct _Py_ext_module_loader_info *info,
+    FILE *fp,
+    PyModInitFunction *modinit,
+    PyModExportFunction *modexport)
+{
+    *modinit = NULL;
+    *modexport = NULL;
+
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
     dl_funcptr exportfunc;
-#ifdef MS_WINDOWS
-    exportfunc = _PyImport_FindSharedFuncptrWindows(
-            info->hook_prefix, name_buf, info->filename, fp);
-#else
-    {
-        const char *path_buf = PyBytes_AS_STRING(info->filename_encoded);
-        exportfunc = _PyImport_FindSharedFuncptr(
-                        info->hook_prefix, name_buf, path_buf, fp);
-    }
-#endif
 
-    if (exportfunc == NULL) {
-        if (!PyErr_Occurred()) {
-            PyObject *msg;
-            msg = PyUnicode_FromFormat(
-                "dynamic module does not define "
-                "module export function (%s_%s)",
-                info->hook_prefix, name_buf);
-            if (msg != NULL) {
-                PyErr_SetImportError(msg, info->name, info->filename);
-                Py_DECREF(msg);
-            }
+    exportfunc = findfuncptr(
+        info->hook_prefixes->export_prefix,
+        name_buf, info, fp);
+    if (exportfunc) {
+        *modexport = (PyModExportFunction)exportfunc;
+        return 2;
+    }
+
+    exportfunc = findfuncptr(
+        info->hook_prefixes->init_prefix,
+        name_buf, info, fp);
+    if (exportfunc) {
+        *modinit = (PyModInitFunction)exportfunc;
+        return 1;
+    }
+
+    if (!PyErr_Occurred()) {
+        PyObject *msg;
+        msg = PyUnicode_FromFormat(
+            "dynamic module does not define "
+            "module export function (%s_%s or %s_%s)",
+            info->hook_prefixes->export_prefix, name_buf,
+            info->hook_prefixes->init_prefix, name_buf);
+        if (msg != NULL) {
+            PyErr_SetImportError(msg, info->name, info->filename);
+            Py_DECREF(msg);
         }
-        return NULL;
     }
-
-    return (PyModInitFunction)exportfunc;
+    return -1;
 }
 #endif /* HAVE_DYNAMIC_LOADING */
 
@@ -477,7 +503,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
         res.def = (PyModuleDef *)m;
         /* Run PyModule_FromDefAndSpec() to finish loading the module. */
     }
-    else if (info->hook_prefix == nonascii_prefix) {
+    else if (info->hook_prefixes == &nonascii_prefixes) {
         /* Non-ASCII is only supported for multi-phase init. */
         res.kind = _Py_ext_module_kind_MULTIPHASE;
         /* Don't allow legacy init for non-ASCII module names. */
@@ -496,7 +522,7 @@ _PyImport_RunModInitFunc(PyModInitFunction p0,
             goto error;
         }
 
-        res.def = _PyModule_GetDef(m);
+        res.def = _PyModule_GetDefOrNull(m);
         if (res.def == NULL) {
             PyErr_Clear();
             _Py_ext_module_loader_result_set_error(
