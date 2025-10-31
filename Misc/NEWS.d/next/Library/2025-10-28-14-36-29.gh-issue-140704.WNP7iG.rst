@@ -1,0 +1,2 @@
+Fix :exc:`AttributeError` in :mod:`dataclasses` when using complex
+annotation with a compiled class.

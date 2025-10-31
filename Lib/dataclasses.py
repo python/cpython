@@ -759,12 +759,16 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
         if not module_name:
             # No module name, assume the class's module did
             # "from dataclasses import InitVar".
-            ns = sys.modules.get(cls.__module__).__dict__
+            module = sys.modules.get(cls.__module__)
+            if module:
+                ns = module.__dict__
         else:
             # Look up module_name in the class's module.
             module = sys.modules.get(cls.__module__)
             if module and module.__dict__.get(module_name) is a_module:
-                ns = sys.modules.get(a_type.__module__).__dict__
+                module = sys.modules.get(a_type.__module__)
+                if module:
+                    ns = module.__dict__
         if ns and is_type_predicate(ns.get(match.group(2)), a_module):
             return True
     return False
