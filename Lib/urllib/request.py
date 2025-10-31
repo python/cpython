@@ -1582,14 +1582,13 @@ class CacheFTPHandler(FTPHandler):
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         key = user, host, port, '/'.join(dirs), timeout
-        if key in self.cache:
-            self.timeout[key] = time.time() + self.delay
-        else:
-            self.cache[key] = ftpwrapper(user, passwd, host, port,
-                                         dirs, timeout)
-            self.timeout[key] = time.time() + self.delay
+        conn = self.cache.get(key)
+        if conn is None or not conn.keepalive:
+            conn = self.cache[key] = ftpwrapper(user, passwd, host, port,
+                                                dirs, timeout)
+        self.timeout[key] = time.time() + self.delay
         self.check_cache()
-        return self.cache[key]
+        return conn
 
     def check_cache(self):
         # first check for old ones
