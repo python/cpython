@@ -31,7 +31,6 @@ concurrency:
 
 env:
   FORCE_COLOR: 1
-  LLVM_VERSION: 20
 
 jobs:
   interpreter:
@@ -68,6 +67,8 @@ jobs:
         debug:
           - true
           - false
+        llvm:
+          - 20
         include:
           - target: i686-pc-windows-msvc/msvc
             architecture: Win32
@@ -109,7 +110,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew update
-          brew install llvm@${{ env.LLVM_VERSION }}
+          brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
           # Set MACOSX_DEPLOYMENT_TARGET and -Werror=unguarded-availability to
           # make sure we don't break downstream distributors (like uv):
@@ -122,8 +123,8 @@ jobs:
       - name: Linux
         if: runner.os == 'Linux'
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
-          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
@@ -133,6 +134,11 @@ jobs:
     needs: interpreter
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        llvm:
+          - 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -142,8 +148,8 @@ jobs:
           python-version: '3.11'
       - name: Build with JIT enabled and GIL disabled
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
-          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure --enable-experimental-jit --with-pydebug --disable-gil
           make all --jobs 4
       - name: Run tests
@@ -156,6 +162,11 @@ jobs:
     needs: interpreter
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        llvm:
+          - 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -165,8 +176,8 @@ jobs:
           python-version: '3.11'
       - name: Build with JIT
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ env.LLVM_VERSION }}
-          export PATH="$(llvm-config-${{ env.LLVM_VERSION }} --bindir):$PATH"
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure --enable-experimental-jit --with-pydebug
           make all --jobs 4
       - name: Run tests without optimizations

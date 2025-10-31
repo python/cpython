@@ -542,8 +542,8 @@ patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state)
     */
     trampoline[0] = 0xFF;
     trampoline[1] = 0x25;
-    *(uint32_t *)(trampoline + 2) = 0;
-    *(uint64_t *)(trampoline + 6) = value;
+    memset(trampoline + 2, 0, 4);
+    memcpy(trampoline + 6, &value, 8);
 
     // Patch the call site to call the trampoline instead
     patch_32r(location, (uintptr_t)trampoline - 4);
