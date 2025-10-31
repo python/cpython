@@ -673,8 +673,10 @@ _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls)
         }
         if (gdbm_delete(self->di_dbm, key) < 0) {
             PyErr_SetString(state->gdbm_error, "cannot delete item from database");
+            free(key.dptr);
             return NULL;
         }
+        free(key.dptr);
     }
     Py_RETURN_NONE;
 }
@@ -688,7 +690,11 @@ gdbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 gdbm__exit__(PyObject *self, PyObject *args)
 {
-    return _gdbm_gdbm_close_impl((gdbmobject *)self);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = _gdbm_gdbm_close_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyMethodDef gdbm_methods[] = {

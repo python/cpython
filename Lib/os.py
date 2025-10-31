@@ -136,6 +136,8 @@ if _exists("_have_functions"):
     _add("HAVE_UNLINKAT",   "unlink")
     _add("HAVE_UNLINKAT",   "rmdir")
     _add("HAVE_UTIMENSAT",  "utime")
+    if _exists("statx"):
+        _set.add(statx)
     supports_dir_fd = _set
 
     _set = set()
@@ -157,6 +159,8 @@ if _exists("_have_functions"):
     _add("HAVE_FPATHCONF",  "pathconf")
     if _exists("statvfs") and _exists("fstatvfs"): # mac os x10.3
         _add("HAVE_FSTATVFS", "statvfs")
+    if _exists("statx"):
+        _set.add(statx)
     supports_fd = _set
 
     _set = set()
@@ -195,6 +199,8 @@ if _exists("_have_functions"):
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_UTIMENSAT",  "utime")
     _add("MS_WINDOWS",      "stat")
+    if _exists("statx"):
+        _set.add(statx)
     supports_follow_symlinks = _set
 
     del _set
@@ -826,6 +832,7 @@ if _exists("_create_environ"):
         env_data.clear()
         env_data.update(data)
 
+    __all__.append("reload_environ")
 
 def getenv(key, default=None):
     """Get an environment variable, return None if it doesn't exist.

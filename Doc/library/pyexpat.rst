@@ -223,10 +223,10 @@ XMLParser Objects
    Calling ``SetReparseDeferralEnabled(True)`` allows re-enabling reparse
    deferral.
 
-   Note that :meth:`SetReparseDeferralEnabled` has been backported to some
-   prior releases of CPython as a security fix.  Check for availability of
-   :meth:`SetReparseDeferralEnabled` using :func:`hasattr` if used in code
-   running across a variety of Python versions.
+   :meth:`!SetReparseDeferralEnabled`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
 
    .. versionadded:: 3.13
 
@@ -257,12 +257,17 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
+   :meth:`!SetBillionLaughsAttackProtectionActivationThreshold`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
    .. note::
 
       Activation thresholds below 4 MiB are known to break support for DITA 1.3
       payload and are hence not recommended.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification(max_factor, /)
 
@@ -288,13 +293,18 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
+   :meth:`!SetBillionLaughsAttackProtectionMaximumAmplification`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
    .. note::
 
       The maximum amplification factor is only considered if the threshold
       that can be adjusted by :meth:`.SetBillionLaughsAttackProtectionActivationThreshold`
       is exceeded.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
 
@@ -309,7 +319,12 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
-   .. versionadded:: next
+   :meth:`!SetAllocTrackerActivationThreshold`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
+   .. versionadded:: 3.15
 
 .. method:: xmlparser.SetAllocTrackerMaximumAmplification(max_factor, /)
 
@@ -334,13 +349,18 @@ against some common XML vulnerabilities.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
+   :meth:`!SetAllocTrackerMaximumAmplification`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
    .. note::
 
       The maximum amplification factor is only considered if the threshold
       that can be adjusted by :meth:`.SetAllocTrackerActivationThreshold`
       is exceeded.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 :class:`xmlparser` objects have the following attributes:

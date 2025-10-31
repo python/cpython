@@ -1,2 +1,0 @@
-Fix possible crash in :func:`locale.strxfrm` due to a platform bug on
-macOS.

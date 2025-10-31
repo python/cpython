@@ -188,7 +188,7 @@ This module offers the following functions:
 
    .. audit-event:: winreg.DeleteTree key,sub_key winreg.DeleteTree
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: DeleteValue(key, value)
