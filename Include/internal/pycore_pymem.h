@@ -54,12 +54,12 @@ static inline int _PyMem_IsPtrFreed(const void *ptr)
 {
     uintptr_t value = (uintptr_t)ptr;
 #if SIZEOF_VOID_P == 8
-    return (value == 0
+    return (value < 256  // NULL, 0x1, 0x2, ...
             || value == (uintptr_t)0xCDCDCDCDCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDDDDDDDDDD
             || value == (uintptr_t)0xFDFDFDFDFDFDFDFD);
 #elif SIZEOF_VOID_P == 4
-    return (value == 0
+    return (value < 256
             || value == (uintptr_t)0xCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDD
             || value == (uintptr_t)0xFDFDFDFD);
