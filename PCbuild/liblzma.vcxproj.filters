@@ -54,13 +54,7 @@
     <ClCompile Include="$(lzmaDir)src\liblzma\check\crc32_fast.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="$(lzmaDir)src\liblzma\check\crc32_table.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="$(lzmaDir)src\liblzma\check\crc64_fast.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="$(lzmaDir)src\liblzma\check\crc64_table.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(lzmaDir)src\liblzma\delta\delta_common.c">
