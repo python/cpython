@@ -292,7 +292,7 @@ Parsing an element with a few attributes and a title::
    End tag  : h1
 
 The content of elements like ``script`` and ``style`` is returned as is,
-without further parsing:
+without further parsing::
 
    >>> parser.feed('<style type="text/css">#python { color: green }</style>')
    Start tag: style
@@ -324,7 +324,7 @@ correct char (note: these 3 references are all equivalent to ``'>'``)::
 
 Feeding incomplete chunks to :meth:`~HTMLParser.feed` works, but
 :meth:`~HTMLParser.handle_data` might be called more than once
-if *convert_charrefs* is false:
+if *convert_charrefs* is false::
 
    >>> for chunk in ['<sp', 'an>buff', 'ered ', 'text</s', 'pan>']:
    ...     parser.feed(chunk)
