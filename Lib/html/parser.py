@@ -180,7 +180,7 @@ class HTMLParser(_markupbase.ParserBase):
     def set_cdata_mode(self, elem, *, escapable=False):
         self.cdata_elem = elem.lower()
         self._escapable = escapable
-        if escapable is None:  # PLAINTEXT mode
+        if self.cdata_elem == 'plaintext':
             self.interesting = re.compile(r'\z')
         elif escapable and not self.convert_charrefs:
             self.interesting = re.compile(r'&|</%s(?=[\t\n\r\f />])' % self.cdata_elem,
@@ -454,14 +454,12 @@ class HTMLParser(_markupbase.ParserBase):
             self.handle_startendtag(tag, attrs)
         else:
             self.handle_starttag(tag, attrs)
-            if tag in self.CDATA_CONTENT_ELEMENTS:
-                self.set_cdata_mode(tag)
+            if (tag in self.CDATA_CONTENT_ELEMENTS or
+                (self.scripting and tag == "noscript") or
+                tag == "plaintext"):
+                self.set_cdata_mode(tag, escapable=False)
             elif tag in self.RCDATA_CONTENT_ELEMENTS:
                 self.set_cdata_mode(tag, escapable=True)
-            elif self.scripting and tag == "noscript":
-                self.set_cdata_mode(tag)
-            elif tag == "plaintext":
-                self.set_cdata_mode(tag, escapable=None)
         return endpos
 
     # Internal -- check to see if we have a complete starttag; return end
