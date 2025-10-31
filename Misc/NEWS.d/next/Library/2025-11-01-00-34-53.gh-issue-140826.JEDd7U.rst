@@ -1,0 +1,2 @@
+Now :class:`winreg.PyHKEY` objects are compared by their underlying Windows
+registry handle value instead of their object identity.
