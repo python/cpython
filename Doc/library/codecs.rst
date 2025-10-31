@@ -462,8 +462,10 @@ handler:
    where encoding should continue. The replacement may be either :class:`str` or
    :class:`bytes`. If the replacement is bytes, the encoder will simply copy
    them into the output buffer. If the replacement is a string, the encoder will
-   encode the replacement. Encoding continues on original input at the
-   specified position. Negative position values will be treated as being
+   encode the replacement with the ``'strict'`` error handling, which means
+   :exc:`UnicodeEncodeError` may be raised here.
+   Encoding continues on original input at the specified position.
+   Negative position values will be treated as being
    relative to the end of the input string. If the resulting position is out of
    bound an :exc:`IndexError` will be raised.
 
