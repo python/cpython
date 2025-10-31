@@ -244,6 +244,10 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
 
     /* Re-align data to the start of the allocation. */
     if (logical_offset > 0) {
+        /* optimization tradeoff: This is faster than a new allocation when
+           the number of bytes being removed in a resize is small; for large
+           size changes it may be better to just make a new bytes object as
+           _PyBytes_Resize will do a malloc + memcpy internally. */
         memmove(obj->ob_bytes, obj->ob_start,
                 Py_MIN(requested_size, Py_SIZE(self)));
     }
