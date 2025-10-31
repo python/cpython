@@ -1,0 +1,3 @@
+Abstract methods and dunder methods of members of :mod:`collections.abc`
+are now defined with use positional-only arguments, allowing implementations
+to use positional-only arguments if desired.
