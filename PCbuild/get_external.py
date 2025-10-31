@@ -11,14 +11,15 @@ import urllib.request
 import zipfile
 
 
-def retrieve_with_retries(download_location, output_path, reporthook, max_retries=7):
-    """Download a file with retries."""
+def retrieve_with_retries(download_location, output_path, reporthook,
+                          max_retries=7):
+    """Download a file with exponential backoff retry and save to disk."""
     for attempt in range(max_retries + 1):
         try:
             resp = urllib.request.urlretrieve(
                 download_location,
                 output_path,
-                reporthook,
+                reporthook = reporthook,
             )
         except (urllib.error.URLError, ConnectionError) as ex:
             if attempt == max_retries:
@@ -27,7 +28,7 @@ def retrieve_with_retries(download_location, output_path, reporthook, max_retrie
         else:
             return resp
 
-def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose=False):
+def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
     repo = 'cpython-bin-deps' if binary else 'cpython-source-deps'
     url = f'https://github.com/{org}/{repo}/archive/{commit_hash}.zip'
     reporthook = None
