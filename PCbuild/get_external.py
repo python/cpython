@@ -19,7 +19,7 @@ def retrieve_with_retries(download_location, output_path, reporthook,
             resp = urllib.request.urlretrieve(
                 download_location,
                 output_path,
-                reporthook = reporthook,
+                reporthook=reporthook,
             )
         except (urllib.error.URLError, ConnectionError) as ex:
             if attempt == max_retries:
