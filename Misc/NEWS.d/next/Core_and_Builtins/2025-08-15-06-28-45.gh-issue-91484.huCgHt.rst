@@ -1,0 +1,1 @@
+memoryview.cast() now allows casting from N-D to 1-D for F-contiguous.

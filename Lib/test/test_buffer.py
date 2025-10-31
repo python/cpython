@@ -2846,6 +2846,32 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertEqual(m2.strides, (1,))
             self.assertEqual(m2.suboffsets, ())
 
+    def test_memoryview_cast_f_contiguous_ND_1D(self):
+        nd = ndarray(list(range(12)),shape=[3, 4], format='B', flags=ND_FORTRAN)
+        m = memoryview(nd)
+        self.assertTrue(m.f_contiguous)
+        self.assertTrue(m.contiguous)
+
+        m1 = m.cast('B')
+        self.assertEqual(m1.ndim, 1)
+        self.assertEqual(m1.shape, (m.nbytes,))
+        self.assertEqual(m1.strides, (1,))
+        self.assertTrue(m1.c_contiguous)
+        self.assertTrue(m1.contiguous)
+        self.assertEqual(m1.tobytes(), memoryview(nd).tobytes(order='F'))
+
+        for fmt in ('B', 'b', 'c', 'H', 'I'):
+            size = struct.calcsize(fmt)
+            if m.nbytes % size == 0:
+                m2 = m.cast(fmt)
+                self.assertEqual(m2.ndim, 1)
+                self.assertEqual(m2.shape, (m.nbytes // size,))
+                self.assertTrue(m2.contiguous)
+
+        m3 = m[::-1]
+        with self.assertRaises(TypeError):
+            m3.cast('B')
+
     def test_memoryview_tolist(self):
 
         # Most tolist() tests are in self.verify() etc.
