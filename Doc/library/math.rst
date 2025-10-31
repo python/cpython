@@ -721,7 +721,8 @@ Number-theoretic functions
 --------------------------
 
 For backward compatibility, the :mod:`math` module provides also aliases of
-the following functions from the :mod:`math.integer` module:
+the following functions from the :mod:`math.integer` module.
+They are :term:`soft deprecated`.
 
 .. list-table:: **Number-theoretic functions**
 
