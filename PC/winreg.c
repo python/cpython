@@ -181,13 +181,38 @@ PyHKEY_strFunc(PyObject *ob)
     return PyUnicode_FromFormat("<PyHKEY:%p>", pyhkey->hkey);
 }
 
-static int
-PyHKEY_compareFunc(PyObject *ob1, PyObject *ob2)
+static PyObject *
+PyHKEY_richcompare(PyObject *ob1, PyObject *ob2, int op)
 {
+    /* Both objects must be PyHKEY objects from the same module */
+    if (Py_TYPE(ob1) != Py_TYPE(ob2)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
     PyHKEYObject *pyhkey1 = (PyHKEYObject *)ob1;
     PyHKEYObject *pyhkey2 = (PyHKEYObject *)ob2;
-    return pyhkey1 == pyhkey2 ? 0 :
-         (pyhkey1 < pyhkey2 ? -1 : 1);
+    HKEY hkey1 = pyhkey1->hkey;
+    HKEY hkey2 = pyhkey2->hkey;
+    int result;
+
+    switch (op) {
+        case Py_EQ:
+            result = (hkey1 == hkey2);
+            break;
+        case Py_NE:
+            result = (hkey1 != hkey2);
+            break;
+        default:
+            /* Only support equality comparisons, not ordering */
+            Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (result) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
 }
 
 static Py_hash_t
@@ -365,6 +390,7 @@ static PyType_Slot pyhkey_type_slots[] = {
     {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_hash, PyHKEY_hashFunc},
     {Py_tp_str, PyHKEY_strFunc},
+    {Py_tp_richcompare, PyHKEY_richcompare},
 
     // Number protocol
     {Py_nb_add, PyHKEY_binaryFailureFunc},
