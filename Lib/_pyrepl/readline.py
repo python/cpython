@@ -256,20 +256,52 @@ def _should_auto_indent(buffer: list[str], pos: int) -> bool:
     # check if last character before "pos" is a colon, ignoring
     # whitespaces and comments.
     last_char = None
-    while pos > 0:
-        pos -= 1
-        if last_char is None:
-            if buffer[pos] not in " \t\n#":  # ignore whitespaces and comments
-                last_char = buffer[pos]
-        else:
-            # even if we found a non-whitespace character before
-            # original pos, we keep going back until newline is reached
-            # to make sure we ignore comments
-            if buffer[pos] == "\n":
-                break
-            if buffer[pos] == "#":
-                last_char = None
-    return last_char == ":"
+    # A stack to keep track of string delimiters. Push a quote when entering a
+    # string, pop it when the string ends. If the stack is empty, we're not
+    # inside a string. When see a '#', it's a comment start if we're not inside
+    # a string; otherwise, it's just a '#' character within a string.
+    str_delims: list[str] = []
+    in_comment = False
+    char_line_indent_start = None
+    char_line_indent = 0
+    lastchar_line_indent = 0
+    cursor_line_indent = 0
+
+    i = -1
+    while i < pos - 1:
+        i += 1
+        char = buffer[i]
+
+        # update last_char
+        if char == "#":
+            if str_delims:
+                last_char = char # '#' inside a string is just a character
+            else:
+                in_comment = True
+        elif char == "\n":
+            # newline ends a comment
+            in_comment = False
+            if i < pos - 1 and buffer[i + 1] in " \t":
+                char_line_indent_start = i + 1
+            else:
+                char_line_indent_start = None # clear last line's line_indent_start
+                char_line_indent = 0
+        elif char not in " \t":
+            if char_line_indent_start is not None:
+                char_line_indent = i - char_line_indent_start
+            if not in_comment and not str_delims:
+                # update last_char with non-whitespace chars outside comments and strings
+                last_char = char
+                lastchar_line_indent = char_line_indent
+
+        # update stack
+        if char in "\"'" and (i == 0 or buffer[i - 1] != "\\"):
+            if str_delims and str_delims[-1] == char:
+                str_delims.pop()
+            else:
+                str_delims.append(char)
+    cursor_line_indent = char_line_indent
+    return last_char == ":" and cursor_line_indent <= lastchar_line_indent
 
 
 class maybe_accept(commands.Command):
