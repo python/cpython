@@ -1,0 +1,2 @@
+Add :c:type:`PyObject_GetDict` function to get the :py:attr:`~object.__dict__`
+of an object. Patch by Victor Stinner.

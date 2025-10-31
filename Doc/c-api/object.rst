@@ -268,13 +268,18 @@ Object Protocol
    A generic implementation for the getter of a ``__dict__`` descriptor. It
    creates the dictionary if necessary.
 
-   This function may also be called to get the :py:attr:`~object.__dict__`
-   of the object *o*. Pass ``NULL`` for *context* when calling it.
-   Since this function may need to allocate memory for the
-   dictionary, it may be more efficient to call :c:func:`PyObject_GetAttr`
-   when accessing an attribute on the object.
+   Raise an :exc:`AttributeError` if the object has no ``__dict__``.
 
    On failure, returns ``NULL`` with an exception set.
+
+   To get the  ``__dict__`` of an arbitrary object (that is, when you are not
+   implementing a getter of a ``__dict__`` descriptor), prefer using
+   :c:func:`PyObject_GetDict` instead.
+   Alternately, use this function and pass ``NULL`` for *context*.
+
+   Since this function may need to allocate memory for the
+   dictionary, it may be more efficient to call :c:func:`PyObject_GetAttr`
+   when accessing a single attribute on the object.
 
    .. versionadded:: 3.3
 
@@ -287,6 +292,27 @@ Object Protocol
    .. versionadded:: 3.3
 
 
+.. c:function:: int PyObject_GetDict(PyObject *obj, PyObject **dict)
+
+   Get a pointer to :py:attr:`~object.__dict__` of the object *obj*.
+
+   * If there is a ``__dict__``, set *\*dict* to a :term:`strong reference`
+     to the dictionary and return ``1``.
+   * If there is no ``__dict__``, set *\*dict* to ``NULL`` without setting
+     an exception and return ``0``.
+   * On error, set an exception and return ``-1``.
+
+   This function may need to allocate memory for the dictionary, so it may be
+   more efficient to call :c:func:`PyObject_GetAttr` when accessing an
+   attribute on the object.
+
+   .. versionadded:: next
+
+   .. seealso::
+      :c:func:`PyObject_GenericGetDict` and :c:func:`PyObject_GenericSetDict`
+      functions.
+
+
 .. c:function:: PyObject** _PyObject_GetDictPtr(PyObject *obj)
 
    Return a pointer to :py:attr:`~object.__dict__` of the object *obj*.
@@ -295,6 +321,11 @@ Object Protocol
    This function may need to allocate memory for the
    dictionary, so it may be more efficient to call :c:func:`PyObject_GetAttr`
    when accessing an attribute on the object.
+
+   .. deprecated:: 3.15
+      Use :c:func:`PyObject_GetDict`, :c:func:`PyObject_GetAttr`,
+      :c:func:`PyObject_SetAttr` or :c:func:`PyObject_ClearManagedDict`
+      instead.
 
 
 .. c:function:: PyObject* PyObject_RichCompare(PyObject *o1, PyObject *o2, int opid)
