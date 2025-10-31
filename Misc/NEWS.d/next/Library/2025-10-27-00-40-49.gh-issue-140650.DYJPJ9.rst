@@ -1,0 +1,3 @@
+Fix an issue where closing :class:`io.BufferedWriter` could crash if
+the closed attribute raised an exception on access or could not be
+converted to a boolean.
