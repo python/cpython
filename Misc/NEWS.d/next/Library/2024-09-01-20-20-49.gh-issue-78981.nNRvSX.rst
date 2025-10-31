@@ -1,0 +1,2 @@
+Fixed a bug where :meth:`email.contentmanager.set_content` raised error when
+``email.policy.Policy.max_line_length`` is 0 or ``None``. Patch by silane.
