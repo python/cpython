@@ -479,6 +479,7 @@
     <ClCompile Include="..\Modules\hmacmodule.c" />
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />
+    <ClCompile Include="..\Modules\mathintegermodule.c" />
     <ClCompile Include="..\Modules\mathmodule.c" />
     <ClCompile Include="..\Modules\md5module.c" />
     <ClCompile Include="..\Modules\mmapmodule.c" />
