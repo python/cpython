@@ -5196,7 +5196,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *name = PyTuple_GetItem(localsplusnames, oparg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (PyMapping_HasKeyWithError(BUILTINS(), name) == 1) {
+                if (name && PyMapping_HasKeyWithError(BUILTINS(), name) == 1) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                         CANNOT_DELETE_BUILTIN_ERROR_MSG, name);
