@@ -1,2 +1,2 @@
-The internal class :class:`mailbox._ProxyFile` is no longer marked as
+The internal class ``mailbox._ProxyFile`` is no longer marked as
 generic.
