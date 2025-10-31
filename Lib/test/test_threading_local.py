@@ -232,12 +232,11 @@ class BaseLocalTest:
             def __del__(self):
                 pass
 
-        counter = 0
+        func_names = []
 
         def tracer(frame, event, arg):
-            self.assertNotEqual(frame.f_code.co_name, '__del__')
-            nonlocal counter
-            counter += 1
+            nonlocal func_names
+            func_names.append(frame.f_code.co_name)
             local.d = ClassWithDel()
 
         old_trace = threading.gettrace()
@@ -250,7 +249,7 @@ class BaseLocalTest:
         finally:
             threading.settrace(old_trace)
 
-        self.assertEqual(counter, 2)
+        self.assertEqual(func_names, ['run', '_delete'])
 
 
 class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
