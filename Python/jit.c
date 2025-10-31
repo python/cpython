@@ -461,6 +461,25 @@ void patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *st
     #define DATA_ALIGN 1
 #endif
 
+// Get the trampoline memory location for a given symbol ordinal.
+static unsigned char *
+get_trampoline_slot(int ordinal, jit_state *state)
+{
+    const uint32_t symbol_mask = 1 << (ordinal % 32);
+    const uint32_t trampoline_mask = state->trampolines.mask[ordinal / 32];
+    assert(symbol_mask & trampoline_mask);
+
+     // Count the number of set bits in the trampoline mask lower than ordinal
+    int index = _Py_popcount32(trampoline_mask & (symbol_mask - 1));
+    for (int i = 0; i < ordinal / 32; i++) {
+        index += _Py_popcount32(state->trampolines.mask[i]);
+    }
+
+    unsigned char *trampoline = state->trampolines.mem + index * TRAMPOLINE_SIZE;
+    assert((size_t)(index + 1) * TRAMPOLINE_SIZE <= state->trampolines.size);
+    return trampoline;
+}
+
 // Generate and patch AArch64 trampolines. The symbols to jump to are stored
 // in the jit_stencils.h in the symbols_map.
 void
@@ -477,20 +496,8 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
         return;
     }
 
-    // Masking is done modulo 32 as the mask is stored as an array of uint32_t
-    const uint32_t symbol_mask = 1 << (ordinal % 32);
-    const uint32_t trampoline_mask = state->trampolines.mask[ordinal / 32];
-    assert(symbol_mask & trampoline_mask);
-
-    // Count the number of set bits in the trampoline mask lower than ordinal,
-    // this gives the index into the array of trampolines.
-    int index = _Py_popcount32(trampoline_mask & (symbol_mask - 1));
-    for (int i = 0; i < ordinal / 32; i++) {
-        index += _Py_popcount32(state->trampolines.mask[i]);
-    }
-
-    uint32_t *p = (uint32_t*)(state->trampolines.mem + index * TRAMPOLINE_SIZE);
-    assert((size_t)(index + 1) * TRAMPOLINE_SIZE <= state->trampolines.size);
+    // Out of range - need a trampoline
+    uint32_t *p = (uint32_t *)get_trampoline_slot(ordinal, state);
 
 
     /* Generate the trampoline
@@ -521,18 +528,7 @@ patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state)
     }
 
     // Out of range - need a trampoline
-    const uint32_t symbol_mask = 1 << (ordinal % 32);
-    const uint32_t trampoline_mask = state->trampolines.mask[ordinal / 32];
-    assert(symbol_mask & trampoline_mask);
-
-    // Count the number of set bits in the trampoline mask lower than ordinal
-    int index = _Py_popcount32(trampoline_mask & (symbol_mask - 1));
-    for (int i = 0; i < ordinal / 32; i++) {
-        index += _Py_popcount32(state->trampolines.mask[i]);
-    }
-
-    unsigned char *trampoline = state->trampolines.mem + index * TRAMPOLINE_SIZE;
-    assert((size_t)(index + 1) * TRAMPOLINE_SIZE <= state->trampolines.size);
+    unsigned char *trampoline = get_trampoline_slot(ordinal, state);
 
     /* Generate the trampoline (14 bytes, padded to 16):
        0: ff 25 00 00 00 00    jmp *(%rip)

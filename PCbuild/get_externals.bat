@@ -93,9 +93,9 @@ for %%b in (%binaries%) do (
     ) else (
         echo.Fetching %%b...
         if "%%b"=="llvm-20.1.8.0" (
-            %PYTHON% -E "%PCBUILD%\get_external.py" -r -O %ORG% -e "%EXTERNALS_DIR%" %%b
+            %PYTHON% -E "%PCBUILD%\get_external.py" --release --organization %ORG% --externals-dir "%EXTERNALS_DIR%" %%b
         ) else (
-            %PYTHON% -E "%PCBUILD%\get_external.py" -b -O %ORG% -e "%EXTERNALS_DIR%" %%b
+            %PYTHON% -E "%PCBUILD%\get_external.py" --binary --organization %ORG% --externals-dir "%EXTERNALS_DIR%" %%b
         )
     )
 )

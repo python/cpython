@@ -11,30 +11,21 @@ import urllib.request
 import zipfile
 
 
-def request_with_retry(request_func, *args, max_retries=7,
-                       err_msg='Request failed.', **kwargs):
-    """Make a request using request_func with exponential backoff"""
+def retrieve_with_retries(download_location, output_path, reporthook, max_retries=7):
+    """Download a file with retries."""
     for attempt in range(max_retries + 1):
         try:
-            resp = request_func(*args, **kwargs)
+            resp = urllib.request.urlretrieve(
+                download_location,
+                output_path,
+                reporthook,
+            )
         except (urllib.error.URLError, ConnectionError) as ex:
             if attempt == max_retries:
-                raise OSError(err_msg) from ex
+                raise OSError(f'Download from {download_location} failed.') from ex
             time.sleep(2.25**attempt)
         else:
             return resp
-
-
-def retrieve_with_retries(download_location, output_path, reporthook):
-    """Download a file with retries."""
-    return request_with_retry(
-        urllib.request.urlretrieve,
-        download_location,
-        output_path,
-        reporthook,
-        err_msg=f'Download from {download_location} failed.',
-    )
-
 
 def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose=False):
     repo = 'cpython-bin-deps' if binary else 'cpython-source-deps'
