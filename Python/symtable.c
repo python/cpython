@@ -1682,6 +1682,9 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
             return 0;
         }
     }
+    if (!symtable_add_def(st, &_Py_ID(__name__), DEF_GLOBAL, loc)) {
+        return 0;
+    }
     return 1;
 }
 
