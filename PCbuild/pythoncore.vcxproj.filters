@@ -1070,6 +1070,9 @@
     <ClCompile Include="..\Modules\main.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\mathintegermodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\mathmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
