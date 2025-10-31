@@ -8,7 +8,7 @@ import sys
 import unittest
 import warnings
 from test import support
-from test.support import os_helper
+from test.support import os_helper, is_emscripten
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
 from test.support.os_helper import FakePath
