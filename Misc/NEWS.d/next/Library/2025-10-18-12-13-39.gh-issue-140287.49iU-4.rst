@@ -1,0 +1,2 @@
+The asyncio REPL now properly handles exceptions in ``PYTHONSTARTUP``
+scripts. Patch by Bartosz Sławecki in :gh:`140287`.
