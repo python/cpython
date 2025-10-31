@@ -1,0 +1,70 @@
+.. date: 2025-08-15-23-08-44
+.. gh-issue: 137836
+.. nonce: b55rhh
+.. release date: 2025-10-31
+.. section: Security
+
+Add support of the "plaintext" element, RAWTEXT elements "xmp", "iframe",
+"noembed" and "noframes", and optionally RAWTEXT element "noscript" in
+:class:`html.parser.HTMLParser`.
+
+..
+
+.. date: 2025-06-28-13-23-53
+.. gh-issue: 136063
+.. nonce: aGk0Jv
+.. section: Security
+
+:mod:`email.message`: ensure linear complexity for legacy HTTP parameters
+parsing. Patch by Bénédikt Tran.
+
+..
+
+.. date: 2025-05-30-22-33-27
+.. gh-issue: 136065
+.. nonce: bu337o
+.. section: Security
+
+Fix quadratic complexity in :func:`os.path.expandvars`.
+
+..
+
+.. date: 2022-10-29-03-40-18
+.. gh-issue: 98793
+.. nonce: WSPB4A
+.. section: Library
+
+Fix argument typechecks in :func:`!_overlapped.WSAConnect` and
+:func:`!_overlapped.Overlapped.WSASendTo` functions.
+
+..
+
+.. bpo: 44817
+.. date: 2021-08-03-05-31-00
+.. nonce: wOW_Qn
+.. section: Library
+
+Ignore WinError 53 (ERROR_BAD_NETPATH), 65 (ERROR_NETWORK_ACCESS_DENIED) and
+161 (ERROR_BAD_PATHNAME) when using ntpath.realpath().
+
+..
+
+.. date: 2024-06-13-12-17-52
+.. gh-issue: 120384
+.. nonce: w1UBGl
+.. section: Core and Builtins
+
+Fix an array out of bounds crash in ``list_ass_subscript``, which could be
+invoked via some specificly tailored input: including concurrent
+modification of a list object, where one thread assigns a slice and another
+clears it.
+
+..
+
+.. date: 2024-06-10-10-42-48
+.. gh-issue: 120298
+.. nonce: napREA
+.. section: Core and Builtins
+
+Fix use-after free in ``list_richcompare_impl`` which can be invoked via
+some specificly tailored evil input.
