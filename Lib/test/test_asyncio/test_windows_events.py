@@ -279,6 +279,17 @@ class ProactorTests(WindowsEventsTestCase):
         stop.set()
         thr.join()
 
+    def test_address_argument_type_error(self):
+        # Regression test for https://github.com/python/cpython/issues/98793
+        proactor = self.loop._proactor
+        sock = socket.socket(type=socket.SOCK_DGRAM)
+        bad_address = None
+        with self.assertRaises(TypeError):
+            proactor.connect(sock, bad_address)
+        with self.assertRaises(TypeError):
+            proactor.sendto(sock, b'abc', addr=bad_address)
+        sock.close()
+
 
 class WinPolicyTests(WindowsEventsTestCase):
 

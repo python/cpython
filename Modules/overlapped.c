@@ -1552,7 +1552,9 @@ overlapped_WSAConnect(PyObject *self, PyObject *args)
     int Length;
     int err;
 
-    if (!PyArg_ParseTuple(args, F_HANDLE "O", &ConnectSocket, &AddressObj)) {
+
+    if (!PyArg_ParseTuple(args, F_HANDLE "O!:WSAConnect",
+                          &ConnectSocket, &PyTuple_Type, &AddressObj)) {
         return NULL;
     }
 
@@ -1598,8 +1600,8 @@ Overlapped_WSASendTo(OverlappedObject *self, PyObject *args)
     int ret;
     DWORD err;
 
-    if (!PyArg_ParseTuple(args, F_HANDLE "O" F_DWORD "O",
-                          &handle, &bufobj, &flags, &AddressObj))
+    if (!PyArg_ParseTuple(args, F_HANDLE "OkO!:WSASendTo",
+        &handle, &bufobj, &flags, &PyTuple_Type, &AddressObj))
     {
         return NULL;
     }
