@@ -402,7 +402,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.stack = []
         self.curindex = 0
         self.curframe = None
-        self.currentbp = 0
         self._user_requested_quit = False
 
     def set_trace(self, frame=None, *, commands=None):
