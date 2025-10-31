@@ -131,7 +131,7 @@ class FakeConsole(Console):
     def getheightwidth(self) -> tuple[int, int]:
         return self.height, self.width
 
-    def refresh(self, screen: list[str], xy: tuple[int, int]) -> None:
+    def refresh(self, screen: list[str], xy: tuple[int, int], clear_to_end: bool = False) -> None:
         pass
 
     def prepare(self) -> None:
@@ -141,6 +141,9 @@ class FakeConsole(Console):
         pass
 
     def move_cursor(self, x: int, y: int) -> None:
+        pass
+
+    def reset_cursor(self) -> None:
         pass
 
     def set_cursor_vis(self, visible: bool) -> None:
