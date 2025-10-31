@@ -1,0 +1,1 @@
+Support building the documentation with docutils >= 0.22.

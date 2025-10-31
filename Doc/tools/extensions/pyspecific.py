@@ -24,12 +24,17 @@ from sphinx.util.docutils import SphinxDirective
 # Used in conf.py and updated here by python/release-tools/run_release.py
 SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
-# monkey-patch reST parser to disable alphabetic and roman enumerated lists
+# monkey-patch reST parser to detect any alphabetic and roman enumerated lists
+# that need escaping. Sadly we don't get a location to point to.
 from docutils.parsers.rst.states import Body
+def disabled_converter(x):
+    raise Exception("Detected an alphabetic or Roman enumerated list. "
+                    "It needs to be escaped.")
+
 Body.enum.converters['loweralpha'] = \
     Body.enum.converters['upperalpha'] = \
     Body.enum.converters['lowerroman'] = \
-    Body.enum.converters['upperroman'] = lambda x: None
+    Body.enum.converters['upperroman'] = disabled_converter
 
 
 class PyAwaitableMixin(object):
