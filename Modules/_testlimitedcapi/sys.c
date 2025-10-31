@@ -5,6 +5,7 @@
 #endif
 #include "parts.h"
 #include "util.h"
+#include "audit.h"
 
 
 static PyObject *
@@ -106,6 +107,46 @@ sys_getxoptions(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(ignored))
     return Py_XNewRef(result);
 }
 
+static PyObject *
+sys_audit(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *event;
+    Py_ssize_t event_len;
+    const char *argFormat;
+    Py_ssize_t format_len;
+    PyObject *arg1 = NULL, *arg2 = NULL, *arg3 = NULL;
+
+    if (!PyArg_ParseTuple(args, "z#z#|OOO", &event, &event_len, &argFormat, &format_len, &arg1, &arg2, &arg3)) {
+        return NULL;
+    }
+
+    int result;
+    if (arg1 == NULL) {
+        result = PySys_Audit(event, argFormat);
+    } else if (arg2 == NULL) {
+        result = PySys_Audit(event, argFormat, arg1);
+    } else if (arg3 == NULL) {
+        result = PySys_Audit(event, argFormat, arg1, arg2);
+    } else {
+        result = PySys_Audit(event, argFormat, arg1, arg2, arg3);
+    }
+
+    RETURN_INT(result);
+}
+
+static PyObject *
+sys_audittuple(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *event;
+    Py_ssize_t event_len;
+    PyObject *tuple_args = NULL;
+
+    if (!PyArg_ParseTuple(args, "z#|O", &event, &event_len, &tuple_args)) {
+        return NULL;
+    }
+
+    RETURN_INT(PySys_AuditTuple(event, tuple_args));
+}
 
 static PyMethodDef test_methods[] = {
     {"sys_getattr", sys_getattr, METH_O},
@@ -115,6 +156,8 @@ static PyMethodDef test_methods[] = {
     {"sys_getobject", sys_getobject, METH_O},
     {"sys_setobject", sys_setobject, METH_VARARGS},
     {"sys_getxoptions", sys_getxoptions, METH_NOARGS},
+    {"sys_audit", sys_audit, METH_VARARGS},
+    {"sys_audittuple", sys_audittuple, METH_VARARGS},
     {NULL},
 };
 
