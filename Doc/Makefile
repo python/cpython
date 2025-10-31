@@ -241,7 +241,11 @@ dist-pdf:
 	# as otherwise the full latexmk process is run twice.
 	# ($$ is needed to escape the $; https://www.gnu.org/software/make/manual/make.html#Basics-of-Variable-References)
 	-sed -i 's/: all-$$(FMT)/:/' build/latex/Makefile
-	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
+	if [ -n "$(filter output-sync,$(value .FEATURES))" ]; then \
+		(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2) \
+	else \
+		(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`getconf _NPROCESSORS_ONLN`+1)) LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2) \
+	fi
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 	@echo "Build finished and archived!"
