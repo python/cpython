@@ -2180,6 +2180,8 @@ class ReTests(unittest.TestCase):
         is_emscripten or is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
     )
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -2220,6 +2222,8 @@ class ReTests(unittest.TestCase):
         is_emscripten or is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
     )
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
