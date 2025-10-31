@@ -337,8 +337,7 @@ class _Stream:
        _Stream is intended to be used only internally.
     """
 
-    def __init__(self, name, mode, comptype, fileobj, bufsize,
-                 compresslevel, preset):
+    def __init__(self, name, mode, comptype, fileobj, bufsize, **kwargs):
         """Construct a _Stream object.
         """
         self._extfileobj = True
@@ -373,7 +372,7 @@ class _Stream:
                     self.exception = zlib.error
                     self._init_read_gz()
                 else:
-                    self._init_write_gz(compresslevel)
+                    self._init_write_gz(kwargs.get("compresslevel"))
 
             elif comptype == "bz2":
                 try:
@@ -385,7 +384,7 @@ class _Stream:
                     self.cmp = bz2.BZ2Decompressor()
                     self.exception = OSError
                 else:
-                    self.cmp = bz2.BZ2Compressor(compresslevel)
+                    self.cmp = bz2.BZ2Compressor(kwargs.get("compresslevel"))
 
             elif comptype == "xz":
                 try:
@@ -397,7 +396,7 @@ class _Stream:
                     self.cmp = lzma.LZMADecompressor()
                     self.exception = lzma.LZMAError
                 else:
-                    self.cmp = lzma.LZMACompressor(preset=preset)
+                    self.cmp = lzma.LZMACompressor(preset=kwargs.get("preset"))
             elif comptype == "zst":
                 try:
                     from compression import zstd
@@ -405,10 +404,13 @@ class _Stream:
                     raise CompressionError("compression.zstd module is not available") from None
                 if mode == "r":
                     self.dbuf = b""
-                    self.cmp = zstd.ZstdDecompressor()
+                    self.cmp = zstd.ZstdDecompressor(kwargs.get("zstd_dict"),
+                            kwargs.get("options"))
                     self.exception = zstd.ZstdError
                 else:
-                    self.cmp = zstd.ZstdCompressor()
+                    self.cmp = zstd.ZstdCompressor(kwargs.get("level"),
+                                                   kwargs.get("options"),
+                                                   kwargs.get("zstd_dict"))
             elif comptype != "tar":
                 raise CompressionError("unknown compression type %r" % comptype)
 
@@ -1929,10 +1931,19 @@ class TarFile(object):
             if "preset" in kwargs and comptype not in ("xz",):
                 raise ValueError("preset is only valid for w|xz mode")
 
-            compresslevel = kwargs.pop("compresslevel", 6)
-            preset = kwargs.pop("preset", None)
+            if comptype not in ("zst",):
+                for arg in ("level", "options", "zstd_dict"):
+                    if arg in kwargs:
+                        raise ValueError(
+                            f"{arg} is only valid for zstd compression"
+                        )
+
             stream = _Stream(name, filemode, comptype, fileobj, bufsize,
-                             compresslevel, preset)
+                             compresslevel=kwargs.pop("compresslevel", 6),
+                             preset=kwargs.pop("preset", None),
+                             level=kwargs.pop("level", None),
+                             options=kwargs.pop("options", None),
+                             zstd_dict=kwargs.pop("zstd_dict", None))
             try:
                 t = cls(name, filemode, stream, **kwargs)
             except:
