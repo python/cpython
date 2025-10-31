@@ -8,9 +8,8 @@ import sys
 import unittest
 import warnings
 from test import support
-from test.support import os_helper
 from test.support.script_helper import assert_python_ok
-from test.support import FakePath
+from test.support import FakePath, EnvironmentVarGuard
 
 
 def create_file(filename, data=b'foo'):
@@ -375,7 +374,7 @@ class CommonTest(GenericTest):
 
     def test_expandvars(self):
         expandvars = self.pathmodule.expandvars
-        with support.EnvironmentVarGuard() as env:
+        with EnvironmentVarGuard() as env:
             env.clear()
             env["foo"] = "bar"
             env["{foo"] = "baz1"
@@ -409,7 +408,7 @@ class CommonTest(GenericTest):
         expandvars = self.pathmodule.expandvars
         def check(value, expected):
             self.assertEqual(expandvars(value), expected)
-        with support.EnvironmentVarGuard() as env:
+        with EnvironmentVarGuard() as env:
             env.clear()
             nonascii = support.FS_NONASCII
             env['spam'] = nonascii
@@ -433,7 +432,7 @@ class CommonTest(GenericTest):
     @support.requires_resource('cpu')
     def test_expandvars_large(self):
         expandvars = self.pathmodule.expandvars
-        with os_helper.EnvironmentVarGuard() as env:
+        with EnvironmentVarGuard() as env:
             env.clear()
             env["A"] = "B"
             n = 100_000
