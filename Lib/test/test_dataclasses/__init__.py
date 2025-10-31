@@ -3396,6 +3396,24 @@ class TestSlots(unittest.TestCase):
         self.assertNotHasAttr(A, "__slots__")
         self.assertHasAttr(B, "__slots__")
 
+    def test_slots_qualname(self):
+        # Test that __qualname__ is set correctly when using slots
+        @dataclass(slots=True)
+        class C:
+            x: int
+
+            def __init_subclass__(cls):
+                expected = f'TestSlots.test_slots_qualname.<locals>.{cls.__name__}'
+                self.assertEqual(cls.__qualname__, expected)
+
+        self.assertEqual(C.__qualname__, 'TestSlots.test_slots_qualname.<locals>.C')
+
+        @dataclass(slots=True)
+        class D(C):
+            pass
+
+        self.assertEqual(D.__qualname__, 'TestSlots.test_slots_qualname.<locals>.D')
+
     # Can't be local to test_frozen_pickle.
     @dataclass(frozen=True, slots=True)
     class FrozenSlotsClass:
