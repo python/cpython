@@ -376,7 +376,7 @@ pairwise_next(PyObject *op)
     }
 
     result = po->result;
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         PyObject *last_old = PyTuple_GET_ITEM(result, 0);
         PyObject *last_new = PyTuple_GET_ITEM(result, 1);
@@ -802,7 +802,7 @@ teedataobject_traverse(PyObject *op, visitproc visit, void * arg)
 static void
 teedataobject_safe_decref(PyObject *obj)
 {
-    while (obj && Py_REFCNT(obj) == 1) {
+    while (obj && _PyObject_IsUniquelyReferenced(obj)) {
         teedataobject *tmp = teedataobject_CAST(obj);
         PyObject *nextlink = tmp->nextlink;
         tmp->nextlink = NULL;
@@ -1069,22 +1069,18 @@ static PyType_Spec tee_spec = {
 /*[clinic input]
 itertools.tee
     iterable: object
-    n: Py_ssize_t = 2
+    n: Py_ssize_t(allow_negative=False) = 2
     /
 Returns a tuple of n independent iterators.
 [clinic start generated code]*/
 
 static PyObject *
 itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
-/*[clinic end generated code: output=1c64519cd859c2f0 input=c99a1472c425d66d]*/
+/*[clinic end generated code: output=1c64519cd859c2f0 input=0f72d78e655f45cb]*/
 {
     Py_ssize_t i;
     PyObject *it, *to, *result;
 
-    if (n < 0) {
-        PyErr_SetString(PyExc_ValueError, "n must be >= 0");
-        return NULL;
-    }
     result = PyTuple_New(n);
     if (result == NULL)
         return NULL;
@@ -2133,9 +2129,9 @@ product_next_lock_held(PyObject *op)
         Py_ssize_t *indices = lz->indices;
 
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), npools);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), npools);
             if (result == NULL)
                 goto empty;
             lz->result = result;
@@ -2255,7 +2251,7 @@ typedef struct {
 @classmethod
 itertools.combinations.__new__
     iterable: object
-    r: Py_ssize_t
+    r: Py_ssize_t(allow_negative=False)
 Return successive r-length combinations of elements in the iterable.
 
 combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)
@@ -2264,7 +2260,7 @@ combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)
 static PyObject *
 itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
                             Py_ssize_t r)
-/*[clinic end generated code: output=87a689b39c40039c input=06bede09e3da20f8]*/
+/*[clinic end generated code: output=87a689b39c40039c input=a32f07a15cfa4676]*/
 {
     combinationsobject *co;
     Py_ssize_t n;
@@ -2276,10 +2272,6 @@ itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
     if (pool == NULL)
         goto error;
     n = PyTuple_GET_SIZE(pool);
-    if (r < 0) {
-        PyErr_SetString(PyExc_ValueError, "r must be non-negative");
-        goto error;
-    }
 
     indices = PyMem_New(Py_ssize_t, r);
     if (indices == NULL) {
@@ -2372,9 +2364,9 @@ combinations_next_lock_held(PyObject *op)
         }
     } else {
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             co->result = result;
@@ -2510,7 +2502,7 @@ typedef struct {
 @classmethod
 itertools.combinations_with_replacement.__new__
     iterable: object
-    r: Py_ssize_t
+    r: Py_ssize_t(allow_negative=False)
 Return successive r-length combinations of elements in the iterable allowing individual elements to have successive repeats.
 
 combinations_with_replacement('ABC', 2) --> ('A','A'), ('A','B'), ('A','C'), ('B','B'), ('B','C'), ('C','C')
@@ -2520,7 +2512,7 @@ static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
                                              PyObject *iterable,
                                              Py_ssize_t r)
-/*[clinic end generated code: output=48b26856d4e659ca input=26ebe0e42149e9fb]*/
+/*[clinic end generated code: output=48b26856d4e659ca input=828696750169e84f]*/
 {
     cwrobject *co;
     Py_ssize_t n;
@@ -2532,10 +2524,6 @@ itertools_combinations_with_replacement_impl(PyTypeObject *type,
     if (pool == NULL)
         goto error;
     n = PyTuple_GET_SIZE(pool);
-    if (r < 0) {
-        PyErr_SetString(PyExc_ValueError, "r must be non-negative");
-        goto error;
-    }
 
     indices = PyMem_New(Py_ssize_t, r);
     if (indices == NULL) {
@@ -2630,9 +2618,9 @@ cwr_next(PyObject *op)
         }
     } else {
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             co->result = result;
@@ -2891,9 +2879,9 @@ permutations_next(PyObject *op)
             goto empty;
 
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             po->result = result;
@@ -3859,7 +3847,7 @@ zip_longest_next(PyObject *op)
         return NULL;
     if (lz->numactive == 0)
         return NULL;
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);

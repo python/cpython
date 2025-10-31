@@ -22,6 +22,7 @@ from test.support import (
     captured_stderr,
     force_not_colorized,
     force_not_colorized_test_class,
+    swap_attr,
 )
 from test.support import import_helper
 from test.support import os_helper
@@ -2286,7 +2287,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
     """Test error handling and suggestion when a user makes a typo"""
 
     def test_wrong_argument_error_with_suggestions(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
@@ -2306,7 +2307,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_wrong_argument_subparsers_with_suggestions(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers(required=True)
         subparsers.add_parser('foo')
         subparsers.add_parser('bar')
@@ -2330,18 +2331,19 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             excinfo.exception.stderr,
         )
 
-    def test_wrong_argument_no_suggestion_implicit(self):
-        parser = ErrorRaisingArgumentParser()
+    def test_wrong_argument_with_suggestion_explicit(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "error: argument foo: invalid choice: 'bazz' (choose from bar, baz)",
+            "error: argument foo: invalid choice: 'bazz', maybe you meant"
+             " 'baz'? (choose from bar, baz)",
             excinfo.exception.stderr,
         )
 
     def test_suggestions_choices_empty(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
@@ -2351,7 +2353,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_suggestions_choices_int(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[1, 2])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
@@ -2361,7 +2363,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_suggestions_choices_mixed_types(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[1, '2'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
@@ -5830,6 +5832,7 @@ class TestConflictHandling(TestCase):
 # Help and Version option tests
 # =============================
 
+@force_not_colorized_test_class
 class TestOptionalsHelpVersionActions(TestCase):
     """Test the help and version actions"""
 
@@ -7128,7 +7131,8 @@ class TestColorized(TestCase):
     def setUp(self):
         super().setUp()
         # Ensure color even if ran with NO_COLOR=1
-        _colorize.can_colorize = lambda *args, **kwargs: True
+        self.enterContext(swap_attr(_colorize, 'can_colorize',
+                                     lambda *args, **kwargs: True))
         self.theme = _colorize.get_theme(force_color=True).argparse
 
     def test_argparse_color(self):
@@ -7311,11 +7315,11 @@ class TestColorized(TestCase):
             {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
 
             {heading}positional arguments:{reset}
-                 {pos_b}spam{reset}               spam help
+                 {pos_b}spam{reset}           spam help
 
             {heading}options:{reset}
-                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
-                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+                 {short_b}-h{reset}, {long_b}--help{reset}     show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
 
     def test_custom_formatter_class(self):
@@ -7348,12 +7352,33 @@ class TestColorized(TestCase):
             {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
 
             {heading}positional arguments:{reset}
-                 {pos_b}spam{reset}               spam help
+                 {pos_b}spam{reset}           spam help
 
             {heading}options:{reset}
-                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
-                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+                 {short_b}-h{reset}, {long_b}--help{reset}     show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
+
+    def test_subparser_prog_is_stored_without_color(self):
+        parser = argparse.ArgumentParser(prog='complex', color=True)
+        sub = parser.add_subparsers(dest='command')
+        demo_parser = sub.add_parser('demo')
+
+        self.assertNotIn('\x1b[', demo_parser.prog)
+
+        demo_parser.color = False
+        help_text = demo_parser.format_help()
+        self.assertNotIn('\x1b[', help_text)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(argparse, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 def tearDownModule():

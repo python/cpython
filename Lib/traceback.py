@@ -206,9 +206,9 @@ def _safe_string(value, what, func=str):
 
 # --
 
-def print_exc(limit=None, file=None, chain=True):
+def print_exc(limit=None, file=None, chain=True, **kwargs):
     """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
-    print_exception(sys.exception(), limit=limit, file=file, chain=chain)
+    print_exception(sys.exception(), limit=limit, file=file, chain=chain, **kwargs)
 
 def format_exc(limit=None, chain=True):
     """Like print_exc() but return a string."""
@@ -1108,6 +1108,46 @@ class TracebackException:
             self.exc_type_qualname = None
             self.exc_type_module = None
 
+        if exc_type and issubclass(exc_type, SyntaxError):
+            # Handle SyntaxError's specially
+            self.filename = exc_value.filename
+            lno = exc_value.lineno
+            self.lineno = str(lno) if lno is not None else None
+            end_lno = exc_value.end_lineno
+            self.end_lineno = str(end_lno) if end_lno is not None else None
+            self.text = exc_value.text
+            self.offset = exc_value.offset
+            self.end_offset = exc_value.end_offset
+            self.msg = exc_value.msg
+            self._is_syntax_error = True
+            self._exc_metadata = getattr(exc_value, "_metadata", None)
+        elif exc_type and issubclass(exc_type, ImportError) and \
+                getattr(exc_value, "name_from", None) is not None:
+            wrong_name = getattr(exc_value, "name_from", None)
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            if suggestion:
+                self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError):
+            module_name = getattr(exc_value, "name", None)
+            if module_name in sys.stdlib_module_names:
+                self._str = f"Standard library module '{module_name}' was not found"
+            elif sys.flags.no_site:
+                self._str += (". Site initialization is disabled, did you forget to "
+                    + "add the site-packages directory to sys.path "
+                    + "or to enable your virtual environment?")
+        elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
+                getattr(exc_value, "name", None) is not None:
+            wrong_name = getattr(exc_value, "name", None)
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            if suggestion:
+                self._str += f". Did you mean: '{suggestion}'?"
+            if issubclass(exc_type, NameError):
+                wrong_name = getattr(exc_value, "name", None)
+                if wrong_name is not None and wrong_name in sys.stdlib_module_names:
+                    if suggestion:
+                        self._str += f" Or did you forget to import '{wrong_name}'?"
+                    else:
+                        self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \

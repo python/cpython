@@ -1116,7 +1116,15 @@ class _NamespacePath:
 
     def _get_parent_path(self):
         parent_module_name, path_attr_name = self._find_parent_path_names()
-        return getattr(sys.modules[parent_module_name], path_attr_name)
+        try:
+            module = sys.modules[parent_module_name]
+        except KeyError as e:
+            raise ModuleNotFoundError(
+                f"{parent_module_name!r} must be imported before finding {self._name!r}.",
+                name=parent_module_name,
+            ) from e
+        else:
+            return getattr(module, path_attr_name)
 
     def _recalculate(self):
         # If the parent's path has changed, recalculate _path
@@ -1498,7 +1506,13 @@ class AppleFrameworkLoader(ExtensionFileLoader):
         )
 
         # Ensure that the __file__ points at the .fwork location
-        module.__file__ = path
+        try:
+            module.__file__ = path
+        except AttributeError:
+            # Not important enough to report.
+            # (The error is also ignored in _bootstrap._init_module_attrs or
+            # import_run_extension in import.c)
+            pass
 
         return module
 

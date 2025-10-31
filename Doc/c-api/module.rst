@@ -102,6 +102,10 @@ Module Objects
    Return a pointer to the :c:type:`PyModuleDef` struct from which the module was
    created, or ``NULL`` if the module wasn't created from a definition.
 
+   On error, return ``NULL`` with an exception set.
+   Use :c:func:`PyErr_Occurred` to tell this case apart from a mising
+   :c:type:`!PyModuleDef`.
+
 
 .. c:function:: PyObject* PyModule_GetFilenameObject(PyObject *module)
 
@@ -387,6 +391,28 @@ The available slot types are:
    ``Py_MOD_GIL_USED``.
 
    .. versionadded:: 3.13
+
+.. c:macro:: Py_mod_abi
+
+   A pointer to a :c:struct:`PyABIInfo` structure that describes the ABI that
+   the extension is using.
+
+   When the module is loaded, the :c:struct:`!PyABIInfo` in this slot is checked
+   using :c:func:`PyABIInfo_Check`.
+
+   A suitable :c:struct:`!PyABIInfo` variable can be defined using the
+   :c:macro:`PyABIInfo_VAR` macro, as in:
+
+   .. code-block:: c
+
+      PyABIInfo_VAR(abi_info);
+
+      static PyModuleDef_Slot mymodule_slots[] = {
+         {Py_mod_abi, &abi_info},
+         ...
+      };
+
+   .. versionadded:: 3.15
 
 
 .. _moduledef-dynamic:
