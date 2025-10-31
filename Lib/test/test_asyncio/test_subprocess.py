@@ -901,6 +901,23 @@ class SubprocessMixin:
         asyncio.run(main())
         gc_collect()
 
+    @warnings_helper.ignore_warnings(category=ResourceWarning)
+    def test_subprocess_read_write_pipe_cancelled(self):
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.connect_read_pipe = mock.AsyncMock(side_effect=asyncio.CancelledError)
+            loop.connect_write_pipe = mock.AsyncMock(side_effect=asyncio.CancelledError)
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.create_subprocess_exec(
+                    *PROGRAM_BLOCKED,
+                    stdin=asyncio.subprocess.PIPE,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+
+        asyncio.run(main())
+        gc_collect()
+
 if sys.platform != 'win32':
     # Unix
     class SubprocessWatcherMixin(SubprocessMixin):

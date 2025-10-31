@@ -264,7 +264,6 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             # got cancelled. In this broken state we consider all pipes disconnected and
             # to avoid hanging forever in self._wait as otherwise _exit_waiters
             # would never be woken up, we wake them up here.
-            self._finished = True
             for waiter in self._exit_waiters:
                 if not waiter.cancelled():
                     waiter.set_result(self._returncode)
