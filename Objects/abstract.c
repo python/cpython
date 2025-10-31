@@ -205,8 +205,14 @@ PyObject_GetItem(PyObject *o, PyObject *key)
     return type_error("'%.200s' object is not subscriptable", o);
 }
 
+// MSVC fails during a tail call release build with loads of
+// error C4737: Unable to perform required tail call.
+// without using Py_NO_INLINE here, but PGO works fine.
+#if defined(_MSC_VER) && !defined(__clang__) && _Py_TAIL_CALL_INTERP && !defined(_Py_USING_PGO)
+Py_NO_INLINE
+#endif
 int
-PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
+PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **restrict result)
 {
     if (PyDict_CheckExact(obj)) {
         return PyDict_GetItemRef(obj, key, result);
