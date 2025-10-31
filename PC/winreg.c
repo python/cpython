@@ -101,8 +101,7 @@ PyDoc_STRVAR(PyHKEY_doc,
 "\n"
 "Operations:\n"
 "__bool__ - Handles with an open object return true, otherwise false.\n"
-"__int__ - Converting a handle to an integer returns the Win32 handle.\n"
-"rich comparison - Handle objects are compared using the handle value.");
+"__int__ - Converting a handle to an integer returns the Win32 handle.");
 
 
 
