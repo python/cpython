@@ -11,14 +11,13 @@
 This module provides access to the mathematical functions defined for integer arguments.
 These functions accept integers and objects that implement the
 :meth:`~object.__index__` method which is used to convert the object to an integer
-number.  They cannot be used with floating-point numbers or complex
-numbers.
+number.
 
 The following functions are provided by this module.  All return values are
 computed exactly and are integers.
 
 
-.. function:: comb(n, k)
+.. function:: comb(n, k, /)
 
    Return the number of ways to choose *k* items from *n* items without repetition
    and without order.
@@ -33,7 +32,7 @@ computed exactly and are integers.
    Raises :exc:`ValueError` if either of the arguments are negative.
 
 
-.. function:: factorial(n)
+.. function:: factorial(n, /)
 
    Return factorial of the nonnegative integer *n*.
 
@@ -47,7 +46,7 @@ computed exactly and are integers.
    returns ``0``.
 
 
-.. function:: isqrt(n)
+.. function:: isqrt(n, /)
 
    Return the integer square root of the nonnegative integer *n*. This is the
    floor of the exact square root of *n*, or equivalently the greatest integer
@@ -68,7 +67,7 @@ computed exactly and are integers.
    returns ``1``.
 
 
-.. function:: perm(n, k=None)
+.. function:: perm(n, k=None, /)
 
    Return the number of ways to choose *k* items from *n* items
    without repetition and with order.
