@@ -205,6 +205,18 @@ objects.
 A :class:`timedelta` object represents a duration, the difference between two
 :class:`.datetime` or :class:`date` instances.
 
+.. warning::
+
+   When performing arithmetic with aware datetime objects that share the same
+   ``tzinfo`` instance, time zone transitions (such as daylight saving time changes)
+   are not taken into account. This means the arithmetic may not reflect elapsed
+   time as measured in UTC. For example, adding one hour across a daylight saving
+   time boundary may result in a time that is not exactly one hour later in UTC.
+
+   For arithmetic that accounts for time zone transitions,
+   convert the datetime to UTC with :meth:`datetime.astimezone`,
+   perform the arithmetic, and convert back to the desired time zone.
+
 .. class:: timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0)
 
    All arguments are optional and default to 0. Arguments may be integers
@@ -1298,6 +1310,29 @@ Supported operations:
    the :attr:`~.datetime.tzinfo` attributes are ignored, and the result is a :class:`timedelta`
    object ``t`` such that ``datetime2 + t == datetime1``. No time zone adjustments
    are done in this case.
+
+   .. note::
+
+      When two aware datetime objects share the same ``tzinfo`` instance,
+      arithmetic is performed in local (naive) time. As a result, differences
+      in UTC offset, such as daylight saving time transitions, are not applied.
+
+      For arithmetic that reflects elapsed time accurately across time zone transitions,
+      convert both values to UTC with :meth:`.astimezone`,
+      perform arithmetic, and convert back to the desired time zone if needed.
+
+      Example::
+
+         >>> from datetime import datetime, timedelta
+         >>> from zoneinfo import ZoneInfo
+         >>> t = datetime(2024, 10, 27, 1, 0, tzinfo=ZoneInfo("Europe/London"), fold=0)
+         >>> t.isoformat()
+         '2024-10-27T01:00:00+01:00'
+         >>> t + timedelta(hours=1)
+         datetime.datetime(2024, 10, 27, 2, 0, tzinfo=zoneinfo.ZoneInfo(key='Europe/London'))
+
+         # This result reflects arithmetic in local time; DST transitions are not applied.
+         # The result is not the repeated 01:00 (fold=1), but instead the next distinct clock hour.
 
    If both are aware and have different :attr:`~.datetime.tzinfo` attributes, ``a-b`` acts
    as if ``a`` and ``b`` were first converted to naive UTC datetimes. The
