@@ -240,11 +240,15 @@ class BaseLocalTest:
             counter += 1
             local.d = ClassWithDel()
 
-        threading.settrace(tracer)
-        t = threading.Thread()
-        t.start()
-        t.join()
-        del t
+        old_trace = threading.gettrace()
+        try:
+            threading.settrace(tracer)
+            t = threading.Thread()
+            t.start()
+            t.join()
+            del t
+        finally:
+            threading.settrace(old_trace)
 
         self.assertEqual(counter, 2)
 
