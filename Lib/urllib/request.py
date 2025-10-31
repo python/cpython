@@ -1535,6 +1535,7 @@ class FTPHandler(BaseHandler):
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]
+        fw = None
         try:
             fw = self.connect_ftp(user, passwd, host, port, dirs, req.timeout)
             type = file and 'I' or 'D'
@@ -1552,8 +1553,12 @@ class FTPHandler(BaseHandler):
                 headers += "Content-length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
-        except ftplib.all_errors as exp:
-            raise URLError(f"ftp error: {exp}") from exp
+        except Exception as exp:
+            if fw is not None and not fw.keepalive:
+                fw.close()
+            if isinstance(exp, ftplib.all_errors):
+                raise URLError(f"ftp error: {exp}") from exp
+            raise
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
