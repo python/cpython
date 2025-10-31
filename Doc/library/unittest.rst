@@ -535,7 +535,7 @@ tests.  In addition, it supports marking a test as an "expected failure," a test
 that is broken and will fail, but shouldn't be counted as a failure on a
 :class:`TestResult`.
 
-Skipping a test is simply a matter of using the :func:`skip` :term:`decorator`
+Skipping a test is simply a matter of using the :deco:`skip` :term:`decorator`
 or one of its conditional variants, calling :meth:`TestCase.skipTest` within a
 :meth:`~TestCase.setUp` or test method, or raising :exc:`SkipTest` directly.
 
@@ -586,7 +586,7 @@ Classes can be skipped just like methods::
 :meth:`TestCase.setUp` can also skip the test.  This is useful when a resource
 that needs to be set up is not available.
 
-Expected failures use the :func:`expectedFailure` decorator. ::
+Expected failures use the :deco:`expectedFailure` decorator. ::
 
    class ExpectedFailureTestCase(unittest.TestCase):
        @unittest.expectedFailure
@@ -768,7 +768,7 @@ Test cases
 
       A class method called before tests in an individual class are run.
       ``setUpClass`` is called with the class as the only argument
-      and must be decorated as a :func:`classmethod`::
+      and must be decorated as a :deco:`classmethod`::
 
         @classmethod
         def setUpClass(cls):
@@ -783,7 +783,7 @@ Test cases
 
       A class method called after tests in an individual class have run.
       ``tearDownClass`` is called with the class as the only argument
-      and must be decorated as a :meth:`classmethod`::
+      and must be decorated as a :deco:`classmethod`::
 
         @classmethod
         def tearDownClass(cls):
@@ -2138,7 +2138,7 @@ Loading and running tests
 
       .. versionchanged:: 3.4
          Returns ``False`` if there were any :attr:`unexpectedSuccesses`
-         from tests marked with the :func:`expectedFailure` decorator.
+         from tests marked with the :deco:`expectedFailure` decorator.
 
    .. method:: stop()
 
@@ -2221,7 +2221,7 @@ Loading and running tests
    .. method:: addExpectedFailure(test, err)
 
       Called when the test case *test* fails or errors, but was marked with
-      the :func:`expectedFailure` decorator.
+      the :deco:`expectedFailure` decorator.
 
       The default implementation appends a tuple ``(test, formatted_err)`` to
       the instance's :attr:`expectedFailures` attribute, where *formatted_err*
@@ -2231,7 +2231,7 @@ Loading and running tests
    .. method:: addUnexpectedSuccess(test)
 
       Called when the test case *test* was marked with the
-      :func:`expectedFailure` decorator, but succeeded.
+      :deco:`expectedFailure` decorator, but succeeded.
 
       The default implementation appends the test to the instance's
       :attr:`unexpectedSuccesses` attribute.
