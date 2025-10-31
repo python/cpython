@@ -376,7 +376,7 @@ gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
 _gdbm.gdbm.setdefault
 
     key: object
-    default: object = None
+    default: object
     /
 
 Get value for key, or set it to default and return default if not present.
@@ -385,7 +385,7 @@ Get value for key, or set it to default and return default if not present.
 static PyObject *
 _gdbm_gdbm_setdefault_impl(gdbmobject *self, PyObject *key,
                            PyObject *default_value)
-/*[clinic end generated code: output=f3246e880509f142 input=f4008b358165bbb8]*/
+/*[clinic end generated code: output=f3246e880509f142 input=6e9519905bc18910]*/
 {
     PyObject *res;
 
