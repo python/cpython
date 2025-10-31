@@ -2209,6 +2209,42 @@ Content-Type: text/plain
         eq(msg.get_boundary(), '    XXXX')
         eq(len(msg.get_payload()), 2)
 
+    def test_boundary_stripped_only_once(self):
+        eq = self.assertEqual
+        msg = email.message_from_string(textwrap.dedent('''\
+            MIME-Version: 1.0
+            Content-Type: multipart/mixed; boundary="<>"
+
+            --<>
+            Content-Type: text/plain
+
+
+            --<>
+            Content-Type: text/plain
+
+            --<>--
+            '''))
+        self.assertTrue(msg.is_multipart())
+        eq(msg.get_boundary(), '<>')
+        eq(len(msg.get_payload()), 2)
+
+        msg = email.message_from_string(textwrap.dedent('''\
+            MIME-Version: 1.0
+            Content-Type: multipart/mixed; boundary=<"">
+
+            --""
+            Content-Type: text/plain
+
+
+            --""
+            Content-Type: text/plain
+
+            --""--
+            '''))
+        self.assertTrue(msg.is_multipart())
+        eq(msg.get_boundary(), '""')
+        eq(len(msg.get_payload()), 2)
+
     def test_boundary_without_trailing_newline(self):
         m = Parser().parsestr("""\
 Content-Type: multipart/mixed; boundary="===============0012394164=="
