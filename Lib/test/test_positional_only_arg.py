@@ -166,9 +166,9 @@ class PositionalOnlyTestCase(unittest.TestCase):
         def f(a, b, /, c, *, d, e):
             pass
         f(1, 2, 3, d=1, e=2)  # does not raise
-        with self.assertRaisesRegex(TypeError, r"missing 1 required keyword-only argument: 'd'"):
+        with self.assertRaisesRegex(TypeError, r"missing 1 required keyword argument: 'd'"):
             f(1, 2, 3, e=2)
-        with self.assertRaisesRegex(TypeError, r"missing 2 required keyword-only arguments: 'd' and 'e'"):
+        with self.assertRaisesRegex(TypeError, r"missing 2 required keyword arguments: 'd' and 'e'"):
             f(1, 2, 3)
         with self.assertRaisesRegex(TypeError, r"f\(\) missing 1 required positional argument: 'c'"):
             f(1, 2)
@@ -177,7 +177,7 @@ class PositionalOnlyTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, r" missing 3 required positional arguments: 'a', 'b', and 'c'"):
             f()
         with self.assertRaisesRegex(TypeError, r"f\(\) takes 3 positional arguments but 6 positional arguments "
-                                               r"\(and 2 keyword-only arguments\) were given"):
+                                               r"\(and 2 keyword arguments\) were given"):
             f(1, 2, 3, 4, 5, 6, d=7, e=8)
         with self.assertRaisesRegex(TypeError, r"f\(\) got an unexpected keyword argument 'f'"):
             f(1, 2, 3, d=1, e=4, f=56)
