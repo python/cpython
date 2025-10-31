@@ -16,17 +16,17 @@ The following modules have a command-line interface.
 * :ref:`dis <dis-cli>`
 * :ref:`doctest <doctest-cli>`
 * :mod:`!encodings.rot_13`
-* :mod:`ensurepip`
+* :ref:`ensurepip <ensurepip-cli>`
 * :mod:`filecmp`
 * :mod:`fileinput`
 * :mod:`ftplib`
 * :ref:`gzip <gzip-cli>`
 * :ref:`http.server <http-server-cli>`
-* :mod:`!idlelib`
+* :ref:`idlelib <idlelib-cli>`
 * :ref:`inspect <inspect-module-cli>`
 * :ref:`json <json-commandline>`
 * :ref:`mimetypes <mimetypes-cli>`
-* :mod:`pdb`
+* :ref:`pdb <pdb-cli>`
 * :ref:`pickle <pickle-cli>`
 * :ref:`pickletools <pickletools-cli>`
 * :ref:`platform <platform-cli>`
@@ -52,8 +52,8 @@ The following modules have a command-line interface.
 * :mod:`turtledemo`
 * :ref:`unittest <unittest-command-line-interface>`
 * :ref:`uuid <uuid-cli>`
-* :mod:`venv`
-* :mod:`webbrowser`
+* :ref:`venv <venv-cli>`
+* :ref:`webbrowser <webbrowser-cli>`
 * :ref:`zipapp <zipapp-command-line-interface>`
 * :ref:`zipfile <zipfile-commandline>`
 
