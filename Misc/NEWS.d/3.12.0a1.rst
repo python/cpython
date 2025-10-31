@@ -4330,7 +4330,7 @@ and ``sendfile`` inside ``IocpProactor``.
 .. nonce: GsBL9-
 .. section: Library
 
-Fixed :meth:`collections.UserDict.get` to not call :meth:`__missing__` when
+Fixed :meth:`collections.UserDict.get` to not call :meth:`~object.__missing__` when
 a value is not found. This matches the behavior of :class:`dict`. Patch by
 Bar Harel.
 

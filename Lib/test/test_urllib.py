@@ -1590,6 +1590,10 @@ class Pathname_Tests(unittest.TestCase):
     def test_url2pathname_win(self):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/C:/'), 'C:\\')
+        self.assertEqual(fn('//C:'), 'C:')
+        self.assertEqual(fn('//C:/'), 'C:\\')
+        self.assertEqual(fn('//C:\\'), 'C:\\')
+        self.assertEqual(fn('//C:80/'), 'C:80\\')
         self.assertEqual(fn("///C|"), 'C:')
         self.assertEqual(fn("///C:"), 'C:')
         self.assertEqual(fn('///C:/'), 'C:\\')

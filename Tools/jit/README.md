@@ -9,7 +9,7 @@ Python 3.11 or newer is required to build the JIT.
 
 The JIT compiler does not require end users to install any third-party dependencies, but part of it must be *built* using LLVM[^why-llvm]. You are *not* required to build the rest of CPython using LLVM, or even the same version of LLVM (in fact, this is uncommon).
 
-LLVM version 19 is required. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-19`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
+LLVM version 19 is the officially supported version. You can modify if needed using the `LLVM_VERSION` env var during configure. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-19`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
 
 It's easy to install all of the required tools:
 
@@ -51,6 +51,10 @@ Alternatively, you can use [chocolatey](https://chocolatey.org):
 choco install llvm --version=19.1.0
 ```
 
+### Dev Containers
+
+If you are working on CPython in a [Codespaces instance](https://devguide.python.org/getting-started/setup-building/#using-codespaces), there's no 
+need to install LLVM as the Fedora 41 base image includes LLVM 19 out of the box.
 
 ## Building
 

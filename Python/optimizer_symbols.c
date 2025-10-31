@@ -7,7 +7,6 @@
 #include "pycore_long.h"
 #include "pycore_optimizer.h"
 #include "pycore_stats.h"
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -667,7 +666,7 @@ _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptRef *args)
 }
 
 JitOptRef
-_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, int item)
+_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, Py_ssize_t item)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     assert(item >= 0);
@@ -683,7 +682,7 @@ _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, int item)
     return _Py_uop_sym_new_not_null(ctx);
 }
 
-int
+Py_ssize_t
 _Py_uop_sym_tuple_length(JitOptRef ref)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
@@ -827,6 +826,9 @@ _Py_uop_frame_new(
     frame->locals = ctx->n_consumed;
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
+    frame->globals_checked_version = 0;
+    frame->globals_watched = false;
+    frame->func = NULL;
     ctx->n_consumed = ctx->n_consumed + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
         ctx->done = true;
@@ -888,6 +890,14 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
 
     // Frame setup
     ctx->curr_frame_depth = 0;
+
+    // Ctx signals.
+    // Note: this must happen before frame_new, as it might override
+    // the result should frame_new set things to bottom.
+    ctx->done = false;
+    ctx->out_of_space = false;
+    ctx->contradiction = false;
+    ctx->builtins_watched = false;
 }
 
 int
@@ -1033,7 +1043,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         "tuple item does not match value used to create tuple"
     );
     PyObject *pair[2] = { val_42, val_43 };
-    tuple = _PyTuple_FromArray(pair, 2);
+    tuple = PyTuple_FromArray(pair, 2);
     ref = _Py_uop_sym_new_const(ctx, tuple);
     TEST_PREDICATE(
         _Py_uop_sym_get_const(ctx, _Py_uop_sym_tuple_getitem(ctx, ref, 1)) == val_43,

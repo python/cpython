@@ -739,6 +739,18 @@ class SysModuleTest(unittest.TestCase):
         elif sys.platform == "wasi":
             self.assertEqual(info.name, "pthread-stubs")
 
+    def test_abi_info(self):
+        info = sys.abi_info
+        info_keys = {'pointer_bits', 'free_threaded', 'debug', 'byteorder'}
+        self.assertEqual(set(vars(info)), info_keys)
+        pointer_bits = 64 if sys.maxsize > 2**32 else 32
+        self.assertEqual(info.pointer_bits, pointer_bits)
+        self.assertEqual(info.free_threaded,
+                         bool(sysconfig.get_config_var('Py_GIL_DISABLED')))
+        self.assertEqual(info.debug,
+                         bool(sysconfig.get_config_var('Py_DEBUG')))
+        self.assertEqual(info.byteorder, sys.byteorder)
+
     @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
     def test_emscripten_info(self):
         self.assertEqual(len(sys._emscripten_info), 4)
@@ -1340,6 +1352,7 @@ class SysModuleTest(unittest.TestCase):
 
 
 @test.support.cpython_only
+@force_not_colorized
 class UnraisableHookTest(unittest.TestCase):
     def test_original_unraisablehook(self):
         _testcapi = import_helper.import_module('_testcapi')

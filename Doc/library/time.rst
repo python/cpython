@@ -189,7 +189,7 @@ Functions
    .. versionadded:: 3.7
 
 
-.. function:: clock_settime(clk_id, time: float)
+.. function:: clock_settime(clk_id, time)
 
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
@@ -200,6 +200,9 @@ Functions
    .. availability:: Unix, not Android, not iOS.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.15
+      Accepts any real number as *time*, not only integer or float.
 
 
 .. function:: clock_settime_ns(clk_id, time: int)
@@ -223,6 +226,9 @@ Functions
    ``asctime(localtime(secs))``. Locale information is not used by
    :func:`ctime`.
 
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
+
 
 .. function:: get_clock_info(name)
 
@@ -238,8 +244,8 @@ Functions
 
    The result has the following attributes:
 
-   - *adjustable*: ``True`` if the clock can be changed automatically (e.g. by
-     a NTP daemon) or manually by the system administrator, ``False`` otherwise
+   - *adjustable*: ``True`` if the clock can be set to jump forward or backward
+     in time, ``False`` otherwise. Does not refer to gradual NTP rate adjustments.
    - *implementation*: The name of the underlying C function used to get
      the clock value.  Refer to :ref:`time-clock-id-constants` for possible values.
    - *monotonic*: ``True`` if the clock cannot go backward,
@@ -258,6 +264,9 @@ Functions
    :class:`struct_time` object. See :func:`calendar.timegm` for the inverse of this
    function.
 
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
+
 
 .. function:: localtime([secs])
 
@@ -270,6 +279,9 @@ Functions
    or :c:func:`gmtime` functions, and :exc:`OSError` on :c:func:`localtime` or
    :c:func:`gmtime` failure. It's common for this to be restricted to years
    between 1970 and 2038.
+
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
 
 .. function:: mktime(t)
@@ -382,8 +394,7 @@ Functions
 .. function:: sleep(secs)
 
    Suspend execution of the calling thread for the given number of seconds.
-   The argument may be a floating-point number to indicate a more precise sleep
-   time.
+   The argument may be a non-integer to indicate a more precise sleep time.
 
    If the sleep is interrupted by a signal and no exception is raised by the
    signal handler, the sleep is restarted with a recomputed timeout.
@@ -427,6 +438,9 @@ Functions
 
    .. versionchanged:: 3.13
       Raises an auditing event.
+
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
 .. index::
    single: % (percent); datetime format
@@ -935,7 +949,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
 .. data:: CLOCK_TAI
 
-   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/nist-time-frequently-asked-questions-faq#tai>`_
+   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/how-utcnist-related-coordinated-universal-time-utc-international>`_
 
    The system must have a current leap second table in order for this to give
    the correct answer.  PTP or NTP software can maintain a leap second table.

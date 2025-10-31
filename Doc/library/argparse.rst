@@ -74,7 +74,7 @@ ArgumentParser objects
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
                           add_help=True, allow_abbrev=True, exit_on_error=True, \
-                          *, suggest_on_error=False, color=True)
+                          *, suggest_on_error=True, color=True)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -117,7 +117,7 @@ ArgumentParser objects
      error info when an error occurs. (default: ``True``)
 
    * suggest_on_error_ - Enables suggestions for mistyped argument choices
-     and subparser names (default: ``False``)
+     and subparser names (default: ``True``)
 
    * color_ - Allow color output (default: ``True``)
 
@@ -133,6 +133,9 @@ ArgumentParser objects
 
    .. versionchanged:: 3.14
       *suggest_on_error* and *color* parameters were added.
+
+   .. versionchanged:: 3.15
+      *suggest_on_error* default changed to ``True``.
 
 The following sections describe how each of these are used.
 
@@ -596,13 +599,11 @@ suggest_on_error
 ^^^^^^^^^^^^^^^^
 
 By default, when a user passes an invalid argument choice or subparser name,
-:class:`ArgumentParser` will exit with error info and list the permissible
-argument choices (if specified) or subparser names as part of the error message.
-
-If the user would like to enable suggestions for mistyped argument choices and
-subparser names, the feature can be enabled by setting ``suggest_on_error`` to
-``True``. Note that this only applies for arguments when the choices specified
-are strings::
+:class:`ArgumentParser` will exit with error info and provide suggestions for
+mistyped arguments. The error message will list the permissible argument
+choices (if specified) or subparser names, along with a "maybe you meant"
+suggestion if a close match is found. Note that this only applies for arguments
+when the choices specified are strings::
 
    >>> parser = argparse.ArgumentParser(description='Process some integers.',
                                         suggest_on_error=True)
@@ -612,16 +613,14 @@ are strings::
    >>> parser.parse_args(['--action', 'sumn', 1, 2, 3])
    tester.py: error: argument --action: invalid choice: 'sumn', maybe you meant 'sum'? (choose from 'sum', 'max')
 
-If you're writing code that needs to be compatible with older Python versions
-and want to opportunistically use ``suggest_on_error`` when it's available, you
-can set it as an attribute after initializing the parser instead of using the
-keyword argument::
+You can disable suggestions by setting ``suggest_on_error`` to ``False``::
 
-   >>> parser = argparse.ArgumentParser(description='Process some integers.')
-   >>> parser.suggest_on_error = True
+   >>> parser = argparse.ArgumentParser(description='Process some integers.',
+                                        suggest_on_error=False)
 
 .. versionadded:: 3.14
-
+.. versionchanged:: 3.15
+   Changed default value of ``suggest_on_error`` from ``False`` to ``True``.
 
 color
 ^^^^^
@@ -774,16 +773,16 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--foo --bar'.split())
     Namespace(foo=True, bar=False, baz=True)
 
-* ``'append'`` - This stores a list, and appends each argument value to the
-  list. It is useful to allow an option to be specified multiple times.
-  If the default value is non-empty, the default elements will be present
-  in the parsed value for the option, with any values from the
-  command line appended after those default values. Example usage::
+* ``'append'`` - This appends each argument value to a list.
+  It is useful for allowing an option to be specified multiple times.
+  If the default value is a non-empty list, the parsed value will start
+  with the default list's elements and any values from the command line
+  will be appended after those default values. Example usage::
 
     >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--foo', action='append')
+    >>> parser.add_argument('--foo', action='append', default=['0'])
     >>> parser.parse_args('--foo 1 --foo 2'.split())
-    Namespace(foo=['1', '2'])
+    Namespace(foo=['0', '1', '2'])
 
 * ``'append_const'`` - This stores a list, and appends the value specified by
   the const_ keyword argument to the list; note that the const_ keyword
@@ -981,8 +980,8 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
   (like ``-f`` or ``--foo``) and ``nargs='?'``.  This creates an optional
   argument that can be followed by zero or one command-line arguments.
   When parsing the command line, if the option string is encountered with no
-  command-line argument following it, the value of ``const`` will be assumed to
-  be ``None`` instead.  See the nargs_ description for examples.
+  command-line argument following it, the value from ``const`` will be used.
+  See the nargs_ description for examples.
 
 .. versionchanged:: 3.11
    ``const=None`` by default, including when ``action='append_const'`` or
@@ -1142,15 +1141,20 @@ if the argument was not one of the acceptable values::
    game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
    'paper', 'scissors')
 
-Note that inclusion in the *choices* sequence is checked after any type_
-conversions have been performed, so the type of the objects in the *choices*
-sequence should match the type_ specified.
-
 Any sequence can be passed as the *choices* value, so :class:`list` objects,
 :class:`tuple` objects, and custom sequences are all supported.
 
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
+
+Note that *choices* are checked after any type_
+conversions have been performed, so objects in *choices*
+should match the type_ specified. This can make *choices*
+appear unfamiliar in usage, help, or error messages.
+
+To keep *choices* user-friendly, consider a custom type wrapper that
+converts and formats values, or omit type_ and handle conversion in
+your application code.
 
 Formatted choices override the default *metavar* which is normally derived
 from *dest*.  This is usually what you want because the user never sees the

@@ -259,7 +259,7 @@ Floating point arithmetic
    is, :func:`!fmax` is not required to be sensitive to the sign of such
    operands (see Annex F of the C11 standard, §F.10.0.3 and §F.10.9.2).
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: fmin(x, y)
@@ -271,7 +271,7 @@ Floating point arithmetic
    is, :func:`!fmin` is not required to be sensitive to the sign of such
    operands (see Annex F of the C11 standard, §F.10.0.3 and §F.10.9.3).
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: fmod(x, y)
@@ -408,7 +408,7 @@ Floating point manipulation functions
    nonzero number that is not a subnormal (see :func:`issubnormal`).
    Return ``False`` otherwise.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: issubnormal(x)
@@ -417,7 +417,7 @@ Floating point manipulation functions
    nonzero number with a magnitude smaller than :data:`sys.float_info.min`.
    Return ``False`` otherwise.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: isinf(x)
@@ -464,7 +464,7 @@ Floating point manipulation functions
 
    This is useful to detect the sign bit of zeroes, infinities and NaNs.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: ulp(x)

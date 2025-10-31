@@ -197,11 +197,11 @@ Object Protocol
    in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
    plans to remove it.
 
-   The function must not be called with ``NULL`` *v* and an an exception set.
+   The function must not be called with a ``NULL`` *v* and an exception set.
    This case can arise from forgetting ``NULL`` checks and would delete the
    attribute.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Must not be called with NULL value if an exception is set.
 
 
@@ -214,7 +214,7 @@ Object Protocol
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
-   The function must not be called with ``NULL`` *v* and an an exception set.
+   The function must not be called with a ``NULL`` *v* and an exception set.
    This case can arise from forgetting ``NULL`` checks and would delete the
    attribute.
 
@@ -226,7 +226,7 @@ Object Protocol
    For more details, see :c:func:`PyUnicode_InternFromString`, which may be
    used internally to create a key object.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Must not be called with NULL value if an exception is set.
 
 
@@ -600,7 +600,7 @@ Object Protocol
 
    Clear the managed dictionary of *obj*.
 
-   This function must only be called in a traverse function of the type which
+   This function must only be called in a clear function of the type which
    has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
 
    .. versionadded:: 3.13
