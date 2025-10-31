@@ -141,7 +141,7 @@ class HTMLParser(_markupbase.ParserBase):
 
         If *scripting* is false (the default), the content of the
         ``noscript`` element is parsed normally; if it's true,
-        it's parsed in RAWTEXT mode.
+        it's returned as is without being parsed.
         """
         super().__init__()
         self.convert_charrefs = convert_charrefs

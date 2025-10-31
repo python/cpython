@@ -24,8 +24,8 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
    automatically converted to the corresponding Unicode characters.
 
    If *scripting* is false (the default), the content of the ``noscript``
-   element is parsed normally; if it's true, it's parsed in RAWTEXT mode,
-   like ``script``.
+   element is parsed normally; if it's true, it's returned as is without
+   being parsed.
 
    An :class:`.HTMLParser` instance is fed HTML data and calls handler methods
    when start tags, end tags, text, comments, and other markup elements are
