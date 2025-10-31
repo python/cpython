@@ -258,6 +258,29 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject*
+dict_fromitems(PyObject* self, PyObject *args)
+{
+    PyObject *keys_obj, *values_obj;
+    if (!PyArg_ParseTuple(args, "O!O!",
+                          &PyTuple_Type, &keys_obj,
+                          &PyTuple_Type, &values_obj)) {
+        return NULL;
+    }
+
+    Py_ssize_t length = PyTuple_GET_SIZE(keys_obj);
+    if (PyTuple_GET_SIZE(values_obj) != length) {
+        PyErr_SetString(PyExc_ValueError,
+                        "keys and values must have the same length");
+        return NULL;
+    }
+
+    PyObject **keys = &PyTuple_GET_ITEM(keys_obj, 0);
+    PyObject **values = &PyTuple_GET_ITEM(values_obj, 0);
+    return PyDict_FromItems(keys, values, length);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"dict_containsstring", dict_containsstring, METH_VARARGS},
     {"dict_getitemref", dict_getitemref, METH_VARARGS},
@@ -268,7 +291,8 @@ static PyMethodDef test_methods[] = {
     {"dict_pop_null", dict_pop_null, METH_VARARGS},
     {"dict_popstring", dict_popstring, METH_VARARGS},
     {"dict_popstring_null", dict_popstring_null, METH_VARARGS},
-    {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
+    {"test_dict_iteration", test_dict_iteration, METH_NOARGS},
+    {"dict_fromitems", dict_fromitems, METH_VARARGS},
     {NULL},
 };
 
