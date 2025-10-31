@@ -1065,13 +1065,6 @@ Text I/O
       .. versionchanged:: 3.11
          The method supports ``encoding="locale"`` option.
 
-   Example usage::
-
-      # decoding newlines in universal newlines mode
-      >>> import io
-      >>> io.TextIOWrapper(io.BytesIO(b'1\r\n2\r3\n4')).read()
-      '1\n2\n3\n4'
-
    .. method:: seek(cookie, whence=os.SEEK_SET, /)
 
       Set the stream position.
@@ -1098,6 +1091,13 @@ Text I/O
       Return the stream position as an opaque number.
       The return value of :meth:`!tell` can be given as input to :meth:`seek`,
       to restore a previous stream position.
+
+   Example usage::
+
+      # decoding newlines in universal newlines mode
+      >>> import io
+      >>> io.TextIOWrapper(io.BytesIO(b'1\r\n2\r3\n4')).read()
+      '1\n2\n3\n4'
 
 
 .. class:: StringIO(initial_value='', newline='\n')
