@@ -1543,7 +1543,7 @@ PyDoc_STRVAR(
  * _only_ be used for connectionless sockets (UDP).
  */
 static PyObject *
-overlapped_WSAConnect(PyObject *self, PyObject *args, Py_ssize_t nargs)
+overlapped_WSAConnect(PyObject *self, PyObject *args)
 {
     SOCKET ConnectSocket;
     PyObject *AddressObj;
@@ -1553,8 +1553,8 @@ overlapped_WSAConnect(PyObject *self, PyObject *args, Py_ssize_t nargs)
     int err;
 
 
-    if (!_PyArg_ParseStack(args, nargs, F_HANDLE "O!:WSAConnect",
-        &ConnectSocket, &PyTuple_Type, &AddressObj)) {
+    if (!PyArg_ParseTuple(args, F_HANDLE "O!:WSAConnect",
+                          &ConnectSocket, &PyTuple_Type, &AddressObj)) {
         return NULL;
     }
 
@@ -1586,7 +1586,7 @@ PyDoc_STRVAR(
     "Start overlapped sendto over a connectionless (UDP) socket");
 
 static PyObject *
-Overlapped_WSASendTo(OverlappedObject *self, PyObject *args, Py_ssize_t nargs)
+Overlapped_WSASendTo(OverlappedObject *self, PyObject *args)
 {
     HANDLE handle;
     PyObject *bufobj;
@@ -1600,7 +1600,7 @@ Overlapped_WSASendTo(OverlappedObject *self, PyObject *args, Py_ssize_t nargs)
     int ret;
     DWORD err;
 
-    if (!_PyArg_ParseStack(args, nargs, F_HANDLE "OkO!:WSASendTo",
+    if (!PyArg_ParseTuple(args, F_HANDLE "OkO!:WSASendTo",
         &handle, &bufobj, &flags, &PyTuple_Type, &AddressObj))
     {
         return NULL;
@@ -1754,7 +1754,7 @@ static PyMethodDef Overlapped_methods[] = {
     {"WSARecvFrom", (PyCFunction) Overlapped_WSARecvFrom,
      METH_VARARGS, Overlapped_WSARecvFrom_doc },
     {"WSASendTo", (PyCFunction) Overlapped_WSASendTo,
-     METH_FASTCALL, Overlapped_WSASendTo_doc },
+     METH_VARARGS, Overlapped_WSASendTo_doc },
     {NULL}
 };
 
@@ -1843,7 +1843,7 @@ static PyMethodDef overlapped_functions[] = {
     {"ConnectPipe", overlapped_ConnectPipe,
      METH_VARARGS, ConnectPipe_doc},
     {"WSAConnect", overlapped_WSAConnect,
-     METH_FASTCALL, WSAConnect_doc},
+     METH_VARARGS, WSAConnect_doc},
     {NULL}
 };
 
