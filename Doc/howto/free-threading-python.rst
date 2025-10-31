@@ -6,14 +6,13 @@ Python support for free threading
 
 Starting with the 3.13 release, CPython has support for a build of
 Python called :term:`free threading` where the :term:`global interpreter lock`
-(GIL) is disabled.  Free-threaded execution allows for full utilization of the
+(GIL) is disabled. Free-threaded execution allows for full utilization of the
 available processing power by running threads in parallel on available CPU cores.
 While not all software will benefit from this automatically, programs
 designed with threading in mind will run faster on multi-core hardware.
 
-The free-threaded mode is working and continues to be improved, but
-there is some additional overhead in single-threaded workloads compared
-to the regular build. Additionally, third-party packages, in particular ones
+The free-threaded mode continues to be improved with each release.
+Additionally, third-party packages, in particular ones
 with an :term:`extension module`, may not be ready for use in a
 free-threaded build, and will re-enable the :term:`GIL`.
 
@@ -101,60 +100,48 @@ This section describes known limitations of the free-threaded CPython build.
 Immortalization
 ---------------
 
-The free-threaded build of the 3.13 release makes some objects :term:`immortal`.
+In the free-threaded build, some objects are :term:`immortal`.
 Immortal objects are not deallocated and have reference counts that are
-never modified.  This is done to avoid reference count contention that would
+never modified.  This is done to avoid reference count contention that would
 prevent efficient multi-threaded scaling.
 
-An object will be made immortal when a new thread is started for the first time
-after the main thread is running.  The following objects are immortalized:
+As of the 3.14 release, immortalization is limited to:
 
-* :ref:`function <user-defined-funcs>` objects declared at the module level
-* :ref:`method <instance-methods>` descriptors
-* :ref:`code <code-objects>` objects
-* :term:`module` objects and their dictionaries
-* :ref:`classes <classes>` (type objects)
-
-Because immortal objects are never deallocated, applications that create many
-objects of these types may see increased memory usage.  This is expected to be
-addressed in the 3.14 release.
-
-Additionally, numeric and string literals in the code as well as strings
-returned by :func:`sys.intern` are also immortalized.  This behavior is
-expected to remain in the 3.14 free-threaded build.
+* Code constants: numeric literals, string literals, and tuple literals
+  composed of other constants.
+* Strings returned by :func:`sys.intern`.
 
 
 Frame objects
 -------------
 
 It is not safe to access :ref:`frame <frame-objects>` objects from other
-threads and doing so may cause your program to crash .  This means that
+threads. This means that
 :func:`sys._current_frames` is generally not safe to use in a free-threaded
-build.  Functions like :func:`inspect.currentframe` and :func:`sys._getframe`
+build. Functions like :func:`inspect.currentframe` and :func:`sys._getframe`
 are generally safe as long as the resulting frame object is not passed to
 another thread.
 
 Iterators
 ---------
 
-Sharing the same iterator object between multiple threads is generally not
-safe and threads may see duplicate or missing elements when iterating or crash
-the interpreter.
+While sharing the same iterator object between multiple threads is generally not
+safe from a logical perspective (threads may see duplicate or missing elements
+when iterating), the 3.14 free-threaded build prevents interpreter crashes
+that occurred in earlier versions.
 
 
 Single-threaded performance
 ---------------------------
 
 The free-threaded build has additional overhead when executing Python code
-compared to the default GIL-enabled build.  In 3.13, this overhead is about
-40% on the `pyperformance <https://pyperformance.readthedocs.io/>`_ suite.
+compared to the default GIL-enabled build. This overhead was reduced
+in the 3.14 release (which re-enabled the specializing adaptive
+interpreter, :pep:`659`). Reducing this overhead further remains an
+active development goal, with an aim for 10% or less on the
+`pyperformance <https://pyperformance.readthedocs.io/>`_ suite compared to the default GIL-enabled build.
 Programs that spend most of their time in C extensions or I/O will see
-less of an impact.  The largest impact is because the specializing adaptive
-interpreter (:pep:`659`) is disabled in the free-threaded build.  We expect
-to re-enable it in a thread-safe way in the 3.14 release.  This overhead is
-expected to be reduced in upcoming Python release.   We are aiming for an
-overhead of 10% or less on the pyperformance suite compared to the default
-GIL-enabled build.
+less of an impact.
 
 
 Behavioral changes
