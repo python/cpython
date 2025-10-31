@@ -58,6 +58,10 @@ computed exactly and are integers.
    ``a = 1 + isqrt(n - 1)``.
 
 
+   .. |nbsp| unicode:: 0xA0
+      :trim:
+
+
 .. function:: lcm(*integers)
 
    Return the least common multiple of the specified integer arguments.
@@ -79,7 +83,3 @@ computed exactly and are integers.
    and the function returns ``n!``.
 
    Raises :exc:`ValueError` if either of the arguments are negative.
-
-
-.. |nbsp| unicode:: 0xA0
-   :trim:
