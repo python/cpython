@@ -721,16 +721,16 @@ Number-theoretic functions
 --------------------------
 
 For backward compatibility, the :mod:`math` module provides also aliases of
-the following functions from the :mod:`math.integer` module.
-They are :term:`soft deprecated`.
+the following functions from the :mod:`math.integer` module:
 
-.. list-table:: **Number-theoretic functions**
+.. list-table::
 
    * - .. function:: comb(n, k)
           :no-typesetting:
 
        :func:`comb(n, k) <math.integer.comb>`
-     - Number of ways to choose *k* items from *n* items without repetition and without order
+     - Number of ways to choose *k* items from *n* items without repetition
+       and without order
 
    * - .. function:: factorial(n)
           :no-typesetting:
@@ -760,7 +760,8 @@ They are :term:`soft deprecated`.
           :no-typesetting:
 
        :func:`perm(n, k) <math.integer.perm>`
-     - Number of ways to choose *k* items from *n* items without repetition and with order
+     - Number of ways to choose *k* items from *n* items without repetition
+       and with order
 
 .. versionadded:: 3.5
    The :func:`gcd` function.
@@ -779,6 +780,10 @@ They are :term:`soft deprecated`.
 .. versionchanged:: 3.10
    Floats with integral values (like ``5.0``) are no longer accepted in the
    :func:`factorial` function.
+
+.. deprecated:: next
+   These aliases are :term:`soft deprecated` in favor of the
+   :mod:`math.integer` functions.
 
 
 Constants
