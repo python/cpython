@@ -1,0 +1,2 @@
+:func:`multiprocessing.freeze_support` no longer sets the start method
+globally.
