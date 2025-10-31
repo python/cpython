@@ -3190,76 +3190,11 @@ objects.
 
          Taking all bytes is a zero-copy operation.
 
-      .. list-table:: Suggested Replacements
-         :header-rows: 1
-
-         * - Description
-           - Old
-           - New
-
-         * - Return :class:`bytes` after working with :class:`bytearray`
-           - .. code:: python
-
-                  def read() -> bytes:
-                     buffer = bytearray(1024)
-                     ...
-                     return bytes(buffer)
-
-           - .. code:: python
-
-                  def read() -> bytes:
-                     buffer = bytearray(1024)
-                     ...
-                     return buffer.take_bytes()
-
-         * - Empty a buffer getting the bytes
-           - .. code:: python
-
-                  buffer = bytearray(1024)
-                  ...
-                  data = bytes(buffer)
-                  buffer.clear()
-
-           - .. code:: python
-
-                  buffer = bytearray(1024)
-                  ...
-                  data = buffer.take_bytes()
-
-         * - Split a buffer at a specific separator
-           - .. code:: python
-
-                  buffer = bytearray(b'abc\ndef')
-                  n = buffer.find(b'\n')
-                  data = bytes(buffer[:n + 1])
-                  del buffer[:n + 1]
-                  assert data == b'abc'
-                  assert buffer == bytearray(b'def')
-
-           - .. code:: python
-
-                  buffer = bytearray(b'abc\ndef')
-                  n = buffer.find(b'\n')
-                  data = buffer.take_bytes(n + 1)
-
-         * - Split a buffer at a specific separator; discard after the separator
-           - .. code:: python
-
-                  buffer = bytearray(b'abc\ndef')
-                  n = buffer.find(b'\n')
-                  data = bytes(buffer[:n])
-                  buffer.clear()
-                  assert data == b'abc'
-                  assert len(buffer) == 0
-
-           - .. code:: python
-
-                  buffer = bytearray(b'abc\ndef')
-                  n = buffer.find(b'\n')
-                  buffer.resize(n)
-                  data = buffer.take_bytes()
-
       .. versionadded:: next
+
+         See the :ref:`What's New <whatsnew315-bytearray-take-bytes>` entry for
+         common code patterns which can be optimized with
+         :func:`bytearray.take_bytes`.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
