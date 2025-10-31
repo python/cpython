@@ -4,8 +4,11 @@ import json
 import struct
 import sys
 import unittest
+from contextlib import redirect_stderr
 from gettext import GNUTranslations
+from io import StringIO
 from pathlib import Path
+from textwrap import dedent
 
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
@@ -239,6 +242,227 @@ class POParserTest(unittest.TestCase):
                     msgfmt.MESSAGES.clear()
                     with self.assertRaises(Exception):
                         msgfmt.make('messages.po', 'messages.mo')
+
+    def test_general_syntax_errors(self):
+        # 2-tuples of input PO files and expected error messages
+        invalid_po_files = (
+            ('', None),
+            ('"', None),
+            ('""', 'Syntax error on messages.po:1 before:'),
+            ('"foo"', f'Syntax error on messages.po:1 before:\nfoo'),
+            # 'msgid',  # invalid but currently accepted
+            ('msgstr', None),
+            ('msgid_plural', 'msgid_plural not preceded by msgid on messages.po:1'),
+            # 'msgctxt',  # invalid but currently accepted
+            ('msgstr', None),
+            ('msgstr[0]', None),
+            ('[0]', f'Syntax error on messages.po:1 before:\n[0]'),
+            # unclosed string
+            (
+                dedent('''\
+                    msgid "
+                    msgstr "bar"
+                '''),
+                None
+            ),
+            # unclosed string
+            (
+                dedent('''\
+                    msgid "foo
+                    msgstr "bar"
+                '''),
+                None
+            ),
+            # unclosed string
+            (
+                dedent('''\
+                    msgid "foo" "
+                    msgstr "bar"
+                '''),
+                None
+            ),
+            # unclosed string
+            (
+                dedent('''\
+                    msgid "foo"
+                    "
+                    msgstr "bar"
+                '''),
+                None
+            ),
+            # illegal backslash
+            (
+                dedent('''\
+                    msgid "foo\\"
+                    "
+                    msgstr "bar"
+                '''),
+                None
+            ),
+            # msgid with an index
+            (
+                dedent('''\
+                    msgid[0] "foo"
+                    msgstr "bar"
+                '''),
+                None
+            ),
+            # invalid plural index
+            (
+                dedent('''\
+                    msgid "foo"
+                    msgid_plural "foos"
+                    msgstr[0 "baz"
+                '''),
+                None
+            ),
+            # invalid plural index
+            (
+                dedent('''\
+                    msgid "foo"
+                    msgid_plural "foos"
+                    msgstr1] "baz"
+                '''),
+                'indexed msgstr required for plural on  messages.po:3'
+            ),
+            # invalid plural index
+            (
+                dedent('''\
+                    msgid "foo"
+                    msgid_plural "foos"
+                    msgstr[[0]] "baz"
+                '''),
+                None
+            )
+        )
+        with temp_cwd():
+            for invalid_po, err_msg in invalid_po_files:
+                with self.subTest(invalid_po=invalid_po):
+                    Path('messages.po').write_text(invalid_po)
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    with redirect_stderr(StringIO()) as output:
+                        with self.assertRaises((SystemExit, UnboundLocalError,
+                                                IndexError, SyntaxError)):
+                            msgfmt.make('messages.po', 'messages.mo')
+                    if err_msg:
+                        self.assertEqual(output.getvalue().strip(), err_msg)
+
+    def test_semantic_errors(self):
+        # 2-tuples of input PO files and expected error messages
+        invalid_po_files = (
+            # msgid_plural must be preceded by msgid
+            (
+                dedent('''\
+                    msgid_plural "foos"
+
+                    msgid "bar"
+                    msgstr "baz"
+                '''),
+                'msgid_plural not preceded by msgid on messages.po:1'
+            ),
+            # msgid_plural not allowed after comment
+            (
+                dedent('''\
+                    # comment
+                    msgid_plural "foos"
+
+                    msgid "bar"
+                    msgstr "baz"
+                '''),
+                'msgid_plural not preceded by msgid on messages.po:2'
+            ),
+            # msgid_plural not allowed after msgctxt
+            (
+                dedent('''\
+                    msgctxt "foo"
+                    msgid_plural "foos"
+
+                    msgid "bar"
+                    msgstr "baz"
+                '''),
+                'msgid_plural not preceded by msgid on messages.po:2'
+            ),
+            # msgid_plural not allowed after msgstr
+            (
+                dedent('''\
+                    msgid "foo"
+                    msgstr "bar"
+                    msgid_plural "foos"
+
+                    msgid "bar"
+                    msgstr "baz"
+                '''),
+                'msgid_plural not preceded by msgid on messages.po:3'
+            ),
+            # msgstr must be preceded by msgid
+            (
+                dedent('''\
+                    msgstr "foo"
+
+                    msgid "bar"
+                    msgstr "baz"
+                '''),
+                None
+            ),
+            # msgstr not allowed after msgctxt
+            (
+                dedent('''\
+                    msgctxt "foo"
+                    msgstr "bar"
+
+                    msgid "foo"
+                    msgstr "bar"
+                '''),
+                None
+            ),
+            # missing msgid_plural section
+            (
+                dedent('''\
+                    msgid "foo"
+                    msgstr[0] "bar"
+
+                    msgid "bar"
+                    msgstr "baz"
+                '''),
+                'plural without msgid_plural on messages.po:2'
+            ),
+        )
+        with temp_cwd():
+            for invalid_po, err_msg in invalid_po_files:
+                with self.subTest(invalid_po=invalid_po):
+                    Path('messages.po').write_text(invalid_po)
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    with redirect_stderr(StringIO()) as output:
+                        with self.assertRaises((SystemExit, UnboundLocalError)):
+                            msgfmt.make('messages.po', 'messages.mo')
+                    if err_msg:
+                        self.assertEqual(output.getvalue().strip(), err_msg)
+
+    def test_msgstr_invalid_indices(self):
+        # 2-tuples of input PO files and expected error messages
+        invalid_po_files = (
+            # msgstr not pluralized
+            (
+                dedent('''\
+                    msgid "foo"
+                    msgid_plural "foos"
+                    msgstr "bar"
+                '''),
+                'indexed msgstr required for plural on  messages.po:3'
+            ),
+        )
+        with temp_cwd():
+            for invalid_po, err_msg in invalid_po_files:
+                with self.subTest(invalid_po=invalid_po):
+                    Path('messages.po').write_text(invalid_po)
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    with redirect_stderr(StringIO()) as output:
+                        with self.assertRaises(SystemExit):
+                            msgfmt.make('messages.po', 'messages.mo')
+                    self.assertEqual(output.getvalue().strip(), err_msg)
 
 
 class CLITest(unittest.TestCase):
