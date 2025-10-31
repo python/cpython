@@ -66,6 +66,25 @@ class GenericBrowserCommandTest(CommandTestMixin, unittest.TestCase):
                    options=[],
                    arguments=[URL])
 
+    def test_supports_file(self):
+        self._test('open',
+                   args=["file:///tmp/file"],
+                   options=[],
+                   arguments=["file:///tmp/file"])
+
+    def test_not_supports_file(self):
+        popen = PopenMock()
+        support.patch(self, subprocess, 'Popen', popen)
+        browser = self.browser_class("open")
+        browser._supports_file = False
+        assert not browser.open("file:///some/file")
+        assert subprocess.Popen.call_count == 0
+        url = "https://some-url"
+        browser.open(url)
+        assert subprocess.Popen.call_count == 1
+        popen_args = subprocess.Popen.call_args[0][0]
+        self.assertEqual(popen_args, ["open", url])
+
 
 class BackgroundBrowserCommandTest(CommandTestMixin, unittest.TestCase):
 
@@ -75,6 +94,25 @@ class BackgroundBrowserCommandTest(CommandTestMixin, unittest.TestCase):
         self._test('open',
                    options=[],
                    arguments=[URL])
+
+    def test_supports_file(self):
+        self._test('open',
+                   args=["file:///tmp/file"],
+                   options=[],
+                   arguments=["file:///tmp/file"])
+
+    def test_not_supports_file(self):
+        popen = PopenMock()
+        support.patch(self, subprocess, 'Popen', popen)
+        browser = self.browser_class("open")
+        browser._supports_file = False
+        assert not browser.open("file:///some/file")
+        assert subprocess.Popen.call_count == 0
+        url = "https://some-url"
+        browser.open(url)
+        assert subprocess.Popen.call_count == 1
+        popen_args = subprocess.Popen.call_args[0][0]
+        self.assertEqual(popen_args, ["open", url])
 
 
 class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
