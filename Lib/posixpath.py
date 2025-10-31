@@ -13,14 +13,14 @@ for manipulation of the pathname component of URLs.
 # Strings representing various path-related bits and pieces.
 # These are primarily for export; internally, they are hardcoded.
 # Should be set before imports for resolving cyclic dependency.
-curdir = '.'
-pardir = '..'
-extsep = '.'
-sep = '/'
-pathsep = ':'
-defpath = ':/bin:/usr/bin'
+curdir = "."
+pardir = ".."
+extsep = "."
+sep = "/"
+pathsep = ":"
+defpath = ":/bin:/usr/bin"
 altsep = None
-devnull = '/dev/null'
+devnull = "/dev/null"
 
 import os
 import sys
@@ -28,38 +28,76 @@ import stat
 import genericpath
 from genericpath import *
 
-__all__ = ["normcase","isabs","join","splitdrive","split","splitext",
-           "basename","dirname","commonprefix","getsize","getmtime",
-           "getatime","getctime","islink","exists","lexists","isdir","isfile",
-           "ismount", "expanduser","expandvars","normpath","abspath",
-           "samefile","sameopenfile","samestat",
-           "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
-           "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "ALLOW_MISSING"]
+__all__ = [
+    "normcase",
+    "isabs",
+    "join",
+    "splitdrive",
+    "split",
+    "splitext",
+    "basename",
+    "dirname",
+    "commonprefix",
+    "getsize",
+    "getmtime",
+    "getatime",
+    "getctime",
+    "islink",
+    "exists",
+    "lexists",
+    "isdir",
+    "isfile",
+    "ismount",
+    "expanduser",
+    "expandvars",
+    "normpath",
+    "abspath",
+    "samefile",
+    "sameopenfile",
+    "samestat",
+    "curdir",
+    "pardir",
+    "sep",
+    "pathsep",
+    "defpath",
+    "altsep",
+    "extsep",
+    "devnull",
+    "realpath",
+    "supports_unicode_filenames",
+    "relpath",
+    "commonpath",
+    "ALLOW_MISSING",
+]
 
 
 def _get_sep(path):
     if isinstance(path, bytes):
-        return b'/'
+        return b"/"
     else:
-        return '/'
+        return "/"
+
 
 # Normalize the case of a pathname.  Trivial in Posix, string.lower on Mac.
 # On MS-DOS this may also turn slashes into backslashes; however, other
 # normalizations (such as optimizing '../' away) are not allowed
 # (another function should be defined to do that).
 
+
 def normcase(s):
     """Normalize case of pathname.  Has no effect under Posix"""
     s = os.fspath(s)
     if not isinstance(s, (bytes, str)):
-        raise TypeError("normcase() argument must be str or bytes, "
-                        "not '{}'".format(s.__class__.__name__))
+        raise TypeError(
+            "normcase() argument must be str or bytes, "
+            "not '{}'".format(s.__class__.__name__)
+        )
     return s
 
 
 # Return whether a path is absolute.
 # Trivial in Posix, harder on the Mac or MS-DOS.
+
 
 def isabs(s):
     """Test whether a path is absolute"""
@@ -72,6 +110,7 @@ def isabs(s):
 # Ignore the previous parts if a part is absolute.
 # Insert a '/' unless the first part is empty or already ends in '/'.
 
+
 def join(a, *p):
     """Join two or more pathname components, inserting '/' as needed.
     If any component is an absolute path, all previous path components
@@ -82,7 +121,7 @@ def join(a, *p):
     path = a
     try:
         if not p:
-            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
+            path[:0] + sep  # 23780: Ensure compatible data type even if p is null.
         for b in map(os.fspath, p):
             if b.startswith(sep):
                 path = b
@@ -91,7 +130,7 @@ def join(a, *p):
             else:
                 path += sep + b
     except (TypeError, AttributeError, BytesWarning):
-        genericpath._check_arg_types('join', a, *p)
+        genericpath._check_arg_types("join", a, *p)
         raise
     return path
 
@@ -101,6 +140,7 @@ def join(a, *p):
 # '/' in the path, head  will be empty.
 # Trailing '/'es are stripped from head unless it is the root.
 
+
 def split(p):
     """Split a pathname.  Returns tuple "(head, tail)" where "tail" is
     everything after the final slash.  Either part may be empty."""
@@ -108,7 +148,7 @@ def split(p):
     sep = _get_sep(p)
     i = p.rfind(sep) + 1
     head, tail = p[:i], p[i:]
-    if head and head != sep*len(head):
+    if head and head != sep * len(head):
         head = head.rstrip(sep)
     return head, tail
 
@@ -118,19 +158,23 @@ def split(p):
 # pathname component; the root is everything before that.
 # It is always true that root + ext == p.
 
+
 def splitext(p):
     p = os.fspath(p)
     if isinstance(p, bytes):
-        sep = b'/'
-        extsep = b'.'
+        sep = b"/"
+        extsep = b"."
     else:
-        sep = '/'
-        extsep = '.'
+        sep = "/"
+        extsep = "."
     return genericpath._splitext(p, sep, None, extsep)
+
+
 splitext.__doc__ = genericpath._splitext.__doc__
 
 # Split a pathname into a drive specification and the rest of the
 # path.  Useful on DOS/Windows/NT; on Unix, the drive is always empty.
+
 
 def splitdrive(p):
     """Split a pathname into drive and path. On Posix, drive is always
@@ -140,6 +184,7 @@ def splitdrive(p):
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
+
 
 def basename(p):
     """Returns the final component of a pathname"""
@@ -151,19 +196,21 @@ def basename(p):
 
 # Return the head (dirname) part of a path, same as split(path)[0].
 
+
 def dirname(p):
     """Returns the directory component of a pathname"""
     p = os.fspath(p)
     sep = _get_sep(p)
     i = p.rfind(sep) + 1
     head = p[:i]
-    if head and head != sep*len(head):
+    if head and head != sep * len(head):
         head = head.rstrip(sep)
     return head
 
 
 # Is a path a symbolic link?
 # This will always return false on systems where os.lstat doesn't exist.
+
 
 def islink(path):
     """Test whether a path is a symbolic link"""
@@ -173,7 +220,9 @@ def islink(path):
         return False
     return stat.S_ISLNK(st.st_mode)
 
+
 # Being true for dangling symbolic links is also useful.
+
 
 def lexists(path):
     """Test whether a path exists.  Returns True for broken symbolic links"""
@@ -186,6 +235,7 @@ def lexists(path):
 
 # Is a path a mount point?
 # (Does this work for all UNIXes?  Is it even guaranteed to work by Posix?)
+
 
 def ismount(path):
     """Test whether a path is a mount point"""
@@ -200,9 +250,9 @@ def ismount(path):
             return False
 
     if isinstance(path, bytes):
-        parent = join(path, b'..')
+        parent = join(path, b"..")
     else:
-        parent = join(path, '..')
+        parent = join(path, "..")
     parent = realpath(parent)
     try:
         s2 = os.lstat(parent)
@@ -212,11 +262,11 @@ def ismount(path):
     dev1 = s1.st_dev
     dev2 = s2.st_dev
     if dev1 != dev2:
-        return True     # path/.. on a different device as path
+        return True  # path/.. on a different device as path
     ino1 = s1.st_ino
     ino2 = s2.st_ino
     if ino1 == ino2:
-        return True     # path/.. is the same i-node as path
+        return True  # path/.. is the same i-node as path
     return False
 
 
@@ -229,14 +279,15 @@ def ismount(path):
 # (A function should also be defined to do full *sh-style environment
 # variable expansion.)
 
+
 def expanduser(path):
     """Expand ~ and ~user constructions.  If user or $HOME is unknown,
     do nothing."""
     path = os.fspath(path)
     if isinstance(path, bytes):
-        tilde = b'~'
+        tilde = b"~"
     else:
-        tilde = '~'
+        tilde = "~"
     if not path.startswith(tilde):
         return path
     sep = _get_sep(path)
@@ -244,8 +295,9 @@ def expanduser(path):
     if i < 0:
         i = len(path)
     if i == 1:
-        if 'HOME' not in os.environ:
+        if "HOME" not in os.environ:
             import pwd
+
             try:
                 userhome = pwd.getpwuid(os.getuid()).pw_dir
             except KeyError:
@@ -253,12 +305,13 @@ def expanduser(path):
                 # password database, return the path unchanged
                 return path
         else:
-            userhome = os.environ['HOME']
+            userhome = os.environ["HOME"]
     else:
         import pwd
+
         name = path[1:i]
         if isinstance(name, bytes):
-            name = str(name, 'ASCII')
+            name = str(name, "ASCII")
         try:
             pwent = pwd.getpwnam(name)
         except KeyError:
@@ -268,9 +321,9 @@ def expanduser(path):
         userhome = pwent.pw_dir
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
-        root = b'/'
+        root = b"/"
     else:
-        root = '/'
+        root = "/"
     userhome = userhome.rstrip(root)
     return (userhome + path[i:]) or root
 
@@ -279,42 +332,44 @@ def expanduser(path):
 # This expands the forms $variable and ${variable} only.
 # Non-existent variables are left unchanged.
 
-_varprog = None
-_varprogb = None
+_varpattern = r"\$(\w+|\{[^}]*\}?)"
+_varsub = None
+_varsubb = None
+
 
 def expandvars(path):
     """Expand shell variables of form $var and ${var}.  Unknown variables
     are left unchanged."""
     path = os.fspath(path)
-    global _varprog, _varprogb
+    global _varsub, _varsubb
     if isinstance(path, bytes):
-        if b'$' not in path:
+        if b"$" not in path:
             return path
-        if not _varprogb:
+        if not _varsubb:
             import re
-            _varprogb = re.compile(br'\$(\w+|\{[^}]*\})', re.ASCII)
-        search = _varprogb.search
-        start = b'{'
-        end = b'}'
-        environ = getattr(os, 'environb', None)
+
+            _varsubb = re.compile(_varpattern.encode(), re.ASCII).sub
+        sub = _varsubb
+        start = b"{"
+        end = b"}"
+        environ = getattr(os, "environb", None)
     else:
-        if '$' not in path:
+        if "$" not in path:
             return path
-        if not _varprog:
+        if not _varsub:
             import re
-            _varprog = re.compile(r'\$(\w+|\{[^}]*\})', re.ASCII)
-        search = _varprog.search
-        start = '{'
-        end = '}'
+
+            _varsub = re.compile(_varpattern, re.ASCII).sub
+        sub = _varsub
+        start = "{"
+        end = "}"
         environ = os.environ
-    i = 0
-    while True:
-        m = search(path, i)
-        if not m:
-            break
-        i, j = m.span(0)
+
+    def repl(m):
         name = m.group(1)
-        if name.startswith(start) and name.endswith(end):
+        if name.startswith(start):
+            if not name.endswith(end):
+                return m.group(0)
             name = name[1:-1]
         try:
             if environ is None:
@@ -322,54 +377,55 @@ def expandvars(path):
             else:
                 value = environ[name]
         except KeyError:
-            i = j
+            return m.group(0)
         else:
-            tail = path[j:]
-            path = path[:i] + value
-            i = len(path)
-            path += tail
-    return path
+            return value
+
+    return sub(repl, path)
 
 
 # Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A/B.
 # It should be understood that this may change the meaning of the path
 # if it contains symbolic links!
 
+
 def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
     path = os.fspath(path)
     if isinstance(path, bytes):
-        sep = b'/'
-        empty = b''
-        dot = b'.'
-        dotdot = b'..'
+        sep = b"/"
+        empty = b""
+        dot = b"."
+        dotdot = b".."
     else:
-        sep = '/'
-        empty = ''
-        dot = '.'
-        dotdot = '..'
+        sep = "/"
+        empty = ""
+        dot = "."
+        dotdot = ".."
     if path == empty:
         return dot
     initial_slashes = path.startswith(sep)
     # POSIX allows one or two initial slashes, but treats three or more
     # as single slash.
-    if (initial_slashes and
-        path.startswith(sep*2) and not path.startswith(sep*3)):
+    if initial_slashes and path.startswith(sep * 2) and not path.startswith(sep * 3):
         initial_slashes = 2
     comps = path.split(sep)
     new_comps = []
     for comp in comps:
         if comp in (empty, dot):
             continue
-        if (comp != dotdot or (not initial_slashes and not new_comps) or
-             (new_comps and new_comps[-1] == dotdot)):
+        if (
+            comp != dotdot
+            or (not initial_slashes and not new_comps)
+            or (new_comps and new_comps[-1] == dotdot)
+        ):
             new_comps.append(comp)
         elif new_comps:
             new_comps.pop()
     comps = new_comps
     path = sep.join(comps)
     if initial_slashes:
-        path = sep*initial_slashes + path
+        path = sep * initial_slashes + path
     return path or dot
 
 
@@ -388,24 +444,26 @@ def abspath(path):
 # Return a canonical path (i.e. the absolute location of a file on the
 # filesystem).
 
+
 def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
-symbolic links encountered in the path."""
+    symbolic links encountered in the path."""
     filename = os.fspath(filename)
     path, ok = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
+
 
 # Join two paths, normalizing and eliminating any symbolic links
 # encountered in the second path.
 def _joinrealpath(path, rest, strict, seen):
     if isinstance(path, bytes):
-        sep = b'/'
-        curdir = b'.'
-        pardir = b'..'
+        sep = b"/"
+        curdir = b"."
+        pardir = b".."
     else:
-        sep = '/'
-        curdir = '.'
-        pardir = '..'
+        sep = "/"
+        curdir = "."
+        pardir = ".."
         getcwd = os.getcwd
     if strict is ALLOW_MISSING:
         ignored_error = FileNotFoundError
@@ -458,16 +516,17 @@ def _joinrealpath(path, rest, strict, seen):
             else:
                 # Return already resolved part + rest of the path unchanged.
                 return join(newpath, rest), False
-        seen[newpath] = None # not resolved symlink
+        seen[newpath] = None  # not resolved symlink
         path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
         if not ok:
             return join(path, rest), False
-        seen[newpath] = path # resolved symlink
+        seen[newpath] = path  # resolved symlink
 
     return path, True
 
 
-supports_unicode_filenames = (sys.platform == 'darwin')
+supports_unicode_filenames = sys.platform == "darwin"
+
 
 def relpath(path, start=None):
     """Return a relative version of a path"""
@@ -477,13 +536,13 @@ def relpath(path, start=None):
 
     path = os.fspath(path)
     if isinstance(path, bytes):
-        curdir = b'.'
-        sep = b'/'
-        pardir = b'..'
+        curdir = b"."
+        sep = b"/"
+        pardir = b".."
     else:
-        curdir = '.'
-        sep = '/'
-        pardir = '..'
+        curdir = "."
+        sep = "/"
+        pardir = ".."
 
     if start is None:
         start = curdir
@@ -496,12 +555,12 @@ def relpath(path, start=None):
         # Work out how much of the filepath is shared by start and path.
         i = len(commonprefix([start_list, path_list]))
 
-        rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
+        rel_list = [pardir] * (len(start_list) - i) + path_list[i:]
         if not rel_list:
             return curdir
         return join(*rel_list)
     except (TypeError, AttributeError, BytesWarning, DeprecationWarning):
-        genericpath._check_arg_types('relpath', path, start)
+        genericpath._check_arg_types("relpath", path, start)
         raise
 
 
@@ -510,25 +569,26 @@ def relpath(path, start=None):
 # responsibility of the caller). Any trailing separator is stripped from the
 # returned path.
 
+
 def commonpath(paths):
     """Given a sequence of path names, returns the longest common sub-path."""
 
     if not paths:
-        raise ValueError('commonpath() arg is an empty sequence')
+        raise ValueError("commonpath() arg is an empty sequence")
 
     paths = tuple(map(os.fspath, paths))
     if isinstance(paths[0], bytes):
-        sep = b'/'
-        curdir = b'.'
+        sep = b"/"
+        curdir = b"."
     else:
-        sep = '/'
-        curdir = '.'
+        sep = "/"
+        curdir = "."
 
     try:
         split_paths = [path.split(sep) for path in paths]
 
         try:
-            isabs, = set(p[:1] == sep for p in paths)
+            (isabs,) = set(p[:1] == sep for p in paths)
         except ValueError:
             raise ValueError("Can't mix absolute and relative paths") from None
 
@@ -544,5 +604,5 @@ def commonpath(paths):
         prefix = sep if isabs else sep[:0]
         return prefix + sep.join(common)
     except (TypeError, AttributeError):
-        genericpath._check_arg_types('commonpath', *paths)
+        genericpath._check_arg_types("commonpath", *paths)
         raise
