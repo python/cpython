@@ -69,6 +69,13 @@ class traceback "PyTracebackObject *" "&PyTraceback_Type"
 
 #include "clinic/traceback.c.h"
 
+
+#ifdef MS_WINDOWS
+typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
+static PF_GET_THREAD_DESCRIPTION pGetThreadDescription = NULL;
+#endif
+
+
 static PyObject *
 tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,
               int lineno)
@@ -973,6 +980,52 @@ done:
     }
 }
 
+
+#ifdef MS_WINDOWS
+static void
+_Py_DumpWideString(int fd, wchar_t *str)
+{
+    Py_ssize_t size = wcslen(str);
+    int truncated;
+    if (MAX_STRING_LENGTH < size) {
+        size = MAX_STRING_LENGTH;
+        truncated = 1;
+    }
+    else {
+        truncated = 0;
+    }
+
+    for (Py_ssize_t i=0; i < size; i++) {
+        Py_UCS4 ch = str[i];
+        if (' ' <= ch && ch <= 126) {
+            /* printable ASCII character */
+            dump_char(fd, (char)ch);
+        }
+        else if (ch <= 0xff) {
+            PUTS(fd, "\\x");
+            _Py_DumpHexadecimal(fd, ch, 2);
+        }
+        else if (Py_UNICODE_IS_HIGH_SURROGATE(ch)
+                 && Py_UNICODE_IS_LOW_SURROGATE(str[i+1])) {
+            ch = Py_UNICODE_JOIN_SURROGATES(ch, str[i+1]);
+            i++;  // Skip the low surrogate character
+            PUTS(fd, "\\U");
+            _Py_DumpHexadecimal(fd, ch, 8);
+        }
+        else {
+            Py_BUILD_ASSERT(sizeof(wchar_t) == 2);
+            PUTS(fd, "\\u");
+            _Py_DumpHexadecimal(fd, ch, 4);
+        }
+    }
+
+    if (truncated) {
+        PUTS(fd, "...");
+    }
+}
+#endif
+
+
 /* Write a frame into the file fd: "File "xxx", line xxx in xxx".
 
    This function is signal safe. */
@@ -1107,23 +1160,12 @@ _Py_DumpTraceback(int fd, PyThreadState *tstate)
 # endif
 #endif
 
-/* Write the thread identifier into the file 'fd': "Current thread 0xHHHH:\" if
-   is_current is true, "Thread 0xHHHH:\n" otherwise.
 
-   This function is signal safe. */
-
+// Write the thread name
 static void
-write_thread_id(int fd, PyThreadState *tstate, int is_current)
+write_thread_name(int fd, PyThreadState *tstate)
 {
-    if (is_current)
-        PUTS(fd, "Current thread 0x");
-    else
-        PUTS(fd, "Thread 0x");
-    _Py_DumpHexadecimal(fd,
-                        tstate->thread_id,
-                        sizeof(unsigned long) * 2);
-
-    // Write the thread name
+#ifndef MS_WINDOWS
 #if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
     char name[100];
     pthread_t thread = (pthread_t)tstate->thread_id;
@@ -1142,6 +1184,49 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
         }
     }
 #endif
+#else
+    // Windows implementation
+    if (pGetThreadDescription == NULL) {
+        return;
+    }
+
+    HANDLE thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, tstate->thread_id);
+    if (thread == NULL) {
+        return;
+    }
+
+    wchar_t *name;
+    HRESULT hr = pGetThreadDescription(thread, &name);
+    if (!FAILED(hr)) {
+        if (name[0] != 0) {
+            PUTS(fd, " [");
+            _Py_DumpWideString(fd, name);
+            PUTS(fd, "]");
+        }
+        LocalFree(name);
+    }
+    CloseHandle(thread);
+#endif
+}
+
+
+/* Write the thread identifier into the file 'fd': "Current thread 0xHHHH:\" if
+   is_current is true, "Thread 0xHHHH:\n" otherwise.
+
+   This function is signal safe (except on Windows). */
+
+static void
+write_thread_id(int fd, PyThreadState *tstate, int is_current)
+{
+    if (is_current)
+        PUTS(fd, "Current thread 0x");
+    else
+        PUTS(fd, "Thread 0x");
+    _Py_DumpHexadecimal(fd,
+                        tstate->thread_id,
+                        sizeof(unsigned long) * 2);
+
+    write_thread_name(fd, tstate);
 
     PUTS(fd, " (most recent call first):\n");
 }
@@ -1334,5 +1419,22 @@ _Py_InitDumpStack(void)
     // gh-137185: Call backtrace() once to force libgcc to be loaded early.
     void *callstack[1];
     (void)backtrace(callstack, 1);
+#endif
+}
+
+
+void
+_Py_DumpTraceback_Init(void)
+{
+#ifdef MS_WINDOWS
+    if (pGetThreadDescription != NULL) {
+        return;
+    }
+
+    HMODULE kernelbase = GetModuleHandleW(L"kernelbase.dll");
+    if (kernelbase != NULL) {
+        pGetThreadDescription = (PF_GET_THREAD_DESCRIPTION)GetProcAddress(
+                                    kernelbase, "GetThreadDescription");
+    }
 #endif
 }
