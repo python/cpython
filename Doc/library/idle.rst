@@ -37,6 +37,8 @@ IDLE has the following features:
 
 * configuration, browsers, and other dialogs
 
+.. include:: ../includes/optional-module.rst
+
 Menus
 -----
 
