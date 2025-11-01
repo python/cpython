@@ -1520,7 +1520,7 @@ class GrammarTests(unittest.TestCase):
         def check(test):
             self.check_syntax_warning(test, msg)
 
-        msg=r'is not callable; perhaps you missed a comma\?'
+        msg=r'is not callable; did you miss a comma to separate sequence elements\?'
         check('[(1, 2) (3, 4)]')
         check('[(x, y) (3, 4)]')
         check('[[1, 2] (3, 4)]')
@@ -1543,7 +1543,7 @@ class GrammarTests(unittest.TestCase):
         check('[t"{x}" (3, 4)]')
         check('[t"x={x}" (3, 4)]')
 
-        msg=r'is not subscriptable; perhaps you missed a comma\?'
+        msg=r'is not subscriptable; did you miss a comma to separate sequence elements\?'
         check('[{1, 2} [i, j]]')
         check('[{i for i in range(5)} [i, j]]')
         check('[(i for i in range(5)) [i, j]]')
@@ -1557,7 +1557,7 @@ class GrammarTests(unittest.TestCase):
         check('[t"{x}" [i, j]]')
         check('[t"x={x}" [i, j]]')
 
-        msg=r'indices must be integers or slices, not tuple; perhaps you missed a comma\?'
+        msg=r'indices must be integers or slices, not tuple; did you miss a comma to separate sequence elements\?'
         check('[(1, 2) [i, j]]')
         check('[(x, y) [i, j]]')
         check('[[1, 2] [i, j]]')
