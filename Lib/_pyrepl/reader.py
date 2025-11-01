@@ -618,9 +618,15 @@ class Reader:
         elif self.paste_mode:
             prompt = "(paste) "
         elif "\n" in self.buffer:
+            newline_count = self.buffer.count("\n")
+            ends_with_newline = bool(self.buffer) and self.buffer[-1] == "\n"
             if lineno == 0:
-                prompt = self.ps2
-            elif self.ps4 and lineno == self.buffer.count("\n"):
+                prompt = self.ps1
+            elif lineno < newline_count:
+                prompt = self.ps3
+            elif ends_with_newline and lineno == newline_count:
+                prompt = self.ps3
+            elif self.ps4 and lineno == newline_count:
                 prompt = self.ps4
             else:
                 prompt = self.ps3
