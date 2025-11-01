@@ -257,19 +257,27 @@ class HistoricalReader(Reader):
         )
 
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
-        return super().collect_keymap() + (
+        bindings: list[tuple[KeySpec, CommandName]] = [
             (r"\C-n", "next-history"),
             (r"\C-p", "previous-history"),
             (r"\C-o", "operate-and-get-next"),
             (r"\C-r", "reverse-history-isearch"),
             (r"\C-s", "forward-history-isearch"),
-            (r"\M-r", "restore-history"),
-            (r"\M-.", "yank-arg"),
             (r"\<page down>", "history-search-forward"),
-            (r"\x1b[6~", "history-search-forward"),
             (r"\<page up>", "history-search-backward"),
-            (r"\x1b[5~", "history-search-backward"),
-        )
+        ]
+
+        if not self.use_vi_mode:
+            bindings.extend(
+                [
+                    (r"\M-r", "restore-history"),
+                    (r"\M-.", "yank-arg"),
+                    (r"\x1b[6~", "history-search-forward"),
+                    (r"\x1b[5~", "history-search-backward"),
+                ]
+            )
+
+        return super().collect_keymap() + tuple(bindings)
 
     def select_item(self, i: int) -> None:
         self.transient_history[self.historyi] = self.get_unicode()

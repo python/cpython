@@ -325,10 +325,19 @@ class right(MotionCommand):
         b = r.buffer
         for _ in range(r.get_arg()):
             p = r.pos + 1
-            if p <= len(b):
-                r.pos = p
+            # In vi normal mode, don't move past the last character
+            if r.editor_mode.is_normal():
+                eol_pos = r.eol()
+                max_pos = max(r.bol(), eol_pos - 1) if eol_pos > r.bol() else r.bol()
+                if p <= max_pos:
+                    r.pos = p
+                else:
+                    self.reader.error("end of line")
             else:
-                self.reader.error("end of buffer")
+                if p <= len(b):
+                    r.pos = p
+                else:
+                    self.reader.error("end of buffer")
 
 
 class beginning_of_line(MotionCommand):
@@ -336,9 +345,21 @@ class beginning_of_line(MotionCommand):
         self.reader.pos = self.reader.bol()
 
 
+class first_non_whitespace_character(MotionCommand):
+    def do(self) -> None:
+        self.reader.pos = self.reader.first_non_whitespace()
+
+
 class end_of_line(MotionCommand):
     def do(self) -> None:
-        self.reader.pos = self.reader.eol()
+        r = self.reader
+        eol_pos = r.eol()
+        if r.editor_mode.is_normal():
+            bol_pos = r.bol()
+            # Don't go past the last character (but stay at bol if line is empty)
+            r.pos = max(bol_pos, eol_pos - 1) if eol_pos > bol_pos else bol_pos
+        else:
+            r.pos = eol_pos
 
 
 class home(MotionCommand):
@@ -363,6 +384,20 @@ class backward_word(MotionCommand):
         r = self.reader
         for i in range(r.get_arg()):
             r.pos = r.bow()
+
+
+class end_of_word(MotionCommand):
+    def do(self) -> None:
+        r = self.reader
+        for _ in range(r.get_arg()):
+            r.pos = r.vi_eow()
+
+
+class vi_forward_word(MotionCommand):
+    def do(self) -> None:
+        r = self.reader
+        for _ in range(r.get_arg()):
+            r.pos = r.vi_forward_word()
 
 
 class self_insert(EditCommand):
@@ -503,3 +538,55 @@ class perform_bracketed_paste(Command):
         )
         self.reader.insert(data.replace(done, ""))
         self.reader.last_refresh_cache.invalidated = True
+
+
+class vi_normal_mode(Command):
+    def do(self) -> None:
+        self.reader.enter_normal_mode()
+
+
+class vi_insert_mode(Command):
+    def do(self) -> None:
+        self.reader.enter_insert_mode()
+
+
+class vi_append_mode(Command):
+    def do(self) -> None:
+        if self.reader.pos < len(self.reader.buffer):
+            self.reader.pos += 1
+        self.reader.enter_insert_mode()
+
+
+class vi_append_eol(Command):
+    def do(self) -> None:
+        while self.reader.pos < len(self.reader.buffer):
+            if self.reader.buffer[self.reader.pos] == '\n':
+                break
+            self.reader.pos += 1
+        self.reader.enter_insert_mode()
+
+
+class vi_insert_bol(Command):
+    def do(self) -> None:
+        self.reader.pos = self.reader.first_non_whitespace()
+        self.reader.enter_insert_mode()
+
+
+class vi_open_below(Command):
+    def do(self) -> None:
+        while self.reader.pos < len(self.reader.buffer):
+            if self.reader.buffer[self.reader.pos] == '\n':
+                break
+            self.reader.pos += 1
+
+        self.reader.insert('\n')
+        self.reader.enter_insert_mode()
+
+class vi_open_above(Command):
+    def do(self) -> None:
+        while self.reader.pos > 0 and self.reader.buffer[self.reader.pos - 1] != '\n':
+            self.reader.pos -= 1
+
+        self.reader.insert('\n')
+        self.reader.pos -= 1
+        self.reader.enter_insert_mode()

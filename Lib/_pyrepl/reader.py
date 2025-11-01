@@ -27,6 +27,8 @@ import _colorize
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 
+import enum
+
 from . import commands, console, input
 from .utils import wlen, unbracket, disp_str, gen_colors, THEME
 from .trace import trace
@@ -39,6 +41,22 @@ from .types import Callback, SimpleContextManager, KeySpec, CommandName
 
 # syntax classes
 SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)
+
+
+class Mode(str, enum.Enum):
+    INSERT = "insert"
+    NORMAL = "normal"
+
+
+class EditorMode:
+    def __init__(self, mode: Mode = Mode.INSERT) -> None:
+        self.mode = mode
+
+    def is_insert(self) -> bool:
+        return self.mode == Mode.INSERT
+
+    def is_normal(self) -> bool:
+        return self.mode == Mode.NORMAL
 
 
 def make_default_syntax_table() -> dict[str, int]:
@@ -131,6 +149,67 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
 )
 
 
+vi_insert_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
+    [binding for binding in default_keymap if not binding[0].startswith((r"\M-", r"\x1b", r"\EOF", r"\EOH"))] +
+    [(r"\<escape>", "vi-normal-mode")]
+)
+
+
+vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
+    [
+        # Basic motions
+        (r"h", "left"),
+        (r"j", "down"),
+        (r"k", "up"),
+        (r"l", "right"),
+        (r"0", "beginning-of-line"),
+        (r"$", "end-of-line"),
+        (r"w", "vi-forward-word"),
+        (r"b", "backward-word"),
+        (r"e", "end-of-word"),
+        (r"^", "first-non-whitespace-character"),
+
+        # Edit commands
+        (r"x", "delete"),
+        (r"i", "vi-insert-mode"),
+        (r"a", "vi-append-mode"),
+        (r"A", "vi-append-eol"),
+        (r"I", "vi-insert-bol"),
+        (r"o", "vi-open-below"),
+        (r"O", "vi-open-above"),
+
+        # Special keys still work in normal mode
+        (r"\<left>", "left"),
+        (r"\<right>", "right"),
+        (r"\<up>", "up"),
+        (r"\<down>", "down"),
+        (r"\<home>", "beginning-of-line"),
+        (r"\<end>", "end-of-line"),
+        (r"\<delete>", "delete"),
+        (r"\<backspace>", "left"),
+
+        # Control keys (important ones that work in both modes)
+        (r"\C-c", "interrupt"),
+        (r"\C-d", "delete"),
+        (r"\C-l", "clear-screen"),
+        (r"\C-r", "reverse-history-isearch"),
+
+        # Digit args for counts (1-9, not 0 which is BOL)
+        (r"1", "digit-arg"),
+        (r"2", "digit-arg"),
+        (r"3", "digit-arg"),
+        (r"4", "digit-arg"),
+        (r"5", "digit-arg"),
+        (r"6", "digit-arg"),
+        (r"7", "digit-arg"),
+        (r"8", "digit-arg"),
+        (r"9", "digit-arg"),
+
+        (r"\<escape>", "invalid-key"),
+    ]
+)
+
+
 @dataclass(slots=True)
 class Reader:
     """The Reader class implements the bare bones of a command reader,
@@ -214,6 +293,8 @@ class Reader:
     scheduled_commands: list[str] = field(default_factory=list)
     can_colorize: bool = False
     threading_hook: Callback | None = None
+    use_vi_mode: bool = False
+    editor_mode: EditorMode = field(default_factory=EditorMode)
 
     ## cached metadata to speed up screen refreshes
     @dataclass
@@ -281,6 +362,11 @@ class Reader:
         self.last_refresh_cache.dimensions = (0, 0)
 
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
+        if self.use_vi_mode:
+            if self.editor_mode.is_insert():
+                return vi_insert_keymap
+            elif self.editor_mode.is_normal():
+                return vi_normal_keymap
         return default_keymap
 
     def calc_screen(self) -> list[str]:
@@ -433,6 +519,57 @@ class Reader:
             p += 1
         return p
 
+    def vi_eow(self, p: int | None = None) -> int:
+        """Return the 0-based index of the last character of the word
+        following p most immediately (vi 'e' semantics).
+
+        Unlike eow(), this returns the position ON the last word character,
+        not past it. p defaults to self.pos; word boundaries are determined
+        using self.syntax_table."""
+        if p is None:
+            p = self.pos
+        st = self.syntax_table
+        b = self.buffer
+
+        # If we're already at the end of a word, move past it
+        if (p < len(b) and st.get(b[p], SYNTAX_WORD) == SYNTAX_WORD and
+            (p + 1 >= len(b) or st.get(b[p + 1], SYNTAX_WORD) != SYNTAX_WORD)):
+            p += 1
+
+        # Skip non-word characters to find the start of next word
+        while p < len(b) and st.get(b[p], SYNTAX_WORD) != SYNTAX_WORD:
+            p += 1
+
+        # Move to the last character of this word (not past it)
+        while p + 1 < len(b) and st.get(b[p + 1], SYNTAX_WORD) == SYNTAX_WORD:
+            p += 1
+
+        # Clamp to valid buffer range
+        return min(p, len(b) - 1) if b else 0
+
+    def vi_forward_word(self, p: int | None = None) -> int:
+        """Return the 0-based index of the first character of the next word
+        (vi 'w' semantics).
+
+        Unlike eow(), this lands ON the first character of the next word,
+        not past it. p defaults to self.pos; word boundaries are determined
+        using self.syntax_table."""
+        if p is None:
+            p = self.pos
+        st = self.syntax_table
+        b = self.buffer
+
+        # Skip the rest of the current word if we're on one
+        while p < len(b) and st.get(b[p], SYNTAX_WORD) == SYNTAX_WORD:
+            p += 1
+
+        # Skip non-word characters to find the start of next word
+        while p < len(b) and st.get(b[p], SYNTAX_WORD) != SYNTAX_WORD:
+            p += 1
+
+        # Clamp to valid buffer range
+        return min(p, len(b) - 1) if b else 0
+
     def bol(self, p: int | None = None) -> int:
         """Return the 0-based index of the line break preceding p most
         immediately.
@@ -457,6 +594,18 @@ class Reader:
         while p < len(b) and b[p] != "\n":
             p += 1
         return p
+
+    def first_non_whitespace(self, p: int | None = None) -> int:
+        """Return the 0-based index of the first non-whitespace character
+        on the current line.
+
+        p defaults to self.pos."""
+        bol_pos = self.bol(p)
+        eol_pos = self.eol(p)
+        pos = bol_pos
+        while pos < eol_pos and self.buffer[pos].isspace() and self.buffer[pos] != '\n':
+            pos += 1
+        return pos
 
     def max_column(self, y: int) -> int:
         """Return the last x-offset for line y"""
@@ -589,6 +738,8 @@ class Reader:
             self.pos = 0
             self.dirty = True
             self.last_command = None
+            if self.use_vi_mode:
+                self.enter_insert_mode()
             self.calc_screen()
         except BaseException:
             self.restore()
@@ -760,3 +911,38 @@ class Reader:
     def get_unicode(self) -> str:
         """Return the current buffer as a unicode string."""
         return "".join(self.buffer)
+
+    def enter_insert_mode(self) -> None:
+        if self.editor_mode.is_insert():
+            return
+
+        self.editor_mode.mode = Mode.INSERT
+
+        # Switch translator to insert mode keymap
+        self.keymap = self.collect_keymap()
+        self.input_trans = input.KeymapTranslator(
+            self.keymap, invalid_cls="invalid-key", character_cls="self-insert"
+        )
+
+        self.dirty = True
+
+    def enter_normal_mode(self) -> None:
+        if self.editor_mode.is_normal():
+            return
+
+        self.editor_mode.mode = Mode.NORMAL
+
+        # Switch translator to normal mode keymap
+        self.keymap = self.collect_keymap()
+        self.input_trans = input.KeymapTranslator(
+            self.keymap, invalid_cls="invalid-key", character_cls="invalid-key"
+        )
+
+        # In vi normal mode, cursor should be ON a character, not after the last one
+        # If we're past the end of line, move back to the last character
+        bol_pos = self.bol()
+        eol_pos = self.eol()
+        if self.pos >= eol_pos and eol_pos > bol_pos:
+            self.pos = eol_pos - 1
+
+        self.dirty = True
