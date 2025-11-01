@@ -1920,8 +1920,15 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
     assert(old_bases != NULL);
     PyTypeObject *old_base = type->tp_base;
 
+
+#ifdef Py_GIL_DISABLED
+    types_stop_world();
+#endif
     set_tp_bases(type, Py_NewRef(new_bases), 0);
     type->tp_base = (PyTypeObject *)Py_NewRef(best_base);
+#ifdef Py_GIL_DISABLED
+    types_start_world();
+#endif
 
     PyObject *temp = PyList_New(0);
     if (temp == NULL) {
@@ -1982,8 +1989,13 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
     if (lookup_tp_bases(type) == new_bases) {
         assert(type->tp_base == best_base);
 
-        set_tp_bases(type, old_bases, 0);
+#ifdef Py_GIL_DISABLED
+    types_stop_world();
+#endif
         type->tp_base = old_base;
+#ifdef Py_GIL_DISABLED
+    types_start_world();
+#endif
 
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
