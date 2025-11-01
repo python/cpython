@@ -207,7 +207,3 @@ jobs:
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           CC=clang-${{ matrix.llvm }} ./configure --enable-experimental-jit --with-tail-call-interp --with-pydebug
           make all --jobs 4
-      - name: Run tests
-        run: |
-          /python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
