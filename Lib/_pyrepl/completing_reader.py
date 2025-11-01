@@ -29,8 +29,9 @@ from .reader import Reader
 
 # types
 Command = commands.Command
-if False:
-    from .types import KeySpec, CommandName
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from .types import KeySpec, CommandName, CompletionAction
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:
@@ -168,23 +169,33 @@ class complete(commands.Command):
         r: CompletingReader
         r = self.reader  # type: ignore[assignment]
         last_is_completer = r.last_command_is(self.__class__)
+        if r.cmpltn_action:
+            if last_is_completer:  # double-tab: execute action
+                msg = r.cmpltn_action[1]()
+                if msg:
+                    r.msg = msg
+            else:  # other input since last tab: cancel action
+                r.cmpltn_action = None
+
         immutable_completions = r.assume_immutable_completions
         completions_unchangable = last_is_completer and immutable_completions
         stem = r.get_stem()
         if not completions_unchangable:
-            r.cmpltn_menu_choices = r.get_completions(stem)
+            r.cmpltn_menu_choices, r.cmpltn_action = r.get_completions(stem)
 
         completions = r.cmpltn_menu_choices
         if not completions:
-            r.error("no matches")
+            if not r.cmpltn_action:
+                r.error("no matches")
         elif len(completions) == 1:
-            if completions_unchangable and len(completions[0]) == len(stem):
-                r.msg = "[ sole completion ]"
-                r.dirty = True
-            r.insert(completions[0][len(stem):])
+            if not r.cmpltn_action:
+                if completions_unchangable and len(completions[0]) == len(stem):
+                    r.msg = "[ sole completion ]"
+                    r.dirty = True
+                r.insert(completions[0][len(stem):])
         else:
             p = prefix(completions, len(stem))
-            if p:
+            if p and not r.cmpltn_action:
                 r.insert(p)
             if last_is_completer:
                 r.cmpltn_menu_visible = True
@@ -201,6 +212,14 @@ class complete(commands.Command):
                 else:
                     r.msg = "[ not unique ]"
                     r.dirty = True
+
+        if r.cmpltn_action:
+            if r.msg:
+                r.msg += "\n" + r.cmpltn_action[0]
+            else:
+                r.msg = r.cmpltn_action[0]
+            r.cmpltn_message_visible = True
+            r.dirty = True
 
 
 class self_insert(commands.self_insert):
@@ -240,6 +259,7 @@ class CompletingReader(Reader):
     cmpltn_message_visible: bool = field(init=False)
     cmpltn_menu_end: int = field(init=False)
     cmpltn_menu_choices: list[str] = field(init=False)
+    cmpltn_action: CompletionAction | None = field(init=False)
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -281,6 +301,7 @@ class CompletingReader(Reader):
         self.cmpltn_message_visible = False
         self.cmpltn_menu_end = 0
         self.cmpltn_menu_choices = []
+        self.cmpltn_action = None
 
     def get_stem(self) -> str:
         st = self.syntax_table
@@ -291,8 +312,8 @@ class CompletingReader(Reader):
             p -= 1
         return ''.join(b[p+1:self.pos])
 
-    def get_completions(self, stem: str) -> list[str]:
-        return []
+    def get_completions(self, stem: str) -> tuple[list[str], CompletionAction | None]:
+        return [], None
 
     def get_line(self) -> str:
         """Return the current line until the cursor position."""

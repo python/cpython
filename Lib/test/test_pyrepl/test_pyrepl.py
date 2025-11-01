@@ -957,7 +957,9 @@ class TestPyReplModuleCompleter(TestCase):
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
-    def test_import_completions(self):
+    @patch.dict(sys.modules,
+                {"importlib.resources": object()})  # don't propose to import it
+    def test_completions(self):
         cases = (
             ("import path\t\n", "import pathlib"),
             ("import importlib.\t\tres\t\n", "import importlib.resources"),
@@ -1005,12 +1007,13 @@ class TestPyReplModuleCompleter(TestCase):
             ModuleInfo(None, "_private", True),
         ],
     )
+    @patch.dict(sys.modules, {"foo": object()})  # don't propose to import it
     def test_sub_module_private_completions(self):
         cases = (
             # Return public methods by default
             ("from foo import \t\n", "from foo import public"),
             # Return private methods if explicitly specified
-            ("from foo import _\t\n", "from foo import _private"),
+            ("from foo import _p\t\n", "from foo import _private"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1031,12 +1034,13 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
-    def test_relative_import_completions(self):
+    def test_relative_completions(self):
         cases = (
             (None, "from .readl\t\n", "from .readl"),
             (None, "from . import readl\t\n", "from . import readl"),
             ("_pyrepl", "from .readl\t\n", "from .readline"),
             ("_pyrepl", "from . import readl\t\n", "from . import readline"),
+            ("_pyrepl", "from .readline import mul\t\n", "from .readline import multiline_input"),
         )
         for package, code, expected in cases:
             with self.subTest(code=code):
@@ -1066,7 +1070,7 @@ class TestPyReplModuleCompleter(TestCase):
         cases = (
             ("import pri\t\n", "import pri"),
             ("from pri\t\n", "from pri"),
-            ("from typing import Na\t\n", "from typing import Na"),
+            ("from typong import Na\t\n", "from typong import Na"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1078,7 +1082,7 @@ class TestPyReplModuleCompleter(TestCase):
     def test_hardcoded_stdlib_submodules(self):
         cases = (
             ("import collections.\t\n", "import collections.abc"),
-            ("from os import \t\n", "from os import path"),
+            ("import os.\t\n", "import os.path"),
             ("import xml.parsers.expat.\t\te\t\n\n", "import xml.parsers.expat.errors"),
             ("from xml.parsers.expat import \t\tm\t\n\n", "from xml.parsers.expat import model"),
         )
@@ -1095,11 +1099,103 @@ class TestPyReplModuleCompleter(TestCase):
             (dir / "collections").mkdir()
             (dir / "collections" / "__init__.py").touch()
             (dir / "collections" / "foo.py").touch()
-            with patch.object(sys, "path", [dir, *sys.path]):
+            with patch.object(sys, "path", [_dir, *sys.path]):
                 events = code_to_events("import collections.\t\n")
                 reader = self.prepare_reader(events, namespace={})
                 output = reader.readline()
                 self.assertEqual(output, "import collections.foo")
+
+    def test_attribute_completion_module_already_imported(self):
+        cases = (
+            ("from collections import def\t\n", "from collections import defaultdict"),
+            ("from collections.abc import \tB\t\n", "from collections.abc import Buffer"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_attribute_completion_module_on_demand(self):
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "foo.py").write_text("bar = 42")
+            (dir / "pack").mkdir()
+            (dir / "pack" / "__init__.py").touch()
+            (dir / "pack" / "bar.py").touch()
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                cases = (
+                    ("from foo import \t\n", "from foo import ", False),
+                    ("from foo import \t\t\n", "from foo import bar", True),
+                    ("from foo import ba\t\n", "from foo import ba", False),
+                    ("from foo import ba\t\t\n", "from foo import bar", True),
+                    ("from foo import \tb\ta\t\n", "from foo import ba", False),
+                    # only one suggestion but message: do not complete
+                    ("from pack import \t\n", "from pack import ", False),
+                )
+                for code, expected, is_foo_imported in cases:
+                    with self.subTest(code=code):
+                        events = code_to_events(code)
+                        reader = self.prepare_reader(events, namespace={})
+                        output = reader.readline()
+                        self.assertEqual(output, expected)
+                        self.assertEqual("foo" in sys.modules, is_foo_imported)
+                        if is_foo_imported:
+                            del sys.modules["foo"]
+
+    def test_attribute_completion_error_on_import(self):
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "foo.py").write_text("bar = 42")
+            (dir / "boom.py").write_text("1 <> 2")
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                cases = (
+                    ("from boom import \t\t\n", "from boom import "),
+                    ("from foo import \t\t\n", "from foo import bar"), # still working
+                )
+                for code, expected in cases:
+                    with self.subTest(code=code):
+                        events = code_to_events(code)
+                        reader = self.prepare_reader(events, namespace={})
+                        output = reader.readline()
+                        self.assertEqual(output, expected)
+                self.assertNotIn("boom", sys.modules)
+                del sys.modules["foo"]
+
+    def test_attribute_completion_error_on_attributes_access(self):
+        class BrokenModule:
+            def __dir__(self):
+                raise ValueError("boom")
+
+        with (patch.dict(sys.modules, {"boom": BrokenModule()}),
+              patch("_pyrepl._module_completer.ModuleCompleter.iter_submodules",
+                    lambda *_: [ModuleInfo(None, "submodule", False)])):
+            events = code_to_events("from boom import \t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output = reader.readline()
+            # ignore attributes, just propose submodule
+            self.assertEqual(output, "from boom import submodule")
+
+    def test_attribute_completion_private_and_invalid_names(self):
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "foo.py").write_text("_secret = 'bar'")
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                mod = importlib.import_module("foo")
+                mod.__dict__["invalid-identifier"] = "baz"
+                cases = (
+                    ("from foo import \t\n", "from foo import "),
+                    ("from foo import _s\t\n", "from foo import _secret"),
+                    ("from foo import inv\t\n", "from foo import inv"),
+                )
+                for code, expected in cases:
+                    with self.subTest(code=code):
+                        events = code_to_events(code)
+                        reader = self.prepare_reader(events, namespace={})
+                        output = reader.readline()
+                        self.assertEqual(output, expected)
+                del sys.modules["foo"]
 
     def test_get_path_and_prefix(self):
         cases = (
@@ -1229,6 +1325,61 @@ class TestPyReplModuleCompleter(TestCase):
             with self.subTest(code=code):
                 self.assertEqual(actual, None)
 
+    def test_suggestions_and_messages(self) -> None:
+        # more unitary tests checking the exact suggestions provided
+        # (sorting, de-duplication, import action...)
+        _prompt = ("[ module not imported, press again to import it "
+                          "and propose attributes ]")
+        _error = "[ error during import: division by zero ]"
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "foo.py").write_text("bar = 42")
+            (dir / "boom.py").write_text("1/0")
+            (dir / "pack").mkdir()
+            (dir / "pack" / "__init__.py").write_text("foo = 1; bar = 2;")
+            (dir / "pack" / "bar.py").touch()
+            with patch.object(sys, "path", [_dir, *sys.path]):
+                cases = (
+                    # no match != not an import
+                    ("import nope", ([], None), set()),
+                    ("improt nope", None, set()),
+                    # names sorting
+                    ("import col", (["collections", "colorsys"], None), set()),
+                    # module auto-import
+                    ("import fo", (["foo"], None), set()),
+                    ("from foo import ", ([], (_prompt, None)), {"foo"}),
+                    ("from foo import ", (["bar"], None), set()), # now imported
+                    ("from foo import ba", (["bar"], None), set()),
+                    # error during import
+                    ("from boom import ", ([], (_prompt, _error)), set()),
+                    ("from boom import ", ([], None), set()), # do not retry
+                    # packages
+                    ("from collections import a", (["abc"], None), set()),
+                    ("from pack import ", (["bar"], (_prompt, None)), {"pack"}),
+                    ("from pack import ", (["bar", "foo"], None), set()),
+                    ("from pack.bar import ", ([], (_prompt, None)), {"pack.bar"}),
+                    ("from pack.bar import ", ([], None), set()),
+                )
+                completer = ModuleCompleter()
+                for i, (code, expected, expected_imports) in enumerate(cases):
+                    with self.subTest(code=code, i=i):
+                        _imported = set(sys.modules.keys())
+                        result = completer.get_completions(code)
+                        self.assertEqual(result is None, expected is None)
+                        if result:
+                            compl, act = result
+                            self.assertEqual(compl, expected[0])
+                            self.assertEqual(act is None, expected[1] is None)
+                            if act:
+                                msg, func = act
+                                self.assertEqual(msg, expected[1][0])
+                                act_result = func()
+                                self.assertEqual(act_result, expected[1][1])
+
+                        new_imports = sys.modules.keys() - _imported
+                        self.assertSetEqual(new_imports, expected_imports)
+                        for mod in new_imports:
+                            self.addCleanup(sys.modules.pop, mod)
 
 class TestHardcodedSubmodules(TestCase):
     def test_hardcoded_stdlib_submodules_are_importable(self):
