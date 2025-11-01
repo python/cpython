@@ -446,16 +446,8 @@ def decode_params(params):
                 new_params.append((name, '"%s"' % value))
     return new_params
 
-_SANITIZE_TABLE = str.maketrans({i: None for i in range(128, 65536)})
-
-def _sanitize_charset_name(charset, fallback_charset):
-    if not charset:
-        return charset
-    sanitized = charset.translate(_SANITIZE_TABLE)
-    return sanitized if sanitized else fallback_charset
-
 def collapse_rfc2231_value(value, errors='replace',
-                           fallback_charset='ascii'):
+                           fallback_charset='us-ascii'):
     if not isinstance(value, tuple) or len(value) != 3:
         return unquote(value)
     # While value comes to us as a unicode string, we need it to be a bytes
@@ -466,7 +458,6 @@ def collapse_rfc2231_value(value, errors='replace',
         # Issue 17369: if charset/lang is None, decode_rfc2231 couldn't parse
         # the value, so use the fallback_charset.
         charset = fallback_charset
-    charset = _sanitize_charset_name(charset, fallback_charset)
     rawbytes = bytes(text, 'raw-unicode-escape')
     try:
         return str(rawbytes, charset, errors)
