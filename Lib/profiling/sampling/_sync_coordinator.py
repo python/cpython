@@ -149,6 +149,9 @@ def _execute_module(module_name: str, module_args: List[str]) -> None:
         pass
     except Exception as e:
         raise TargetError(f"Error executing module '{module_name}': {e}") from e
+    finally:
+        sys.stdout.flush()
+        sys.stderr.flush()
 
 
 def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
@@ -198,6 +201,9 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
         pass
     except Exception as e:
         raise TargetError(f"Error executing script '{script_path}': {e}") from e
+    finally:
+        sys.stdout.flush()
+        sys.stderr.flush()
 
 
 def main() -> NoReturn:
