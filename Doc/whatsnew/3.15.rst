@@ -307,6 +307,86 @@ Other language changes
   not only integers or floats, although this does not improve precision.
   (Contributed by Serhiy Storchaka in :gh:`67795`.)
 
+.. _whatsnew315-bytearray-take-bytes:
+
+* Added :meth:`bytearray.take_bytes(n=None, /) <bytearray.take_bytes>` to take
+  bytes out of a :class:`bytearray` without copying. This enables optimizing code
+  which must return :class:`bytes` after working with a mutable buffer of bytes
+  such as buffering data, network protocol implementation, encoding, decoding,
+  and compression. Common code patterns which can be optimized with
+  :func:`~bytearray.take_bytes` are listed below.
+
+  (Contributed by Cody Maloney in :gh:`139871`.)
+
+  .. list-table:: Suggested Optimizing Refactors
+      :header-rows: 1
+
+      * - Description
+        - Old
+        - New
+
+      * - Return :class:`bytes` after working with :class:`bytearray`
+        - .. code:: python
+
+              def read() -> bytes:
+                  buffer = bytearray(1024)
+                  ...
+                  return bytes(buffer)
+
+        - .. code:: python
+
+              def read() -> bytes:
+                  buffer = bytearray(1024)
+                  ...
+                  return buffer.take_bytes()
+
+      * - Empty a buffer getting the bytes
+        - .. code:: python
+
+              buffer = bytearray(1024)
+              ...
+              data = bytes(buffer)
+              buffer.clear()
+
+        - .. code:: python
+
+              buffer = bytearray(1024)
+              ...
+              data = buffer.take_bytes()
+
+      * - Split a buffer at a specific separator
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              data = bytes(buffer[:n + 1])
+              del buffer[:n + 1]
+              assert data == b'abc'
+              assert buffer == bytearray(b'def')
+
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              data = buffer.take_bytes(n + 1)
+
+      * - Split a buffer at a specific separator; discard after the separator
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              data = bytes(buffer[:n])
+              buffer.clear()
+              assert data == b'abc'
+              assert len(buffer) == 0
+
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              buffer.resize(n)
+              data = buffer.take_bytes()
+
 
 New modules
 ===========
