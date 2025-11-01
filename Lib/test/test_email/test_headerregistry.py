@@ -1,7 +1,6 @@
 import datetime
 import textwrap
 import unittest
-import warnings
 from email import errors
 from email import policy
 from email.message import Message
@@ -249,11 +248,8 @@ class TestContentTypeHeader(TestHeaderBase):
         header = 'Content-Type:' + ' ' if source else ''
         folded = args[3] if l>3 else header + decoded + '\n'
         # Suppress deprecation warning for rfc2231_nonascii_in_charset_of_charset_parameter_value
-        if 'utf-8%E2%80%9D' in source:
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore',
-                    message='Support for non-ascii encoding names',
-                    category=DeprecationWarning)
+        if 'utf-8%E2%80%9D' in source and not 'ascii' in source:
+            with self.assertWarns(DeprecationWarning):
                 h = self.make_header('Content-Type', source)
         else:
             h = self.make_header('Content-Type', source)
