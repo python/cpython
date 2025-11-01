@@ -220,11 +220,9 @@ class BaseWinregTests(unittest.TestCase):
         self.addCleanup(CloseKey, key3)
 
         self.assertEqual(key1.handle, key2.handle)
-        self.assertEqual(key1, key2)
         self.assertTrue(key1 == key2)
         self.assertFalse(key1 != key2)
 
-        self.assertNotEqual(key1, key3)
         self.assertTrue(key1 != key3)
         self.assertFalse(key1 == key3)
 

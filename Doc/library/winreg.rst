@@ -771,9 +771,9 @@ Handle objects provide semantics for :meth:`~object.__bool__` -- thus ::
 will print ``Yes`` if the handle is currently valid (has not been closed or
 detached).
 
-The object also support comparison semantics, so handle objects will compare
-true if they both reference the same underlying Windows handle value. Closed
-handle objects (those with a handle value of zero) always compare equal.
+The object also support equality comparison semantics, so handle objects will
+compare equal if they both reference the same underlying Windows handle value.
+Closed handle objects (those with a handle value of zero) always compare equal.
 
 Handle objects can be converted to an integer (e.g., using the built-in
 :func:`int` function), in which case the underlying Windows handle value is
@@ -818,4 +818,4 @@ integer handle, and also disconnect the Windows handle from the handle object.
 
 .. versionchanged:: next
    Handle objects are now compared by their underlying Windows handle value
-   instead of object identity.
+   instead of object identity for equality comparisons.
