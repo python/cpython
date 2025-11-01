@@ -7110,7 +7110,9 @@
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND0();
             _PyExitData *exit = (_PyExitData *)exit_p;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
-            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
+            const _Py_CODEUNIT *target = ((frame->owner >= FRAME_OWNED_BY_INTERPRETER)
+                ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame))
+            + exit->target;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 2) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -7462,7 +7464,8 @@
         case _COLD_EXIT: {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
+            _Py_CODEUNIT *target = ((frame->owner >= FRAME_OWNED_BY_INTERPRETER)
+                                    ? (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame)) + exit->target;
             _Py_BackoffCounter temperature = exit->temperature;
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
@@ -7471,6 +7474,9 @@
                 Py_INCREF(executor);
             }
             else {
+                if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+                    GOTO_TIER_ONE(target);
+                }
                 if (!backoff_counter_triggers(temperature)) {
                     exit->temperature = advance_backoff_counter(temperature);
                     GOTO_TIER_ONE(target);

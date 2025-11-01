@@ -44,6 +44,7 @@
 
 #define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"
+#include "../Include/internal/pycore_stackref.h"
 
 /* Flow control macros */
 
@@ -170,7 +171,6 @@ dummy_func(
 
         op(_QUICKEN_RESUME, (--)) {
             #if ENABLE_SPECIALIZATION_FT
-            PyCodeObject *code = _PyFrame_GetCode(frame);
             if (tstate->tracing == 0 && this_instr->op.code == RESUME) {
                 FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
             }
@@ -5266,7 +5266,9 @@ dummy_func(
         tier2 op(_EXIT_TRACE, (exit_p/4 --)) {
             _PyExitData *exit = (_PyExitData *)exit_p;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
-            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
+            const _Py_CODEUNIT *target = ((frame->owner >= FRAME_OWNED_BY_INTERPRETER)
+                ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame))
+                + exit->target;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
@@ -5420,7 +5422,8 @@ dummy_func(
         tier2 op(_COLD_EXIT, ( -- )) {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
+            _Py_CODEUNIT *target = ((frame->owner >= FRAME_OWNED_BY_INTERPRETER)
+                ? (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame)) + exit->target;
             _Py_BackoffCounter temperature = exit->temperature;
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
@@ -5429,6 +5432,9 @@ dummy_func(
                 Py_INCREF(executor);
             }
             else {
+                if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+                    GOTO_TIER_ONE(target);
+                }
                 if (!backoff_counter_triggers(temperature)) {
                     exit->temperature = advance_backoff_counter(temperature);
                     GOTO_TIER_ONE(target);
@@ -5664,14 +5670,14 @@ dummy_func(
                 tstate->interp->jit_state.prev_instr = next_instr;
             }
             tstate->interp->jit_state.specialize_counter = 0;
-            PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
+            PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(PyStackRef_AsPyObjectBorrow(frame->f_executable));
             if (tstate->interp->jit_state.prev_instr_code != prev_code) {
                 Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
             }
 
             tstate->interp->jit_state.prev_instr_frame = frame;
             tstate->interp->jit_state.prev_instr_oparg = oparg;
-            tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();
+            tstate->interp->jit_state.prev_instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
             DISPATCH_GOTO_NON_TRACING();
 #else
             Py_FatalError("JIT label executed in non-jit build.");

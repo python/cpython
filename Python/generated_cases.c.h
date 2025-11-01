@@ -10343,7 +10343,6 @@
             // _QUICKEN_RESUME
             {
                 #if ENABLE_SPECIALIZATION_FT
-                PyCodeObject *code = _PyFrame_GetCode(frame);
                 if (tstate->tracing == 0 && this_instr->op.code == RESUME) {
                     FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, RESUME_CHECK);
                 }
@@ -12368,7 +12367,7 @@ JUMP_TO_LABEL(error);
                 tstate->interp->jit_state.prev_instr = next_instr;
             }
             tstate->interp->jit_state.specialize_counter = 0;
-            PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
+            PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(PyStackRef_AsPyObjectBorrow(frame->f_executable));
             if (tstate->interp->jit_state.prev_instr_code != prev_code) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
@@ -12376,7 +12375,7 @@ JUMP_TO_LABEL(error);
             }
             tstate->interp->jit_state.prev_instr_frame = frame;
             tstate->interp->jit_state.prev_instr_oparg = oparg;
-            tstate->interp->jit_state.prev_instr_stacklevel = STACK_LEVEL();
+            tstate->interp->jit_state.prev_instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
             DISPATCH_GOTO_NON_TRACING();
             #else
             Py_FatalError("JIT label executed in non-jit build.");

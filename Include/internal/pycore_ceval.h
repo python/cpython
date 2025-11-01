@@ -391,8 +391,7 @@ _PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame
 #define SPECIAL___AEXIT__   3
 #define SPECIAL_MAX   3
 
-struct _PyCode12 _PyCode_DEF(12);
-PyAPI_DATA(const struct _PyCode12) _PyEntryFrameCode;
+PyAPI_DATA(const _Py_CODEUNIT *) _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR;
 
 #ifdef __cplusplus
 }

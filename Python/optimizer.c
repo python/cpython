@@ -34,7 +34,7 @@
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
 {
-    if (code == (PyCodeObject *)&_Py_InitCleanup || code == (PyCodeObject *)&_PyEntryFrameCode) {
+    if (code == (PyCodeObject *)&_Py_InitCleanup) {
         return false;
     }
     if (instr->op.code == ENTER_EXECUTOR) {
@@ -580,7 +580,9 @@ _PyJit_translate_single_bytecode_to_trace(
     _Py_CODEUNIT *target_instr = this_instr;
     uint32_t target = 0;
 
-    target = INSTR_IP(target_instr, old_code);
+    target = Py_IsNone((PyObject *)old_code)
+        ? (int)(target_instr - _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR)
+        : INSTR_IP(target_instr, old_code);
 
     // Rewind EXTENDED_ARG so that we see the whole thing.
     // We must point to the first EXTENDED_ARG when deopting.
@@ -858,7 +860,7 @@ _PyJit_translate_single_bytecode_to_trace(
                         DPRINTF(2, "Adding %p func to op\n", (void *)operand);
                         _Py_BloomFilter_Add(dependencies, new_func);
                     }
-                    else if (new_code != NULL) {
+                    else if (new_code != NULL && !Py_IsNone((PyObject*)new_code)) {
                         operand = (uintptr_t)new_code | 1;
                         DPRINTF(2, "Adding %p code to op\n", (void *)operand);
                         _Py_BloomFilter_Add(dependencies, new_code);
@@ -867,7 +869,7 @@ _PyJit_translate_single_bytecode_to_trace(
                         operand = 0;
                     }
                     ADD_TO_TRACE(uop, oparg, operand, target);
-                    trace[trace_length - 1].operand1 = ((int)(frame->stackpointer - _PyFrame_Stackbase(frame)));
+                    trace[trace_length - 1].operand1 = PyStackRef_IsNone(frame->f_executable) ? 2 : ((int)(frame->stackpointer - _PyFrame_Stackbase(frame)));
                     break;
                 }
                 if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {

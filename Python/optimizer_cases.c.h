@@ -1175,6 +1175,7 @@
             JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            ctx->frame->stack_pointer = stack_pointer;
             PyCodeObject *returning_code = get_code_with_logging(this_instr);
             if (returning_code == NULL) {
                 ctx->done = true;

@@ -812,6 +812,7 @@ dummy_func(void) {
         JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
         DEAD(retval);
         SAVE_STACK();
+        ctx->frame->stack_pointer = stack_pointer;
         PyCodeObject *returning_code = get_code_with_logging(this_instr);
         if (returning_code == NULL) {
             ctx->done = true;
