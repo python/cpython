@@ -17,6 +17,7 @@ TYPE_CHECKING = False
 
 if TYPE_CHECKING:
     from typing import Any, Iterable, Iterator, Mapping
+    from .types import CompletionAction
 
 
 HARDCODED_SUBMODULES = {
@@ -52,11 +53,17 @@ class ModuleCompleter:
     def __init__(self, namespace: Mapping[str, Any] | None = None) -> None:
         self.namespace = namespace or {}
         self._global_cache: list[pkgutil.ModuleInfo] = []
+        self._failed_imports: set[str] = set()
         self._curr_sys_path: list[str] = sys.path[:]
         self._stdlib_path = os.path.dirname(importlib.__path__[0])
 
-    def get_completions(self, line: str) -> list[str] | None:
-        """Return the next possible import completions for 'line'."""
+    def get_completions(self, line: str) -> tuple[list[str], CompletionAction | None] | None:
+        """Return the next possible import completions for 'line'.
+
+        For attributes completion, if the module to complete from is not
+        imported, also return an action (prompt + callback to run if the
+        user press TAB again) to import the module.
+        """
         result = ImportParser(line).parse()
         if not result:
             return None
@@ -65,24 +72,26 @@ class ModuleCompleter:
         except Exception:
             # Some unexpected error occurred, make it look like
             # no completions are available
-            return []
+            return [], None
 
-    def complete(self, from_name: str | None, name: str | None) -> list[str]:
+    def complete(self, from_name: str | None, name: str | None) -> tuple[list[str], CompletionAction | None]:
         if from_name is None:
             # import x.y.z<tab>
             assert name is not None
             path, prefix = self.get_path_and_prefix(name)
             modules = self.find_modules(path, prefix)
-            return [self.format_completion(path, module) for module in modules]
+            return [self.format_completion(path, module) for module in modules], None
 
         if name is None:
             # from x.y.z<tab>
             path, prefix = self.get_path_and_prefix(from_name)
             modules = self.find_modules(path, prefix)
-            return [self.format_completion(path, module) for module in modules]
+            return [self.format_completion(path, module) for module in modules], None
 
         # from x.y import z<tab>
-        return self.find_modules(from_name, name)
+        submodules = self.find_modules(from_name, name)
+        attributes, action = self.find_attributes(from_name, name)
+        return sorted({*submodules, *attributes}), action
 
     def find_modules(self, path: str, prefix: str) -> list[str]:
         """Find all modules under 'path' that start with 'prefix'."""
@@ -128,6 +137,33 @@ class ModuleCompleter:
     def _is_stdlib_module(self, module_info: pkgutil.ModuleInfo) -> bool:
         return (isinstance(module_info.module_finder, FileFinder)
                 and module_info.module_finder.path == self._stdlib_path)
+
+    def find_attributes(self, path: str, prefix: str) -> tuple[list[str], CompletionAction | None]:
+        """Find all attributes of module 'path' that start with 'prefix'."""
+        attributes, action = self._find_attributes(path, prefix)
+        # Filter out invalid attribute names
+        # (for example those containing dashes that cannot be imported with 'import')
+        return [attr for attr in attributes if attr.isidentifier()], action
+
+    def _find_attributes(self, path: str, prefix: str) -> tuple[list[str], CompletionAction | None]:
+        if path.startswith('.'):
+            # Convert relative path to absolute path
+            package = self.namespace.get('__package__', '')
+            path = self.resolve_relative_name(path, package)  # type: ignore[assignment]
+            if path is None:
+                return [], None
+
+        imported_module = sys.modules.get(path)
+        if not imported_module:
+            if path in self._failed_imports:  # Do not propose to import again
+                return [], None
+            return [], self._get_import_completion_action(path)
+        try:
+            module_attributes = dir(imported_module)
+        except Exception:
+            module_attributes = []
+        return [attr_name for attr_name in module_attributes
+                if self.is_suggestion_match(attr_name, prefix)], None
 
     def is_suggestion_match(self, module_name: str, prefix: str) -> bool:
         if prefix:
@@ -199,6 +235,21 @@ class ModuleCompleter:
             # print('getting packages')
             self._global_cache = list(pkgutil.iter_modules())
         return self._global_cache
+
+    def _get_import_completion_action(self, path: str) -> CompletionAction:
+        prompt = ("[ module not imported, press again to import it "
+                  "and propose attributes ]")
+
+        def _do_import() -> str | None:
+            try:
+                importlib.import_module(path)
+                return None
+            except Exception as exc:
+                sys.modules.pop(path, None)  # Clean half-imported module
+                self._failed_imports.add(path)
+                return f"[ error during import: {exc} ]"
+
+        return (prompt, _do_import)
 
 
 class ImportParser:
