@@ -218,6 +218,7 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=opname))
         stencil_groups = {task.get_name(): task.result() for task in tasks}
         for stencil_group in stencil_groups.values():
+            stencil_group.convert_labels_to_relocations()
             stencil_group.process_relocations(self.known_symbols)
         return stencil_groups
 
@@ -565,7 +566,7 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         host = "aarch64-apple-darwin"
         condition = "defined(__aarch64__) && defined(__APPLE__)"
-        optimizer = _optimizers.OptimizerAArch64_MachO
+        optimizer = _optimizers.OptimizerAArch64
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         host = "aarch64-pc-windows-msvc"
