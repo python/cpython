@@ -289,6 +289,14 @@ class AuditTest(unittest.TestCase):
         self.assertNotEqual(returncode, 0)
         self.assertIn('hook failed', stderr.splitlines()[-1])
 
+    def test_time_leak(self):
+        import sys
+        import time  # Leaks struct_time_type
+
+        hook = lambda a, b: None
+        sys.addaudithook(hook)
+        t = time.localtime()
+
     def test_sys_monitoring_register_callback(self):
         returncode, events, stderr = self.run_python("test_sys_monitoring_register_callback")
         if returncode:
