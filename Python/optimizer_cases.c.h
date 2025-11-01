@@ -3274,6 +3274,14 @@
             break;
         }
 
+        case _DYNAMIC_EXIT: {
+            break;
+        }
+
+        case _DYNAMIC_DEOPT: {
+            break;
+        }
+
         case _CHECK_VALIDITY: {
             break;
         }
@@ -3399,6 +3407,10 @@
             break;
         }
 
+        case _START_DYNAMIC_EXECUTOR: {
+            break;
+        }
+
         case _MAKE_WARM: {
             break;
         }
@@ -3427,6 +3439,14 @@
             break;
         }
 
+        case _COLD_DYNAMIC_EXIT: {
+            break;
+        }
+
+        case _GUARD_EXECUTOR_IP: {
+            break;
+        }
+
         case _GUARD_IP__PUSH_FRAME: {
             break;
         }
@@ -3440,10 +3460,6 @@
         }
 
         case _GUARD_IP_RETURN_GENERATOR: {
-            break;
-        }
-
-        case _DYNAMIC_EXIT: {
             break;
         }
 

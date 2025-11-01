@@ -2984,7 +2984,7 @@ dummy_func(
                     oparg >>= 8;
                     insert_exec_at--;
                 }
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, NULL, oparg);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, NULL, oparg, false);
                 if (succ) {
                     ENTER_TRACING();
                 }
@@ -5283,6 +5283,32 @@ dummy_func(
             TIER2_TO_TIER2(exit->executor);
         }
 
+        // Note: this is different than _COLD_EXIT/_EXIT_TRACE, as it may lead to multiple executors
+        // from a single exit!
+        tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
+            _PyExitData *exit = (_PyExitData *)exit_p;
+    #if defined(Py_DEBUG) && !defined(_Py_JIT)
+            _Py_CODEUNIT *target = frame->instr_ptr;
+            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+            if (frame->lltrace >= 2) {
+                printf("DYNAMIC EXIT: [UOp ");
+                _PyUOpPrint(&next_uop[-1]);
+                printf(", exit %tu, temp %d, target %d -> %s]\n",
+                    exit - current_executor->exits, exit->temperature.value_and_backoff,
+                    (int)(target - _PyFrame_GetBytecode(frame)),
+                    _PyOpcode_OpName[target->op.code]);
+            }
+    #endif
+            tstate->jit_exit = exit;
+            assert(exit->is_dynamic);
+            _PyExecutorObject *exec = exit->executor;
+            TIER2_TO_TIER2(exec);
+        }
+
+        tier2 op(_DYNAMIC_DEOPT, (--)) {
+            GOTO_TIER_ONE(frame->instr_ptr);
+        }
+
         tier2 op(_CHECK_VALIDITY, (--)) {
             DEOPT_IF(!current_executor->vm_data.valid);
         }
@@ -5382,6 +5408,21 @@ dummy_func(
             }
         }
 
+        tier2 op(_START_DYNAMIC_EXECUTOR, (executor/4 --)) {
+#ifndef _Py_JIT
+            assert(current_executor == (_PyExecutorObject*)executor);
+#endif
+            assert(tstate->jit_exit != NULL || tstate->jit_exit->executor == current_executor);
+            tstate->current_executor = (PyObject *)executor;
+            if (!current_executor->vm_data.valid) {
+                assert(tstate->jit_exit->executor == current_executor);
+                assert(tstate->current_executor == executor);
+                _PyExecutor_ClearExit(tstate->jit_exit);
+                // Note: this points to _DYNAMIC_DEOPT!!!
+                DEOPT_IF(true);
+            }
+        }
+
         tier2 op(_MAKE_WARM, (--)) {
             current_executor->vm_data.warm = true;
         }
@@ -5445,15 +5486,51 @@ dummy_func(
                 // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, previous_executor, target->op.arg);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, previous_executor, target->op.arg, false);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
                 }
+                exit->temperature = restart_backoff_counter(exit->temperature);
                 GOTO_TIER_ONE(target);
             }
             assert(tstate->jit_exit == exit);
             exit->executor = executor;
             TIER2_TO_TIER2(exit->executor);
+        }
+
+        tier2 op(_COLD_DYNAMIC_EXIT, ( -- )) {
+            _PyExitData *exit = tstate->jit_exit;
+            assert(exit != NULL);
+            _Py_CODEUNIT *target = frame->instr_ptr;
+            _Py_BackoffCounter temperature = exit->temperature;
+            _PyExecutorObject *executor;
+            if (target->op.code == ENTER_EXECUTOR) {
+                PyCodeObject *code = _PyFrame_GetCode(frame);
+                executor = code->co_executors->executors[target->op.arg];
+                if (executor->trace[2].opcode == _GUARD_EXECUTOR_IP && executor->vm_data.valid) {
+                    Py_INCREF(executor);
+                    assert(tstate->jit_exit == exit);
+                    exit->executor = executor;
+                    TIER2_TO_TIER2(executor);
+                }
+            }
+            if (!backoff_counter_triggers(temperature)) {
+                exit->temperature = advance_backoff_counter(temperature);
+                GOTO_TIER_ONE(target);
+            }
+            _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
+            assert(tstate->current_executor == (PyObject *)previous_executor);
+            int chain_depth = previous_executor->vm_data.chain_depth + 1;
+            int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, previous_executor, target->op.arg, true);
+            if (succ) {
+                GOTO_TIER_ONE_CONTINUE_TRACING(target);
+            }
+            exit->temperature = restart_backoff_counter(exit->temperature);
+            GOTO_TIER_ONE(target);
+        }
+
+        tier2 op(_GUARD_EXECUTOR_IP, (ip/4 --)) {
+            EXIT_IF(frame->instr_ptr != (_Py_CODEUNIT*)ip);
         }
 
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
@@ -5474,33 +5551,6 @@ dummy_func(
         tier2 op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
             // Implementation automatically inserted by Tools/cases/tier2_generator.py
             EXIT_IF(true);
-        }
-
-        // Note: this is different than _COLD_EXIT/_EXIT_TRACE, as it may lead to multiple executors
-        // from a single exit!
-        tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr;
-#if defined(Py_DEBUG) && !defined(_Py_JIT)
-            _PyExitData *exit = (_PyExitData *)exit_p;
-            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            if (frame->lltrace >= 2) {
-                printf("DYNAMIC EXIT: [UOp ");
-                _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %tu, temp %d, target %d -> %s]\n",
-                    exit - current_executor->exits, exit->temperature.value_and_backoff,
-                    (int)(target - _PyFrame_GetBytecode(frame)),
-                    _PyOpcode_OpName[target->op.code]);
-            }
-#endif
-            if (target->op.code == ENTER_EXECUTOR) {
-                PyCodeObject *code = _PyFrame_GetCode(frame);
-                _PyExecutorObject *executor = code->co_executors->executors[target->op.arg];
-                tstate->jit_exit = NULL;
-                TIER2_TO_TIER2(executor);
-            }
-            else {
-                GOTO_TIER_ONE(target);
-            }
         }
 
         label(pop_2_error) {

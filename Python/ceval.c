@@ -1214,7 +1214,10 @@ _PyTier2Interpreter(
 tier2_start:
 
     next_uop = current_executor->trace;
-    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
+    assert(next_uop->opcode == _START_EXECUTOR ||
+        next_uop->opcode == _COLD_EXIT ||
+        next_uop->opcode == _COLD_DYNAMIC_EXIT ||
+        next_uop->opcode == _START_DYNAMIC_EXECUTOR);
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) (void)0
@@ -1238,13 +1241,16 @@ tier2_start:
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
-    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
+    assert(next_uop->opcode == _START_EXECUTOR ||
+        next_uop->opcode == _COLD_EXIT ||
+        next_uop->opcode == _COLD_DYNAMIC_EXIT ||
+        next_uop->opcode == _START_DYNAMIC_EXECUTOR);
 tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (frame->lltrace >= 3) {
-            dump_stack(frame, stack_pointer);
+            // dump_stack(frame, stack_pointer);
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }

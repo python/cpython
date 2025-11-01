@@ -962,6 +962,7 @@ struct _is {
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
+    struct _PyExecutorObject *cold_dynamic_executor;
     int executor_deletion_list_remaining_capacity;
     size_t executor_creation_counter;
     _rare_events rare_events;

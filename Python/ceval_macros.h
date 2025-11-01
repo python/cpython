@@ -401,9 +401,17 @@ do {                                                   \
         next_instr = frame->instr_ptr + 1;                 \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
+    /* No progress made */ \
+    if (next_instr == this_instr) { \
+        opcode = executor->vm_data.opcode; \
+        oparg = (oparg & ~255) | executor->vm_data.oparg; \
+        if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) { \
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter); \
+        } \
+        DISPATCH_GOTO(); \
+    } \
     if (keep_tracing_bit) { \
-        assert(next_instr->op.code != ENTER_EXECUTOR); \
-        assert(tstate->interp->jit_state.code_curr_size == 2); \
+        assert(tstate->interp->jit_state.code_curr_size == 2 || tstate->interp->jit_state.code_curr_size == 3); \
         ENTER_TRACING(); \
         DISPATCH_NON_TRACING(); \
     } \

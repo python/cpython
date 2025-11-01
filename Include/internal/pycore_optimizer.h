@@ -37,6 +37,7 @@ typedef struct {
 typedef struct _PyExitData {
     uint32_t target;
     uint16_t index;
+    char is_dynamic;
     _Py_BackoffCounter temperature;
     struct _PyExecutorObject *executor;
 } _PyExitData;
@@ -340,6 +341,7 @@ static inline _PyExecutorObject *_PyExecutor_FromExit(_PyExitData *exit)
 }
 
 extern _PyExecutorObject *_PyExecutor_GetColdExecutor(void);
+extern _PyExecutorObject *_PyExecutor_GetColdDynamicExecutor(void);
 
 PyAPI_FUNC(void) _PyExecutor_ClearExit(_PyExitData *exit);
 
@@ -366,7 +368,7 @@ int
 _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr,
     _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit,
-    _PyExecutorObject *prev_exec, int oparg);
+    _PyExecutorObject *prev_exec, int oparg, bool is_dynamic_target);
 
 void _PyJit_FinalizeTracing(PyThreadState *tstate);
 

@@ -448,6 +448,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _NOP;
                 }
                 break;
+            case _EXIT_TRACE:
             default:
             {
                 // Cancel out pushes and pops, repeatedly. So:
@@ -481,7 +482,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 }
                 /* _PUSH_FRAME doesn't escape or error, but it
                  * does need the IP for the return address */
-                bool needs_ip = (opcode == _PUSH_FRAME || opcode == _YIELD_VALUE || opcode == _DYNAMIC_EXIT);
+                bool needs_ip = (opcode == _PUSH_FRAME || opcode == _YIELD_VALUE || opcode == _DYNAMIC_EXIT || opcode == _EXIT_TRACE);
                 if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
                     needs_ip = true;
                     may_have_escaped = true;
@@ -491,10 +492,12 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[last_set_ip].opcode = _SET_IP;
                     last_set_ip = -1;
                 }
+                if (opcode == _EXIT_TRACE) {
+                    return pc + 1;
+                }
                 break;
             }
             case _JUMP_TO_TOP:
-            case _EXIT_TRACE:
             case _DYNAMIC_EXIT:
                 return pc + 1;
         }

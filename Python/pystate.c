@@ -827,6 +827,14 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         assert(cold->vm_data.warm);
         _PyExecutor_Free(cold);
     }
+
+    struct _PyExecutorObject *cold_dynamic = interp->cold_dynamic_executor;
+    if (cold_dynamic != NULL) {
+        interp->cold_dynamic_executor = NULL;
+        assert(cold_dynamic->vm_data.valid);
+        assert(cold_dynamic->vm_data.warm);
+        _PyExecutor_Free(cold_dynamic);
+    }
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
        which requires sysdict and builtins. */

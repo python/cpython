@@ -7716,7 +7716,7 @@
                         oparg >>= 8;
                         insert_exec_at--;
                     }
-                    int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, NULL, oparg);
+                    int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, NULL, oparg, false);
                     if (succ) {
                         ENTER_TRACING();
                     }
