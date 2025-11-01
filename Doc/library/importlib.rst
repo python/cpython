@@ -1025,7 +1025,7 @@ find and load modules.
    The *path* argument is the initial path value.
 
    The *path_finder* argument is the callable used to recompute the path value.
-   The callable has the same signature as :meth:`MetaPathFinder.find_spec`.
+   The callable has the same signature as :meth:`importlib.abc.MetaPathFinder.find_spec`.
 
    When the parent's :attr:`module.__path__` attribute is updated, the path
    value is recomputed.
