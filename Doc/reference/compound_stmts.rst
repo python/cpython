@@ -1105,6 +1105,11 @@ The same keyword should not be repeated in class patterns.
 The following is the logical flow for matching a class pattern against a
 subject value:
 
+#. If ``name_or_attr`` is a union type, apply the subsequent steps in order to
+   each of its members, returning the first successful match or raising the first
+   encountered exception.
+   This mirrors the behavior of :func:`isinstance` with union types.
+
 #. If ``name_or_attr`` is not an instance of the builtin :class:`type` , raise
    :exc:`TypeError`.
 
