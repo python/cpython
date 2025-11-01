@@ -84,8 +84,8 @@ class GeckoCollector(Collector):
         self.native_code_start = {}       # Thread running native code (on CPU without GIL)
         self.gil_wait_start = {}          # Thread waiting for GIL
 
-        # GC event tracking: track if we're currently in a GC
-        self.potential_gc_start = None
+        # GC event tracking: track GC start time per thread
+        self.gc_start_per_thread = {}  # tid -> start_time
 
         # Track which threads have been initialized for state tracking
         self.initialized_threads = set()
@@ -136,17 +136,12 @@ class GeckoCollector(Collector):
             ) / self.sample_count
         self.last_sample_time = current_time
 
-        # GC Event Detection and process threads
-        gc_collecting = False
-
+        # Process threads and track GC per thread
         for interpreter_info in stack_frames:
             for thread_info in interpreter_info.threads:
-                # Track GC status
-                if thread_info.gc_collecting:
-                    gc_collecting = True
-
                 frames = thread_info.frame_info
                 tid = thread_info.thread_id
+                gc_collecting = thread_info.gc_collecting
 
                 # Initialize thread if needed
                 if tid not in self.threads:
@@ -202,6 +197,19 @@ class GeckoCollector(Collector):
                     self._add_marker(tid, "Waiting for GIL", self.gil_wait_start.pop(tid),
                                    current_time, CATEGORY_GIL)
 
+                # Track GC events - attribute to all threads that hold the GIL during GC
+                # (GC is interpreter-wide but runs on whichever thread(s) have the GIL)
+                # If GIL switches during GC, multiple threads will get GC markers
+                if gc_collecting and has_gil:
+                    # Start GC marker if not already started for this thread
+                    if tid not in self.gc_start_per_thread:
+                        self.gc_start_per_thread[tid] = current_time
+                elif tid in self.gc_start_per_thread:
+                    # End GC marker if it was running for this thread
+                    # (either GC finished or thread lost GIL)
+                    self._add_marker(tid, "GC Collecting", self.gc_start_per_thread.pop(tid),
+                                   current_time, CATEGORY_GC)
+
                 # Mark thread as initialized after processing all state transitions
                 self.initialized_threads.add(tid)
 
@@ -223,17 +231,6 @@ class GeckoCollector(Collector):
                 samples["stack"].append(stack_index)
                 samples["time"].append(current_time)
                 samples["eventDelay"].append(None)
-
-        # Handle GC event markers after processing all threads
-        if gc_collecting:
-            if self.potential_gc_start is None:
-                # Start of GC
-                self.potential_gc_start = current_time
-        else:
-            # End of GC
-            if self.potential_gc_start is not None:
-                self._add_gc_marker(self.potential_gc_start, current_time)
-            self.potential_gc_start = None
 
         self.sample_count += 1
 
@@ -371,24 +368,6 @@ class GeckoCollector(Collector):
             "duration": duration,
             "tid": tid
         })
-
-    def _add_gc_marker(self, start_time, end_time):
-        """Add a GC Collecting event marker to the main thread."""
-        if not self.threads:
-            return
-
-        # Find the main thread by checking isMainThread flag
-        main_tid = None
-        for tid, thread_data in self.threads.items():
-            if thread_data.get("isMainThread", False):
-                main_tid = tid
-                break
-
-        # If we can't find the main thread, use the first thread as fallback
-        if main_tid is None:
-            main_tid = next(iter(self.threads))
-
-        self._add_marker(main_tid, "GC Collecting", start_time, end_time, CATEGORY_GC)
 
     def _process_stack(self, thread_data, frames):
         """Process a stack and return the stack index."""
@@ -571,17 +550,13 @@ class GeckoCollector(Collector):
             (self.python_code_start, "Python Code", CATEGORY_CODE_TYPE),
             (self.native_code_start, "Native Code", CATEGORY_CODE_TYPE),
             (self.gil_wait_start, "Waiting for GIL", CATEGORY_GIL),
+            (self.gc_start_per_thread, "GC Collecting", CATEGORY_GC),
         ]
 
         for state_dict, marker_name, category in marker_states:
             for tid in list(state_dict.keys()):
                 self._add_marker(tid, marker_name, state_dict[tid], end_time, category)
                 del state_dict[tid]
-
-        # Close any open GC marker
-        if self.potential_gc_start is not None:
-            self._add_gc_marker(self.potential_gc_start, end_time)
-            self.potential_gc_start = None
 
     def export(self, filename):
         """Export the profile to a Gecko JSON file."""
