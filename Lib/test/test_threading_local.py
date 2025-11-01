@@ -223,6 +223,34 @@ class BaseLocalTest:
         with self.assertRaisesRegex(AttributeError, 'Loop.*read-only'):
             loop.__setattr__(NameCompareTrue(), 2)
 
+    def test_settrace_leak(self):
+        # See https://github.com/python/cpython/issues/140798
+
+        local = self._local()
+
+        class ClassWithDel:
+            def __del__(self):
+                pass
+
+        func_names = []
+
+        def tracer(frame, event, arg):
+            nonlocal func_names
+            func_names.append(frame.f_code.co_name)
+            local.d = ClassWithDel()
+
+        old_trace = threading.gettrace()
+        try:
+            threading.settrace(tracer)
+            t = threading.Thread()
+            t.start()
+            t.join()
+            del t
+        finally:
+            threading.settrace(old_trace)
+
+        self.assertEqual(func_names, ['run', '_delete'])
+
 
 class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
     _local = _thread._local

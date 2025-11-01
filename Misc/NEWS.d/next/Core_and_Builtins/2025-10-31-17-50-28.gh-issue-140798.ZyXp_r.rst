@@ -1,0 +1,3 @@
+Fix possible memory leak with :class:`threading.local` when tracing is
+active. It was produced by incorrect clearing order in
+:c:func:`PyThreadState_Clear`. Patch by Mikhail Efimov.
