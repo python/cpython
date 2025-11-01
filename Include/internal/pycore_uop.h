@@ -35,9 +35,17 @@ typedef struct _PyUOpInstruction{
 #endif
 } _PyUOpInstruction;
 
-// This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 1200
+// This is the length of the trace we translate initially.
+#define UOP_MAX_TRACE_LENGTH 3000
 #define UOP_BUFFER_SIZE (UOP_MAX_TRACE_LENGTH * sizeof(_PyUOpInstruction))
+
+/* Bloom filter with m = 256
+ * https://en.wikipedia.org/wiki/Bloom_filter */
+#define _Py_BLOOM_FILTER_WORDS 8
+
+typedef struct {
+    uint32_t bits[_Py_BLOOM_FILTER_WORDS];
+} _PyBloomFilter;
 
 #ifdef __cplusplus
 }

@@ -267,7 +267,7 @@ static
 PyCodeObject *
 get_current_code_object(JitOptContext *ctx)
 {
-    return (PyCodeObject *)ctx->frame->func->func_code;
+    return (PyCodeObject *)ctx->frame->code;
 }
 
 static PyObject *
@@ -298,10 +298,6 @@ optimize_uops(
     JitOptContext context;
     JitOptContext *ctx = &context;
     uint32_t opcode = UINT16_MAX;
-    int curr_space = 0;
-    int max_space = 0;
-    _PyUOpInstruction *first_valid_check_stack = NULL;
-    _PyUOpInstruction *corresponding_check_stack = NULL;
 
     // Make sure that watchers are set up
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -368,14 +364,6 @@ optimize_uops(
     /* Either reached the end or cannot optimize further, but there
      * would be no benefit in retrying later */
     _Py_uop_abstractcontext_fini(ctx);
-    if (first_valid_check_stack != NULL) {
-        assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
-        assert(max_space > 0);
-        assert(max_space <= INT_MAX);
-        assert(max_space <= INT32_MAX);
-        first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
-        first_valid_check_stack->operand0 = max_space;
-    }
     return trace_len;
 
 error:
@@ -493,7 +481,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 }
                 /* _PUSH_FRAME doesn't escape or error, but it
                  * does need the IP for the return address */
-                bool needs_ip = opcode == _PUSH_FRAME;
+                bool needs_ip = (opcode == _PUSH_FRAME || opcode == _YIELD_VALUE || opcode == _DYNAMIC_EXIT);
                 if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
                     needs_ip = true;
                     may_have_escaped = true;
@@ -507,6 +495,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
+            case _DYNAMIC_EXIT:
                 return pc + 1;
         }
     }
@@ -518,7 +507,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 //  > 0 - length of optimized trace
 int
 _Py_uop_analyze_and_optimize(
-    _PyInterpreterFrame *frame,
+    PyFunctionObject *initial_func,
     _PyUOpInstruction *buffer,
     int length,
     int curr_stacklen,
@@ -528,8 +517,8 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-        _PyFrame_GetFunction(frame), buffer,
-        length, curr_stacklen, dependencies);
+         initial_func, buffer,
+         length, curr_stacklen, dependencies);
 
     if (length == 0) {
         return length;

@@ -99,7 +99,12 @@ backoff_counter_triggers(_Py_BackoffCounter counter)
 // Must be larger than ADAPTIVE_COOLDOWN_VALUE, otherwise when JIT code is
 // invalidated we may construct a new trace before the bytecode has properly
 // re-specialized:
-#define JUMP_BACKWARD_INITIAL_VALUE 4095
+// Note: this should be a prime number-1. This increases the likelihood of
+// finding a "good" loop iteration to trace.
+// For example, 4095 does not work for the nqueens benchmark on pyperformance
+// as we always end up tracing the loop iteration's
+// exhaustion iteration. Which aborts our current tracer.
+#define JUMP_BACKWARD_INITIAL_VALUE 4000
 #define JUMP_BACKWARD_INITIAL_BACKOFF 12
 static inline _Py_BackoffCounter
 initial_jump_backoff_counter(void)
@@ -112,7 +117,7 @@ initial_jump_backoff_counter(void)
  * Must be larger than ADAPTIVE_COOLDOWN_VALUE,
  * otherwise when a side exit warms up we may construct
  * a new trace before the Tier 1 code has properly re-specialized. */
-#define SIDE_EXIT_INITIAL_VALUE 4095
+#define SIDE_EXIT_INITIAL_VALUE 4000
 #define SIDE_EXIT_INITIAL_BACKOFF 12
 
 static inline _Py_BackoffCounter
@@ -128,6 +133,14 @@ initial_unreachable_backoff_counter(void)
 {
     return make_backoff_counter(0, UNREACHABLE_BACKOFF);
 }
+
+// Required to not get stuck in infinite specialization loops due to specialization failure.
+// We use 2 here as there are a few scenarios:
+// 1. Freshly specialized from unspecialized, in which case the counter will be 1.
+// 2. Re-specialized from deopt, in which case the counter will be 1.
+// 3. Deopt -> Specialize -> Deopt -> Specialize, in which case the counter will be 2.
+// We do not want the 3rd case.
+#define MAX_SPECIALIZATION_TRIES 2
 
 #ifdef __cplusplus
 }

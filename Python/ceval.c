@@ -941,6 +941,8 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     { .op.code = RESUME, .op.arg = RESUME_OPARG_DEPTH1_MASK | RESUME_AT_FUNC_START }
 };
 
+const _Py_CODEUNIT *_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR = (_Py_CODEUNIT*)&_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS;
+
 #ifdef Py_DEBUG
 extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 #endif
@@ -988,6 +990,48 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
     }
 }
 
+#if _Py_TIER2
+// 0 for success, -1  for error.
+static int
+bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
+{
+    int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
+    int err = 0;
+    if (!_PyErr_Occurred(tstate) && !_is_sys_tracing) {
+        err = _PyOptimizer_Optimize(frame, tstate);
+    }
+    // Deal with backoffs
+    _PyExitData *exit = tstate->interp->jit_state.prev_exit;
+    if (exit == NULL) {
+        // We hold a strong reference to the code object, so the instruction won't be freed.
+        if (err <= 0) {
+            _Py_BackoffCounter counter = tstate->interp->jit_state.jump_backward_instr[1].counter;
+            tstate->interp->jit_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
+        }
+        else {
+            tstate->interp->jit_state.jump_backward_instr[1].counter = initial_jump_backoff_counter();
+        }
+    }
+    else {
+        // Likewise, we hold a strong reference to the executor containing this exit, so the exit is guaranteed
+        // to be valid to access.
+        if (err <= 0) {
+            // Some opcodes will forever be unchanged. Don't ever bother specializing for them ever again.
+            if (tstate->interp->jit_state.prev_instr->op.code == INTERPRETER_EXIT) {
+                exit->temperature = initial_unreachable_backoff_counter();
+            }
+            else {
+                exit->temperature = restart_backoff_counter(exit->temperature);
+            }
+        }
+        else {
+            exit->temperature = initial_temperature_backoff_counter();
+        }
+    }
+    _PyJit_FinalizeTracing(tstate);
+    return err;
+}
+#endif
 
 /* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.
  */
@@ -1061,11 +1105,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_CODEUNIT *next_instr;
     _PyStackRef *stack_pointer;
     entry.stack[0] = PyStackRef_NULL;
-#ifdef Py_STACKREF_DEBUG
-    entry.frame.f_funcobj = PyStackRef_None;
-#elif defined(Py_DEBUG)
+    entry.frame.f_funcobj = PyStackRef_NULL;
+#if defined(Py_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
-    entry.frame.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
     entry.frame.f_locals = (PyObject*)0xaaa1;
     entry.frame.frame_obj = (PyFrameObject*)0xaaa2;
     entry.frame.f_globals = (PyObject*)0xaaa3;
@@ -1117,9 +1159,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         stack_pointer = _PyFrame_GetStackPointer(frame);
 #if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, 0, lastopcode);
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0, lastopcode);
 #   else
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, 0);
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0);
 #   endif
 #else
         goto error;
@@ -1128,9 +1170,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 #if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
-        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_table, 0, lastopcode);
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_handler_table, 0, lastopcode);
 #   else
-        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_table, 0);
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_handler_table, 0);
 #   endif
 #else
     goto start_frame;
