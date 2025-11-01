@@ -247,8 +247,11 @@ class TestContentTypeHeader(TestHeaderBase):
         decoded =  args[2] if l>2 and args[2] is not DITTO else source
         header = 'Content-Type:' + ' ' if source else ''
         folded = args[3] if l>3 else header + decoded + '\n'
-        # Suppress deprecation warning for rfc2231_nonascii_in_charset_of_charset_parameter_value
-        if 'utf-8%E2%80%9D' in source and not 'ascii' in source:
+        # Both rfc2231 test cases with utf-8%E2%80%9D raise warnings,
+        # clear encoding cache to ensure test isolation.
+        if 'utf-8%E2%80%9D' in source:
+            import encodings
+            encodings._cache.clear()
             with self.assertWarns(DeprecationWarning):
                 h = self.make_header('Content-Type', source)
         else:
