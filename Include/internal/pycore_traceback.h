@@ -56,12 +56,16 @@ extern void _Py_DumpTraceback(
    It is better to pass NULL to interp and current_tstate, the function tries
    different options to retrieve this information.
 
+   If skip_current_tstate is 1 then first tstate (current_tstate) will be skiped.
+   This flag used in faulthandler_thread to skip self.
+
    This function is signal safe. */
 
 extern const char* _Py_DumpTracebackThreads(
     int fd,
     PyInterpreterState *interp,
-    PyThreadState *current_tstate);
+    PyThreadState *current_tstate,
+    int skip_current_tstate);
 
 /* Write a Unicode object into the file descriptor fd. Encode the string to
    ASCII using the backslashreplace error handler.

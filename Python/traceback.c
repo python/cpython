@@ -1239,7 +1239,8 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
    handlers if signals were received. */
 const char*
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
-                         PyThreadState *current_tstate)
+                         PyThreadState *current_tstate,
+                         int skip_current_tstate)
 {
     if (current_tstate == NULL) {
         /* _Py_DumpTracebackThreads() is called from signal handlers by
@@ -1289,6 +1290,12 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     _Py_BEGIN_SUPPRESS_IPH
     do
     {
+        if (skip_current_tstate && current_tstate == tstate) {
+            tstate = PyThreadState_Next(tstate);
+            skip_current_tstate = 0;
+            continue;
+        }
+
         if (nthreads != 0)
             PUTS(fd, "\n");
         if (nthreads >= MAX_NTHREADS) {

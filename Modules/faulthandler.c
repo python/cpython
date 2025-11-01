@@ -205,7 +205,7 @@ faulthandler_dump_traceback(int fd, int all_threads,
     PyThreadState *tstate = PyGILState_GetThisThreadState();
 
     if (all_threads == 1) {
-        (void)_Py_DumpTracebackThreads(fd, NULL, tstate);
+        (void)_Py_DumpTracebackThreads(fd, NULL, tstate, 0);
     }
     else {
         if (all_threads == FT_IGNORE_ALL_THREADS) {
@@ -273,7 +273,7 @@ faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
         /* gh-128400: Accessing other thread states while they're running
          * isn't safe if those threads are running. */
         _PyEval_StopTheWorld(interp);
-        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate);
+        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate, 0);
         _PyEval_StartTheWorld(interp);
         if (errmsg != NULL) {
             PyErr_SetString(PyExc_RuntimeError, errmsg);
@@ -677,6 +677,13 @@ faulthandler_is_enabled_impl(PyObject *module)
     return fatal_error.enabled;
 }
 
+// TODO: remove
+static int
+interp_is_freed(PyInterpreterState *interp)
+{
+    return _PyMem_IsPtrFreed(interp);
+}
+
 static void
 faulthandler_thread(void *unused)
 {
@@ -703,7 +710,25 @@ faulthandler_thread(void *unused)
 
         (void)_Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
 
-        errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, NULL);
+        PyInterpreterState *interp = thread.interp;
+        assert(interp != NULL);
+
+        if (!interp_is_freed(interp)) {
+
+#ifdef Py_GIL_DISABLED
+            _PyEval_StopTheWorld(interp);
+#else
+            PyGILState_STATE gil_state = PyGILState_Ensure();
+#endif
+            errmsg = _Py_DumpTracebackThreads(thread.fd, interp, NULL, 1);
+
+#ifdef Py_GIL_DISABLED
+            _PyEval_StartTheWorld(interp);
+#else
+            PyGILState_Release(gil_state);
+#endif
+        }
+
         ok = (errmsg == NULL);
 
         if (thread.exit)
