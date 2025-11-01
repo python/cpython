@@ -2205,10 +2205,10 @@ Async and await
 Apart from the node classes, the :mod:`ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
-.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1)
+.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1, module=None)
 
    Parse the source into an AST node.  Equivalent to ``compile(source,
-   filename, mode, flags=FLAGS_VALUE, optimize=optimize)``,
+   filename, mode, flags=FLAGS_VALUE, optimize=optimize, module=module)``,
    where ``FLAGS_VALUE`` is ``ast.PyCF_ONLY_AST`` if ``optimize <= 0``
    and ``ast.PyCF_OPTIMIZED_AST`` otherwise.
 
@@ -2260,6 +2260,9 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.13
       The minimum supported version for ``feature_version`` is now ``(3, 7)``.
       The ``optimize`` argument was added.
+
+   .. versionadded:: next
+      Added the *module* parameter.
 
 
 .. function:: unparse(ast_obj)

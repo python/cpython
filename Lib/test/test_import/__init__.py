@@ -1259,20 +1259,7 @@ os.does_not_exist
               warnings.catch_warnings(record=True) as wlog):
             warnings.simplefilter('error')
             warnings.filterwarnings('always', module=module_re)
-            import test.test_import.data.syntax_warnings
-        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
-        filename = test.test_import.data.syntax_warnings.__file__
-        for wm in wlog:
-            self.assertEqual(wm.filename, filename)
-            self.assertIs(wm.category, SyntaxWarning)
-
-        module_re = r'syntax_warnings\z'
-        unload('test.test_import.data.syntax_warnings')
-        with (os_helper.temp_dir() as tmpdir,
-              temporary_pycache_prefix(tmpdir),
-              warnings.catch_warnings(record=True) as wlog):
-            warnings.simplefilter('error')
-            warnings.filterwarnings('always', module=module_re)
+            warnings.filterwarnings('error', module='syntax_warnings')
             import test.test_import.data.syntax_warnings
         self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
         filename = test.test_import.data.syntax_warnings.__file__
