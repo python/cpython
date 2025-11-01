@@ -67,9 +67,9 @@ do {                                                                       \
 
 #undef LLTRACE_RESUME_FRAME
 #ifdef Py_DEBUG
-#define LLTRACE_RESUME_FRAME() frame->lltrace = 0;
+#define LLTRACE_RESUME_FRAME() (frame->lltrace = 0)
 #else
-#define LLTRACE_RESUME_FRAME()
+#define LLTRACE_RESUME_FRAME() do {} while (0)
 #endif
 
 #define PATCH_JUMP(ALIAS)                                                 \
