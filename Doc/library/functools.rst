@@ -46,7 +46,7 @@ The :mod:`functools` module defines the following functions:
         3628800
         >>> factorial(5)       # just looks up cached value result
         120
-        >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
+        >>> factorial(12)      # makes two new recursive calls, the other 11 are cached
         479001600
 
    The cache is threadsafe so that the wrapped function can be used in
