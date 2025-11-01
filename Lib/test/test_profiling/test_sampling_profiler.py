@@ -3038,16 +3038,23 @@ if __name__ == "__main__":
                 temp_dir, 'test_process_pool_executor_pickle', test_script
             )
             with SuppressCrashReport():
-                with script_helper.spawn_python(script, stderr=subprocess.PIPE) as proc:
-                    proc.wait()
+                with script_helper.spawn_python(
+                    "-m", "profiling.sampling.sample",
+                    "-d", "1",
+                    "-i", "100000",
+                    script,
+                    stderr=subprocess.PIPE,
+                    text=True
+                ) as proc:
+                    proc.wait(timeout=10)
                     stdout = proc.stdout.read()
                     stderr = proc.stderr.read()
 
-        if b"PermissionError" in stderr:
+        if "PermissionError" in stderr:
             self.skipTest("Insufficient permissions for remote profiling")
 
-        self.assertIn(b"Results: [2, 4, 6]", stdout)
-        self.assertNotIn(b"Can't pickle", stderr)
+        self.assertIn("Results: [2, 4, 6]", stdout)
+        self.assertNotIn("Can't pickle", stderr)
 
 
 if __name__ == "__main__":

@@ -1,2 +1,2 @@
-Fix: Add __mp_main__ as a duplicate for __main__ for pickle to work in
-sampling
+Fix pickling error in the sampling profiler when using ``concurrent.futures.ProcessPoolExecutor``
+script can not be properly pickled and executed in worker processes.
