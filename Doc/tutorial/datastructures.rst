@@ -245,17 +245,32 @@ and it's equivalent to::
 Note how the order of the :keyword:`for` and :keyword:`if` statements is the
 same in both these snippets.
 
-For multiple :keyword:`!if` statements, like this::
+Looking at another example::
 
    >>> [x for x in range(10) if x % 2 if x % 3]
    [1, 5, 7]
 
 This example is equivalent to::
 
-   >>> [x for x in range(10) if x % 2 and x % 3]
+   >>> result = []
+   >>> for x in range(10):
+   ...     if x % 2:
+   ...         if x % 3:
+   ...             result.append(x)
+   ...
+   >>> result
    [1, 5, 7]
 
-Note the second :keyword:`!if` is replaced by :keyword:`!and`.
+This example could be further simplified by combining the two :keyword:if statements::
+
+   >>> result = []
+   >>> for x in range(10):
+   ...     if x % 2 and if x % 3:
+   ...         result.append(x)
+   ...
+   >>> result
+   [1, 5, 7]
+
 
 If the expression is a tuple (e.g. the ``(x, y)`` in the previous example),
 it must be parenthesized. ::
