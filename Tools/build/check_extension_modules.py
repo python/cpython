@@ -23,6 +23,7 @@ from __future__ import annotations
 import _imp
 import argparse
 import enum
+import json
 import logging
 import os
 import pathlib
@@ -114,6 +115,13 @@ parser.add_argument(
     "--list-module-names",
     action="store_true",
     help="Print a list of module names to stdout and exit",
+)
+
+parser.add_argument(
+    "--generate-stdlib-info",
+    nargs="?",
+    const=True,
+    help="Generate file with stdlib module info, with optional config file",
 )
 
 
@@ -280,6 +288,50 @@ class ModuleChecker:
         if all:
             names.update(WINDOWS_MODULES)
         return names
+
+    def generate_stdlib_info(self, config_path: str | None = None) -> None:
+
+        disabled_modules = {modinfo.name for modinfo in self.modules
+                           if modinfo.state in (ModuleState.DISABLED, ModuleState.DISABLED_SETUP)}
+        missing_modules = {modinfo.name for modinfo in self.modules
+                          if modinfo.state == ModuleState.MISSING}
+        na_modules = {modinfo.name for modinfo in self.modules
+                     if modinfo.state == ModuleState.NA}
+
+        config_messages = {}
+        if config_path:
+            try:
+                with open(config_path, encoding='utf-8') as f:
+                    config_messages = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                logger.error("Failed to load distributor config %s: %s", config_path, e)
+
+        default_messages = {
+            **{name: f"Windows-only standard library module '{name}' was not found"
+               for name in WINDOWS_MODULES},
+            **{name: f"Standard library module disabled during build '{name}' was not found"
+               for name in disabled_modules},
+            **{name: f"Unsupported platform for standard library module '{name}'"
+               for name in na_modules},
+        }
+
+        messages = {**default_messages, **config_messages}
+
+        content = f'''\
+# Standard library information used by the traceback module for more informative
+# ModuleNotFound error messages.
+
+DISABLED_MODULES = {sorted(disabled_modules)!r}
+MISSING_MODULES = {sorted(missing_modules)!r}
+NOT_AVAILABLE_MODULES = {sorted(na_modules)!r}
+WINDOWS_ONLY_MODULES = {sorted(WINDOWS_MODULES)!r}
+
+MISSING_STDLIB_MODULE_MESSAGES = {messages!r}
+'''
+
+        output_path = self.builddir / "_stdlib_modules_info.py"
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(content)
 
     def get_builddir(self) -> pathlib.Path:
         try:
@@ -499,6 +551,10 @@ def main() -> None:
         names = checker.list_module_names(all=True)
         for name in sorted(names):
             print(name)
+    elif args.generate_stdlib_info:
+        checker.check()
+        config_path = None if args.generate_stdlib_info is True else args.generate_stdlib_info
+        checker.generate_stdlib_info(config_path)
     else:
         checker.check()
         checker.summary(verbose=args.verbose)
