@@ -328,6 +328,7 @@
     <ClInclude Include="..\Include\internal\pycore_typevarobject.h" />
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_unicodectype.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_uniqueid.h" />
@@ -478,6 +479,7 @@
     <ClCompile Include="..\Modules\hmacmodule.c" />
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />
+    <ClCompile Include="..\Modules\mathintegermodule.c" />
     <ClCompile Include="..\Modules\mathmodule.c" />
     <ClCompile Include="..\Modules\md5module.c" />
     <ClCompile Include="..\Modules\mmapmodule.c" />
@@ -561,6 +563,7 @@
     <ClCompile Include="..\Objects\unicode_format.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicode_formatter.c" />
+    <ClCompile Include="..\Objects\unicode_writer.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />

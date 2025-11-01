@@ -37,6 +37,30 @@ WASMTIME_VAR_NAME = "WASMTIME"
 WASMTIME_HOST_RUNNER_VAR = f"{{{WASMTIME_VAR_NAME}}}"
 
 
+def separator():
+    """Print a separator line across the terminal width."""
+    try:
+        tput_output = subprocess.check_output(
+            ["tput", "cols"], encoding="utf-8"
+        )
+    except subprocess.CalledProcessError:
+        terminal_width = 80
+    else:
+        terminal_width = int(tput_output.strip())
+    print("⎯" * terminal_width)
+
+
+def log(emoji, message, *, spacing=None):
+    """Print a notification with an emoji.
+
+    If 'spacing' is None, calculate the spacing based on the number of code points
+    in the emoji as terminals "eat" a space when the emoji has multiple code points.
+    """
+    if spacing is None:
+        spacing = " " if len(emoji) == 1 else "  "
+    print("".join([emoji, spacing, message]))
+
+
 def updated_env(updates={}):
     """Create a new dict representing the environment to use.
 
@@ -60,9 +84,10 @@ def updated_env(updates={}):
         if os.environ.get(key) != value:
             env_diff[key] = value
 
-    print("🌎 Environment changes:")
-    for key in sorted(env_diff.keys()):
-        print(f"  {key}={env_diff[key]}")
+    env_vars = (
+        f"\n     {key}={item}" for key, item in sorted(env_diff.items())
+    )
+    log("🌎", f"Environment changes:{''.join(env_vars)}")
 
     return environment
 
@@ -77,22 +102,14 @@ def subdir(working_dir, *, clean_ok=False):
 
             if callable(working_dir):
                 working_dir = working_dir(context)
-            try:
-                tput_output = subprocess.check_output(
-                    ["tput", "cols"], encoding="utf-8"
-                )
-            except subprocess.CalledProcessError:
-                terminal_width = 80
-            else:
-                terminal_width = int(tput_output.strip())
-            print("⎯" * terminal_width)
-            print("📁", working_dir)
+            separator()
+            log("📁", os.fsdecode(working_dir))
             if (
                 clean_ok
                 and getattr(context, "clean", False)
                 and working_dir.exists()
             ):
-                print("🚮 Deleting directory (--clean)...")
+                log("🚮", "Deleting directory (--clean)...")
                 shutil.rmtree(working_dir)
 
             working_dir.mkdir(parents=True, exist_ok=True)
@@ -116,7 +133,7 @@ def call(command, *, context=None, quiet=False, logdir=None, **kwargs):
     elif quiet and logdir is None:
         raise ValueError("When quiet is True, logdir must be specified")
 
-    print("❯", " ".join(map(str, command)))
+    log("❯", " ".join(map(str, command)), spacing="  ")
     if not quiet:
         stdout = None
         stderr = None
@@ -130,7 +147,7 @@ def call(command, *, context=None, quiet=False, logdir=None, **kwargs):
             suffix=".log",
         )
         stderr = subprocess.STDOUT
-        print(f"📝 Logging output to {stdout.name} (--quiet)...")
+        log("📝", f"Logging output to {stdout.name} (--quiet)...")
 
     subprocess.check_call(command, **kwargs, stdout=stdout, stderr=stderr)
 
@@ -163,11 +180,11 @@ def configure_build_python(context, working_dir):
     """Configure the build/host Python."""
     if LOCAL_SETUP.exists():
         if LOCAL_SETUP.read_bytes() == LOCAL_SETUP_MARKER:
-            print(f"👍 {LOCAL_SETUP} exists ...")
+            log("👍", f"{LOCAL_SETUP} exists ...")
         else:
-            print(f"⚠️ {LOCAL_SETUP} exists, but has unexpected contents")
+            log("⚠️", f"{LOCAL_SETUP} exists, but has unexpected contents")
     else:
-        print(f"📝 Creating {LOCAL_SETUP} ...")
+        log("📝", f"Creating {LOCAL_SETUP} ...")
         LOCAL_SETUP.write_bytes(LOCAL_SETUP_MARKER)
 
     configure = [os.path.relpath(CHECKOUT / "configure", working_dir)]
@@ -191,30 +208,50 @@ def make_build_python(context, working_dir):
     ]
     version = subprocess.check_output(cmd, encoding="utf-8").strip()
 
-    print(f"🎉 {binary} {version}")
+    log("🎉", f"{binary} {version}")
 
 
 def find_wasi_sdk():
     """Find the path to the WASI SDK."""
-    if wasi_sdk_path := os.environ.get("WASI_SDK_PATH"):
-        return pathlib.Path(wasi_sdk_path)
+    wasi_sdk_path = None
 
-    opt_path = pathlib.Path("/opt")
-    # WASI SDK versions have a ``.0`` suffix, but it's a constant; the WASI SDK team
-    # has said they don't plan to ever do a point release and all of their Git tags
-    # lack the ``.0`` suffix.
-    # Starting with WASI SDK 23, the tarballs went from containing a directory named
-    # ``wasi-sdk-{WASI_SDK_VERSION}.0`` to e.g.
-    # ``wasi-sdk-{WASI_SDK_VERSION}.0-x86_64-linux``.
-    potential_sdks = [
-        path
-        for path in opt_path.glob(f"wasi-sdk-{WASI_SDK_VERSION}.0*")
-        if path.is_dir()
-    ]
-    if len(potential_sdks) == 1:
-        return potential_sdks[0]
-    elif (default_path := opt_path / "wasi-sdk").is_dir():
-        return default_path
+    if wasi_sdk_path_env_var := os.environ.get("WASI_SDK_PATH"):
+        wasi_sdk_path = pathlib.Path(wasi_sdk_path_env_var)
+    else:
+        opt_path = pathlib.Path("/opt")
+        # WASI SDK versions have a ``.0`` suffix, but it's a constant; the WASI SDK team
+        # has said they don't plan to ever do a point release and all of their Git tags
+        # lack the ``.0`` suffix.
+        # Starting with WASI SDK 23, the tarballs went from containing a directory named
+        # ``wasi-sdk-{WASI_SDK_VERSION}.0`` to e.g.
+        # ``wasi-sdk-{WASI_SDK_VERSION}.0-x86_64-linux``.
+        potential_sdks = [
+            path
+            for path in opt_path.glob(f"wasi-sdk-{WASI_SDK_VERSION}.0*")
+            if path.is_dir()
+        ]
+        if len(potential_sdks) == 1:
+            wasi_sdk_path = potential_sdks[0]
+        elif (default_path := opt_path / "wasi-sdk").is_dir():
+            wasi_sdk_path = default_path
+
+    # Starting with WASI SDK 25, a VERSION file is included in the root
+    # of the SDK directory that we can read to warn folks when they are using
+    # an unsupported version.
+    if wasi_sdk_path and (version_file := wasi_sdk_path / "VERSION").is_file():
+        version_details = version_file.read_text(encoding="utf-8")
+        found_version = version_details.splitlines()[0]
+        # Make sure there's a trailing dot to avoid false positives if somehow the
+        # supported version is a prefix of the found version (e.g. `25` and `2567`).
+        if not found_version.startswith(f"{WASI_SDK_VERSION}."):
+            major_version = found_version.partition(".")[0]
+            log(
+                "⚠️",
+                f" Found WASI SDK {major_version}, "
+                f"but WASI SDK {WASI_SDK_VERSION} is the supported version",
+            )
+
+    return wasi_sdk_path
 
 
 def wasi_sdk_env(context):
@@ -330,7 +367,7 @@ def configure_wasi_python(context, working_dir):
     with exec_script.open("w", encoding="utf-8") as file:
         file.write(f'#!/bin/sh\nexec {host_runner} {python_wasm} "$@"\n')
     exec_script.chmod(0o755)
-    print(f"🏃‍♀️ Created {exec_script} (--host-runner)... ")
+    log("🏃", f"Created {exec_script} (--host-runner)... ")
     sys.stdout.flush()
 
 
@@ -345,9 +382,10 @@ def make_wasi_python(context, working_dir):
 
     exec_script = working_dir / "python.sh"
     call([exec_script, "--version"], quiet=False)
-    print(
-        f"🎉 Use `{exec_script.relative_to(context.init_dir)}` "
-        "to run CPython w/ the WASI host specified by --host-runner"
+    log(
+        "🎉",
+        f"Use `{exec_script.relative_to(context.init_dir)}` "
+        "to run CPython w/ the WASI host specified by --host-runner",
     )
 
 
@@ -366,12 +404,12 @@ def build_all(context):
 def clean_contents(context):
     """Delete all files created by this script."""
     if CROSS_BUILD_DIR.exists():
-        print(f"🧹 Deleting {CROSS_BUILD_DIR} ...")
+        log("🧹", f"Deleting {CROSS_BUILD_DIR} ...")
         shutil.rmtree(CROSS_BUILD_DIR)
 
     if LOCAL_SETUP.exists():
         if LOCAL_SETUP.read_bytes() == LOCAL_SETUP_MARKER:
-            print(f"🧹 Deleting generated {LOCAL_SETUP} ...")
+            log("🧹", f"Deleting generated {LOCAL_SETUP} ...")
 
 
 def main():

@@ -823,7 +823,7 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:
             + [
                 "--",
                 "test",
-                "--slow-ci" if context.slow else "--fast-ci",
+                f"--{context.ci_mode}-ci",
                 "--single-process",
                 "--no-randomize",
                 # Timeout handling requires subprocesses; explicitly setting
@@ -836,11 +836,39 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:
         )
 
 
+def apple_sim_host(platform_name: str) -> str:
+    """Determine the native simulator target for this platform."""
+    for _, slice_parts in HOSTS[platform_name].items():
+        for host_triple in slice_parts:
+            parts = host_triple.split('-')
+            if parts[0] == platform.machine() and parts[-1] == "simulator":
+                return host_triple
+
+    raise KeyError(platform_name)
+
+
 def ci(context: argparse.Namespace) -> None:
-    """The implementation of the "ci" command."""
+    """The implementation of the "ci" command.
+
+    In "Fast" mode, this compiles the build python, and the simulator for the
+    build machine's architecture; and runs the test suite with `--fast-ci`
+    configuration.
+
+    In "Slow" mode, it compiles the build python, plus all candidate
+    architectures (both device and simulator); then runs the test suite with
+    `--slow-ci` configuration.
+    """
     clean(context, "all")
-    build(context, host="all")
-    test(context, host="all")
+    if context.ci_mode == "slow":
+        # In slow mode, build and test the full XCframework
+        build(context, host="all")
+        test(context, host="all")
+    else:
+        # In fast mode, just build the simulator platform.
+        sim_host = apple_sim_host(context.platform)
+        build(context, host="build")
+        build(context, host=sim_host)
+        test(context, host=sim_host)
 
 
 def parse_args() -> argparse.Namespace:
@@ -947,11 +975,13 @@ def parse_args() -> argparse.Namespace:
                 "an ARM64 iPhone 16 Pro simulator running iOS 26.0."
             ),
         )
-        cmd.add_argument(
-            "--slow",
-            action="store_true",
-            help="Run tests with --slow-ci options.",
-        )
+        group = cmd.add_mutually_exclusive_group()
+        group.add_argument(
+            "--fast-ci", action="store_const", dest="ci_mode", const="fast",
+            help="Add test arguments for GitHub Actions")
+        group.add_argument(
+            "--slow-ci", action="store_const", dest="ci_mode", const="slow",
+            help="Add test arguments for buildbots")
 
     for subcommand in [configure_build, configure_host, build, ci]:
         subcommand.add_argument(
@@ -1012,4 +1042,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Under the buildbot, stdout is not a TTY, but we must still flush after
+    # every line to make sure our output appears in the correct order relative
+    # to the output of our subprocesses.
+    for stream in [sys.stdout, sys.stderr]:
+        stream.reconfigure(line_buffering=True)
+
     main()

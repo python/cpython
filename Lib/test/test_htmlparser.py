@@ -8,6 +8,18 @@ from unittest.mock import patch
 from test import support
 
 
+SAMPLE_RCDATA = (
+    '<!-- not a comment -->'
+    "<not a='start tag'>"
+    '<![CDATA[not a cdata]]>'
+    '<!not a bogus comment>'
+    '</not a bogus comment>'
+    '\u2603'
+)
+
+SAMPLE_RAWTEXT = SAMPLE_RCDATA + '&amp;&#9786;'
+
+
 class EventCollector(html.parser.HTMLParser):
 
     def __init__(self, *args, autocdata=False, **kw):
@@ -293,30 +305,20 @@ text
              'Date().getTime()+\'"><\\/s\'+\'cript>\');\n//]]>'),
             '\n<!-- //\nvar foo = 3.14;\n// -->\n',
             '<!-- \u2603 -->',
-            'foo = "</ script>"',
-            'foo = "</scripture>"',
-            'foo = "</script\v>"',
-            'foo = "</script\xa0>"',
-            'foo = "</ſcript>"',
-            'foo = "</scrıpt>"',
         ])
     def test_script_content(self, content):
         s = f'<script>{content}</script>'
-        self._run_check(s, [("starttag", "script", []),
-                            ("data", content),
-                            ("endtag", "script")])
+        self._run_check(s, [
+            ("starttag", "script", []),
+            ("data", content),
+            ("endtag", "script"),
+        ])
 
     @support.subTests('content', [
             'a::before { content: "<!-- not a comment -->"; }',
             'a::before { content: "&not-an-entity-ref;"; }',
             'a::before { content: "<not a=\'start tag\'>"; }',
             'a::before { content: "\u2603"; }',
-            'a::before { content: "< /style>"; }',
-            'a::before { content: "</ style>"; }',
-            'a::before { content: "</styled>"; }',
-            'a::before { content: "</style\v>"; }',
-            'a::before { content: "</style\xa0>"; }',
-            'a::before { content: "</ſtyle>"; }',
         ])
     def test_style_content(self, content):
         s = f'<style>{content}</style>'
@@ -324,47 +326,59 @@ text
                             ("data", content),
                             ("endtag", "style")])
 
-    @support.subTests('content', [
-            '<!-- not a comment -->',
-            "<not a='start tag'>",
-            '<![CDATA[not a cdata]]>',
-            '<!not a bogus comment>',
-            '</not a bogus comment>',
-            '\u2603',
-            '< /title>',
-            '</ title>',
-            '</titled>',
-            '</title\v>',
-            '</title\xa0>',
-            '</tıtle>',
-        ])
-    def test_title_content(self, content):
-        source = f"<title>{content}</title>"
+    @support.subTests('tag', ['title', 'textarea'])
+    def test_rcdata_content(self, tag):
+        source = f"<{tag}>{SAMPLE_RCDATA}</{tag}>"
         self._run_check(source, [
-            ("starttag", "title", []),
-            ("data", content),
-            ("endtag", "title"),
+            ("starttag", tag, []),
+            ("data", SAMPLE_RCDATA),
+            ("endtag", tag),
+        ])
+        source = f"<{tag}>&amp;</{tag}>"
+        self._run_check(source, [
+            ("starttag", tag, []),
+            ('entityref', 'amp'),
+            ("endtag", tag),
         ])
 
-    @support.subTests('content', [
-            '<!-- not a comment -->',
-            "<not a='start tag'>",
-            '<![CDATA[not a cdata]]>',
-            '<!not a bogus comment>',
-            '</not a bogus comment>',
-            '\u2603',
-            '< /textarea>',
-            '</ textarea>',
-            '</textareable>',
-            '</textarea\v>',
-            '</textarea\xa0>',
-        ])
-    def test_textarea_content(self, content):
-        source = f"<textarea>{content}</textarea>"
+    @support.subTests('tag',
+            ['style', 'xmp', 'iframe', 'noembed', 'noframes', 'script'])
+    def test_rawtext_content(self, tag):
+        source = f"<{tag}>{SAMPLE_RAWTEXT}</{tag}>"
         self._run_check(source, [
-            ("starttag", "textarea", []),
+            ("starttag", tag, []),
+            ("data", SAMPLE_RAWTEXT),
+            ("endtag", tag),
+        ])
+
+    def test_noscript_content(self):
+        source = f"<noscript>{SAMPLE_RAWTEXT}</noscript>"
+        # scripting=False -- normal mode
+        self._run_check(source, [
+            ('starttag', 'noscript', []),
+            ('comment', ' not a comment '),
+            ('starttag', 'not', [('a', 'start tag')]),
+            ('unknown decl', 'CDATA[not a cdata'),
+            ('comment', 'not a bogus comment'),
+            ('endtag', 'not'),
+            ('data', '☃'),
+            ('entityref', 'amp'),
+            ('charref', '9786'),
+            ('endtag', 'noscript'),
+        ])
+        # scripting=True -- RAWTEXT mode
+        self._run_check(source, [
+            ("starttag", "noscript", []),
+            ("data", SAMPLE_RAWTEXT),
+            ("endtag", "noscript"),
+        ], collector=EventCollector(scripting=True))
+
+    def test_plaintext_content(self):
+        content = SAMPLE_RAWTEXT + '</plaintext>'  # not closing
+        source = f"<plaintext>{content}"
+        self._run_check(source, [
+            ("starttag", "plaintext", []),
             ("data", content),
-            ("endtag", "textarea"),
         ])
 
     @support.subTests('endtag', ['script', 'SCRIPT', 'script ', 'script\n',
@@ -381,52 +395,65 @@ text
                             ("endtag", "script")],
                         collector=EventCollectorNoNormalize(convert_charrefs=False))
 
-    @support.subTests('endtag', ['style', 'STYLE', 'style ', 'style\n',
-                                 'style/', 'style foo=bar', 'style foo=">"'])
-    def test_style_closing_tag(self, endtag):
-        content = """
-            b::before { content: "<!-- not a comment -->"; }
-            p::before { content: "&not-an-entity-ref;"; }
-            a::before { content: "<i>"; }
-            a::after { content: "</i>"; }
-            """
-        s = f'<StyLE>{content}</{endtag}>'
-        self._run_check(s, [("starttag", "style", []),
-                            ("data", content),
-                            ("endtag", "style")],
-                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+    @support.subTests('tag', [
+        'script', 'style', 'xmp', 'iframe', 'noembed', 'noframes',
+        'textarea', 'title', 'noscript',
+    ])
+    def test_closing_tag(self, tag):
+        for endtag in [tag, tag.upper(), f'{tag} ', f'{tag}\n',
+                       f'{tag}/', f'{tag} foo=bar', f'{tag} foo=">"']:
+            content = "<!-- not a comment --><i>Spam</i>"
+            s = f'<{tag.upper()}>{content}</{endtag}>'
+            self._run_check(s, [
+                ("starttag", tag, []),
+                ('data', content),
+                ("endtag", tag),
+            ], collector=EventCollectorNoNormalize(convert_charrefs=False, scripting=True))
 
-    @support.subTests('endtag', ['title', 'TITLE', 'title ', 'title\n',
-                                 'title/', 'title foo=bar', 'title foo=">"'])
-    def test_title_closing_tag(self, endtag):
-        content = "<!-- not a comment --><i>Egg &amp; Spam</i>"
-        s = f'<TitLe>{content}</{endtag}>'
-        self._run_check(s, [("starttag", "title", []),
-                            ('data', '<!-- not a comment --><i>Egg & Spam</i>'),
-                            ("endtag", "title")],
-                        collector=EventCollectorNoNormalize(convert_charrefs=True))
-        self._run_check(s, [("starttag", "title", []),
-                            ('data', '<!-- not a comment --><i>Egg '),
-                            ('entityref', 'amp'),
-                            ('data', ' Spam</i>'),
-                            ("endtag", "title")],
-                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+    @support.subTests('tag', [
+        'script', 'style', 'xmp', 'iframe', 'noembed', 'noframes',
+        'textarea', 'title', 'noscript',
+    ])
+    def test_invalid_closing_tag(self, tag):
+        content = (
+            f'< /{tag}>'
+            f'</ {tag}>'
+            f'</{tag}x>'
+            f'</{tag}\v>'
+            f'</{tag}\xa0>'
+        )
+        source = f"<{tag}>{content}</{tag}>"
+        self._run_check(source, [
+            ("starttag", tag, []),
+            ("data", content),
+            ("endtag", tag),
+        ], collector=EventCollector(convert_charrefs=False, scripting=True))
 
-    @support.subTests('endtag', ['textarea', 'TEXTAREA', 'textarea ', 'textarea\n',
-                                 'textarea/', 'textarea foo=bar', 'textarea foo=">"'])
-    def test_textarea_closing_tag(self, endtag):
-        content = "<!-- not a comment --><i>Egg &amp; Spam</i>"
-        s = f'<TexTarEa>{content}</{endtag}>'
-        self._run_check(s, [("starttag", "textarea", []),
-                            ('data', '<!-- not a comment --><i>Egg & Spam</i>'),
-                            ("endtag", "textarea")],
-                        collector=EventCollectorNoNormalize(convert_charrefs=True))
-        self._run_check(s, [("starttag", "textarea", []),
-                            ('data', '<!-- not a comment --><i>Egg '),
-                            ('entityref', 'amp'),
-                            ('data', ' Spam</i>'),
-                            ("endtag", "textarea")],
-                        collector=EventCollectorNoNormalize(convert_charrefs=False))
+    @support.subTests('tag,endtag', [
+        ('title', 'tıtle'),
+        ('style', 'ſtyle'),
+        ('style', 'ﬅyle'),
+        ('style', 'ﬆyle'),
+        ('iframe', 'ıframe'),
+        ('noframes', 'noframeſ'),
+        ('noscript', 'noſcript'),
+        ('noscript', 'noscrıpt'),
+        ('script', 'ſcript'),
+        ('script', 'scrıpt'),
+    ])
+    def test_invalid_nonascii_closing_tag(self, tag, endtag):
+        content = f"<br></{endtag}>"
+        source = f"<{tag}>{content}"
+        self._run_check(source, [
+            ("starttag", tag, []),
+            ("data", content),
+        ], collector=EventCollector(convert_charrefs=False, scripting=True))
+        source = f"<{tag}>{content}</{tag}>"
+        self._run_check(source, [
+            ("starttag", tag, []),
+            ("data", content),
+            ("endtag", tag),
+        ], collector=EventCollector(convert_charrefs=False, scripting=True))
 
     @support.subTests('tail,end', [
         ('', False),

@@ -10,14 +10,15 @@ __all__ = [
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_str', 'global_enum',
         'EnumCheck', 'CONTINUOUS', 'NAMED_FLAGS', 'UNIQUE',
-        'pickle_by_global_name', 'pickle_by_enum_name',
+        'pickle_by_global_name', 'pickle_by_enum_name', 'show_flag_values',
+        'bin',
         ]
 
 
 # Dummy value for Enum and Flag as there are explicit checks for them
 # before they have been created.
 # This is also why there are checks in EnumType like `if Enum is not None`
-Enum = Flag = EJECT = _stdlib_enums = ReprEnum = None
+Enum = Flag = EJECT = ReprEnum = None
 
 class nonmember(object):
     """
@@ -2189,5 +2190,3 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
         members.sort(key=lambda t: t[0])
     cls = etype(name, members, module=module, boundary=boundary or KEEP)
     return cls
-
-_stdlib_enums = IntEnum, StrEnum, IntFlag

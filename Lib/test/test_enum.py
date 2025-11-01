@@ -5324,7 +5324,7 @@ class TestStdLib(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
 
     def test__all__(self):
-        support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
+        support.check__all__(self, enum)
 
     @cpython_only
     def test_lazy_import(self):

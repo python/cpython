@@ -939,7 +939,7 @@ struct _is {
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
     int executor_deletion_list_remaining_capacity;
-    size_t trace_run_counter;
+    size_t executor_creation_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 

@@ -289,7 +289,7 @@ may change without deprecation warnings.
 
 .. c:function:: Py_ssize_t PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
 
-   Return a new an opaque index value used to adding data to code objects.
+   Return a new opaque index value used to adding data to code objects.
 
    You generally call this function once (per interpreter) and use the result
    with ``PyCode_GetExtra`` and ``PyCode_SetExtra`` to manipulate

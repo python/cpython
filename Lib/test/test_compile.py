@@ -1745,6 +1745,80 @@ class TestSpecifics(unittest.TestCase):
             self.assertEqual(wm.category, SyntaxWarning)
             self.assertIn("\"is\" with 'int' literal", str(wm.message))
 
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            compile(source, filename, 'exec')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+    @support.subTests('src', [
+        textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    return 42
+            """),
+        textwrap.dedent("""
+            for x in y:
+                try:
+                    pass
+                finally:
+                    break
+            """),
+        textwrap.dedent("""
+            for x in y:
+                try:
+                    pass
+                finally:
+                    continue
+            """),
+    ])
+    def test_pep_765_warnings(self, src):
+        with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+            compile(src, '<string>', 'exec')
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            tree = ast.parse(src)
+        with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+            compile(tree, '<string>', 'exec')
+
+    @support.subTests('src', [
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                def f():
+                    return 42
+            """),
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                for x in y:
+                    break
+            """),
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                for x in y:
+                    continue
+            """),
+    ])
+    def test_pep_765_no_warnings(self, src):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            compile(src, '<string>', 'exec')
+
 
 class TestBooleanExpression(unittest.TestCase):
     class Value:
