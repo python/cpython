@@ -16,7 +16,7 @@ except ImportError:
     c_make_encoder = None
 
 ESCAPE = re.compile(r'[\x00-\x1f\\"\b\f\n\r\t]')
-ESCAPE_ASCII = re.compile(r'([\\"]|[^\ -~])')
+ESCAPE_ASCII = re.compile(r'([\\"]|[^\ -\x7f])')
 HAS_UTF8 = re.compile(b'[\x80-\xff]')
 ESCAPE_DCT = {
     '\\': '\\\\',

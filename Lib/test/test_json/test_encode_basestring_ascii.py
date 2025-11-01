@@ -36,6 +36,15 @@ class TestEncodeBasestringAscii:
         s = self.dumps(dict(items), sort_keys=True)
         self.assertEqual(s, '{"five": 5, "four": 4, "one": 1, "three": 3, "two": 2}')
 
+    def test_ascii_range_consistency(self):
+        encode_basestring = self.json.encoder.encode_basestring
+        encode_basestring_ascii = self.json.encoder.encode_basestring_ascii
+
+        for i in range(0x80):
+            result_basestring = encode_basestring(chr(i))
+            result_ascii = encode_basestring_ascii(chr(i))
+            self.assertEqual(result_basestring, result_ascii)
+
 
 class TestPyEncodeBasestringAscii(TestEncodeBasestringAscii, PyTest): pass
 class TestCEncodeBasestringAscii(TestEncodeBasestringAscii, CTest):
