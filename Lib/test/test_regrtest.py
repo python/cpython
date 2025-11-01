@@ -182,12 +182,32 @@ class ParseArgsTestCase(unittest.TestCase):
             self.assertTrue(regrtest.randomize)
             self.assertIsInstance(regrtest.random_seed, int)
 
+    def test_no_randomize(self):
+        ns = self.parse_args([])
+        self.assertIs(ns.randomize, False)
+
+        ns = self.parse_args(["--randomize"])
+        self.assertIs(ns.randomize, True)
+
+        ns = self.parse_args(["--no-randomize"])
+        self.assertIs(ns.randomize, False)
+
+        ns = self.parse_args(["--randomize", "--no-randomize"])
+        self.assertIs(ns.randomize, False)
+
+        ns = self.parse_args(["--no-randomize", "--randomize"])
+        self.assertIs(ns.randomize, False)
+
     def test_randseed(self):
         ns = self.parse_args(['--randseed', '12345'])
         self.assertEqual(ns.random_seed, 12345)
         self.assertTrue(ns.randomize)
         self.checkError(['--randseed'], 'expected one argument')
         self.checkError(['--randseed', 'foo'], 'invalid int value')
+
+        ns = self.parse_args(['--randseed', '12345', '--no-randomize'])
+        self.assertEqual(ns.random_seed, 12345)
+        self.assertFalse(ns.randomize)
 
     def test_fromfile(self):
         for opt in '-f', '--fromfile':
@@ -428,15 +448,17 @@ class ParseArgsTestCase(unittest.TestCase):
 
         return regrtest
 
-    def check_ci_mode(self, args, use_resources, rerun=True):
+    def check_ci_mode(self, args, use_resources,
+                      *, rerun=True, randomize=True, output_on_failure=True):
         regrtest = self.create_regrtest(args)
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
-        self.assertTrue(regrtest.randomize)
+        self.assertEqual(regrtest.fail_rerun, False)
+        self.assertEqual(regrtest.randomize, randomize)
         self.assertIsInstance(regrtest.random_seed, int)
         self.assertTrue(regrtest.fail_env_changed)
         self.assertTrue(regrtest.print_slowest)
-        self.assertTrue(regrtest.output_on_failure)
+        self.assertEqual(regrtest.output_on_failure, output_on_failure)
         self.assertEqual(sorted(regrtest.use_resources), sorted(use_resources))
         return regrtest
 
@@ -463,11 +485,28 @@ class ParseArgsTestCase(unittest.TestCase):
         use_resources.remove('network')
         self.check_ci_mode(args, use_resources)
 
+    def test_fast_ci_verbose(self):
+        args = ['--fast-ci', '--verbose']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        use_resources.remove('cpu')
+        regrtest = self.check_ci_mode(args, use_resources,
+                                      output_on_failure=False)
+        self.assertEqual(regrtest.verbose, True)
+
     def test_slow_ci(self):
         args = ['--slow-ci']
         use_resources = sorted(cmdline.ALL_RESOURCES)
         regrtest = self.check_ci_mode(args, use_resources)
         self.assertEqual(regrtest.timeout, 20 * 60)
+
+    def test_ci_no_randomize(self):
+        all_resources = set(cmdline.ALL_RESOURCES)
+        self.check_ci_mode(
+            ["--slow-ci", "--no-randomize"], all_resources, randomize=False
+        )
+        self.check_ci_mode(
+            ["--fast-ci", "--no-randomize"], all_resources - {'cpu'}, randomize=False
+        )
 
     def test_dont_add_python_opts(self):
         args = ['--dont-add-python-opts']
@@ -2345,6 +2384,17 @@ class ArgsTestCase(BaseTestCase):
         # Run in parallel
         output = self.run_tests('-j1', '-v', testname, env=env, isolated=False)
         check(output)
+
+    def test_pgo_exclude(self):
+        # Get PGO tests
+        output = self.run_tests('--pgo', '--list-tests')
+        pgo_tests = output.strip().split()
+
+        # Exclude test_re
+        output = self.run_tests('--pgo', '--list-tests', '-x', 'test_re')
+        tests = output.strip().split()
+        self.assertNotIn('test_re', tests)
+        self.assertEqual(len(tests), len(pgo_tests) - 1)
 
 
 class TestUtils(unittest.TestCase):

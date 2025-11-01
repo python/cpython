@@ -22,6 +22,11 @@
 #define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
 
+/*[clinic input]
+module _interpqueues
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cb1313f77fab132b]*/
+
 #define GLOBAL_MALLOC(TYPE) \
     PyMem_RawMalloc(sizeof(TYPE))
 #define GLOBAL_FREE(VAR) \
@@ -431,7 +436,7 @@ _queueitem_clear_data(_queueitem *item)
         return;
     }
     // It was allocated in queue_put().
-    (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
+    (void)_release_xid_data(item->data, XID_IGNORE_EXC | XID_FREE);
     item->data = NULL;
 }
 
@@ -707,8 +712,11 @@ _queue_is_full(_queue *queue, int *p_is_full)
         return err;
     }
 
-    assert(queue->items.count <= queue->items.maxsize);
-    *p_is_full = queue->items.count == queue->items.maxsize;
+    assert(queue->items.maxsize <= 0
+           || queue->items.count <= queue->items.maxsize);
+    *p_is_full = queue->items.maxsize > 0
+        ? queue->items.count == queue->items.maxsize
+        : 0;
 
     _queue_unlock(queue);
     return 0;
@@ -1463,31 +1471,48 @@ clear_interpreter(void *data)
 }
 
 
-typedef struct idarg_int64_converter_data qidarg_converter_data;
+/*[python input]
+
+class qidarg_converter(CConverter):
+    type = 'int64_t'
+    converter = 'qidarg_converter'
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c64fbf36771164d6]*/
 
 static int
 qidarg_converter(PyObject *arg, void *ptr)
 {
-    qidarg_converter_data *data = ptr;
-    if (data->label == NULL) {
-        data->label = "queue ID";
-    }
-    return idarg_int64_converter(arg, ptr);
+    int64_t *qid_ptr = ptr;
+    struct idarg_int64_converter_data data = {
+        .label = "queue ID",
+    };
+    int res = idarg_int64_converter(arg, &data);
+    *qid_ptr = data.id;
+    return res;
 }
 
+#include "clinic/_interpqueuesmodule.c.h"
+
+
+/*[clinic input]
+_interpqueues.create
+    maxsize: Py_ssize_t
+    unboundop as unboundarg: int = -1
+    fallback as fallbackarg: int = -1
+
+Create a new cross-interpreter queue and return its unique generated ID.
+
+It is a new reference as though bind() had been called on the queue.
+The caller is responsible for calling destroy() for the new queue
+before the runtime is finalized.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_create_impl(PyObject *module, Py_ssize_t maxsize,
+                          int unboundarg, int fallbackarg)
+/*[clinic end generated code: output=9a889b93773251eb input=4f79b710a87360e1]*/
 {
-    static char *kwlist[] = {"maxsize", "unboundop", "fallback", NULL};
-    Py_ssize_t maxsize;
-    int unboundarg = -1;
-    int fallbackarg = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "n|ii:create", kwlist,
-                                     &maxsize, &unboundarg, &fallbackarg))
-    {
-        return NULL;
-    }
     struct _queuedefaults defaults = {0};
     if (resolve_unboundop(unboundarg, UNBOUND_REPLACE,
                           &defaults.unboundop) < 0)
@@ -1502,7 +1527,7 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     int64_t qid = queue_create(&_globals.queues, maxsize, defaults);
     if (qid < 0) {
-        (void)handle_queue_error((int)qid, self, qid);
+        (void)handle_queue_error((int)qid, module, qid);
         return NULL;
     }
 
@@ -1510,7 +1535,7 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
     if (qidobj == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
         int err = queue_destroy(&_globals.queues, qid);
-        if (handle_queue_error(err, self, qid)) {
+        if (handle_queue_error(err, module, qid)) {
             // XXX issue a warning?
             PyErr_Clear();
         }
@@ -1521,41 +1546,37 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
     return qidobj;
 }
 
-PyDoc_STRVAR(queuesmod_create_doc,
-"create(maxsize, unboundop, fallback) -> qid\n\
-\n\
-Create a new cross-interpreter queue and return its unique generated ID.\n\
-It is a new reference as though bind() had been called on the queue.\n\
-\n\
-The caller is responsible for calling destroy() for the new queue\n\
-before the runtime is finalized.");
+/*[clinic input]
+_interpqueues.destroy
+    qid: qidarg
+
+Clear and destroy the queue.
+
+Afterward attempts to use the queue will behave as though it never existed.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_destroy(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_destroy_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=46b35623f080cbff input=8632bba87f81e3e9]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:destroy", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
-    int64_t qid = qidarg.id;
-
     int err = queue_destroy(&_globals.queues, qid);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(queuesmod_destroy_doc,
-"destroy(qid)\n\
-\n\
-Clear and destroy the queue.  Afterward attempts to use the queue\n\
-will behave as though it never existed.");
+/*[clinic input]
+_interpqueues.list_all
+
+Return the list of ID triples for all queues.
+
+Each ID triple consists of (ID, default unbound op, default fallback).
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
+_interpqueues_list_all_impl(PyObject *module)
+/*[clinic end generated code: output=974280cb6442afdb input=19495f02cbb38b33]*/
 {
     int64_t count = 0;
     struct queue_id_and_info *qids = _queues_list_all(&_globals.queues, &count);
@@ -1586,31 +1607,25 @@ finally:
     return ids;
 }
 
-PyDoc_STRVAR(queuesmod_list_all_doc,
-"list_all() -> [(qid, unboundop, fallback)]\n\
-\n\
-Return the list of IDs for all queues.\n\
-Each corresponding default unbound op and fallback is also included.");
+/*[clinic input]
+_interpqueues.put
+    qid: qidarg
+    obj: object
+    unboundop as unboundarg: int = -1
+    fallback as fallbackarg: int = -1
+
+Add the object's data to the queue.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_put_impl(PyObject *module, int64_t qid, PyObject *obj,
+                       int unboundarg, int fallbackarg)
+/*[clinic end generated code: output=2e0b31c6eaec29c9 input=4906550ab5c73be3]*/
 {
-    static char *kwlist[] = {"qid", "obj", "unboundop", "fallback", NULL};
-    qidarg_converter_data qidarg = {0};
-    PyObject *obj;
-    int unboundarg = -1;
-    int fallbackarg = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|ii$p:put", kwlist,
-                                     qidarg_converter, &qidarg, &obj,
-                                     &unboundarg, &fallbackarg))
-    {
-        return NULL;
-    }
-    int64_t qid = qidarg.id;
     struct _queuedefaults defaults = {-1, -1};
     if (unboundarg < 0 || fallbackarg < 0) {
         int err = queue_get_defaults(&_globals.queues, qid, &defaults);
-        if (handle_queue_error(err, self, qid)) {
+        if (handle_queue_error(err, module, qid)) {
             return NULL;
         }
     }
@@ -1626,34 +1641,31 @@ queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
     /* Queue up the object. */
     int err = queue_put(&_globals.queues, qid, obj, unboundop, fallback);
     // This is the only place that raises QueueFull.
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
 
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(queuesmod_put_doc,
-"put(qid, obj)\n\
-\n\
-Add the object's data to the queue.");
+/*[clinic input]
+_interpqueues.get
+    qid: qidarg
+
+Return the (object, unbound op) from the front of the queue.
+
+If there is nothing to receive then raise QueueEmpty.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_get_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=b0988a0e29194f05 input=c5bccbc409ad0190]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:get", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
-    int64_t qid = qidarg.id;
-
     PyObject *obj = NULL;
     int unboundop = 0;
     int err = queue_get(&_globals.queues, qid, &obj, &unboundop);
     // This is the only place that raises QueueEmpty.
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
 
@@ -1665,29 +1677,23 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
     return res;
 }
 
-PyDoc_STRVAR(queuesmod_get_doc,
-"get(qid) -> (obj, unboundop)\n\
-\n\
-Return a new object from the data at the front of the queue.\n\
-The unbound op is also returned.\n\
-\n\
-If there is nothing to receive then raise QueueEmpty.");
+/*[clinic input]
+_interpqueues.bind
+    qid: qidarg
+
+Take a reference to the identified queue.
+
+The queue is not destroyed until there are no references left.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_bind(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_bind_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=02b515e203c3f926 input=b0efd1a6ce0e576e]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:bind", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
-    int64_t qid = qidarg.id;
-
     // XXX Check module state if bound already.
 
     int err = _queues_incref(&_globals.queues, qid);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
 
@@ -1696,82 +1702,65 @@ queuesmod_bind(PyObject *self, PyObject *args, PyObject *kwds)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(queuesmod_bind_doc,
-"bind(qid)\n\
-\n\
-Take a reference to the identified queue.\n\
-The queue is not destroyed until there are no references left.");
+/*[clinic input]
+_interpqueues.release
+    qid: qidarg
+
+Release a reference to the queue.
+
+The queue is destroyed once there are no references left.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_release(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_release_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=a59545d7c61fc6ee input=664125cf0262ff6f]*/
 {
     // Note that only the current interpreter is affected.
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:release", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
-    int64_t qid = qidarg.id;
 
     // XXX Check module state if bound already.
     // XXX Update module state.
 
     int err = _queues_decref(&_globals.queues, qid);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
 
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(queuesmod_release_doc,
-"release(qid)\n\
-\n\
-Release a reference to the queue.\n\
-The queue is destroyed once there are no references left.");
+/*[clinic input]
+_interpqueues.get_maxsize
+    qid: qidarg
+
+Return the maximum number of items in the queue.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_get_maxsize(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_get_maxsize_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=074202b9c6dc37bf input=ef55def3496cc379]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:get_maxsize", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
-    int64_t qid = qidarg.id;
-
     Py_ssize_t maxsize = -1;
     int err = queue_get_maxsize(&_globals.queues, qid, &maxsize);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
     return PyLong_FromLongLong(maxsize);
 }
 
-PyDoc_STRVAR(queuesmod_get_maxsize_doc,
-"get_maxsize(qid)\n\
-\n\
-Return the maximum number of items in the queue.");
+/*[clinic input]
+_interpqueues.get_queue_defaults
+    qid: qidarg
+
+Return the queue's default values, set when it was created.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_get_queue_defaults_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=b1b8b8103834191a input=3102315a7bff77fc]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:get_queue_defaults", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
-    int64_t qid = qidarg.id;
-
     struct _queuedefaults defaults = {0};
     int err = queue_get_defaults(&_globals.queues, qid, &defaults);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
 
@@ -1779,26 +1768,20 @@ queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
     return res;
 }
 
-PyDoc_STRVAR(queuesmod_get_queue_defaults_doc,
-"get_queue_defaults(qid)\n\
-\n\
-Return the queue's default values, set when it was created.");
+/*[clinic input]
+_interpqueues.is_full
+    qid: qidarg
+
+Return true if the queue has a maxsize and has reached it.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_is_full_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=47a6e18477cddfee input=25d86a327ed3a2e7]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:is_full", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
-    int64_t qid = qidarg.id;
-
     int is_full = 0;
     int err = queue_is_full(&_globals.queues, qid, &is_full);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
     if (is_full) {
@@ -1807,54 +1790,42 @@ queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
     Py_RETURN_FALSE;
 }
 
-PyDoc_STRVAR(queuesmod_is_full_doc,
-"is_full(qid)\n\
-\n\
-Return true if the queue has a maxsize and has reached it.");
+/*[clinic input]
+_interpqueues.get_count
+    qid: qidarg
+
+Return the number of items in the queue.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod_get_count(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_get_count_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=fb9e66e829cdd964 input=ce47690e7598884b]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:get_count", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
-    int64_t qid = qidarg.id;
-
     Py_ssize_t count = -1;
     int err = queue_get_count(&_globals.queues, qid, &count);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
     assert(count >= 0);
     return PyLong_FromSsize_t(count);
 }
 
-PyDoc_STRVAR(queuesmod_get_count_doc,
-"get_count(qid)\n\
-\n\
-Return the number of items in the queue.");
+/*[clinic input]
+_interpqueues._register_heap_types
+    queuetype: object(subclass_of='&PyType_Type', type='PyTypeObject *')
+    emptyerror: object
+    fullerror: object
+
+Return the number of items in the queue.
+[clinic start generated code]*/
 
 static PyObject *
-queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues__register_heap_types_impl(PyObject *module,
+                                        PyTypeObject *queuetype,
+                                        PyObject *emptyerror,
+                                        PyObject *fullerror)
+/*[clinic end generated code: output=f33f6e8b5af905cd input=57d24ae405eda521]*/
 {
-    static char *kwlist[] = {"queuetype", "emptyerror", "fullerror", NULL};
-    PyObject *queuetype;
-    PyObject *emptyerror;
-    PyObject *fullerror;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OOO:_register_heap_types", kwlist,
-                                     &queuetype, &emptyerror, &fullerror)) {
-        return NULL;
-    }
-    if (!PyType_Check(queuetype)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "expected a type for 'queuetype'");
-        return NULL;
-    }
     if (!PyExceptionClass_Check(emptyerror)) {
         PyErr_SetString(PyExc_TypeError,
                         "expected an exception type for 'emptyerror'");
@@ -1866,9 +1837,9 @@ queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    module_state *state = get_module_state(self);
+    module_state *state = get_module_state(module);
 
-    if (set_external_queue_type(state, (PyTypeObject *)queuetype) < 0) {
+    if (set_external_queue_type(state, queuetype) < 0) {
         return NULL;
     }
     if (set_external_exc_types(state, emptyerror, fullerror) < 0) {
@@ -1879,30 +1850,18 @@ queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMethodDef module_functions[] = {
-    {"create",                     _PyCFunction_CAST(queuesmod_create),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_create_doc},
-    {"destroy",                    _PyCFunction_CAST(queuesmod_destroy),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_destroy_doc},
-    {"list_all",                   queuesmod_list_all,
-     METH_NOARGS,                  queuesmod_list_all_doc},
-    {"put",                        _PyCFunction_CAST(queuesmod_put),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_put_doc},
-    {"get",                        _PyCFunction_CAST(queuesmod_get),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_get_doc},
-    {"bind",                       _PyCFunction_CAST(queuesmod_bind),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_bind_doc},
-    {"release",                    _PyCFunction_CAST(queuesmod_release),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_release_doc},
-    {"get_maxsize",                _PyCFunction_CAST(queuesmod_get_maxsize),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_get_maxsize_doc},
-    {"get_queue_defaults",         _PyCFunction_CAST(queuesmod_get_queue_defaults),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_get_queue_defaults_doc},
-    {"is_full",                    _PyCFunction_CAST(queuesmod_is_full),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_is_full_doc},
-    {"get_count",                  _PyCFunction_CAST(queuesmod_get_count),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_get_count_doc},
-    {"_register_heap_types",       _PyCFunction_CAST(queuesmod__register_heap_types),
-     METH_VARARGS | METH_KEYWORDS, NULL},
+    _INTERPQUEUES_CREATE_METHODDEF
+    _INTERPQUEUES_DESTROY_METHODDEF
+    _INTERPQUEUES_LIST_ALL_METHODDEF
+    _INTERPQUEUES_PUT_METHODDEF
+    _INTERPQUEUES_GET_METHODDEF
+    _INTERPQUEUES_BIND_METHODDEF
+    _INTERPQUEUES_RELEASE_METHODDEF
+    _INTERPQUEUES_GET_MAXSIZE_METHODDEF
+    _INTERPQUEUES_GET_QUEUE_DEFAULTS_METHODDEF
+    _INTERPQUEUES_IS_FULL_METHODDEF
+    _INTERPQUEUES_GET_COUNT_METHODDEF
+    _INTERPQUEUES__REGISTER_HEAP_TYPES_METHODDEF
 
     {NULL,                        NULL}           /* sentinel */
 };
@@ -1949,8 +1908,7 @@ static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
-    (void)traverse_module_state(state, visit, arg);
-    return 0;
+    return traverse_module_state(state, visit, arg);
 }
 
 static int
@@ -1959,8 +1917,7 @@ module_clear(PyObject *mod)
     module_state *state = get_module_state(mod);
 
     // Now we clear the module state.
-    (void)clear_module_state(state);
-    return 0;
+    return clear_module_state(state);
 }
 
 static void

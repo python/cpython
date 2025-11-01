@@ -218,6 +218,7 @@ msvcrt_get_osfhandle_impl(PyObject *module, int fd)
 
 /* Console I/O */
 /*[clinic input]
+@permit_long_summary
 msvcrt.kbhit -> long
 
 Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0.
@@ -225,7 +226,7 @@ Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0
 
 static long
 msvcrt_kbhit_impl(PyObject *module)
-/*[clinic end generated code: output=940dfce6587c1890 input=d0f4cb3289ff51e2]*/
+/*[clinic end generated code: output=940dfce6587c1890 input=52c0c44143f3fba5]*/
 {
     return _kbhit();
 }

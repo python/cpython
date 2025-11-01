@@ -15,7 +15,6 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`builtins`:
 
-  * ``bool(NotImplemented)``.
   * Generators: ``throw(type, exc, tb)`` and ``athrow(type, exc, tb)``
     signature is deprecated: use ``throw(exc)`` and ``athrow(exc)`` instead,
     the single argument signature.
@@ -88,8 +87,6 @@ although there is currently no date scheduled for their removal.
   replacement strings can now only contain ASCII letters and digits and
   underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
-
-* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
 * :mod:`shutil`: :func:`~shutil.rmtree`'s *onerror* parameter is deprecated in
   Python 3.12; use the *onexc* parameter instead.

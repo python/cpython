@@ -663,99 +663,21 @@ build_ftstring_body(asdl_expr_seq *values, bool is_format_spec)
 }
 
 static int
-_write_values_subarray(PyUnicodeWriter *writer, asdl_expr_seq *values, Py_ssize_t first_idx,
-                       Py_ssize_t last_idx, char prefix, PyArena *arena)
+append_templatestr(PyUnicodeWriter *writer, expr_ty e)
 {
     int result = -1;
-
-    asdl_expr_seq *new_values = _Py_asdl_expr_seq_new(last_idx - first_idx + 1, arena);
-    if (!new_values) {
-        return result;
-    }
-
-    Py_ssize_t j = 0;
-    for (Py_ssize_t i = first_idx; i <= last_idx; ++i) {
-        asdl_seq_SET(new_values, j++, asdl_seq_GET(values, i));
-    }
-
-    PyObject *body = build_ftstring_body(new_values, false);
+    PyObject *body = build_ftstring_body(e->v.TemplateStr.values, false);
     if (!body) {
-        return result;
+        return -1;
     }
 
-    if (-1 != append_char(writer, prefix) &&
+    if (-1 != append_charp(writer, "t") &&
         -1 != append_repr(writer, body))
     {
         result = 0;
     }
     Py_DECREF(body);
     return result;
-}
-
-static int
-append_templatestr(PyUnicodeWriter *writer, expr_ty e)
-{
-    PyArena *arena = _PyArena_New();
-    if (!arena) {
-        return -1;
-    }
-
-    Py_ssize_t last_idx = 0;
-    Py_ssize_t len = asdl_seq_LEN(e->v.TemplateStr.values);
-    if (len == 0) {
-        int result = _write_values_subarray(writer, e->v.TemplateStr.values,
-                0, len - 1, 't', arena);
-        _PyArena_Free(arena);
-        return result;
-    }
-
-    for (Py_ssize_t i = 0; i < len; i++) {
-        expr_ty value = asdl_seq_GET(e->v.TemplateStr.values, i);
-
-        // Handle implicit concat of t-strings with f-strings
-        if (value->kind == FormattedValue_kind) {
-            if (i > last_idx) {
-                // Create a new TemplateStr with the values between last_idx and i
-                // and append it to the writer.
-                if (_write_values_subarray(writer, e->v.TemplateStr.values,
-                        last_idx, i - 1, 't', arena) == -1) {
-                    goto error;
-                }
-
-                if (append_charp(writer, " ") == -1) {
-                    goto error;
-                }
-            }
-
-            // Append the FormattedValue to the writer.
-            if (_write_values_subarray(writer, e->v.TemplateStr.values,
-                    i, i, 'f', arena) == -1) {
-                goto error;
-            }
-
-            if (i + 1 < len) {
-                if (append_charp(writer, " ") == -1) {
-                    goto error;
-                }
-            }
-
-            last_idx = i + 1;
-        }
-    }
-
-    if (last_idx < len) {
-        if (_write_values_subarray(writer, e->v.TemplateStr.values,
-                last_idx, len - 1, 't', arena) == -1) {
-            goto error;
-        }
-    }
-    _PyArena_Free(arena);
-
-    return 0;
-
-error:
-    _PyArena_Free(arena);
-    return -1;
 }
 
 static int
