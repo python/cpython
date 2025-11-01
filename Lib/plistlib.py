@@ -471,7 +471,7 @@ class _BinaryPlistParser:
     """
     def __init__(self, dict_type, aware_datetime=False):
         self._dict_type = dict_type
-        self._aware_datime = aware_datetime
+        self._aware_datetime = aware_datetime
 
     def parse(self, fp):
         try:
@@ -565,7 +565,7 @@ class _BinaryPlistParser:
             f = struct.unpack('>d', self._fp.read(8))[0]
             # timestamp 0 of binary plists corresponds to 1/1/2001
             # (year of Mac OS X 10.0), instead of 1/1/1970.
-            if self._aware_datime:
+            if self._aware_datetime:
                 epoch = datetime.datetime(2001, 1, 1, tzinfo=datetime.UTC)
             else:
                 epoch = datetime.datetime(2001, 1, 1)
