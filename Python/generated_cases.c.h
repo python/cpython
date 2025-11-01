@@ -5172,7 +5172,7 @@
             PyObject *oldobj = PyCell_SwapTakeRef((PyCellObject *)cell, NULL);
             if (oldobj == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg, 1);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_LABEL(error);
             }
@@ -5187,6 +5187,7 @@
             int opcode = DELETE_FAST;
             (void)(opcode);
             #endif
+            PyObject* op = PyUnicode_FromString("deleting");
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_FAST);
@@ -5195,7 +5196,8 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg),
+                    op
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_LABEL(error);
@@ -5213,6 +5215,7 @@
             int opcode = DELETE_GLOBAL;
             (void)(opcode);
             #endif
+            PyObject* op = PyUnicode_FromString("deleting");
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_GLOBAL);
@@ -5226,7 +5229,7 @@
             if (err == 0) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                    NAME_ERROR_MSG, name);
+                    NAME_ERROR_MSG, name, op);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_LABEL(error);
             }
@@ -5238,6 +5241,7 @@
             int opcode = DELETE_NAME;
             (void)(opcode);
             #endif
+            PyObject* op = PyUnicode_FromString("deleting");
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_NAME);
@@ -5258,7 +5262,8 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                     NAME_ERROR_MSG,
-                    name);
+                    name,
+                    op);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_LABEL(error);
             }
@@ -8858,7 +8863,7 @@
                 stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg, 0);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_LABEL(error);
             }
@@ -8945,6 +8950,7 @@
             int opcode = LOAD_FAST_CHECK;
             (void)(opcode);
             #endif
+            PyObject* op = PyUnicode_FromString("getting");
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_CHECK);
@@ -8954,7 +8960,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg), op
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_LABEL(error);
@@ -9015,7 +9021,7 @@
                 value_o = PyCell_GetRef(cell);
                 if (value_o == NULL) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                    _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg, 0);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     JUMP_TO_LABEL(error);
                 }
@@ -9037,6 +9043,7 @@
             int opcode = LOAD_FROM_DICT_OR_GLOBALS;
             (void)(opcode);
             #endif
+            PyObject* op = PyUnicode_FromString("getting");
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FROM_DICT_OR_GLOBALS);
@@ -9069,7 +9076,7 @@
                         if (!_PyErr_Occurred(tstate)) {
                             _PyFrame_SetStackPointer(frame, stack_pointer);
                             _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                NAME_ERROR_MSG, name);
+                                NAME_ERROR_MSG, name, op);
                             stack_pointer = _PyFrame_GetStackPointer(frame);
                         }
                         JUMP_TO_LABEL(error);
@@ -9093,7 +9100,7 @@
                             _PyFrame_SetStackPointer(frame, stack_pointer);
                             _PyEval_FormatExcCheckArg(
                                 tstate, PyExc_NameError,
-                                NAME_ERROR_MSG, name);
+                                NAME_ERROR_MSG, name, op);
                             stack_pointer = _PyFrame_GetStackPointer(frame);
                             JUMP_TO_LABEL(error);
                         }

@@ -1674,11 +1674,15 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         while tb.tb_next is not None:
             tb = tb.tb_next
         frame = tb.tb_frame
-        d = (
-            list(frame.f_locals)
-            + list(frame.f_globals)
-            + list(frame.f_builtins)
-        )
+        if getattr(exc_value, "op", "getting") == "deleting":
+            d = (list(frame.f_locals)
+                + list(frame.f_globals))
+        else:
+            d = (
+                list(frame.f_locals)
+                + list(frame.f_globals)
+                + list(frame.f_builtins)
+            )
         d = [x for x in d if isinstance(x, str)]
 
         # Check first if we are in a method and the instance

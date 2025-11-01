@@ -3324,7 +3324,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
 
 void
 _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc,
-                          const char *format_str, PyObject *obj)
+                          const char *format_str, PyObject *obj, PyObject *op)
 {
     const char *obj_str;
 
@@ -3346,25 +3346,35 @@ _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc,
                 // NameError anyway.
                 (void)PyObject_SetAttr(exc, &_Py_ID(name), obj);
             }
+            if (((PyNameErrorObject*)exc)->op == NULL) {
+                (void)PyObject_SetAttrString(exc, "op", op);
+            }
         }
         PyErr_SetRaisedException(exc);
     }
 }
 
 void
-_PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
+_PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg, int op_type)
 {
     PyObject *name;
+    PyObject* op;
+    if (op_type == 0) {
+        op = PyUnicode_FromString("getting");
+    }
+    else {
+        op = PyUnicode_FromString("deleting");
+    }
     /* Don't stomp existing exception */
     if (_PyErr_Occurred(tstate))
         return;
     name = PyTuple_GET_ITEM(co->co_localsplusnames, oparg);
     if (oparg < PyUnstable_Code_GetFirstFree(co)) {
         _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-                                  UNBOUNDLOCAL_ERROR_MSG, name);
+                                  UNBOUNDLOCAL_ERROR_MSG, name, op);
     } else {
         _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                  UNBOUNDFREE_ERROR_MSG, name);
+                                  UNBOUNDFREE_ERROR_MSG, name, op);
     }
 }
 
@@ -3457,6 +3467,7 @@ _PyEval_GetANext(PyObject *aiter)
 void
 _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto)
 {
+    PyObject* op = PyUnicode_FromString("getting");
     if (PyDict_CheckExact(globals) && PyDict_CheckExact(builtins)) {
         _PyDict_LoadGlobalStackRef((PyDictObject *)globals,
                                     (PyDictObject *)builtins,
@@ -3465,7 +3476,7 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
             /* _PyDict_LoadGlobal() returns NULL without raising
                 * an exception if the key doesn't exist */
             _PyEval_FormatExcCheckArg(PyThreadState_GET(), PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
+                                        NAME_ERROR_MSG, name, op);
         }
     }
     else {
@@ -3485,7 +3496,7 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
             if (res == NULL) {
                 _PyEval_FormatExcCheckArg(
                             PyThreadState_GET(), PyExc_NameError,
-                            NAME_ERROR_MSG, name);
+                            NAME_ERROR_MSG, name, op);
                 *writeto = PyStackRef_NULL;
                 return;
             }
@@ -3523,6 +3534,7 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
 {
 
     PyObject *value;
+    PyObject* op = PyUnicode_FromString("getting");
     if (frame->f_locals == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
                             "no locals found");
@@ -3546,7 +3558,7 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
     if (value == NULL) {
         _PyEval_FormatExcCheckArg(
                     tstate, PyExc_NameError,
-                    NAME_ERROR_MSG, name);
+                    NAME_ERROR_MSG, name, op);
     }
     return value;
 }

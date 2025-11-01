@@ -4648,6 +4648,19 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(func)
         self.assertIn("'ZeroDivisionError'?", actual)
 
+    def test_name_error_ignore_suggestions_from_builtins_in_deleting(self):
+        try:
+            exec("del next")
+        except NameError:
+            msg = traceback.format_exc()
+            self.assertNotIn("anext", msg)
+
+        def func():
+            del next
+
+        actual = self.get_suggestion(func)
+        self.assertNotIn("anext", actual)
+
     def test_name_error_suggestions_with_non_string_candidates(self):
         def func():
             abc = 1
