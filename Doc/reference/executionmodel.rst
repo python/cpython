@@ -412,9 +412,35 @@ its operating system (OS), if there is one.  When a program runs,
 the conceptual layers of how it runs on the host look something
 like this:
 
-   | **host machine**
-   |   **process** (global resources)
-   |     **thread** (runs machine code)
+.. graphviz::
+
+   digraph general_comput_model {
+       graph [
+           bgcolor=white,
+           splines=false,
+           overlap=false,
+           rankdir=TB,
+       ];
+
+       subgraph cluster_host {
+           label="host machine";
+           style=filled;
+           color=lightgrey;
+           penwidth=2;
+           shape=ellipse;
+
+           subgraph cluster_process {
+               label="process\n(global resources)";
+               style=filled;
+               color=white;
+               penwidth=2;
+
+               thread [label="thread\n(runs machine code)",
+                            style=filled, fillcolor=lightgreen];
+
+           }
+       }
+   }
 
 Each process represents a program running on the host.  Think of each
 process itself as the data part of its program.  Think of the process'
@@ -471,12 +497,55 @@ Python Runtime Model
 The same conceptual layers apply to each Python program, with some
 extra data layers specific to Python:
 
-   | **host machine**
-   |   **process** (global resources)
-   |     Python global runtime (*state*)
-   |       Python interpreter (*state*)
-   |         **thread** (runs Python bytecode and "C-API")
-   |           Python thread *state*
+.. graphviz::
+
+   digraph python_exec_model {
+       graph [
+           bgcolor=white,
+           splines=false,
+           overlap=false,
+           rankdir=TB,
+       ];
+
+       subgraph cluster_host {
+           label="host machine";
+           style=filled;
+           color=lightgrey;
+           penwidth=2;
+           shape=ellipse;
+
+           subgraph cluster_process {
+               label="process\n(global resources)";
+               style=filled;
+               color=white;
+               penwidth=2;
+
+               subgraph cluster_runtime {
+                   label="Python global runtime\n(state)";
+                   style=filled;
+                   color=lightyellow;
+                   penwidth=2;
+
+                   subgraph cluster_interpreter {
+                       label="Python interpreter\n(state)";
+                       style=filled;
+                       color=lightblue;
+                       penwidth=2;
+
+                       subgraph cluster_thread {
+                           label="thread\n(runs Python bytecode and C-API)";
+                           style=filled;
+                           color=lightgreen;
+                           penwidth=2;
+
+                           thread_state [label="Python thread state",
+                                style=filled, fillcolor=white];
+                       }
+                   }
+               }
+           }
+       }
+   }
 
 At the conceptual level: when a Python program starts, it looks exactly
 like that diagram, with one of each.  The runtime may grow to include
