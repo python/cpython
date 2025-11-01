@@ -83,6 +83,14 @@ def prepare_reader(console: Console, **kwargs):
     return reader
 
 
+def prepare_vi_reader(console: Console, **kwargs):
+    reader = prepare_reader(console, **kwargs)
+    reader.use_vi_mode = True
+    reader.enter_normal_mode()
+    reader.enter_insert_mode()
+    return reader
+
+
 def prepare_console(events: Iterable[Event], **kwargs) -> MagicMock | Console:
     console = MagicMock()
     console.get_event.side_effect = events

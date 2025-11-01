@@ -1,3 +1,4 @@
+import enum
 from collections.abc import Callable, Iterator
 
 type Callback = Callable[[], object]
@@ -8,3 +9,8 @@ type EventTuple = tuple[CommandName, str]
 type Completer = Callable[[str, int], str | None]
 type CharBuffer = list[str]
 type CharWidths = list[int]
+
+
+class ViMode(str, enum.Enum):
+    INSERT = "insert"
+    NORMAL = "normal"
