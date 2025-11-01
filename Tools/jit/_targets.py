@@ -575,7 +575,7 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         optimizer = _optimizers.OptimizerAArch64
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        host = "aarch64-unknown-linux-gnu"
+        host = "aarch64-pc-linux-gnu"
         condition = "defined(__aarch64__) && defined(__linux__)"
         # -mno-outline-atomics: Keep intrinsics from being emitted.
         args = ["-fpic", "-mno-outline-atomics"]
@@ -600,7 +600,7 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
         optimizer = _optimizers.OptimizerX86
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        host = "x86_64-unknown-linux-gnu"
+        host = "x86_64-pc-linux-gnu"
         condition = "defined(__x86_64__) && defined(__linux__)"
         args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
         optimizer = _optimizers.OptimizerX86
