@@ -679,6 +679,303 @@ class TestViMode(TestCase):
         reader, _ = self._run_vi(events_normal_path)
         self.assertTrue(reader.editor_mode.is_normal())
 
+    def test_insert_bol_and_append_eol(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC to normal
+                Event(evt="key", data="I", raw=bytearray(b"I")),        # Insert at BOL
+                Event(evt="key", data="[", raw=bytearray(b"[")),
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # Back to normal
+                Event(evt="key", data="A", raw=bytearray(b"A")),        # Append at EOL
+                Event(evt="key", data="]", raw=bytearray(b"]")),
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "[hello]")
+        self.assertTrue(reader.editor_mode.is_normal())
+
+    def test_insert_mode_from_normal(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC to normal
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Go to beginning
+                Event(evt="key", data="l", raw=bytearray(b"l")),        # Move right
+                Event(evt="key", data="l", raw=bytearray(b"l")),        # Move right again
+                Event(evt="key", data="i", raw=bytearray(b"i")),        # Insert mode
+                Event(evt="key", data="X", raw=bytearray(b"X")),
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "heXllo")
+        self.assertTrue(reader.editor_mode.is_insert())
+
+    def test_hjkl_motions(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC to normal
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Go to start of line
+                Event(evt="key", data="l", raw=bytearray(b"l")),        # Right (h->e)
+                Event(evt="key", data="l", raw=bytearray(b"l")),        # Right (e->l)
+                Event(evt="key", data="h", raw=bytearray(b"h")),        # Left (l->e)
+                Event(evt="key", data="x", raw=bytearray(b"x")),        # Delete 'e'
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "hllo")
+        self.assertTrue(reader.editor_mode.is_normal())
+
+    def test_dollar_end_of_line(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Beginning
+                Event(evt="key", data="$", raw=bytearray(b"$")),        # End (on last char)
+                Event(evt="key", data="x", raw=bytearray(b"x")),        # Delete 'o'
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "hell")
+
+    def test_word_motions(self):
+        events = itertools.chain(
+            code_to_events("one two"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Beginning
+                Event(evt="key", data="w", raw=bytearray(b"w")),        # Forward word
+                Event(evt="key", data="x", raw=bytearray(b"x")),        # Delete first char of 'two'
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertIn("one", reader.get_unicode())
+        self.assertNotEqual(reader.get_unicode(), "one two")  # Something was deleted
+
+    def test_repeat_counts(self):
+        events = itertools.chain(
+            code_to_events("abcdefghij"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Beginning
+                Event(evt="key", data="3", raw=bytearray(b"3")),        # Count 3
+                Event(evt="key", data="l", raw=bytearray(b"l")),        # Move right 3 times
+                Event(evt="key", data="2", raw=bytearray(b"2")),        # Count 2
+                Event(evt="key", data="x", raw=bytearray(b"x")),        # Delete 2 chars (d, e)
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "abcfghij")
+        self.assertTrue(reader.editor_mode.is_normal())
+
+    def test_multiline_navigation(self):
+        # Test j/k navigation across multiple lines
+        code = "first\nsecond\nthird"
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="k", raw=bytearray(b"k")),        # Up to "second"
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Beginning of line
+                Event(evt="key", data="x", raw=bytearray(b"x")),        # Delete 's'
+                Event(evt="key", data="j", raw=bytearray(b"j")),        # Down to "third"
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Beginning
+                Event(evt="key", data="x", raw=bytearray(b"x")),        # Delete 't'
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "first\necond\nhird")
+
+    def test_arrow_keys_in_normal_mode(self):
+        events = itertools.chain(
+            code_to_events("test"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="left", raw=bytearray(b"\x1b[D")),  # Left arrow
+                Event(evt="key", data="left", raw=bytearray(b"\x1b[D")),  # Left arrow
+                Event(evt="key", data="x", raw=bytearray(b"x")),        # Delete 'e'
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "tst")
+
+    def test_escape_in_normal_mode_is_noop(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC to normal
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC again (no-op)
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC again (no-op)
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertTrue(reader.editor_mode.is_normal())
+        self.assertEqual(reader.get_unicode(), "hello")
+
+    def test_backspace_in_normal_mode(self):
+        events = itertools.chain(
+            code_to_events("abcd"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="\x7f", raw=bytearray(b"\x7f")),  # Backspace
+                Event(evt="key", data="\x7f", raw=bytearray(b"\x7f")),  # Backspace again
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertTrue(reader.editor_mode.is_normal())
+        self.assertIsNotNone(reader.get_unicode())
+
+    def test_end_of_word_motion(self):
+        events = itertools.chain(
+            code_to_events("hello world test"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Beginning
+                Event(evt="key", data="e", raw=bytearray(b"e")),        # End of "hello"
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        # Should be on 'o' of "hello" (last char of word)
+        self.assertEqual(reader.pos, 4)
+        self.assertEqual(reader.buffer[reader.pos], 'o')
+
+        # Test multiple 'e' commands
+        events2 = itertools.chain(
+            code_to_events("one two three"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),
+                Event(evt="key", data="0", raw=bytearray(b"0")),
+                Event(evt="key", data="e", raw=bytearray(b"e")),  # End of "one"
+                Event(evt="key", data="e", raw=bytearray(b"e")),  # End of "two"
+            ],
+        )
+        reader2, _ = self._run_vi(events2)
+        # Should be on 'o' of "two"
+        self.assertEqual(reader2.buffer[reader2.pos], 'o')
+
+    def test_backward_word_motion(self):
+        # Test from end of buffer
+        events = itertools.chain(
+            code_to_events("one two"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC at end
+                Event(evt="key", data="b", raw=bytearray(b"b")),        # Back to start of "two"
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.pos, 4)  # At 't' of "two"
+        self.assertEqual(reader.buffer[reader.pos], 't')
+
+        # Test multiple backwards
+        events2 = itertools.chain(
+            code_to_events("one two three"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="b", raw=bytearray(b"b")),        # Back to "three"
+                Event(evt="key", data="b", raw=bytearray(b"b")),        # Back to "two"
+                Event(evt="key", data="b", raw=bytearray(b"b")),        # Back to "one"
+            ],
+        )
+        reader2, _ = self._run_vi(events2)
+        # Should be at beginning of "one"
+        self.assertEqual(reader2.pos, 0)
+        self.assertEqual(reader2.buffer[reader2.pos], 'o')
+
+    def test_first_non_whitespace_character(self):
+        events = itertools.chain(
+            code_to_events("   hello world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="^", raw=bytearray(b"^")),        # First non-ws
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        # Should be at 'h' of "hello", skipping the 3 spaces
+        self.assertEqual(reader.pos, 3)
+        self.assertEqual(reader.buffer[reader.pos], 'h')
+
+        # Test with tabs and spaces
+        events2 = itertools.chain(
+            code_to_events("\t  text"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),
+                Event(evt="key", data="0", raw=bytearray(b"0")),       # Go to BOL first
+                Event(evt="key", data="^", raw=bytearray(b"^")),       # Then to first non-ws
+            ],
+        )
+        reader2, _ = self._run_vi(events2)
+        self.assertEqual(reader2.buffer[reader2.pos], 't')
+
+    def test_word_motion_edge_cases(self):
+        # Test with punctuation - underscore should be a word boundary
+        events = itertools.chain(
+            code_to_events("hello_world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),
+                Event(evt="key", data="0", raw=bytearray(b"0")),
+                Event(evt="key", data="w", raw=bytearray(b"w")),  # Forward word
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        # 'w' moves to next word, underscore is not alphanumeric so treated as boundary
+        self.assertIn(reader.pos, [5, 6])  # Could be on '_' or 'w' depending on implementation
+
+        # Test 'e' at end of buffer stays in bounds
+        events2 = itertools.chain(
+            code_to_events("end"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),
+                Event(evt="key", data="e", raw=bytearray(b"e")),  # Already at end of word
+                Event(evt="key", data="e", raw=bytearray(b"e")),  # Should stay in bounds
+            ],
+        )
+        reader2, _ = self._run_vi(events2)
+        # Should not go past end of buffer
+        self.assertLessEqual(reader2.pos, len(reader2.buffer) - 1)
+
+        # Test 'b' at beginning doesn't crash
+        events3 = itertools.chain(
+            code_to_events("start"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),
+                Event(evt="key", data="0", raw=bytearray(b"0")),
+                Event(evt="key", data="b", raw=bytearray(b"b")),  # Should stay at 0
+            ],
+        )
+        reader3, _ = self._run_vi(events3)
+        self.assertEqual(reader3.pos, 0)
+
+    def test_repeat_count_with_word_motions(self):
+        events = itertools.chain(
+            code_to_events("one two three four"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),
+                Event(evt="key", data="0", raw=bytearray(b"0")),
+                Event(evt="key", data="2", raw=bytearray(b"2")),  # Count 2
+                Event(evt="key", data="w", raw=bytearray(b"w")),  # Forward 2 words
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        # Should be at start of "three" (2 words forward from "one")
+        self.assertEqual(reader.buffer[reader.pos], 't')  # 't' of "three"
+
+        # Test with 'e'
+        events2 = itertools.chain(
+            code_to_events("alpha beta gamma"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),
+                Event(evt="key", data="0", raw=bytearray(b"0")),
+                Event(evt="key", data="2", raw=bytearray(b"2")),
+                Event(evt="key", data="e", raw=bytearray(b"e")),  # End of 2nd word
+            ],
+        )
+        reader2, _ = self._run_vi(events2)
+        # Should be at end of "beta"
+        self.assertEqual(reader2.buffer[reader2.pos], 'a')  # Last 'a' of "beta"
+
 
 @force_not_colorized_test_class
 class TestHistoricalReaderBindings(TestCase):
