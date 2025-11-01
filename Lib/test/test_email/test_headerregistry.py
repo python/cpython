@@ -249,7 +249,7 @@ class TestContentTypeHeader(TestHeaderBase):
         folded = args[3] if l>3 else header + decoded + '\n'
         # Both rfc2231 test cases with utf-8%E2%80%9D raise warnings,
         # clear encoding cache to ensure test isolation.
-        if 'utf-8%E2%80%9D' in source:
+        if 'utf-8%E2%80%9D' in source and 'ascii' not in source:
             import encodings
             encodings._cache.clear()
             with self.assertWarns(DeprecationWarning):
