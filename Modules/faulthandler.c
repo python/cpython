@@ -689,7 +689,7 @@ faulthandler_thread(void *unused)
 {
     PyLockStatus st;
     const char* errmsg;
-    int ok;
+    int ok = 1;
 #if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
     sigset_t set;
 
@@ -721,6 +721,7 @@ faulthandler_thread(void *unused)
             PyGILState_STATE gil_state = PyGILState_Ensure();
 #endif
             errmsg = _Py_DumpTracebackThreads(thread.fd, interp, NULL, 1);
+            ok = (errmsg == NULL);
 
 #ifdef Py_GIL_DISABLED
             _PyEval_StartTheWorld(interp);
@@ -729,7 +730,6 @@ faulthandler_thread(void *unused)
 #endif
         }
 
-        ok = (errmsg == NULL);
 
         if (thread.exit)
             _exit(1);
