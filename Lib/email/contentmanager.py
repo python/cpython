@@ -151,7 +151,7 @@ def _encode_text(string, charset, cte, policy):
     def normal_body(lines): return b'\n'.join(lines) + b'\n'
     if cte is None:
         # Use heuristics to decide on the "best" encoding.
-        if max((len(x) for x in lines), default=0) <= maxlen:
+        if max(map(len, lines), default=0) <= maxlen:
             try:
                 return '7bit', normal_body(lines).decode('ascii')
             except UnicodeDecodeError:
