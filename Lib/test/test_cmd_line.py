@@ -206,7 +206,9 @@ class CmdLineTest(unittest.TestCase):
         # gh-140594: heap-buffer-underflow in PyOS_StdioReadline when a NUL (\0) is present in interactive input
         with os_helper.EnvironmentVarGuard() as env:
             env.unset('PYTHONSTARTUP')
-            args = [sys.executable, '-I', '-S', '-q', '-i']
+            # -I: isolated mode (ignore env vars, no user site-packages)
+            # -i: interactive mode (required to trigger the bug)
+            args = [sys.executable, '-I', '-i']
             p = subprocess.Popen(
                 args,
                 stdin=subprocess.PIPE,
