@@ -1,0 +1,2 @@
+Fix handling of unclosed character references (named and numerical)
+followed by the end of file in :class:`html.parser.HTMLParser`.
