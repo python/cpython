@@ -208,10 +208,7 @@ class CmdLineTest(unittest.TestCase):
         # byte to the interactive prompt does not crash the interpreter.
         proc = spawn_python('-I', '-i')
         out, _ = proc.communicate(b'\x00', timeout=10)
-        self.assertEqual(
-            proc.returncode, 0,
-            msg=f"Interpreter aborted on NUL input, output:\n{out[:500]!r}"
-        )
+        self.assertEqual(proc.returncode, 0)
 
     def test_relativedir_bug46421(self):
         # Test `python -m unittest` with a relative directory beginning with ./
