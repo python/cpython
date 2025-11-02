@@ -1,5 +1,4 @@
 # regression test for SAX 2.0
-
 from xml.sax import make_parser, ContentHandler, \
                     SAXException, SAXReaderNotAvailable, SAXParseException, handler
 import unittest
@@ -1307,37 +1306,22 @@ class ExpatReaderTest(XmlTestBase):
         self.assertEqual(parser.getSystemId(), fname)
         self.assertEqual(parser.getPublicId(), None)
 
-    def test_namespace_prefix(self):
-        parser = create_parser()
-        parser.setFeature(handler.feature_namespaces, 1)
-        parser.setFeature(handler.feature_namespace_prefixes, 1)
+    def test_qualified_names(self):
 
-        class Handler(handler.ContentHandler):
+        class Handler(ContentHandler):
             def startElementNS(self, name, qname, attrs):
                 self.qname = qname
 
-        h = Handler()
+        for xml_s, expected_qname in zip(["<Q:E xmlns:Q='http://example.org/testuri'/>", "<E xmlns='http://example.org/testuri'/>", "<E />"], ["Q:E", "E", "E"]):
+            parser = create_parser()
+            parser.setFeature(handler.feature_namespaces, 1)
+            parser.setFeature(handler.feature_namespace_prefixes, 1)
 
-        parser.setContentHandler(h)
-        parser.feed("<Q:E xmlns:Q='http://example.org/testuri'/>")
-        parser.close()
-        self.assertEqual(h.qname, "Q:E")
+            h = Handler()
 
-    def test_default_namespace(self):
-        parser = create_parser()
-        parser.setFeature(handler.feature_namespaces, 1)
-
-        class Handler(handler.ContentHandler):
-            def startElementNS(self, name, qname, attrs):
-                self.qname = qname
-
-        h = Handler()
-
-        parser.setContentHandler(h)
-        parser.feed("<E xmlns='http://example.org/testuri'/>")
-        parser.close()
-        self.assertEqual(h.qname, "E")
-
+            parser.setContentHandler(h)
+            parser.parse(StringIO(xml_s))
+            self.assertEqual(h.qname, expected_qname)
 
 
 # ===========================================================================
