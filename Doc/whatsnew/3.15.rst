@@ -951,6 +951,14 @@ New features
   (Contributed by Victor Stinner in :gh:`111489`.)
 
 
+Changed C APIs
+--------------
+
+* If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` or :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
+  flag is set then :c:macro:`Py_TPFLAGS_HAVE_GC` must be set too.
+  (Contributed by Sergey Miryanov in :gh:`134786`)
+
+
 Porting to Python 3.15
 ----------------------
 
