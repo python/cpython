@@ -210,14 +210,17 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
         # Test the exact bug scenario: 1 worker, max_tasks=2, 10 tasks
         executor = self.executor_type(1, mp_context=context, max_tasks_per_child=2)
-        futures = [executor.submit(mul, i, i) for i in range(10)]
+        try:
+            futures = [executor.submit(mul, i, i) for i in range(10)]
 
-        # All futures should complete without hanging
-        for i, future in enumerate(futures):
-            result = future.result(timeout=support.SHORT_TIMEOUT)
-            self.assertEqual(result, i * i)
-
-        executor.shutdown()
+            # All futures should complete without hanging
+            results = [future.result(timeout=support.SHORT_TIMEOUT) for future in futures]
+            expected = [i * i for i in range(10)]
+            self.assertEqual(results, expected,
+                           "ProcessPoolExecutor with max_tasks_per_child=2 failed to "
+                           "complete all 10 tasks (gh-115634 deadlock regression)")
+        finally:
+            executor.shutdown(wait=True, cancel_futures=True)
 
     def test_max_tasks_per_child_multiple_worker_restarts_gh115634(self):
         # gh-115634: Test multiple restart cycles with various max_tasks values
@@ -227,14 +230,18 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
         # Test with max_tasks=3, forcing multiple restarts
         executor = self.executor_type(1, mp_context=context, max_tasks_per_child=3)
-        futures = [executor.submit(mul, i, 2) for i in range(15)]
+        try:
+            futures = [executor.submit(mul, i, 2) for i in range(15)]
 
-        # All 15 tasks should complete (requires 5 worker restarts)
-        for i, future in enumerate(futures):
-            result = future.result(timeout=support.SHORT_TIMEOUT)
-            self.assertEqual(result, i * 2)
-
-        executor.shutdown()
+            # All 15 tasks should complete (requires 5 worker restarts)
+            results = [future.result(timeout=support.SHORT_TIMEOUT) for future in futures]
+            expected = [i * 2 for i in range(15)]
+            self.assertEqual(results, expected,
+                           "ProcessPoolExecutor with max_tasks_per_child=3 failed to "
+                           "complete all 15 tasks across 5 worker restart cycles "
+                           "(gh-115634 deadlock regression)")
+        finally:
+            executor.shutdown(wait=True, cancel_futures=True)
 
     def test_max_tasks_per_child_multiple_workers_gh115634(self):
         # gh-115634: Test with multiple workers to ensure fix works
@@ -246,13 +253,16 @@ class ProcessPoolExecutorTest(ExecutorTest):
         # 2 workers, max_tasks=2 each, 12 tasks total
         # Should require 3 restart cycles per worker
         executor = self.executor_type(2, mp_context=context, max_tasks_per_child=2)
-        futures = [executor.submit(mul, i, 3) for i in range(12)]
+        try:
+            futures = [executor.submit(mul, i, 3) for i in range(12)]
 
-        results = [future.result(timeout=support.SHORT_TIMEOUT) for future in futures]
-        expected = [i * 3 for i in range(12)]
-        self.assertEqual(results, expected)
-
-        executor.shutdown()
+            results = [future.result(timeout=support.SHORT_TIMEOUT) for future in futures]
+            expected = [i * 3 for i in range(12)]
+            self.assertEqual(results, expected,
+                           "ProcessPoolExecutor with 2 workers and max_tasks_per_child=2 "
+                           "failed to complete all 12 tasks (gh-115634 deadlock regression)")
+        finally:
+            executor.shutdown(wait=True, cancel_futures=True)
 
     def test_max_tasks_early_shutdown(self):
         context = self.get_context()
