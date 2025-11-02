@@ -276,7 +276,7 @@ PyAPI_FUNC(int) _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
 // Similar to PyCode_Addr2Line(), but return -1 if the code object is invalid
-// and call be called without an attached tstate.
+// and can be called without an attached tstate.
 // Used by dump_frame() in Python/traceback.c.
 extern int _PyCode_SafeAddr2Line(PyCodeObject *co, int addr);
 
