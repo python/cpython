@@ -1,6 +1,7 @@
 """
 Very minimal unittests for parts of the readline module.
 """
+import codecs
 import locale
 import os
 import sys
@@ -231,6 +232,13 @@ print("History length:", readline.get_current_history_length())
             # writing and reading non-ASCII bytes into/from a TTY works, but
             # readline or ncurses ignores non-ASCII bytes on read.
             self.skipTest(f"the LC_CTYPE locale is {loc!r}")
+        if sys.flags.utf8_mode:
+            encoding = locale.getencoding()
+            encoding = codecs.lookup(encoding).name  # normalize the name
+            if encoding != "utf-8":
+                # gh-133711: The Python UTF-8 Mode ignores the LC_CTYPE locale
+                # and always use the UTF-8 encoding.
+                self.skipTest(f"the LC_CTYPE encoding is {encoding!r}")
 
         try:
             readline.add_history("\xEB\xEF")

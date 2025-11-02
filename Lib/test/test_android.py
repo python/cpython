@@ -91,34 +91,38 @@ class TestAndroidOutput(unittest.TestCase):
         self.logcat_thread = None
 
     @contextmanager
-    def unbuffered(self, stream):
-        stream.reconfigure(write_through=True)
+    def reconfigure(self, stream, **settings):
+        original_settings = {key: getattr(stream, key, None) for key in settings.keys()}
+        stream.reconfigure(**settings)
         try:
             yield
         finally:
-            stream.reconfigure(write_through=False)
+            stream.reconfigure(**original_settings)
 
-    # In --verbose3 mode, sys.stdout and sys.stderr are captured, so we can't
-    # test them directly. Detect this mode and use some temporary streams with
-    # the same properties.
     def stream_context(self, stream_name, level):
-        # https://developer.android.com/ndk/reference/group/logging
-        prio = {"I": 4, "W": 5}[level]
-
         stack = ExitStack()
         stack.enter_context(self.subTest(stream_name))
+
+        # In --verbose3 mode, sys.stdout and sys.stderr are captured, so we can't
+        # test them directly. Detect this mode and use some temporary streams with
+        # the same properties.
         stream = getattr(sys, stream_name)
         native_stream = getattr(sys, f"__{stream_name}__")
         if isinstance(stream, io.StringIO):
+            # https://developer.android.com/ndk/reference/group/logging
+            prio = {"I": 4, "W": 5}[level]
             stack.enter_context(
                 patch(
                     f"sys.{stream_name}",
-                    TextLogStream(
-                        prio, f"python.{stream_name}", native_stream.fileno(),
-                        errors="backslashreplace"
+                    stream := TextLogStream(
+                        prio, f"python.{stream_name}", native_stream,
                     ),
                 )
             )
+
+        # The tests assume the stream is initially buffered.
+        stack.enter_context(self.reconfigure(stream, write_through=False))
+
         return stack
 
     def test_str(self):
@@ -145,7 +149,7 @@ class TestAndroidOutput(unittest.TestCase):
                     self.assert_logs(level, tag, lines)
 
                 # Single-line messages,
-                with self.unbuffered(stream):
+                with self.reconfigure(stream, write_through=True):
                     write("", [])
 
                     write("a")
@@ -192,7 +196,7 @@ class TestAndroidOutput(unittest.TestCase):
 
                 # However, buffering can be turned off completely if you want a
                 # flush after every write.
-                with self.unbuffered(stream):
+                with self.reconfigure(stream, write_through=True):
                     write("\nx", ["", "x"])
                     write("\na\n", ["", "a"])
                     write("\n", [""])

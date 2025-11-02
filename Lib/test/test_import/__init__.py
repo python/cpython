@@ -15,6 +15,7 @@ import marshal
 import os
 import py_compile
 import random
+import re
 import shutil
 import stat
 import subprocess
@@ -23,6 +24,7 @@ import textwrap
 import threading
 import time
 import types
+import warnings
 import unittest
 from unittest import mock
 import _imp
@@ -35,7 +37,7 @@ from test.support import (
     cpython_only,
     is_apple_mobile,
     is_emscripten,
-    is_wasi,
+    is_wasm32,
     run_in_subinterp,
     run_in_subinterp_with_config,
     Py_TRACE_REFS,
@@ -51,7 +53,7 @@ from test.support.os_helper import (
     TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE)
 from test.support import script_helper
 from test.support import threading_helper
-from test.test_importlib.util import uncache
+from test.test_importlib.util import uncache, temporary_pycache_prefix
 from types import ModuleType
 try:
     import _testsinglephase
@@ -412,7 +414,6 @@ class ImportTests(unittest.TestCase):
         self.assertIsNotNone(cm.exception)
 
     def test_from_import_star_invalid_type(self):
-        import re
         with ready_to_import() as (name, path):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("__all__ = [b'invalid_type']")
@@ -1001,7 +1002,7 @@ from not_a_module import symbol
 
                 expected_error = error + (
                     rb" \(consider renaming '.*numpy.py' if it has the "
-                    rb"same name as a library you intended to import\)\s+\Z"
+                    rb"same name as a library you intended to import\)\s+\z"
                 )
 
                 popen = script_helper.spawn_python(os.path.join(tmp, "numpy.py"))
@@ -1022,14 +1023,14 @@ from not_a_module import symbol
                 f.write("this_script_does_not_attempt_to_import_numpy = True")
 
             expected_error = (
-                rb"AttributeError: module 'numpy' has no attribute 'attr'\s+\Z"
+                rb"AttributeError: module 'numpy' has no attribute 'attr'\s+\z"
             )
             popen = script_helper.spawn_python('-c', 'import numpy; numpy.attr', cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
             expected_error = (
-                rb"ImportError: cannot import name 'attr' from 'numpy' \(.*\)\s+\Z"
+                rb"ImportError: cannot import name 'attr' from 'numpy' \(.*\)\s+\z"
             )
             popen = script_helper.spawn_python('-c', 'from numpy import attr', cwd=tmp)
             stdout, stderr = popen.communicate()
@@ -1187,6 +1188,7 @@ except ImportError as e:
 
     @unittest.skipIf(sys.platform == 'win32', 'Cannot delete cwd on Windows')
     @unittest.skipIf(sys.platform == 'sunos5', 'Cannot delete cwd on Solaris/Illumos')
+    @unittest.skipIf(sys.platform.startswith('aix'), 'Cannot delete cwd on AIX')
     def test_script_shadowing_stdlib_cwd_failure(self):
         with os_helper.temp_dir() as tmp:
             subtmp = os.path.join(tmp, "subtmp")
@@ -1249,6 +1251,35 @@ os.does_not_exist
                 origin = "a\x00b"
             _imp.create_dynamic(Spec2())
 
+    def test_filter_syntax_warnings_by_module(self):
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        unload('test.test_import.data.syntax_warnings')
+        with (os_helper.temp_dir() as tmpdir,
+              temporary_pycache_prefix(tmpdir),
+              warnings.catch_warnings(record=True) as wlog):
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            import test.test_import.data.syntax_warnings
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        filename = test.test_import.data.syntax_warnings.__file__
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+        module_re = r'syntax_warnings\z'
+        unload('test.test_import.data.syntax_warnings')
+        with (os_helper.temp_dir() as tmpdir,
+              temporary_pycache_prefix(tmpdir),
+              warnings.catch_warnings(record=True) as wlog):
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            import test.test_import.data.syntax_warnings
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        filename = test.test_import.data.syntax_warnings.__file__
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
 
 @skip_if_dont_write_bytecode
 class FilePermissionTests(unittest.TestCase):
@@ -1257,7 +1288,7 @@ class FilePermissionTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "Emscripten's/WASI's umask is a stub."
     )
     def test_creation_mode(self):
@@ -3159,6 +3190,7 @@ class SinglephaseInitTests(unittest.TestCase):
     # Also, we test with a single-phase module that has global state,
     # which is shared by all interpreters.
 
+    @no_rerun(reason="module state is not cleared (see gh-140657)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_main_no_reset(self):
         # without resetting; already loaded in main interpreter

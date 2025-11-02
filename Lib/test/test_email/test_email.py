@@ -389,6 +389,24 @@ class TestMessageAPI(TestEmailBase):
         msg = email.message_from_string("Content-Type: blarg; baz; boo\n")
         self.assertEqual(msg.get_param('baz'), '')
 
+    def test_continuation_sorting_part_order(self):
+        msg = email.message_from_string(
+            "Content-Disposition: attachment; "
+            "filename*=\"ignored\"; "
+            "filename*0*=\"utf-8''foo%20\"; "
+            "filename*1*=\"bar.txt\"\n"
+        )
+        filename = msg.get_filename()
+        self.assertEqual(filename, 'foo bar.txt')
+
+    def test_sorting_no_continuations(self):
+        msg = email.message_from_string(
+            "Content-Disposition: attachment; "
+            "filename*=\"bar.txt\"; "
+        )
+        filename = msg.get_filename()
+        self.assertEqual(filename, 'bar.txt')
+
     def test_missing_filename(self):
         msg = email.message_from_string("From: foo\n")
         self.assertEqual(msg.get_filename(), None)
@@ -462,6 +480,27 @@ class TestMessageAPI(TestEmailBase):
         msg = email.message_from_string(
             "Content-Type: foo; bar*0=\"baz\\\"foobar\"; bar*1=\"\\\"baz\"")
         self.assertEqual(msg.get_param('bar'), 'baz"foobar"baz')
+
+    def test_get_param_linear_complexity(self):
+        # Ensure that email.message._parseparam() is fast.
+        # See https://github.com/python/cpython/issues/136063.
+        N = 100_000
+        for s, r in [
+            ("", ""),
+            ("foo=bar", "foo=bar"),
+            (" FOO = bar    ", "foo=bar"),
+        ]:
+            with self.subTest(s=s, r=r, N=N):
+                src = f'{s};' * (N - 1) + s
+                res = email.message._parseparam(src)
+                self.assertEqual(len(res), N)
+                self.assertEqual(len(set(res)), 1)
+                self.assertEqual(res[0], r)
+
+        # This will be considered as a single parameter.
+        malformed = 's="' + ';' * (N - 1)
+        res = email.message._parseparam(malformed)
+        self.assertEqual(res, [malformed])
 
     def test_field_containment(self):
         msg = email.message_from_string('Header: exists')
@@ -2549,6 +2588,18 @@ Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
                          ''.join(s.splitlines()))
         self.assertEqual(str(make_header(decode_header(s))),
                          '"Müller T" <T.Mueller@xxx.com>')
+
+    def test_unencoded_ascii(self):
+        # bpo-22833/gh-67022: returns [(str, None)] rather than [(bytes, None)]
+        s = 'header without encoded words'
+        self.assertEqual(decode_header(s),
+            [('header without encoded words', None)])
+
+    def test_unencoded_utf8(self):
+        # bpo-22833/gh-67022: returns [(str, None)] rather than [(bytes, None)]
+        s = 'header with unexpected non ASCII caract\xe8res'
+        self.assertEqual(decode_header(s),
+            [('header with unexpected non ASCII caract\xe8res', None)])
 
 
 # Test the MIMEMessage class

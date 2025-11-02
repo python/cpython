@@ -376,6 +376,24 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
    If *p* is ``NULL``, no operation is performed.
 
+   Do not call this directly to free an object's memory; call the type's
+   :c:member:`~PyTypeObject.tp_free` slot instead.
+
+   Do not use this for memory allocated by :c:macro:`PyObject_GC_New` or
+   :c:macro:`PyObject_GC_NewVar`; use :c:func:`PyObject_GC_Del` instead.
+
+   .. seealso::
+
+      * :c:func:`PyObject_GC_Del` is the equivalent of this function for memory
+        allocated by types that support garbage collection.
+      * :c:func:`PyObject_Malloc`
+      * :c:func:`PyObject_Realloc`
+      * :c:func:`PyObject_Calloc`
+      * :c:macro:`PyObject_New`
+      * :c:macro:`PyObject_NewVar`
+      * :c:func:`PyType_GenericAlloc`
+      * :c:member:`~PyTypeObject.tp_free`
+
 
 .. _default-memory-allocators:
 
@@ -653,6 +671,10 @@ The arena allocator uses the following functions:
 This allocator is disabled if Python is configured with the
 :option:`--without-pymalloc` option. It can also be disabled at runtime using
 the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
+
+Typically, it makes sense to disable the pymalloc allocator when building
+Python with AddressSanitizer (:option:`--with-address-sanitizer`) which helps
+uncover low level bugs within the C code.
 
 Customize pymalloc Arena Allocator
 ----------------------------------

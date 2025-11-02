@@ -170,6 +170,7 @@ venv:
 		echo "venv already exists."; \
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
+		set -e; \
 		echo "Creating venv in $(VENVDIR)"; \
 		if $(UV) --version >/dev/null 2>&1; then \
 			$(UV) venv --python=$(PYTHON) $(VENVDIR); \
@@ -183,7 +184,7 @@ venv:
 	fi
 
 .PHONY: dist-no-html
-dist-no-html: dist-text dist-pdf dist-epub dist-texinfo
+dist-no-html: dist-text dist-epub dist-texinfo
 
 .PHONY: dist
 dist:

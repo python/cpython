@@ -12,6 +12,7 @@
 #include "pycore_frame.h"
 #include "pycore_function.h"
 #include "pycore_interpframe.h"
+#include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
 #include "pycore_list.h"
 #include "pycore_long.h"
@@ -21,6 +22,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
+#include "pycore_template.h"
 #include "pycore_tuple.h"
 #include "pycore_unicodeobject.h"
 
@@ -67,10 +69,6 @@ jit_alloc(size_t size)
 #else
     int flags = MAP_ANONYMOUS | MAP_PRIVATE;
     int prot = PROT_READ | PROT_WRITE;
-# ifdef MAP_JIT
-    flags |= MAP_JIT;
-    prot |= PROT_EXEC;
-# endif
     unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
 #endif
@@ -116,11 +114,8 @@ mark_executable(unsigned char *memory, size_t size)
     int old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
-    int failed = 0;
     __builtin___clear_cache((char *)memory, (char *)memory + size);
-#ifndef MAP_JIT
-    failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
-#endif
+    int failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
 #endif
     if (failed) {
         jit_error("unable to protect executable memory");
@@ -162,21 +157,29 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
          uint8_t width)
 {
     assert(loc_start + width <= 32);
+    uint32_t temp_val;
+    // Use memcpy to safely read the value, avoiding potential alignment
+    // issues and strict aliasing violations.
+    memcpy(&temp_val, loc, sizeof(temp_val));
     // Clear the bits we're about to patch:
-    *loc &= ~(((1ULL << width) - 1) << loc_start);
-    assert(get_bits(*loc, loc_start, width) == 0);
+    temp_val &= ~(((1ULL << width) - 1) << loc_start);
+    assert(get_bits(temp_val, loc_start, width) == 0);
     // Patch the bits:
-    *loc |= get_bits(value, value_start, width) << loc_start;
-    assert(get_bits(*loc, loc_start, width) == get_bits(value, value_start, width));
+    temp_val |= get_bits(value, value_start, width) << loc_start;
+    assert(get_bits(temp_val, loc_start, width) == get_bits(value, value_start, width));
+    // Safely write the modified value back to memory.
+    memcpy(loc, &temp_val, sizeof(temp_val));
 }
 
 // See https://developer.arm.com/documentation/ddi0602/2023-09/Base-Instructions
 // for instruction encodings:
-#define IS_AARCH64_ADD_OR_SUB(I) (((I) & 0x11C00000) == 0x11000000)
-#define IS_AARCH64_ADRP(I)       (((I) & 0x9F000000) == 0x90000000)
-#define IS_AARCH64_BRANCH(I)     (((I) & 0x7C000000) == 0x14000000)
-#define IS_AARCH64_LDR_OR_STR(I) (((I) & 0x3B000000) == 0x39000000)
-#define IS_AARCH64_MOV(I)        (((I) & 0x9F800000) == 0x92800000)
+#define IS_AARCH64_ADD_OR_SUB(I)  (((I) & 0x11C00000) == 0x11000000)
+#define IS_AARCH64_ADRP(I)        (((I) & 0x9F000000) == 0x90000000)
+#define IS_AARCH64_BRANCH(I)      (((I) & 0x7C000000) == 0x14000000)
+#define IS_AARCH64_BRANCH_COND(I) (((I) & 0x7C000000) == 0x54000000)
+#define IS_AARCH64_TEST_AND_BRANCH(I) (((I) & 0x7E000000) == 0x36000000)
+#define IS_AARCH64_LDR_OR_STR(I)  (((I) & 0x3B000000) == 0x39000000)
+#define IS_AARCH64_MOV(I)         (((I) & 0x9F800000) == 0x92800000)
 
 // LLD is a great reference for performing relocations... just keep in
 // mind that Tools/jit/build.py does filtering and preprocessing for us!
@@ -207,30 +210,29 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 void
 patch_32(unsigned char *location, uint64_t value)
 {
-    uint32_t *loc32 = (uint32_t *)location;
     // Check that we're not out of range of 32 unsigned bits:
     assert(value < (1ULL << 32));
-    *loc32 = (uint32_t)value;
+    uint32_t final_value = (uint32_t)value;
+    memcpy(location, &final_value, sizeof(final_value));
 }
 
 // 32-bit relative address.
 void
 patch_32r(unsigned char *location, uint64_t value)
 {
-    uint32_t *loc32 = (uint32_t *)location;
     value -= (uintptr_t)location;
     // Check that we're not out of range of 32 signed bits:
     assert((int64_t)value >= -(1LL << 31));
     assert((int64_t)value < (1LL << 31));
-    *loc32 = (uint32_t)value;
+    uint32_t final_value = (uint32_t)value;
+    memcpy(location, &final_value, sizeof(final_value));
 }
 
 // 64-bit absolute address.
 void
 patch_64(unsigned char *location, uint64_t value)
 {
-    uint64_t *loc64 = (uint64_t *)location;
-    *loc64 = value;
+    memcpy(location, &value, sizeof(value));
 }
 
 // 12-bit low part of an absolute address. Pairs nicely with patch_aarch64_21r
@@ -337,6 +339,21 @@ patch_aarch64_21rx(unsigned char *location, uint64_t value)
     patch_aarch64_21r(location, value);
 }
 
+// 21-bit relative branch.
+void
+patch_aarch64_19r(unsigned char *location, uint64_t value)
+{
+    uint32_t *loc32 = (uint32_t *)location;
+    assert(IS_AARCH64_BRANCH_COND(*loc32));
+    value -= (uintptr_t)location;
+    // Check that we're not out of range of 21 signed bits:
+    assert((int64_t)value >= -(1 << 20));
+    assert((int64_t)value < (1 << 20));
+    // Since instructions are 4-byte aligned, only use 19 bits:
+    assert(get_bits(value, 0, 2) == 0);
+    set_bits(loc32, 5, value, 2, 19);
+}
+
 // 28-bit relative branch.
 void
 patch_aarch64_26r(unsigned char *location, uint64_t value)
@@ -398,7 +415,10 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 {
     uint8_t *loc8 = (uint8_t *)location;
     // Try to relax the GOT load into an immediate value:
-    uint64_t relaxed = *(uint64_t *)(value + 4) - 4;
+    uint64_t relaxed;
+    memcpy(&relaxed, (void *)(value + 4), sizeof(relaxed));
+    relaxed -= 4;
+
     if ((int64_t)relaxed - (int64_t)location >= -(1LL << 31) &&
         (int64_t)relaxed - (int64_t)location + 1 < (1LL << 31))
     {
@@ -429,8 +449,10 @@ void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *s
 
 #if defined(__aarch64__) || defined(_M_ARM64)
     #define TRAMPOLINE_SIZE 16
+    #define DATA_ALIGN 8
 #else
     #define TRAMPOLINE_SIZE 0
+    #define DATA_ALIGN 1
 #endif
 
 // Generate and patch AArch64 trampolines. The symbols to jump to are stored
@@ -497,10 +519,6 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     size_t code_size = 0;
     size_t data_size = 0;
     jit_state state = {0};
-    group = &shim;
-    code_size += group->code_size;
-    data_size += group->data_size;
-    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
@@ -520,15 +538,13 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    size_t padding = page_size - ((code_size + state.trampolines.size + data_size) & (page_size - 1));
-    size_t total_size = code_size + state.trampolines.size + data_size  + padding;
+    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
+    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
+    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + padding;
     unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
     }
-#ifdef MAP_JIT
-    pthread_jit_write_protect_np(0);
-#endif
     // Collect memory stats
     OPT_STAT_ADD(jit_total_memory_size, total_size);
     OPT_STAT_ADD(jit_code_size, code_size);
@@ -543,15 +559,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Loop again to emit the code:
     unsigned char *code = memory;
     state.trampolines.mem = memory + code_size;
-    unsigned char *data = memory + code_size + state.trampolines.size;
-    // Compile the shim, which handles converting between the native
-    // calling convention and the calling convention used by jitted code
-    // (which may be different for efficiency reasons).
-    group = &shim;
-    group->emit(code, data, executor, NULL, &state);
-    code += group->code_size;
-    data += group->data_size;
-    assert(trace[0].opcode == _START_EXECUTOR);
+    unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
+    assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
@@ -565,18 +574,79 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     code += group->code_size;
     data += group->data_size;
     assert(code == memory + code_size);
-    assert(data == memory + code_size + state.trampolines.size + data_size);
-#ifdef MAP_JIT
-    pthread_jit_write_protect_np(1);
-#endif
+    assert(data == memory + code_size + state.trampolines.size + code_padding + data_size);
     if (mark_executable(memory, total_size)) {
         jit_free(memory, total_size);
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_side_entry = memory + shim.code_size;
     executor->jit_size = total_size;
     return 0;
+}
+
+/* One-off compilation of the jit entry trampoline
+ * We compile this once only as it effectively a normal
+ * function, but we need to use the JIT because it needs
+ * to understand the jit-specific calling convention.
+ */
+static _PyJitEntryFuncPtr
+compile_trampoline(void)
+{
+    _PyExecutorObject dummy;
+    const StencilGroup *group;
+    size_t code_size = 0;
+    size_t data_size = 0;
+    jit_state state = {0};
+    group = &trampoline;
+    code_size += group->code_size;
+    data_size += group->data_size;
+    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
+    // Round up to the nearest page:
+    size_t page_size = get_page_size();
+    assert((page_size & (page_size - 1)) == 0);
+    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
+    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
+    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + padding;
+    unsigned char *memory = jit_alloc(total_size);
+    if (memory == NULL) {
+        return NULL;
+    }
+    unsigned char *code = memory;
+    state.trampolines.mem = memory + code_size;
+    unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
+    // Compile the shim, which handles converting between the native
+    // calling convention and the calling convention used by jitted code
+    // (which may be different for efficiency reasons).
+    group = &trampoline;
+    group->emit(code, data, &dummy, NULL, &state);
+    code += group->code_size;
+    data += group->data_size;
+    assert(code == memory + code_size);
+    assert(data == memory + code_size + state.trampolines.size + code_padding + data_size);
+    if (mark_executable(memory, total_size)) {
+        jit_free(memory, total_size);
+        return NULL;
+    }
+    return (_PyJitEntryFuncPtr)memory;
+}
+
+static PyMutex lazy_jit_mutex = { 0 };
+
+_Py_CODEUNIT *
+_Py_LazyJitTrampoline(
+    _PyExecutorObject *executor, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
+) {
+    PyMutex_Lock(&lazy_jit_mutex);
+    if (_Py_jit_entry == _Py_LazyJitTrampoline) {
+        _PyJitEntryFuncPtr trampoline = compile_trampoline();
+        if (trampoline == NULL) {
+            PyMutex_Unlock(&lazy_jit_mutex);
+            Py_FatalError("Cannot allocate core JIT code");
+        }
+        _Py_jit_entry = trampoline;
+    }
+    PyMutex_Unlock(&lazy_jit_mutex);
+    return _Py_jit_entry(executor, frame, stack_pointer, tstate);
 }
 
 void
@@ -586,7 +656,6 @@ _PyJIT_Free(_PyExecutorObject *executor)
     size_t size = executor->jit_size;
     if (memory) {
         executor->jit_code = NULL;
-        executor->jit_side_entry = NULL;
         executor->jit_size = 0;
         if (jit_free(memory, size)) {
             PyErr_FormatUnraisable("Exception ignored while "

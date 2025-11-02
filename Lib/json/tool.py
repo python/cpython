@@ -7,7 +7,7 @@ import argparse
 import json
 import re
 import sys
-from _colorize import ANSIColors, can_colorize
+from _colorize import get_theme, can_colorize
 
 
 # The string we are colorizing is valid JSON,
@@ -17,36 +17,37 @@ from _colorize import ANSIColors, can_colorize
 _color_pattern = re.compile(r'''
     (?P<key>"(\\.|[^"\\])*")(?=:)           |
     (?P<string>"(\\.|[^"\\])*")             |
+    (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |
     (?P<boolean>true|false)                 |
     (?P<null>null)
 ''', re.VERBOSE)
 
-
-_colors = {
-    'key': ANSIColors.INTENSE_BLUE,
-    'string': ANSIColors.BOLD_GREEN,
-    'boolean': ANSIColors.BOLD_CYAN,
-    'null': ANSIColors.BOLD_CYAN,
+_group_to_theme_color = {
+    "key": "definition",
+    "string": "string",
+    "number": "number",
+    "boolean": "keyword",
+    "null": "keyword",
 }
 
 
-def _replace_match_callback(match):
-    for key, color in _colors.items():
-        if m := match.group(key):
-            return f"{color}{m}{ANSIColors.RESET}"
-    return match.group()
+def _colorize_json(json_str, theme):
+    def _replace_match_callback(match):
+        for group, color in _group_to_theme_color.items():
+            if m := match.group(group):
+                return f"{theme[color]}{m}{theme.reset}"
+        return match.group()
 
-
-def _colorize_json(json_str):
     return re.sub(_color_pattern, _replace_match_callback, json_str)
 
 
 def main():
     description = ('A simple command line interface for json module '
                    'to validate and pretty-print JSON objects.')
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, color=True)
     parser.add_argument('infile', nargs='?',
-                        help='a JSON file to be validated or pretty-printed',
+                        help='a JSON file to be validated or pretty-printed; '
+                             'defaults to stdin',
                         default='-')
     parser.add_argument('outfile', nargs='?',
                         help='write the output of infile to outfile',
@@ -100,13 +101,16 @@ def main():
         else:
             outfile = open(options.outfile, 'w', encoding='utf-8')
         with outfile:
-            for obj in objs:
-                if can_colorize(file=outfile):
+            if can_colorize(file=outfile):
+                t = get_theme(tty_file=outfile).syntax
+                for obj in objs:
                     json_str = json.dumps(obj, **dump_args)
-                    outfile.write(_colorize_json(json_str))
-                else:
+                    outfile.write(_colorize_json(json_str, t))
+                    outfile.write('\n')
+            else:
+                for obj in objs:
                     json.dump(obj, outfile, **dump_args)
-                outfile.write('\n')
+                    outfile.write('\n')
     except ValueError as e:
         raise SystemExit(e)
 

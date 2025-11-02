@@ -202,6 +202,102 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip('f" something { my_dict["key"] } something else "')
         self.check_ast_roundtrip('f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"')
 
+    def test_tstrings(self):
+        self.check_ast_roundtrip("t'foo'")
+        self.check_ast_roundtrip("t'foo {bar}'")
+        self.check_ast_roundtrip("t'foo {bar!s:.2f}'")
+        self.check_ast_roundtrip("t'{a +    b}'")
+        self.check_ast_roundtrip("t'{a +    b:x}'")
+        self.check_ast_roundtrip("t'{a +    b!s}'")
+        self.check_ast_roundtrip("t'{ {a}}'")
+        self.check_ast_roundtrip("t'{ {a}=}'")
+        self.check_ast_roundtrip("t'{{a}}'")
+        self.check_ast_roundtrip("t''")
+        self.check_ast_roundtrip('t""')
+        self.check_ast_roundtrip("t'{(lambda x: x)}'")
+        self.check_ast_roundtrip("t'{t'{x}'}'")
+
+    def test_tstring_with_nonsensical_str_field(self):
+        # `value` suggests that the original code is `t'{test1}`, but `str` suggests otherwise
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    values=[
+                        ast.Interpolation(
+                            value=ast.Name(id="test1", ctx=ast.Load()), str="test2", conversion=-1
+                        )
+                    ]
+                )
+            ),
+            "t'{test2}'",
+        )
+
+    def test_tstring_with_none_str_field(self):
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    [ast.Interpolation(value=ast.Name(id="test1"), str=None, conversion=-1)]
+                )
+            ),
+            "t'{test1}'",
+        )
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    [
+                        ast.Interpolation(
+                            value=ast.Lambda(
+                                args=ast.arguments(args=[ast.arg(arg="x")]),
+                                body=ast.Name(id="x"),
+                            ),
+                            str=None,
+                            conversion=-1,
+                        )
+                    ]
+                )
+            ),
+            "t'{(lambda x: x)}'",
+        )
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    values=[
+                        ast.Interpolation(
+                            value=ast.TemplateStr(
+                                # `str` field kept here
+                                [ast.Interpolation(value=ast.Name(id="x"), str="y", conversion=-1)]
+                            ),
+                            str=None,
+                            conversion=-1,
+                        )
+                    ]
+                )
+            ),
+            '''t"{t'{y}'}"''',
+        )
+        self.assertEqual(
+            ast.unparse(
+                ast.TemplateStr(
+                    values=[
+                        ast.Interpolation(
+                            value=ast.TemplateStr(
+                                [ast.Interpolation(value=ast.Name(id="x"), str=None, conversion=-1)]
+                            ),
+                            str=None,
+                            conversion=-1,
+                        )
+                    ]
+                )
+            ),
+            '''t"{t'{x}'}"''',
+        )
+        self.assertEqual(
+            ast.unparse(ast.TemplateStr(
+                [ast.Interpolation(value=ast.Constant(value="foo"), str=None, conversion=114)]
+            )),
+            '''t"{'foo'!r}"''',
+        )
+
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
         self.check_ast_roundtrip("r'foo'")
@@ -918,7 +1014,7 @@ class DirectoryTestCase(ASTTestCase):
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
                         "test_ast.py", "test_asdl_parser.py", "test_fstring.py",
                         "test_patma.py", "test_type_alias.py", "test_type_params.py",
-                        "test_tokenize.py"}
+                        "test_tokenize.py", "test_tstring.py"}
 
     _files_to_test = None
 

@@ -80,8 +80,12 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
 
     # Tag used in runtime ID (for side-by-side install/updates)
     ID_TAG = XY_ARCH_TAG
-    # Tag shown in 'py list' output
+    # Tag shown in 'py list' output.
+    # gh-139810: We only include '-dev' here for prereleases, even though it
+    # works for final releases too.
     DISPLAY_TAG = f"{XY_TAG}-dev{TAG_ARCH}" if VER_SUFFIX else XY_ARCH_TAG
+    # Tag used for PEP 514 registration
+    SYS_WINVER = XY_TAG + (TAG_ARCH if TAG_ARCH != '-64' else '')
 
     DISPLAY_SUFFIX = ", ".join(i for i in DISPLAY_TAGS if i)
     if DISPLAY_SUFFIX:
@@ -100,9 +104,10 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         FULL_ARCH_TAG,
         XY_ARCH_TAG,
         X_ARCH_TAG,
-        # X_TAG and XY_TAG doesn't include VER_SUFFIX, so create -dev versions
-        f"{XY_TAG}-dev{TAG_ARCH}" if XY_TAG and VER_SUFFIX else "",
-        f"{X_TAG}-dev{TAG_ARCH}" if X_TAG and VER_SUFFIX else "",
+        # gh-139810: The -dev tags are always included so that the latest
+        # release is chosen, no matter whether it's prerelease or final.
+        f"{XY_TAG}-dev{TAG_ARCH}" if XY_TAG else "",
+        f"{X_TAG}-dev{TAG_ARCH}" if X_TAG else "",
     ]
 
     # Generate run-for entries for each target.
@@ -113,16 +118,15 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     ]:
         if not base["target"]:
             continue
-        STD_RUN_FOR.append({**base, "tag": FULL_ARCH_TAG})
+        STD_RUN_FOR.extend([
+            {**base, "tag": FULL_ARCH_TAG},
+            {**base, "tag": f"{XY_TAG}-dev{TAG_ARCH}" if XY_TAG else ""},
+            {**base, "tag": f"{X_TAG}-dev{TAG_ARCH}" if X_TAG else ""},
+        ])
         if XY_TAG:
             STD_RUN_FOR.append({**base, "tag": XY_ARCH_TAG})
         if X_TAG:
             STD_RUN_FOR.append({**base, "tag": X_ARCH_TAG})
-        if VER_SUFFIX:
-            STD_RUN_FOR.extend([
-                {**base, "tag": f"{XY_TAG}-dev{TAG_ARCH}" if XY_TAG else ""},
-                {**base, "tag": f"{X_TAG}-dev{TAG_ARCH}" if X_TAG else ""},
-            ])
 
     # Generate alias entries for each target. We need both arch and non-arch
     # versions as well as windowed/non-windowed versions to make sure that all
@@ -146,25 +150,26 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
                 {**base, "name": f"{prefix}{X_ARCH_TAG}.exe"},
             ])
 
-    STD_PEP514.append({
-        "kind": "pep514",
-        "Key": rf"{COMPANY}\{ID_TAG}",
-        "DisplayName": f"{DISPLAY_NAME} {DISPLAY_VERSION}",
-        "SupportUrl": "https://www.python.org/",
-        "SysArchitecture": SYS_ARCH,
-        "SysVersion": VER_DOT,
-        "Version": FULL_VERSION,
-        "InstallPath": {
-            "_": "%PREFIX%",
-            "ExecutablePath": f"%PREFIX%{TARGET}",
-            # WindowedExecutablePath is added below
-        },
-        "Help": {
-            "Online Python Documentation": {
-                "_": f"https://docs.python.org/{VER_DOT}/"
+    if SYS_WINVER:
+        STD_PEP514.append({
+            "kind": "pep514",
+            "Key": rf"{COMPANY}\{SYS_WINVER}",
+            "DisplayName": f"{DISPLAY_NAME} {DISPLAY_VERSION}",
+            "SupportUrl": "https://www.python.org/",
+            "SysArchitecture": SYS_ARCH,
+            "SysVersion": VER_DOT,
+            "Version": FULL_VERSION,
+            "InstallPath": {
+                "_": "%PREFIX%",
+                "ExecutablePath": f"%PREFIX%{TARGET}",
+                # WindowedExecutablePath is added below
             },
-        },
-    })
+            "Help": {
+                "Online Python Documentation": {
+                    "_": f"https://docs.python.org/{VER_DOT}/"
+                },
+            },
+        })
 
     STD_START.append({
         "kind": "start",
@@ -185,7 +190,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         ],
     })
 
-    if TARGETW:
+    if TARGETW and STD_PEP514:
         STD_PEP514[0]["InstallPath"]["WindowedExecutablePath"] = f"%PREFIX%{TARGETW}"
 
     if ns.include_idle:
@@ -203,6 +208,8 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
             "Icon": r"%PREFIX%Lib\idlelib\Icons\idle.ico",
             "IconIndex": 0,
         })
+        if STD_PEP514:
+            STD_PEP514[0]["InstallPath"]["IdlePath"] = f"%PREFIX%Lib\\idlelib\\idle.pyw"
 
     if ns.include_html_doc:
         STD_PEP514[0]["Help"]["Main Python Documentation"] = {

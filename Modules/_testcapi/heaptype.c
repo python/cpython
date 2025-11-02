@@ -521,6 +521,13 @@ error:
     return NULL;
 }
 
+static PyObject *
+pytype_getmodulebydef(PyObject *self, PyObject *type)
+{
+    PyObject *mod = PyType_GetModuleByDef((PyTypeObject *)type, _testcapimodule);
+    return Py_XNewRef(mod);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
@@ -538,6 +545,7 @@ static PyMethodDef TestMethods[] = {
     {"create_type_with_token", create_type_with_token, METH_VARARGS},
     {"get_tp_token", get_tp_token, METH_O},
     {"pytype_getbasebytoken", pytype_getbasebytoken, METH_VARARGS},
+    {"pytype_getmodulebydef", pytype_getmodulebydef, METH_O},
     {NULL},
 };
 
@@ -774,10 +782,7 @@ heapctypesubclasswithfinalizer_finalize(PyObject *self)
     /* Save the current exception, if any. */
     PyObject *exc = PyErr_GetRaisedException();
 
-    if (_testcapimodule == NULL) {
-        goto cleanup_finalize;
-    }
-    PyObject *m = PyState_FindModule(_testcapimodule);
+    PyObject *m = PyType_GetModule(Py_TYPE(self));
     if (m == NULL) {
         goto cleanup_finalize;
     }
@@ -1394,8 +1399,8 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     if (subclass_with_finalizer_bases == NULL) {
         return -1;
     }
-    PyObject *HeapCTypeSubclassWithFinalizer = PyType_FromSpecWithBases(
-        &HeapCTypeSubclassWithFinalizer_spec, subclass_with_finalizer_bases);
+    PyObject *HeapCTypeSubclassWithFinalizer = PyType_FromModuleAndSpec(
+        m, &HeapCTypeSubclassWithFinalizer_spec, subclass_with_finalizer_bases);
     Py_DECREF(subclass_with_finalizer_bases);
     ADD("HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
 

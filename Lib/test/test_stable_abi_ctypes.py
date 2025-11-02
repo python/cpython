@@ -45,6 +45,7 @@ class TestStableABIAvailability(unittest.TestCase):
 
 SYMBOL_NAMES = (
 
+    "PyABIInfo_Check",
     "PyAIter_Check",
     "PyArg_Parse",
     "PyArg_ParseTuple",
@@ -658,7 +659,11 @@ SYMBOL_NAMES = (
     "PySys_AuditTuple",
     "PySys_FormatStderr",
     "PySys_FormatStdout",
+    "PySys_GetAttr",
+    "PySys_GetAttrString",
     "PySys_GetObject",
+    "PySys_GetOptionalAttr",
+    "PySys_GetOptionalAttrString",
     "PySys_GetXOptions",
     "PySys_HasWarnOptions",
     "PySys_ResetWarnOptions",

@@ -1,0 +1,2 @@
+Errors when calling functions with invalid values after ``*`` and ``**`` now do not
+include the function name. Patch by Ilia Solin.

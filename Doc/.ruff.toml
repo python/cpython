@@ -1,7 +1,6 @@
+extend = "../.ruff.toml"  # Inherit the project-wide settings
+
 target-version = "py312"  # Align with the version in oldest_supported_sphinx
-fix = true
-output-format = "full"
-line-length = 79
 extend-exclude = [
     "includes/*",
     # Temporary exclusions:
