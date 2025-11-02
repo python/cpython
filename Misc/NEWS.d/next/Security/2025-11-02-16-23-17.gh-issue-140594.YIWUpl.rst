@@ -1,2 +1,2 @@
-Fixed heap-buffer-overflow in PyOS_StdioReadline when encountering null
-bytes in interactive input. Patch by Shamil Abdulaev.
+Fix a buffer overflow in :c:func:`!PyOS_StdioReadline` when a single NULL character is read from the standard input.
+Patch by Shamil Abdulaev.
