@@ -50,7 +50,7 @@ Dictionary Objects
 
 .. c:function:: int PyDict_Contains(PyObject *p, PyObject *key)
 
-   Determine if dictionary *p* contains *key*.  If an item in *p* is matches
+   Determine if dictionary *p* contains *key*.  If an item in *p* matches
    *key*, return ``1``, otherwise return ``0``.  On error, return ``-1``.
    This is equivalent to the Python expression ``key in p``.
 
@@ -198,7 +198,7 @@ Dictionary Objects
 .. c:function:: int PyDict_Pop(PyObject *p, PyObject *key, PyObject **result)
 
    Remove *key* from dictionary *p* and optionally return the removed value.
-   Do not raise :exc:`KeyError` if the key missing.
+   Do not raise :exc:`KeyError` if the key is missing.
 
    - If the key is present, set *\*result* to a new reference to the removed
      value if *result* is not ``NULL``, and return ``1``.
@@ -207,7 +207,7 @@ Dictionary Objects
    - On error, raise an exception and return ``-1``.
 
    Similar to :meth:`dict.pop`, but without the default value and
-   not raising :exc:`KeyError` if the key missing.
+   not raising :exc:`KeyError` if the key is missing.
 
    .. versionadded:: 3.13
 
