@@ -206,8 +206,8 @@ class CmdLineTest(unittest.TestCase):
         # gh-140594: heap-buffer-underflow in PyOS_StdioReadline when a NUL (\0)
         # is present in interactive input. The test ensures that feeding a null
         # byte to the interactive prompt does not crash the interpreter.
-        proc = spawn_python('-I', '-i')
-        out, _ = proc.communicate(b'\x00', timeout=10)
+        proc = spawn_python('-i')
+        proc.communicate(b'\x00', timeout=10)
         self.assertEqual(proc.returncode, 0)
 
     def test_relativedir_bug46421(self):
