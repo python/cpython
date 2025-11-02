@@ -81,7 +81,7 @@ class ExpatLocator(xmlreader.Locator):
 class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
     """SAX driver for the pyexpat C module."""
 
-    def __init__(self, namespaceHandling=0, bufsize=2**16-20):
+    def __init__(self, namespaceHandling=0, namespacePrefixesHandling=0, bufsize=2**16-20):
         xmlreader.IncrementalParser.__init__(self, bufsize)
         self._source = xmlreader.InputSource()
         self._parser = None
@@ -91,7 +91,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._entity_stack = []
         self._external_ges = 0
         self._interning = None
-        self._namespace_prefixes = 1
+        self._namespace_prefixes = namespacePrefixesHandling
 
     # XMLReader methods
 
