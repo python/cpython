@@ -1669,6 +1669,9 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     /* Don't clear tstate->pyframe: it is a borrowed reference */
 
+    Py_CLEAR(tstate->threading_local_key);
+    Py_CLEAR(tstate->threading_local_sentinel);
+
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
 
@@ -1704,12 +1707,6 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(tstate->c_profileobj);
     Py_CLEAR(tstate->c_traceobj);
-
-    // gh-140798: It's important to clear thread local values
-    // after profiling and tracing primitives.
-
-    Py_CLEAR(tstate->threading_local_key);
-    Py_CLEAR(tstate->threading_local_sentinel);
 
     Py_CLEAR(tstate->async_gen_firstiter);
     Py_CLEAR(tstate->async_gen_finalizer);
