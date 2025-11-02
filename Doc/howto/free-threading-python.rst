@@ -1,18 +1,21 @@
 .. _freethreading-python-howto:
 
-**********************************************
-Python experimental support for free threading
-**********************************************
+*********************************
+Python support for free threading
+*********************************
 
-Starting with the 3.13 release, CPython has experimental support for a build of
+Starting with the 3.13 release, CPython has support for a build of
 Python called :term:`free threading` where the :term:`global interpreter lock`
 (GIL) is disabled.  Free-threaded execution allows for full utilization of the
 available processing power by running threads in parallel on available CPU cores.
 While not all software will benefit from this automatically, programs
 designed with threading in mind will run faster on multi-core hardware.
 
-**The free-threaded mode is experimental** and work is ongoing to improve it:
-expect some bugs and a substantial single-threaded performance hit.
+The free-threaded mode is working and continues to be improved, but
+there is some additional overhead in single-threaded workloads compared
+to the regular build. Additionally, third-party packages, in particular ones
+with an :term:`extension module`, may not be ready for use in a
+free-threaded build, and will re-enable the :term:`GIL`.
 
 This document describes the implications of free threading
 for Python code.  See :ref:`freethreading-extensions-howto` for information on
@@ -43,7 +46,7 @@ Identifying free-threaded Python
 ================================
 
 To check if the current interpreter supports free-threading, :option:`python -VV <-V>`
-and :data:`sys.version` contain "experimental free-threading build".
+and :data:`sys.version` contain "free-threading build".
 The new :func:`sys._is_gil_enabled` function can be used to check whether
 the GIL is actually disabled in the running process.
 

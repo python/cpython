@@ -47,6 +47,7 @@ def main():
     std = os.environ.get("CPYTHON_TEST_CPP_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
     limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
+    internal = bool(int(os.environ.get("TEST_INTERNAL_C_API", "0")))
 
     cppflags = list(CPPFLAGS)
     cppflags.append(f'-DMODULE_NAME={module_name}')
@@ -81,6 +82,9 @@ def main():
     if limited:
         version = sys.hexversion
         cppflags.append(f'-DPy_LIMITED_API={version:#x}')
+
+    if internal:
+        cppflags.append('-DTEST_INTERNAL_C_API=1')
 
     # On Windows, add PCbuild\amd64\ to include and library directories
     include_dirs = []

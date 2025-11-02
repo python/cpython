@@ -17,6 +17,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_warnings.h"      // _PyErr_WarnUnawaitedCoroutine()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 #include "opcode_ids.h"           // RESUME, etc
@@ -161,8 +162,7 @@ gen_dealloc(PyObject *self)
 
     _PyObject_GC_UNTRACK(gen);
 
-    if (gen->gi_weakreflist != NULL)
-        PyObject_ClearWeakRefs(self);
+    FT_CLEAR_WEAKREFS(self, gen->gi_weakreflist);
 
     _PyObject_GC_TRACK(self);
 
@@ -315,7 +315,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
 }
 
 PyDoc_STRVAR(send_doc,
-"send(arg) -> send 'arg' into generator,\n\
+"send(value) -> send 'value' into generator,\n\
 return next yielded value or raise StopIteration.");
 
 static PyObject *
@@ -407,11 +407,12 @@ gen_close(PyObject *self, PyObject *args)
     }
     _PyInterpreterFrame *frame = &gen->gi_iframe;
     if (is_resume(frame->instr_ptr)) {
+        bool no_unwind_tools = _PyEval_NoToolsForUnwind(_PyThreadState_GET());
         /* We can safely ignore the outermost try block
          * as it is automatically generated to handle
          * StopIteration. */
         int oparg = frame->instr_ptr->op.arg;
-        if (oparg & RESUME_OPARG_DEPTH1_MASK) {
+        if (oparg & RESUME_OPARG_DEPTH1_MASK && no_unwind_tools) {
             // RESUME after YIELD_VALUE and exception depth is 1
             assert((oparg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_FUNC_START);
             gen->gi_frame_state = FRAME_COMPLETED;
@@ -704,7 +705,8 @@ static PyObject *
 gen_get_name(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *op = _PyGen_CAST(self);
-    return Py_NewRef(op->gi_name);
+    PyObject *name = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->gi_name);
+    return Py_NewRef(name);
 }
 
 static int
@@ -718,7 +720,11 @@ gen_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->gi_name, Py_NewRef(value));
+    Py_BEGIN_CRITICAL_SECTION(self);
+    // gh-133931: To prevent use-after-free from other threads that reference
+    // the gi_name.
+    _PyObject_XSetRefDelayed(&op->gi_name, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -726,7 +732,8 @@ static PyObject *
 gen_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
     PyGenObject *op = _PyGen_CAST(self);
-    return Py_NewRef(op->gi_qualname);
+    PyObject *qualname = FT_ATOMIC_LOAD_PTR_ACQUIRE(op->gi_qualname);
+    return Py_NewRef(qualname);
 }
 
 static int
@@ -740,7 +747,11 @@ gen_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__qualname__ must be set to a string object");
         return -1;
     }
-    Py_XSETREF(op->gi_qualname, Py_NewRef(value));
+    Py_BEGIN_CRITICAL_SECTION(self);
+    // gh-133931: To prevent use-after-free from other threads that reference
+    // the gi_qualname.
+    _PyObject_XSetRefDelayed(&op->gi_qualname, Py_NewRef(value));
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -922,6 +933,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_weakreflist = NULL;
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.previous_item = NULL;
+    gen->gi_iframe.f_executable = PyStackRef_None;
     assert(func->func_name != NULL);
     gen->gi_name = Py_NewRef(func->func_name);
     assert(func->func_qualname != NULL);
@@ -1082,14 +1094,14 @@ _PyCoro_GetAwaitableIter(PyObject *o)
             if (PyCoro_CheckExact(res) || gen_is_coroutine(res)) {
                 /* __await__ must return an *iterator*, not
                    a coroutine or another awaitable (see PEP 492) */
-                PyErr_SetString(PyExc_TypeError,
-                                "__await__() returned a coroutine");
+                PyErr_Format(PyExc_TypeError,
+                             "%T.__await__() must return an iterator, "
+                             "not coroutine", o);
                 Py_CLEAR(res);
             } else if (!PyIter_Check(res)) {
                 PyErr_Format(PyExc_TypeError,
-                             "__await__() returned non-iterator "
-                             "of type '%.100s'",
-                             Py_TYPE(res)->tp_name);
+                             "%T.__await__() must return an iterator, "
+                             "not %T", o, res);
                 Py_CLEAR(res);
             }
         }

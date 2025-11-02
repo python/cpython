@@ -1689,10 +1689,13 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: setdefaulttimeout(timeout)
 
-   Set the default timeout in seconds (float) for new socket objects.  When
+   Set the default timeout in seconds (real number) for new socket objects.  When
    the socket module is first imported, the default is ``None``.  See
    :meth:`~socket.settimeout` for possible values and their respective
    meanings.
+
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
 
 .. function:: sethostname(name)
@@ -2355,7 +2358,7 @@ to sockets.
 .. method:: socket.settimeout(value)
 
    Set a timeout on blocking socket operations.  The *value* argument can be a
-   nonnegative floating-point number expressing seconds, or ``None``.
+   nonnegative real number expressing seconds, or ``None``.
    If a non-zero value is given, subsequent socket operations will raise a
    :exc:`timeout` exception if the timeout period *value* has elapsed before
    the operation has completed.  If zero is given, the socket is put in
@@ -2366,6 +2369,9 @@ to sockets.
    .. versionchanged:: 3.7
       The method no longer toggles :const:`SOCK_NONBLOCK` flag on
       :attr:`socket.type`.
+
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
 
 .. method:: socket.setsockopt(level, optname, value: int)

@@ -1061,6 +1061,41 @@ Sequence.register(bytes)
 Sequence.register(range)
 Sequence.register(memoryview)
 
+class _DeprecateByteStringMeta(ABCMeta):
+    def __new__(cls, name, bases, namespace, **kwargs):
+        if name != "ByteString":
+            import warnings
+
+            warnings._deprecated(
+                "collections.abc.ByteString",
+                remove=(3, 17),
+            )
+        return super().__new__(cls, name, bases, namespace, **kwargs)
+
+    def __instancecheck__(cls, instance):
+        import warnings
+
+        warnings._deprecated(
+            "collections.abc.ByteString",
+            remove=(3, 17),
+        )
+        return super().__instancecheck__(instance)
+
+class ByteString(Sequence, metaclass=_DeprecateByteStringMeta):
+    """Deprecated ABC serving as a common supertype of ``bytes`` and ``bytearray``.
+
+    This ABC is scheduled for removal in Python 3.17.
+    Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+    implements the buffer protocol at runtime. For use in type annotations,
+    either use ``Buffer`` or a union that explicitly specifies the types your
+    code supports (e.g., ``bytes | bytearray | memoryview``).
+    """
+
+    __slots__ = ()
+
+ByteString.register(bytes)
+ByteString.register(bytearray)
+
 
 class MutableSequence(Sequence):
     """All the operations on a read-write sequence.
@@ -1130,3 +1165,13 @@ class MutableSequence(Sequence):
 
 MutableSequence.register(list)
 MutableSequence.register(bytearray)
+
+_deprecated_ByteString = globals().pop("ByteString")
+
+def __getattr__(attr):
+    if attr == "ByteString":
+        import warnings
+        warnings._deprecated("collections.abc.ByteString", remove=(3, 17))
+        globals()["ByteString"] = _deprecated_ByteString
+        return _deprecated_ByteString
+    raise AttributeError(f"module 'collections.abc' has no attribute {attr!r}")

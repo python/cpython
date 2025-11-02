@@ -60,7 +60,7 @@ The :mod:`gc` module provides the following functions:
    The effect of calling ``gc.collect()`` while the interpreter is already
    performing a collection is undefined.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       ``generation=1`` performs an increment of collection.
 
 
@@ -83,13 +83,13 @@ The :mod:`gc` module provides the following functions:
    returned. If *generation* is not ``None``, return only the objects as follows:
 
    * 0: All objects in the young generation
-   * 1: No objects, as there is no generation 1 (as of Python 3.13)
+   * 1: No objects, as there is no generation 1 (as of Python 3.14)
    * 2: All objects in the old generation
 
    .. versionchanged:: 3.8
       New *generation* parameter.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       Generation 1 is removed
 
    .. audit-event:: gc.get_objects generation gc.get_objects
@@ -142,7 +142,7 @@ The :mod:`gc` module provides the following functions:
 
    See `Garbage collector design <https://devguide.python.org/garbage_collector>`_ for more information.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: 3.14
       *threshold2* is ignored
 
 

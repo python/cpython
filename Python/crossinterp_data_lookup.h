@@ -722,16 +722,26 @@ _PyFunction_FromXIData(_PyXIData_t *xidata)
         return NULL;
     }
     // Create a new function.
+    // For stateless functions (no globals) we use __main__ as __globals__,
+    // just like we do for builtins like exec().
     assert(PyCode_Check(code));
-    PyObject *globals = PyDict_New();
-    if (globals == NULL) {
-        Py_DECREF(code);
-        return NULL;
-    }
     PyThreadState *tstate = _PyThreadState_GET();
-    if (PyDict_SetItem(globals, &_Py_ID(__builtins__),
-                       tstate->interp->builtins) < 0)
-    {
+    PyObject *globals = _PyEval_GetGlobalsFromRunningMain(tstate);  // borrowed
+    if (globals == NULL) {
+        if (_PyErr_Occurred(tstate)) {
+            Py_DECREF(code);
+            return NULL;
+        }
+        globals = PyDict_New();
+        if (globals == NULL) {
+            Py_DECREF(code);
+            return NULL;
+        }
+    }
+    else {
+        Py_INCREF(globals);
+    }
+    if (_PyEval_EnsureBuiltins(tstate, globals, NULL) < 0) {
         Py_DECREF(code);
         Py_DECREF(globals);
         return NULL;

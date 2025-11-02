@@ -1,1 +1,0 @@
-Improve Zip file validation false positive rate in :func:`zipfile.is_zipfile`.
