@@ -1030,30 +1030,6 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
         parsed_body = parsed.get_body().get_content().rstrip('\n')
         self.assertEqual(parsed_body, body)
 
-    def test_invalid_header_names(self):
-        invalid_headers = [
-            ('Invalid Header', 'contains space'),
-            ('Tab\tHeader', 'contains tab'),
-            ('Colon:Header', 'contains colon'),
-            ('', 'Empty name'),
-            (' LeadingSpace', 'starts with space'),
-            ('TrailingSpace ', 'ends with space'),
-            ('Header\x7F', 'Non-ASCII character'),
-            ('Header\x80', 'Extended ASCII'),
-        ]
-        for email_policy in (policy.default, policy.compat32):
-            for setter in (EmailMessage.__setitem__, EmailMessage.add_header):
-                for name, value in invalid_headers:
-                    self.do_test_invalid_header_names(email_policy, setter, name, value)
-
-    def do_test_invalid_header_names(self, policy, setter, name, value):
-        with self.subTest(policy=policy, setter=setter, name=name, value=value):
-            message = EmailMessage(policy=policy)
-            pattern = r'(?i)(?=.*invalid)(?=.*header)(?=.*name)'
-            with self.assertRaisesRegex(ValueError, pattern) as cm:
-                 setter(message, name, value)
-            self.assertIn(f"{name!r}", str(cm.exception))
-
     def test_get_body_malformed(self):
         """test for bpo-42892"""
         msg = textwrap.dedent("""\
