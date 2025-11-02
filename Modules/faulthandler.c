@@ -205,7 +205,7 @@ faulthandler_dump_traceback(int fd, int all_threads,
     PyThreadState *tstate = PyGILState_GetThisThreadState();
 
     if (all_threads == 1) {
-        (void)_Py_DumpTracebackThreads(fd, NULL, tstate, 0);
+        (void)_Py_DumpTracebackThreads(fd, NULL, tstate);
     }
     else {
         if (all_threads == FT_IGNORE_ALL_THREADS) {
@@ -273,7 +273,7 @@ faulthandler_dump_traceback_py_impl(PyObject *module, PyObject *file,
         /* gh-128400: Accessing other thread states while they're running
          * isn't safe if those threads are running. */
         _PyEval_StopTheWorld(interp);
-        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate, 0);
+        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate);
         _PyEval_StartTheWorld(interp);
         if (errmsg != NULL) {
             PyErr_SetString(PyExc_RuntimeError, errmsg);

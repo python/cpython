@@ -31,6 +31,7 @@ THREAD_ID = fr'Thread 0x[0-9a-f]+{THREAD_NAME}'
 THREAD_HEADER = fr'{THREAD_ID} \(most recent call first\):'
 CURRENT_THREAD_ID = fr'Current thread 0x[0-9a-f]+{THREAD_NAME}'
 CURRENT_THREAD_HEADER = fr'{CURRENT_THREAD_ID} \(most recent call first\):'
+THREAD_NO_PYTHON_FRAME = '  <no Python frame>'
 
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
@@ -676,6 +677,8 @@ class FaultHandlerTests(unittest.TestCase):
             if repeat:
                 count *= 2
             header = (fr'Timeout \({timeout_str}\)!\n'
+                      fr'{CURRENT_THREAD_HEADER}\n'
+                      fr'{THREAD_NO_PYTHON_FRAME}\n\n'
                       fr'{THREAD_HEADER}\n')
             regex = expected_traceback(17, 26, header, min_count=count)
             self.assertRegex(trace, regex)
