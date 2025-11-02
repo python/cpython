@@ -203,24 +203,15 @@ class CmdLineTest(unittest.TestCase):
 
     @support.cpython_only
     def test_null_byte_in_interactive_mode(self):
-        # gh-140594: heap-buffer-underflow in PyOS_StdioReadline when a NUL (\0) is present in interactive input
-        with os_helper.EnvironmentVarGuard() as env:
-            env.unset('PYTHONSTARTUP')
-            # -I: isolated mode (ignore env vars, no user site-packages)
-            # -i: interactive mode (required to trigger the bug)
-            args = [sys.executable, '-I', '-i']
-            p = subprocess.Popen(
-                args,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                env=env.copy(),
-            )
-            out, _ = p.communicate(b'\x00', timeout=10)
-            self.assertEqual(
-                p.returncode, 0,
-                msg=f"Interpreter aborted on NUL input, output:\n{out[:500]!r}"
-            )
+        # gh-140594: heap-buffer-underflow in PyOS_StdioReadline when a NUL (\0)
+        # is present in interactive input. The test ensures that feeding a null
+        # byte to the interactive prompt does not crash the interpreter.
+        proc = spawn_python('-I', '-i')
+        out, _ = proc.communicate(b'\x00', timeout=10)
+        self.assertEqual(
+            proc.returncode, 0,
+            msg=f"Interpreter aborted on NUL input, output:\n{out[:500]!r}"
+        )
 
     def test_relativedir_bug46421(self):
         # Test `python -m unittest` with a relative directory beginning with ./
