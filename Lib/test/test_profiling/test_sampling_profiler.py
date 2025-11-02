@@ -3040,13 +3040,13 @@ if __name__ == "__main__":
             with SuppressCrashReport():
                 with script_helper.spawn_python(
                     "-m", "profiling.sampling.sample",
-                    "-d", "1",
+                    "-d", "5",
                     "-i", "100000",
                     script,
                     stderr=subprocess.PIPE,
                     text=True
                 ) as proc:
-                    proc.wait(timeout=10)
+                    proc.wait(timeout=SHORT_TIMEOUT)
                     stdout = proc.stdout.read()
                     stderr = proc.stderr.read()
 
