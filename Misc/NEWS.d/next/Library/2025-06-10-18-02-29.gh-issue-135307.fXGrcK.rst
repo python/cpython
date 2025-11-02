@@ -1,3 +1,2 @@
-:mod:`email`: Fix exception in set_content when encoding text
-and max_line_length is set to :const:`0` or :const:`None`
-(unlimited).
+:mod:`email`: Fix exception in ``set_content()`` when encoding text
+and max_line_length is set to ``0`` or ``None`` (unlimited).
