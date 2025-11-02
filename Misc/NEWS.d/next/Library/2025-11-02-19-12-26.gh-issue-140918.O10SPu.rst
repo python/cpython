@@ -1,1 +1,1 @@
-This patch introduces a call to :func:`urllib.parse._splituser` in :class:`urllib.request.Request` to correctly clean the hostname by removing any credentials.
+This patch introduces a call to urllib.parse._splituser in :class:`urllib.request.Request` to correctly clean the hostname by removing any credentials.
