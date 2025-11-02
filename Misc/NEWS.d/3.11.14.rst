@@ -1,0 +1,143 @@
+.. date: 2025-10-07-19-31-34
+.. gh-issue: 139700
+.. nonce: vNHU1O
+.. release date: 2025-10-09
+.. section: Security
+
+Check consistency of the zip64 end of central directory record. Support
+records with "zip64 extensible data" if there are no bytes prepended to the
+ZIP file.
+
+..
+
+.. date: 2025-09-29-00-01-28
+.. gh-issue: 139400
+.. nonce: X2T-jO
+.. section: Security
+
+:mod:`xml.parsers.expat`: Make sure that parent Expat parsers are only
+garbage-collected once they are no longer referenced by subparsers created
+by :meth:`~xml.parsers.expat.xmlparser.ExternalEntityParserCreate`. Patch by
+Sebastian Pipping.
+
+..
+
+.. date: 2025-06-25-14-13-39
+.. gh-issue: 135661
+.. nonce: idjQ0B
+.. section: Security
+
+Fix parsing start and end tags in :class:`html.parser.HTMLParser` according
+to the HTML5 standard.
+
+* Whitespaces no longer accepted between ``</`` and the tag name.
+  E.g. ``</ script>`` does not end the script section.
+
+* Vertical tabulation (``\v``) and non-ASCII whitespaces no longer recognized
+  as whitespaces. The only whitespaces are ``\t\n\r\f`` and space.
+
+* Null character (U+0000) no longer ends the tag name.
+
+* Attributes and slashes after the tag name in end tags are now ignored,
+  instead of terminating after the first ``>`` in quoted attribute value.
+  E.g. ``</script/foo=">"/>``.
+
+* Multiple slashes and whitespaces between the last attribute and closing ``>``
+  are now ignored in both start and end tags. E.g. ``<a foo=bar/ //>``.
+
+* Multiple ``=`` between attribute name and value are no longer collapsed.
+  E.g. ``<a foo==bar>`` produces attribute "foo" with value "=bar".
+
+..
+
+.. date: 2025-06-18-13-34-55
+.. gh-issue: 135661
+.. nonce: NZlpWf
+.. section: Security
+
+Fix CDATA section parsing in :class:`html.parser.HTMLParser` according to
+the HTML5 standard: ``] ]>`` and ``]] >`` no longer end the CDATA section.
+Add private method ``_set_support_cdata()`` which can be used to specify how
+to parse ``<[CDATA[`` --- as a CDATA section in foreign content (SVG or
+MathML) or as a bogus comment in the HTML namespace.
+
+..
+
+.. date: 2025-06-18-13-28-08
+.. gh-issue: 102555
+.. nonce: nADrzJ
+.. section: Security
+
+Fix comment parsing in :class:`html.parser.HTMLParser` according to the
+HTML5 standard. ``--!>`` now ends the comment. ``-- >`` no longer ends the
+comment. Support abnormally ended empty comments ``<-->`` and ``<--->``.
+
+..
+
+.. date: 2025-06-13-15-55-22
+.. gh-issue: 135462
+.. nonce: KBeJpc
+.. section: Security
+
+Fix quadratic complexity in processing specially crafted input in
+:class:`html.parser.HTMLParser`. End-of-file errors are now handled
+according to the HTML5 specs -- comments and declarations are automatically
+closed, tags are ignored.
+
+..
+
+.. date: 2025-06-09-20-38-25
+.. gh-issue: 118350
+.. nonce: KgWCcP
+.. section: Security
+
+Fix support of escapable raw text mode (elements "textarea" and "title") in
+:class:`html.parser.HTMLParser`.
+
+..
+
+.. date: 2023-02-13-21-41-34
+.. gh-issue: 86155
+.. nonce: ppIGSC
+.. section: Security
+
+:meth:`html.parser.HTMLParser.close` no longer loses data when the
+``<script>`` tag is not closed. Patch by Waylan Limberg.
+
+..
+
+.. date: 2025-09-25-07-33-43
+.. gh-issue: 139312
+.. nonce: ygE8AC
+.. section: Library
+
+Upgrade bundled libexpat to 2.7.3
+
+..
+
+.. date: 2025-09-16-19-05-29
+.. gh-issue: 138998
+.. nonce: URl0Y_
+.. section: Library
+
+Update bundled libexpat to 2.7.2
+
+..
+
+.. date: 2025-07-23-00-35-29
+.. gh-issue: 130577
+.. nonce: c7EITy
+.. section: Library
+
+:mod:`tarfile` now validates archives to ensure member offsets are
+non-negative.  (Contributed by Alexander Enrique Urieles Nieto in
+:gh:`130577`.)
+
+..
+
+.. date: 2025-06-11-17-38-16
+.. gh-issue: 135374
+.. nonce: eqRcTc
+.. section: Library
+
+Update the bundled copy of setuptools to 79.0.1.
