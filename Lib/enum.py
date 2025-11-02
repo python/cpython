@@ -1,6 +1,6 @@
 import sys
 import builtins as bltns
-from types import MappingProxyType, DynamicClassAttribute
+from types import DynamicClassAttribute
 
 
 __all__ = [
@@ -817,7 +817,7 @@ class EnumType(type):
         This mapping lists all enum members, including aliases. Note that this
         is a read-only view of the internal mapping.
         """
-        return MappingProxyType(cls._member_map_)
+        return frozendict(cls._member_map_)
 
     def __repr__(cls):
         if Flag is not None and issubclass(cls, Flag):

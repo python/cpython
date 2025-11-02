@@ -20,7 +20,7 @@ class BdbQuit(Exception):
 E = sys.monitoring.events
 
 class _MonitoringTracer:
-    EVENT_CALLBACK_MAP = {
+    EVENT_CALLBACK_MAP = frozendict({
         E.PY_START: 'call',
         E.PY_RESUME: 'call',
         E.PY_THROW: 'call',
@@ -32,7 +32,7 @@ class _MonitoringTracer:
         E.RAISE: 'exception',
         E.STOP_ITERATION: 'exception',
         E.INSTRUCTION: 'opcode',
-    }
+    })
 
     GLOBAL_EVENTS = E.PY_START | E.PY_RESUME | E.PY_THROW | E.PY_UNWIND | E.RAISE
     LOCAL_EVENTS = E.LINE | E.JUMP | E.PY_RETURN | E.PY_YIELD | E.STOP_ITERATION

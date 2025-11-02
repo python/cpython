@@ -1664,6 +1664,9 @@ class Dict(dict):
 class SubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = Dict
 
+class FrozenDictMappingTests(mapping_tests.BasicTestImmutableMappingProtocol):
+    type2test = frozendict
+
 
 if __name__ == "__main__":
     unittest.main()

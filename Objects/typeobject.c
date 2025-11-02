@@ -3998,7 +3998,7 @@ subtype_dict(PyObject *obj, void *context)
 int
 _PyObject_SetDict(PyObject *obj, PyObject *value)
 {
-    if (value != NULL && !PyDict_Check(value)) {
+    if (value != NULL && !_PyAnyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "__dict__ must be set to a dictionary, "
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
@@ -5999,7 +5999,7 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *base = PyTuple_GET_ITEM(mro, i);
         PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
-        assert(dict && PyDict_Check(dict));
+        assert(dict && _PyAnyDict_Check(dict));
         if (_PyDict_GetItemRef_KnownHash((PyDictObject *)dict, name, hash, &res) < 0) {
             *error = -1;
             goto done;

@@ -30,17 +30,17 @@ def get_specialized(analysis: Analysis) -> set[str]:
 
 
 def generate_specializations(analysis: Analysis, out: CWriter) -> None:
-    out.emit("_specializations = {\n")
+    out.emit("_specializations = frozendict(\n")
     for family in analysis.families.values():
-        out.emit(f'"{family.name}": [\n')
+        out.emit(f'{family.name}= [\n')
         for member in family.members:
             out.emit(f'    "{member.name}",\n')
         out.emit("],\n")
-    out.emit("}\n\n")
+    out.emit(")\n\n")
 
 
 def generate_specialized_opmap(analysis: Analysis, out: CWriter) -> None:
-    out.emit("_specialized_opmap = {\n")
+    out.emit("_specialized_opmap = frozendict(\n")
     names = []
     for family in analysis.families.values():
         for member in family.members:
@@ -48,17 +48,17 @@ def generate_specialized_opmap(analysis: Analysis, out: CWriter) -> None:
                 continue
             names.append(member.name)
     for name in sorted(names):
-        out.emit(f"'{name}': {analysis.opmap[name]},\n")
-    out.emit("}\n\n")
+        out.emit(f"{name}= {analysis.opmap[name]},\n")
+    out.emit(")\n\n")
 
 
 def generate_opmap(analysis: Analysis, out: CWriter) -> None:
     specialized = get_specialized(analysis)
-    out.emit("opmap = {\n")
+    out.emit("opmap = frozendict(\n")
     for inst, op in analysis.opmap.items():
         if inst not in specialized:
-            out.emit(f"'{inst}': {analysis.opmap[inst]},\n")
-    out.emit("}\n\n")
+            out.emit(f"{inst}= {analysis.opmap[inst]},\n")
+    out.emit(")\n\n")
 
 
 def generate_py_metadata(

@@ -1,11 +1,5 @@
 /* Errno module */
 
-// Need limited C API version 3.13 for Py_mod_gil
-#include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030d0000
-#endif
-
 #include "Python.h"
 #include <errno.h>                // EPIPE
 
@@ -94,10 +88,6 @@ errno_exec(PyObject *module)
     }
     PyObject *error_dict = PyDict_New();
     if (error_dict == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(module_dict, "errorcode", error_dict) < 0) {
-        Py_DECREF(error_dict);
         return -1;
     }
 
@@ -946,6 +936,18 @@ errno_exec(PyObject *module)
     // WASI extension
     add_errcode("ENOTCAPABLE", ENOTCAPABLE, "Capabilities insufficient");
 #endif
+
+    PyObject *frozendict = PyFrozenDict_New(error_dict);
+    if (frozendict == NULL) {
+        Py_DECREF(error_dict);
+        return -1;
+    }
+    if (PyDict_SetItemString(module_dict, "errorcode", frozendict) < 0) {
+        Py_DECREF(error_dict);
+        Py_DECREF(frozendict);
+        return -1;
+    }
+    Py_DECREF(frozendict);
 
     Py_DECREF(error_dict);
     return 0;

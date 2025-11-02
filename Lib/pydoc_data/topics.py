@@ -3679,7 +3679,7 @@ less likely to be able to resolve annotations at runtime.
 
     * a class that inherits from any of the above
 
-    The standard library classes "dict" and "types.MappingProxyType"
+    The standard library classes "dict" and "frozendict"
     are mappings.
 
 [4] A string literal appearing as the first statement in the function
@@ -13174,8 +13174,7 @@ class dict(iterable, /, **kwargs)
 
 See also:
 
-  "types.MappingProxyType" can be used to create a read-only view of a
-  "dict".
+  "frozendict" can be used to create a read-only view of a "dict".
 
 
 Dictionary view objects
