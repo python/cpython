@@ -32,6 +32,13 @@ class TestUnicode:
         j = self.dumps(u + "\n", ensure_ascii=False)
         self.assertEqual(j, f'"{u}\\n"')
 
+    def test_ascii_non_printable_encode(self):
+        u = '\b\t\n\f\r\x00\x1f\x7f'
+        self.assertEqual(self.dumps(u),
+                         '"\\b\\t\\n\\f\\r\\u0000\\u001f\\u007f"')
+        self.assertEqual(self.dumps(u, ensure_ascii=False),
+                         '"\\b\\t\\n\\f\\r\\u0000\\u001f\x7f"')
+
     def test_big_unicode_encode(self):
         u = '\U0001d120'
         self.assertEqual(self.dumps(u), '"\\ud834\\udd20"')
