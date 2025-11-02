@@ -72,16 +72,16 @@ class TestUnicode:
             self.assertEqual(self.loads(s), u)
 
     def test_single_surrogate_encode(self):
-        self.assertEqual(self.dumps('\uD0D0'), '"\\ud0d0"')
-        self.assertEqual(self.dumps('\uD0D0', ensure_ascii=False), '"\ud0d0"')
-        self.assertEqual(self.dumps('\uDEAD'), '"\\udead"')
-        self.assertEqual(self.dumps('\uDEAD', ensure_ascii=False), '"\udead"')
+        self.assertEqual(self.dumps('\uD83D'), '"\\ud83d"')
+        self.assertEqual(self.dumps('\uD83D', ensure_ascii=False), '"\ud83d"')
+        self.assertEqual(self.dumps('\uDC0D'), '"\\udc0d"')
+        self.assertEqual(self.dumps('\uDC0D', ensure_ascii=False), '"\udc0d"')
 
     def test_single_surrogate_decode(self):
-        self.assertEqual(self.loads('"\uD0D0"'), '\ud0d0')
-        self.assertEqual(self.loads('"\\uD0D0"'), '\ud0d0')
-        self.assertEqual(self.loads('"\uDEAD"'), '\udead')
-        self.assertEqual(self.loads('"\\uDEAD"'), '\udead')
+        self.assertEqual(self.loads('"\uD83D"'), '\ud83d')
+        self.assertEqual(self.loads('"\\uD83D"'), '\ud83d')
+        self.assertEqual(self.loads('"\udc0d"'), '\udc0d')
+        self.assertEqual(self.loads('"\\udc0d"'), '\udc0d')
 
     def test_unicode_preservation(self):
         self.assertEqual(type(self.loads('""')), str)
