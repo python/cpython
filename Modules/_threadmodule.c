@@ -1864,7 +1864,6 @@ clear_locals(PyObject *locals_and_key, PyObject *dummyweakref)
 
     /* If the thread-local object is still alive and not being cleared,
        remove the corresponding local dict */
-
     if (self->localdicts != NULL) {
         PyObject *key = PyTuple_GetItem(locals_and_key, 1);
         if (PyDict_Pop(self->localdicts, key, NULL) < 0) {
