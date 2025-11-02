@@ -715,19 +715,21 @@ faulthandler_thread(void *unused)
 
         if (!interp_is_freed(interp)) {
 
-#ifdef Py_GIL_DISABLED
-            _PyEval_StopTheWorld(interp);
-#else
-            PyGILState_STATE gil_state = PyGILState_Ensure();
-#endif
-            errmsg = _Py_DumpTracebackThreads(thread.fd, interp, NULL, 1);
-            ok = (errmsg == NULL);
+            PyThreadState* ts = PyThreadState_New(interp);
+            if (ts) {
+                _PyThreadState_Attach(ts);
+                _PyEval_StopTheWorld(interp);
 
-#ifdef Py_GIL_DISABLED
-            _PyEval_StartTheWorld(interp);
-#else
-            PyGILState_Release(gil_state);
-#endif
+                errmsg = _Py_DumpTracebackThreads(thread.fd, interp, NULL);
+                ok = (errmsg == NULL);
+
+                _PyEval_StartTheWorld(interp);
+                PyThreadState_Clear(ts);
+                PyThreadState_DeleteCurrent();
+            }
+            else {
+                fprintf(stderr, "faulthandler_thread: PyThreadState_New failed\n");
+            }
         }
 
 
