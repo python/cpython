@@ -350,7 +350,7 @@ that ``a[0]`` is always its smallest element.
 The strange invariant above is meant to be an efficient memory representation
 for a tournament.  The numbers below are *k*, not ``a[k]``:
 
-.. figure:: heapq-binary-tree.svg
+.. figure:: heapq-binary-tree.*
    :class: invert-in-dark-mode
    :align: center
    :alt: Example (min-heap) binary tree.
