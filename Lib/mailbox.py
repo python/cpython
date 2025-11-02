@@ -2090,8 +2090,6 @@ class _ProxyFile:
             return False
         return self._file.closed
 
-    __class_getitem__ = classmethod(GenericAlias)
-
 
 class _PartialFile(_ProxyFile):
     """A read-only wrapper of part of a file."""
