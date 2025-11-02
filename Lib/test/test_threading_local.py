@@ -230,7 +230,8 @@ class BaseLocalTest:
 
         class ClassWithDel:
             def __del__(_):
-                local.b = object()
+                local.b = 42
+                self.assertEqual(local.__dict__, {'b': 42})
 
         def thread_func():
             local.a = ClassWithDel()
@@ -239,7 +240,7 @@ class BaseLocalTest:
         t.start()
         t.join()
 
-        self.assertEqual(True, False)
+        self.assertEqual(local.__dict__, {})
 
 
 class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
