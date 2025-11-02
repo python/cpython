@@ -26,7 +26,9 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
 
 // Similar to _PyFrame_GetCode(), but return NULL if the frame is invalid or
 // freed. Used by dump_frame() in Python/traceback.c.
-static inline PyCodeObject* _PyFrame_SafeGetCode(_PyInterpreterFrame *f) {
+static inline PyCodeObject*
+_PyFrame_SafeGetCode(_PyInterpreterFrame *f)
+{
     if (PyStackRef_IsNull(f->f_executable)) {
         return NULL;
     }
@@ -64,22 +66,19 @@ _PyFrame_GetBytecode(_PyInterpreterFrame *f)
 static inline int
 _PyFrame_SafeGetLasti(struct _PyInterpreterFrame *f)
 {
-    // Inline _PyFrame_GetBytecode() but replace _PyFrame_GetCode()
+    // Code based on _PyFrame_GetBytecode() but replace _PyFrame_GetCode()
     // with _PyFrame_SafeGetCode().
-    _Py_CODEUNIT *bytecode;
-#ifdef Py_GIL_DISABLED
     PyCodeObject *co = _PyFrame_SafeGetCode(f);
     if (co == NULL) {
         return -1;
     }
+
+    _Py_CODEUNIT *bytecode;
+#ifdef Py_GIL_DISABLED
     _PyCodeArray *tlbc = _PyCode_GetTLBCArray(co);
     assert(f->tlbc_index >= 0 && f->tlbc_index < tlbc->size);
     bytecode = (_Py_CODEUNIT *)tlbc->entries[f->tlbc_index];
 #else
-    PyCodeObject *co = _PyFrame_SafeGetCode(f);
-    if (co == NULL) {
-        return -1;
-    }
     bytecode = _PyCode_CODE(co);
 #endif
 

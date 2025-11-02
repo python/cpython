@@ -1134,6 +1134,10 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
             break;
         }
 
+        if (_PyMem_IsPtrFreed(frame)) {
+            PUTS(fd, "  <freed frame>\n");
+            break;
+        }
         if (dump_frame(fd, frame) < 0) {
             PUTS(fd, "  <invalid frame>\n");
             break;
@@ -1141,10 +1145,6 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
 
         frame = frame->previous;
         if (frame == NULL) {
-            break;
-        }
-        if (_PyMem_IsPtrFreed(frame)) {
-            PUTS(fd, "  <freed frame>\n");
             break;
         }
         depth++;
