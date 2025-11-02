@@ -109,16 +109,24 @@ class HTMLParser(_markupbase.ParserBase):
     argument.
     """
 
-    CDATA_CONTENT_ELEMENTS = ("script", "style")
+    # See the HTML5 specs section "13.4 Parsing HTML fragments".
+    # https://html.spec.whatwg.org/multipage/parsing.html#parsing-html-fragments
+    # CDATA_CONTENT_ELEMENTS are parsed in RAWTEXT mode
+    CDATA_CONTENT_ELEMENTS = ("script", "style", "xmp", "iframe", "noembed", "noframes")
     RCDATA_CONTENT_ELEMENTS = ("textarea", "title")
 
-    def __init__(self, *, convert_charrefs=True):
+    def __init__(self, *, convert_charrefs=True, scripting=False):
         """Initialize and reset this instance.
 
-        If convert_charrefs is True (the default), all character references
+        If convert_charrefs is true (the default), all character references
         are automatically converted to the corresponding Unicode characters.
+
+        If *scripting* is false (the default), the content of the
+        ``noscript`` element is parsed normally; if it's true,
+        it's returned as is without being parsed.
         """
         self.convert_charrefs = convert_charrefs
+        self.scripting = scripting
         self.reset()
 
     def reset(self):
@@ -127,6 +135,7 @@ class HTMLParser(_markupbase.ParserBase):
         self.lasttag = '???'
         self.interesting = interesting_normal
         self.cdata_elem = None
+        self._support_cdata = True
         self._escapable = True
         _markupbase.ParserBase.reset(self)
 
@@ -152,7 +161,9 @@ class HTMLParser(_markupbase.ParserBase):
     def set_cdata_mode(self, elem, *, escapable=False):
         self.cdata_elem = elem.lower()
         self._escapable = escapable
-        if escapable and not self.convert_charrefs:
+        if self.cdata_elem == 'plaintext':
+            self.interesting = re.compile(r'\Z')
+        elif escapable and not self.convert_charrefs:
             self.interesting = re.compile(r'&|</%s(?=[\t\n\r\f />])' % self.cdata_elem,
                                           re.IGNORECASE|re.ASCII)
         else:
@@ -163,6 +174,19 @@ class HTMLParser(_markupbase.ParserBase):
         self.interesting = interesting_normal
         self.cdata_elem = None
         self._escapable = True
+
+    def _set_support_cdata(self, flag=True):
+        """Enable or disable support of the CDATA sections.
+        If enabled, "<[CDATA[" starts a CDATA section which ends with "]]>".
+        If disabled, "<[CDATA[" starts a bogus comments which ends with ">".
+
+        This method is not called by default. Its purpose is to be called
+        in custom handle_starttag() and handle_endtag() methods, with
+        value that depends on the adjusted current node.
+        See https://html.spec.whatwg.org/multipage/parsing.html#markup-declaration-open-state
+        for details.
+        """
+        self._support_cdata = flag
 
     # Internal -- handle data as far as reasonable.  May leave state
     # and data to be processed by a subsequent call.  If 'end' is
@@ -238,7 +262,7 @@ class HTMLParser(_markupbase.ParserBase):
                                 j -= len(suffix)
                                 break
                         self.handle_comment(rawdata[i+4:j])
-                    elif startswith("<![CDATA[", i):
+                    elif startswith("<![CDATA[", i) and self._support_cdata:
                         self.unknown_decl(rawdata[i+3:])
                     elif rawdata[i:i+9].lower() == '<!doctype':
                         self.handle_decl(rawdata[i+2:])
@@ -314,8 +338,12 @@ class HTMLParser(_markupbase.ParserBase):
         if rawdata[i:i+4] == '<!--':
             # this case is actually already handled in goahead()
             return self.parse_comment(i)
-        elif rawdata[i:i+3] == '<![':
-            return self.parse_marked_section(i)
+        elif rawdata[i:i+9] == '<![CDATA[' and self._support_cdata:
+            j = rawdata.find(']]>', i+9)
+            if j < 0:
+                return -1
+            self.unknown_decl(rawdata[i+3: j])
+            return j + 3
         elif rawdata[i:i+9].lower() == '<!doctype':
             # find the closing >
             gtpos = rawdata.find('>', i+9)
@@ -323,6 +351,15 @@ class HTMLParser(_markupbase.ParserBase):
                 return -1
             self.handle_decl(rawdata[i+2:gtpos])
             return gtpos+1
+        elif rawdata[i:i+3] == '<![':
+            j = rawdata.find('>', i+3)
+            if j < 0:
+                return -1
+            if rawdata[j-1] == ']':
+                self.unknown_decl(rawdata[i+3: j-1])
+            else:
+                self.handle_comment(rawdata[i+2: j])
+            return j + 1
         else:
             return self.parse_bogus_comment(i)
 
@@ -414,8 +451,10 @@ class HTMLParser(_markupbase.ParserBase):
             self.handle_startendtag(tag, attrs)
         else:
             self.handle_starttag(tag, attrs)
-            if tag in self.CDATA_CONTENT_ELEMENTS:
-                self.set_cdata_mode(tag)
+            if (tag in self.CDATA_CONTENT_ELEMENTS or
+                (self.scripting and tag == "noscript") or
+                tag == "plaintext"):
+                self.set_cdata_mode(tag, escapable=False)
             elif tag in self.RCDATA_CONTENT_ELEMENTS:
                 self.set_cdata_mode(tag, escapable=True)
         return endpos
