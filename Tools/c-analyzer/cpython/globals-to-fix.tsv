@@ -419,6 +419,7 @@ Modules/_cursesmodule.c	-	curses_setupterm_called	-
 Modules/_cursesmodule.c	-	curses_start_color_called	-
 Modules/_cursesmodule.c	-	curses_screen_encoding	-
 Modules/_elementtree.c	-	expat_capi	-
+Modules/_struct.c	-	endian_tables_init_once	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
 Modules/readline.c	-	libedit_history_start	-
