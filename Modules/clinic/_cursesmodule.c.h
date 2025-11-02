@@ -301,7 +301,7 @@ PyDoc_STRVAR(_curses_window_attron__doc__,
 "attron($self, attr, /)\n"
 "--\n"
 "\n"
-"Add attribute attr from the \"background\" set.");
+"Add attribute attr to the \"background\" set.");
 
 #define _CURSES_WINDOW_ATTRON_METHODDEF    \
     {"attron", (PyCFunction)_curses_window_attron, METH_O, _curses_window_attron__doc__},
@@ -4373,4 +4373,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=39a35d730a47ea72 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=265cd9f5affbad5e input=a9049054013a1b77]*/

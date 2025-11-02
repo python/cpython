@@ -1,4 +1,4 @@
-This is Python version 3.13.7
+This is Python version 3.13.9
 =============================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
@@ -153,7 +153,7 @@ Documentation
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
-is downloadable in HTML, PDF, and reStructuredText formats; the latter version
+is downloadable in HTML, EPUB, and reStructuredText formats; the latter version
 is primarily for documentation authors, translators, and people with special
 formatting requirements.
 

@@ -13,7 +13,7 @@ module _symtable
 _symtable.symtable
 
     source:    object
-    filename:  object(converter='PyUnicode_FSDecoder')
+    filename:  unicode_fs_decoded
     startstr:  str
     /
 
@@ -23,7 +23,7 @@ Return symbol and scope dictionaries used internally by compiler.
 static PyObject *
 _symtable_symtable_impl(PyObject *module, PyObject *source,
                         PyObject *filename, const char *startstr)
-/*[clinic end generated code: output=59eb0d5fc7285ac4 input=9dd8a50c0c36a4d7]*/
+/*[clinic end generated code: output=59eb0d5fc7285ac4 input=436ffff90d02e4f6]*/
 {
     struct symtable *st;
     PyObject *t;
@@ -47,12 +47,10 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
     else {
         PyErr_SetString(PyExc_ValueError,
            "symtable() arg 3 must be 'exec' or 'eval' or 'single'");
-        Py_DECREF(filename);
         Py_XDECREF(source_copy);
         return NULL;
     }
     st = _Py_SymtableStringObjectFlags(str, filename, start, &cf);
-    Py_DECREF(filename);
     Py_XDECREF(source_copy);
     if (st == NULL) {
         return NULL;

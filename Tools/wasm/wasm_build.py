@@ -21,6 +21,7 @@ changes.
   ./Tools/wasm/wasm_builder.py --clean build build
 
 """
+
 import argparse
 import enum
 import dataclasses
@@ -67,7 +68,9 @@ WASI_SDK_PATH = pathlib.Path(os.environ.get("WASI_SDK_PATH", "/opt/wasi-sdk"))
 
 # path to Emscripten SDK config file.
 # auto-detect's EMSDK in /opt/emsdk without ". emsdk_env.sh".
-EM_CONFIG = pathlib.Path(os.environ.setdefault("EM_CONFIG", "/opt/emsdk/.emscripten"))
+EM_CONFIG = pathlib.Path(
+    os.environ.setdefault("EM_CONFIG", "/opt/emsdk/.emscripten")
+)
 EMSDK_MIN_VERSION = (3, 1, 19)
 EMSDK_BROKEN_VERSION = {
     (3, 1, 14): "https://github.com/emscripten-core/emscripten/issues/17338",
@@ -261,8 +264,7 @@ def _check_emscripten() -> None:
         # git / upstream / tot-upstream installation
         version = version[:-4]
     version_tuple = cast(
-        Tuple[int, int, int],
-        tuple(int(v) for v in version.split("."))
+        Tuple[int, int, int], tuple(int(v) for v in version.split("."))
     )
     if version_tuple < EMSDK_MIN_VERSION:
         raise ConditionError(
@@ -518,7 +520,7 @@ class BuildProfile:
     def getenv(self) -> Dict[str, Any]:
         """Generate environ dict for platform"""
         env = os.environ.copy()
-        if hasattr(os, 'process_cpu_count'):
+        if hasattr(os, "process_cpu_count"):
             cpu_count = os.process_cpu_count()
         else:
             cpu_count = os.cpu_count()
@@ -596,7 +598,9 @@ class BuildProfile:
         """Run Python with hostrunner"""
         self._check_execute()
         return self.run_make(
-            "--eval", f"run: all; $(HOSTRUNNER) ./$(PYTHON) {shlex.join(args)}", "run"
+            "--eval",
+            f"run: all; $(HOSTRUNNER) ./$(PYTHON) {shlex.join(args)}",
+            "run",
         )
 
     def run_browser(self, bind: str = "127.0.0.1", port: int = 8000) -> None:
@@ -666,9 +670,12 @@ class BuildProfile:
         # Pre-build libbz2, libsqlite3, libz, and some system libs.
         ports_cmd.extend(["-sUSE_ZLIB", "-sUSE_BZIP2", "-sUSE_SQLITE3"])
         # Multi-threaded sqlite3 has different suffix
-        embuilder_cmd.extend(
-            ["build", "bzip2", "sqlite3-mt" if self.pthreads else "sqlite3", "zlib"]
-        )
+        embuilder_cmd.extend([
+            "build",
+            "bzip2",
+            "sqlite3-mt" if self.pthreads else "sqlite3",
+            "zlib",
+        ])
 
         self._run_cmd(embuilder_cmd, cwd=SRCDIR)
 
@@ -817,7 +824,9 @@ parser.add_argument(
 
 # Don't list broken and experimental variants in help
 platforms_choices = list(p.name for p in _profiles) + ["cleanall"]
-platforms_help = list(p.name for p in _profiles if p.support_level) + ["cleanall"]
+platforms_help = list(p.name for p in _profiles if p.support_level) + [
+    "cleanall"
+]
 parser.add_argument(
     "platform",
     metavar="PLATFORM",

@@ -102,6 +102,10 @@ Module Objects
    Return a pointer to the :c:type:`PyModuleDef` struct from which the module was
    created, or ``NULL`` if the module wasn't created from a definition.
 
+   On error, return ``NULL`` with an exception set.
+   Use :c:func:`PyErr_Occurred` to tell this case apart from a mising
+   :c:type:`!PyModuleDef`.
+
 
 .. c:function:: PyObject* PyModule_GetFilenameObject(PyObject *module)
 

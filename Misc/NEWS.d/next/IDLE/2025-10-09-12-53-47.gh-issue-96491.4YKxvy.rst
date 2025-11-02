@@ -1,0 +1,1 @@
+Deduplicate version number in IDLE shell title bar after saving to a file.

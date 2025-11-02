@@ -481,6 +481,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
             }
+            else if (c == EOF && PyErr_Occurred()) {
+                return MAKE_TOKEN(ERRORTOKEN);
+            }
             else {
                 break;
             }
@@ -1291,7 +1294,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid non-printable character U+%04X", c));
     }
 
-    if( c == '=' && INSIDE_FSTRING_EXPR(current_tok)) {
+    if( c == '=' && INSIDE_FSTRING_EXPR_AT_TOP(current_tok)) {
         current_tok->f_string_debug = 1;
     }
 

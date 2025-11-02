@@ -1094,7 +1094,7 @@ acquire the :term:`GIL`.
 If any thread, other than the finalization thread, attempts to acquire the GIL
 during finalization, either explicitly via :c:func:`PyGILState_Ensure`,
 :c:macro:`Py_END_ALLOW_THREADS`, :c:func:`PyEval_AcquireThread`, or
-:c:func:`PyEval_AcquireLock`, or implicitly when the interpreter attempts to
+:c:func:`!PyEval_AcquireLock`, or implicitly when the interpreter attempts to
 reacquire it after having yielded it, the thread enters **a permanently blocked
 state** where it remains until the program exits.  In most cases this is
 harmless, but this can result in deadlock if a later stage of finalization
@@ -1193,7 +1193,7 @@ code, or when embedding the Python interpreter:
       created by Python.  Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.8
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
@@ -1228,6 +1228,19 @@ code, or when embedding the Python interpreter:
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
 
+.. c:type:: PyGILState_STATE
+
+   The type of the value returned by :c:func:`PyGILState_Ensure` and passed to
+   :c:func:`PyGILState_Release`.
+
+   .. c:enumerator:: PyGILState_LOCKED
+
+      The GIL was already held when :c:func:`PyGILState_Ensure` was called.
+
+   .. c:enumerator:: PyGILState_UNLOCKED
+
+      The GIL was not held when :c:func:`PyGILState_Ensure` was called.
+
 .. c:function:: PyGILState_STATE PyGILState_Ensure()
 
    Ensure that the current thread is ready to call the Python C API regardless
@@ -1256,7 +1269,7 @@ with sub-interpreters:
       created by Python.  Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.8
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
@@ -1372,11 +1385,11 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    must be held.
 
    .. versionchanged:: 3.9
-      This function now calls the :c:member:`PyThreadState.on_delete` callback.
+      This function now calls the :c:member:`!PyThreadState.on_delete` callback.
       Previously, that happened in :c:func:`PyThreadState_Delete`.
 
    .. versionchanged:: 3.13
-      The :c:member:`PyThreadState.on_delete` callback was removed.
+      The :c:member:`!PyThreadState.on_delete` callback was removed.
 
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
@@ -1563,7 +1576,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
       and terminate the current thread if called while the interpreter is finalizing.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.13.8
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 

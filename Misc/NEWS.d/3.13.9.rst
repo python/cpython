@@ -1,0 +1,8 @@
+.. date: 2025-10-09-13-48-28
+.. gh-issue: 139783
+.. nonce: __NUgo
+.. release date: 2025-10-14
+.. section: Library
+
+Fix :func:`inspect.getsourcelines` for the case when a decorator is followed
+by a comment or an empty line.
