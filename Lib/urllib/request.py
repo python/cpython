@@ -343,7 +343,8 @@ class Request:
         self.type, rest = _splittype(self._full_url)
         if self.type is None:
             raise ValueError("unknown url type: %r" % self.full_url)
-        self.host, self.selector = _splithost(rest)
+        host, self.selector = _splithost(rest)
+        _, self.host = _splituser(host)
         if self.host:
             self.host = unquote(self.host)
 
