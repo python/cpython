@@ -39,6 +39,22 @@ class TestUnicode:
         self.assertEqual(self.dumps(u, ensure_ascii=False),
                          '"\\b\\t\\n\\f\\r\\u0000\\u001f\x7f"')
 
+    def test_ascii_non_printable_decode(self):
+        self.assertEqual(self.loads('"\\b\\t\\n\\f\\r"'),
+                         '\b\t\n\f\r')
+        s = ''.join(map(chr, range(32)))
+        for c in s:
+            self.assertRaises(self.JSONDecodeError, self.loads, f'"{c}"')
+        self.assertEqual(self.loads(f'"{s}"', strict=False), s)
+        self.assertEqual(self.loads('"\x7f"'), '\x7f')
+
+    def test_escaped_decode(self):
+        self.assertEqual(self.loads('"\\b\\t\\n\\f\\r"'), '\b\t\n\f\r')
+        self.assertEqual(self.loads('"\\"\\\\\\/"'), '"\\/')
+        for c in set(map(chr, range(0x100))) - set('"\\/bfnrt'):
+            self.assertRaises(self.JSONDecodeError, self.loads, f'"\\{c}"')
+            self.assertRaises(self.JSONDecodeError, self.loads, f'"\\{c}"', strict=False)
+
     def test_big_unicode_encode(self):
         u = '\U0001d120'
         self.assertEqual(self.dumps(u), '"\\ud834\\udd20"')
@@ -54,6 +70,18 @@ class TestUnicode:
             u = chr(i)
             s = f'"\\u{i:04x}"'
             self.assertEqual(self.loads(s), u)
+
+    def test_single_surrogate_encode(self):
+        self.assertEqual(self.dumps('\uD0FF'), '"\\ud0ff"')
+        self.assertEqual(self.dumps('\uD0FF', ensure_ascii=False), '"\ud0ff"')
+        self.assertEqual(self.dumps('\uDEAD'), '"\\udead"')
+        self.assertEqual(self.dumps('\uDEAD', ensure_ascii=False), '"\udead"')
+
+    def test_single_surrogate_decode(self):
+        self.assertEqual(self.loads('"\uD0FF"'), '\ud0ff')
+        self.assertEqual(self.loads('"\\uD0FF"'), '\ud0ff')
+        self.assertEqual(self.loads('"\uDEAD"'), '\udead')
+        self.assertEqual(self.loads('"\\uDEAD"'), '\udead')
 
     def test_unicode_preservation(self):
         self.assertEqual(type(self.loads('""')), str)
