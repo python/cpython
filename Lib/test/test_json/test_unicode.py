@@ -72,14 +72,14 @@ class TestUnicode:
             self.assertEqual(self.loads(s), u)
 
     def test_single_surrogate_encode(self):
-        self.assertEqual(self.dumps('\uD0FF'), '"\\ud0ff"')
-        self.assertEqual(self.dumps('\uD0FF', ensure_ascii=False), '"\ud0ff"')
+        self.assertEqual(self.dumps('\uD0D0'), '"\\ud0d0"')
+        self.assertEqual(self.dumps('\uD0D0', ensure_ascii=False), '"\ud0d0"')
         self.assertEqual(self.dumps('\uDEAD'), '"\\udead"')
         self.assertEqual(self.dumps('\uDEAD', ensure_ascii=False), '"\udead"')
 
     def test_single_surrogate_decode(self):
-        self.assertEqual(self.loads('"\uD0FF"'), '\ud0ff')
-        self.assertEqual(self.loads('"\\uD0FF"'), '\ud0ff')
+        self.assertEqual(self.loads('"\uD0D0"'), '\ud0d0')
+        self.assertEqual(self.loads('"\\uD0D0"'), '\ud0d0')
         self.assertEqual(self.loads('"\uDEAD"'), '\udead')
         self.assertEqual(self.loads('"\\uDEAD"'), '\udead')
 
