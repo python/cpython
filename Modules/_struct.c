@@ -1510,10 +1510,8 @@ static formatdef lilendian_table[] = {
 static _PyOnceFlag endian_tables_init_once = {0};
 
 static int
-init_endian_tables(void *arg)
+init_endian_tables(void *Py_UNUSED(arg))
 {
-    (void)arg;  // Unused but required by _Py_once_fn_t signature
-
     const formatdef *native = native_table;
     formatdef *other, *ptr;
 #if PY_LITTLE_ENDIAN
