@@ -1,2 +1,2 @@
-Fix a buffer overflow in :c:func:`!PyOS_StdioReadline` when a single NULL character is read from the standard input.
+Fix a buffer overflow when a single NULL character is read from the standard input.
 Patch by Shamil Abdulaev.
