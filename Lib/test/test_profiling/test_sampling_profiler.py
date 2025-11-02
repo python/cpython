@@ -124,7 +124,7 @@ _test_sock.sendall(b"ready")
         server_socket.close()
         response = client_socket.recv(1024)
         if response != b"ready":
-            raise RuntimeError(f"Unexpected response from subprocess: {response}")
+            raise RuntimeError(f"Unexpected response from subprocess: {response!r}")
 
         yield SubprocessInfo(proc, client_socket)
     finally:
@@ -1689,8 +1689,6 @@ class TestSampleProfilerIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_script = '''
-import time
-import os
 import operator
 import gc
 
@@ -1830,10 +1828,10 @@ if __name__ == "__main__":
                 try:
                     profiling.sampling.sample.sample(
                         subproc.process.pid,
-                        duration_sec=2,  # XXX
+                        duration_sec=1,
                         filename=collapsed_file.name,
                         output_format="collapsed",
-                        sample_interval_usec=100,  # XXX
+                        sample_interval_usec=10000,
                     )
                 except PermissionError:
                     self.skipTest(
@@ -1848,8 +1846,6 @@ if __name__ == "__main__":
             with open(collapsed_file.name, "r") as f:
                 content = f.read()
             
-            with open("/Users/brandtbucher/cpython/x.txt", "w") as f:  # XXX
-                f.write(content)  # XXX
             lines = content.strip().split("\n")
             self.assertGreater(len(lines), 0)
 

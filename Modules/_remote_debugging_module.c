@@ -25,7 +25,7 @@
 #include "Python.h"
 #include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
 #include <internal/pycore_frame.h>          // FRAME_SUSPENDED_YIELD_FROM
-#include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_CSTACK
+#include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_INTERPRETER
 #include <internal/pycore_llist.h>          // struct llist_node
 #include <internal/pycore_long.h>           // _PyLong_GetZero
 #include <internal/pycore_stackref.h>       // Py_TAG_BITS
@@ -2240,8 +2240,7 @@ is_frame_valid(
 
     void* frame = (void*)frame_addr;
 
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_CSTACK ||
-        GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
+    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
         return 0;  // C frame
     }
 
@@ -2461,8 +2460,8 @@ process_frame_chain(
     uintptr_t initial_frame_addr,
     StackChunkList *chunks,
     PyObject *frame_info,
-    uintptr_t gc_frame
-) {
+    uintptr_t gc_frame)
+{
     uintptr_t frame_addr = initial_frame_addr;
     uintptr_t prev_frame_addr = 0;
     const size_t MAX_FRAMES = 1024;
