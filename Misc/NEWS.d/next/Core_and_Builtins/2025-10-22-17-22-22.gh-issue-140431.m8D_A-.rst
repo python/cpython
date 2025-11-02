@@ -1,0 +1,3 @@
+Fix a crash in Python's :term:`garbage collector <garbage collection>` due to
+partially initialized :term:`coroutine` objects when coroutine origin tracking
+depth is enabled (:func:`sys.set_coroutine_origin_tracking_depth`).

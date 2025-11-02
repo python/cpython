@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
+#include "pycore_uop.h"           // struct _PyUOpInstruction
 
 
 #define CODE_MAX_WATCHERS 8
@@ -202,12 +203,6 @@ enum _GCPhase {
 #define NUM_GENERATIONS 3
 
 struct _gc_runtime_state {
-    /* List of objects that still need to be cleaned up, singly linked
-     * via their gc headers' gc_prev pointers.  */
-    PyObject *trash_delete_later;
-    /* Current call-stack depth of tp_dealloc calls. */
-    int trash_delete_nesting;
-
     /* Is automatic collection enabled? */
     int enabled;
     int debug;
@@ -677,11 +672,6 @@ struct _Py_interp_cached_objects {
 
     /* object.__reduce__ */
     PyObject *objreduce;
-#ifndef Py_GIL_DISABLED
-    /* resolve_slotdups() */
-    PyObject *type_slots_pname;
-    pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
-#endif
 
     /* TypeVar and related types */
     PyTypeObject *generic_type;
@@ -778,12 +768,6 @@ struct _is {
      * which is by far the hottest field in this struct
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
-
-    /* This structure is carefully allocated so that it's correctly aligned
-     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
-     * field stores the allocated pointer address that will later be freed.
-     */
-    void *_malloced;
 
     PyInterpreterState *next;
 
@@ -949,11 +933,13 @@ struct _is {
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
+    bool compiling;
+    struct _PyUOpInstruction *jit_uop_buffer;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
     int executor_deletion_list_remaining_capacity;
-    size_t trace_run_counter;
+    size_t executor_creation_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 

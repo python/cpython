@@ -58,7 +58,7 @@ The :mod:`locale` module defines the following exception and functions:
    specified in the :envvar:`LANG` environment variable).  If the locale is not
    changed thereafter, using multithreading should not cause problems.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Support language codes with ``@``-modifiers.
 
 
@@ -374,7 +374,7 @@ The :mod:`locale` module defines the following exception and functions:
    determined.
    The "C" locale is represented as ``(None, None)``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       ``@``-modifier are no longer silently removed, but included in
       the language code.
 

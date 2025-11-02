@@ -70,6 +70,7 @@
 
         case _LOAD_CONST: {
             JitOptRef value;
+            PyCodeObject *co = get_current_code_object(ctx);
             PyObject *val = PyTuple_GET_ITEM(co->co_consts, oparg);
             REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
             value = PyJitRef_Borrow(sym_new_const(ctx, val));
@@ -188,6 +189,31 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, value)
+            ) {
+                JitOptRef value_sym = value;
+                _PyStackRef value = sym_get_const_as_stackref(ctx, value_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *res_o = PyNumber_Negative(PyStackRef_AsPyObjectBorrow(value));
+                PyStackRef_CLOSE(value);
+                if (res_o == NULL) {
+                    goto error;
+                }
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+                        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
+                stack_pointer[-1] = res;
+                break;
+            }
             if (sym_is_compact_int(value)) {
                 res = sym_new_compact_int(ctx);
             }
@@ -220,6 +246,13 @@
                 ? PyStackRef_True : PyStackRef_False;
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+                        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
                 stack_pointer[-1] = res;
                 break;
             }
@@ -359,6 +392,33 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
+            if (!sym_matches_type(value, &PyBool_Type)) {
+                if (
+                    sym_is_safe_const(ctx, value)
+                ) {
+                    JitOptRef value_sym = value;
+                    _PyStackRef value = sym_get_const_as_stackref(ctx, value_sym);
+                    _PyStackRef res_stackref;
+                    /* Start of uop copied from bytecodes for constant evaluation */
+                    PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
+                    PyStackRef_CLOSE(value);
+                    if (res_o == NULL) {
+                        goto error;
+                    }
+                    res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                    /* End of uop copied from bytecodes for constant evaluation */
+                    res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                    if (sym_is_const(ctx, res)) {
+                        PyObject *result = sym_get_const(ctx, res);
+                        if (_Py_IsImmortal(result)) {
+                            // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+                            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                        }
+                    }
+                    stack_pointer[-1] = res;
+                    break;
+                }
+            }
             if (sym_matches_type(value, &PyLong_Type)) {
                 res = sym_new_type(ctx, &PyLong_Type);
             }
@@ -438,7 +498,6 @@
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -489,7 +548,6 @@
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -540,7 +598,6 @@
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -610,7 +667,6 @@
                 }
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -663,7 +719,6 @@
                 }
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -716,7 +771,6 @@
                 }
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -796,7 +850,6 @@
                 res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -938,7 +991,7 @@
                 assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
                 long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
                 assert(index >= 0);
-                int tuple_length = sym_tuple_length(tuple_st);
+                Py_ssize_t tuple_length = sym_tuple_length(tuple_st);
                 if (tuple_length == -1) {
                     res = sym_new_not_null(ctx);
                 }
@@ -1060,9 +1113,10 @@
             JitOptRef retval;
             JitOptRef res;
             retval = stack_pointer[-1];
-            JitOptRef temp = PyJitRef_Wrap(PyJitRef_Unwrap(retval));
+            JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            PyCodeObject *co = get_current_code_object(ctx);
             ctx->frame->stack_pointer = stack_pointer;
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
@@ -1072,10 +1126,6 @@
             assert(framesize > 0);
             assert(framesize <= curr_space);
             curr_space -= framesize;
-            co = get_code(this_instr);
-            if (co == NULL) {
-                ctx->done = true;
-            }
             res = temp;
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1291,12 +1341,65 @@
         }
 
         case _GUARD_GLOBALS_VERSION: {
+            uint16_t version = (uint16_t)this_instr->operand0;
+            if (ctx->frame->func != NULL) {
+                PyObject *globals = ctx->frame->func->func_globals;
+                if (incorrect_keys(globals, version)) {
+                    OPT_STAT_INC(remove_globals_incorrect_keys);
+                    ctx->done = true;
+                }
+                else if (get_mutations(globals) >= _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                }
+                else {
+                    if (!ctx->frame->globals_watched) {
+                        PyDict_Watch(GLOBALS_WATCHER_ID, globals);
+                        _Py_BloomFilter_Add(dependencies, globals);
+                        ctx->frame->globals_watched = true;
+                    }
+                    if (ctx->frame->globals_checked_version == version) {
+                        REPLACE_OP(this_instr, _NOP, 0, 0);
+                    }
+                }
+            }
+            ctx->frame->globals_checked_version = version;
             break;
         }
 
         case _LOAD_GLOBAL_MODULE: {
             JitOptRef res;
-            res = sym_new_not_null(ctx);
+            uint16_t version = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand0;
+            (void)index;
+            PyObject *cnst = NULL;
+            if (ctx->frame->func != NULL) {
+                PyObject *globals = ctx->frame->func->func_globals;
+                if (incorrect_keys(globals, version)) {
+                    OPT_STAT_INC(remove_globals_incorrect_keys);
+                    ctx->done = true;
+                }
+                else if (get_mutations(globals) >= _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                }
+                else {
+                    if (!ctx->frame->globals_watched) {
+                        PyDict_Watch(GLOBALS_WATCHER_ID, globals);
+                        _Py_BloomFilter_Add(dependencies, globals);
+                        ctx->frame->globals_watched = true;
+                    }
+                    if (ctx->frame->globals_checked_version != version && this_instr[-1].opcode == _NOP) {
+                        REPLACE_OP(this_instr-1, _GUARD_GLOBALS_VERSION, 0, version);
+                        ctx->frame->globals_checked_version = version;
+                    }
+                    if (ctx->frame->globals_checked_version == version) {
+                        cnst = convert_global_to_const(this_instr, globals, false);
+                    }
+                }
+            }
+            if (cnst == NULL) {
+                res = sym_new_not_null(ctx);
+            }
+            else {
+                res = sym_new_const(ctx, cnst);
+            }
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1305,7 +1408,34 @@
 
         case _LOAD_GLOBAL_BUILTINS: {
             JitOptRef res;
-            res = sym_new_not_null(ctx);
+            uint16_t version = (uint16_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand0;
+            (void)version;
+            (void)index;
+            PyObject *cnst = NULL;
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            PyObject *builtins = interp->builtins;
+            if (incorrect_keys(builtins, version)) {
+                OPT_STAT_INC(remove_globals_incorrect_keys);
+                ctx->done = true;
+            }
+            else if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+            }
+            else {
+                if (!ctx->builtins_watched) {
+                    PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
+                    ctx->builtins_watched = true;
+                }
+                if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
+                    cnst = convert_global_to_const(this_instr, builtins, false);
+                }
+            }
+            if (cnst == NULL) {
+                res = sym_new_not_null(ctx);
+            }
+            else {
+                res = sym_new_const(ctx, cnst);
+            }
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1599,7 +1729,7 @@
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
             PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
-            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
@@ -1642,7 +1772,53 @@
         }
 
         case _COMPARE_OP: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                assert((oparg >> 5) <= Py_GE);
+                PyObject *res_o = PyObject_RichCompare(left_o, right_o, oparg >> 5);
+                if (res_o == NULL) {
+                    goto error;
+                }
+                if (oparg & 16) {
+                    int res_bool = PyObject_IsTrue(res_o);
+                    Py_DECREF(res_o);
+                    if (res_bool < 0) {
+                        goto error;
+                    }
+                    res_stackref = res_bool ? PyStackRef_True : PyStackRef_False;
+                }
+                else {
+                    res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                }
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                if (sym_is_const(ctx, res)) {
+                    PyObject *result = sym_get_const(ctx, res);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             if (oparg & 16) {
                 res = sym_new_type(ctx, &PyBool_Type);
             }
@@ -1682,7 +1858,6 @@
                 res_stackref = (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -1733,7 +1908,6 @@
                 res_stackref =  (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -1782,7 +1956,6 @@
                 res_stackref = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? PyStackRef_True : PyStackRef_False;
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -1812,7 +1985,42 @@
         }
 
         case _CONTAINS_OP: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef b;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef b_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+                int res = PySequence_Contains(right_o, left_o);
+                if (res < 0) {
+                    goto error;
+                }
+                b_stackref = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
+                /* End of uop copied from bytecodes for constant evaluation */
+                b = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(b_stackref));
+                if (sym_is_const(ctx, b)) {
+                    PyObject *result = sym_get_const(ctx, b);
+                    if (_Py_IsImmortal(result)) {
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }
+                }
+                stack_pointer[-2] = b;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                break;
+            }
             b = sym_new_type(ctx, &PyBool_Type);
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -1899,13 +2107,13 @@
             JitOptRef obj;
             JitOptRef len;
             obj = stack_pointer[-1];
-            int tuple_length = sym_tuple_length(obj);
+            Py_ssize_t tuple_length = sym_tuple_length(obj);
             if (tuple_length == -1) {
                 len = sym_new_type(ctx, &PyLong_Type);
             }
             else {
                 assert(tuple_length >= 0);
-                PyObject *temp = PyLong_FromLong(tuple_length);
+                PyObject *temp = PyLong_FromSsize_t(tuple_length);
                 if (temp == NULL) {
                     goto error;
                 }
@@ -2133,7 +2341,7 @@
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
-            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
@@ -2153,7 +2361,7 @@
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
-            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
@@ -2172,7 +2380,7 @@
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
-            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
@@ -2187,7 +2395,7 @@
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
-            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
@@ -2207,7 +2415,7 @@
             PyObject *descr = (PyObject *)this_instr->operand0;
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
-            PyObject *name = PyTuple_GET_ITEM(co->co_names, oparg >> 1);
+            PyObject *name = get_co_name(ctx, oparg >> 1);
             attr = lookup_attr(ctx, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
@@ -2240,9 +2448,8 @@
 
         case _PY_FRAME_GENERAL: {
             JitOptRef new_frame;
-            PyCodeObject *co = NULL;
             assert((this_instr + 2)->opcode == _PUSH_FRAME);
-            co = get_code_with_logging((this_instr + 2));
+            PyCodeObject *co = get_code_with_logging((this_instr + 2));
             if (co == NULL) {
                 ctx->done = true;
                 break;
@@ -2366,9 +2573,8 @@
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             int argcount = oparg;
-            PyCodeObject *co = NULL;
             assert((this_instr + 2)->opcode == _PUSH_FRAME);
-            co = get_code_with_logging((this_instr + 2));
+            PyCodeObject *co = get_code_with_logging((this_instr + 2));
             if (co == NULL) {
                 ctx->done = true;
                 break;
@@ -2399,11 +2605,15 @@
             ctx->frame = (_Py_UOpsAbstractFrame *)PyJitRef_Unwrap(new_frame);
             ctx->curr_frame_depth++;
             stack_pointer = ctx->frame->stack_pointer;
-            co = get_code(this_instr);
-            if (co == NULL) {
+            uint64_t operand = this_instr->operand0;
+            if (operand == 0 || (operand & 1)) {
                 ctx->done = true;
                 break;
             }
+            PyFunctionObject *func = (PyFunctionObject *)operand;
+            PyCodeObject *co = (PyCodeObject *)func->func_code;
+            assert(PyFunction_Check(func));
+            ctx->frame->func = func;
             int framesize = co->co_framesize;
             assert(framesize > 0);
             curr_space += framesize;
@@ -2496,7 +2706,7 @@
             JitOptRef res;
             arg = stack_pointer[-1];
             if (sym_matches_type(arg, &PyUnicode_Type)) {
-                res = arg;
+                res = PyJitRef_StripReferenceInfo(arg);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
@@ -2522,7 +2732,7 @@
             JitOptRef res;
             arg = stack_pointer[-1];
             if (sym_matches_type(arg, &PyTuple_Type)) {
-                res = arg;
+                res = PyJitRef_StripReferenceInfo(arg);
             }
             else {
                 res = sym_new_type(ctx, &PyTuple_Type);
@@ -2618,9 +2828,9 @@
             JitOptRef res;
             arg = stack_pointer[-1];
             res = sym_new_type(ctx, &PyLong_Type);
-            int tuple_length = sym_tuple_length(arg);
+            Py_ssize_t tuple_length = sym_tuple_length(arg);
             if (tuple_length >= 0) {
-                PyObject *temp = PyLong_FromLong(tuple_length);
+                PyObject *temp = PyLong_FromSsize_t(tuple_length);
                 if (temp == NULL) {
                     goto error;
                 }
@@ -2795,6 +3005,7 @@
 
         case _RETURN_GENERATOR: {
             JitOptRef res;
+            PyCodeObject *co = get_current_code_object(ctx);
             ctx->frame->stack_pointer = stack_pointer;
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
@@ -2808,10 +3019,6 @@
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            co = get_code(this_instr);
-            if (co == NULL) {
-                ctx->done = true;
-            }
             break;
         }
 
@@ -2885,7 +3092,6 @@
                 res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
                     if (_Py_IsImmortal(result)) {
@@ -3177,10 +3383,6 @@
             stack_pointer[0] = new;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _CHECK_FUNCTION: {
             break;
         }
 
