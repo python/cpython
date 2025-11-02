@@ -60,9 +60,12 @@ class ColorSpan(NamedTuple):
 
 
 DEFAULT_PS1 = ">>> "
-DEFAULT_PS2 = ">>> "
-DEFAULT_PS3 = "... "
-DEFAULT_PS4 = "... "
+DEFAULT_PS2 = "... "
+
+MULTILINE_PS1 = DEFAULT_PS1
+MULTILINE_PS2 = DEFAULT_PS1
+MULTILINE_PS3 = DEFAULT_PS2
+MULTILINE_PS4 = ""
 
 
 @functools.cache

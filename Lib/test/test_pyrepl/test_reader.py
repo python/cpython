@@ -11,12 +11,13 @@ from .support import ScreenEqualMixin, code_to_events
 from .support import prepare_reader, prepare_console
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
-from _pyrepl.utils import DEFAULT_PS1, DEFAULT_PS2, DEFAULT_PS3, DEFAULT_PS4
+from _pyrepl.utils import DEFAULT_PS1
+from _pyrepl.utils import MULTILINE_PS1, MULTILINE_PS2, MULTILINE_PS3, MULTILINE_PS4
 from _colorize import default_theme
 
 
 def prepare_reader_with_prompt(
-    console, ps1=DEFAULT_PS1, ps2=DEFAULT_PS2, ps3=DEFAULT_PS3, ps4=DEFAULT_PS4):
+    console, ps1=MULTILINE_PS1, ps2=MULTILINE_PS2, ps3=MULTILINE_PS3, ps4=MULTILINE_PS4):
     reader = prepare_reader(
         console,
         can_colorize=False,
@@ -57,10 +58,10 @@ class TestReader(ScreenEqualMixin, TestCase):
         def prepare_reader_keep_prompts(*args, **kwargs):
             reader = prepare_reader(*args, **kwargs)
             del reader.get_prompt
-            reader.ps1 = ">>> "
-            reader.ps2 = ">>> "
-            reader.ps3 = "... "
-            reader.ps4 = ""
+            reader.ps1 = MULTILINE_PS1
+            reader.ps2 = MULTILINE_PS2
+            reader.ps3 = MULTILINE_PS3
+            reader.ps4 = MULTILINE_PS4
             reader.can_colorize = False
             reader.paste_mode = False
             return reader
@@ -355,13 +356,13 @@ class TestReader(ScreenEqualMixin, TestCase):
         )
 
         prompt = reader.get_prompt(0, False)
-        self.assertEqual(prompt, DEFAULT_PS2)
+        self.assertEqual(prompt, MULTILINE_PS2)
 
         prompt = reader.get_prompt(1, False)
-        self.assertEqual(prompt, DEFAULT_PS3)
+        self.assertEqual(prompt, MULTILINE_PS3)
 
         prompt = reader.get_prompt(2, False)
-        self.assertEqual(prompt, DEFAULT_PS4)
+        self.assertEqual(prompt, MULTILINE_PS4)
 
     def test_prompt_arg_raise_exception(self):
         # Handles exceptions from arg prompt

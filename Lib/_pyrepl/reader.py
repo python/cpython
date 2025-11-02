@@ -28,7 +28,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 
 from . import commands, console, input
-from .utils import DEFAULT_PS1, DEFAULT_PS2, DEFAULT_PS3, DEFAULT_PS4
+from .utils import DEFAULT_PS1
+from .utils import MULTILINE_PS2, MULTILINE_PS3, MULTILINE_PS4
 from .utils import wlen, unbracket, disp_str, gen_colors, THEME
 from .trace import trace
 
@@ -501,11 +502,11 @@ class Reader:
             prompt = "(paste) "
         elif "\n" in self.buffer:
             if lineno == 0:
-                prompt = self.__get_prompt_str(self.ps2, DEFAULT_PS2)
+                prompt = self.__get_prompt_str(self.ps2, MULTILINE_PS2)
             elif self.ps4 and lineno == self.buffer.count("\n"):
-                prompt = self.__get_prompt_str(self.ps4, DEFAULT_PS4)
+                prompt = self.__get_prompt_str(self.ps4, MULTILINE_PS4)
             else:
-                prompt = self.__get_prompt_str(self.ps3, DEFAULT_PS3)
+                prompt = self.__get_prompt_str(self.ps3, MULTILINE_PS3)
         else:
             prompt = self.__get_prompt_str(self.ps1, DEFAULT_PS1)
 
