@@ -58,6 +58,7 @@ _PATCH_FUNCS = {
     "ARM64_RELOC_PAGE21": "patch_aarch64_21r",
     "ARM64_RELOC_PAGEOFF12": "patch_aarch64_12",
     "ARM64_RELOC_UNSIGNED": "patch_64",
+    "CUSTOM_AARCH64_BRANCH19": "patch_aarch64_19r",
     # x86_64-pc-windows-msvc:
     "IMAGE_REL_AMD64_REL32": "patch_x86_64_32rx",
     # aarch64-pc-windows-msvc:
@@ -220,6 +221,17 @@ class StencilGroup:
     )
     _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
     _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
+
+    def convert_labels_to_relocations(self) -> None:
+        for name, hole_plus in self.symbols.items():
+            if isinstance(name, str) and "_JIT_RELOCATION_" in name:
+                _, offset = hole_plus
+                reloc, target = name.split("_JIT_RELOCATION_")
+                value, symbol = symbol_to_value(target)
+                hole = Hole(
+                    int(offset), typing.cast(_schema.HoleKind, reloc), value, symbol, 0
+                )
+                self.code.holes.append(hole)
 
     def process_relocations(self, known_symbols: dict[str, int]) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
