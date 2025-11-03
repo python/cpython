@@ -41,14 +41,25 @@ class Collector(ABC):
         """
         # First, index all tasks by their IDs so we can look up parents easily
         all_tasks = {}
+        tasks_by_name = {}
         for awaited_info in awaited_info_list:
             for task_info in awaited_info.awaited_by:
                 all_tasks[task_info.task_id] = (task_info, awaited_info.thread_id)
+                display_name = task_info.task_name or f"Task-{task_info.task_id}"
+                tasks_by_name.setdefault(display_name, []).append(
+                    (task_info, awaited_info.thread_id)
+                )
+                fallback_name = f"Task-{task_info.task_id}"
+                if fallback_name != display_name:
+                    tasks_by_name.setdefault(fallback_name, []).append(
+                        (task_info, awaited_info.thread_id)
+                    )
 
         # Use a cache for memoizing parent chains so we don't recompute them repeatedly
         cache = {}
+        root_frame = FrameInfo(("<root>", 0, "<all tasks>"))
 
-        def build_parent_chain(task_id, parent_id):
+        def build_parent_chain(task_id, parent_name, thread_id, await_frames):
             """
             Recursively build the parent chain for a given task by:
             - Finding the parent's await-site frames
@@ -56,36 +67,71 @@ class Collector(ABC):
             - Add Program Root at the top of the chain
             - Cache results along the way to avoid redundant work
             """
-            if parent_id in cache:
-                return cache[parent_id]
+            def frame_signature(frame):
+                func = getattr(frame, "function", None)
+                if func is None:
+                    func = getattr(frame, "funcname", None)
+                return (
+                    getattr(frame, "filename", None),
+                    getattr(frame, "lineno", None),
+                    func,
+                )
 
-            if parent_id not in all_tasks:
-                return []
+            frames_signature = tuple(
+                frame_signature(frame) for frame in await_frames or []
+            )
+            cache_key = (task_id, parent_name, thread_id, frames_signature)
+            if cache_key in cache:
+                return cache[cache_key]
 
-            parent_info, _ = all_tasks[parent_id]
+            if not parent_name:
+                chain = list(await_frames or []) + [root_frame]
+                cache[cache_key] = chain
+                return chain
 
-            # Find the await-site frames for this parent relationship
-            await_frames = []
-            for coro_info in all_tasks[task_id][0].awaited_by:
-                if coro_info.task_name == parent_id:
-                    await_frames = list(coro_info.call_stack or [])
+            parent_entry = None
+            for candidate_info, candidate_tid in tasks_by_name.get(parent_name, []):
+                if candidate_tid == thread_id:
+                    parent_entry = (candidate_info, candidate_tid)
                     break
 
-            # Recursively build grandparent chain, or terminate with Program Root
-            if (parent_info.awaited_by and parent_info.awaited_by[0].task_name and
-                parent_info.awaited_by[0].task_name in all_tasks):
-                grandparent_id = parent_info.awaited_by[0].task_name
-                chain = await_frames + build_parent_chain(parent_id, grandparent_id)
-            else:
-                # Parent is root or grandparent not tracked
-                root_frame = FrameInfo(("<root>", 0, "<all tasks>"))
-                chain = await_frames + [root_frame]
+            if parent_entry is None:
+                chain = list(await_frames or []) + [root_frame]
+                cache[cache_key] = chain
+                return chain
 
-            cache[parent_id] = chain
+            parent_info, parent_thread = parent_entry
+
+            # Recursively build grandparent chain, or terminate with Program Root
+            grandparent_chain = resolve_parent_chain(
+                parent_info.task_id, parent_thread, parent_info.awaited_by
+            )
+            chain = list(await_frames or []) + grandparent_chain
+
+            cache[cache_key] = chain
             return chain
 
+        def resolve_parent_chain(task_id, thread_id, awaited_by_list):
+            """Find the best available parent chain for the given task.
+            Best means the longest chain (most frames) among all possible parents."""
+            best_chain = [root_frame]
+            for coro_info in awaited_by_list or []:
+                parent_name = coro_info.task_name
+                await_frames = list(coro_info.call_stack or [])
+                candidate = build_parent_chain(
+                    task_id,
+                    parent_name,
+                    thread_id,
+                    await_frames,
+                )
+                if len(candidate) > len(best_chain):
+                    best_chain = candidate
+                if len(best_chain) > 1:
+                    break
+            return best_chain
+
         # Yield one complete stack per task in LEAF→ROOT order
-        for task_id, (task_info, _) in all_tasks.items():
+        for task_id, (task_info, thread_id) in all_tasks.items():
             # Start with the task's own body frames (deepest frames first)
             body_frames = [
                 frame
@@ -93,21 +139,16 @@ class Collector(ABC):
                 for frame in (coro.call_stack or [])
             ]
 
-            if task_info.awaited_by and task_info.awaited_by[0].task_name:
+            if task_info.awaited_by:
                 # Add synthetic frame for the task itself
                 task_name = task_info.task_name or f"Task-{task_id}"
                 synthetic = FrameInfo(("<task>", 0, f"running {task_name}"))
 
                 # Append parent chain (await-site frames + parents recursively)
-                parent_id = task_info.awaited_by[0].task_name
-                if parent_id in all_tasks:
-                    parent_chain = build_parent_chain(task_id, parent_id)
-                    yield body_frames + [synthetic] + parent_chain, task_id
-                else:
-                    # No tracked parent, just add root marker
-                    root = FrameInfo(("<root>", 0, "<all tasks>"))
-                    yield body_frames + [synthetic, root], task_id
+                parent_chain = resolve_parent_chain(
+                    task_id, thread_id, task_info.awaited_by
+                )
+                yield body_frames + [synthetic] + parent_chain, task_id
             else:
                 # Root task: no synthetic marker needed, just add root marker
-                root = FrameInfo(("<root>", 0, "<all tasks>"))
-                yield body_frames + [root], task_id
+                yield body_frames + [root_frame], task_id
