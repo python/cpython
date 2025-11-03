@@ -2294,9 +2294,8 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
 
     PyModuleDef *def = _PyModule_GetDefOrNull(mod);
     if (def == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_BadInternalCall();
-        }
+        assert(!PyErr_Occurred());
+        PyErr_BadInternalCall();
         goto finally;
     }
 
