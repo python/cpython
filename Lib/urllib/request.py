@@ -1584,6 +1584,8 @@ class CacheFTPHandler(FTPHandler):
         key = user, host, port, '/'.join(dirs), timeout
         conn = self.cache.get(key)
         if conn is None or not conn.keepalive:
+            if conn is not None:
+                conn.close()
             conn = self.cache[key] = ftpwrapper(user, passwd, host, port,
                                                 dirs, timeout)
         self.timeout[key] = time.time() + self.delay
