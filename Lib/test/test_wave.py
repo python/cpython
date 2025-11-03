@@ -3,7 +3,9 @@ from test import audiotests
 from test import support
 import io
 import os
+import pathlib
 import struct
+import tempfile
 import sys
 import wave
 
@@ -204,6 +206,18 @@ class WaveLowLevelTest(unittest.TestCase):
                 wave.open(os.curdir, "wb")
             support.gc_collect()
             self.assertIsNone(cm.unraisable)
+
+    def test_open_pathlike(self):
+        """It is possible to use `wave.read` and `wave.write` with a path-like file"""
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            WAV_FILE = pathlib.Path(fp.name)
+            with wave.open(WAV_FILE, 'wb') as f:
+                f.setnchannels(1)
+                f.setsampwidth(2)
+                f.setframerate(44100)
+
+            with wave.open(WAV_FILE, 'rb') as f:
+                pass
 
 
 if __name__ == '__main__':
