@@ -214,6 +214,13 @@ New modules
 Improved modules
 ================
 
+dataclasses
+-----------
+
+* Annotations for generated ``__init__`` methods no longer include internal
+  type names.
+
+
 dbm
 ---
 
