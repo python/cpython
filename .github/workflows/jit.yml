@@ -166,7 +166,7 @@ jobs:
       fail-fast: false
       matrix:
         llvm:
-          - 20
+          - 21
     steps:
       - uses: actions/checkout@v4
         with:
