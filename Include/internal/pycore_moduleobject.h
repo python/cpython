@@ -43,15 +43,15 @@ typedef struct {
 #define _PyModule_CAST(op) \
     (assert(PyModule_Check(op)), _Py_CAST(PyModuleObject*, (op)))
 
-static inline PyModuleDef* _PyModule_GetDefOrNull(PyObject *arg) {
+static inline PyModuleDef *_PyModule_GetDefOrNull(PyObject *arg) {
     PyModuleObject *mod = _PyModule_CAST(arg);
     if (mod->md_token_is_def) {
-        return (PyModuleDef*)((PyModuleObject *)mod)->md_token;
+        return (PyModuleDef *)((PyModuleObject *)mod)->md_token;
     }
     return NULL;
 }
 
-static inline PyModuleDef* _PyModule_GetToken(PyObject *arg) {
+static inline PyModuleDef *_PyModule_GetToken(PyObject *arg) {
     PyModuleObject *mod = _PyModule_CAST(arg);
     return mod->md_token;
 }
