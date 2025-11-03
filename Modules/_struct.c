@@ -2758,10 +2758,7 @@ _structmodule_exec(PyObject *m)
         return -1;
     }
 
-    /* Check endian and swap in faster functions */
-    if (_PyOnceFlag_CallOnce(&endian_tables_init_once, init_endian_tables, NULL) == -1) {
-        return -1;
-    }
+    _PyOnceFlag_CallOnce(&endian_tables_init_once, init_endian_tables, NULL);
 
     /* Add some symbolic constants to the module */
     state->StructError = PyErr_NewException("struct.error", NULL, NULL);
