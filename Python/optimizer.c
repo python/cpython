@@ -100,7 +100,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
 }
 
 static _PyExecutorObject *
-make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
+make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies, PyObject *constant_pool);
 
 static int
 uop_optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *instr,
@@ -388,6 +388,7 @@ static int
 executor_traverse(PyObject *o, visitproc visit, void *arg)
 {
     _PyExecutorObject *executor = _PyExecutorObject_CAST(o);
+    Py_VISIT(executor->constant_pool);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         Py_VISIT(executor->exits[i].executor);
     }
@@ -1115,13 +1116,15 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
 /* Executor side exits */
 
 static _PyExecutorObject *
-allocate_executor(int exit_count, int length)
+allocate_executor(int exit_count, int length, PyObject *constant_pool)
 {
     int size = exit_count*sizeof(_PyExitData) + length*sizeof(_PyUOpInstruction);
     _PyExecutorObject *res = PyObject_GC_NewVar(_PyExecutorObject, &_PyUOpExecutor_Type, size);
     if (res == NULL) {
         return NULL;
     }
+    // Transfer ownership
+    res->constant_pool = constant_pool;
     res->trace = (_PyUOpInstruction *)(res->exits + exit_count);
     res->code_size = length;
     res->exit_count = exit_count;
@@ -1196,10 +1199,10 @@ sanity_check(_PyExecutorObject *executor)
  * and not a NOP.
  */
 static _PyExecutorObject *
-make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies)
+make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies, PyObject *constant_pool)
 {
     int exit_count = count_exits(buffer, length);
-    _PyExecutorObject *executor = allocate_executor(exit_count, length);
+    _PyExecutorObject *executor = allocate_executor(exit_count, length, constant_pool);
     if (executor == NULL) {
         return NULL;
     }
@@ -1293,6 +1296,7 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *constant_pool = NULL;
     if (interp->jit_uop_buffer == NULL) {
         interp->jit_uop_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
         if (interp->jit_uop_buffer == NULL) {
@@ -1316,7 +1320,7 @@ uop_optimize(
     if (!is_noopt) {
         length = _Py_uop_analyze_and_optimize(frame, buffer,
                                            length,
-                                           curr_stackentries, &dependencies);
+                                           curr_stackentries, &dependencies, &constant_pool);
         if (length <= 0) {
             return length;
         }
@@ -1339,7 +1343,7 @@ uop_optimize(
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
-    _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies);
+    _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies, constant_pool);
     if (executor == NULL) {
         return -1;
     }
@@ -1512,7 +1516,7 @@ _PyExecutor_GetColdExecutor(void)
     if (interp->cold_executor != NULL) {
         return interp->cold_executor;
     }
-    _PyExecutorObject *cold = allocate_executor(0, 1);
+    _PyExecutorObject *cold = allocate_executor(0, 1, NULL);
     if (cold == NULL) {
         Py_FatalError("Cannot allocate core JIT code");
     }
@@ -1574,6 +1578,8 @@ executor_clear(PyObject *op)
     assert(executor->vm_data.valid == 1);
     unlink_executor(executor);
     executor->vm_data.valid = 0;
+
+    Py_CLEAR(executor->constant_pool);
 
     /* It is possible for an executor to form a reference
      * cycle with itself, so decref'ing a side exit could

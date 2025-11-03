@@ -52,6 +52,7 @@ typedef struct _PyExitData {
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
     const _PyUOpInstruction *trace;
+    PyObject *constant_pool;
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
     uint32_t exit_count;
     uint32_t code_size;
@@ -98,7 +99,7 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 
 int _Py_uop_analyze_and_optimize(_PyInterpreterFrame *frame,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
-    _PyBloomFilter *dependencies);
+    _PyBloomFilter *dependencies, PyObject **constant_pool_ptr);
 
 extern PyTypeObject _PyUOpExecutor_Type;
 
@@ -278,6 +279,7 @@ typedef struct _JitOptContext {
     bool contradiction;
      // Has the builtins dict been watched?
     bool builtins_watched;
+    PyObject *constant_pool;
     // The current "executing" frame.
     _Py_UOpsAbstractFrame *frame;
     _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
@@ -324,8 +326,9 @@ extern bool _Py_uop_sym_is_compact_int(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_compact_int(JitOptContext *ctx);
 extern void _Py_uop_sym_set_compact_int(JitOptContext *ctx,  JitOptRef sym);
 
-extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
+extern int _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
+extern int _Py_uop_promote_to_constant_pool(JitOptContext *ctx, PyObject *obj);
 
 extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     JitOptContext *ctx,

@@ -153,6 +153,8 @@ incorrect_keys(PyObject *obj, uint32_t version)
     (INST)->oparg = ARG;            \
     (INST)->operand0 = OPERAND;
 
+#define PROMOTE_TO_CONSTANT_POOL _Py_uop_promote_to_constant_pool
+
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
 #define sym_is_const _Py_uop_sym_is_const
@@ -290,7 +292,8 @@ optimize_uops(
     _PyUOpInstruction *trace,
     int trace_len,
     int curr_stacklen,
-    _PyBloomFilter *dependencies
+    _PyBloomFilter *dependencies,
+    PyObject **constant_pool_ptr
 )
 {
     assert(!PyErr_Occurred());
@@ -310,9 +313,13 @@ optimize_uops(
         interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
     }
 
-    _Py_uop_abstractcontext_init(ctx);
+    if (_Py_uop_abstractcontext_init(ctx)) {
+        return 0;
+    }
+
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, curr_stacklen, NULL, 0);
     if (frame == NULL) {
+        _Py_uop_abstractcontext_fini(ctx);
         return 0;
     }
     frame->func = func;
@@ -367,6 +374,7 @@ optimize_uops(
 
     /* Either reached the end or cannot optimize further, but there
      * would be no benefit in retrying later */
+    *constant_pool_ptr = Py_NewRef(ctx->constant_pool);
     _Py_uop_abstractcontext_fini(ctx);
     if (first_valid_check_stack != NULL) {
         assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
@@ -522,14 +530,15 @@ _Py_uop_analyze_and_optimize(
     _PyUOpInstruction *buffer,
     int length,
     int curr_stacklen,
-    _PyBloomFilter *dependencies
+    _PyBloomFilter *dependencies,
+    PyObject **constant_pool_ptr
 )
 {
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
         _PyFrame_GetFunction(frame), buffer,
-        length, curr_stacklen, dependencies);
+        length, curr_stacklen, dependencies, constant_pool_ptr);
 
     if (length == 0) {
         return length;
