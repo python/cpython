@@ -67,6 +67,7 @@ _OTHER_SUPPORTED_TYPES = {
     'PyMethodDef',
     'PyMethodDef[]',
     'PyMemberDef[]',
+    'PyGetSetDef',
     'PyGetSetDef[]',
     'PyNumberMethods',
     'PySequenceMethods',

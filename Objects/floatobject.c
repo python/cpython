@@ -1484,6 +1484,7 @@ float_fromhex_impl(PyTypeObject *type, PyObject *string)
 }
 
 /*[clinic input]
+@permit_long_summary
 float.as_integer_ratio
 
 Return a pair of integers, whose ratio is exactly equal to the original float.
@@ -1501,7 +1502,7 @@ OverflowError on infinities and a ValueError on NaNs.
 
 static PyObject *
 float_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=65f25f0d8d30a712 input=d5ba7765655d75bd]*/
+/*[clinic end generated code: output=65f25f0d8d30a712 input=75ae9be7cecd82a3]*/
 {
     double self_double;
     double float_part;
@@ -1698,6 +1699,7 @@ typedef enum _py_float_format_type float_format_type;
 
 
 /*[clinic input]
+@permit_long_docstring_body
 @classmethod
 float.__getformat__
 
@@ -1716,7 +1718,7 @@ C type named by typestr.
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=90d5e246409a246e]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=d2735823bfe8e81e]*/
 {
     float_format_type r;
 

@@ -1328,6 +1328,7 @@ finally:
 
 
 /*[clinic input]
+@permit_long_summary
 _interpreters.is_shareable
     obj: object
 
@@ -1336,7 +1337,7 @@ Return True if the object's data may be shared between interpreters and False ot
 
 static PyObject *
 _interpreters_is_shareable_impl(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=227856926a22940b input=72b9a36bdf1d2a53]*/
+/*[clinic end generated code: output=227856926a22940b input=95f888d35a6d4bb3]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (_PyObject_CheckXIData(tstate, obj) == 0) {
@@ -1491,6 +1492,7 @@ _interpreters_decref_impl(PyObject *module, PyObject *id, int restricted)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 _interpreters.capture_exception
     exc as exc_arg: object = None
 
@@ -1502,7 +1504,7 @@ The returned snapshot is the same as what _interpreters.exec() returns.
 
 static PyObject *
 _interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg)
-/*[clinic end generated code: output=ef3f5393ef9c88a6 input=32045341e979bc9e]*/
+/*[clinic end generated code: output=ef3f5393ef9c88a6 input=6c4dcb78fb722217]*/
 {
     PyObject *exc = exc_arg;
     if (exc == NULL || exc == Py_None) {

@@ -1,9 +1,8 @@
 /* fcntl module */
 
-// Need limited C API version 3.14 for PyLong_AsNativeBytes() in AC code
-#include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030e0000
+// Argument Clinic uses the internal C API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
@@ -113,12 +112,12 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             return PyBytes_FromStringAndSize(buf, len);
         }
         else {
-            PyObject *result = PyBytes_FromStringAndSize(NULL, len);
-            if (result == NULL) {
+            PyBytesWriter *writer = PyBytesWriter_Create(len);
+            if (writer == NULL) {
                 PyBuffer_Release(&view);
                 return NULL;
             }
-            char *ptr = PyBytes_AsString(result);
+            char *ptr = PyBytesWriter_GetData(writer);
             memcpy(ptr, view.buf, len);
             PyBuffer_Release(&view);
 
@@ -131,15 +130,15 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 if (!async_err) {
                     PyErr_SetFromErrno(PyExc_OSError);
                 }
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
             if (ptr[len] != '\0') {
                 PyErr_SetString(PyExc_SystemError, "buffer overflow");
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
-            return result;
+            return PyBytesWriter_Finish(writer);
         }
 #undef FCNTL_BUFSZ
     }
@@ -152,6 +151,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 fcntl.ioctl
 
     fd: fildes
@@ -193,7 +193,7 @@ code.
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                  int mutate_arg)
-/*[clinic end generated code: output=f72baba2454d7a62 input=9c6cca5e2c339622]*/
+/*[clinic end generated code: output=f72baba2454d7a62 input=d7fe504d335449e2]*/
 {
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
        because the system expects it to be a 32bit bit field value
@@ -296,12 +296,12 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
             return PyBytes_FromStringAndSize(buf, len);
         }
         else {
-            PyObject *result = PyBytes_FromStringAndSize(NULL, len);
-            if (result == NULL) {
+            PyBytesWriter *writer = PyBytesWriter_Create(len);
+            if (writer == NULL) {
                 PyBuffer_Release(&view);
                 return NULL;
             }
-            char *ptr = PyBytes_AsString(result);
+            char *ptr = PyBytesWriter_GetData(writer);
             memcpy(ptr, view.buf, len);
             PyBuffer_Release(&view);
 
@@ -314,15 +314,15 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 if (!async_err) {
                     PyErr_SetFromErrno(PyExc_OSError);
                 }
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
             if (ptr[len] != '\0') {
                 PyErr_SetString(PyExc_SystemError, "buffer overflow");
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
-            return result;
+            return PyBytesWriter_Finish(writer);
         }
 #undef IOCTL_BUFSZ
     }
@@ -400,6 +400,7 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 fcntl.lockf
 
     fd: fildes
@@ -436,7 +437,7 @@ starts.  `whence` is as with fileobj.seek(), specifically:
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence)
-/*[clinic end generated code: output=4985e7a172e7461a input=5480479fc63a04b8]*/
+/*[clinic end generated code: output=4985e7a172e7461a input=f666662ec2edd775]*/
 {
     int ret;
     int async_err = 0;
