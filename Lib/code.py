@@ -217,7 +217,7 @@ class InteractiveConsole(InteractiveInterpreter):
         a default message is printed.
 
         """
-        from ._pyrepl.utils import DEFAULT_PS1, DEFAULT_PS2
+        from _pyrepl.utils import DEFAULT_PS1, DEFAULT_PS2
         try:
             sys.ps1
             delete_ps1_after = False
