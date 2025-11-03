@@ -38,18 +38,24 @@ class Collector(ABC):
     def _iter_async_frames(self, awaited_info_list):
         """
         Iterate over all async frame stacks from awaited info.
-        Yields one stack per task in LEAF→ROOT order: [task body, task marker, parent body, ..., Program Root]
         """
-        # Index all tasks by ID
+        # First, index all tasks by their IDs so we can look up parents easily
         all_tasks = {}
         for awaited_info in awaited_info_list:
             for task_info in awaited_info.awaited_by:
                 all_tasks[task_info.task_id] = (task_info, awaited_info.thread_id)
 
-        cache = {}  # Memoize parent chains
+        # Use a cache for memoizing parent chains so we don't recompute them repeatedly
+        cache = {}
 
         def build_parent_chain(task_id, parent_id):
-            """Build ancestor chain: [await-site frames, grandparent chain..., Program Root]"""
+            """
+            Recursively build the parent chain for a given task by:
+            - Finding the parent's await-site frames
+            - Recursing up the parent chain until reaching Program Root
+            - Add Program Root at the top of the chain
+            - Cache results along the way to avoid redundant work
+            """
             if parent_id in cache:
                 return cache[parent_id]
 
@@ -72,36 +78,36 @@ class Collector(ABC):
                 chain = await_frames + build_parent_chain(parent_id, grandparent_id)
             else:
                 # Parent is root or grandparent not tracked
-                root_frame = FrameInfo(("<thread>", 0, "Program Root"))
+                root_frame = FrameInfo(("<root>", 0, "<all tasks>"))
                 chain = await_frames + [root_frame]
 
             cache[parent_id] = chain
             return chain
 
-        # Yield one stack per task (including parents doing their own work)
-        for task_id, (task_info, thread_id) in all_tasks.items():
-            # Collect task's coroutine frames
+        # Yield one complete stack per task in LEAF→ROOT order
+        for task_id, (task_info, _) in all_tasks.items():
+            # Start with the task's own body frames (deepest frames first)
             body_frames = [
                 frame
                 for coro in (task_info.coroutine_stack or [])
                 for frame in (coro.call_stack or [])
             ]
 
-            # Build complete stack with parent chain
             if task_info.awaited_by and task_info.awaited_by[0].task_name:
-                # Child task: add synthetic marker to distinguish from parent
+                # Add synthetic frame for the task itself
                 task_name = task_info.task_name or f"Task-{task_id}"
                 synthetic = FrameInfo(("<task>", 0, f"running {task_name}"))
 
+                # Append parent chain (await-site frames + parents recursively)
                 parent_id = task_info.awaited_by[0].task_name
                 if parent_id in all_tasks:
                     parent_chain = build_parent_chain(task_id, parent_id)
-                    yield body_frames + [synthetic] + parent_chain, thread_id, 0
+                    yield body_frames + [synthetic] + parent_chain, task_id
                 else:
-                    # Parent not tracked, treat as root task
-                    root = FrameInfo(("<thread>", 0, "Program Root"))
-                    yield body_frames + [synthetic, root], thread_id, 0
+                    # No tracked parent, just add root marker
+                    root = FrameInfo(("<root>", 0, "<all tasks>"))
+                    yield body_frames + [synthetic, root], task_id
             else:
-                # Root task: no synthetic marker needed, just add Program Root
-                root = FrameInfo(("<thread>", 0, "Program Root"))
-                yield body_frames + [root], thread_id, 0
+                # Root task: no synthetic marker needed, just add root marker
+                root = FrameInfo(("<root>", 0, "<all tasks>"))
+                yield body_frames + [root], task_id
