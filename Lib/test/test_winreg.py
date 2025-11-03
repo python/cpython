@@ -209,6 +209,33 @@ class BaseWinregTests(unittest.TestCase):
                        access=KEY_ALL_ACCESS) as okey:
             self.assertTrue(okey.handle != 0)
 
+    def test_hkey_comparison(self):
+        """Test HKEY comparison by handle value rather than object identity."""
+        key1 = OpenKey(HKEY_CURRENT_USER, None)
+        key2 = OpenKey(HKEY_CURRENT_USER, None)
+        key3 = OpenKey(HKEY_LOCAL_MACHINE, None)
+
+        self.addCleanup(CloseKey, key1)
+        self.addCleanup(CloseKey, key2)
+        self.addCleanup(CloseKey, key3)
+
+        self.assertEqual(key1.handle, key2.handle)
+        self.assertTrue(key1 == key2)
+        self.assertFalse(key1 != key2)
+
+        self.assertTrue(key1 != key3)
+        self.assertFalse(key1 == key3)
+
+        # Closed keys should be equal (all have handle=0)
+        CloseKey(key1)
+        CloseKey(key2)
+        CloseKey(key3)
+
+        self.assertEqual(key1.handle, 0)
+        self.assertEqual(key2.handle, 0)
+        self.assertEqual(key3.handle, 0)
+        self.assertEqual(key2, key3)
+
 
 class LocalWinregTests(BaseWinregTests):
 
