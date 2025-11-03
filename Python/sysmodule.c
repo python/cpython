@@ -610,7 +610,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 
     if (last_dot == NULL) {
         /* The breakpoint is a built-in, e.g. PYTHONBREAKPOINT=int */
-        modulepath = PyUnicode_FromString("builtins");
+        modulepath = &_Py_ID(builtins);
         attrname = envar;
     }
     else if (last_dot != envar) {
@@ -3045,7 +3045,7 @@ get_warnoptions(PyThreadState *tstate)
     return warnoptions;
 }
 
-void
+PyAPI_FUNC(void)
 PySys_ResetWarnOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -3268,6 +3268,7 @@ PyDoc_STR(
 "\n\
 Static objects:\n\
 \n\
+abi_info -- Python ABI information.\n\
 builtin_module_names -- tuple of module names built into this interpreter\n\
 copyright -- copyright notice pertaining to this interpreter\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
@@ -3638,6 +3639,66 @@ error:
     return NULL;
 }
 
+
+static PyObject *
+make_abi_info(void)
+{
+    // New entries should be added when needed for a supported platform,
+    // or by core dev consensus for enabling an unsupported one.
+
+    PyObject *value;
+    PyObject *abi_info = PyDict_New();
+    if (abi_info == NULL) {
+        return NULL;
+    }
+
+    value = PyLong_FromLong(sizeof(void *) * 8);
+    if (value == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItem(abi_info, &_Py_ID(pointer_bits), value) < 0) {
+        goto error;
+    }
+    Py_DECREF(value);
+
+#ifdef Py_GIL_DISABLED
+    value = Py_True;
+#else
+    value = Py_False;
+#endif
+    if (PyDict_SetItem(abi_info, &_Py_ID(free_threaded), value) < 0) {
+        goto error;
+    }
+
+#ifdef Py_DEBUG
+    value = Py_True;
+#else
+    value = Py_False;
+#endif
+    if (PyDict_SetItem(abi_info, &_Py_ID(debug), value) < 0) {
+        goto error;
+    }
+
+#if PY_BIG_ENDIAN
+    value = &_Py_ID(big);
+#else
+    value = &_Py_ID(little);
+#endif
+    if (PyDict_SetItem(abi_info, &_Py_ID(byteorder), value) < 0) {
+        goto error;
+    }
+
+    PyObject *ns = _PyNamespace_New(abi_info);
+    Py_DECREF(abi_info);
+    return ns;
+
+error:
+    Py_DECREF(abi_info);
+    Py_XDECREF(value);
+    return NULL;
+}
+
+
 #ifdef __EMSCRIPTEN__
 
 PyDoc_STRVAR(emscripten_info__doc__,
@@ -3812,9 +3873,9 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("builtin_module_names", list_builtin_module_names());
     SET_SYS("stdlib_module_names", list_stdlib_module_names());
 #if PY_BIG_ENDIAN
-    SET_SYS_FROM_STRING("byteorder", "big");
+    SET_SYS("byteorder", &_Py_ID(big));
 #else
-    SET_SYS_FROM_STRING("byteorder", "little");
+    SET_SYS("byteorder", &_Py_ID(little));
 #endif
 
 #ifdef MS_COREDLL
@@ -3856,12 +3917,14 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
 #if _PY_SHORT_FLOAT_REPR == 1
-    SET_SYS_FROM_STRING("float_repr_style", "short");
+    SET_SYS("float_repr_style", &_Py_ID(short));
 #else
-    SET_SYS_FROM_STRING("float_repr_style", "legacy");
+    SET_SYS("float_repr_style", &_Py_ID(legacy));
 #endif
 
     SET_SYS("thread_info", PyThread_GetInfo());
+
+    SET_SYS("abi_info", make_abi_info());
 
     /* initialize asyncgen_hooks */
     if (_PyStructSequence_InitBuiltin(interp, &AsyncGenHooksType,

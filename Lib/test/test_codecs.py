@@ -3873,26 +3873,22 @@ class Rot13UtilTest(unittest.TestCase):
 class CodecNameNormalizationTest(unittest.TestCase):
     """Test codec name normalization"""
     def test_codecs_lookup(self):
-        FOUND = (1, 2, 3, 4)
-        NOT_FOUND = (None, None, None, None)
         def search_function(encoding):
-            if encoding == "aaa_8":
-                return FOUND
+            if encoding.startswith("test."):
+                return (encoding, 2, 3, 4)
             else:
-                return NOT_FOUND
+                return None
 
         codecs.register(search_function)
         self.addCleanup(codecs.unregister, search_function)
-        self.assertEqual(FOUND, codecs.lookup('aaa_8'))
-        self.assertEqual(FOUND, codecs.lookup('AAA-8'))
-        self.assertEqual(FOUND, codecs.lookup('AAA---8'))
-        self.assertEqual(FOUND, codecs.lookup('AAA   8'))
-        self.assertEqual(FOUND, codecs.lookup('aaa\xe9\u20ac-8'))
-        self.assertEqual(NOT_FOUND, codecs.lookup('AAA.8'))
-        self.assertEqual(NOT_FOUND, codecs.lookup('AAA...8'))
-        self.assertEqual(NOT_FOUND, codecs.lookup('BBB-8'))
-        self.assertEqual(NOT_FOUND, codecs.lookup('BBB.8'))
-        self.assertEqual(NOT_FOUND, codecs.lookup('a\xe9\u20ac-8'))
+        self.assertEqual(codecs.lookup('test.aaa_8'), ('test.aaa_8', 2, 3, 4))
+        self.assertEqual(codecs.lookup('TEST.AAA-8'), ('test.aaa-8', 2, 3, 4))
+        self.assertEqual(codecs.lookup('TEST.AAA 8'), ('test.aaa-8', 2, 3, 4))
+        self.assertEqual(codecs.lookup('TEST.AAA---8'), ('test.aaa---8', 2, 3, 4))
+        self.assertEqual(codecs.lookup('TEST.AAA   8'), ('test.aaa---8', 2, 3, 4))
+        self.assertEqual(codecs.lookup('TEST.AAA\xe9\u20ac-8'), ('test.aaa\xe9\u20ac-8', 2, 3, 4))
+        self.assertEqual(codecs.lookup('TEST.AAA.8'), ('test.aaa.8', 2, 3, 4))
+        self.assertEqual(codecs.lookup('TEST.AAA...8'), ('test.aaa...8', 2, 3, 4))
 
     def test_encodings_normalize_encoding(self):
         # encodings.normalize_encoding() ignores non-ASCII characters.
