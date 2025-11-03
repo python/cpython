@@ -219,7 +219,7 @@ struct _ts {
     _PyRemoteDebuggerSupport remote_debugger_support;
 
 #ifdef Py_STATS
-    // Pointer PyStats structure, NULL if recording is off.  For the
+    // Pointer to PyStats structure, NULL if recording is off.  For the
     // free-threaded build, the structure is per-thread (stored as a pointer
     // in _PyThreadStateImpl).  For the default build, the structure is stored
     // in the PyInterpreterState structure (threads do not have their own
