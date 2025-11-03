@@ -1,7 +1,6 @@
 from collections import abc
 from itertools import combinations
 import array
-from concurrent.futures import InterpreterPoolExecutor
 import gc
 import math
 import operator
@@ -804,6 +803,8 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_endian_table_init_subinterpreters(self):
         # Verify that the _struct extension module can be initialized
         # concurrently in subinterpreters (gh-140260).
+        from concurrent.futures import InterpreterPoolExecutor
+
         code = "import struct"
         with InterpreterPoolExecutor(max_workers=5) as executor:
             results = executor.map(support.run_in_subinterp, [code] * 5)
