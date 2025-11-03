@@ -197,7 +197,7 @@ PyAPI_FUNC(PyStats *) _PyStats_GetLocal(void);
 
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
 // use inline function version defined in cpython/pystate.h
-static inline PyStats* _PyThreadState_GetStatsFast(void);
+static inline PyStats *_PyThreadState_GetStatsFast(void);
 #define _PyStats_GET _PyThreadState_GetStatsFast
 #else
 #define _PyStats_GET _PyStats_GetLocal

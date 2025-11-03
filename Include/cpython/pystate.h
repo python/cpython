@@ -250,7 +250,7 @@ PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
 
 #ifdef Py_STATS
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
-extern _Py_thread_local PyThreadState* _Py_tss_tstate;
+extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 
 static inline PyStats*
 _PyThreadState_GetStatsFast(void)
