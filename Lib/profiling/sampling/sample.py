@@ -154,7 +154,7 @@ class SampleProfiler:
         self.total_samples = 0
         self.realtime_stats = False
 
-    def sample(self, collector, duration_sec=10):
+    def sample(self, collector, async_aware, duration_sec=10):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
         running_time = 0
         num_samples = 0
@@ -168,7 +168,10 @@ class SampleProfiler:
             current_time = time.perf_counter()
             if next_time < current_time:
                 try:
-                    stack_frames = self.unwinder.get_stack_trace()
+                    if async_aware:
+                        stack_frames = self.unwinder.get_all_awaited_by()
+                    else:
+                        stack_frames = self.unwinder.get_stack_trace()
                     collector.collect(stack_frames)
                 except ProcessLookupError:
                     duration_sec = current_time - start_time
@@ -613,6 +616,7 @@ def sample(
     output_format="pstats",
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
+    async_aware=False,
 ):
     profiler = SampleProfiler(
         pid, sample_interval_usec, all_threads=all_threads, mode=mode
@@ -638,7 +642,7 @@ def sample(
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
 
-    profiler.sample(collector, duration_sec)
+    profiler.sample(collector, async_aware, duration_sec)
 
     if output_format == "pstats" and not filename:
         stats = pstats.SampledStats(collector).strip_dirs()
@@ -706,6 +710,7 @@ def wait_for_process_and_sample(pid, sort_value, args):
         output_format=args.format,
         realtime_stats=args.realtime_stats,
         mode=mode,
+        async_aware=args.async_aware,
     )
 
 
@@ -758,6 +763,13 @@ def main():
         action="store_true",
         default=False,
         help="Print real-time sampling statistics (Hz, mean, min, max, stdev) during profiling",
+    )
+
+    sampling_group.add_argument(
+        "--async-aware",
+        action="store_true",
+        default=False,
+        help="Enable async-aware sampling (experimental)",
     )
 
     # Mode options
@@ -915,6 +927,7 @@ def main():
             output_format=args.format,
             realtime_stats=args.realtime_stats,
             mode=mode,
+            async_aware=args.async_aware,
         )
     elif args.module or args.args:
         if args.module:

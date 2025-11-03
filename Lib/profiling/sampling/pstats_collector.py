@@ -41,8 +41,14 @@ class PstatsCollector(Collector):
             self.callers[callee][caller] += 1
 
     def collect(self, stack_frames):
-        for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
-            self._process_frames(frames)
+        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
+            # Async frame processing
+            for frames, thread_id, _depth in self._iter_async_frames(stack_frames):
+                self._process_frames(frames)
+        else:
+            # Regular frame processing
+            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
+                self._process_frames(frames)
 
     def export(self, filename):
         self.create_stats()
