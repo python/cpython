@@ -1014,6 +1014,7 @@ class _TestProcess(BaseTestCase):
         if proc.exitcode != 0:
             errs.append("process reported non-zero exit code")
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_racing_joins(self):
         if self.TYPE == "threads":
             self.skipTest(f"test not appropriate for {self.TYPE}")
