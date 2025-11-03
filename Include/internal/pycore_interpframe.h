@@ -29,6 +29,12 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
 static inline PyCodeObject*
 _PyFrame_SafeGetCode(_PyInterpreterFrame *f)
 {
+    // globals and builtins may be NULL on a legit frame, but it's unlikely.
+    // It's more likely that it's a sign of an invalid frame.
+    if (f->f_globals == NULL || f->f_builtins == NULL) {
+        return NULL;
+    }
+
     if (PyStackRef_IsNull(f->f_executable)) {
         return NULL;
     }
