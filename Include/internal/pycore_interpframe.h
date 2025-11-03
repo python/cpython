@@ -25,7 +25,8 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
 }
 
 // Similar to _PyFrame_GetCode(), but return NULL if the frame is invalid or
-// freed. Used by dump_frame() in Python/traceback.c.
+// freed. Used by dump_frame() in Python/traceback.c. The function uses
+// heuristics to detect freed memory, it's not 100% reliable.
 static inline PyCodeObject*
 _PyFrame_SafeGetCode(_PyInterpreterFrame *f)
 {
@@ -66,9 +67,9 @@ _PyFrame_GetBytecode(_PyInterpreterFrame *f)
 #endif
 }
 
-// Similar to PyUnstable_InterpreterFrame_GetLasti(), but return NULL
-// if the frame is invalid or freed.
-// Used by dump_frame() in Python/traceback.c.
+// Similar to PyUnstable_InterpreterFrame_GetLasti(), but return NULL if the
+// frame is invalid or freed. Used by dump_frame() in Python/traceback.c. The
+// function uses heuristics to detect freed memory, it's not 100% reliable.
 static inline int
 _PyFrame_SafeGetLasti(struct _PyInterpreterFrame *f)
 {
