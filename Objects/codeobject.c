@@ -1006,7 +1006,7 @@ failed:
  ******************/
 
 int
-PyCode_Addr2Line(PyCodeObject *co, int addrq)
+_PyCode_Addr2LineNoTstate(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
@@ -1018,6 +1018,16 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
+}
+
+int
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
+{
+    int lineno;
+    Py_BEGIN_CRITICAL_SECTION(co);
+    lineno = _PyCode_Addr2LineNoTstate(co, addrq);
+    Py_END_CRITICAL_SECTION();
+    return lineno;
 }
 
 void
@@ -2715,6 +2725,7 @@ code_branchesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 /*[clinic input]
+@permit_long_summary
 @text_signature "($self, /, **changes)"
 code.replace
 
@@ -2751,7 +2762,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_filename, PyObject *co_name,
                   PyObject *co_qualname, PyObject *co_linetable,
                   PyObject *co_exceptiontable)
-/*[clinic end generated code: output=e75c48a15def18b9 input=a455a89c57ac9d42]*/
+/*[clinic end generated code: output=e75c48a15def18b9 input=e944fdac8b456114]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \

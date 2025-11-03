@@ -81,10 +81,13 @@ struct PyModuleDef_Slot {
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 #  define Py_mod_gil 4
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+#  define Py_mod_abi 5
+#endif
 
 
 #ifndef Py_LIMITED_API
-#define _Py_mod_LAST_SLOT 4
+#define _Py_mod_LAST_SLOT 5
 #endif
 
 #endif /* New in 3.5 */

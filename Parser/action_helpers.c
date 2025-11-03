@@ -1612,19 +1612,46 @@ _build_concatenated_bytes(Parser *p, asdl_expr_seq *strings, int lineno,
     Py_ssize_t len = asdl_seq_LEN(strings);
     assert(len > 0);
 
-    PyObject* res = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-
     /* Bytes literals never get a kind, but just for consistency
         since they are represented as Constant nodes, we'll mirror
         the same behavior as unicode strings for determining the
         kind. */
-    PyObject* kind = asdl_seq_GET(strings, 0)->v.Constant.kind;
+    PyObject *kind = asdl_seq_GET(strings, 0)->v.Constant.kind;
+
+    Py_ssize_t total = 0;
     for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty elem = asdl_seq_GET(strings, i);
-        PyBytes_Concat(&res, elem->v.Constant.value);
+        PyObject *bytes = elem->v.Constant.value;
+        Py_ssize_t part = PyBytes_GET_SIZE(bytes);
+        if (part > PY_SSIZE_T_MAX - total) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        total += part;
     }
-    if (!res || _PyArena_AddPyObject(arena, res) < 0) {
-        Py_XDECREF(res);
+
+    PyBytesWriter *writer = PyBytesWriter_Create(total);
+    if (writer == NULL) {
+        return NULL;
+    }
+    char *out = PyBytesWriter_GetData(writer);
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        expr_ty elem = asdl_seq_GET(strings, i);
+        PyObject *bytes = elem->v.Constant.value;
+        Py_ssize_t part = PyBytes_GET_SIZE(bytes);
+        if (part > 0) {
+            memcpy(out, PyBytes_AS_STRING(bytes), part);
+            out += part;
+        }
+    }
+
+    PyObject *res = PyBytesWriter_Finish(writer);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(arena, res) < 0) {
+        Py_DECREF(res);
         return NULL;
     }
     return _PyAST_Constant(res, kind, lineno, col_offset, end_lineno, end_col_offset, p->arena);
@@ -1939,6 +1966,9 @@ _PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts) {
         return stmts;
     }
     stmt_ty last_stmt = asdl_seq_GET(stmts, len - 1);
+    if (p->last_stmt_location.lineno > last_stmt->lineno) {
+        return stmts;
+    }
     p->last_stmt_location.lineno = last_stmt->lineno;
     p->last_stmt_location.col_offset = last_stmt->col_offset;
     p->last_stmt_location.end_lineno = last_stmt->end_lineno;
