@@ -1062,7 +1062,7 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     PUTS(fd, ", line ");
     int lasti = _PyFrame_SafeGetLasti(frame);
     int lineno = -1;
-    if (0 <= lasti) {
+    if (lasti >= 0) {
         lineno = _PyCode_SafeAddr2Line(code, lasti);
     }
     if (lineno >= 0) {
