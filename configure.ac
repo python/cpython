@@ -8218,10 +8218,10 @@ AS_VAR_IF([enable_experimental_jit], [no],
       JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
       ;;
     aarch64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-aarch64-pc-linux-gnu.h"
       ;;
     x86_64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-x86_64-pc-linux-gnu.h"
       ;;
   esac])
 
