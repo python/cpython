@@ -134,6 +134,18 @@ class Orderable:
     def __hash__(self):
         return self._hash
 
+
+class CustomPrintable:
+    def __str__(self):
+        return "my str"
+
+    def __repr__(self):
+        return "my str"
+
+    def __pprint__(self, context, maxlevels, level):
+        return "my pprint"
+
+
 class QueryTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -1471,6 +1483,13 @@ ValuesView({'a': 6,
     'brown fox '
     'jumped over a '
     'lazy dog'}""")
+
+    def test_custom_pprinter(self):
+        stream = io.StringIO()
+        pp = pprint.PrettyPrinter(stream=stream)
+        custom_obj = CustomPrintable()
+        pp.pprint(custom_obj)
+        self.assertEqual(stream.getvalue(), "my pprint\n")
 
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):

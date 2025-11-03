@@ -28,6 +28,9 @@ adjustable by the *width* parameter defaulting to 80 characters.
 .. versionchanged:: 3.10
    Added support for pretty-printing :class:`dataclasses.dataclass`.
 
+.. versionchanged:: 3.15
+   Added support for the :ref:`__pprint__ <dunder-pprint>` protocol.
+
 .. _pprint-functions:
 
 Functions
@@ -253,6 +256,16 @@ are converted to strings.  The default implementation uses the internals of the
    calls. The fourth argument, *level*, gives the current level; recursive calls
    should be passed a value less than that of the current call.
 
+.. _dunder-pprint:
+
+The "__pprint__" protocol
+-------------------------
+
+Pretty printing will use an object's ``__repr__`` by default.  For custom pretty printing, objects can
+implement a ``__pprint__()`` function to customize how their representations will be printed.  If this method
+exists, it is called with 4 arguments, exactly matching the API of :meth:`PrettyPrinter.format()`.  The
+``__pprint__()`` method is expected to return a string, which is used as the pretty printed representation of
+the object.
 
 .. _pprint-example:
 
@@ -418,3 +431,12 @@ cannot be split, the specified width will be exceeded::
     'requires_python': None,
     'summary': 'A sample Python project',
     'version': '1.2.0'}
+
+A custom ``__pprint__()`` method can be used to customize the representation of the object::
+
+    >>> class Custom:
+    ...     def __str__(self): return 'my str'
+    ...     def __repr__(self): return 'my repr'
+    ...     def __pprint__(self, context, maxlevels, level): return 'my pprint'
+    >>> pprint.pp(Custom())
+    my pprint

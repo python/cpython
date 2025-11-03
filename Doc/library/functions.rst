@@ -1587,17 +1587,23 @@ are always available.  They are listed here in alphabetical order.
       supported.
 
 
-.. function:: print(*objects, sep=' ', end='\n', file=None, flush=False)
+.. function:: print(*objects, sep=' ', end='\n', file=None, flush=False, pretty=None)
 
-   Print *objects* to the text stream *file*, separated by *sep* and followed
-   by *end*.  *sep*, *end*, *file*, and *flush*, if present, must be given as keyword
-   arguments.
+   Print *objects* to the text stream *file*, separated by *sep* and followed by
+   *end*.  *sep*, *end*, *file*, *flush*, and *pretty*, if present, must be
+   given as keyword arguments.
 
-   All non-keyword arguments are converted to strings like :func:`str` does and
-   written to the stream, separated by *sep* and followed by *end*.  Both *sep*
-   and *end* must be strings; they can also be ``None``, which means to use the
-   default values.  If no *objects* are given, :func:`print` will just write
-   *end*.
+   When *pretty* is ``None``, all non-keyword arguments are converted to
+   strings like :func:`str` does and written to the stream, separated by *sep*
+   and followed by *end*.  Both *sep* and *end* must be strings; they can also
+   be ``None``, which means to use the default values.  If no *objects* are
+   given, :func:`print` will just write *end*.
+
+   When *pretty* is given, it signals that the objects should be "pretty
+   printed".  *pretty* can be ``True`` or an object implementing the
+   :method:`PrettyPrinter.pprint()` API which takes an object and returns a
+   formatted representation of the object.  When *pretty* is ``True``, then it
+   actually does call ``PrettyPrinter.pformat()`` explicitly.
 
    The *file* argument must be an object with a ``write(string)`` method; if it
    is not present or ``None``, :data:`sys.stdout` will be used.  Since printed
@@ -1610,6 +1616,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.
+
+   .. versionchanged:: 3.15
+      Added the *pretty* keyword argument.
 
 
 .. class:: property(fget=None, fset=None, fdel=None, doc=None)
