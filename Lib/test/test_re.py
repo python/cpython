@@ -1639,6 +1639,25 @@ class ReTests(unittest.TestCase):
                          (['sum', 'op=', 3, 'op*', 'foo', 'op+', 312.5,
                            'op+', 'bar'], ''))
 
+    def test_bug_140797(self):
+        #bug 140797: remove capturing groups compilation form re.Scanner
+
+        #Presence of Capturing group throws an error
+        lex = [("(a)b", None)]
+        with self.assertRaises(ValueError):
+            Scanner(lex)
+
+        #Presence of non-capturing groups should pass normally
+        s = Scanner([("(?:a)b", lambda scanner, token: token)])
+        result, rem = s.scan("ab")
+        self.assertEqual(result,['ab'])
+        self.assertEqual(rem,'')
+
+        #Testing a very complex capturing group
+        pattern= "(?P<name>a)"
+        with self.assertRaises(ValueError):
+            Scanner([(pattern, None)])
+
     def test_bug_448951(self):
         # bug 448951 (similar to 429357, but with single char match)
         # (Also test greedy matches.)
