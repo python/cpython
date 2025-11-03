@@ -1194,6 +1194,21 @@ class TestGetAnnotations(unittest.TestCase):
             },
         )
 
+    def test_nonlocal_in_annotation_scope(self):
+        class Demo:
+            nonlocal sequence_b
+            x: sequence_b
+            y: sequence_b[int]
+
+        fwdrefs = get_annotations(Demo, format=Format.FORWARDREF)
+
+        self.assertIsInstance(fwdrefs["x"], ForwardRef)
+        self.assertIsInstance(fwdrefs["y"], ForwardRef)
+
+        sequence_b = list
+        self.assertIs(fwdrefs["x"].evaluate(), list)
+        self.assertEqual(fwdrefs["y"].evaluate(), list[int])
+
     def test_raises_error_from_value(self):
         # test that if VALUE is the only supported format, but raises an error
         # that error is propagated from get_annotations
