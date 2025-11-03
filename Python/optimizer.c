@@ -118,7 +118,9 @@ _PyOptimizer_Optimize(
 {
     _PyStackRef *stack_pointer = frame->stackpointer;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->jit);
+    if (!interp->jit) {
+        return 0;
+    }
     assert(!interp->compiling);
 #ifndef Py_GIL_DISABLED
     interp->compiling = true;
