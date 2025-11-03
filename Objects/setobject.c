@@ -106,7 +106,7 @@ set_compare_threadsafe(PySetObject *so, setentry *table, setentry *ep,
     }
     Py_ssize_t ep_hash = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(ep->hash);
     if (ep_hash == hash) {
-        if (startkey == NULL || !_Py_TryIncrefCompare(&ep->key, startkey)) {
+        if (!_Py_TryIncrefCompare(&ep->key, startkey)) {
             return SET_LOOKKEY_CHANGED;
         }
         int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -135,9 +135,10 @@ set_compare_threadsafe(PySetObject *so, setentry *table, setentry *ep,
 #endif
 
 static inline Py_ALWAYS_INLINE int
-set_compare_entry(PySetObject *so, setentry *table, setentry *entry,
-                  PyObject *key, Py_hash_t hash)
+set_compare_entry_lock_held(PySetObject *so, setentry *table, setentry *entry,
+                            PyObject *key, Py_hash_t hash)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
     if (entry->hash == 0 && entry->key == NULL)
         return SET_LOOKKEY_EMPTY;
     if (entry->hash == hash) {
@@ -163,10 +164,10 @@ set_compare_entry(PySetObject *so, setentry *table, setentry *entry,
     return SET_LOOKKEY_NO_MATCH;
 }
 
-// This is similar to set_compare_entry() but we don't need to incref startkey
-// before comparing and we don't need to check if the set has changed.  This
-// also omits the PyUnicode_CheckExact() special case since it doesn't help
-// much for frozensets.
+// This is similar to set_compare_entry_lock_held() but we don't need to
+// incref startkey before comparing and we don't need to check if the set has
+// changed.  This also omits the PyUnicode_CheckExact() special case since it
+// doesn't help much for frozensets.
 static inline Py_ALWAYS_INLINE int
 set_compare_frozenset(PySetObject *so, setentry *table, setentry *ep,
                                  PyObject *key, Py_hash_t hash)
@@ -418,7 +419,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash, setentry **epp)
         Py_BEGIN_CRITICAL_SECTION(so);
         do {
             status = set_do_lookup(so, so->table, so->mask, key, hash, epp,
-                                   set_compare_entry);
+                                   set_compare_entry_lock_held);
         } while (status == SET_LOOKKEY_CHANGED);
         Py_END_CRITICAL_SECTION();
     }
@@ -2439,10 +2440,12 @@ _PySet_Contains(PySetObject *so, PyObject *key)
             return -1;
         }
         PyErr_Clear();
+        // Note that 'key' could be a set() or frozenset() object.  Unlike most
+        // container types, set allows membership testing with a set key, even
+        // though it is not hashable.
         Py_BEGIN_CRITICAL_SECTION(key);
         hash = frozenset_hash_impl(key);
         Py_END_CRITICAL_SECTION();
-        return set_contains_entry(so, key, hash);
     }
     return set_contains_entry(so, key, hash);
 }
