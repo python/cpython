@@ -3,7 +3,15 @@
 This module only exists to provide OS-specific code
 for urllib.requests, thus do not use directly.
 """
-# Testing is done through test_urllib.
+# Testing is done through test_nturl2path.
+
+import warnings
+
+
+warnings._deprecated(
+    __name__,
+    message=f"{warnings._DEPRECATED_MSG}; use 'urllib.request' instead",
+    remove=(3, 19))
 
 def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme

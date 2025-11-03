@@ -123,26 +123,6 @@ Wave_read Objects
 
       Rewind the file pointer to the beginning of the audio stream.
 
-   The following two methods are defined for compatibility with the old :mod:`!aifc`
-   module, and don't do anything interesting.
-
-
-   .. method:: getmarkers()
-
-      Returns ``None``.
-
-      .. deprecated-removed:: 3.13 3.15
-         The method only existed for compatibility with the :mod:`!aifc` module
-         which has been removed in Python 3.13.
-
-
-   .. method:: getmark(id)
-
-      Raise an error.
-
-      .. deprecated-removed:: 3.13 3.15
-         The method only existed for compatibility with the :mod:`!aifc` module
-         which has been removed in Python 3.13.
 
    The following two methods define a term "position" which is compatible between
    them, and is otherwise implementation dependent.

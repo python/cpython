@@ -8,8 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime_structs.h"
-#include "pycore_pystate.h"
+#include "pycore_interp_structs.h" // PyGC_Head
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
 
 
 /* Get an object's GC head */
@@ -204,6 +205,12 @@ static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
 #endif
 }
 
+extern void _Py_ScheduleGC(PyThreadState *tstate);
+
+#ifndef Py_GIL_DISABLED
+extern void _Py_TriggerGC(struct _gc_runtime_state *gcstate);
+#endif
+
 
 /* Tell the GC to track this object.
  *
@@ -237,14 +244,19 @@ static inline void _PyObject_GC_TRACK(
                           "object is in generation which is garbage collected",
                           filename, lineno, __func__);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyGC_Head *generation0 = &interp->gc.young.head;
+    struct _gc_runtime_state *gcstate = &_PyInterpreterState_GET()->gc;
+    PyGC_Head *generation0 = &gcstate->young.head;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
-    uintptr_t not_visited = 1 ^ interp->gc.visited_space;
+    uintptr_t not_visited = 1 ^ gcstate->visited_space;
     gc->_gc_next = ((uintptr_t)generation0) | not_visited;
     generation0->_gc_prev = (uintptr_t)gc;
+    gcstate->young.count++; /* number of tracked GC objects */
+    gcstate->heap_size++;
+    if (gcstate->young.count > gcstate->young.threshold) {
+        _Py_TriggerGC(gcstate);
+    }
 #endif
 }
 
@@ -279,6 +291,11 @@ static inline void _PyObject_GC_UNTRACK(
     _PyGCHead_SET_PREV(next, prev);
     gc->_gc_next = 0;
     gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
+    struct _gc_runtime_state *gcstate = &_PyInterpreterState_GET()->gc;
+    if (gcstate->young.count > 0) {
+        gcstate->young.count--;
+    }
+    gcstate->heap_size--;
 #endif
 }
 
@@ -342,24 +359,13 @@ extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 
 // Functions to clear types free lists
 extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
-extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
 
 union _PyStackRef;
 
 // GC visit callback for tracked interpreter frames
-extern int _PyGC_VisitFrameStack(struct _PyInterpreterFrame *frame, visitproc visit, void *arg);
+extern int _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg);
 extern int _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *arg);
-
-// Like Py_VISIT but for _PyStackRef fields
-#define _Py_VISIT_STACKREF(ref)                                         \
-    do {                                                                \
-        if (!PyStackRef_IsNull(ref)) {                                  \
-            int vret = _PyGC_VisitStackRef(&(ref), visit, arg);         \
-            if (vret)                                                   \
-                return vret;                                            \
-        }                                                               \
-    } while (0)
 
 #ifdef Py_GIL_DISABLED
 extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,

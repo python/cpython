@@ -61,4 +61,38 @@ _testcapi_py_fopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e943bbd7f181d079 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testcapi_py_universalnewlinefgets__doc__,
+"py_universalnewlinefgets($module, file, size, /)\n"
+"--\n"
+"\n"
+"Read a line from a file using Py_UniversalNewlineFgets.");
+
+#define _TESTCAPI_PY_UNIVERSALNEWLINEFGETS_METHODDEF    \
+    {"py_universalnewlinefgets", _PyCFunction_CAST(_testcapi_py_universalnewlinefgets), METH_FASTCALL, _testcapi_py_universalnewlinefgets__doc__},
+
+static PyObject *
+_testcapi_py_universalnewlinefgets_impl(PyObject *module, PyObject *file,
+                                        int size);
+
+static PyObject *
+_testcapi_py_universalnewlinefgets(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *file;
+    int size;
+
+    if (!_PyArg_CheckPositional("py_universalnewlinefgets", nargs, 2, 2)) {
+        goto exit;
+    }
+    file = args[0];
+    size = PyLong_AsInt(args[1]);
+    if (size == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _testcapi_py_universalnewlinefgets_impl(module, file, size);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=a5ed111054e3a0bc input=a9049054013a1b77]*/

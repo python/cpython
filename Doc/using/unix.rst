@@ -53,7 +53,7 @@ In some cases, IDLE might not be included in your Python installation.
 
 * For SUSE and OpenSUSE users::
 
-   sudo zypper in python3-idle
+   sudo zypper install python3-idle
 
 * For Alpine Linux users::
 

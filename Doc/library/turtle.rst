@@ -1,6 +1,6 @@
-=================================
-:mod:`turtle` --- Turtle graphics
-=================================
+==================================
+:mod:`!turtle` --- Turtle graphics
+==================================
 
 .. module:: turtle
    :synopsis: An educational framework for simple graphics applications
@@ -777,13 +777,17 @@ Turtle motion
       180.0
 
 
-.. function:: dot(size=None, *color)
+.. function:: dot()
+              dot(size)
+              dot(color, /)
+              dot(size, color, /)
+              dot(size, r, g, b, /)
 
    :param size: an integer >= 1 (if given)
    :param color: a colorstring or a numeric color tuple
 
    Draw a circular dot with diameter *size*, using *color*.  If *size* is
-   not given, the maximum of pensize+4 and 2*pensize is used.
+   not given, the maximum of ``pensize+4`` and ``2*pensize`` is used.
 
 
    .. doctest::
@@ -1152,7 +1156,9 @@ Drawing state
 Color control
 ~~~~~~~~~~~~~
 
-.. function:: pencolor(*args)
+.. function:: pencolor()
+              pencolor(color, /)
+              pencolor(r, g, b, /)
 
    Return or set the pencolor.
 
@@ -1161,7 +1167,7 @@ Color control
    ``pencolor()``
       Return the current pencolor as color specification string or
       as a tuple (see example).  May be used as input to another
-      color/pencolor/fillcolor call.
+      color/pencolor/fillcolor/bgcolor call.
 
    ``pencolor(colorstring)``
       Set pencolor to *colorstring*, which is a Tk color specification string,
@@ -1201,7 +1207,9 @@ Color control
       (50.0, 193.0, 143.0)
 
 
-.. function:: fillcolor(*args)
+.. function:: fillcolor()
+              fillcolor(color, /)
+              fillcolor(r, g, b, /)
 
    Return or set the fillcolor.
 
@@ -1210,7 +1218,7 @@ Color control
    ``fillcolor()``
       Return the current fillcolor as color specification string, possibly
       in tuple format (see example).  May be used as input to another
-      color/pencolor/fillcolor call.
+      color/pencolor/fillcolor/bgcolor call.
 
    ``fillcolor(colorstring)``
       Set fillcolor to *colorstring*, which is a Tk color specification string,
@@ -1244,7 +1252,10 @@ Color control
       (255.0, 255.0, 255.0)
 
 
-.. function:: color(*args)
+.. function:: color()
+              color(color, /)
+              color(r, g, b, /)
+              color(pencolor, fillcolor, /)
 
    Return or set pencolor and fillcolor.
 
@@ -1870,13 +1881,32 @@ Most of the examples in this section refer to a TurtleScreen instance called
 Window control
 --------------
 
-.. function:: bgcolor(*args)
+.. function:: bgcolor()
+              bgcolor(color, /)
+              bgcolor(r, g, b, /)
 
-   :param args: a color string or three numbers in the range 0..colormode or a
-                3-tuple of such numbers
+   Return or set the background color of the TurtleScreen.
 
+   Four input formats are allowed:
 
-   Set or return background color of the TurtleScreen.
+   ``bgcolor()``
+      Return the current background color as color specification string or
+      as a tuple (see example).  May be used as input to another
+      color/pencolor/fillcolor/bgcolor call.
+
+   ``bgcolor(colorstring)``
+      Set the background color to *colorstring*, which is a Tk color
+      specification string, such as ``"red"``, ``"yellow"``, or ``"#33cc8c"``.
+
+   ``bgcolor((r, g, b))``
+      Set the background color to the RGB color represented by the tuple of
+      *r*, *g*, and *b*.
+      Each of *r*, *g*, and *b* must be in the range 0..colormode, where
+      colormode is either 1.0 or 255 (see :func:`colormode`).
+
+   ``bgcolor(r, g, b)``
+      Set the background color to the RGB color represented by *r*, *g*, and *b*.  Each of
+      *r*, *g*, and *b* must be in the range 0..colormode.
 
    .. doctest::
       :skipif: _tkinter is None
