@@ -1065,7 +1065,9 @@ class BlockFinder:
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
         if not self.started and not self.indecorator:
-            if type == tokenize.INDENT or token == "async":
+            if type in (tokenize.INDENT, tokenize.COMMENT, tokenize.NL):
+                pass
+            elif token == "async":
                 pass
             # skip any decorators
             elif token == "@":

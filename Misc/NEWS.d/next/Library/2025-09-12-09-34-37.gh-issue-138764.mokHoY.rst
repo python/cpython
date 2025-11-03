@@ -1,0 +1,3 @@
+Prevent :func:`annotationlib.call_annotate_function` from calling ``__annotate__`` functions that don't support ``VALUE_WITH_FAKE_GLOBALS`` in a fake globals namespace with empty globals.
+
+Make ``FORWARDREF`` and ``STRING`` annotations fall back to using ``VALUE`` annotations in the case that neither their own format, nor ``VALUE_WITH_FAKE_GLOBALS`` are supported.

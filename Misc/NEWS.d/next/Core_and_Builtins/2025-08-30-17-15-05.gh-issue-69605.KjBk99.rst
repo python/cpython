@@ -1,1 +1,0 @@
-Fix some standard library submodules missing from the :term:`REPL` auto-completion of imports.

@@ -352,7 +352,7 @@ _PyLong_Negate(PyLongObject **x_p)
     PyLongObject *x;
 
     x = (PyLongObject *)*x_p;
-    if (Py_REFCNT(x) == 1) {
+    if (_PyObject_IsUniquelyReferenced((PyObject *)x)) {
          _PyLong_FlipSign(x);
         return;
     }
@@ -5849,7 +5849,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(c, 1, size_a);
         }
-        else if (Py_REFCNT(a) == 1) {
+        else if (_PyObject_IsUniquelyReferenced((PyObject *)a)) {
             c = (PyLongObject*)Py_NewRef(a);
         }
         else {
@@ -5863,7 +5863,8 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(d, 1, size_a);
         }
-        else if (Py_REFCNT(b) == 1 && size_a <= alloc_b) {
+        else if (_PyObject_IsUniquelyReferenced((PyObject *)b)
+                 && size_a <= alloc_b) {
             d = (PyLongObject*)Py_NewRef(b);
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(d, 1, size_a);
