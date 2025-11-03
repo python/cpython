@@ -759,7 +759,6 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 class TestPytime(unittest.TestCase):
     @skip_if_buggy_ucrt_strfptime
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_localtime_timezone(self):
 
         # Get the localtime and examine it for the offset and zone.
@@ -794,14 +793,12 @@ class TestPytime(unittest.TestCase):
         self.assertEqual(new_lt.tm_gmtoff, lt.tm_gmtoff)
         self.assertEqual(new_lt9.tm_zone, lt.tm_zone)
 
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_strptime_timezone(self):
         t = time.strptime("UTC", "%Z")
         self.assertEqual(t.tm_zone, 'UTC')
         t = time.strptime("+0500", "%z")
         self.assertEqual(t.tm_gmtoff, 5 * 3600)
 
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_short_times(self):
 
         import pickle
