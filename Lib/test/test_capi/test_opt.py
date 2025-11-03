@@ -2680,7 +2680,7 @@ class TestUopsOptimization(unittest.TestCase):
             simple_for()
             g = gen()
             next(g)
-            print("finished")
+            print("finished", end='')
         """)
 
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.py')
@@ -2693,7 +2693,7 @@ class TestUopsOptimization(unittest.TestCase):
         finally:
             os.remove(tmp.name)
             p.stdout.close()
-        self.assertEqual(b"finished\n", out)
+        self.assertEqual(b"finished", out)
 
 def global_identity(x):
     return x
