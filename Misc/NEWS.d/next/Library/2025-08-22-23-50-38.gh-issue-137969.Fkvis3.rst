@@ -1,0 +1,2 @@
+Fix :meth:`annotationlib.ForwardRef.evaluate` returning :class:`annotationlib.ForwardRef`
+objects which do not update in new contexts.
