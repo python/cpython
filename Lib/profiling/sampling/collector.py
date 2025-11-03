@@ -78,19 +78,8 @@ class Collector(ABC):
             cache[parent_id] = chain
             return chain
 
-        # Find all parent task IDs (tasks that have children)
-        parent_task_ids = {
-            coro.task_name
-            for task_info, _ in all_tasks.values()
-            for coro in (task_info.awaited_by or [])
-            if coro.task_name
-        }
-
-        # Yield one stack per leaf task (tasks that are not parents)
+        # Yield one stack per task (including parents doing their own work)
         for task_id, (task_info, thread_id) in all_tasks.items():
-            # Skip parent tasks - they'll be included in their children's stacks
-            if task_id in parent_task_ids:
-                continue
             # Collect task's coroutine frames
             body_frames = [
                 frame
@@ -98,12 +87,12 @@ class Collector(ABC):
                 for frame in (coro.call_stack or [])
             ]
 
-            # Add synthetic task marker
-            task_name = task_info.task_name or f"Task-{task_id}"
-            synthetic = FrameInfo(("<task>", 0, f"running {task_name}"))
-
             # Build complete stack with parent chain
             if task_info.awaited_by and task_info.awaited_by[0].task_name:
+                # Child task: add synthetic marker to distinguish from parent
+                task_name = task_info.task_name or f"Task-{task_id}"
+                synthetic = FrameInfo(("<task>", 0, f"running {task_name}"))
+
                 parent_id = task_info.awaited_by[0].task_name
                 if parent_id in all_tasks:
                     parent_chain = build_parent_chain(task_id, parent_id)
@@ -113,6 +102,6 @@ class Collector(ABC):
                     root = FrameInfo(("<thread>", 0, "Program Root"))
                     yield body_frames + [synthetic, root], thread_id, 0
             else:
-                # Root task (no parents or empty awaited_by)
+                # Root task: no synthetic marker needed, just add Program Root
                 root = FrameInfo(("<thread>", 0, "Program Root"))
-                yield body_frames + [synthetic, root], thread_id, 0
+                yield body_frames + [root], thread_id, 0
