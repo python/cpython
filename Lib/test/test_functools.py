@@ -3498,11 +3498,25 @@ class TestSingleDispatch(unittest.TestCase):
             t = functools.singledispatchmethod(Callable('general'))
             t.register(int, Callable('special'))
 
+            @functools.singledispatchmethod
+            def u(self, arg):
+                return 'general', arg
+            u.register(int, Callable('special'))
+
+            v = functools.singledispatchmethod(Callable('general'))
+            @v.register(int)
+            def _(self, arg):
+                return 'special', arg
+
         a = A()
         self.assertEqual(a.t(0), ('special', 0))
         self.assertEqual(a.t(2.5), ('general', 2.5))
         self.assertEqual(A.t(0), ('special', 0))
         self.assertEqual(A.t(2.5), ('general', 2.5))
+        self.assertEqual(a.u(0), ('special', 0))
+        self.assertEqual(a.u(2.5), ('general', 2.5))
+        self.assertEqual(a.v(0), ('special', 0))
+        self.assertEqual(a.v(2.5), ('general', 2.5))
 
 
 class CachedCostItem:
