@@ -52,6 +52,7 @@ class _Target(typing.Generic[_S, _R]):
     cflags: str = ""
     llvm_version: str = _llvm._LLVM_VERSION
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
+    input_file: pathlib.Path = PYTHON_EXECUTOR_CASES_C_H
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 
     def _get_nop(self) -> bytes:
@@ -69,7 +70,7 @@ class _Target(typing.Generic[_S, _R]):
         hasher.update(self.debug.to_bytes())
         hasher.update(self.cflags.encode())
         # These dependencies are also reflected in _JITSources in regen.targets:
-        hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
+        hasher.update(self.input_file.read_bytes())
         hasher.update((self.pyconfig_dir / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
             # Exclude cache files from digest computation to ensure reproducible builds.
@@ -88,10 +89,15 @@ class _Target(typing.Generic[_S, _R]):
         if output is not None:
             # Make sure that full paths don't leak out (for reproducibility):
             long, short = str(path), str(path.name)
-            group.code.disassembly.extend(
-                line.expandtabs().strip().replace(long, short)
-                for line in output.splitlines()
-            )
+            lines = output.splitlines()
+            started = False
+            for line in lines:
+                if line.lstrip().startswith("0:"):
+                    started = True
+                if started:
+                    cleaned = line.replace(long, short).expandtabs().strip()
+                    if cleaned:
+                        group.code.disassembly.append(cleaned)
         args = [
             "--elf-output-style=JSON",
             "--expand-relocs",
@@ -193,10 +199,12 @@ class _Target(typing.Generic[_S, _R]):
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
-        generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
+        generated_cases = self.input_file.read_text()
         cases_and_opnames = sorted(
             re.findall(
-                r"\n {8}(case (\w+): \{\n.*?\n {8}\})", generated_cases, flags=re.DOTALL
+                r"^ {8}(case (\w+): \{\n.*?\n {8}\})",
+                generated_cases,
+                flags=re.DOTALL | re.MULTILINE,
             )
         )
         tasks = []
@@ -275,7 +283,7 @@ class _COFF(
         if "SectionData" in section:
             section_data_bytes = section["SectionData"]["Bytes"]
         else:
-            # Zeroed BSS data, seen with printf debugging calls:
+            # Zeroed BSS data:
             section_data_bytes = [0] * section["RawDataSize"]
         if "IMAGE_SCN_MEM_EXECUTE" in flags:
             value = _stencils.HoleValue.CODE
@@ -285,6 +293,10 @@ class _COFF(
             stencil = group.data
         else:
             return
+        if "IMAGE_SCN_MEM_WRITE" in flags:
+            assert value is _stencils.HoleValue.DATA
+            value = _stencils.HoleValue.WRITABLE
+            section_data_bytes = []
         base = len(stencil.body)
         group.symbols[section["Number"]] = value, base
         stencil.body.extend(section_data_bytes)
@@ -385,29 +397,39 @@ class _ELF(
             if value is _stencils.HoleValue.CODE:
                 stencil = group.code
             else:
-                assert value is _stencils.HoleValue.DATA
+                assert value in (_stencils.HoleValue.DATA, _stencils.HoleValue.WRITABLE)
                 stencil = group.data
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
                 hole = self._handle_relocation(base, relocation, stencil.body)
                 stencil.holes.append(hole)
-        elif section_type == "SHT_PROGBITS":
+        elif section_type in {"SHT_PROGBITS", "SHT_NOBITS"}:
             if "SHF_ALLOC" not in flags:
                 return
+            if "SectionData" in section:
+                section_data_bytes = section["SectionData"]["Bytes"]
+            else:
+                # Zeroed BSS data:
+                section_data_bytes = [0] * section["Size"]
             if "SHF_EXECINSTR" in flags:
                 value = _stencils.HoleValue.CODE
                 stencil = group.code
             else:
                 value = _stencils.HoleValue.DATA
                 stencil = group.data
-            group.symbols[section["Index"]] = value, len(stencil.body)
+            if "SHF_WRITE" in flags:
+                assert value is _stencils.HoleValue.DATA
+                value = _stencils.HoleValue.WRITABLE
+                section_data_bytes = []
+            base = len(stencil.body)
+            group.symbols[section["Index"]] = value, base
+            stencil.body.extend(section_data_bytes)
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
-                offset = len(stencil.body) + symbol["Value"]
+                offset = base + symbol["Value"]
                 name = symbol["Name"]["Name"]
                 name = name.removeprefix(self.symbol_prefix)
                 group.symbols[name] = value, offset
-            stencil.body.extend(section["SectionData"]["Bytes"])
             assert not section["Relocations"]
         else:
             assert section_type in {
@@ -462,33 +484,35 @@ class _MachO(
     def _handle_section(
         self, section: _schema.MachOSection, group: _stencils.StencilGroup
     ) -> None:
-        assert section["Address"] >= len(group.code.body)
-        assert "SectionData" in section
+        if "SectionData" in section:
+            section_data_bytes = section["SectionData"]["Bytes"]
+        else:
+            # Zeroed BSS data:
+            section_data_bytes = [0] * section["Size"]
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
-        name = section["Name"]["Value"]
-        name = name.removeprefix(self.symbol_prefix)
         if "Debug" in flags:
             return
         if "PureInstructions" in flags:
             value = _stencils.HoleValue.CODE
             stencil = group.code
-            start_address = 0
-            group.symbols[name] = value, section["Address"] - start_address
         else:
             value = _stencils.HoleValue.DATA
             stencil = group.data
-            start_address = len(group.code.body)
-            group.symbols[name] = value, len(group.code.body)
-        base = section["Address"] - start_address
+        segment = section["Segment"]["Value"]
+        assert segment in {"__DATA", "__TEXT"}, segment
+        if segment == "__DATA":
+            value = _stencils.HoleValue.WRITABLE
+            section_data_bytes = []
+        base = len(stencil.body)
         group.symbols[section["Index"]] = value, base
-        stencil.body.extend(
-            [0] * (section["Address"] - len(group.code.body) - len(group.data.body))
-        )
-        stencil.body.extend(section["SectionData"]["Bytes"])
+        stencil.body.extend(section_data_bytes)
+        name = section["Name"]["Value"]
+        name = name.removeprefix(self.symbol_prefix)
+        group.symbols[name] = value, base
         assert "Symbols" in section
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]
-            offset = symbol["Value"] - start_address
+            offset = base + symbol["Value"] - section["Address"]
             name = symbol["Name"]["Name"]
             name = name.removeprefix(self.symbol_prefix)
             group.symbols[name] = value, offset
