@@ -403,7 +403,8 @@ PyStackRef_IsTaggedInt(_PyStackRef i)
 static inline _PyStackRef
 PyStackRef_TagInt(intptr_t i)
 {
-    assert(Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (i << Py_TAGGED_SHIFT), Py_TAGGED_SHIFT) == i);
+    assert(Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (intptr_t)(((uintptr_t)i) << Py_TAGGED_SHIFT),
+                                     Py_TAGGED_SHIFT) == i);
     return (_PyStackRef){ .bits = ((((uintptr_t)i) << Py_TAGGED_SHIFT) | Py_INT_TAG) };
 }
 
