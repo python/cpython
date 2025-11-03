@@ -1,10 +1,10 @@
 from collections import abc
 from itertools import combinations
 import array
+from concurrent.futures import InterpreterPoolExecutor
 import gc
 import math
 import operator
-import threading
 import unittest
 import platform
 import struct
@@ -39,24 +39,6 @@ def bigendian_to_native(value):
         return value
     else:
         return string_reverse(value)
-
-# Helper for test_endian_table_init_subinterpreters
-class _Result:
-    def __init__(self):
-        self.ret = -1
-        self.err = None
-
-def _run_in_subinterp_worker(code, barrier, result):
-    """
-    Worker function for a thread. Waits on the barrier, then runs the
-    code in a subinterpreter.
-    """
-    try:
-        # Wait until all threads are ready to start simultaneously.
-        barrier.wait()
-        result.ret = support.run_in_subinterp(code)
-    except Exception as e:
-        result.err = e
 
 class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_isbigendian(self):
@@ -820,42 +802,13 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     self.assertComplexesAreIdentical(z, round_trip)
 
     def test_endian_table_init_subinterpreters(self):
-        # Verify that struct works correctly in subinterpreters after
-        # once-only endian table initialization (gh-140260), when
-        # initialized concurrently.
-        # Use struct in the main interpreter first.
-        self.assertEqual(struct.unpack('>i', struct.pack('>i', 1))[0], 1)
-        self.assertEqual(struct.unpack('<i', struct.pack('<i', 1))[0], 1)
-
-        code = (
-            "import struct\n"
-            "x = struct.pack('>i', 1)\n"
-            "assert struct.unpack('>i', x)[0] == 1\n"
-            "y = struct.pack('<i', 1)\n"
-            "assert struct.unpack('<i', y)[0] == 1\n"
-        )
-
-        num_threads = 3
-        barrier = threading.Barrier(num_threads)
-        results = [_Result() for _ in range(num_threads)]
-        threads = [
-            threading.Thread(
-                target=_run_in_subinterp_worker,
-                args=(code, barrier, results[i])
-            )
-            for i in range(num_threads)
-        ]
-
-        for t in threads:
-            t.start()
-
-        for t in threads:
-            t.join()
-
-        for result in results:
-            if result.err:
-                raise result.err
-            self.assertEqual(result.ret, 0)
+        # Verify that the _struct extension module can be initialized
+        # concurrently in subinterpreters (gh-140260).
+        code = "import struct"
+        with InterpreterPoolExecutor(max_workers=5) as executor:
+            results = executor.map(support.run_in_subinterp, [code] * 5)
+            for ret in results:
+                self.assertEqual(ret, 0)
 
 
 class UnpackIteratorTest(unittest.TestCase):
