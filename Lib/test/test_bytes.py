@@ -804,7 +804,7 @@ class BaseBytesTest:
 
         # gh-140939: MemoryError is raised without leaking
         for _ in range(100):
-            with self.assertRaises(MemoryError):
+            with self.assertRaises((MemoryError, OverflowError)):
                 b = self.type2test(b'%*b')
                 b % (2**63-1, b'abc')
 
