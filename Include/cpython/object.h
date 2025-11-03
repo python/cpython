@@ -442,7 +442,6 @@ PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int m
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
 PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
-PyAPI_FUNC(int) _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
 
@@ -492,7 +491,3 @@ PyAPI_FUNC(int) PyUnstable_TryIncRef(PyObject *);
 PyAPI_FUNC(void) PyUnstable_EnableTryIncRef(PyObject *);
 
 PyAPI_FUNC(int) PyUnstable_Object_IsUniquelyReferenced(PyObject *);
-
-/* Utility for the tp_traverse slot of mutable heap types that have no other
- * references. */
-PyAPI_FUNC(int) _PyObject_VisitType(PyObject *op, visitproc visit, void *arg);

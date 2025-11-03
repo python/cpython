@@ -190,7 +190,7 @@ The :mod:`functools` module defines the following functions:
 
    Note, type specificity applies only to the function's immediate arguments
    rather than their contents.  The scalar arguments, ``Decimal(42)`` and
-   ``Fraction(42)`` are be treated as distinct calls with distinct results.
+   ``Fraction(42)`` are treated as distinct calls with distinct results.
    In contrast, the tuple arguments ``('answer', Decimal(42))`` and
    ``('answer', Fraction(42))`` are treated as equivalent.
 
@@ -690,7 +690,7 @@ The :mod:`functools` module defines the following functions:
             return not arg
 
    ``@singledispatchmethod`` supports nesting with other decorators such as
-   :func:`@classmethod<classmethod>`. Note that to allow for
+   :deco:`classmethod`. Note that to allow for
    ``dispatcher.register``, ``singledispatchmethod`` must be the *outer most*
    decorator. Here is the ``Negator`` class with the ``neg`` methods bound to
    the class, rather than an instance of the class::
@@ -712,8 +712,7 @@ The :mod:`functools` module defines the following functions:
             return not arg
 
    The same pattern can be used for other similar decorators:
-   :func:`@staticmethod<staticmethod>`,
-   :func:`@abstractmethod<abc.abstractmethod>`, and others.
+   :deco:`staticmethod`, :deco:`~abc.abstractmethod`, and others.
 
    .. versionadded:: 3.8
 
