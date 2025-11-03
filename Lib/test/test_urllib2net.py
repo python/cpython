@@ -146,6 +146,7 @@ class OtherNetworkTests(unittest.TestCase):
             ]
         self._test_urls(urls, self._extra_handlers())
 
+    @support.requires_resource('walltime')
     def test_ftp_no_leak(self):
         # gh-140691: When the data connection (but not control connection)
         # cannot be made established, we shouldn't leave an open socket object.
