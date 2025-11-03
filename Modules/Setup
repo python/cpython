@@ -156,6 +156,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #binascii binascii.c
 #cmath cmathmodule.c
 #math mathmodule.c
+#_math_integer mathintegermodule.c
 #mmap mmapmodule.c
 #select selectmodule.c
 #_sysconfig _sysconfig.c
