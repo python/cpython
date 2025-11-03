@@ -3974,7 +3974,10 @@ def bœr():
         commands = """
             continue
         """
-        self._run_pdb(["calendar", "-m"], commands, expected_returncode=2)
+        self._run_pdb(["calendar", "-m"], commands, expected_returncode=1)
+
+        _, stderr = self._run_pdb(["-m", "calendar", "-p", "1"], commands)
+        self.assertIn("unrecognized arguments: -p", stderr)
 
         stdout, _ = self._run_pdb(["-m", "calendar", "1"], commands)
         self.assertIn("December", stdout)
