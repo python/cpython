@@ -187,8 +187,11 @@ class ForwardRef:
             except Exception:
                 if not is_forwardref_format:
                     raise
+
+            # All variables, in scoping order, should be checked before
+            # triggering __missing__ to create a _Stringifier.
             new_locals = _StringifierDict(
-                {**builtins.__dict__, **locals},
+                {**builtins.__dict__, **globals, **locals},
                 globals=globals,
                 owner=owner,
                 is_class=self.__forward_is_class__,
