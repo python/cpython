@@ -1708,8 +1708,7 @@ finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
-    // Invalidate all executors and turn off JIT:
-    interp->jit = false;
+    // Invalidate all executors
     interp->compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
