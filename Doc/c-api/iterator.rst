@@ -52,8 +52,8 @@ sentinel value is returned.
    *sentinel*, the iteration will be terminated.
 
 
-
 .. _range-objects:
+
 Range Objects
 ^^^^^^^^^^^^^
 
