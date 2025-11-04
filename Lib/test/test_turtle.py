@@ -1,6 +1,7 @@
 import pickle
 import unittest
-from unittest.mock import MagicMock, patch
+import unittest
+import unittest.mock
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -58,7 +59,7 @@ def patch_screen():
     instance because instantiating it requires a display.
     """
     # Create a mock screen that delegates color validation to the real TurtleScreen methods
-    mock_screen = MagicMock()
+    mock_screen = unittest.mock.MagicMock()
     mock_screen.__class__ = turtle._Screen
     mock_screen.mode.return_value = "standard"
     mock_screen._colormode = 1.0
@@ -73,7 +74,7 @@ def patch_screen():
     mock_screen._iscolorstring = mock_iscolorstring
     mock_screen._colorstr = turtle._Screen._colorstr.__get__(mock_screen)
 
-    return patch(
+    return unittest.mock.patch(
         "turtle._Screen.__new__",
         return_value=mock_screen
     )
