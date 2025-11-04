@@ -55,15 +55,10 @@ def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
 
 
 def extract_tarball(externals_dir, tarball_path, tag):
-    # Extract to externals_dir and return the path to the first top-level directory
+    output_path = externals_dir / tag
     with tarfile.open(tarball_path) as tf:
-        # Get the first top-level directory name from the tarball
-        members = tf.getmembers()
-        if not members:
-            raise ValueError(f"Tarball {tarball_path} is empty")
-        top_level_dir = members[0].name.split('/')[0]
         tf.extractall(os.fspath(externals_dir))
-        return externals_dir / top_level_dir
+    return output_path
 
 
 def extract_zip(externals_dir, zip_path):
@@ -121,21 +116,23 @@ def main():
             verbose=args.verbose,
         )
         extracted = extract_zip(args.externals_dir, zip_path)
-    for wait in [1, 2, 3, 5, 8, 0]:
-        try:
-            extracted.replace(final_name)
-            break
-        except PermissionError as ex:
-            retry = f" Retrying in {wait}s..." if wait else ""
-            print(f"Encountered permission error '{ex}'.{retry}", file=sys.stderr)
-            time.sleep(wait)
-    else:
-        print(
-            f"ERROR: Failed to extract {final_name}.",
-            "You may need to restart your build",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+
+    if extracted != final_name:
+        for wait in [1, 2, 3, 5, 8, 0]:
+            try:
+                extracted.replace(final_name)
+                break
+            except PermissionError as ex:
+                retry = f" Retrying in {wait}s..." if wait else ""
+                print(f"Encountered permission error '{ex}'.{retry}", file=sys.stderr)
+                time.sleep(wait)
+        else:
+            print(
+                f"ERROR: Failed to rename {extracted} to {final_name}.",
+                "You may need to restart your build",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
 
 if __name__ == '__main__':
