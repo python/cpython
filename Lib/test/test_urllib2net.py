@@ -1,8 +1,8 @@
 import contextlib
 import errno
+import sysconfig
 import unittest
 from unittest import mock
-import warnings
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
@@ -148,6 +148,8 @@ class OtherNetworkTests(unittest.TestCase):
         self._test_urls(urls, self._extra_handlers())
 
     @support.requires_resource('walltime')
+    @unittest.skipIf(sysconfig.get_platform() == 'linux-ppc64le',
+                     'leaks on PPC64LE (gh-140691)')
     def test_ftp_no_leak(self):
         # gh-140691: When the data connection (but not control connection)
         # cannot be made established, we shouldn't leave an open socket object.
