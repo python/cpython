@@ -1,6 +1,5 @@
 import pickle
 import unittest
-import unittest
 import unittest.mock
 from test import support
 from test.support import import_helper
