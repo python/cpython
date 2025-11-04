@@ -89,6 +89,14 @@ async def _find_tool(tool: str, llvm_version: str, *, echo: bool = False) -> str
     externals = os.environ.get("EXTERNALS_DIR", _targets.EXTERNALS)
     path = os.path.join(externals, _EXTERNALS_LLVM_TAG, "bin", tool)
     print(f"DEBUG: Trying PCbuild externals: {path} (exists: {os.path.exists(path)})")
+    # On Windows, executables need .exe extension
+    if os.name == "nt" and not path.endswith(".exe"):
+        path_with_exe = path + ".exe"
+        print(
+            f"DEBUG: Also trying with .exe: {path_with_exe} (exists: {os.path.exists(path_with_exe)})"
+        )
+        if os.path.exists(path_with_exe):
+            path = path_with_exe
     if await _check_tool_version(path, llvm_version, echo=echo):
         print(f"DEBUG: Found at: {path}")
         return path
