@@ -4078,7 +4078,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(C2.__subclasses__(), [D])
 
         with self.assertRaisesRegex(TypeError,
-                    "cannot delete '__bases__' attribute of immutable type"):
+                    "cannot delete '__bases__' attribute of type 'D'"):
             del D.__bases__
         with self.assertRaisesRegex(TypeError, 'can only assign non-empty tuple'):
             D.__bases__ = ()
@@ -5062,7 +5062,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
         with self.assertRaises(TypeError) as cm:
             type(X).__dict__["__doc__"].__delete__(X)
-        self.assertIn("cannot delete '__doc__' attribute of immutable type 'X'", str(cm.exception))
+        self.assertIn("cannot delete '__doc__' attribute of type 'X'", str(cm.exception))
         self.assertEqual(X.__doc__, "banana")
 
     def test_qualname(self):

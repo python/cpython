@@ -5278,6 +5278,23 @@ class TestInvalidHandle(unittest.TestCase):
                           multiprocessing.connection.Connection, -1)
 
 
+#
+# Regression tests for BaseProcess kwargs handling
+#
+
+class TestBaseProcessKwargs(unittest.TestCase):
+    def test_default_kwargs_not_shared_between_instances(self):
+        # Creating multiple Process instances without passing kwargs
+        # must create independent empty dicts (no shared state).
+        p1 = multiprocessing.Process(target=lambda: None)
+        p2 = multiprocessing.Process(target=lambda: None)
+        self.assertIsInstance(p1._kwargs, dict)
+        self.assertIsInstance(p2._kwargs, dict)
+        self.assertIsNot(p1._kwargs, p2._kwargs)
+        # Mutating one should not affect the other
+        p1._kwargs['x'] = 1
+        self.assertNotIn('x', p2._kwargs)
+
 
 @hashlib_helper.requires_hashdigest('sha256')
 class OtherTest(unittest.TestCase):

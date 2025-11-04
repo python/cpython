@@ -1177,7 +1177,7 @@ Test cases
 
       .. versionadded:: 3.4
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Now accepts a *formatter* to control how messages are formatted.
 
    .. method:: assertNoLogs(logger=None, level=None)

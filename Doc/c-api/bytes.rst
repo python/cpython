@@ -47,6 +47,10 @@ called with a non-bytes parameter.
    *len* on success, and ``NULL`` on failure.  If *v* is ``NULL``, the contents of
    the bytes object are uninitialized.
 
+   .. deprecated:: 3.15
+      ``PyBytes_FromStringAndSize(NULL, len)`` is :term:`soft deprecated`,
+      use the :c:type:`PyBytesWriter` API instead.
+
 
 .. c:function:: PyObject* PyBytes_FromFormat(const char *format, ...)
 
@@ -220,13 +224,19 @@ called with a non-bytes parameter.
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.
 
+   .. deprecated:: 3.15
+      The function is :term:`soft deprecated`,
+      use the :c:type:`PyBytesWriter` API instead.
+
+.. _pybyteswriter:
+
 PyBytesWriter
 -------------
 
 The :c:type:`PyBytesWriter` API can be used to create a Python :class:`bytes`
 object.
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
 .. c:type:: PyBytesWriter
 
@@ -249,8 +259,9 @@ Create, Finish, Discard
    If *size* is greater than zero, allocate *size* bytes, and set the
    writer size to *size*. The caller is responsible to write *size*
    bytes using :c:func:`PyBytesWriter_GetData`.
+   This function does not overallocate.
 
-   On error, set an exception and return NULL.
+   On error, set an exception and return ``NULL``.
 
    *size* must be positive or zero.
 
@@ -339,6 +350,8 @@ Low-level API
 
    Resize the writer to *size* bytes. It can be used to enlarge or to
    shrink the writer.
+   This function typically overallocates to achieve amortized performance when
+   resizing multiple times.
 
    Newly allocated bytes are left uninitialized.
 
@@ -350,6 +363,8 @@ Low-level API
 .. c:function:: int PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t grow)
 
    Resize the writer by adding *grow* bytes to the current writer size.
+   This function typically overallocates to achieve amortized performance when
+   resizing multiple times.
 
    Newly allocated bytes are left uninitialized.
 

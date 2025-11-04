@@ -21,8 +21,6 @@ Simple usage example:
    (options, args) = parser.parse_args()
 """
 
-__version__ = "1.5.3"
-
 __all__ = ['Option',
            'make_option',
            'SUPPRESS_HELP',
@@ -1669,3 +1667,12 @@ def _match_abbrev(s, wordmap):
 # which will become a factory function when there are many Option
 # classes.
 make_option = Option
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.5.3"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
