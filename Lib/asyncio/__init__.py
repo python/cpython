@@ -22,6 +22,7 @@ from .taskgroups import *
 from .timeouts import *
 from .threads import *
 from .transports import *
+from .subinterpreters import *
 
 __all__ = (base_events.__all__ +
            coroutines.__all__ +
@@ -39,7 +40,8 @@ __all__ = (base_events.__all__ +
            taskgroups.__all__ +
            threads.__all__ +
            timeouts.__all__ +
-           transports.__all__)
+           transports.__all__ +
+           subinterpreters.__all__)
 
 if sys.platform == 'win32':  # pragma: no cover
     from .windows_events import *
