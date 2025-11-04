@@ -2,6 +2,7 @@ import contextlib
 import errno
 import unittest
 from unittest import mock
+import warnings
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
