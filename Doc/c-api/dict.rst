@@ -426,3 +426,85 @@ Dictionary Objects
    it before returning.
 
    .. versionadded:: 3.12
+
+
+.. c:function:: int PyDictViewSet_Check(PyObject *o)
+
+   Return true if *o* is a view of a set inside a dictionary. This is
+   equivalent to :c:expr:`PyDictKeys_Check(o) || PyDictItems_Check(o)`. This
+   function always succeeds.
+
+
+Dictionary Keys Objects
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:var:: PyTypeObject PyDictKeys_Type
+
+   Type object for a view of dictionary keys. In Python, this is the type of
+   the object returned by :meth:`dict.keys`.
+
+
+.. c:function:: int PyDictKeys_Check(PyObject *o)
+
+   Return true if *o* is an instance of a dictionary keys view. This function
+   always succeeds.
+
+
+.. c:var:: PyTypeObject PyDictIterKey_Type
+
+   Iterator over the keys of a dictionary.
+
+
+.. c:var:: PyTypeObject PyDictRevIterKey_Type
+
+   Reversed iterator over the keys of a dictionary.
+
+
+Dictionary Values Objects
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:var:: PyTypeObject PyDictValues_Type
+
+   Type object for a view of dictionary values. In Python, this is the type of
+   the object returned by :meth:`dict.values`.
+
+
+.. c:function:: int PyDictValues_Check(PyObject *o)
+
+   Return true if *o* is an instance of a dictionary values view. This function
+   always succeeds.
+
+
+.. c:var:: PyTypeObject PyDictIterValue_Type
+
+   Iterator over the values of a dictionary.
+
+
+.. c:var:: PyTypeObject PyDictRevIterValue_Type
+
+   Reversed iterator over the values of a dictionary.
+
+
+Dictionary Items Objects
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:var:: PyTypeObject PyDictItems_Type
+
+   Type object for a view of dictionary items. In Python, this is the type of
+   the object returned by :meth:`dict.items`.
+
+
+.. c:function:: int PyDictItems_Check(PyObject *o)
+
+   Return true if *o* is an instance of a dictionary items view. This function
+   always succeeds.
+
+
+.. c:var:: PyTypeObject PyDictIterItem_Type
+
+   Iterator over the items of a dictionary.
+
+
+.. c:var:: PyTypeObject PyDictRevIterItem_Type
+
+   Reversed iterator over the items of a dictionary.
