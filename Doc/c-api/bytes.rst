@@ -22,7 +22,7 @@ called with a non-bytes parameter.
    is the same object as :class:`bytes` in the Python layer.
 
 
-.. c:var:: PyTypeObject PyByteIter_Type
+.. c:var:: PyTypeObject PyBytesIter_Type
 
    Type object for an iterator over a :class:`bytes` object. Instances
    of this object are returned by :meth:`!bytes.__iter__`.
