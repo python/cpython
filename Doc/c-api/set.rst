@@ -41,6 +41,12 @@ the abstract object protocol (including :c:func:`PyObject_CallMethod`,
    :class:`set` type.
 
 
+.. c:var:: PyTypeObject PySetIter_Type
+
+   Type object for an iterator over a :class:`set` object. Instances
+   of this object are returned by :meth:`!set.__iter__`.
+
+
 .. c:var:: PyTypeObject PyFrozenSet_Type
 
    This is an instance of :c:type:`PyTypeObject` representing the Python
