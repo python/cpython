@@ -2281,7 +2281,9 @@ static PyObject *
 sys__stats_on_impl(PyObject *module)
 /*[clinic end generated code: output=aca53eafcbb4d9fe input=43b5bfe145299e55]*/
 {
-    _Py_StatsOn();
+    if (_Py_StatsOn() < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -3045,7 +3047,7 @@ get_warnoptions(PyThreadState *tstate)
     return warnoptions;
 }
 
-void
+PyAPI_FUNC(void)
 PySys_ResetWarnOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();

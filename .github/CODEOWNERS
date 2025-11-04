@@ -82,9 +82,13 @@ Tools/patchcheck/             @AA-Turner
 # Autotools
 configure*                       @erlend-aasland @corona10 @AA-Turner @emmatyping
 Makefile.pre.in                  @erlend-aasland @AA-Turner @emmatyping
+Modules/makesetup                @erlend-aasland @AA-Turner @emmatyping
 Modules/Setup*                   @erlend-aasland @AA-Turner @emmatyping
-Modules/makesetup                @emmatyping
 Tools/build/regen-configure.sh   @AA-Turner
+
+# generate-build-details
+Tools/build/generate-build-details.py   @FFY00
+Lib/test/test_build_details.py          @FFY00
 
 
 # ----------------------------------------------------------------------------
@@ -150,6 +154,7 @@ Lib/test/test_android.py      @mhsmith @freakboy3742
 # iOS
 Doc/using/ios.rst             @freakboy3742
 Lib/_ios_support.py           @freakboy3742
+Apple/                        @freakboy3742
 iOS/                          @freakboy3742
 
 # macOS
@@ -240,10 +245,10 @@ Lib/test/test_getpath.py      @FFY00
 Modules/getpath*              @FFY00
 
 # Hashing / ``hash()`` and related
-Include/cpython/pyhash.h         @gpshead @picnixz @tiran
-Include/internal/pycore_pyhash.h @gpshead @picnixz @tiran
-Include/pyhash.h                 @gpshead @picnixz @tiran
-Python/pyhash.c                  @gpshead @picnixz @tiran
+Include/cpython/pyhash.h         @gpshead @picnixz
+Include/internal/pycore_pyhash.h @gpshead @picnixz
+Include/pyhash.h                 @gpshead @picnixz
+Python/pyhash.c                  @gpshead @picnixz
 
 # The import system (including importlib)
 **/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
@@ -370,14 +375,14 @@ Lib/calendar.py               @AA-Turner
 Lib/test/test_calendar.py     @AA-Turner
 
 # Cryptographic Primitives and Applications
-**/*hashlib*                  @gpshead @picnixz @tiran
-**/*hashopenssl*              @gpshead @picnixz @tiran
+**/*hashlib*                  @gpshead @picnixz
+**/*hashopenssl*              @gpshead @picnixz
 **/*hmac*                     @gpshead @picnixz
 **/*ssl*                      @gpshead @picnixz
 Modules/_hacl/                @gpshead @picnixz
-Modules/*blake*               @gpshead @picnixz @tiran
-Modules/*md5*                 @gpshead @picnixz @tiran
-Modules/*sha*                 @gpshead @picnixz @tiran
+Modules/*blake*               @gpshead @picnixz
+Modules/*md5*                 @gpshead @picnixz
+Modules/*sha*                 @gpshead @picnixz
 
 # Codecs
 Modules/cjkcodecs/            @corona10
@@ -406,11 +411,15 @@ Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
 Doc/**/*time.rst                 @pganssle @abalkin
+Doc/library/zoneinfo.rst         @pganssle
 Include/datetime.h               @pganssle @abalkin
 Include/internal/pycore_time.h   @pganssle @abalkin
+Lib/test/test_zoneinfo/          @pganssle
+Lib/zoneinfo/                    @pganssle
 Lib/*time.py                     @pganssle @abalkin
 Lib/test/datetimetester.py       @pganssle @abalkin
 Lib/test/test_*time.py           @pganssle @abalkin
+Modules/*zoneinfo*               @pganssle
 Modules/*time*                   @pganssle @abalkin
 Python/pytime.c                  @pganssle @abalkin
 

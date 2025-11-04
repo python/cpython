@@ -258,6 +258,7 @@ static const char usage_help[] = "\
 Options (and corresponding environment variables):\n\
 -b     : issue warnings about converting bytes/bytearray to str and comparing\n\
          bytes/bytearray with str or bytes with int. (-bb: issue errors)\n\
+         deprecated since 3.15 and will become no-op in 3.17.\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
@@ -2808,12 +2809,6 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
     {
         return _PyStatus_NO_MEMORY();
     }
-
-#ifdef Py_STATS
-    if (config->_pystats) {
-        _Py_StatsOn();
-    }
-#endif
 
     return _PyStatus_OK();
 }
