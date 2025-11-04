@@ -1640,7 +1640,7 @@ class ReTests(unittest.TestCase):
                            'op+', 'bar'], ''))
 
     def test_bug_gh140797(self):
-        # gh140797: capturing groups is not allowed in re.Scanner
+        # gh140797: Capturing groups are not allowed in re.Scanner
 
         msg = "Cannot use capturing groups in re.Scanner"
         # Capturing group throws an error
