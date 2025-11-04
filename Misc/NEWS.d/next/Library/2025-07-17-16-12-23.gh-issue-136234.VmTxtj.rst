@@ -1,2 +1,0 @@
-Fix :meth:`asyncio.WriteTransport.writelines` to be robust to connection
-failure, by using the same behavior as :meth:`~asyncio.WriteTransport.write`.

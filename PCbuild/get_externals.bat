@@ -82,7 +82,7 @@ if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi-3.4.4
 if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-3.0.18
 if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.15.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
-if NOT "%IncludeLLVM%"=="false"    set binaries=%binaries% llvm-19.1.7.0
+if NOT "%IncludeLLVM%"=="false"    set binaries=%binaries% llvm-20.1.8.0
 
 for %%b in (%binaries%) do (
     if exist "%EXTERNALS_DIR%\%%b" (
@@ -92,7 +92,11 @@ for %%b in (%binaries%) do (
         git clone --depth 1 https://github.com/%ORG%/cpython-bin-deps --branch %%b "%EXTERNALS_DIR%\%%b"
     ) else (
         echo.Fetching %%b...
-        %PYTHON% -E "%PCBUILD%\get_external.py" -b -O %ORG% -e "%EXTERNALS_DIR%" %%b
+        if "%%b"=="llvm-20.1.8.0" (
+            %PYTHON% -E "%PCBUILD%\get_external.py" --release --organization %ORG% --externals-dir "%EXTERNALS_DIR%" %%b
+        ) else (
+            %PYTHON% -E "%PCBUILD%\get_external.py" --binary --organization %ORG% --externals-dir "%EXTERNALS_DIR%" %%b
+        )
     )
 )
 
