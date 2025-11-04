@@ -154,7 +154,7 @@ instantiation, of which this module provides three different variants:
       variable. This instance parses and manages the headers in the HTTP
       request. The :func:`~http.client.parse_headers` function from
       :mod:`http.client` is used to parse the headers and it requires that the
-      HTTP request provide a valid :rfc:`2822` style header.
+      HTTP request provide a valid :rfc:`5322` style header.
 
    .. attribute:: rfile
 
