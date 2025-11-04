@@ -6,14 +6,12 @@ import unittest
 import gc
 import os
 import types
-import tempfile
-import subprocess
 
 import _opcode
 
 from test.support import (script_helper, requires_specialization,
                           import_helper, Py_GIL_DISABLED, requires_jit_enabled,
-                          reset_code, requires_subprocess)
+                          reset_code)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -2662,9 +2660,8 @@ class TestUopsOptimization(unittest.TestCase):
 
         f()
 
-    @requires_subprocess()
     def test_interpreter_finalization_with_generator_alive(self):
-        code = textwrap.dedent("""
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
             import sys
             def simple_for():
                 for x in (1, 2):
@@ -2680,20 +2677,8 @@ class TestUopsOptimization(unittest.TestCase):
             simple_for()
             g = gen()
             next(g)
-            print("finished", end='')
-        """)
+        """))
 
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.py')
-        tmp.write(code.encode('utf-8'))
-        tmp.close()
-        try:
-            p = subprocess.Popen([sys.executable, tmp.name], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            p.wait()
-            out = p.stdout.read()
-        finally:
-            os.remove(tmp.name)
-            p.stdout.close()
-        self.assertEqual(b"finished", out)
 
 def global_identity(x):
     return x
