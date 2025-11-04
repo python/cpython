@@ -1,5 +1,9 @@
 import asyncio
-from asyncio import run_in_subinterpreter
+
+try:
+    from asyncio import run_in_subinterpreter
+except ImportError:
+    raise unittest.SkipTest("subinterpreters not supported")
 
 import unittest
 
