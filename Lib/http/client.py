@@ -231,7 +231,7 @@ def _read_headers(fp, max_headers):
 
 def _parse_header_lines(header_lines, _class=HTTPMessage):
     """
-    Parses only RFC2822 headers from header lines.
+    Parses only RFC 5322 headers from header lines.
 
     email Parser wants to see strings rather than bytes.
     But a TextIOWrapper around self.rfile would buffer too many bytes
@@ -244,7 +244,7 @@ def _parse_header_lines(header_lines, _class=HTTPMessage):
     return email.parser.Parser(_class=_class).parsestr(hstring)
 
 def parse_headers(fp, _class=HTTPMessage, *, _max_headers=None):
-    """Parses only RFC2822 headers from a file pointer."""
+    """Parses only RFC 5322 headers from a file pointer."""
 
     headers = _read_headers(fp, _max_headers)
     return _parse_header_lines(headers, _class)
