@@ -180,8 +180,8 @@ _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber
     entry->linenumber_borrow = linenumber;
 }
 
-void
-_Py_stackref_get_borrowed_from(_PyStackRef ref, _PyStackRef *p_borrowed_from, const char *filename, int linenumber)
+_PyStackRef
+_Py_stackref_get_borrowed_from(_PyStackRef ref, const char *filename, int linenumber)
 {
     assert(!PyStackRef_IsError(ref));
     PyInterpreterState *interp = PyInterpreterState_Get();
@@ -193,9 +193,7 @@ _Py_stackref_get_borrowed_from(_PyStackRef ref, _PyStackRef *p_borrowed_from, co
             ref.index, filename, linenumber);
     }
 
-    if (p_borrowed_from != NULL) {
-        *p_borrowed_from = entry->borrowed_from;
-    }
+    return entry->borrowed_from;
 }
 
 // This function should be used no more than once per ref.
