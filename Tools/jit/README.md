@@ -43,7 +43,7 @@ Homebrew won't add any of the tools to your `$PATH`. That's okay; the build scri
 
 LLVM is downloaded automatically (along with other external binary dependencies) by `PCbuild\build.bat`.
 
-Otherwise, you can install LLVM 20 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=20), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
+Otherwise, you can install LLVM 21 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=21), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
 
 Alternatively, you can use [chocolatey](https://chocolatey.org):
 
