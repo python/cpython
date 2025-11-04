@@ -156,37 +156,33 @@ class ForwardRef:
                 locals.update(vars(owner))
 
         if type_params is None and owner is not None:
-            # "Inject" type parameters into the local namespace
-            # (unless they are shadowed by assignments *in* the local namespace),
-            # as a way of emulating annotation scopes when calling `eval()`
             type_params = getattr(owner, "__type_params__", None)
 
-        # Nonlocals logically sit between the locals and the globals. We simulate this
-        # by overriding the globals.
-        if isinstance(self.__cell__, dict):
-            globals = dict(globals)
-
-        # Type parameters exist in their own scope, which is logically
-        # between the locals and the globals.
-        type_param_scope = {}
+        # "Inject" type parameters into the local namespace
+        # (unless they are shadowed by assignments *in* the local namespace),
+        # as a way of emulating annotation scopes when calling `eval()`
         if type_params is not None:
             for param in type_params:
-                type_param_scope[param.__name__] = param
+                if param.__name__ not in locals:
+                    locals[param.__name__] = param
+
+        # Similar logic can be used for nonlocals, which should not
+        # override locals.
         if isinstance(self.__cell__, dict):
             for cell_name, cell_value in self.__cell__.items():
                 try:
-                    globals[cell_name] = cell_value.cell_contents
+                    if cell_name not in locals:
+                        locals[cell_name] = cell_value.cell_contents
                 except ValueError:
                     pass
+
         if self.__extra_names__:
-            locals = {**locals, **self.__extra_names__}
+            locals.update(self.__extra_names__)
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
             if arg in locals:
                 return locals[arg]
-            elif arg in type_param_scope:
-                return type_param_scope[arg]
             elif arg in globals:
                 return globals[arg]
             elif hasattr(builtins, arg):
@@ -198,7 +194,7 @@ class ForwardRef:
         else:
             code = self.__forward_code__
             try:
-                return eval(code, globals=globals, locals={**type_param_scope, **locals})
+                return eval(code, globals=globals, locals=locals)
             except Exception:
                 if not is_forwardref_format:
                     raise
@@ -206,7 +202,7 @@ class ForwardRef:
             # All variables, in scoping order, should be checked before
             # triggering __missing__ to create a _Stringifier.
             new_locals = _StringifierDict(
-                {**builtins.__dict__, **globals, **type_param_scope, **locals},
+                {**builtins.__dict__, **globals, **locals},
                 globals=globals,
                 owner=owner,
                 is_class=self.__forward_is_class__,
