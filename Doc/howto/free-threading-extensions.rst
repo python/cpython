@@ -161,6 +161,8 @@ that return :term:`strong references <strong reference>`.
 +===================================+===================================+
 | :c:func:`PyList_GetItem`          | :c:func:`PyList_GetItemRef`       |
 +-----------------------------------+-----------------------------------+
+| :c:func:`PyList_GET_ITEM`         | :c:func:`PyList_GetItemRef`       |
++-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_GetItem`          | :c:func:`PyDict_GetItemRef`       |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_GetItemWithError` | :c:func:`PyDict_GetItemRef`       |
@@ -171,9 +173,9 @@ that return :term:`strong references <strong reference>`.
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_Next`             | none (see :ref:`PyDict_Next`)     |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyWeakref_GetObject`     | :c:func:`PyWeakref_GetRef`        |
+| :c:func:`!PyWeakref_GetObject`    | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyWeakref_GET_OBJECT`    | :c:func:`PyWeakref_GetRef`        |
+| :c:func:`!PyWeakref_GET_OBJECT`   | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyImport_AddModule`      | :c:func:`PyImport_AddModuleRef`   |
 +-----------------------------------+-----------------------------------+

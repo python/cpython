@@ -100,14 +100,14 @@ def copy(x):
     return _reconstruct(x, None, *rv)
 
 
-_copy_atomic_types = {types.NoneType, int, float, bool, complex, str, tuple,
+_copy_atomic_types = frozenset({types.NoneType, int, float, bool, complex, str, tuple,
           bytes, frozenset, type, range, slice, property,
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
-          weakref.ref, super}
-_copy_builtin_containers = {list, dict, set, bytearray}
+          weakref.ref, super})
+_copy_builtin_containers = frozenset({list, dict, set, bytearray})
 
-def deepcopy(x, memo=None, _nil=[]):
+def deepcopy(x, memo=None):
     """Deep copy operation on arbitrary Python objects.
 
     See the module's __doc__ string for more info.
@@ -122,8 +122,8 @@ def deepcopy(x, memo=None, _nil=[]):
     if memo is None:
         memo = {}
     else:
-        y = memo.get(d, _nil)
-        if y is not _nil:
+        y = memo.get(d, None)
+        if y is not None:
             return y
 
     copier = _deepcopy_dispatch.get(cls)
@@ -162,9 +162,9 @@ def deepcopy(x, memo=None, _nil=[]):
         _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
 
-_atomic_types =  {types.NoneType, types.EllipsisType, types.NotImplementedType,
+_atomic_types = frozenset({types.NoneType, types.EllipsisType, types.NotImplementedType,
           int, float, bool, complex, bytes, str, types.CodeType, type, range,
-          types.BuiltinFunctionType, types.FunctionType, weakref.ref, property}
+          types.BuiltinFunctionType, types.FunctionType, weakref.ref, property})
 
 _deepcopy_dispatch = d = {}
 

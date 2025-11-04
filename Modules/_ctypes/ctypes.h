@@ -431,7 +431,7 @@ typedef struct {
     visible to other threads before the `dict_final` bit is set.
 */
 
-#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUT(&(stginfo)->mutex)
+#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUTEX(&(stginfo)->mutex)
 #define STGINFO_UNLOCK()        Py_END_CRITICAL_SECTION()
 
 static inline uint8_t

@@ -121,9 +121,11 @@ class TestRecvChannelAttrs(TestBase):
 
     def test_pickle(self):
         ch, _ = channels.create()
-        data = pickle.dumps(ch)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, ch)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(ch, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, ch)
 
 
 class TestSendChannelAttrs(TestBase):
@@ -152,9 +154,11 @@ class TestSendChannelAttrs(TestBase):
 
     def test_pickle(self):
         _, ch = channels.create()
-        data = pickle.dumps(ch)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, ch)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(ch, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, ch)
 
 
 class TestSendRecv(TestBase):
