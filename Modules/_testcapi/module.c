@@ -96,9 +96,6 @@ module_from_slots_gc(PyObject *self, PyObject *spec)
     if (!mod) {
         return NULL;
     }
-    traverseproc traverse;
-    inquiry clear;
-    freefunc free;
     if (PyModule_Add(mod, "traverse", PyLong_FromVoidPtr(&noop_traverse)) < 0) {
         Py_DECREF(mod);
         return NULL;
