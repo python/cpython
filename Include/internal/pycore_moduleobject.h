@@ -46,7 +46,7 @@ typedef struct {
 static inline PyModuleDef *_PyModule_GetDefOrNull(PyObject *arg) {
     PyModuleObject *mod = _PyModule_CAST(arg);
     if (mod->md_token_is_def) {
-        return (PyModuleDef *)((PyModuleObject *)mod)->md_token;
+        return (PyModuleDef *)mod->md_token;
     }
     return NULL;
 }
