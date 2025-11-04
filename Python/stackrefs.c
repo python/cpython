@@ -200,10 +200,6 @@ _Py_stackref_get_borrowed_from(_PyStackRef ref, const char *filename, int linenu
 void
 _Py_stackref_set_borrowed_from(_PyStackRef ref, _PyStackRef borrowed_from, const char *filename, int linenumber)
 {
-    if (PyStackRef_IsNull(borrowed_from)) {
-        return;
-    }
-
     assert(!PyStackRef_IsError(ref));
     PyInterpreterState *interp = PyInterpreterState_Get();
 
@@ -212,6 +208,11 @@ _Py_stackref_set_borrowed_from(_PyStackRef ref, _PyStackRef borrowed_from, const
         _Py_FatalErrorFormat(__func__,
             "Invalid StackRef (ref) with ID %" PRIu64 " at %s:%d\n",
             ref.index, filename, linenumber);
+    }
+
+    assert(PyStackRef_IsNull(entry->borrowed_from));
+    if (PyStackRef_IsNull(borrowed_from)) {
+        return;
     }
 
     TableEntry *entry_borrowed = _Py_hashtable_get(interp->open_stackrefs_table, (void *)borrowed_from.index);
