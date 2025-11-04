@@ -3,8 +3,8 @@
 import argparse
 import os
 import pathlib
-import shutil
 import sys
+import tarfile
 import time
 import urllib.error
 import urllib.request
@@ -55,9 +55,15 @@ def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
 
 
 def extract_tarball(externals_dir, tarball_path, tag):
-    output_path = externals_dir / tag
-    shutil.unpack_archive(os.fspath(tarball_path), os.fspath(output_path))
-    return output_path
+    # Extract to externals_dir and return the path to the first top-level directory
+    with tarfile.open(tarball_path) as tf:
+        # Get the first top-level directory name from the tarball
+        members = tf.getmembers()
+        if not members:
+            raise ValueError(f"Tarball {tarball_path} is empty")
+        top_level_dir = members[0].name.split('/')[0]
+        tf.extractall(os.fspath(externals_dir))
+        return externals_dir / top_level_dir
 
 
 def extract_zip(externals_dir, zip_path):
