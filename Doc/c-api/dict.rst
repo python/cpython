@@ -430,7 +430,7 @@ Dictionary Objects
 
 .. c:function:: int PyDictViewSet_Check(PyObject *o)
 
-   Return true if *o* is a view of a set inside a dictionary. This is
+   Return true if *o* is a view of a set inside a dictionary. This is currently
    equivalent to :c:expr:`PyDictKeys_Check(o) || PyDictItems_Check(o)`. This
    function always succeeds.
 
