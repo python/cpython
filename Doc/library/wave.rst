@@ -25,7 +25,7 @@ The :mod:`wave` module defines the following function and exception:
 
 .. function:: open(file, mode=None)
 
-   If *file* is a string, open the file by that name, otherwise treat it as a
+   If *file* is a string or a :term:`path-like object`, open the file by that name, otherwise treat it as a
    file-like object.  *mode* can be:
 
    ``'rb'``
