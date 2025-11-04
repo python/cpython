@@ -976,14 +976,24 @@ done:
 
 /* Write a frame into the file fd: "File "xxx", line xxx in xxx".
 
-   This function is signal safe. */
+   This function is signal safe.
 
-static void
+   Return 0 on success. Return -1 if the frame is invalid. */
+
+static int
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
-    assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
+    if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
+        /* Ignore trampoline frame */
+        return 0;
+    }
 
-    PyCodeObject *code =_PyFrame_GetCode(frame);
+    PyCodeObject *code = _PyFrame_SafeGetCode(frame);
+    if (code == NULL) {
+        return -1;
+    }
+
+    int res = 0;
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
@@ -991,29 +1001,36 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
         PUTS(fd, "\"");
         _Py_DumpASCII(fd, code->co_filename);
         PUTS(fd, "\"");
-    } else {
-        PUTS(fd, "???");
     }
-    int lasti = PyUnstable_InterpreterFrame_GetLasti(frame);
-    int lineno = _PyCode_Addr2LineNoTstate(code, lasti);
+    else {
+        PUTS(fd, "???");
+        res = -1;
+    }
+
     PUTS(fd, ", line ");
+    int lasti = _PyFrame_SafeGetLasti(frame);
+    int lineno = -1;
+    if (lasti >= 0) {
+        lineno = _PyCode_SafeAddr2Line(code, lasti);
+    }
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);
     }
     else {
         PUTS(fd, "???");
+        res = -1;
     }
-    PUTS(fd, " in ");
 
-    if (code->co_name != NULL
-       && PyUnicode_Check(code->co_name)) {
+    PUTS(fd, " in ");
+    if (code->co_name != NULL && PyUnicode_Check(code->co_name)) {
         _Py_DumpASCII(fd, code->co_name);
     }
     else {
         PUTS(fd, "???");
+        res = -1;
     }
-
     PUTS(fd, "\n");
+    return res;
 }
 
 static int
@@ -1056,17 +1073,6 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
 
     unsigned int depth = 0;
     while (1) {
-        if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
-            /* Trampoline frame */
-            frame = frame->previous;
-            if (frame == NULL) {
-                break;
-            }
-
-            /* Can't have more than one shim frame in a row */
-            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-        }
-
         if (MAX_FRAME_DEPTH <= depth) {
             if (MAX_FRAME_DEPTH < depth) {
                 PUTS(fd, "plus ");
@@ -1076,7 +1082,15 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
             break;
         }
 
-        dump_frame(fd, frame);
+        if (_PyMem_IsPtrFreed(frame)) {
+            PUTS(fd, "  <freed frame>\n");
+            break;
+        }
+        if (dump_frame(fd, frame) < 0) {
+            PUTS(fd, "  <invalid frame>\n");
+            break;
+        }
+
         frame = frame->previous;
         if (frame == NULL) {
             break;
