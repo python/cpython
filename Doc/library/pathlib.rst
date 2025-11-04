@@ -136,6 +136,14 @@ we also call *flavours*:
       >>> PurePath()
       PurePosixPath('.')
 
+   An empty string in *pathsegments* also refers to the current directory.
+   This means that ``PurePath("")`` is equivalent to ``PurePath(".")``,
+   and consequently ``Path("").exists()`` will always return ``True``. This
+   differs from ``os.path.exists("")``, which returns ``False``.
+
+      >>> PurePath("")
+      PurePosixPath('.')
+
    If a segment is an absolute path, all previous segments are ignored
    (like :func:`os.path.join`)::
 
