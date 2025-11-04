@@ -200,7 +200,7 @@ There are a few functions specific to Python functions.
    runtime behavior depending on optimization decisions, it does not change
    the semantics of the Python code being executed.
 
-   If *event* is ``PyFunction_EVENT_DESTROY``,  Taking a reference in the
+   If *event* is ``PyFunction_EVENT_DESTROY``, taking a reference in the
    callback to the about-to-be-destroyed function will resurrect it, preventing
    it from being freed at this time. When the resurrected object is destroyed
    later, any watcher callbacks active at that time will be called again.
