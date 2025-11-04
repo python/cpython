@@ -62,8 +62,9 @@
 #ifdef Py_STATS
 #define INSTRUCTION_STATS(op) \
     do { \
+        PyStats *s = _PyStats_GET(); \
         OPCODE_EXE_INC(op); \
-        if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
+        if (s) s->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
@@ -71,14 +72,22 @@
 #endif
 
 #ifdef Py_STATS
-#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, int lastopcode
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, lastopcode
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, const void *instruction_funcptr_table, int oparg, int lastopcode
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg, lastopcode
 #else
-#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg
-#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, const void *instruction_funcptr_table, int oparg
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg
 #endif
 
-#if Py_TAIL_CALL_INTERP
+#if _Py_TAIL_CALL_INTERP
+#   if defined(__clang__) || defined(__GNUC__)
+#       if !_Py__has_attribute(preserve_none) || !_Py__has_attribute(musttail)
+#           error "This compiler does not have support for efficient tail calling."
+#       endif
+#   elif defined(_MSC_VER) && (_MSC_VER < 1950)
+#       error "You need at least VS 2026 / PlatformToolset v145 for tail calling."
+#   endif
+
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
 #   define Py_MUSTTAIL [[clang::musttail]]
 #   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
@@ -87,7 +96,7 @@
 #   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
 #   define DISPATCH_GOTO() \
         do { \
-            Py_MUSTTAIL return (INSTRUCTION_TABLE[opcode])(TAIL_CALL_ARGS); \
+            Py_MUSTTAIL return (((py_tail_call_funcptr *)instruction_funcptr_table)[opcode])(TAIL_CALL_ARGS); \
         } while (0)
 #   define JUMP_TO_LABEL(name) \
         do { \
@@ -96,12 +105,12 @@
 #   ifdef Py_STATS
 #       define JUMP_TO_PREDICTED(name) \
             do { \
-                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, oparg, lastopcode); \
+                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg, lastopcode); \
             } while (0)
 #   else
 #       define JUMP_TO_PREDICTED(name) \
             do { \
-                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, oparg); \
+                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg); \
             } while (0)
 #   endif
 #    define LABEL(name) TARGET(name)
@@ -358,7 +367,9 @@ do {                                                   \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     if (next_instr == NULL) {                          \
-        next_instr = frame->instr_ptr;                 \
+        /* gh-140104: The exception handler expects frame->instr_ptr
+            to after this_instr, not this_instr! */ \
+        next_instr = frame->instr_ptr + 1;                 \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     DISPATCH();                                        \
