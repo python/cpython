@@ -1642,7 +1642,7 @@ class ReTests(unittest.TestCase):
     def test_bug_gh140797(self):
         # gh140797: Capturing groups are not allowed in re.Scanner
 
-        msg = "Cannot use capturing groups in re.Scanner"
+        msg = r"Cannot use capturing groups in re\.Scanner"
         # Capturing group throws an error
         with self.assertRaisesRegex(ValueError, msg):
             Scanner([("(a)b", None)])
