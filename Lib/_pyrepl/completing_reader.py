@@ -188,14 +188,13 @@ class complete(commands.Command):
             if not r.cmpltn_action:
                 r.error("no matches")
         elif len(completions) == 1:
-            if not r.cmpltn_action:
-                if completions_unchangable and len(completions[0]) == len(stem):
-                    r.msg = "[ sole completion ]"
-                    r.dirty = True
-                r.insert(completions[0][len(stem):])
+            if completions_unchangable and len(completions[0]) == len(stem):
+                r.msg = "[ sole completion ]"
+                r.dirty = True
+            r.insert(completions[0][len(stem):])
         else:
             p = prefix(completions, len(stem))
-            if p and not r.cmpltn_action:
+            if p:
                 r.insert(p)
             if last_is_completer:
                 r.cmpltn_menu_visible = True
@@ -214,12 +213,14 @@ class complete(commands.Command):
                     r.dirty = True
 
         if r.cmpltn_action:
-            if r.msg:
-                r.msg += "\n" + r.cmpltn_action[0]
+            if r.msg and r.cmpltn_message_visible:
+                # There is already a message (eg. [ not unique ]) that
+                # would conflict for next tab: cancel action
+                r.cmpltn_action = None
             else:
                 r.msg = r.cmpltn_action[0]
-            r.cmpltn_message_visible = True
-            r.dirty = True
+                r.cmpltn_message_visible = True
+                r.dirty = True
 
 
 class self_insert(commands.self_insert):

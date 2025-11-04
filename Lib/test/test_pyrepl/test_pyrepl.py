@@ -1136,28 +1136,42 @@ class TestPyReplModuleCompleter(TestCase):
             dir = pathlib.Path(_dir)
             (dir / "foo.py").write_text("bar = 42")
             (dir / "pack").mkdir()
-            (dir / "pack" / "__init__.py").touch()
+            (dir / "pack" / "__init__.py").write_text("attr = 42")
+            (dir / "pack" / "foo.py").touch()
             (dir / "pack" / "bar.py").touch()
+            (dir / "pack" / "baz.py").touch()
             with patch.object(sys, "path", [_dir, *sys.path]):
                 cases = (
-                    ("from foo import \t\n", "from foo import ", False),
-                    ("from foo import \t\t\n", "from foo import bar", True),
-                    ("from foo import ba\t\n", "from foo import ba", False),
-                    ("from foo import ba\t\t\n", "from foo import bar", True),
-                    ("from foo import \tb\ta\t\n", "from foo import ba", False),
-                    # only one suggestion but message: do not complete
-                    ("from pack import \t\n", "from pack import ", False),
+                    # needs 2 tabs to import (show prompt, then import)
+                    ("from foo import \t\n", "from foo import ", set()),
+                    ("from foo import \t\t\n", "from foo import bar", {"foo"}),
+                    ("from foo import ba\t\n", "from foo import ba", set()),
+                    ("from foo import ba\t\t\n", "from foo import bar", {"foo"}),
+                    # reset if a character is inserted between tabs
+                    ("from foo import \tb\ta\t\n", "from foo import ba", set()),
+                    # packages: needs 3 tabs ([ not unique ], prompt, import)
+                    ("from pack import \t\t\n", "from pack import ", set()),
+                    ("from pack import \t\t\t\n", "from pack import ", {"pack"}),
+                    ("from pack import \t\t\ta\t\n", "from pack import attr", {"pack"}),
+                    # one match: needs 2 tabs (insert + show prompt, import)
+                    ("from pack import f\t\n", "from pack import foo", set()),
+                    ("from pack import f\t\t\n", "from pack import foo", {"pack"}),
+                    # common prefix: needs 3 tabs (insert + [ not unique ], prompt, import)
+                    ("from pack import b\t\n", "from pack import ba", set()),
+                    ("from pack import b\t\t\n", "from pack import ba", set()),
+                    ("from pack import b\t\t\t\n", "from pack import ba", {"pack"}),
                 )
-                for code, expected, is_foo_imported in cases:
-                    with self.subTest(code=code):
+                for code, expected, expected_imports in cases:
+                    with self.subTest(code=code), patch.dict(sys.modules):
+                        _imported = set(sys.modules.keys())
                         events = code_to_events(code)
                         reader = self.prepare_reader(events, namespace={})
                         output = reader.readline()
                         self.assertEqual(output, expected)
-                        self.assertEqual("foo" in sys.modules, is_foo_imported)
-                        if is_foo_imported:
-                            del sys.modules["foo"]
+                        new_imports = sys.modules.keys() - _imported
+                        self.assertEqual(new_imports, expected_imports)
 
+    @patch.dict(sys.modules)
     def test_attribute_completion_error_on_import(self):
         with tempfile.TemporaryDirectory() as _dir:
             dir = pathlib.Path(_dir)
@@ -1175,7 +1189,7 @@ class TestPyReplModuleCompleter(TestCase):
                         output = reader.readline()
                         self.assertEqual(output, expected)
                 self.assertNotIn("boom", sys.modules)
-                del sys.modules["foo"]
+
 
     def test_attribute_completion_error_on_attributes_access(self):
         class BrokenModule:
@@ -1191,6 +1205,7 @@ class TestPyReplModuleCompleter(TestCase):
             # ignore attributes, just propose submodule
             self.assertEqual(output, "from boom import submodule")
 
+    @patch.dict(sys.modules)
     def test_attribute_completion_private_and_invalid_names(self):
         with tempfile.TemporaryDirectory() as _dir:
             dir = pathlib.Path(_dir)
@@ -1209,7 +1224,7 @@ class TestPyReplModuleCompleter(TestCase):
                         reader = self.prepare_reader(events, namespace={})
                         output = reader.readline()
                         self.assertEqual(output, expected)
-                del sys.modules["foo"]
+
 
     def test_get_path_and_prefix(self):
         cases = (
@@ -1399,6 +1414,7 @@ class TestPyReplModuleCompleter(TestCase):
                             self.addCleanup(sys.modules.pop, mod)
 
 class TestHardcodedSubmodules(TestCase):
+    @patch.dict(sys.modules)
     def test_hardcoded_stdlib_submodules_are_importable(self):
         for parent_path, submodules in HARDCODED_SUBMODULES.items():
             for module_name in submodules:
