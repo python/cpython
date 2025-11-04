@@ -1,11 +1,10 @@
 import asyncio
+import unittest
 
 try:
     from asyncio import run_in_subinterpreter
 except ImportError:
     raise unittest.SkipTest("subinterpreters not supported")
-
-import unittest
 
 def simple_func():
     return 42
