@@ -1926,6 +1926,26 @@ class TestForwardRefClass(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             fr.evaluate()
 
+    def test_re_evaluate_generics(self):
+        global global_alias
+
+        # If we've already run this test before,
+        # ensure the variable is still undefined
+        if "global_alias" in globals():
+            del global_alias
+
+        class C:
+            x: global_alias[int]
+
+        # Evaluate the ForwardRef once
+        evaluated = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            format=Format.FORWARDREF
+        )
+
+        # Now define the global and ensure that the ForwardRef evaluates
+        global_alias = list
+        self.assertEqual(evaluated.evaluate(), list[int])
+
 
 class TestAnnotationLib(unittest.TestCase):
     def test__all__(self):
