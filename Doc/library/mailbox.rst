@@ -757,7 +757,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    `nmh - Message Handling System <https://www.nongnu.org/nmh/>`_
       Home page of :program:`nmh`, an updated version of the original :program:`mh`.
 
-   `MH & nmh: Email for Users & Programmers <https://rand-mh.sourceforge.io/book/>`_
+   `MH & nmh: Email for Users & Programmers <https://web.mit.edu/daveg/SIPB/Info/Links/Documentation/mh-book/index.htm>`_
       A GPL-licensed book on :program:`mh` and :program:`nmh`, with some information
       on the mailbox format.
 
