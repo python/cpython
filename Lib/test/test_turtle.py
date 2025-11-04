@@ -520,6 +520,7 @@ class TestTurtle(unittest.TestCase):
         self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, (0, 257, 0))
         self.assertRaises(turtle.TurtleGraphicsError, self.turtle.dot, 0, 0, 257, 0)
 
+
 class TestModuleLevel(unittest.TestCase):
     def test_all_signatures(self):
         import inspect
