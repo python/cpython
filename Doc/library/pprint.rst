@@ -263,7 +263,7 @@ The "__pprint__" protocol
 
 Pretty printing will use an object's ``__repr__`` by default.  For custom pretty printing, objects can
 implement a ``__pprint__()`` function to customize how their representations will be printed.  If this method
-exists, it is called with 4 arguments, exactly matching the API of :meth:`PrettyPrinter.format()`.  The
+exists, it is called with 4 arguments, exactly matching the API of :meth:`PrettyPrinter.format`.  The
 ``__pprint__()`` method is expected to return a string, which is used as the pretty printed representation of
 the object.
 
