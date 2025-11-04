@@ -150,13 +150,21 @@ class ForwardRef:
         if globals is None:
             globals = {}
 
+        if type_params is None and owner is not None:
+            type_params = getattr(owner, "__type_params__", None)
+
         if locals is None:
             locals = {}
             if isinstance(owner, type):
                 locals.update(vars(owner))
-
-        if type_params is None and owner is not None:
-            type_params = getattr(owner, "__type_params__", None)
+        elif (
+            type_params is not None
+            or isinstance(self.__cell__, dict)
+            or self.__extra_names__
+        ):
+            # Create a new locals dict if necessary,
+            # to avoid mutating the argument.
+            locals = dict(locals)
 
         # "Inject" type parameters into the local namespace
         # (unless they are shadowed by assignments *in* the local namespace),
