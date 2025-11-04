@@ -90,6 +90,51 @@ Built-in :py:func:`print` takes a new optional argument, appended to the end of 
   instantiation.
 
 
+Examples
+========
+
+A custom ``__pprint__()`` method can be used to customize the representation of the object:
+
+.. _code-block:
+
+    >>> class Custom:
+    ...     def __str__(self): return 'my str'
+    ...     def __repr__(self): return 'my repr'
+    ...     def __pprint__(self, context, maxlevels, level): return 'my pprint'
+
+    >>> pprint.pp(Custom())
+    my pprint
+
+Using the ``pretty`` argument to ``print()``:
+
+.. _code-block:
+
+    >>> import os
+    >>> print(os.pathconf_names)
+    {'PC_ASYNC_IO': 17, 'PC_CHOWN_RESTRICTED': 7, 'PC_FILESIZEBITS': 18, 'PC_LINK_MAX': 1, 'PC_MAX_CANON': 2, 'PC_MAX_INPUT': 3, 'PC_NAME_MAX': 4, 'PC_NO_TRUNC': 8, 'PC_PATH_MAX': 5, 'PC_PIPE_BUF': 6, 'PC_PRIO_IO': 19, 'PC_SYNC_IO': 25, 'PC_VDISABLE': 9, 'PC_MIN_HOLE_SIZE': 27, 'PC_ALLOC_SIZE_MIN': 16, 'PC_REC_INCR_XFER_SIZE': 20, 'PC_REC_MAX_XFER_SIZE': 21, 'PC_REC_MIN_XFER_SIZE': 22, 'PC_REC_XFER_ALIGN': 23, 'PC_SYMLINK_MAX': 24}
+    >>> print(os.pathconf_names, pretty=True)
+    {'PC_ALLOC_SIZE_MIN': 16,
+     'PC_ASYNC_IO': 17,
+     'PC_CHOWN_RESTRICTED': 7,
+     'PC_FILESIZEBITS': 18,
+     'PC_LINK_MAX': 1,
+     'PC_MAX_CANON': 2,
+     'PC_MAX_INPUT': 3,
+     'PC_MIN_HOLE_SIZE': 27,
+     'PC_NAME_MAX': 4,
+     'PC_NO_TRUNC': 8,
+     'PC_PATH_MAX': 5,
+     'PC_PIPE_BUF': 6,
+     'PC_PRIO_IO': 19,
+     'PC_REC_INCR_XFER_SIZE': 20,
+     'PC_REC_MAX_XFER_SIZE': 21,
+     'PC_REC_MIN_XFER_SIZE': 22,
+     'PC_REC_XFER_ALIGN': 23,
+     'PC_SYMLINK_MAX': 24,
+     'PC_SYNC_IO': 25,
+     'PC_VDISABLE': 9}
+
+
 Backwards Compatibility
 =======================
 
