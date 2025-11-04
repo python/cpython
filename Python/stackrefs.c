@@ -116,7 +116,7 @@ _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
         }
         if (entry->borrows > 0) {
             _Py_FatalErrorFormat(__func__,
-                "StackRef with ID %" PRIu64 " closed while borrows %d refs at %s:%d. Opened at %s:%d\n",
+                "StackRef with ID %" PRIu64 " closed with %d borrowed refs at %s:%d. Opened at %s:%d\n",
                 ref.index, entry->borrows, filename, linenumber, entry->filename, entry->linenumber);
         }
         obj = entry->obj;
