@@ -52,7 +52,33 @@ sentinel value is returned.
    *sentinel*, the iteration will be terminated.
 
 
-.. _other-builtin-types:
+
+.. _range-objects:
+Range Objects
+^^^^^^^^^^^^^
+
+.. c:var:: PyTypeObject PyRange_Type
+
+   The type object for :class:`range` objects.
+
+
+.. c:var:: PyTypeObject PyRangeIter_Type
+
+   The type object for iterators over :class:`range` objects.
+
+
+.. c:var:: PyTypeObject PyLongRangeIter_Type
+
+   The type object for iterators over :class:`range` objects with large bounds.
+
+
+.. c:function:: int PyRange_Check(PyObject *o)
+
+   Return true if the object *o* is an instance of a :class:`range` object.
+   This function always succeeds.
+
+
+.. _other-builtin-iterator-types:
 
 Other Builtin Iterator Types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -78,3 +104,4 @@ provide no additional functions. They are here for completeness.
 .. c:var:: PyTypeObject PyZip_Type
 
    The type object for :class:`zip` objects.
+
