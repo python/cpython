@@ -2111,10 +2111,11 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     _PyErr_SetRaisedException(tstate, exc);
     GC_STAT_ADD(generation, objects_collected, stats.collected);
 #ifdef Py_STATS
-    if (_Py_stats) {
+    PyStats *s = _PyStats_GET();
+    if (s) {
         GC_STAT_ADD(generation, object_visits,
-            _Py_stats->object_stats.object_visits);
-        _Py_stats->object_stats.object_visits = 0;
+            s->object_stats.object_visits);
+        s->object_stats.object_visits = 0;
     }
 #endif
     validate_spaces(gcstate);
