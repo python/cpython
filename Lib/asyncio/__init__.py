@@ -46,7 +46,7 @@ try:
 except ImportError:
     subinterpreters = None
 else:
-    __all__.extend(subinterpreters.__all__)
+    __all__ = __all__ + subinterpreters.__all__
 
 if sys.platform == 'win32':  # pragma: no cover
     from .windows_events import *
