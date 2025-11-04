@@ -66,7 +66,10 @@ class ABCMeta(type):
         if issubclass(cls, subclass):
             # This would create a cycle, which is bad for the algorithm below
             raise RuntimeError("Refusing to create an inheritance cycle")
+        # Add registry entry
         cls._abc_registry.add(subclass)
+        # Automatically include cache entry
+        cls._abc_cache.add(subclass)
         ABCMeta._abc_invalidation_counter += 1  # Invalidate negative cache
         return subclass
 

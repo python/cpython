@@ -613,7 +613,13 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     if (impl == NULL) {
         return NULL;
     }
+    // Add registry entry
     if (_add_to_weak_set(impl, &impl->_abc_registry, subclass) < 0) {
+        Py_DECREF(impl);
+        return NULL;
+    }
+    // Automatically include cache entry
+    if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
         Py_DECREF(impl);
         return NULL;
     }
