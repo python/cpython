@@ -140,7 +140,7 @@ the same library that the Python runtime is using.
    interpreter prompt is about to become idle and wait for user input
    from the terminal.  The return value is ignored.  Overriding this
    hook can be used to integrate the interpreter's prompt with other
-   event loops, as done in the :file:`Modules/_tkinter.c` in the
+   event loops, as done in :file:`Modules/_tkinter.c` in the
    Python source code.
 
    .. versionchanged:: 3.12
