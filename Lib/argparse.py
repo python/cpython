@@ -2749,6 +2749,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             except (AttributeError, OSError):
                 pass
 
+    def _get_theme(self, file=None):
+        from _colorize import can_colorize, get_theme
+
+        if self.color and can_colorize(file=file):
+            return get_theme(force_color=True).argparse
+        else:
+            return get_theme(force_no_color=True).argparse
+
     # ===============
     # Exiting methods
     # ===============
@@ -2768,13 +2776,21 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         should either exit or raise an exception.
         """
         self.print_usage(_sys.stderr)
+        theme = self._get_theme(file=_sys.stderr)
+        fmt = _('%(prog)s: error: %(message)s\n')
+        fmt = fmt.replace('error: %(message)s',
+                        f'{theme.error}error:{theme.reset} {theme.message}%(message)s{theme.reset}')
+
         args = {'prog': self.prog, 'message': message}
-        self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+        self.exit(2, fmt % args)
 
     def _warning(self, message):
+        theme = self._get_theme(file=_sys.stderr)
+        fmt = _('%(prog)s: warning: %(message)s\n')
+        fmt = fmt.replace('warning: %(message)s',
+                        f'{theme.warning}warning:{theme.reset} {theme.message}%(message)s{theme.reset}')
         args = {'prog': self.prog, 'message': message}
-        self._print_message(_('%(prog)s: warning: %(message)s\n') % args, _sys.stderr)
-
+        self._print_message(fmt % args, _sys.stderr)
 
 def __getattr__(name):
     if name == "__version__":
