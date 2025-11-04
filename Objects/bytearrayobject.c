@@ -147,6 +147,13 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
         return NULL;
     }
 
+    /* Fill values used in bytearray_dealloc.
+
+       In an optimized build the memory isn't zeroed and ob_exports would read
+       uninitialized data when when PyBytes_FromStringAndSize errored leading to
+       intermittent test failures. */
+    new->ob_exports = 0;
+
     /* Optimization: size=0 bytearray should not allocate space
 
        PyBytes_FromStringAndSize returns the empty bytes global when size=0 so
@@ -160,7 +167,6 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
     if (bytes != NULL && size > 0) {
         memcpy(new->ob_bytes, bytes, size);
     }
-    new->ob_exports = 0;
 
     return (PyObject *)new;
 }
