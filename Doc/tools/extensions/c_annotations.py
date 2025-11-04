@@ -300,12 +300,11 @@ class CorrespondingTypeSlot(SphinxDirective):
     """
 
     has_content = False
-    option_spec = {}
 
     required_arguments = 1
     optional_arguments = 0
 
-    def run(self):
+    def run(self) -> list[nodes.Node]:
         name = self.arguments[0]
         state = self.env.domaindata["c_annotations"]
         stable_abi_data = state["stable_abi_data"]
