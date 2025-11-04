@@ -7,6 +7,7 @@ Glossary
 .. if you add new entries, keep the alphabetical sorting!
 
 .. glossary::
+   :sorted:
 
    ``>>>``
       The default Python prompt of the :term:`interactive` shell.  Often
@@ -565,6 +566,7 @@ Glossary
       Also see :ref:`annotations-howto`
       for best practices on working with annotations.
 
+   future statement
    __future__
       A :ref:`future statement <future>`, ``from __future__ import <feature>``,
       directs the compiler to compile the current module using syntax or
@@ -1231,6 +1233,7 @@ Glossary
       An acronym for the "read–eval–print loop", another name for the
       :term:`interactive` interpreter shell.
 
+   slots declaration
    __slots__
       A declaration inside a class that saves memory by pre-declaring space for
       instance attributes and eliminating instance dictionaries.  Though
