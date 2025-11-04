@@ -149,8 +149,8 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
 
     /* Fill values used in bytearray_dealloc.
 
-       In an optimized build the memory isn't zeroed and ob_exports would read
-       uninitialized data when when PyBytes_FromStringAndSize errored leading to
+       In an optimized build the memory isn't zeroed and ob_exports would be
+       uninitialized when when PyBytes_FromStringAndSize errored leading to
        intermittent test failures. */
     new->ob_exports = 0;
 
