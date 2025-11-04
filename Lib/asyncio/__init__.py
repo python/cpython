@@ -46,6 +46,7 @@ try:
 except ImportError:
     subinterpreters = None
 else:
+    from .subinterpreters import *
     __all__ = __all__ + subinterpreters.__all__
 
 if sys.platform == 'win32':  # pragma: no cover
