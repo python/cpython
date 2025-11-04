@@ -140,6 +140,11 @@ class ABCMeta(type):
                 return True
         # Check if it's a subclass of a subclass (recursive)
         for scls in cls.__subclasses__():
+            if subclass is scls:
+                # Fast path
+                if not cls._abc_issubclasscheck_recursive:
+                    cls._abc_cache.add(subclass)
+                return True
             # If inside recursive issubclass check, avoid adding classes
             # to any cache because this may drastically increase memory usage.
             # Unfortunately, issubclass/__subclasscheck__ don't accept third
@@ -149,6 +154,7 @@ class ABCMeta(type):
             if scls_is_abc:
                 scls._abc_issubclasscheck_recursive = True
             try:
+                # Perform recursive check
                 result = issubclass(subclass, scls)
             finally:
                 if scls_is_abc:

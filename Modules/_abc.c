@@ -848,6 +848,17 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
             goto end;
         }
 
+        if (scls == subclass) {
+            // Fast path
+            if (!is_issubclasscheck_recursive(impl)) {
+                if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
+                    goto end;
+                }
+            }
+            result = Py_True;
+            goto end;
+        }
+
         _abc_data *scls_impl;
         int scls_is_abc = _get_optional_impl(state, scls, &scls_impl);
         if (scls_is_abc < 0) {
@@ -865,6 +876,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
             set_issubclasscheck_recursive(scls_impl);
         }
 
+        // Perform recursive check
         int r = PyObject_IsSubclass(subclass, scls);
         Py_DECREF(scls);
 
