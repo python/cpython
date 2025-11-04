@@ -676,7 +676,7 @@ xml.parsers.expat
   to :ref:`xmlparser <xmlparser-objects>` objects to tune protections against
   `billion laughs`_ attacks.
   (Contributed by Bénédikt Tran in :gh:`90949`.)
-  
+
   .. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
 
 abc
