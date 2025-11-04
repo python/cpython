@@ -1,1 +1,0 @@
-wave.py - Allow opening of path-like files.
