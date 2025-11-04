@@ -19,6 +19,11 @@ Byte Array Objects
    it is the same object as :class:`bytearray` in the Python layer.
 
 
+.. c:var:: PyTypeObject PyByteArrayIter_Type
+
+   Iterator over a :class:`bytearray` object.
+
+
 Type check macros
 ^^^^^^^^^^^^^^^^^
 
