@@ -225,6 +225,9 @@
     <ClCompile Include="$(lzmaDir)src\liblzma\lzma\lzma2_encoder.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="$(lzmaDir)src\liblzma\common\lzip_decoder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(lzmaDir)src\common\mythread.h">
@@ -425,7 +428,10 @@
     <ClInclude Include="$(lzmaDir)src\liblzma\simple\simple_private.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="$(lzmaDir)windows\vs2019\config.h">
+    <ClInclude Include="$(lzmaDir)windows\config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(lzmaDir)src\liblzma\common\lzip_decoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
