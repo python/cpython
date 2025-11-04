@@ -85,6 +85,15 @@ class TestModFromSlotsAndSpec(unittest.TestCase):
         self.assertEqual(mod.__name__, 'testmod')
         self.assertEqual(mod.__doc__, None)
 
+        # Check that the requested hook functions (which module_from_slots_gc
+        # stores as attributes) match what's in the module (as retrieved by
+        # _testinternalcapi.module_get_gc_hooks)
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        traverse, clear, free = _testinternalcapi.module_get_gc_hooks(mod)
+        self.assertEqual(traverse, mod.traverse)
+        self.assertEqual(clear, mod.clear)
+        self.assertEqual(free, mod.free)
+
     def test_token(self):
         mod = _testcapi.module_from_slots_token(FakeSpec())
         self.assertIsInstance(mod, types.ModuleType)

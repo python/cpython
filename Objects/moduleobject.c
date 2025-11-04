@@ -828,21 +828,6 @@ PyModule_GetToken(PyObject *m, void **token_p)
     return 0;
 }
 
-int
-_PyModule_GetGCHooks(PyObject *m, traverseproc *traverse,
-                     inquiry *clear, freefunc *free)
-{
-    if (!PyModule_Check(m)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    PyModuleObject *mod = (PyModuleObject *)m;
-    *traverse = mod->md_state_traverse;
-    *clear = mod->md_state_clear;
-    *free = mod->md_state_free;
-    return 0;
-}
-
 PyObject*
 PyModule_GetNameObject(PyObject *mod)
 {

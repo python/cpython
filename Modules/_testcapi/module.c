@@ -99,13 +99,18 @@ module_from_slots_gc(PyObject *self, PyObject *spec)
     traverseproc traverse;
     inquiry clear;
     freefunc free;
-    if (_PyModule_GetGCHooks(mod, &traverse, &clear, &free) < 0) {
+    if (PyModule_Add(mod, "traverse", PyLong_FromVoidPtr(&noop_traverse)) < 0) {
         Py_DECREF(mod);
         return NULL;
     }
-    assert(traverse == &noop_traverse);
-    assert(clear == &noop_clear);
-    assert(free == &noop_free);
+    if (PyModule_Add(mod, "clear", PyLong_FromVoidPtr(&noop_clear)) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    if (PyModule_Add(mod, "free", PyLong_FromVoidPtr(&noop_free)) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
     return mod;
 }
 
