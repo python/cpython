@@ -83,9 +83,10 @@ Floating-Point Objects
    Return :data:`math.nan` from a function.
 
 
-.. c:macro:: Py_RETURN_INF
+.. c:macro:: Py_RETURN_INF(sign)
 
-   Return :data:`math.inf` from a function.
+   Return :data:`math.inf` or :data:`-math.inf <math.inf>` from a function,
+   depending on the sign of *sign*.
 
 
 Pack and Unpack functions
