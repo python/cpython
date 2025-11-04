@@ -169,12 +169,19 @@ class OtherNetworkTests(unittest.TestCase):
         with mock.patch('socket.create_connection', patched_create_connection):
             with check_no_resource_warning(self):
                 # Try without CacheFTPHandler
+                warnings.filterwarnings('error', category=ResourceWarning)
                 self._test_urls([entry], handlers=no_cache_handlers)
             with check_no_resource_warning(self):
-                # Try with CacheFTPHandler (uncached & cached)
-                self._test_urls([entry, entry], cache_handlers)
+                # Try with CacheFTPHandler (uncached)
+                warnings.filterwarnings('error', category=ResourceWarning)
+                self._test_urls([entry], cache_handlers)
+            with check_no_resource_warning(self):
+                # Try with CacheFTPHandler (cached)
+                warnings.filterwarnings('error', category=ResourceWarning)
+                self._test_urls([entry], cache_handlers)
         # Try without the mock: the handler should not use a closed connection
         with check_no_resource_warning(self):
+            warnings.filterwarnings('error', category=ResourceWarning)
             self._test_urls([url], cache_handlers)
 
     def test_file(self):
