@@ -1525,7 +1525,8 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
         if (to_take < 0) {
             to_take += size;
         }
-    } else {
+    }
+    else {
         PyErr_SetString(PyExc_TypeError, "n must be an integer or None");
         return NULL;
     }
