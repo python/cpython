@@ -129,3 +129,11 @@ Registry API for Unicode encoding error handlers
    Replace the unicode encode error with ``\N{...}`` escapes.
 
    .. versionadded:: 3.5
+
+
+Codec utility variables
+-----------------------
+
+.. c:var:: const char *Py_hexdigits
+
+   A string constant containing the hexadecimal digits ``"0123456789abcdef"``.
