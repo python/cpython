@@ -92,12 +92,7 @@ Floating-Point Objects
 
    On most platforms, this is equivalent to the following::
 
-      if (copysign(1., sign) == 1.) {
-         return PyFloat_FromDouble(INFINITY);
-      }
-      else {
-         return PyFloat_FromDouble(-INFINITY);
-      }
+      return PyFloat_FromDouble(copysign(INFINITY, sign));
 
 
 Pack and Unpack functions
