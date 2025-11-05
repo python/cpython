@@ -1,4 +1,5 @@
 import enum
+import os
 import sys
 import textwrap
 import unittest
@@ -12,6 +13,8 @@ from test.support.script_helper import assert_python_failure
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
+
+STDERR_FD = 2
 
 
 class Constant(enum.IntEnum):
@@ -246,6 +249,41 @@ class CAPITest(unittest.TestCase):
             self.assertFalse(_testcapi.pyobject_is_unique_temporary(x))
 
         func(object())
+
+    def test_pyobject_dump(self):
+        pyobject_dump = _testcapi.pyobject_dump
+        obj = 'test string'
+
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        try:
+            old_stderr = os.dup(STDERR_FD)
+        except OSError as exc:
+            # os.dup(STDERR_FD) is not supported on WASI
+            self.skipTest(f"os.dup() failed with {exc!r}")
+
+        try:
+            with open(filename, "wb") as fp:
+                fd = fp.fileno()
+                os.dup2(fd, STDERR_FD)
+                pyobject_dump(obj)
+        finally:
+            os.dup2(old_stderr, STDERR_FD)
+            os.close(old_stderr)
+
+        with open(filename) as fp:
+            output = fp.read()
+
+        hex_regex = r'0x[0-9a-fA-F]+'
+        self.assertRegex(output.rstrip(),
+            fr"object address  : {hex_regex}\n"
+             r"object refcount : [0-9]+\n"
+            fr"object type     : {hex_regex}\n"
+             r"object type name: str\n"
+             r"object repr     : 'test string'"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

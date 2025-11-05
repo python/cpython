@@ -85,6 +85,26 @@ Object Protocol
    instead of the :func:`repr`.
 
 
+.. c:function:: void PyObject_Dump(PyObject* op)
+
+   Dump an object *op* to ``stderr``. Function used for debugging.
+
+   It can be called without an :term:`attached thread state`, even if it's not
+   recommended.
+
+   Implement an heuristic to detect if the object memory has been freed.
+
+   Example of output::
+
+       object address  : 0x7f80124702c0
+       object refcount : 2
+       object type     : 0x9902e0
+       object type name: str
+       object repr     : 'abcdef'
+
+   .. versionadded:: next
+
+
 .. c:function:: int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.

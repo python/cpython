@@ -1,0 +1,2 @@
+Add :c:func:`PyObject_Dump` to dump an object to ``stderr``. Function used
+for debugging. Patch by Victor Stinner.

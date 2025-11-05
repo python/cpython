@@ -485,6 +485,14 @@ is_uniquely_referenced(PyObject *self, PyObject *op)
 }
 
 
+static PyObject *
+pyobject_dump(PyObject *self, PyObject *op)
+{
+    PyObject_Dump(op);
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},
@@ -511,6 +519,7 @@ static PyMethodDef test_methods[] = {
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {"is_uniquely_referenced", is_uniquely_referenced, METH_O},
+    {"pyobject_dump", pyobject_dump, METH_O},
     {NULL},
 };
 

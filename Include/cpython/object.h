@@ -295,7 +295,10 @@ PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
-PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
+PyAPI_FUNC(void) PyObject_Dump(PyObject *);
+
+// Alias for backward compatibility
+#define _PyObject_Dump PyObject_Dump
 
 PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 
@@ -387,7 +390,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
    process with a message on stderr if the given condition fails to hold,
    but compile away to nothing if NDEBUG is defined.
 
-   However, before aborting, Python will also try to call _PyObject_Dump() on
+   However, before aborting, Python will also try to call PyObject_Dump() on
    the given object.  This may be of use when investigating bugs in which a
    particular object is corrupt (e.g. buggy a tp_visit method in an extension
    module breaking the garbage collector), to help locate the broken objects.
