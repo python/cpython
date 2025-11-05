@@ -46,8 +46,9 @@ Multi-Phase Initialization
 ..........................
 
 Extensions that use multi-phase initialization (i.e.,
-:c:func:`PyModuleDef_Init`) should add a :c:data:`Py_mod_gil` slot in the
-module definition.  If your extension supports older versions of CPython,
+:c:func:`PyModuleDef_Init` or :c:func:`PyModExport_modulename`) should add a
+:c:data:`Py_mod_gil` slot in the module definition.
+If your extension supports older versions of CPython,
 you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
 
 ::
@@ -58,12 +59,6 @@ you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     #endif
         {0, NULL}
-    };
-
-    static struct PyModuleDef moduledef = {
-        PyModuleDef_HEAD_INIT,
-        .m_slots = module_slots,
-        ...
     };
 
 
