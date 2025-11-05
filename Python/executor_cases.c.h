@@ -7563,6 +7563,9 @@
                     TIER2_TO_TIER2(executor);
                 }
             }
+            if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
+                GOTO_TIER_ONE(target);
+            }
             if (!backoff_counter_triggers(temperature)) {
                 exit->temperature = advance_backoff_counter(temperature);
                 GOTO_TIER_ONE(target);
