@@ -89,8 +89,8 @@ Object Protocol
 
    Dump an object *op* to ``stderr``. This should only be used for debugging.
 
-   It can be called without an :term:`attached thread state`, even if it's not
-   recommended.
+   This function can be called without an :term:`attached thread state`, but it's not
+   recommended to do so.
 
    Implement a heuristic to detect if the object memory has been freed.
 
