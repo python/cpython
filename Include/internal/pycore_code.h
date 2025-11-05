@@ -308,6 +308,13 @@ extern void _PyLineTable_InitAddressRange(
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
+// Similar to PyCode_Addr2Line(), but return -1 if the code object is invalid
+// and can be called without an attached tstate. Used by dump_frame() in
+// Python/traceback.c. The function uses heuristics to detect freed memory,
+// it's not 100% reliable.
+extern int _PyCode_SafeAddr2Line(PyCodeObject *co, int addr);
+
+
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 

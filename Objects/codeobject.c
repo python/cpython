@@ -997,6 +997,23 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     return _PyCode_CheckLineNumber(addrq, &bounds);
 }
 
+int
+_PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
+{
+    if (addrq < 0) {
+        return co->co_firstlineno;
+    }
+    if (co->_co_monitoring && co->_co_monitoring->lines) {
+        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    }
+    if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
+        return -1;
+    }
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(co, &bounds);
+    return _PyCode_CheckLineNumber(addrq, &bounds);
+}
+
 void
 _PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range)
 {

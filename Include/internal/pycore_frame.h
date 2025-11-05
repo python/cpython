@@ -11,6 +11,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
 #include "pycore_code.h"          // STATS
+#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 
 /* See Objects/frame_layout.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
@@ -82,6 +83,29 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     return (PyCodeObject *)f->f_executable;
 }
 
+// Similar to _PyFrame_GetCode(), but return NULL if the frame is invalid or
+// freed. Used by dump_frame() in Python/traceback.c. The function uses
+// heuristics to detect freed memory, it's not 100% reliable.
+static inline PyCodeObject*
+_PyFrame_SafeGetCode(_PyInterpreterFrame *f)
+{
+    // globals and builtins may be NULL on a legit frame, but it's unlikely.
+    // It's more likely that it's a sign of an invalid frame.
+    if (f->f_globals == NULL || f->f_builtins == NULL) {
+        return NULL;
+    }
+
+    PyObject *executable = f->f_executable;
+    // Reimplement _PyObject_IsFreed() to avoid pycore_object.h dependency
+    if (_PyMem_IsPtrFreed(executable) || _PyMem_IsPtrFreed(Py_TYPE(executable))) {
+        return NULL;
+    }
+    if (!PyCode_Check(executable)) {
+        return NULL;
+    }
+    return (PyCodeObject *)executable;
+}
+
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus;
 }
@@ -124,6 +148,22 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
+}
+
+// Similar to PyUnstable_InterpreterFrame_GetLasti(), but return NULL if the
+// frame is invalid or freed. Used by dump_frame() in Python/traceback.c. The
+// function uses heuristics to detect freed memory, it's not 100% reliable.
+static inline int
+_PyFrame_SafeGetLasti(struct _PyInterpreterFrame *f)
+{
+    // Code based on _PyFrame_GetBytecode() but replace _PyFrame_GetCode()
+    // with _PyFrame_SafeGetCode().
+    PyCodeObject *co = _PyFrame_SafeGetCode(f);
+    if (co == NULL) {
+        return -1;
+    }
+
+    return (int)(f->instr_ptr - _PyCode_CODE(co)) * sizeof(_Py_CODEUNIT);
 }
 
 /* Consumes reference to func and locals.
