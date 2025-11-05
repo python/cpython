@@ -15,7 +15,8 @@ any other object.
 
 .. c:var:: PyTypeObject PyMemoryView_Type
 
-   The type object for :class:`memoryview` objects.
+   This instance of :c:type:`PyTypeObject` represents the Python memoryview
+   type. This is the same object as :class:`memoryview` in the Python layer.
 
 
 .. c:function:: PyObject *PyMemoryView_FromObject(PyObject *obj)
