@@ -7353,6 +7353,11 @@ class TestSharedMemoryNames(unittest.TestCase):
                 ":starts:with:colon",
                 "ends:with:colon:",
                 "::double::colons::",
+                "name\\nwithnewline",
+                "name-with-trailing-newline\\n",
+                "\\nname-starts-with-newline",
+                "colons:and\\nnewlines:mix",
+                "multi\\nline\\nname",
             ]
 
             for name in test_names:

@@ -15,6 +15,7 @@
 # this resource tracker process, "killall python" would probably leave unlinked
 # resources.
 
+import base64
 import os
 import signal
 import sys
@@ -248,6 +249,12 @@ class ResourceTracker(object):
         assert nbytes == len(msg), f"{nbytes=} != {len(msg)=}"
 
     def _send(self, cmd, name, rtype):
+        # Encode shared_memory names as they are created by the user and may contain
+        # colons or newlines.
+        if rtype == "shared_memory":
+            b = name.encode('utf-8', 'surrogateescape')
+            name = base64.urlsafe_b64encode(b).decode('ascii')
+
         msg = f"{cmd}:{name}:{rtype}\n".encode("ascii")
         if len(msg) > 512:
             # posix guarantees that writes to a pipe of less than PIPE_BUF
@@ -285,12 +292,13 @@ def main(fd):
         with open(fd, 'rb') as f:
             for line in f:
                 try:
-                    parts = line.strip().decode('ascii').split(':')
-                    if len(parts) < 3:
-                        raise ValueError("malformed resource_tracker message: %r" % (parts,))
-                    cmd = parts[0]
-                    rtype = parts[-1]
-                    name = ':'.join(parts[1:-1])
+                    cmd, enc_name, rtype = line.rstrip(b'\n').decode('ascii').split(':', 2)
+                    if rtype == "shared_memory":
+                        name = base64.urlsafe_b64decode(enc_name.encode('ascii')).decode('utf-8', 'surrogateescape')
+                    else:
+                        # Semaphore names are generated internally, so no encoding is needed.
+                        name = enc_name
+
                     cleanup_func = _CLEANUP_FUNCS.get(rtype, None)
                     if cleanup_func is None:
                         raise ValueError(
