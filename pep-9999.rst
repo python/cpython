@@ -54,13 +54,13 @@ There are two parts to this proposal.
 
 Classes can implement a new dunder method, ``__pretty__()`` which if present, generates the pretty printed
 representation of their instances.  This augments ``__repr__()`` which, prior to this proposal, was the only
-method used to generate a pretty representation of the object.  Since the built-in :py:func:`repr` function
-provides functionality potentially separate from pretty printing, some classes may want more control over
-object display between those two use cases.
+method used to generate a pretty representation of the object.  Since object reprs provide functionality
+distinct from pretty printing, some classes may want more control over their pretty display.
 
 ``__pretty__()`` is optional; if missing, the standard pretty printers fall back to ``__repr__()`` for full
-backward compatibility.  However, if defined on a class, ``__pretty__()`` has the same argument signature as
-:py:func:`PrettyPrinter.format`, taking four arguments:
+backward compatibility (technically speaking, :meth:`pprint.saferepr` is used).  However, if defined on a
+class, ``__pretty__()`` has the same argument signature as :py:func:`PrettyPrinter.format`, taking four
+arguments:
 
 * ``object`` - the object to print, which is effectively always ``self``
 * ``context`` - a dictionary mapping the ``id()`` of objects which are part of the current presentation
@@ -68,10 +68,12 @@ backward compatibility.  However, if defined on a class, ``__pretty__()`` has th
 * ``maxlevels`` - the requested limit to recursion
 * ``levels`` - the current recursion level
 
-See :py:func:`PrettyPrinter.format` for details.
+Similarly, ``__pretty__()`` returns three values, the string to be used as the pretty printed representation,
+a boolean indicating whether the returned value is "readable", and a boolean indicating whether recursion has
+been detected.  In this context, "readable" means the same as :meth:`PrettyPrinter.isreadable`, i.e. that the
+returned value can be used to reconstruct the original object using ``eval()``.
 
-Unlike that function, ``__pretty__()`` returns a single value, the string to be used as the pretty printed
-representation.
+See :py:func:`PrettyPrinter.format` for details.
 
 
 A new argument to built-in ``print``
@@ -172,13 +174,7 @@ None at this time.
 Open Issues
 ===========
 
-As currently defined, the ``__pretty__()`` method is defined as taking four arguments and returning
-a single string.  This is close to -- but not quite -- the full signature for
-``PrettyPrinter.format()``, and was chosen for reference implementation convenience.  It's not
-clear that custom pretty representations need ``context``, ``maxlevels``, and ``levels``, so perhaps
-the argument list should be simplified?  If not, then perhaps ``__pretty__()`` should *exactly*
-match ``PrettyPrinter.format()``?  That does, however complicate the protocol for users.
-
+TBD
 
 Acknowledgements
 ================
