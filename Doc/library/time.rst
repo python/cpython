@@ -584,7 +584,7 @@ Functions
       calculations when the day of the week and the year are specified.
 
    Here is an example, a format for dates compatible with that specified  in the
-   :rfc:`2822` Internet email standard.  [1]_ ::
+   :rfc:`5322` Internet email standard.  [1]_ ::
 
       >>> from time import gmtime, strftime
       >>> strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
@@ -1066,4 +1066,5 @@ Timezone Constants
    strict reading of the original 1982 :rfc:`822` standard calls for a two-digit
    year (``%y`` rather than ``%Y``), but practice moved to 4-digit years long before the
    year 2000.  After that, :rfc:`822` became obsolete and the 4-digit year has
-   been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`.
+   been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`,
+   with :rfc:`5322` continuing this requirement.
