@@ -50,3 +50,32 @@ sentinel value is returned.
    callable object that can be called with no parameters; each call to it should
    return the next item in the iteration.  When *callable* returns a value equal to
    *sentinel*, the iteration will be terminated.
+
+
+Other Iterator Objects
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:var:: PyTypeObject PyByteArrayIter_Type
+.. c:var:: PyTypeObject PyBytesIter_Type
+.. c:var:: PyTypeObject PyListIter_Type
+.. c:var:: PyTypeObject PyListRevIter_Type
+.. c:var:: PyTypeObject PySetIter_Type
+.. c:var:: PyTypeObject PyTupleIter_Type
+.. c:var:: PyTypeObject PyRangeIter_Type
+.. c:var:: PyTypeObject PyLongRangeIter_Type
+.. c:var:: PyTypeObject PyDictIterKey_Type
+.. c:var:: PyTypeObject PyDictRevIterKey_Type
+.. c:var:: PyTypeObject PyDictIterValue_Type
+.. c:var:: PyTypeObject PyDictRevIterValue_Type
+.. c:var:: PyTypeObject PyDictIterItem_Type
+.. c:var:: PyTypeObject PyDictRevIterItem_Type
+
+   Type objects for iterators of various built-in objects.
+
+   Do not create instances of these directly; prefer calling
+   :c:func:`PyObject_GetIter` instead.
+
+   Note that there is no guarantee that a given built-in type uses a given iterator
+   type. For example, iterating over :class:`range` will use one of two iterator
+   types depending on the size of the range. Other types may start using a
+   similar scheme in the future, without warning.
