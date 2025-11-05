@@ -672,8 +672,8 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). first time  (not found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
-       C.   _PyImport_GetModInitFunc():  load <module init func>
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModuleExportHooks()
+       C.   _PyImport_GetModuleExportHooks():  load <module init func>
        D. _imp_create_dynamic_impl() -> import_run_extension()
        E.   import_run_extension() -> _PyImport_RunModInitFunc()
        F.     _PyImport_RunModInitFunc():  call <module init func>
@@ -743,16 +743,19 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
        A. noop
 
 
-    ...for multi-phase init modules:
+    ...for multi-phase init modules from PyModInit_* (PyModuleDef):
 
     (6). every time:
        A. _imp_create_dynamic_impl() -> import_find_extension()  (not found)
-       B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
-       C.   _PyImport_GetModInitFunc():  load <module init func>
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModuleExportHooks()
+       C.   _PyImport_GetModuleExportHooks():  load <module init func>
        D. _imp_create_dynamic_impl() -> import_run_extension()
        E.   import_run_extension() -> _PyImport_RunModInitFunc()
        F.     _PyImport_RunModInitFunc():  call <module init func>
        G.   import_run_extension() -> PyModule_FromDefAndSpec()
+
+       PyModule_FromDefAndSpec():
+
        H.      PyModule_FromDefAndSpec(): gather/check moduledef slots
        I.      if there's a Py_mod_create slot:
                  1. PyModule_FromDefAndSpec():  call its function
@@ -765,10 +768,29 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     (10). every time:
        A. _imp_exec_dynamic_impl() -> exec_builtin_or_dynamic()
        B.   if mod->md_state == NULL (including if m_size == 0):
-            1. exec_builtin_or_dynamic() -> PyModule_ExecDef()
-            2.   PyModule_ExecDef():  allocate mod->md_state
+            1. exec_builtin_or_dynamic() -> PyModule_Exec()
+            2.   PyModule_Exec():  allocate mod->md_state
             3.   if there's a Py_mod_exec slot:
-                 1. PyModule_ExecDef():  call its function
+                 1. PyModule_Exec():  call its function
+
+
+    ...for multi-phase init modules from PyModExport_* (slots array):
+
+    (6). every time:
+
+       A. _imp_create_dynamic_impl() -> import_find_extension()  (not found)
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModuleExportHooks()
+       C.   _PyImport_GetModuleExportHooks():  load <module export func>
+       D. _imp_create_dynamic_impl() -> import_run_modexport()
+       E.     import_run_modexport():  call <module init func>
+       F.   import_run_modexport() -> PyModule_FromSlotsAndSpec()
+       G.     PyModule_FromSlotsAndSpec(): create temporary PyModuleDef-like
+       H.       PyModule_FromSlotsAndSpec() -> PyModule_FromDefAndSpec()
+
+       (PyModule_FromDefAndSpec behaves as for PyModInit_*, above)
+
+    (10). every time: as for PyModInit_*, above
+
  */
 
 
@@ -825,15 +847,9 @@ _PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val)
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
 static int
 exec_builtin_or_dynamic(PyObject *mod) {
-    PyModuleDef *def;
     void *state;
 
     if (!PyModule_Check(mod)) {
-        return 0;
-    }
-
-    def = PyModule_GetDef(mod);
-    if (def == NULL) {
         return 0;
     }
 
@@ -843,7 +859,7 @@ exec_builtin_or_dynamic(PyObject *mod) {
         return 0;
     }
 
-    return PyModule_ExecDef(mod, def);
+    return PyModule_Exec(mod);
 }
 
 
@@ -1787,7 +1803,7 @@ finish_singlephase_extension(PyThreadState *tstate, PyObject *mod,
                              PyObject *name, PyObject *modules)
 {
     assert(mod != NULL && PyModule_Check(mod));
-    assert(cached->def == _PyModule_GetDef(mod));
+    assert(cached->def == _PyModule_GetDefOrNull(mod));
 
     Py_ssize_t index = _get_cached_module_index(cached);
     if (_modules_by_index_set(tstate->interp, index, mod) < 0) {
@@ -1865,8 +1881,8 @@ reload_singlephase_extension(PyThreadState *tstate,
          * due to violating interpreter isolation.
          * See the note in set_cached_m_dict().
          * Until that is solved, we leave md_def set to NULL. */
-        assert(_PyModule_GetDef(mod) == NULL
-               || _PyModule_GetDef(mod) == def);
+        assert(_PyModule_GetDefOrNull(mod) == NULL
+               || _PyModule_GetDefOrNull(mod) == def);
     }
     else {
         assert(cached->m_dict == NULL);
@@ -1951,6 +1967,43 @@ import_find_extension(PyThreadState *tstate,
     }
 
     return mod;
+}
+
+static PyObject *
+import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
+                     struct _Py_ext_module_loader_info *info,
+                     PyObject *spec)
+{
+    /* This is like import_run_extension, but avoids interpreter switching
+     * and code for for single-phase modules.
+     */
+    PyModuleDef_Slot *slots = ex0();
+    if (!slots) {
+        if (!PyErr_Occurred()) {
+            PyErr_Format(
+                PyExc_SystemError,
+                "slot export function for module %s failed without setting an exception",
+                info->name);
+        }
+        return NULL;
+    }
+    if (PyErr_Occurred()) {
+        PyErr_Format(
+            PyExc_SystemError,
+            "slot export function for module %s raised unreported exception",
+            info->name);
+    }
+    PyObject *result = PyModule_FromSlotsAndSpec(slots, spec);
+    if (!result) {
+        return NULL;
+    }
+    if (PyModule_Check(result)) {
+        PyModuleObject *mod = (PyModuleObject *)result;
+        if (mod && !mod->md_token) {
+            mod->md_token = slots;
+        }
+    }
+    return result;
 }
 
 static PyObject *
@@ -2125,7 +2178,7 @@ main_finally:
         assert_multiphase_def(def);
         assert(mod == NULL);
         /* Note that we cheat a little by not repeating the calls
-         * to _PyImport_GetModInitFunc() and _PyImport_RunModInitFunc(). */
+         * to _PyImport_GetModuleExportHooks() and _PyImport_RunModInitFunc(). */
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
             goto error;
@@ -2239,8 +2292,9 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         return -1;
     }
 
-    PyModuleDef *def = PyModule_GetDef(mod);
+    PyModuleDef *def = _PyModule_GetDefOrNull(mod);
     if (def == NULL) {
+        assert(!PyErr_Occurred());
         PyErr_BadInternalCall();
         goto finally;
     }
@@ -2322,8 +2376,8 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         assert(!_PyErr_Occurred(tstate));
         assert(cached != NULL);
         /* The module might not have md_def set in certain reload cases. */
-        assert(_PyModule_GetDef(mod) == NULL
-                || cached->def == _PyModule_GetDef(mod));
+        assert(_PyModule_GetDefOrNull(mod) == NULL
+                || cached->def == _PyModule_GetDefOrNull(mod));
         assert_singlephase(cached);
         goto finally;
     }
@@ -4653,8 +4707,8 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         assert(!_PyErr_Occurred(tstate));
         assert(cached != NULL);
         /* The module might not have md_def set in certain reload cases. */
-        assert(_PyModule_GetDef(mod) == NULL
-                || cached->def == _PyModule_GetDef(mod));
+        assert(_PyModule_GetDefOrNull(mod) == NULL
+                || cached->def == _PyModule_GetDefOrNull(mod));
         assert_singlephase(cached);
         goto finally;
     }
@@ -4679,7 +4733,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 
     /* We would move this (and the fclose() below) into
-     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
+     * _PyImport_GetModuleExportHooks(), but it isn't clear if the intervening
      * code relies on fp still being open. */
     FILE *fp;
     if (file != NULL) {
@@ -4692,7 +4746,13 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         fp = NULL;
     }
 
-    PyModInitFunction p0 = _PyImport_GetModInitFunc(&info, fp);
+    PyModInitFunction p0 = NULL;
+    PyModExportFunction ex0 = NULL;
+    _PyImport_GetModuleExportHooks(&info, fp, &p0, &ex0);
+    if (ex0) {
+        mod = import_run_modexport(tstate, ex0, &info, spec);
+        goto cleanup;
+    }
     if (p0 == NULL) {
         goto finally;
     }
@@ -4714,6 +4774,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 #endif
 
+cleanup:
     // XXX Shouldn't this happen in the error cases too (i.e. in "finally")?
     if (fp) {
         fclose(fp);

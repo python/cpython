@@ -2611,3 +2611,31 @@
     added = '3.15'
 [const.PyABIInfo_FREETHREADING_AGNOSTIC]
     added = '3.15'
+[function.PyModule_FromSlotsAndSpec]
+    added = '3.15'
+[function.PyModule_Exec]
+    added = '3.15'
+[function.PyModule_GetToken]
+    added = '3.15'
+[function.PyType_GetModuleByToken]
+    added = '3.15'
+[function.PyModule_GetStateSize]
+    added = '3.15'
+[macro.PyMODEXPORT_FUNC]
+    added = '3.15'
+[const.Py_mod_name]
+    added = '3.15'
+[const.Py_mod_doc]
+    added = '3.15'
+[const.Py_mod_state_size]
+    added = '3.15'
+[const.Py_mod_methods]
+    added = '3.15'
+[const.Py_mod_state_traverse]
+    added = '3.15'
+[const.Py_mod_state_clear]
+    added = '3.15'
+[const.Py_mod_state_free]
+    added = '3.15'
+[const.Py_mod_token]
+    added = '3.15'
