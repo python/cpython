@@ -440,6 +440,14 @@ math
   (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
+mimetypes
+---------
+
+* Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
+* Rename ``application/x-texinfo`` to ``application/texinfo``.
+  (Contributed by Charlie Lin in :gh:`140165`)
+
+
 mmap
 ----
 
@@ -612,6 +620,17 @@ types
   as described in :pep:`667`.
 
 
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 17.0.0.
+
+* Add :func:`unicodedata.isxidstart` and :func:`unicodedata.isxidcontinue`
+  functions to check whether a character can start or continue a
+  `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_ identifier.
+  (Contributed by Stan Ulbrych in :gh:`129117`.)
+
+
 unittest
 --------
 
@@ -720,14 +739,6 @@ importlib.resources
   (Contributed by Semyon Moroz in :gh:`138044`)
 
 
-mimetypes
----------
-
-* Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
-* Rename ``application/x-texinfo`` to ``application/texinfo``.
-  (Contributed by Charlie Lin in :gh:`140165`)
-
-
 pathlib
 -------
 
@@ -777,7 +788,7 @@ typing
   (Contributed by Bénédikt Tran in :gh:`133817`.)
 
 * Using ``TD = TypedDict("TD")`` or ``TD = TypedDict("TD", None)`` to
-  construct a :class:`~typing.TypedDict` type with zero field is no
+  construct a :class:`~typing.TypedDict` type with zero fields is no
   longer supported. Use ``class TD(TypedDict): pass``
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
@@ -810,17 +821,6 @@ typing
   (Contributed by Nikita Sobolev in :gh:`133601`.)
 
 
-unicodedata
------------
-
-* The Unicode database has been updated to Unicode 17.0.0.
-
-* Add :func:`unicodedata.isxidstart` and :func:`unicodedata.isxidcontinue`
-  functions to check whether a character can start or continue a
-  `Unicode Standard Annex #31 <https://www.unicode.org/reports/tr31/>`_ identifier.
-  (Contributed by Stan Ulbrych in :gh:`129117`.)
-
-
 wave
 ----
 
@@ -847,7 +847,7 @@ New deprecations
 * CLI:
 
   * Deprecate :option:`-b` and :option:`!-bb` command-line options
-    and schedule them to become no-op in Python 3.17.
+    and schedule them to become no-ops in Python 3.17.
     These were primarily helpers for the Python 2 -> 3 transition.
     Starting with Python 3.17, no :exc:`BytesWarning` will be raised
     for these cases; use a type checker instead.
@@ -858,8 +858,8 @@ New deprecations
 
   * In hash function constructors such as :func:`~hashlib.new` or the
     direct hash-named constructors such as :func:`~hashlib.md5` and
-    :func:`~hashlib.sha256`, their optional initial data parameter could
-    also be passed a keyword argument named ``data=`` or ``string=`` in
+    :func:`~hashlib.sha256`, the optional initial data parameter could
+    also be passed as a keyword argument named ``data=`` or ``string=`` in
     various :mod:`hashlib` implementations.
 
     Support for the ``string`` keyword argument name is now deprecated and
@@ -951,33 +951,21 @@ New features
   (Contributed by Victor Stinner in :gh:`111489`.)
 
 
+Changed C APIs
+--------------
+
+* If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` or :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF`
+  flag is set then :c:macro:`Py_TPFLAGS_HAVE_GC` must be set too.
+  (Contributed by Sergey Miryanov in :gh:`134786`)
+
+
 Porting to Python 3.15
 ----------------------
-
-* :class:`sqlite3.Connection` APIs has been cleaned up.
-
-  * All parameters of :func:`sqlite3.connect` except *database* are now keyword-only.
-  * The first three parameters of methods :meth:`~sqlite3.Connection.create_function`
-    and :meth:`~sqlite3.Connection.create_aggregate` are now positional-only.
-  * The first parameter of methods :meth:`~sqlite3.Connection.set_authorizer`,
-    :meth:`~sqlite3.Connection.set_progress_handler` and
-    :meth:`~sqlite3.Connection.set_trace_callback` is now positional-only.
-
-  (Contributed by Serhiy Storchaka in :gh:`133595`.)
 
 * Private functions promoted to public C APIs:
 
   The |pythoncapi_compat_project| can be used to get most of these new
   functions on Python 3.14 and older.
-
-* :data:`resource.RLIM_INFINITY` is now always positive.
-  Passing a negative integer value that corresponded to its old value
-  (such as ``-1`` or ``-3``, depending on platform) to
-  :func:`resource.setrlimit` and :func:`resource.prlimit` is now deprecated.
-  (Contributed by Serhiy Storchaka in :gh:`137044`.)
-
-* :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
-  underlying syscall, instead of raising a :exc:`SystemError`.
 
 
 Removed C APIs
@@ -1098,3 +1086,23 @@ Porting to Python 3.15
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+* :class:`sqlite3.Connection` APIs has been cleaned up.
+
+  * All parameters of :func:`sqlite3.connect` except *database* are now keyword-only.
+  * The first three parameters of methods :meth:`~sqlite3.Connection.create_function`
+    and :meth:`~sqlite3.Connection.create_aggregate` are now positional-only.
+  * The first parameter of methods :meth:`~sqlite3.Connection.set_authorizer`,
+    :meth:`~sqlite3.Connection.set_progress_handler` and
+    :meth:`~sqlite3.Connection.set_trace_callback` is now positional-only.
+
+  (Contributed by Serhiy Storchaka in :gh:`133595`.)
+
+* :data:`resource.RLIM_INFINITY` is now always positive.
+  Passing a negative integer value that corresponded to its old value
+  (such as ``-1`` or ``-3``, depending on platform) to
+  :func:`resource.setrlimit` and :func:`resource.prlimit` is now deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`137044`.)
+
+* :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
+  underlying syscall, instead of raising a :exc:`SystemError`.
