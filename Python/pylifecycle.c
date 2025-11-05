@@ -506,6 +506,7 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
     _Py_InitVersion();
+    _Py_DumpTraceback_Init();
 
     status = _Py_HashRandomization_Init(config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -835,6 +836,10 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
     interp->callable_cache.object__getattribute__ = object__getattribute__;
+
+    if (_PyType_InitSlotDefs(interp) < 0) {
+        return _PyStatus_ERR("failed to init slotdefs");
+    }
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");

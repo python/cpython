@@ -17,7 +17,8 @@ extern int _PyImport_IsInitialized(PyInterpreterState *);
 // Export for 'pyexpat' shared extension
 PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
 
-extern int _PyImport_SetModuleString(const char *name, PyObject* module);
+// Export for 'math' shared extension
+PyAPI_FUNC(int) _PyImport_SetModuleString(const char *name, PyObject* module);
 
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
 extern void _PyImport_ReleaseLock(PyInterpreterState *interp);

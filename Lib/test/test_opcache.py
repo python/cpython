@@ -567,6 +567,14 @@ class TestCallCache(TestBase):
         with self.assertRaises(RecursionError):
             test()
 
+    def test_dont_specialize_custom_vectorcall(self):
+        def f():
+            raise Exception("no way")
+
+        _testinternalcapi.set_vectorcall_nop(f)
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            f()
+
 
 def make_deferred_ref_count_obj():
     """Create an object that uses deferred reference counting.

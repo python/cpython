@@ -2399,6 +2399,25 @@ simple_pending_call(PyObject *self, PyObject *callable)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+vectorcall_nop(PyObject *callable, PyObject *const *args,
+               size_t nargsf, PyObject *kwnames)
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+set_vectorcall_nop(PyObject *self, PyObject *func)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "expected function");
+        return NULL;
+    }
+
+    ((PyFunctionObject*)func)->vectorcall = vectorcall_nop;
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2507,6 +2526,7 @@ static PyMethodDef module_functions[] = {
     {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
 #endif
     {"simple_pending_call", simple_pending_call, METH_O},
+    {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

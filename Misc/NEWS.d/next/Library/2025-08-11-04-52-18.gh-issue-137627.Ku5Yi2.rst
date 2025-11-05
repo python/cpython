@@ -1,0 +1,1 @@
+Speed up :meth:`csv.Sniffer.sniff` delimiter detection by up to 1.6x.

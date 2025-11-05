@@ -1216,6 +1216,23 @@ f'''
     FSTRING_END "\'\'\'"         (3, 1) (3, 4)
     """)
 
+        # gh-139516, the '\n' is explicit to ensure no trailing whitespace which would invalidate the test
+        self.check_tokenize('''f"{f(a=lambda: 'à'\n)}"''', """\
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    OP         '{'           (1, 2) (1, 3)
+    NAME       'f'           (1, 3) (1, 4)
+    OP         '('           (1, 4) (1, 5)
+    NAME       'a'           (1, 5) (1, 6)
+    OP         '='           (1, 6) (1, 7)
+    NAME       'lambda'      (1, 7) (1, 13)
+    OP         ':'           (1, 13) (1, 14)
+    STRING     "\'à\'"         (1, 15) (1, 18)
+    NL         '\\n'          (1, 18) (1, 19)
+    OP         ')'           (2, 0) (2, 1)
+    OP         '}'           (2, 1) (2, 2)
+    FSTRING_END \'"\'           (2, 2) (2, 3)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
@@ -1478,6 +1495,61 @@ class TestDetectEncoding(TestCase):
         expected = [b"print('\xc2\xa3')\n"]
         self.assertEqual(consumed_lines, expected)
 
+    def test_first_non_utf8_coding_line(self):
+        lines = (
+            b'#coding:iso-8859-15 \xa4\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_first_utf8_coding_line_error(self):
+        lines = (
+            b'#coding:ascii \xc3\xa4\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_second_non_utf8_coding_line(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:iso-8859-15 \xa4\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_second_utf8_coding_line_error(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:ascii \xc3\xa4\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_non_utf8_shebang(self):
+        lines = (
+            b'#!/home/\xa4/bin/python\n',
+            b'#coding:iso-8859-15\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_utf8_shebang_error(self):
+        lines = (
+            b'#!/home/\xc3\xa4/bin/python\n',
+            b'#coding:ascii\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
     def test_cookie_second_line_empty_first_line(self):
         lines = (
             b'\n',
@@ -1530,6 +1602,28 @@ class TestDetectEncoding(TestCase):
         encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
         self.assertEqual(encoding, 'utf-8')
         self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_nul_in_first_coding_line(self):
+        lines = (
+            b'#coding:iso8859-15\x00\n',
+            b'\n',
+            b'\n',
+            b'print(something)\n'
+        )
+        with self.assertRaisesRegex(SyntaxError,
+                "source code cannot contain null bytes"):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_nul_in_second_coding_line(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:iso8859-15\x00\n',
+            b'\n',
+            b'print(something)\n'
+        )
+        with self.assertRaisesRegex(SyntaxError,
+                "source code cannot contain null bytes"):
+            tokenize.detect_encoding(self.get_readline(lines))
 
     def test_latin1_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.
@@ -3089,6 +3183,7 @@ async def f():
             f'__{
                 x:d
             }__'""",
+            " a\n\x00",
         ]:
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)

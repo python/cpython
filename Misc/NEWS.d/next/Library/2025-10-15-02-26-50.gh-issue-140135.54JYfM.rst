@@ -1,0 +1,2 @@
+Speed up :meth:`io.RawIOBase.readall` by using PyBytesWriter API (about 4x
+faster)

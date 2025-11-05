@@ -1,2 +1,0 @@
-Removed the :meth:`~mmap.mmap.resize` method on platforms that don't support the
-underlying syscall, instead of raising a :exc:`SystemError`.
