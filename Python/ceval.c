@@ -1216,8 +1216,7 @@ tier2_start:
     next_uop = current_executor->trace;
     assert(next_uop->opcode == _START_EXECUTOR ||
         next_uop->opcode == _COLD_EXIT ||
-        next_uop->opcode == _COLD_DYNAMIC_EXIT ||
-        next_uop->opcode == _START_DYNAMIC_EXECUTOR);
+        next_uop->opcode == _COLD_DYNAMIC_EXIT);
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) (void)0
@@ -1243,8 +1242,7 @@ tier2_start:
 
     assert(next_uop->opcode == _START_EXECUTOR ||
         next_uop->opcode == _COLD_EXIT ||
-        next_uop->opcode == _COLD_DYNAMIC_EXIT ||
-        next_uop->opcode == _START_DYNAMIC_EXECUTOR);
+        next_uop->opcode == _COLD_DYNAMIC_EXIT);
 tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;

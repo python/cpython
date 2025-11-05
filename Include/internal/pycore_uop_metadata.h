@@ -341,7 +341,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_TIER2_RESUME_CHECK] = HAS_PERIODIC_FLAG,
     [_COLD_EXIT] = 0,
     [_COLD_DYNAMIC_EXIT] = 0,
-    [_GUARD_EXECUTOR_IP] = HAS_EXIT_FLAG,
     [_GUARD_IP__PUSH_FRAME] = HAS_EXIT_FLAG,
     [_GUARD_IP_YIELD_VALUE] = HAS_EXIT_FLAG,
     [_GUARD_IP_RETURN_VALUE] = HAS_EXIT_FLAG,
@@ -482,7 +481,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_CALLABLE_TYPE_1] = "_GUARD_CALLABLE_TYPE_1",
     [_GUARD_DORV_NO_DICT] = "_GUARD_DORV_NO_DICT",
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
-    [_GUARD_EXECUTOR_IP] = "_GUARD_EXECUTOR_IP",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
     [_GUARD_IP_RETURN_GENERATOR] = "_GUARD_IP_RETURN_GENERATOR",
     [_GUARD_IP_RETURN_VALUE] = "_GUARD_IP_RETURN_VALUE",
@@ -1330,8 +1328,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _COLD_EXIT:
             return 0;
         case _COLD_DYNAMIC_EXIT:
-            return 0;
-        case _GUARD_EXECUTOR_IP:
             return 0;
         case _GUARD_IP__PUSH_FRAME:
             return 0;

@@ -3443,10 +3443,6 @@
             break;
         }
 
-        case _GUARD_EXECUTOR_IP: {
-            break;
-        }
-
         case _GUARD_IP__PUSH_FRAME: {
             break;
         }

@@ -7148,9 +7148,8 @@
             }
             #endif
             tstate->jit_exit = exit;
-            assert(exit->is_dynamic);
             _PyExecutorObject *exec = exit->executor;
-            assert(exec->trace[0].opcode == _COLD_DYNAMIC_EXIT || exec->trace[0].opcode == _START_DYNAMIC_EXECUTOR);
+            assert(exec->trace[0].opcode == _COLD_DYNAMIC_EXIT);
             TIER2_TO_TIER2(exec);
             break;
         }
@@ -7454,6 +7453,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyExecutor_ClearExit(tstate->jit_exit);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_DO_NOT_REENTER);
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -7523,11 +7523,6 @@
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
-                #if Py_DEBUG
-                if (executor->trace[2].opcode == _GUARD_EXECUTOR_IP) {
-                    assert(executor->trace[2].operand0 == (uint64_t)target);
-                }
-                #endif
             }
             else {
                 if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
@@ -7540,7 +7535,7 @@
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, previous_executor, target->op.arg, false);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, previous_executor, target->op.arg);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
@@ -7556,53 +7551,8 @@
         case _COLD_DYNAMIC_EXIT: {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            assert(exit->is_dynamic);
             _Py_CODEUNIT *target = frame->instr_ptr;
-            _Py_BackoffCounter temperature = exit->temperature;
-            _PyExecutorObject *executor;
-            if (target->op.code == ENTER_EXECUTOR) {
-                PyCodeObject *code = _PyFrame_GetCode(frame);
-                executor = code->co_executors->executors[target->op.arg];
-                if (executor->vm_data.valid &&
-                    executor->trace[0].opcode == _START_DYNAMIC_EXECUTOR) {
-                    assert(executor->trace[2].operand0 == (uint64_t)target);
-                    Py_INCREF(executor);
-                    assert(tstate->jit_exit == exit);
-                    exit->executor = executor;
-                    TIER2_TO_TIER2(executor);
-                }
-                else {
-                    GOTO_TIER_ONE(target);
-                }
-            }
-            if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
-                GOTO_TIER_ONE(target);
-            }
-            if (!backoff_counter_triggers(temperature)) {
-                exit->temperature = advance_backoff_counter(temperature);
-                GOTO_TIER_ONE(target);
-            }
-            _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
-            assert(tstate->current_executor == (PyObject *)previous_executor);
-            int chain_depth = previous_executor->vm_data.chain_depth + 1;
-            int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, previous_executor, target->op.arg, true);
-            exit->temperature = restart_backoff_counter(exit->temperature);
-            if (succ) {
-                GOTO_TIER_ONE_CONTINUE_TRACING(target);
-            }
             GOTO_TIER_ONE(target);
-            break;
-        }
-
-        case _GUARD_EXECUTOR_IP: {
-            PyObject *ip = (PyObject *)CURRENT_OPERAND0();
-            if (frame->instr_ptr != (_Py_CODEUNIT*)ip) {
-                _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_DO_NOT_REENTER);
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
             break;
         }
 

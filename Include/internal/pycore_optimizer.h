@@ -368,7 +368,7 @@ int
 _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
     _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr,
     _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit,
-    _PyExecutorObject *prev_exec, int oparg, bool is_dynamic_target);
+    _PyExecutorObject *prev_exec, int oparg);
 
 void _PyJit_FinalizeTracing(PyThreadState *tstate);
 

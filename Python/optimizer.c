@@ -941,7 +941,7 @@ full:
 
 // Returns 0 for do not enter tracing, 1 on enter tracing.
 int
-_PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit, _PyExecutorObject *prev_exec, int oparg, bool is_dynamic_target)
+_PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit, _PyExecutorObject *prev_exec, int oparg)
 {
     // A recursive trace.
     // Don't trace into the inner call because it will stomp on the previous trace, causing endless retraces.
@@ -968,19 +968,10 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _
         chain_depth);
 #endif
 
-    if (is_dynamic_target) {
-        assert(curr_instr == frame->instr_ptr);
-        assert(curr_instr == insert_exec_instr);
-        add_to_trace(tstate->interp->jit_state.code_buffer, 0, _START_DYNAMIC_EXECUTOR, 0, (uintptr_t)insert_exec_instr, 0);
-        add_to_trace(tstate->interp->jit_state.code_buffer, 1, _MAKE_WARM, 0, 0, 0);
-        add_to_trace(tstate->interp->jit_state.code_buffer, 2, _GUARD_EXECUTOR_IP, 0, (uintptr_t)curr_instr, 0);
-        tstate->interp->jit_state.code_curr_size = 3;
-    }
-    else {
-        add_to_trace(tstate->interp->jit_state.code_buffer, 0, _START_EXECUTOR, 0, (uintptr_t)insert_exec_instr, INSTR_IP(insert_exec_instr, code));
-        add_to_trace(tstate->interp->jit_state.code_buffer, 1, _MAKE_WARM, 0, 0, 0);
-        tstate->interp->jit_state.code_curr_size = 2;
-    }
+    add_to_trace(tstate->interp->jit_state.code_buffer, 0, _START_EXECUTOR, 0, (uintptr_t)insert_exec_instr, INSTR_IP(insert_exec_instr, code));
+    add_to_trace(tstate->interp->jit_state.code_buffer, 1, _MAKE_WARM, 0, 0, 0);
+    tstate->interp->jit_state.code_curr_size = 2;
+
     tstate->interp->jit_state.code_max_size = UOP_MAX_TRACE_LENGTH;
     tstate->interp->jit_state.insert_exec_instr = insert_exec_instr;
     tstate->interp->jit_state.close_loop_instr = close_loop_instr;
@@ -1100,14 +1091,10 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 opcode == _GUARD_IP__PUSH_FRAME ||
                 opcode == _GUARD_IP_RETURN_VALUE ||
                 opcode == _GUARD_IP_YIELD_VALUE ||
-                opcode == _GUARD_IP_RETURN_GENERATOR ||
-                opcode == _GUARD_EXECUTOR_IP
+                opcode == _GUARD_IP_RETURN_GENERATOR
             ) {
                 exit_op = _DYNAMIC_EXIT;
                 unique_target = true;
-            }
-            if (opcode == _START_DYNAMIC_EXECUTOR) {
-                exit_op = _DYNAMIC_DEOPT;
             }
             if (unique_target || jump_target != current_jump_target || current_exit_op != exit_op) {
                 make_exit(&buffer[next_spare], exit_op, jump_target);
@@ -1186,11 +1173,7 @@ sanity_check(_PyExecutorObject *executor)
     uint32_t i = 0;
     CHECK(executor->trace[0].opcode == _START_EXECUTOR ||
         executor->trace[0].opcode == _COLD_EXIT ||
-        executor->trace[0].opcode == _COLD_DYNAMIC_EXIT ||
-        executor->trace[0].opcode == _START_DYNAMIC_EXECUTOR);
-    if (executor->trace[0].opcode == _START_DYNAMIC_EXECUTOR) {
-        CHECK(executor->trace[2].opcode == _GUARD_EXECUTOR_IP);
-    }
+        executor->trace[0].opcode == _COLD_DYNAMIC_EXIT);
     for (; i < executor->code_size; i++) {
         const _PyUOpInstruction *inst = &executor->trace[i];
         uint16_t opcode = inst->opcode;
@@ -1255,7 +1238,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
-    assert(buffer[0].opcode == _START_EXECUTOR || buffer[0].opcode == _START_DYNAMIC_EXECUTOR);
+    assert(buffer[0].opcode == _START_EXECUTOR);
     buffer[0].operand0 = (uint64_t)executor;
     for (int i = length-1; i >= 0; i--) {
         int opcode = buffer[i].opcode;
@@ -1272,7 +1255,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
     assert(next_exit == -1);
     assert(dest == executor->trace);
-    assert(dest->opcode == _START_EXECUTOR || dest->opcode == _START_DYNAMIC_EXECUTOR);
+    assert(dest->opcode == _START_EXECUTOR);
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
