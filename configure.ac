@@ -7881,6 +7881,7 @@ PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
 
 dnl always enabled extension modules
 PY_STDLIB_MOD_SIMPLE([array])
+PY_STDLIB_MOD_SIMPLE([_math_integer])
 PY_STDLIB_MOD_SIMPLE([_asyncio])
 PY_STDLIB_MOD_SIMPLE([_bisect])
 PY_STDLIB_MOD_SIMPLE([_csv])
@@ -8218,10 +8219,10 @@ AS_VAR_IF([enable_experimental_jit], [no],
       JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
       ;;
     aarch64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
       ;;
     x86_64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
       ;;
   esac])
 

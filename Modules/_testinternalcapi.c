@@ -2420,6 +2420,34 @@ set_vectorcall_nop(PyObject *self, PyObject *func)
 }
 
 static PyObject *
+module_get_gc_hooks(PyObject *self, PyObject *arg)
+{
+    PyModuleObject *mod = (PyModuleObject *)arg;
+    PyObject *traverse = NULL;
+    PyObject *clear = NULL;
+    PyObject *free = NULL;
+    PyObject *result = NULL;
+    traverse = PyLong_FromVoidPtr(mod->md_state_traverse);
+    if (!traverse) {
+        goto finally;
+    }
+    clear = PyLong_FromVoidPtr(mod->md_state_clear);
+    if (!clear) {
+        goto finally;
+    }
+    free = PyLong_FromVoidPtr(mod->md_state_free);
+    if (!free) {
+        goto finally;
+    }
+    result = PyTuple_FromArray((PyObject*[]){ traverse, clear, free }, 3);
+finally:
+    Py_XDECREF(traverse);
+    Py_XDECREF(clear);
+    Py_XDECREF(free);
+    return result;
+}
+
+static PyObject *
 stackref_from_object_new(PyObject *self, PyObject *op)
 {
     _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
@@ -2608,6 +2636,7 @@ static PyMethodDef module_functions[] = {
 #endif
     {"simple_pending_call", simple_pending_call, METH_O},
     {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
+    {"module_get_gc_hooks", module_get_gc_hooks, METH_O},
     {"stackref_from_object_new", stackref_from_object_new, METH_O},
     {"stackref_from_object_steal_with_incref", stackref_from_object_steal_with_incref, METH_O},
     {"stackref_make_heap_safe", stackref_make_heap_safe, METH_O},
