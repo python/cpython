@@ -19,12 +19,6 @@ Byte Array Objects
    it is the same object as :class:`bytearray` in the Python layer.
 
 
-.. c:var:: PyTypeObject PyByteArrayIter_Type
-
-   Type object for an iterator over a :class:`bytearray` object. Instances
-   of this object are returned by :meth:`!bytearray.__iter__`.
-
-
 Type check macros
 ^^^^^^^^^^^^^^^^^
 

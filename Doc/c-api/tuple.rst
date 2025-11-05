@@ -19,12 +19,6 @@ Tuple Objects
    is the same object as :class:`tuple` in the Python layer.
 
 
-.. c:var:: PyTypeObject PyTupleIter_Type
-
-   Type object for an iterator over a :class:`tuple` object. Instances
-   of this object are returned by :meth:`!tuple.__iter__`.
-
-
 .. c:function:: int PyTuple_Check(PyObject *p)
 
    Return true if *p* is a tuple object or an instance of a subtype of the

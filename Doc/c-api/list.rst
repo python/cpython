@@ -181,18 +181,3 @@ List Objects
 
    Return a new tuple object containing the contents of *list*; equivalent to
    ``tuple(list)``.
-
-List Iterators
-^^^^^^^^^^^^^^
-
-
-.. c:var:: PyTypeObject PyListIter_Type
-
-   Type object for an iterator over a :class:`list` object. Instances
-   of this object are returned by :meth:`!bytes.__iter__`.
-
-
-.. c:var:: PyTypeObject PyListRevIter_Type
-
-   Type object for a reversed iterator over a :class:`list` object.
-   Instances of this object are returned by :meth:`!bytes.__reversed__`.
