@@ -79,4 +79,3 @@ Other Iterator Objects
    type. For example, iterating over :class:`range` will use one of two iterator
    types depending on the size of the range. Other types may start using a
    similar scheme in the future, without warning.
-
