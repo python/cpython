@@ -275,7 +275,7 @@ class CAPITest(unittest.TestCase):
         with open(filename) as fp:
             output = fp.read()
 
-        hex_regex = r'0x[0-9a-fA-F]+'
+        hex_regex = r'(0x)?[0-9a-fA-F]+'
         self.assertRegex(output.rstrip(),
             fr"object address  : {hex_regex}\n"
              r"object refcount : [0-9]+\n"
