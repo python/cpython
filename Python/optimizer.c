@@ -133,7 +133,12 @@ _PyOptimizer_Optimize(
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
     // this is true, since a deopt won't infinitely re-enter the executor:
-    chain_depth %= MAX_CHAIN_DEPTH;
+    if (tstate->interp->jit_state.code_buffer[0].opcode == _START_DYNAMIC_EXECUTOR) {
+        chain_depth %= MAX_DYNAMIC_CHAIN_DEPTH;
+    }
+    else {
+        chain_depth %= MAX_CHAIN_DEPTH;
+    }
     bool progress_needed = chain_depth == 0;
     PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_state.initial_code;
     _Py_CODEUNIT *start = tstate->interp->jit_state.insert_exec_instr;
@@ -951,10 +956,7 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _
     if (oparg > 0xFFFF) {
         return 0;
     }
-    // Dynamic exits with progress is wonky.
-    if (is_dynamic_target && chain_depth >= MAX_CHAIN_DEPTH) {
-        return 0;
-    }
+
     PyCodeObject *code = _PyFrame_GetCode(frame);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");

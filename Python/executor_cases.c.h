@@ -7445,7 +7445,6 @@
             #ifndef _Py_JIT
             assert(current_executor == (_PyExecutorObject*)executor);
             #endif
-            assert(tstate->jit_exit != NULL || tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)executor;
             if (!current_executor->vm_data.valid) {
                 assert(tstate->jit_exit->executor == current_executor);
@@ -7556,7 +7555,7 @@
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
-                if (executor->trace[2].opcode == _GUARD_EXECUTOR_IP && executor->vm_data.valid) {
+                if (executor->trace[0].opcode == _START_DYNAMIC_EXECUTOR && executor->vm_data.valid) {
                     Py_INCREF(executor);
                     assert(tstate->jit_exit == exit);
                     exit->executor = executor;
