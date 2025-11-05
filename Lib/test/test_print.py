@@ -203,7 +203,7 @@ class TestPy2MigrationHint(unittest.TestCase):
 
 class PPrintable:
     def __pprint__(self, context, maxlevels, level):
-        return 'I feel pretty'
+        return 'I feel pretty', False, False
 
 
 class PrettySmart(PrettyPrinter):

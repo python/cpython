@@ -143,7 +143,8 @@ class CustomPrintable:
         return "my str"
 
     def __pprint__(self, context, maxlevels, level):
-        return "my pprint"
+        # The custom pretty repr, not-readable bool, no recursion detected.
+        return "my pprint", False, False
 
 
 class QueryTestCase(unittest.TestCase):

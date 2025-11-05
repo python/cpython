@@ -616,7 +616,7 @@ class PrettyPrinter:
             return repr(object), True, False
 
         if (p := getattr(typ, "__pprint__", None)):
-            return p(object, context, maxlevels, level), True, False
+            return p(object, context, maxlevels, level)
 
         r = getattr(typ, "__repr__", None)
 
