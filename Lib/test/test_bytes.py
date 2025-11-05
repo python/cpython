@@ -1979,7 +1979,7 @@ class AssortedBytesTest(unittest.TestCase):
         self.assertEqual(f(bytearray([7, 8, 9, 10, 11, 12, 13])),
                             r"bytearray(b'\x07\x08\t\n\x0b\x0c\r')")
         self.assertEqual(f(bytearray(b'"')), """bytearray(b'"')""") # '"'
-        self.assertEqual(f(bytearray(b"'")), r'''bytearray(b"\'")''') # "\'"
+        self.assertEqual(f(bytearray(b"'")), '''bytearray(b"'")''') # "'"
         self.assertEqual(f(bytearray(b"'\"")), r"""bytearray(b'\'"')""") # '\'"'
         self.assertEqual(f(bytearray(b"\"'\"")), r"""bytearray(b'"\'"')""") # '"\'"'
         self.assertEqual(f(bytearray(b'\'"\'')), r"""bytearray(b'\'"\'')""") # '\'"\''

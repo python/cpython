@@ -1,0 +1,3 @@
+Update ``python -m test`` to set ``FORCE_COLOR=1`` when being run with color
+enabled so that :mod:`unittest` which is run by it with redirected output will
+output in color.

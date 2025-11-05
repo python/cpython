@@ -1600,6 +1600,7 @@
     added = '3.2'
 [function.PyWeakref_GetObject]
     added = '3.2'
+    abi_only = true
 [function.PyWeakref_NewProxy]
     added = '3.2'
 [function.PyWeakref_NewRef]
@@ -2304,6 +2305,10 @@
 [function.PyBuffer_Release]
     added = '3.11'
 [function.PyMemoryView_FromBuffer]
+    added = '3.11'
+[const.Py_bf_getbuffer]
+    added = '3.11'
+[const.Py_bf_releasebuffer]
     added = '3.11'
 
 # Constants for Py_buffer API added to this list in Python 3.11.1 (https://github.com/python/cpython/issues/98680)

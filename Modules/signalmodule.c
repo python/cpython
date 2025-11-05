@@ -1210,13 +1210,13 @@ signal.sigtimedwait
 
 Like sigwaitinfo(), but with a timeout.
 
-The timeout is specified in seconds, with floating-point numbers allowed.
+The timeout is specified in seconds, rounded up to nanoseconds.
 [clinic start generated code]*/
 
 static PyObject *
 signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
-/*[clinic end generated code: output=59c8971e8ae18a64 input=955773219c1596cd]*/
+/*[clinic end generated code: output=59c8971e8ae18a64 input=f89af57d645e48e0]*/
 {
     PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
