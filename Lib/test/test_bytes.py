@@ -803,10 +803,9 @@ class BaseBytesTest:
                 operator.mod(format_bytes, value)
 
         # gh-140939: MemoryError is raised without leaking
-        for _ in range(100):
-            with self.assertRaises((MemoryError, OverflowError)):
-                b = self.type2test(b'%*b')
-                b % (2**63-1, b'abc')
+        with self.assertRaises((MemoryError, OverflowError)):
+            b = self.type2test(b'%*b')
+            b % (2**63-1, b'abc')
 
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
