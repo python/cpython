@@ -94,7 +94,9 @@ Object Protocol
 
    Implement an heuristic to detect if the object memory has been freed.
 
-   Example of output::
+   Example of output:
+
+   .. code-block:: output
 
        object address  : 0x7f80124702c0
        object refcount : 2
