@@ -80,14 +80,14 @@ Floating-Point Objects
 
 .. c:macro:: Py_MATH_El
 
-   Hight-precision (long double) definition of :data:`~math.e` constant.
+   High precision (long double) definition of :data:`~math.e` constant.
 
    .. deprecated-removed:: 3.15 3.20
 
 
-.. c:macro:: Py_MATH_pil
+.. c:macro:: Py_MATH_PIl
 
-   Hight-precision (long double) definition of :data:`~math.pi` constant.
+   High precision (long double) definition of :data:`~math.pi` constant.
 
    .. deprecated-removed:: 3.15 3.20
 
