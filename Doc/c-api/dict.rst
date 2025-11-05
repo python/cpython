@@ -450,16 +450,6 @@ Dictionary Keys Objects
    always succeeds.
 
 
-.. c:var:: PyTypeObject PyDictIterKey_Type
-
-   Iterator over the keys of a dictionary.
-
-
-.. c:var:: PyTypeObject PyDictRevIterKey_Type
-
-   Reversed iterator over the keys of a dictionary.
-
-
 Dictionary Values Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -475,16 +465,6 @@ Dictionary Values Objects
    always succeeds.
 
 
-.. c:var:: PyTypeObject PyDictIterValue_Type
-
-   Iterator over the values of a dictionary.
-
-
-.. c:var:: PyTypeObject PyDictRevIterValue_Type
-
-   Reversed iterator over the values of a dictionary.
-
-
 Dictionary Items Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -498,13 +478,3 @@ Dictionary Items Objects
 
    Return true if *o* is an instance of a dictionary items view. This function
    always succeeds.
-
-
-.. c:var:: PyTypeObject PyDictIterItem_Type
-
-   Iterator over the items of a dictionary.
-
-
-.. c:var:: PyTypeObject PyDictRevIterItem_Type
-
-   Reversed iterator over the items of a dictionary.
