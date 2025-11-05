@@ -136,4 +136,4 @@ Codec utility variables
 
 .. c:var:: const char *Py_hexdigits
 
-   A string constant containing the hexadecimal digits ``"0123456789abcdef"``.
+   A string constant containing the lowercase hexadecimal digits: ``"0123456789abcdef"``.
