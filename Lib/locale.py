@@ -28,7 +28,7 @@ __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
            "str", "atof", "atoi", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
            "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "getencoding", "delocalize",
-           "localize"]
+           "localize", "ABDAY_1", "ABDAY_2", "ABDAY_3", "ABDAY_4", "ABDAY_5", "ABDAY_6", "ABDAY_7", "ABMON_1", "ABMON_10", "ABMON_11", "ABMON_12", "ABMON_2", "ABMON_3", "ABMON_4", "ABMON_5", "ABMON_6", "ABMON_7", "ABMON_8", "ABMON_9", "ALT_DIGITS", "CODESET", "CRNCYSTR", "DAY_1", "DAY_2", "DAY_3", "DAY_4", "DAY_5", "DAY_6", "DAY_7", "D_FMT", "D_T_FMT", "ERA", "ERA_D_FMT", "ERA_D_T_FMT", "ERA_T_FMT", "MON_1", "MON_10", "MON_11", "MON_12", "MON_2", "MON_3", "MON_4", "MON_5", "MON_6", "MON_7", "MON_8", "MON_9", "NOEXPR", "RADIXCHAR", "THOUSEP", "T_FMT", "T_FMT_AMPM", "YESEXPR"]
 
 def _strcoll(a,b):
     """ strcoll(string,string) -> int.

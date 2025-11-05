@@ -10,6 +10,13 @@ import os
 import sys
 import codecs
 
+
+class MiscTestCase(unittest.TestCase):
+    maxDiff = None
+    def test__all__(self):
+        support.check__all__(self, locale, extra=["localeconv","strcoll","strxfrm","getencoding",],
+        not_exported=["locale_encoding_alias", "locale_alias","windows_locale", "AM_STR", "PM_STR",])
+
 class LazyImportTest(unittest.TestCase):
     @cpython_only
     def test_lazy_import(self):
