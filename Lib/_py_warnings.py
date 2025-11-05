@@ -646,6 +646,9 @@ class WarningMessage(object):
                     "line : %r}" % (self.message, self._category_name,
                                     self.filename, self.lineno, self.line))
 
+    def __repr__(self):
+        return f'<{type(self).__qualname__} {self}>'
+
 
 class catch_warnings(object):
 

@@ -1,0 +1,3 @@
+In :mod:`urllib.request`, when opening a FTP URL fails because a data
+connection cannot be made, the control connection's socket is now closed to
+avoid a :exc:`ResourceWarning`.
