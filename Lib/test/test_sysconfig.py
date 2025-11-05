@@ -770,6 +770,7 @@ class MakefileTests(unittest.TestCase):
             print("var8=$$(var3)", file=makefile)
             print("var9=$(var10)(var3)", file=makefile)
             print("var10=$$", file=makefile)
+            print("var11=$${ORIGIN}${var5}", file=makefile)
         vars = _parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': 'ab42',
@@ -782,6 +783,7 @@ class MakefileTests(unittest.TestCase):
             'var8': '$(var3)',
             'var9': '$(var3)',
             'var10': '$',
+            'var11': '${ORIGIN}dollar$5',
         })
 
     def _test_parse_makefile_recursion(self):

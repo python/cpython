@@ -78,7 +78,7 @@ The full details for each codec can also be looked up directly:
    .. versionchanged:: 3.9
       Any characters except ASCII letters and digits and a dot are converted to underscore.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       No characters are converted to underscore anymore.
       Spaces are converted to hyphens.
 
@@ -989,17 +989,22 @@ defined in Unicode. A simple and straightforward way that can store each Unicode
 code point, is to store each code point as four consecutive bytes. There are two
 possibilities: store the bytes in big endian or in little endian order. These
 two encodings are called ``UTF-32-BE`` and ``UTF-32-LE`` respectively. Their
-disadvantage is that if e.g. you use ``UTF-32-BE`` on a little endian machine you
-will always have to swap bytes on encoding and decoding. ``UTF-32`` avoids this
-problem: bytes will always be in natural endianness. When these bytes are read
-by a CPU with a different endianness, then bytes have to be swapped though. To
-be able to detect the endianness of a ``UTF-16`` or ``UTF-32`` byte sequence,
-there's the so called BOM ("Byte Order Mark"). This is the Unicode character
-``U+FEFF``. This character can be prepended to every ``UTF-16`` or ``UTF-32``
-byte sequence. The byte swapped version of this character (``0xFFFE``) is an
-illegal character that may not appear in a Unicode text. So when the
-first character in a ``UTF-16`` or ``UTF-32`` byte sequence
-appears to be a ``U+FFFE`` the bytes have to be swapped on decoding.
+disadvantage is that if, for example, you use ``UTF-32-BE`` on a little endian
+machine you will always have to swap bytes on encoding and decoding.
+Python's ``UTF-16`` and ``UTF-32`` codecs avoid this problem by using the
+platform's native byte order when no BOM is present.
+Python follows prevailing platform
+practice, so native-endian data round-trips without redundant byte swapping,
+even though the Unicode Standard defaults to big-endian when the byte order is
+unspecified. When these bytes are read by a CPU with a different endianness,
+the bytes have to be swapped. To be able to detect the endianness of a
+``UTF-16`` or ``UTF-32`` byte sequence, a BOM ("Byte Order Mark") is used.
+This is the Unicode character ``U+FEFF``. This character can be prepended to every
+``UTF-16`` or ``UTF-32`` byte sequence. The byte swapped version of this character
+(``0xFFFE``) is an illegal character that may not appear in a Unicode text.
+When the first character of a ``UTF-16`` or ``UTF-32`` byte sequence is
+``U+FFFE``, the bytes have to be swapped on decoding.
+
 Unfortunately the character ``U+FEFF`` had a second purpose as
 a ``ZERO WIDTH NO-BREAK SPACE``: a character that has no width and doesn't allow
 a word to be split. It can e.g. be used to give hints to a ligature algorithm.
@@ -1083,7 +1088,7 @@ alias for the ``'utf_8'`` codec.
    refer to the source :source:`aliases.py <Lib/encodings/aliases.py>` file.
 
 On Windows, ``cpXXX`` codecs are available for all code pages.
-But only codecs listed in the following table are guarantead to exist on
+But only codecs listed in the following table are guaranteed to exist on
 other platforms.
 
 .. impl-detail::

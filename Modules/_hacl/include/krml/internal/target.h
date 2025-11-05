@@ -1,8 +1,8 @@
 /* Copyright (c) INRIA and Microsoft Corporation. All rights reserved.
    Licensed under the Apache 2.0 and MIT Licenses. */
 
-#ifndef __KRML_TARGET_H
-#define __KRML_TARGET_H
+#ifndef KRML_HEADER_TARGET_H
+#define KRML_HEADER_TARGET_H
 
 #include <assert.h>
 #include <inttypes.h>
@@ -11,6 +11,9 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+typedef float float32_t;
+typedef double float64_t;
 
 /* Since KaRaMeL emits the inline keyword unconditionally, we follow the
  * guidelines at https://gcc.gnu.org/onlinedocs/gcc/Inline.html and make this
@@ -425,4 +428,4 @@ inline static int32_t krml_time(void) {
 #else
 #  define KRML_MAYBE_FOR16(i, z, n, k, x) KRML_ACTUAL_FOR(i, z, n, k, x)
 #endif
-#endif
+#endif /* KRML_HEADER_TARGET_H */

@@ -72,7 +72,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 // the type has been revealed to other threads or we only do those updates
 // while the stop-the-world mechanism is active.  The slots and flags are read
 // in many places without holding a lock and without atomics.
-#define TYPE_LOCK &PyInterpreterState_Get()->types.mutex
+#define TYPE_LOCK &_PyInterpreterState_GET()->types.mutex
 #define BEGIN_TYPE_LOCK() Py_BEGIN_CRITICAL_SECTION_MUTEX(TYPE_LOCK)
 #define END_TYPE_LOCK() Py_END_CRITICAL_SECTION()
 
@@ -81,7 +81,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #define END_TYPE_DICT_LOCK() Py_END_CRITICAL_SECTION2()
 
-#ifdef Py_DEBUG
+#ifndef NDEBUG
 // Return true if the world is currently stopped.
 static bool
 types_world_is_stopped(void)
@@ -1780,7 +1780,7 @@ static int recurse_down_subclasses(PyTypeObject *type, PyObject *name,
 // Compute tp_mro for this type and all of its subclasses.  This
 // is called after __bases__ is assigned to an existing type.
 static int
-mro_hierarchy(PyTypeObject *type, PyObject *temp)
+mro_hierarchy_for_complete_type(PyTypeObject *type, PyObject *temp)
 {
     ASSERT_TYPE_LOCK_HELD();
 
@@ -1791,6 +1791,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
         return res;
     }
     PyObject *new_mro = lookup_tp_mro(type);
+    assert(new_mro != NULL);
 
     PyObject *tuple;
     if (old_mro != NULL) {
@@ -1835,7 +1836,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
         Py_ssize_t n = PyList_GET_SIZE(subclasses);
         for (Py_ssize_t i = 0; i < n; i++) {
             PyTypeObject *subclass = _PyType_CAST(PyList_GET_ITEM(subclasses, i));
-            res = mro_hierarchy(subclass, temp);
+            res = mro_hierarchy_for_complete_type(subclass, temp);
             if (res < 0) {
                 break;
             }
@@ -1926,7 +1927,7 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
     if (temp == NULL) {
         goto bail;
     }
-    if (mro_hierarchy(type, temp) < 0) {
+    if (mro_hierarchy_for_complete_type(type, temp) < 0) {
         goto undo;
     }
     Py_DECREF(temp);
@@ -3432,6 +3433,7 @@ mro_implementation_unlocked(PyTypeObject *type)
          */
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, 0));
         PyObject *base_mro = lookup_tp_mro(base);
+        assert(base_mro != NULL);
         Py_ssize_t k = PyTuple_GET_SIZE(base_mro);
         PyObject *result = PyTuple_New(k + 1);
         if (result == NULL) {
@@ -3466,9 +3468,12 @@ mro_implementation_unlocked(PyTypeObject *type)
         return NULL;
     }
 
+    PyObject *mro_to_merge;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(bases, i));
-        to_merge[i] = lookup_tp_mro(base);
+        mro_to_merge = lookup_tp_mro(base);
+        assert(mro_to_merge != NULL);
+        to_merge[i] = mro_to_merge;
     }
     to_merge[n] = bases;
 
@@ -5759,11 +5764,11 @@ PyType_GetModuleState(PyTypeObject *type)
 }
 
 
-/* Get the module of the first superclass where the module has the
- * given PyModuleDef.
+/* Return borrowed ref to the module of the first superclass where the module
+ * has the given token.
  */
-PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
+static PyObject *
+borrow_module_by_token(PyTypeObject *type, const void *token)
 {
     assert(PyType_Check(type));
 
@@ -5775,7 +5780,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     else {
         PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
         PyObject *module = ht->ht_module;
-        if (module && _PyModule_GetDef(module) == def) {
+        if (module && _PyModule_GetToken(module) == token) {
             return module;
         }
     }
@@ -5803,7 +5808,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 
         PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
         PyObject *module = ht->ht_module;
-        if (module && _PyModule_GetDef(module) == def) {
+        if (module && _PyModule_GetToken(module) == token) {
             res = module;
             break;
         }
@@ -5819,6 +5824,18 @@ error:
         "PyType_GetModuleByDef: No superclass of '%s' has the given module",
         type->tp_name);
     return NULL;
+}
+
+PyObject *
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
+{
+    return borrow_module_by_token(type, def);
+}
+
+PyObject *
+PyType_GetModuleByToken(PyTypeObject *type, const void *token)
+{
+    return Py_XNewRef(borrow_module_by_token(type, token));
 }
 
 
@@ -8893,6 +8910,13 @@ type_ready_preheader(PyTypeObject *type)
                         type->tp_name);
             return -1;
         }
+        if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC)) {
+            PyErr_Format(PyExc_SystemError,
+                        "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
+                        "but not Py_TPFLAGS_HAVE_GC flag",
+                        type->tp_name);
+            return -1;
+        }
         type->tp_dictoffset = -1;
     }
     if (type->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF) {
@@ -8902,6 +8926,13 @@ type_ready_preheader(PyTypeObject *type)
             PyErr_Format(PyExc_TypeError,
                         "type %s has the Py_TPFLAGS_MANAGED_WEAKREF flag "
                         "but tp_weaklistoffset is set",
+                        type->tp_name);
+            return -1;
+        }
+        if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC)) {
+            PyErr_Format(PyExc_SystemError,
+                        "type %s has the Py_TPFLAGS_MANAGED_WEAKREF flag "
+                        "but not Py_TPFLAGS_HAVE_GC flag",
                         type->tp_name);
             return -1;
         }
@@ -8998,6 +9029,7 @@ type_ready_inherit(PyTypeObject *type)
 
     // Inherit slots
     PyObject *mro = lookup_tp_mro(type);
+    assert(mro != NULL);
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 1; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(mro, i);
@@ -10569,6 +10601,7 @@ slot_tp_hash(PyObject *self)
         return PyObject_HashNotImplemented(self);
     }
     if (!PyLong_Check(res)) {
+        Py_DECREF(res);
         PyErr_SetString(PyExc_TypeError,
                         "__hash__ method should return an integer");
         return -1;
