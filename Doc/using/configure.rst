@@ -52,8 +52,8 @@ To build :term:`optional modules <optional module>` of the standard library,
 you will need several third-party libraries installed for development
 (for example, header files must be available).
 
-Missing requirements are generally given in ``configure`` output.
-Missing optional modules are listed near the end of ``make`` output,
+Missing requirements are reported in the ``configure`` output.
+Missing optional modules are listed near the end of the ``make`` output,
 sometimes using an internal name such as ``_ctypes`` for the :mod:`ctypes`
 module.
 
