@@ -245,6 +245,11 @@ Dictionary Objects
    ``len(p)`` on a dictionary.
 
 
+.. c:function:: Py_ssize_t PyDict_GET_SIZE(PyObject *p)
+
+   Similar to :c:func:`PyDict_Size`, but without error checking.
+
+
 .. c:function:: int PyDict_Next(PyObject *p, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 
    Iterate over all key-value pairs in the dictionary *p*.  The
