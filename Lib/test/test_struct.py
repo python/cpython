@@ -810,7 +810,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         code = "import struct"
         with InterpreterPoolExecutor(max_workers=5) as executor:
-            results = executor.map(exec(code_str), [code] * 5)
+            results = executor.map(exec(code), [code] * 5)
             self.assertListEqual(list(results), [None] * 5)
 
 
