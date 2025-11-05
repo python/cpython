@@ -384,13 +384,13 @@ highest protocol among opcodes = 0
         self.check_dis_error(b'Sabc"\n.', '',
                              "no string quotes around b'abc\"'")
         self.check_dis_error(b"S'abc\n.", '',
-                             '''strinq quote b"'" not found at both ends of b"'abc"''')
+                             '''string quote b"'" not found at both ends of b"'abc"''')
         self.check_dis_error(b'S"abc\n.', '',
-                             r"""strinq quote b'"' not found at both ends of b'"abc'""")
+                             r"""string quote b'"' not found at both ends of b'"abc'""")
         self.check_dis_error(b"S'abc\"\n.", '',
-                             r"""strinq quote b"'" not found at both ends of b'\\'abc"'""")
+                             r"""string quote b"'" not found at both ends of b'\\'abc"'""")
         self.check_dis_error(b"S\"abc'\n.", '',
-                             r"""strinq quote b'"' not found at both ends of b'"abc\\''""")
+                             r"""string quote b'"' not found at both ends of b'"abc\\''""")
 
     def test_binstring(self):
         self.check_dis(b"T\x03\x00\x00\x00abc.", '''\

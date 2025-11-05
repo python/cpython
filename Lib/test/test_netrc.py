@@ -1,10 +1,6 @@
 import netrc, os, unittest, sys, textwrap
+from test import support
 from test.support import os_helper
-
-try:
-    import pwd
-except ImportError:
-    pwd = None
 
 temp_filename = os_helper.TESTFN
 
@@ -269,9 +265,14 @@ class NetrcTestCase(unittest.TestCase):
             machine bar.domain.com login foo password pass
             """, '#pass')
 
+    @unittest.skipUnless(support.is_wasi, 'WASI only test')
+    def test_security_on_WASI(self):
+        self.assertFalse(netrc._can_security_check())
+        self.assertEqual(netrc._getpwuid(0), 'uid 0')
+        self.assertEqual(netrc._getpwuid(123456), 'uid 123456')
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
-    @unittest.skipIf(pwd is None, 'security check requires pwd module')
+    @unittest.skipUnless(hasattr(os, 'getuid'), "os.getuid is required")
     @os_helper.skip_unless_working_chmod
     def test_security(self):
         # This test is incomplete since we are normally not run as root and

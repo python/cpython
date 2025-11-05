@@ -2491,6 +2491,38 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(address.all_mailboxes[0].domain, 'example.com')
         self.assertEqual(address.all_mailboxes[0].addr_spec, '"example example"@example.com')
 
+    def test_get_address_with_invalid_domain(self):
+        address = self._test_get_x(parser.get_address,
+            '<T@[',
+            '<T@[]>',
+            '<T@[]>',
+            [errors.InvalidHeaderDefect,    # missing trailing '>' on angle-addr
+             errors.InvalidHeaderDefect,    # end of input inside domain-literal
+            ],
+            '')
+        self.assertEqual(address.token_type, 'address')
+        self.assertEqual(len(address.mailboxes), 0)
+        self.assertEqual(len(address.all_mailboxes), 1)
+        self.assertEqual(address.all_mailboxes[0].domain, '[]')
+        self.assertEqual(address.all_mailboxes[0].local_part, 'T')
+        self.assertEqual(address.all_mailboxes[0].token_type, 'invalid-mailbox')
+        self.assertEqual(address[0].token_type, 'invalid-mailbox')
+
+        address = self._test_get_x(parser.get_address,
+            '!an??:=m==fr2@[C',
+            '!an??:=m==fr2@[C];',
+            '!an??:=m==fr2@[C];',
+            [errors.InvalidHeaderDefect,    # end of header in group
+             errors.InvalidHeaderDefect,    # end of input inside domain-literal
+            ],
+            '')
+        self.assertEqual(address.token_type, 'address')
+        self.assertEqual(len(address.mailboxes), 0)
+        self.assertEqual(len(address.all_mailboxes), 1)
+        self.assertEqual(address.all_mailboxes[0].domain, '[C]')
+        self.assertEqual(address.all_mailboxes[0].local_part, '=m==fr2')
+        self.assertEqual(address.all_mailboxes[0].token_type, 'invalid-mailbox')
+        self.assertEqual(address[0].token_type, 'group')
 
     # get_address_list
 
@@ -2764,6 +2796,19 @@ class TestParser(TestParserMixin, TestEmailBase):
             [],
             )
         self.assertEqual(message_id.token_type, 'message-id')
+
+    def test_parse_message_id_with_invalid_domain(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "<T@[",
+            "<T@[]>",
+            "<T@[]>",
+            [errors.ObsoleteHeaderDefect] + [errors.InvalidHeaderDefect] * 2,
+            [],
+            )
+        self.assertEqual(message_id.token_type, 'message-id')
+        self.assertEqual(str(message_id.all_defects[-1]),
+                         "end of input inside domain-literal")
 
     def test_parse_message_id_with_remaining(self):
         message_id = self._test_parse_x(

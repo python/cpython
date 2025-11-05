@@ -9,9 +9,13 @@ def load_tzdata(key):
     resource_name = components[-1]
 
     try:
-        return resources.files(package_name).joinpath(resource_name).open("rb")
+        path = resources.files(package_name).joinpath(resource_name)
+        # gh-85702: Prevent PermissionError on Windows
+        if path.is_dir():
+            raise IsADirectoryError
+        return path.open("rb")
     except (ImportError, FileNotFoundError, UnicodeEncodeError, IsADirectoryError):
-        # There are three types of exception that can be raised that all amount
+        # There are four types of exception that can be raised that all amount
         # to "we cannot find this key":
         #
         # ImportError: If package_name doesn't exist (e.g. if tzdata is not

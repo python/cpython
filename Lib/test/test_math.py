@@ -17,6 +17,7 @@ import sys
 
 eps = 1E-05
 NAN = float('nan')
+NNAN = float('-nan')
 INF = float('inf')
 NINF = float('-inf')
 FLOAT_MAX = sys.float_info.max
@@ -53,56 +54,6 @@ def to_ulps(x):
         n = ~(n+2**63)
     return n
 
-
-# Here's a pure Python version of the math.factorial algorithm, for
-# documentation and comparison purposes.
-#
-# Formula:
-#
-#   factorial(n) = factorial_odd_part(n) << (n - count_set_bits(n))
-#
-# where
-#
-#   factorial_odd_part(n) = product_{i >= 0} product_{0 < j <= n >> i; j odd} j
-#
-# The outer product above is an infinite product, but once i >= n.bit_length,
-# (n >> i) < 1 and the corresponding term of the product is empty.  So only the
-# finitely many terms for 0 <= i < n.bit_length() contribute anything.
-#
-# We iterate downwards from i == n.bit_length() - 1 to i == 0.  The inner
-# product in the formula above starts at 1 for i == n.bit_length(); for each i
-# < n.bit_length() we get the inner product for i from that for i + 1 by
-# multiplying by all j in {n >> i+1 < j <= n >> i; j odd}.  In Python terms,
-# this set is range((n >> i+1) + 1 | 1, (n >> i) + 1 | 1, 2).
-
-def count_set_bits(n):
-    """Number of '1' bits in binary expansion of a nonnnegative integer."""
-    return 1 + count_set_bits(n & n - 1) if n else 0
-
-def partial_product(start, stop):
-    """Product of integers in range(start, stop, 2), computed recursively.
-    start and stop should both be odd, with start <= stop.
-
-    """
-    numfactors = (stop - start) >> 1
-    if not numfactors:
-        return 1
-    elif numfactors == 1:
-        return start
-    else:
-        mid = (start + numfactors) | 1
-        return partial_product(start, mid) * partial_product(mid, stop)
-
-def py_factorial(n):
-    """Factorial of nonnegative integer n, via "Binary Split Factorial Formula"
-    described at http://www.luschny.de/math/factorial/binarysplitfact.html
-
-    """
-    inner = outer = 1
-    for i in reversed(range(n.bit_length())):
-        inner *= partial_product((n >> i + 1) + 1 | 1, (n >> i) + 1 | 1)
-        outer *= inner
-    return outer << (n - count_set_bits(n))
 
 def ulp_abs_check(expected, got, ulp_tol, abs_tol):
     """Given finite floats `expected` and `got`, check that they're
@@ -475,6 +426,19 @@ class MathTests(unittest.TestCase):
         # similarly, copysign(2., NAN) could be 2. or -2.
         self.assertEqual(abs(math.copysign(2., NAN)), 2.)
 
+    def test_signbit(self):
+        self.assertRaises(TypeError, math.signbit)
+        self.assertRaises(TypeError, math.signbit, '1.0')
+
+        # C11, §7.12.3.6 requires signbit() to return a nonzero value
+        # if and only if the sign of its argument value is negative,
+        # but in practice, we are only interested in a boolean value.
+        self.assertIsInstance(math.signbit(1.0), bool)
+
+        for arg in [0., 1., INF, NAN]:
+            self.assertFalse(math.signbit(arg))
+            self.assertTrue(math.signbit(-arg))
+
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
         self.ftest('cos(-pi/2)', math.cos(-math.pi/2), 0, abs_tol=math.ulp(1))
@@ -532,33 +496,6 @@ class MathTests(unittest.TestCase):
         self.ftest('fabs(-1)', math.fabs(-1), 1)
         self.ftest('fabs(0)', math.fabs(0), 0)
         self.ftest('fabs(1)', math.fabs(1), 1)
-
-    def testFactorial(self):
-        self.assertEqual(math.factorial(0), 1)
-        total = 1
-        for i in range(1, 1000):
-            total *= i
-            self.assertEqual(math.factorial(i), total)
-            self.assertEqual(math.factorial(i), py_factorial(i))
-        self.assertRaises(ValueError, math.factorial, -1)
-        self.assertRaises(ValueError, math.factorial, -10**100)
-
-    def testFactorialNonIntegers(self):
-        self.assertRaises(TypeError, math.factorial, 5.0)
-        self.assertRaises(TypeError, math.factorial, 5.2)
-        self.assertRaises(TypeError, math.factorial, -1.0)
-        self.assertRaises(TypeError, math.factorial, -1e100)
-        self.assertRaises(TypeError, math.factorial, decimal.Decimal('5'))
-        self.assertRaises(TypeError, math.factorial, decimal.Decimal('5.2'))
-        self.assertRaises(TypeError, math.factorial, "5")
-
-    # Other implementations may place different upper bounds.
-    @support.cpython_only
-    def testFactorialHugeInputs(self):
-        # Currently raises OverflowError for inputs that are too large
-        # to fit into a C long.
-        self.assertRaises(OverflowError, math.factorial, 10**100)
-        self.assertRaises(TypeError, math.factorial, 1e100)
 
     def testFloor(self):
         self.assertRaises(TypeError, math.floor)
@@ -622,6 +559,92 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.fmod(0.0, 3.0), 0.0)
         self.assertEqual(math.fmod(0.0, NINF), 0.0)
         self.assertRaises(ValueError, math.fmod, INF, INF)
+
+    def test_fmax(self):
+        self.assertRaises(TypeError, math.fmax)
+        self.assertRaises(TypeError, math.fmax, 'x', 'y')
+
+        self.assertEqual(math.fmax(0., 0.), 0.)
+        self.assertEqual(math.fmax(1., 2.), 2.)
+        self.assertEqual(math.fmax(2., 1.), 2.)
+
+        self.assertEqual(math.fmax(+1., +0.), 1.)
+        self.assertEqual(math.fmax(+0., +1.), 1.)
+        self.assertEqual(math.fmax(+1., -0.), 1.)
+        self.assertEqual(math.fmax(-0., +1.), 1.)
+
+        self.assertEqual(math.fmax(-1., +0.), 0.)
+        self.assertEqual(math.fmax(+0., -1.), 0.)
+        self.assertEqual(math.fmax(-1., -0.), 0.)
+        self.assertEqual(math.fmax(-0., -1.), 0.)
+
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            self.assertFalse(math.isnan(x))
+
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
+                self.assertEqual(math.fmax(INF, x), INF)
+                self.assertEqual(math.fmax(x, INF), INF)
+                self.assertEqual(math.fmax(NINF, x), x)
+                self.assertEqual(math.fmax(x, NINF), x)
+
+    @requires_IEEE_754
+    def test_fmax_nans(self):
+        # When exactly one operand is NaN, the other is returned.
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
+                self.assertFalse(math.isnan(math.fmax(NAN, x)))
+                self.assertFalse(math.isnan(math.fmax(x, NAN)))
+                self.assertFalse(math.isnan(math.fmax(NNAN, x)))
+                self.assertFalse(math.isnan(math.fmax(x, NNAN)))
+        # When both operands are NaNs, fmax() returns NaN (see C11, F.10.9.2)
+        # whose sign is implementation-defined (see C11, F.10.0.3).
+        self.assertTrue(math.isnan(math.fmax(NAN, NAN)))
+        self.assertTrue(math.isnan(math.fmax(NNAN, NNAN)))
+        self.assertTrue(math.isnan(math.fmax(NAN, NNAN)))
+        self.assertTrue(math.isnan(math.fmax(NNAN, NAN)))
+
+    def test_fmin(self):
+        self.assertRaises(TypeError, math.fmin)
+        self.assertRaises(TypeError, math.fmin, 'x', 'y')
+
+        self.assertEqual(math.fmin(0., 0.), 0.)
+        self.assertEqual(math.fmin(1., 2.), 1.)
+        self.assertEqual(math.fmin(2., 1.), 1.)
+
+        self.assertEqual(math.fmin(+1., +0.), 0.)
+        self.assertEqual(math.fmin(+0., +1.), 0.)
+        self.assertEqual(math.fmin(+1., -0.), 0.)
+        self.assertEqual(math.fmin(-0., +1.), 0.)
+
+        self.assertEqual(math.fmin(-1., +0.), -1.)
+        self.assertEqual(math.fmin(+0., -1.), -1.)
+        self.assertEqual(math.fmin(-1., -0.), -1.)
+        self.assertEqual(math.fmin(-0., -1.), -1.)
+
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            self.assertFalse(math.isnan(x))
+
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
+                self.assertEqual(math.fmin(INF, x), x)
+                self.assertEqual(math.fmin(x, INF), x)
+                self.assertEqual(math.fmin(NINF, x), NINF)
+                self.assertEqual(math.fmin(x, NINF), NINF)
+
+    @requires_IEEE_754
+    def test_fmin_nans(self):
+        # When exactly one operand is NaN, the other is returned.
+        for x in [NINF, -1., -0., 0., 1., INF]:
+            with self.subTest(x=x, is_negative=math.copysign(1, x) < 0):
+                self.assertFalse(math.isnan(math.fmin(NAN, x)))
+                self.assertFalse(math.isnan(math.fmin(x, NAN)))
+                self.assertFalse(math.isnan(math.fmin(NNAN, x)))
+                self.assertFalse(math.isnan(math.fmin(x, NNAN)))
+        # When both operands are NaNs, fmin() returns NaN (see C11, F.10.9.3)
+        # whose sign is implementation-defined (see C11, F.10.0.3).
+        self.assertTrue(math.isnan(math.fmin(NAN, NAN)))
+        self.assertTrue(math.isnan(math.fmin(NNAN, NNAN)))
+        self.assertTrue(math.isnan(math.fmin(NAN, NNAN)))
+        self.assertTrue(math.isnan(math.fmin(NNAN, NAN)))
 
     def testFrexp(self):
         self.assertRaises(TypeError, math.frexp)
@@ -1075,68 +1098,6 @@ class MathTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             math.dist([1, 2], [3, 4, 5])
 
-    def testIsqrt(self):
-        # Test a variety of inputs, large and small.
-        test_values = (
-            list(range(1000))
-            + list(range(10**6 - 1000, 10**6 + 1000))
-            + [2**e + i for e in range(60, 200) for i in range(-40, 40)]
-            + [3**9999, 10**5001]
-        )
-
-        for value in test_values:
-            with self.subTest(value=value):
-                s = math.isqrt(value)
-                self.assertIs(type(s), int)
-                self.assertLessEqual(s*s, value)
-                self.assertLess(value, (s+1)*(s+1))
-
-        # Negative values
-        with self.assertRaises(ValueError):
-            math.isqrt(-1)
-
-        # Integer-like things
-        s = math.isqrt(True)
-        self.assertIs(type(s), int)
-        self.assertEqual(s, 1)
-
-        s = math.isqrt(False)
-        self.assertIs(type(s), int)
-        self.assertEqual(s, 0)
-
-        class IntegerLike(object):
-            def __init__(self, value):
-                self.value = value
-
-            def __index__(self):
-                return self.value
-
-        s = math.isqrt(IntegerLike(1729))
-        self.assertIs(type(s), int)
-        self.assertEqual(s, 41)
-
-        with self.assertRaises(ValueError):
-            math.isqrt(IntegerLike(-3))
-
-        # Non-integer-like things
-        bad_values = [
-            3.5, "a string", decimal.Decimal("3.5"), 3.5j,
-            100.0, -4.0,
-        ]
-        for value in bad_values:
-            with self.subTest(value=value):
-                with self.assertRaises(TypeError):
-                    math.isqrt(value)
-
-    @support.bigmemtest(2**32, memuse=0.85)
-    def test_isqrt_huge(self, size):
-        if size & 1:
-            size += 1
-        v = 1 << size
-        w = math.isqrt(v)
-        self.assertEqual(w.bit_length(), size // 2 + 1)
-        self.assertEqual(w.bit_count(), 1)
-
     def test_lcm(self):
         lcm = math.lcm
         self.assertEqual(lcm(0, 0), 0)
@@ -1386,7 +1347,6 @@ class MathTests(unittest.TestCase):
         # Error cases that arose during development
         args = ((-5, -5, 10), (1.5, 4611686018427387904, 2305843009213693952))
         self.assertEqual(sumprod(*args), 0.0)
-
 
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
@@ -1973,6 +1933,28 @@ class MathTests(unittest.TestCase):
         self.assertFalse(math.isfinite(float("inf")))
         self.assertFalse(math.isfinite(float("-inf")))
 
+    def testIsnormal(self):
+        self.assertTrue(math.isnormal(1.25))
+        self.assertTrue(math.isnormal(-1.0))
+        self.assertFalse(math.isnormal(0.0))
+        self.assertFalse(math.isnormal(-0.0))
+        self.assertFalse(math.isnormal(INF))
+        self.assertFalse(math.isnormal(NINF))
+        self.assertFalse(math.isnormal(NAN))
+        self.assertFalse(math.isnormal(FLOAT_MIN/2))
+        self.assertFalse(math.isnormal(-FLOAT_MIN/2))
+
+    def testIssubnormal(self):
+        self.assertFalse(math.issubnormal(1.25))
+        self.assertFalse(math.issubnormal(-1.0))
+        self.assertFalse(math.issubnormal(0.0))
+        self.assertFalse(math.issubnormal(-0.0))
+        self.assertFalse(math.issubnormal(INF))
+        self.assertFalse(math.issubnormal(NINF))
+        self.assertFalse(math.issubnormal(NAN))
+        self.assertTrue(math.issubnormal(FLOAT_MIN/2))
+        self.assertTrue(math.issubnormal(-FLOAT_MIN/2))
+
     def testIsnan(self):
         self.assertTrue(math.isnan(float("nan")))
         self.assertTrue(math.isnan(float("-nan")))
@@ -2271,140 +2253,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(type(prod([1, decimal.Decimal(2.0), 3, 4, 5, 6])),
                          decimal.Decimal)
 
-    def testPerm(self):
-        perm = math.perm
-        factorial = math.factorial
-        # Test if factorial definition is satisfied
-        for n in range(500):
-            for k in (range(n + 1) if n < 100 else range(30) if n < 200 else range(10)):
-                self.assertEqual(perm(n, k),
-                                 factorial(n) // factorial(n - k))
-
-        # Test for Pascal's identity
-        for n in range(1, 100):
-            for k in range(1, n):
-                self.assertEqual(perm(n, k), perm(n - 1, k - 1) * k + perm(n - 1, k))
-
-        # Test corner cases
-        for n in range(1, 100):
-            self.assertEqual(perm(n, 0), 1)
-            self.assertEqual(perm(n, 1), n)
-            self.assertEqual(perm(n, n), factorial(n))
-
-        # Test one argument form
-        for n in range(20):
-            self.assertEqual(perm(n), factorial(n))
-            self.assertEqual(perm(n, None), factorial(n))
-
-        # Raises TypeError if any argument is non-integer or argument count is
-        # not 1 or 2
-        self.assertRaises(TypeError, perm, 10, 1.0)
-        self.assertRaises(TypeError, perm, 10, decimal.Decimal(1.0))
-        self.assertRaises(TypeError, perm, 10, "1")
-        self.assertRaises(TypeError, perm, 10.0, 1)
-        self.assertRaises(TypeError, perm, decimal.Decimal(10.0), 1)
-        self.assertRaises(TypeError, perm, "10", 1)
-
-        self.assertRaises(TypeError, perm)
-        self.assertRaises(TypeError, perm, 10, 1, 3)
-        self.assertRaises(TypeError, perm)
-
-        # Raises Value error if not k or n are negative numbers
-        self.assertRaises(ValueError, perm, -1, 1)
-        self.assertRaises(ValueError, perm, -2**1000, 1)
-        self.assertRaises(ValueError, perm, 1, -1)
-        self.assertRaises(ValueError, perm, 1, -2**1000)
-
-        # Returns zero if k is greater than n
-        self.assertEqual(perm(1, 2), 0)
-        self.assertEqual(perm(1, 2**1000), 0)
-
-        n = 2**1000
-        self.assertEqual(perm(n, 0), 1)
-        self.assertEqual(perm(n, 1), n)
-        self.assertEqual(perm(n, 2), n * (n-1))
-        if support.check_impl_detail(cpython=True):
-            self.assertRaises(OverflowError, perm, n, n)
-
-        for n, k in (True, True), (True, False), (False, False):
-            self.assertEqual(perm(n, k), 1)
-            self.assertIs(type(perm(n, k)), int)
-        self.assertEqual(perm(IntSubclass(5), IntSubclass(2)), 20)
-        self.assertEqual(perm(MyIndexable(5), MyIndexable(2)), 20)
-        for k in range(3):
-            self.assertIs(type(perm(IntSubclass(5), IntSubclass(k))), int)
-            self.assertIs(type(perm(MyIndexable(5), MyIndexable(k))), int)
-
-    def testComb(self):
-        comb = math.comb
-        factorial = math.factorial
-        # Test if factorial definition is satisfied
-        for n in range(500):
-            for k in (range(n + 1) if n < 100 else range(30) if n < 200 else range(10)):
-                self.assertEqual(comb(n, k), factorial(n)
-                    // (factorial(k) * factorial(n - k)))
-
-        # Test for Pascal's identity
-        for n in range(1, 100):
-            for k in range(1, n):
-                self.assertEqual(comb(n, k), comb(n - 1, k - 1) + comb(n - 1, k))
-
-        # Test corner cases
-        for n in range(100):
-            self.assertEqual(comb(n, 0), 1)
-            self.assertEqual(comb(n, n), 1)
-
-        for n in range(1, 100):
-            self.assertEqual(comb(n, 1), n)
-            self.assertEqual(comb(n, n - 1), n)
-
-        # Test Symmetry
-        for n in range(100):
-            for k in range(n // 2):
-                self.assertEqual(comb(n, k), comb(n, n - k))
-
-        # Raises TypeError if any argument is non-integer or argument count is
-        # not 2
-        self.assertRaises(TypeError, comb, 10, 1.0)
-        self.assertRaises(TypeError, comb, 10, decimal.Decimal(1.0))
-        self.assertRaises(TypeError, comb, 10, "1")
-        self.assertRaises(TypeError, comb, 10.0, 1)
-        self.assertRaises(TypeError, comb, decimal.Decimal(10.0), 1)
-        self.assertRaises(TypeError, comb, "10", 1)
-
-        self.assertRaises(TypeError, comb, 10)
-        self.assertRaises(TypeError, comb, 10, 1, 3)
-        self.assertRaises(TypeError, comb)
-
-        # Raises Value error if not k or n are negative numbers
-        self.assertRaises(ValueError, comb, -1, 1)
-        self.assertRaises(ValueError, comb, -2**1000, 1)
-        self.assertRaises(ValueError, comb, 1, -1)
-        self.assertRaises(ValueError, comb, 1, -2**1000)
-
-        # Returns zero if k is greater than n
-        self.assertEqual(comb(1, 2), 0)
-        self.assertEqual(comb(1, 2**1000), 0)
-
-        n = 2**1000
-        self.assertEqual(comb(n, 0), 1)
-        self.assertEqual(comb(n, 1), n)
-        self.assertEqual(comb(n, 2), n * (n-1) // 2)
-        self.assertEqual(comb(n, n), 1)
-        self.assertEqual(comb(n, n-1), n)
-        self.assertEqual(comb(n, n-2), n * (n-1) // 2)
-        if support.check_impl_detail(cpython=True):
-            self.assertRaises(OverflowError, comb, n, n//2)
-
-        for n, k in (True, True), (True, False), (False, False):
-            self.assertEqual(comb(n, k), 1)
-            self.assertIs(type(comb(n, k)), int)
-        self.assertEqual(comb(IntSubclass(5), IntSubclass(2)), 10)
-        self.assertEqual(comb(MyIndexable(5), MyIndexable(2)), 10)
-        for k in range(3):
-            self.assertIs(type(comb(IntSubclass(5), IntSubclass(k))), int)
-            self.assertIs(type(comb(MyIndexable(5), MyIndexable(k))), int)
-
     @requires_IEEE_754
     def test_nextafter(self):
         # around 2^52 and 2^63
@@ -2463,7 +2311,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(1.0, math.nextafter(1.0, INF, steps=0))
         with self.assertRaises(ValueError):
             math.nextafter(1.0, INF, steps=-1)
-
 
     @requires_IEEE_754
     def test_ulp(self):

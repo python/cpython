@@ -54,15 +54,17 @@ static inline int _PyMem_IsPtrFreed(const void *ptr)
 {
     uintptr_t value = (uintptr_t)ptr;
 #if SIZEOF_VOID_P == 8
-    return (value == 0
+    return (value <= 0xff  // NULL, 0x1, 0x2, ..., 0xff
             || value == (uintptr_t)0xCDCDCDCDCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDDDDDDDDDD
-            || value == (uintptr_t)0xFDFDFDFDFDFDFDFD);
+            || value == (uintptr_t)0xFDFDFDFDFDFDFDFD
+            || value >= (uintptr_t)0xFFFFFFFFFFFFFF00);  // -0xff, ..., -2, -1
 #elif SIZEOF_VOID_P == 4
-    return (value == 0
+    return (value <= 0xff
             || value == (uintptr_t)0xCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDD
-            || value == (uintptr_t)0xFDFDFDFD);
+            || value == (uintptr_t)0xFDFDFDFD
+            || value >= (uintptr_t)0xFFFFFF00);
 #else
 #  error "unknown pointer size"
 #endif
@@ -88,17 +90,7 @@ extern wchar_t *_PyMem_DefaultRawWcsdup(const wchar_t *str);
 extern int _PyMem_DebugEnabled(void);
 
 // Enqueue a pointer to be freed possibly after some delay.
-extern void _PyMem_FreeDelayed(void *ptr);
-
-// Enqueue an object to be freed possibly after some delay
-#ifdef Py_GIL_DISABLED
-PyAPI_FUNC(void) _PyObject_XDecRefDelayed(PyObject *obj);
-#else
-static inline void _PyObject_XDecRefDelayed(PyObject *obj)
-{
-    Py_XDECREF(obj);
-}
-#endif
+extern void _PyMem_FreeDelayed(void *ptr, size_t size);
 
 // Periodically process delayed free requests.
 extern void _PyMem_ProcessDelayed(PyThreadState *tstate);

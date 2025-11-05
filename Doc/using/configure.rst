@@ -22,12 +22,48 @@ Features and minimum versions required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.16 is the recommended
-  minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
+To build optional modules:
 
-* SQLite 3.15.2 for the :mod:`sqlite3` extension module.
+* `libbz2 <https://sourceware.org/bzip2/>`_ for the :mod:`bz2` module.
 
-* Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
+* `libb2 <https://github.com/BLAKE2/libb2>`_ (:ref:`BLAKE2 <hashlib-blake2>`)
+  for the :mod:`hashlib` module.
+
+* `libffi <https://sourceware.org/libffi/>`_ 3.3.0 is the recommended
+  minimum version for the :mod:`ctypes` module.
+
+* ``liblzma`` for the :mod:`lzma` module.
+
+* `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_ 2.5.0
+  for the :mod:`decimal` module.
+
+* ``libncurses`` or ``libncursesw`` for the :mod:`curses` module.
+
+* ``libpanel`` or ``libpanelw`` for the :mod:`curses.panel` module.
+
+* `libreadline <https://tiswww.case.edu/php/chet/readline/rltop.html>`_ or
+  `libedit <https://www.thrysoee.dk/editline/>`_
+  for the :mod:`readline` module.
+
+* `libuuid <https://linux.die.net/man/3/libuuid>`_ for the :mod:`uuid` module.
+
+* `OpenSSL <https://www.openssl.org/>`_ 1.1.1 is the minimum version and
+  OpenSSL 3.0.18 is the recommended minimum version for the
+  :mod:`ssl` and :mod:`hashlib` extension modules.
+
+* `SQLite <https://sqlite.org/>`_ 3.15.2 for the :mod:`sqlite3` extension module.
+
+* `Tcl/Tk <https://www.tcl-lang.org/>`_ 8.5.12 for the :mod:`tkinter` module.
+
+* `zlib <https://www.zlib.net>`_ 1.2.2.1 is the minimum version for the
+  :mod:`zlib` module.
+
+* `zstd <https://facebook.github.io/zstd/>`_ 1.4.5 is the minimum version for
+  the :mod:`compression.zstd` module.
+
+For a full list of dependencies required to build all modules and how to install
+them, see the
+`devguide <https://devguide.python.org/getting-started/setup-building/#install-dependencies>`_.
 
 * Autoconf 2.72 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
@@ -290,8 +326,11 @@ General Options
 
 .. option:: --disable-gil
 
-   Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL): free threading build.
+   .. c:macro:: Py_GIL_DISABLED
+      :no-typesetting:
+
+   Enables support for running Python without the :term:`global interpreter
+   lock` (GIL): free threading build.
 
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
@@ -444,6 +483,14 @@ Options for third-party dependencies
 
    C compiler and linker flags for ``libuuid``, used by :mod:`uuid` module,
    overriding ``pkg-config``.
+
+.. option:: LIBZSTD_CFLAGS
+.. option:: LIBZSTD_LIBS
+
+   C compiler and linker flags for ``libzstd``, used by :mod:`compression.zstd` module,
+   overriding ``pkg-config``.
+
+   .. versionadded:: 3.14
 
 .. option:: PANEL_CFLAGS
 .. option:: PANEL_LIBS
@@ -675,6 +722,13 @@ also be used to improve performance.
    not compiled. This includes both the functionality to schedule code to be executed
    and the functionality to receive code to be executed.
 
+   .. c:macro:: Py_REMOTE_DEBUG
+
+      This macro is defined by default, unless Python is configured with
+      :option:`--without-remote-debug`.
+
+      Note that even if the macro is defined, remote debugging may not be
+      available (for example, on an incompatible platform).
 
    .. versionadded:: 3.14
 
@@ -784,6 +838,9 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
+   To improve ASan detection capabilities you may also want to combine this
+   with :option:`--without-pymalloc` to disable the specialized small-object
+   allocator whose allocations are not tracked by ASan.
 
    .. versionadded:: 3.6
 
@@ -845,9 +902,9 @@ Libraries options
    .. versionchanged:: 3.13
       Default to using the installed ``mpdecimal`` library.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. deprecated-removed:: 3.13 3.16
       A copy of the ``mpdecimal`` library sources will no longer be distributed
-      with Python 3.15.
+      with Python 3.16.
 
    .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
