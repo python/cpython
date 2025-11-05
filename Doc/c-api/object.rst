@@ -87,7 +87,7 @@ Object Protocol
 
 .. c:function:: void PyObject_Dump(PyObject* op)
 
-   Dump an object *op* to ``stderr``. Function used for debugging.
+   Dump an object *op* to ``stderr``. This should only be used for debugging.
 
    It can be called without an :term:`attached thread state`, even if it's not
    recommended.
