@@ -1030,8 +1030,9 @@ Glossary
       but may be absent in some builds of :term:`CPython`,
       usually due to missing third-party libraries or because the module
       is not available for a given platform.
+
       See :ref:`optional-module-requirements` for a list of optional modules
-      and the required libraries.
+      that require third-party libraries.
 
    package
       A Python :term:`module` which can contain submodules or recursively,

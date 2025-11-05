@@ -48,12 +48,13 @@ support".
 Requirements for optional modules
 ---------------------------------
 
-To build :term:`optional modules <optional module>` of the standard library,
-you will need several third-party libraries installed for development
+Some :term:`optional modules <optional module>` of the standard library
+require third-party libraries installed for development
 (for example, header files must be available).
 
 Missing requirements are reported in the ``configure`` output.
-Missing optional modules are listed near the end of the ``make`` output,
+Modules that are missing due to missing dependencies are listed near the end
+of the ``make`` output,
 sometimes using an internal name such as ``_ctypes`` for the :mod:`ctypes`
 module.
 
@@ -123,6 +124,9 @@ Dependencies to build optional modules are:
 .. [5] If OpenSSL is not available, the :mod:`hashlib` module will use
    bundled implementations of several hash functions.
    See :option:`--with-builtin-hashlib-hashes` for *forcing* usage of OpenSSL.
+
+Note that the table does not include all optional modules; in particular,
+platform-specific modules like :mod:`winreg` are not listed here.
 
 .. seealso::
 
