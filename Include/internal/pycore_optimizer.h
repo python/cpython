@@ -132,9 +132,6 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 // handle before rejoining the rest of the program.
 #define MAX_CHAIN_DEPTH 4
 
-// The maximum number of side exits arising from unpredictable control-flow.
-#define MAX_DYNAMIC_CHAIN_DEPTH 6
-
 /* Symbols */
 /* See explanation in optimizer_symbols.c */
 

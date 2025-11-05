@@ -133,12 +133,7 @@ _PyOptimizer_Optimize(
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
     // this is true, since a deopt won't infinitely re-enter the executor:
-    if (tstate->interp->jit_state.code_buffer[0].opcode == _START_DYNAMIC_EXECUTOR) {
-        chain_depth %= MAX_DYNAMIC_CHAIN_DEPTH;
-    }
-    else {
-        chain_depth %= MAX_CHAIN_DEPTH;
-    }
+    chain_depth %= MAX_CHAIN_DEPTH;
     bool progress_needed = chain_depth == 0;
     PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_state.initial_code;
     _Py_CODEUNIT *start = tstate->interp->jit_state.insert_exec_instr;
