@@ -1,5 +1,5 @@
 PEP: 9999
-Title: The pprint protocol
+Title: The Pretty Print Protocol
 Author: Barry Warsaw <barry@python.org>,
         Eric V. Smith <eric at trueblade.com>
 Discussions-To: Pending
@@ -13,7 +13,7 @@ Post-History: Pending
 Abstract
 ========
 
-This PEP describes the "pprint protocol", a collection of changes proposed to make pretty printing more
+This PEP describes the "pretty print protocol", a collection of changes proposed to make pretty printing more
 customizable and convenient.
 
 
