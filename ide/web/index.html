@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web-Based Python IDE</title>
+    <style>
+        /* General Reset and Layout */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Top Bar for Controls */
+        #controls {
+            padding: 10px 20px;
+            background-color: #333;
+            border-bottom: 2px solid #555;
+            display: flex;
+            align-items: center;
+        }
+
+        #run-button {
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        #run-button:hover {
+            background-color: #45a049;
+        }
+        
+        #status-message {
+            margin-left: 20px;
+            color: white;
+            font-size: 14px;
+        }
+
+        /* Main Editor and Output Area */
+        .main-area {
+            display: flex;
+            flex: 1; /* Fills remaining space */
+        }
+
+        #code-input {
+            flex: 2; /* Editor takes 2/3 of the space */
+            padding: 15px;
+            border: none;
+            border-right: 1px solid #ddd;
+            font-size: 15px;
+            font-family: Consolas, 'Courier New', monospace;
+            resize: none;
+            box-sizing: border-box;
+            background-color: #ffffff;
+            line-height: 1.5;
+            outline: none;
+        }
+
+        #output-area {
+            flex: 1; /* Output takes 1/3 of the space */
+            padding: 15px;
+            background-color: #212121;
+            color: #E0E0E0;
+            overflow: auto;
+            white-space: pre-wrap;
+            box-sizing: border-box;
+            font-family: Consolas, 'Courier New', monospace;
+            line-height: 1.4;
+        }
+
+        .error {
+            color: #FF7043; /* Light red for errors */
+            font-weight: bold;
+        }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+</head>
+<body>
+    <div class="container">
+        
+        <div id="controls">
+            <button id="run-button" onclick="runPythonCode()">Run Code</button>
+            <span id="status-message">Initializing...</span>
+        </div>
+
+        <div class="main-area">
+            <textarea id="code-input" placeholder="Write your Python code here..." spellcheck="false">print("Hello, Pyodide!")
+for i in range(3):
+    print(f"Count: {i}")
+
+# Tip: Press 'Run Code' to execute. 
+# Pyodide supports most pure Python features and many packages!
+</textarea>
+            <pre id="output-area">Output will appear here...</pre>
+        </div>
+    </div>
+
+    <script>
+        let pyodideReady = false;
+        let pyodide;
+        const statusElement = document.getElementById('status-message');
+        const outputElement = document.getElementById('output-area');
+
+        async function loadPyodideAndDependencies() {
+            try {
+                statusElement.textContent = "Loading Pyodide...";
+                pyodide = await loadPyodide({
+                    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
+                });
+                
+                pyodideReady = true;
+                statusElement.textContent = "Ready!";
+            } catch (error) {
+                statusElement.textContent = "Error loading Pyodide.";
+                outputElement.innerHTML = `<span class="error">Error loading Pyodide:</span> ${error}`;
+            }
+        }
+
+        loadPyodideAndDependencies();
+
+        async function runPythonCode() {
+            if (!pyodideReady) {
+                alert("Pyodide is still loading. Please wait.");
+                return;
+            }
+
+            const code = document.getElementById('code-input').value;
+            statusElement.textContent = "Running code...";
+            outputElement.className = '';
+            outputElement.textContent = "Executing...";
+
+            try {
+                // To capture print() statements, we redirect sys.stdout
+                let scriptOutput = '';
+                pyodide.runPython(`
+import io, sys
+sys.stdout = io.StringIO()
+${code}
+result = sys.stdout.getvalue()
+                `);
+                
+                scriptOutput = pyodide.globals.get('result');
+                
+                outputElement.textContent = scriptOutput;
+                statusElement.textContent = "Execution finished.";
+                
+            } catch (error) {
+                // Display the Python error
+                outputElement.className = 'error';
+                outputElement.textContent = `Python Error:\n${error}`;
+                statusElement.textContent = "Execution failed.";
+            }
+        }
+    </script>
+</body>
+</html>
