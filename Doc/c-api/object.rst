@@ -92,7 +92,7 @@ Object Protocol
    It can be called without an :term:`attached thread state`, even if it's not
    recommended.
 
-   Implement an heuristic to detect if the object memory has been freed.
+   Implement a heuristic to detect if the object memory has been freed.
 
    Example of output:
 
