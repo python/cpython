@@ -14,7 +14,7 @@ import codecs
 class MiscTestCase(unittest.TestCase):
     maxDiff = None
     def test__all__(self):
-        support.check__all__(self, locale, extra=["localeconv","strcoll","strxfrm","getencoding",],
+        support.check__all__(self, locale, extra=["localeconv","strcoll","strxfrm","getencoding","Error"],
         not_exported=["locale_encoding_alias", "locale_alias","windows_locale", "AM_STR", "PM_STR",])
 
 class LazyImportTest(unittest.TestCase):
