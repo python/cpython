@@ -189,6 +189,8 @@ type_lock_allow_release(void)
 #define types_world_is_stopped() 1
 #define types_stop_world()
 #define types_start_world()
+#define type_lock_prevent_release()
+#define type_lock_allow_release()
 
 #endif
 
@@ -1920,16 +1922,12 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
     assert(old_bases != NULL);
     PyTypeObject *old_base = type->tp_base;
 
-#ifdef Py_GIL_DISABLED
     type_lock_prevent_release();
-#endif
     types_stop_world();
     set_tp_bases(type, Py_NewRef(new_bases), 0);
     type->tp_base = (PyTypeObject *)Py_NewRef(best_base);
     types_start_world();
-#ifdef Py_GIL_DISABLED
     type_lock_allow_release();
-#endif
 
     PyObject *temp = PyList_New(0);
     if (temp == NULL) {
@@ -1990,16 +1988,12 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
     if (lookup_tp_bases(type) == new_bases) {
         assert(type->tp_base == best_base);
 
-#ifdef Py_GIL_DISABLED
         type_lock_prevent_release();
-#endif
         types_stop_world();
         set_tp_bases(type, old_bases, 0);
         type->tp_base = old_base;
         types_start_world();
-#ifdef Py_GIL_DISABLED
         type_lock_allow_release();
-#endif
 
         Py_DECREF(new_bases);
         Py_DECREF(best_base);
