@@ -73,7 +73,7 @@ Other Iterator Objects
    Type objects for iterators of various built-in objects.
 
    Do not create instances of these directly; prefer calling
-   :func:`PyObject_GetIter` instead.
+   :c:func:`PyObject_GetIter` instead.
 
    Note that there is no guarantee that a given built-in type uses a given iterator
    type. For example, iterating over :class:`range` will use one of two iterator
