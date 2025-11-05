@@ -800,18 +800,18 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
 
-    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
+    @unittest.skipUnless(
+        support.Py_GIL_DISABLED,
+        'this test can only possibly fail with GIL disabled'
+    )
     def test_endian_table_init_subinterpreters(self):
         # Verify that the _struct extension module can be initialized
         # concurrently in subinterpreters (gh-140260).
         from concurrent.futures import InterpreterPoolExecutor
 
-        def _exec_code(code_str):
-            exec(code_str)
-
         code = "import struct"
         with InterpreterPoolExecutor(max_workers=5) as executor:
-            results = executor.map(_exec_code, [code] * 5)
+            results = executor.map(exec(code_str), [code] * 5)
             self.assertListEqual(list(results), [None] * 5)
 
 
