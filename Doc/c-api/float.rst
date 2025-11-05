@@ -82,11 +82,22 @@ Floating-Point Objects
 
    Return :data:`math.nan` from a function.
 
+   On most platforms, this is equivalent to ``return PyFloat_FromDouble(NAN)``.
+
 
 .. c:macro:: Py_RETURN_INF(sign)
 
    Return :data:`math.inf` or :data:`-math.inf <math.inf>` from a function,
    depending on the sign of *sign*.
+
+   On most platforms, this is equivalent to the following::
+
+      if (copysign(1., sign) == 1.) {
+         return PyFloat_FromDouble(INFINITY);
+      }
+      else {
+         return PyFloat_FromDouble(-INFINITY);
+      }
 
 
 Pack and Unpack functions
