@@ -225,9 +225,6 @@
     <ClCompile Include="$(lzmaDir)src\liblzma\lzma\lzma2_encoder.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="$(lzmaDir)src\liblzma\common\lzip_decoder.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(lzmaDir)src\common\mythread.h">

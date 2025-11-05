@@ -133,7 +133,6 @@
     <ClCompile Include="$(lzmaDir)src\liblzma\common\index_decoder.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\common\index_encoder.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\common\index_hash.c" />
-    <ClCompile Include="$(lzmaDir)src\liblzma\common\lzip_decoder.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\common\outqueue.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\common\stream_buffer_decoder.c" />
     <ClCompile Include="$(lzmaDir)src\liblzma\common\stream_buffer_encoder.c" />
