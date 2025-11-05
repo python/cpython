@@ -78,6 +78,23 @@ Floating-Point Objects
    Return the minimum normalized positive float *DBL_MIN* as C :c:expr:`double`.
 
 
+.. c:macro:: Py_RETURN_NAN
+
+   Return :data:`math.nan` from a function.
+
+   On most platforms, this is equivalent to ``return PyFloat_FromDouble(NAN)``.
+
+
+.. c:macro:: Py_RETURN_INF(sign)
+
+   Return :data:`math.inf` or :data:`-math.inf <math.inf>` from a function,
+   depending on the sign of *sign*.
+
+   On most platforms, this is equivalent to the following::
+
+      return PyFloat_FromDouble(copysign(INFINITY, sign));
+
+
 Pack and Unpack functions
 -------------------------
 
