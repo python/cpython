@@ -211,7 +211,6 @@
     <ClInclude Include="$(lzmaDir)src\liblzma\common\filter_encoder.h" />
     <ClInclude Include="$(lzmaDir)src\liblzma\common\index.h" />
     <ClInclude Include="$(lzmaDir)src\liblzma\common\index_encoder.h" />
-    <ClInclude Include="$(lzmaDir)src\liblzma\common\lzip_decoder.h" />
     <ClInclude Include="$(lzmaDir)src\liblzma\common\memcmplen.h" />
     <ClInclude Include="$(lzmaDir)src\liblzma\common\outqueue.h" />
     <ClInclude Include="$(lzmaDir)src\liblzma\common\stream_decoder.h" />

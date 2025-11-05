@@ -154,21 +154,21 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "9ba013411a7b0cd8dbf2b6ef42d3add2c847671b780c8792fed7131d7ab2d130"
+          "checksumValue": "1bfaba0ccacc6681d3ba85335cc7f49c24cf6f9d16f848cbd153b896d8a7d631"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/xz-5.8.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/xz-5.8.1.1.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tukaani:xz:5.8.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tukaani:xz:5.8.1.1:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "xz",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "5.8.1"
+      "versionInfo": "5.8.1.1"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-zlib-ng",

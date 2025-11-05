@@ -428,8 +428,5 @@
     <ClInclude Include="$(lzmaDir)windows\config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="$(lzmaDir)src\liblzma\common\lzip_decoder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
