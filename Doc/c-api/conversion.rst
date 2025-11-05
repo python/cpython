@@ -105,7 +105,7 @@ The following functions provide locale-independent string to number conversions.
 
    If ``s`` represents a value that is too large to store in a float
    (for example, ``"1e500"`` is such a string on many platforms) then
-   if ``overflow_exception`` is ``NULL`` return ``Py_INFINITY`` (with
+   if ``overflow_exception`` is ``NULL`` return :c:macro:`!INFINITY` (with
    an appropriate sign) and don't set any exception.  Otherwise,
    ``overflow_exception`` must point to a Python exception object;
    raise that exception and return ``-1.0``.  In both cases, set
