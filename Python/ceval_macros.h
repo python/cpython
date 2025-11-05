@@ -401,14 +401,9 @@ do {                                                   \
         next_instr = frame->instr_ptr + 1;                 \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
-    /* No progress made */ \
-    if (next_instr == this_instr) { \
-        opcode = executor->vm_data.opcode; \
-        oparg = (oparg & ~255) | executor->vm_data.oparg; \
-        if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) { \
-            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter); \
-        } \
-        DISPATCH_GOTO(); \
+    /* Progress made */ \
+    if (next_instr != this_instr) { \
+        _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_DO_NOT_REENTER); \
     } \
     if (keep_tracing_bit) { \
         assert(tstate->interp->jit_state.code_curr_size == 2 || tstate->interp->jit_state.code_curr_size == 3); \

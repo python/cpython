@@ -44,7 +44,6 @@
 
 #define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"
-#include "../Include/internal/pycore_stackref.h"
 
 /* Flow control macros */
 
@@ -2988,6 +2987,9 @@ dummy_func(
                 if (succ) {
                     ENTER_TRACING();
                 }
+                else {
+                    this_instr[1].counter = restart_backoff_counter(counter);
+                }
             }
             else {
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
@@ -3047,7 +3049,8 @@ dummy_func(
             /* If the eval breaker is set then stay in tier 1.
              * This avoids any potentially infinite loops
              * involving _RESUME_CHECK */
-            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & (_PY_EVAL_EVENTS_MASK | _PY_EVAL_JIT_DO_NOT_REENTER)) {
+                _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_DO_NOT_REENTER);
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
@@ -5302,6 +5305,7 @@ dummy_func(
             tstate->jit_exit = exit;
             assert(exit->is_dynamic);
             _PyExecutorObject *exec = exit->executor;
+            assert(exec->trace[0].opcode == _COLD_DYNAMIC_EXIT || exec->trace[0].opcode == _START_DYNAMIC_EXECUTOR);
             TIER2_TO_TIER2(exec);
         }
 
@@ -5412,6 +5416,7 @@ dummy_func(
 #ifndef _Py_JIT
             assert(current_executor == (_PyExecutorObject*)executor);
 #endif
+            assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)executor;
             if (!current_executor->vm_data.valid) {
                 assert(tstate->jit_exit->executor == current_executor);
@@ -5470,6 +5475,11 @@ dummy_func(
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
+            #if Py_DEBUG
+                if (executor->trace[2].opcode == _GUARD_EXECUTOR_IP) {
+                    assert(executor->trace[2].operand0 == (uint64_t)target);
+                }
+            #endif
             }
             else {
                 if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
@@ -5486,10 +5496,10 @@ dummy_func(
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.
                 int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, previous_executor, target->op.arg, false);
+                exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
                 }
-                exit->temperature = restart_backoff_counter(exit->temperature);
                 GOTO_TIER_ONE(target);
             }
             assert(tstate->jit_exit == exit);
@@ -5500,17 +5510,23 @@ dummy_func(
         tier2 op(_COLD_DYNAMIC_EXIT, ( -- )) {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
+            assert(exit->is_dynamic);
             _Py_CODEUNIT *target = frame->instr_ptr;
             _Py_BackoffCounter temperature = exit->temperature;
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
-                if (executor->trace[0].opcode == _START_DYNAMIC_EXECUTOR && executor->vm_data.valid) {
+                if (executor->vm_data.valid &&
+                    executor->trace[0].opcode == _START_DYNAMIC_EXECUTOR) {
+                    assert(executor->trace[2].operand0 == (uint64_t)target);
                     Py_INCREF(executor);
                     assert(tstate->jit_exit == exit);
                     exit->executor = executor;
                     TIER2_TO_TIER2(executor);
+                }
+                else {
+                    GOTO_TIER_ONE(target);
                 }
             }
             if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
@@ -5524,15 +5540,18 @@ dummy_func(
             assert(tstate->current_executor == (PyObject *)previous_executor);
             int chain_depth = previous_executor->vm_data.chain_depth + 1;
             int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, previous_executor, target->op.arg, true);
+            exit->temperature = restart_backoff_counter(exit->temperature);
             if (succ) {
                 GOTO_TIER_ONE_CONTINUE_TRACING(target);
             }
-            exit->temperature = restart_backoff_counter(exit->temperature);
             GOTO_TIER_ONE(target);
         }
 
         tier2 op(_GUARD_EXECUTOR_IP, (ip/4 --)) {
-            EXIT_IF(frame->instr_ptr != (_Py_CODEUNIT*)ip);
+            if (frame->instr_ptr != (_Py_CODEUNIT*)ip) {
+                _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_DO_NOT_REENTER);
+                EXIT_IF(true);
+            }
         }
 
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {

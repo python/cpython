@@ -969,7 +969,9 @@ _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _
 #endif
 
     if (is_dynamic_target) {
-        add_to_trace(tstate->interp->jit_state.code_buffer, 0, _START_DYNAMIC_EXECUTOR, 0, (uintptr_t)insert_exec_instr, INSTR_IP(insert_exec_instr, code));
+        assert(curr_instr == frame->instr_ptr);
+        assert(curr_instr == insert_exec_instr);
+        add_to_trace(tstate->interp->jit_state.code_buffer, 0, _START_DYNAMIC_EXECUTOR, 0, (uintptr_t)insert_exec_instr, 0);
         add_to_trace(tstate->interp->jit_state.code_buffer, 1, _MAKE_WARM, 0, 0, 0);
         add_to_trace(tstate->interp->jit_state.code_buffer, 2, _GUARD_EXECUTOR_IP, 0, (uintptr_t)curr_instr, 0);
         tstate->interp->jit_state.code_curr_size = 3;
@@ -1186,6 +1188,9 @@ sanity_check(_PyExecutorObject *executor)
         executor->trace[0].opcode == _COLD_EXIT ||
         executor->trace[0].opcode == _COLD_DYNAMIC_EXIT ||
         executor->trace[0].opcode == _START_DYNAMIC_EXECUTOR);
+    if (executor->trace[0].opcode == _START_DYNAMIC_EXECUTOR) {
+        CHECK(executor->trace[2].opcode == _GUARD_EXECUTOR_IP);
+    }
     for (; i < executor->code_size; i++) {
         const _PyUOpInstruction *inst = &executor->trace[i];
         uint16_t opcode = inst->opcode;
@@ -1579,6 +1584,7 @@ _PyExecutor_GetColdDynamicExecutor(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->cold_dynamic_executor != NULL) {
+        assert(interp->cold_dynamic_executor->trace[0].opcode == _COLD_DYNAMIC_EXIT);
         return interp->cold_dynamic_executor;
     }
     _PyExecutorObject *cold = allocate_executor(0, 1);
