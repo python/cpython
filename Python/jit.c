@@ -645,6 +645,7 @@ _Py_LazyJitTrampoline(
         }
         _Py_jit_entry = trampoline;
     }
+    tstate->current_executor = (PyObject *)executor;
     PyMutex_Unlock(&lazy_jit_mutex);
     return _Py_jit_entry(executor, frame, stack_pointer, tstate);
 }
