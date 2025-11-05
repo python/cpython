@@ -1353,7 +1353,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.11
 
 
-.. c:function:: int PyUnstable_ThreadState_SetStack(PyThreadState *tstate, void *stack_start_addr, size_t stack_size)
+.. c:function:: int PyUnstable_ThreadState_SetStackProtection(PyThreadState *tstate, void *stack_start_addr, size_t stack_size)
 
    Set the stack start address and stack size of a Python thread state.
 
@@ -1367,24 +1367,24 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    normally gets from the operating system.
    When the stack is changed, for example using context switching techniques like the
    Boost library's ``boost::context``, you must call
-   :c:func:`~PyUnstable_ThreadState_SetStack` to inform CPython of the change.
+   :c:func:`~PyUnstable_ThreadState_SetStackProtection` to inform CPython of the change.
 
-   Call :c:func:`~PyUnstable_ThreadState_SetStack` either before
+   Call :c:func:`~PyUnstable_ThreadState_SetStackProtection` either before
    or after changing the stack.
    Do not call any other Python C API between the call and the stack
    change.
 
-   See :c:func:`PyUnstable_ThreadState_ResetStack` for undoing this operation.
+   See :c:func:`PyUnstable_ThreadState_ResetStackProtection` for undoing this operation.
 
    .. versionadded:: next
 
 
-.. c:function:: void PyUnstable_ThreadState_ResetStack(PyThreadState *tstate)
+.. c:function:: void PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
 
    Reset the stack start address and stack size of a Python thread state to
    the operating system defaults.
 
-   See :c:func:`PyUnstable_ThreadState_SetStack` for an explanation.
+   See :c:func:`PyUnstable_ThreadState_SetStackProtection` for an explanation.
 
    .. versionadded:: next
 

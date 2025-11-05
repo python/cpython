@@ -37,7 +37,7 @@ typedef struct _PyThreadStateImpl {
     uintptr_t c_stack_soft_limit;
     uintptr_t c_stack_hard_limit;
 
-    // PyUnstable_ThreadState_ResetStack() values
+    // PyUnstable_ThreadState_ResetStackProtection() values
     uintptr_t c_stack_init_base;
     uintptr_t c_stack_init_top;
 

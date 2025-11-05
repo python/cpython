@@ -2421,7 +2421,7 @@ set_vectorcall_nop(PyObject *self, PyObject *func)
 static void
 check_threadstate_set_stack(PyThreadState *tstate, void *start, size_t size)
 {
-    assert(PyUnstable_ThreadState_SetStack(tstate, start, size) == 0);
+    assert(PyUnstable_ThreadState_SetStackProtection(tstate, start, size) == 0);
     assert(!PyErr_Occurred());
 
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
@@ -2455,12 +2455,12 @@ test_threadstate_set_stack(PyObject *self, PyObject *Py_UNUSED(args))
     // Test invalid size (too small)
     size = 5;
     start = (void*)(_Py_get_machine_stack_pointer() - size);
-    assert(PyUnstable_ThreadState_SetStack(tstate, start, size) == -1);
+    assert(PyUnstable_ThreadState_SetStackProtection(tstate, start, size) == -1);
     assert(PyErr_ExceptionMatches(PyExc_ValueError));
     PyErr_Clear();
 
-    // Test PyUnstable_ThreadState_ResetStack()
-    PyUnstable_ThreadState_ResetStack(tstate);
+    // Test PyUnstable_ThreadState_ResetStackProtection()
+    PyUnstable_ThreadState_ResetStackProtection(tstate);
     assert(ts->c_stack_init_base == init_base);
     assert(ts->c_stack_init_top == init_top);
 

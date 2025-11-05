@@ -1,3 +1,3 @@
-Add :c:func:`PyUnstable_ThreadState_SetStack` and
-:c:func:`PyUnstable_ThreadState_ResetStack` functions to set the stack base
+Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and
+:c:func:`PyUnstable_ThreadState_ResetStackProtection` functions to set the stack base
 address and stack size of a Python thread state. Patch by Victor Stinner.

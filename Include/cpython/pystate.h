@@ -253,13 +253,13 @@ PyAPI_FUNC(int) PyGILState_Check(void);
 PyAPI_FUNC(PyObject*) _PyThread_CurrentFrames(void);
 
 // Set the stack start address and stack size of a Python thread state
-PyAPI_FUNC(int) PyUnstable_ThreadState_SetStack(
+PyAPI_FUNC(int) PyUnstable_ThreadState_SetStackProtection(
     PyThreadState *tstate,
     void *stack_start_addr,  // Stack start address
     size_t stack_size);      // Stack size (in bytes)
 
 // Reset the stack start address and stack size of a Python thread state
-PyAPI_FUNC(void) PyUnstable_ThreadState_ResetStack(
+PyAPI_FUNC(void) PyUnstable_ThreadState_ResetStackProtection(
     PyThreadState *tstate);
 
 /* Routines for advanced debuggers, requested by David Beazley.

@@ -530,7 +530,7 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
 
 
 int
-PyUnstable_ThreadState_SetStack(PyThreadState *tstate,
+PyUnstable_ThreadState_SetStackProtection(PyThreadState *tstate,
                                 void *stack_start_addr, size_t stack_size)
 {
     if (stack_size < _PyOS_MIN_STACK_SIZE) {
@@ -548,7 +548,7 @@ PyUnstable_ThreadState_SetStack(PyThreadState *tstate,
 
 
 void
-PyUnstable_ThreadState_ResetStack(PyThreadState *tstate)
+PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
 {
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
     if (ts->c_stack_init_top != 0) {
