@@ -5764,11 +5764,11 @@ PyType_GetModuleState(PyTypeObject *type)
 }
 
 
-/* Get the module of the first superclass where the module has the
- * given PyModuleDef.
+/* Return borrowed ref to the module of the first superclass where the module
+ * has the given token.
  */
-PyObject *
-PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
+static PyObject *
+borrow_module_by_token(PyTypeObject *type, const void *token)
 {
     assert(PyType_Check(type));
 
@@ -5780,7 +5780,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     else {
         PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
         PyObject *module = ht->ht_module;
-        if (module && _PyModule_GetDef(module) == def) {
+        if (module && _PyModule_GetToken(module) == token) {
             return module;
         }
     }
@@ -5808,7 +5808,7 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
 
         PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
         PyObject *module = ht->ht_module;
-        if (module && _PyModule_GetDef(module) == def) {
+        if (module && _PyModule_GetToken(module) == token) {
             res = module;
             break;
         }
@@ -5824,6 +5824,18 @@ error:
         "PyType_GetModuleByDef: No superclass of '%s' has the given module",
         type->tp_name);
     return NULL;
+}
+
+PyObject *
+PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
+{
+    return borrow_module_by_token(type, def);
+}
+
+PyObject *
+PyType_GetModuleByToken(PyTypeObject *type, const void *token)
+{
+    return Py_XNewRef(borrow_module_by_token(type, token));
 }
 
 
