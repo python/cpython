@@ -5276,10 +5276,10 @@ dummy_func(
             if (frame->lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %tu, temp %d, target %d -> %s]\n",
+                printf(", exit %tu, temp %d, target %d -> %s, is_control_flow %d]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyFrame_GetBytecode(frame)),
-                    _PyOpcode_OpName[target->op.code]);
+                    _PyOpcode_OpName[target->op.code], exit->is_control_flow);
             }
         #endif
             tstate->jit_exit = exit;
@@ -5486,7 +5486,9 @@ dummy_func(
                 }
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
-                int chain_depth = previous_executor->vm_data.chain_depth + 1;
+                // For control-flow guards, we don't want to increase the chain depth, as those don't actually
+                // represent deopts but rather just normal programs!
+                int chain_depth = previous_executor->vm_data.chain_depth + !exit->is_control_flow;
                 // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.

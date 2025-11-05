@@ -7118,10 +7118,10 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %tu, temp %d, target %d -> %s]\n",
+                printf(", exit %tu, temp %d, target %d -> %s, is_control_flow %d]\n",
                        exit - current_executor->exits, exit->temperature.value_and_backoff,
                        (int)(target - _PyFrame_GetBytecode(frame)),
-                       _PyOpcode_OpName[target->op.code]);
+                       _PyOpcode_OpName[target->op.code], exit->is_control_flow);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             #endif
@@ -7534,7 +7534,7 @@
                 }
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
-                int chain_depth = previous_executor->vm_data.chain_depth + 1;
+                int chain_depth = previous_executor->vm_data.chain_depth + !exit->is_control_flow;
                 int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, previous_executor, target->op.arg);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {

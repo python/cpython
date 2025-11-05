@@ -470,6 +470,7 @@ is_for_iter_test[MAX_UOP_ID + 1] = {
     [_GUARD_NOT_EXHAUSTED_RANGE] = 1,
     [_GUARD_NOT_EXHAUSTED_LIST] = 1,
     [_GUARD_NOT_EXHAUSTED_TUPLE] = 1,
+    [_FOR_ITER_TIER_TWO] = 1,
 };
 
 static const uint16_t
@@ -757,6 +758,7 @@ _PyJit_translate_single_bytecode_to_trace(
                 // inner loop might start and let the traces rejoin.
                 OPT_STAT_INC(inner_loop);
                 ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
+                trace[trace_length-1].operand1 = true; // is_control_flow
                 DPRINTF(2, "JUMP_BACKWARD not to top ends trace %p %p %p\n", next_instr, tstate->interp->jit_state.close_loop_instr, tstate->interp->jit_state.insert_exec_instr);
                 goto done;
             }
@@ -933,6 +935,7 @@ full:
         // We previously reversed one.
         max_length += 1;
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
+        trace[trace_length-1].operand1 = true; // is_control_flow
     }
     tstate->interp->jit_state.code_curr_size = trace_length;
     tstate->interp->jit_state.code_max_size = max_length;
@@ -1033,13 +1036,14 @@ count_exits(_PyUOpInstruction *buffer, int length)
     return exit_count;
 }
 
-static void make_exit(_PyUOpInstruction *inst, int opcode, int target)
+static void make_exit(_PyUOpInstruction *inst, int opcode, int target, bool is_control_flow)
 {
     inst->opcode = opcode;
     inst->oparg = 0;
     inst->operand0 = 0;
     inst->format = UOP_FORMAT_TARGET;
     inst->target = target;
+    inst->operand1 = is_control_flow;
 #ifdef Py_STATS
     inst->execution_count = 0;
 #endif
@@ -1096,8 +1100,9 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 exit_op = _DYNAMIC_EXIT;
                 unique_target = true;
             }
+            bool is_control_flow = (opcode == _GUARD_IS_FALSE_POP || opcode == _GUARD_IS_TRUE_POP || is_for_iter_test[opcode]);
             if (unique_target || jump_target != current_jump_target || current_exit_op != exit_op) {
-                make_exit(&buffer[next_spare], exit_op, jump_target);
+                make_exit(&buffer[next_spare], exit_op, jump_target, is_control_flow);
                 current_exit_op = exit_op;
                 current_jump_target = jump_target;
                 current_jump = next_spare;
@@ -1113,7 +1118,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 current_popped = popped;
                 current_error = next_spare;
                 current_error_target = target;
-                make_exit(&buffer[next_spare], _ERROR_POP_N, 0);
+                make_exit(&buffer[next_spare], _ERROR_POP_N, 0, false);
                 buffer[next_spare].operand0 = target;
                 next_spare++;
             }
@@ -1250,6 +1255,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
             dest->operand0 = (uint64_t)exit;
             exit->executor = opcode == _EXIT_TRACE ? cold : cold_dynamic;
             exit->is_dynamic = (char)(opcode == _DYNAMIC_EXIT);
+            exit->is_control_flow = (char)buffer[i].operand1;
             next_exit--;
         }
     }
