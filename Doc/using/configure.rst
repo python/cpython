@@ -144,10 +144,10 @@ platform-specific modules like :mod:`winreg` are not listed here.
    Tcl/Tk version 8.4 is now required for :mod:`tkinter`.
 
 .. versionchanged:: 3.7
-   OpenSSL 1.0.2 is now required for :mod:`hashlib`.
+   OpenSSL 1.0.2 is now required for :mod:`hashlib` and :mod:`ssl`.
 
 .. versionchanged:: 3.10
-   OpenSSL 1.1.1 is now required for :mod:`hashlib`.
+   OpenSSL 1.1.1 is now required for :mod:`hashlib` and :mod:`ssl`.
    SQLite 3.7.15 is now required for :mod:`sqlite3`.
 
 .. versionchanged:: 3.11
