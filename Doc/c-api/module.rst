@@ -103,7 +103,7 @@ Module Objects
    created, or ``NULL`` if the module wasn't created from a definition.
 
    On error, return ``NULL`` with an exception set.
-   Use :c:func:`PyErr_Occurred` to tell this case apart from a mising
+   Use :c:func:`PyErr_Occurred` to tell this case apart from a missing
    :c:type:`!PyModuleDef`.
 
 
