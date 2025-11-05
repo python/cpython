@@ -2634,13 +2634,14 @@ _posix_free(void *module)
 static PyObject *
 stat_nanosecond_timestamp(_posixstate *state, time_t sec, unsigned long nsec)
 {
-#if SIZEOF_LONG >= 8
+#if SIZEOF_TIME_T == 4
+    return PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
+#else
     /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
     if ((LLONG_MIN/SEC_TO_NS) <= sec && sec <= (LLONG_MAX/SEC_TO_NS - 1)) {
         return PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
     }
     else
-#endif
     {
         PyObject *ns_total = NULL;
         PyObject *s_in_ns = NULL;
@@ -2663,6 +2664,7 @@ stat_nanosecond_timestamp(_posixstate *state, time_t sec, unsigned long nsec)
         Py_XDECREF(s_in_ns);
         return ns_total;
     }
+#endif
 }
 
 static int
