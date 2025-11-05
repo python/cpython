@@ -62,16 +62,6 @@ Range Objects
    The type object for :class:`range` objects.
 
 
-.. c:var:: PyTypeObject PyRangeIter_Type
-
-   The type object for iterators over :class:`range` objects.
-
-
-.. c:var:: PyTypeObject PyLongRangeIter_Type
-
-   The type object for iterators over :class:`range` objects with large bounds.
-
-
 .. c:function:: int PyRange_Check(PyObject *o)
 
    Return true if the object *o* is an instance of a :class:`range` object.
