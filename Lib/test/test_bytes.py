@@ -802,6 +802,7 @@ class BaseBytesTest:
             with self.assertRaisesRegex(TypeError, msg):
                 operator.mod(format_bytes, value)
 
+    def test_memory_leak_gh_140939(self):
         # gh-140939: MemoryError is raised without leaking
         _testcapi = import_helper.import_module('_testcapi')
         with self.assertRaises(MemoryError):
