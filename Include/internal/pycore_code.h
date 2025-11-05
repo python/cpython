@@ -274,8 +274,13 @@ extern void _PyLineTable_InitAddressRange(
 /** API for traversing the line number table. */
 PyAPI_FUNC(int) _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
-// This is used in dump_frame() in traceback.c without an attached tstate.
-extern int _PyCode_Addr2LineNoTstate(PyCodeObject *co, int addr);
+
+// Similar to PyCode_Addr2Line(), but return -1 if the code object is invalid
+// and can be called without an attached tstate. Used by dump_frame() in
+// Python/traceback.c. The function uses heuristics to detect freed memory,
+// it's not 100% reliable.
+extern int _PyCode_SafeAddr2Line(PyCodeObject *co, int addr);
+
 
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
@@ -662,6 +667,15 @@ PyAPI_FUNC(int) _PyCode_VerifyStateless(
 
 PyAPI_FUNC(int) _PyCode_CheckPureFunction(PyCodeObject *, const char **);
 PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
+
+/* Create a comparable key used to compare constants taking in account the
+ * object type. It is used to make sure types are not coerced (e.g., float and
+ * complex) _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms
+ *
+ * Return (type(obj), obj, ...): a tuple with variable size (at least 2 items)
+ * depending on the type and the value. The type is the first item to not
+ * compare bytes and str which can raise a BytesWarning exception. */
+extern PyObject* _PyCode_ConstantKey(PyObject *obj);
 
 
 #ifdef __cplusplus

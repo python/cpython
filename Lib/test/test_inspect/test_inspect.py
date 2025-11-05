@@ -1223,6 +1223,10 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(next(mod2.ge377), 377, 380)
         self.assertSourceEqual(next(mod2.func383()), 385, 388)
 
+    def test_comment_or_empty_line_after_decorator(self):
+        self.assertSourceEqual(mod2.func394, 392, 395)
+        self.assertSourceEqual(mod2.func400, 398, 401)
+
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):

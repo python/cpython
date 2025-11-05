@@ -282,10 +282,8 @@ tok_underflow_interactive(struct tok_state *tok) {
 }
 
 static int
-tok_underflow_file(struct tok_state *tok) {
-    if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
-        tok->cur = tok->inp = tok->buf;
-    }
+tok_underflow_file(struct tok_state *tok)
+{
     if (tok->decoding_state == STATE_INIT) {
         /* We have not yet determined the encoding.
            If an encoding is found, use the file-pointer
@@ -296,8 +294,16 @@ tok_underflow_file(struct tok_state *tok) {
         }
         assert(tok->decoding_state != STATE_INIT);
     }
+    int raw = tok->decoding_readline == NULL;
+    if (raw && tok->decoding_state != STATE_NORMAL) {
+        /* Keep the first line in the buffer to validate it later if
+         * the encoding has not yet been determined. */
+    }
+    else if (tok->start == NULL && !INSIDE_FSTRING(tok)) {
+        tok->cur = tok->inp = tok->buf;
+    }
     /* Read until '\n' or EOF */
-    if (tok->decoding_readline != NULL) {
+    if (!raw) {
         /* We already have a codec associated with this input. */
         if (!tok_readline_recode(tok)) {
             return 0;
@@ -328,20 +334,35 @@ tok_underflow_file(struct tok_state *tok) {
 
     ADVANCE_LINENO();
     if (tok->decoding_state != STATE_NORMAL) {
-        if (tok->lineno > 2) {
-            tok->decoding_state = STATE_NORMAL;
-        }
-        else if (!_PyTokenizer_check_coding_spec(tok->cur, strlen(tok->cur),
+        if (!_PyTokenizer_check_coding_spec(tok->cur, strlen(tok->cur),
                                     tok, fp_setreadl))
         {
             return 0;
         }
+        if (tok->lineno >= 2) {
+            tok->decoding_state = STATE_NORMAL;
+        }
     }
-    /* The default encoding is UTF-8, so make sure we don't have any
-       non-UTF-8 sequences in it. */
-    if (!tok->encoding && !_PyTokenizer_ensure_utf8(tok->cur, tok)) {
-        _PyTokenizer_error_ret(tok);
-        return 0;
+    if (raw && tok->decoding_state == STATE_NORMAL) {
+        const char *line = tok->lineno <= 2 ? tok->buf : tok->cur;
+        int lineno = tok->lineno <= 2 ? 1 : tok->lineno;
+        if (!tok->encoding) {
+            /* The default encoding is UTF-8, so make sure we don't have any
+               non-UTF-8 sequences in it. */
+            if (!_PyTokenizer_ensure_utf8(line, tok, lineno)) {
+                _PyTokenizer_error_ret(tok);
+                return 0;
+            }
+        }
+        else {
+            PyObject *tmp = PyUnicode_Decode(line, strlen(line),
+                                             tok->encoding, NULL);
+            if (tmp == NULL) {
+                _PyTokenizer_error_ret(tok);
+                return 0;
+            }
+            Py_DECREF(tmp);
+        }
     }
     assert(tok->done == E_OK);
     return tok->done == E_OK;

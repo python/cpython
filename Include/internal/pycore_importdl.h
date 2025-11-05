@@ -28,6 +28,11 @@ typedef enum ext_module_origin {
     _Py_ext_module_origin_DYNAMIC = 3,
 } _Py_ext_module_origin;
 
+struct hook_prefixes {
+    const char *const init_prefix;
+    const char *const export_prefix;
+};
+
 /* Input for loading an extension module. */
 struct _Py_ext_module_loader_info {
     PyObject *filename;
@@ -40,7 +45,7 @@ struct _Py_ext_module_loader_info {
      * depending on if it's builtin or not. */
     PyObject *path;
     _Py_ext_module_origin origin;
-    const char *hook_prefix;
+    const struct hook_prefixes *hook_prefixes;
     const char *newcontext;
 };
 extern void _Py_ext_module_loader_info_clear(
@@ -62,7 +67,9 @@ extern int _Py_ext_module_loader_info_init_from_spec(
     PyObject *spec);
 #endif
 
-/* The result from running an extension module's init function. */
+/* The result from running an extension module's init function.
+ * Not used for modules defined via PyModExport (slots array).
+ */
 struct _Py_ext_module_loader_result {
     PyModuleDef *def;
     PyObject *module;
@@ -89,10 +96,11 @@ extern void _Py_ext_module_loader_result_apply_error(
 
 /* The module init function. */
 typedef PyObject *(*PyModInitFunction)(void);
+typedef PyModuleDef_Slot *(*PyModExportFunction)(void);
 #ifdef HAVE_DYNAMIC_LOADING
-extern PyModInitFunction _PyImport_GetModInitFunc(
+extern int _PyImport_GetModuleExportHooks(
     struct _Py_ext_module_loader_info *info,
-    FILE *fp);
+    FILE *fp, PyModInitFunction *modinit, PyModExportFunction *modexport);
 #endif
 extern int _PyImport_RunModInitFunc(
     PyModInitFunction p0,

@@ -204,7 +204,7 @@ New Indent Width
    Open a dialog to change indent width. The accepted default by the Python
    community is 4 spaces.
 
-Strip Trailing Chitespace
+Strip Trailing Whitespace
    Remove trailing space and other whitespace characters after the last
    non-whitespace character of a line by applying str.rstrip to each line,
    including lines within multiline strings.  Except for Shell windows,

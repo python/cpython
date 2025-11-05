@@ -58,6 +58,11 @@ if 'posix' in _names:
         __all__.append('_exit')
     except ImportError:
         pass
+    try:
+        from posix import _clearenv
+        __all__.append('_clearenv')
+    except ImportError:
+        pass
     import posixpath as path
 
     try:
@@ -131,6 +136,8 @@ if _exists("_have_functions"):
     _add("HAVE_UNLINKAT",   "unlink")
     _add("HAVE_UNLINKAT",   "rmdir")
     _add("HAVE_UTIMENSAT",  "utime")
+    if _exists("statx"):
+        _set.add(statx)
     supports_dir_fd = _set
 
     _set = set()
@@ -152,6 +159,8 @@ if _exists("_have_functions"):
     _add("HAVE_FPATHCONF",  "pathconf")
     if _exists("statvfs") and _exists("fstatvfs"): # mac os x10.3
         _add("HAVE_FSTATVFS", "statvfs")
+    if _exists("statx"):
+        _set.add(statx)
     supports_fd = _set
 
     _set = set()
@@ -190,6 +199,8 @@ if _exists("_have_functions"):
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_UTIMENSAT",  "utime")
     _add("MS_WINDOWS",      "stat")
+    if _exists("statx"):
+        _set.add(statx)
     supports_follow_symlinks = _set
 
     del _set
@@ -768,6 +779,12 @@ class _Environ(MutableMapping):
         new.update(self)
         return new
 
+    if _exists("_clearenv"):
+        def clear(self):
+            _clearenv()
+            self._data.clear()
+
+
 def _create_environ_mapping():
     if name == 'nt':
         # Where Env Var Names Must Be UPPERCASE
@@ -815,6 +832,7 @@ if _exists("_create_environ"):
         env_data.clear()
         env_data.update(data)
 
+    __all__.append("reload_environ")
 
 def getenv(key, default=None):
     """Get an environment variable, return None if it doesn't exist.

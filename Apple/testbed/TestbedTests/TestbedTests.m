@@ -35,6 +35,9 @@
     setenv("NO_COLOR", "1", true);
     setenv("PYTHON_COLORS", "0", true);
 
+    if (getenv("GITHUB_ACTIONS")) {
+        NSLog(@"Running in a GitHub Actions environment");
+    }
     // Arguments to pass into the test suite runner.
     // argv[0] must identify the process; any subsequent arg
     // will be handled as if it were an argument to `python -m test`

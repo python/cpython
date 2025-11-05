@@ -1,1 +1,0 @@
-Increased the number of cached small positive integers from 256 to 1024.
