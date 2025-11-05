@@ -19,7 +19,7 @@ cleanup_proc_handle(proc_handle_t *handle) {
 }
 
 static int
-read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* dst)
+read_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
 {
     return _Py_RemoteDebug_ReadRemoteMemory(handle, remote_address, len, dst);
 }
