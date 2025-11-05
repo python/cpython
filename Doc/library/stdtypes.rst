@@ -4986,9 +4986,6 @@ can be used interchangeably to index the same dictionary entry.
       >>> a == b == c == d == e == f
       True
 
-   Providing keyword arguments as in the first example only works for keys that
-   are valid Python identifiers.  Otherwise, any valid keys can be used.
-
    Dictionaries preserve insertion order.  Note that updating a key does not
    affect the order.  Keys added after deletion are inserted at the end. ::
 
