@@ -135,11 +135,12 @@ Glossary
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    atomic operation
-      An operation that completes as a single indivisible unit without
-      interruption from other threads.  Atomic operations are critical for
-      :term:`thread-safe` programming because they cannot be observed in a
-      partially completed state by other threads.  See also
-      :term:`race condition` and :term:`data race`.
+      An operation that appears to execute as a single, indivisible step: no
+      other thread can observe it half-done, and its effects become visible all
+      at once.  Python does not guarantee that ordinary high-level statements
+      are atomic (for example, ``x += 1`` performs multiple bytecode operations
+      and is not atomic).  Atomicity is only guaranteed where explicitly
+      documented.  See also :term:`race condition` and :term:`data race`.
 
    attached thread state
 
@@ -365,15 +366,6 @@ Glossary
       :keyword:`async with` keywords.  These were introduced
       by :pep:`492`.
 
-   critical section
-      A section of code that accesses shared resources and must not be
-      executed by multiple threads simultaneously.  Critical sections are
-      typically protected using :term:`locks <lock>` or other
-      :term:`synchronization primitives <synchronization primitive>` to
-      ensure :term:`thread-safe` access.  Critical section are purely a concept
-      in the C API and are not exposed in Python.  See also :term:`lock` and
-      :term:`race condition`.
-
    CPython
       The canonical implementation of the Python programming language, as
       distributed on `python.org <https://www.python.org>`_.  The term "CPython"
@@ -406,14 +398,15 @@ Glossary
       :term:`thread-safe`.
 
    deadlock
-      A situation where two or more threads are unable to proceed because
-      each is waiting for the other to release a resource.  For example,
-      if thread A holds lock 1 and waits for lock 2, while thread B holds
-      lock 2 and waits for lock 1, both threads will wait indefinitely.  Any
-      program that makes blocking calls using more than one lock is possibly
-      susceptible to deadlocks. Deadlocks can be avoided by always acquiring
-      multiple :term:`locks <lock>` in a consistent order or by using
-      timeout-based locking.  See also :term:`lock` and :term:`reentrant`.
+      A situation in which two or more tasks (threads, processes, or coroutines)
+      wait indefinitely for each other to release resources or complete actions,
+      preventing any from making progress.  For example, if thread A holds lock
+      1 and waits for lock 2, while thread B holds lock 2 and waits for lock 1,
+      both threads will wait indefinitely.  In Python this often arises from
+      acquiring multiple locks in conflicting orders or from circular
+      join/await dependencies.  Deadlocks can be avoided by always acquiring
+      multiple :term:`locks <lock>` in a consistent order.  See also
+      :term:`lock` and :term:`reentrant`.
 
    decorator
       A function returning another function, usually applied as a function
@@ -1133,14 +1126,14 @@ Glossary
       See also :term:`regular package` and :term:`namespace package`.
 
    parallelism
-      The simultaneous execution of operations on multiple processors.
-      True parallelism requires multiple processors or processor cores where
-      operations run at exactly the same time and are not just interleaved.
-      In Python, the :term:`free-threaded <free threading>` build enables
-      parallelism for multi-threaded programs that access state stored in the
-      interpreter by disabling the :term:`global interpreter lock`.  The
-      :mod:`multiprocessing` module also enables parallelism by using separate
-      processes.  See also :term:`concurrency`.
+      Executing multiple operations at the same time (e.g. on multiple CPU
+      cores).  In Python builds with the
+      :term:`global interpreter lock (GIL) <global interpreter lock>`, only one
+      thread runs Python bytecode at a time, so taking advantage of multiple
+      CPU cores typically involves multiple processes
+      (e.g. :mod:`multiprocessing`) or native extensions that release the GIL.
+      In :term:`free-threaded <free-threading>` Python, multiple Python threads
+      can run Python code simultaneously on different cores.
 
    parameter
       A named entity in a :term:`function` (or method) definition that
@@ -1545,8 +1538,8 @@ Glossary
       information.
 
    thread-safe
-      Code that functions correctly when accessed by multiple threads
-      concurrently.  Thread-safe code uses appropriate
+      A module, function, or class that behaves correctly when used by multiple
+      threads concurrently.  Thread-safe code uses appropriate
       :term:`synchronization primitives <synchronization primitive>` like
       :term:`locks <lock>` to protect shared mutable state, or is designed
       to avoid shared mutable state entirely.  In the
