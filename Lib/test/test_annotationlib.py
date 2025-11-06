@@ -1793,6 +1793,19 @@ class TestForwardRefClass(unittest.TestCase):
             support.EqualToForwardRef('"a" + 1'),
         )
 
+    def test_evaluate_notimplemented_format(self):
+        class C:
+            x: alias
+
+        fwdref = get_annotations(C, format=Format.FORWARDREF)["x"]
+
+        with self.assertRaises(NotImplementedError):
+            fwdref.evaluate(format=Format.VALUE_WITH_FAKE_GLOBALS)
+
+        with self.assertRaises(NotImplementedError):
+            # Some other unsupported value
+            fwdref.evaluate(format=7)
+
     def test_evaluate_with_type_params(self):
         class Gen[T]:
             alias = int
