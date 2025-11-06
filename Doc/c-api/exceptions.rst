@@ -991,7 +991,7 @@ these are the C equivalent to :func:`reprlib.recursive_repr`.
    .. seealso::
       :py:func:`sys.getrecursionlimit`
 
-.. c:function:: void Py_SetRecursionLimit(int limit)
+.. c:function:: void Py_SetRecursionLimit(int new_limit)
 
    Set the recursion limit for the current interpreter.
 
