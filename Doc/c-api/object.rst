@@ -99,6 +99,7 @@ Object Protocol
      but this may also cause crashes or unintended behavior.
    * Implement a heuristic to detect if the object memory has been freed. Don't
      display the object contents in this case, only its memory address.
+   * The output format may change at any time.
 
    Example of output:
 
