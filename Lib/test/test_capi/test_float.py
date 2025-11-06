@@ -229,6 +229,7 @@ class CAPIFloatTest(unittest.TestCase):
                         self.assertEqual(data1, data2)
 
     @unittest.skipUnless(HAVE_IEEE_754, "requires IEEE 754")
+    @unittest.skipUnless(sys.maxsize != 2147483647, "requires 64-bit mode")
     def test_pack_unpack_nans_for_different_formats(self):
         pack = _testcapi.float_pack
         unpack = _testcapi.float_unpack
