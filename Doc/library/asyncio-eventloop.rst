@@ -1608,6 +1608,9 @@ async/await code consider using the high-level
    conforms to the :class:`asyncio.SubprocessTransport` base class and
    *protocol* is an object instantiated by the *protocol_factory*.
 
+   If the transport is closed or is garbage collected, the child process
+   is killed if it is still running.
+
 .. method:: loop.subprocess_shell(protocol_factory, cmd, *, \
                stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
                stderr=subprocess.PIPE, **kwargs)
@@ -1630,6 +1633,9 @@ async/await code consider using the high-level
    Returns a pair of ``(transport, protocol)``, where *transport*
    conforms to the :class:`SubprocessTransport` base class and
    *protocol* is an object instantiated by the *protocol_factory*.
+
+   If the transport is closed or is garbage collected, the child process
+   is killed if it is still running.
 
 .. note::
    It is the application's responsibility to ensure that all whitespace
