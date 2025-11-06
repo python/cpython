@@ -109,6 +109,8 @@ else:
                                     "MON_8", "MON_9", "NOEXPR",
                                     "RADIXCHAR", "THOUSEP", "T_FMT",
                                     "T_FMT_AMPM", "YESEXPR"]
+    # The constants defined in _locale are platform-dependent,
+    # so we only include those that are available on the current platform.
     __all__.extend(vars().keys() & _conditional_constants_names)
 
 # These may or may not exist in _locale, so be sure to set them.
