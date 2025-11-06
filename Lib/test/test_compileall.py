@@ -625,7 +625,8 @@ class CommandLineTestsBase:
                 ['-m', 'compileall', '-q', self.pkgdir]))
             # Verify the __pycache__ directory contents.
             self.assertTrue(os.path.exists(self.pkgdir_cachedir))
-            expected = sorted(base.format(sys.implementation.cache_tag, ext)
+            expected = ['.gitignore'] + \
+                       sorted(base.format(sys.implementation.cache_tag, ext)
                               for base in ('__init__.{}.{}', 'bar.{}.{}'))
             self.assertEqual(sorted(os.listdir(self.pkgdir_cachedir)), expected)
             # Make sure there are no .pyc files in the source directory.
