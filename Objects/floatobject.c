@@ -2030,6 +2030,10 @@ PyFloat_Pack2(double x, char *data, int le)
         memcpy(&v, &x, sizeof(v));
         v &= 0xffc0000000000ULL;
         bits = (unsigned short)(v >> 42); /* NaN's type & payload */
+        /* set qNaN if no payload */
+        if (!bits) {
+            bits |= (1<<9);
+        }
     }
     else {
         sign = (x < 0.0);
@@ -2202,7 +2206,10 @@ PyFloat_Pack4(double x, char *data, int le)
             if ((v & (1ULL << 51)) == 0) {
                 uint32_t u32;
                 memcpy(&u32, &y, 4);
-                u32 &= ~(1 << 22); /* make sNaN */
+                /* if have payload, make sNaN */
+                if (u32 & 0x3fffff) {
+                    u32 &= ~(1 << 22);
+                }
                 memcpy(&y, &u32, 4);
             }
 #else
