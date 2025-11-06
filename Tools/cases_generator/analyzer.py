@@ -456,7 +456,6 @@ def find_variable_stores(node: parser.InstDef) -> list[lexer.Token]:
     return res
 
 
-
 def variable_used(node: parser.CodeDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
