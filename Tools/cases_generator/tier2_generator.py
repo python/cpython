@@ -235,7 +235,7 @@ def generate_tier2(
             out.emit(f"#define OFFSET_OF_{name_offset_pair[0]} ({name_offset_pair[1]})\n")
         stack = write_uop(uop, emitter, stack)
         if name_offset_pair:
-            out.emit(f"#undef OFFSET_OF_{name_offset_pair[0]}\n")        
+            out.emit(f"#undef OFFSET_OF_{name_offset_pair[0]}\n")
         out.start_line()
         if not uop.properties.always_exits:
             out.emit("break;\n")
