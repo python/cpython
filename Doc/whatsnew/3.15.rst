@@ -1069,7 +1069,7 @@ Deprecated C APIs
   (Contributed by Nikita Sobolev in :gh:`136355`.)
 
 * The :c:macro:`!Py_INFINITY` macro is :term:`soft deprecated`,
-  use the C standard :c:macro:`!INFINITY` instead.
+  use the C11 standard ``<math.h>`` :c:macro:`!INFINITY` instead.
   (Contributed by Sergey B Kirpichev in :gh:`141004`.)
 
 
