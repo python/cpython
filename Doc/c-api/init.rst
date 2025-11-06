@@ -1866,6 +1866,11 @@ pointer and a void pointer argument.
 
    The caller must hold an :term:`attached thread state`.
 
+   .. versionadded:: 3.1
+
+   .. versionchanged:: 3.12
+      This function only runs pending calls in the main interpreter.
+
 
 .. _profiling:
 
