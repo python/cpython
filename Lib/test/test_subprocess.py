@@ -3438,7 +3438,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # because libc tends to implement that internally using vfork. But
         # that'd just be testing a libc+kernel implementation detail.
 
-        # Are intersted in the system calls:
+        # Are interested in the system calls:
         # clone,clone2,clone3,fork,vfork,exit,exit_group
         # Unfortunately using `--trace` with that list to strace fails because
         # not all are supported on all platforms (ex. clone2 is ia64 only...)
