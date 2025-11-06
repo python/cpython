@@ -973,8 +973,8 @@ these are the C equivalent to :func:`reprlib.recursive_repr`.
    :c:func:`Py_SetRecursionLimit`. The recursion limit prevents the
    Python interpreter stack from growing infinitely.
 
-   This function cannot fail, and the caller must hold an
-   :term:`attached thread state`.
+   This function cannot fail, and the caller must hold the
+   :term:`GIL`.
 
    .. seealso::
       :py:func:`sys.getrecursionlimit`
