@@ -928,8 +928,7 @@ Glossary
       to prevent :term:`race conditions <race condition>` and ensure
       :term:`thread-safe` access to shared data.  Alternative design patterns
       to locks exist such as queues, producer/consumer patterns, and
-      thread-local state. See also :term:`critical section`, :term:`deadlock`,
-      and :term:`reentrant`.
+      thread-local state. See also :term:`deadlock`, and :term:`reentrant`.
 
    loader
       An object that loads a module.
@@ -1132,7 +1131,7 @@ Glossary
       thread runs Python bytecode at a time, so taking advantage of multiple
       CPU cores typically involves multiple processes
       (e.g. :mod:`multiprocessing`) or native extensions that release the GIL.
-      In :term:`free-threaded <free-threading>` Python, multiple Python threads
+      In :term:`free-threaded <free threading>` Python, multiple Python threads
       can run Python code simultaneously on different cores.
 
    parameter
@@ -1482,8 +1481,7 @@ Glossary
       the :mod:`queue` module provides multi-producer, multi-consumer queues
       that are especially useful in multithreaded programs. These
       primitives help prevent :term:`race conditions <race condition>` and
-      coordinate thread execution.  See also :term:`lock` and
-      :term:`critical section`.
+      coordinate thread execution.  See also :term:`lock`.
 
    t-string
    t-strings
