@@ -13,7 +13,7 @@
         "python": "./configure --config-cache --with-pydebug && make -s -j `nproc`",
         "docs": [
             "make",
-            "--directory",
+            "--directory", in
             "Doc",
             "venv",
             "html"
