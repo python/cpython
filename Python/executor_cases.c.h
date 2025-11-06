@@ -8,10 +8,6 @@
 #endif
 #define TIER_TWO 2
 
-        #define OFFSET_OF_RETURN_VALUE ((frame->return_offset))
-        #define OFFSET_OF_YIELD_VALUE ((1+INLINE_CACHE_ENTRIES_SEND))
-        #define OFFSET_OF__PUSH_FRAME ((0))
-        #define OFFSET_OF_RETURN_GENERATOR ((frame->return_offset))
 
         case _NOP: {
             break;
@@ -7531,6 +7527,7 @@
         }
 
         case _GUARD_IP__PUSH_FRAME: {
+            #define OFFSET_OF__PUSH_FRAME ((0))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
             _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF__PUSH_FRAME;
             if (target != (_Py_CODEUNIT *)ip) {
@@ -7544,6 +7541,7 @@
         }
 
         case _GUARD_IP_YIELD_VALUE: {
+            #define OFFSET_OF_YIELD_VALUE ((1+INLINE_CACHE_ENTRIES_SEND))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
             _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_YIELD_VALUE;
             if (target != (_Py_CODEUNIT *)ip) {
@@ -7557,6 +7555,7 @@
         }
 
         case _GUARD_IP_RETURN_VALUE: {
+            #define OFFSET_OF_RETURN_VALUE ((frame->return_offset))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
             _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_VALUE;
             if (target != (_Py_CODEUNIT *)ip) {
@@ -7570,6 +7569,7 @@
         }
 
         case _GUARD_IP_RETURN_GENERATOR: {
+            #define OFFSET_OF_RETURN_GENERATOR ((frame->return_offset))
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
             _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_GENERATOR;
             if (target != (_Py_CODEUNIT *)ip) {
