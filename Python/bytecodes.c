@@ -5489,23 +5489,35 @@ dummy_func(
         }
 
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
-            // Implementation automatically inserted by Tools/cases/tier2_generator.py
-            EXIT_IF(true);
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_CORRESPONDING_UOP;
+            if (target != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += OFFSET_OF_CORRESPONDING_UOP;
+                EXIT_IF(true);
+            }
         }
 
         tier2 op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
-            // Implementation automatically inserted by Tools/cases/tier2_generator.py
-            EXIT_IF(true);
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_CORRESPONDING_UOP;
+            if (target != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += OFFSET_OF_CORRESPONDING_UOP;
+                EXIT_IF(true);
+            }
         }
 
         tier2 op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
-            // Implementation automatically inserted by Tools/cases/tier2_generator.py
-            EXIT_IF(true);
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_CORRESPONDING_UOP;
+            if (target != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += OFFSET_OF_CORRESPONDING_UOP;
+                EXIT_IF(true);
+            }
         }
 
         tier2 op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
-            // Implementation automatically inserted by Tools/cases/tier2_generator.py
-            EXIT_IF(true);
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_CORRESPONDING_UOP;
+            if (target != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += OFFSET_OF_CORRESPONDING_UOP;
+                EXIT_IF(true);
+            }
         }
 
         label(pop_2_error) {

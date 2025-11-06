@@ -63,6 +63,7 @@ class Tier2Emitter(Emitter):
     def __init__(self, out: CWriter, labels: dict[str, Label]):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
+        self._replacers["OFFSET_OF_CORRESPONDING_UOP"] = self.offset_of_corresponding_uop
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
@@ -134,6 +135,19 @@ class Tier2Emitter(Emitter):
         self.out.emit_at(uop.name[-1], tkn)
         return True
 
+    def offset_of_corresponding_uop(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        assert uop.name.startswith("_GUARD_IP")
+        rest = uop.name[len("_GUARD_IP"):]
+        self.emit(f" OFFSET_OF{rest};\n")
+        next(tkn_iter)
+        return True
 
 def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
     locals: dict[str, Local] = {}
@@ -165,33 +179,6 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
 SKIPS = ("_EXTENDED_ARG",)
 
 
-def generate_guard_ips(
-    analysis: Analysis,
-    emitter: Tier2Emitter,
-) -> None:
-    for name, uop in analysis.uops.items():
-        for stmt in uop.body.body:
-            tkn_iter = iter(stmt.tokens())
-            for token in tkn_iter:
-                if token.kind == "IDENTIFIER" and token.text == "LOAD_IP":
-                    offset = []
-                    while token.kind != "SEMI":
-                        offset.append(token.text)
-                        token = next(tkn_iter)
-                    # 1: to remove the LOAD_IP text
-                    offset_str = "".join(offset[1:])
-                    emitter.emit(f"case _GUARD_IP_{name}: {{\n")
-                    emitter.emit("PyObject *ip = (PyObject *)CURRENT_OPERAND0();\n")
-                    emitter.emit(f"if (frame->instr_ptr + {offset_str} != (_Py_CODEUNIT *)ip) {{\n")
-                    emitter.emit(f"frame->instr_ptr += {offset_str};\n")
-                    emitter.emit(f"UOP_STAT_INC(uopcode, miss);\n")
-                    emitter.emit("JUMP_TO_JUMP_TARGET();\n")
-                    emitter.emit("}\n")
-                    emitter.emit("break;\n")
-                    emitter.emit("}\n")
-                    emitter.emit("\n")
-
-
 def generate_tier2(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
@@ -207,12 +194,34 @@ def generate_tier2(
     out = CWriter(outfile, 2, lines)
     emitter = Tier2Emitter(out, analysis.labels)
     out.emit("\n")
+    offset_strs: list[tuple[str, str]] = []
+    for name, uop in analysis.uops.items():
+        if not f"_GUARD_IP_{name}" in analysis.uops:
+            continue
+        tkn_iter = uop.body.tokens()
+        found = False
+        offset_str = ""
+        for token in tkn_iter:
+            if token.kind == "IDENTIFIER" and token.text == "LOAD_IP":
+                if found:
+                    raise analysis_error("Cannot have two LOAD_IP in a guarded single uop.", uop.body.open)
+                offset = []
+                while token.kind != "SEMI":
+                    offset.append(token.text)
+                    token = next(tkn_iter)
+                # 1: to remove the LOAD_IP text
+                offset_str = "".join(offset[1:])
+                found = True
+        assert offset_str
+        out.emit(f"#define OFFSET_OF_{name} ({offset_str})\n")
+        offset_strs.append((name, offset_str))
+
+    out.emit("\n")
+
     for name, uop in analysis.uops.items():
         if uop.properties.tier == 1:
             continue
         if uop.is_super():
-            continue
-        if name.startswith("_GUARD_IP"):
             continue
         why_not_viable = uop.why_not_viable()
         if why_not_viable is not None:
@@ -231,7 +240,9 @@ def generate_tier2(
         out.emit("}")
         out.emit("\n\n")
 
-    generate_guard_ips(analysis, emitter)
+    for name, offset_str in offset_strs:
+        out.emit(f"#undef OFFSET_OF{name}\n")
+    out.emit("\n")
     outfile.write("#undef TIER_TWO\n")
 
 

@@ -8,6 +8,11 @@
 #endif
 #define TIER_TWO 2
 
+        #define OFFSET_OF_RETURN_VALUE ((frame->return_offset))
+        #define OFFSET_OF_YIELD_VALUE ((1+INLINE_CACHE_ENTRIES_SEND))
+        #define OFFSET_OF__PUSH_FRAME ((0))
+        #define OFFSET_OF_RETURN_GENERATOR ((frame->return_offset))
+
         case _NOP: {
             break;
         }
@@ -7525,44 +7530,61 @@
             break;
         }
 
-        case _GUARD_IP_RETURN_VALUE: {
+        case _GUARD_IP__PUSH_FRAME: {
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
-            if (frame->instr_ptr + (frame->return_offset) != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += (frame->return_offset);
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF__PUSH_FRAME;
+            if (target != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += OFFSET_OF__PUSH_FRAME;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             break;
         }
 
         case _GUARD_IP_YIELD_VALUE: {
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
-            if (frame->instr_ptr + (1+INLINE_CACHE_ENTRIES_SEND) != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += (1+INLINE_CACHE_ENTRIES_SEND);
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_YIELD_VALUE;
+            if (target != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += OFFSET_OF_YIELD_VALUE;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             break;
         }
 
-        case _GUARD_IP__PUSH_FRAME: {
+        case _GUARD_IP_RETURN_VALUE: {
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
-            if (frame->instr_ptr + (0) != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += (0);
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_VALUE;
+            if (target != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += OFFSET_OF_RETURN_VALUE;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             break;
         }
 
         case _GUARD_IP_RETURN_GENERATOR: {
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
-            if (frame->instr_ptr + (frame->return_offset) != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += (frame->return_offset);
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_RETURN_GENERATOR;
+            if (target != (_Py_CODEUNIT *)ip) {
+                frame->instr_ptr += OFFSET_OF_RETURN_GENERATOR;
+                if (true) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             break;
         }
+
+        #undef OFFSET_OFRETURN_VALUE
+        #undef OFFSET_OFYIELD_VALUE
+        #undef OFFSET_OF_PUSH_FRAME
+        #undef OFFSET_OFRETURN_GENERATOR
 
 #undef TIER_TWO
