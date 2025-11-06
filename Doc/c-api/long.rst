@@ -169,6 +169,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    :c:func:`PyLong_FromLongLong`, depending on the size of the system's
    PID type.
 
+   .. versionadded:: 3.2
+
 
 .. c:function:: long PyLong_AsLong(PyObject *obj)
 
@@ -591,6 +593,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    This can be defined as an alias to :c:func:`PyLong_AsLong`,
    :c:func:`PyLong_FromLongLong`, or :c:func:`PyLong_AsInt`, depending on the
    size of the system's PID type.
+
+   .. versionadded:: 3.2
 
 
 .. c:function:: int PyLong_GetSign(PyObject *obj, int *sign)
