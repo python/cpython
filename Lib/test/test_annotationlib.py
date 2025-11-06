@@ -73,6 +73,30 @@ class TestForwardRefFormat(unittest.TestCase):
         anno = get_annotations(inner, format=Format.FORWARDREF)
         self.assertEqual(anno["arg"], x)
 
+    def test_multiple_closure(self):
+        def inner(arg: x[y]):
+            pass
+
+        fwdref = get_annotations(inner, format=Format.FORWARDREF)["arg"]
+        self.assertIsInstance(fwdref, ForwardRef)
+        self.assertEqual(fwdref.__forward_arg__, "x[y]")
+        with self.assertRaises(NameError):
+            fwdref.evaluate()
+
+        y = str
+        fwdref = get_annotations(inner, format=Format.FORWARDREF)["arg"]
+        self.assertIsInstance(fwdref, ForwardRef)
+        extra_name, extra_val = next(iter(fwdref.__extra_names__.items()))
+        self.assertEqual(fwdref.__forward_arg__.replace(extra_name, extra_val.__name__), "x[str]")
+        with self.assertRaises(NameError):
+            fwdref.evaluate()
+
+        x = list
+        self.assertEqual(fwdref.evaluate(), x[y])
+
+        fwdref = get_annotations(inner, format=Format.FORWARDREF)["arg"]
+        self.assertEqual(fwdref, x[y])
+
     def test_function(self):
         def f(x: int, y: doesntexist):
             pass
