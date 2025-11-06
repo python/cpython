@@ -1946,6 +1946,31 @@ class TestForwardRefClass(unittest.TestCase):
         global_alias = list
         self.assertEqual(evaluated.evaluate(), list[int])
 
+    def test_fwdref_evaluate_argument_mutation(self):
+        class C[T]:
+            nonlocal alias
+            x: alias[T]
+
+        # Mutable arguments
+        globals_ = globals()
+        globals_copy = globals_.copy()
+        locals_ = locals()
+        locals_copy = locals_.copy()
+
+        # Evaluate the ForwardRef, ensuring we use __cell__ and type params
+        get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            globals=globals_,
+            locals=locals_,
+            type_params=C.__type_params__,
+            format=Format.FORWARDREF,
+        )
+
+        # Check if the passed in mutable arguments equal the originals
+        self.assertEqual(globals_, globals_copy)
+        self.assertEqual(locals_, locals_copy)
+
+        alias = list
+
 
 class TestAnnotationLib(unittest.TestCase):
     def test__all__(self):
