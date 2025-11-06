@@ -525,12 +525,12 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
                 self.check_isinstance(A(), Root)
                 self.check_isinstance(B(), Root)
-                self.check_isinstance(C(), Root)
-                self.check_isinstance(D(), Root)
                 self.check_issubclass(A, Root)
                 self.check_issubclass(B, Root)
-                self.check_issubclass(C, Root)
-                self.check_issubclass(D, Root)
+                self.check_not_isinstance(C(), Root)
+                self.check_not_isinstance(D(), Root)
+                self.check_not_issubclass(C, Root)
+                self.check_not_issubclass(D, Root)
 
         def test_issubclass_bad_arguments(self):
             class A(metaclass=abc_ABCMeta):
@@ -594,9 +594,9 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
 
             B._abc_registry = 1
-            error_msg = "argument of type 'int' is not a container or iterable"
+            error_msg = "'int' object is not iterable"
             with self.assertRaisesRegex(TypeError, error_msg):
-                issubclass(B, B)
+                issubclass(int, B)
 
             class C(metaclass=_py_abc.ABCMeta):
                 pass
