@@ -628,6 +628,16 @@ _PyJit_translate_single_bytecode_to_trace(
         goto done;
     }
 
+    /* Special case the first instruction,
+    * so that we can guarantee forward progress */
+    if (progress_needed && tstate->interp->jit_state.code_curr_size <= 2) {
+        if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
+            opcode = _PyOpcode_Deopt[opcode];
+        }
+        assert(!OPCODE_HAS_EXIT(opcode));
+        assert(!OPCODE_HAS_DEOPT(opcode));
+    }
+
     // Strange control-flow
     bool has_dynamic_jump_taken = OPCODE_HAS_UNPREDICTABLE_JUMP(opcode) &&
         (next_instr != this_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]]);
@@ -696,15 +706,6 @@ _PyJit_translate_single_bytecode_to_trace(
     assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
     assert(!_PyErr_Occurred(tstate));
 
-    /* Special case the first instruction,
-     * so that we can guarantee forward progress */
-    if (progress_needed && tstate->interp->jit_state.code_curr_size <= 2) {
-        if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
-            opcode = _PyOpcode_Deopt[opcode];
-        }
-        assert(!OPCODE_HAS_EXIT(opcode));
-        assert(!OPCODE_HAS_DEOPT(opcode));
-    }
 
     if (OPCODE_HAS_EXIT(opcode)) {
         // Make space for side exit and final _EXIT_TRACE:
