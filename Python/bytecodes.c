@@ -5289,8 +5289,8 @@ dummy_func(
         // Note: this is different than _COLD_EXIT/_EXIT_TRACE, as it may lead to multiple executors
         // from a single exit!
         tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
-            _PyExitData *exit = (_PyExitData *)exit_p;
     #if defined(Py_DEBUG) && !defined(_Py_JIT)
+            _PyExitData *exit = (_PyExitData *)exit_p;
             _Py_CODEUNIT *target = frame->instr_ptr;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 2) {
@@ -5302,10 +5302,9 @@ dummy_func(
                     _PyOpcode_OpName[target->op.code]);
             }
     #endif
-            tstate->jit_exit = exit;
-            _PyExecutorObject *exec = exit->executor;
-            assert(exec->trace[0].opcode == _COLD_DYNAMIC_EXIT);
-            TIER2_TO_TIER2(exec);
+            // Disabled for now (gh-139109) as it slows down dynamic code tremendously.
+            // Compile and jump to the cold dynamic executors in the future.
+            GOTO_TIER_ONE(frame->instr_ptr);
         }
 
         tier2 op(_DYNAMIC_DEOPT, (--)) {
@@ -5475,6 +5474,9 @@ dummy_func(
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
+                assert(tstate->jit_exit == exit);
+                exit->executor = executor;
+                TIER2_TO_TIER2(exit->executor);
             }
             else {
                 if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
@@ -5499,14 +5501,9 @@ dummy_func(
                 }
                 GOTO_TIER_ONE(target);
             }
-            assert(tstate->jit_exit == exit);
-            exit->executor = executor;
-            TIER2_TO_TIER2(exit->executor);
         }
 
         tier2 op(_COLD_DYNAMIC_EXIT, ( -- )) {
-            _PyExitData *exit = tstate->jit_exit;
-            assert(exit != NULL);
             _Py_CODEUNIT *target = frame->instr_ptr;
             GOTO_TIER_ONE(target);
         }

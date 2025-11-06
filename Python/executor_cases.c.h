@@ -7132,8 +7132,8 @@
 
         case _DYNAMIC_EXIT: {
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND0();
-            _PyExitData *exit = (_PyExitData *)exit_p;
             #if defined(Py_DEBUG) && !defined(_Py_JIT)
+            _PyExitData *exit = (_PyExitData *)exit_p;
             _Py_CODEUNIT *target = frame->instr_ptr;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             if (frame->lltrace >= 2) {
@@ -7147,10 +7147,8 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             #endif
-            tstate->jit_exit = exit;
-            _PyExecutorObject *exec = exit->executor;
-            assert(exec->trace[0].opcode == _COLD_DYNAMIC_EXIT);
-            TIER2_TO_TIER2(exec);
+
+            GOTO_TIER_ONE(frame->instr_ptr);
             break;
         }
 
@@ -7523,6 +7521,9 @@
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
+                assert(tstate->jit_exit == exit);
+                exit->executor = executor;
+                TIER2_TO_TIER2(exit->executor);
             }
             else {
                 if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
@@ -7542,15 +7543,10 @@
                 }
                 GOTO_TIER_ONE(target);
             }
-            assert(tstate->jit_exit == exit);
-            exit->executor = executor;
-            TIER2_TO_TIER2(exit->executor);
             break;
         }
 
         case _COLD_DYNAMIC_EXIT: {
-            _PyExitData *exit = tstate->jit_exit;
-            assert(exit != NULL);
             _Py_CODEUNIT *target = frame->instr_ptr;
             GOTO_TIER_ONE(target);
             break;
