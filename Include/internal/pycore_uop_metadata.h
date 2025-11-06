@@ -316,7 +316,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_SAVE_RETURN_OFFSET] = HAS_ARG_FLAG,
     [_EXIT_TRACE] = HAS_ESCAPES_FLAG,
     [_DYNAMIC_EXIT] = HAS_ESCAPES_FLAG,
-    [_DYNAMIC_DEOPT] = 0,
     [_CHECK_VALIDITY] = HAS_DEOPT_FLAG,
     [_LOAD_CONST_INLINE] = HAS_PURE_FLAG,
     [_POP_TOP_LOAD_CONST_INLINE] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
@@ -332,7 +331,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_CONST_UNDER_INLINE] = 0,
     [_LOAD_CONST_UNDER_INLINE_BORROW] = 0,
     [_START_EXECUTOR] = HAS_DEOPT_FLAG,
-    [_START_DYNAMIC_EXECUTOR] = HAS_DEOPT_FLAG,
     [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
     [_DEOPT] = 0,
@@ -452,7 +450,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DEOPT] = "_DEOPT",
     [_DICT_MERGE] = "_DICT_MERGE",
     [_DICT_UPDATE] = "_DICT_UPDATE",
-    [_DYNAMIC_DEOPT] = "_DYNAMIC_DEOPT",
     [_DYNAMIC_EXIT] = "_DYNAMIC_EXIT",
     [_END_FOR] = "_END_FOR",
     [_END_SEND] = "_END_SEND",
@@ -639,7 +636,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_SET_FUNCTION_ATTRIBUTE] = "_SET_FUNCTION_ATTRIBUTE",
     [_SET_IP] = "_SET_IP",
     [_SET_UPDATE] = "_SET_UPDATE",
-    [_START_DYNAMIC_EXECUTOR] = "_START_DYNAMIC_EXECUTOR",
     [_START_EXECUTOR] = "_START_EXECUTOR",
     [_STORE_ATTR] = "_STORE_ATTR",
     [_STORE_ATTR_INSTANCE_VALUE] = "_STORE_ATTR_INSTANCE_VALUE",
@@ -1279,8 +1275,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _DYNAMIC_EXIT:
             return 0;
-        case _DYNAMIC_DEOPT:
-            return 0;
         case _CHECK_VALIDITY:
             return 0;
         case _LOAD_CONST_INLINE:
@@ -1310,8 +1304,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_CONST_UNDER_INLINE_BORROW:
             return 1;
         case _START_EXECUTOR:
-            return 0;
-        case _START_DYNAMIC_EXECUTOR:
             return 0;
         case _MAKE_WARM:
             return 0;

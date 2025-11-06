@@ -5307,10 +5307,6 @@ dummy_func(
             GOTO_TIER_ONE(frame->instr_ptr);
         }
 
-        tier2 op(_DYNAMIC_DEOPT, (--)) {
-            GOTO_TIER_ONE(frame->instr_ptr);
-        }
-
         tier2 op(_CHECK_VALIDITY, (--)) {
             DEOPT_IF(!current_executor->vm_data.valid);
         }
@@ -5406,22 +5402,6 @@ dummy_func(
                 assert(tstate->jit_exit->executor == current_executor);
                 assert(tstate->current_executor == executor);
                 _PyExecutor_ClearExit(tstate->jit_exit);
-                DEOPT_IF(true);
-            }
-        }
-
-        tier2 op(_START_DYNAMIC_EXECUTOR, (executor/4 --)) {
-#ifndef _Py_JIT
-            assert(current_executor == (_PyExecutorObject*)executor);
-#endif
-            assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
-            tstate->current_executor = (PyObject *)executor;
-            if (!current_executor->vm_data.valid) {
-                assert(tstate->jit_exit->executor == current_executor);
-                assert(tstate->current_executor == executor);
-                _PyExecutor_ClearExit(tstate->jit_exit);
-                _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_DO_NOT_REENTER);
-                // Note: this points to _DYNAMIC_DEOPT!!!
                 DEOPT_IF(true);
             }
         }

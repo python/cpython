@@ -1129,7 +1129,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             }
         }
         if (opcode == _JUMP_TO_TOP) {
-            assert(buffer[0].opcode == _START_EXECUTOR || buffer[0].opcode == _START_DYNAMIC_EXECUTOR);
+            assert(buffer[0].opcode == _START_EXECUTOR);
             buffer[i].format = UOP_FORMAT_JUMP;
             buffer[i].jump_target = 1;
         }
@@ -1211,8 +1211,7 @@ sanity_check(_PyExecutorObject *executor)
             opcode == _HANDLE_PENDING_AND_DEOPT ||
             opcode == _EXIT_TRACE ||
             opcode == _ERROR_POP_N ||
-            opcode == _DYNAMIC_EXIT ||
-            opcode == _DYNAMIC_DEOPT);
+            opcode == _DYNAMIC_EXIT);
     }
 }
 

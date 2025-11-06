@@ -3278,10 +3278,6 @@
             break;
         }
 
-        case _DYNAMIC_DEOPT: {
-            break;
-        }
-
         case _CHECK_VALIDITY: {
             break;
         }
@@ -3404,10 +3400,6 @@
         }
 
         case _START_EXECUTOR: {
-            break;
-        }
-
-        case _START_DYNAMIC_EXECUTOR: {
             break;
         }
 

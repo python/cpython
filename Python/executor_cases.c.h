@@ -7152,11 +7152,6 @@
             break;
         }
 
-        case _DYNAMIC_DEOPT: {
-            GOTO_TIER_ONE(frame->instr_ptr);
-            break;
-        }
-
         case _CHECK_VALIDITY: {
             if (!current_executor->vm_data.valid) {
                 UOP_STAT_INC(uopcode, miss);
@@ -7430,28 +7425,6 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyExecutor_ClearExit(tstate->jit_exit);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
-            break;
-        }
-
-        case _START_DYNAMIC_EXECUTOR: {
-            PyObject *executor = (PyObject *)CURRENT_OPERAND0();
-            #ifndef _Py_JIT
-            assert(current_executor == (_PyExecutorObject*)executor);
-            #endif
-            assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
-            tstate->current_executor = (PyObject *)executor;
-            if (!current_executor->vm_data.valid) {
-                assert(tstate->jit_exit->executor == current_executor);
-                assert(tstate->current_executor == executor);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyExecutor_ClearExit(tstate->jit_exit);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_DO_NOT_REENTER);
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
