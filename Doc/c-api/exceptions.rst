@@ -979,6 +979,27 @@ these are the C equivalent to :func:`reprlib.recursive_repr`.
    Ends a :c:func:`Py_ReprEnter`.  Must be called once for each
    invocation of :c:func:`Py_ReprEnter` that returns zero.
 
+.. c:function:: int Py_GetRecursionLimit(void)
+
+   Get the recursion limit for the current interpreter. It can be set with
+   :c:func:`Py_SetRecursionLimit`. The recursion limit prevents the
+   Python interpreter stack from growing infinitely.
+
+   This function cannot fail, and the caller must hold an
+   :term:`attached thread state`.
+
+   .. seealso::
+      :py:func:`sys.getrecursionlimit`
+
+.. c:function:: void Py_SetRecursionLimit(int new_limit)
+
+   Set the recursion limit for the current interpreter.
+
+   This function cannot fail, and the caller must hold an
+   :term:`attached thread state`.
+
+   .. seealso::
+      :py:func:`sys.setrecursionlimit`
 
 .. _standardexceptions:
 
