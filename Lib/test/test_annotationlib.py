@@ -1247,6 +1247,32 @@ class TestCallEvaluateFunction(unittest.TestCase):
             "undefined",
         )
 
+    def test_fake_global_evaluation(self):
+        # This will raise an AttributeError
+        def evaluate_union(format, exc=NotImplementedError):
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
+                # Return a ForwardRef
+                return builtins.undefined | list[int]
+            raise exc
+
+        self.assertEqual(
+            annotationlib.call_evaluate_function(evaluate_union, Format.FORWARDREF),
+            support.EqualToForwardRef("builtins.undef | list[int]"),
+        )
+
+        # This will raise an AttributeError
+        def evaluate_intermediate(format, exc=NotImplementedError):
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
+                intermediate = builtins.undefined
+                # Return a literal
+                return intermediate == builtins.defined
+            raise exc
+
+        self.assertIs(
+            annotationlib.call_evaluate_function(evaluate_intermediate, Format.FORWARDREF),
+            False,
+        )
+
 
 class TestCallAnnotateFunction(unittest.TestCase):
     # Tests for user defined annotate functions.
