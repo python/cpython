@@ -22,8 +22,6 @@ The formatted representation keeps objects on a single line if it can, and
 breaks them onto multiple lines if they don't fit within the allowed width,
 adjustable by the *width* parameter defaulting to 80 characters.
 
-Dictionaries are sorted by key before the display is computed.
-
 .. versionchanged:: 3.9
    Added support for pretty-printing :class:`types.SimpleNamespace`.
 

@@ -513,6 +513,7 @@ _abc_notify_subclasses_override(_abcmodule_state *state, PyObject *data, PyObjec
 #define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
 
 /*[clinic input]
+@permit_long_summary
 _abc._abc_init
 
     self: object
@@ -526,7 +527,7 @@ Internal ABC helper for class set-up. Should be never used outside abc module.
 static PyObject *
 _abc__abc_init_impl(PyObject *module, PyObject *self, PyObject *bases,
                     PyObject *namespace)
-/*[clinic end generated code: output=a410180fefc86056 input=6bf48b3e15ff54aa]*/
+/*[clinic end generated code: output=a410180fefc86056 input=a984e4f7d36d6298]*/
 {
     _abcmodule_state *state = get_abc_state(module);
     PyObject *data;
@@ -581,6 +582,7 @@ _abc__abc_init_impl(PyObject *module, PyObject *self, PyObject *bases,
 }
 
 /*[clinic input]
+@permit_long_summary
 _abc._abc_register
 
     self: object
@@ -592,7 +594,7 @@ Internal ABC helper for subclasss registration. Should be never used outside abc
 
 static PyObject *
 _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
-/*[clinic end generated code: output=7851e7668c963524 input=ca589f8c3080e67f]*/
+/*[clinic end generated code: output=7851e7668c963524 input=135ab13a581b4414]*/
 {
     if (!PyType_Check(subclass)) {
         PyErr_SetString(PyExc_TypeError, "Can only register classes");
@@ -687,6 +689,7 @@ error:
 
 
 /*[clinic input]
+@permit_long_summary
 _abc._abc_instancecheck
 
     self: object
@@ -699,7 +702,7 @@ Internal ABC helper for instance checks. Should be never used outside abc module
 static PyObject *
 _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
                              PyObject *instance)
-/*[clinic end generated code: output=b8b5148f63b6b56f input=a4f4525679261084]*/
+/*[clinic end generated code: output=b8b5148f63b6b56f input=0bbc8da0ea346719]*/
 {
     PyObject *subtype, *result = NULL, *subclass = NULL;
     _abc_data *impl = _get_impl(module, self);
@@ -773,6 +776,7 @@ static int subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
                                         PyObject **result);
 
 /*[clinic input]
+@permit_long_summary
 _abc._abc_subclasscheck
 
     self: object
@@ -785,7 +789,7 @@ Internal ABC helper for subclasss checks. Should be never used outside abc modul
 static PyObject *
 _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
                              PyObject *subclass)
-/*[clinic end generated code: output=b56c9e4a530e3894 input=1d947243409d10b8]*/
+/*[clinic end generated code: output=b56c9e4a530e3894 input=5bf1ef712f5d3610]*/
 {
     if (!PyType_Check(subclass)) {
         PyErr_SetString(PyExc_TypeError, "issubclass() arg 1 must be a class");

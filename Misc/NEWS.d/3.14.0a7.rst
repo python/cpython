@@ -192,7 +192,7 @@ The :class:`ctypes.py_object` type now supports subscription, making it a
 .. nonce: cX4yTn
 .. section: Library
 
-Add the :attr:`zipfile.ZipFile.data_offset` attribute, which stores the
+Add the :attr:`!zipfile.ZipFile.data_offset` attribute, which stores the
 offset to the beginning of ZIP data in a file when available. When the
 :class:`zipfile.ZipFile` is opened in either mode ``'w'`` or ``'x'`` and the
 underlying file does not support ``tell()``, the value will be ``None``
@@ -671,7 +671,7 @@ Allow the JIT to remove an extra ``_TO_BOOL_BOOL`` instruction after
 .. nonce: dNh64H
 .. section: Core and Builtins
 
-Fix crash when calling :meth:`!list.append` as an unbound method.
+Fix crash when calling :meth:`list.append` as an unbound method.
 
 ..
 

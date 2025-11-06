@@ -1,3 +1,4 @@
+import collections.abc
 import unittest
 import tkinter
 from tkinter import font
@@ -118,6 +119,16 @@ class FontTest(AbstractTkTest, unittest.TestCase):
             repr(self.font), f'<tkinter.font.Font object {fontname!r}>'
         )
 
+    def test_iterable_protocol(self):
+        self.assertNotIsSubclass(font.Font, collections.abc.Iterable)
+        self.assertNotIsSubclass(font.Font, collections.abc.Container)
+        self.assertNotIsInstance(self.font, collections.abc.Iterable)
+        self.assertNotIsInstance(self.font, collections.abc.Container)
+        with self.assertRaisesRegex(TypeError, 'is not iterable'):
+            iter(self.font)
+        with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
+            self.font in self.font
+
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
@@ -157,6 +168,16 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         root.destroy()
         tkinter.NoDefaultRoot()
         self.assertRaises(RuntimeError, font.nametofont, fontname)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(font, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

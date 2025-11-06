@@ -378,6 +378,7 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
                     case "ios" | "android":
                         print("on the phone")
                     case _: print('arms around', match.group(1))
+            type type = type[type]
             """
         )
         expected = dedent(
@@ -397,6 +398,7 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
                     {K}case{z} {s}"ios"{z} {o}|{z} {s}"android"{z}{o}:{z}
                         {b}print{z}{o}({z}{s}"on the phone"{z}{o}){z}
                     {K}case{z} {K}_{z}{o}:{z} {b}print{z}{o}({z}{s}'arms around'{z}{o},{z} match{o}.{z}group{o}({z}{n}1{z}{o}){z}{o}){z}
+            {K}type{z} {b}type{z} {o}={z} {b}type{z}{o}[{z}{b}type{z}{o}]{z}
             """
         )
         expected_sync = expected.format(a="", **colors)
@@ -404,14 +406,14 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         self.assert_screen_equal(reader, code, clean=True)
         self.assert_screen_equal(reader, expected_sync)
-        self.assertEqual(reader.pos, 396)
-        self.assertEqual(reader.cxy, (0, 15))
+        self.assertEqual(reader.pos, 419)
+        self.assertEqual(reader.cxy, (0, 16))
 
         async_msg = "{k}async{z} ".format(**colors)
         expected_async = expected.format(a=async_msg, **colors)
         more_events = itertools.chain(
             code_to_events(code),
-            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))] * 14,
+            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))] * 15,
             code_to_events("async "),
         )
         reader, _ = handle_all_events(more_events)

@@ -24,7 +24,7 @@ There are four basic concrete server classes:
    :meth:`~BaseServer.server_activate`.  The other parameters are passed to
    the :class:`BaseServer` base class.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The default queue size is now ``socket.SOMAXCONN`` for :class:`socketserver.TCPServer`.
 
 .. class:: UDPServer(server_address, RequestHandlerClass, bind_and_activate=True)

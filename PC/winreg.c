@@ -162,13 +162,6 @@ PyHKEY_deallocFunc(PyObject *ob)
 }
 
 static int
-PyHKEY_traverseFunc(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
-static int
 PyHKEY_boolFunc(PyObject *ob)
 {
     return ((PyHKEYObject *)ob)->hkey != 0;
@@ -188,13 +181,38 @@ PyHKEY_strFunc(PyObject *ob)
     return PyUnicode_FromFormat("<PyHKEY:%p>", pyhkey->hkey);
 }
 
-static int
-PyHKEY_compareFunc(PyObject *ob1, PyObject *ob2)
+static PyObject *
+PyHKEY_richcompare(PyObject *ob1, PyObject *ob2, int op)
 {
+    /* Both objects must be PyHKEY objects from the same module */
+    if (Py_TYPE(ob1) != Py_TYPE(ob2)) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
     PyHKEYObject *pyhkey1 = (PyHKEYObject *)ob1;
     PyHKEYObject *pyhkey2 = (PyHKEYObject *)ob2;
-    return pyhkey1 == pyhkey2 ? 0 :
-         (pyhkey1 < pyhkey2 ? -1 : 1);
+    HKEY hkey1 = pyhkey1->hkey;
+    HKEY hkey2 = pyhkey2->hkey;
+    int result;
+
+    switch (op) {
+        case Py_EQ:
+            result = (hkey1 == hkey2);
+            break;
+        case Py_NE:
+            result = (hkey1 != hkey2);
+            break;
+        default:
+            /* Only support equality comparisons, not ordering */
+            Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (result) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
 }
 
 static Py_hash_t
@@ -369,9 +387,10 @@ static PyType_Slot pyhkey_type_slots[] = {
     {Py_tp_members, PyHKEY_memberlist},
     {Py_tp_methods, PyHKEY_methods},
     {Py_tp_doc, (char *)PyHKEY_doc},
-    {Py_tp_traverse, PyHKEY_traverseFunc},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_hash, PyHKEY_hashFunc},
     {Py_tp_str, PyHKEY_strFunc},
+    {Py_tp_richcompare, PyHKEY_richcompare},
 
     // Number protocol
     {Py_nb_add, PyHKEY_binaryFailureFunc},
@@ -2027,6 +2046,45 @@ winreg_EnableReflectionKey_impl(PyObject *module, HKEY key)
 }
 
 /*[clinic input]
+winreg.DeleteTree
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(accept={str, NoneType}) = None
+        A string that names the subkey to delete. If None, deletes all subkeys
+        and values of the specified key.
+    /
+
+Deletes the specified key and all its subkeys and values recursively.
+
+This function deletes a key and all its descendants. If sub_key is None,
+all subkeys and values of the specified key are deleted.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_DeleteTree_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
+/*[clinic end generated code: output=c34395ee59290501 input=419ef9bb8b06e4bf]*/
+{
+    LONG rc;
+
+    if (PySys_Audit("winreg.DeleteTree", "nu",
+                    (Py_ssize_t)key, sub_key) < 0) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegDeleteTreeW(key, sub_key);
+    Py_END_ALLOW_THREADS
+
+    if (rc != ERROR_SUCCESS) {
+        PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteTreeW");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 winreg.QueryReflectionKey
 
     key: HKEY
@@ -2084,6 +2142,7 @@ static struct PyMethodDef winreg_methods[] = {
     WINREG_DELETEKEY_METHODDEF
     WINREG_DELETEKEYEX_METHODDEF
     WINREG_DELETEVALUE_METHODDEF
+    WINREG_DELETETREE_METHODDEF
     WINREG_DISABLEREFLECTIONKEY_METHODDEF
     WINREG_ENABLEREFLECTIONKEY_METHODDEF
     WINREG_ENUMKEY_METHODDEF

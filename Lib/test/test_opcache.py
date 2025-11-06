@@ -567,6 +567,14 @@ class TestCallCache(TestBase):
         with self.assertRaises(RecursionError):
             test()
 
+    def test_dont_specialize_custom_vectorcall(self):
+        def f():
+            raise Exception("no way")
+
+        _testinternalcapi.set_vectorcall_nop(f)
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            f()
+
 
 def make_deferred_ref_count_obj():
     """Create an object that uses deferred reference counting.
@@ -1332,6 +1340,21 @@ class TestSpecializer(TestBase):
         binary_op_add_int()
         self.assert_specialized(binary_op_add_int, "BINARY_OP_ADD_INT")
         self.assert_no_opcode(binary_op_add_int, "BINARY_OP")
+
+        def binary_op_int_non_compact():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a, b = 10000000000, 1
+                c = a + b
+                self.assertEqual(c, 10000000001)
+                c = a - b
+                self.assertEqual(c, 9999999999)
+                c = a * b
+                self.assertEqual(c, 10000000000)
+
+        binary_op_int_non_compact()
+        self.assert_no_opcode(binary_op_int_non_compact, "BINARY_OP_ADD_INT")
+        self.assert_no_opcode(binary_op_int_non_compact, "BINARY_OP_SUBTRACT_INT")
+        self.assert_no_opcode(binary_op_int_non_compact, "BINARY_OP_MULTIPLY_INT")
 
         def binary_op_add_unicode():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):

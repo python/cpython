@@ -100,11 +100,15 @@ class TestCParser(unittest.TestCase):
 
         with contextlib.ExitStack() as stack:
             python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools("venv"))
-            sitepackages = subprocess.check_output(
+            platlib_path = subprocess.check_output(
                 [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
                 text=True,
             ).strip()
-            stack.enter_context(import_helper.DirsOnSysPath(sitepackages))
+            purelib_path = subprocess.check_output(
+                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
+                text=True,
+            ).strip()
+            stack.enter_context(import_helper.DirsOnSysPath(platlib_path, purelib_path))
             cls.addClassCleanup(stack.pop_all().close)
 
     @support.requires_venv_with_pip()

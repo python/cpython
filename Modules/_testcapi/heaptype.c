@@ -782,10 +782,7 @@ heapctypesubclasswithfinalizer_finalize(PyObject *self)
     /* Save the current exception, if any. */
     PyObject *exc = PyErr_GetRaisedException();
 
-    if (_testcapimodule == NULL) {
-        goto cleanup_finalize;
-    }
-    PyObject *m = PyState_FindModule(_testcapimodule);
+    PyObject *m = PyType_GetModule(Py_TYPE(self));
     if (m == NULL) {
         goto cleanup_finalize;
     }
@@ -1402,8 +1399,8 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     if (subclass_with_finalizer_bases == NULL) {
         return -1;
     }
-    PyObject *HeapCTypeSubclassWithFinalizer = PyType_FromSpecWithBases(
-        &HeapCTypeSubclassWithFinalizer_spec, subclass_with_finalizer_bases);
+    PyObject *HeapCTypeSubclassWithFinalizer = PyType_FromModuleAndSpec(
+        m, &HeapCTypeSubclassWithFinalizer_spec, subclass_with_finalizer_bases);
     Py_DECREF(subclass_with_finalizer_bases);
     ADD("HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
 

@@ -22,7 +22,7 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *source;
-    PyObject *filename;
+    PyObject *filename = NULL;
     const char *startstr;
 
     if (!_PyArg_CheckPositional("symtable", nargs, 3, 3)) {
@@ -48,6 +48,9 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     return_value = _symtable_symtable_impl(module, source, filename, startstr);
 
 exit:
+    /* Cleanup for filename */
+    Py_XDECREF(filename);
+
     return return_value;
 }
-/*[clinic end generated code: output=931964a76a72f850 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a8545d9a1efe837 input=a9049054013a1b77]*/

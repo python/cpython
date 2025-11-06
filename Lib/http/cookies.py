@@ -426,7 +426,7 @@ _CookiePattern = re.compile(r"""
     (                              # Optional group: there may not be a value.
     \s*=\s*                          # Equal Sign
     (?P<val>                         # Start of group 'val'
-    "(?:[^\\"]|\\.)*"                  # Any double-quoted string
+    "(?:\\"|.)*?"                    # Any double-quoted string
     |                                  # or
     # Special case for "expires" attr
     (\w{3,6}day|\w{3}),\s              # Day of the week or abbreviated day

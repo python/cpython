@@ -1,0 +1,2 @@
+Inside :meth:`io.RawIOBase.read`, validate that the count of bytes returned by
+:meth:`io.RawIOBase.readinto` is valid (inside the provided buffer).

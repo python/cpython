@@ -1,0 +1,1 @@
+Remove ``Tools/scripts/checkpip.py`` script.

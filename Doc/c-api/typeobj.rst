@@ -1260,7 +1260,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       This bit indicates that instances of the class have a :attr:`~object.__dict__`
       attribute, and that the space for the dictionary is managed by the VM.
 
-      If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
+      If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` must also be set.
 
       The type traverse function must call :c:func:`PyObject_VisitManagedDict`
       and its clear function must call :c:func:`PyObject_ClearManagedDict`.
@@ -1278,12 +1278,27 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       This bit indicates that instances of the class should be weakly
       referenceable.
 
+      If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` must also be set.
+
       .. versionadded:: 3.12
 
       **Inheritance:**
 
       This flag is inherited unless the
       :c:member:`~PyTypeObject.tp_weaklistoffset` field is set in a superclass.
+
+
+   .. c:macro:: Py_TPFLAGS_PREHEADER
+
+      These bits indicate that the VM will manage some fields by storing them
+      before the object. Currently, this macro is equivalent to
+      :c:expr:`Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF`.
+
+      This macro value relies on the implementation of the VM, so its value is not
+      stable and may change in a future version. Prefer using individual
+      flags instead.
+
+      .. versionadded:: 3.12
 
 
    .. c:macro:: Py_TPFLAGS_ITEMS_AT_END
@@ -1691,7 +1706,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:func:`Py_CLEAR` macro performs the operations in a safe order.
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
-   :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
+   :c:member:`~PyTypeObject.tp_flags` field, the clear function must call
    :c:func:`PyObject_ClearManagedDict` like this::
 
        PyObject_ClearManagedDict((PyObject*)self);

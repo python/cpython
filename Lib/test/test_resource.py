@@ -40,7 +40,10 @@ class ResourceTest(unittest.TestCase):
         # we need to test that the get/setrlimit functions properly convert
         # the number to a C long long and that the conversion doesn't raise
         # an error.
+        self.assertGreater(resource.RLIM_INFINITY, 0)
         self.assertEqual(resource.RLIM_INFINITY, max)
+        self.assertLessEqual(cur, max)
+        resource.setrlimit(resource.RLIMIT_FSIZE, (max, max))
         resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
 
     @unittest.skipIf(sys.platform == "vxworks",
@@ -113,29 +116,28 @@ class ResourceTest(unittest.TestCase):
         self.addCleanup(resource.setrlimit, resource.RLIMIT_FSIZE, (cur, max))
 
         def expected(cur):
-            if resource.RLIM_INFINITY < 0:
-                return [(cur, max), (resource.RLIM_INFINITY, max)]
-            elif resource.RLIM_INFINITY < cur:
-                return [(resource.RLIM_INFINITY, max)]
-            else:
-                return [(cur, max)]
+            # The glibc wrapper functions use a 64-bit rlim_t data type,
+            # even on 32-bit platforms. If a program tried to set a resource
+            # limit to a value larger than can be represented in a 32-bit
+            # unsigned long, then the glibc setrlimit() wrapper function
+            # silently converted the limit value to RLIM_INFINITY.
+            if sys.maxsize < 2**32 <= cur <= resource.RLIM_INFINITY:
+                return [(resource.RLIM_INFINITY, max), (cur, max)]
+            return [(min(cur, resource.RLIM_INFINITY), max)]
 
         resource.setrlimit(resource.RLIMIT_FSIZE, (2**31-5, max))
         self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**31-5, max))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (2**31, max))
+        self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**31))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (2**32-5, max))
+        self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**32-5))
 
         try:
             resource.setrlimit(resource.RLIMIT_FSIZE, (2**32, max))
         except OverflowError:
-            resource.setrlimit(resource.RLIMIT_FSIZE, (2**31, max))
-            self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**31))
-            resource.setrlimit(resource.RLIMIT_FSIZE, (2**32-5, max))
-            self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**32-5))
+            pass
         else:
             self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**32))
-            resource.setrlimit(resource.RLIMIT_FSIZE, (2**31, max))
-            self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**31, max))
-            resource.setrlimit(resource.RLIMIT_FSIZE, (2**32-5, max))
-            self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**32-5, max))
 
             resource.setrlimit(resource.RLIMIT_FSIZE, (2**63-5, max))
             self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**63-5))
@@ -153,15 +155,20 @@ class ResourceTest(unittest.TestCase):
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
     def test_fsize_negative(self):
+        self.assertGreater(resource.RLIM_INFINITY, 0)
         (cur, max) = resource.getrlimit(resource.RLIMIT_FSIZE)
         for value in -5, -2**31, -2**32-5, -2**63, -2**64-5, -2**1000:
             with self.subTest(value=value):
-                # This test assumes that the values don't map to RLIM_INFINITY,
-                # though Posix doesn't guarantee it.
-                self.assertNotEqual(value, resource.RLIM_INFINITY)
-
                 self.assertRaises(ValueError, resource.setrlimit, resource.RLIMIT_FSIZE, (value, max))
                 self.assertRaises(ValueError, resource.setrlimit, resource.RLIMIT_FSIZE, (cur, value))
+
+        if resource.RLIM_INFINITY in (2**32-3, 2**32-1, 2**64-3, 2**64-1):
+            value = (resource.RLIM_INFINITY & 0xffff) - 0x10000
+            with self.assertWarnsRegex(DeprecationWarning, "RLIM_INFINITY"):
+                resource.setrlimit(resource.RLIMIT_FSIZE, (value, max))
+            with self.assertWarnsRegex(DeprecationWarning, "RLIM_INFINITY"):
+                resource.setrlimit(resource.RLIMIT_FSIZE, (cur, value))
+
 
     @unittest.skipUnless(hasattr(resource, "getrusage"), "needs getrusage")
     def test_getrusage(self):
@@ -200,6 +207,15 @@ class ResourceTest(unittest.TestCase):
         self.assertIsInstance(pagesize, int)
         self.assertGreaterEqual(pagesize, 0)
 
+    def test_contants(self):
+        self.assertIsInstance(resource.RLIM_INFINITY, int)
+        if sys.platform.startswith(('freebsd', 'solaris', 'sunos', 'aix')):
+            self.assertHasAttr(resource, 'RLIM_SAVED_CUR')
+            self.assertHasAttr(resource, 'RLIM_SAVED_MAX')
+        if hasattr(resource, 'RLIM_SAVED_CUR'):
+            self.assertIsInstance(resource.RLIM_SAVED_CUR, int)
+            self.assertIsInstance(resource.RLIM_SAVED_MAX, int)
+
     @unittest.skipUnless(sys.platform in ('linux', 'android'), 'Linux only')
     def test_linux_constants(self):
         for attr in ['MSGQUEUE', 'NICE', 'RTPRIO', 'RTTIME', 'SIGPENDING']:
@@ -207,7 +223,7 @@ class ResourceTest(unittest.TestCase):
                 self.assertIsInstance(getattr(resource, 'RLIMIT_' + attr), int)
 
     def test_freebsd_contants(self):
-        for attr in ['SWAP', 'SBSIZE', 'NPTS']:
+        for attr in ['SWAP', 'SBSIZE', 'NPTS', 'UMTXP', 'VMEM', 'PIPEBUF']:
             with contextlib.suppress(AttributeError):
                 self.assertIsInstance(getattr(resource, 'RLIMIT_' + attr), int)
 

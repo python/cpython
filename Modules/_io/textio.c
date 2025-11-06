@@ -53,6 +53,7 @@ _unsupported(_PyIO_State *state, const char *message)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io._TextIOBase.detach
     cls: defining_class
     /
@@ -64,7 +65,7 @@ After the underlying buffer has been detached, the TextIO is in an unusable stat
 
 static PyObject *
 _io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=50915f40c609eaa4 input=987ca3640d0a3776]*/
+/*[clinic end generated code: output=50915f40c609eaa4 input=8cd0652c17d7f015]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "detach");

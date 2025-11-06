@@ -533,7 +533,7 @@ The :mod:`calendar` module exports the following data attributes:
    in the standalone form if the locale provides one. Else it is equivalent
    to :data:`month_name`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: standalone_month_abbr
@@ -542,7 +542,7 @@ The :mod:`calendar` module exports the following data attributes:
    locale in the standalone form if the locale provides one. Else it is
    equivalent to :data:`month_abbr`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: JANUARY
@@ -710,8 +710,7 @@ The following options are accepted:
 .. option:: month
 
    The month of the specified :option:`year` to print the calendar for.
-   Must be a number between 1 and 12,
-   and may only be used in text mode.
+   Must be a number between 1 and 12.
    Defaults to printing a calendar for the full year.
 
 

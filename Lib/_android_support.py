@@ -29,15 +29,19 @@ def init_streams(android_log_write, stdout_prio, stderr_prio):
 
     global logcat
     logcat = Logcat(android_log_write)
-
-    sys.stdout = TextLogStream(
-        stdout_prio, "python.stdout", sys.stdout.fileno())
-    sys.stderr = TextLogStream(
-        stderr_prio, "python.stderr", sys.stderr.fileno())
+    sys.stdout = TextLogStream(stdout_prio, "python.stdout", sys.stdout)
+    sys.stderr = TextLogStream(stderr_prio, "python.stderr", sys.stderr)
 
 
 class TextLogStream(io.TextIOWrapper):
-    def __init__(self, prio, tag, fileno=None, **kwargs):
+    def __init__(self, prio, tag, original=None, **kwargs):
+        # Respect the -u option.
+        if original:
+            kwargs.setdefault("write_through", original.write_through)
+            fileno = original.fileno()
+        else:
+            fileno = None
+
         # The default is surrogateescape for stdout and backslashreplace for
         # stderr, but in the context of an Android log, readability is more
         # important than reversibility.

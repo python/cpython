@@ -649,7 +649,7 @@ functions.
 
       If specified, *env* must provide any variables required for the program to
       execute.  On Windows, in order to run a `side-by-side assembly`_ the
-      specified *env* **must** include a valid :envvar:`SystemRoot`.
+      specified *env* **must** include a valid ``%SystemRoot%``.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
@@ -1473,7 +1473,7 @@ handling consistency are valid for these functions.
 
    Return ``(exitcode, output)`` of executing *cmd* in a shell.
 
-   Execute the string *cmd* in a shell with :meth:`Popen.check_output` and
+   Execute the string *cmd* in a shell with :func:`check_output` and
    return a 2-tuple ``(exitcode, output)``.
    *encoding* and *errors* are used to decode output;
    see the notes on :ref:`frequently-used-arguments` for more details.

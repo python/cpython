@@ -30,11 +30,6 @@
 
 #ifdef Py_GIL_DISABLED
 static PyMutex malloc_closure_lock;
-# define MALLOC_CLOSURE_LOCK()   PyMutex_Lock(&malloc_closure_lock)
-# define MALLOC_CLOSURE_UNLOCK() PyMutex_Unlock(&malloc_closure_lock)
-#else
-# define MALLOC_CLOSURE_LOCK()   ((void)0)
-# define MALLOC_CLOSURE_UNLOCK() ((void)0)
 #endif
 
 typedef union _tagITEM {
@@ -120,11 +115,11 @@ void Py_ffi_closure_free(void *p)
     }
 #endif
 #endif
-    MALLOC_CLOSURE_LOCK();
+    FT_MUTEX_LOCK(&malloc_closure_lock);
     ITEM *item = (ITEM *)p;
     item->next = free_list;
     free_list = item;
-    MALLOC_CLOSURE_UNLOCK();
+    FT_MUTEX_UNLOCK(&malloc_closure_lock);
 }
 
 /* return one item from the free list, allocating more if needed */
@@ -143,13 +138,13 @@ void *Py_ffi_closure_alloc(size_t size, void** codeloc)
     }
 #endif
 #endif
-    MALLOC_CLOSURE_LOCK();
+    FT_MUTEX_LOCK(&malloc_closure_lock);
     ITEM *item;
     if (!free_list) {
         more_core();
     }
     if (!free_list) {
-        MALLOC_CLOSURE_UNLOCK();
+        FT_MUTEX_UNLOCK(&malloc_closure_lock);
         return NULL;
     }
     item = free_list;
@@ -160,6 +155,6 @@ void *Py_ffi_closure_alloc(size_t size, void** codeloc)
 #else
     *codeloc = (void *)item;
 #endif
-    MALLOC_CLOSURE_UNLOCK();
+    FT_MUTEX_UNLOCK(&malloc_closure_lock);
     return (void *)item;
 }

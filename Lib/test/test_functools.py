@@ -406,6 +406,7 @@ class TestPartial:
 
     def test_setstate_errors(self):
         f = self.partial(signature)
+
         self.assertRaises(TypeError, f.__setstate__, (capture, (), {}))
         self.assertRaises(TypeError, f.__setstate__, (capture, (), {}, {}, None))
         self.assertRaises(TypeError, f.__setstate__, [capture, (), {}, None])
@@ -413,6 +414,8 @@ class TestPartial:
         self.assertRaises(TypeError, f.__setstate__, (capture, None, {}, None))
         self.assertRaises(TypeError, f.__setstate__, (capture, [], {}, None))
         self.assertRaises(TypeError, f.__setstate__, (capture, (), [], None))
+        self.assertRaises(TypeError, f.__setstate__, (capture, (), {}, ()))
+        self.assertRaises(TypeError, f.__setstate__, (capture, (), {}, 'test'))
 
     def test_setstate_subclasses(self):
         f = self.partial(signature)

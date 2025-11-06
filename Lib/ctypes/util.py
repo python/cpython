@@ -173,6 +173,25 @@ elif sys.platform == "android":
         fname = f"{directory}/lib{name}.so"
         return fname if os.path.isfile(fname) else None
 
+elif sys.platform == "emscripten":
+    def _is_wasm(filename):
+        # Return True if the given file is an WASM module
+        wasm_header = b"\x00asm"
+        with open(filename, 'br') as thefile:
+            return thefile.read(4) == wasm_header
+
+    def find_library(name):
+        candidates = [f"lib{name}.so", f"lib{name}.wasm"]
+        paths = os.environ.get("LD_LIBRARY_PATH", "")
+        for libdir in paths.split(":"):
+            for name in candidates:
+                libfile = os.path.join(libdir, name)
+
+                if os.path.isfile(libfile) and _is_wasm(libfile):
+                    return libfile
+
+        return None
+
 elif os.name == "posix":
     # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
     import re, tempfile

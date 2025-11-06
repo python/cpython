@@ -175,6 +175,9 @@ There are a few functions specific to Python functions.
 
    .. versionadded:: 3.12
 
+    - ``PyFunction_PYFUNC_EVENT_MODIFY_QUALNAME``
+
+   .. versionadded:: 3.15
 
 .. c:type:: int (*PyFunction_WatchCallback)(PyFunction_WatchEvent event, PyFunctionObject *func, PyObject *new_value)
 

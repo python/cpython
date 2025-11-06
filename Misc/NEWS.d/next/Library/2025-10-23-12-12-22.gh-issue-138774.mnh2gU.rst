@@ -1,0 +1,2 @@
+:func:`ast.unparse` now generates full source code when handling
+:class:`ast.Interpolation` nodes that do not have a specified source.

@@ -4688,6 +4688,28 @@ class PdbTestInline(unittest.TestCase):
         stdout, _ = self._run_script(script, commands)
         self.assertIn("42", stdout)
 
+    def test_readline_not_imported(self):
+        """GH-138860
+        Directly or indirectly importing readline might deadlock a subprocess
+        if it's launched with process_group=0 or preexec_fn=setpgrp
+
+        It's also a pattern that readline is never imported with just import pdb.
+
+        This test is to ensure that readline is not imported for import pdb.
+        It's possible that we have a good reason to do that in the future.
+        """
+
+        script = textwrap.dedent("""
+            import sys
+            import pdb
+            if "readline" in sys.modules:
+                print("readline imported")
+        """)
+        commands = ""
+        stdout, stderr = self._run_script(script, commands)
+        self.assertNotIn("readline imported", stdout)
+        self.assertEqual(stderr, "")
+
 
 @support.force_colorized_test_class
 class PdbTestColorize(unittest.TestCase):

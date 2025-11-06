@@ -1,0 +1,1 @@
+Deprecate ``__version__`` from a :mod:`imaplib`. Patch by Hugo van Kemenade.

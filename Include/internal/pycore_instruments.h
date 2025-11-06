@@ -33,32 +33,34 @@ int _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events);
 int _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet events);
 int _PyMonitoring_GetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet *events);
 
-extern int
+
+// these are exported only for other re-generated interpreters to call
+PyAPI_FUNC(int)
 _Py_call_instrumentation(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
 
-extern int
+PyAPI_FUNC(int)
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
                               _Py_CODEUNIT *instr, _Py_CODEUNIT *prev);
 
-extern int
+PyAPI_FUNC(int)
 _Py_call_instrumentation_instruction(
     PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr);
 
-_Py_CODEUNIT *
+PyAPI_FUNC(_Py_CODEUNIT *)
 _Py_call_instrumentation_jump(
     _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest);
 
-extern int
+PyAPI_FUNC(int)
 _Py_call_instrumentation_arg(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg);
 
-extern int
+PyAPI_FUNC(int)
 _Py_call_instrumentation_2args(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
 
-extern void
+PyAPI_FUNC(void)
 _Py_call_instrumentation_exc2(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
 

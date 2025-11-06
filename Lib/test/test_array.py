@@ -1255,6 +1255,14 @@ class UnicodeTest(StringTest, unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             array.array("u")
 
+    def test_empty_string_mem_leak_gh140474(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            for _ in range(1000):
+                a = array.array('u', '')
+                self.assertEqual(len(a), 0)
+                self.assertEqual(a.typecode, 'u')
+
 
 class UCS4Test(UnicodeTest):
     typecode = 'w'

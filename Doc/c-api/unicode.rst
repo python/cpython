@@ -747,7 +747,7 @@ APIs:
    Return ``0`` on success, ``-1`` on error with an exception set.
 
    This function checks that *unicode* is a Unicode object, that the index is
-   not out of bounds, and that the object's reference count is one).
+   not out of bounds, and that the object's reference count is one.
    See :c:func:`PyUnicode_WRITE` for a version that skips these checks,
    making them your responsibility.
 

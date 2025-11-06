@@ -46,12 +46,12 @@
 #undef CURRENT_TARGET
 #define CURRENT_TARGET() (_target)
 
-#undef GOTO_TIER_TWO
-#define GOTO_TIER_TWO(EXECUTOR)                                            \
+#undef TIER2_TO_TIER2
+#define TIER2_TO_TIER2(EXECUTOR)                                           \
 do {                                                                       \
     OPT_STAT_INC(traces_executed);                                         \
     _PyExecutorObject *_executor = (EXECUTOR);                             \
-    jit_func_preserve_none jitted = _executor->jit_side_entry;             \
+    jit_func_preserve_none jitted = _executor->jit_code;                   \
     __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
 } while (0)
 
@@ -69,9 +69,11 @@ do {                                                \
     } while (0)
 
 #undef LLTRACE_RESUME_FRAME
-#define LLTRACE_RESUME_FRAME() \
-    do {                       \
-    } while (0)
+#ifdef Py_DEBUG
+#define LLTRACE_RESUME_FRAME() (frame->lltrace = 0)
+#else
+#define LLTRACE_RESUME_FRAME() do {} while (0)
+#endif
 
 #define PATCH_JUMP(ALIAS)                                                 \
 do {                                                                      \

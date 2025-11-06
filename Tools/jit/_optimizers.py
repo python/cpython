@@ -9,7 +9,7 @@ import typing
 _RE_NEVER_MATCH = re.compile(r"(?!)")
 # Dictionary mapping branch instructions to their inverted branch instructions.
 # If a branch cannot be inverted, the value is None:
-_X86_BRANCHES = {
+_X86_BRANCH_NAMES = {
     # https://www.felixcloutier.com/x86/jcc
     "ja": "jna",
     "jae": "jnae",
@@ -37,7 +37,42 @@ _X86_BRANCHES = {
     "loopz": None,
 }
 # Update with all of the inverted branches, too:
-_X86_BRANCHES |= {v: k for k, v in _X86_BRANCHES.items() if v}
+_X86_BRANCH_NAMES |= {v: k for k, v in _X86_BRANCH_NAMES.items() if v}
+# No custom relocations needed
+_X86_BRANCHES: dict[str, tuple[str | None, str | None]] = {
+    k: (v, None) for k, v in _X86_BRANCH_NAMES.items()
+}
+
+_AARCH64_COND_CODES = {
+    # https://developer.arm.com/documentation/dui0801/b/CJAJIHAD?lang=en
+    "eq": "ne",
+    "ne": "eq",
+    "lt": "ge",
+    "ge": "lt",
+    "gt": "le",
+    "le": "gt",
+    "vs": "vc",
+    "vc": "vs",
+    "mi": "pl",
+    "pl": "mi",
+    "cs": "cc",
+    "cc": "cs",
+    "hs": "lo",
+    "lo": "hs",
+    "hi": "ls",
+    "ls": "hi",
+}
+# MyPy doesn't understand that a invariant variable can be initialized by a covariant value
+CUSTOM_AARCH64_BRANCH19: str | None = "CUSTOM_AARCH64_BRANCH19"
+
+# Branches are either b.{cond} or bc.{cond}
+_AARCH64_BRANCHES: dict[str, tuple[str | None, str | None]] = {
+    "b." + cond: (("b." + inverse if inverse else None), CUSTOM_AARCH64_BRANCH19)
+    for (cond, inverse) in _AARCH64_COND_CODES.items()
+} | {
+    "bc." + cond: (("bc." + inverse if inverse else None), CUSTOM_AARCH64_BRANCH19)
+    for (cond, inverse) in _AARCH64_COND_CODES.items()
+}
 
 
 @dataclasses.dataclass
@@ -85,7 +120,8 @@ class Optimizer:
         r'\s*(?P<label>[\w."$?@]+):'
     )
     # Override everything that follows in subclasses:
-    _branches: typing.ClassVar[dict[str, str | None]] = {}
+    _supports_external_relocations = True
+    _branches: typing.ClassVar[dict[str, tuple[str | None, str | None]]] = {}
     # Two groups (instruction and target):
     _re_branch: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     # One group (target):
@@ -142,7 +178,10 @@ class Optimizer:
     def _invert_branch(cls, line: str, target: str) -> str | None:
         match = cls._re_branch.match(line)
         assert match
-        inverted = cls._branches.get(match["instruction"])
+        inverted_reloc = cls._branches.get(match["instruction"])
+        if inverted_reloc is None:
+            return None
+        inverted = inverted_reloc[0]
         if not inverted:
             return None
         (a, b), (c, d) = match.span("instruction"), match.span("target")
@@ -274,20 +313,53 @@ class Optimizer:
                 block.fallthrough = True
                 block.instructions.pop()
 
+    def _fixup_external_labels(self) -> None:
+        if self._supports_external_relocations:
+            # Nothing to fix up
+            return
+        for block in self._blocks():
+            if block.target and block.fallthrough:
+                branch = block.instructions[-1]
+                match = self._re_branch.match(branch)
+                assert match is not None
+                target = match["target"]
+                reloc = self._branches[match["instruction"]][1]
+                if reloc is not None and not target.startswith(self.label_prefix):
+                    name = target[len(self.symbol_prefix) :]
+                    block.instructions[-1] = (
+                        f"// target='{target}' prefix='{self.label_prefix}'"
+                    )
+                    block.instructions.append(
+                        f"{self.symbol_prefix}{reloc}_JIT_RELOCATION_{name}:"
+                    )
+                    a, b = match.span("target")
+                    branch = "".join([branch[:a], "0", branch[b:]])
+                    block.instructions.append(branch)
+
     def run(self) -> None:
         """Run this optimizer."""
         self._insert_continue_label()
         self._mark_hot_blocks()
         self._invert_hot_branches()
         self._remove_redundant_jumps()
+        self._fixup_external_labels()
         self.path.write_text(self._body())
 
 
 class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
-    """aarch64-apple-darwin/aarch64-pc-windows-msvc/aarch64-unknown-linux-gnu"""
+    """aarch64-pc-windows-msvc/aarch64-apple-darwin/aarch64-unknown-linux-gnu"""
+
+    _branches = _AARCH64_BRANCHES
+    # Mach-O does not support the 19 bit branch locations needed for branch reordering
+    _supports_external_relocations = False
+    _re_branch = re.compile(
+        rf"\s*(?P<instruction>{'|'.join(_AARCH64_BRANCHES)})\s+(.+,\s+)*(?P<target>[\w.]+)"
+    )
 
     # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
+    # https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/RET--Return-from-subroutine-
+    _re_return = re.compile(r"\s*ret\b")
 
 
 class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods

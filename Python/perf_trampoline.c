@@ -202,6 +202,7 @@ enum perf_trampoline_type {
 #define perf_map_file _PyRuntime.ceval.perf.map_file
 #define persist_after_fork _PyRuntime.ceval.perf.persist_after_fork
 #define perf_trampoline_type _PyRuntime.ceval.perf.perf_trampoline_type
+#define prev_eval_frame _PyRuntime.ceval.perf.prev_eval_frame
 
 static void
 perf_map_write_entry(void *state, const void *code_addr,
@@ -407,9 +408,12 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
         f = new_trampoline;
     }
     assert(f != NULL);
-    return f(ts, frame, throw, _PyEval_EvalFrameDefault);
+    return f(ts, frame, throw, prev_eval_frame != NULL ? prev_eval_frame : _PyEval_EvalFrameDefault);
 default_eval:
     // Something failed, fall back to the default evaluator.
+    if (prev_eval_frame) {
+        return prev_eval_frame(ts, frame, throw);
+    }
     return _PyEval_EvalFrameDefault(ts, frame, throw);
 }
 #endif  // PY_HAVE_PERF_TRAMPOLINE
@@ -481,18 +485,12 @@ _PyPerfTrampoline_Init(int activate)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate->interp->eval_frame &&
-        tstate->interp->eval_frame != py_trampoline_evaluator) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Trampoline cannot be initialized as a custom eval "
-                        "frame is already present");
-        return -1;
-    }
     if (!activate) {
-        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, NULL);
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
         perf_status = PERF_STATUS_NO_INIT;
     }
-    else {
+    else if (tstate->interp->eval_frame != py_trampoline_evaluator) {
+        prev_eval_frame = _PyInterpreterState_GetEvalFrameFunc(tstate->interp);
         _PyInterpreterState_SetEvalFrameFunc(tstate->interp, py_trampoline_evaluator);
         extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         if (extra_code_index == -1) {

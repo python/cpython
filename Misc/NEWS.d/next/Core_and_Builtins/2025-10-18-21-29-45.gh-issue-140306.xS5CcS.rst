@@ -1,0 +1,2 @@
+Fix memory leaks in cross-interpreter channel operations and shared
+namespace handling.

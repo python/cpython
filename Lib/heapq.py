@@ -494,7 +494,7 @@ def nsmallest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key)[:n]
+            return sorted(iterable, key=key)
 
     # When key is none, use simpler decoration
     if key is None:
@@ -554,7 +554,7 @@ def nlargest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key, reverse=True)[:n]
+            return sorted(iterable, key=key, reverse=True)
 
     # When key is none, use simpler decoration
     if key is None:

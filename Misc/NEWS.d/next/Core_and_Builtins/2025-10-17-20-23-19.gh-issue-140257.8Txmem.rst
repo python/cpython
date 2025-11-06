@@ -1,0 +1,2 @@
+Fix data race between interpreter_clear() and take_gil() on eval_breaker
+during finalization with daemon threads.

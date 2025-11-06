@@ -112,6 +112,7 @@ atexit_callfuncs(struct atexit_state *state)
     {
         PyErr_FormatUnraisable("Exception ignored while "
                                "copying atexit callbacks");
+        atexit_cleanup(state);
         return;
     }
 

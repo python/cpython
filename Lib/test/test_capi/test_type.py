@@ -274,3 +274,10 @@ class TypeTests(unittest.TestCase):
         obj.__dict__ = {'bar': 3}
         self.assertEqual(obj.__dict__, {'bar': 3})
         self.assertEqual(obj.bar, 3)
+
+    def test_extension_managed_weakref_nogc_type(self):
+        msg = ("type _testcapi.ManagedWeakrefNoGCType "
+               "has the Py_TPFLAGS_MANAGED_WEAKREF "
+               "flag but not Py_TPFLAGS_HAVE_GC flag")
+        with self.assertRaisesRegex(SystemError, msg):
+            _testcapi.create_managed_weakref_nogc_type()

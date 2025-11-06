@@ -1,0 +1,2 @@
+Generate a clear compilation error when ``_Py_TAIL_CALL_INTERP`` is enabled but
+either ``preserve_none`` or ``musttail`` is not supported.

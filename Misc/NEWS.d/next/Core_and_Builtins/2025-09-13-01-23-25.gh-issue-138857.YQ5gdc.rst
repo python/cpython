@@ -1,0 +1,2 @@
+Improve :exc:`SyntaxError` message for ``case`` keyword placed outside
+:keyword:`match` body.
