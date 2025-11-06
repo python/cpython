@@ -2216,7 +2216,7 @@ PyFloat_Pack4(double x, char *data, int le)
             uint32_t u32;
 
             memcpy(&u32, &y, 4);
-            if ((v & (1ULL << 51)) == 0) {
+            if ((v & (1ULL << 51)) == 0 && (u32 & 0x3fffff)) {
                 u32 &= ~(1 << 22);
             }
             /* Workaround RISC-V: "If a NaN value is converted to a
