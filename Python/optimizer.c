@@ -605,6 +605,24 @@ _PyJit_translate_single_bytecode_to_trace(
 
     int old_stack_level = tstate->interp->jit_state.prev_instr_stacklevel;
 
+    // Strange control-flow
+    bool has_dynamic_jump_taken = OPCODE_HAS_UNPREDICTABLE_JUMP(opcode) &&
+        (next_instr != this_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]]);
+    if (has_dynamic_jump_taken) {
+        DPRINTF(2, "Unsupported: dynamic jump taken\n");
+        goto unsupported;
+    }
+
+    /* Special case the first instruction,
+    * so that we can guarantee forward progress */
+    if (progress_needed && tstate->interp->jit_state.code_curr_size <= 3) {
+        if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
+            opcode = _PyOpcode_Deopt[opcode];
+        }
+        assert(!OPCODE_HAS_EXIT(opcode));
+        assert(!OPCODE_HAS_DEOPT(opcode));
+    }
+
     bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode];
     DPRINTF(2, "%p %d: %s(%d) %d %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, needs_guard_ip, old_stack_level);
 
@@ -626,24 +644,6 @@ _PyJit_translate_single_bytecode_to_trace(
 
     if (!tstate->interp->jit_state.dependencies_still_valid) {
         goto done;
-    }
-
-    // Strange control-flow
-    bool has_dynamic_jump_taken = OPCODE_HAS_UNPREDICTABLE_JUMP(opcode) &&
-        (next_instr != this_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]]);
-    if (has_dynamic_jump_taken) {
-        DPRINTF(2, "Unsupported: dynamic jump taken\n");
-        goto unsupported;
-    }
-
-    /* Special case the first instruction,
-    * so that we can guarantee forward progress */
-    if (progress_needed && tstate->interp->jit_state.code_curr_size <= 2) {
-        if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
-            opcode = _PyOpcode_Deopt[opcode];
-        }
-        assert(!OPCODE_HAS_EXIT(opcode));
-        assert(!OPCODE_HAS_DEOPT(opcode));
     }
 
     // This happens when a recursive call happens that we can't trace. Such as Python -> C -> Python calls
