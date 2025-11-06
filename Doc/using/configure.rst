@@ -55,7 +55,7 @@ require third-party libraries installed for development
 Missing requirements are reported in the ``configure`` output.
 Modules that are missing due to missing dependencies are listed near the end
 of the ``make`` output,
-sometimes using an internal name such as ``_ctypes`` for the :mod:`ctypes`
+sometimes using an internal name, for example, ``_ctypes`` for :mod:`ctypes`
 module.
 
 If you distribute a CPython interpreter without optional modules,
