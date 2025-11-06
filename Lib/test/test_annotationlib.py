@@ -1971,6 +1971,11 @@ class TestForwardRefClass(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             fr.evaluate()
 
+    def test_fwdref_final_class(self):
+        with self.assertRaises(TypeError):
+            class C(ForwardRef):
+                pass
+
 
 class TestAnnotationLib(unittest.TestCase):
     def test__all__(self):
