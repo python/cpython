@@ -5509,8 +5509,7 @@
             assert(executor->vm_data.code == code);
             assert(executor->vm_data.valid);
             assert(tstate->current_executor == NULL);
-            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & (_PY_EVAL_EVENTS_MASK | _PY_EVAL_JIT_DO_NOT_REENTER)) {
-                _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_DO_NOT_REENTER);
+            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
