@@ -163,7 +163,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 .. c:macro:: PyLong_FromPid(pid)
 
-   Macro for creating a Python integer from a process ID.
+   Macro for creating a Python integer from a process identifier.
 
    This can be defined as an alias to :c:func:`PyLong_FromLong` or
    :c:func:`PyLong_FromLongLong`, depending on the size of the system's
