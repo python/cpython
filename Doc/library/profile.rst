@@ -378,7 +378,7 @@ about statistical profiling, see :ref:`statistical-profiling`
    :param bool native: Whether to include ``<native>`` frames (default: True)
    :param bool gc: Whether to include ``<GC>`` frames (default: True)
 
-   :raises ValueError: If output_format is not 'pstats' or 'collapsed
+   :raises ValueError: If output_format is not 'pstats' or 'collapsed'
 
    Examples::
 
