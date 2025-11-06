@@ -236,9 +236,11 @@ class Queue:
         By default, gets will only raise once the queue is empty. Set
         'immediate' to True to make gets raise immediately instead.
 
-        All blocked callers of put() and get() will be unblocked. If
-        'immediate', callers of join() are unblocked regardless of
-        the number of unfinished tasks.
+        All blocked callers of put() and get() will be unblocked.
+
+        If 'immediate', the queue is drained and unfinished tasks
+        is reduced by the number of drained tasks.  If unfinished tasks
+        is reduced to zero, callers of Queue.join are unblocked.
         '''
         with self.mutex:
             self.is_shutdown = True
