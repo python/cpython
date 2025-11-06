@@ -1,1 +1,0 @@
-Fix data race in compile_template in :file:`sre.c`.

@@ -330,9 +330,11 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), &_Py_ID(options), &_Py_ID(create_only), },
     };
     #undef NUM_KEYWORDS
@@ -535,9 +537,11 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(access), &_Py_ID(reserved), },
     };
     #undef NUM_KEYWORDS
@@ -969,9 +973,11 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), },
     };
     #undef NUM_KEYWORDS
@@ -1092,9 +1098,11 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(options), &_Py_ID(access), &_Py_ID(reserved), },
     };
     #undef NUM_KEYWORDS
@@ -1668,6 +1676,70 @@ exit:
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
+PyDoc_STRVAR(winreg_DeleteTree__doc__,
+"DeleteTree($module, key, sub_key=None, /)\n"
+"--\n"
+"\n"
+"Deletes the specified key and all its subkeys and values recursively.\n"
+"\n"
+"  key\n"
+"    An already open key, or any one of the predefined HKEY_* constants.\n"
+"  sub_key\n"
+"    A string that names the subkey to delete. If None, deletes all subkeys\n"
+"    and values of the specified key.\n"
+"\n"
+"This function deletes a key and all its descendants. If sub_key is None,\n"
+"all subkeys and values of the specified key are deleted.");
+
+#define WINREG_DELETETREE_METHODDEF    \
+    {"DeleteTree", _PyCFunction_CAST(winreg_DeleteTree), METH_FASTCALL, winreg_DeleteTree__doc__},
+
+static PyObject *
+winreg_DeleteTree_impl(PyObject *module, HKEY key, const wchar_t *sub_key);
+
+static PyObject *
+winreg_DeleteTree(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HKEY key;
+    const wchar_t *sub_key = NULL;
+
+    if (!_PyArg_CheckPositional("DeleteTree", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(_PyModule_GetState(module), args[0], &key)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        sub_key = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        sub_key = PyUnicode_AsWideCharString(args[1], NULL);
+        if (sub_key == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("DeleteTree", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
+    return_value = winreg_DeleteTree_impl(module, key, sub_key);
+
+exit:
+    /* Cleanup for sub_key */
+    PyMem_Free((void *)sub_key);
+
+    return return_value;
+}
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+
 PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
 "QueryReflectionKey($module, key, /)\n"
 "--\n"
@@ -1806,7 +1878,11 @@ exit:
     #define WINREG_ENABLEREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_ENABLEREFLECTIONKEY_METHODDEF) */
 
+#ifndef WINREG_DELETETREE_METHODDEF
+    #define WINREG_DELETETREE_METHODDEF
+#endif /* !defined(WINREG_DELETETREE_METHODDEF) */
+
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=67346bb47df95b6b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4015905d06f7360 input=a9049054013a1b77]*/

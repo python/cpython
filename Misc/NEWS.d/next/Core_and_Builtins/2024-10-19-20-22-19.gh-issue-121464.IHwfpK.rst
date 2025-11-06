@@ -1,1 +1,0 @@
-Make concurrent iterations over the same :func:`enumerate` iterator safe under free-threading. See `Strategy for Iterators in Free Threading <https://github.com/python/cpython/issues/124397>`_.

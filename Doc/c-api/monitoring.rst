@@ -136,7 +136,7 @@ Managing the Monitoring State
 -----------------------------
 
 Monitoring states can be managed with the help of monitoring scopes. A scope
-would typically correspond to a python function.
+would typically correspond to a Python function.
 
 .. c:function:: int PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version, const uint8_t *event_types, Py_ssize_t length)
 
@@ -196,3 +196,15 @@ would typically correspond to a python function.
 .. c:function:: int PyMonitoring_ExitScope(void)
 
    Exit the last scope that was entered with :c:func:`!PyMonitoring_EnterScope`.
+
+
+.. c:function:: int PY_MONITORING_IS_INSTRUMENTED_EVENT(uint8_t ev)
+
+   Return true if the event corresponding to the event ID *ev* is
+   a :ref:`local event <monitoring-event-local>`.
+
+   .. versionadded:: 3.13
+
+   .. deprecated:: 3.14
+
+      This function is :term:`soft deprecated`.

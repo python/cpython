@@ -78,8 +78,7 @@ This module defines the following functions:
    exceptions on ill-formed XML.  Unknown elements will simply be ignored
    by the plist parser.
 
-   The parser for the binary format raises :exc:`InvalidFileException`
-   when the file cannot be parsed.
+   The parser raises :exc:`InvalidFileException` when the file cannot be parsed.
 
    .. versionadded:: 3.4
 
@@ -148,8 +147,9 @@ The following classes are available:
    Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
    encoded data, which contains UID (see PList manual).
 
-   It has one attribute, :attr:`data`, which can be used to retrieve the int value
-   of the UID.  :attr:`data` must be in the range ``0 <= data < 2**64``.
+   .. attribute:: data
+
+      Int value of the UID.  It must be in the range ``0 <= data < 2**64``.
 
    .. versionadded:: 3.8
 
@@ -166,6 +166,15 @@ The following constants are available:
 .. data:: FMT_BINARY
 
    The binary format for plist files
+
+   .. versionadded:: 3.4
+
+
+The module defines the following exceptions:
+
+.. exception:: InvalidFileException
+
+   Raised when a file cannot be parsed.
 
    .. versionadded:: 3.4
 

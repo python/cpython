@@ -1,2 +1,0 @@
-Speed up :meth:`Path.copy <pathlib.Path.copy>` by making better use of
-:attr:`~pathlib.Path.info` internally.

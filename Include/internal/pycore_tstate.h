@@ -14,6 +14,13 @@ extern "C" {
 #include "pycore_qsbr.h"            // struct qsbr
 
 
+#ifdef Py_GIL_DISABLED
+struct _gc_thread_state {
+    /* Thread-local allocation count. */
+    Py_ssize_t alloc_count;
+};
+#endif
+
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
 // are intended to be private. The _PyThreadStateImpl fields not exposed.
@@ -40,8 +47,9 @@ typedef struct _PyThreadStateImpl {
     struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
     struct llist_node mem_free_queue; // delayed free queue
 
-
 #ifdef Py_GIL_DISABLED
+    // Stack references for the current thread that exist on the C stack
+    struct _PyCStackRef *c_stack_refs;
     struct _gc_thread_state gc;
     struct _mimalloc_thread_state mimalloc;
     struct _Py_freelists freelists;
@@ -62,7 +70,13 @@ typedef struct _PyThreadStateImpl {
 
     // When >1, code objects do not immortalize their non-string constants.
     int suppress_co_const_immortalization;
+
+#ifdef Py_STATS
+     // per-thread stats, will be merged into interp->pystats_struct
+     PyStats *pystats_struct; // allocated by _PyStats_ThreadInit()
 #endif
+
+#endif // Py_GIL_DISABLED
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     Py_ssize_t reftotal;  // this thread's total refcount operations

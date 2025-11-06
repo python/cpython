@@ -1,2 +1,0 @@
-The tests of terminal colorization are no longer sensitive to the value of
-the ``TERM`` variable in the testing environment.

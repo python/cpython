@@ -1,2 +1,0 @@
-Fix race conditions during runtime finalization that could lead to accessing
-freed memory.

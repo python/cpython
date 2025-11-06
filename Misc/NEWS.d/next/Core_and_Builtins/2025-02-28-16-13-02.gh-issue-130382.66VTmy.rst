@@ -1,1 +1,0 @@
-Fix ``PyRefTracer_DESTROY`` not being sent from :file:`Python/ceval.c` ``Py_DECREF()``.

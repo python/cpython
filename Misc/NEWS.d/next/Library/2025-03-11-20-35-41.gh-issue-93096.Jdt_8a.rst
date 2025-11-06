@@ -1,2 +1,0 @@
-Removed undocumented CLI ``python -m difflib``. Use ``python -m doctest
-Lib/difflib.py -v`` instead. Patch by Semyon Moroz.

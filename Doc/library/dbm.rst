@@ -15,9 +15,15 @@
 * :mod:`dbm.ndbm`
 
 If none of these modules are installed, the
-slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There
+slow-but-simple implementation in module :mod:`dbm.dumb` will be used. There
 is a `third party interface <https://www.jcea.es/programacion/pybsddb.htm>`_ to
 the Oracle Berkeley DB.
+
+.. note::
+   None of the underlying modules will automatically shrink the disk space used by
+   the database file. However, :mod:`dbm.sqlite3`, :mod:`dbm.gnu` and :mod:`dbm.dumb`
+   provide a :meth:`!reorganize` method that can be used for this purpose.
+
 
 .. exception:: error
 
@@ -84,10 +90,13 @@ the Oracle Berkeley DB.
    .. versionchanged:: 3.11
       *file* accepts a :term:`path-like object`.
 
-The object returned by :func:`~dbm.open` supports the same basic functionality as a
-:class:`dict`; keys and their corresponding values can be stored, retrieved, and
-deleted, and the :keyword:`in` operator and the :meth:`!keys` method are
-available, as well as :meth:`!get` and :meth:`!setdefault` methods.
+The object returned by :func:`~dbm.open` supports the basic
+functionality of mutable :term:`mappings <mapping>`;
+keys and their corresponding values can be stored, retrieved, and
+deleted, and iteration, the :keyword:`in` operator and methods :meth:`!keys`,
+:meth:`!get`, :meth:`!setdefault` and :meth:`!clear` are available.
+The :meth:`!keys` method returns a list instead of a view object.
+The :meth:`!setdefault` method requires two arguments.
 
 Key and values are always stored as :class:`bytes`. This means that when
 strings are used they are implicitly converted to the default encoding before
@@ -107,6 +116,10 @@ will automatically close them when done.
 .. versionchanged:: 3.8
    Deleting a key from a read-only database raises a database module specific exception
    instead of :exc:`KeyError`.
+
+.. versionchanged:: 3.13
+   :meth:`!clear` methods are now available for all :mod:`dbm` backends.
+
 
 The following example records some hostnames and a corresponding title,  and
 then prints out the contents of the database::
@@ -167,9 +180,6 @@ or any other SQLite browser, including the SQLite CLI.
 .. function:: open(filename, /, flag="r", mode=0o666)
 
    Open an SQLite database.
-   The returned object behaves like a :term:`mapping`,
-   implements a :meth:`!close` method,
-   and supports a "closing" context manager via the :keyword:`with` keyword.
 
    :param filename:
       The path to the database to be opened.
@@ -185,6 +195,29 @@ or any other SQLite browser, including the SQLite CLI.
    :param mode:
       The Unix file access mode of the file (default: octal ``0o666``),
       used only when the database has to be created.
+
+   The returned database object behaves similar to a mutable :term:`mapping`,
+   but the :meth:`!keys` method returns a list, and
+   the :meth:`!setdefault` method requires two arguments.
+   It also supports a "closing" context manager via the :keyword:`with` keyword.
+
+   The following methods are also provided:
+
+   .. method:: sqlite3.close()
+
+      Close the SQLite database.
+
+   .. method:: sqlite3.reorganize()
+
+      If you have carried out a lot of deletions and would like to shrink the space
+      used on disk, this method will reorganize the database; otherwise, deleted file
+      space will be kept and reused as new (key, value) pairs are added.
+
+      .. note::
+         While reorganizing, as much as two times the size of the original database is required
+         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
+
+      .. versionadded:: 3.15
 
 
 :mod:`dbm.gnu` --- GNU database manager
@@ -213,6 +246,11 @@ functionality like crash tolerance.
 
    Raised on :mod:`dbm.gnu`-specific errors, such as I/O errors. :exc:`KeyError` is
    raised for general mapping errors like specifying an incorrect key.
+
+
+.. data:: open_flags
+
+   A string of characters the *flag* parameter of :meth:`~dbm.gnu.open` supports.
 
 
 .. function:: open(filename, flag="r", mode=0o666, /)
@@ -250,13 +288,24 @@ functionality like crash tolerance.
    .. versionchanged:: 3.11
       *filename* accepts a :term:`path-like object`.
 
-   .. data:: open_flags
+   :class:`!gdbm` objects behave similar to mutable :term:`mappings <mapping>`,
+   but methods :meth:`!items`, :meth:`!values`, :meth:`!pop`, :meth:`!popitem`,
+   and :meth:`!update` are not supported,
+   the :meth:`!keys` method returns a list, and
+   the :meth:`!setdefault` method requires two arguments.
+   It also supports a "closing" context manager via the :keyword:`with` keyword.
 
-      A string of characters the *flag* parameter of :meth:`~dbm.gnu.open` supports.
+   .. versionchanged:: 3.2
+      Added the :meth:`!get` and :meth:`!setdefault` methods.
 
-   :class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
-   but :meth:`!items` and :meth:`!values` methods are not supported.
+   .. versionchanged:: 3.13
+      Added the :meth:`!clear` method.
+
    The following methods are also provided:
+
+   .. method:: gdbm.close()
+
+      Close the GDBM database.
 
    .. method:: gdbm.firstkey()
 
@@ -284,20 +333,14 @@ functionality like crash tolerance.
       reorganization; otherwise, deleted file space will be kept and reused as new
       (key, value) pairs are added.
 
+      .. note::
+         While reorganizing, as much as one time the size of the original database is required
+         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
+
    .. method:: gdbm.sync()
 
       When the database has been opened in fast mode, this method forces any
       unwritten data to be written to the disk.
-
-   .. method:: gdbm.close()
-
-      Close the GDBM database.
-
-   .. method:: gdbm.clear()
-
-      Remove all items from the GDBM database.
-
-      .. versionadded:: 3.13
 
 
 :mod:`dbm.ndbm` --- New Database Manager
@@ -359,22 +402,27 @@ This module can be used with the "classic" NDBM interface or the
    :param int mode:
       |mode_param_doc|
 
-   :class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
-   but :meth:`!items` and :meth:`!values` methods are not supported.
-   The following methods are also provided:
-
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
+
+   :class:`!ndbm` objects behave similar to mutable :term:`mappings <mapping>`,
+   but methods :meth:`!items`, :meth:`!values`, :meth:`!pop`, :meth:`!popitem`,
+   and :meth:`!update` are not supported,
+   the :meth:`!keys` method returns a list, and
+   the :meth:`!setdefault` method requires two arguments.
+   It also supports a "closing" context manager via the :keyword:`with` keyword.
+
+   .. versionchanged:: 3.2
+      Added the :meth:`!get` and :meth:`!setdefault` methods.
+
+   .. versionchanged:: 3.13
+      Added the :meth:`!clear` method.
+
+   The following method is also provided:
 
    .. method:: ndbm.close()
 
       Close the NDBM database.
-
-   .. method:: ndbm.clear()
-
-      Remove all items from the NDBM database.
-
-      .. versionadded:: 3.13
 
 
 :mod:`dbm.dumb` --- Portable DBM implementation
@@ -412,9 +460,6 @@ The :mod:`!dbm.dumb` module defines the following:
 .. function:: open(filename, flag="c", mode=0o666)
 
    Open a :mod:`!dbm.dumb` database.
-   The returned database object behaves similar to a :term:`mapping`,
-   in addition to providing :meth:`~dumbdbm.sync` and :meth:`~dumbdbm.close`
-   methods.
 
    :param filename:
       The basename of the database file (without extensions).
@@ -438,6 +483,11 @@ The :mod:`!dbm.dumb` module defines the following:
       with a sufficiently large/complex entry due to stack depth limitations in
       Python's AST compiler.
 
+   .. warning::
+      :mod:`dbm.dumb` does not support concurrent read/write access. (Multiple
+      simultaneous read accesses are safe.) When a program has the database open
+      for writing, no other program should have it open for reading or writing.
+
    .. versionchanged:: 3.5
       :func:`~dbm.dumb.open` always creates a new database when *flag* is ``'n'``.
 
@@ -448,15 +498,30 @@ The :mod:`!dbm.dumb` module defines the following:
    .. versionchanged:: 3.11
       *filename* accepts a :term:`path-like object`.
 
-   In addition to the methods provided by the
-   :class:`collections.abc.MutableMapping` class,
-   the following methods are provided:
+   The returned database object behaves similar to a mutable :term:`mapping`,
+   but the :meth:`!keys` and :meth:`!items` methods return lists, and
+   the :meth:`!setdefault` method requires two arguments.
+   It also supports a "closing" context manager via the :keyword:`with` keyword.
+
+   The following methods are also provided:
+
+   .. method:: dumbdbm.close()
+
+      Close the database.
+
+   .. method:: dumbdbm.reorganize()
+
+      If you have carried out a lot of deletions and would like to shrink the space
+      used on disk, this method will reorganize the database; otherwise, deleted file
+      space will not be reused.
+
+      .. note::
+         While reorganizing, no additional free disk space is required. However, be aware
+         that this factor changes for each :mod:`dbm` submodule.
+
+      .. versionadded:: 3.15
 
    .. method:: dumbdbm.sync()
 
       Synchronize the on-disk directory and data files.  This method is called
       by the :meth:`shelve.Shelf.sync` method.
-
-   .. method:: dumbdbm.close()
-
-      Close the database.

@@ -11,7 +11,7 @@ of three conceptual sections:
   previous frame, etc.
 
 The definition of the `_PyInterpreterFrame` struct is in
-[Include/internal/pycore_frame.h](../Include/internal/pycore_frame.h).
+[Include/internal/pycore_interpframe_structs.h](../Include/internal/pycore_interpframe_structs.h).
 
 # Allocation
 
@@ -21,8 +21,8 @@ of reference, most frames are allocated contiguously in a per-thread stack
 (see `_PyThreadState_PushFrame` in [Python/pystate.c](../Python/pystate.c)).
 
 Frames of generators and coroutines are embedded in the generator and coroutine
-objects, so are not allocated in the per-thread stack. See `PyGenObject` in
-[Include/internal/pycore_genobject.h](../Include/internal/pycore_genobject.h).
+objects, so are not allocated in the per-thread stack. See `_PyGenObject` in
+[Include/internal/pycore_interpframe_structs.h](../Include/internal/pycore_interpframe_structs.h).
 
 ## Layout
 
@@ -126,7 +126,7 @@ to see in an exception traceback.
 The `return_offset` field determines where a `RETURN` should go in the caller,
 relative to `instr_ptr`.  It is only meaningful to the callee, so it needs to
 be set in any instruction that implements a call (to a Python function),
-including CALL, SEND and BINARY_SUBSCR_GETITEM, among others. If there is no
+including CALL, SEND and BINARY_OP_SUBSCR_GETITEM, among others. If there is no
 callee, then return_offset is meaningless. It is necessary to have a separate
 field for the return offset because (1) if we apply this offset to `instr_ptr`
 while executing the `RETURN`, this is too early and would lose us information

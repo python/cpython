@@ -1,4 +1,0 @@
-Add the optional ``buffersize`` parameter to
-:meth:`concurrent.futures.Executor.map` to limit the number of submitted tasks
-whose results have not yet been yielded. If the buffer is full, iteration over
-the *iterables* pauses until a result is yielded from the buffer.

@@ -8,6 +8,7 @@
  */
 
 #include "multiprocessing.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 
 #ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>           // gettimeofday()
@@ -65,7 +66,7 @@ class _multiprocessing.SemLock "SemLockObject *" "&_PyMp_SemLockType"
 #define SEM_UNLINK(name) 0
 
 static int
-_GetSemaphoreValue(HANDLE handle, long *value)
+_GetSemaphoreValue(HANDLE handle, int *value)
 {
     long previous;
 
@@ -720,13 +721,6 @@ _multiprocessing_SemLock___exit___impl(SemLockObject *self,
     return _multiprocessing_SemLock_release_impl(self);
 }
 
-static int
-semlock_traverse(PyObject *s, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(s));
-    return 0;
-}
-
 /*
  * Semaphore methods
  */
@@ -773,7 +767,7 @@ static PyType_Slot _PyMp_SemLockType_slots[] = {
     {Py_tp_members, semlock_members},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, _multiprocessing_SemLock},
-    {Py_tp_traverse, semlock_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_free, PyObject_GC_Del},
     {Py_tp_doc, (void *)PyDoc_STR("Semaphore/Mutex type")},
     {0, 0},

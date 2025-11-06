@@ -112,7 +112,7 @@ Context Variables
 
        assert var.get() == 'default value'
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
       Added support for usage as a context manager.
 
