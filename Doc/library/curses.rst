@@ -23,6 +23,8 @@ Linux and the BSD variants of Unix.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. include:: ../includes/optional-module.rst
+
 .. note::
 
    Whenever the documentation mentions a *character* it can be specified
