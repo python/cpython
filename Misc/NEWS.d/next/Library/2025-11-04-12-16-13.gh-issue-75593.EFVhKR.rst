@@ -1,1 +1,1 @@
-wave.py - Allow opening of path-like files.
+Add support of :term:`path-like objects <path-like object>` in :func:`wave.open`.
