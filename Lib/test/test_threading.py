@@ -215,11 +215,6 @@ class ThreadTests(BaseTestCase):
             self.assertRegex(repr(t), r'^<TestThread\(.*, initial\)>$')
             t.start()
 
-        if hasattr(threading, 'get_native_id'):
-            native_ids = set(t.native_id for t in threads) | {threading.get_native_id()}
-            self.assertNotIn(None, native_ids)
-            self.assertEqual(len(native_ids), NUMTASKS + 1)
-
         if verbose:
             print('waiting for all tasks to complete')
         for t in threads:
@@ -228,6 +223,12 @@ class ThreadTests(BaseTestCase):
             self.assertNotEqual(t.ident, 0)
             self.assertIsNotNone(t.ident)
             self.assertRegex(repr(t), r'^<TestThread\(.*, stopped -?\d+\)>$')
+
+        if hasattr(threading, 'get_native_id'):
+            native_ids = set(t.native_id for t in threads) | {threading.get_native_id()}
+            self.assertNotIn(None, native_ids)
+            self.assertEqual(len(native_ids), NUMTASKS + 1)
+
         if verbose:
             print('all tasks done')
         self.assertEqual(numrunning.get(), 0)
@@ -307,7 +308,7 @@ class ThreadTests(BaseTestCase):
         # Issue gh-106236:
         with self.assertRaises(RuntimeError):
             dummy_thread.join()
-        dummy_thread._started.clear()
+        dummy_thread._os_thread_handle._set_done()
         with self.assertRaises(RuntimeError):
             dummy_thread.is_alive()
         # Busy wait for the following condition: after the thread dies, the
@@ -1456,6 +1457,32 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(err, b"")
         self.assertEqual(out.strip(), b"Exiting...")
+
+    def test_memory_error_bootstrap(self):
+        # gh-140746: Test that Thread.start() doesn't hang indefinitely if
+        # the new thread fails (MemoryError) during its initialization
+
+        def serving_thread():
+
+            def nothing():
+                pass
+
+            def _set_ident_memory_error():
+                raise MemoryError()
+
+            thread = threading.Thread(target=nothing)
+            with (
+                support.catch_unraisable_exception(),
+                mock.patch.object(thread, '_set_ident', _set_ident_memory_error)
+            ):
+                thread.start()
+                self.assertFalse(thread.is_alive())
+
+        serving_thread = threading.Thread(target=serving_thread)
+        serving_thread.start()
+        serving_thread.join(0.1)
+        self.assertFalse(serving_thread.is_alive())
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
