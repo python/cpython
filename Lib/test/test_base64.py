@@ -301,13 +301,21 @@ class BaseXYTestCase(unittest.TestCase):
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr.decode('ascii'), validate=True)
 
-        # Normal alphabet characters are discarded when alternative given
-        self.assertEqual(base64.b64decode(b'++//', altchars=b'-_'), b'')
-        self.assertEqual(base64.urlsafe_b64decode(b'++//'), b'')
+        # Normal alphabet characters will be discarded when alternative given
+        with self.assertWarns(FutureWarning):
+            self.assertEqual(base64.b64decode(b'++++', altchars=b'-_'),
+                             b'\xfb\xef\xbe')
+        with self.assertWarns(FutureWarning):
+            self.assertEqual(base64.b64decode(b'////', altchars=b'-_'),
+                             b'\xff\xff\xff')
+        self.assertEqual(base64.urlsafe_b64decode(b'++++'), b'')
+        self.assertEqual(base64.urlsafe_b64decode(b'////'), b'')
         with self.assertRaises(binascii.Error):
             base64.b64decode(b'++++', altchars=b'-_', validate=True)
         with self.assertRaises(binascii.Error):
             base64.b64decode(b'////', altchars=b'-_', validate=True)
+        with self.assertRaises(binascii.Error):
+            base64.b64decode(b'+/!', altchars=b'-_')
 
     def _altchars_strategy():
         """Generate 'altchars' for base64 encoding."""
