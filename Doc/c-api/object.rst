@@ -89,10 +89,16 @@ Object Protocol
 
    Dump an object *op* to ``stderr``. This should only be used for debugging.
 
-   This function can be called without an :term:`attached thread state`, but it's not
-   recommended to do so.
+   The output is intended to try dumping objects even after memory corruption:
 
-   Implement a heuristic to detect if the object memory has been freed.
+   * Information is written starting with fields that are the least likely to
+     crash when accessed.
+   * This function can be called without an :term:`attached thread state`, but
+     it's not recommended to do so: it can cause deadlocks.
+   * An object that does not belong to the current interpreter may be dumped,
+     but this may also cause crashes or unintended behavior.
+   * Implement a heuristic to detect if the object memory has been freed. Don't
+     display the object contents in this case, only its memory address.
 
    Example of output:
 
