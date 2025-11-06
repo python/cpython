@@ -80,8 +80,9 @@ def b64decode(s, altchars=None, validate=False):
     s = _bytes_from_decode_data(s)
     if altchars is not None:
         altchars = _bytes_from_decode_data(altchars)
-        assert len(altchars) == 2, repr(altchars)
-        s = s.translate(bytes.maketrans(altchars, b'+/'))
+        if len(altchars) != 2:
+            raise ValueError(f'invalid altchars: {altchars!r}')
+        s = s.translate(bytes.maketrans(b'+/' + altchars, altchars + b'+/'))
     return binascii.a2b_base64(s, strict_mode=validate)
 
 
@@ -104,7 +105,7 @@ def standard_b64decode(s):
 
 
 _urlsafe_encode_translation = bytes.maketrans(b'+/', b'-_')
-_urlsafe_decode_translation = bytes.maketrans(b'-_', b'+/')
+_urlsafe_decode_translation = bytes.maketrans(b'+/-_', b'-_+/')
 
 def urlsafe_b64encode(s):
     """Encode bytes using the URL- and filesystem-safe Base64 alphabet.

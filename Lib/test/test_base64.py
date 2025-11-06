@@ -265,6 +265,11 @@ class BaseXYTestCase(unittest.TestCase):
             eq(base64.b64decode(data, altchars=altchars_str), res)
             eq(base64.b64decode(data_str, altchars=altchars_str), res)
 
+        self.assertRaises(ValueError, base64.b64decode, b'', altchars=b'+')
+        self.assertRaises(ValueError, base64.b64decode, b'', altchars=b'+/-')
+        self.assertRaises(ValueError, base64.b64decode, '', altchars='+')
+        self.assertRaises(ValueError, base64.b64decode, '', altchars='+/-')
+
     def test_b64decode_padding_error(self):
         self.assertRaises(binascii.Error, base64.b64decode, b'abc')
         self.assertRaises(binascii.Error, base64.b64decode, 'abc')
@@ -296,13 +301,13 @@ class BaseXYTestCase(unittest.TestCase):
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr.decode('ascii'), validate=True)
 
-        # Normal alphabet characters not discarded when alternative given
-        res = b'\xfb\xef\xff'
-        self.assertEqual(base64.b64decode(b'++//', validate=True), res)
-        self.assertEqual(base64.b64decode(b'++//', '-_', validate=True), res)
-        self.assertEqual(base64.b64decode(b'--__', '-_', validate=True), res)
-        self.assertEqual(base64.urlsafe_b64decode(b'++//'), res)
-        self.assertEqual(base64.urlsafe_b64decode(b'--__'), res)
+        # Normal alphabet characters are discarded when alternative given
+        self.assertEqual(base64.b64decode(b'++//', altchars=b'-_'), b'')
+        self.assertEqual(base64.urlsafe_b64decode(b'++//'), b'')
+        with self.assertRaises(binascii.Error):
+            base64.b64decode(b'++++', altchars=b'-_', validate=True)
+        with self.assertRaises(binascii.Error):
+            base64.b64decode(b'////', altchars=b'-_', validate=True)
 
     def _altchars_strategy():
         """Generate 'altchars' for base64 encoding."""
@@ -393,10 +398,6 @@ class BaseXYTestCase(unittest.TestCase):
 
         self.assertRaises(binascii.Error, base64.b32decode, b'me======')
         self.assertRaises(binascii.Error, base64.b32decode, 'me======')
-
-        # Mapping zero and one
-        eq(base64.b32decode(b'MLO23456'), b'b\xdd\xad\xf3\xbe')
-        eq(base64.b32decode('MLO23456'), b'b\xdd\xad\xf3\xbe')
 
     def test_b32decode_map01(self):
         # Mapping zero and one
