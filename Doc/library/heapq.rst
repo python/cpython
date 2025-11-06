@@ -42,6 +42,11 @@ populated list into a heap via function :func:`heapify`.
 The following functions are provided:
 
 
+.. function:: heapify(x)
+
+   Transform list *x* into a heap, in-place, in linear time.
+
+
 .. function:: heappush(heap, item)
 
    Push the value *item* onto the *heap*, maintaining the heap invariant.
@@ -59,11 +64,6 @@ The following functions are provided:
    Push *item* on the heap, then pop and return the smallest item from the
    *heap*.  The combined action runs more efficiently than :func:`heappush`
    followed by a separate call to :func:`heappop`.
-
-
-.. function:: heapify(x)
-
-   Transform list *x* into a heap, in-place, in linear time.
 
 
 .. function:: heapreplace(heap, item)
