@@ -1330,7 +1330,7 @@ class TestInterpreterCall(TestBase):
             # builtin exceptions
             Exception('uh-oh!'),
             ModuleNotFoundError('mymodule'),
-            # builtin fnctions
+            # builtin functions
             len,
             sys.exit,
             # user classes
