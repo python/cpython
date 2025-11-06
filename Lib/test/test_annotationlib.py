@@ -1388,6 +1388,23 @@ class TestCallAnnotateFunction(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             annotationlib.call_annotate_function(annotate, Format.STRING)
 
+    def test_unsupported_formats(self):
+        def annotate(format, /):
+            if format == Format.FORWARDREF:
+                return {"x": str}
+            else:
+                raise NotImplementedError(format)
+
+        with self.assertRaises(ValueError):
+            annotationlib.call_annotate_function(annotate, Format.VALUE_WITH_FAKE_GLOBALS)
+
+        with self.assertRaises(RuntimeError):
+            annotationlib.call_annotate_function(annotate, Format.VALUE)
+
+        with self.assertRaises(ValueError):
+            # Some non-Format value
+            annotationlib.call_annotate_function(annotate, 7)
+
     def test_error_from_value_raised(self):
         # Test that the error from format.VALUE is raised
         # if all formats fail
