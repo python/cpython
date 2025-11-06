@@ -1194,6 +1194,21 @@ class TestGetAnnotations(unittest.TestCase):
             },
         )
 
+    def test_nonlocal_in_annotation_scope(self):
+        class Demo:
+            nonlocal sequence_b
+            x: sequence_b
+            y: sequence_b[int]
+
+        fwdrefs = get_annotations(Demo, format=Format.FORWARDREF)
+
+        self.assertIsInstance(fwdrefs["x"], ForwardRef)
+        self.assertIsInstance(fwdrefs["y"], ForwardRef)
+
+        sequence_b = list
+        self.assertIs(fwdrefs["x"].evaluate(), list)
+        self.assertEqual(fwdrefs["y"].evaluate(), list[int])
+
     def test_raises_error_from_value(self):
         # test that if VALUE is the only supported format, but raises an error
         # that error is propagated from get_annotations
@@ -1876,6 +1891,32 @@ class TestForwardRefClass(unittest.TestCase):
             ForwardRef("doesntexist").evaluate()
 
         self.assertEqual(exc.exception.name, "doesntexist")
+
+    def test_evaluate_undefined_generic(self):
+        # Test the codepath where have to eval() with undefined variables.
+        class C:
+            x: alias[int, undef]
+
+        generic = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            format=Format.FORWARDREF,
+            globals={"alias": dict}
+        )
+        self.assertNotIsInstance(generic, ForwardRef)
+        self.assertIs(generic.__origin__, dict)
+        self.assertEqual(len(generic.__args__), 2)
+        self.assertIs(generic.__args__[0], int)
+        self.assertIsInstance(generic.__args__[1], ForwardRef)
+
+        generic = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            format=Format.FORWARDREF,
+            globals={"alias": Union},
+            locals={"alias": dict}
+        )
+        self.assertNotIsInstance(generic, ForwardRef)
+        self.assertIs(generic.__origin__, dict)
+        self.assertEqual(len(generic.__args__), 2)
+        self.assertIs(generic.__args__[0], int)
+        self.assertIsInstance(generic.__args__[1], ForwardRef)
 
     def test_fwdref_invalid_syntax(self):
         fr = ForwardRef("if")
