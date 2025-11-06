@@ -2510,9 +2510,9 @@ process_frame_chain(
                 PyErr_SetString(PyExc_RuntimeError, e);
                 return -1;
             }
-            if (unwinder->native && 
+            if (unwinder->native &&
                 // The last frame is always native, so skip that one:
-                next_frame_addr && 
+                next_frame_addr &&
                 // If the next frame will be reported as a GC frame, then don't
                 // add an extra native frame below it:
                 !(unwinder->gc && next_frame_addr == gc_frame))
@@ -3030,7 +3030,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             Py_CLEAR(result);
             goto exit;
         }
-    
+
         uintptr_t gc_frame = 0;
         if (self->gc) {
             gc_frame = GET_MEMBER(uintptr_t, interp_state_buffer,
