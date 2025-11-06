@@ -2663,8 +2663,9 @@ class TestUopsOptimization(unittest.TestCase):
     def test_interpreter_finalization_with_generator_alive(self):
         script_helper.assert_python_ok("-c", textwrap.dedent("""
             import sys
+            t = tuple(range(%d))
             def simple_for():
-                for x in (1, 2):
+                for x in t:
                     x
 
             def gen():
@@ -2677,7 +2678,7 @@ class TestUopsOptimization(unittest.TestCase):
             simple_for()
             g = gen()
             next(g)
-        """))
+        """ % _testinternalcapi.SPECIALIZATION_THRESHOLD))
 
 
 def global_identity(x):
