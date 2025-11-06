@@ -3294,6 +3294,76 @@ class TestFolding(TestEmailBase):
             with self.subTest(to=to):
                 self._test(parser.get_address_list(to)[0], folded, policy=policy)
 
+    def test_address_list_with_long_unwrapable_comment(self):
+        policy = self.policy.clone(max_line_length=40)
+        cases = [
+            # (to, folded)
+
+            # 1. Unwrappable Comments
+
+            # Entire line is <= 40 characters, 40 characters exactly
+            # No folding
+            ('spy@example.org(loremipsumdolorsitametc)', 'spy@example.org(loremipsumdolorsitametc)\n'),
+            ('(loremipsumdolorsitametc)spy@example.org', '(loremipsumdolorsitametc)spy@example.org\n'),
+            # Entire line is > 40 characters, 41 characters
+            # Folding triggered
+            ('spy@example.org(loremipsumdolorsitametco)','spy@example.org\n (loremipsumdolorsitametco)\n'),
+             ('(loremipsumdolorsitametco)spy@example.org', '(loremipsumdolorsitametco)spy@example.org\n'),
+            # Entire line is > 40 characters, 54 characters, `len(tstr) <= maxlen - len(lines[-1])` is `True`
+            # Folding triggered
+            # Comment part < 40 characthers, 39 characters, `len(tstr) + 1 <= maxlen` is `True`
+            # No attempt to fold the subpart
+            ('spy@example.org(loremipsumdolorsitametconsecteturadip)',
+             'spy@example.org\n'
+             ' (loremipsumdolorsitametconsecteturadip)\n'),
+            ('(loremipsumdolorsitametconsecteturadip)spy@example.org',
+             '(loremipsumdolorsitametconsecteturadip)spy@example.org\n'),
+            # Entire line is > 40 characters, 55 characters, `len(tstr) <= maxlen - len(lines[-1])` is `True`
+            # Folding triggered
+            # Comment part >= 40 characters, 40 characters exactly, `len(tstr) + 1 <= maxlen` is `False`
+            # Attempt to fold the subpart
+            ('spy@example.org(loremipsumdolorsitametconsecteturadipi)',
+             'spy@example.org\n'
+             ' (loremipsumdolorsitametconsecteturadipi)\n'),
+            ('(loremipsumdolorsitametconsecteturadipi)spy@example.org',
+             '(loremipsumdolorsitametconsecteturadipi)spy@example.org\n'),
+
+            # 2. Wrappable comments
+
+            # Entire line is <= 40 characters, 40 characters exactly
+            # No folding
+            ('spy@example.org(loremipsumd olorsitamet)', 'spy@example.org(loremipsumd olorsitamet)\n'),
+            ('(loremipsumd olorsitamet)spy@example.org', '(loremipsumd olorsitamet)spy@example.org\n'),
+            # Entire line is > 40 characters, 41 characters
+            # Folding triggered
+            # Comment part < 40 characters
+            ('spy@example.org(loremipsumd olorsitametc)', 'spy@example.org\n (loremipsumd olorsitametc)\n'),
+            ('(loremipsumd olorsitametc)spy@example.org', '(loremipsumd olorsitametc)spy@example.org\n'),
+            # Entire line is > 40 characters, 56 characters
+            # Folding triggered
+            # Comment part > 40 characters, 41 characters
+            ('spy@example.org(loremipsumd loremipsumdolorsitametconse)', 'spy@example.org(loremipsumd\n loremipsumdolorsitametconse)\n'),
+            ('(loremipsumd loremipsumdolorsitametconse)spy@example.org', '(loremipsumd\n loremipsumdolorsitametconse)spy@example.org\n'),
+            # Entire line is > 40 characters, 70 characters
+            # Folding triggered
+            # Comment part > 40 characters, 55 characters
+            # One word in the comment > 40 characters, 41 characters
+            ('spy@example.org(loremipsumd loremipsumdolorsitametconsecteturadipisci)', 'spy@example.org(loremipsumd\n loremipsumdolorsitametconsecteturadipisci)\n'),
+            ('(loremipsumd loremipsumdolorsitametconsecteturadipisci)spy@example.org', '(loremipsumd\n loremipsumdolorsitametconsecteturadipisci)spy@example.org\n'),
+
+            # 3. Nested comments
+
+            ('spy@example.org((loremipsumdolorsitametconsecteturadi))', 'spy@example.org(\n (loremipsumdolorsitametconsecteturadi))\n'),
+            ('spy@example.org((loremipsumdolorsitametconsecteturadip))', 'spy@example.org(\n (loremipsumdolorsitametconsecteturadip)\n )\n'),
+            ('spy@example.org((loremipsumdolorsitam)(loremipsumdolorsitam))', 'spy@example.org((loremipsumdolorsitam)\n (loremipsumdolorsitam))\n'),
+            ('spy@example.org((loremipsumdolorsitametc)(loremipsumdolorsitametc))', 'spy@example.org(\n (loremipsumdolorsitametc)\n (loremipsumdolorsitametc))\n'),
+            ('spy@example.org(loremipsumdolorsitametc(loremipsumdolorsitametc))', 'spy@example.org(loremipsumdolorsitametc\n (loremipsumdolorsitametc))\n'),
+            ('spy@example.org((loremipsumdolorsitametc)loremipsumdolorsitametc)', 'spy@example.org(\n (loremipsumdolorsitametc)\n loremipsumdolorsitametc)\n'),
+        ]
+        for (to, folded) in cases:
+            with self.subTest(to=to):
+                self._test(parser.get_address_list(to)[0], folded, policy=policy)
+
     # XXX Need tests with comments on various sides of a unicode token,
     # and with unicode tokens in the comments.  Spaces inside the quotes
     # currently don't do the right thing.

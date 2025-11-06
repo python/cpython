@@ -2941,7 +2941,10 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # the way encoded strings handle continuation lines, we need to
                 # be prepared to encode any whitespace if the next line turns
                 # out to start with an encoded word.
-                lines.append(newline + tstr)
+                line = newline + tstr
+                if line[0] not in WSP:
+                    line = ' ' + line
+                lines.append(line)
 
                 whitespace_accumulator = []
                 for char in lines[-1]:
@@ -2977,7 +2980,10 @@ def _refold_parse_tree(parse_tree, *, policy):
         # We can't figure out how to wrap, it, so give up.
         newline = _steal_trailing_WSP_if_exists(lines)
         if newline or part.startswith_fws():
-            lines.append(newline + tstr)
+            line = newline + tstr
+            if line[0] not in WSP:
+                line = ' ' + line
+            lines.append(line)
         else:
             # We can't fold it onto the next line either...
             lines[-1] += tstr
