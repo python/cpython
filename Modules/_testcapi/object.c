@@ -486,9 +486,25 @@ is_uniquely_referenced(PyObject *self, PyObject *op)
 
 
 static PyObject *
-pyobject_dump(PyObject *self, PyObject *op)
+pyobject_dump(PyObject *self, PyObject *args)
 {
-    PyObject_Dump(op);
+    PyObject *op;
+    int release_gil = 0;
+
+    if (!PyArg_ParseTuple(args, "O|i", &op, &release_gil)) {
+        return NULL;
+    }
+    NULLABLE(op);
+
+    if (release_gil) {
+        Py_BEGIN_ALLOW_THREADS
+        PyObject_Dump(op);
+        Py_END_ALLOW_THREADS
+
+    }
+    else {
+        PyObject_Dump(op);
+    }
     Py_RETURN_NONE;
 }
 
@@ -519,7 +535,7 @@ static PyMethodDef test_methods[] = {
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {"is_uniquely_referenced", is_uniquely_referenced, METH_O},
-    {"pyobject_dump", pyobject_dump, METH_O},
+    {"pyobject_dump", pyobject_dump, METH_VARARGS},
     {NULL},
 };
 

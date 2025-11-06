@@ -14,6 +14,7 @@ _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
 
+NULL = None
 STDERR_FD = 2
 
 
@@ -250,12 +251,8 @@ class CAPITest(unittest.TestCase):
 
         func(object())
 
-    def test_pyobject_dump(self):
+    def pyobject_dump(self, obj, release_gil=False):
         pyobject_dump = _testcapi.pyobject_dump
-        obj = 'test string'
-
-        filename = os_helper.TESTFN
-        self.addCleanup(os_helper.unlink, filename)
 
         try:
             old_stderr = os.dup(STDERR_FD)
@@ -263,26 +260,45 @@ class CAPITest(unittest.TestCase):
             # os.dup(STDERR_FD) is not supported on WASI
             self.skipTest(f"os.dup() failed with {exc!r}")
 
+        filename = os_helper.TESTFN
         try:
-            with open(filename, "wb") as fp:
-                fd = fp.fileno()
-                os.dup2(fd, STDERR_FD)
-                pyobject_dump(obj)
+            try:
+                with open(filename, "wb") as fp:
+                    fd = fp.fileno()
+                    os.dup2(fd, STDERR_FD)
+                    pyobject_dump(obj, release_gil)
+            finally:
+                os.dup2(old_stderr, STDERR_FD)
+                os.close(old_stderr)
+
+            with open(filename) as fp:
+                return fp.read().rstrip()
         finally:
-            os.dup2(old_stderr, STDERR_FD)
-            os.close(old_stderr)
+            os_helper.unlink(filename)
 
-        with open(filename) as fp:
-            output = fp.read()
-
+    def test_pyobject_dump(self):
+        # test string object
+        str_obj = 'test string'
+        output = self.pyobject_dump(str_obj)
         hex_regex = r'(0x)?[0-9a-fA-F]+'
-        self.assertRegex(output.rstrip(),
+        regex = (
             fr"object address  : {hex_regex}\n"
              r"object refcount : [0-9]+\n"
             fr"object type     : {hex_regex}\n"
              r"object type name: str\n"
              r"object repr     : 'test string'"
         )
+        self.assertRegex(output, regex)
+
+        # release the GIL
+        output = self.pyobject_dump(str_obj, release_gil=True)
+        self.assertRegex(output, regex)
+
+        # test NULL object
+        output = self.pyobject_dump(NULL)
+        hex_regex = r'(0x)?[0-9a-fA-F]+'
+        self.assertEqual(output,
+                         '<object at (nil) is freed>')
 
 
 if __name__ == "__main__":
