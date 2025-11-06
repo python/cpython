@@ -53,7 +53,7 @@ static inline PyModuleDef *_PyModule_GetDefOrNull(PyObject *arg) {
 
 static inline PyModuleDef *_PyModule_GetToken(PyObject *arg) {
     PyModuleObject *mod = _PyModule_CAST(arg);
-    return mod->md_token;
+    return (PyModuleDef *)mod->md_token;
 }
 
 static inline void* _PyModule_GetState(PyObject* mod) {
