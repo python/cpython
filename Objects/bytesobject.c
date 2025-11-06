@@ -985,6 +985,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             if (alloc > 2) {
                 res = PyBytesWriter_GrowAndUpdatePointer(writer, alloc - 2, res);
                 if (res == NULL) {
+                    Py_XDECREF(temp);
                     goto error;
                 }
             }
