@@ -854,17 +854,6 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
             goto end;
         }
 
-        if (scls == subclass) {
-            // Fast path
-            if (!is_issubclasscheck_recursive(impl)) {
-                if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
-                    goto end;
-                }
-            }
-            result = Py_True;
-            goto end;
-        }
-
         _abc_data *scls_impl;
         int scls_is_abc = _get_optional_impl(state, scls, &scls_impl);
         if (scls_is_abc < 0) {
@@ -925,7 +914,7 @@ static int
 subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
                              PyObject **result)
 {
-    // Fast path: check subclass is in weakref directly.
+    // Fast path: check subclass is in weakset directly.
     int ret = _in_weak_set(impl, &impl->_abc_registry, subclass);
     if (ret < 0) {
         *result = NULL;
