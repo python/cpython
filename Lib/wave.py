@@ -275,7 +275,7 @@ class Wave_read:
 
     def __init__(self, f):
         self._i_opened_the_file = None
-        if isinstance(f, (str, os.PathLike)):
+        if isinstance(f, (bytes, str, os.PathLike)):
             f = builtins.open(f, 'rb')
             self._i_opened_the_file = f
         # else, assume it is an open file object already
@@ -432,7 +432,7 @@ class Wave_write:
 
     def __init__(self, f):
         self._i_opened_the_file = None
-        if isinstance(f, (str, os.PathLike)):
+        if isinstance(f, (bytes, str, os.PathLike)):
             f = builtins.open(f, 'wb')
             self._i_opened_the_file = f
         try:
