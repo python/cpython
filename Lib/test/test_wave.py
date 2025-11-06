@@ -4,7 +4,6 @@ from test import support
 from test.support.os_helper import FakePath
 import io
 import os
-import pathlib
 import struct
 import tempfile
 import sys
