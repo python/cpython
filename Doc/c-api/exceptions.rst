@@ -983,8 +983,8 @@ these are the C equivalent to :func:`reprlib.recursive_repr`.
 
    Set the recursion limit for the current interpreter.
 
-   This function cannot fail, and the caller must hold an
-   :term:`attached thread state`.
+   This function cannot fail, and the caller must hold the
+   :term:`GIL`.
 
    .. seealso::
       :py:func:`sys.setrecursionlimit`
