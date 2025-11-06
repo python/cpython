@@ -981,7 +981,7 @@ these are the C equivalent to :func:`reprlib.recursive_repr`.
 
 .. c:function:: int Py_GetRecursionLimit(void)
 
-   Get the recursion limit for the current interpreter. It can be set by
+   Get the recursion limit for the current interpreter. It can be set with
    :c:func:`Py_SetRecursionLimit`. The recursion limit prevents the
    Python interpreter stack from growing infinitely.
 
