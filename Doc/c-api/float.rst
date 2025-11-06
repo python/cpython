@@ -78,6 +78,15 @@ Floating-Point Objects
    Return the minimum normalized positive float *DBL_MIN* as C :c:expr:`double`.
 
 
+.. c:macro:: Py_INFINITY
+
+   This is equivalent of :c:macro:`!INFINITY` from the C11 standard
+   ``<math.h>`` header.
+
+   .. deprecated:: 3.15
+      The macro is soft deprecated.
+
+
 .. c:macro:: Py_RETURN_NAN
 
    Return :data:`math.nan` from a function.
