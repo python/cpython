@@ -825,7 +825,7 @@ _PyJit_translate_single_bytecode_to_trace(
                         if (uop == _TIER2_RESUME_CHECK) {
                             target = next_inst;
                         }
-                        else if (uop != _FOR_ITER_TIER_TWO) {
+                        else {
                             int extended_arg = orig_oparg > 255;
                             uint32_t jump_target = next_inst + orig_oparg + extended_arg;
                             assert(_Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR);
