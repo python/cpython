@@ -1,13 +1,9 @@
 import unittest
-
 from threading import Thread, Barrier
-from unittest import TestCase
-
 from test.support import threading_helper
 
 
-@threading_helper.requires_working_threading()
-class TestSet(TestCase):
+class TestSetRepr(unittest.TestCase):
     def test_repr_clear(self):
         """Test repr() of a set while another thread is calling clear()"""
         NUM_ITERS = 10
@@ -36,19 +32,20 @@ class TestSet(TestCase):
             for set_repr in set_reprs:
                 self.assertIn(set_repr, ("set()", "{1, 2, 3, 4, 5, 6, 7, 8}"))
 
+
+class RaceTestBase:
     def test_contains_mutate(self):
         """Test set contains operation combined with mutation."""
         barrier = Barrier(2, timeout=2)
         s = set()
         done = False
 
-        NUM_ITEMS = 200
-        NUM_LOOPS = 200
+        NUM_LOOPS = 1000
 
         def read_set():
             barrier.wait()
             while not done:
-                for i in range(NUM_ITEMS):
+                for i in range(self.SET_SIZE):
                     item = i >> 1
                     result = item in s
 
@@ -57,9 +54,9 @@ class TestSet(TestCase):
             barrier.wait()
             for i in range(NUM_LOOPS):
                 s.clear()
-                for j in range(NUM_ITEMS):
+                for j in range(self.SET_SIZE):
                     s.add(j)
-                for j in range(NUM_ITEMS):
+                for j in range(self.SET_SIZE):
                     s.discard(j)
                 # executes the set_swap_bodies() function
                 s.__iand__(set(k for k in range(10, 20)))
@@ -112,10 +109,10 @@ class TestSet(TestCase):
         """Test set contains operation with mutating hash method."""
         barrier = Barrier(2, timeout=2)
 
-        NUM_ITEMS = 20  # should be larger than PySet_MINSIZE
         NUM_LOOPS = 1_000
+        SET_SIZE = self.SET_SIZE
 
-        s = set(range(NUM_ITEMS))
+        s = set(range(SET_SIZE))
 
         class Key:
             def __init__(self):
@@ -130,7 +127,7 @@ class TestSet(TestCase):
                 if self.count % 2 == 0:
                     s.clear()
                 else:
-                    s.update(range(NUM_ITEMS))
+                    s.update(range(SET_SIZE))
                 return hash(self.value)
 
             def __eq__(self, other):
@@ -152,6 +149,16 @@ class TestSet(TestCase):
             t.start()
         for t in threads:
             t.join()
+
+
+@threading_helper.requires_working_threading()
+class SmallSetTest(RaceTestBase, unittest.TestCase):
+    SET_SIZE = 6  # smaller than PySet_MINSIZE
+
+
+@threading_helper.requires_working_threading()
+class LargeSetTest(RaceTestBase, unittest.TestCase):
+    SET_SIZE = 20  # larger than PySet_MINSIZE
 
 
 if __name__ == "__main__":
