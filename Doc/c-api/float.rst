@@ -80,7 +80,7 @@ Floating-Point Objects
 
 .. c:macro:: Py_INFINITY
 
-   This is equivalent of :c:macro:`!INFINITY` from the C11 standard
+   This is equivalent to the :c:macro:`!INFINITY` macro from the C11 standard
    ``<math.h>`` header.
 
    .. deprecated:: 3.15
