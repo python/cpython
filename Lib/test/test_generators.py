@@ -135,8 +135,6 @@ class FinalizationTest(unittest.TestCase):
         self.assertIsInstance(resurrected[0].gi_code, types.CodeType)
 
     def test_exhausted_generator_frame_cycle(self):
-        # gh-100964: Ensure that exhausted generator frames don't create
-        # reference cycles through f_back when the frame is accessed.
         def g():
             yield
 
