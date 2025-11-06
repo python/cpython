@@ -23,6 +23,8 @@ module. Note that :class:`LZMAFile` and :class:`bz2.BZ2File` are *not*
 thread-safe, so if you need to use a single :class:`LZMAFile` instance
 from multiple threads, it is necessary to protect it with a lock.
 
+.. include:: ../includes/optional-module.rst
+
 
 .. exception:: LZMAError
 

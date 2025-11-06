@@ -29,6 +29,8 @@ introduced in Logo <https://en.wikipedia.org/wiki/Turtle_
 (robot)>`_, developed by Wally Feurzeig, Seymour Papert and Cynthia Solomon
 in 1967.
 
+.. include:: ../includes/optional-module.rst
+
 
 Get started
 ===========

@@ -21,6 +21,14 @@ Some facts and figures:
 * reads and writes :mod:`gzip`, :mod:`bz2`, :mod:`compression.zstd`, and
   :mod:`lzma` compressed archives if the respective modules are available.
 
+  ..
+     The following paragraph should be similar to ../includes/optional-module.rst
+
+  If any of these :term:`optional modules <optional module>` are missing from
+  your copy of CPython, look for documentation from your distributor (that is,
+  whoever provided Python to you).
+  If you are the distributor, see :ref:`optional-module-requirements`.
+
 * read/write support for the POSIX.1-1988 (ustar) format.
 
 * read/write support for the GNU tar format including *longname* and *longlink*

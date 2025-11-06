@@ -37,6 +37,10 @@ IDLE has the following features:
 
 * configuration, browsers, and other dialogs
 
+The IDLE application is implemented in the :mod:`idlelib` package.
+
+.. include:: ../includes/optional-module.rst
+
 Menus
 -----
 
