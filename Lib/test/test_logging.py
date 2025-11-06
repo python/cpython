@@ -2388,7 +2388,7 @@ class CustomQueueProtocol:
         return getattr(queue, attribute)
 
 class CustomQueueFakeProtocol(CustomQueueProtocol):
-    # An object implementing the minimial Queue API for
+    # An object implementing the minimal Queue API for
     # the logging module but with incorrect signatures.
     #
     # The object will be considered a valid queue class since we
