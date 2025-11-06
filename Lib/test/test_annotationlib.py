@@ -1712,6 +1712,14 @@ class TestForwardRefClass(unittest.TestCase):
             repr(List[ForwardRef("int", module="mod")]),
             "typing.List[ForwardRef('int', module='mod')]",
         )
+        self.assertEqual(
+            repr(List[ForwardRef("int", module="mod", is_class=True)]),
+            "typing.List[ForwardRef('int', module='mod', is_class=True)]",
+        )
+        self.assertEqual(
+            repr(List[ForwardRef("int", owner="class")]),
+            "typing.List[ForwardRef('int', owner='class')]",
+        )
 
     def test_forward_recursion_actually(self):
         def namespace1():
