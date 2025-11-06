@@ -517,7 +517,7 @@ Directory and files operations
 
    This exception collects exceptions that are raised during a multi-file
    operation. For :func:`copytree`, the exception argument is a list of 3-tuples
-   (*srcname*, *dstname*, *exception*). :exc:`Error` is a subclass of :exc:`OSError`.
+   (*srcname*, *dstname*, *exception*). :exc:`!Error` is a subclass of :exc:`OSError`.
 
 .. _shutil-platform-dependent-efficient-copy-operations:
 
