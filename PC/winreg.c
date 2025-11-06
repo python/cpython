@@ -108,10 +108,8 @@ PyDoc_STRVAR(PyHKEY_doc,
 "Operations:\n"
 "__bool__ - Handles with an open object return true, otherwise false.\n"
 "__int__ - Converting a handle to an integer returns the Win32 handle.\n"
-"__enter__ - Context manager entry, returns self.\n"
-"__exit__ - Context manager exit, closes the handle.\n"
-"__eq__ - Handle objects are equal if they represent the same Windows handle.\n"
-"__ne__ - Handle objects are not equal if they represent different Windows handles.");
+"__enter__, __exit__ - Context manager support for 'with' statement, automatically closes handle.\n"
+"__eq__, __ne__ - Equality comparison based on Windows handle value.");
 
 
 
