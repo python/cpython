@@ -7537,6 +7537,7 @@
                     JUMP_TO_JUMP_TARGET();
                 }
             }
+            #undef OFFSET_OF__PUSH_FRAME
             break;
         }
 
@@ -7551,6 +7552,7 @@
                     JUMP_TO_JUMP_TARGET();
                 }
             }
+            #undef OFFSET_OF_YIELD_VALUE
             break;
         }
 
@@ -7565,6 +7567,7 @@
                     JUMP_TO_JUMP_TARGET();
                 }
             }
+            #undef OFFSET_OF_RETURN_VALUE
             break;
         }
 
@@ -7579,12 +7582,9 @@
                     JUMP_TO_JUMP_TARGET();
                 }
             }
+            #undef OFFSET_OF_RETURN_GENERATOR
             break;
         }
 
-        #undef OFFSET_OFRETURN_VALUE
-        #undef OFFSET_OFYIELD_VALUE
-        #undef OFFSET_OF_PUSH_FRAME
-        #undef OFFSET_OFRETURN_GENERATOR
 
 #undef TIER_TWO
