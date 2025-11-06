@@ -171,16 +171,14 @@ class ForwardRef:
         # as a way of emulating annotation scopes when calling `eval()`
         if type_params is not None:
             for param in type_params:
-                if param.__name__ not in locals:
-                    locals[param.__name__] = param
+                locals.setdefault(param.__name__, param)
 
         # Similar logic can be used for nonlocals, which should not
         # override locals.
         if isinstance(self.__cell__, dict):
             for cell_name, cell_value in self.__cell__.items():
                 try:
-                    if cell_name not in locals:
-                        locals[cell_name] = cell_value.cell_contents
+                    locals.setdefault(cell_name, cell_value.cell_contents)
                 except ValueError:
                     pass
 
