@@ -33,7 +33,7 @@ except (FileNotFoundError, ImportError):
 class FormatTestsBase:
     @property
     def contents(self):
-        """Install details file contents. Should be overriden by subclasses."""
+        """Install details file contents. Should be overridden by subclasses."""
         raise NotImplementedError
 
     @property
@@ -141,7 +141,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     def test_location(self):
         self.assertTrue(os.path.isfile(self.location))
 
-    # Override generic format tests with tests for our specific implemenation.
+    # Override generic format tests with tests for our specific implementation.
 
     @needs_installed_python
     @unittest.skipIf(
