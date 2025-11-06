@@ -594,7 +594,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
 
             B._abc_registry = 1
-            error_msg = "'int' object is not iterable"
+            error_msg = "argument of type 'int' is not a container or iterable"
             with self.assertRaisesRegex(TypeError, error_msg):
                 issubclass(int, B)
 
