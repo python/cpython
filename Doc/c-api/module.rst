@@ -94,7 +94,7 @@ Module Objects
    ``'utf-8'``.
 
    The returned buffer is only valid until the module is renamed or destroyed.
-   Note that Python code may rename a module by setting its ``__name__``
+   Note that Python code may rename a module by setting its :py:attr:`~module.__name__`
    attribute.
 
 .. c:function:: void* PyModule_GetState(PyObject *module)
@@ -133,7 +133,7 @@ Module Objects
    Similar to :c:func:`PyModule_GetFilenameObject` but return the filename
    encoded to 'utf-8'.
 
-   The returned buffer is only valid until the module's ``__file__`` attribute
+   The returned buffer is only valid until the module's :py:attr:`~module.__file__` attribute
    is reassigned or the module is destroyed.
 
    .. deprecated:: 3.2
