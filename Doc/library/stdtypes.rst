@@ -3175,15 +3175,16 @@ objects.
 
    .. method:: take_bytes(n=None, /)
 
-      Take the first *n* bytes as an immutable :class:`bytes`. Defaults to all
-      bytes.
+      Remove the first *n* bytes from the bytearray and return them as an immutable
+      :class:`bytes`.
+      By default (if *n* is ``None``), return all bytes and clear the bytearray.
 
-      If *n* is negative indexes from the end and takes the first :func:`len`
-      plus *n* bytes. If *n* is out of bounds raises :exc:`IndexError`.
+      If *n* is negative, index from the end and take the first :func:`len`
+      plus *n* bytes. If *n* is out of bounds, raise :exc:`IndexError`.
 
       Taking less than the full length will leave remaining bytes in the
-      :class:`bytearray` which requires a copy. If the remaining bytes should be
-      discarded use :func:`~bytearray.resize` or :keyword:`del` to truncate
+      :class:`bytearray`, which requires a copy. If the remaining bytes should be
+      discarded, use :func:`~bytearray.resize` or :keyword:`del` to truncate
       then :func:`~bytearray.take_bytes` without a size.
 
       .. impl-detail::
