@@ -1248,7 +1248,7 @@ Tracebacks
 .. c:function:: int PyTraceBack_Here(PyFrameObject *f)
 
    Replace the :attr:`~BaseException.__traceback__` attribute on the current
-   exception with a new traceback pointing to *f*.
+   exception with a new traceback prepending *f* to the existing chain.
 
    Calling this function without an exception set is undefined behavior.
 
