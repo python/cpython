@@ -24,13 +24,18 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    The algorithm name is exposed by :data:`sys.hash_info.algorithm`.
 
+   .. versionadded:: 3.4
+
 .. c:macro:: Py_HASH_FNV
-             Py_HASH_SIPHASH13
              Py_HASH_SIPHASH24
+             Py_HASH_SIPHASH13
 
    Numerical values to compare to :c:macro:`Py_HASH_ALGORITHM` to determine
    which algorithm is used for hashing. The hash algorithm can be configured
    via the configure :option:`--with-hash-algorithm` option.
+
+   .. versionadded:: 3.11
+      Add :c:macro:`!Py_HASH_SIPHASH13`.
 
 .. c:macro:: Py_HASH_CUTOFF
 
@@ -43,6 +48,8 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    32-bit platforms should use a cutoff smaller than 64-bit platforms because
    it is easier to create colliding strings. A cutoff of 7 on 64-bit platforms
    and 5 on 32-bit platforms should provide a decent safety margin.
+
+   .. versionadded:: 3.4
 
 .. c:macro:: PyHASH_MODULUS
 
