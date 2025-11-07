@@ -134,7 +134,7 @@
 
 #if (_Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS) && _Py_TIER2
 #  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
-#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && tstate->interp->jit_state.specialize_counter < MAX_SPECIALIZATION_TRIES)
+#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && tstate->interp->jit_state.prev_state.specialize_counter < MAX_SPECIALIZATION_TRIES)
 #  define ENTER_TRACING() \
     DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
 #  define LEAVE_TRACING() \
@@ -402,7 +402,7 @@ do {                                                   \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
-        assert(tstate->interp->jit_state.code_curr_size == 2 || tstate->interp->jit_state.code_curr_size == 3); \
+        assert(tstate->interp->jit_state.prev_state.code_curr_size == 2); \
         ENTER_TRACING(); \
         DISPATCH_NON_TRACING(); \
     } \

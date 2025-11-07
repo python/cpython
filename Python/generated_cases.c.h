@@ -45,7 +45,7 @@
                     _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -1539,7 +1539,7 @@
                     _Py_Specialize_Call(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -2832,7 +2832,7 @@
                     _Py_Specialize_CallKw(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -4678,7 +4678,7 @@
                     _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -4926,7 +4926,7 @@
                     _Py_Specialize_ContainsOp(right, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -5665,7 +5665,7 @@
                     _Py_Specialize_ForIter(iter, null_or_index, next_instr, oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -7647,7 +7647,7 @@
                     FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, desired);
                     next_instr = this_instr;
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -7880,7 +7880,7 @@
                     _Py_Specialize_LoadAttr(owner, next_instr, name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -9188,7 +9188,7 @@
                     _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -9511,7 +9511,7 @@
                     _Py_Specialize_LoadSuperAttr(global_super_st, class_st, next_instr, load_method);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -10499,7 +10499,7 @@
                     _Py_Specialize_Send(receiver, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -10801,7 +10801,7 @@
                     _Py_Specialize_StoreAttr(owner, next_instr, name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -11301,7 +11301,7 @@
                     _Py_Specialize_StoreSubscr(container, sub, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -11513,7 +11513,7 @@
                     _Py_Specialize_ToBool(value, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -11896,7 +11896,7 @@
                     _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     #if _Py_TIER2
-                    tstate->interp->jit_state.specialize_counter++;
+                    tstate->interp->jit_state.prev_state.specialize_counter++;
                     #endif
                     DISPATCH_SAME_OPARG();
                 }
@@ -12360,25 +12360,25 @@ JUMP_TO_LABEL(error);
                 }
                 DISPATCH_GOTO_NON_TRACING();
             }
-            if ((tstate->interp->jit_state.prev_instr->op.code == CALL_LIST_APPEND &&
+            if ((tstate->interp->jit_state.prev_state.instr->op.code == CALL_LIST_APPEND &&
                  opcode == POP_TOP) ||
-                (tstate->interp->jit_state.prev_instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
+                (tstate->interp->jit_state.prev_state.instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
                  opcode == STORE_FAST)) {
-                tstate->interp->jit_state.prev_instr_is_super = true;
+                tstate->interp->jit_state.prev_state.instr_is_super = true;
             }
             else {
-                tstate->interp->jit_state.prev_instr = next_instr;
+                tstate->interp->jit_state.prev_state.instr = next_instr;
             }
-            tstate->interp->jit_state.specialize_counter = 0;
+            tstate->interp->jit_state.prev_state.specialize_counter = 0;
             PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(PyStackRef_AsPyObjectBorrow(frame->f_executable));
-            if (tstate->interp->jit_state.prev_instr_code != prev_code) {
+            if (tstate->interp->jit_state.prev_state.instr_code != prev_code) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
+                Py_SETREF(tstate->interp->jit_state.prev_state.instr_code, prev_code);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            tstate->interp->jit_state.prev_instr_frame = frame;
-            tstate->interp->jit_state.prev_instr_oparg = oparg;
-            tstate->interp->jit_state.prev_instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            tstate->interp->jit_state.prev_state.instr_frame = frame;
+            tstate->interp->jit_state.prev_state.instr_oparg = oparg;
+            tstate->interp->jit_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
             DISPATCH_GOTO_NON_TRACING();
             #else
             Py_FatalError("JIT label executed in non-jit build.");

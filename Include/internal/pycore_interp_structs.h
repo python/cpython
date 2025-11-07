@@ -768,18 +768,20 @@ typedef struct _PyJitTracerState {
         _Py_CODEUNIT *close_loop_instr;
         _Py_CODEUNIT *jump_backward_instr;
     } initial_state;
-    bool dependencies_still_valid;
-    bool prev_instr_is_super;
-    int code_max_size;
-    int code_curr_size;
-    int prev_instr_oparg;
-    int prev_instr_stacklevel;
-    int specialize_counter;
     _PyUOpInstruction *code_buffer;
-    _Py_CODEUNIT *prev_instr;
-    PyCodeObject *prev_instr_code; // Strong
-    _PyInterpreterFrame *prev_instr_frame;
-    _PyBloomFilter dependencies;
+    struct {
+        bool dependencies_still_valid;
+        bool instr_is_super;
+        int code_max_size;
+        int code_curr_size;
+        int instr_oparg;
+        int instr_stacklevel;
+        int specialize_counter;
+        _Py_CODEUNIT *instr;
+        PyCodeObject *instr_code; // Strong
+        _PyInterpreterFrame *instr_frame;
+        _PyBloomFilter dependencies;
+    } prev_state;;
 } _PyJitTracerState;
 
 /* PyInterpreterState holds the global state for one of the runtime's

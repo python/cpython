@@ -162,7 +162,7 @@ class Emitter:
         assert "specializing" in uop.annotations, uop.name
         self.out.start_line()
         self.emit("#if _Py_TIER2\n")
-        self.emit("tstate->interp->jit_state.specialize_counter++;\n")
+        self.emit("tstate->interp->jit_state.prev_state.specialize_counter++;\n")
         self.emit("#endif\n")
         self.emit(tkn)
         emit_to(self.out, tkn_iter, "SEMI")

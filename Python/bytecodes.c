@@ -5673,24 +5673,24 @@ dummy_func(
             }
             // Super instructions. Instruction deopted. There's a mismatch in what the stack expects
             // in the optimizer. So we have to reflect in the trace correctly.
-            if ((tstate->interp->jit_state.prev_instr->op.code == CALL_LIST_APPEND &&
+            if ((tstate->interp->jit_state.prev_state.instr->op.code == CALL_LIST_APPEND &&
                 opcode == POP_TOP) ||
-                (tstate->interp->jit_state.prev_instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
+                (tstate->interp->jit_state.prev_state.instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
                 opcode == STORE_FAST)) {
-                tstate->interp->jit_state.prev_instr_is_super = true;
+                tstate->interp->jit_state.prev_state.instr_is_super = true;
             }
             else {
-                tstate->interp->jit_state.prev_instr = next_instr;
+                tstate->interp->jit_state.prev_state.instr = next_instr;
             }
-            tstate->interp->jit_state.specialize_counter = 0;
+            tstate->interp->jit_state.prev_state.specialize_counter = 0;
             PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(PyStackRef_AsPyObjectBorrow(frame->f_executable));
-            if (tstate->interp->jit_state.prev_instr_code != prev_code) {
-                Py_SETREF(tstate->interp->jit_state.prev_instr_code, prev_code);
+            if (tstate->interp->jit_state.prev_state.instr_code != prev_code) {
+                Py_SETREF(tstate->interp->jit_state.prev_state.instr_code, prev_code);
             }
 
-            tstate->interp->jit_state.prev_instr_frame = frame;
-            tstate->interp->jit_state.prev_instr_oparg = oparg;
-            tstate->interp->jit_state.prev_instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            tstate->interp->jit_state.prev_state.instr_frame = frame;
+            tstate->interp->jit_state.prev_state.instr_oparg = oparg;
+            tstate->interp->jit_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
             DISPATCH_GOTO_NON_TRACING();
 #else
             Py_FatalError("JIT label executed in non-jit build.");
