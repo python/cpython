@@ -1040,20 +1040,20 @@ for_if_clause[comprehension_ty]:
     | invalid_for_target
 
 listcomp[expr_ty]:
-    | '[' a=named_expression b=for_if_clauses ']' { _PyAST_ListComp(a, b, EXTRA) }
+    | '[' a=star_named_expression b=for_if_clauses ']' { _PyAST_ListComp(a, b, EXTRA) }
     | invalid_comprehension
 
 setcomp[expr_ty]:
-    | '{' a=named_expression b=for_if_clauses '}' { _PyAST_SetComp(a, b, EXTRA) }
+    | '{' a=star_named_expression b=for_if_clauses '}' { _PyAST_SetComp(a, b, EXTRA) }
     | invalid_comprehension
 
 genexp[expr_ty]:
-    | '(' a=( assignment_expression | expression !':=') b=for_if_clauses ')' { _PyAST_GeneratorExp(a, b, EXTRA) }
+    | '(' a=( assignment_expression | expression !':=' | starred_expression ) b=for_if_clauses ')' { _PyAST_GeneratorExp(a, b, EXTRA) }
     | invalid_comprehension
 
 dictcomp[expr_ty]:
     | '{' a=kvpair b=for_if_clauses '}' { _PyAST_DictComp(a->key, a->value, b, EXTRA) }
-    | invalid_dict_comprehension
+    | '{' '**' a=expression b=for_if_clauses '}' { _PyAST_DictComp(a, NULL, b, EXTRA) }
 
 # FUNCTION CALL ARGUMENTS
 # =======================
@@ -1326,16 +1326,15 @@ invalid_assert_stmt:
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
-    | ('[' | '(' | '{') a=starred_expression for_if_clauses {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable unpacking cannot be used in comprehension") }
+    | '[' a='**' b=expression for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "dict unpacking cannot be used in list comprehension") }
+    | '(' a='**' b=expression for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "dict unpacking cannot be used in generator expression") }
     | ('[' | '{') a=star_named_expression ',' b=star_named_expressions for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, expr_ty),
         "did you forget parentheses around the comprehension target?") }
     | ('[' | '{') a=star_named_expression b=',' for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "did you forget parentheses around the comprehension target?") }
-invalid_dict_comprehension:
-    | '{' a='**' bitwise_or for_if_clauses '}' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
     | a="/" ',' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "at least one parameter must precede /") }
