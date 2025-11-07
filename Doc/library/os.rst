@@ -3868,10 +3868,13 @@ features:
 
    .. versionadded:: 3.3
 
+.. function:: symlink(src, dst, target_is_directory=False, *, dir_fd=None)
 
-.. function:: symlink(target, link_name, target_is_directory=False, *, dir_fd=None)
+   Create a symbolic link pointing to *src* named *dst*.
 
-   Create a symbolic link pointing to *target* named *link_name*.
+   The *src* parameter refers to the target of the link (the file or directory being linked to),
+   and *dst* is the name of the link being created.
+   This matches the behavior of the Unix ``ln`` command (``ln TARGET LINK_NAME``).
 
    On Windows, a symlink represents either a file or a directory, and does not
    morph to the target dynamically.  If the target is present, the type of the
