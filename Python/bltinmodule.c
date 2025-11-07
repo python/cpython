@@ -2304,18 +2304,7 @@ builtin_print_impl(PyObject *module, PyObject * const *objects,
                 return NULL;
             }
         }
-        /* XXX: I have a couple of thoughts about how this could be handled.  We could add a
-           PyFile_WriteObjectEx() function which would look largely like PyFile_WriteObject() but
-           would take a pretty printer object (or None, in which case it would just fall back to
-           PyFile_WriteObject()).  Then we could put the logic for the (TBD) "pretty printing
-           protocol" in there.
 
-           For now though, let's keep things localized so all the logic is in the print() function's
-           implementation.  Maybe a better way will come to mind as we pan this idea out.
-
-           Or, this currently calls `printer.pformat(object)` so a pretty printing protocol could
-           be implemented there.  Or maybe we want a more generic method name.
-         */
         if (printer) {
             PyObject *prettified = PyObject_CallMethod(printer, "pformat", "O", objects[i]);
 
