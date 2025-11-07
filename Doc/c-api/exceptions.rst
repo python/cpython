@@ -1237,3 +1237,37 @@ Warning types
 
 .. versionadded:: 3.10
    :c:data:`PyExc_EncodingWarning`.
+
+
+Tracebacks
+==========
+
+.. c:var:: PyTypeObject PyTraceBack_Type
+
+   Type object for traceback objects. This is available as
+   :class:`types.TracebackType` in the Python layer.
+
+
+.. c:function:: int PyTraceBack_Check(PyObject *op)
+
+   Return true if *op* is a traceback object, false otherwise. This function
+   does not account for subtypes.
+
+
+.. c:function:: int PyTraceBack_Here(PyFrameObject *f)
+
+   Replace the :attr:`~BaseException.__traceback__` attribute on the current
+   exception with a new traceback prepending *f* to the existing chain.
+
+   Calling this function without an exception set is undefined behavior.
+
+   This function returns ``0`` on success, and returns ``-1`` with an
+   exception set on failure.
+
+
+.. c:function:: int PyTraceBack_Print(PyObject *tb, PyObject *f)
+
+   Write the traceback *tb* into the file *f*.
+
+   This function returns ``0`` on success, and returns ``-1`` with an
+   exception set on failure.
