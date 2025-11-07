@@ -511,7 +511,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 //  > 0 - length of optimized trace
 int
 _Py_uop_analyze_and_optimize(
-    PyFunctionObject *initial_func,
+    PyFunctionObject *func,
     _PyUOpInstruction *buffer,
     int length,
     int curr_stacklen,
@@ -521,7 +521,7 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-         initial_func, buffer,
+         func, buffer,
          length, curr_stacklen, dependencies);
 
     if (length == 0) {

@@ -758,24 +758,26 @@ struct _Py_unique_id_pool {
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
 typedef struct _PyJitTracerState {
+    struct {
+        int stack_depth;
+        int chain_depth;
+        struct _PyExitData *exit;
+        PyCodeObject *code; // Strong
+        PyFunctionObject *func; // Strong
+        _Py_CODEUNIT *start_instr;
+        _Py_CODEUNIT *close_loop_instr;
+        _Py_CODEUNIT *jump_backward_instr;
+    } initial_state;
     bool dependencies_still_valid;
     bool prev_instr_is_super;
     int code_max_size;
     int code_curr_size;
-    int initial_stack_depth;
-    int initial_chain_depth;
     int prev_instr_oparg;
     int prev_instr_stacklevel;
     int specialize_counter;
     _PyUOpInstruction *code_buffer;
-    _Py_CODEUNIT *start_instr;
-    _Py_CODEUNIT *close_loop_instr;
-    _Py_CODEUNIT *jump_backward_instr;
-    PyCodeObject *initial_code; // Strong
-    PyFunctionObject *initial_func; // Strong
     _Py_CODEUNIT *prev_instr;
     PyCodeObject *prev_instr_code; // Strong
-    struct _PyExitData *prev_exit;
     _PyInterpreterFrame *prev_instr_frame;
     _PyBloomFilter dependencies;
 } _PyJitTracerState;

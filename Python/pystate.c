@@ -547,10 +547,6 @@ init_interpreter(PyInterpreterState *interp,
 
 #ifdef _Py_TIER2
     interp->jit_state.code_buffer = NULL;
-    interp->jit_state.initial_stack_depth = -1;
-    interp->jit_state.initial_chain_depth = -1;
-    interp->jit_state.initial_code = NULL;
-    interp->jit_state.initial_func = NULL;
 #endif
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);

@@ -3047,8 +3047,8 @@ class EndPositionTests(unittest.TestCase):
 
 class NodeTransformerTests(ASTTestMixin, unittest.TestCase):
     def assertASTTransformation(self, transformer_class,
-                                initial_code, expected_code):
-        initial_ast = ast.parse(dedent(initial_code))
+                                code, expected_code):
+        initial_ast = ast.parse(dedent(code))
         expected_ast = ast.parse(dedent(expected_code))
 
         transformer = transformer_class()

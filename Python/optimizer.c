@@ -119,13 +119,13 @@ _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, PyThreadState *tstate)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    int chain_depth = tstate->interp->jit_state.initial_chain_depth;
+    int chain_depth = tstate->interp->jit_state.initial_state.chain_depth;
     assert(interp->jit);
     assert(!interp->compiling);
-    assert(tstate->interp->jit_state.initial_stack_depth >= 0);
+    assert(tstate->interp->jit_state.initial_state.stack_depth >= 0);
 #ifndef Py_GIL_DISABLED
     // Trace got stomped on by another thread.
-    if (tstate->interp->jit_state.initial_func == NULL) {
+    if (tstate->interp->jit_state.initial_state.func == NULL) {
         return 0;
     }
     interp->compiling = true;
@@ -135,8 +135,8 @@ _PyOptimizer_Optimize(
     // this is true, since a deopt won't infinitely re-enter the executor:
     chain_depth %= MAX_CHAIN_DEPTH;
     bool progress_needed = chain_depth == 0;
-    PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_state.initial_code;
-    _Py_CODEUNIT *start = tstate->interp->jit_state.start_instr;
+    PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_state.initial_state.code;
+    _Py_CODEUNIT *start = tstate->interp->jit_state.initial_state.start_instr;
     if (progress_needed && !has_space_for_executor(code, start)) {
         interp->compiling = false;
         return 0;
@@ -171,9 +171,9 @@ _PyOptimizer_Optimize(
     else {
         executor->vm_data.code = NULL;
     }
-    _PyExitData *prev_exit = tstate->interp->jit_state.prev_exit;
-    if (prev_exit != NULL) {
-        prev_exit->executor = executor;
+    _PyExitData *exit = tstate->interp->jit_state.initial_state.exit;
+    if (exit != NULL) {
+        exit->executor = executor;
     }
     executor->vm_data.chain_depth = chain_depth;
     assert(executor->vm_data.valid);
@@ -569,7 +569,7 @@ _PyJit_translate_single_bytecode_to_trace(
     if (old_code == NULL) {
         return 0;
     }
-    bool progress_needed = (tstate->interp->jit_state.initial_chain_depth % MAX_CHAIN_DEPTH) == 0;;
+    bool progress_needed = (tstate->interp->jit_state.initial_state.chain_depth % MAX_CHAIN_DEPTH) == 0;
     _PyBloomFilter *dependencies = &tstate->interp->jit_state.dependencies;
     _Py_BloomFilter_Add(dependencies, old_code);
     int trace_length = tstate->interp->jit_state.code_curr_size;
@@ -748,8 +748,8 @@ _PyJit_translate_single_bytecode_to_trace(
             _Py_FALLTHROUGH;
         case JUMP_BACKWARD_NO_INTERRUPT:
         {
-            if ((next_instr != tstate->interp->jit_state.close_loop_instr) &&
-                (next_instr != tstate->interp->jit_state.start_instr) &&
+            if ((next_instr != tstate->interp->jit_state.initial_state.close_loop_instr) &&
+                (next_instr != tstate->interp->jit_state.initial_state.start_instr) &&
                 tstate->interp->jit_state.code_curr_size > 5 &&
                 // These are coroutines, and we want to unroll those usually.
                 opcode != JUMP_BACKWARD_NO_INTERRUPT) {
@@ -760,7 +760,8 @@ _PyJit_translate_single_bytecode_to_trace(
                 OPT_STAT_INC(inner_loop);
                 ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
                 trace[trace_length-1].operand1 = true; // is_control_flow
-                DPRINTF(2, "JUMP_BACKWARD not to top ends trace %p %p %p\n", next_instr, tstate->interp->jit_state.close_loop_instr, tstate->interp->jit_state.start_instr);
+                DPRINTF(2, "JUMP_BACKWARD not to top ends trace %p %p %p\n", next_instr,
+                    tstate->interp->jit_state.initial_state.close_loop_instr, tstate->interp->jit_state.initial_state.start_instr);
                 goto done;
             }
             break;
@@ -915,7 +916,8 @@ _PyJit_translate_single_bytecode_to_trace(
         }
     }
     // Loop back to the start
-    int is_first_instr = tstate->interp->jit_state.close_loop_instr == next_instr || tstate->interp->jit_state.start_instr == next_instr;
+    int is_first_instr = tstate->interp->jit_state.initial_state.close_loop_instr == next_instr ||
+        tstate->interp->jit_state.initial_state.start_instr == next_instr;
     if (is_first_instr && tstate->interp->jit_state.code_curr_size > 5) {
         if (needs_guard_ip) {
             ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)next_instr, 0);
@@ -985,13 +987,13 @@ _PyJit_TryInitializeTracing(
     tstate->interp->jit_state.code_curr_size = 2;
 
     tstate->interp->jit_state.code_max_size = UOP_MAX_TRACE_LENGTH;
-    tstate->interp->jit_state.start_instr = start_instr;
-    tstate->interp->jit_state.close_loop_instr = close_loop_instr;
-    tstate->interp->jit_state.initial_code = (PyCodeObject *)Py_NewRef(code);
-    tstate->interp->jit_state.initial_func = (PyFunctionObject *)Py_XNewRef(PyStackRef_AsPyObjectBorrow(frame->f_funcobj));
-    tstate->interp->jit_state.prev_exit = exit;
-    tstate->interp->jit_state.initial_stack_depth = curr_stackdepth;
-    tstate->interp->jit_state.initial_chain_depth = chain_depth;
+    tstate->interp->jit_state.initial_state.start_instr = start_instr;
+    tstate->interp->jit_state.initial_state.close_loop_instr = close_loop_instr;
+    tstate->interp->jit_state.initial_state.code = (PyCodeObject *)Py_NewRef(code);
+    tstate->interp->jit_state.initial_state.func = (PyFunctionObject *)Py_XNewRef(PyStackRef_AsPyObjectBorrow(frame->f_funcobj));
+    tstate->interp->jit_state.initial_state.exit = exit;
+    tstate->interp->jit_state.initial_state.stack_depth = curr_stackdepth;
+    tstate->interp->jit_state.initial_state.chain_depth = chain_depth;
     tstate->interp->jit_state.prev_instr_frame = frame;
     tstate->interp->jit_state.dependencies_still_valid = true;
     tstate->interp->jit_state.specialize_counter = 0;
@@ -1002,7 +1004,7 @@ _PyJit_TryInitializeTracing(
     tstate->interp->jit_state.prev_instr_stacklevel = curr_stackdepth;
     tstate->interp->jit_state.prev_instr_is_super = false;
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
-    tstate->interp->jit_state.jump_backward_instr = curr_instr;
+    tstate->interp->jit_state.initial_state.jump_backward_instr = curr_instr;
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
     _Py_BloomFilter_Init(&tstate->interp->jit_state.dependencies);
     return 1;
@@ -1011,8 +1013,8 @@ _PyJit_TryInitializeTracing(
 void
 _PyJit_FinalizeTracing(PyThreadState *tstate)
 {
-    Py_CLEAR(tstate->interp->jit_state.initial_code);
-    Py_CLEAR(tstate->interp->jit_state.initial_func);
+    Py_CLEAR(tstate->interp->jit_state.initial_state.code);
+    Py_CLEAR(tstate->interp->jit_state.initial_state.func);
     Py_CLEAR(tstate->interp->jit_state.prev_instr_code);
     tstate->interp->jit_state.code_curr_size = 2;
     tstate->interp->jit_state.code_max_size = UOP_MAX_TRACE_LENGTH - 1;
@@ -1335,7 +1337,7 @@ uop_optimize(
     // It is the optimizer's responsibility to add the dependencies it requires on its own.
     _PyBloomFilter new_dependencies;
     _Py_BloomFilter_Init(&new_dependencies);
-    _Py_BloomFilter_Add(&new_dependencies, tstate->interp->jit_state.initial_code);
+    _Py_BloomFilter_Add(&new_dependencies, tstate->interp->jit_state.initial_state.code);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyUOpInstruction *buffer = interp->jit_state.code_buffer;
     OPT_STAT_INC(attempts);
@@ -1344,7 +1346,7 @@ uop_optimize(
     if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
         is_noopt = false;
     }
-    int curr_stackentries = tstate->interp->jit_state.initial_stack_depth;
+    int curr_stackentries = tstate->interp->jit_state.initial_state.stack_depth;
     int length = interp->jit_state.code_curr_size;
     // Trace too short, don't bother.
     if (length <= 5) {
@@ -1354,7 +1356,7 @@ uop_optimize(
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
     if (!is_noopt) {
-        length = _Py_uop_analyze_and_optimize(tstate->interp->jit_state.initial_func, buffer,
+        length = _Py_uop_analyze_and_optimize(tstate->interp->jit_state.initial_state.func, buffer,
                                            length,
                                            curr_stackentries, &new_dependencies);
         if (length <= 0) {
@@ -1379,7 +1381,8 @@ uop_optimize(
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
-    _PyExecutorObject *executor = make_executor_from_uops(buffer, length, &new_dependencies, tstate->interp->jit_state.initial_chain_depth);
+    _PyExecutorObject *executor = make_executor_from_uops(
+        buffer, length, &new_dependencies, tstate->interp->jit_state.initial_state.chain_depth);
     if (executor == NULL) {
         return -1;
     }
