@@ -882,9 +882,9 @@ atom[expr_ty]:
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
     | &(STRING|FSTRING_START|TSTRING_START) strings
     | NUMBER
-    | &'(' (tuple | group | genexp)
-    | &'[' (list | listcomp)
-    | &'{' (dict | set | dictcomp | setcomp)
+    | &'(' ( genexp | tuple | group)
+    | &'[' (listcomp | list)
+    | &'{' (dictcomp | setcomp | dict | set)
     | '...' { _PyAST_Constant(Py_Ellipsis, NULL, EXTRA) }
 
 group[expr_ty]:
@@ -1327,9 +1327,9 @@ invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:
     | '[' a='**' b=expression for_if_clauses {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "dict unpacking cannot be used in list comprehension") }
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use dict unpacking in list comprehension") }
     | '(' a='**' b=expression for_if_clauses {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "dict unpacking cannot be used in generator expression") }
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot use dict unpacking in generator expression") }
     | ('[' | '{') a=star_named_expression ',' b=star_named_expressions for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, expr_ty),
         "did you forget parentheses around the comprehension target?") }
@@ -1531,11 +1531,13 @@ invalid_class_def_raw:
 invalid_double_starred_kvpairs:
     | ','.double_starred_kvpair+ ',' invalid_kvpair
     | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use a starred expression in a dictionary value") }
+    | expression ':' a='**' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use dict unpacking in a dictionary value") }
     | expression a=':' &('}'|',') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
 invalid_kvpair:
     | a=expression !(':') {
         RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, a->end_lineno, -1, "':' expected after dictionary key") }
     | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use a starred expression in a dictionary value") }
+    | expression ':' a='**' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use dict unpacking in a dictionary value") }
     | expression a=':' &('}'|',') {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
 invalid_starred_expression_unpacking:
     | a='*' expression '=' b=expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to iterable argument unpacking") }
