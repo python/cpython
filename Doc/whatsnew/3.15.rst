@@ -312,7 +312,7 @@ Other language changes
 * Added :meth:`bytearray.take_bytes(n=None, /) <bytearray.take_bytes>` to take
   bytes out of a :class:`bytearray` without copying. This enables optimizing code
   which must return :class:`bytes` after working with a mutable buffer of bytes
-  such as buffering data, network protocol implementation, encoding, decoding,
+  such as data buffering, network protocol parsing, encoding, decoding,
   and compression. Common code patterns which can be optimized with
   :func:`~bytearray.take_bytes` are listed below.
 
