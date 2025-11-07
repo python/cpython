@@ -1,0 +1,3 @@
+Extend `functools.cached_property` so the user can select the attrname
+
+A class with `__slots__`, which ordinarily keeps them empty to minimize memory use, may define some properties as `@cached_property(slot)` to instantiate them only on demand.
