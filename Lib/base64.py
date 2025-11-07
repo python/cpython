@@ -464,10 +464,10 @@ def b85decode(b):
     if _b85dec is None:
         # we don't assign to _b85dec directly to avoid issues when
         # multiple threads call this function simultaneously
-        _b85dec_tmp = [None] * 256
+        b85dec_tmp = [None] * 256
         for i, c in enumerate(_b85alphabet):
-            _b85dec_tmp[c] = i
-        _b85dec = _b85dec_tmp
+            b85dec_tmp[c] = i
+        _b85dec = b85dec_tmp
 
     b = _bytes_from_decode_data(b)
     padding = (-len(b)) % 5
