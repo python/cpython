@@ -50,7 +50,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    instead of the algorithm described by :c:macro:`Py_HASH_ALGORITHM`.
 
    - A :c:macro:`!Py_HASH_CUTOFF` of 0 disables the optimization.
-   - :c:macro:`!Py_HASH_CUTOFF` must non-negative and less or equal than 7.
+   - :c:macro:`!Py_HASH_CUTOFF` must be non-negative and less or equal than 7.
 
    32-bit platforms should use a cutoff smaller than 64-bit platforms because
    it is easier to create colliding strings. A cutoff of 7 on 64-bit platforms
