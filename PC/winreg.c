@@ -53,6 +53,7 @@ PyDoc_STRVAR(module_doc,
 "CreateKey() - Creates the specified key, or opens it if it already exists.\n"
 "DeleteKey() - Deletes the specified key.\n"
 "DeleteValue() - Removes a named value from the specified registry key.\n"
+"DeleteTree() - Deletes the specified key and all its subkeys and values recursively.\n"
 "EnumKey() - Enumerates subkeys of the specified open registry key.\n"
 "EnumValue() - Enumerates values of the specified open registry key.\n"
 "ExpandEnvironmentStrings() - Expand the env strings in a REG_EXPAND_SZ\n"
@@ -103,7 +104,9 @@ PyDoc_STRVAR(PyHKEY_doc,
 "\n"
 "Operations:\n"
 "__bool__ - Handles with an open object return true, otherwise false.\n"
-"__int__ - Converting a handle to an integer returns the Win32 handle.");
+"__int__ - Converting a handle to an integer returns the Win32 handle.\n"
+"__enter__, __exit__ - Context manager support for 'with' statement,\n"
+"automatically closes handle.");
 
 
 
