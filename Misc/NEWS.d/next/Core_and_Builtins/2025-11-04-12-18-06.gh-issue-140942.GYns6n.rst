@@ -1,2 +1,2 @@
-Add .cjs extension to common_types to give CommonJS modules a mimetype of
+Add .cjs to mimetypes to give CommonJS modules a mimetype of
 "application/node"
