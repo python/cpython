@@ -214,7 +214,11 @@ struct BaseEvent {
 typedef struct {
     struct BaseEvent base;   // Common event header
     uint32_t process_id;     // Process ID where code was generated
+#if defined(__APPLE__)
     uint64_t thread_id;      // Thread ID where code was generated
+#else
+    uint32_t thread_id;      // Thread ID where code was generated
+#endif
     uint64_t vma;            // Virtual memory address where code is loaded
     uint64_t code_address;   // Address of the actual machine code
     uint64_t code_size;      // Size of the machine code in bytes

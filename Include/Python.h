@@ -16,6 +16,7 @@
 
 
 // Include standard header files
+// When changing these files, remember to update Doc/extending/extending.rst.
 #include <assert.h>               // assert()
 #include <inttypes.h>             // uintptr_t
 #include <limits.h>               // INT_MAX
@@ -59,6 +60,15 @@
 #  endif
 #endif // Py_GIL_DISABLED
 
+#ifdef _MSC_VER
+// Ignore MSC warning C4201: "nonstandard extension used: nameless
+// struct/union".  (Only generated for C standard versions less than C11, which
+// we don't *officially* support.)
+__pragma(warning(push))
+__pragma(warning(disable: 4201))
+#endif
+
+
 // Include Python header files
 #include "pyport.h"
 #include "pymacro.h"
@@ -68,7 +78,7 @@
 #include "pybuffer.h"
 #include "pystats.h"
 #include "pyatomic.h"
-#include "lock.h"
+#include "cpython/pylock.h"
 #include "critical_section.h"
 #include "object.h"
 #include "refcount.h"
@@ -95,7 +105,7 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
-#include "monitoring.h"
+#include "cpython/monitoring.h"
 #include "cpython/funcobject.h"
 #include "cpython/classobject.h"
 #include "fileobject.h"
@@ -137,5 +147,9 @@
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "cpython/tracemalloc.h"
+
+#ifdef _MSC_VER
+__pragma(warning(pop))  // warning(disable: 4201)
+#endif
 
 #endif /* !Py_PYTHON_H */

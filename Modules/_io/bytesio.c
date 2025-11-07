@@ -270,6 +270,7 @@ bytesio_get_closed(PyObject *op, void *Py_UNUSED(closure))
 }
 
 /*[clinic input]
+@critical_section
 _io.BytesIO.readable
 
 Returns True if the IO object can be read.
@@ -277,13 +278,14 @@ Returns True if the IO object can be read.
 
 static PyObject *
 _io_BytesIO_readable_impl(bytesio *self)
-/*[clinic end generated code: output=4e93822ad5b62263 input=96c5d0cccfb29f5c]*/
+/*[clinic end generated code: output=4e93822ad5b62263 input=ab7816facef48bfd]*/
 {
     CHECK_CLOSED(self);
     Py_RETURN_TRUE;
 }
 
 /*[clinic input]
+@critical_section
 _io.BytesIO.writable
 
 Returns True if the IO object can be written.
@@ -291,13 +293,14 @@ Returns True if the IO object can be written.
 
 static PyObject *
 _io_BytesIO_writable_impl(bytesio *self)
-/*[clinic end generated code: output=64ff6a254b1150b8 input=700eed808277560a]*/
+/*[clinic end generated code: output=64ff6a254b1150b8 input=4f35d49d26dab024]*/
 {
     CHECK_CLOSED(self);
     Py_RETURN_TRUE;
 }
 
 /*[clinic input]
+@critical_section
 _io.BytesIO.seekable
 
 Returns True if the IO object can be seeked.
@@ -305,13 +308,14 @@ Returns True if the IO object can be seeked.
 
 static PyObject *
 _io_BytesIO_seekable_impl(bytesio *self)
-/*[clinic end generated code: output=6b417f46dcc09b56 input=9421f65627a344dd]*/
+/*[clinic end generated code: output=6b417f46dcc09b56 input=9cc78d15aa1deaa3]*/
 {
     CHECK_CLOSED(self);
     Py_RETURN_TRUE;
 }
 
 /*[clinic input]
+@critical_section
 _io.BytesIO.flush
 
 Does nothing.
@@ -319,7 +323,7 @@ Does nothing.
 
 static PyObject *
 _io_BytesIO_flush_impl(bytesio *self)
-/*[clinic end generated code: output=187e3d781ca134a0 input=561ea490be4581a7]*/
+/*[clinic end generated code: output=187e3d781ca134a0 input=c60842743910b381]*/
 {
     CHECK_CLOSED(self);
     Py_RETURN_NONE;
@@ -385,6 +389,7 @@ _io_BytesIO_getvalue_impl(bytesio *self)
 }
 
 /*[clinic input]
+@critical_section
 _io.BytesIO.isatty
 
 Always returns False.
@@ -394,7 +399,7 @@ BytesIO objects are not connected to a TTY-like device.
 
 static PyObject *
 _io_BytesIO_isatty_impl(bytesio *self)
-/*[clinic end generated code: output=df67712e669f6c8f input=6f97f0985d13f827]*/
+/*[clinic end generated code: output=df67712e669f6c8f input=50487b74dc5ae8a9]*/
 {
     CHECK_CLOSED(self);
     Py_RETURN_FALSE;

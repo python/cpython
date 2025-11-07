@@ -116,12 +116,14 @@ after the main thread is running.  The following objects are immortalized:
 * :ref:`classes <classes>` (type objects)
 
 Because immortal objects are never deallocated, applications that create many
-objects of these types may see increased memory usage.  This is expected to be
-addressed in the 3.14 release.
+objects of these types may see increased memory usage under Python 3.13.  This
+has been addressed in the 3.14 release, where the aforementioned objects use
+deferred reference counting to avoid reference count contention.
 
 Additionally, numeric and string literals in the code as well as strings
-returned by :func:`sys.intern` are also immortalized.  This behavior is
-expected to remain in the 3.14 free-threaded build.
+returned by :func:`sys.intern` are also immortalized in the 3.13 release.  This
+behavior is part of the 3.14 release as well and it is expected to remain in
+future free-threaded builds.
 
 
 Frame objects
@@ -150,11 +152,12 @@ compared to the default GIL-enabled build.  In 3.13, this overhead is about
 40% on the `pyperformance <https://pyperformance.readthedocs.io/>`_ suite.
 Programs that spend most of their time in C extensions or I/O will see
 less of an impact.  The largest impact is because the specializing adaptive
-interpreter (:pep:`659`) is disabled in the free-threaded build.  We expect
-to re-enable it in a thread-safe way in the 3.14 release.  This overhead is
-expected to be reduced in upcoming Python release.   We are aiming for an
-overhead of 10% or less on the pyperformance suite compared to the default
-GIL-enabled build.
+interpreter (:pep:`659`) is disabled in the free-threaded build.
+
+The specializing adaptive interpreter has been re-enabled in a thread-safe way
+in the 3.14 release.  The performance penalty on single-threaded code in
+free-threaded mode is now roughly 5-10%, depending on the platform and C
+compiler used.
 
 
 Behavioral changes

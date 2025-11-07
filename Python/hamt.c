@@ -256,9 +256,9 @@ Debug
 =====
 
 The HAMT datatype is accessible for testing purposes under the
-`_testcapi` module:
+`_testinternalcapi` module:
 
-    >>> from _testcapi import hamt
+    >>> from _testinternalcapi import hamt
     >>> h = hamt()
     >>> h2 = h.set('a', 2)
     >>> h3 = h2.set('b', 3)
