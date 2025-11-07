@@ -1220,7 +1220,7 @@ dummy_func(
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
             if (IS_JIT_TRACING()) {
 #if _Py_TIER2
-                _PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
+                _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL);
                 LEAVE_TRACING();
                 int err = bail_tracing_and_jit(tstate, frame);
                 if (err < 0) {
@@ -2983,7 +2983,7 @@ dummy_func(
                     oparg >>= 8;
                     insert_exec_at--;
                 }
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, NULL, oparg);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg);
                 if (succ) {
                     ENTER_TRACING();
                 }
@@ -5268,7 +5268,7 @@ dummy_func(
         tier2 op(_EXIT_TRACE, (exit_p/4 --)) {
             _PyExitData *exit = (_PyExitData *)exit_p;
         #if defined(Py_DEBUG) && !defined(_Py_JIT)
-            const _Py_CODEUNIT *target = ((frame->owner >= FRAME_OWNED_BY_INTERPRETER)
+            const _Py_CODEUNIT *target = ((frame->owner == FRAME_OWNED_BY_INTERPRETER)
                 ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame))
                 + exit->target;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
@@ -5285,8 +5285,6 @@ dummy_func(
             TIER2_TO_TIER2(exit->executor);
         }
 
-        // Note: this is different than _COLD_EXIT/_EXIT_TRACE, as it may lead to multiple executors
-        // from a single exit!
         tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
     #if defined(Py_DEBUG) && !defined(_Py_JIT)
             _PyExitData *exit = (_PyExitData *)exit_p;
@@ -5415,7 +5413,8 @@ dummy_func(
         }
 
         tier2 op(_DEOPT, (--)) {
-            GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            GOTO_TIER_ONE((frame->owner == FRAME_OWNED_BY_INTERPRETER)
+                ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
         }
 
         tier2 op(_HANDLE_PENDING_AND_DEOPT, (--)) {
@@ -5445,8 +5444,8 @@ dummy_func(
         tier2 op(_COLD_EXIT, ( -- )) {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
-            _Py_CODEUNIT *target = ((frame->owner >= FRAME_OWNED_BY_INTERPRETER)
-                ? (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame)) + exit->target;
+            assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
+            _Py_CODEUNIT *target = _PyFrame_GetBytecode(frame) + exit->target;
             _Py_BackoffCounter temperature = exit->temperature;
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
@@ -5458,9 +5457,6 @@ dummy_func(
                 TIER2_TO_TIER2(exit->executor);
             }
             else {
-                if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
-                    GOTO_TIER_ONE(target);
-                }
                 if (!backoff_counter_triggers(temperature)) {
                     exit->temperature = advance_backoff_counter(temperature);
                     GOTO_TIER_ONE(target);
@@ -5473,7 +5469,7 @@ dummy_func(
                 // Note: it's safe to use target->op.arg here instead of the oparg given by EXTENDED_ARG.
                 // The invariant in the optimizer is the deopt target always points back to the first EXTENDED_ARG.
                 // So setting it to anything else is wrong.
-                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, previous_executor, target->op.arg);
+                int succ = _PyJit_TryInitializeTracing(tstate, frame, target, target, target, STACK_LEVEL(), chain_depth, exit, target->op.arg);
                 exit->temperature = restart_backoff_counter(exit->temperature);
                 if (succ) {
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
@@ -5483,6 +5479,7 @@ dummy_func(
         }
 
         tier2 op(_COLD_DYNAMIC_EXIT, ( -- )) {
+            // TODO (gh-139109): This should be similar to _COLD_EXIT in the future.
             _Py_CODEUNIT *target = frame->instr_ptr;
             GOTO_TIER_ONE(target);
         }

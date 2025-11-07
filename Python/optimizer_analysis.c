@@ -499,6 +499,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
             case _JUMP_TO_TOP:
             case _DYNAMIC_EXIT:
+            case _DEOPT:
                 return pc + 1;
         }
     }

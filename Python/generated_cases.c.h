@@ -7557,7 +7557,7 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
+                _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 LEAVE_TRACING();
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -7716,7 +7716,7 @@
                         oparg >>= 8;
                         insert_exec_at--;
                     }
-                    int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, NULL, oparg);
+                    int succ = _PyJit_TryInitializeTracing(tstate, frame, this_instr, insert_exec_at, next_instr, STACK_LEVEL(), 0, NULL, oparg);
                     if (succ) {
                         ENTER_TRACING();
                     }

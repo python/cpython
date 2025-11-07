@@ -768,15 +768,14 @@ typedef struct _PyJitTracerState {
     int prev_instr_stacklevel;
     int specialize_counter;
     _PyUOpInstruction *code_buffer;
-    _Py_CODEUNIT *insert_exec_instr;
+    _Py_CODEUNIT *start_instr;
     _Py_CODEUNIT *close_loop_instr;
+    _Py_CODEUNIT *jump_backward_instr;
     PyCodeObject *initial_code; // Strong
     PyFunctionObject *initial_func; // Strong
     _Py_CODEUNIT *prev_instr;
     PyCodeObject *prev_instr_code; // Strong
     struct _PyExitData *prev_exit;
-    struct _PyExecutorObject *prev_executor; // Strong
-    _Py_CODEUNIT *jump_backward_instr;
     _PyInterpreterFrame *prev_instr_frame;
     _PyBloomFilter dependencies;
 } _PyJitTracerState;

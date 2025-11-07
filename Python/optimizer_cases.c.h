@@ -3412,6 +3412,7 @@
         }
 
         case _DEOPT: {
+            ctx->done = true;
             break;
         }
 

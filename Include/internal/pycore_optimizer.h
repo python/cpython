@@ -36,9 +36,9 @@ typedef struct {
 
 typedef struct _PyExitData {
     uint32_t target;
-    uint16_t index;
-    char is_dynamic:4;
-    char is_control_flow:4;
+    uint16_t index:14;
+    uint16_t is_dynamic:1;
+    uint16_t is_control_flow:1;
     _Py_BackoffCounter temperature;
     struct _PyExecutorObject *executor;
 } _PyExitData;
@@ -351,6 +351,7 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
     int opcode = uop->opcode;
     return (
         opcode == _EXIT_TRACE ||
+        opcode == _DEOPT ||
         opcode == _JUMP_TO_TOP ||
         opcode == _DYNAMIC_EXIT
     );
@@ -367,9 +368,9 @@ int _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpre
 
 int
 _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *insert_exec_instr,
+    _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *start_instr,
     _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit,
-    _PyExecutorObject *prev_exec, int oparg);
+    int oparg);
 
 void _PyJit_FinalizeTracing(PyThreadState *tstate);
 
