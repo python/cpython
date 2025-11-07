@@ -954,14 +954,13 @@ Libraries options
 Security Options
 ----------------
 
-.. option:: --with-hash-algorithm=[fnv|siphash13|siphash24|external]
+.. option:: --with-hash-algorithm=[fnv|siphash13|siphash24]
 
    Select hash algorithm for use in ``Python/pyhash.c``:
 
    * ``siphash13`` (default);
    * ``siphash24``;
-   * ``fnv``;
-   * ``external``.
+   * ``fnv``.
 
    .. versionadded:: 3.4
 

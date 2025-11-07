@@ -32,27 +32,6 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    which algorithm is used for hashing. The hash algorithm can be configured
    via the configure :option:`--with-hash-algorithm` option.
 
-.. c:macro:: Py_HASH_EXTERNAL
-
-   If :c:macro:`Py_HASH_ALGORITHM` is set to that value, this means that
-   the hash function is externally implemented, that is, embedders must
-   provide a definition for ``extern PyHash_FuncDef PyHash_Func`` when
-   building Python:
-
-   .. code-block:: c
-
-      static Py_hash_t
-      my_siphash24(const void *src, Py_ssize_t src_sz) { ... }
-
-      PyHash_FuncDef PyHash_Func = {
-         .hash = my_siphash24,
-         .name = "my_siphash24",
-         .hash_bits = 64,
-         .seed_bits = 128,
-      };
-
-   .. availability:: Unix
-
 .. c:macro:: Py_HASH_CUTOFF
 
    Buffers of length in range ``[1, Py_HASH_CUTOFF)`` are hashed using DJBX33A

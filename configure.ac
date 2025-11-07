@@ -3966,15 +3966,12 @@ dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(
   [hash_algorithm],
   [AS_HELP_STRING(
-    [--with-hash-algorithm=@<:@fnv|siphash13|siphash24|external@:>@],
+    [--with-hash-algorithm=@<:@fnv|siphash13|siphash24@:>@],
     [select hash algorithm for use in Python/pyhash.c (default is SipHash13)]
   )],
 [
 AC_MSG_RESULT([$withval])
 case "$withval" in
-    external)
-        AC_DEFINE([Py_HASH_ALGORITHM], [0])
-        ;;
     siphash13)
         AC_DEFINE([Py_HASH_ALGORITHM], [3])
         ;;
