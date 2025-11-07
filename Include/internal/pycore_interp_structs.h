@@ -14,8 +14,6 @@ extern "C" {
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
-#include "pycore_uop.h"           // struct _PyUOpInstruction
-
 
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
@@ -757,36 +755,6 @@ struct _Py_unique_id_pool {
 
 typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
-typedef struct _PyJitTracerInitialState {
-    int stack_depth;
-    int chain_depth;
-    struct _PyExitData *exit;
-    PyCodeObject *code; // Strong
-    PyFunctionObject *func; // Strong
-    _Py_CODEUNIT *start_instr;
-    _Py_CODEUNIT *close_loop_instr;
-    _Py_CODEUNIT *jump_backward_instr;
-} _PyJitTracerInitialState;
-
-typedef struct _PyJitTracerPreviousState {
-    bool dependencies_still_valid;
-    bool instr_is_super;
-    int code_max_size;
-    int code_curr_size;
-    int instr_oparg;
-    int instr_stacklevel;
-    int specialize_counter;
-    _Py_CODEUNIT *instr;
-    PyCodeObject *instr_code; // Strong
-    _PyInterpreterFrame *instr_frame;
-    _PyBloomFilter dependencies;
-} _PyJitTracerPreviousState;
-
-typedef struct _PyJitTracerState {
-    _PyUOpInstruction *code_buffer;
-    _PyJitTracerInitialState initial_state;
-    _PyJitTracerPreviousState prev_state;
-} _PyJitTracerState;
 
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
@@ -963,7 +931,6 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
-    _PyJitTracerState jit_state;
     bool jit;
     bool compiling;
     struct _PyExecutorObject *executor_list_head;

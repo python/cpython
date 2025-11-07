@@ -2970,13 +2970,6 @@ dummy_func(
             if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) &&
                 this_instr->op.code == JUMP_BACKWARD_JIT &&
                 next_instr->op.code != ENTER_EXECUTOR) {
-                if (tstate->interp->jit_state.code_buffer == NULL) {
-                    tstate->interp->jit_state.code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
-                    if (tstate->interp->jit_state.code_buffer == NULL) {
-                        // Don't error, just go to next instruction.
-                        DISPATCH();
-                    }
-                }
                 /* Back up over EXTENDED_ARGs so executor is inserted at the correct place */
                 _Py_CODEUNIT *insert_exec_at = this_instr;
                 while (oparg > 255) {
@@ -5673,24 +5666,25 @@ dummy_func(
             }
             // Super instructions. Instruction deopted. There's a mismatch in what the stack expects
             // in the optimizer. So we have to reflect in the trace correctly.
-            if ((tstate->interp->jit_state.prev_state.instr->op.code == CALL_LIST_APPEND &&
+            _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+            if ((_tstate->jit_state.prev_state.instr->op.code == CALL_LIST_APPEND &&
                 opcode == POP_TOP) ||
-                (tstate->interp->jit_state.prev_state.instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
+                (_tstate->jit_state.prev_state.instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
                 opcode == STORE_FAST)) {
-                tstate->interp->jit_state.prev_state.instr_is_super = true;
+                _tstate->jit_state.prev_state.instr_is_super = true;
             }
             else {
-                tstate->interp->jit_state.prev_state.instr = next_instr;
+                _tstate->jit_state.prev_state.instr = next_instr;
             }
-            tstate->interp->jit_state.prev_state.specialize_counter = 0;
+            _tstate->jit_state.prev_state.specialize_counter = 0;
             PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(PyStackRef_AsPyObjectBorrow(frame->f_executable));
-            if (tstate->interp->jit_state.prev_state.instr_code != prev_code) {
-                Py_SETREF(tstate->interp->jit_state.prev_state.instr_code, prev_code);
+            if (_tstate->jit_state.prev_state.instr_code != prev_code) {
+                Py_SETREF(_tstate->jit_state.prev_state.instr_code, prev_code);
             }
 
-            tstate->interp->jit_state.prev_state.instr_frame = frame;
-            tstate->interp->jit_state.prev_state.instr_oparg = oparg;
-            tstate->interp->jit_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            _tstate->jit_state.prev_state.instr_frame = frame;
+            _tstate->jit_state.prev_state.instr_oparg = oparg;
+            _tstate->jit_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
             DISPATCH_GOTO_NON_TRACING();
 #else
             Py_FatalError("JIT label executed in non-jit build.");

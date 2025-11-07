@@ -1000,16 +1000,17 @@ bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
     if (!_PyErr_Occurred(tstate) && !_is_sys_tracing) {
         err = _PyOptimizer_Optimize(frame, tstate);
     }
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     // Deal with backoffs
-    _PyExitData *exit = tstate->interp->jit_state.initial_state.exit;
+    _PyExitData *exit = _tstate->jit_state.initial_state.exit;
     if (exit == NULL) {
         // We hold a strong reference to the code object, so the instruction won't be freed.
         if (err <= 0) {
-            _Py_BackoffCounter counter = tstate->interp->jit_state.initial_state.jump_backward_instr[1].counter;
-            tstate->interp->jit_state.initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
+            _Py_BackoffCounter counter = _tstate->jit_state.initial_state.jump_backward_instr[1].counter;
+            _tstate->jit_state.initial_state.jump_backward_instr[1].counter = restart_backoff_counter(counter);
         }
         else {
-            tstate->interp->jit_state.initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter();
+            _tstate->jit_state.initial_state.jump_backward_instr[1].counter = initial_jump_backoff_counter();
         }
     }
     else {
@@ -1017,7 +1018,7 @@ bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
         // to be valid to access.
         if (err <= 0) {
             // Some opcodes will forever be unchanged. Don't ever bother specializing for them ever again.
-            if (tstate->interp->jit_state.prev_state.instr->op.code == INTERPRETER_EXIT) {
+            if (_tstate->jit_state.prev_state.instr->op.code == INTERPRETER_EXIT) {
                 exit->temperature = initial_unreachable_backoff_counter();
             }
             else {

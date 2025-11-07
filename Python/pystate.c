@@ -545,9 +545,6 @@ init_interpreter(PyInterpreterState *interp,
     _Py_brc_init_state(interp);
 #endif
 
-#ifdef _Py_TIER2
-    interp->jit_state.code_buffer = NULL;
-#endif
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
     interp->asyncio_tasks_lock = (PyMutex){0};
@@ -797,10 +794,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
 #ifdef _Py_TIER2
     _Py_ClearExecutorDeletionList(interp);
-    if (interp->jit_state.code_buffer != NULL) {
-        _PyObject_VirtualFree(interp->jit_state.code_buffer, UOP_BUFFER_SIZE);
-        interp->jit_state.code_buffer = NULL;
-    }
 #endif
     _PyAST_Fini(interp);
     _PyAtExit_Fini(interp);
@@ -1495,6 +1488,9 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
 
+#ifdef _Py_TIER2
+    _tstate->jit_state.code_buffer = NULL;
+#endif
     tstate->delete_later = NULL;
 
     llist_init(&_tstate->mem_free_queue);
@@ -1792,6 +1788,14 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     tstate->interp->object_state.reftotal += tstate_impl->reftotal;
     tstate_impl->reftotal = 0;
     assert(tstate_impl->refcounts.values == NULL);
+#endif
+
+#if _Py_TIER2
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (_tstate->jit_state.code_buffer != NULL) {
+        _PyObject_VirtualFree(_tstate->jit_state.code_buffer, UOP_BUFFER_SIZE);
+        _tstate->jit_state.code_buffer = NULL;
+    }
 #endif
 
     HEAD_UNLOCK(runtime);
