@@ -672,8 +672,6 @@ PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
  * compare bytes and str which can raise a BytesWarning exception. */
 extern PyObject* _PyCode_ConstantKey(PyObject *obj);
 
-#define NO_LOC_4 (128 | (PY_CODE_LOCATION_INFO_NONE << 3) | 3)
-
 
 #ifdef __cplusplus
 }
