@@ -13,7 +13,7 @@ Module Objects
    .. index:: single: ModuleType (in module types)
 
    This instance of :c:type:`PyTypeObject` represents the Python module type.  This
-   is exposed to Python programs as ``types.ModuleType``.
+   is exposed to Python programs as :py:class:`types.ModuleType`.
 
 
 .. c:function:: int PyModule_Check(PyObject *p)
@@ -71,6 +71,9 @@ Module Objects
    ``PyObject_*`` functions rather than directly manipulate a module's
    :attr:`~object.__dict__`.
 
+   The returned reference is borrowed from the module; it is valid until
+   the module is destroyed.
+
 
 .. c:function:: PyObject* PyModule_GetNameObject(PyObject *module)
 
@@ -89,6 +92,10 @@ Module Objects
 
    Similar to :c:func:`PyModule_GetNameObject` but return the name encoded to
    ``'utf-8'``.
+
+   The returned buffer is only valid until the module is renamed or destroyed.
+   Note that Python code may rename a module by setting its :py:attr:`~module.__name__`
+   attribute.
 
 .. c:function:: void* PyModule_GetState(PyObject *module)
 
@@ -125,6 +132,9 @@ Module Objects
 
    Similar to :c:func:`PyModule_GetFilenameObject` but return the filename
    encoded to 'utf-8'.
+
+   The returned buffer is only valid until the module's :py:attr:`~module.__file__` attribute
+   is reassigned or the module is destroyed.
 
    .. deprecated:: 3.2
       :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
@@ -527,6 +537,9 @@ objects dynamically. Note that both ``PyModule_FromDefAndSpec`` and
    This function is called automatically when creating a module from
    ``PyModuleDef``, using either ``PyModule_Create`` or
    ``PyModule_FromDefAndSpec``.
+
+   The *functions* array must be statically allocated (or otherwise guaranteed
+   to outlive the module object).
 
    .. versionadded:: 3.5
 
