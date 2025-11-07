@@ -801,7 +801,7 @@ class TestGzip(BaseTest):
     def roundtrip_compress_decompress(self, data):
         compressed_data = gzip.compress(data)
         decompressed_data = gzip.decompress(compressed_data)
-        self.assertEqual(decompressed_data, data)
+        self.assertEqual(decompressed_data, bytes(data))
 
     def test_compress_decompress(self):
         self.roundtrip_compress_decompress(data1)
