@@ -7703,15 +7703,6 @@
                 if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) &&
                     this_instr->op.code == JUMP_BACKWARD_JIT &&
                     next_instr->op.code != ENTER_EXECUTOR) {
-                    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-                    if (_tstate->jit_state.code_buffer == NULL) {
-                        _PyFrame_SetStackPointer(frame, stack_pointer);
-                        _tstate->jit_state.code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
-                        stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (_tstate->jit_state.code_buffer == NULL) {
-                            DISPATCH();
-                        }
-                    }
                     _Py_CODEUNIT *insert_exec_at = this_instr;
                     while (oparg > 255) {
                         oparg >>= 8;
