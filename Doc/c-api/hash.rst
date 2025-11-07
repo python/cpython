@@ -11,11 +11,13 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    .. versionadded:: 3.2
 
+
 .. c:type:: Py_uhash_t
 
    Hash value type: unsigned integer.
 
    .. versionadded:: 3.2
+
 
 .. c:macro:: Py_HASH_ALGORITHM
 
@@ -25,6 +27,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    The algorithm name is exposed by :data:`sys.hash_info.algorithm`.
 
    .. versionadded:: 3.4
+
 
 .. c:macro:: Py_HASH_FNV
              Py_HASH_SIPHASH24
@@ -36,6 +39,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    .. versionadded:: 3.11
       Add :c:macro:`!Py_HASH_SIPHASH13`.
+
 
 .. c:macro:: Py_HASH_CUTOFF
 
@@ -51,6 +55,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    .. versionadded:: 3.4
 
+
 .. c:macro:: PyHASH_MODULUS
 
    The `Mersenne prime <https://en.wikipedia.org/wiki/Mersenne_prime>`_ ``P = 2**n -1``,
@@ -59,6 +64,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    .. versionadded:: 3.13
 
+
 .. c:macro:: PyHASH_BITS
 
    The exponent ``n`` of ``P`` in :c:macro:`PyHASH_MODULUS`.
@@ -66,11 +72,13 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    .. versionadded:: 3.13
 
+
 .. c:macro:: PyHASH_MULTIPLIER
 
    Prime multiplier used in string and various other hashes.
 
    .. versionadded:: 3.13
+
 
 .. c:macro:: PyHASH_INF
 
@@ -79,12 +87,14 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    .. versionadded:: 3.13
 
+
 .. c:macro:: PyHASH_IMAG
 
    The multiplier used for the imaginary part of a complex number.
    This corresponds to the :data:`sys.hash_info.imag` constant.
 
    .. versionadded:: 3.13
+
 
 .. c:type:: PyHash_FuncDef
 
