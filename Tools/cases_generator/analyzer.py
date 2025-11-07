@@ -984,7 +984,10 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         no_save_ip=no_save_ip,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
-        needs_guard_ip=(isinstance(op, parser.InstDef) and (unpredictable_jump and "replaced" not in op.annotations)) or variable_used(op, "LLTRACE_RESUME_FRAME") or variable_used(op, "DISPATCH_INLINED"),
+        needs_guard_ip=(isinstance(op, parser.InstDef)
+                        and (unpredictable_jump and "replaced" not in op.annotations))
+                       or variable_used(op, "LOAD_IP")
+                       or variable_used(op, "DISPATCH_INLINED"),
         unpredictable_jump=unpredictable_jump,
     )
 

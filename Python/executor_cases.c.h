@@ -8,7 +8,6 @@
 #endif
 #define TIER_TWO 2
 
-
         case _NOP: {
             break;
         }

@@ -5485,33 +5485,33 @@ dummy_func(
         }
 
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_CORRESPONDING_UOP;
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF(_PUSH_FRAME);
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_CORRESPONDING_UOP;
+                frame->instr_ptr += OFFSET_OF(_PUSH_FRAME);
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_CORRESPONDING_UOP;
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF(YIELD_VALUE);
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_CORRESPONDING_UOP;
+                frame->instr_ptr += OFFSET_OF(YIELD_VALUE);
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_CORRESPONDING_UOP;
+            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF(RETURN_VALUE);
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_CORRESPONDING_UOP;
+                frame->instr_ptr += OFFSET_OF(RETURN_VALUE);
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF_CORRESPONDING_UOP;
+            _Py_CODEUNIT *target = frame->instr_ptr +  OFFSET_OF(RETURN_GENERATOR);
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF_CORRESPONDING_UOP;
+                frame->instr_ptr += OFFSET_OF(RETURN_GENERATOR);
                 EXIT_IF(true);
             }
         }

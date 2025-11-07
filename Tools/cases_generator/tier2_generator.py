@@ -63,7 +63,7 @@ class Tier2Emitter(Emitter):
     def __init__(self, out: CWriter, labels: dict[str, Label]):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
-        self._replacers["OFFSET_OF_CORRESPONDING_UOP"] = self.offset_of_corresponding_uop
+        self._replacers["OFFSET_OF"] = self.offset_of
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
@@ -135,7 +135,7 @@ class Tier2Emitter(Emitter):
         self.out.emit_at(uop.name[-1], tkn)
         return True
 
-    def offset_of_corresponding_uop(
+    def offset_of(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
@@ -144,14 +144,21 @@ class Tier2Emitter(Emitter):
         inst: Instruction | None,
     ) -> bool:
         assert uop.name.startswith("_GUARD_IP")
-        rest = uop.name[len("_GUARD_IP"):]
-        self.emit(f" OFFSET_OF{rest};\n")
+        # LPAREN
+        next(tkn_iter)
+        inst = next(tkn_iter)
+        self.emit(f" OFFSET_OF_{inst.text};\n")
+        # RPAREN
+        next(tkn_iter)
+        # SEMI
         next(tkn_iter)
         return True
 
-def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack, offset_strs: dict[str, tuple[str, str]]) -> Stack:
     locals: dict[str, Local] = {}
     try:
+        if name_offset_pair := offset_strs.get(uop.name):
+            emitter.emit(f"#define OFFSET_OF_{name_offset_pair[0]} ({name_offset_pair[1]})\n")
         emitter.out.start_line()
         if uop.properties.oparg:
             emitter.emit("oparg = CURRENT_OPARG();\n")
@@ -172,6 +179,8 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                 idx += 1
         _, storage = emitter.emit_tokens(uop, storage, None, False)
         storage.flush(emitter.out)
+        if name_offset_pair:
+            emitter.emit(f"#undef OFFSET_OF_{name_offset_pair[0]}\n")
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body.open) from None
     return storage.stack
@@ -179,21 +188,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
 SKIPS = ("_EXTENDED_ARG",)
 
 
-def generate_tier2(
-    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
-) -> None:
-    write_header(__file__, filenames, outfile)
-    outfile.write(
-        """
-#ifdef TIER_ONE
-    #error "This file is for Tier 2 only"
-#endif
-#define TIER_TWO 2
-"""
-    )
-    out = CWriter(outfile, 2, lines)
-    emitter = Tier2Emitter(out, analysis.labels)
-    out.emit("\n")
+def populate_offset_strs(analysis: Analysis) -> dict[str, tuple[str, str]]:
     offset_strs: dict[str, tuple[str, str]] = {}
     for name, uop in analysis.uops.items():
         if not f"_GUARD_IP_{name}" in analysis.uops:
@@ -214,7 +209,23 @@ def generate_tier2(
                 found = True
         assert offset_str
         offset_strs[f"_GUARD_IP_{name}"] = (name, offset_str)
+    return offset_strs
 
+def generate_tier2(
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
+    write_header(__file__, filenames, outfile)
+    outfile.write(
+        """
+#ifdef TIER_ONE
+    #error "This file is for Tier 2 only"
+#endif
+#define TIER_TWO 2
+"""
+    )
+    out = CWriter(outfile, 2, lines)
+    emitter = Tier2Emitter(out, analysis.labels)
+    offset_strs = populate_offset_strs(analysis)
     out.emit("\n")
 
     for name, uop in analysis.uops.items():
@@ -231,11 +242,7 @@ def generate_tier2(
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
         stack = Stack()
-        if name_offset_pair := offset_strs.get(name):
-            out.emit(f"#define OFFSET_OF_{name_offset_pair[0]} ({name_offset_pair[1]})\n")
-        stack = write_uop(uop, emitter, stack)
-        if name_offset_pair:
-            out.emit(f"#undef OFFSET_OF_{name_offset_pair[0]}\n")
+        stack = write_uop(uop, emitter, stack, offset_strs)
         out.start_line()
         if not uop.properties.always_exits:
             out.emit("break;\n")
