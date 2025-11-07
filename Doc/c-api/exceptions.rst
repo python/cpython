@@ -394,6 +394,15 @@ an error value).
    .. versionadded:: 3.2
 
 
+.. c:function:: int PyErr_WarnExplicitFormat(PyObject *category, const char *filename, int lineno, const char *module, PyObject *registry, const char *format, ...)
+
+   Similar to :c:func:`PyErr_WarnExplicit`, but uses
+   :c:func:`PyUnicode_FromFormat` to format the warning message. *format* is
+   an ASCII-encoded string.
+
+   .. versionadded:: 3.2
+
+
 .. c:function:: int PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level, const char *format, ...)
 
    Function similar to :c:func:`PyErr_WarnFormat`, but *category* is
