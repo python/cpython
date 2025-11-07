@@ -2748,11 +2748,7 @@ PySet_Contains(PyObject *anyset, PyObject *key)
         return -1;
     }
 
-    int rv;
-    Py_BEGIN_CRITICAL_SECTION(anyset);
-    rv = set_contains_key((PySetObject *)anyset, key);
-    Py_END_CRITICAL_SECTION();
-    return rv;
+    return _PySet_Contains(_PySet_CAST(anyset), key);
 }
 
 int
