@@ -413,6 +413,8 @@ _PyImport_GetModuleExportHooks(
     if (exportfunc) {
         *modexport = (PyModExportFunction)exportfunc;
         return 2;
+    } else if (PyErr_Occurred()) {
+        PyErr_Clear();
     }
 
     exportfunc = findfuncptr(
