@@ -1229,6 +1229,7 @@ Warning types
 .. versionadded:: 3.10
    :c:data:`PyExc_EncodingWarning`.
 
+
 Tracebacks
 ==========
 
