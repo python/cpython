@@ -49,7 +49,7 @@ class TestLZMA(unittest.TestCase):
         run_concurrently(worker_func=worker, nthreads=NTHREADS)
         self.assertEqual(len(output), NTHREADS)
         # Verify the expected chunks (order doesn't matter due to append race)
-        self.assertEqual(set(output), set(chunks))
+        self.assertSetEqual(set(output), set(chunks))
 
 
 if __name__ == "__main__":
