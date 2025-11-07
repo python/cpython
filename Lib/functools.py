@@ -1157,13 +1157,13 @@ class cached_property:
                 val = self.func(instance)
                 try:
                     setattr(instance, self.attrname, val)
-                except AttributeError as err:
+                except AttributeError:
                     msg = (
                         f"The class {type(instance).__name__!r} does not "
                         f"have the requested slot, {self.attrname!r}, "
                         "in its '__slots__' attribute"
                     )
-                    raise TypeError(msg) from err
+                    raise TypeError(msg) from None
             return val
         try:
             cache = instance.__dict__
