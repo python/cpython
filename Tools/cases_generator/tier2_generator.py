@@ -146,8 +146,8 @@ class Tier2Emitter(Emitter):
         assert uop.name.startswith("_GUARD_IP")
         # LPAREN
         next(tkn_iter)
-        inst = next(tkn_iter)
-        self.emit(f" OFFSET_OF_{inst.text};\n")
+        tok = next(tkn_iter)
+        self.emit(f" OFFSET_OF_{tok.text};\n")
         # RPAREN
         next(tkn_iter)
         # SEMI
