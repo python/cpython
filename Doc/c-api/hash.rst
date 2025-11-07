@@ -37,7 +37,10 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    which algorithm is used for hashing. The hash algorithm can be configured
    via the configure :option:`--with-hash-algorithm` option.
 
-   .. versionadded:: 3.11
+   .. versionadded:: 3.4
+      Add :c:macro:`!Py_HASH_FNV` and :c:macro:`!Py_HASH_SIPHASH24`.
+
+   .. versionadded:: 3.13
       Add :c:macro:`!Py_HASH_SIPHASH13`.
 
 
