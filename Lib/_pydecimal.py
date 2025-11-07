@@ -462,7 +462,7 @@ def _tento(n):
     return (5 ** n) << n
 
 
-def _is_leq_than_pow10a_use_str(q, a):
+def _is_less_than_pow10a_use_str(q, a):
     """Try to efficiently check len(str(q)) <= a, or equivalently q < 10**a.
 
     If it is not possible to efficiently compute len(str(q)),
@@ -476,14 +476,14 @@ def _is_leq_than_pow10a_use_str(q, a):
         #   log2(q) >= a*log2(10) >= a*z > q.bit_length().
         # In particular, q > 2**q.bit_length(), which is impossible.
 
-        # assert q < 10 ** context.prec
+        # assert q < 10 ** a
         return True, None
     elif q.bit_length() >= 1 + a * _LOG_10_BASE_2_HI:
         # Claim: If z > log2(10) and q.bit_length() >= 1 + a*z, then q > 10**a.
         # Proof: Since q >= 2**(q.bit_length()-1), we have
         #   q >= 2**(q.bit_length()-1) >= 2**(a*z) > 2**(a*log2(10)) = 10**a.
 
-        # assert q > 10 ** context.prec
+        # assert q > 10 ** a
         return False, None
     # Handles other cases due to floating point precision loss
     # when computing _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
@@ -492,7 +492,7 @@ def _is_leq_than_pow10a_use_str(q, a):
     return is_valid, str_q
 
 
-def _is_leq_than_pow10a(q, a, *, exact=True, ulp_order=20):
+def _is_less_than_pow10a(q, a, *, exact=True, ulp_order=20):
     """Check that len(str(q)) <= a without computing str(q).
 
     When *exact* is false, computing len(str(q)) is replaced by f(q):
@@ -505,7 +505,6 @@ def _is_leq_than_pow10a(q, a, *, exact=True, ulp_order=20):
     When *exact* is true, computing len(str(q)) requires one bigint
     exponentiation that only depends on q.
     """
-
     if q < 10:
         return a >= 1
 
@@ -1441,7 +1440,7 @@ class Decimal(object):
             else:
                 op2.int *= 10**(op2.exp - op1.exp)
             q, r = divmod(op1.int, op2.int)
-            is_valid, str_q = _is_leq_than_pow10a_use_str(q, context.prec)
+            is_valid, str_q = _is_less_than_pow10a_use_str(q, context.prec)
             if is_valid:
                 if str_q is None:
                     str_q = str(q)
@@ -1602,7 +1601,7 @@ class Decimal(object):
             r -= op2.int
             q += 1
 
-        if not _is_leq_than_pow10a(q, context.prec):
+        if not _is_less_than_pow10a(q, context.prec):
             # assert q >= 10 ** context.prec
             # assert len(str(q)) > context.prec
             return context._raise_error(DivisionImpossible)
