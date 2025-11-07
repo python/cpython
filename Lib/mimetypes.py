@@ -486,6 +486,7 @@ def _default_mime_types():
         '.wiz'    : 'application/msword',
         '.nq'     : 'application/n-quads',
         '.nt'     : 'application/n-triples',
+        '.cjs'    : 'application/node',
         '.bin'    : 'application/octet-stream',
         '.a'      : 'application/octet-stream',
         '.dll'    : 'application/octet-stream',
@@ -681,7 +682,6 @@ def _default_mime_types():
 
     # Please sort these too
     common_types = _common_types_default = {
-        '.cjs' : 'application/node',
         '.rtf' : 'application/rtf',
         '.apk' : 'application/vnd.android.package-archive',
         '.midi': 'audio/midi',
