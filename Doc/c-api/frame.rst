@@ -32,8 +32,8 @@ See also :ref:`Reflection <reflection>`.
 .. c:function:: PyObject *PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals, PyObject *locals)
 
    Create a new frame object. This function returns a :term:`strong reference`
-   to the new frame object on success; return ``NULL`` with an exception set
-   on failure.
+   to the new frame object on success, and returns ``NULL`` with an exception
+   set on failure.
 
 .. c:function:: int PyFrame_Check(PyObject *obj)
 
