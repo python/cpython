@@ -711,7 +711,10 @@ _PyJit_translate_single_bytecode_to_trace(
         max_length--;
     }
 
-    RESERVE_RAW(expansion->nuops + needs_guard_ip + 3 + (!OPCODE_HAS_NO_SAVE_IP(opcode)), "uop and various checks");
+    // _GUARD_IP leads to an exit.
+    max_length -= needs_guard_ip;
+
+    RESERVE_RAW(expansion->nuops + needs_guard_ip + 2 + (!OPCODE_HAS_NO_SAVE_IP(opcode)), "uop and various checks");
 
     ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
 
