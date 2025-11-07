@@ -646,7 +646,8 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     }
     if (!PyTuple_Check(bases)) {
         PyErr_SetString(PyExc_TypeError, "__bases__ is not tuple");
-        goto error;
+        Py_DECREF(bases);
+        return NULL;
     }
     for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(bases); pos++) {
         PyObject *base = PyTuple_GET_ITEM(bases, pos);  // borrowed
@@ -654,14 +655,16 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
 
         int base_is_abc = _get_optional_impl(state, base, &base_impl);
         if (base_is_abc < 0) {
-            goto error;
+            Py_DECREF(bases);
+            return NULL;
         }
         if (base_is_abc == 0) {
             continue;
         }
         PyObject *base_result = PyObject_CallMethod(base, "register", "O", subclass);
         if (base_result == NULL) {
-           goto error;
+            Py_DECREF(bases);
+            return NULL;
         }
         Py_DECREF(base_result);
     }
@@ -681,10 +684,6 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
         }
     }
     return Py_NewRef(subclass);
-
-error:
-    //Py_DECREF(bases);
-    return NULL;
 }
 
 
