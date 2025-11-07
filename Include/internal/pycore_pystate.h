@@ -89,7 +89,7 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 /* Variable and static inline functions for in-line access to current thread
    and interpreter state */
 
-#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+#if !defined(Py_BUILD_CORE_MODULE)
 extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 extern _Py_thread_local PyInterpreterState *_Py_tss_interp;
 #endif
@@ -115,7 +115,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
-#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+#if !defined(Py_BUILD_CORE_MODULE)
     return _Py_tss_tstate;
 #else
     return _PyThreadState_GetCurrent();
