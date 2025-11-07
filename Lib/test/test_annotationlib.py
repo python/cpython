@@ -1257,7 +1257,7 @@ class TestCallEvaluateFunction(unittest.TestCase):
 
         self.assertEqual(
             annotationlib.call_evaluate_function(evaluate_union, Format.FORWARDREF),
-            support.EqualToForwardRef("builtins.undef | list[int]"),
+            support.EqualToForwardRef("builtins.undefined | list[int]"),
         )
 
         # This will raise an AttributeError
@@ -1265,7 +1265,7 @@ class TestCallEvaluateFunction(unittest.TestCase):
             if format == Format.VALUE_WITH_FAKE_GLOBALS:
                 intermediate = builtins.undefined
                 # Return a literal
-                return intermediate == builtins.defined
+                return intermediate is None
             raise exc
 
         self.assertIs(
