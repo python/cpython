@@ -1902,7 +1902,7 @@ Optional Packages:
                           behaviour detector, 'ubsan' (default is no)
   --with-thread-sanitizer enable ThreadSanitizer data race detector, 'tsan'
                           (default is no)
-  --with-hash-algorithm=[fnv|siphash13|siphash24]
+  --with-hash-algorithm=[fnv|siphash13|siphash24|external]
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash13)
   --with-tzpath=<list of absolute paths separated by pathsep>
@@ -14934,6 +14934,10 @@ then :
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 printf "%s\n" "$withval" >&6; }
 case "$withval" in
+    external)
+        printf "%s\n" "#define Py_HASH_ALGORITHM 0" >>confdefs.h
+
+        ;;
     siphash13)
         printf "%s\n" "#define Py_HASH_ALGORITHM 3" >>confdefs.h
 
