@@ -619,7 +619,7 @@ _PyJit_translate_single_bytecode_to_trace(
         assert(!OPCODE_HAS_DEOPT(opcode));
     }
 
-    bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode];
+    bool needs_guard_ip = OPCODE_HAS_NEEDS_GUARD_IP(opcode);
     if (has_dynamic_jump_taken && !needs_guard_ip) {
         DPRINTF(2, "Unsupported: dynamic jump taken\n");
         goto unsupported;

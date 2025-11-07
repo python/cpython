@@ -757,6 +757,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_NO_SAVE_IP_FLAG")
     if p.unpredictable_jump:
         flags.append("HAS_UNPREDICTABLE_JUMP_FLAG")
+    if p.needs_guard_ip:
+        flags.append("HAS_NEEDS_GUARD_IP_FLAG")
     if flags:
         return " | ".join(flags)
     else:

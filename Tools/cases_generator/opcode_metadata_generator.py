@@ -57,6 +57,7 @@ FLAGS = [
     "NO_SAVE_IP",
     "PERIODIC",
     "UNPREDICTABLE_JUMP",
+    "NEEDS_GUARD_IP",
 ]
 
 
@@ -185,16 +186,6 @@ def generate_cache_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("#endif\n\n")
 
 
-def generate_needs_guard_ip_table(analysis: Analysis, out: CWriter) -> None:
-    out.emit("extern const uint8_t _PyOpcode_NeedsGuardIp[256];\n")
-    out.emit("#ifdef NEED_OPCODE_METADATA\n")
-    out.emit("const uint8_t _PyOpcode_NeedsGuardIp[256] = {\n")
-    for inst in analysis.instructions.values():
-        if inst.properties.needs_guard_ip:
-            out.emit(f"[{inst.name}] = 1,\n")
-    out.emit("};\n")
-    out.emit("#endif\n\n")
-
 def generate_name_table(analysis: Analysis, out: CWriter) -> None:
     table_size = 256 + len(analysis.pseudos)
     out.emit(f"extern const char *_PyOpcode_OpName[{table_size}];\n")
@@ -212,7 +203,7 @@ def generate_metadata_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("struct opcode_metadata {\n")
     out.emit("uint8_t valid_entry;\n")
     out.emit("uint8_t instr_format;\n")
-    out.emit("uint16_t flags;\n")
+    out.emit("uint32_t flags;\n")
     out.emit("};\n\n")
     out.emit(
         f"extern const struct opcode_metadata _PyOpcode_opcode_metadata[{table_size}];\n"
@@ -393,7 +384,6 @@ def generate_opcode_metadata(
         generate_expansion_table(analysis, out)
         generate_name_table(analysis, out)
         generate_cache_table(analysis, out)
-        generate_needs_guard_ip_table(analysis, out)
         generate_deopt_table(analysis, out)
         generate_extra_cases(analysis, out)
         generate_pseudo_targets(analysis, out)
