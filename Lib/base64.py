@@ -462,9 +462,12 @@ def b85decode(b):
     # Delay the initialization of tables to not waste memory
     # if the function is never called
     if _b85dec is None:
-        _b85dec = [None] * 256
+        # we don't assign to _b85dec directly to avoid issues when
+        # multiple threads call this function simultaneously
+        b85dec_tmp = [None] * 256
         for i, c in enumerate(_b85alphabet):
-            _b85dec[c] = i
+            b85dec_tmp[c] = i
+        _b85dec = b85dec_tmp
 
     b = _bytes_from_decode_data(b)
     padding = (-len(b)) % 5
