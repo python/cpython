@@ -481,6 +481,27 @@ class TestMessageAPI(TestEmailBase):
             "Content-Type: foo; bar*0=\"baz\\\"foobar\"; bar*1=\"\\\"baz\"")
         self.assertEqual(msg.get_param('bar'), 'baz"foobar"baz')
 
+    def test_get_param_linear_complexity(self):
+        # Ensure that email.message._parseparam() is fast.
+        # See https://github.com/python/cpython/issues/136063.
+        N = 100_000
+        for s, r in [
+            ("", ""),
+            ("foo=bar", "foo=bar"),
+            (" FOO = bar    ", "foo=bar"),
+        ]:
+            with self.subTest(s=s, r=r, N=N):
+                src = f'{s};' * (N - 1) + s
+                res = email.message._parseparam(src)
+                self.assertEqual(len(res), N)
+                self.assertEqual(len(set(res)), 1)
+                self.assertEqual(res[0], r)
+
+        # This will be considered as a single parameter.
+        malformed = 's="' + ';' * (N - 1)
+        res = email.message._parseparam(malformed)
+        self.assertEqual(res, [malformed])
+
     def test_field_containment(self):
         msg = email.message_from_string('Header: exists')
         self.assertIn('header', msg)
@@ -2352,7 +2373,7 @@ From: aperson@dom.ain
 To: bperson@dom.ain
 Subject: here's something interesting
 
-counter to RFC 2822, there's no separating newline here
+counter to RFC 5322, there's no separating newline here
 """)
 
     # test_defect_handling
@@ -2508,49 +2529,49 @@ Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
                         [(b'andr\xe9=zz', 'iso-8859-1')])
 
     def test_rfc2047_rfc2047_1(self):
-        # 1st testcase at end of rfc2047
+        # 1st testcase at end of RFC 2047
         s = '(=?ISO-8859-1?Q?a?=)'
         self.assertEqual(decode_header(s),
             [(b'(', None), (b'a', 'iso-8859-1'), (b')', None)])
 
     def test_rfc2047_rfc2047_2(self):
-        # 2nd testcase at end of rfc2047
+        # 2nd testcase at end of RFC 2047
         s = '(=?ISO-8859-1?Q?a?= b)'
         self.assertEqual(decode_header(s),
             [(b'(', None), (b'a', 'iso-8859-1'), (b' b)', None)])
 
     def test_rfc2047_rfc2047_3(self):
-        # 3rd testcase at end of rfc2047
+        # 3rd testcase at end of RFC 2047
         s = '(=?ISO-8859-1?Q?a?= =?ISO-8859-1?Q?b?=)'
         self.assertEqual(decode_header(s),
             [(b'(', None), (b'ab', 'iso-8859-1'), (b')', None)])
 
     def test_rfc2047_rfc2047_4(self):
-        # 4th testcase at end of rfc2047
+        # 4th testcase at end of RFC 2047
         s = '(=?ISO-8859-1?Q?a?=  =?ISO-8859-1?Q?b?=)'
         self.assertEqual(decode_header(s),
             [(b'(', None), (b'ab', 'iso-8859-1'), (b')', None)])
 
     def test_rfc2047_rfc2047_5a(self):
-        # 5th testcase at end of rfc2047 newline is \r\n
+        # 5th testcase at end of RFC 2047 newline is \r\n
         s = '(=?ISO-8859-1?Q?a?=\r\n    =?ISO-8859-1?Q?b?=)'
         self.assertEqual(decode_header(s),
             [(b'(', None), (b'ab', 'iso-8859-1'), (b')', None)])
 
     def test_rfc2047_rfc2047_5b(self):
-        # 5th testcase at end of rfc2047 newline is \n
+        # 5th testcase at end of RFC 2047 newline is \n
         s = '(=?ISO-8859-1?Q?a?=\n    =?ISO-8859-1?Q?b?=)'
         self.assertEqual(decode_header(s),
             [(b'(', None), (b'ab', 'iso-8859-1'), (b')', None)])
 
     def test_rfc2047_rfc2047_6(self):
-        # 6th testcase at end of rfc2047
+        # 6th testcase at end of RFC 2047
         s = '(=?ISO-8859-1?Q?a_b?=)'
         self.assertEqual(decode_header(s),
             [(b'(', None), (b'a b', 'iso-8859-1'), (b')', None)])
 
     def test_rfc2047_rfc2047_7(self):
-        # 7th testcase at end of rfc2047
+        # 7th testcase at end of RFC 2047
         s = '(=?ISO-8859-1?Q?a?= =?ISO-8859-2?Q?_b?=)'
         self.assertEqual(decode_header(s),
             [(b'(', None), (b'a', 'iso-8859-1'), (b' b', 'iso-8859-2'),
@@ -3252,8 +3273,8 @@ class TestMiscellaneous(TestEmailBase):
         """Test for parsing a date with a two-digit year.
 
         Parsing a date with a two-digit year should return the correct
-        four-digit year. RFC822 allows two-digit years, but RFC2822 (which
-        obsoletes RFC822) requires four-digit years.
+        four-digit year. RFC 822 allows two-digit years, but RFC 5322 (which
+        obsoletes RFC 2822, which obsoletes RFC 822) requires four-digit years.
 
         """
         self.assertEqual(utils.parsedate_tz('25 Feb 03 13:47:26 -0800'),
@@ -3304,7 +3325,7 @@ class TestMiscellaneous(TestEmailBase):
         self.assertEqual(utils.parseaddr(utils.formataddr((a, b))), (a, b))
 
     def test_quotes_unicode_names(self):
-        # issue 1690608.  email.utils.formataddr() should be rfc2047 aware.
+        # issue 1690608.  email.utils.formataddr() should be RFC 2047 aware.
         name = "H\u00e4ns W\u00fcrst"
         addr = 'person@dom.ain'
         utf8_base64 = "=?utf-8?b?SMOkbnMgV8O8cnN0?= <person@dom.ain>"
@@ -3314,7 +3335,7 @@ class TestMiscellaneous(TestEmailBase):
             latin1_quopri)
 
     def test_accepts_any_charset_like_object(self):
-        # issue 1690608.  email.utils.formataddr() should be rfc2047 aware.
+        # issue 1690608.  email.utils.formataddr() should be RFC 2047 aware.
         name = "H\u00e4ns W\u00fcrst"
         addr = 'person@dom.ain'
         utf8_base64 = "=?utf-8?b?SMOkbnMgV8O8cnN0?= <person@dom.ain>"
@@ -3329,7 +3350,7 @@ class TestMiscellaneous(TestEmailBase):
             utf8_base64)
 
     def test_invalid_charset_like_object_raises_error(self):
-        # issue 1690608.  email.utils.formataddr() should be rfc2047 aware.
+        # issue 1690608.  email.utils.formataddr() should be RFC 2047 aware.
         name = "H\u00e4ns W\u00fcrst"
         addr = 'person@dom.ain'
         # An object without a header_encode method:
@@ -3338,7 +3359,7 @@ class TestMiscellaneous(TestEmailBase):
             bad_charset)
 
     def test_unicode_address_raises_error(self):
-        # issue 1690608.  email.utils.formataddr() should be rfc2047 aware.
+        # issue 1690608.  email.utils.formataddr() should be RFC 2047 aware.
         addr = 'pers\u00f6n@dom.in'
         self.assertRaises(UnicodeError, utils.formataddr, (None, addr))
         self.assertRaises(UnicodeError, utils.formataddr, ("Name", addr))
@@ -3359,7 +3380,7 @@ class TestMiscellaneous(TestEmailBase):
         # string containing a quoted backslash, followed by 'example' and two
         # backslashes, followed by another quoted string containing a space and
         # the word 'example'.  parseaddr copies those two backslashes
-        # literally.  Per rfc5322 this is not technically correct since a \ may
+        # literally.  Per RFC 5322 this is not technically correct since a \ may
         # not appear in an address outside of a quoted string.  It is probably
         # a sensible Postel interpretation, though.
         eq = self.assertEqual
@@ -3371,12 +3392,12 @@ class TestMiscellaneous(TestEmailBase):
           ('', '"\\\\"example\\\\" example"@example.com'))
 
     def test_parseaddr_preserves_spaces_in_local_part(self):
-        # issue 9286.  A normal RFC5322 local part should not contain any
+        # issue 9286.  A normal RFC 5322 local part should not contain any
         # folding white space, but legacy local parts can (they are a sequence
         # of atoms, not dotatoms).  On the other hand we strip whitespace from
         # before the @ and around dots, on the assumption that the whitespace
         # around the punctuation is a mistake in what would otherwise be
-        # an RFC5322 local part.  Leading whitespace is, usual, stripped as well.
+        # an RFC 5322 local part.  Leading whitespace is, usual, stripped as well.
         self.assertEqual(('', "merwok wok@xample.com"),
             utils.parseaddr("merwok wok@xample.com"))
         self.assertEqual(('', "merwok  wok@xample.com"),

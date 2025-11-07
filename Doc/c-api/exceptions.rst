@@ -394,6 +394,15 @@ an error value).
    .. versionadded:: 3.2
 
 
+.. c:function:: int PyErr_WarnExplicitFormat(PyObject *category, const char *filename, int lineno, const char *module, PyObject *registry, const char *format, ...)
+
+   Similar to :c:func:`PyErr_WarnExplicit`, but uses
+   :c:func:`PyUnicode_FromFormat` to format the warning message. *format* is
+   an ASCII-encoded string.
+
+   .. versionadded:: 3.2
+
+
 .. c:function:: int PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level, const char *format, ...)
 
    Function similar to :c:func:`PyErr_WarnFormat`, but *category* is
@@ -979,6 +988,27 @@ these are the C equivalent to :func:`reprlib.recursive_repr`.
    Ends a :c:func:`Py_ReprEnter`.  Must be called once for each
    invocation of :c:func:`Py_ReprEnter` that returns zero.
 
+.. c:function:: int Py_GetRecursionLimit(void)
+
+   Get the recursion limit for the current interpreter. It can be set with
+   :c:func:`Py_SetRecursionLimit`. The recursion limit prevents the
+   Python interpreter stack from growing infinitely.
+
+   This function cannot fail, and the caller must hold an
+   :term:`attached thread state`.
+
+   .. seealso::
+      :py:func:`sys.getrecursionlimit`
+
+.. c:function:: void Py_SetRecursionLimit(int new_limit)
+
+   Set the recursion limit for the current interpreter.
+
+   This function cannot fail, and the caller must hold an
+   :term:`attached thread state`.
+
+   .. seealso::
+      :py:func:`sys.setrecursionlimit`
 
 .. _standardexceptions:
 
@@ -1207,3 +1237,37 @@ Warning types
 
 .. versionadded:: 3.10
    :c:data:`PyExc_EncodingWarning`.
+
+
+Tracebacks
+==========
+
+.. c:var:: PyTypeObject PyTraceBack_Type
+
+   Type object for traceback objects. This is available as
+   :class:`types.TracebackType` in the Python layer.
+
+
+.. c:function:: int PyTraceBack_Check(PyObject *op)
+
+   Return true if *op* is a traceback object, false otherwise. This function
+   does not account for subtypes.
+
+
+.. c:function:: int PyTraceBack_Here(PyFrameObject *f)
+
+   Replace the :attr:`~BaseException.__traceback__` attribute on the current
+   exception with a new traceback prepending *f* to the existing chain.
+
+   Calling this function without an exception set is undefined behavior.
+
+   This function returns ``0`` on success, and returns ``-1`` with an
+   exception set on failure.
+
+
+.. c:function:: int PyTraceBack_Print(PyObject *tb, PyObject *f)
+
+   Write the traceback *tb* into the file *f*.
+
+   This function returns ``0`` on success, and returns ``-1`` with an
+   exception set on failure.
