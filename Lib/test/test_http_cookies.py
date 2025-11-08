@@ -48,6 +48,29 @@ class CookieTests(unittest.TestCase):
                     'Set-Cookie: d=r',
                     'Set-Cookie: f=h'
                 ))
+            },
+
+            # gh-92936: allow double quote in cookie values
+            {
+                'data': 'cookie="{"key": "value"}"',
+                'dict': {'cookie': '{"key": "value"}'},
+                'repr': "<SimpleCookie: cookie='{\"key\": \"value\"}'>",
+                'output': 'Set-Cookie: cookie="{"key": "value"}"',
+            },
+            {
+                'data': 'key="some value; surrounded by quotes"',
+                'dict': {'key': 'some value; surrounded by quotes'},
+                'repr': "<SimpleCookie: key='some value; surrounded by quotes'>",
+                'output': 'Set-Cookie: key="some value; surrounded by quotes"',
+            },
+            {
+                'data': 'session="user123"; preferences="{"theme": "dark"}"',
+                'dict': {'session': 'user123', 'preferences': '{"theme": "dark"}'},
+                'repr': "<SimpleCookie: preferences='{\"theme\": \"dark\"}' session='user123'>",
+                'output': '\n'.join((
+                    'Set-Cookie: preferences="{"theme": "dark"}"',
+                    'Set-Cookie: session="user123"',
+                ))
             }
         ]
 

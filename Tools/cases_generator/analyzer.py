@@ -20,6 +20,7 @@ class Properties:
     error_with_pop: bool
     error_without_pop: bool
     deopts: bool
+    deopts_periodic: bool
     oparg: bool
     jumps: bool
     eval_breaker: bool
@@ -58,6 +59,7 @@ class Properties:
             error_with_pop=any(p.error_with_pop for p in properties),
             error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
+            deopts_periodic=any(p.deopts_periodic for p in properties),
             oparg=any(p.oparg for p in properties),
             jumps=any(p.jumps for p in properties),
             eval_breaker=any(p.eval_breaker for p in properties),
@@ -85,6 +87,7 @@ SKIP_PROPERTIES = Properties(
     error_with_pop=False,
     error_without_pop=False,
     deopts=False,
+    deopts_periodic=False,
     oparg=False,
     jumps=False,
     eval_breaker=False,
@@ -706,7 +709,7 @@ def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, Escapi
             in_if = 0
             tkn_iter = iter(stmt.contents)
             for tkn in tkn_iter:
-                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
+                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF", "HANDLE_PENDING_AND_DEOPT_IF", "AT_END_EXIT_IF"):
                     in_if = 1
                     next(tkn_iter)
                 elif tkn.kind == "LPAREN":
@@ -833,7 +836,7 @@ def stmt_is_simple_exit(stmt: Stmt) -> bool:
     if len(tokens) < 4:
         return False
     return (
-        tokens[0].text in ("ERROR_IF", "DEOPT_IF", "EXIT_IF")
+        tokens[0].text in ("ERROR_IF", "DEOPT_IF", "EXIT_IF", "AT_END_EXIT_IF")
         and
         tokens[1].text == "("
         and
@@ -889,11 +892,13 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         or variable_used(op, "PyCell_SwapTakeRef")
     )
     deopts_if = variable_used(op, "DEOPT_IF")
-    exits_if = variable_used(op, "EXIT_IF")
-    if deopts_if and exits_if:
+    exits_if = variable_used(op, "EXIT_IF") or variable_used(op, "AT_END_EXIT_IF")
+    deopts_periodic = variable_used(op, "HANDLE_PENDING_AND_DEOPT_IF")
+    exits_and_deopts = sum((deopts_if, exits_if, deopts_periodic))
+    if exits_and_deopts > 1:
         tkn = op.tokens[0]
         raise lexer.make_syntax_error(
-            "Op cannot contain both EXIT_IF and DEOPT_IF",
+            "Op cannot contain more than one of EXIT_IF, DEOPT_IF and HANDLE_PENDING_AND_DEOPT_IF",
             tkn.filename,
             tkn.line,
             tkn.column,
@@ -910,6 +915,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         error_with_pop=error_with_pop,
         error_without_pop=error_without_pop,
         deopts=deopts_if,
+        deopts_periodic=deopts_periodic,
         side_exit=exits_if,
         oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),

@@ -442,7 +442,6 @@ PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int m
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
 PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
-PyAPI_FUNC(int) _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
 
@@ -463,6 +462,7 @@ PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);
 typedef enum {
     PyRefTracer_CREATE = 0,
     PyRefTracer_DESTROY = 1,
+    PyRefTracer_TRACKER_REMOVED = 2,
 } PyRefTracerEvent;
 
 typedef int (*PyRefTracer)(PyObject *, PyRefTracerEvent event, void *);

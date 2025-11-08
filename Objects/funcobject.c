@@ -62,6 +62,7 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
         case PyFunction_EVENT_MODIFY_CODE:
         case PyFunction_EVENT_MODIFY_DEFAULTS:
         case PyFunction_EVENT_MODIFY_KWDEFAULTS:
+        case PyFunction_EVENT_MODIFY_QUALNAME:
             RARE_EVENT_INTERP_INC(interp, func_modification);
             break;
         default:
@@ -560,8 +561,9 @@ func_get_annotation_dict(PyFunctionObject *op)
             return NULL;
         }
         if (!PyDict_Check(ann_dict)) {
-            PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
-                         Py_TYPE(ann_dict)->tp_name);
+            PyErr_Format(PyExc_TypeError,
+                         "__annotate__() must return a dict, not %T",
+                         ann_dict);
             Py_DECREF(ann_dict);
             return NULL;
         }
@@ -746,6 +748,7 @@ func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
                         "__qualname__ must be set to a string object");
         return -1;
     }
+    handle_func_event(PyFunction_EVENT_MODIFY_QUALNAME, (PyFunctionObject *) op, value);
     Py_XSETREF(op->func_qualname, Py_NewRef(value));
     return 0;
 }

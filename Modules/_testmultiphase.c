@@ -850,6 +850,28 @@ PyInit__testmultiphase_exec_unreported_exception(void)
     return PyModuleDef_Init(&def_exec_unreported_exception);
 }
 
+static int execfn_a1(PyObject*m) { return PyModule_AddIntConstant(m, "a", 1); }
+static int execfn_b2(PyObject*m) { return PyModule_AddIntConstant(m, "b", 2); }
+static int execfn_c3(PyObject*m) { return PyModule_AddIntConstant(m, "c", 3); }
+
+PyMODINIT_FUNC
+PyInit__testmultiphase_exec_multiple(void)
+{
+    static PyModuleDef_Slot slots[] = {
+        {Py_mod_exec, execfn_a1},
+        {Py_mod_exec, execfn_b2},
+        {Py_mod_exec, execfn_c3},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+        {0}
+    };
+    static PyModuleDef def = {
+        PyModuleDef_HEAD_INIT,
+        .m_name="_testmultiphase_exec_multiple",
+        .m_slots=slots,
+    };
+    return PyModuleDef_Init(&def);
+}
+
 static int
 meth_state_access_exec(PyObject *m)
 {
@@ -992,4 +1014,157 @@ PyMODINIT_FUNC
 PyInit__test_no_multiple_interpreter_slot(void)
 {
     return PyModuleDef_Init(&no_multiple_interpreter_slot_def);
+}
+
+
+/* PyModExport_* hooks */
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport(void)
+{
+    static PyModuleDef_Slot slots[] = {
+        {Py_mod_name, "_test_from_modexport"},
+        {0},
+    };
+    return slots;
+}
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_null(void)
+{
+    return NULL;
+}
+
+PyMODINIT_FUNC
+PyModInit__test_from_modexport_null(void)
+{
+    // This is not called as fallback for failed PyModExport_*
+    assert(0);
+    PyErr_SetString(PyExc_AssertionError, "PyInit_ fallback called");
+    return NULL;
+}
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_exception(void)
+{
+    PyErr_SetString(PyExc_ValueError, "failed as requested");
+    return NULL;
+}
+
+PyMODINIT_FUNC
+PyModInit__test_from_modexport_exception(void)
+{
+    // This is not called as fallback for failed PyModExport_*
+    assert(0);
+    PyErr_SetString(PyExc_AssertionError, "PyInit_ fallback called");
+    return NULL;
+}
+
+static PyObject *
+modexport_create_string(PyObject *spec, PyObject *def)
+{
+    assert(def == NULL);
+    return PyUnicode_FromString("is this \xf0\x9f\xa6\x8b... a module?");
+}
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_create_nonmodule(void)
+{
+    static PyModuleDef_Slot slots[] = {
+        {Py_mod_name, "_test_from_modexport_create_nonmodule"},
+        {Py_mod_create, modexport_create_string},
+        {0},
+    };
+    return slots;
+}
+
+static PyModuleDef_Slot modexport_empty_slots[] = {
+    {0},
+};
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_empty_slots(void)
+{
+    return modexport_empty_slots;
+}
+
+static int
+modexport_smoke_exec(PyObject *mod)
+{
+    // "magic" values 147 & 258 are expected in the test
+    if (PyModule_AddIntConstant(mod, "number", 147) < 0) {
+        return 0;
+    }
+    int *state = PyModule_GetState(mod);
+    if (!state) {
+        return -1;
+    }
+    *state = 258;
+
+    PyObject *tp = PyType_FromModuleAndSpec(mod, &StateAccessType_spec, NULL);
+    if (PyModule_Add(mod, "Example", tp) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static PyObject *
+modexport_smoke_get_state_int(PyObject *mod, PyObject *arg)
+{
+    int *state = PyModule_GetState(mod);
+    if (!state) {
+        return NULL;
+    }
+    return PyLong_FromLong(*state);
+}
+
+static const char modexport_smoke_test_token;
+
+static PyObject *
+modexport_smoke_get_test_token(PyObject *mod, PyObject *arg)
+{
+    return PyLong_FromVoidPtr((void*)&modexport_smoke_test_token);
+}
+
+static PyObject *
+modexport_get_empty_slots(PyObject *mod, PyObject *arg)
+{
+    /* Get the address of modexport_empty_slots.
+     * This method would be in the `_test_from_modexport_empty_slots` module,
+     * if it had a methods slot.
+     */
+    return PyLong_FromVoidPtr(&modexport_empty_slots);
+}
+
+static void
+modexport_smoke_free(PyObject *mod)
+{
+    int *state = PyModule_GetState(mod);
+    if (!state) {
+        PyErr_FormatUnraisable("Exception ignored in module %R free", mod);
+    }
+    assert(*state == 258);
+}
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_smoke(void)
+{
+    static PyMethodDef methods[] = {
+        {"get_state_int", modexport_smoke_get_state_int, METH_NOARGS},
+        {"get_test_token", modexport_smoke_get_test_token, METH_NOARGS},
+        {"get_modexport_empty_slots", modexport_get_empty_slots, METH_NOARGS},
+        {0},
+    };
+    static PyModuleDef_Slot slots[] = {
+        {Py_mod_name, "_test_from_modexport_smoke"},
+        {Py_mod_doc, "the expected docstring"},
+        {Py_mod_exec, modexport_smoke_exec},
+        {Py_mod_state_size, (void*)sizeof(int)},
+        {Py_mod_methods, methods},
+        {Py_mod_state_free, modexport_smoke_free},
+        {Py_mod_token, (void*)&modexport_smoke_test_token},
+        {0},
+    };
+    return slots;
 }
