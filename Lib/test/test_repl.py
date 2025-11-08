@@ -68,6 +68,16 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, custom=F
 spawn_asyncio_repl = partial(spawn_repl, "-m", "asyncio", custom=True)
 
 
+@contextmanager
+def new_startup_env(*, code: str, histfile: str = ".pythonhist"):
+    """Create temporary environment variables for a PYTHONSTARTUP script."""
+    with os_helper.temp_dir() as tmpdir:
+        filename = os.path.join(tmpdir, "pythonstartup.py")
+        with open(filename, "w") as f:
+            f.write(os.linesep.join(code.splitlines()))
+        yield {"PYTHONSTARTUP": filename, "PYTHON_HISTORY": os.path.join(tmpdir, histfile)}
+
+
 def run_on_interactive_mode(source):
     """Spawn a new Python interpreter, pass the given
     input source code from the stdin and return the
@@ -308,15 +318,6 @@ class TestInteractiveInterpreter(unittest.TestCase):
             exit_code = proc.wait()
 
         self.assertEqual(exit_code, 0, "".join(output))
-
-
-@contextmanager
-def new_startup_env(*, code: str, histfile: str = ".pythonhist"):
-    with os_helper.temp_dir() as tmpdir:
-        filename = os.path.join(tmpdir, "pythonstartup.py")
-        with open(filename, "w") as f:
-            f.write(os.linesep.join(code.splitlines()))
-        yield {"PYTHONSTARTUP": filename, "PYTHON_HISTORY": os.path.join(tmpdir, histfile)}
 
 
 @support.force_not_colorized_test_class
