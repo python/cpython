@@ -764,8 +764,20 @@ dummy_func(void) {
     }
 
     op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
-        init_frame = PyJitRef_NULL;
-        ctx->done = true;
+        _Py_UOpsAbstractFrame *old_frame = ctx->frame;
+        _Py_UOpsAbstractFrame *shim = frame_new(ctx, (PyCodeObject *)&_Py_InitCleanup, 0, NULL, 0);
+        if (shim == NULL) {
+            break;
+        }
+        /* Push self onto stack of shim */
+        shim->stack[0] = self;
+        shim->stack_pointer++;
+        assert((int)(shim->stack_pointer - shim->stack) == 1);
+        ctx->frame = shim;
+        ctx->curr_frame_depth++;
+        assert((this_instr + 1)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging((this_instr + 1));
+        init_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, args-1, oparg+1));
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
@@ -863,7 +875,9 @@ dummy_func(void) {
 
     op(_PUSH_FRAME, (new_frame -- )) {
         SYNC_SP();
-        ctx->frame->stack_pointer = stack_pointer;
+        if (!CURRENT_FRAME_IS_INIT_SHIM()) {
+            ctx->frame->stack_pointer = stack_pointer;
+        }
         ctx->frame = (_Py_UOpsAbstractFrame *)PyJitRef_Unwrap(new_frame);
         ctx->curr_frame_depth++;
         stack_pointer = ctx->frame->stack_pointer;

@@ -823,7 +823,6 @@ _Py_uop_frame_new(
         return NULL;
     }
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
-
     frame->code = co;
     frame->stack_len = co->co_stacksize;
     frame->locals_len = co->co_nlocalsplus;

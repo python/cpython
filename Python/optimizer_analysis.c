@@ -142,8 +142,10 @@ incorrect_keys(PyObject *obj, uint32_t version)
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
 #define STACK_SIZE()      ((int)(ctx->frame->stack_len))
 
+#define CURRENT_FRAME_IS_INIT_SHIM() (ctx->frame->code == ((PyCodeObject *)&_Py_InitCleanup))
+
 #define WITHIN_STACK_BOUNDS() \
-    (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE())
+    (CURRENT_FRAME_IS_INIT_SHIM() || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
@@ -316,13 +318,18 @@ optimize_uops(
     ctx->frame = frame;
 
     _PyUOpInstruction *this_instr = NULL;
+    JitOptRef *stack_pointer = ctx->frame->stack_pointer;
+
     for (int i = 0; !ctx->done; i++) {
         assert(i < trace_len);
         this_instr = &trace[i];
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        JitOptRef *stack_pointer = ctx->frame->stack_pointer;
+
+        if (!CURRENT_FRAME_IS_INIT_SHIM()) {
+            stack_pointer = ctx->frame->stack_pointer;
+        }
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
@@ -341,9 +348,11 @@ optimize_uops(
                 Py_UNREACHABLE();
         }
         assert(ctx->frame != NULL);
-        DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
-        ctx->frame->stack_pointer = stack_pointer;
-        assert(STACK_LEVEL() >= 0);
+        if (!CURRENT_FRAME_IS_INIT_SHIM()) {
+            DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
+            ctx->frame->stack_pointer = stack_pointer;
+            assert(STACK_LEVEL() >= 0);
+        }
     }
     if (ctx->out_of_space) {
         DPRINTF(3, "\n");
