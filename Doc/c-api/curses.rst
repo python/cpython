@@ -47,9 +47,9 @@ be invoked, usually as part of the module initialisation function, to populate
    The :ref:`heap type <heap-types>` corresponding to :class:`curses.window`.
 
 
-.. c:func:: int PyCursesWindow_Check(PyObject *op)
+.. c:function:: int PyCursesWindow_Check(PyObject *op)
 
-   Return *1* if *op* is an :class:`curses.window` instance, *0* otherwise.
+   Return *1* if *op* is a :class:`curses.window` instance, *0* otherwise.
 
 
 The following macros are convenience macros expanding into C statements.
