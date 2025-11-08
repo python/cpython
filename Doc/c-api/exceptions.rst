@@ -331,6 +331,23 @@ For convenience, some of these functions will always return a
    use.
 
 
+.. c:function:: PyObject *PyErr_ProgramTextObject(PyObject *filename, int lineno)
+
+   Get the source line in *filename* at line *lineno*. *filename* should be a
+   Python :class:`str` object.
+
+   On success, this function returns a Python string object with the found line.
+   On failure, this function returns ``NULL`` without an exception set.
+
+
+.. c:function:: PyObject *PyErr_ProgramText(const char *filename, int lineno)
+
+   Similar to :c:func:`PyErr_ProgramTextObject`, but *filename* is a
+   :c:expr:`const char *`, which is decoded with the
+   :term:`filesystem encoding and error handler`, instead of a
+   Python object reference.
+
+
 Issuing warnings
 ================
 
