@@ -44,6 +44,29 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
       Add :c:macro:`!Py_HASH_SIPHASH13`.
 
 
+.. c:macro:: Py_HASH_EXTERNAL
+
+   If :c:macro:`Py_HASH_ALGORITHM` is set to that value, the hash function
+   definition ``PyHash_Func`` must be provided by embedders at compile time.
+   For instance, to use SipHash-4-8 for conservative security purposes
+
+   .. code-block:: c
+
+      static Py_hash_t
+      siphash48(const void *src, Py_ssize_t src_sz) { ... }
+
+      PyHash_FuncDef PyHash_Func = {
+         .hash = siphash48,
+         .name = "siphash48",
+         .hash_bits = 64,
+         .seed_bits = 128,
+      };
+
+   .. availability:: Unix
+
+   .. versionadded:: 3.4
+
+
 .. c:macro:: Py_HASH_CUTOFF
 
    Buffers of length in range ``[1, Py_HASH_CUTOFF)`` are hashed using DJBX33A
