@@ -443,6 +443,7 @@ math
 mimetypes
 ---------
 
+* Add ``application/node`` MIME type for ``.cjs`` extension. (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`)
