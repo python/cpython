@@ -226,6 +226,7 @@ Distribution metadata
    Raises :exc:`PackageNotFoundError` if the named distribution
    package is not installed in the current Python environment.
 
+
 .. class:: PackageMetadata
 
    A concrete implementation of the
@@ -503,6 +504,8 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
        attempt to honor the canonical parameters defined below when
        appropriate.
 
+       See the section on :ref:`implementing-custom-providers` for more details.
+
        .. attribute:: name
 
           Specific name for which a distribution finder should match.
@@ -528,6 +531,7 @@ This metadata finder search defaults to ``sys.path``, but varies slightly in how
    :class:`!DistributionFinder.Context` is used to modify the search for
    distributions.
 
+.. _implementing-custom-providers:
 
 Implementing Custom Providers
 =============================
