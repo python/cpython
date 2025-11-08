@@ -25,7 +25,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
    An :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
    that support a full repertoire of SMTP and ESMTP operations.
-   If the host parameter is set to a truthy value, :meth:`connect(host, port)` is
+   If the host parameter is set to a truthy value, :meth:`SMTP.connect` is
    called automatically when the object is created, otherwise :meth:`connect` must be
    called manually.
 
@@ -86,9 +86,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
    An :class:`SMTP_SSL` instance behaves exactly the same as instances of
    :class:`SMTP`. :class:`SMTP_SSL` should be used for situations where SSL is
-   required from the beginning of the connection and using :meth:`starttls` is
+   required from the beginning of the connection and using :meth:`SMTP.starttls` is
    not appropriate. If the host parameter is set to a truthy value,
-   :meth:`connect(host, port)` is called automatically when the object is created,
+   :meth:`SMTP.connect` is called automatically when the object is created,
    otherwise :meth:`connect` must be called manually.
 
    The optional arguments *local_hostname*, *timeout* and *source_address* have the same
