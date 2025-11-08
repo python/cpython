@@ -392,9 +392,12 @@ class TestAsyncioREPL(unittest.TestCase):
             kill_python(p)
             output_lines = p.stderr.read().splitlines()
             p.stderr.close()
+
             self.assertEqual(output_lines[3], 'notice from pythonstartup in asyncio repl')
+
             tb_start_lines = output_lines[4:6]
             tb_final_lines = output_lines[13:]
+
             expected_lines = [
                 '>>> import asyncio',
                 'Traceback (most recent call last):',
@@ -405,6 +408,7 @@ class TestAsyncioREPL(unittest.TestCase):
                 '',
                 'exiting asyncio REPL...',
             ]
+
             self.assertEqual(tb_start_lines + tb_final_lines, expected_lines)
 
     def test_pythonstartup_failure(self):
@@ -415,6 +419,7 @@ class TestAsyncioREPL(unittest.TestCase):
             kill_python(p)
             output = p.stderr.read()
             p.stderr.close()
+
             tb_start_lines = output.splitlines()[3:5]
             tb_final_lines = output.splitlines()[12:]
 
@@ -431,6 +436,7 @@ class TestAsyncioREPL(unittest.TestCase):
                 '',
                 'exiting asyncio REPL...',
             ]
+
             self.assertEqual(tb_start_lines + tb_final_lines, expected_lines)
 
 
