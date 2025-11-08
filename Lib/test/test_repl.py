@@ -396,10 +396,9 @@ class TestAsyncioREPL(unittest.TestCase):
 
         self.assertEqual(output_lines[3], 'notice from pythonstartup in asyncio repl')
 
-        tb_start_lines = output_lines[4:6]
+        tb_start_lines = output_lines[5:6]
         tb_final_lines = output_lines[13:]
         expected_lines = [
-            '>>> import asyncio',
             'Traceback (most recent call last):',
             '  File "<stdin>", line 1, in <module>',
             '    1/0',
@@ -419,10 +418,9 @@ class TestAsyncioREPL(unittest.TestCase):
         output_lines = p.stderr.read().splitlines()
         p.stderr.close()
 
-        tb_start_lines = output_lines[3:5]
+        tb_start_lines = output_lines[4:5]
         tb_final_lines = output_lines[12:]
         expected_lines = [
-            '>>> import asyncio',
             'Traceback (most recent call last):',
             '  File "<stdin>", line 1, in <module>',
             '    foo()',
