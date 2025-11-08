@@ -233,6 +233,10 @@ complete listing.
 
    .. versionadded:: 3.4
 
+.. c:macro:: PyDoc_VAR(name)
+
+   Declares a static character array variable with the given name *name*.
+
 .. c:macro:: PyDoc_STRVAR(name, str)
 
    Creates a variable with name ``name`` that can be used in docstrings.
