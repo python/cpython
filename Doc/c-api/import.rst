@@ -341,7 +341,7 @@ Importing Modules
    The function creates and returns a module object given a *spec* and an *initfunc*.
 
    *spec* must be a :class:`~importlib.machinery.ModuleSpec` object
-   
+
    *initfunc* is the same as in :c:func:`PyImport_ExtendInittab`
 
    .. versionadded:: 3.15
