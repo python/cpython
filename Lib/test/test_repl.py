@@ -248,7 +248,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         # errors based on https://github.com/python/cpython/issues/137576
         # case 1: error in user input, but PYTHONSTARTUP is fine
         startup_code = "print('notice from pythonstartup')"
-        with new_startup_env(code=startup_code, histfile=".pythonhist") as startup_env:
+        with new_startup_env(code=startup_code) as startup_env:
             # -q to suppress noise
             p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
             p.stdin.write("1/0")
@@ -269,7 +269,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
     def test_pythonstartup_failure(self):
         # case 2: error in PYTHONSTARTUP triggered by user input
         startup_code = "def foo():\n    1/0\n"
-        with new_startup_env(code=startup_code, histfile=".asyncio_history") as startup_env:
+        with new_startup_env(code=startup_code) as startup_env:
             # -q to suppress noise
             p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
             p.stdin.write("foo()")
