@@ -253,6 +253,9 @@ class TestInteractiveInterpreter(unittest.TestCase):
             p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
             p.stdin.write("1/0")
             output_lines = kill_python(p).splitlines()
+
+            self.assertEqual(output_lines[0], 'notice from pythonstartup')
+
             traceback_lines = output_lines[2:-1]
             expected_lines = [
                 'Traceback (most recent call last):',
@@ -261,7 +264,6 @@ class TestInteractiveInterpreter(unittest.TestCase):
                 '    ~^~',
                 'ZeroDivisionError: division by zero',
             ]
-            self.assertEqual(output_lines[0], 'notice from pythonstartup')
             self.assertEqual(traceback_lines, expected_lines)
 
     def test_pythonstartup_failure(self):
@@ -417,11 +419,11 @@ class TestAsyncioREPL(unittest.TestCase):
             p = spawn_asyncio_repl(env=os.environ | startup_env, stderr=subprocess.PIPE, isolated=False)
             p.stdin.write("foo()")
             kill_python(p)
-            output = p.stderr.read()
+            output_lines = p.stderr.read().splitlines()
             p.stderr.close()
 
-            tb_start_lines = output.splitlines()[3:5]
-            tb_final_lines = output.splitlines()[12:]
+            tb_start_lines = output_lines[3:5]
+            tb_final_lines = output_lines[12:]
 
             expected_lines = [
                 '>>> import asyncio',
