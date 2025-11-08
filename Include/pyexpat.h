@@ -6,9 +6,8 @@
 #define PyExpat_CAPI_MAGIC  "pyexpat.expat_CAPI 1.1"
 #define PyExpat_CAPSULE_NAME "pyexpat.expat_CAPI"
 
-struct PyExpat_CAPI
-{
-    char* magic; /* set to PyExpat_CAPI_MAGIC */
+struct PyExpat_CAPI {
+    char *magic; /* set to PyExpat_CAPI_MAGIC */
     int size; /* set to sizeof(struct PyExpat_CAPI) */
     int MAJOR_VERSION;
     int MINOR_VERSION;
@@ -65,3 +64,15 @@ struct PyExpat_CAPI
     /* always add new stuff to the end! */
 };
 
+static inline int
+PyExpat_CheckCompatibility(struct PyExpat_CAPI *api)
+{
+    return (
+        api != NULL
+        && strcmp(api->magic, PyExpat_CAPI_MAGIC) == 0
+        && (size_t)api->size >= sizeof(struct PyExpat_CAPI)
+        && api->MAJOR_VERSION == XML_MAJOR_VERSION
+        && api->MINOR_VERSION == XML_MINOR_VERSION
+        && api->MICRO_VERSION == XML_MICRO_VERSION
+    );
+}
