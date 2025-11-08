@@ -770,7 +770,7 @@ dummy_func(void) {
     }
 
     op(_CREATE_INIT_FRAME, (init, self, args[oparg] -- init_frame)) {
-        _Py_UOpsAbstractFrame *old_frame = ctx->frame;
+        ctx->frame->stack_pointer = stack_pointer - oparg - 2;
         _Py_UOpsAbstractFrame *shim = frame_new(ctx, (PyCodeObject *)&_Py_InitCleanup, 0, NULL, 0);
         if (shim == NULL) {
             break;
@@ -799,6 +799,13 @@ dummy_func(void) {
         }
         _Py_BloomFilter_Add(dependencies, returning_code);
         int returning_stacklevel = this_instr->operand1;
+        if (ctx->curr_frame_depth >= 2) {
+            PyCodeObject *expected_code = ctx->frames[ctx->curr_frame_depth - 2].code;
+            if (expected_code == returning_code) {
+                assert((this_instr + 1)->opcode == _GUARD_IP_RETURN_VALUE);
+                REPLACE_OP((this_instr + 1), _NOP, 0, 0);
+            }
+        }
         if (frame_pop(ctx, returning_code, returning_stacklevel)) {
             break;
         }
@@ -897,6 +904,12 @@ dummy_func(void) {
             PyCodeObject *co = (PyCodeObject *)func->func_code;
             _Py_BloomFilter_Add(dependencies, co);
             ctx->frame->func = func;
+        }
+        // Fixed calls don't need IP guards.
+        if ((this_instr-1)->opcode == _SAVE_RETURN_OFFSET ||
+            (this_instr-1)->opcode == _CREATE_INIT_FRAME) {
+            assert((this_instr+1)->opcode == _GUARD_IP__PUSH_FRAME);
+            REPLACE_OP(this_instr+1, _NOP, 0, 0);
         }
     }
 

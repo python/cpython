@@ -1124,6 +1124,13 @@
             }
             _Py_BloomFilter_Add(dependencies, returning_code);
             int returning_stacklevel = this_instr->operand1;
+            if (ctx->curr_frame_depth >= 2) {
+                PyCodeObject *expected_code = ctx->frames[ctx->curr_frame_depth - 2].code;
+                if (expected_code == returning_code) {
+                    assert((this_instr + 1)->opcode == _GUARD_IP_RETURN_VALUE);
+                    REPLACE_OP((this_instr + 1), _NOP, 0, 0);
+                }
+            }
             if (frame_pop(ctx, returning_code, returning_stacklevel)) {
                 break;
             }
@@ -2639,6 +2646,11 @@
                 _Py_BloomFilter_Add(dependencies, co);
                 ctx->frame->func = func;
             }
+            if ((this_instr-1)->opcode == _SAVE_RETURN_OFFSET ||
+                (this_instr-1)->opcode == _CREATE_INIT_FRAME) {
+                assert((this_instr+1)->opcode == _GUARD_IP__PUSH_FRAME);
+                REPLACE_OP(this_instr+1, _NOP, 0, 0);
+            }
             break;
         }
 
@@ -2776,7 +2788,7 @@
             JitOptRef init_frame;
             args = &stack_pointer[-oparg];
             self = stack_pointer[-1 - oparg];
-            _Py_UOpsAbstractFrame *old_frame = ctx->frame;
+            ctx->frame->stack_pointer = stack_pointer - oparg - 2;
             _Py_UOpsAbstractFrame *shim = frame_new(ctx, (PyCodeObject *)&_Py_InitCleanup, 0, NULL, 0);
             if (shim == NULL) {
                 break;

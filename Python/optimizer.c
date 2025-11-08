@@ -616,7 +616,7 @@ _PyJit_translate_single_bytecode_to_trace(
 
     bool needs_guard_ip = OPCODE_HAS_NEEDS_GUARD_IP(opcode);
     if (has_dynamic_jump_taken && !needs_guard_ip) {
-        DPRINTF(2, "Unsupported: dynamic jump taken\n");
+        DPRINTF(2, "Unsupported: dynamic jump taken %s\n", _PyOpcode_OpName[opcode]);
         goto unsupported;
     }
     DPRINTF(2, "%p %d: %s(%d) %d %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, needs_guard_ip, old_stack_level);
@@ -749,6 +749,8 @@ _PyJit_translate_single_bytecode_to_trace(
             if ((next_instr != _tstate->jit_state.initial_state.close_loop_instr) &&
                 (next_instr != _tstate->jit_state.initial_state.start_instr) &&
                 _tstate->jit_state.prev_state.code_curr_size > 5 &&
+                // For side exits, we don't want to terminate them early.
+                _tstate->jit_state.initial_state.exit == NULL &&
                 // These are coroutines, and we want to unroll those usually.
                 opcode != JUMP_BACKWARD_NO_INTERRUPT) {
                 // We encountered a JUMP_BACKWARD but not to the top of our own loop.
@@ -867,7 +869,7 @@ _PyJit_translate_single_bytecode_to_trace(
                     if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
                         // Don't add nested code objects to the dependency.
                         // It causes endless re-traces.
-                        if (new_func != NULL && !(new_code->co_flags & CO_NESTED)) {
+                        if (new_func != NULL && !Py_IsNone((PyObject*)new_func) && !(new_code->co_flags & CO_NESTED)) {
                             operand = (uintptr_t)new_func;
                             DPRINTF(2, "Adding %p func to op\n", (void *)operand);
                             _Py_BloomFilter_Add(dependencies, new_func);

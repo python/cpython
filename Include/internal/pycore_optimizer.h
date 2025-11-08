@@ -88,8 +88,6 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 // This value is arbitrary and was not optimized.
 #define JIT_CLEANUP_THRESHOLD 1000
 
-#define TRACE_STACK_SIZE 5
-
 int _Py_uop_analyze_and_optimize(
     PyFunctionObject *func,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
@@ -125,7 +123,7 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 #define TY_ARENA_SIZE (UOP_MAX_TRACE_LENGTH * 5)
 
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
-#define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
+#define MAX_ABSTRACT_FRAME_DEPTH (16)
 
 // The maximum number of side exits that we can take before requiring forward
 // progress (and inserting a new ENTER_EXECUTOR instruction). In practice, this
