@@ -24,7 +24,7 @@ the module state:
    }
 
 
-.. c:function:: int PyExpat_CheckCompatibility(struct PyExpat_API *api)
+.. c:function:: int PyExpat_CheckCompatibility(struct PyExpat_CAPI *api)
 
    Return ``1`` if *api* is compatible with the linked Expat library,
    and ``0`` otherwise. This function never sets a Python exception.
