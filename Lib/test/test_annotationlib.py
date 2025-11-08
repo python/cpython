@@ -823,6 +823,16 @@ class TestGetAnnotations(unittest.TestCase):
             {"x": int},
         )
 
+    def test_stringized_annotations_on_custom_object(self):
+        class HasAnnotations:
+            @property
+            def __annotations__(self):
+                return {"x": "int"}
+
+        ha = HasAnnotations()
+        self.assertEqual(get_annotations(ha), {"x": "int"})
+        self.assertEqual(get_annotations(ha, eval_str=True), {"x": int})
+
     def test_stringized_annotation_permutations(self):
         def define_class(name, has_future, has_annos, base_text, extra_names=None):
             lines = []
