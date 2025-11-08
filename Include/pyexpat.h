@@ -67,9 +67,9 @@ struct PyExpat_CAPI {
 static inline int
 PyExpat_CheckCompatibility(struct PyExpat_CAPI *api)
 {
+    assert(api != NULL);
     return (
-        api != NULL
-        && strcmp(api->magic, PyExpat_CAPI_MAGIC) == 0
+        strcmp(api->magic, PyExpat_CAPI_MAGIC) == 0
         && (size_t)api->size >= sizeof(struct PyExpat_CAPI)
         && api->MAJOR_VERSION == XML_MAJOR_VERSION
         && api->MINOR_VERSION == XML_MINOR_VERSION
