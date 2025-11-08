@@ -343,8 +343,9 @@ For convenience, some of these functions will always return a
 .. c:function:: PyObject *PyErr_ProgramText(const char *filename, int lineno)
 
    Similar to :c:func:`PyErr_ProgramTextObject`, but *filename* is a
-   :c:expr:`const char *` UTF-8 encoded string instead of a Python object
-   reference.
+   :c:expr:`const char *`, which is decoded with the
+   :term:`filesystem-encoding-and-error-handler`, instead of a
+   Python object reference.
 
 
 Issuing warnings
