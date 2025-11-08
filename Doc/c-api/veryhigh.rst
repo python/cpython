@@ -233,10 +233,11 @@ the same library that the Python runtime is using.
 
    Parse and compile the Python source code in *str*, returning the resulting code
    object.  The start symbol is given by *start*; this can be used to constrain the
-   code which can be compiled and should be one of the :ref:`available start symbols <start-symbols>`.
-   The filename specified by *filename* is used to construct the code object
-   and may appear in tracebacks or :exc:`SyntaxError` exception messages.
-   This returns ``NULL`` if the code cannot be parsed or compiled.
+   code which can be compiled and should be :ref:`available start symbols
+   <start-symbols>`.  The filename specified by
+   *filename* is used to construct the code object and may appear in tracebacks or
+   :exc:`SyntaxError` exception messages.  This returns ``NULL`` if the code
+   cannot be parsed or compiled.
 
    The integer *optimize* specifies the optimization level of the compiler; a
    value of ``-1`` selects the optimization level of the interpreter as given by
