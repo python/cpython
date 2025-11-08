@@ -752,8 +752,14 @@ dummy_func(void) {
     }
 
     op(_PY_FRAME_KW, (callable, self_or_null, args[oparg], kwnames -- new_frame)) {
-        new_frame = PyJitRef_NULL;
-        ctx->done = true;
+        assert((this_instr + 2)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging((this_instr + 2));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+
+        new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
     }
 
     op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
@@ -882,16 +888,16 @@ dummy_func(void) {
         ctx->curr_frame_depth++;
         stack_pointer = ctx->frame->stack_pointer;
         uint64_t operand = this_instr->operand0;
-        if (operand == 0 || (operand & 1)) {
-            // It's either a code object or NULL
+        if (operand == 0) {
             ctx->done = true;
             break;
         }
-        PyFunctionObject *func = (PyFunctionObject *)operand;
-        PyCodeObject *co = (PyCodeObject *)func->func_code;
-        _Py_BloomFilter_Add(dependencies, co);
-        assert(PyFunction_Check(func));
-        ctx->frame->func = func;
+        if (!(operand & 1)) {
+            PyFunctionObject *func = (PyFunctionObject *)operand;
+            PyCodeObject *co = (PyCodeObject *)func->func_code;
+            _Py_BloomFilter_Add(dependencies, co);
+            ctx->frame->func = func;
+        }
     }
 
     op(_UNPACK_SEQUENCE, (seq -- values[oparg], top[0])) {

@@ -865,7 +865,9 @@ _PyJit_translate_single_bytecode_to_trace(
 
                     operand = 0;
                     if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
-                        if (new_func != NULL) {
+                        // Don't add nested code objects to the dependency.
+                        // It causes endless re-traces.
+                        if (new_func != NULL && !(new_code->co_flags & CO_NESTED)) {
                             operand = (uintptr_t)new_func;
                             DPRINTF(2, "Adding %p func to op\n", (void *)operand);
                             _Py_BloomFilter_Add(dependencies, new_func);

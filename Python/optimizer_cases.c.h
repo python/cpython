@@ -2629,15 +2629,16 @@
             ctx->curr_frame_depth++;
             stack_pointer = ctx->frame->stack_pointer;
             uint64_t operand = this_instr->operand0;
-            if (operand == 0 || (operand & 1)) {
+            if (operand == 0) {
                 ctx->done = true;
                 break;
             }
-            PyFunctionObject *func = (PyFunctionObject *)operand;
-            PyCodeObject *co = (PyCodeObject *)func->func_code;
-            _Py_BloomFilter_Add(dependencies, co);
-            assert(PyFunction_Check(func));
-            ctx->frame->func = func;
+            if (!(operand & 1)) {
+                PyFunctionObject *func = (PyFunctionObject *)operand;
+                PyCodeObject *co = (PyCodeObject *)func->func_code;
+                _Py_BloomFilter_Add(dependencies, co);
+                ctx->frame->func = func;
+            }
             break;
         }
 
@@ -2972,8 +2973,13 @@
 
         case _PY_FRAME_KW: {
             JitOptRef new_frame;
-            new_frame = PyJitRef_NULL;
-            ctx->done = true;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            new_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
             stack_pointer[-3 - oparg] = new_frame;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
