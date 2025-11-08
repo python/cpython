@@ -42,6 +42,7 @@ struct faulthandler_user_signal {
     int chain;
     _Py_sighandler_t previous;
     PyInterpreterState *interp;
+    PyThreadState *tstate;
 };
 #endif /* FAULTHANDLER_USER */
 
