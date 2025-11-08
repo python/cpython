@@ -94,6 +94,10 @@ class TestForwardRefFormat(unittest.TestCase):
             alpha: some | obj,
             beta: +some,
             gamma: some < obj,
+            delta: some | {obj: module},
+            epsilon: some | {obj, module},
+            zeta: some | [obj],
+            eta: some | (),
         ):
             pass
 
@@ -121,6 +125,23 @@ class TestForwardRefFormat(unittest.TestCase):
         gamma_anno = anno["gamma"]
         self.assertIsInstance(gamma_anno, ForwardRef)
         self.assertEqual(gamma_anno, support.EqualToForwardRef("some < obj", owner=f))
+
+        delta_anno = anno["delta"]
+        self.assertIsInstance(delta_anno, ForwardRef)
+        self.assertEqual(delta_anno, support.EqualToForwardRef("some | {obj: module}", owner=f))
+
+        epsilon_anno = anno["epsilon"]
+        self.assertIsInstance(epsilon_anno, ForwardRef)
+        self.assertEqual(epsilon_anno, support.EqualToForwardRef("some | {obj, module}", owner=f))
+
+        zeta_anno = anno["zeta"]
+        self.assertIsInstance(zeta_anno, ForwardRef)
+        self.assertEqual(zeta_anno, support.EqualToForwardRef("some | [obj]", owner=f))
+
+        eta_anno = anno["eta"]
+        self.assertIsInstance(eta_anno, ForwardRef)
+        self.assertEqual(eta_anno, support.EqualToForwardRef("some | ()", owner=f))
+
 
     def test_partially_nonexistent_union(self):
         # Test unions with '|' syntax equal unions with typing.Union[] with some forwardrefs
