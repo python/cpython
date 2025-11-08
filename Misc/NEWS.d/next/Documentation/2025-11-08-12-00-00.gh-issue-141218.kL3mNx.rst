@@ -1,0 +1,4 @@
+Fix inaccurate documentation about object comparison. Changed "Objects of different 
+types, except different numeric types, never compare equal" to "Objects of different 
+types, unless documented otherwise, never compare equal" to account for documented 
+exceptions like set/frozenset comparisons.
