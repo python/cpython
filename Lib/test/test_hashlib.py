@@ -929,6 +929,7 @@ class HashLibTestCase(unittest.TestCase):
           last_node=True)
 
     @requires_blake2
+    @requires_resource('urlfetch')
     def test_blake2b_vectors(self):
         for msg, key, md in read_vectors('blake2b'):
             key = bytes.fromhex(key)
@@ -972,6 +973,7 @@ class HashLibTestCase(unittest.TestCase):
           last_node=True)
 
     @requires_blake2
+    @requires_resource('urlfetch')
     def test_blake2s_vectors(self):
         for msg, key, md in read_vectors('blake2s'):
             key = bytes.fromhex(key)
@@ -983,6 +985,7 @@ class HashLibTestCase(unittest.TestCase):
           "6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7")
 
     @requires_sha3
+    @requires_resource('urlfetch')
     def test_case_sha3_224_vector(self):
         for msg, md in read_vectors('sha3_224'):
             self.check('sha3_224', msg, md)
@@ -993,6 +996,7 @@ class HashLibTestCase(unittest.TestCase):
           "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a")
 
     @requires_sha3
+    @requires_resource('urlfetch')
     def test_case_sha3_256_vector(self):
         for msg, md in read_vectors('sha3_256'):
             self.check('sha3_256', msg, md)
@@ -1004,6 +1008,7 @@ class HashLibTestCase(unittest.TestCase):
           "c3713831264adb47fb6bd1e058d5f004")
 
     @requires_sha3
+    @requires_resource('urlfetch')
     def test_case_sha3_384_vector(self):
         for msg, md in read_vectors('sha3_384'):
             self.check('sha3_384', msg, md)
@@ -1015,6 +1020,7 @@ class HashLibTestCase(unittest.TestCase):
           "15b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26")
 
     @requires_sha3
+    @requires_resource('urlfetch')
     def test_case_sha3_512_vector(self):
         for msg, md in read_vectors('sha3_512'):
             self.check('sha3_512', msg, md)
@@ -1025,6 +1031,7 @@ class HashLibTestCase(unittest.TestCase):
           True)
         self.check('shake_128', b"", "7f9c", True)
 
+    @requires_resource('urlfetch')
     def test_case_shake128_vector(self):
         for msg, md in read_vectors('shake_128'):
             self.check('shake_128', msg, md, True)
@@ -1035,6 +1042,7 @@ class HashLibTestCase(unittest.TestCase):
           True)
         self.check('shake_256', b"", "46b9", True)
 
+    @requires_resource('urlfetch')
     def test_case_shake256_vector(self):
         for msg, md in read_vectors('shake_256'):
             self.check('shake_256', msg, md, True)
