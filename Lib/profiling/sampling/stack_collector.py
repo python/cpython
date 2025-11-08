@@ -104,6 +104,10 @@ class FlamegraphCollector(StackTraceCollector):
     def _format_function_name(func):
         filename, lineno, funcname = func
 
+        # Special frames like <GC> and <native> should not show file:line
+        if filename == "~" and lineno == 0:
+            return funcname
+
         if len(filename) > 50:
             parts = filename.split("/")
             if len(parts) > 2:
