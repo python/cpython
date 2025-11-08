@@ -1222,7 +1222,7 @@ Task Object
    To cancel a running Task use the :meth:`cancel` method.  Calling it
    will cause the Task to throw a :exc:`CancelledError` exception into
    the wrapped coroutine.  If a coroutine is awaiting on a Future
-   object during cancellation, the Future object will be cancelled.
+   or Task object during cancellation, the awaited object will be cancelled.
 
    :meth:`cancelled` can be used to check if the Task was cancelled.
    The method returns ``True`` if the wrapped coroutine did not
@@ -1231,7 +1231,8 @@ Task Object
 
    :class:`asyncio.Task` inherits from :class:`Future` all of its
    APIs except :meth:`Future.set_result` and
-   :meth:`Future.set_exception`.
+   :meth:`Future.set_exception`. This includes the cancellation
+   behavior: Tasks can be cancelled in the same way as Futures.
 
    An optional keyword-only *context* argument allows specifying a
    custom :class:`contextvars.Context` for the *coro* to run in.
@@ -1410,6 +1411,10 @@ Task Object
       discouraged.  Should the coroutine nevertheless decide to suppress
       the cancellation, it needs to call :meth:`Task.uncancel` in addition
       to catching the exception.
+      
+      If the Task being cancelled is currently awaiting another Task or
+      Future, that awaited object will also be cancelled. This cancellation
+      propagates down the entire chain of awaited objects.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.
