@@ -387,3 +387,4 @@ Available start symbols
    .. seealso::
       :py:class:`ast.FunctionType`
 
+   .. versionadded:: 3.8
