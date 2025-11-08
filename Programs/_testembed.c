@@ -2213,6 +2213,67 @@ static int test_repeated_init_and_inittab(void)
     return 0;
 }
 
+static PyObject* create_module(PyObject* self, PyObject* spec) {
+    return PyImport_CreateModuleFromInitfunc(spec, PyInit_embedded_ext);
+}
+
+static PyMethodDef create_static_module_methods[] = {
+    {"create_module", create_module, METH_O, NULL},
+    {}
+};
+
+static struct PyModuleDef create_static_module_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "create_static_module",
+    .m_size = 0,
+    .m_methods = create_static_module_methods,
+    .m_slots = extension_slots,
+};
+
+PyMODINIT_FUNC PyInit_create_static_module(void) {
+    return PyModuleDef_Init(&create_static_module_def);
+}
+
+static int test_create_module_from_initfunc(void)
+{
+    wchar_t* argv[] = {PROGRAM_NAME, L"-c", L"import embedded_ext; print(embedded_ext)"};
+    PyConfig config;
+    if (PyImport_AppendInittab("create_static_module",
+                               &PyInit_create_static_module) != 0) {
+        fprintf(stderr, "PyImport_AppendInittab() failed\n");
+        return 1;
+    }
+    PyConfig_InitPythonConfig(&config);
+    config.isolated = 1;
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+    int result = PyRun_SimpleString(
+        "import sys\n"
+        "from importlib._bootstrap import spec_from_loader, _call_with_frames_removed\n"
+        "import _imp\n"
+        "import create_static_module\n"
+        "class StaticExtensionImporter:\n"
+        "   _ORIGIN = \"static-extension\"\n"
+        "   @classmethod\n"
+        "   def find_spec(cls, fullname, path, target=None):\n"
+        "       if fullname == \"embedded_ext\":\n"
+        "           return spec_from_loader(fullname, cls, origin=cls._ORIGIN)\n"
+        "       return None\n"
+        "   @staticmethod\n"
+        "   def create_module(spec):\n"
+        "       return _call_with_frames_removed(create_static_module.create_module, spec)\n"
+        "   @staticmethod\n"
+        "   def exec_module(module):\n"
+        "       _call_with_frames_removed(_imp.exec_builtin, module)\n"
+        "sys.meta_path.append(StaticExtensionImporter)\n"
+    );
+    if (result < 0) {
+        fprintf(stderr, "PyRun_SimpleString() failed\n");
+        return 1;
+    }
+    return Py_RunMain();
+}
+
 static void wrap_allocator(PyMemAllocatorEx *allocator);
 static void unwrap_allocator(PyMemAllocatorEx *allocator);
 
@@ -2396,6 +2457,7 @@ static struct TestCase TestCases[] = {
 #endif
     {"test_get_incomplete_frame", test_get_incomplete_frame},
     {"test_gilstate_after_finalization", test_gilstate_after_finalization},
+    {"test_create_module_from_initfunc", test_create_module_from_initfunc},
     {NULL, NULL}
 };
 
