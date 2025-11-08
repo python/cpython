@@ -40,7 +40,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    .. versionadded:: 3.4
       Add :c:macro:`!Py_HASH_FNV` and :c:macro:`!Py_HASH_SIPHASH24`.
 
-   .. versionadded:: 3.13
+   .. versionadded:: 3.11
       Add :c:macro:`!Py_HASH_SIPHASH13`.
 
 
