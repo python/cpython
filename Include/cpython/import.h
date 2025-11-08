@@ -14,7 +14,7 @@ PyAPI_FUNC(int) PyImport_ExtendInittab(struct _inittab *newtab);
 // extension modules directly from a spec and init function,
 // without needing to go through inittab
 PyAPI_FUNC(PyObject *)
-PyImport_CreateBuiltinFromSpecAndInitfunc(
+PyImport_CreateModuleFromInitfunc(
     PyObject *spec,
     PyObject* (*initfunc)(void)
     );

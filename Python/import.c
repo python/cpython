@@ -2368,18 +2368,15 @@ lookup_inittab_initfunc(const struct _Py_ext_module_loader_info* info)
     struct _inittab *found = NULL;
     for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(info->name, p->name)) {
-            found = p;
+            return (PyModInitFunction)p->initfunc;
         }
     }
-    if (found == NULL) {
-        // not found
-        return NULL;
-    }
-    return (PyModInitFunction)found->initfunc;
+    // not found
+    return NULL;
 }
 
 static PyObject*
-create_builtin_ex(
+create_builtin(
     PyThreadState *tstate, PyObject *name,
     PyObject *spec,
     PyModInitFunction initfunc)
@@ -2447,14 +2444,8 @@ finally:
     return mod;
 }
 
-static PyObject*
-create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
-{
-    return create_builtin_ex(tstate, name, spec, NULL);
-}
-
 PyObject*
-PyImport_CreateBuiltinFromSpecAndInitfunc(
+PyImport_CreateModuleFromInitfunc(
     PyObject *spec, PyObject* (*initfunc)(void))
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -2466,13 +2457,12 @@ PyImport_CreateBuiltinFromSpecAndInitfunc(
 
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
-                     "name must be string, not %.200s",
-                     Py_TYPE(name)->tp_name);
+                     "spec name must be string, not %T", name);
         Py_DECREF(name);
         return NULL;
     }
 
-    PyObject *mod = create_builtin_ex(tstate, name, spec, initfunc);
+    PyObject *mod = create_builtin(tstate, name, spec, initfunc);
     Py_DECREF(name);
     return mod;
 }
@@ -3245,7 +3235,7 @@ bootstrap_imp(PyThreadState *tstate)
     }
 
     // Create the _imp module from its definition.
-    PyObject *mod = create_builtin(tstate, name, spec);
+    PyObject *mod = create_builtin(tstate, name, spec, NULL);
     Py_CLEAR(name);
     Py_DECREF(spec);
     if (mod == NULL) {
@@ -4405,7 +4395,7 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
         return NULL;
     }
 
-    PyObject *mod = create_builtin(tstate, name, spec);
+    PyObject *mod = create_builtin(tstate, name, spec, NULL);
     Py_DECREF(name);
     return mod;
 }
