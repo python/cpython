@@ -1,5 +1,0 @@
-Python now gets the locale encoding with C code to initialize the encoding
-of standard streams like sys.stdout. Moreover, the encoding is now
-initialized to the Python codec name to get a normalized encoding name and
-to ensure that the codec is loaded. The change avoids importing _bootlocale
-and _locale modules at startup by default.

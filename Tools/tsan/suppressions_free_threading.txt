@@ -1,0 +1,43 @@
+# This file contains suppressions for the free-threaded build. It contains the
+# suppressions for the default build and additional suppressions needed only in
+# the free-threaded build.
+#
+# reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
+
+## Free-threaded suppressions
+
+
+# These entries are for warnings that trigger in a library function, as called
+# by a CPython function.
+
+# These warnings trigger directly in a CPython function.
+
+race_top:dump_traceback
+race_top:fatal_error
+race_top:_PyFrame_GetCode
+race_top:_PyFrame_Initialize
+race_top:_PyObject_TryGetInstanceAttribute
+race_top:PyUnstable_InterpreterFrame_GetLine
+race_top:write_thread_id
+
+# gh-129068: race on shared range iterators (test_free_threading.test_zip.ZipThreading.test_threading)
+race_top:rangeiter_next
+
+# gh-129748: test.test_free_threading.test_slots.TestSlots.test_object
+race_top:mi_block_set_nextx
+
+# https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
+thread:pthread_create
+
+# Range iteration is not thread-safe yet (issue #129068)
+race_top:rangeiter_next
+
+# List resizing happens through different paths ending in memcpy or memmove
+# (for efficiency), which will probably need to rewritten as explicit loops
+# of ptr-sized copies to be thread-safe. (Issue #129069)
+race:list_ass_slice_lock_held
+race:list_inplace_repeat_lock_held
+
+# PyObject_Realloc internally does memcpy which isn't atomic so can race
+# with non-locking reads. See #132070
+race:PyObject_Realloc

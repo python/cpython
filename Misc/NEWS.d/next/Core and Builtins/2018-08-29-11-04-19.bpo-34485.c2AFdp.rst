@@ -1,3 +1,0 @@
-On Windows, the LC_CTYPE is now set to the user preferred locale at startup.
-Previously, the LC_CTYPE locale was "C" at startup, but changed when calling
-setlocale(LC_CTYPE, "") or setlocale(LC_ALL, "").

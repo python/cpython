@@ -1,0 +1,76 @@
+# Workflow to run mypy on select parts of the CPython repo
+name: mypy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - ".github/workflows/mypy.yml"
+      - "Lib/_colorize.py"
+      - "Lib/_pyrepl/**"
+      - "Lib/test/libregrtest/**"
+      - "Lib/tomllib/**"
+      - "Misc/mypy/**"
+      - "Tools/build/check_extension_modules.py"
+      - "Tools/build/check_warnings.py"
+      - "Tools/build/compute-changes.py"
+      - "Tools/build/consts_getter.py"
+      - "Tools/build/deepfreeze.py"
+      - "Tools/build/generate-build-details.py"
+      - "Tools/build/generate_sbom.py"
+      - "Tools/build/generate_stdlib_module_names.py"
+      - "Tools/build/mypy.ini"
+      - "Tools/build/umarshal.py"
+      - "Tools/build/update_file.py"
+      - "Tools/build/verify_ensurepip_wheels.py"
+      - "Tools/cases_generator/**"
+      - "Tools/clinic/**"
+      - "Tools/jit/**"
+      - "Tools/peg_generator/**"
+      - "Tools/requirements-dev.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  FORCE_COLOR: 1
+  TERM: xterm-256color  # needed for FORCE_COLOR to work on mypy on Ubuntu, see https://github.com/python/mypy/issues/13817
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  mypy:
+    name: Run mypy on ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [
+          "Lib/_pyrepl",
+          "Lib/test/libregrtest",
+          "Lib/tomllib",
+          "Tools/build",
+          "Tools/cases_generator",
+          "Tools/clinic",
+          "Tools/jit",
+          "Tools/peg_generator",
+        ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: Tools/requirements-dev.txt
+      - run: pip install -r Tools/requirements-dev.txt
+      - run: python3 Misc/mypy/make_symlinks.py --symlink
+      - run: mypy --config-file ${{ matrix.target }}/mypy.ini

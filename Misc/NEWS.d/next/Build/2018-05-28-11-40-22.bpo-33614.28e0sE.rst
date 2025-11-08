@@ -1,2 +1,0 @@
-Ensures module definition files for the stable ABI on Windows are correctly
-regenerated.

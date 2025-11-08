@@ -7,7 +7,7 @@ This includes:
 from tkinter import *
 
 
-class TooltipBase(object):
+class TooltipBase:
     """abstract base class for tooltips"""
 
     def __init__(self, anchor_widget):
@@ -75,7 +75,7 @@ class TooltipBase(object):
         if tw:
             try:
                 tw.destroy()
-            except TclError:
+            except TclError:  # pragma: no cover
                 pass
 
 
@@ -92,7 +92,7 @@ class OnHoverTooltipBase(TooltipBase):
         e.g. after hovering over the anchor widget with the mouse for enough
         time.
         """
-        super(OnHoverTooltipBase, self).__init__(anchor_widget)
+        super().__init__(anchor_widget)
         self.hover_delay = hover_delay
 
         self._after_id = None
@@ -103,11 +103,11 @@ class OnHoverTooltipBase(TooltipBase):
     def __del__(self):
         try:
             self.anchor_widget.unbind("<Enter>", self._id1)
-            self.anchor_widget.unbind("<Leave>", self._id2)
-            self.anchor_widget.unbind("<Button>", self._id3)
+            self.anchor_widget.unbind("<Leave>", self._id2)  # pragma: no cover
+            self.anchor_widget.unbind("<Button>", self._id3) # pragma: no cover
         except TclError:
             pass
-        super(OnHoverTooltipBase, self).__del__()
+        super().__del__()
 
     def _show_event(self, event=None):
         """event handler to display the tooltip"""
@@ -137,14 +137,15 @@ class OnHoverTooltipBase(TooltipBase):
         """hide the tooltip"""
         try:
             self.unschedule()
-        except TclError:
+        except TclError:  # pragma: no cover
             pass
-        super(OnHoverTooltipBase, self).hidetip()
+        super().hidetip()
 
 
 class Hovertip(OnHoverTooltipBase):
     "A tooltip that pops up when a mouse hovers over an anchor widget."
-    def __init__(self, anchor_widget, text, hover_delay=1000):
+    def __init__(self, anchor_widget, text, hover_delay=1000,
+                 foreground="#000000", background="#ffffe0"):
         """Create a text tooltip with a mouse hover delay.
 
         anchor_widget: the widget next to which the tooltip will be shown
@@ -154,12 +155,15 @@ class Hovertip(OnHoverTooltipBase):
         e.g. after hovering over the anchor widget with the mouse for enough
         time.
         """
-        super(Hovertip, self).__init__(anchor_widget, hover_delay=hover_delay)
+        super().__init__(anchor_widget, hover_delay=hover_delay)
         self.text = text
+        self.foreground = foreground
+        self.background = background
 
     def showcontents(self):
         label = Label(self.tipwindow, text=self.text, justify=LEFT,
-                      background="#ffffe0", relief=SOLID, borderwidth=1)
+                       relief=SOLID,  borderwidth=1,
+                       foreground=self.foreground, background=self.background)
         label.pack()
 
 

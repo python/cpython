@@ -1,6 +1,7 @@
 """Utilities to get a password and/or the current user name.
 
-getpass(prompt[, stream]) - Prompt for a password, with echo turned off.
+getpass(prompt[, stream[, echo_char]]) - Prompt for a password, with echo
+turned off and optional keyboard feedback.
 getuser() - Get the user name from the environment or password database.
 
 GetPassWarning - This UserWarning is issued when getpass() cannot prevent
@@ -18,7 +19,6 @@ import contextlib
 import io
 import os
 import sys
-import warnings
 
 __all__ = ["getpass","getuser","GetPassWarning"]
 
@@ -26,13 +26,15 @@ __all__ = ["getpass","getuser","GetPassWarning"]
 class GetPassWarning(UserWarning): pass
 
 
-def unix_getpass(prompt='Password: ', stream=None):
+def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
     """Prompt for a password, with echo turned off.
 
     Args:
       prompt: Written on stream to ask for the input.  Default: 'Password: '
       stream: A writable file object to display the prompt.  Defaults to
               the tty.  If no tty is available defaults to sys.stderr.
+      echo_char: A single ASCII character to mask input (e.g., '*').
+              If None, input is hidden.
     Returns:
       The seKr3t input.
     Raises:
@@ -41,6 +43,8 @@ def unix_getpass(prompt='Password: ', stream=None):
 
     Always restores terminal settings before returning.
     """
+    _check_echo_char(echo_char)
+
     passwd = None
     with contextlib.ExitStack() as stack:
         try:
@@ -52,7 +56,7 @@ def unix_getpass(prompt='Password: ', stream=None):
             stack.enter_context(input)
             if not stream:
                 stream = input
-        except OSError as e:
+        except OSError:
             # If that fails, see if stdin can be controlled.
             stack.close()
             try:
@@ -69,12 +73,16 @@ def unix_getpass(prompt='Password: ', stream=None):
                 old = termios.tcgetattr(fd)     # a copy to save
                 new = old[:]
                 new[3] &= ~termios.ECHO  # 3 == 'lflags'
+                if echo_char:
+                    new[3] &= ~termios.ICANON
                 tcsetattr_flags = termios.TCSAFLUSH
                 if hasattr(termios, 'TCSASOFT'):
                     tcsetattr_flags |= termios.TCSASOFT
                 try:
                     termios.tcsetattr(fd, tcsetattr_flags, new)
-                    passwd = _raw_input(prompt, stream, input=input)
+                    passwd = _raw_input(prompt, stream, input=input,
+                                        echo_char=echo_char)
+
                 finally:
                     termios.tcsetattr(fd, tcsetattr_flags, old)
                     stream.flush()  # issue7208
@@ -94,10 +102,11 @@ def unix_getpass(prompt='Password: ', stream=None):
         return passwd
 
 
-def win_getpass(prompt='Password: ', stream=None):
-    """Prompt for password with echo off, using Windows getch()."""
+def win_getpass(prompt='Password: ', stream=None, *, echo_char=None):
+    """Prompt for password with echo off, using Windows getwch()."""
     if sys.stdin is not sys.__stdin__:
         return fallback_getpass(prompt, stream)
+    _check_echo_char(echo_char)
 
     for c in prompt:
         msvcrt.putwch(c)
@@ -109,24 +118,48 @@ def win_getpass(prompt='Password: ', stream=None):
         if c == '\003':
             raise KeyboardInterrupt
         if c == '\b':
+            if echo_char and pw:
+                msvcrt.putwch('\b')
+                msvcrt.putwch(' ')
+                msvcrt.putwch('\b')
             pw = pw[:-1]
         else:
             pw = pw + c
+            if echo_char:
+                msvcrt.putwch(echo_char)
     msvcrt.putwch('\r')
     msvcrt.putwch('\n')
     return pw
 
 
-def fallback_getpass(prompt='Password: ', stream=None):
+def fallback_getpass(prompt='Password: ', stream=None, *, echo_char=None):
+    _check_echo_char(echo_char)
+    import warnings
     warnings.warn("Can not control echo on the terminal.", GetPassWarning,
                   stacklevel=2)
     if not stream:
         stream = sys.stderr
     print("Warning: Password input may be echoed.", file=stream)
-    return _raw_input(prompt, stream)
+    return _raw_input(prompt, stream, echo_char=echo_char)
 
 
-def _raw_input(prompt="", stream=None, input=None):
+def _check_echo_char(echo_char):
+    # Single-character ASCII excluding control characters
+    if echo_char is None:
+        return
+    if not isinstance(echo_char, str):
+        raise TypeError("'echo_char' must be a str or None, not "
+                        f"{type(echo_char).__name__}")
+    if not (
+        len(echo_char) == 1
+        and echo_char.isprintable()
+        and echo_char.isascii()
+    ):
+        raise ValueError("'echo_char' must be a single printable ASCII "
+                         f"character, got: {echo_char!r}")
+
+
+def _raw_input(prompt="", stream=None, input=None, echo_char=None):
     # This doesn't save the string in the GNU readline history.
     if not stream:
         stream = sys.stderr
@@ -143,6 +176,8 @@ def _raw_input(prompt="", stream=None, input=None):
             stream.write(prompt)
         stream.flush()
     # NOTE: The Python C API calls flockfile() (and unlock) during readline.
+    if echo_char:
+        return _readline_with_echo_char(stream, input, echo_char)
     line = input.readline()
     if not line:
         raise EOFError
@@ -151,12 +186,45 @@ def _raw_input(prompt="", stream=None, input=None):
     return line
 
 
+def _readline_with_echo_char(stream, input, echo_char):
+    passwd = ""
+    eof_pressed = False
+    while True:
+        char = input.read(1)
+        if char == '\n' or char == '\r':
+            break
+        elif char == '\x03':
+            raise KeyboardInterrupt
+        elif char == '\x7f' or char == '\b':
+            if passwd:
+                stream.write("\b \b")
+                stream.flush()
+            passwd = passwd[:-1]
+        elif char == '\x04':
+            if eof_pressed:
+                break
+            else:
+                eof_pressed = True
+        elif char == '\x00':
+            continue
+        else:
+            passwd += char
+            stream.write(echo_char)
+            stream.flush()
+            eof_pressed = False
+    return passwd
+
+
 def getuser():
     """Get the username from the environment or password database.
 
     First try various environment variables, then the password
     database.  This works on Windows as long as USERNAME is set.
+    Any failure to find a username raises OSError.
 
+    .. versionchanged:: 3.13
+        Previously, various exceptions beyond just :exc:`OSError`
+        were raised.
     """
 
     for name in ('LOGNAME', 'USER', 'LNAME', 'USERNAME'):
@@ -164,9 +232,12 @@ def getuser():
         if user:
             return user
 
-    # If this fails, the exception will "explain" why
-    import pwd
-    return pwd.getpwuid(os.getuid())[0]
+    try:
+        import pwd
+        return pwd.getpwuid(os.getuid())[0]
+    except (ImportError, KeyError) as e:
+        raise OSError('No username set in the environment') from e
+
 
 # Bind the name getpass to the appropriate function
 try:

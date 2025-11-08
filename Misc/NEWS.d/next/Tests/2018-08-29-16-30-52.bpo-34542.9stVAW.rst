@@ -1,1 +1,0 @@
-Use 3072 RSA keys and SHA-256 signature for test certs and keys.

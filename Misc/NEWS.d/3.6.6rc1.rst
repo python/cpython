@@ -110,7 +110,7 @@ on Windows.
 .. nonce: UoC319
 .. section: Core and Builtins
 
-Fix a crash in `ctypes.cast()` in case the type argument is a ctypes
+Fix a crash in ``ctypes.cast()`` in case the type argument is a ctypes
 structured data type. Patch by Eryk Sun and Oren Milman.
 
 ..
@@ -248,7 +248,7 @@ Patch by Zvi Effron
 .. nonce: taxbVT
 .. section: Library
 
-Fix race condition with `ReadTransport.resume_reading` in Windows proactor
+Fix race condition with ``ReadTransport.resume_reading`` in Windows proactor
 event loop.
 
 ..
@@ -289,7 +289,7 @@ literals on pydoc. Patch by Andrés Delfino.
 .. section: Library
 
 Update error message when constructing invalid inspect.Parameters Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -346,7 +346,7 @@ tree of tuples or lists with ``line_info=False`` and ``col_info=True``.
 .. nonce: B56Hc1
 .. section: Library
 
-Fix FD leak in `_SelectorSocketTransport`  Patch by Vlad Starostin.
+Fix FD leak in ``_SelectorSocketTransport``  Patch by Vlad Starostin.
 
 ..
 
@@ -376,7 +376,7 @@ implementation.
 .. nonce: pyR0jB
 .. section: Library
 
-Update difflib.mdiff() for PEP 479.  Convert an uncaught StopIteration in a
+Update difflib.mdiff() for :pep:`479`.  Convert an uncaught StopIteration in a
 generator into a return-statement.
 
 ..
@@ -861,7 +861,7 @@ Fix pystackv and pystack gdbinit macros.
 .. nonce: dL5x7C
 .. section: Tools/Demos
 
-Add an ``-n`` flag for ``Tools/scripts/pathfix.py`` to disbale automatic
+Add an ``-n`` flag for ``Tools/scripts/pathfix.py`` to disable automatic
 backup creation (files with ``~`` suffix).
 
 ..

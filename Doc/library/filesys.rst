@@ -14,7 +14,6 @@ in this chapter is:
 
    pathlib.rst
    os.path.rst
-   fileinput.rst
    stat.rst
    filecmp.rst
    tempfile.rst
@@ -22,7 +21,6 @@ in this chapter is:
    fnmatch.rst
    linecache.rst
    shutil.rst
-   macpath.rst
 
 
 .. seealso::

@@ -27,13 +27,21 @@ class MultiCallTest(unittest.TestCase):
     def test_creator(self):
         mc = self.mc
         self.assertIs(multicall._multicall_dict[Text], mc)
-        self.assertTrue(issubclass(mc, Text))
+        self.assertIsSubclass(mc, Text)
         mc2 = multicall.MultiCallCreator(Text)
         self.assertIs(mc, mc2)
 
     def test_init(self):
         mctext = self.mc(self.root)
         self.assertIsInstance(mctext._MultiCall__binders, list)
+
+    def test_yview(self):
+        # Added for tree.wheel_event
+        # (it depends on yview to not be overridden)
+        mc = self.mc
+        self.assertIs(mc.yview, Text.yview)
+        mctext = self.mc(self.root)
+        self.assertIs(mctext.yview.__func__, Text.yview)
 
 
 if __name__ == '__main__':

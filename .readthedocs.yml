@@ -1,0 +1,34 @@
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+# Project page: https://readthedocs.org/projects/cpython-previews/
+
+version: 2
+
+sphinx:
+   configuration: Doc/conf.py
+
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3"
+
+  commands:
+    # https://docs.readthedocs.io/en/stable/build-customization.html#cancel-build-based-on-a-condition
+    #
+    # Cancel building pull requests when there aren't changes in the Doc directory.
+    #
+    # If there are no changes (git diff exits with 0) we force the command to return with 183.
+    # This is a special exit code on Read the Docs that will cancel the build immediately.
+    - |
+      if [ "$READTHEDOCS_VERSION_TYPE" = "external" ] && [ "$(git diff --quiet origin/main -- Doc/ .readthedocs.yml; echo $?)" -eq 0 ];
+      then
+        echo "No changes to Doc/ - exiting the build.";
+        exit 183;
+      fi
+
+    - asdf plugin add uv
+    - asdf install uv latest
+    - asdf global uv latest
+    - make -C Doc venv html
+    - mkdir _readthedocs
+    - mv Doc/build/html _readthedocs/html

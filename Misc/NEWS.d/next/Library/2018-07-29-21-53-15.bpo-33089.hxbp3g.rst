@@ -1,1 +1,0 @@
-Add math.dist() to compute the Euclidean distance between two points.

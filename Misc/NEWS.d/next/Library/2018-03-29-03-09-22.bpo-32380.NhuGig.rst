@@ -1,2 +1,0 @@
-Create functools.singledispatchmethod to support generic single dispatch on
-descriptors and methods.

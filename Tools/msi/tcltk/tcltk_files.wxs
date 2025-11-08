@@ -16,6 +16,9 @@
             <Component Id="tk86t.dll" Directory="DLLs" Guid="*">
                 <File Name="tk86t.dll" KeyPath="yes" />
             </Component>
+            <Component Id="zlib1.dll" Directory="DLLs" Guid="*">
+                <File Name="zlib1.dll" KeyPath="yes" />
+            </Component>
         </ComponentGroup>
     </Fragment>
     

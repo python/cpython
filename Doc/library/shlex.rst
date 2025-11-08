@@ -1,5 +1,5 @@
-:mod:`shlex` --- Simple lexical analysis
-========================================
+:mod:`!shlex` --- Simple lexical analysis
+=========================================
 
 .. module:: shlex
    :synopsis: Simple lexical analysis for Unix shell-like languages.
@@ -30,11 +30,23 @@ The :mod:`shlex` module defines the following functions:
    in POSIX mode by default, but uses non-POSIX mode if the *posix* argument is
    false.
 
-   .. note::
+   .. versionchanged:: 3.12
+      Passing ``None`` for *s* argument now raises an exception, rather than
+      reading :data:`sys.stdin`.
 
-      Since the :func:`split` function instantiates a :class:`~shlex.shlex`
-      instance, passing ``None`` for *s* will read the string to split from
-      standard input.
+.. function:: join(split_command)
+
+   Concatenate the tokens of the list *split_command* and return a string.
+   This function is the inverse of :func:`split`.
+
+      >>> from shlex import join
+      >>> print(join(['echo', '-n', 'Multiple words']))
+      echo -n 'Multiple words'
+
+   The returned value is shell-escaped to protect against injection
+   vulnerabilities (see :func:`quote`).
+
+   .. versionadded:: 3.8
 
 
 .. function:: quote(s)
@@ -42,6 +54,20 @@ The :mod:`shlex` module defines the following functions:
    Return a shell-escaped version of the string *s*.  The returned value is a
    string that can safely be used as one token in a shell command line, for
    cases where you cannot use a list.
+
+   .. _shlex-quote-warning:
+
+   .. warning::
+
+      The ``shlex`` module is **only designed for Unix shells**.
+
+      The :func:`quote` function is not guaranteed to be correct on non-POSIX
+      compliant shells or shells from other operating systems such as Windows.
+      Executing commands quoted by this module on such shells can open up the
+      possibility of a command injection vulnerability.
+
+      Consider using functions that pass command arguments with lists such as
+      :func:`subprocess.run` with ``shell=False``.
 
    This idiom would be unsafe:
 
@@ -98,7 +124,9 @@ The :mod:`shlex` module defines the following class:
    characters, those characters will be used as the punctuation characters.  Any
    characters in the :attr:`wordchars` attribute that appear in
    *punctuation_chars* will be removed from :attr:`wordchars`.  See
-   :ref:`improved-shell-compatibility` for more information.
+   :ref:`improved-shell-compatibility` for more information. *punctuation_chars*
+   can be set only upon :class:`~shlex.shlex` instance creation and can't be
+   modified later.
 
    .. versionchanged:: 3.6
       The *punctuation_chars* parameter was added.
@@ -210,7 +238,8 @@ variables which either control lexical analysis or can be used for debugging:
    appear in filename specifications and command line parameters, will also be
    included in this attribute, and any characters which appear in
    ``punctuation_chars`` will be removed from ``wordchars`` if they are present
-   there.
+   there. If :attr:`whitespace_split` is set to ``True``, this will have no
+   effect.
 
 
 .. attribute:: shlex.whitespace
@@ -243,11 +272,13 @@ variables which either control lexical analysis or can be used for debugging:
 
    If ``True``, tokens will only be split in whitespaces.  This is useful, for
    example, for parsing command lines with :class:`~shlex.shlex`, getting
-   tokens in a similar way to shell arguments.  If this attribute is ``True``,
-   :attr:`punctuation_chars` will have no effect, and splitting will happen
-   only on whitespaces.  When using :attr:`punctuation_chars`, which is
-   intended to provide parsing closer to that implemented by shells, it is
-   advisable to leave ``whitespace_split`` as ``False`` (the default value).
+   tokens in a similar way to shell arguments.  When used in combination with
+   :attr:`punctuation_chars`, tokens will be split on whitespace in addition to
+   those characters.
+
+   .. versionchanged:: 3.8
+      The :attr:`punctuation_chars` attribute was made compatible with the
+      :attr:`whitespace_split` attribute.
 
 
 .. attribute:: shlex.infile
@@ -299,8 +330,8 @@ variables which either control lexical analysis or can be used for debugging:
 
 .. attribute:: shlex.punctuation_chars
 
-   Characters that will be considered punctuation. Runs of punctuation
-   characters will be returned as a single token. However, note that no
+   A read-only property. Characters that will be considered punctuation. Runs of
+   punctuation characters will be returned as a single token. However, note that no
    semantic validity checking will be performed: for example, '>>>' could be
    returned as a token, even though it may not be recognised as such by shells.
 
@@ -381,14 +412,17 @@ otherwise.  To illustrate, you can see the difference in the following snippet:
 .. doctest::
    :options: +NORMALIZE_WHITESPACE
 
-    >>> import shlex
-    >>> text = "a && b; c && d || e; f >'abc'; (def \"ghi\")"
-    >>> list(shlex.shlex(text))
-    ['a', '&', '&', 'b', ';', 'c', '&', '&', 'd', '|', '|', 'e', ';', 'f', '>',
-    "'abc'", ';', '(', 'def', '"ghi"', ')']
-    >>> list(shlex.shlex(text, punctuation_chars=True))
-    ['a', '&&', 'b', ';', 'c', '&&', 'd', '||', 'e', ';', 'f', '>', "'abc'",
-    ';', '(', 'def', '"ghi"', ')']
+   >>> import shlex
+   >>> text = "a && b; c && d || e; f >'abc'; (def \"ghi\")"
+   >>> s = shlex.shlex(text, posix=True)
+   >>> s.whitespace_split = True
+   >>> list(s)
+   ['a', '&&', 'b;', 'c', '&&', 'd', '||', 'e;', 'f', '>abc;', '(def', 'ghi)']
+   >>> s = shlex.shlex(text, posix=True, punctuation_chars=True)
+   >>> s.whitespace_split = True
+   >>> list(s)
+   ['a', '&&', 'b', ';', 'c', '&&', 'd', '||', 'e', ';', 'f', '>', 'abc', ';',
+   '(', 'def', 'ghi', ')']
 
 Of course, tokens will be returned which are not valid for shells, and you'll
 need to implement your own error checks on the returned tokens.
@@ -397,10 +431,10 @@ Instead of passing ``True`` as the value for the punctuation_chars parameter,
 you can pass a string with specific characters, which will be used to determine
 which characters constitute punctuation. For example::
 
-    >>> import shlex
-    >>> s = shlex.shlex("a && b || c", punctuation_chars="|")
-    >>> list(s)
-    ['a', '&', '&', 'b', '||', 'c']
+   >>> import shlex
+   >>> s = shlex.shlex("a && b || c", punctuation_chars="|")
+   >>> list(s)
+   ['a', '&', '&', 'b', '||', 'c']
 
 .. note:: When ``punctuation_chars`` is specified, the :attr:`~shlex.wordchars`
    attribute is augmented with the characters ``~-./*?=``.  That is because these
@@ -412,6 +446,11 @@ which characters constitute punctuation. For example::
       ...                 punctuation_chars=True)
       >>> list(s)
       ['~/a', '&&', 'b-c', '--color=auto', '||', 'd', '*.py?']
+
+   However, to match the shell as closely as possible, it is recommended to
+   always use ``posix`` and :attr:`~shlex.whitespace_split` when using
+   :attr:`~shlex.punctuation_chars`, which will negate
+   :attr:`~shlex.wordchars` entirely.
 
 For best effect, ``punctuation_chars`` should be set in conjunction with
 ``posix=True``. (Note that ``posix=False`` is the default for

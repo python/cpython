@@ -1,5 +1,5 @@
-:mod:`email.message`: Representing an email message
----------------------------------------------------
+:mod:`!email.message`: Representing an email message
+----------------------------------------------------
 
 .. module:: email.message
    :synopsis: The base class representing email messages.
@@ -40,9 +40,9 @@ over the object tree.
 The :class:`EmailMessage` dictionary-like interface is indexed by the header
 names, which must be ASCII values.  The values of the dictionary are strings
 with some extra methods.  Headers are stored and returned in case-preserving
-form, but field names are matched case-insensitively.  Unlike a real dict,
-there is an ordering to the keys, and there can be duplicate keys.  Additional
-methods are provided for working with headers that have duplicate keys.
+form, but field names are matched case-insensitively.  The keys are ordered,
+but unlike a real dict, there can be duplicates.  Additional methods are
+provided for working with headers that have duplicate keys.
 
 The *payload* is either a string or bytes object, in the case of simple message
 objects, or a list of :class:`EmailMessage` objects, for MIME container
@@ -67,7 +67,7 @@ message objects.
       with the base :class:`~email.message.Message` class *maxheaderlen* is
       accepted, but defaults to ``None``, which means that by default the line
       length is controlled by the
-      :attr:`~email.policy.EmailPolicy.max_line_length` of the policy.  The
+      :attr:`~email.policy.Policy.max_line_length` of the policy.  The
       *policy* argument may be used to override the default policy obtained
       from the message instance.  This can be used to control some of the
       formatting produced by the method, since the specified *policy* will be
@@ -92,7 +92,7 @@ message objects.
 
    .. method:: __str__()
 
-      Equivalent to `as_string(policy=self.policy.clone(utf8=True)`.  Allows
+      Equivalent to ``as_string(policy=self.policy.clone(utf8=True))``.  Allows
       ``str(msg)`` to produce a string containing the serialized message in a
       readable format.
 
@@ -124,14 +124,14 @@ message objects.
 
    .. method:: __bytes__()
 
-      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      Equivalent to :meth:`.as_bytes`.  Allows ``bytes(msg)`` to produce a
       bytes object containing the serialized message.
 
 
    .. method:: is_multipart()
 
-      Return ``True`` if the message's payload is a list of sub-\
-      :class:`EmailMessage` objects, otherwise return ``False``.  When
+      Return ``True`` if the message's payload is a list of
+      sub-\ :class:`EmailMessage` objects, otherwise return ``False``.  When
       :meth:`is_multipart` returns ``False``, the payload should be a string
       object (which might be a CTE encoded binary payload).  Note that
       :meth:`is_multipart` returning ``True`` does not necessarily mean that
@@ -178,7 +178,7 @@ message objects.
 
    .. method:: __contains__(name)
 
-      Return true if the message object has a field named *name*. Matching is
+      Return ``True`` if the message object has a field named *name*. Matching is
       done without regard to case and *name* does not include the trailing
       colon.  Used for the ``in`` operator.  For example::
 
@@ -213,7 +213,7 @@ message objects.
          del msg['subject']
          msg['subject'] = 'Python roolz!'
 
-      If the :mod:`policy` defines certain headers to be unique (as the standard
+      If the :mod:`policy <email.policy>` defines certain headers to be unique (as the standard
       policies do), this method may raise a :exc:`ValueError` when an attempt
       is made to assign a value to such a header when one already exists.  This
       behavior is intentional for consistency's sake, but do not depend on it
@@ -247,7 +247,7 @@ message objects.
    .. method:: get(name, failobj=None)
 
       Return the value of the named header field.  This is identical to
-      :meth:`__getitem__` except that optional *failobj* is returned if the
+      :meth:`~object.__getitem__` except that optional *failobj* is returned if the
       named header is missing (*failobj* defaults to ``None``).
 
 
@@ -378,8 +378,8 @@ message objects.
       deprecated.
 
       Note that existing parameter values of headers may be accessed through
-      the :attr:`~email.headerregistry.BaseHeader.params` attribute of the
-      header value (for example, ``msg['Content-Type'].params['charset']``.
+      the :attr:`~email.headerregistry.ParameterizedMIMEHeader.params` attribute of the
+      header value (for example, ``msg['Content-Type'].params['charset']``).
 
       .. versionchanged:: 3.4 ``replace`` keyword was added.
 
@@ -487,7 +487,6 @@ message objects.
          from email import message_from_binary_file
          with open('../Lib/test/test_email/data/msg_16.txt', 'rb') as f:
              msg = message_from_binary_file(f)
-         from email.iterators import _structure
 
       .. doctest::
 
@@ -509,6 +508,7 @@ message objects.
 
       .. doctest::
 
+         >>> from email.iterators import _structure
          >>> for part in msg.walk():
          ...     print(part.get_content_maintype() == 'multipart',
          ...           part.is_multipart())
@@ -679,7 +679,7 @@ message objects.
       specified by the current :mod:`~email.policy`.  If the added part
       has no :mailheader:`Content-Disposition` header, add one with the value
       ``attachment``.  This method can be used both for explicit attachments
-      (:mailheader:`Content-Disposition: attachment` and ``inline`` attachments
+      (:mailheader:`Content-Disposition: attachment`) and ``inline`` attachments
       (:mailheader:`Content-Disposition: inline`), by passing appropriate
       options to the ``content_manager``.
 
@@ -691,7 +691,7 @@ message objects.
 
    .. method:: clear_content()
 
-      Remove the payload and all of the :exc:`Content-` headers, leaving
+      Remove the payload and all of the :mailheader:`!Content-` headers, leaving
       all other headers intact and in their original order.
 
 

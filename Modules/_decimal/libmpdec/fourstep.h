@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,12 +26,11 @@
  */
 
 
-#ifndef FOUR_STEP_H
-#define FOUR_STEP_H
+#ifndef LIBMPDEC_FOURSTEP_H_
+#define LIBMPDEC_FOURSTEP_H_
 
 
 #include "mpdecimal.h"
-#include <stdio.h>
 
 
 /* Internal header file: all symbols have local scope in the DSO */
@@ -45,4 +44,4 @@ int inv_four_step_fnt(mpd_uint_t *a, mpd_size_t n, int modnum);
 MPD_PRAGMA(MPD_HIDE_SYMBOLS_END) /* restore previous scope rules */
 
 
-#endif
+#endif /* LIBMPDEC_FOURSTEP_H_ */

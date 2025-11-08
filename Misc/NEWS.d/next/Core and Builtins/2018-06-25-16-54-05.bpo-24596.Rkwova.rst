@@ -1,2 +1,0 @@
-Decref the module object in :c:func:`PyRun_SimpleFileExFlags` before calling
-:c:func:`PyErr_Print()`.  Patch by Zackery Spytz.
