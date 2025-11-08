@@ -195,6 +195,17 @@ class PropertyTests(unittest.TestCase):
             Okay2.color
         self.assertEqual(Okay2().color, 'magenta')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_empty_docstring(self):
+        attr = DynamicClassAttribute(fget=None, fset=None, fdel=None, doc='')
+        self.assertEqual(attr.__doc__, '',)
+        def fget():
+            """fget's docstring"""
+        attr_with_fget = DynamicClassAttribute(fget=fget, doc='')
+        self.assertEqual(attr_with_fget.__doc__, '')
+        attr_no_doc = DynamicClassAttribute(fget=None)
+        self.assertIsNone(attr_no_doc.__doc__)
 
 # Issue 5890: subclasses of DynamicClassAttribute do not preserve method __doc__ strings
 class PropertySub(DynamicClassAttribute):
