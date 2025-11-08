@@ -1,1 +1,1 @@
-The repr of lambda now contains the signature and body expression.
+Add signature and body expression to the repr of lambda.
