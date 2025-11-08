@@ -47,15 +47,9 @@ be invoked, usually as part of the module initialisation function, to populate
    The :ref:`heap type <heap-types>` corresponding to :class:`curses.window`.
 
 
-.. c:macro:: PyCursesWindow_Check(op)
+.. c:func:: int PyCursesWindow_Check(PyObject *op)
 
    Return *1* if *op* is an :class:`curses.window` instance, *0* otherwise.
-
-   The macro expansion is equivalent to:
-
-   .. code-block::
-
-      Py_IS_TYPE((op), &PyCursesWindow_Type)
 
 
 The following macros are convenience macros expanding into C statements.
