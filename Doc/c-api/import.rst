@@ -333,3 +333,15 @@ Importing Modules
    strings instead of Python :class:`str` objects.
 
    .. versionadded:: 3.14
+
+.. c:function:: PyObject* PyImport_CreateModuleFromInitfunc(PyObject *spec, PyObject* (*initfunc)(void))
+
+   This function is a building block that enables embedders to implement custom
+   static extension importers (e.g. of statically-linked extensions).
+   The function creates and returns a module object given a *spec* and an *initfunc*.
+
+   *spec* must be a :class:`~importlib.machinery.ModuleSpec` object
+   
+   *initfunc* is the same as in :c:func:`PyImport_ExtendInittab`
+
+   .. versionadded:: 3.15
