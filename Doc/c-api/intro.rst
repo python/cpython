@@ -233,13 +233,9 @@ complete listing.
 
    .. versionadded:: 3.4
 
-.. c:macro:: PyDoc_VAR(name)
-
-   Declares a static character array variable with the given name *name*.
-
 .. c:macro:: PyDoc_STRVAR(name, str)
 
-   Creates a variable with name ``name`` that can be used in docstrings.
+   Creates a variable with name *name* that can be used in docstrings.
    If Python is built without docstrings, the value will be empty.
 
    Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
@@ -270,6 +266,10 @@ complete listing.
               PyDoc_STR("Returns the keys of the row.")},
           {NULL, NULL}
       };
+
+.. c:macro:: PyDoc_VAR(name)
+
+   Declares a static character array variable with the given name *name*.
 
 
 .. _api-objects:
