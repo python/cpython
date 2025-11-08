@@ -89,7 +89,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    required from the beginning of the connection and using :meth:`SMTP.starttls` is
    not appropriate. If the host parameter is set to a truthy value,
    :meth:`SMTP.connect` is called automatically when the object is created,
-   otherwise :meth:`connect` must be called manually.
+   otherwise :meth:`!SMTP.connect` must be called manually.
 
    The optional arguments *local_hostname*, *timeout* and *source_address* have the same
    meaning as they do in the :class:`SMTP` class.  *context*, also optional,
