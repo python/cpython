@@ -271,6 +271,11 @@ complete listing.
 
    Declares a static character array variable with the given name *name*.
 
+   For example::
+
+      PyDoc_VAR(python_doc) = PyDoc_STR("A genus of constricting snakes in the Pythonidae family native "
+                                        "to the tropics and subtropics of the Eastern Hemisphere.");
+
 
 .. _api-objects:
 
