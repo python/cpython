@@ -113,6 +113,10 @@ Module contents
         (for example, ``self.a == other.a and self.b == other.b``), rather than
         comparing tuples of fields as in previous versions.
 
+     This change makes the comparison faster but it may alter results in cases
+     where attributes compare equal by identity but not by value (such as
+     ``float('nan')``).
+
      In Python 3.12 and earlier, the comparison was performed by creating
      tuples of the fields and comparing them (for example,
      ``(self.a, self.b) == (other.a, other.b)``).
