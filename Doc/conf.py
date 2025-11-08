@@ -226,9 +226,6 @@ nitpick_ignore = [
 # Temporary undocumented names.
 # In future this list must be empty.
 nitpick_ignore += [
-    # Undocumented public C macros
-    ('c:macro', 'Py_BUILD_ASSERT'),
-    ('c:macro', 'Py_BUILD_ASSERT_EXPR'),
     # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
     # be resolved, as the method is currently undocumented. For context, see
     # https://github.com/python/cpython/pull/103289.
