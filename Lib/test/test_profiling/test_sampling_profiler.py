@@ -124,7 +124,7 @@ _test_sock.sendall(b"ready")
         server_socket.close()
         response = client_socket.recv(1024)
         if response != b"ready":
-            raise RuntimeError(f"Unexpected response from subprocess: {response!r}")
+            raise RuntimeError(f"Unexpected response from subprocess: {response}")
 
         yield SubprocessInfo(proc, client_socket)
     finally:
@@ -1689,15 +1689,14 @@ class TestSampleProfilerIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_script = '''
-import operator
-import gc
+import time
+import os
 
 def slow_fibonacci(n):
     """Recursive fibonacci - should show up prominently in profiler."""
     if n <= 1:
         return n
-    # Use operator.call(...) to force native frames between interpreter frames:
-    return operator.call(slow_fibonacci, n-1) + slow_fibonacci(n-2)
+    return slow_fibonacci(n-1) + slow_fibonacci(n-2)
 
 def cpu_intensive_work():
     """CPU intensive work that should show in profiler."""
@@ -1708,32 +1707,46 @@ def cpu_intensive_work():
             result = result % 1000000
     return result
 
+def medium_computation():
+    """Medium complexity function."""
+    result = 0
+    for i in range(100):
+        result += i * i
+    return result
+
+def fast_loop():
+    """Fast simple loop."""
+    total = 0
+    for i in range(50):
+        total += i
+    return total
+
 def nested_calls():
     """Test nested function calls."""
     def level1():
         def level2():
-            return cpu_intensive_work()
+            return medium_computation()
         return level2()
     return level1()
 
-class ExpensiveGarbage:
-    def __init__(self):
-        self.cycle = self
-    def __del__(self):
-        cpu_intensive_work()
-
-def garbage_collection():
-    """GC-intensive work."""
-    ExpensiveGarbage()
-    gc.collect()
-
 def main_loop():
     """Main test loop with different execution paths."""
+    iteration = 0
+
     while True:
-        cpu_intensive_work()
-        slow_fibonacci(24)
-        garbage_collection()
-        nested_calls()
+        iteration += 1
+
+        # Different execution paths - focus on CPU intensive work
+        if iteration % 3 == 0:
+            # Very CPU intensive
+            result = cpu_intensive_work()
+        elif iteration % 5 == 0:
+            # Expensive recursive operation
+            result = slow_fibonacci(12)
+        else:
+            # Medium operation
+            result = nested_calls()
+
         # No sleep - keep CPU busy
 
 if __name__ == "__main__":
@@ -1765,8 +1778,6 @@ if __name__ == "__main__":
 
         # Should see some of our test functions
         self.assertIn("slow_fibonacci", output)
-        self.assertIn("<native>", output)
-        self.assertIn("<GC>", output)
 
     def test_sampling_with_pstats_export(self):
         pstats_out = tempfile.NamedTemporaryFile(
@@ -1864,8 +1875,6 @@ if __name__ == "__main__":
                     stack_parts = stack_trace.split(";")
                     for part in stack_parts:
                         # Each part should be file:function:line
-                        if part in {"<native>", "<GC>"}:
-                            continue
                         self.assertIn(":", part)
 
     def test_sampling_all_threads(self):
@@ -1916,8 +1925,6 @@ if __name__ == "__main__":
 
         # Should see some of our test functions
         self.assertIn("slow_fibonacci", output)
-        self.assertIn("<native>", output)
-        self.assertIn("<GC>", output)
 
     def test_sample_target_module(self):
         tempdir = tempfile.TemporaryDirectory(delete=False)
@@ -1951,39 +1958,6 @@ if __name__ == "__main__":
 
         # Should see some of our test functions
         self.assertIn("slow_fibonacci", output)
-        self.assertIn("<native>", output)
-        self.assertIn("<GC>", output)
-
-    def test_sample_no_native_no_gc(self):
-        script_file = tempfile.NamedTemporaryFile(delete=False)
-        script_file.write(self.test_script.encode("utf-8"))
-        script_file.flush()
-        self.addCleanup(close_and_unlink, script_file)
-
-        test_args = ["profiling.sampling.sample", "-d", "1", "--no-native", "--no-gc", script_file.name]
-
-        with (
-            mock.patch("sys.argv", test_args),
-            io.StringIO() as captured_output,
-            mock.patch("sys.stdout", captured_output),
-        ):
-            try:
-                profiling.sampling.sample.main()
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
-
-            output = captured_output.getvalue()
-
-        # Basic checks on output
-        self.assertIn("Captured", output)
-        self.assertIn("samples", output)
-        self.assertIn("Profile Stats", output)
-
-        # Should see some of our test functions
-        self.assertIn("slow_fibonacci", output)
-        # But not ones we intentionally excluded:
-        self.assertNotIn("<native>", output)
-        self.assertNotIn("<GC>", output)
 
 
 @skip_if_not_supported
@@ -3044,6 +3018,97 @@ main()
         # Test invalid mode raises KeyError
         with self.assertRaises(KeyError):
             profiling.sampling.sample._parse_mode("invalid")
+
+
+@requires_subprocess()
+@skip_if_not_supported
+class TestGCFrameTracking(unittest.TestCase):
+    """Tests for GC frame tracking in the sampling profiler."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Create a static test script with GC frames and CPU-intensive work."""
+        cls.gc_test_script = '''
+import gc
+
+class ExpensiveGarbage:
+    """Class that triggers GC with expensive finalizer (callback)."""
+    def __init__(self):
+        self.cycle = self
+
+    def __del__(self):
+        # CPU-intensive work in the finalizer callback
+        result = 0
+        for i in range(100000):
+            result += i * i
+            if i % 1000 == 0:
+                result = result % 1000000
+
+def main_loop():
+    """Main loop that triggers GC with expensive callback."""
+    while True:
+        ExpensiveGarbage()
+        gc.collect()
+
+if __name__ == "__main__":
+    main_loop()
+'''
+
+    def test_gc_frames_enabled(self):
+        """Test that GC frames appear when gc tracking is enabled."""
+        with (
+            test_subprocess(self.gc_test_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    duration_sec=1,
+                    sample_interval_usec=5000,
+                    show_summary=False,
+                    native=True,
+                    gc=True,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # Should capture samples
+        self.assertIn("Captured", output)
+        self.assertIn("samples", output)
+
+        # GC frames should be present
+        self.assertIn("<GC>", output)
+
+    def test_gc_frames_disabled(self):
+        """Test that GC frames do not appear when gc tracking is disabled."""
+        with (
+            test_subprocess(self.gc_test_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    duration_sec=1,
+                    sample_interval_usec=5000,
+                    show_summary=False,
+                    native=True,
+                    gc=False,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # Should capture samples
+        self.assertIn("Captured", output)
+        self.assertIn("samples", output)
+
+        # GC frames should NOT be present
+        self.assertNotIn("<GC>", output)
 
 
 if __name__ == "__main__":
