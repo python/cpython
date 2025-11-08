@@ -225,6 +225,7 @@ _get_tcl_lib_path(void)
 
 */
 
+#if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
 static int
 _check_tcl_threaded(void)
 {
@@ -239,6 +240,7 @@ _check_tcl_threaded(void)
     if (threaded == NULL) return 0;
     else return 1;
 }
+#endif
 
 static Tcl_ThreadDataKey state_key;
 typedef PyThreadState *ThreadSpecificData;
@@ -3414,11 +3416,13 @@ PyInit__tkinter(void)
 {
     PyObject *m, *uexe, *cexe;
 
+#if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
     if (_check_tcl_threaded() == 0) {
         PyErr_SetString(PyExc_ImportError,
                         "Tcl must be compiled with thread support");
         return 0;
     }
+#endif
 
     m = PyModule_Create(&_tkintermodule);
     if (m == NULL)
