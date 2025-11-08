@@ -70,7 +70,7 @@ spawn_asyncio_repl = partial(spawn_repl, "-m", "asyncio", custom=True)
 
 @contextmanager
 def new_startup_env(*, code: str, histfile: str = ".pythonhist"):
-    """Create temporary environment variables for a PYTHONSTARTUP script."""
+    """Create environment variables for a PYTHONSTARTUP script in a temporary directory."""
     with os_helper.temp_dir() as tmpdir:
         filename = os.path.join(tmpdir, "pythonstartup.py")
         with open(filename, "w") as f:
