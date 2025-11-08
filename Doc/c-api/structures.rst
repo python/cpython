@@ -447,6 +447,25 @@ definition with the same method name.
    slot.  This is helpful because calls to PyCFunctions are optimized more
    than wrapper object calls.
 
+
+.. c:var:: PyTypeObject PyCMethod_Type
+
+   The type object corresponding to Python C method objects. This is
+   available as :class:`types.BuiltinMethodType` in the Python layer.
+
+
+.. c:function:: int PyCMethod_Check(PyObject *f)
+
+   Return true if *f* is an instance of the :c:type:`PyCMethod_Type` type
+   or a subtype of it. This function always succeeds.
+
+
+.. c:function:: int PyCMethod_CheckExact(PyObject *f)
+
+   This is the same as :c:func:`PyCMethod_Check`, but does not account for
+   subtypes.
+
+
 .. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
 
    Turn *ml* into a Python :term:`callable` object.
