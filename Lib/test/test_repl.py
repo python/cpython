@@ -234,6 +234,46 @@ class TestInteractiveInterpreter(unittest.TestCase):
         expected = "(30, None, [\'def foo(x):\\n\', \'    return x + 1\\n\', \'\\n\'], \'<stdin>\')"
         self.assertIn(expected, output, expected)
 
+    def test_pythonstartup_success(self):
+        # errors based on https://github.com/python/cpython/issues/137576
+        # case 1: error in user input, but PYTHONSTARTUP is fine
+        startup_code = "print('notice from pythonstartup')"
+        with new_startup_env(code=startup_code, histfile=".pythonhist") as startup_env:
+            # -q to suppress noise
+            p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
+            p.stdin.write("1/0")
+            output_lines = kill_python(p).splitlines()
+            traceback_lines = output_lines[2:-1]
+            expected_lines = [
+                'Traceback (most recent call last):',
+                '  File "<stdin>", line 1, in <module>',
+                '    1/0',
+                '    ~^~',
+                'ZeroDivisionError: division by zero',
+            ]
+            self.assertEqual(output_lines[0], 'notice from pythonstartup')
+            self.assertEqual(traceback_lines, expected_lines)
+
+    def test_pythonstartup_failure(self):
+        # case 2: error in PYTHONSTARTUP triggered by user input
+        startup_code = "def foo():\n    1/0\n"
+        with new_startup_env(code=startup_code, histfile=".asyncio_history") as startup_env:
+            # -q to suppress noise
+            p = spawn_repl("-q", env=os.environ | startup_env, isolated=False)
+            p.stdin.write("foo()")
+            traceback_lines = kill_python(p).splitlines()[1:-1]
+            expected_lines = [
+                'Traceback (most recent call last):',
+                '  File "<stdin>", line 1, in <module>',
+                '    foo()',
+                '    ~~~^^',
+                f'  File "{startup_env['PYTHONSTARTUP']}", line 2, in foo',
+                '    1/0',
+                '    ~^~',
+                'ZeroDivisionError: division by zero',
+            ]
+            self.assertEqual(traceback_lines, expected_lines)
+
     @unittest.skipUnless(pty, "requires pty")
     def test_asyncio_repl_is_ok(self):
         m, s = pty.openpty()
@@ -280,55 +320,6 @@ def new_startup_env(*, code: str, histfile: str = ".pythonhist"):
 
 
 @support.force_not_colorized_test_class
-class TestPythonStartup(unittest.TestCase):
-    REPLS = [
-        ("REPL", spawn_repl, ".pythonhist"),
-        ("asyncio REPL", spawn_asyncio_repl, ".asyncio_history"),
-    ]
-
-    def test_pythonstartup_success(self):
-        # errors based on https://github.com/python/cpython/issues/137576
-        # case 1: error in user input, but PYTHONSTARTUP is fine
-        startup_code = "print('from pythonstartup')"
-        for repl_name, repl_factory, histfile in self.REPLS:
-            with (
-                self.subTest(repl_name),
-                new_startup_env(code=startup_code, histfile=histfile) as startup_env
-            ):
-                p = repl_factory(env=os.environ | startup_env, isolated=False)
-                p.stdin.write("1/0")
-                output = kill_python(p)
-
-                for expected in (
-                    "from pythonstartup",
-                    "Traceback (most recent call last):",
-                    'File "<stdin>", line 1, in <module>',
-                    "ZeroDivisionError: division by zero",
-                ):
-                    self.assertIn(expected, output)
-
-    def test_pythonstartup_failure(self):
-        # case 2: error in PYTHONSTARTUP triggered by user input
-        startup_code = "def foo():\n    1/0\n"
-        for repl_name, repl_factory, histfile in self.REPLS:
-            with (
-                self.subTest(repl_name),
-                new_startup_env(code=startup_code, histfile=histfile) as startup_env
-            ):
-                p = repl_factory(env=os.environ | startup_env, isolated=False)
-                p.stdin.write('foo()')
-                output = kill_python(p)
-
-                for expected in (
-                    "Traceback (most recent call last):",
-                    'File "<stdin>", line 1, in <module>',
-                    f'File "{startup_env['PYTHONSTARTUP']}", line ',
-                    "ZeroDivisionError: division by zero",
-                ):
-                    self.assertIn(expected, output)
-
-
-@support.force_not_colorized_test_class
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
     def test_interactive_syntax_error_correct_line(self):
@@ -347,6 +338,7 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
         self.assertEqual(traceback_lines, expected_lines)
 
 
+@support.force_not_colorized_test_class
 class TestAsyncioREPL(unittest.TestCase):
     def test_multiple_statements_fail_early(self):
         user_input = "1 / 0; print(f'afterwards: {1+1}')"
@@ -390,6 +382,56 @@ class TestAsyncioREPL(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         expected = "toplevel contextvar test: ok"
         self.assertIn(expected, output, expected)
+
+    def test_pythonstartup_success(self):
+        startup_code = "import sys\nprint('notice from pythonstartup in asyncio repl', file=sys.stderr)"
+        with new_startup_env(code=startup_code, histfile=".asyncio_history") as startup_env:
+            p = spawn_asyncio_repl(env=os.environ | startup_env, stderr=subprocess.PIPE, isolated=False)
+            p.stdin.write("1/0")
+            kill_python(p)
+            output_lines = p.stderr.read().splitlines()
+            p.stderr.close()
+            self.assertEqual(output_lines[3], 'notice from pythonstartup in asyncio repl')
+            tb_start_lines = output_lines[4:6]
+            tb_final_lines = output_lines[13:]
+            expected_lines = [
+                '>>> import asyncio',
+                'Traceback (most recent call last):',
+                '  File "<stdin>", line 1, in <module>',
+                '    1/0',
+                '    ~^~',
+                'ZeroDivisionError: division by zero',
+                '',
+                'exiting asyncio REPL...',
+            ]
+            self.assertEqual(tb_start_lines + tb_final_lines, expected_lines)
+            self.assertEqual(tb_start_lines + tb_final_lines, expected_lines)
+
+    def test_pythonstartup_failure(self):
+        startup_code = "def foo():\n    1/0\n"
+        with new_startup_env(code=startup_code, histfile=".asyncio_history") as startup_env:
+            p = spawn_asyncio_repl(env=os.environ | startup_env, stderr=subprocess.PIPE, isolated=False)
+            p.stdin.write("foo()")
+            kill_python(p)
+            output = p.stderr.read()
+            p.stderr.close()
+            tb_start_lines = output.splitlines()[3:5]
+            tb_final_lines = output.splitlines()[12:]
+
+            expected_lines = [
+                '>>> import asyncio',
+                'Traceback (most recent call last):',
+                '  File "<stdin>", line 1, in <module>',
+                '    foo()',
+                '    ~~~^^',
+                f'  File "{startup_env['PYTHONSTARTUP']}", line 2, in foo',
+                '    1/0',
+                '    ~^~',
+                'ZeroDivisionError: division by zero',
+                '',
+                'exiting asyncio REPL...',
+            ]
+            self.assertEqual(tb_start_lines + tb_final_lines, expected_lines)
 
 
 if __name__ == "__main__":
