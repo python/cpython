@@ -180,7 +180,6 @@ _get_tcl_lib_path(void)
 }
 #endif /* MS_WINDOWS */
 
-<<<<<<< HEAD
 #if defined(MS_WINDOWS) && TK_MAJOR_VERSION >= 9
 static void
 mount_tk_dll_zip(void)
@@ -284,6 +283,7 @@ Tkinter_TkInit(Tcl_Interp *interp)
 
 */
 
+#if TCL_MAJOR_VERSION < 9  /* Tcl 9.x is always threaded */
 static int
 _check_tcl_threaded(void)
 {
@@ -298,6 +298,7 @@ _check_tcl_threaded(void)
     if (threaded == NULL) return 0;
     else return 1;
 }
+#endif
 
 static Tcl_ThreadDataKey state_key;
 #define tcl_tstate \
@@ -3751,10 +3752,6 @@ PyInit__tkinter(void)
     }
 
     PyObject *m, *uexe, *cexe;
-
-    tcl_lock = PyThread_allocate_lock();
-    if (tcl_lock == NULL)
-        return PyErr_NoMemory();
 
     m = PyModule_Create(&_tkintermodule);
     if (m == NULL)
