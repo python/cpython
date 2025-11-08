@@ -168,7 +168,7 @@ Character classification and conversion
 =======================================
 
 The following macros provide locale-independent character classification and
-conversion. The argument must be a signed or unsigned :c:type:`char`.
+conversion. The argument must be a signed or unsigned :c:expr:`char`.
 
 .. c:macro:: Py_ISALNUM(c)
 
