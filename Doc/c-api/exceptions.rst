@@ -344,7 +344,7 @@ For convenience, some of these functions will always return a
 
    Similar to :c:func:`PyErr_ProgramTextObject`, but *filename* is a
    :c:expr:`const char *`, which is decoded with the
-   :term:`filesystem-encoding-and-error-handler`, instead of a
+   :term:`filesystem encoding and error handler`, instead of a
    Python object reference.
 
 
