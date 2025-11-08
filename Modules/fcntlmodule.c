@@ -56,12 +56,13 @@ the C code.
 
 If arg is given as a bytes-like object, the return value of fcntl() is a
 bytes object of that length, containing the resulting value put in the
-arg buffer by the operating system.
+arg buffer by the operating system.  The length of the arg buffer is not
+allowed to exceed 1024 bytes.
 [clinic start generated code]*/
 
 static PyObject *
 fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
-/*[clinic end generated code: output=888fc93b51c295bd input=77340720f11665da]*/
+/*[clinic end generated code: output=888fc93b51c295bd input=56c6d6196a4854df]*/
 {
     int ret;
     int async_err = 0;
@@ -166,13 +167,14 @@ false, the behavior is as if an immutable buffer had been passed.
 If the argument is an immutable buffer then a copy of the buffer is
 passed to the operating system and the return value is a bytes object of
 the same length containing whatever the operating system put in the
-buffer.
+buffer.  The length of the arg buffer in this case is not allowed to
+exceed 1024 bytes.
 [clinic start generated code]*/
 
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                  int mutate_arg)
-/*[clinic end generated code: output=f72baba2454d7a62 input=954fe75c208cc492]*/
+/*[clinic end generated code: output=f72baba2454d7a62 input=b69717a5588e086e]*/
 {
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
        because the system expects it to be a 32bit bit field value

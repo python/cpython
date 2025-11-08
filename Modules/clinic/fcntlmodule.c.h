@@ -21,7 +21,8 @@ PyDoc_STRVAR(fcntl_fcntl__doc__,
 "\n"
 "If arg is given as a bytes-like object, the return value of fcntl() is a\n"
 "bytes object of that length, containing the resulting value put in the\n"
-"arg buffer by the operating system.");
+"arg buffer by the operating system.  The length of the arg buffer is not\n"
+"allowed to exceed 1024 bytes.");
 
 #define FCNTL_FCNTL_METHODDEF    \
     {"fcntl", (PyCFunction)(void(*)(void))fcntl_fcntl, METH_FASTCALL, fcntl_fcntl__doc__},
@@ -94,7 +95,8 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
 "If the argument is an immutable buffer then a copy of the buffer is\n"
 "passed to the operating system and the return value is a bytes object of\n"
 "the same length containing whatever the operating system put in the\n"
-"buffer.");
+"buffer.  The length of the arg buffer in this case is not allowed to\n"
+"exceed 1024 bytes.");
 
 #define FCNTL_IOCTL_METHODDEF    \
     {"ioctl", (PyCFunction)(void(*)(void))fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
@@ -268,4 +270,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4c3b7333ceb76d58 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a9345d258926adb7 input=a9049054013a1b77]*/
