@@ -359,7 +359,7 @@ Usually, a method is called right after it is bound::
 
    x.f()
 
-In the :class:`!MyClass` example, this will return the string ``'hello world'``.
+If ``x = MyClass()``, as above, this will return the string ``'hello world'``.
 However, it is not necessary to call a method right away: ``x.f`` is a method
 object, and can be stored away and called at a later time.  For example::
 
