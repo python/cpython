@@ -3,7 +3,7 @@
 Expat C API
 -----------
 
-:mod:`pyexpat` exposes a C interface for extension modules.
+:mod:`!pyexpat exposes a C interface for extension modules.
 Consumers must include the header file :file:`pyexpat.h` (which is not
 included by default by :file:`Python.h`) and ``expat.h`` for Expat.
 
