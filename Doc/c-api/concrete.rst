@@ -115,5 +115,6 @@ Other Objects
    gen.rst
    coro.rst
    contextvars.rst
+   curses.rst
    datetime.rst
    typehints.rst
