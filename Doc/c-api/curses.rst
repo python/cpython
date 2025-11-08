@@ -42,7 +42,7 @@ be invoked, usually as part of the module initialisation function, to populate
    :c:macro:`PyCursesInitialised`, and :c:macro:`PyCursesInitialisedColor`.
 
 
-.. c:data:: PyTypeObject PyCursesWindow_Type
+.. c:var:: PyTypeObject PyCursesWindow_Type
 
    The :ref:`heap type <heap-types>` corresponding to :class:`curses.window`.
 
