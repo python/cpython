@@ -226,7 +226,6 @@ Distribution metadata
    Raises :exc:`PackageNotFoundError` if the named distribution
    package is not installed in the current Python environment.
 
-
 .. class:: PackageMetadata
 
    A concrete implementation of the
