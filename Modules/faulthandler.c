@@ -945,23 +945,30 @@ faulthandler_user(int signum)
     if (!user->enabled)
         return;
 
-    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    int attach = 0;
+    PyThreadState *tstate = PyThreadState_GetUnchecked();
     if (!tstate) {
-        tstate = user->tstate;
+        tstate = PyGILState_GetThisThreadState();
+        if (tstate) {
+            attach = 1;
+        }
     }
 
-    if (tstate) {
-        assert (user->interp);
-
+    if (attach) {
         _PyThreadState_Attach(tstate);
+    }
+
+    if (user->all_threads) {
+        assert (user->interp);
         _PyEval_StopTheWorld(user->interp);
     }
-
     faulthandler_dump_traceback(user->fd, user->all_threads, user->interp);
-
-    if (tstate) {
+    if (user->all_threads) {
         assert (user->interp);
         _PyEval_StartTheWorld(user->interp);
+    }
+
+    if (attach) {
         _PyThreadState_Detach(tstate);
     }
 
@@ -1074,13 +1081,7 @@ faulthandler_register_py_impl(PyObject *module, int signum, PyObject *file,
     user->all_threads = all_threads;
     user->chain = chain;
     user->interp = PyThreadState_GetInterpreter(tstate);
-    user->tstate = PyThreadState_New(user->interp);
     user->enabled = 1;
-
-    if (!user->tstate) {
-        Py_XDECREF(file);
-        return NULL;
-    }
 
     Py_RETURN_NONE;
 }
@@ -1097,10 +1098,6 @@ faulthandler_unregister(user_signal_t *user, int signum)
     (void)signal(signum, user->previous);
 #endif
     Py_CLEAR(user->file);
-    if (user->tstate) {
-        PyThreadState_Clear(user->tstate);
-        user->tstate = NULL;
-    }
     user->fd = -1;
     return 1;
 }
