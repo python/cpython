@@ -405,7 +405,6 @@ class TestAsyncioREPL(unittest.TestCase):
                 'exiting asyncio REPL...',
             ]
             self.assertEqual(tb_start_lines + tb_final_lines, expected_lines)
-            self.assertEqual(tb_start_lines + tb_final_lines, expected_lines)
 
     def test_pythonstartup_failure(self):
         startup_code = "def foo():\n    1/0\n"
