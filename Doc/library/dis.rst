@@ -1673,7 +1673,7 @@ iterations of the loop.
    * ``0x02`` a dictionary of keyword-only parameters' default values
    * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
-   * ``0x10`` the annotate function for the function object
+   * ``0x10`` the :term:`annotate function` for the function object
 
    .. versionadded:: 3.13
 
