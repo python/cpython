@@ -379,12 +379,13 @@ Available start symbols
    .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for a function type; for use with
-   :c:func:`Py_CompileString`. This is used for parsing function ``# type:``
-   comments.
+   :c:func:`Py_CompileString`. This is used to parse "signature type comments"
+   from :pep:`484`.
 
    This requires the :c:macro:`PyCF_ONLY_AST` flag to be set.
 
    .. seealso::
       :py:class:`ast.FunctionType`
+      :pep:`484`
 
    .. versionadded:: 3.8
