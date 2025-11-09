@@ -3,19 +3,29 @@
 
 /* note: you must import expat.h before importing this module! */
 
+#ifndef PyExpat_CAPI_H
+#define PyExpat_CAPI_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * Only bump the magic number when PyExpat_CAPI changes but not its size.
+ * If the structure changes because of an additional field, the magic number
+ * should not be bumped (see https://github.com/python/cpython/issues/115398).
+ */
 #define PyExpat_CAPI_MAGIC  "pyexpat.expat_CAPI 1.1"
 #define PyExpat_CAPSULE_NAME "pyexpat.expat_CAPI"
 
-struct PyExpat_CAPI
-{
-    char* magic; /* set to PyExpat_CAPI_MAGIC */
-    int size; /* set to sizeof(struct PyExpat_CAPI) */
+typedef struct PyExpat_CAPI {
+    char *magic; /* set to PyExpat_CAPI_MAGIC */
+    int size; /* set to sizeof(PyExpat_CAPI) */
     int MAJOR_VERSION;
     int MINOR_VERSION;
     int MICRO_VERSION;
     /* pointers to selected expat functions.  add new functions at
        the end, if needed */
-    const XML_LChar * (*ErrorString)(enum XML_Error code);
+    const XML_LChar *(*ErrorString)(enum XML_Error code);
     enum XML_Error (*GetErrorCode)(XML_Parser parser);
     XML_Size (*GetErrorColumnNumber)(XML_Parser parser);
     XML_Size (*GetErrorLineNumber)(XML_Parser parser);
@@ -63,5 +73,22 @@ struct PyExpat_CAPI
     XML_Bool (*SetBillionLaughsAttackProtectionMaximumAmplification)(
         XML_Parser parser, float maxAmplificationFactor);
     /* always add new stuff to the end! */
-};
+} PyExpat_CAPI;
 
+static inline int
+PyExpat_CheckCompatibility(const PyExpat_CAPI *capi)
+{
+    assert(capi != NULL);
+    return (
+        strcmp(capi->magic, PyExpat_CAPI_MAGIC) == 0
+        && (size_t)capi->size >= sizeof(PyExpat_CAPI)
+        && capi->MAJOR_VERSION == XML_MAJOR_VERSION
+        && capi->MINOR_VERSION == XML_MINOR_VERSION
+        && capi->MICRO_VERSION == XML_MICRO_VERSION
+    );
+}
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !PyExpat_CAPI_H */
