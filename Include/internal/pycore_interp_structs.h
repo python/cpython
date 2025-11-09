@@ -9,6 +9,7 @@ extern "C" {
 
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_llist.h"         // struct llist_node
+#include "pycore_lock.h"          // _PyRecursiveMutex
 #include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_structs.h"       // PyHamtObject
@@ -30,10 +31,15 @@ extern "C" {
 #endif
 
 // Executor list lock macros for thread-safe access to executor linked lists
+#ifdef Py_GIL_DISABLED
 #define EXECUTOR_LIST_LOCK(interp) \
-    FT_MUTEX_LOCK(&(interp)->executor_list_lock)
+    _PyRecursiveMutex_Lock(&(interp)->executor_list_lock)
 #define EXECUTOR_LIST_UNLOCK(interp) \
-    FT_MUTEX_UNLOCK(&(interp)->executor_list_lock)
+    _PyRecursiveMutex_Unlock(&(interp)->executor_list_lock)
+#else
+#define EXECUTOR_LIST_LOCK(interp)
+#define EXECUTOR_LIST_UNLOCK(interp)
+#endif
 
 typedef int (*_Py_pending_call_func)(void *);
 
@@ -946,7 +952,7 @@ struct _is {
     struct _PyExecutorObject *cold_executor;
     int executor_deletion_list_remaining_capacity;
 #ifdef Py_GIL_DISABLED
-    PyMutex executor_list_lock;
+    _PyRecursiveMutex executor_list_lock;
 #endif
     size_t executor_creation_counter;
     _rare_events rare_events;
