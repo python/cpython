@@ -52,6 +52,7 @@ Built-in descriptors
 .. c:function:: PyObject *PyClassMethod_New(PyObject *callable)
 
    Create a new :class:`classmethod` object wrapping *callable*.
+   *callable* must be a callable object and must not be ``NULL``.
 
    On success, this function returns a :term:`strong reference` to a new class
    method descriptor. On failure, this function returns ``NULL`` with an
@@ -67,6 +68,7 @@ Built-in descriptors
 .. c:function:: PyObject *PyStaticMethod_New(PyObject *callable)
 
    Create a new :class:`staticmethod` object wrapping *callable*.
+   *callable* must be a callable object and must not be ``NULL``.
 
    On success, this function returns a :term:`strong reference` to a new static
    method descriptor. On failure, this function returns ``NULL`` with an
