@@ -24,7 +24,8 @@ __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
            "str", "atof", "atoi", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
            "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "getencoding", "delocalize",
-           "localize"]
+           "localize", "locale_encoding_alias", "locale_alias",
+           "windows_locale"]
 
 def _strcoll(a,b):
     """ strcoll(string,string) -> int.
@@ -108,7 +109,8 @@ else:
                                     "MON_4", "MON_5", "MON_6", "MON_7",
                                     "MON_8", "MON_9", "NOEXPR",
                                     "RADIXCHAR", "THOUSEP", "T_FMT",
-                                    "T_FMT_AMPM", "YESEXPR"]
+                                    "T_FMT_AMPM", "YESEXPR", "AM_STR",
+                                    "PM_STR"]
     # The constants defined in _locale are platform-dependent,
     # so we only include those that are available on the current platform.
     __all__.extend(vars().keys() & _conditional_constants_names)
