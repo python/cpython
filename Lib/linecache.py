@@ -253,8 +253,12 @@ def _bless_my_loader(module_globals):
     loader = module_globals.get('__loader__')
     if loader is None and '__spec__' not in module_globals:
         return None
-
     spec = module_globals.get('__spec__')
+
+    # The __main__ module has __spec__ = None.
+    if spec is None and module_globals.get('__name__') == '__main__':
+        return loader
+
     spec_loader = getattr(spec, 'loader', None)
     if spec_loader is None:
         import warnings
