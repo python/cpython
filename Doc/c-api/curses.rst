@@ -32,7 +32,7 @@ be invoked, usually as part of the module initialisation function, to populate
 .. c:var:: void **PyCurses_API
 
    Dynamically allocated object containing the curses C API.
-   This variable is only available once :c:macro:`import_curses` succeeded.
+   This variable is only available once :c:macro:`import_curses` succeeds.
 
    ``PyCurses_API[0]`` corresponds to :c:data:`PyCursesWindow_Type`.
 
@@ -56,6 +56,7 @@ be invoked, usually as part of the module initialisation function, to populate
 .. c:macro:: PyCurses_API_pointers
 
    The number of accessible fields (``4``) in :c:var:`PyCurses_API`.
+   This number is incremented whenever new fields are added.
 
 
 .. c:var:: PyTypeObject PyCursesWindow_Type
@@ -65,7 +66,7 @@ be invoked, usually as part of the module initialisation function, to populate
 
 .. c:function:: int PyCursesWindow_Check(PyObject *op)
 
-   Return *1* if *op* is a :class:`curses.window` instance, *0* otherwise.
+   Return true if *op* is a :class:`curses.window` instance, false otherwise.
 
 
 The following macros are convenience macros expanding into C statements.
