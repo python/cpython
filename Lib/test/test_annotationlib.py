@@ -1039,6 +1039,23 @@ class TestGetAnnotations(unittest.TestCase):
             {"x": "int"},
         )
 
+    def test_non_dict_annotate(self):
+        class WeirdAnnotate:
+            def __annotate__(self, *args, **kwargs):
+                return "not a dict"
+
+        wa = WeirdAnnotate()
+        for format in Format:
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
+                continue
+            with (
+                self.subTest(format=format),
+                self.assertRaisesRegex(
+                    ValueError, r".*__annotate__ returned a non-dict"
+                ),
+            ):
+                get_annotations(wa, format=format)
+
     def test_no_annotations(self):
         class CustomClass:
             pass
