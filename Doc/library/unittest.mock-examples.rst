@@ -743,16 +743,15 @@ exception is raised in the setUp then tearDown is not called.
 Mocking Unbound Methods
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Whilst writing tests today I needed to patch an *unbound method* (patching the
-method on the class rather than on the instance). I needed self to be passed
-in as the first argument because I want to make asserts about which objects
-were calling this particular method. The issue is that you can't patch with a
-mock for this, because if you replace an unbound method with a mock it doesn't
-become a bound method when fetched from the instance, and so it doesn't get
-self passed in. The workaround is to patch the unbound method with a real
-function instead. The :func:`patch` decorator makes it so simple to
-patch out methods with a mock that having to create a real function becomes a
-nuisance.
+Sometimes a test needs to patch an *unbound method*, which means patching the
+method on the class rather than on the instance. In order to make assertions
+about which objects were calling this particular method, you need to pass
+``self`` as the first argument. The issue is that you can't patch with a mock for
+this, because if you replace an unbound method with a mock it doesn't become
+a bound method when fetched from the instance, and so it doesn't get ``self``
+passed in. The workaround is to patch the unbound method with a real function
+instead. The :func:`patch` decorator makes it so simple to patch out methods
+with a mock that having to create a real function becomes a nuisance.
 
 If you pass ``autospec=True`` to patch then it does the patching with a
 *real* function object. This function object has the same signature as the one
@@ -760,8 +759,8 @@ it is replacing, but delegates to a mock under the hood. You still get your
 mock auto-created in exactly the same way as before. What it means though, is
 that if you use it to patch out an unbound method on a class the mocked
 function will be turned into a bound method if it is fetched from an instance.
-It will have ``self`` passed in as the first argument, which is exactly what I
-wanted:
+It will have ``self`` passed in as the first argument, which is exactly what
+was needed:
 
     >>> class Foo:
     ...   def foo(self):
