@@ -2612,6 +2612,37 @@ class PyUsabilityTest(UsabilityTest, unittest.TestCase):
         sys.set_int_max_str_digits(self._previous_int_limit)
         super().tearDown()
 
+    def test_helper__is_less_than_pow10a_use_str_slow_path(self):
+        # Test the "slow" path of _is_less_than_pow10a_use_str().
+        a, b = 2, 7
+
+        # Choose q1, q2 such that len(str(q1)) <= a < len(str(q2))
+        # and q1.bit_length() == q2.bit_length() == b to check that
+        # we cover the "slow" path correctly even for small values.
+        q1, q2 = 95, 105
+        b1, b2 = q1.bit_length(), q2.bit_length()
+
+        self.assertEqual(b1, b)
+        self.assertEqual(b2, b)
+
+        # ensure that the first "fast" check doesn't hold
+        self.assertGreaterEqual(b, a * self.decimal._LOG_10_BASE_2_LO)
+        # ensure that the second "fast" check doesn't hold
+        self.assertLess(b, 1 + a * self.decimal._LOG_10_BASE_2_HI)
+
+        cond_q1, str_q1 = self.decimal._is_less_than_pow10a_use_str(q1, a)
+        self.assertTrue(cond_q1)
+        self.assertIsNotNone(str_q1)
+
+        cond_q2, str_q2 = self.decimal._is_less_than_pow10a_use_str(q2, a)
+        self.assertFalse(cond_q2)
+        self.assertIsNotNone(str_q2)
+
+    def test_helper__is_less_than_pow10a(self):
+        # TODO(picnixz): find a simple test case with custom ulp_order.
+        pass
+
+
 class PythonAPItests:
 
     def test_abc(self):
