@@ -58,15 +58,6 @@ Allocating Objects on the Heap
    use :c:func:`PyObject_GC_NewVar` instead.
 
 
-.. c:function:: void PyObject_Del(void *op)
-
-   Releases memory allocated to an object using :c:macro:`PyObject_New` or
-   :c:macro:`PyObject_NewVar`.  This is normally called from the
-   :c:member:`~PyTypeObject.tp_dealloc` handler specified in the object's type.  The fields of
-   the object should not be accessed after this call as the memory is no
-   longer a valid Python object.
-
-
 .. c:var:: PyObject _Py_NoneStruct
 
    Object which is visible in Python as ``None``.  This should only be accessed
@@ -79,3 +70,35 @@ Allocating Objects on the Heap
    :ref:`moduleobjects`
       To allocate and create extension modules.
 
+
+Deprecated aliases
+^^^^^^^^^^^^^^^^^^
+
+These are :term:`soft deprecated` aliases to existing functions and macros.
+They exist solely for backwards compatibility.
+
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * Deprecated alias
+     * Function
+   * * .. c:macro:: PyObject_NEW(type, typeobj)
+     * :c:macro:`PyObject_New`
+   * * .. c:macro:: PyObject_NEW_VAR(type, typeobj, n)
+     * :c:macro:`PyObject_NewVar`
+   * * .. c:macro:: PyObject_INIT(op, typeobj)
+     * :c:func:`PyObject_Init`
+   * * .. c:macro:: PyObject_INIT_VAR(op, typeobj, n)
+     * :c:func:`PyObject_InitVar`
+   * * .. c:macro:: PyObject_MALLOC(n)
+     * :c:func:`PyObject_Malloc`
+   * * .. c:macro:: PyObject_REALLOC(p, n)
+     * :c:func:`PyObject_Realloc`
+   * * .. c:macro:: PyObject_FREE(p)
+     * :c:func:`PyObject_Free`
+   * * .. c:macro:: PyObject_DEL(p)
+     * :c:func:`PyObject_Free`
+   * * .. c:macro:: PyObject_Del(p)
+     * :c:func:`PyObject_Free`
