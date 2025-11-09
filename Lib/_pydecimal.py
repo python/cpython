@@ -465,8 +465,9 @@ def _tento(n):
 def _is_less_than_pow10a_use_str(q, a):
     """Try to efficiently check len(str(q)) <= a, or equivalently q < 10**a.
 
-    If it is not possible to efficiently compute len(str(q)),
-    this explicitly compute str(q) instead.
+    If it is not possible to efficiently compute the comparison, str(q) is
+    explicitly computed. str(q) may also be computed for cases that cannot
+    be optimized.
 
     Return (len(str(q)) <= a, None) or (len(str(q)) <= a, str(q)).
     """
@@ -485,8 +486,12 @@ def _is_less_than_pow10a_use_str(q, a):
 
         # assert q > 10 ** a
         return False, None
-    # Handles other cases due to floating point precision loss
-    # when computing _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI.
+    # Handle cases that fail due to floating point precision loss
+    # when computing _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI, or
+    # that cannot be distinguished with (q.bit_length(), a) only.
+    #
+    # For instance, (q1, a) = (95, 2) and (q2, a) = (105, a) produce
+    # different results but q1.bit_length() == q2.bit_length() == 7.
     str_q = str(q)  # can raise a ValueError
     is_valid = len(str_q) <= a
     return is_valid, str_q
