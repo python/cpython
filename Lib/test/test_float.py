@@ -8,8 +8,11 @@ import time
 import unittest
 
 from test import support
-from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
-                               INVALID_UNDERSCORE_LITERALS)
+from test.support.testcase import FloatsAreIdenticalMixin
+from test.support.numbers import (
+    VALID_UNDERSCORE_LITERALS,
+    INVALID_UNDERSCORE_LITERALS,
+)
 from math import isinf, isnan, copysign, ldexp
 import math
 
@@ -174,7 +177,7 @@ class GeneralFloatCases(unittest.TestCase):
         # non-UTF-8 byte string
         check(b'123\xa0')
 
-    @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
+    @support.run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE', '')
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
         # float must not accept the locale specific decimal point but
@@ -753,7 +756,47 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(INF, 'f'), 'inf')
         self.assertEqual(format(INF, 'F'), 'INF')
 
+        # thousands separators
+        x = 123_456.123_456
+        self.assertEqual(format(x, '_f'), '123_456.123456')
+        self.assertEqual(format(x, ',f'), '123,456.123456')
+        self.assertEqual(format(x, '._f'), '123456.123_456')
+        self.assertEqual(format(x, '.,f'), '123456.123,456')
+        self.assertEqual(format(x, '_._f'), '123_456.123_456')
+        self.assertEqual(format(x, ',.,f'), '123,456.123,456')
+        self.assertEqual(format(x, '.10_f'), '123456.123_456_000_0')
+        self.assertEqual(format(x, '.10,f'), '123456.123,456,000,0')
+        self.assertEqual(format(x, '>21._f'), '       123456.123_456')
+        self.assertEqual(format(x, '<21._f'), '123456.123_456       ')
+        self.assertEqual(format(x, '+.11_e'), '+1.234_561_234_56e+05')
+        self.assertEqual(format(x, '+.11,e'), '+1.234,561,234,56e+05')
+        self.assertEqual(format(x, '021_._f'), '0_000_123_456.123_456')
+        self.assertEqual(format(x, '020_._f'), '0_000_123_456.123_456')
+        self.assertEqual(format(x, '+021_._f'), '+0_000_123_456.123_456')
+        self.assertEqual(format(x, '21_._f'), '      123_456.123_456')
+        self.assertEqual(format(x, '>021_._f'), '000000123_456.123_456')
+        self.assertEqual(format(x, '<021_._f'), '123_456.123_456000000')
+        self.assertEqual(format(x, '023_.10_f'), '0_123_456.123_456_000_0')
+        self.assertEqual(format(x, '022_.10_f'), '0_123_456.123_456_000_0')
+        self.assertEqual(format(x, '+023_.10_f'), '+0_123_456.123_456_000_0')
+        self.assertEqual(format(x, '023_.9_f'), '000_123_456.123_456_000')
+        self.assertEqual(format(x, '021_._e'), '0_000_001.234_561e+05')
+        self.assertEqual(format(x, '020_._e'), '0_000_001.234_561e+05')
+        self.assertEqual(format(x, '+021_._e'), '+0_000_001.234_561e+05')
+        self.assertEqual(format(x, '023_.10_e'), '0_001.234_561_234_6e+05')
+        self.assertEqual(format(x, '022_.10_e'), '0_001.234_561_234_6e+05')
+        self.assertEqual(format(x, '023_.9_e'), '000_001.234_561_235e+05')
+
+        self.assertRaises(ValueError, format, x, '._6f')
+        self.assertRaises(ValueError, format, x, '.,_f')
+        self.assertRaises(ValueError, format, x, '.6,_f')
+        self.assertRaises(ValueError, format, x, '.6_,f')
+        self.assertRaises(ValueError, format, x, '.6_n')
+        self.assertRaises(ValueError, format, x, '.6,n')
+
     @support.requires_IEEE_754
+    @unittest.skipUnless(sys.float_repr_style == 'short',
+                         "applies only when using short float repr style")
     def test_format_testfile(self):
         with open(format_testfile, encoding="utf-8") as testfile:
             for line in testfile:
@@ -862,7 +905,7 @@ class ReprTestCase(unittest.TestCase):
             self.assertEqual(repr(float(negs)), str(float(negs)))
 
 @support.requires_IEEE_754
-class RoundTestCase(unittest.TestCase):
+class RoundTestCase(unittest.TestCase, FloatsAreIdenticalMixin):
 
     def test_inf_nan(self):
         self.assertRaises(OverflowError, round, INF)
@@ -892,10 +935,10 @@ class RoundTestCase(unittest.TestCase):
 
     def test_small_n(self):
         for n in [-308, -309, -400, 1-2**31, -2**31, -2**31-1, -2**100]:
-            self.assertEqual(round(123.456, n), 0.0)
-            self.assertEqual(round(-123.456, n), -0.0)
-            self.assertEqual(round(1e300, n), 0.0)
-            self.assertEqual(round(1e-320, n), 0.0)
+            self.assertFloatsAreIdentical(round(123.456, n), 0.0)
+            self.assertFloatsAreIdentical(round(-123.456, n), -0.0)
+            self.assertFloatsAreIdentical(round(1e300, n), 0.0)
+            self.assertFloatsAreIdentical(round(1e-320, n), 0.0)
 
     def test_overflow(self):
         self.assertRaises(OverflowError, round, 1.6e308, -308)
@@ -1093,21 +1136,14 @@ class InfNanTest(unittest.TestCase):
 
 fromHex = float.fromhex
 toHex = float.hex
-class HexFloatTestCase(unittest.TestCase):
+class HexFloatTestCase(FloatsAreIdenticalMixin, unittest.TestCase):
     MAX = fromHex('0x.fffffffffffff8p+1024')  # max normal
     MIN = fromHex('0x1p-1022')                # min normal
     TINY = fromHex('0x0.0000000000001p-1022') # min subnormal
     EPS = fromHex('0x0.0000000000001p0') # diff between 1.0 and next float up
 
     def identical(self, x, y):
-        # check that floats x and y are identical, or that both
-        # are NaNs
-        if isnan(x) or isnan(y):
-            if isnan(x) == isnan(y):
-                return
-        elif x == y and (x != 0.0 or copysign(1.0, x) == copysign(1.0, y)):
-            return
-        self.fail('%r not identical to %r' % (x, y))
+        self.assertFloatsAreIdentical(x, y)
 
     def test_ends(self):
         self.identical(self.MIN, ldexp(1.0, -1022))

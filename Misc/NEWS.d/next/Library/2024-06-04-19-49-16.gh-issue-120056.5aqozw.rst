@@ -1,3 +1,0 @@
-Add :data:`!socket.IP_RECVERR` and :data:`!socket.IP_RECVTTL` constants
-(both available since Linux 2.2).
-And :data:`!socket.IP_RECVORIGDSTADDR` constant (available since Linux 2.6.29).

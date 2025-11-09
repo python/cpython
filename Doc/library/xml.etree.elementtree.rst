@@ -20,11 +20,10 @@ for parsing and creating XML data.
    The :mod:`!xml.etree.cElementTree` module is deprecated.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.etree.ElementTree` module is not secure against
-   maliciously constructed data.  If you need to parse untrusted or
-   unauthenticated data see :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 Tutorial
 --------
@@ -971,7 +970,7 @@ Element Objects
 
    .. method:: extend(subelements)
 
-      Appends *subelements* from a sequence object with zero or more elements.
+      Appends *subelements* from an iterable of elements.
       Raises :exc:`TypeError` if a subelement is not an :class:`Element`.
 
       .. versionadded:: 3.2
@@ -1375,7 +1374,7 @@ XMLParser Objects
 
    .. versionchanged:: 3.8
       Parameters are now :ref:`keyword-only <keyword-only_parameter>`.
-      The *html* argument no longer supported.
+      The *html* argument is no longer supported.
 
 
    .. method:: close()
@@ -1399,10 +1398,10 @@ XMLParser Objects
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
 
-      Note that :meth:`flush` has been backported to some prior releases of
-      CPython as a security fix.  Check for availability of :meth:`flush`
-      using :func:`hasattr` if used in code running across a variety of Python
-      versions.
+      :meth:`!flush`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability using :func:`hasattr` if used in code running
+      across a variety of Python versions.
 
       .. versionadded:: 3.13
 
@@ -1477,10 +1476,10 @@ XMLPullParser Objects
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
 
-      Note that :meth:`flush` has been backported to some prior releases of
-      CPython as a security fix.  Check for availability of :meth:`flush`
-      using :func:`hasattr` if used in code running across a variety of Python
-      versions.
+      :meth:`!flush`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability using :func:`hasattr` if used in code running
+      across a variety of Python versions.
 
       .. versionadded:: 3.13
 

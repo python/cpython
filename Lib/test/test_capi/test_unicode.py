@@ -1,7 +1,7 @@
 import unittest
 import sys
 from test import support
-from test.support import import_helper
+from test.support import threading_helper
 
 try:
     import _testcapi
@@ -1005,6 +1005,24 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_asutf8, [], 0)
         # CRASHES unicode_asutf8(NULL, 0)
 
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    @threading_helper.requires_working_threading()
+    def test_asutf8_race(self):
+        """Test that there's no race condition in PyUnicode_AsUTF8()"""
+        unicode_asutf8 = _testcapi.unicode_asutf8
+        from threading import Thread
+
+        data = "😊"
+
+        def worker():
+            for _ in range(1000):
+                self.assertEqual(unicode_asutf8(data, 5), b'\xf0\x9f\x98\x8a\0')
+
+        threads = [Thread(target=worker) for _ in range(10)]
+        with threading_helper.start_threads(threads):
+            pass
+
+
     @support.cpython_only
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_asutf8andsize(self):
@@ -1721,6 +1739,20 @@ class CAPITest(unittest.TestCase):
                 # Check that the second call returns the same result
                 self.assertEqual(getargs_s_hash(s), chr(k).encode() * (i + 1))
 
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_GET_CACHED_HASH(self):
+        from _testcapi import unicode_GET_CACHED_HASH
+        content_bytes = b'some new string'
+        # avoid parser interning & constant folding
+        obj = str(content_bytes, 'ascii')
+        # impl detail: fresh strings do not have cached hash
+        self.assertEqual(unicode_GET_CACHED_HASH(obj), -1)
+        # impl detail: adding string to a dict caches its hash
+        {obj: obj}
+        # impl detail: ASCII string hashes are equal to bytes ones
+        self.assertEqual(unicode_GET_CACHED_HASH(obj), hash(content_bytes))
+
 
 class PyUnicodeWriterTest(unittest.TestCase):
     def create_writer(self, size):
@@ -1757,6 +1789,13 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_char('.')
         self.assertEqual(writer.finish(),
                          "ascii-latin1=\xE9-euro=\u20AC.")
+
+    def test_ascii(self):
+        writer = self.create_writer(0)
+        writer.write_ascii(b"Hello ", -1)
+        writer.write_ascii(b"", 0)
+        writer.write_ascii(b"Python! <truncated>", 6)
+        self.assertEqual(writer.finish(), "Hello Python")
 
     def test_invalid_utf8(self):
         writer = self.create_writer(0)
@@ -1902,6 +1941,39 @@ class PyUnicodeWriterFormatTest(unittest.TestCase):
         self.writer_format(writer, b"%s.", b"World")
 
         self.assertEqual(writer.finish(), 'Hello World.')
+
+    def test_unicode_equal(self):
+        unicode_equal = _testlimitedcapi.unicode_equal
+
+        def copy(text):
+            return text.encode().decode()
+
+        self.assertTrue(unicode_equal("", ""))
+        self.assertTrue(unicode_equal("abc", "abc"))
+        self.assertTrue(unicode_equal("abc", copy("abc")))
+        self.assertTrue(unicode_equal("\u20ac", copy("\u20ac")))
+        self.assertTrue(unicode_equal("\U0010ffff", copy("\U0010ffff")))
+
+        self.assertFalse(unicode_equal("abc", "abcd"))
+        self.assertFalse(unicode_equal("\u20ac", "\u20ad"))
+        self.assertFalse(unicode_equal("\U0010ffff", "\U0010fffe"))
+
+        # str subclass
+        self.assertTrue(unicode_equal("abc", Str("abc")))
+        self.assertTrue(unicode_equal(Str("abc"), "abc"))
+        self.assertFalse(unicode_equal("abc", Str("abcd")))
+        self.assertFalse(unicode_equal(Str("abc"), "abcd"))
+
+        # invalid type
+        for invalid_type in (b'bytes', 123, ("tuple",)):
+            with self.subTest(invalid_type=invalid_type):
+                with self.assertRaises(TypeError):
+                    unicode_equal("abc", invalid_type)
+                with self.assertRaises(TypeError):
+                    unicode_equal(invalid_type, "abc")
+
+        # CRASHES unicode_equal("abc", NULL)
+        # CRASHES unicode_equal(NULL, "abc")
 
 
 if __name__ == "__main__":

@@ -1,1 +1,0 @@
-Fix bug where compiler creates a redundant jump during pseudo-op replacement. Can only happen with a synthetic AST that has a try on the same line as the instruction following the exception handler.

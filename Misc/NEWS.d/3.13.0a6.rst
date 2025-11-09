@@ -264,7 +264,8 @@ Improve performance of :func:`os.path.join` and :func:`os.path.expanduser`.
 .. nonce: hqk9Hn
 .. section: Library
 
-Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath()`.
+Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath
+<os.path.relpath>`.
 
 ..
 
@@ -273,7 +274,8 @@ Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath()`.
 .. nonce: l6rWlj
 .. section: Library
 
-Preserve mailbox ownership when rewriting in :func:`mailbox.mbox.flush`.
+Preserve mailbox ownership when rewriting in :func:`mailbox.mbox.flush
+<mailbox.Mailbox.flush>`.
 Patch by Tony Mountifield.
 
 ..
@@ -582,7 +584,7 @@ in other tests (like importlib.resources).
 .. nonce: LV16SL
 .. section: Library
 
-On Windows, :func:`time.time()` now uses the
+On Windows, :func:`time.time` now uses the
 ``GetSystemTimePreciseAsFileTime()`` clock to have a resolution better than
 1 us, instead of the ``GetSystemTimeAsFileTime()`` clock which has a
 resolution of 15.6 ms. Patch by Victor Stinner.
@@ -642,7 +644,7 @@ Also in the corresponding :class:`ipaddress.IPv4Network` and
 .. nonce: OToJnG
 .. section: Library
 
-In :mod:`encodings.idna`, any capitalization of the the ACE prefix
+In :mod:`encodings.idna`, any capitalization of the ACE prefix
 (``xn--``) is now acceptable. Patch by Pepijn de Vos and Zackery Spytz.
 
 ..
@@ -673,14 +675,14 @@ fused multiply-add function. Patch by Mark Dickinson and Victor Stinner.
 .. section: Library
 
 The :mod:`importlib.resources` functions
-:func:`~importlib.resources.is_resource()`,
-:func:`~importlib.resources.open_binary()`,
-:func:`~importlib.resources.open_text()`,
-:func:`~importlib.resources.path()`,
-:func:`~importlib.resources.read_binary()`, and
-:func:`~importlib.resources.read_text()` are un-deprecated, and support
+:func:`~importlib.resources.is_resource`,
+:func:`~importlib.resources.open_binary`,
+:func:`~importlib.resources.open_text`,
+:func:`~importlib.resources.path`,
+:func:`~importlib.resources.read_binary`, and
+:func:`~importlib.resources.read_text` are un-deprecated, and support
 subdirectories via multiple positional arguments. The
-:func:`~importlib.resources.contents()` function also allows subdirectories,
+:func:`~importlib.resources.contents` function also allows subdirectories,
 but remains deprecated.
 
 ..
@@ -1061,7 +1063,7 @@ when available. Contributed by vxiiduu.
 .. nonce: Bwfmp7
 .. section: Windows
 
-On Windows, :func:`time.monotonic()` now uses the
+On Windows, :func:`time.monotonic` now uses the
 ``QueryPerformanceCounter()`` clock to have a resolution better than 1 us,
 instead of the ``GetTickCount64()`` clock which has a resolution of 15.6 ms.
 Patch by Victor Stinner.

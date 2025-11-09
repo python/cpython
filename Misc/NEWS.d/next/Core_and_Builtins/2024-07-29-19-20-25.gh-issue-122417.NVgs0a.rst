@@ -1,4 +1,0 @@
-In the free-threaded build, the reference counts for heap type objects are now
-partially stored in a distributed manner in per-thread arrays.  This reduces
-contention on the heap type's reference count fields when creating or
-destroying instances of the same type from multiple threads concurrently.

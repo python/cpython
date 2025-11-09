@@ -1,2 +1,0 @@
-Support WASI SDK 22 by explicitly skipping functions that are just stubs in
-wasi-libc.

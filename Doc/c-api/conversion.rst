@@ -41,7 +41,7 @@ The return value (*rv*) for these functions should be interpreted as follows:
   ``rv + 1`` bytes would have been needed to succeed. ``str[size-1]`` is ``'\0'``
   in this case.
 
-* When ``rv < 0``, "something bad happened." ``str[size-1]`` is ``'\0'`` in
+* When ``rv < 0``, the output conversion failed and ``str[size-1]`` is ``'\0'`` in
   this case too, but the rest of *str* is undefined. The exact cause of the error
   depends on the underlying platform.
 
@@ -105,7 +105,7 @@ The following functions provide locale-independent string to number conversions.
 
    If ``s`` represents a value that is too large to store in a float
    (for example, ``"1e500"`` is such a string on many platforms) then
-   if ``overflow_exception`` is ``NULL`` return ``Py_HUGE_VAL`` (with
+   if ``overflow_exception`` is ``NULL`` return ``Py_INFINITY`` (with
    an appropriate sign) and don't set any exception.  Otherwise,
    ``overflow_exception`` must point to a Python exception object;
    raise that exception and return ``-1.0``.  In both cases, set

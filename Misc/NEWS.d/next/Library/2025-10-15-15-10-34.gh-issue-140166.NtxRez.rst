@@ -1,0 +1,1 @@
+:mod:`mimetypes`: Per the `IANA assignment <https://www.iana.org/assignments/media-types/application/texinfo>`_, update the MIME type for the ``.texi`` and ``.texinfo`` file formats to ``application/texinfo``, instead of ``application/x-texinfo``.

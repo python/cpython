@@ -10,12 +10,11 @@
 
   See the source code for LLVMFuzzerTestOneInput for details. */
 
-#ifndef Py_BUILD_CORE
-#  define Py_BUILD_CORE 1
+#ifndef Py_BUILD_CORE_MODULE
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include <Python.h>
-#include "pycore_pyhash.h"        // _Py_HashBytes()
 #include <stdlib.h>
 #include <inttypes.h>
 
@@ -45,7 +44,7 @@ static int fuzz_builtin_int(const char* data, size_t size) {
     /* Pick a random valid base. (When the fuzzed function takes extra
        parameters, it's somewhat normal to hash the input to generate those
        parameters. We want to exercise all code paths, so we do so here.) */
-    int base = _Py_HashBytes(data, size) % 37;
+    int base = Py_HashBuffer(data, size) % 37;
     if (base == 1) {
         // 1 is the only number between 0 and 36 that is not a valid base.
         base = 0;

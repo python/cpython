@@ -1,2 +1,0 @@
-Added a :option:`--with-app-store-compliance` option to patch out known
-issues with macOS/iOS App Store review processes.

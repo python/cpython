@@ -9,13 +9,12 @@ import struct
 import time
 import unittest
 import unittest.mock
-import warnings
 
 from test import support
 from test.support import import_helper
 from test.support import os_helper
 
-from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
+from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED, ZIP_ZSTANDARD
 
 import zipimport
 import linecache
@@ -194,19 +193,38 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # occur in that case (builtin modules are always found first),
         # so we'll simply skip it then. Bug #765456.
         #
-        if "zlib" in sys.builtin_module_names:
-            self.skipTest('zlib is a builtin module')
-        if "zlib" in sys.modules:
-            del sys.modules["zlib"]
-        files = {"zlib.py": test_src}
-        try:
-            self.doTest(".py", files, "zlib")
-        except ImportError:
-            if self.compression != ZIP_DEFLATED:
-                self.fail("expected test to not raise ImportError")
+        if self.compression == ZIP_DEFLATED:
+            mod_name = "zlib"
+            if zipimport._zlib_decompress:  # validate attr name
+                # reset the cached import to avoid test order dependencies
+                zipimport._zlib_decompress = None  # reset cache
+        elif self.compression == ZIP_ZSTANDARD:
+            mod_name = "_zstd"
+            if zipimport._zstd_decompressor_class:  # validate attr name
+                # reset the cached import to avoid test order dependencies
+                zipimport._zstd_decompressor_class = None
         else:
+            mod_name = "zlib"  # the ZIP_STORED case below
+
+        if mod_name in sys.builtin_module_names:
+            self.skipTest(f"{mod_name} is a builtin module")
+        if mod_name in sys.modules:
+            del sys.modules[mod_name]
+        files = {f"{mod_name}.py": test_src}
+        try:
+            self.doTest(".py", files, mod_name)
+        except ImportError:
             if self.compression != ZIP_STORED:
-                self.fail("expected test to raise ImportError")
+                # Expected - fake compression module can't decompress
+                pass
+            else:
+                self.fail("expected test to not raise ImportError for uncompressed")
+        else:
+            if self.compression == ZIP_STORED:
+                # Expected - no compression needed, so fake module works
+                pass
+            else:
+                self.fail("expected test to raise ImportError for compressed zip with fake compression module")
 
     def testPy(self):
         files = {TESTMOD + ".py": test_src}
@@ -556,13 +574,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi.archive, TEMP_ZIP)
         self.assertTrue(zi.is_package(TESTPACK))
 
-        # PEP 302
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-
-            mod = zi.load_module(TESTPACK)
-            self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
-
         # PEP 451
         spec = zi.find_spec('spam')
         self.assertIsNotNone(spec)
@@ -576,6 +587,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
+
+        sys.path.insert(0, TEMP_ZIP)
 
         existing_pack_path = importlib.import_module(TESTPACK).__path__[0]
         expected_path_path = os.path.join(TEMP_ZIP, TESTPACK)
@@ -675,11 +688,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi.archive, TEMP_ZIP)
         self.assertEqual(zi.prefix, packdir)
         self.assertTrue(zi.is_package(TESTPACK2))
-        # PEP 302
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            mod = zi.load_module(TESTPACK2)
-            self.assertEqual(zi.get_filename(TESTPACK2), mod.__file__)
         # PEP 451
         spec = zi.find_spec(TESTPACK2)
         mod = importlib.util.module_from_spec(spec)
@@ -702,9 +710,12 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(
             spec.loader.get_filename(TESTMOD), load_mod.__file__)
 
+        sys.path.insert(0, TEMP_ZIP + os.sep + TESTPACK)
+
         mod_path = TESTPACK2 + os.sep + TESTMOD
         mod_name = module_path_to_dotted_name(mod_path)
         mod = importlib.import_module(mod_name)
+
         self.assertTrue(mod_name in sys.modules)
         self.assertIsNone(zi.get_source(TESTPACK2))
         self.assertIsNone(zi.get_source(mod_path))
@@ -835,11 +846,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             s = io.StringIO()
             print_tb(tb, 1, s)
-            self.assertTrue(s.getvalue().endswith(
+            self.assertEndsWith(s.getvalue(),
                 '    def do_raise(): raise TypeError\n'
                 '' if support.has_no_debug_ranges() else
                 '                    ^^^^^^^^^^^^^^^\n'
-            ))
+            )
         else:
             raise AssertionError("This ought to be impossible")
 
@@ -897,7 +908,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             "to run"
         )
 
-        # N.B.: We do alot of gymnastics below in the ZIP_STORED case to save
+        # N.B.: We do a lot of gymnastics below in the ZIP_STORED case to save
         # and reconstruct a sparse zip on systems that support sparse files.
         # Instead of creating a ~8GB zip file mainly consisting of null bytes
         # for every run of the test, we create the zip once and save off the
@@ -1008,8 +1019,13 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
 
 @support.requires_zlib()
-class CompressedZipImportTestCase(UncompressedZipImportTestCase):
+class DeflateCompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
+
+
+@support.requires_zstd()
+class ZStdCompressedZipImportTestCase(UncompressedZipImportTestCase):
+    compression = ZIP_ZSTANDARD
 
 
 class BadFileZipImportTestCase(unittest.TestCase):
@@ -1069,9 +1085,6 @@ class BadFileZipImportTestCase(unittest.TestCase):
         z = zipimport.zipimporter(TESTMOD)
 
         try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                self.assertRaises(TypeError, z.load_module, None)
             self.assertRaises(TypeError, z.find_module, None)
             self.assertRaises(TypeError, z.find_spec, None)
             self.assertRaises(TypeError, z.exec_module, None)
@@ -1082,10 +1095,6 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
             error = zipimport.ZipImportError
             self.assertIsNone(z.find_spec('abc'))
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                self.assertRaises(error, z.load_module, 'abc')
             self.assertRaises(error, z.get_code, 'abc')
             self.assertRaises(OSError, z.get_data, 'abc')
             self.assertRaises(error, z.get_source, 'abc')

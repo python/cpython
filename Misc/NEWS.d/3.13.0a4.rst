@@ -336,7 +336,7 @@ for decorated functions.
 .. nonce: RzxNYT
 .. section: Library
 
-Fix several :func:`format()` bugs when using the C implementation of
+Fix several :func:`format` bugs when using the C implementation of
 :class:`~decimal.Decimal`: * memory leak in some rare cases when using the
 ``z`` format option (coerce negative 0) * incorrect output when applying the
 ``z`` format option to type ``F`` (fixed-point with capital ``NAN`` /
@@ -1096,7 +1096,7 @@ Also changed its name and daemonic status, it can be now joined.
 Add :func:`os.path.isreserved`, which identifies reserved pathnames such as
 "NUL", "AUX" and "CON". This function is only available on Windows.
 
-Deprecate :meth:`pathlib.PurePath.is_reserved`.
+Deprecate :meth:`!pathlib.PurePath.is_reserved`.
 
 ..
 
@@ -1283,7 +1283,7 @@ Update macOS installer to use OpenSSL 3.0.13.
 .. nonce: FrQOQ0
 .. section: macOS
 
-Add Mach-O linkage support for :func:`platform.architecture()`.
+Add Mach-O linkage support for :func:`platform.architecture`.
 
 ..
 

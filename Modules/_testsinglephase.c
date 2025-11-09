@@ -1,7 +1,7 @@
 
 /* Testing module for single-phase initialization of extension modules
 
-This file contains 8 distinct modules, meaning each as its own name
+This file contains several distinct modules, meaning each as its own name
 and its own init function (PyInit_...).  The default import system will
 only find the one matching the filename: _testsinglephase.  To load the
 others you must do so manually.  For example:
@@ -12,9 +12,13 @@ filename = _testsinglephase.__file__
 loader = importlib.machinery.ExtensionFileLoader(name, filename)
 spec = importlib.util.spec_from_file_location(name, filename, loader=loader)
 mod = importlib._bootstrap._load(spec)
+loader.exec_module(module)
+sys.modules[modname] = module
 ```
 
-Here are the 8 modules:
+(The last two lines are just for completeness.)
+
+Here are the modules:
 
 * _testsinglephase
    * def: _testsinglephase_basic,
@@ -163,6 +167,11 @@ Here are the 8 modules:
    * functions: none
    * import system: same as _testsinglephase_with_state
 
+* _testsinglephase_circular
+   Regression test for gh-123880.
+   Does not have the common attributes & methods.
+   See test_singlephase_circular test.test_import.SinglephaseInitTests.
+
 Module state:
 
 * fields
@@ -235,6 +244,8 @@ static inline module_state *
 get_module_state(PyObject *module)
 {
     PyModuleDef *def = PyModule_GetDef(module);
+    assert(def);
+
     if (def->m_size == -1) {
         return &global_state.module;
     }
@@ -739,4 +750,54 @@ PyInit__testsinglephase_with_state_check_cache_first(void)
         return Py_NewRef(mod);
     }
     return PyModule_Create(&_testsinglephase_with_state_check_cache_first);
+}
+
+
+/****************************************/
+/* the _testsinglephase_circular module */
+/****************************************/
+
+static PyObject *static_module_circular;
+
+static PyObject *
+circularmod_clear_static_var(PyObject *self, PyObject *arg)
+{
+    PyObject *result = static_module_circular;
+    static_module_circular = NULL;
+    return result;
+}
+
+static struct PyModuleDef _testsinglephase_circular = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testsinglephase_circular",
+    .m_doc = PyDoc_STR("Test module _testsinglephase_circular"),
+    .m_methods = (PyMethodDef[]) {
+        {"clear_static_var", circularmod_clear_static_var, METH_NOARGS,
+         "Clear the static variable and return its previous value."},
+        {NULL, NULL}           /* sentinel */
+    }
+};
+
+PyMODINIT_FUNC
+PyInit__testsinglephase_circular(void)
+{
+    if (!static_module_circular) {
+        static_module_circular = PyModule_Create(&_testsinglephase_circular);
+        if (!static_module_circular) {
+            return NULL;
+        }
+    }
+    static const char helper_mod_name[] = (
+        "test.test_import.data.circular_imports.singlephase");
+    PyObject *helper_mod = PyImport_ImportModule(helper_mod_name);
+    Py_XDECREF(helper_mod);
+    if (!helper_mod) {
+        return NULL;
+    }
+    if(PyModule_AddStringConstant(static_module_circular,
+                                  "helper_mod_name",
+                                  helper_mod_name) < 0) {
+        return NULL;
+    }
+    return Py_NewRef(static_module_circular);
 }

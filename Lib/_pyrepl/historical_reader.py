@@ -71,6 +71,18 @@ class previous_history(commands.Command):
         r.select_item(r.historyi - 1)
 
 
+class history_search_backward(commands.Command):
+    def do(self) -> None:
+        r = self.reader
+        r.search_next(forwards=False)
+
+
+class history_search_forward(commands.Command):
+    def do(self) -> None:
+        r = self.reader
+        r.search_next(forwards=True)
+
+
 class restore_history(commands.Command):
     def do(self) -> None:
         r = self.reader
@@ -234,6 +246,8 @@ class HistoricalReader(Reader):
             isearch_forwards,
             isearch_backwards,
             operate_and_get_next,
+            history_search_backward,
+            history_search_forward,
         ]:
             self.commands[c.__name__] = c
             self.commands[c.__name__.replace("_", "-")] = c
@@ -251,8 +265,10 @@ class HistoricalReader(Reader):
             (r"\C-s", "forward-history-isearch"),
             (r"\M-r", "restore-history"),
             (r"\M-.", "yank-arg"),
-            (r"\<page down>", "last-history"),
-            (r"\<page up>", "first-history"),
+            (r"\<page down>", "history-search-forward"),
+            (r"\x1b[6~", "history-search-forward"),
+            (r"\<page up>", "history-search-backward"),
+            (r"\x1b[5~", "history-search-backward"),
         )
 
     def select_item(self, i: int) -> None:
@@ -274,13 +290,17 @@ class HistoricalReader(Reader):
 
     @contextmanager
     def suspend(self) -> SimpleContextManager:
-        with super().suspend():
-            try:
-                old_history = self.history[:]
-                del self.history[:]
-                yield
-            finally:
-                self.history[:] = old_history
+        with super().suspend(), self.suspend_history():
+            yield
+
+    @contextmanager
+    def suspend_history(self) -> SimpleContextManager:
+        try:
+            old_history = self.history[:]
+            del self.history[:]
+            yield
+        finally:
+            self.history[:] = old_history
 
     def prepare(self) -> None:
         super().prepare()
@@ -304,6 +324,59 @@ class HistoricalReader(Reader):
             return "(%s-search `%s') " % (d, self.isearch_term)
         else:
             return super().get_prompt(lineno, cursor_on_line)
+
+    def search_next(self, *, forwards: bool) -> None:
+        """Search history for the current line contents up to the cursor.
+
+        Selects the first item found. If nothing is under the cursor, any next
+        item in history is selected.
+        """
+        pos = self.pos
+        s = self.get_unicode()
+        history_index = self.historyi
+
+        # In multiline contexts, we're only interested in the current line.
+        nl_index = s.rfind('\n', 0, pos)
+        prefix = s[nl_index + 1:pos]
+        pos = len(prefix)
+
+        match_prefix = len(prefix)
+        len_item = 0
+        if history_index < len(self.history):
+            len_item = len(self.get_item(history_index))
+        if len_item and pos == len_item:
+            match_prefix = False
+        elif not pos:
+            match_prefix = False
+
+        while 1:
+            if forwards:
+                out_of_bounds = history_index >= len(self.history) - 1
+            else:
+                out_of_bounds = history_index == 0
+            if out_of_bounds:
+                if forwards and not match_prefix:
+                    self.pos = 0
+                    self.buffer = []
+                    self.dirty = True
+                else:
+                    self.error("not found")
+                return
+
+            history_index += 1 if forwards else -1
+            s = self.get_item(history_index)
+
+            if not match_prefix:
+                self.select_item(history_index)
+                return
+
+            len_acc = 0
+            for i, line in enumerate(s.splitlines(keepends=True)):
+                if line.startswith(prefix):
+                    self.select_item(history_index)
+                    self.pos = pos + len_acc
+                    return
+                len_acc += len(line)
 
     def isearch_next(self) -> None:
         st = self.isearch_term

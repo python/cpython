@@ -1,7 +1,10 @@
 import doctest
 import textwrap
+import traceback
 import types
 import unittest
+
+from test.support import BrokenIter
 
 
 doctests = """
@@ -606,7 +609,7 @@ class ListComprehensionTest(unittest.TestCase):
             result = snapshot = None
             try:
                 result = [{func}(value) for value in value]
-            except:
+            except ValueError:
                 snapshot = value
                 raise
         """
@@ -640,7 +643,7 @@ class ListComprehensionTest(unittest.TestCase):
             value = [1, None]
             try:
                 [v for v in value].sort()
-            except:
+            except TypeError:
                 pass
         """
         self._check_in_scopes(code, {"value": [1, None]})
@@ -710,6 +713,42 @@ class ListComprehensionTest(unittest.TestCase):
         """
         self._check_in_scopes(code, {"x": 2, "y": [3]}, ns={"x": 3}, scopes=["class"])
         self._check_in_scopes(code, {"x": 2, "y": [2]}, ns={"x": 3}, scopes=["function", "module"])
+
+    def test_exception_locations(self):
+        # The location of an exception raised from __init__ or
+        # __next__ should be the iterator expression
+
+        def init_raises():
+            try:
+                [x for x in BrokenIter(init_raises=True)]
+            except Exception as e:
+                return e
+
+        def next_raises():
+            try:
+                [x for x in BrokenIter(next_raises=True)]
+            except Exception as e:
+                return e
+
+        def iter_raises():
+            try:
+                [x for x in BrokenIter(iter_raises=True)]
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
+                               (next_raises, "BrokenIter(next_raises=True)"),
+                               (iter_raises, "BrokenIter(iter_raises=True)"),
+                              ]:
+            with self.subTest(func):
+                exc = func()
+                f = traceback.extract_tb(exc.__traceback__)[0]
+                indent = 16
+                co = func.__code__
+                self.assertEqual(f.lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
+                                 expected)
 
 __test__ = {'doctests' : doctests}
 

@@ -1,6 +1,6 @@
+import contextlib
 import io
 import itertools
-import contextlib
 import pathlib
 import pickle
 import stat
@@ -9,12 +9,11 @@ import unittest
 import zipfile
 import zipfile._path
 
-from test.support.os_helper import temp_dir, FakePath
+from test.support.os_helper import FakePath, temp_dir
 
 from ._functools import compose
 from ._itertools import Counter
-
-from ._test_params import parameterize, Invoked
+from ._test_params import Invoked, parameterize
 
 
 class jaraco:
@@ -193,10 +192,10 @@ class TestPath(unittest.TestCase):
         """EncodingWarning must blame the read_text and open calls."""
         assert sys.flags.warn_default_encoding
         root = zipfile.Path(alpharep)
-        with self.assertWarns(EncodingWarning) as wc:
+        with self.assertWarns(EncodingWarning) as wc:  # noqa: F821 (astral-sh/ruff#13296)
             root.joinpath("a.txt").read_text()
         assert __file__ == wc.filename
-        with self.assertWarns(EncodingWarning) as wc:
+        with self.assertWarns(EncodingWarning) as wc:  # noqa: F821 (astral-sh/ruff#13296)
             root.joinpath("a.txt").open("r").close()
         assert __file__ == wc.filename
 
@@ -275,7 +274,8 @@ class TestPath(unittest.TestCase):
         """
         zipfile_ondisk = self.zipfile_ondisk(alpharep)
         pathlike = FakePath(str(zipfile_ondisk))
-        zipfile.Path(pathlike)
+        root = zipfile.Path(pathlike)
+        root.root.close()
 
     @pass_alpharep
     def test_traverse_pathlike(self, alpharep):
@@ -317,7 +317,7 @@ class TestPath(unittest.TestCase):
     HUGE_ZIPFILE_NUM_ENTRIES = 2**13
 
     def huge_zipfile(self):
-        """Create a read-only zipfile with a huge number of entries entries."""
+        """Create a read-only zipfile with a huge number of entries."""
         strm = io.BytesIO()
         zf = zipfile.ZipFile(strm, "w")
         for entry in map(str, range(self.HUGE_ZIPFILE_NUM_ENTRIES)):
@@ -363,6 +363,18 @@ class TestPath(unittest.TestCase):
         """
         root = zipfile.Path(alpharep)
         assert root.name == 'alpharep.zip' == root.filename.name
+
+    @pass_alpharep
+    def test_root_on_disk(self, alpharep):
+        """
+        The name/stem of the root should match the zipfile on disk.
+
+        This condition must hold across platforms.
+        """
+        root = zipfile.Path(self.zipfile_ondisk(alpharep))
+        assert root.name == 'alpharep.zip' == root.filename.name
+        assert root.stem == 'alpharep' == root.filename.stem
+        root.root.close()
 
     @pass_alpharep
     def test_suffix(self, alpharep):
@@ -564,11 +576,13 @@ class TestPath(unittest.TestCase):
     )
     def test_pickle(self, alpharep, path_type, subpath):
         zipfile_ondisk = path_type(str(self.zipfile_ondisk(alpharep)))
-
-        saved_1 = pickle.dumps(zipfile.Path(zipfile_ondisk, at=subpath))
+        root = zipfile.Path(zipfile_ondisk, at=subpath)
+        saved_1 = pickle.dumps(root)
+        root.root.close()
         restored_1 = pickle.loads(saved_1)
         first, *rest = restored_1.iterdir()
         assert first.read_text(encoding='utf-8').startswith('content of ')
+        restored_1.root.close()
 
     @pass_alpharep
     def test_extract_orig_with_implied_dirs(self, alpharep):
@@ -580,6 +594,7 @@ class TestPath(unittest.TestCase):
         # wrap the zipfile for its side effect
         zipfile.Path(zf)
         zf.extractall(source_path.parent)
+        zf.close()
 
     @pass_alpharep
     def test_getinfo_missing(self, alpharep):
@@ -592,7 +607,11 @@ class TestPath(unittest.TestCase):
 
     def test_malformed_paths(self):
         """
-        Path should handle malformed paths.
+        Path should handle malformed paths gracefully.
+
+        Paths with leading slashes are not visible.
+
+        Paths with dots are treated like regular files.
         """
         data = io.BytesIO()
         zf = zipfile.ZipFile(data, "w")
@@ -601,11 +620,40 @@ class TestPath(unittest.TestCase):
         zf.writestr("../parent.txt", b"content")
         zf.filename = ''
         root = zipfile.Path(zf)
-        assert list(map(str, root.iterdir())) == [
-            'one-slash.txt',
-            'two-slash.txt',
-            'parent.txt',
-        ]
+        assert list(map(str, root.iterdir())) == ['../']
+        assert root.joinpath('..').joinpath('parent.txt').read_bytes() == b'content'
+
+    def test_unsupported_names(self):
+        """
+        Path segments with special characters are readable.
+
+        On some platforms or file systems, characters like
+        ``:`` and ``?`` are not allowed, but they are valid
+        in the zip file.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr("path?", b"content")
+        zf.writestr("V: NMS.flac", b"fLaC...")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        contents = root.iterdir()
+        assert next(contents).name == 'path?'
+        assert next(contents).name == 'V: NMS.flac'
+        assert root.joinpath('V: NMS.flac').read_bytes() == b"fLaC..."
+
+    def test_backslash_not_separator(self):
+        """
+        In a zip file, backslashes are not separators.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr(DirtyZipInfo("foo\\bar")._for_archive(zf), b"content")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        (first,) = root.iterdir()
+        assert not first.is_dir()
+        assert first.name == 'foo\\bar'
 
     @pass_alpharep
     def test_interface(self, alpharep):
@@ -613,3 +661,13 @@ class TestPath(unittest.TestCase):
 
         zf = zipfile.Path(alpharep)
         assert isinstance(zf, Traversable)
+
+
+class DirtyZipInfo(zipfile.ZipInfo):
+    """
+    Bypass name sanitization.
+    """
+
+    def __init__(self, filename, *args, **kwargs):
+        super().__init__(filename, *args, **kwargs)
+        self.filename = filename
