@@ -4,6 +4,7 @@
 import abc
 import sys
 import unittest
+from test import support
 from types import DynamicClassAttribute
 
 class PropertyBase(Exception):
@@ -195,8 +196,7 @@ class PropertyTests(unittest.TestCase):
             Okay2.color
         self.assertEqual(Okay2().color, 'magenta')
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
+    @support.requires_docstrings
     def test_empty_docstring(self):
         attr = DynamicClassAttribute(fget=None, fset=None, fdel=None, doc='')
         self.assertEqual(attr.__doc__, '',)
