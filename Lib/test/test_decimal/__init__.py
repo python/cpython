@@ -113,7 +113,7 @@ def init(m):
     )
     m.setcontext(DefaultTestContext)
 
-TESTDATADIR = 'decimaltestdata'
+TESTDATADIR = 'data'
 if __name__ == '__main__':
     file = sys.argv[0]
 else:
@@ -6011,31 +6011,3 @@ ARITH = None
 TEST_ALL = True
 TODO_TESTS = None
 DEBUG = False
-
-def test(arith=None, verbose=None, todo_tests=None, debug=None):
-    """ Execute the tests.
-
-    Runs all arithmetic tests if arith is True or if the "decimal" resource
-    is enabled in regrtest.py
-    """
-
-    global ARITH, TODO_TESTS, DEBUG
-    ARITH = arith
-    TODO_TESTS = todo_tests
-    DEBUG = debug
-    unittest.main(__name__, verbosity=2 if verbose else 1, exit=False, argv=[__name__])
-
-
-if __name__ == '__main__':
-    import optparse
-    p = optparse.OptionParser("test_decimal.py [--debug] [{--skip | test1 [test2 [...]]}]")
-    p.add_option('--debug', '-d', action='store_true', help='shows the test number and context before each test')
-    p.add_option('--skip',  '-s', action='store_true', help='skip over 90% of the arithmetic tests')
-    (opt, args) = p.parse_args()
-
-    if opt.skip:
-        test(arith=False, verbose=True)
-    elif args:
-        test(arith=True, verbose=True, todo_tests=args, debug=opt.debug)
-    else:
-        test(arith=True, verbose=True)
