@@ -9,6 +9,7 @@ import itertools
 import pickle
 from string.templatelib import Template, Interpolation
 import typing
+import sys
 import unittest
 from annotationlib import (
     Format,
@@ -810,6 +811,44 @@ class TestGetAnnotations(unittest.TestCase):
             get_annotations(wrapped, eval_str=False),
             {"a": "int", "b": "str", "return": "MyClass"},
         )
+
+    def test_stringized_annotations_on_partial_wrapper(self):
+        isa = inspect_stringized_annotations
+
+        def times_three_str(fn: typing.Callable[[str], isa.MyClass]):
+            @functools.wraps(fn)
+            def wrapper(b: "str") -> "MyClass":
+                return fn(b * 3)
+
+            return wrapper
+
+        wrapped = times_three_str(functools.partial(isa.function, 1))
+        self.assertEqual(wrapped("x"), isa.MyClass(1, "xxx"))
+        self.assertIsNot(wrapped.__globals__, isa.function.__globals__)
+        self.assertEqual(
+            get_annotations(wrapped, eval_str=True),
+            {"b": str, "return": isa.MyClass},
+        )
+        self.assertEqual(
+            get_annotations(wrapped, eval_str=False),
+            {"b": "str", "return": "MyClass"},
+        )
+
+        # If functools is not loaded, names will be evaluated in the current
+        # module instead of being unwrapped to the original.
+        functools_mod = sys.modules["functools"]
+        del sys.modules["functools"]
+
+        self.assertEqual(
+            get_annotations(wrapped, eval_str=True),
+            {"b": str, "return": MyClass},
+        )
+        self.assertEqual(
+            get_annotations(wrapped, eval_str=False),
+            {"b": "str", "return": "MyClass"},
+        )
+
+        sys.modules["functools"] = functools_mod
 
     def test_stringized_annotations_on_class(self):
         isa = inspect_stringized_annotations
