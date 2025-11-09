@@ -789,7 +789,7 @@ class TestGetAnnotations(unittest.TestCase):
         self.assertEqual(get_annotations(isa2, eval_str=False), {})
 
     def test_stringized_annotations_with_star_unpack(self):
-        def f(*args: *tuple[int, ...]): ...
+        def f(*args: "*tuple[int, ...]"): ...
         self.assertEqual(get_annotations(f, eval_str=True),
                          {'args': (*tuple[int, ...],)[0]})
 
