@@ -43,6 +43,12 @@ found in the dictionary of type objects.
 Built-in descriptors
 ^^^^^^^^^^^^^^^^^^^^
 
+.. c:var:: PyTypeObject PySuper_Type
+
+   The type object for super objects. This is the same object as
+   :class:`super` in the Python layer.
+
+
 .. c:var:: PyTypeObject PyClassMethod_Type
 
    The type of class method objects. This is the same object as
