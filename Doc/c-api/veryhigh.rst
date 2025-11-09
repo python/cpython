@@ -385,7 +385,7 @@ Available start symbols
    This requires the :c:macro:`PyCF_ONLY_AST` flag to be set.
 
    .. seealso::
-      :py:class:`ast.FunctionType`
-      :pep:`484`
+      * :py:class:`ast.FunctionType`
+      * :pep:`484`
 
    .. versionadded:: 3.8
