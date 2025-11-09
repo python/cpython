@@ -2608,6 +2608,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/crashers \
 		test/data \
 		test/test_decimal \
+		test/test_decimal/data \
 		test/dtracedata \
 		test/encoded_modules \
 		test/leakers \
