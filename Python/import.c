@@ -2449,7 +2449,7 @@ PyImport_CreateModuleFromInitfunc(
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    PyObject *name = PyObject_GetAttrString(spec, "name");
+    PyObject *name = PyObject_GetAttr(spec, &_Py_ID(name));
     if (name == NULL) {
         return NULL;
     }
