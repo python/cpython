@@ -11,6 +11,7 @@
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 
@@ -1794,9 +1795,7 @@ s_dealloc(PyObject *op)
     PyStructObject *s = PyStructObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(s);
     PyObject_GC_UnTrack(s);
-    if (s->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, s->weakreflist);
     if (s->s_codes != NULL) {
         PyMem_Free(s->s_codes);
     }
@@ -2190,7 +2189,6 @@ strings.");
 static PyObject *
 s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    char *buf;
     PyStructObject *soself;
     _structmodulestate *state = get_struct_state_structinst(self);
 
@@ -2206,21 +2204,19 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
 
     /* Allocate a new string */
-    _PyBytesWriter writer;
-    _PyBytesWriter_Init(&writer);
-    buf = _PyBytesWriter_Alloc(&writer, soself->s_size);
-    if (buf == NULL) {
-        _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter *writer = PyBytesWriter_Create(soself->s_size);
+    if (writer == NULL) {
         return NULL;
     }
+    char *buf = PyBytesWriter_GetData(writer);
 
     /* Call the guts */
     if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {
-        _PyBytesWriter_Dealloc(&writer);
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
 
-    return _PyBytesWriter_Finish(&writer, buf + soself->s_size);
+    return PyBytesWriter_FinishWithSize(writer, soself->s_size);
 }
 
 PyDoc_STRVAR(s_pack_into__doc__,

@@ -111,32 +111,10 @@ Useful macros
 =============
 
 Several useful macros are defined in the Python header files.  Many are
-defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`).
+defined closer to where they are useful (for example, :c:macro:`Py_RETURN_NONE`,
+:c:macro:`PyMODINIT_FUNC`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
-
-.. c:macro:: PyMODINIT_FUNC
-
-   Declare an extension module ``PyInit`` initialization function. The function
-   return type is :c:expr:`PyObject*`. The macro declares any special linkage
-   declarations required by the platform, and for C++ declares the function as
-   ``extern "C"``.
-
-   The initialization function must be named :samp:`PyInit_{name}`, where
-   *name* is the name of the module, and should be the only non-\ ``static``
-   item defined in the module file. Example::
-
-       static struct PyModuleDef spam_module = {
-           .m_base = PyModuleDef_HEAD_INIT,
-           .m_name = "spam",
-           ...
-       };
-
-       PyMODINIT_FUNC
-       PyInit_spam(void)
-       {
-           return PyModuleDef_Init(&spam_module);
-       }
 
 
 .. c:macro:: Py_ABS(x)
@@ -255,9 +233,32 @@ complete listing.
 
    .. versionadded:: 3.4
 
+.. c:macro:: Py_BUILD_ASSERT(cond)
+
+   Asserts a compile-time condition *cond*, as a statement.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      Py_BUILD_ASSERT(sizeof(PyTime_t) == sizeof(int64_t));
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_BUILD_ASSERT_EXPR(cond)
+
+   Asserts a compile-time condition *cond*, as an expression that evaluates to ``0``.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      #define foo_to_char(foo) \
+          ((char *)(foo) + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+
+   .. versionadded:: 3.3
+
 .. c:macro:: PyDoc_STRVAR(name, str)
 
-   Creates a variable with name ``name`` that can be used in docstrings.
+   Creates a variable with name *name* that can be used in docstrings.
    If Python is built without docstrings, the value will be empty.
 
    Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
@@ -288,6 +289,15 @@ complete listing.
               PyDoc_STR("Returns the keys of the row.")},
           {NULL, NULL}
       };
+
+.. c:macro:: PyDoc_VAR(name)
+
+   Declares a static character array variable with the given name *name*.
+
+   For example::
+
+      PyDoc_VAR(python_doc) = PyDoc_STR("A genus of constricting snakes in the Pythonidae family native "
+                                        "to the tropics and subtropics of the Eastern Hemisphere.");
 
 
 .. _api-objects:
