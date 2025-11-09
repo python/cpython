@@ -1677,6 +1677,9 @@ iterations of the loop.
 
    .. versionadded:: 3.13
 
+   .. versionchanged:: 3.14
+      Added ``0x10`` to indicate the annotate function for the function object.
+
 
 .. opcode:: BUILD_SLICE (argc)
 
