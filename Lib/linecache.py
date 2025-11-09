@@ -226,7 +226,7 @@ def _make_lazycache_entry(filename, module_globals):
         return None
 
     if module_globals is not None and not isinstance(module_globals, dict):
-        raise TypeError(f'module_globals must be a dict, not {type(module_globals).__name__}')
+        raise TypeError(f'module_globals must be a dict, not {type(module_globals).__qualname__}')
     if not module_globals or '__name__' not in module_globals:
         return None
 
