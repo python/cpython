@@ -600,12 +600,12 @@ this list of calls for us::
 Partial mocking
 ~~~~~~~~~~~~~~~
 
-In some tests I wanted to mock out a call to :meth:`datetime.date.today`
-to return a known date, but I didn't want to prevent the code under test from
+For some tests you may want to mock out a call to :meth:`datetime.date.today`
+to return a known date, but you may not want to prevent the code under test from
 creating new date objects. Unfortunately :class:`datetime.date` is written in C, and
-so I couldn't just monkey-patch out the static :meth:`datetime.date.today` method.
+so you cannot just monkey-patch out the static :meth:`datetime.date.today` method.
 
-I found a simple way of doing this that involved effectively wrapping the date
+A simple way of doing this involves effectively wrapping the date
 class with a mock, but passing through calls to the constructor to the real
 class (and returning real instances).
 
