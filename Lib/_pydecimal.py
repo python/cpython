@@ -489,7 +489,7 @@ def _is_less_than_pow10a_use_str(q, a):
     # when computing _LOG_10_BASE_2_LO and _LOG_10_BASE_2_HI, or
     # that cannot be distinguished with (q.bit_length(), a) only.
     #
-    # For instance, (q1, a) = (95, 2) and (q2, a) = (105, a) produce
+    # For instance, (q1, a) = (95, 2) and (q2, a) = (105, 2) produce
     # different results but q1.bit_length() == q2.bit_length() == 7.
     str_q = str(q)  # can raise a ValueError
     is_valid = len(str_q) <= a
