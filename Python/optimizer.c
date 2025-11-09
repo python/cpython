@@ -277,6 +277,7 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
 
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(to_free); i++) {
         _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(to_free, i);
+        PyList_SET_ITEM(to_free, i, NULL);
         _PyExecutor_Free(exec);
     }
     Py_DECREF(to_free);
