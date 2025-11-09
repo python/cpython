@@ -245,6 +245,15 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
         ts = PyThreadState_Next(ts);
         HEAD_UNLOCK(runtime);
     }
+
+    /* Create a list to collect executors that need to be freed.
+     * This avoids calling _PyExecutor_Free while holding the lock,
+     * which could trigger destructors and cause deadlock. */
+    PyObject *to_free = PyList_New(0);
+    if (to_free == NULL) {
+        goto error;
+    }
+
     EXECUTOR_LIST_LOCK(interp);
     _PyExecutorObject **prev_to_next_ptr = &interp->executor_deletion_list_head;
     _PyExecutorObject *exec = *prev_to_next_ptr;
@@ -256,12 +265,26 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
         }
         else {
             *prev_to_next_ptr = exec->vm_data.links.next;
-            _PyExecutor_Free(exec);
+            if (PyList_Append(to_free, (PyObject *)exec)) {
+                EXECUTOR_LIST_UNLOCK(interp);
+                goto error;
+            }
         }
         exec = *prev_to_next_ptr;
     }
     interp->executor_deletion_list_remaining_capacity = EXECUTOR_DELETE_LIST_MAX;
     EXECUTOR_LIST_UNLOCK(interp);
+
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(to_free); i++) {
+        _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(to_free, i);
+        _PyExecutor_Free(exec);
+    }
+    Py_DECREF(to_free);
+    return;
+
+error:
+    PyErr_Clear();
+    Py_XDECREF(to_free);
 }
 
 static void
