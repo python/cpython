@@ -296,11 +296,17 @@ add_to_pending_deletion_list(_PyExecutorObject *self)
     interp->executor_deletion_list_head = self;
     if (interp->executor_deletion_list_remaining_capacity > 0) {
         interp->executor_deletion_list_remaining_capacity--;
+        EXECUTOR_LIST_UNLOCK(interp);
     }
     else {
+        /* Release the lock before calling _Py_ClearExecutorDeletionList
+         * to avoid deadlock, since it also tries to acquire the same lock */
+        EXECUTOR_LIST_UNLOCK(interp);
         _Py_ClearExecutorDeletionList(interp);
+        EXECUTOR_LIST_LOCK(interp);
+        interp->executor_deletion_list_head = self;
+        EXECUTOR_LIST_UNLOCK(interp);
     }
-    EXECUTOR_LIST_UNLOCK(interp);
 }
 
 static void
