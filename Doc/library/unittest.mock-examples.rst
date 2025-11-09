@@ -747,7 +747,7 @@ Sometimes a test needs to patch an *unbound method*, which means patching the
 method on the class rather than on the instance. In order to make assertions
 about which objects were calling this particular method, you need to pass
 ``self`` as the first argument. The issue is that you can't patch with a mock for
-this, because if you replace an unbound method with a mock it doesn't become 
+this, because if you replace an unbound method with a mock it doesn't become
 a bound method when fetched from the instance, and so it doesn't get ``self``
 passed in. The workaround is to patch the unbound method with a real function
 instead. The :func:`patch` decorator makes it so simple to patch out methods
