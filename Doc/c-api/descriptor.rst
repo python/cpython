@@ -38,3 +38,8 @@ found in the dictionary of type objects.
 
 
 .. c:function:: PyObject* PyWrapper_New(PyObject *, PyObject *)
+
+
+.. c:struct:: wrapperbase
+
+   A structure defining the basic behavior of a descriptor wrapper.
