@@ -32,7 +32,7 @@ NLCRE = re.compile(r'\r\n|\r|\n')
 NLCRE_bol = re.compile(r'(\r\n|\r|\n)')
 NLCRE_eol = re.compile(r'(\r\n|\r|\n)\z')
 NLCRE_crack = re.compile(r'(\r\n|\r|\n)')
-# RFC 2822 $3.6.8 Optional fields.  ftext is %d33-57 / %d59-126, Any character
+# RFC 5322 section 3.6.8 Optional fields.  ftext is %d33-57 / %d59-126, Any character
 # except controls, SP, and ":".
 headerRE = re.compile(r'^(From |[\041-\071\073-\176]*:|[\t ])')
 EMPTYSTRING = ''
@@ -294,7 +294,7 @@ class FeedParser:
             return
         if self._cur.get_content_maintype() == 'message':
             # The message claims to be a message/* type, then what follows is
-            # another RFC 2822 message.
+            # another RFC 5322 message.
             for retval in self._parsegen():
                 if retval is NeedMoreData:
                     yield NeedMoreData

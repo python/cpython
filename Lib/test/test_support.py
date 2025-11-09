@@ -96,6 +96,8 @@ class TestSupport(unittest.TestCase):
                         self.test_get_attribute)
         self.assertRaises(unittest.SkipTest, support.get_attribute, self, "foo")
 
+    @unittest.skipIf(support.is_android or support.is_apple_mobile,
+                     'Mobile platforms redirect stdout to system log')
     def test_get_original_stdout(self):
         if isinstance(sys.stdout, io.StringIO):
             # gh-55258: When --junit-xml is used, stdout is a StringIO:

@@ -265,6 +265,12 @@ The variables defined in the :mod:`signal` module are:
 
    .. availability:: Unix.
 
+.. data:: SIGXCPU
+
+   CPU time limit exceeded.
+
+   .. availability:: Unix.
+
 .. data:: SIG*
 
    All the signal numbers are defined symbolically.  For example, the hangup signal
@@ -523,7 +529,7 @@ The :mod:`signal` module defines the following functions:
 
    .. availability:: Unix.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real numbers as *seconds* and *interval*, not only integers
       or floats.
 
@@ -702,7 +708,7 @@ The :mod:`signal` module defines the following functions:
       by a signal not in *sigset* and the signal handler does not raise an
       exception (see :pep:`475` for the rationale).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 

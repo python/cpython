@@ -47,7 +47,7 @@ Tuple Objects
    On success, return a new reference.
    On error, set an exception and return ``NULL``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: PyObject* PyTuple_Pack(Py_ssize_t n, ...)
@@ -61,7 +61,7 @@ Tuple Objects
 .. c:function:: Py_ssize_t PyTuple_Size(PyObject *p)
 
    Take a pointer to a tuple object, and return the size of that tuple.
-   On error, return ``-1`` and with an exception set.
+   On error, return ``-1`` with an exception set.
 
 
 .. c:function:: Py_ssize_t PyTuple_GET_SIZE(PyObject *p)
