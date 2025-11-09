@@ -58,6 +58,19 @@ Allocating Objects on the Heap
    use :c:func:`PyObject_GC_NewVar` instead.
 
 
+.. c:var:: PyObject _Py_NoneStruct
+
+   Object which is visible in Python as ``None``.  This should only be accessed
+   using the :c:macro:`Py_None` macro, which evaluates to a pointer to this
+   object.
+
+
+.. seealso::
+
+   :ref:`moduleobjects`
+      To allocate and create extension modules.
+
+
 Deprecated aliases
 ^^^^^^^^^^^^^^^^^^
 
