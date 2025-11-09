@@ -19,7 +19,14 @@ as much as it can.
 
 .. c:function:: int PyWeakref_CheckRef(PyObject *ob)
 
-   Return non-zero if *ob* is a reference object.  This function always succeeds.
+   Return non-zero if *ob* is a reference object or a subclass of the reference
+   type.  This function always succeeds.
+
+
+.. c:function:: int PyWeakref_CheckRefExact(PyObject *ob)
+
+   Return non-zero if *ob* is a reference object, but not a subclass of the
+   reference type.  This function always succeeds.
 
 
 .. c:function:: int PyWeakref_CheckProxy(PyObject *ob)
