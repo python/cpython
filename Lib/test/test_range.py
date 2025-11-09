@@ -470,6 +470,15 @@ class RangeTest(unittest.TestCase):
         it.__setstate__(2**64 - 7)
         self.assertEqual(list(it), [12, 10])
 
+        msg = "'float' object cannot be interpreted as an integer"
+        with self.assertRaisesRegex(TypeError, msg):
+            it = iter(range(10, 100, 2))
+            it.__setstate__(1.0)
+
+        with self.assertRaisesRegex(TypeError, msg):
+            it = iter(range(10, 2**65, 2))
+            it.__setstate__(1.0)
+
     def test_odd_bug(self):
         # This used to raise a "SystemError: NULL result without error"
         # because the range validation step was eating the exception

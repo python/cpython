@@ -1063,6 +1063,12 @@ longrangeiter_setstate(PyObject *op, PyObject *state)
     PyObject *product = PyNumber_Multiply(state, r->step);
     if (product == NULL)
         return NULL;
+    if (!PyLong_Check(product)) {
+        Py_DECREF(product);
+        PyErr_Format(PyExc_TypeError,
+                     "'%T' object cannot be interpreted as an integer", state);
+        return NULL;
+    }
     PyObject *new_start = PyNumber_Add(r->start, product);
     Py_DECREF(product);
     if (new_start == NULL)
