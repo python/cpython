@@ -796,7 +796,7 @@ Exception Objects
 
 .. c:macro:: PyExceptionInstance_Class(op)
 
-   Equivalent to ``Py_TYPE(op)``.
+   Equivalent to :c:func:`Py_TYPE(op) <Py_TYPE>`.
 
 
 .. c:function:: PyObject* PyException_GetTraceback(PyObject *ex)
