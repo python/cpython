@@ -102,6 +102,15 @@ There are a few functions specific to Python functions.
    dictionary of arguments or ``NULL``.
 
 
+.. c:function:: int PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
+
+   Set the keyword-only argument default values of the function object *op*.
+   *defaults* must be a dictionary of keyword-only arguments or ``Py_None``.
+
+   This function returns ``0`` on success, and returns ``-1`` with an exception
+   set on failure.
+
+
 .. c:function:: PyObject* PyFunction_GetClosure(PyObject *op)
 
    Return the closure associated with the function object *op*. This can be ``NULL``
