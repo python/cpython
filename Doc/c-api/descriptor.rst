@@ -43,7 +43,6 @@ found in the dictionary of type objects.
 Built-in descriptors
 ^^^^^^^^^^^^^^^^^^^^
 
-
 .. c:var:: PyTypeObject PyClassMethod_Type
 
    The type of class method objects. This is the same object as
