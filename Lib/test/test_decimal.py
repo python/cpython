@@ -3724,7 +3724,6 @@ class ContextWithStatement:
         getcontext = self.decimal.getcontext
         localcontext = self.decimal.localcontext
 
-        localcontext = self.decimal.localcontext
         orig_ctx = getcontext()
         new_ctx = Context(prec=42)
         with localcontext(new_ctx) as enter_ctx:
