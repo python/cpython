@@ -98,7 +98,6 @@ typedef struct {
     PyTypeObject *TreeBuilder_Type;
     PyTypeObject *XMLParser_Type;
 
-    PyObject *expat_capsule;
     struct PyExpat_CAPI *expat_capi;
 } elementtreestate;
 
@@ -156,7 +155,6 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->ElementIter_Type);
     Py_CLEAR(st->TreeBuilder_Type);
     Py_CLEAR(st->XMLParser_Type);
-    Py_CLEAR(st->expat_capsule);
 
     st->expat_capi = NULL;
     return 0;
@@ -177,7 +175,7 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->ElementIter_Type);
     Py_VISIT(st->TreeBuilder_Type);
     Py_VISIT(st->XMLParser_Type);
-    Py_VISIT(st->expat_capsule);
+
     return 0;
 }
 
@@ -4430,28 +4428,18 @@ module_exec(PyObject *m)
     if (st->deepcopy_obj == NULL) {
         goto error;
     }
-
-    assert(!PyErr_Occurred());
-    if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
+    st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath");
+    if (st->elementpath_obj == NULL) {
         goto error;
+    }
 
     /* link against pyexpat */
-    if (!(st->expat_capsule = PyImport_ImportModuleAttrString("pyexpat", "expat_CAPI")))
+    st->expat_capi = PyCapsule_Import(PyExpat_CAPSULE_NAME, 0);
+    if (st->expat_capi == NULL) {
         goto error;
-    if (!(st->expat_capi = PyCapsule_GetPointer(st->expat_capsule, PyExpat_CAPSULE_NAME)))
-        goto error;
-    if (st->expat_capi) {
-        /* check that it's usable */
-        if (strcmp(st->expat_capi->magic, PyExpat_CAPI_MAGIC) != 0 ||
-            (size_t)st->expat_capi->size < sizeof(struct PyExpat_CAPI) ||
-            st->expat_capi->MAJOR_VERSION != XML_MAJOR_VERSION ||
-            st->expat_capi->MINOR_VERSION != XML_MINOR_VERSION ||
-            st->expat_capi->MICRO_VERSION != XML_MICRO_VERSION) {
-            PyErr_SetString(PyExc_ImportError,
-                            "pyexpat version is incompatible");
-            goto error;
-        }
-    } else {
+    }
+    if (!PyExpat_CheckCompatibility(st->expat_capi)) {
+        PyErr_SetString(PyExc_ImportError, "pyexpat version is incompatible");
         goto error;
     }
 
