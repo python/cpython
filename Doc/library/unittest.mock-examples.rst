@@ -600,7 +600,7 @@ this list of calls for us::
 Partial mocking
 ~~~~~~~~~~~~~~~
 
-For some tests you may want to mock out a call to :meth:`datetime.date.today`
+For some tests, you may want to mock out a call to :meth:`datetime.date.today`
 to return a known date, but you may not want to prevent the code under test from
 creating new date objects. Unfortunately :class:`datetime.date` is written in C, and
 so you cannot just monkey-patch out the static :meth:`datetime.date.today` method.
