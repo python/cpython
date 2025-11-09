@@ -606,7 +606,7 @@ creating new date objects. Unfortunately :class:`datetime.date` is written in C,
 so you cannot just monkey-patch out the static :meth:`datetime.date.today` method.
 
 Instead, you can effectively wrap the date
-class with a mock, but passing through calls to the constructor to the real
+class with a mock, while passing through calls to the constructor to the real
 class (and returning real instances).
 
 The :func:`patch decorator <patch>` is used here to
