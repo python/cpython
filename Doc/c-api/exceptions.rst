@@ -788,6 +788,17 @@ Exception Classes
 Exception Objects
 =================
 
+.. c:function:: int PyExceptionInstance_Check(PyObject *op)
+
+   Return true if *op* is an instance of :class:`BaseException`, false
+   otherwise. This function always succeeds.
+
+
+.. c:macro:: PyExceptionInstance_Class(op)
+
+   Equivalent to :c:func:`Py_TYPE(op) <Py_TYPE>`.
+
+
 .. c:function:: PyObject* PyException_GetTraceback(PyObject *ex)
 
    Return the traceback associated with the exception as a new reference, as
