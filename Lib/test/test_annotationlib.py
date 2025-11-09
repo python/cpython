@@ -756,6 +756,8 @@ class TestGetAnnotations(unittest.TestCase):
 
         for kwargs in [
             {"eval_str": True},
+            {"eval_str": True, "globals": isa.__dict__, "locals": {}},
+            {"eval_str": True, "globals": {}, "locals": isa.__dict__},
             {"format": Format.VALUE, "eval_str": True},
         ]:
             with self.subTest(**kwargs):
