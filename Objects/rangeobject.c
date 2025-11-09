@@ -1042,6 +1042,12 @@ longrangeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 static PyObject *
 longrangeiter_setstate(PyObject *op, PyObject *state)
 {
+    if (!PyLong_CheckExact(state)) {
+        PyErr_Format(PyExc_TypeError,
+                     "'%T' object cannot be interpreted as an integer", state);
+        return NULL;
+    }
+
     longrangeiterobject *r = (longrangeiterobject*)op;
     PyObject *zero = _PyLong_GetZero();  // borrowed reference
     int cmp;
@@ -1063,12 +1069,6 @@ longrangeiter_setstate(PyObject *op, PyObject *state)
     PyObject *product = PyNumber_Multiply(state, r->step);
     if (product == NULL)
         return NULL;
-    if (!PyLong_Check(product)) {
-        Py_DECREF(product);
-        PyErr_Format(PyExc_TypeError,
-                     "'%T' object cannot be interpreted as an integer", state);
-        return NULL;
-    }
     PyObject *new_start = PyNumber_Add(r->start, product);
     Py_DECREF(product);
     if (new_start == NULL)
