@@ -223,29 +223,6 @@ nitpick_ignore = [
     ('envvar', 'USERPROFILE'),
 ]
 
-# Vendored types
-nitpick_ignore += [
-    ("c:identifier", "XML_Bool"),
-    ("c:identifier", "XML_Char"),
-    ("c:identifier", "XML_CharacterDataHandler"),
-    ("c:identifier", "XML_CommentHandler"),
-    ("c:identifier", "XML_DefaultHandler"),
-    ("c:identifier", "XML_Encoding"),
-    ("c:identifier", "XML_EndElementHandler"),
-    ("c:identifier", "XML_EndNamespaceDeclHandler"),
-    ("c:identifier", "XML_Error"),
-    ("c:identifier", "XML_LChar"),
-    ("c:identifier", "XML_Memory_Handling_Suite"),
-    ("c:identifier", "XML_Parser"),
-    ("c:identifier", "XML_ProcessingInstructionHandler"),
-    ("c:identifier", "XML_Size"),
-    ("c:identifier", "XML_StartDoctypeDeclHandler"),
-    ("c:identifier", "XML_StartElementHandler"),
-    ("c:identifier", "XML_StartNamespaceDeclHandler"),
-    ("c:identifier", "XML_Status"),
-    ("c:identifier", "XML_UnknownEncodingHandler"),
-]
-
 # Temporary undocumented names.
 # In future this list must be empty.
 nitpick_ignore += [
@@ -269,6 +246,30 @@ for role, name in list(nitpick_ignore):
     if role in ('c:type', 'c:struct'):
         nitpick_ignore.append(('c:identifier', name))
 del role, name
+
+# Vendored identifiers. The list does not need to be empty.
+c_id_attributes = [
+    # used in c-api/expat.rst
+    "XML_Bool",
+    "XML_Char",
+    "XML_CharacterDataHandler",
+    "XML_CommentHandler",
+    "XML_DefaultHandler",
+    "XML_Encoding",
+    "XML_EndElementHandler",
+    "XML_EndNamespaceDeclHandler",
+    "XML_Error",
+    "XML_LChar",
+    "XML_Memory_Handling_Suite",
+    "XML_Parser",
+    "XML_ProcessingInstructionHandler",
+    "XML_Size",
+    "XML_StartDoctypeDeclHandler",
+    "XML_StartElementHandler",
+    "XML_StartNamespaceDeclHandler",
+    "XML_Status",
+    "XML_UnknownEncodingHandler",
+]
 
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {

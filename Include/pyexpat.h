@@ -63,16 +63,3 @@ struct PyExpat_CAPI {
         XML_Parser parser, float maxAmplificationFactor);
     /* always add new stuff to the end! */
 };
-
-static inline int
-PyExpat_CheckCompatibility(struct PyExpat_CAPI *api)
-{
-    assert(api != NULL);
-    return (
-        strcmp(api->magic, PyExpat_CAPI_MAGIC) == 0
-        && (size_t)api->size >= sizeof(struct PyExpat_CAPI)
-        && api->MAJOR_VERSION == XML_MAJOR_VERSION
-        && api->MINOR_VERSION == XML_MINOR_VERSION
-        && api->MICRO_VERSION == XML_MICRO_VERSION
-    );
-}

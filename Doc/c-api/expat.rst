@@ -18,20 +18,16 @@ the module state:
    if (capi == NULL) {
        goto error;
    }
-   if (!PyExpat_CheckCompatibility(capi)) {
+   if (!(
+        strcmp(capi->magic, PyExpat_CAPI_MAGIC) == 0
+        && (size_t)capi->size >= sizeof(struct PyExpat_CAPI)
+        && capi->MAJOR_VERSION == XML_MAJOR_VERSION
+        && capi->MINOR_VERSION == XML_MINOR_VERSION
+        && capi->MICRO_VERSION == XML_MICRO_VERSION
+   )) {
        PyErr_SetString(PyExc_ImportError, "pyexpat version is incompatible");
        goto error;
    }
-
-
-.. c:function:: int PyExpat_CheckCompatibility(struct PyExpat_CAPI *api)
-
-   Return ``1`` if *api* is compatible with the linked Expat library,
-   and ``0`` otherwise. This function never sets a Python exception.
-
-   *api* must not be ``NULL``.
-
-   .. versionadded:: next
 
 
 .. c:macro:: PyExpat_CAPI_MAGIC
@@ -148,7 +144,7 @@ the module state:
                    XML_Parser parser,\
                    unsigned long hash_salt)
 
-      Might be NULL for Expat versions prior to 2.1.0.
+      Might be ``NULL`` for Expat versions prior to 2.1.0.
 
       .. versionadded:: 3.4
 
@@ -156,7 +152,7 @@ the module state:
                    XML_Parser parser,\
                    XML_Bool enabled)
 
-      Might be NULL for Expat versions prior to 2.6.0.
+      Might be ``NULL`` for Expat versions prior to 2.6.0.
 
       .. versionadded:: 3.8
 
@@ -164,7 +160,7 @@ the module state:
                    XML_Parser parser,\
                    unsigned long long activationThresholdBytes)
 
-      Might be NULL for Expat versions prior to 2.7.2.
+      Might be ``NULL`` for Expat versions prior to 2.7.2.
 
       .. uncomment this when the backport is done
       .. versionadded:: 3.10
@@ -173,7 +169,7 @@ the module state:
                    XML_Parser parser,\
                    float maxAmplificationFactor)
 
-      Might be NULL for Expat versions prior to 2.7.2.
+      Might be ``NULL`` for Expat versions prior to 2.7.2.
 
       .. uncomment this when the backport is done
       .. versionadded:: 3.10
@@ -182,7 +178,7 @@ the module state:
                    XML_Parser parser,\
                    unsigned long long activationThresholdBytes)
 
-      Might be NULL for Expat versions prior to 2.4.0.
+      Might be ``NULL`` for Expat versions prior to 2.4.0.
 
       .. uncomment this when the backport is done
       .. versionadded:: 3.10
@@ -191,7 +187,7 @@ the module state:
                    XML_Parser parser,\
                    float maxAmplificationFactor)
 
-      Might be NULL for Expat versions prior to 2.4.0.
+      Might be ``NULL`` for Expat versions prior to 2.4.0.
 
       .. uncomment this when the backport is done
       .. versionadded:: 3.10
