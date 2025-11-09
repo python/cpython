@@ -2365,7 +2365,6 @@ is_builtin(PyObject *name)
 static PyModInitFunction
 lookup_inittab_initfunc(const struct _Py_ext_module_loader_info* info)
 {
-    struct _inittab *found = NULL;
     for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(info->name, p->name)) {
             return (PyModInitFunction)p->initfunc;

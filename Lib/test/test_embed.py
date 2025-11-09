@@ -242,7 +242,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_create_module_from_initfunc(self):
         out, err = self.run_embedded_interpreter("test_create_module_from_initfunc")
         self.assertEqual(err, "")
-        self.assertEqual(out, "<module 'embedded_ext' (static-extension)>\n")
+        self.assertEqual(out, "<module 'my_test_extension' (static-extension)>\n")
 
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams

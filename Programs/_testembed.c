@@ -2214,7 +2214,7 @@ static int test_repeated_init_and_inittab(void)
 }
 
 static PyObject* create_module(PyObject* self, PyObject* spec) {
-    return PyImport_CreateModuleFromInitfunc(spec, PyInit_embedded_ext);
+    return PyImport_CreateModuleFromInitfunc(spec, init_my_test_extension);
 }
 
 static PyMethodDef create_static_module_methods[] = {
@@ -2236,7 +2236,7 @@ PyMODINIT_FUNC PyInit_create_static_module(void) {
 
 static int test_create_module_from_initfunc(void)
 {
-    wchar_t* argv[] = {PROGRAM_NAME, L"-c", L"import embedded_ext; print(embedded_ext)"};
+    wchar_t* argv[] = {PROGRAM_NAME, L"-c", L"import my_test_extension; print(my_test_extension)"};
     PyConfig config;
     if (PyImport_AppendInittab("create_static_module",
                                &PyInit_create_static_module) != 0) {
@@ -2256,7 +2256,7 @@ static int test_create_module_from_initfunc(void)
         "   _ORIGIN = \"static-extension\"\n"
         "   @classmethod\n"
         "   def find_spec(cls, fullname, path, target=None):\n"
-        "       if fullname == \"embedded_ext\":\n"
+        "       if fullname == \"my_test_extension\":\n"
         "           return spec_from_loader(fullname, cls, origin=cls._ORIGIN)\n"
         "       return None\n"
         "   @staticmethod\n"
