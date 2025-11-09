@@ -36,6 +36,8 @@ details that are unchanged.
    Most documentation you will find online still uses the old API and
    can be woefully outdated.
 
+.. include:: ../includes/optional-module.rst
+
 .. seealso::
 
    * `TkDocs <https://tkdocs.com/>`_

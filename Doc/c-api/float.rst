@@ -78,6 +78,23 @@ Floating-Point Objects
    Return the minimum normalized positive float *DBL_MIN* as C :c:expr:`double`.
 
 
+.. c:macro:: Py_RETURN_NAN
+
+   Return :data:`math.nan` from a function.
+
+   On most platforms, this is equivalent to ``return PyFloat_FromDouble(NAN)``.
+
+
+.. c:macro:: Py_RETURN_INF(sign)
+
+   Return :data:`math.inf` or :data:`-math.inf <math.inf>` from a function,
+   depending on the sign of *sign*.
+
+   On most platforms, this is equivalent to the following::
+
+      return PyFloat_FromDouble(copysign(INFINITY, sign));
+
+
 Pack and Unpack functions
 -------------------------
 
@@ -96,8 +113,8 @@ NaNs (if such things exist on the platform) isn't handled correctly, and
 attempting to unpack a bytes string containing an IEEE INF or NaN will raise an
 exception.
 
-Note that NaNs type may not be preserved on IEEE platforms (silent NaN become
-quiet), for example on x86 systems in 32-bit mode.
+Note that NaNs type may not be preserved on IEEE platforms (signaling NaN become
+quiet NaN), for example on x86 systems in 32-bit mode.
 
 On non-IEEE platforms with more precision, or larger dynamic range, than IEEE
 754 supports, not all values can be packed; on non-IEEE platforms with less
