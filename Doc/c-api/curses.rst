@@ -9,6 +9,11 @@ included by default by :file:`Python.h`) and :c:func:`import_curses` must
 be invoked, usually as part of the module initialisation function, to populate
 :c:var:`PyCurses_API`.
 
+.. warning::
+
+   Neither the C API nor the pure Python :mod:`curses` module are compatible
+   with subinterpreters.
+
 .. c:macro:: import_curses()
 
    Import the curses C API. The macro does not need a semi-colon to be called.
@@ -40,6 +45,17 @@ be invoked, usually as part of the module initialisation function, to populate
 
    See also the convenience macros :c:macro:`PyCursesSetupTermCalled`,
    :c:macro:`PyCursesInitialised`, and :c:macro:`PyCursesInitialisedColor`.
+
+   .. note::
+
+      The number of entries in this structure is subject to changes.
+      Consider using :c:macro:`PyCurses_API_pointers` to check if
+      new fields are available or not.
+
+
+.. c:macro:: PyCurses_API_pointers
+
+   The number of accessible fields (``4``) in :c:var:`PyCurses_API`.
 
 
 .. c:var:: PyTypeObject PyCursesWindow_Type
@@ -112,14 +128,6 @@ Internal data
 
 The following objects are exposed by the C API but should be considered
 internal-only.
-
-
-.. c:macro:: PyCurses_API_pointers
-
-   The number of accessible fields in :c:var:`PyCurses_API`.
-
-   Internal usage only.
-
 
 .. c:macro:: PyCurses_CAPSULE_NAME
 
