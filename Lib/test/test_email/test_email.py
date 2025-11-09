@@ -5738,7 +5738,8 @@ Content-Disposition: inline; filename*=utf-8\udce2\udc80\udc9d''myfile.txt
 
 """
         msg = email.message_from_string(m)
-        self.assertEqual(msg.get_filename(), 'myfile.txt')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(msg.get_filename(), 'myfile.txt')
 
     def test_rfc2231_single_tick_in_filename_extended(self):
         eq = self.assertEqual

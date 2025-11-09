@@ -123,5 +123,6 @@ C API for extension modules
 
 .. toctree::
 
+   curses.rst
    datetime.rst
    expat.rst
