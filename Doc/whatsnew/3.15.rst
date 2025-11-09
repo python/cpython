@@ -844,6 +844,18 @@ Deprecated
 New deprecations
 ----------------
 
+* Build:
+
+  * Deprecate :pep:`456` support for providing an external definition
+    of the string hashing scheme. Removal is scheduled for Python 3.17.
+
+    Previously, embedders could define :c:macro:`Py_HASH_ALGORITHM` to be
+    ``Py_HASH_EXTERNAL`` to indicate that the hashing scheme was provided
+    externally but this feature was undocumented, untested and most likely
+    unused.
+
+    (Contributed by Bénédikt Tran in :gh:`141226`.)
+
 * CLI:
 
   * Deprecate :option:`-b` and :option:`!-bb` command-line options
