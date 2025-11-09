@@ -13,8 +13,9 @@ the interpreter.
 
 Several of these functions accept a start symbol from the grammar as a
 parameter.  The available start symbols are :c:data:`Py_eval_input`,
-:c:data:`Py_file_input`, and :c:data:`Py_single_input`.  These are described
-following the functions which accept them as parameters.
+:c:data:`Py_file_input`, :c:data:`Py_single_input`, and
+:c:data:`Py_func_type_input`.  These are described following the functions
+which accept them as parameters.
 
 Note also that several of these functions take :c:expr:`FILE*` parameters.  One
 particular issue which needs to be handled carefully is that the :c:type:`FILE`
@@ -183,8 +184,7 @@ the same library that the Python runtime is using.
    objects *globals* and *locals* with the compiler flags specified by
    *flags*.  *globals* must be a dictionary; *locals* can be any object
    that implements the mapping protocol.  The parameter *start* specifies
-   the start symbol and must one of the following:
-   :c:data:`Py_eval_input`, :c:data:`Py_file_input`, or :c:data:`Py_single_input`.
+   the start symbol and must one of the :ref:`available start symbols <start-symbols>`.
 
    Returns the result of executing the code as a Python object, or ``NULL`` if an
    exception was raised.
@@ -233,8 +233,8 @@ the same library that the Python runtime is using.
 
    Parse and compile the Python source code in *str*, returning the resulting code
    object.  The start symbol is given by *start*; this can be used to constrain the
-   code which can be compiled and should be :c:data:`Py_eval_input`,
-   :c:data:`Py_file_input`, or :c:data:`Py_single_input`.  The filename specified by
+   code which can be compiled and should be :ref:`available start symbols
+   <start-symbols>`.  The filename specified by
    *filename* is used to construct the code object and may appear in tracebacks or
    :exc:`SyntaxError` exception messages.  This returns ``NULL`` if the code
    cannot be parsed or compiled.
@@ -297,32 +297,6 @@ the same library that the Python runtime is using.
    true on success, false on failure.
 
 
-.. c:var:: int Py_eval_input
-
-   .. index:: single: Py_CompileString (C function)
-
-   The start symbol from the Python grammar for isolated expressions; for use with
-   :c:func:`Py_CompileString`.
-
-
-.. c:var:: int Py_file_input
-
-   .. index:: single: Py_CompileString (C function)
-
-   The start symbol from the Python grammar for sequences of statements as read
-   from a file or other source; for use with :c:func:`Py_CompileString`.  This is
-   the symbol to use when compiling arbitrarily long Python source code.
-
-
-.. c:var:: int Py_single_input
-
-   .. index:: single: Py_CompileString (C function)
-
-   The start symbol from the Python grammar for a single statement; for use with
-   :c:func:`Py_CompileString`. This is the symbol used for the interactive
-   interpreter loop.
-
-
 .. c:struct:: PyCompilerFlags
 
    This is the structure used to hold compiler flags.  In cases where code is only
@@ -366,3 +340,52 @@ the same library that the Python runtime is using.
    as :c:macro:`CO_FUTURE_ANNOTATIONS` to enable features normally
    selectable using :ref:`future statements <future>`.
    See :ref:`c_codeobject_flags` for a complete list.
+
+
+.. _start-symbols:
+
+Available start symbols
+^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. c:var:: int Py_eval_input
+
+   .. index:: single: Py_CompileString (C function)
+
+   The start symbol from the Python grammar for isolated expressions; for use with
+   :c:func:`Py_CompileString`.
+
+
+.. c:var:: int Py_file_input
+
+   .. index:: single: Py_CompileString (C function)
+
+   The start symbol from the Python grammar for sequences of statements as read
+   from a file or other source; for use with :c:func:`Py_CompileString`.  This is
+   the symbol to use when compiling arbitrarily long Python source code.
+
+
+.. c:var:: int Py_single_input
+
+   .. index:: single: Py_CompileString (C function)
+
+   The start symbol from the Python grammar for a single statement; for use with
+   :c:func:`Py_CompileString`. This is the symbol used for the interactive
+   interpreter loop.
+
+
+.. c:var:: int Py_func_type_input
+
+   .. index:: single: Py_CompileString (C function)
+
+   The start symbol from the Python grammar for a function type; for use with
+   :c:func:`Py_CompileString`. This is used to parse "signature type comments"
+   from :pep:`484`.
+
+   This requires the :c:macro:`PyCF_ONLY_AST` flag to be set.
+
+   .. seealso::
+      * :py:class:`ast.FunctionType`
+      * :pep:`484`
+
+   .. versionadded:: 3.8
