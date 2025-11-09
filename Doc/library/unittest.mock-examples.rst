@@ -602,7 +602,7 @@ Partial mocking
 
 For some tests, you may want to mock out a call to :meth:`datetime.date.today`
 to return a known date, but don't want to prevent the code under test from
-creating new date objects. Unfortunately :class:`datetime.date` is written in C, and
+creating new date objects. Unfortunately :class:`datetime.date` is written in C,
 so you cannot just monkey-patch out the static :meth:`datetime.date.today` method.
 
 Instead, you can effectively wrap the date
