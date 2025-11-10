@@ -128,18 +128,28 @@ The following functions provide locale-independent string to number conversions.
    must be 0 and is ignored.  The ``'r'`` format code specifies the
    standard :func:`repr` format.
 
-   *flags* can be zero or more of the values ``Py_DTSF_SIGN``,
-   ``Py_DTSF_ADD_DOT_0``, or ``Py_DTSF_ALT``, or-ed together:
+   *flags* can be zero or more of the following values or-ed together:
 
-   * ``Py_DTSF_SIGN`` means to always precede the returned string with a sign
-     character, even if *val* is non-negative.
+   .. c:macro:: Py_DTSF_SIGN
 
-   * ``Py_DTSF_ADD_DOT_0`` means to ensure that the returned string will not look
-     like an integer.
+      Always precede the returned string with a sign
+      character, even if *val* is non-negative.
 
-   * ``Py_DTSF_ALT`` means to apply "alternate" formatting rules.  See the
-     documentation for the :c:func:`PyOS_snprintf` ``'#'`` specifier for
-     details.
+   .. c:macro:: Py_DTSF_ADD_DOT_0
+
+      Ensure that the returned string will not look like an integer.
+
+   .. c:macro:: Py_DTSF_ALT
+
+      Apply "alternate" formatting rules.
+      See the documentation for the :c:func:`PyOS_snprintf` ``'#'`` specifier for
+      details.
+
+   .. c:macro:: Py_DTSF_NO_NEG_0
+
+      Negative zero is converted to positive zero.
+
+      .. versionadded:: 3.11
 
    If *ptype* is non-``NULL``, then the value it points to will be set to one of
    ``Py_DTST_FINITE``, ``Py_DTST_INFINITE``, or ``Py_DTST_NAN``, signifying that

@@ -644,7 +644,7 @@ complex_hash(PyObject *op)
      * compare equal must have the same hash value, so that
      * hash(x + 0*j) must equal hash(x).
      */
-    combined = hashreal + _PyHASH_IMAG * hashimag;
+    combined = hashreal + PyHASH_IMAG * hashimag;
     if (combined == (Py_uhash_t)-1)
         combined = (Py_uhash_t)-2;
     return (Py_hash_t)combined;
