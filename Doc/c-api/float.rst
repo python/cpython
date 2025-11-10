@@ -83,9 +83,6 @@ Floating-Point Objects
    This is equivalent to the :c:macro:`!INFINITY` macro from the C11 standard
    ``<math.h>`` header.
 
-   .. deprecated:: 3.15
-      The macro is soft deprecated.
-
 
 .. c:macro:: Py_MATH_El
 
