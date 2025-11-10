@@ -2306,6 +2306,10 @@
     added = '3.11'
 [function.PyMemoryView_FromBuffer]
     added = '3.11'
+[const.Py_bf_getbuffer]
+    added = '3.11'
+[const.Py_bf_releasebuffer]
+    added = '3.11'
 
 # Constants for Py_buffer API added to this list in Python 3.11.1 (https://github.com/python/cpython/issues/98680)
 # (they were available with 3.11.0)
@@ -2606,4 +2610,32 @@
 [const.PyABIInfo_GIL]
     added = '3.15'
 [const.PyABIInfo_FREETHREADING_AGNOSTIC]
+    added = '3.15'
+[function.PyModule_FromSlotsAndSpec]
+    added = '3.15'
+[function.PyModule_Exec]
+    added = '3.15'
+[function.PyModule_GetToken]
+    added = '3.15'
+[function.PyType_GetModuleByToken]
+    added = '3.15'
+[function.PyModule_GetStateSize]
+    added = '3.15'
+[macro.PyMODEXPORT_FUNC]
+    added = '3.15'
+[const.Py_mod_name]
+    added = '3.15'
+[const.Py_mod_doc]
+    added = '3.15'
+[const.Py_mod_state_size]
+    added = '3.15'
+[const.Py_mod_methods]
+    added = '3.15'
+[const.Py_mod_state_traverse]
+    added = '3.15'
+[const.Py_mod_state_clear]
+    added = '3.15'
+[const.Py_mod_state_free]
+    added = '3.15'
+[const.Py_mod_token]
     added = '3.15'

@@ -30,6 +30,10 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_DelItem_KnownHash(PyObject *mp, PyObject *key,
                                           Py_hash_t hash);
+
+extern int _PyDict_DelItem_KnownHash_LockHeld(PyObject *mp, PyObject *key,
+                                              Py_hash_t hash);
+
 extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 
 // "Id" variants
@@ -46,6 +50,8 @@ extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
 
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
+
+extern Py_ssize_t _PyDict_SizeOf_LockHeld(PyDictObject *);
 
 #define _PyDict_HasSplitTable(d) ((d)->ma_values != NULL)
 

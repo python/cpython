@@ -985,6 +985,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             if (alloc > 2) {
                 res = PyBytesWriter_GrowAndUpdatePointer(writer, alloc - 2, res);
                 if (res == NULL) {
+                    Py_XDECREF(temp);
                     goto error;
                 }
             }
@@ -3171,7 +3172,7 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         return;
     }
 
-    if (Py_REFCNT(*pv) == 1 && PyBytes_CheckExact(*pv)) {
+    if (_PyObject_IsUniquelyReferenced(*pv) && PyBytes_CheckExact(*pv)) {
         /* Only one reference, so we can resize in place */
         Py_ssize_t oldsize;
         Py_buffer wb;
@@ -3256,7 +3257,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         return 0;
     }
-    if (Py_REFCNT(v) != 1) {
+    if (!_PyObject_IsUniquelyReferenced(v)) {
         if (oldsize < newsize) {
             *pv = _PyBytes_FromSize(newsize, 0);
             if (*pv) {
