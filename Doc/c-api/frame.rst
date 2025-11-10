@@ -182,7 +182,6 @@ They exist solely for backwards compatibility.
    Prior to Python 3.13, this function would copy the :attr:`~frame.f_locals`
    attribute of *f* to the internal "fast" array of local variables, allowing
    changes in frame objects to be visible to the interpreter. If *clear* was
-   changes in frame objects to be visible to the interpreter. If *clear* was
    true, this function would process variables that were unset in the locals
    dictionary.
 
