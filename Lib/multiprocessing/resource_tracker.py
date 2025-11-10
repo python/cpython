@@ -198,7 +198,7 @@ class ResourceTracker(object):
         """Return a JSON-encoded probe message."""
         return (
             json.dumps(
-                {"cmd": "PROBE", "rtype": "noop", "base64_name": ""},
+                {"cmd": "PROBE", "rtype": "noop"},
                 ensure_ascii=True,
                 separators=(",", ":"),
             )
@@ -262,6 +262,8 @@ class ResourceTracker(object):
         assert nbytes == len(msg), f"{nbytes=} != {len(msg)=}"
 
     def _send(self, cmd, name, rtype):
+        # POSIX guarantees that writes to a pipe of less than PIPE_BUF (512 on Linux)
+        # bytes are atomic. Therefore, we want the message to be shorter than 512 bytes.
         # POSIX shm_open() and sem_open() require the name, including its leading slash,
         # to be at most NAME_MAX bytes (255 on Linux)
         # With json.dump(..., ensure_ascii=True) every non-ASCII byte becomes a 6-char
@@ -309,25 +311,22 @@ def main(fd):
     try:
         # keep track of registered/unregistered resources
         with open(fd, 'rb') as f:
-            for raw in f:
+            for line in f:
                 try:
-                    line = raw.rstrip(b'\n')
                     try:
                         obj = json.loads(line.decode('ascii'))
                     except Exception as e:
                         raise ValueError("malformed resource_tracker message: %r" % (line,)) from e
 
-                    cmd = obj.get("cmd")
-                    rtype = obj.get("rtype")
-                    b64  = obj.get("base64_name")
+                    cmd = obj["cmd"]
+                    rtype = obj["rtype"]
+                    b64  = obj.get("base64_name", "")
 
                     if not isinstance(cmd, str) or not isinstance(rtype, str) or not isinstance(b64, str):
                         raise ValueError("malformed resource_tracker fields: %r" % (obj,))
 
-                    enc = b64.encode('ascii')
-                    enc += b'=' * (-len(enc) % 4)  # normalize padding
                     try:
-                        name = base64.urlsafe_b64decode(enc).decode('utf-8', 'surrogateescape')
+                        name = base64.urlsafe_b64decode(b64).decode('utf-8', 'surrogateescape')
                     except ValueError as e:
                         raise ValueError("malformed resource_tracker base64_name: %r" % (b64,)) from e
 
