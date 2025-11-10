@@ -29,7 +29,7 @@ See also :ref:`Reflection <reflection>`.
       Previously, this type was only available after including
       ``<frameobject.h>``.
 
-.. c:function:: PyObject *PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals, PyObject *locals)
+.. c:function:: PyFrameObject *PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals, PyObject *locals)
 
    Create a new frame object. This function returns a :term:`strong reference`
    to the new frame object on success, and returns ``NULL`` with an exception
