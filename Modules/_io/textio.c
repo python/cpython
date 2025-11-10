@@ -3404,7 +3404,7 @@ static PyGetSetDef textiowrapper_getset[] = {
     {NULL}
 };
 
-PyType_Slot textiowrapper_slots[] = {
+static PyType_Slot textiowrapper_slots[] = {
     {Py_tp_dealloc, textiowrapper_dealloc},
     {Py_tp_repr, textiowrapper_repr},
     {Py_tp_doc, (void *)_io_TextIOWrapper___init____doc__},
