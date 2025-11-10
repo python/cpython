@@ -14,6 +14,8 @@ integer as the registry handle, a :ref:`handle object <handle-object>` is used
 to ensure that the handles are closed correctly, even if the programmer neglects
 to explicitly close them.
 
+.. availability:: Windows.
+
 .. _exception-changed:
 
 .. versionchanged:: 3.3
