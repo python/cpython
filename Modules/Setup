@@ -141,6 +141,8 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_interpreters _interpretersmodule.c
 #_json _json.c
 #_lsprof _lsprof.c rotatingtree.c
+#_math mathmodule.c
+#_math_integer mathintegermodule.c
 #_multiprocessing -I$(srcdir)/Modules/_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
 #_opcode _opcode.c
 #_pickle _pickle.c
@@ -149,17 +151,15 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_socket socketmodule.c
 #_statistics _statisticsmodule.c
 #_struct _struct.c
+#_sysconfig _sysconfig.c
 #_types _typesmodule.c
 #_typing _typingmodule.c
 #_zoneinfo _zoneinfo.c
 #array arraymodule.c
 #binascii binascii.c
 #cmath cmathmodule.c
-#_math mathmodule.c
-#_math_integer mathintegermodule.c
 #mmap mmapmodule.c
 #select selectmodule.c
-#_sysconfig _sysconfig.c
 
 # XML
 #_elementtree _elementtree.c

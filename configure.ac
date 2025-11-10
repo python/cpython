@@ -7911,9 +7911,9 @@ PY_STDLIB_MOD([_posixshmem],
   [$POSIXSHMEM_CFLAGS], [$POSIXSHMEM_LIBS])
 
 dnl needs libm
+PY_STDLIB_MOD_SIMPLE([_math], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([_statistics], [], [$LIBM])
 PY_STDLIB_MOD_SIMPLE([cmath], [], [$LIBM])
-PY_STDLIB_MOD_SIMPLE([_math], [], [$LIBM])
 
 dnl needs libm and on some platforms librt
 PY_STDLIB_MOD_SIMPLE([_datetime], [], [$TIMEMODULE_LIB $LIBM])
