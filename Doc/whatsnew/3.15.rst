@@ -368,6 +368,14 @@ collections.abc
   previously emitted if it was merely imported or accessed from the
   :mod:`!collections.abc` module.
 
+
+dataclasses
+-----------
+
+* Annotations for generated ``__init__`` methods no longer include internal
+  type names.
+
+
 dbm
 ---
 
