@@ -52,7 +52,7 @@
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
-@MODULE_MATH_TRUE@math mathmodule.c
+@MODULE__MATH_TRUE@_math mathmodule.c
 @MODULE_CMATH_TRUE@cmath cmathmodule.c
 @MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
 

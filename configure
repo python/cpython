@@ -766,8 +766,8 @@ MODULE_FCNTL_FALSE
 MODULE_FCNTL_TRUE
 MODULE__DATETIME_FALSE
 MODULE__DATETIME_TRUE
-MODULE_MATH_FALSE
-MODULE_MATH_TRUE
+MODULE__MATH_FALSE
+MODULE__MATH_TRUE
 MODULE_CMATH_FALSE
 MODULE_CMATH_TRUE
 MODULE__STATISTICS_FALSE
@@ -31905,24 +31905,24 @@ then :
 fi
 
 
-        if test "$py_cv_module_math" != "n/a"
+        if test "$py_cv_module__math" != "n/a"
 then :
-  py_cv_module_math=yes
+  py_cv_module__math=yes
 fi
-   if test "$py_cv_module_math" = yes; then
-  MODULE_MATH_TRUE=
-  MODULE_MATH_FALSE='#'
+   if test "$py_cv_module__math" = yes; then
+  MODULE__MATH_TRUE=
+  MODULE__MATH_FALSE='#'
 else
-  MODULE_MATH_TRUE='#'
-  MODULE_MATH_FALSE=
+  MODULE__MATH_TRUE='#'
+  MODULE__MATH_FALSE=
 fi
 
-  as_fn_append MODULE_BLOCK "MODULE_MATH_STATE=$py_cv_module_math$as_nl"
-  if test "x$py_cv_module_math" = xyes
+  as_fn_append MODULE_BLOCK "MODULE__MATH_STATE=$py_cv_module__math$as_nl"
+  if test "x$py_cv_module__math" = xyes
 then :
 
 
-    as_fn_append MODULE_BLOCK "MODULE_MATH_LDFLAGS=$LIBM$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MATH_LDFLAGS=$LIBM$as_nl"
 
 fi
 
@@ -34567,8 +34567,8 @@ if test -z "${MODULE_CMATH_TRUE}" && test -z "${MODULE_CMATH_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_CMATH\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE_MATH_TRUE}" && test -z "${MODULE_MATH_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE_MATH\" was never defined.
+if test -z "${MODULE__MATH_TRUE}" && test -z "${MODULE__MATH_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MATH\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__DATETIME_TRUE}" && test -z "${MODULE__DATETIME_FALSE}"; then

@@ -2413,6 +2413,24 @@ class MathTests(unittest.TestCase):
         self.assertEqual(x, y)
         self.assertEqual(math.copysign(1.0, x), math.copysign(1.0, y))
 
+    def test_module(self):
+        # gh-140824: _math and _math_integer extensions are exported as math
+        # and math.integer names.
+        math_integer_names = set('comb factorial gcd isqrt lcm perm'.split())
+        for name in dir(math):
+            if name.startswith('_'):
+                continue
+            obj = getattr(math, name)
+            if not hasattr(obj, '__module__'):
+                continue
+
+            if name in math_integer_names:
+                module = 'math.integer'
+            else:
+                module = 'math'
+            with self.subTest(name=name):
+                self.assertEqual(obj.__module__, module)
+
 
 class IsCloseTests(unittest.TestCase):
     isclose = math.isclose  # subclasses should override this

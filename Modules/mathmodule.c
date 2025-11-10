@@ -2976,7 +2976,6 @@ math_ulp_impl(PyObject *module, double x)
 static int
 math_exec(PyObject *module)
 {
-
     if (PyModule_Add(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
@@ -2991,32 +2990,6 @@ math_exec(PyObject *module)
         return -1;
     }
     if (PyModule_Add(module, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
-        return -1;
-    }
-
-    PyObject *intmath = PyImport_ImportModule("_math_integer");
-    if (!intmath) {
-        return -1;
-    }
-#define IMPORT_FROM_INTMATH(NAME) do {                          \
-        if (PyModule_Add(module, #NAME,                         \
-                PyObject_GetAttrString(intmath, #NAME)) < 0) {  \
-            Py_DECREF(intmath);                                 \
-            return -1;                                          \
-        }                                                       \
-    } while(0)
-
-    IMPORT_FROM_INTMATH(comb);
-    IMPORT_FROM_INTMATH(factorial);
-    IMPORT_FROM_INTMATH(gcd);
-    IMPORT_FROM_INTMATH(isqrt);
-    IMPORT_FROM_INTMATH(lcm);
-    IMPORT_FROM_INTMATH(perm);
-    if (_PyImport_SetModuleString("math.integer", intmath) < 0) {
-        Py_DECREF(intmath);
-        return -1;
-    }
-    if (PyModule_Add(module, "integer", intmath) < 0) {
         return -1;
     }
     return 0;
@@ -3095,7 +3068,7 @@ PyDoc_STRVAR(module_doc,
 
 static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "math",
+    .m_name = "_math",
     .m_doc = module_doc,
     .m_size = 0,
     .m_methods = math_methods,
@@ -3103,7 +3076,7 @@ static struct PyModuleDef mathmodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_math(void)
+PyInit__math(void)
 {
     return PyModuleDef_Init(&mathmodule);
 }
