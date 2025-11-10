@@ -1,0 +1,2 @@
+Tests for decimal module are divided into some parts. Patch by Mikhail
+Efimov.
