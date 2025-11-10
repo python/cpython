@@ -447,3 +447,6 @@ class CImplicitConstructionTest(ImplicitConstructionTest, unittest.TestCase):
     decimal = C
 class PyImplicitConstructionTest(ImplicitConstructionTest, unittest.TestCase):
     decimal = P
+
+if __name__ == '__main__':
+    unittest.main()

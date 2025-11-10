@@ -2,7 +2,7 @@ import unittest
 from . import load_tests
 import optparse
 
-def execute_tests(arith=None, verbose=None, todo_tests=None, debug=None):
+def execute_tests(arith, verbose, todo_tests=None, debug=None):
     """ Execute the tests.
 
     Runs all arithmetic tests if arith is True or if the "decimal" resource
@@ -10,7 +10,7 @@ def execute_tests(arith=None, verbose=None, todo_tests=None, debug=None):
     """
 
     module = getattr(__import__("test.test_decimal"), "test_decimal")
-    module.ARITH = arith
+    module.TEST_ALL = arith
     module.TODO_TESTS = todo_tests
     module.DEBUG = debug
     unittest.main(module, verbosity=2 if verbose else 1, exit=False, argv=[__name__])

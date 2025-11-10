@@ -5033,3 +5033,6 @@ class CTestModule(TestModule, unittest.TestCase):
     decimal = C
 class PyTestModule(TestModule, unittest.TestCase):
     decimal = P
+
+if __name__ == '__main__':
+    unittest.main()
