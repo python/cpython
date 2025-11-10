@@ -119,6 +119,10 @@ class TestForwardRefFormat(unittest.TestCase):
             alpha: some | obj,
             beta: +some,
             gamma: some < obj,
+            delta: some | {obj: module},
+            epsilon: some | {obj, module},
+            zeta: some | [obj],
+            eta: some | (),
         ):
             pass
 
@@ -146,6 +150,69 @@ class TestForwardRefFormat(unittest.TestCase):
         gamma_anno = anno["gamma"]
         self.assertIsInstance(gamma_anno, ForwardRef)
         self.assertEqual(gamma_anno, support.EqualToForwardRef("some < obj", owner=f))
+
+        delta_anno = anno["delta"]
+        self.assertIsInstance(delta_anno, ForwardRef)
+        self.assertEqual(delta_anno, support.EqualToForwardRef("some | {obj: module}", owner=f))
+
+        epsilon_anno = anno["epsilon"]
+        self.assertIsInstance(epsilon_anno, ForwardRef)
+        self.assertEqual(epsilon_anno, support.EqualToForwardRef("some | {obj, module}", owner=f))
+
+        zeta_anno = anno["zeta"]
+        self.assertIsInstance(zeta_anno, ForwardRef)
+        self.assertEqual(zeta_anno, support.EqualToForwardRef("some | [obj]", owner=f))
+
+        eta_anno = anno["eta"]
+        self.assertIsInstance(eta_anno, ForwardRef)
+        self.assertEqual(eta_anno, support.EqualToForwardRef("some | ()", owner=f))
+
+    def test_partially_nonexistent(self):
+        # These annotations start with a non-existent variable and then use
+        # global types with defined values. This partially evaluates by putting
+        # those globals into `fwdref.__extra_names__`.
+        def f(
+            x: obj | int,
+            y: container[int:obj, int],
+            z: dict_val | {str: int},
+            alpha: set_val | {str, int},
+            beta: obj | bool | int,
+            gamma: obj | call_func(int, kwd=bool),
+        ):
+            pass
+
+        def func(*args, **kwargs):
+            return Union[*args, *(kwargs.values())]
+
+        anno = get_annotations(f, format=Format.FORWARDREF)
+        globals_ = {
+            "obj": str, "container": list, "dict_val": {1: 2}, "set_val": {1, 2},
+            "call_func": func
+        }
+
+        x_anno = anno["x"]
+        self.assertIsInstance(x_anno, ForwardRef)
+        self.assertEqual(x_anno.evaluate(globals=globals_), str | int)
+
+        y_anno = anno["y"]
+        self.assertIsInstance(y_anno, ForwardRef)
+        self.assertEqual(y_anno.evaluate(globals=globals_), list[int:str, int])
+
+        z_anno = anno["z"]
+        self.assertIsInstance(z_anno, ForwardRef)
+        self.assertEqual(z_anno.evaluate(globals=globals_), {1: 2} | {str: int})
+
+        alpha_anno = anno["alpha"]
+        self.assertIsInstance(alpha_anno, ForwardRef)
+        self.assertEqual(alpha_anno.evaluate(globals=globals_), {1, 2} | {str, int})
+
+        beta_anno = anno["beta"]
+        self.assertIsInstance(beta_anno, ForwardRef)
+        self.assertEqual(beta_anno.evaluate(globals=globals_), str | bool | int)
+
+        gamma_anno = anno["gamma"]
+        self.assertIsInstance(gamma_anno, ForwardRef)
+        self.assertEqual(gamma_anno.evaluate(globals=globals_), str | func(int, kwd=bool))
 
     def test_partially_nonexistent_union(self):
         # Test unions with '|' syntax equal unions with typing.Union[] with some forwardrefs
