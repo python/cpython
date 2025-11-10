@@ -42,14 +42,6 @@ C = import_fresh_module('decimal', fresh=['_decimal'])
 P = import_fresh_module('decimal', blocked=['_decimal'])
 import decimal as orig_sys_decimal
 
-# fractions module must import the correct decimal module.
-cfractions = import_fresh_module('fractions', fresh=['fractions'])
-sys.modules['decimal'] = P
-pfractions = import_fresh_module('fractions', fresh=['fractions'])
-sys.modules['decimal'] = C
-fractions = {C: cfractions, P: pfractions}
-sys.modules['decimal'] = orig_sys_decimal
-
 requires_cdecimal = unittest.skipUnless(C, "test requires C version")
 
 # Useful Test Constant
