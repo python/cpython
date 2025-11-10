@@ -138,6 +138,7 @@ Type Objects
    Return non-zero if the type object *type* sets the subclass flag *flag*.
    Subclass flags are denoted by
    :c:macro:`Py_TPFLAGS_*_SUBCLASS <Py_TPFLAGS_LONG_SUBCLASS>`.
+   This function is used by most ``_Check`` functions.
 
 
 .. c:function:: int PyType_IS_GC(PyTypeObject *o)
