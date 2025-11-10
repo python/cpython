@@ -1,0 +1,4 @@
+Fix assertion failure in Unicode escape decoding when using custom error
+handlers that return single-character replacements and rewind the input
+position. The bug occurred in debug builds where ``unicode_decode_call_errorhandler_writer()``
+failed to account for replacement text length in buffer capacity calculations.
