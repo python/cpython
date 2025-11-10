@@ -80,8 +80,20 @@ Floating-Point Objects
 
 .. c:macro:: Py_INFINITY
 
-   This is equivalent to the :c:macro:`!INFINITY` macro from the C11 standard
-   ``<math.h>`` header.
+   This macro expands a to constant expression of type :c:type:`double`, that
+   represents the positive infinity.
+
+   On most platforms, this is equivalent to the :c:macro:`!INFINITY` macro from
+   the C11 standard ``<math.h>`` header.
+
+
+.. c:macro:: Py_NAN
+
+   This macro expands a to constant expression of type :c:type:`double`, that
+   represents a quiet not-a-number (qNaN) value.
+
+   On most platforms, this is equivalent to the :c:macro:`!NAN` macro from
+   the C11 standard ``<math.h>`` header.
 
 
 .. c:macro:: Py_MATH_El
