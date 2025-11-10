@@ -479,7 +479,8 @@ or subtracting from an empty counter.
     corresponding number of items are discarded from the opposite end.  Bounded
     length deques provide functionality similar to the ``tail`` filter in
     Unix. They are also useful for tracking transactions and other pools of data
-    where only the most recent activity is of interest.
+    where only the most recent activity is of interest.  Passing a *maxlen*
+    greater than :data:`sys.maxsize` raises :exc:`ValueError`.
 
 
     Deque objects support the following methods:
@@ -591,9 +592,11 @@ or subtracting from an empty counter.
 
 In addition to the above, deques support iteration, pickling, ``len(d)``,
 ``reversed(d)``, ``copy.copy(d)``, ``copy.deepcopy(d)``, membership testing with
-the :keyword:`in` operator, and subscript references such as ``d[0]`` to access
-the first element.  Indexed access is *O*\ (1) at both ends but slows to *O*\ (*n*) in
-the middle.  For fast random access, use lists instead.
+the :keyword:`in` operator, subscript references such as ``d[0]`` to access
+the first element, and slicing notation like ``d[i:j:k]`` which returns a new
+deque of the same type (including subclasses) while preserving ``maxlen``.
+Indexed access is *O*\ (1).  Slicing is *O*\ (k) where *k* is the number of
+elements in the slice.
 
 Starting in version 3.5, deques support ``__add__()``, ``__mul__()``,
 and ``__imul__()``.

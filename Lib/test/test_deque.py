@@ -5,11 +5,161 @@ from test import support, seq_tests
 import gc
 import weakref
 import copy
+import operator
 import pickle
 import random
 import struct
+import sys
+
+from test.support.hypothesis_helper import hypothesis
+
+st = hypothesis.strategies
+assume = hypothesis.assume
 
 BIG = 100000
+VALUE_STRATEGY = st.text()
+DEFAULT_MAXLEN_STRATEGY = st.one_of(
+    st.none(),
+    st.integers(min_value=0, max_value=sys.maxsize),
+)
+
+
+@st.composite
+def simple_deques(draw, maxlen_strategy=DEFAULT_MAXLEN_STRATEGY, *,
+                  value_strategy=VALUE_STRATEGY, check_for_equality=True):
+    items = draw(st.lists(value_strategy))
+    maxlen = draw(maxlen_strategy)
+    if maxlen is not None:
+        assume(0 <= maxlen <= sys.maxsize)
+    d = deque(items, maxlen=maxlen)
+    if check_for_equality:
+        if maxlen is None or len(items) <= maxlen:
+            assert items == list(d)
+        else:
+            assert list(d) == items[len(items)-maxlen:], (items, maxlen, d)
+    return d
+
+
+@st.composite
+def composite_deques(draw, maxlen_strategy=DEFAULT_MAXLEN_STRATEGY, *,
+                     value_strategy=VALUE_STRATEGY, check_for_equality=True):
+    d = draw(simple_deques(maxlen_strategy=maxlen_strategy,
+                           value_strategy=value_strategy, check_for_equality=check_for_equality))
+    shadow = list(d)
+
+    def append():
+        value = draw(value_strategy)
+        d.append(value)
+        shadow.append(value)
+        if d.maxlen is not None and len(shadow) > d.maxlen:
+            shadow.pop(0)
+        if check_for_equality:
+            assert shadow == list(d)
+
+    def appendleft():
+        value = draw(value_strategy)
+        d.appendleft(value)
+        shadow.insert(0, value)
+        if d.maxlen is not None and len(shadow) > d.maxlen:
+            shadow.pop()
+        if check_for_equality:
+            assert shadow == list(d)
+
+    def pop():
+        try:
+            result = d.pop()
+        except IndexError:
+            assert not shadow
+        else:
+            assert shadow
+            expected = shadow.pop()
+            if check_for_equality:
+                assert result == expected
+            if check_for_equality:
+                assert shadow == list(d)
+
+    def popleft():
+        try:
+            result = d.popleft()
+        except IndexError:
+            assert not shadow
+        else:
+            assert shadow
+            expected = shadow.pop(0)
+            if check_for_equality:
+                assert result == expected
+            if check_for_equality:
+                assert shadow == list(d)
+
+    def rotate():
+        steps = draw(st.integers())
+        d.rotate(steps)
+        if shadow:
+            tmp = deque(shadow)
+            tmp.rotate(steps)
+            shadow[:] = list(tmp)
+        if check_for_equality:
+            assert shadow == list(d)
+
+    def clear():
+        d.clear()
+        shadow.clear()
+        if check_for_equality:
+            assert shadow == list(d)
+
+    def imul():
+        nonlocal shadow, d
+        multiplier = draw(st.integers(-5, 8))
+        d *= multiplier
+        if multiplier <= 0:
+            shadow.clear()
+        else:
+            shadow *= multiplier
+            if d.maxlen is not None:
+                shadow = shadow[-d.maxlen:]
+        if check_for_equality:
+            assert shadow == list(d)
+
+    operations = st.lists(st.sampled_from([append, appendleft, pop, popleft, rotate, clear, imul]))
+    for op in draw(operations):
+        op()
+
+    return d
+
+_NONREFLEXIVE_STRATEGY = st.one_of(
+    st.floats(),
+    st.just(support.NEVER_EQ),
+)
+
+_SLICE_BOUND_STRATEGY = st.one_of(st.none(), st.integers(-30, 30))
+_SLICE_STEP_STRATEGY = st.one_of(
+    st.none(), st.integers(-5, 5).filter(lambda value: value != 0)
+)
+
+@st.composite
+def composite_deques_maxlen(draw, value_strategy=VALUE_STRATEGY, *,
+                            check_for_equality=True):
+    return draw(
+        composite_deques(
+            maxlen_strategy=st.integers(min_value=0, max_value=sys.maxsize),
+            value_strategy=value_strategy,
+            check_for_equality=check_for_equality,
+        )
+    )
+
+@st.composite
+def composite_deques_optional_maxlen(draw, value_strategy=VALUE_STRATEGY, *,
+                                    check_for_equality=True):
+    return draw(
+        composite_deques(
+            maxlen_strategy=st.one_of(
+                st.just(None),
+                st.integers(min_value=0, max_value=sys.maxsize),
+            ),
+            value_strategy=value_strategy,
+            check_for_equality=check_for_equality,
+        )
+    )
 
 def fail():
     raise SyntaxError
@@ -27,7 +177,21 @@ class MutateCmp:
         self.deque.clear()
         return self.result
 
-class TestBasic(unittest.TestCase):
+class TestDequeProperty(unittest.TestCase):
+
+    @hypothesis.given(d=composite_deques())
+    def test_strategy(self, d):
+        """Test to exercise the deque strategy.
+
+        The strategy itself contains some asserts to verify correctness.
+        """
+
+    @hypothesis.given(d=composite_deques_maxlen())
+    def test_strategy_maxlen(self, d):
+        """Test to exercise the deque strategy with maxlen.
+
+        The strategy itself contains some asserts to verify correctness.
+        """
 
     def test_basics(self):
         d = deque(range(-5125, -5000))
@@ -51,6 +215,9 @@ class TestBasic(unittest.TestCase):
     def test_maxlen(self):
         self.assertRaises(ValueError, deque, 'abc', -1)
         self.assertRaises(ValueError, deque, 'abc', -2)
+        huge = sys.maxsize + 1
+        self.assertRaises(ValueError, deque, 'abc', huge)
+        self.assertRaises(ValueError, deque, maxlen=huge)
         it = iter(range(10))
         d = deque(it, maxlen=3)
         self.assertEqual(list(it), [])
@@ -95,6 +262,100 @@ class TestBasic(unittest.TestCase):
         with self.assertRaises(AttributeError):
             d = deque('abc')
             d.maxlen = 10
+
+    @hypothesis.given(
+        dq=composite_deques(),
+        start=_SLICE_BOUND_STRATEGY,
+        stop=_SLICE_BOUND_STRATEGY,
+        step=_SLICE_STEP_STRATEGY,
+    )
+    def test_slice_like_list(self, dq, start, stop, step):
+        result = dq[start:stop:step]
+        self.assertIsInstance(result, deque)
+        expected = list(dq)[slice(start, stop, step)]
+        self.assertEqual(list(result), expected)
+
+    @hypothesis.given(
+        dq=composite_deques(),
+        start=_SLICE_BOUND_STRATEGY,
+        stop=_SLICE_BOUND_STRATEGY,
+        step=_SLICE_STEP_STRATEGY,
+    )
+    def test_slice_preserves_maxlen(self, dq, start, stop, step):
+        result = dq[start:stop:step]
+        self.assertIsInstance(result, deque)
+        self.assertEqual(result.maxlen, dq.maxlen)
+
+    @hypothesis.given(composite_deques_optional_maxlen())
+    def test_exercise_auxiliary_operations(self, d):
+        self.assertIsInstance(str(d), str)
+        self.assertIsInstance(repr(d), str)
+        self.assertEqual(len(d), len(list(d)))
+        self.assertEqual(copy.copy(d), d)
+
+    @hypothesis.given(data=composite_deques_optional_maxlen())
+    def test_supports_weakref(self, data):
+        dq = deque(data)
+        ref = weakref.ref(dq)
+        self.assertIs(ref(), dq)
+        del dq
+        support.gc_collect()
+        self.assertIsNone(ref())
+
+    @hypothesis.given(
+        data=composite_deques(),
+        advance=st.integers(min_value=0, max_value=30),
+        reverse=st.booleans(),
+    )
+    def test_iterator_length_hint_tracks_remaining_items(
+        self, data, advance, reverse
+    ):
+        it = reversed(data) if reverse else iter(data)
+        baseline = list(reversed(data)) if reverse else list(data)
+        consumed = len(list(zip(range(advance), it)))
+        expected = max(len(baseline) - consumed, 0)
+        self.assertEqual(operator.length_hint(it), expected)
+
+    @hypothesis.given(
+        data=composite_deques(),
+        advance=st.integers(min_value=0, max_value=25),
+        reverse=st.booleans(),
+    )
+    def test_iterators_pickle_roundtrip(self, data, advance, reverse):
+        if reverse:
+            iterator = reversed(data)
+            baseline = list(reversed(data))
+        else:
+            iterator = iter(data)
+            baseline = list(data)
+
+        consumed = len(list(zip(range(advance), iterator)))
+
+        payload = pickle.dumps(iterator)
+        restored = pickle.loads(payload)
+        expected = baseline[consumed:]
+        self.assertEqual(list(restored), expected)
+        self.assertEqual(list(iterator), expected)
+
+    @hypothesis.given(
+        dq=composite_deques_optional_maxlen(check_for_equality=False)
+    )
+    def test_equality_handles_nonreflexive_elements(self, dq):
+        left = dq.copy()
+        right = dq
+        self.assertEqual(left, right)
+        self.assertFalse(left != right)
+
+    @hypothesis.given(
+        dq=composite_deques_optional_maxlen(check_for_equality=False),
+        turns=st.integers(-1000, 1000),
+    )
+    def test_equality_respects_rotation(self, dq, turns):
+        left = dq.copy()
+        right = dq.copy()
+        left.rotate(turns)
+        right.rotate(turns)
+        self.assertEqual(left, right)
 
     def test_count(self):
         for s in ('', 'abracadabra', 'simsalabim'*500+'abc'):
@@ -746,17 +1007,23 @@ class TestBasic(unittest.TestCase):
 
     @support.cpython_only
     def test_sizeof(self):
-        MAXFREEBLOCKS = 16
-        BLOCKLEN = 64
-        basesize = support.calcvobjsize('2P5n%dPP' % MAXFREEBLOCKS)
-        blocksize = struct.calcsize('P%dPP' % BLOCKLEN)
+        basesize = deque().__sizeof__()
+        ptrsize = struct.calcsize('P')
+
         self.assertEqual(object.__sizeof__(deque()), basesize)
+
+        def expected(n):
+            if n == 0:
+                return basesize
+            cap = 1
+            while cap < n:
+                cap <<= 1
+            return basesize + cap * ptrsize
+
         check = self.check_sizeof
-        check(deque(), basesize + blocksize)
-        check(deque('a'), basesize + blocksize)
-        check(deque('a' * (BLOCKLEN - 1)), basesize + blocksize)
-        check(deque('a' * BLOCKLEN), basesize + 2 * blocksize)
-        check(deque('a' * (42 * BLOCKLEN)), basesize + 43 * blocksize)
+        for n in (0, 1, 2, 3, 4, 5, 8, 9, 64, 65, 512, 1025):
+            d = deque(range(n))
+            check(d, expected(n))
 
 class TestVariousIteratorArgs(unittest.TestCase):
 
@@ -793,6 +1060,21 @@ class DequeWithBadIter(deque):
         raise TypeError
 
 class TestSubclass(unittest.TestCase):
+
+    @hypothesis.given(
+        dq=composite_deques_optional_maxlen(check_for_equality=False),
+        start=_SLICE_BOUND_STRATEGY,
+        stop=_SLICE_BOUND_STRATEGY,
+        step=_SLICE_STEP_STRATEGY,
+    )
+    def test_slice_preserves_subclass(self, dq, start, stop, step):
+        d = Deque(dq, dq.maxlen)
+        view = d[start:stop:step]
+        self.assertIsInstance(view, Deque)
+        self.assertIsNot(view, d)
+        expected = list(d)[slice(start, stop, step)]
+        self.assertEqual(list(view), expected)
+        self.assertEqual(view.maxlen, d.maxlen)
 
     def test_basics(self):
         d = Deque(range(25))
@@ -910,13 +1192,46 @@ class TestSequence(seq_tests.CommonTest):
         # For now, bypass tests that require slicing
         pass
 
-    def test_getslice(self):
-        # For now, bypass tests that require slicing
-        pass
+    @hypothesis.given(
+        dq=composite_deques_optional_maxlen(),
+        start=_SLICE_BOUND_STRATEGY,
+        stop=_SLICE_BOUND_STRATEGY,
+        step=_SLICE_STEP_STRATEGY,
+    )
+    def test_getslice(self, dq, start, stop, step):
+        subslice = slice(start, stop, step)
+        expected = deque(list(dq)[subslice], maxlen=dq.maxlen)
+        actual = dq[subslice]
+        self.assertIsInstance(actual, deque)
+        self.assertEqual(actual, expected)
+        self.assertIsNot(actual, dq)
 
-    def test_subscript(self):
-        # For now, bypass tests that require slicing
-        pass
+    @hypothesis.given(
+        dq=composite_deques_optional_maxlen(check_for_equality=False),
+        index=st.integers(-50, 50),
+    )
+    def test_subscript(self, dq, index):
+        data = list(dq)
+        if -len(data) <= index < len(data):
+            self.assertEqual(dq[index], data[index])
+        else:
+            with self.assertRaises(IndexError):
+                _ = dq[index]
+
+        clone = dq[:]
+        self.assertIsInstance(clone, deque)
+        self.assertIsNot(clone, dq)
+        self.assertEqual(
+            list(clone), list(dq)
+        )
+        self.assertEqual(clone.maxlen, dq.maxlen)
+
+        even = dq[::2]
+        self.assertEqual(list(even), list(dq)[::2])
+        self.assertEqual(even.maxlen, dq.maxlen)
+
+        with self.assertRaises(TypeError):
+            _ = dq[1.5]
 
     def test_free_after_iterating(self):
         # For now, bypass tests that require slicing

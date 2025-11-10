@@ -236,13 +236,13 @@ PyDoc_STRVAR(deque_rotate__doc__,
     {"rotate", _PyCFunction_CAST(deque_rotate), METH_FASTCALL, deque_rotate__doc__},
 
 static PyObject *
-deque_rotate_impl(dequeobject *deque, Py_ssize_t n);
+deque_rotate_impl(dequeobject *deque, PyObject *n);
 
 static PyObject *
 deque_rotate(PyObject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t n = 1;
+    PyObject *n = NULL;
 
     if (!_PyArg_CheckPositional("rotate", nargs, 0, 1)) {
         goto exit;
@@ -250,18 +250,7 @@ deque_rotate(PyObject *deque, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[0]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        n = ival;
-    }
+    n = args[0];
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(deque);
     return_value = deque_rotate_impl((dequeobject *)deque, n);
@@ -632,4 +621,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b9d4d647c221cb9f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ffc64fa17584cdec input=a9049054013a1b77]*/

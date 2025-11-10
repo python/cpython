@@ -1,0 +1,1 @@
+Slicing a :class:`collections.deque <collections.deque>` is now supported.  Our deque also support constant time indexing.

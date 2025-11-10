@@ -55,6 +55,12 @@ except ImportError:
     pass
 
 try:
+    # Ditto for reverse iterators (used by pickle reducers)
+    from _collections import _deque_reverse_iterator  # noqa: F401
+except ImportError:
+    pass
+
+try:
     from _collections import defaultdict
 except ImportError:
     pass
