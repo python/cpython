@@ -349,7 +349,8 @@ Help menu (Shell and Editor)
 
 :guilabel:`Python &Docs`
    Access local Python documentation, if installed, or start a web browser
-   and open docs.python.org showing the latest Python documentation.
+   and open `docs.python.org <https://docs.python.org/3/>`_ showing the latest
+   Python documentation.
 
 :guilabel:`Turtle Demo`
    Run the turtledemo module with example Python code and turtle drawings.
