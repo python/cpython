@@ -12355,6 +12355,7 @@ JUMP_TO_LABEL(error);
         {
             #if _Py_TIER2
             assert(IS_JIT_TRACING());
+            int opcode = next_instr->op.code;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, true);
             stack_pointer = _PyFrame_GetStackPointer(frame);

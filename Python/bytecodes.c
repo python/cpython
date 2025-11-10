@@ -5681,6 +5681,7 @@ dummy_func(
         label(stop_tracing) {
 #if _Py_TIER2
             assert(IS_JIT_TRACING());
+            int opcode = next_instr->op.code;
             _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, true);
             LEAVE_TRACING();
             int err = bail_tracing_and_jit(tstate, frame);
