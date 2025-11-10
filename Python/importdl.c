@@ -414,6 +414,9 @@ _PyImport_GetModuleExportHooks(
         *modexport = (PyModExportFunction)exportfunc;
         return 2;
     }
+    if (PyErr_Occurred()) {
+        return -1;
+    }
 
     exportfunc = findfuncptr(
         info->hook_prefixes->init_prefix,
