@@ -139,7 +139,7 @@ typedef struct {
 typedef struct {
     trampoline_state trampolines;
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
-} jit_state;
+} jit_tracer_state;
 
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
 
@@ -443,7 +443,7 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
     patch_32r(location, value);
 }
 
-void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state);
+void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_tracer_state *state);
 
 #include "jit_stencils.h"
 
@@ -458,7 +458,7 @@ void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *s
 // Generate and patch AArch64 trampolines. The symbols to jump to are stored
 // in the jit_stencils.h in the symbols_map.
 void
-patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
+patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_tracer_state *state)
 {
 
     uint64_t value = (uintptr_t)symbols_map[ordinal];
@@ -518,7 +518,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // Loop once to find the total compiled size:
     size_t code_size = 0;
     size_t data_size = 0;
-    jit_state state = {0};
+    jit_tracer_state state = {0};
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
@@ -596,7 +596,7 @@ compile_trampoline(void)
     const StencilGroup *group;
     size_t code_size = 0;
     size_t data_size = 0;
-    jit_state state = {0};
+    jit_tracer_state state = {0};
     group = &trampoline;
     code_size += group->code_size;
     data_size += group->data_size;

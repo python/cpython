@@ -1489,7 +1489,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     _tstate->asyncio_running_task = NULL;
 
 #ifdef _Py_TIER2
-    _tstate->jit_state.code_buffer = NULL;
+    _tstate->jit_tracer_state.code_buffer = NULL;
 #endif
     tstate->delete_later = NULL;
 
@@ -1792,9 +1792,9 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
 
 #if _Py_TIER2
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (_tstate->jit_state.code_buffer != NULL) {
-        _PyObject_VirtualFree(_tstate->jit_state.code_buffer, UOP_BUFFER_SIZE);
-        _tstate->jit_state.code_buffer = NULL;
+    if (_tstate->jit_tracer_state.code_buffer != NULL) {
+        _PyObject_VirtualFree(_tstate->jit_tracer_state.code_buffer, UOP_BUFFER_SIZE);
+        _tstate->jit_tracer_state.code_buffer = NULL;
     }
 #endif
 
