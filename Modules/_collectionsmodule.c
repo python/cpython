@@ -1868,8 +1868,6 @@ static PyType_Slot deque_slots[] = {
     {0, NULL},
 };
 
-
-
 static PyType_Spec deque_spec = {
     .name = "collections.deque",
     .basicsize = sizeof(dequeobject),
