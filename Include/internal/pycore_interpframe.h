@@ -18,8 +18,39 @@ extern "C" {
     ((int)((IF)->instr_ptr - _PyFrame_GetBytecode((IF))))
 
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
+    assert(!PyStackRef_IsNull(f->f_executable));
     PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
     assert(PyCode_Check(executable));
+    return (PyCodeObject *)executable;
+}
+
+// Similar to _PyFrame_GetCode(), but return NULL if the frame is invalid or
+// freed. Used by dump_frame() in Python/traceback.c. The function uses
+// heuristics to detect freed memory, it's not 100% reliable.
+static inline PyCodeObject*
+_PyFrame_SafeGetCode(_PyInterpreterFrame *f)
+{
+    // globals and builtins may be NULL on a legit frame, but it's unlikely.
+    // It's more likely that it's a sign of an invalid frame.
+    if (f->f_globals == NULL || f->f_builtins == NULL) {
+        return NULL;
+    }
+
+    if (PyStackRef_IsNull(f->f_executable)) {
+        return NULL;
+    }
+    void *ptr;
+    memcpy(&ptr, &f->f_executable, sizeof(f->f_executable));
+    if (_PyMem_IsPtrFreed(ptr)) {
+        return NULL;
+    }
+    PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
+    if (_PyObject_IsFreed(executable)) {
+        return NULL;
+    }
+    if (!PyCode_Check(executable)) {
+        return NULL;
+    }
     return (PyCodeObject *)executable;
 }
 
@@ -36,6 +67,31 @@ _PyFrame_GetBytecode(_PyInterpreterFrame *f)
 #endif
 }
 
+// Similar to PyUnstable_InterpreterFrame_GetLasti(), but return NULL if the
+// frame is invalid or freed. Used by dump_frame() in Python/traceback.c. The
+// function uses heuristics to detect freed memory, it's not 100% reliable.
+static inline int
+_PyFrame_SafeGetLasti(struct _PyInterpreterFrame *f)
+{
+    // Code based on _PyFrame_GetBytecode() but replace _PyFrame_GetCode()
+    // with _PyFrame_SafeGetCode().
+    PyCodeObject *co = _PyFrame_SafeGetCode(f);
+    if (co == NULL) {
+        return -1;
+    }
+
+    _Py_CODEUNIT *bytecode;
+#ifdef Py_GIL_DISABLED
+    _PyCodeArray *tlbc = _PyCode_GetTLBCArray(co);
+    assert(f->tlbc_index >= 0 && f->tlbc_index < tlbc->size);
+    bytecode = (_Py_CODEUNIT *)tlbc->entries[f->tlbc_index];
+#else
+    bytecode = _PyCode_CODE(co);
+#endif
+
+    return (int)(f->instr_ptr - bytecode) * sizeof(_Py_CODEUNIT);
+}
+
 static inline PyFunctionObject *_PyFrame_GetFunction(_PyInterpreterFrame *f) {
     PyObject *func = PyStackRef_AsPyObjectBorrow(f->f_funcobj);
     assert(PyFunction_Check(func));
@@ -47,13 +103,13 @@ static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
 }
 
 static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
-    assert(f->stackpointer >  f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    assert(f->stackpointer > _PyFrame_Stackbase(f));
     assert(!PyStackRef_IsNull(f->stackpointer[-1]));
     return f->stackpointer[-1];
 }
 
 static inline _PyStackRef _PyFrame_StackPop(_PyInterpreterFrame *f) {
-    assert(f->stackpointer >  f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    assert(f->stackpointer > _PyFrame_Stackbase(f));
     f->stackpointer--;
     return *f->stackpointer;
 }

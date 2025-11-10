@@ -28,6 +28,8 @@
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
+#include "pycore_ceval.h"         // SPECIAL___ENTER__
+#include "pycore_template.h"      // _PyTemplate_Type
 
 #define NEED_OPCODE_METADATA
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
@@ -399,7 +401,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
                 int opcode, jump_target_label target)
 {
     assert(IS_JUMP_TARGET_LABEL(target));
-    assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
+    assert(HAS_TARGET(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
     return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
@@ -527,6 +529,15 @@ codegen_unwind_fblock(compiler *c, location *ploc,
         case COMPILE_FBLOCK_FOR_LOOP:
             /* Pop the iterator */
             if (preserve_tos) {
+                ADDOP_I(c, *ploc, SWAP, 3);
+            }
+            ADDOP(c, *ploc, POP_TOP);
+            ADDOP(c, *ploc, POP_TOP);
+            return SUCCESS;
+
+        case COMPILE_FBLOCK_ASYNC_FOR_LOOP:
+            /* Pop the iterator */
+            if (preserve_tos) {
                 ADDOP_I(c, *ploc, SWAP, 2);
             }
             ADDOP(c, *ploc, POP_TOP);
@@ -629,7 +640,8 @@ codegen_unwind_fblock_stack(compiler *c, location *ploc,
             c, *ploc, "'break', 'continue' and 'return' cannot appear in an except* block");
     }
     if (loop != NULL && (top->fb_type == COMPILE_FBLOCK_WHILE_LOOP ||
-                         top->fb_type == COMPILE_FBLOCK_FOR_LOOP)) {
+                         top->fb_type == COMPILE_FBLOCK_FOR_LOOP ||
+                         top->fb_type == COMPILE_FBLOCK_ASYNC_FOR_LOOP)) {
         *loop = top;
         return SUCCESS;
     }
@@ -654,6 +666,9 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
         loc.lineno = 0;
     }
     ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
+    if (scope_type == COMPILE_SCOPE_MODULE) {
+        ADDOP(c, loc, ANNOTATIONS_PLACEHOLDER);
+    }
     return SUCCESS;
 }
 
@@ -792,6 +807,14 @@ codegen_process_deferred_annotations(compiler *c, location loc)
         return SUCCESS;
     }
 
+    int scope_type = SCOPE_TYPE(c);
+    bool need_separate_block = scope_type == COMPILE_SCOPE_MODULE;
+    if (need_separate_block) {
+        if (_PyCompile_StartAnnotationSetup(c) == ERROR) {
+            goto error;
+        }
+    }
+
     // It's possible that ste_annotations_block is set but
     // u_deferred_annotations is not, because the former is still
     // set if there are only non-simple annotations (i.e., annotations
@@ -800,7 +823,6 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     assert(ste->ste_annotation_block != NULL);
     void *key = (void *)((uintptr_t)ste->ste_id + 1);
-    int scope_type = SCOPE_TYPE(c);
     if (codegen_setup_annotations_scope(c, loc, key,
                                         ste->ste_annotation_block->ste_name) < 0) {
         goto error;
@@ -819,6 +841,10 @@ codegen_process_deferred_annotations(compiler *c, location loc)
         c, loc,
         ste->ste_type == ClassBlock ? &_Py_ID(__annotate_func__) : &_Py_ID(__annotate__),
         Store));
+
+    if (need_separate_block) {
+        RETURN_IF_ERROR(_PyCompile_EndAnnotationSetup(c));
+    }
 
     return SUCCESS;
 error:
@@ -2111,7 +2137,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP(c, LOC(s->v.AsyncFor.iter), GET_AITER);
 
     USE_LABEL(c, start);
-    RETURN_IF_ERROR(_PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_FOR_LOOP, start, end, NULL));
+    RETURN_IF_ERROR(_PyCompile_PushFBlock(c, loc, COMPILE_FBLOCK_ASYNC_FOR_LOOP, start, end, NULL));
 
     /* SETUP_FINALLY to guard the __anext__ call */
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
@@ -2128,7 +2154,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     /* Mark jump as artificial */
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
-    _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
+    _PyCompile_PopFBlock(c, COMPILE_FBLOCK_ASYNC_FOR_LOOP, start);
 
     /* Except block for __anext__ */
     USE_LABEL(c, except);
@@ -3592,6 +3618,9 @@ infer_type(expr_ty e)
         return &PyGen_Type;
     case Lambda_kind:
         return &PyFunction_Type;
+    case TemplateStr_kind:
+    case Interpolation_kind:
+        return &_PyTemplate_Type;
     case JoinedStr_kind:
     case FormattedValue_kind:
         return &PyUnicode_Type;
@@ -3616,7 +3645,9 @@ check_caller(compiler *c, expr_ty e)
     case SetComp_kind:
     case GeneratorExp_kind:
     case JoinedStr_kind:
-    case FormattedValue_kind: {
+    case TemplateStr_kind:
+    case FormattedValue_kind:
+    case Interpolation_kind: {
         location loc = LOC(e);
         return _PyCompile_Warn(c, loc, "'%.200s' object is not callable; "
                                        "perhaps you missed a comma?",
@@ -3645,6 +3676,8 @@ check_subscripter(compiler *c, expr_ty e)
     case Set_kind:
     case SetComp_kind:
     case GeneratorExp_kind:
+    case TemplateStr_kind:
+    case Interpolation_kind:
     case Lambda_kind: {
         location loc = LOC(e);
         return _PyCompile_Warn(c, loc, "'%.200s' object is not subscriptable; "
@@ -3875,10 +3908,11 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         NEW_JUMP_TARGET_LABEL(c, loop);
         NEW_JUMP_TARGET_LABEL(c, cleanup);
 
+        ADDOP(c, loc, PUSH_NULL); // Push NULL index for loop
         USE_LABEL(c, loop);
         ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
         if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
-            ADDOP_I(c, loc, LIST_APPEND, 2);
+            ADDOP_I(c, loc, LIST_APPEND, 3);
             ADDOP_JUMP(c, loc, JUMP, loop);
         }
         else {
@@ -4030,6 +4064,49 @@ codegen_call(compiler *c, expr_ty e)
 }
 
 static int
+codegen_template_str(compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+    expr_ty value;
+
+    Py_ssize_t value_count = asdl_seq_LEN(e->v.TemplateStr.values);
+    int last_was_interpolation = 1;
+    Py_ssize_t stringslen = 0;
+    for (Py_ssize_t i = 0; i < value_count; i++) {
+        value = asdl_seq_GET(e->v.TemplateStr.values, i);
+        if (value->kind == Interpolation_kind) {
+            if (last_was_interpolation) {
+                ADDOP_LOAD_CONST(c, loc, Py_NewRef(&_Py_STR(empty)));
+                stringslen++;
+            }
+            last_was_interpolation = 1;
+        }
+        else {
+            VISIT(c, expr, value);
+            stringslen++;
+            last_was_interpolation = 0;
+        }
+    }
+    if (last_was_interpolation) {
+        ADDOP_LOAD_CONST(c, loc, Py_NewRef(&_Py_STR(empty)));
+        stringslen++;
+    }
+    ADDOP_I(c, loc, BUILD_TUPLE, stringslen);
+
+    Py_ssize_t interpolationslen = 0;
+    for (Py_ssize_t i = 0; i < value_count; i++) {
+        value = asdl_seq_GET(e->v.TemplateStr.values, i);
+        if (value->kind == Interpolation_kind) {
+            VISIT(c, expr, value);
+            interpolationslen++;
+        }
+    }
+    ADDOP_I(c, loc, BUILD_TUPLE, interpolationslen);
+    ADDOP(c, loc, BUILD_TEMPLATE);
+    return SUCCESS;
+}
+
+static int
 codegen_joined_str(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
@@ -4058,24 +4135,41 @@ codegen_joined_str(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
+static int
+codegen_interpolation(compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+
+    VISIT(c, expr, e->v.Interpolation.value);
+    ADDOP_LOAD_CONST(c, loc, e->v.Interpolation.str);
+
+    int oparg = 2;
+    if (e->v.Interpolation.format_spec) {
+        oparg++;
+        VISIT(c, expr, e->v.Interpolation.format_spec);
+    }
+
+    int conversion = e->v.Interpolation.conversion;
+    if (conversion != -1) {
+        switch (conversion) {
+        case 's': oparg |= FVC_STR << 2;   break;
+        case 'r': oparg |= FVC_REPR << 2;  break;
+        case 'a': oparg |= FVC_ASCII << 2; break;
+        default:
+            PyErr_Format(PyExc_SystemError,
+                     "Unrecognized conversion character %d", conversion);
+            return ERROR;
+        }
+    }
+
+    ADDOP_I(c, loc, BUILD_INTERPOLATION, oparg);
+    return SUCCESS;
+}
+
 /* Used to implement f-strings. Format a single value. */
 static int
 codegen_formatted_value(compiler *c, expr_ty e)
 {
-    /* Our oparg encodes 2 pieces of information: the conversion
-       character, and whether or not a format_spec was provided.
-
-       Convert the conversion char to 3 bits:
-           : 000  0x0  FVC_NONE   The default if nothing specified.
-       !s  : 001  0x1  FVC_STR
-       !r  : 010  0x2  FVC_REPR
-       !a  : 011  0x3  FVC_ASCII
-
-       next bit is whether or not we have a format spec:
-       yes : 100  0x4
-       no  : 000  0x0
-    */
-
     int conversion = e->v.FormattedValue.conversion;
     int oparg;
 
@@ -4352,13 +4446,12 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
             }
             if (IS_JUMP_TARGET_LABEL(start)) {
                 VISIT(c, expr, gen->iter);
-                ADDOP(c, LOC(gen->iter), GET_ITER);
             }
         }
     }
 
     if (IS_JUMP_TARGET_LABEL(start)) {
-        depth++;
+        depth += 2;
         ADDOP(c, LOC(gen->iter), GET_ITER);
         USE_LABEL(c, start);
         ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
@@ -4453,9 +4546,9 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         else {
             /* Sub-iter - calculate on the fly */
             VISIT(c, expr, gen->iter);
-            ADDOP(c, LOC(gen->iter), GET_AITER);
         }
     }
+    ADDOP(c, LOC(gen->iter), GET_AITER);
 
     USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */
@@ -4667,19 +4760,6 @@ pop_inlined_comprehension_state(compiler *c, location loc,
     return SUCCESS;
 }
 
-static inline int
-codegen_comprehension_iter(compiler *c, comprehension_ty comp)
-{
-    VISIT(c, expr, comp->iter);
-    if (comp->is_async) {
-        ADDOP(c, LOC(comp->iter), GET_AITER);
-    }
-    else {
-        ADDOP(c, LOC(comp->iter), GET_ITER);
-    }
-    return SUCCESS;
-}
-
 static int
 codegen_comprehension(compiler *c, expr_ty e, int type,
                       identifier name, asdl_comprehension_seq *generators, expr_ty elt,
@@ -4699,9 +4779,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
-        if (codegen_comprehension_iter(c, outermost)) {
-            goto error;
-        }
+        VISIT(c, expr, outermost->iter);
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
             goto error;
         }
@@ -5168,8 +5246,12 @@ codegen_visit_expr(compiler *c, expr_ty e)
         break;
     case JoinedStr_kind:
         return codegen_joined_str(c, e);
+    case TemplateStr_kind:
+        return codegen_template_str(c, e);
     case FormattedValue_kind:
         return codegen_formatted_value(c, e);
+    case Interpolation_kind:
+        return codegen_interpolation(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         if (e->v.Attribute.ctx == Load) {
@@ -5333,23 +5415,6 @@ codegen_check_ann_expr(compiler *c, expr_ty e)
 }
 
 static int
-codegen_check_annotation(compiler *c, stmt_ty s)
-{
-    /* Annotations of complex targets does not produce anything
-       under annotations future */
-    if (FUTURE_FEATURES(c) & CO_FUTURE_ANNOTATIONS) {
-        return SUCCESS;
-    }
-
-    /* Annotations are only evaluated in a module or class. */
-    if (SCOPE_TYPE(c) == COMPILE_SCOPE_MODULE ||
-        SCOPE_TYPE(c) == COMPILE_SCOPE_CLASS) {
-        return codegen_check_ann_expr(c, s->v.AnnAssign.annotation);
-    }
-    return SUCCESS;
-}
-
-static int
 codegen_check_ann_subscr(compiler *c, expr_ty e)
 {
     /* We check that everything in a subscript is defined at runtime. */
@@ -5412,10 +5477,12 @@ codegen_annassign(compiler *c, stmt_ty s)
                 RETURN_IF_ERROR(_PyCompile_AddDeferredAnnotation(
                     c, s, &conditional_annotation_index));
                 if (conditional_annotation_index != NULL) {
-                    ADDOP_NAME(
-                        c, loc,
-                        SCOPE_TYPE(c) == COMPILE_SCOPE_CLASS ? LOAD_DEREF : LOAD_NAME,
-                        &_Py_ID(__conditional_annotations__), cellvars);
+                    if (SCOPE_TYPE(c) == COMPILE_SCOPE_CLASS) {
+                        ADDOP_NAME(c, loc, LOAD_DEREF, &_Py_ID(__conditional_annotations__), cellvars);
+                    }
+                    else {
+                        ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__conditional_annotations__), names);
+                    }
                     ADDOP_LOAD_CONST_NEW(c, loc, conditional_annotation_index);
                     ADDOP_I(c, loc, SET_ADD, 1);
                     ADDOP(c, loc, POP_TOP);
@@ -5440,10 +5507,6 @@ codegen_annassign(compiler *c, stmt_ty s)
         PyErr_Format(PyExc_SystemError,
                      "invalid node type (%d) for annotated assignment",
                      targ->kind);
-        return ERROR;
-    }
-    /* Annotation is evaluated last. */
-    if (future_annotations && !s->v.AnnAssign.simple && codegen_check_annotation(c, s) < 0) {
         return ERROR;
     }
     return SUCCESS;

@@ -104,7 +104,12 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         for proto in self._pipes.values():
             if proto is None:
                 continue
-            proto.pipe.close()
+            # See gh-114177
+            # skip closing the pipe if loop is already closed
+            # this can happen e.g. when loop is closed immediately after
+            # process is killed
+            if self._loop and not self._loop.is_closed():
+                proto.pipe.close()
 
         if (self._proc is not None and
                 # has the child process finished?

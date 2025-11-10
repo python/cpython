@@ -103,6 +103,15 @@ static struct _inittab *inittab_copy = NULL;
 #define FIND_AND_LOAD(interp) \
     (interp)->imports.find_and_load
 
+#define _IMPORT_TIME_HEADER(interp)                                           \
+    do {                                                                      \
+        if (FIND_AND_LOAD((interp)).header) {                                 \
+            fputs("import time: self [us] | cumulative | imported package\n", \
+                  stderr);                                                    \
+            FIND_AND_LOAD((interp)).header = 0;                               \
+        }                                                                     \
+    } while (0)
+
 
 /*******************/
 /* the import lock */
@@ -151,6 +160,20 @@ PyObject *
 _PyImport_GetModules(PyInterpreterState *interp)
 {
     return MODULES(interp);
+}
+
+PyObject *
+_PyImport_GetModulesRef(PyInterpreterState *interp)
+{
+    _PyImport_AcquireLock(interp);
+    PyObject *modules = MODULES(interp);
+    if (modules == NULL) {
+        /* The interpreter hasn't been initialized yet. */
+        modules = Py_None;
+    }
+    Py_INCREF(modules);
+    _PyImport_ReleaseLock(interp);
+    return modules;
 }
 
 void
@@ -232,9 +255,13 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
         rc = _PyModuleSpec_IsInitializing(spec);
         Py_DECREF(spec);
     }
-    if (rc <= 0) {
+    if (rc == 0) {
+        goto done;
+    }
+    else if (rc < 0) {
         return rc;
     }
+
     /* Wait until module is done importing. */
     PyObject *value = PyObject_CallMethodOneArg(
         IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
@@ -242,6 +269,19 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
         return -1;
     }
     Py_DECREF(value);
+
+done:
+    /* When -X importtime=2, print an import time entry even if an
+       imported module has already been loaded.
+     */
+    if (_PyInterpreterState_GetConfig(interp)->import_time == 2) {
+        _IMPORT_TIME_HEADER(interp);
+#define import_level FIND_AND_LOAD(interp).import_level
+        fprintf(stderr, "import time: cached    | cached     | %*s\n",
+                import_level*2, PyUnicode_AsUTF8(name));
+#undef import_level
+    }
+
     return 0;
 }
 
@@ -632,8 +672,8 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). first time  (not found in _PyRuntime.imports.extensions):
        A. _imp_create_dynamic_impl() -> import_find_extension()
-       B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
-       C.   _PyImport_GetModInitFunc():  load <module init func>
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModuleExportHooks()
+       C.   _PyImport_GetModuleExportHooks():  load <module init func>
        D. _imp_create_dynamic_impl() -> import_run_extension()
        E.   import_run_extension() -> _PyImport_RunModInitFunc()
        F.     _PyImport_RunModInitFunc():  call <module init func>
@@ -703,16 +743,19 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
        A. noop
 
 
-    ...for multi-phase init modules:
+    ...for multi-phase init modules from PyModInit_* (PyModuleDef):
 
     (6). every time:
        A. _imp_create_dynamic_impl() -> import_find_extension()  (not found)
-       B. _imp_create_dynamic_impl() -> _PyImport_GetModInitFunc()
-       C.   _PyImport_GetModInitFunc():  load <module init func>
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModuleExportHooks()
+       C.   _PyImport_GetModuleExportHooks():  load <module init func>
        D. _imp_create_dynamic_impl() -> import_run_extension()
        E.   import_run_extension() -> _PyImport_RunModInitFunc()
        F.     _PyImport_RunModInitFunc():  call <module init func>
        G.   import_run_extension() -> PyModule_FromDefAndSpec()
+
+       PyModule_FromDefAndSpec():
+
        H.      PyModule_FromDefAndSpec(): gather/check moduledef slots
        I.      if there's a Py_mod_create slot:
                  1. PyModule_FromDefAndSpec():  call its function
@@ -725,10 +768,29 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     (10). every time:
        A. _imp_exec_dynamic_impl() -> exec_builtin_or_dynamic()
        B.   if mod->md_state == NULL (including if m_size == 0):
-            1. exec_builtin_or_dynamic() -> PyModule_ExecDef()
-            2.   PyModule_ExecDef():  allocate mod->md_state
+            1. exec_builtin_or_dynamic() -> PyModule_Exec()
+            2.   PyModule_Exec():  allocate mod->md_state
             3.   if there's a Py_mod_exec slot:
-                 1. PyModule_ExecDef():  call its function
+                 1. PyModule_Exec():  call its function
+
+
+    ...for multi-phase init modules from PyModExport_* (slots array):
+
+    (6). every time:
+
+       A. _imp_create_dynamic_impl() -> import_find_extension()  (not found)
+       B. _imp_create_dynamic_impl() -> _PyImport_GetModuleExportHooks()
+       C.   _PyImport_GetModuleExportHooks():  load <module export func>
+       D. _imp_create_dynamic_impl() -> import_run_modexport()
+       E.     import_run_modexport():  call <module init func>
+       F.   import_run_modexport() -> PyModule_FromSlotsAndSpec()
+       G.     PyModule_FromSlotsAndSpec(): create temporary PyModuleDef-like
+       H.       PyModule_FromSlotsAndSpec() -> PyModule_FromDefAndSpec()
+
+       (PyModule_FromDefAndSpec behaves as for PyModInit_*, above)
+
+    (10). every time: as for PyModInit_*, above
+
  */
 
 
@@ -742,18 +804,13 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
    substitute this (if the name actually matches).
 */
 
-#ifdef HAVE_THREAD_LOCAL
 _Py_thread_local const char *pkgcontext = NULL;
 # undef PKGCONTEXT
 # define PKGCONTEXT pkgcontext
-#endif
 
 const char *
 _PyImport_ResolveNameWithPackageContext(const char *name)
 {
-#ifndef HAVE_THREAD_LOCAL
-    PyMutex_Lock(&EXTENSIONS.mutex);
-#endif
     if (PKGCONTEXT != NULL) {
         const char *p = strrchr(PKGCONTEXT, '.');
         if (p != NULL && strcmp(name, p+1) == 0) {
@@ -761,23 +818,14 @@ _PyImport_ResolveNameWithPackageContext(const char *name)
             PKGCONTEXT = NULL;
         }
     }
-#ifndef HAVE_THREAD_LOCAL
-    PyMutex_Unlock(&EXTENSIONS.mutex);
-#endif
     return name;
 }
 
 const char *
 _PyImport_SwapPackageContext(const char *newcontext)
 {
-#ifndef HAVE_THREAD_LOCAL
-    PyMutex_Lock(&EXTENSIONS.mutex);
-#endif
     const char *oldcontext = PKGCONTEXT;
     PKGCONTEXT = newcontext;
-#ifndef HAVE_THREAD_LOCAL
-    PyMutex_Unlock(&EXTENSIONS.mutex);
-#endif
     return oldcontext;
 }
 
@@ -799,15 +847,9 @@ _PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val)
 /* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
 static int
 exec_builtin_or_dynamic(PyObject *mod) {
-    PyModuleDef *def;
     void *state;
 
     if (!PyModule_Check(mod)) {
-        return 0;
-    }
-
-    def = PyModule_GetDef(mod);
-    if (def == NULL) {
         return 0;
     }
 
@@ -817,7 +859,7 @@ exec_builtin_or_dynamic(PyObject *mod) {
         return 0;
     }
 
-    return PyModule_ExecDef(mod, def);
+    return PyModule_Exec(mod);
 }
 
 
@@ -1761,7 +1803,7 @@ finish_singlephase_extension(PyThreadState *tstate, PyObject *mod,
                              PyObject *name, PyObject *modules)
 {
     assert(mod != NULL && PyModule_Check(mod));
-    assert(cached->def == _PyModule_GetDef(mod));
+    assert(cached->def == _PyModule_GetDefOrNull(mod));
 
     Py_ssize_t index = _get_cached_module_index(cached);
     if (_modules_by_index_set(tstate->interp, index, mod) < 0) {
@@ -1839,8 +1881,8 @@ reload_singlephase_extension(PyThreadState *tstate,
          * due to violating interpreter isolation.
          * See the note in set_cached_m_dict().
          * Until that is solved, we leave md_def set to NULL. */
-        assert(_PyModule_GetDef(mod) == NULL
-               || _PyModule_GetDef(mod) == def);
+        assert(_PyModule_GetDefOrNull(mod) == NULL
+               || _PyModule_GetDefOrNull(mod) == def);
     }
     else {
         assert(cached->m_dict == NULL);
@@ -1925,6 +1967,43 @@ import_find_extension(PyThreadState *tstate,
     }
 
     return mod;
+}
+
+static PyObject *
+import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
+                     struct _Py_ext_module_loader_info *info,
+                     PyObject *spec)
+{
+    /* This is like import_run_extension, but avoids interpreter switching
+     * and code for for single-phase modules.
+     */
+    PyModuleDef_Slot *slots = ex0();
+    if (!slots) {
+        if (!PyErr_Occurred()) {
+            PyErr_Format(
+                PyExc_SystemError,
+                "slot export function for module %s failed without setting an exception",
+                info->name);
+        }
+        return NULL;
+    }
+    if (PyErr_Occurred()) {
+        PyErr_Format(
+            PyExc_SystemError,
+            "slot export function for module %s raised unreported exception",
+            info->name);
+    }
+    PyObject *result = PyModule_FromSlotsAndSpec(slots, spec);
+    if (!result) {
+        return NULL;
+    }
+    if (PyModule_Check(result)) {
+        PyModuleObject *mod = (PyModuleObject *)result;
+        if (mod && !mod->md_token) {
+            mod->md_token = slots;
+        }
+    }
+    return result;
 }
 
 static PyObject *
@@ -2099,7 +2178,7 @@ main_finally:
         assert_multiphase_def(def);
         assert(mod == NULL);
         /* Note that we cheat a little by not repeating the calls
-         * to _PyImport_GetModInitFunc() and _PyImport_RunModInitFunc(). */
+         * to _PyImport_GetModuleExportHooks() and _PyImport_RunModInitFunc(). */
         mod = PyModule_FromDefAndSpec(def, spec);
         if (mod == NULL) {
             goto error;
@@ -2213,8 +2292,9 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
         return -1;
     }
 
-    PyModuleDef *def = PyModule_GetDef(mod);
+    PyModuleDef *def = _PyModule_GetDefOrNull(mod);
     if (def == NULL) {
+        assert(!PyErr_Occurred());
         PyErr_BadInternalCall();
         goto finally;
     }
@@ -2296,8 +2376,8 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         assert(!_PyErr_Occurred(tstate));
         assert(cached != NULL);
         /* The module might not have md_def set in certain reload cases. */
-        assert(_PyModule_GetDef(mod) == NULL
-                || cached->def == _PyModule_GetDef(mod));
+        assert(_PyModule_GetDefOrNull(mod) == NULL
+                || cached->def == _PyModule_GetDefOrNull(mod));
         assert_singlephase(cached);
         goto finally;
     }
@@ -2318,6 +2398,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
     for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(info.name, p->name)) {
             found = p;
+            break;
         }
     }
     if (found == NULL) {
@@ -3329,11 +3410,11 @@ PyObject *
 PyImport_GetImporter(PyObject *path)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *path_importer_cache = _PySys_GetRequiredAttrString("path_importer_cache");
+    PyObject *path_importer_cache = PySys_GetAttrString("path_importer_cache");
     if (path_importer_cache == NULL) {
         return NULL;
     }
-    PyObject *path_hooks = _PySys_GetRequiredAttrString("path_hooks");
+    PyObject *path_hooks = PySys_GetAttrString("path_hooks");
     if (path_hooks == NULL) {
         Py_DECREF(path_importer_cache);
         return NULL;
@@ -3394,8 +3475,10 @@ PyImport_ImportModule(const char *name)
  * ImportError instead of blocking.
  *
  * Returns the module object with incremented ref count.
+ *
+ * Removed in 3.15, but kept for stable ABI compatibility.
  */
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyImport_ImportModuleNoBlock(const char *name)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -3639,46 +3722,13 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 
     PyTime_t t1 = 0, accumulated_copy = accumulated;
 
-    PyObject *sys_path, *sys_meta_path, *sys_path_hooks;
-    if (_PySys_GetOptionalAttrString("path", &sys_path) < 0) {
-        return NULL;
-    }
-    if (_PySys_GetOptionalAttrString("meta_path", &sys_meta_path) < 0) {
-        Py_XDECREF(sys_path);
-        return NULL;
-    }
-    if (_PySys_GetOptionalAttrString("path_hooks", &sys_path_hooks) < 0) {
-        Py_XDECREF(sys_meta_path);
-        Py_XDECREF(sys_path);
-        return NULL;
-    }
-    if (_PySys_Audit(tstate, "import", "OOOOO",
-                     abs_name, Py_None, sys_path ? sys_path : Py_None,
-                     sys_meta_path ? sys_meta_path : Py_None,
-                     sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
-        Py_XDECREF(sys_path_hooks);
-        Py_XDECREF(sys_meta_path);
-        Py_XDECREF(sys_path);
-        return NULL;
-    }
-    Py_XDECREF(sys_path_hooks);
-    Py_XDECREF(sys_meta_path);
-    Py_XDECREF(sys_path);
-
-
     /* XOptions is initialized after first some imports.
      * So we can't have negative cache before completed initialization.
      * Anyway, importlib._find_and_load is much slower than
      * _PyDict_GetItemIdWithError().
      */
     if (import_time) {
-#define header FIND_AND_LOAD(interp).header
-        if (header) {
-            fputs("import time: self [us] | cumulative | imported package\n",
-                  stderr);
-            header = 0;
-        }
-#undef header
+        _IMPORT_TIME_HEADER(interp);
 
         import_level++;
         // ignore error: don't block import if reading the clock fails
@@ -3818,15 +3868,17 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                 }
 
                 final_mod = import_get_module(tstate, to_return);
-                Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     if (!_PyErr_Occurred(tstate)) {
                         _PyErr_Format(tstate, PyExc_KeyError,
                                       "%R not in sys.modules as expected",
                                       to_return);
                     }
+                    Py_DECREF(to_return);
                     goto error;
                 }
+
+                Py_DECREF(to_return);
             }
         }
         else {
@@ -3922,23 +3974,28 @@ PyImport_Import(PyObject *module_name)
     }
 
     /* Get the builtins from current globals */
-    globals = PyEval_GetGlobals();
+    globals = PyEval_GetGlobals();  // borrowed
     if (globals != NULL) {
         Py_INCREF(globals);
+        // XXX Use _PyEval_EnsureBuiltins()?
         builtins = PyObject_GetItem(globals, &_Py_ID(__builtins__));
-        if (builtins == NULL)
+        if (builtins == NULL) {
+            // XXX Fall back to interp->builtins or sys.modules['builtins']?
             goto err;
+        }
+    }
+    else if (_PyErr_Occurred(tstate)) {
+        goto err;
     }
     else {
         /* No globals -- use standard builtins, and fake globals */
-        builtins = PyImport_ImportModuleLevel("builtins",
-                                              NULL, NULL, NULL, 0);
-        if (builtins == NULL) {
+        globals = PyDict_New();
+        if (globals == NULL) {
             goto err;
         }
-        globals = Py_BuildValue("{OO}", &_Py_ID(__builtins__), builtins);
-        if (globals == NULL)
+        if (_PyEval_EnsureBuiltinsWithModule(tstate, globals, &builtins) < 0) {
             goto err;
+        }
     }
 
     /* Get the __import__ function from the builtins */
@@ -4089,7 +4146,7 @@ _PyImport_FiniCore(PyInterpreterState *interp)
 static int
 init_zipimport(PyThreadState *tstate, int verbose)
 {
-    PyObject *path_hooks = _PySys_GetRequiredAttrString("path_hooks");
+    PyObject *path_hooks = PySys_GetAttrString("path_hooks");
     if (path_hooks == NULL) {
         return -1;
     }
@@ -4216,6 +4273,7 @@ _imp_lock_held_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _imp.acquire_lock
 
 Acquires the interpreter's import lock for the current thread.
@@ -4226,7 +4284,7 @@ modules. On platforms without threads, this function does nothing.
 
 static PyObject *
 _imp_acquire_lock_impl(PyObject *module)
-/*[clinic end generated code: output=1aff58cb0ee1b026 input=4a2d4381866d5fdc]*/
+/*[clinic end generated code: output=1aff58cb0ee1b026 input=e1a4ef049d34e7dd]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyImport_AcquireLock(interp);
@@ -4649,8 +4707,8 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         assert(!_PyErr_Occurred(tstate));
         assert(cached != NULL);
         /* The module might not have md_def set in certain reload cases. */
-        assert(_PyModule_GetDef(mod) == NULL
-                || cached->def == _PyModule_GetDef(mod));
+        assert(_PyModule_GetDefOrNull(mod) == NULL
+                || cached->def == _PyModule_GetDefOrNull(mod));
         assert_singlephase(cached);
         goto finally;
     }
@@ -4675,7 +4733,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 
     /* We would move this (and the fclose() below) into
-     * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
+     * _PyImport_GetModuleExportHooks(), but it isn't clear if the intervening
      * code relies on fp still being open. */
     FILE *fp;
     if (file != NULL) {
@@ -4688,7 +4746,13 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         fp = NULL;
     }
 
-    PyModInitFunction p0 = _PyImport_GetModInitFunc(&info, fp);
+    PyModInitFunction p0 = NULL;
+    PyModExportFunction ex0 = NULL;
+    _PyImport_GetModuleExportHooks(&info, fp, &p0, &ex0);
+    if (ex0) {
+        mod = import_run_modexport(tstate, ex0, &info, spec);
+        goto cleanup;
+    }
     if (p0 == NULL) {
         goto finally;
     }
@@ -4710,6 +4774,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     }
 #endif
 
+cleanup:
     // XXX Shouldn't this happen in the error cases too (i.e. in "finally")?
     if (fp) {
         fclose(fp);

@@ -61,6 +61,20 @@ Pending removal in Python 3.16
   * Calling the Python implementation of :func:`functools.reduce` with *function*
     or *sequence* as keyword arguments has been deprecated since Python 3.14.
 
+* :mod:`logging`:
+
+  * Support for custom logging handlers with the *strm* argument is deprecated
+    and scheduled for removal in Python 3.16. Define handlers with the *stream*
+    argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
+
+* :mod:`mimetypes`:
+
+  * Valid extensions start with a '.' or are empty for
+    :meth:`mimetypes.MimeTypes.add_type`.
+    Undotted extensions are deprecated and will
+    raise a :exc:`ValueError` in Python 3.16.
+    (Contributed by Hugo van Kemenade in :gh:`75223`.)
+
 * :mod:`shutil`:
 
   * The :class:`!ExecError` exception
