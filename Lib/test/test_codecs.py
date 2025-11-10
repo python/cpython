@@ -13,6 +13,7 @@ import warnings
 
 from test import support
 from test.support import os_helper
+from test.support import warnings_helper
 
 try:
     import _testlimitedcapi
@@ -3902,8 +3903,8 @@ class CodecNameNormalizationTest(unittest.TestCase):
         self.assertEqual(normalize('utf...8'), 'utf...8')
 
         # Non-ASCII *encoding* is deprecated.
-        with self.assertWarnsRegex(DeprecationWarning,
-                "Support for non-ascii encoding names will be removed in 3.17"):
+        msg = "Support for non-ascii encoding names will be removed in 3.17"
+        with warnings_helper.check_warnings((msg, DeprecationWarning)):
             self.assertEqual(normalize('utf\xE9\u20AC\U0010ffff-8'), 'utf_8')
 
 
