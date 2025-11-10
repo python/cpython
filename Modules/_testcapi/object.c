@@ -485,6 +485,45 @@ is_uniquely_referenced(PyObject *self, PyObject *op)
 }
 
 
+static PyObject *
+object_getdict(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+
+    PyObject *dict = UNINITIALIZED_PTR;
+    switch (PyObject_GetDict(obj, &dict)) {
+        case -1:
+            assert(dict == NULL);
+            return NULL;
+        case 0:
+            assert(dict == NULL);
+            return Py_NewRef(PyExc_AttributeError);
+        case 1:
+            return dict;
+        default:
+            Py_FatalError("PyObject_GetDict() returned invalid code");
+            Py_UNREACHABLE();
+    }
+}
+
+
+static PyObject *
+object_genericgetdict(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+
+    PyObject *dict = PyObject_GenericGetDict(obj, NULL);
+    if (dict != NULL) {
+        return dict;
+    }
+
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    return Py_NewRef(PyExc_AttributeError);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},
@@ -511,6 +550,8 @@ static PyMethodDef test_methods[] = {
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
     {"is_uniquely_referenced", is_uniquely_referenced, METH_O},
+    {"object_getdict", object_getdict, METH_O},
+    {"object_genericgetdict", object_genericgetdict, METH_O},
     {NULL},
 };
 
