@@ -340,7 +340,6 @@ Error messages for specific failure modes of unpacking
     SyntaxError: cannot use dict unpacking in a dictionary value
 
 
-# Pegen is better here.
 # Generator expression in function arguments
 
     >>> list(*x for x in (range(5) for i in range(3)))
