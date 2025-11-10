@@ -3873,6 +3873,9 @@ features:
 
    Create a symbolic link pointing to *src* named *dst*.
 
+   The *src* parameter refers to the target of the link (the file or directory being linked to),
+   and *dst* is the name of the link being created.
+
    On Windows, a symlink represents either a file or a directory, and does not
    morph to the target dynamically.  If the target is present, the type of the
    symlink will be created to match. Otherwise, the symlink will be created

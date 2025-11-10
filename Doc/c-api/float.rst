@@ -87,6 +87,20 @@ Floating-Point Objects
       The macro is soft deprecated.
 
 
+.. c:macro:: Py_MATH_El
+
+   High precision (long double) definition of :data:`~math.e` constant.
+
+   .. deprecated-removed:: 3.15 3.20
+
+
+.. c:macro:: Py_MATH_PIl
+
+   High precision (long double) definition of :data:`~math.pi` constant.
+
+   .. deprecated-removed:: 3.15 3.20
+
+
 .. c:macro:: Py_RETURN_NAN
 
    Return :data:`math.nan` from a function.
@@ -122,8 +136,8 @@ NaNs (if such things exist on the platform) isn't handled correctly, and
 attempting to unpack a bytes string containing an IEEE INF or NaN will raise an
 exception.
 
-Note that NaNs type may not be preserved on IEEE platforms (silent NaN become
-quiet), for example on x86 systems in 32-bit mode.
+Note that NaNs type may not be preserved on IEEE platforms (signaling NaN become
+quiet NaN), for example on x86 systems in 32-bit mode.
 
 On non-IEEE platforms with more precision, or larger dynamic range, than IEEE
 754 supports, not all values can be packed; on non-IEEE platforms with less

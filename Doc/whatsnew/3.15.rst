@@ -368,6 +368,14 @@ collections.abc
   previously emitted if it was merely imported or accessed from the
   :mod:`!collections.abc` module.
 
+
+dataclasses
+-----------
+
+* Annotations for generated ``__init__`` methods no longer include internal
+  type names.
+
+
 dbm
 ---
 
@@ -1067,6 +1075,10 @@ Deprecated C APIs
 * :c:member:`~PyConfig.bytes_warning` is deprecated
   since 3.15 and will be removed in 3.17.
   (Contributed by Nikita Sobolev in :gh:`136355`.)
+
+* :c:macro:`!Py_MATH_El` and :c:macro:`!Py_MATH_PIl` are deprecated
+  since 3.15 and will be removed in 3.20.
+  (Contributed by Sergey B Kirpichev in :gh:`141004`.)
 
 
 .. Add C API deprecations above alphabetically, not here at the end.
