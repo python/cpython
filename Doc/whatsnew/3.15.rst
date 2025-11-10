@@ -1076,6 +1076,10 @@ Deprecated C APIs
   since 3.15 and will be removed in 3.17.
   (Contributed by Nikita Sobolev in :gh:`136355`.)
 
+* :c:macro:`!Py_MATH_El` and :c:macro:`!Py_MATH_PIl` are deprecated
+  since 3.15 and will be removed in 3.20.
+  (Contributed by Sergey B Kirpichev in :gh:`141004`.)
+
 
 .. Add C API deprecations above alphabetically, not here at the end.
 

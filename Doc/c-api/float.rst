@@ -78,6 +78,20 @@ Floating-Point Objects
    Return the minimum normalized positive float *DBL_MIN* as C :c:expr:`double`.
 
 
+.. c:macro:: Py_MATH_El
+
+   High precision (long double) definition of :data:`~math.e` constant.
+
+   .. deprecated-removed:: 3.15 3.20
+
+
+.. c:macro:: Py_MATH_PIl
+
+   High precision (long double) definition of :data:`~math.pi` constant.
+
+   .. deprecated-removed:: 3.15 3.20
+
+
 .. c:macro:: Py_RETURN_NAN
 
    Return :data:`math.nan` from a function.
