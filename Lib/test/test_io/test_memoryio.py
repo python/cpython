@@ -557,8 +557,8 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         _testcapi = import_module("_testcapi")
 
         memio = self.ioclass()
-        # Seek should allow PY_SSIZE_T_MAX, read should be capped to buffer size.
-        # Past end of buffer read should always return empty bytes (EOF).
+        # Seek allows PY_SSIZE_T_MAX, read handle that.
+        # Past end of buffer read should always return 0 (EOF).
         self.assertEqual(_testcapi.PY_SSIZE_T_MAX,
                          memio.seek(_testcapi.PY_SSIZE_T_MAX))
         buf = bytearray(2)
