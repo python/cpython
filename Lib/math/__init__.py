@@ -1,5 +1,5 @@
 """
-math module -- Mathematical functions
+This module provides access to integer related mathematical functions.
 """
 
 from _math import *
