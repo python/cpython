@@ -44,9 +44,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(BINARY_OP);
@@ -1538,9 +1535,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_Call(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(CALL);
@@ -2831,9 +2825,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_CallKw(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(CALL_KW);
@@ -4677,9 +4668,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(COMPARE_OP);
@@ -4925,9 +4913,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_ContainsOp(right, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(CONTAINS_OP);
@@ -5656,9 +5641,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_ForIter(iter, null_or_index, next_instr, oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(FOR_ITER);
@@ -7616,9 +7598,6 @@
                     uint8_t desired = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
                     FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, desired);
                     next_instr = this_instr;
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 #endif
@@ -7841,9 +7820,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_LoadAttr(owner, next_instr, name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(LOAD_ATTR);
@@ -9149,9 +9125,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(LOAD_GLOBAL);
@@ -9472,9 +9445,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_LoadSuperAttr(global_super_st, class_st, next_instr, load_method);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(LOAD_SUPER_ATTR);
@@ -10460,9 +10430,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_Send(receiver, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(SEND);
@@ -10762,9 +10729,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_StoreAttr(owner, next_instr, name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(STORE_ATTR);
@@ -11262,9 +11226,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_StoreSubscr(container, sub, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(STORE_SUBSCR);
@@ -11474,9 +11435,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_ToBool(value, next_instr);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(TO_BOOL);
@@ -11857,9 +11815,6 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    #if _Py_TIER2
-                    ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;
-                    #endif
                     DISPATCH_SAME_OPARG();
                 }
                 OPCODE_DEFERRED_INC(UNPACK_SEQUENCE);
@@ -12335,7 +12290,6 @@ JUMP_TO_LABEL(error);
             else {
                 _tstate->jit_state.prev_state.instr = next_instr;
             }
-            _tstate->jit_state.prev_state.specialize_counter = 0;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (_tstate->jit_state.prev_state.instr_code != (PyCodeObject *)prev_code) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -12345,6 +12299,9 @@ JUMP_TO_LABEL(error);
             _tstate->jit_state.prev_state.instr_frame = frame;
             _tstate->jit_state.prev_state.instr_oparg = oparg;
             _tstate->jit_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+                (&next_instr[1])->counter = trigger_backoff_counter();
+            }
             DISPATCH_GOTO_NON_TRACING();
             #else
             Py_FatalError("JIT label executed in non-jit build.");

@@ -134,14 +134,12 @@
 
 #if (_Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS) && _Py_TIER2
 #  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
-#  define IS_JIT_TRACING_MAKING_PROGRESS() (IS_JIT_TRACING() && ((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter < MAX_SPECIALIZATION_TRIES)
 #  define ENTER_TRACING() \
     DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
 #  define LEAVE_TRACING() \
     DISPATCH_TABLE_VAR = DISPATCH_TABLE;
 #else
 #  define IS_JIT_TRACING() (0)
-#  define IS_JIT_TRACING_MAKING_PROGRESS() (0)
 #  define ENTER_TRACING()
 #  define LEAVE_TRACING()
 #endif
@@ -308,7 +306,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
  * which is always an integral type. */
 // Force re-specialization when tracing a side exit to get good side exits.
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
-    backoff_counter_triggers(forge_backoff_counter((COUNTER))) || IS_JIT_TRACING_MAKING_PROGRESS()
+    backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \

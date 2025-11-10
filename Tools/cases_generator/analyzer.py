@@ -702,6 +702,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyJit_TryInitializeTracing",
     "_Py_unset_eval_breaker_bit",
     "_Py_set_eval_breaker_bit",
+    "trigger_backoff_counter",
 )
 
 

@@ -129,6 +129,7 @@ _PyOptimizer_Optimize(
     if (_tstate->jit_state.initial_state.func == NULL) {
         return 0;
     }
+    assert(_tstate->jit_state.initial_state.func != NULL);
     interp->compiling = true;
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
     // make progress in order to avoid infinite loops or excessively-long
@@ -584,10 +585,6 @@ _PyJit_translate_single_bytecode_to_trace(
     // We must point to the first EXTENDED_ARG when deopting.
     int oparg = _tstate->jit_state.prev_state.instr_oparg;
     int opcode = this_instr->op.code;
-    // Failed specialization many times. Deopt!
-    if (_tstate->jit_state.prev_state.specialize_counter >= MAX_SPECIALIZATION_TRIES) {
-        opcode = _PyOpcode_Deopt[opcode];
-    }
     int rewind_oparg = oparg;
     while (rewind_oparg > 255) {
         rewind_oparg >>= 8;
@@ -736,6 +733,7 @@ _PyJit_translate_single_bytecode_to_trace(
             _Py_CODEUNIT *computed_jump_instr = computed_next_instr_without_modifiers + oparg;
             assert(next_instr == computed_next_instr || next_instr == computed_jump_instr);
             int jump_happened = computed_jump_instr == next_instr;
+            assert(jump_happened == (target_instr[1].cache & 1));
             uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_happened];
             ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_happened ? computed_next_instr : computed_jump_instr, old_code));
             break;
@@ -974,7 +972,10 @@ _PyJit_TryInitializeTracing(
             return 0;
         }
     }
-
+    PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+    if (func == NULL) {
+        return 0;
+    }
     PyCodeObject *code = _PyFrame_GetCode(frame);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -999,13 +1000,12 @@ _PyJit_TryInitializeTracing(
     _tstate->jit_state.initial_state.start_instr = start_instr;
     _tstate->jit_state.initial_state.close_loop_instr = close_loop_instr;
     _tstate->jit_state.initial_state.code = (PyCodeObject *)Py_NewRef(code);
-    _tstate->jit_state.initial_state.func = (PyFunctionObject *)Py_XNewRef(PyStackRef_AsPyObjectBorrow(frame->f_funcobj));
+    _tstate->jit_state.initial_state.func = (PyFunctionObject *)Py_NewRef(func);
     _tstate->jit_state.initial_state.exit = exit;
     _tstate->jit_state.initial_state.stack_depth = curr_stackdepth;
     _tstate->jit_state.initial_state.chain_depth = chain_depth;
     _tstate->jit_state.prev_state.instr_frame = frame;
     _tstate->jit_state.prev_state.dependencies_still_valid = true;
-    _tstate->jit_state.prev_state.specialize_counter = 0;
     _tstate->jit_state.prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
     _tstate->jit_state.prev_state.instr = curr_instr;
     _tstate->jit_state.prev_state.instr_frame = frame;
@@ -1014,7 +1014,10 @@ _PyJit_TryInitializeTracing(
     _tstate->jit_state.prev_state.instr_is_super = false;
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
     _tstate->jit_state.initial_state.jump_backward_instr = curr_instr;
-    assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
+
+    if (_PyOpcode_Caches[_PyOpcode_Deopt[close_loop_instr->op.code]]) {
+        close_loop_instr[1].counter = trigger_backoff_counter();
+    }
     _Py_BloomFilter_Init(&_tstate->jit_state.prev_state.dependencies);
     return 1;
 }
@@ -1366,9 +1369,10 @@ uop_optimize(
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
     if (!is_noopt) {
-        length = _Py_uop_analyze_and_optimize(_tstate->jit_state.initial_state.func, buffer,
-                                           length,
-                                           curr_stackentries, &new_dependencies);
+        length = _Py_uop_analyze_and_optimize(
+            _tstate->jit_state.initial_state.func,
+            buffer,length,
+            curr_stackentries, &new_dependencies);
         if (length <= 0) {
             return length;
         }

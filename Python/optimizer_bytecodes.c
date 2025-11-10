@@ -342,7 +342,6 @@ dummy_func(void) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &value);
         if (!already_bool) {
             sym_set_type(value, &PyBool_Type);
-            value = sym_new_truthiness(ctx, value, true);
         }
     }
 

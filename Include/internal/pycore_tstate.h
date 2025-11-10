@@ -41,7 +41,6 @@ typedef struct _PyJitTracerPreviousState {
     int code_curr_size;
     int instr_oparg;
     int instr_stacklevel;
-    int specialize_counter;
     _Py_CODEUNIT *instr;
     PyCodeObject *instr_code; // Strong
     struct _PyInterpreterFrame *instr_frame;

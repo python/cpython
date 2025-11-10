@@ -129,7 +129,6 @@ class Emitter:
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
             "stack_pointer": self.stack_pointer,
-            "DISPATCH_SAME_OPARG": self.dispatch_same_oparg,
         }
         self.out = out
         self.labels = labels
@@ -148,26 +147,6 @@ class Emitter:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
         storage.stack.flush(self.out)
         self.emit(tkn)
-        return False
-
-    def dispatch_same_oparg(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        assert isinstance(uop, Uop)
-        assert "specializing" in uop.annotations, uop.name
-        self.out.start_line()
-        self.emit("#if _Py_TIER2\n")
-        self.emit("((_PyThreadStateImpl *)tstate)->jit_state.prev_state.specialize_counter++;\n")
-        self.emit("#endif\n")
-        self.emit(tkn)
-        emit_to(self.out, tkn_iter, "SEMI")
-        self.emit(";\n")
-        self.out.start_line()
         return False
 
     def deopt_if(

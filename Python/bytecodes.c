@@ -5249,7 +5249,7 @@ dummy_func(
                 ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame))
                 + exit->target;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            if (frame->lltrace >= 2) {
+            if (frame->lltrace >= 3) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %tu, temp %d, target %d -> %s, is_control_flow %d]\n",
@@ -5267,7 +5267,7 @@ dummy_func(
             _PyExitData *exit = (_PyExitData *)exit_p;
             _Py_CODEUNIT *target = frame->instr_ptr;
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            if (frame->lltrace >= 2) {
+            if (frame->lltrace >= 3) {
                 printf("DYNAMIC EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
                 printf(", exit %tu, temp %d, target %d -> %s]\n",
@@ -5663,7 +5663,6 @@ dummy_func(
             else {
                 _tstate->jit_state.prev_state.instr = next_instr;
             }
-            _tstate->jit_state.prev_state.specialize_counter = 0;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (_tstate->jit_state.prev_state.instr_code != (PyCodeObject *)prev_code) {
                 Py_SETREF(_tstate->jit_state.prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
@@ -5672,6 +5671,9 @@ dummy_func(
             _tstate->jit_state.prev_state.instr_frame = frame;
             _tstate->jit_state.prev_state.instr_oparg = oparg;
             _tstate->jit_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+                (&next_instr[1])->counter = trigger_backoff_counter();
+            }
             DISPATCH_GOTO_NON_TRACING();
 #else
             Py_FatalError("JIT label executed in non-jit build.");
