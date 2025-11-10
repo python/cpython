@@ -74,6 +74,30 @@ class TestForwardRefFormat(unittest.TestCase):
         anno = get_annotations(inner, format=Format.FORWARDREF)
         self.assertEqual(anno["arg"], x)
 
+    def test_multiple_closure(self):
+        def inner(arg: x[y]):
+            pass
+
+        fwdref = get_annotations(inner, format=Format.FORWARDREF)["arg"]
+        self.assertIsInstance(fwdref, ForwardRef)
+        self.assertEqual(fwdref.__forward_arg__, "x[y]")
+        with self.assertRaises(NameError):
+            fwdref.evaluate()
+
+        y = str
+        fwdref = get_annotations(inner, format=Format.FORWARDREF)["arg"]
+        self.assertIsInstance(fwdref, ForwardRef)
+        extra_name, extra_val = next(iter(fwdref.__extra_names__.items()))
+        self.assertEqual(fwdref.__forward_arg__.replace(extra_name, extra_val.__name__), "x[str]")
+        with self.assertRaises(NameError):
+            fwdref.evaluate()
+
+        x = list
+        self.assertEqual(fwdref.evaluate(), x[y])
+
+        fwdref = get_annotations(inner, format=Format.FORWARDREF)["arg"]
+        self.assertEqual(fwdref, x[y])
+
     def test_function(self):
         def f(x: int, y: doesntexist):
             pass
@@ -1799,6 +1823,14 @@ class TestForwardRefClass(unittest.TestCase):
             repr(List[ForwardRef("int", module="mod")]),
             "typing.List[ForwardRef('int', module='mod')]",
         )
+        self.assertEqual(
+            repr(List[ForwardRef("int", module="mod", is_class=True)]),
+            "typing.List[ForwardRef('int', module='mod', is_class=True)]",
+        )
+        self.assertEqual(
+            repr(List[ForwardRef("int", owner="class")]),
+            "typing.List[ForwardRef('int', owner='class')]",
+        )
 
     def test_forward_recursion_actually(self):
         def namespace1():
@@ -1903,6 +1935,19 @@ class TestForwardRefClass(unittest.TestCase):
             fr.evaluate(format=Format.FORWARDREF),
             support.EqualToForwardRef('"a" + 1'),
         )
+
+    def test_evaluate_notimplemented_format(self):
+        class C:
+            x: alias
+
+        fwdref = get_annotations(C, format=Format.FORWARDREF)["x"]
+
+        with self.assertRaises(NotImplementedError):
+            fwdref.evaluate(format=Format.VALUE_WITH_FAKE_GLOBALS)
+
+        with self.assertRaises(NotImplementedError):
+            # Some other unsupported value
+            fwdref.evaluate(format=7)
 
     def test_evaluate_with_type_params(self):
         class Gen[T]:
@@ -2036,6 +2081,11 @@ class TestForwardRefClass(unittest.TestCase):
         fr = ForwardRef("1+")
         with self.assertRaises(SyntaxError):
             fr.evaluate()
+
+    def test_fwdref_final_class(self):
+        with self.assertRaises(TypeError):
+            class C(ForwardRef):
+                pass
 
 
 class TestAnnotationLib(unittest.TestCase):
