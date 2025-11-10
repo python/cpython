@@ -1,0 +1,2 @@
+Restict passing of non-integer object to the :meth:`~iterator.__setstate__`
+for ranges. Patch by Sergey Miryanov.
