@@ -2847,12 +2847,12 @@ _io_TextIOWrapper_tell_impl(textio *self)
     /* Skip the optimization if next_input is empty */
     if (PyBytes_GET_SIZE(next_input) == 0) {
         skip_bytes = 0;
-    }
-    else {
+    } else {
         skip_back = 1;
         assert(skip_back <= PyBytes_GET_SIZE(next_input));
         input = PyBytes_AS_STRING(next_input);
-        while (skip_bytes > 0) {
+    }
+    while (skip_bytes > 0) {
         /* Decode up to temptative start point */
         if (_textiowrapper_decoder_setstate(self, &cookie) < 0)
             goto fail;
@@ -2874,7 +2874,6 @@ _io_TextIOWrapper_tell_impl(textio *self)
             skip_bytes -= skip_back;
             skip_back *= 2;
         }
-    }
     }
     if (skip_bytes <= 0) {
         skip_bytes = 0;
