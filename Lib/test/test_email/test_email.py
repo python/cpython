@@ -41,6 +41,7 @@ from email import utils
 
 from test import support
 from test.support import threading_helper
+from test.support import warnings_helper
 from test.support.os_helper import unlink
 from test.test_email import openfile, TestEmailBase
 
@@ -5738,7 +5739,7 @@ Content-Disposition: inline; filename*=utf-8\udce2\udc80\udc9d''myfile.txt
 
 """
         msg = email.message_from_string(m)
-        with self.assertWarns(DeprecationWarning):
+        with warnings_helper.check_warnings(('', DeprecationWarning)):
             self.assertEqual(msg.get_filename(), 'myfile.txt')
 
     def test_rfc2231_single_tick_in_filename_extended(self):
