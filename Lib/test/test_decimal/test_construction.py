@@ -2,7 +2,7 @@ import unittest
 import copy
 import random
 from test.support import requires_IEEE_754
-from . import (C, P, requires_cdecimal,
+from . import (load_tests_for_base_classes,
                setUpModule, tearDownModule)
 
 # The following classes test the behaviour of Decimal according to PEP 327
@@ -359,12 +359,6 @@ class ExplicitConstructionTest:
         for input, expected in test_values.items():
             self.assertEqual(str(Decimal(input)), expected)
 
-@requires_cdecimal
-class CExplicitConstructionTest(ExplicitConstructionTest, unittest.TestCase):
-    decimal = C
-class PyExplicitConstructionTest(ExplicitConstructionTest, unittest.TestCase):
-    decimal = P
-
 class ImplicitConstructionTest:
     '''Unit tests for Implicit Construction cases of Decimal.'''
 
@@ -442,11 +436,10 @@ class ImplicitConstructionTest:
             self.assertEqual(eval('Decimal(10)' + sym + 'E()'),
                              '10' + rop + 'str')
 
-@requires_cdecimal
-class CImplicitConstructionTest(ImplicitConstructionTest, unittest.TestCase):
-    decimal = C
-class PyImplicitConstructionTest(ImplicitConstructionTest, unittest.TestCase):
-    decimal = P
+def load_tests(loader, tests, pattern):
+    base_classes = [ExplicitConstructionTest, ImplicitConstructionTest]
+    return load_tests_for_base_classes(loader, tests, base_classes)
+
 
 if __name__ == '__main__':
     unittest.main()

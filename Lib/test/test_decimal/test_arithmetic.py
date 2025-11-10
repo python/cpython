@@ -2,7 +2,8 @@ import unittest
 import os
 import sys
 import random
-from . import (C, P, Signals, OrderedSignals,
+from . import (C, P, load_tests_for_base_classes,
+               Signals, OrderedSignals,
                setUpModule, tearDownModule)
 
 TESTDATADIR = 'data'
@@ -391,17 +392,8 @@ def load_tests(loader, tests, pattern):
             continue
         tester = lambda self, f=filename: self.eval_file(directory + f)
         setattr(IBMTestCases, 'test_' + head, tester)
-        del filename, head, tail, tester
 
-    for prefix, mod in ('C', C), ('Py', P):
-        if not mod:
-            continue
-        test_class = type(prefix + 'IBMTestCases',
-                          (IBMTestCases, unittest.TestCase),
-                          {'decimal': mod})
-        tests.addTest(loader.loadTestsFromTestCase(test_class))
-
-    return tests
+    return load_tests_for_base_classes(loader, tests, [IBMTestCases])
 
 
 TEST_ALL = True

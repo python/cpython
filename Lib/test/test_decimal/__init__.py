@@ -99,6 +99,19 @@ requires_extra_functionality = unittest.skipUnless(
 skip_if_extra_functionality = unittest.skipIf(
   EXTRA_FUNCTIONALITY, "test requires regular build")
 
+def load_tests_for_base_classes(loader, tests, base_classes):
+    for prefix, mod in ('C', C), ('Py', P):
+        if not mod:
+            continue
+
+        for base_class in base_classes:
+            test_class = type(prefix + base_class.__name__,
+                              (base_class, unittest.TestCase),
+                              {'decimal': mod})
+            tests.addTest(loader.loadTestsFromTestCase(test_class))
+
+    return tests
+
 def load_arithmetic_module():
     module = __import__("test.test_decimal.test_arithmetic")
     arithmetic = module.test_decimal.test_arithmetic
