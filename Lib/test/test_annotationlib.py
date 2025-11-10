@@ -9,6 +9,7 @@ import itertools
 import pickle
 from string.templatelib import Template, Interpolation
 import typing
+import sys
 import unittest
 from annotationlib import (
     Format,
@@ -755,6 +756,8 @@ class TestGetAnnotations(unittest.TestCase):
 
         for kwargs in [
             {"eval_str": True},
+            {"eval_str": True, "globals": isa.__dict__, "locals": {}},
+            {"eval_str": True, "globals": {}, "locals": isa.__dict__},
             {"format": Format.VALUE, "eval_str": True},
         ]:
             with self.subTest(**kwargs):
@@ -788,7 +791,7 @@ class TestGetAnnotations(unittest.TestCase):
         self.assertEqual(get_annotations(isa2, eval_str=False), {})
 
     def test_stringized_annotations_with_star_unpack(self):
-        def f(*args: *tuple[int, ...]): ...
+        def f(*args: "*tuple[int, ...]"): ...
         self.assertEqual(get_annotations(f, eval_str=True),
                          {'args': (*tuple[int, ...],)[0]})
 
@@ -811,6 +814,44 @@ class TestGetAnnotations(unittest.TestCase):
             {"a": "int", "b": "str", "return": "MyClass"},
         )
 
+    def test_stringized_annotations_on_partial_wrapper(self):
+        isa = inspect_stringized_annotations
+
+        def times_three_str(fn: typing.Callable[[str], isa.MyClass]):
+            @functools.wraps(fn)
+            def wrapper(b: "str") -> "MyClass":
+                return fn(b * 3)
+
+            return wrapper
+
+        wrapped = times_three_str(functools.partial(isa.function, 1))
+        self.assertEqual(wrapped("x"), isa.MyClass(1, "xxx"))
+        self.assertIsNot(wrapped.__globals__, isa.function.__globals__)
+        self.assertEqual(
+            get_annotations(wrapped, eval_str=True),
+            {"b": str, "return": isa.MyClass},
+        )
+        self.assertEqual(
+            get_annotations(wrapped, eval_str=False),
+            {"b": "str", "return": "MyClass"},
+        )
+
+        # If functools is not loaded, names will be evaluated in the current
+        # module instead of being unwrapped to the original.
+        functools_mod = sys.modules["functools"]
+        del sys.modules["functools"]
+
+        self.assertEqual(
+            get_annotations(wrapped, eval_str=True),
+            {"b": str, "return": MyClass},
+        )
+        self.assertEqual(
+            get_annotations(wrapped, eval_str=False),
+            {"b": "str", "return": "MyClass"},
+        )
+
+        sys.modules["functools"] = functools_mod
+
     def test_stringized_annotations_on_class(self):
         isa = inspect_stringized_annotations
         # test that local namespace lookups work
@@ -822,6 +863,16 @@ class TestGetAnnotations(unittest.TestCase):
             get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True),
             {"x": int},
         )
+
+    def test_stringized_annotations_on_custom_object(self):
+        class HasAnnotations:
+            @property
+            def __annotations__(self):
+                return {"x": "int"}
+
+        ha = HasAnnotations()
+        self.assertEqual(get_annotations(ha), {"x": "int"})
+        self.assertEqual(get_annotations(ha, eval_str=True), {"x": int})
 
     def test_stringized_annotation_permutations(self):
         def define_class(name, has_future, has_annos, base_text, extra_names=None):
@@ -989,6 +1040,23 @@ class TestGetAnnotations(unittest.TestCase):
             get_annotations(oa, format=Format.STRING),
             {"x": "int"},
         )
+
+    def test_non_dict_annotate(self):
+        class WeirdAnnotate:
+            def __annotate__(self, *args, **kwargs):
+                return "not a dict"
+
+        wa = WeirdAnnotate()
+        for format in Format:
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
+                continue
+            with (
+                self.subTest(format=format),
+                self.assertRaisesRegex(
+                    ValueError, r".*__annotate__ returned a non-dict"
+                ),
+            ):
+                get_annotations(wa, format=format)
 
     def test_no_annotations(self):
         class CustomClass:
