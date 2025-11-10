@@ -1048,8 +1048,7 @@ static PyObject *
 longrangeiter_setstate(PyObject *op, PyObject *state)
 {
     if (!PyLong_CheckExact(state)) {
-        PyErr_Format(PyExc_TypeError,
-                     "'%T' object cannot be interpreted as an integer", state);
+        PyErr_Format(PyExc_TypeError, "state must be an int, not %T", state);
         return NULL;
     }
 
