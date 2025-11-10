@@ -314,6 +314,8 @@ optimize_uops(
     }
 
     if (_Py_uop_abstractcontext_init(ctx)) {
+        assert(PyErr_Occurred());
+        PyErr_Clear();
         return 0;
     }
 
