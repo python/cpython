@@ -2844,7 +2844,6 @@ _io_TextIOWrapper_tell_impl(textio *self)
     /* Fast search for an acceptable start point, close to our
        current pos */
     skip_bytes = (Py_ssize_t) (self->b2cratio * chars_to_skip);
-    
     /* Skip the optimization if next_input is empty */
     if (PyBytes_GET_SIZE(next_input) == 0) {
         skip_bytes = 0;
