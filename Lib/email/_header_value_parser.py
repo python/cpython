@@ -796,6 +796,10 @@ class MimeParameters(TokenList):
                         value = urllib.parse.unquote(value, encoding='latin-1')
                     else:
                         try:
+                            # Explicitly look up the codec for warning generation, see gh-140030
+                            # Can be removed in 3.17
+                            import codecs
+                            codecs.lookup(charset)
                             value = value.decode(charset, 'surrogateescape')
                         except (LookupError, UnicodeEncodeError):
                             # XXX: there should really be a custom defect for

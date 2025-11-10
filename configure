@@ -814,6 +814,8 @@ MODULE__BISECT_FALSE
 MODULE__BISECT_TRUE
 MODULE__ASYNCIO_FALSE
 MODULE__ASYNCIO_TRUE
+MODULE__MATH_INTEGER_FALSE
+MODULE__MATH_INTEGER_TRUE
 MODULE_ARRAY_FALSE
 MODULE_ARRAY_TRUE
 MODULE_TIME_FALSE
@@ -31337,6 +31339,28 @@ then :
 fi
 
 
+        if test "$py_cv_module__math_integer" != "n/a"
+then :
+  py_cv_module__math_integer=yes
+fi
+   if test "$py_cv_module__math_integer" = yes; then
+  MODULE__MATH_INTEGER_TRUE=
+  MODULE__MATH_INTEGER_FALSE='#'
+else
+  MODULE__MATH_INTEGER_TRUE='#'
+  MODULE__MATH_INTEGER_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__MATH_INTEGER_STATE=$py_cv_module__math_integer$as_nl"
+  if test "x$py_cv_module__math_integer" = xyes
+then :
+
+
+
+
+fi
+
+
         if test "$py_cv_module__asyncio" != "n/a"
 then :
   py_cv_module__asyncio=yes
@@ -34303,10 +34327,10 @@ else case e in #(
       JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
       ;;
     aarch64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
       ;;
     x86_64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
       ;;
   esac ;;
 esac
@@ -34445,6 +34469,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_ARRAY_TRUE}" && test -z "${MODULE_ARRAY_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_ARRAY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__MATH_INTEGER_TRUE}" && test -z "${MODULE__MATH_INTEGER_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MATH_INTEGER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ASYNCIO_TRUE}" && test -z "${MODULE__ASYNCIO_FALSE}"; then

@@ -133,6 +133,18 @@ Type Objects
    Type features are denoted by single bit flags.
 
 
+.. c:function:: int PyType_FastSubclass(PyTypeObject *type, int flag)
+
+   Return non-zero if the type object *type* sets the subclass flag *flag*.
+   Subclass flags are denoted by
+   :c:macro:`Py_TPFLAGS_*_SUBCLASS <Py_TPFLAGS_LONG_SUBCLASS>`.
+   This function is used by many ``_Check`` functions for common types.
+
+   .. seealso::
+       :c:func:`PyObject_TypeCheck`, which is used as a slower alternative in
+       ``_Check`` functions for types that don't come with subclass flags.
+
+
 .. c:function:: int PyType_IS_GC(PyTypeObject *o)
 
    Return true if the type object includes support for the cycle detector; this
