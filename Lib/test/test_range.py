@@ -470,14 +470,24 @@ class RangeTest(unittest.TestCase):
         it.__setstate__(2**64 - 7)
         self.assertEqual(list(it), [12, 10])
 
-        msg = "'float' object cannot be interpreted as an integer"
-        with self.assertRaisesRegex(TypeError, msg):
-            it = iter(range(10, 100, 2))
-            it.__setstate__(1.0)
+    def test_iterator_invalid_setstate(self):
 
-        with self.assertRaisesRegex(TypeError, msg):
-            it = iter(range(10, 2**65, 2))
-            it.__setstate__(1.0)
+        class I:
+            def __int__(self): return 1
+            def __index__(self): return 1
+            def __repr__(self): return "I()"
+
+        invalid_values = (1.0, I(), "")
+
+        for invalid_value in invalid_values:
+            invalid_msg = F"state must be an int, not "
+            ranges = (("range_iter", range(10, 100, 2)),
+                      ("longrange_iter", range(10, 2**65, 2)))
+            for name, rng in ranges:
+                with self.subTest(invalid_value=invalid_value, range_name=name):
+                    it = iter(rng)
+                    with self.assertRaisesRegex(TypeError, invalid_msg):
+                        it.__setstate__(invalid_value)
 
     def test_odd_bug(self):
         # This used to raise a "SystemError: NULL result without error"
