@@ -1218,33 +1218,19 @@ dummy_func(
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
-            if (IS_JIT_TRACING()) {
-#if _Py_TIER2
-                _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL);
-                LEAVE_TRACING();
-                int err = bail_tracing_and_jit(tstate, frame);
-                if (err < 0) {
-                    Py_DECREF(result);
-                    ERROR_IF(true);
-                }
-                return result;
-#endif
-            }
-            else {
 #if !_Py_TAIL_CALL_INTERP
-                assert(frame == &entry.frame);
+            assert(frame == &entry.frame);
 #endif
 #ifdef _Py_TIER2
-                _PyStackRef executor = frame->localsplus[0];
-                assert(tstate->current_executor == NULL);
-                if (!PyStackRef_IsNull(executor)) {
-                    tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
-                    PyStackRef_CLOSE(executor);
-                }
-#endif
-                LLTRACE_RESUME_FRAME();
-                return result;
+            _PyStackRef executor = frame->localsplus[0];
+            assert(tstate->current_executor == NULL);
+            if (!PyStackRef_IsNull(executor)) {
+                tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
+                PyStackRef_CLOSE(executor);
             }
+#endif
+            LLTRACE_RESUME_FRAME();
+            return result;
         }
 
         // The stack effect here is a bit misleading.
@@ -3028,10 +3014,8 @@ dummy_func(
         tier1 inst(ENTER_EXECUTOR, (--)) {
             #ifdef _Py_TIER2
             if (IS_JIT_TRACING()) {
-                _PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
-                LEAVE_TRACING();
-                int err = bail_tracing_and_jit(tstate, frame);
-                ERROR_IF(err < 0);
+                next_instr = this_instr;
+                goto stop_tracing;
             }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
@@ -5657,7 +5641,10 @@ dummy_func(
 #if _Py_TIER2
             assert(IS_JIT_TRACING());
             int opcode = next_instr->op.code;
-            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr);
+            bool stop_tracing = (opcode == WITH_EXCEPT_START ||
+                opcode == RERAISE || opcode == CLEANUP_THROW ||
+                opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
+            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing);
             if (full) {
                 LEAVE_TRACING();
                 int err = bail_tracing_and_jit(tstate, frame);
@@ -5677,14 +5664,27 @@ dummy_func(
                 _tstate->jit_state.prev_state.instr = next_instr;
             }
             _tstate->jit_state.prev_state.specialize_counter = 0;
-            PyCodeObject *prev_code = (PyCodeObject *)Py_NewRef(PyStackRef_AsPyObjectBorrow(frame->f_executable));
-            if (_tstate->jit_state.prev_state.instr_code != prev_code) {
-                Py_SETREF(_tstate->jit_state.prev_state.instr_code, prev_code);
+            PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (_tstate->jit_state.prev_state.instr_code != (PyCodeObject *)prev_code) {
+                Py_SETREF(_tstate->jit_state.prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
             }
 
             _tstate->jit_state.prev_state.instr_frame = frame;
             _tstate->jit_state.prev_state.instr_oparg = oparg;
             _tstate->jit_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            DISPATCH_GOTO_NON_TRACING();
+#else
+            Py_FatalError("JIT label executed in non-jit build.");
+#endif
+        }
+
+        label(stop_tracing) {
+#if _Py_TIER2
+            assert(IS_JIT_TRACING());
+            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, true);
+            LEAVE_TRACING();
+            int err = bail_tracing_and_jit(tstate, frame);
+            ERROR_IF(err < 0);
             DISPATCH_GOTO_NON_TRACING();
 #else
             Py_FatalError("JIT label executed in non-jit build.");

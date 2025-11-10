@@ -552,7 +552,8 @@ int
 _PyJit_translate_single_bytecode_to_trace(
     PyThreadState *tstate,
     _PyInterpreterFrame *frame,
-    _Py_CODEUNIT *next_instr)
+    _Py_CODEUNIT *next_instr,
+    bool stop_tracing)
 {
 
 #ifdef Py_DEBUG
@@ -570,11 +571,6 @@ _PyJit_translate_single_bytecode_to_trace(
     int trace_length = _tstate->jit_state.prev_state.code_curr_size;
     _PyUOpInstruction *trace = _tstate->jit_state.code_buffer;
     int max_length = _tstate->jit_state.prev_state.code_max_size;
-
-    int is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
-    if (is_sys_tracing) {
-        goto full;
-    }
 
     _Py_CODEUNIT *this_instr =  _tstate->jit_state.prev_state.instr;
     _Py_CODEUNIT *target_instr = this_instr;
@@ -619,6 +615,17 @@ _PyJit_translate_single_bytecode_to_trace(
         DPRINTF(2, "Unsupported: dynamic jump taken %s\n", _PyOpcode_OpName[opcode]);
         goto unsupported;
     }
+
+    int is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
+    if (is_sys_tracing) {
+        goto full;
+    }
+
+    if (stop_tracing) {
+        ADD_TO_TRACE(_DEOPT, 0, 0, target);
+        goto done;
+    }
+
     DPRINTF(2, "%p %d: %s(%d) %d %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, needs_guard_ip, old_stack_level);
 
 #ifdef Py_DEBUG
@@ -655,11 +662,6 @@ _PyJit_translate_single_bytecode_to_trace(
 
     // TODO (gh-140277): The constituent use one extra stack slot. So we need to check for headroom.
     if (opcode == BINARY_OP_SUBSCR_GETITEM && old_stack_level + 1 > old_code->co_stacksize) {
-        goto unsupported;
-    }
-
-    if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
-        DPRINTF(2, "Unsupported: strange control-flow\n");
         unsupported:
         {
             // Rewind to previous instruction and replace with _EXIT_TRACE.
@@ -773,9 +775,6 @@ _PyJit_translate_single_bytecode_to_trace(
              *  start with RESUME_CHECK */
             ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
             break;
-        case INTERPRETER_EXIT:
-            ADD_TO_TRACE(_DEOPT, 0, 0, target);
-            goto done;;
         default:
         {
             const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];

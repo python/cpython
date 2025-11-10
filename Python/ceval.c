@@ -1017,13 +1017,7 @@ bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
         // Likewise, we hold a strong reference to the executor containing this exit, so the exit is guaranteed
         // to be valid to access.
         if (err <= 0) {
-            // Some opcodes will forever be unchanged. Don't ever bother specializing for them ever again.
-            if (_tstate->jit_state.prev_state.instr->op.code == INTERPRETER_EXIT) {
-                exit->temperature = initial_unreachable_backoff_counter();
-            }
-            else {
-                exit->temperature = restart_backoff_counter(exit->temperature);
-            }
+            exit->temperature = restart_backoff_counter(exit->temperature);
         }
         else {
             exit->temperature = initial_temperature_backoff_counter();
