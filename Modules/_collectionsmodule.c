@@ -1772,9 +1772,8 @@ static PyObject *
 deque_get_maxlen(PyObject *self, void *Py_UNUSED(closure))
 {
     dequeobject *deque = dequeobject_CAST(self);
-    if (deque->maxlen < 0) {
+    if (deque->maxlen < 0)
         Py_RETURN_NONE;
-    }
     return PyLong_FromSsize_t(deque->maxlen);
 }
 
@@ -1877,7 +1876,7 @@ static PyType_Spec deque_spec = {
     .slots = deque_slots,
 };
 
-/*********************** deque Iterator **************************/
+/*********************** Deque Iterator **************************/
 
 typedef struct {
     PyObject_HEAD
