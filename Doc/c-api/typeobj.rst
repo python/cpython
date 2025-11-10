@@ -2240,8 +2240,6 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: vectorcallfunc PyTypeObject.tp_vectorcall
 
-   .. corresponding-type-slot:: Py_tp_vectorcall
-
    Vectorcall function to use for calls of this type object.
    In other words, it is used to implement
    :ref:`vectorcall <vectorcall>` for ``type.__call__``.
