@@ -1,3 +1,2 @@
-Fix assertion failure in :class:`io.BytesIO` implementation of
-:func:`~io.BufferedIOBase.readinto` when the current offset is at the max
-offset and readinto is called.
+Fix assertion failure in :class:`!io.BytesIO.readinto` when the current offset
+is at the max offset and readinto is called.
