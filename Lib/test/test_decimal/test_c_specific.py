@@ -7,10 +7,11 @@ from . import (C, P, requires_cdecimal, requires_extra_functionality,
                setUpModule, tearDownModule)
 
 
+@requires_cdecimal
+@requires_extra_functionality
 class CFunctionality(unittest.TestCase):
     """Extra functionality in _decimal"""
 
-    @requires_extra_functionality
     def test_c_context(self):
         Context = C.Context
 
@@ -18,7 +19,6 @@ class CFunctionality(unittest.TestCase):
         self.assertEqual(c._flags, C.DecClamped)
         self.assertEqual(c._traps, C.DecRounded)
 
-    @requires_extra_functionality
     def test_constants(self):
         # Condition flags
         cond = (

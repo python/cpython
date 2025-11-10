@@ -1,6 +1,8 @@
 import unittest
 import operator
-from . import (load_tests_for_base_classes, setUpModule, tearDownModule)
+from . import (load_tests_for_base_classes,
+               setUpModule, tearDownModule)
+
 
 class ArithmeticOperatorsTest:
     '''Unit tests for all arithmetic operators, binary and unary.'''

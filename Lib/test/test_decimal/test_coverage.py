@@ -1,8 +1,7 @@
 import unittest
 import sys
-from . import (
-    C, P, requires_cdecimal, OrderedSignals,
-    setUpModule, tearDownModule)
+from . import (C, P, requires_cdecimal, OrderedSignals,
+               setUpModule, tearDownModule)
 
 
 class Coverage:
@@ -272,6 +271,8 @@ class Coverage:
 @requires_cdecimal
 class CCoverage(Coverage, unittest.TestCase):
     decimal = C
+
+
 class PyCoverage(Coverage, unittest.TestCase):
     decimal = P
 

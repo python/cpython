@@ -78,13 +78,6 @@ ORIGINAL_CONTEXT = {
   P: P.getcontext().copy()
 }
 
-def init_module(m):
-    if not m: return
-    DefaultTestContext = m.Context(
-       prec=9, rounding=P.ROUND_HALF_EVEN, traps=dict.fromkeys(Signals[m], 0)
-    )
-    m.setcontext(DefaultTestContext)
-
 # Test extra functionality in the C version (-DEXTRA_FUNCTIONALITY).
 EXTRA_FUNCTIONALITY = True if hasattr(C, 'DecClamped') else False
 requires_extra_functionality = unittest.skipUnless(
@@ -97,6 +90,26 @@ TEST_ALL = is_resource_enabled('decimal')
 TODO_TESTS = None
 DEBUG = False
 
+
+def load_arithmetic_module():
+    module = __import__("test.test_decimal.test_arithmetic")
+    arithmetic = module.test_decimal.test_arithmetic
+    arithmetic.TEST_ALL = TEST_ALL
+    arithmetic.TODO_TESTS = TODO_TESTS
+    arithmetic.DEBUG = DEBUG
+    return arithmetic
+
+def load_tests(loader, tests, pattern):
+    arithmetic = load_arithmetic_module()
+    if TODO_TESTS is not None:
+        # Run only Arithmetic tests
+        return arithmetic.load_tests(loader, loader.suiteClass(), pattern)
+
+    start_dir = os.path.dirname(__file__)
+    package_tests = loader.discover(start_dir=start_dir,
+                                    top_level_dir=STDLIB_DIR)
+    tests.addTests(package_tests)
+    return tests
 
 def load_tests_for_base_classes(loader, tests, base_classes):
     for prefix, mod in ('C', C), ('Py', P):
@@ -111,31 +124,15 @@ def load_tests_for_base_classes(loader, tests, base_classes):
 
     return tests
 
-def load_arithmetic_module():
-    module = __import__("test.test_decimal.test_arithmetic")
-    arithmetic = module.test_decimal.test_arithmetic
-    arithmetic.TEST_ALL = TEST_ALL
-    arithmetic.TODO_TESTS = TODO_TESTS
-    arithmetic.DEBUG = DEBUG
-    return arithmetic
-
-def load_tests(loader, tests, pattern):
-    arithmetic = load_arithmetic_module()
-    if TODO_TESTS is not None:
-        # Run only Arithmetic tests
-        tests = loader.suiteClass()
-        arithmetic.load_tests(loader, tests, pattern)
-        return tests
-
-    start_dir = os.path.dirname(__file__)
-    package_tests = loader.discover(start_dir=start_dir,
-                                    top_level_dir=STDLIB_DIR)
-    tests.addTests(package_tests)
-    return tests
-
 def setUpModule():
-    init_module(C)
-    init_module(P)
+    for mod in C, P:
+        if not mod:
+            continue
+
+        mod.setcontext(mod.Context(
+           prec=9, rounding=P.ROUND_HALF_EVEN,
+           traps=dict.fromkeys(Signals[mod], 0),
+        ))
 
 def tearDownModule():
     if C: C.setcontext(ORIGINAL_CONTEXT[C].copy())

@@ -14,7 +14,8 @@ def execute_tests(arith, verbose, todo_tests=None, debug=None):
     module.TEST_ALL = arith
     module.TODO_TESTS = todo_tests
     module.DEBUG = debug
-    unittest.main(module, verbosity=2 if verbose else 1, exit=False, argv=[__name__])
+    verbosity = 2 if verbose else 1
+    unittest.main(module, verbosity=verbosity, exit=False, argv=[__name__])
 
 
 p = optparse.OptionParser("test_decimal [--debug] [{--skip | test1 [test2 [...]]}]")

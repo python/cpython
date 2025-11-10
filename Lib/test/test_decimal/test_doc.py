@@ -1,22 +1,17 @@
 import unittest
 import sys
 from doctest import DocTestSuite, IGNORE_EXCEPTION_DETAIL
-from . import (C, P, init_module, orig_sys_decimal, ORIGINAL_CONTEXT)
+from . import C, P, orig_sys_decimal
 
 def get_test_suite_for_module(mod):
     if not mod:
         return None
 
-    orig_context = orig_sys_decimal.getcontext().copy()
-
     def setUp(self, mod=mod):
         sys.modules['decimal'] = mod
-        init_module(mod)
 
-    def tearDown(slf, mod=mod, orig_context=orig_context):
+    def tearDown(self):
         sys.modules['decimal'] = orig_sys_decimal
-        mod.setcontext(ORIGINAL_CONTEXT[mod].copy())
-        orig_sys_decimal.setcontext(orig_context.copy())
 
     optionflags = IGNORE_EXCEPTION_DETAIL if mod is C else 0
     return DocTestSuite(mod, setUp=setUp, tearDown=tearDown,
@@ -29,7 +24,6 @@ def load_tests(loader, tests, pattern):
         if test_suite:
             tests.addTest(test_suite)
 
-    sys.modules['decimal'] = orig_sys_decimal
     return tests
 
 

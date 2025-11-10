@@ -1,7 +1,8 @@
 import unittest
 from test.support import (requires_docstrings, TestFailed)
 import inspect
-from . import (C, P, requires_cdecimal, skip_if_extra_functionality,
+from . import (C, P, load_tests_for_base_classes,
+               requires_cdecimal, skip_if_extra_functionality,
                setUpModule, tearDownModule)
 
 
@@ -169,6 +170,20 @@ class SignatureTest(unittest.TestCase):
 
         doit('Decimal')
         doit('Context')
+
+
+class TestModule:
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(self.decimal, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
+def load_tests(loader, tests, pattern):
+    return load_tests_for_base_classes(loader, tests, [TestModule])
 
 
 if __name__ == '__main__':

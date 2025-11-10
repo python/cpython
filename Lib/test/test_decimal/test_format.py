@@ -1,6 +1,6 @@
 import unittest
 import locale
-from test.support import (run_with_locale, warnings_helper)
+from test.support import run_with_locale, warnings_helper
 from . import (C, P, load_tests_for_base_classes,
                setUpModule, tearDownModule)
 
