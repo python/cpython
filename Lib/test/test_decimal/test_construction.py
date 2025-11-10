@@ -436,6 +436,7 @@ class ImplicitConstructionTest:
             self.assertEqual(eval('Decimal(10)' + sym + 'E()'),
                              '10' + rop + 'str')
 
+
 def load_tests(loader, tests, pattern):
     base_classes = [ExplicitConstructionTest, ImplicitConstructionTest]
     return load_tests_for_base_classes(loader, tests, base_classes)

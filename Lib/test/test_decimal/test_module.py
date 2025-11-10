@@ -10,6 +10,7 @@ class TestModule:
             getattr(self.decimal, "__version__")
         self.assertEqual(cm.filename, __file__)
 
+
 def load_tests(loader, tests, pattern):
     return load_tests_for_base_classes(loader, tests, [TestModule])
 

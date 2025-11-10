@@ -68,6 +68,7 @@ OrderedSignals = {
       P.Overflow, P.DivisionByZero, P.InvalidOperation,
       P.FloatOperation]
 }
+
 def assert_signals(cls, context, attr, expected):
     d = getattr(context, attr)
     cls.assertTrue(all(d[s] if s in expected else not d[s] for s in d))
@@ -98,6 +99,12 @@ requires_extra_functionality = unittest.skipUnless(
   EXTRA_FUNCTIONALITY, "test requires build with -DEXTRA_FUNCTIONALITY")
 skip_if_extra_functionality = unittest.skipIf(
   EXTRA_FUNCTIONALITY, "test requires regular build")
+
+
+TEST_ALL = is_resource_enabled('decimal')
+TODO_TESTS = None
+DEBUG = False
+
 
 def load_tests_for_base_classes(loader, tests, base_classes):
     for prefix, mod in ('C', C), ('Py', P):
@@ -149,7 +156,3 @@ def tearDownModule():
         raise TestFailed("Internal error: unbalanced number of changes to "
                          "sys.modules['decimal'].")
 
-
-TEST_ALL = is_resource_enabled('decimal')
-TODO_TESTS = None
-DEBUG = False

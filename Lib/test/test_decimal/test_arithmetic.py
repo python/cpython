@@ -21,6 +21,11 @@ skip_expected = not os.path.isdir(directory)
 EXTENDEDERRORTEST = False
 
 
+TEST_ALL = True
+TODO_TESTS = None
+DEBUG = False
+
+
 class IBMTestCases:
     """Class which tests the Decimal class against the IBM test cases."""
 
@@ -394,11 +399,6 @@ def load_tests(loader, tests, pattern):
         setattr(IBMTestCases, 'test_' + head, tester)
 
     return load_tests_for_base_classes(loader, tests, [IBMTestCases])
-
-
-TEST_ALL = True
-TODO_TESTS = None
-DEBUG = False
 
 
 if __name__ == '__main__':
