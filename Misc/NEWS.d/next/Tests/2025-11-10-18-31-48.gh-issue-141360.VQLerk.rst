@@ -1,2 +1,2 @@
-Tests for decimal module are divided into some parts. Patch by Mikhail
-Efimov.
+Tests for the :mod:`decimal` module have been split into several files.
+Patch by Mikhail Efimov.
