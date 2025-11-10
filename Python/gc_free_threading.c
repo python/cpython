@@ -675,10 +675,11 @@ gc_mark_span_push(gc_span_stack_t *ss, PyObject **start, PyObject **end)
         else {
             ss->capacity *= 2;
         }
-        ss->stack = (gc_span_t *)PyMem_Realloc(ss->stack, ss->capacity * sizeof(gc_span_t));
-        if (ss->stack == NULL) {
+        gc_span_t *new_stack = (gc_span_t *)PyMem_Realloc(ss->stack, ss->capacity * sizeof(gc_span_t));
+        if (new_stack == NULL) {
             return -1;
         }
+        ss->stack = new_stack;
     }
     assert(end > start);
     ss->stack[ss->size].start = start;
