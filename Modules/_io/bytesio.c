@@ -609,8 +609,9 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
     n = self->string_size - self->pos;
     if (len > n) {
         len = n;
-        if (len < 0)
-            len = 0;
+        if (len < 0) {
+            return PyLong_FromSsize_t(0);
+        }
     }
 
     assert(self->pos + len < PY_SSIZE_T_MAX);
