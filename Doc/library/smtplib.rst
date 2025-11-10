@@ -91,7 +91,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    not appropriate.
 
    If the host parameter is set to a truthy value, :meth:`SMTP.connect` is called with host
-   and port automatically when the object is created; otherwise, :meth:`connect` must
+   and port automatically when the object is created; otherwise, :meth:`!SMTP.connect` must
    be called manually.
 
    The optional arguments *local_hostname*, *timeout* and *source_address* have the same
