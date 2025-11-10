@@ -2793,7 +2793,7 @@ class MiscTests(unittest.TestCase):
     def test_module_name(self):
         # gh-140824: _math and _math_integer extensions are exported as math
         # and math.integer names.
-        math_integer_names = set('comb factorial gcd isqrt lcm perm'.split())
+        math_integer_names = {'comb', 'factorial', 'gcd', 'isqrt', 'lcm', 'perm'}
         for name in dir(math):
             if name.startswith('_'):
                 continue
