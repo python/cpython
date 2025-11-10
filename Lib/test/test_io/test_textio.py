@@ -713,12 +713,12 @@ class TextIOWrapperTest:
             (b'line1\rline2\rline3\r', ['line1\n', 'line2\n', 'line3\n']),
             (b'\r\rdata\r', ['\n', '\n', 'data\n']),
         ]
-        
+
         for data, expected_lines in test_cases:
             with self.subTest(data=data):
                 with self.open(os_helper.TESTFN, "wb") as f:
                     f.write(data)
-                
+
                 with self.open(os_helper.TESTFN, "r") as f:
                     # Read all lines and call tell() after each
                     lines_read = []
@@ -732,10 +732,10 @@ class TextIOWrapperTest:
                         # This should not cause an assertion failure
                         pos_after = f.tell()
                         positions.append((pos_before, pos_after))
-                    
+
                     # Verify lines read correctly
                     self.assertEqual(lines_read, expected_lines)
-                    
+
                     # Verify we can seek back to each position
                     f.seek(0)
                     for i, (pos_before, pos_after) in enumerate(positions):
