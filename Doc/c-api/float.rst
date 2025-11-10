@@ -78,6 +78,23 @@ Floating-Point Objects
    Return the minimum normalized positive float *DBL_MIN* as C :c:expr:`double`.
 
 
+.. c:macro:: Py_MATH_E
+
+   The definition of the :data:`math.e` constant.
+
+
+.. c:macro:: Py_MATH_PI
+
+   The definition of the :data:`math.pi` constant.
+
+
+.. c:macro:: Py_MATH_TAU
+
+   The definition of the :data:`math.tau` constant.
+
+   .. versionadded:: 3.6
+
+
 .. c:macro:: Py_MATH_El
 
    High precision (long double) definition of :data:`~math.e` constant.
