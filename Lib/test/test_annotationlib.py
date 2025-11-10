@@ -1315,6 +1315,32 @@ class TestCallEvaluateFunction(unittest.TestCase):
             "undefined",
         )
 
+    def test_fake_global_evaluation(self):
+        # This will raise an AttributeError
+        def evaluate_union(format, exc=NotImplementedError):
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
+                # Return a ForwardRef
+                return builtins.undefined | list[int]
+            raise exc
+
+        self.assertEqual(
+            annotationlib.call_evaluate_function(evaluate_union, Format.FORWARDREF),
+            support.EqualToForwardRef("builtins.undefined | list[int]"),
+        )
+
+        # This will raise an AttributeError
+        def evaluate_intermediate(format, exc=NotImplementedError):
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
+                intermediate = builtins.undefined
+                # Return a literal
+                return intermediate is None
+            raise exc
+
+        self.assertIs(
+            annotationlib.call_evaluate_function(evaluate_intermediate, Format.FORWARDREF),
+            False,
+        )
+
 
 class TestCallAnnotateFunction(unittest.TestCase):
     # Tests for user defined annotate functions.
@@ -1455,6 +1481,23 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         with self.assertRaises(NotImplementedError):
             annotationlib.call_annotate_function(annotate, Format.STRING)
+
+    def test_unsupported_formats(self):
+        def annotate(format, /):
+            if format == Format.FORWARDREF:
+                return {"x": str}
+            else:
+                raise NotImplementedError(format)
+
+        with self.assertRaises(ValueError):
+            annotationlib.call_annotate_function(annotate, Format.VALUE_WITH_FAKE_GLOBALS)
+
+        with self.assertRaises(RuntimeError):
+            annotationlib.call_annotate_function(annotate, Format.VALUE)
+
+        with self.assertRaises(ValueError):
+            # Some non-Format value
+            annotationlib.call_annotate_function(annotate, 7)
 
     def test_error_from_value_raised(self):
         # Test that the error from format.VALUE is raised
