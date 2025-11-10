@@ -1,7 +1,7 @@
 import unittest
 import sys
 from doctest import DocTestSuite, IGNORE_EXCEPTION_DETAIL
-from . import (C, P, init, orig_sys_decimal, ORIGINAL_CONTEXT)
+from . import (C, P, init_module, orig_sys_decimal, ORIGINAL_CONTEXT)
 
 def get_test_suite_for_module(mod):
     if not mod:
@@ -11,7 +11,7 @@ def get_test_suite_for_module(mod):
 
     def setUp(self, mod=mod):
         sys.modules['decimal'] = mod
-        init(mod)
+        init_module(mod)
 
     def tearDown(slf, mod=mod, orig_context=orig_context):
         sys.modules['decimal'] = orig_sys_decimal

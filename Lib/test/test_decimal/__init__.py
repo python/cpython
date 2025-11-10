@@ -78,7 +78,7 @@ ORIGINAL_CONTEXT = {
   P: P.getcontext().copy()
 }
 
-def init(m):
+def init_module(m):
     if not m: return
     DefaultTestContext = m.Context(
        prec=9, rounding=P.ROUND_HALF_EVEN, traps=dict.fromkeys(Signals[m], 0)
@@ -134,8 +134,8 @@ def load_tests(loader, tests, pattern):
     return tests
 
 def setUpModule():
-    init(C)
-    init(P)
+    init_module(C)
+    init_module(P)
 
 def tearDownModule():
     if C: C.setcontext(ORIGINAL_CONTEXT[C].copy())
