@@ -12,7 +12,6 @@ import _pyio as pyio
 import pickle
 import sys
 import weakref
-from test.support.import_helper import import_module
 
 class IntLike:
     def __init__(self, num):
@@ -554,13 +553,10 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         self.assertEqual(memio.read(), buf[1:])
 
     def test_issue141311(self):
-        _testcapi = import_module("_testcapi")
-
         memio = self.ioclass()
-        # Seek allows PY_SSIZE_T_MAX, read handle that.
+        # Seek allows PY_SSIZE_T_MAX, read should handle that.
         # Past end of buffer read should always return 0 (EOF).
-        self.assertEqual(_testcapi.PY_SSIZE_T_MAX,
-                         memio.seek(_testcapi.PY_SSIZE_T_MAX))
+        self.assertEqual(sys.maxsize, memio.seek(sys.maxsize))
         buf = bytearray(2)
         self.assertEqual(0, memio.readinto(buf))
 
