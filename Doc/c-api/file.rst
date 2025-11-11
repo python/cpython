@@ -93,6 +93,29 @@ the :mod:`io` APIs instead.
    .. versionadded:: 3.8
 
 
+.. c:function:: PyObject *PyFile_OpenCodeObject(PyObject *path)
+
+   Open *path* with the mode ``'rb'``. *path* must be a Python :class:`str`
+   object. The behavior of this function may be overridden by
+   :c:func:`PyFile_SetOpenCodeHook` to allow for some preprocessing of the
+   text.
+
+   This is analogous to :func:`io.open_code` in Python.
+
+   On success, this function returns a :term:`strong reference` to a Python
+   file object. On failure, this function returns ``NULL`` with an exception
+   set.
+
+   .. versionadded:: 3.8
+
+
+.. c:function:: PyObject *PyFile_OpenCode(const char *path)
+
+   Similar to :c:func:`PyFile_OpenCodeObject`, but *path* is a
+   UTF-8 encoded :c:expr:`const char*`.
+
+   .. versionadded:: 3.8
+
 
 .. c:function:: int PyFile_WriteObject(PyObject *obj, PyObject *p, int flags)
 
