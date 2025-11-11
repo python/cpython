@@ -112,8 +112,7 @@ the :mod:`io` APIs instead.
 .. c:function:: PyObject *PyFile_OpenCode(const char *path)
 
    Similar to :c:func:`PyFile_OpenCodeObject`, but *path* is a
-   :c:expr:`const char*` that is decoded by the
-   :term:`filesystem encoding and error handler`.
+   UTF-8 encoded :c:expr:`const char*`.
 
    .. versionadded:: 3.8
 
