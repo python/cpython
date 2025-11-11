@@ -95,7 +95,7 @@ the :mod:`io` APIs instead.
 
 .. c:function:: PyObject *PyFile_OpenCodeObject(PyObject *path)
 
-   Open *path* and read the text. *path* must be a Python :class:`str`
+   Open *path* with the mode ``'rb'``. *path* must be a Python :class:`str`
    object. The behavior of this function may be overridden by
    :c:func:`PyFile_SetOpenCodeHook` to allow for some preprocessing of the
    text.
