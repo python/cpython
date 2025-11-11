@@ -62,6 +62,8 @@ Asynchronous Generator Objects
    The type object corresponding to asynchronous generator objects. This is
    available as :class:`types.AsyncGeneratorType` in the Python layer.
 
+   .. versionadded:: 3.6
+
 .. c:function:: PyObject *PyAsyncGen_New(PyFrameObject *frame, PyObject *name, PyObject *qualname)
 
    Create a new asynchronous generator wrapping *frame*, with ``__name__`` and
@@ -78,3 +80,5 @@ Asynchronous Generator Objects
 
    Return true if *op* is an asynchronous generator object, false otherwise.
    This function always succeeds.
+
+   .. versionadded:: 3.6
