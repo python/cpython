@@ -2216,9 +2216,6 @@ PyFloat_Pack4(double x, char *data, int le)
             uint32_t u32;
 
             memcpy(&u32, &y, 4);
-            if ((v & (1ULL << 51)) == 0 && (u32 & 0x3fffff)) {
-                u32 &= ~(1 << 22);
-            }
             /* Workaround RISC-V: "If a NaN value is converted to a
              * different floating-point type, the result is the
              * canonical NaN of the new type".  The canonical NaN here
@@ -2229,6 +2226,10 @@ PyFloat_Pack4(double x, char *data, int le)
             /* add payload */
             u32 -= (u32 & 0x3fffff);
             u32 += (uint32_t)((v & 0x7ffffffffffffULL) >> 29);
+            /* if have payload, make sNaN */
+            if ((v & (1ULL << 51)) == 0 && (u32 & 0x3fffff)) {
+                u32 &= ~(1 << 22);
+            }
 
             memcpy(&y, &u32, 4);
 #endif
