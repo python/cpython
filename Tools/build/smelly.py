@@ -22,7 +22,6 @@ EXCEPTIONS = frozenset({
 
 IGNORED_EXTENSION = "_ctypes_test"
 # Ignore constructor and destructor functions
-IGNORED_SYMBOLS = {'_init', '_fini'}
 
 
 def is_local_symbol_type(symtype):
@@ -82,8 +81,6 @@ def get_smelly_symbols(stdout, dynamic=False):
             continue
 
         if is_local_symbol_type(symtype):
-            local_symbols.append(result)
-        elif symbol in IGNORED_SYMBOLS:
             local_symbols.append(result)
         else:
             smelly_symbols.append(result)
