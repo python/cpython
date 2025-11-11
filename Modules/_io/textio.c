@@ -2845,7 +2845,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
        current pos */
     skip_bytes = (Py_ssize_t) (self->b2cratio * chars_to_skip);
     skip_back = 1;
-    assert(skip_back <= PyBytes_GET_SIZE(next_input));
+    assert(skip_bytes <= PyBytes_GET_SIZE(next_input));
     input = PyBytes_AS_STRING(next_input);
     while (skip_bytes > 0) {
         /* Decode up to temptative start point */
