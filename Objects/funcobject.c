@@ -1165,6 +1165,18 @@ static PyObject*
 func_repr(PyObject *self)
 {
     PyFunctionObject *op = _PyFunction_CAST(self);
+    PyObject *name = op->func_name;
+    Py_ssize_t len = PyUnicode_GET_LENGTH(name);
+    if (len > 2
+        && PyUnicode_READ_CHAR(name, 0) == '<'
+        && PyUnicode_READ_CHAR(name, len-1) == '>')
+    {
+        PyObject *repr = PyUnicode_Substring(name, 0, len-1);
+        if (repr) {
+            Py_SETREF(repr, PyUnicode_FromFormat("%U at %p>", repr, op));
+        }
+        return repr;
+    }
     return PyUnicode_FromFormat("<function %U at %p>",
                                 op->func_qualname, op);
 }

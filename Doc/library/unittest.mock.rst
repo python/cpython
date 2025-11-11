@@ -2684,7 +2684,7 @@ we try to call it incorrectly::
     >>> req = request.Request()
     Traceback (most recent call last):
      ...
-    TypeError: <lambda>() takes at least 2 arguments (1 given)
+    TypeError: missing a required argument: 'url'
 
 The spec also applies to instantiated classes (i.e. the return value of
 specced mocks)::

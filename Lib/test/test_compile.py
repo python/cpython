@@ -587,6 +587,7 @@ class TestSpecifics(unittest.TestCase):
             ['<ifblock>', """if True:\n    pass\n"""],
             ['<forblock>', """for n in [1, 2, 3]:\n    print(n)\n"""],
             ['<deffunc>', """def foo():\n    pass\nfoo()\n"""],
+            ['<lambda>', """f = lambda x: x+1"""],
             [fname, fcontents],
         ]
 

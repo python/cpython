@@ -1256,8 +1256,7 @@ The following option is accepted:
 
 .. [#] Don't confuse this with the :mod:`marshal` module
 
-.. [#] This is why :keyword:`lambda` functions cannot be pickled:  all
-    :keyword:`!lambda` functions share the same name:  ``<lambda>``.
+.. [#] This is why :keyword:`lambda` functions cannot be pickled.
 
 .. [#] The exception raised will likely be an :exc:`ImportError` or an
    :exc:`AttributeError` but it could be something else.

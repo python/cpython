@@ -2022,10 +2022,20 @@ codegen_lambda(compiler *c, expr_ty e)
         .u_posonlyargcount = asdl_seq_LEN(args->posonlyargs),
         .u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs),
     };
-    _Py_DECLARE_STR(anon_lambda, "<lambda>");
-    RETURN_IF_ERROR(
-        codegen_enter_scope(c, &_Py_STR(anon_lambda), COMPILE_SCOPE_LAMBDA,
-                            (void *)e, e->lineno, NULL, &umd));
+
+    PyObject *exprstr = _PyAST_ExprAsUnicode(e);
+    if (!exprstr) {
+        return ERROR;
+    }
+    PyObject *name = PyUnicode_FromFormat("<%U>", exprstr);
+    Py_DECREF(exprstr);
+    if (!name) {
+        return ERROR;
+    }
+    int rc = codegen_enter_scope(c, name, COMPILE_SCOPE_LAMBDA,
+                                 (void *)e, e->lineno, NULL, &umd);
+    Py_DECREF(name);
+    RETURN_IF_ERROR(rc);
 
     assert(!SYMTABLE_ENTRY(c)->ste_has_docstring);
 

@@ -205,7 +205,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertEqual(FuncAttrsTest.setUp.__qualname__, 'FuncAttrsTest.setUp')
         self.assertEqual(global_function.__qualname__, 'global_function')
         self.assertEqual(global_function().__qualname__,
-                         'global_function.<locals>.<lambda>')
+                         'global_function.<locals>.<lambda: inner_function>')
         self.assertEqual(global_function()().__qualname__,
                          'global_function.<locals>.inner_function')
         self.assertEqual(global_function()()().__qualname__,
