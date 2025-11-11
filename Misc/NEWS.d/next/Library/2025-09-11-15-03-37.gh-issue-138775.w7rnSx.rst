@@ -1,0 +1,2 @@
+Use of ``python -m`` with :mod:`base64` has been fixed to detect input from a
+terminal so that it properly notices EOF.
