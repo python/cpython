@@ -234,6 +234,9 @@ called with a non-bytes parameter.
    Get the string representation of *bytes*. This function is currently used to
    implement :meth:`!bytes.__repr__` in Python.
 
+   This function does not do type checking; it is undefined behavior to pass
+   *bytes* as a non-bytes object or ``NULL``.
+
    If *smartquotes* is true, the representation will use a double-quoted string
    instead of single-quoted string when single-quotes are present in *bytes*.
    For example, the byte string ``'Python'`` would be represented as
