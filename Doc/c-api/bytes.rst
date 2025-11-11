@@ -245,6 +245,22 @@ called with a non-bytes parameter.
    returns ``NULL`` with an exception set.
 
 
+.. c:function:: PyObject *PyBytes_DecodeEscape(const char *s, Py_ssize_t len, const char *errors, Py_ssize_t unicode, const char *recode_encoding)
+
+   Unescape a backslash-escaped string *s*. *s* must not be ``NULL``.
+   *len* must be the size of *s*.
+
+   *errors* must be one of ``"strict"``, ``"replace"``, or ``"ignore"``. If
+   *errors* is ``NULL``, then ``"strict"`` is used by default.
+
+   On success, this function returns a :term:`strong reference` to a Python
+   :class:`bytes` object containing the unescaped string. On failure, this
+   function returns ``NULL`` with an exception set.
+
+   .. versionchanged:: 3.9
+      *unicode* and *recode_encoding* are now unused.
+
+
 .. _pybyteswriter:
 
 PyBytesWriter
