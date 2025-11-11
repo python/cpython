@@ -1,1 +1,0 @@
-Added symmetric difference support to :class:`collections.Counter` objects.

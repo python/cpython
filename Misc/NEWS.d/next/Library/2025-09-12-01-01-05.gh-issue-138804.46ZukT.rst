@@ -1,3 +1,0 @@
-Raise :exc:`TypeError` instead of :exc:`AttributeError` when an argument of
-incorrect type is passed to :func:`shlex.quote`. This restores the behavior of
-the function prior to 3.14.

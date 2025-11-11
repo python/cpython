@@ -2283,11 +2283,12 @@ class TestNegativeNumber(ParserTestCase):
         ('--complex -1e-3j', NS(int=None, float=None, complex=-0.001j)),
     ]
 
+@force_not_colorized_test_class
 class TestArgumentAndSubparserSuggestions(TestCase):
     """Test error handling and suggestion when a user makes a typo"""
 
     def test_wrong_argument_error_with_suggestions(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
@@ -2307,7 +2308,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_wrong_argument_subparsers_with_suggestions(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers(required=True)
         subparsers.add_parser('foo')
         subparsers.add_parser('bar')
@@ -2331,18 +2332,19 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             excinfo.exception.stderr,
         )
 
-    def test_wrong_argument_no_suggestion_implicit(self):
-        parser = ErrorRaisingArgumentParser()
+    def test_wrong_argument_with_suggestion_explicit(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "error: argument foo: invalid choice: 'bazz' (choose from bar, baz)",
+            "error: argument foo: invalid choice: 'bazz', maybe you meant"
+             " 'baz'? (choose from bar, baz)",
             excinfo.exception.stderr,
         )
 
     def test_suggestions_choices_empty(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
@@ -2352,7 +2354,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_suggestions_choices_int(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[1, 2])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
@@ -2362,7 +2364,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_suggestions_choices_mixed_types(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[1, '2'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
@@ -5831,6 +5833,7 @@ class TestConflictHandling(TestCase):
 # Help and Version option tests
 # =============================
 
+@force_not_colorized_test_class
 class TestOptionalsHelpVersionActions(TestCase):
     """Test the help and version actions"""
 
@@ -6145,6 +6148,7 @@ class TestTypeFunctionCallOnlyOnce(TestCase):
 # Check that deprecated arguments output warning
 # ==============================================
 
+@force_not_colorized_test_class
 class TestDeprecatedArguments(TestCase):
 
     def test_deprecated_option(self):
@@ -7367,6 +7371,45 @@ class TestColorized(TestCase):
         demo_parser.color = False
         help_text = demo_parser.format_help()
         self.assertNotIn('\x1b[', help_text)
+
+    def test_error_and_warning_keywords_colorized(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        parser.add_argument('foo')
+
+        with self.assertRaises(SystemExit):
+            with captured_stderr() as stderr:
+                parser.parse_args([])
+
+        err = stderr.getvalue()
+        error_color = self.theme.error
+        reset = self.theme.reset
+        self.assertIn(f'{error_color}error:{reset}', err)
+
+        with captured_stderr() as stderr:
+            parser._warning('test warning')
+
+        warn = stderr.getvalue()
+        warning_color = self.theme.warning
+        self.assertIn(f'{warning_color}warning:{reset}', warn)
+
+    def test_error_and_warning_not_colorized_when_disabled(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=False)
+        parser.add_argument('foo')
+
+        with self.assertRaises(SystemExit):
+            with captured_stderr() as stderr:
+                parser.parse_args([])
+
+        err = stderr.getvalue()
+        self.assertNotIn('\x1b[', err)
+        self.assertIn('error:', err)
+
+        with captured_stderr() as stderr:
+            parser._warning('test warning')
+
+        warn = stderr.getvalue()
+        self.assertNotIn('\x1b[', warn)
+        self.assertIn('warning:', warn)
 
 
 class TestModule(unittest.TestCase):
