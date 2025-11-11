@@ -132,4 +132,3 @@ the :mod:`io` APIs instead.
 
    Write string *s* to file object *p*.  Return ``0`` on success or ``-1`` on
    failure; the appropriate exception will be set.
-
