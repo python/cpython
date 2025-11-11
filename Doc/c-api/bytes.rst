@@ -201,3 +201,38 @@ called with a non-bytes parameter.
    reallocation fails, the original bytes object at *\*bytes* is deallocated,
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.
+
+
+.. c:function:: PyObject *PyBytes_Repr(PyObject *bytes, int smartquotes)
+
+   Get the string representation of *bytes*. This function is currently used to
+   implement :meth:`!bytes.__repr__` in Python.
+
+   This function does not do type checking; it is undefined behavior to pass
+   *bytes* as a non-bytes object or ``NULL``.
+
+   If *smartquotes* is true, the representation will use a double-quoted string
+   instead of single-quoted string when single-quotes are present in *bytes*.
+   For example, the byte string ``'Python'`` would be represented as
+   ``b"'Python'"`` when *smartquotes* is true, or ``b'\'Python\''`` when it is
+   false.
+
+   On success, this function returns a :term:`strong reference` to a
+   :class:`str` object containing the representation. On failure, this
+   returns ``NULL`` with an exception set.
+
+
+.. c:function:: PyObject *PyBytes_DecodeEscape(const char *s, Py_ssize_t len, const char *errors, Py_ssize_t unicode, const char *recode_encoding)
+
+   Unescape a backslash-escaped string *s*. *s* must not be ``NULL``.
+   *len* must be the size of *s*.
+
+   *errors* must be one of ``"strict"``, ``"replace"``, or ``"ignore"``. If
+   *errors* is ``NULL``, then ``"strict"`` is used by default.
+
+   On success, this function returns a :term:`strong reference` to a Python
+   :class:`bytes` object containing the unescaped string. On failure, this
+   function returns ``NULL`` with an exception set.
+
+   .. versionchanged:: 3.9
+      *unicode* and *recode_encoding* are now unused.
