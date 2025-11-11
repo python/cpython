@@ -1,3 +1,2 @@
-Fix assertion failure in :func:`!io.BytesIO.readinto` and possible
-undefined behavior in :class:`io.BytesIO` when the current position
-is at or near :data:`sys.maxsize`.
+Fix assertion failure in :func:`!io.BytesIO.readinto` and possible out of bounds
+read when position is near :data:`sys.maxsize` in :class:`io.BytesIO`.
