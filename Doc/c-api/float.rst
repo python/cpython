@@ -78,6 +78,24 @@ Floating-Point Objects
    Return the minimum normalized positive float *DBL_MIN* as C :c:expr:`double`.
 
 
+.. c:macro:: Py_INFINITY
+
+   This macro expands a to constant expression of type :c:expr:`double`, that
+   represents the positive infinity.
+
+   On most platforms, this is equivalent to the :c:macro:`!INFINITY` macro from
+   the C11 standard ``<math.h>`` header.
+
+
+.. c:macro:: Py_NAN
+
+   This macro expands a to constant expression of type :c:expr:`double`, that
+   represents a quiet not-a-number (qNaN) value.
+
+   On most platforms, this is equivalent to the :c:macro:`!NAN` macro from
+   the C11 standard ``<math.h>`` header.
+
+
 .. c:macro:: Py_MATH_El
 
    High precision (long double) definition of :data:`~math.e` constant.
