@@ -46,7 +46,7 @@ macros.
 
 .. c:var:: PyTypeObject PyDateTime_DeltaType
 
-   This instance of :c:type:`PyTypeObject` represents Python type for
+   This instance of :c:type:`PyTypeObject` represents the Python type for
    the difference between two datetime values;
    it is the same object as :class:`datetime.timedelta` in the Python layer.
 

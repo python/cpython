@@ -4,7 +4,7 @@
 .. module:: string
    :synopsis: Common string operations.
 
-**Source code:** :source:`Lib/string.py`
+**Source code:** :source:`Lib/string/__init__.py`
 
 --------------
 

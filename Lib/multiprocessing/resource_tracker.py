@@ -111,7 +111,12 @@ class ResourceTracker(object):
         close(self._fd)
         self._fd = None
 
-        _, status = waitpid(self._pid, 0)
+        try:
+            _, status = waitpid(self._pid, 0)
+        except ChildProcessError:
+            self._pid = None
+            self._exitcode = None
+            return
 
         self._pid = None
 

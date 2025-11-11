@@ -1,0 +1,2 @@
+:mod:`faulthandler` now detects if a frame or a code object is invalid or
+freed. Patch by Victor Stinner.

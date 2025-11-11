@@ -115,5 +115,13 @@ Other Objects
    gen.rst
    coro.rst
    contextvars.rst
-   datetime.rst
    typehints.rst
+
+
+C API for extension modules
+===========================
+
+.. toctree::
+
+   curses.rst
+   datetime.rst

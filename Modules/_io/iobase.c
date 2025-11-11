@@ -885,7 +885,7 @@ static PyType_Slot iobase_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec iobase_spec = {
+PyType_Spec _Py_iobase_spec = {
     .name = "_io._IOBase",
     .basicsize = sizeof(iobase),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -1046,7 +1046,7 @@ static PyType_Slot rawiobase_slots[] = {
 };
 
 /* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
-PyType_Spec rawiobase_spec = {
+PyType_Spec _Py_rawiobase_spec = {
     .name = "_io._RawIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),

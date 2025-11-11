@@ -1,0 +1,2 @@
+Fix memory leak when :class:`bytearray` or :class:`bytes` is formated with the
+``%*b`` format with a large width that results in a :exc:`MemoryError`.

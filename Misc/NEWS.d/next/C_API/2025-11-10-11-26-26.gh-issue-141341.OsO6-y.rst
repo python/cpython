@@ -1,0 +1,2 @@
+On Windows, rename the ``COMPILER`` macro to ``_Py_COMPILER`` to avoid name
+conflicts. Patch by Victor Stinner.

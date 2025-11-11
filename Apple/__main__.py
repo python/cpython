@@ -507,7 +507,7 @@ def lib_non_platform_files(dirname, names):
 def create_xcframework(platform: str) -> str:
     """Build an XCframework from the component parts for the platform.
 
-    :return: The version number of the Python verion that was packaged.
+    :return: The version number of the Python version that was packaged.
     """
     package_path = CROSS_BUILD_DIR / platform
     try:

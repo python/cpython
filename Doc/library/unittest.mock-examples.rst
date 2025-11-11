@@ -600,13 +600,13 @@ this list of calls for us::
 Partial mocking
 ~~~~~~~~~~~~~~~
 
-In some tests I wanted to mock out a call to :meth:`datetime.date.today`
-to return a known date, but I didn't want to prevent the code under test from
-creating new date objects. Unfortunately :class:`datetime.date` is written in C, and
-so I couldn't just monkey-patch out the static :meth:`datetime.date.today` method.
+For some tests, you may want to mock out a call to :meth:`datetime.date.today`
+to return a known date, but don't want to prevent the code under test from
+creating new date objects. Unfortunately :class:`datetime.date` is written in C,
+so you cannot just monkey-patch out the static :meth:`datetime.date.today` method.
 
-I found a simple way of doing this that involved effectively wrapping the date
-class with a mock, but passing through calls to the constructor to the real
+Instead, you can effectively wrap the date
+class with a mock, while passing through calls to the constructor to the real
 class (and returning real instances).
 
 The :func:`patch decorator <patch>` is used here to
@@ -743,16 +743,15 @@ exception is raised in the setUp then tearDown is not called.
 Mocking Unbound Methods
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Whilst writing tests today I needed to patch an *unbound method* (patching the
-method on the class rather than on the instance). I needed self to be passed
-in as the first argument because I want to make asserts about which objects
-were calling this particular method. The issue is that you can't patch with a
-mock for this, because if you replace an unbound method with a mock it doesn't
-become a bound method when fetched from the instance, and so it doesn't get
-self passed in. The workaround is to patch the unbound method with a real
-function instead. The :func:`patch` decorator makes it so simple to
-patch out methods with a mock that having to create a real function becomes a
-nuisance.
+Sometimes a test needs to patch an *unbound method*, which means patching the
+method on the class rather than on the instance. In order to make assertions
+about which objects were calling this particular method, you need to pass
+``self`` as the first argument. The issue is that you can't patch with a mock for
+this, because if you replace an unbound method with a mock it doesn't become
+a bound method when fetched from the instance, and so it doesn't get ``self``
+passed in. The workaround is to patch the unbound method with a real function
+instead. The :func:`patch` decorator makes it so simple to patch out methods
+with a mock that having to create a real function becomes a nuisance.
 
 If you pass ``autospec=True`` to patch then it does the patching with a
 *real* function object. This function object has the same signature as the one
@@ -760,8 +759,8 @@ it is replacing, but delegates to a mock under the hood. You still get your
 mock auto-created in exactly the same way as before. What it means though, is
 that if you use it to patch out an unbound method on a class the mocked
 function will be turned into a bound method if it is fetched from an instance.
-It will have ``self`` passed in as the first argument, which is exactly what I
-wanted:
+It will have ``self`` passed in as the first argument, which is exactly what
+was needed:
 
     >>> class Foo:
     ...   def foo(self):

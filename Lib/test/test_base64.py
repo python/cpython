@@ -231,18 +231,6 @@ class BaseXYTestCase(unittest.TestCase):
         self.check_other_types(base64.b64decode, b"YWJj", b"abc")
         self.check_decode_type_errors(base64.b64decode)
 
-        # Test with arbitrary alternative characters
-        tests_altchars = {(b'01a*b$cd', b'*$'): b'\xd3V\xbeo\xf7\x1d',
-                          }
-        for (data, altchars), res in tests_altchars.items():
-            data_str = data.decode('ascii')
-            altchars_str = altchars.decode('ascii')
-
-            eq(base64.b64decode(data, altchars=altchars), res)
-            eq(base64.b64decode(data_str, altchars=altchars), res)
-            eq(base64.b64decode(data, altchars=altchars_str), res)
-            eq(base64.b64decode(data_str, altchars=altchars_str), res)
-
         # Test standard alphabet
         for data, res in tests.items():
             eq(base64.standard_b64decode(data), res)
@@ -262,6 +250,20 @@ class BaseXYTestCase(unittest.TestCase):
         self.check_other_types(base64.urlsafe_b64decode, b'01a-b_cd',
                                b'\xd3V\xbeo\xf7\x1d')
         self.check_decode_type_errors(base64.urlsafe_b64decode)
+
+    def test_b64decode_altchars(self):
+        # Test with arbitrary alternative characters
+        eq = self.assertEqual
+        res = b'\xd3V\xbeo\xf7\x1d'
+        for altchars in b'*$', b'+/', b'/+', b'+_', b'-+', b'-/', b'/_':
+            data = b'01a%cb%ccd' % tuple(altchars)
+            data_str = data.decode('ascii')
+            altchars_str = altchars.decode('ascii')
+
+            eq(base64.b64decode(data, altchars=altchars), res)
+            eq(base64.b64decode(data_str, altchars=altchars), res)
+            eq(base64.b64decode(data, altchars=altchars_str), res)
+            eq(base64.b64decode(data_str, altchars=altchars_str), res)
 
     def test_b64decode_padding_error(self):
         self.assertRaises(binascii.Error, base64.b64decode, b'abc')
@@ -295,10 +297,12 @@ class BaseXYTestCase(unittest.TestCase):
                 base64.b64decode(bstr.decode('ascii'), validate=True)
 
         # Normal alphabet characters not discarded when alternative given
-        res = b'\xFB\xEF\xBE\xFF\xFF\xFF'
-        self.assertEqual(base64.b64decode(b'++[[//]]', b'[]'), res)
-        self.assertEqual(base64.urlsafe_b64decode(b'++--//__'), res)
-
+        res = b'\xfb\xef\xff'
+        self.assertEqual(base64.b64decode(b'++//', validate=True), res)
+        self.assertEqual(base64.b64decode(b'++//', '-_', validate=True), res)
+        self.assertEqual(base64.b64decode(b'--__', '-_', validate=True), res)
+        self.assertEqual(base64.urlsafe_b64decode(b'++//'), res)
+        self.assertEqual(base64.urlsafe_b64decode(b'--__'), res)
 
     def _altchars_strategy():
         """Generate 'altchars' for base64 encoding."""
@@ -390,23 +394,33 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(binascii.Error, base64.b32decode, b'me======')
         self.assertRaises(binascii.Error, base64.b32decode, 'me======')
 
+    def test_b32decode_map01(self):
         # Mapping zero and one
-        eq(base64.b32decode(b'MLO23456'), b'b\xdd\xad\xf3\xbe')
-        eq(base64.b32decode('MLO23456'), b'b\xdd\xad\xf3\xbe')
+        eq = self.assertEqual
+        res_L = b'b\xdd\xad\xf3\xbe'
+        res_I = b'b\x1d\xad\xf3\xbe'
+        eq(base64.b32decode(b'MLO23456'), res_L)
+        eq(base64.b32decode('MLO23456'), res_L)
+        eq(base64.b32decode(b'MIO23456'), res_I)
+        eq(base64.b32decode('MIO23456'), res_I)
+        self.assertRaises(binascii.Error, base64.b32decode, b'M1023456')
+        self.assertRaises(binascii.Error, base64.b32decode, b'M1O23456')
+        self.assertRaises(binascii.Error, base64.b32decode, b'ML023456')
+        self.assertRaises(binascii.Error, base64.b32decode, b'MI023456')
 
-        map_tests = {(b'M1023456', b'L'): b'b\xdd\xad\xf3\xbe',
-                     (b'M1023456', b'I'): b'b\x1d\xad\xf3\xbe',
-                     }
-        for (data, map01), res in map_tests.items():
-            data_str = data.decode('ascii')
+        data = b'M1023456'
+        data_str = data.decode('ascii')
+        for map01, res in [(b'L', res_L), (b'I', res_I)]:
             map01_str = map01.decode('ascii')
 
             eq(base64.b32decode(data, map01=map01), res)
             eq(base64.b32decode(data_str, map01=map01), res)
             eq(base64.b32decode(data, map01=map01_str), res)
             eq(base64.b32decode(data_str, map01=map01_str), res)
-            self.assertRaises(binascii.Error, base64.b32decode, data)
-            self.assertRaises(binascii.Error, base64.b32decode, data_str)
+
+            eq(base64.b32decode(b'M1O23456', map01=map01), res)
+            eq(base64.b32decode(b'M%c023456' % map01, map01=map01), res)
+            eq(base64.b32decode(b'M%cO23456' % map01, map01=map01), res)
 
     def test_b32decode_error(self):
         tests = [b'abc', b'ABCDEF==', b'==ABCDEF']

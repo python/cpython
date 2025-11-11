@@ -116,6 +116,20 @@ Type Objects
    .. versionadded:: 3.12
 
 
+.. c:function:: int PyType_Unwatch(int watcher_id, PyObject *type)
+
+   Mark *type* as not watched. This undoes a previous call to
+   :c:func:`PyType_Watch`. *type* must not be ``NULL``.
+
+   An extension should never call this function with a *watcher_id* that was
+   not returned to it by a previous call to :c:func:`PyType_AddWatcher`.
+
+   On success, this function returns ``0``. On failure, this function returns
+   ``-1`` with an exception set.
+
+   .. versionadded:: 3.12
+
+
 .. c:type:: int (*PyType_WatchCallback)(PyObject *type)
 
    Type of a type-watcher callback function.
@@ -131,6 +145,18 @@ Type Objects
 
    Return non-zero if the type object *o* sets the feature *feature*.
    Type features are denoted by single bit flags.
+
+
+.. c:function:: int PyType_FastSubclass(PyTypeObject *type, int flag)
+
+   Return non-zero if the type object *type* sets the subclass flag *flag*.
+   Subclass flags are denoted by
+   :c:macro:`Py_TPFLAGS_*_SUBCLASS <Py_TPFLAGS_LONG_SUBCLASS>`.
+   This function is used by many ``_Check`` functions for common types.
+
+   .. seealso::
+       :c:func:`PyObject_TypeCheck`, which is used as a slower alternative in
+       ``_Check`` functions for types that don't come with subclass flags.
 
 
 .. c:function:: int PyType_IS_GC(PyTypeObject *o)

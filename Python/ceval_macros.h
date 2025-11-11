@@ -62,8 +62,9 @@
 #ifdef Py_STATS
 #define INSTRUCTION_STATS(op) \
     do { \
+        PyStats *s = _PyStats_GET(); \
         OPCODE_EXE_INC(op); \
-        if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
+        if (s) s->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
@@ -79,6 +80,14 @@
 #endif
 
 #if _Py_TAIL_CALL_INTERP
+#   if defined(__clang__) || defined(__GNUC__)
+#       if !_Py__has_attribute(preserve_none) || !_Py__has_attribute(musttail)
+#           error "This compiler does not have support for efficient tail calling."
+#       endif
+#   elif defined(_MSC_VER) && (_MSC_VER < 1950)
+#       error "You need at least VS 2026 / PlatformToolset v145 for tail calling."
+#   endif
+
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
 #   define Py_MUSTTAIL [[clang::musttail]]
 #   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))

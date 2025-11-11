@@ -233,9 +233,32 @@ complete listing.
 
    .. versionadded:: 3.4
 
+.. c:macro:: Py_BUILD_ASSERT(cond)
+
+   Asserts a compile-time condition *cond*, as a statement.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      Py_BUILD_ASSERT(sizeof(PyTime_t) == sizeof(int64_t));
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_BUILD_ASSERT_EXPR(cond)
+
+   Asserts a compile-time condition *cond*, as an expression that evaluates to ``0``.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      #define foo_to_char(foo) \
+          ((char *)(foo) + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+
+   .. versionadded:: 3.3
+
 .. c:macro:: PyDoc_STRVAR(name, str)
 
-   Creates a variable with name ``name`` that can be used in docstrings.
+   Creates a variable with name *name* that can be used in docstrings.
    If Python is built without docstrings, the value will be empty.
 
    Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
@@ -266,6 +289,15 @@ complete listing.
               PyDoc_STR("Returns the keys of the row.")},
           {NULL, NULL}
       };
+
+.. c:macro:: PyDoc_VAR(name)
+
+   Declares a static character array variable with the given name *name*.
+
+   For example::
+
+      PyDoc_VAR(python_doc) = PyDoc_STR("A genus of constricting snakes in the Pythonidae family native "
+                                        "to the tropics and subtropics of the Eastern Hemisphere.");
 
 
 .. _api-objects:

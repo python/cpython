@@ -1,0 +1,2 @@
+:mod:`multiprocessing`: fix off-by-one error when checking the length
+of a temporary socket file path. Patch by Bénédikt Tran.

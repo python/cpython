@@ -1,0 +1,2 @@
+The iOS testbed app will now expose the ``GITHUB_ACTIONS`` environment
+variable to iOS apps being tested.

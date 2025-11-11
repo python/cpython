@@ -1,0 +1,1 @@
+Avoid making unnecessary filesystem calls for frozen modules in :mod:`linecache` when the global module cache is not present.

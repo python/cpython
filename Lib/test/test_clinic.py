@@ -4,6 +4,7 @@
 
 from functools import partial
 from test import support, test_tools
+from test.support import force_not_colorized_test_class
 from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink, rmtree
 from textwrap import dedent
@@ -2758,6 +2759,7 @@ class ClinicParserTest(TestCase):
                 with self.assertRaisesRegex((AssertionError, TypeError), errmsg):
                     self.parse_function(block)
 
+@force_not_colorized_test_class
 class ClinicExternalTest(TestCase):
     maxDiff = None
 
