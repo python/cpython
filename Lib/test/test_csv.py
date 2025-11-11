@@ -1353,10 +1353,21 @@ ghijkl\0mno
 ghi\0jkl
 """
 
+    sample15 = dedent("""\
+                        id;field1;group;sub_group
+                        1;False;['345'];['10']
+                        2;False;['112', '112'];['765', '766']
+                     """)
+
     def test_issue43625(self):
         sniffer = csv.Sniffer()
         self.assertTrue(sniffer.has_header(self.sample12))
         self.assertFalse(sniffer.has_header(self.sample13))
+
+    def test_issue119123(self):
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(self.sample15, ",;")
+        self.assertEqual(dialect.delimiter, ';')
 
     def test_has_header_strings(self):
         "More to document existing (unexpected?) behavior than anything else."
