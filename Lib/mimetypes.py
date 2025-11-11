@@ -486,6 +486,7 @@ def _default_mime_types():
         '.wiz'    : 'application/msword',
         '.nq'     : 'application/n-quads',
         '.nt'     : 'application/n-triples',
+        '.cjs'    : 'application/node',
         '.bin'    : 'application/octet-stream',
         '.a'      : 'application/octet-stream',
         '.dll'    : 'application/octet-stream',

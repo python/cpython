@@ -9,32 +9,32 @@ Python 3.11 or newer is required to build the JIT.
 
 The JIT compiler does not require end users to install any third-party dependencies, but part of it must be *built* using LLVM[^why-llvm]. You are *not* required to build the rest of CPython using LLVM, or even the same version of LLVM (in fact, this is uncommon).
 
-LLVM version 19 is the officially supported version. You can modify if needed using the `LLVM_VERSION` env var during configure. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-19`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
+LLVM version 20 is the officially supported version. You can modify if needed using the `LLVM_VERSION` env var during configure. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-19`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
 
 It's easy to install all of the required tools:
 
 ### Linux
 
-Install LLVM 19 on Ubuntu/Debian:
+Install LLVM 20 on Ubuntu/Debian:
 
 ```sh
 wget https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
-sudo ./llvm.sh 19
+sudo ./llvm.sh 20
 ```
 
-Install LLVM 19 on Fedora Linux 40 or newer:
+Install LLVM 20 on Fedora Linux 40 or newer:
 
 ```sh
-sudo dnf install 'clang(major) = 19' 'llvm(major) = 19'
+sudo dnf install 'clang(major) = 20' 'llvm(major) = 20'
 ```
 
 ### macOS
 
-Install LLVM 19 with [Homebrew](https://brew.sh):
+Install LLVM 20 with [Homebrew](https://brew.sh):
 
 ```sh
-brew install llvm@19
+brew install llvm@20
 ```
 
 Homebrew won't add any of the tools to your `$PATH`. That's okay; the build script knows how to find them.
@@ -43,18 +43,18 @@ Homebrew won't add any of the tools to your `$PATH`. That's okay; the build scri
 
 LLVM is downloaded automatically (along with other external binary dependencies) by `PCbuild\build.bat`.
 
-Otherwise, you can install LLVM 19 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=19), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
+Otherwise, you can install LLVM 20 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=20), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
 
 Alternatively, you can use [chocolatey](https://chocolatey.org):
 
 ```sh
-choco install llvm --version=19.1.0
+choco install llvm --version=20.1.8
 ```
 
 ### Dev Containers
 
 If you are working on CPython in a [Codespaces instance](https://devguide.python.org/getting-started/setup-building/#using-codespaces), there's no 
-need to install LLVM as the Fedora 41 base image includes LLVM 19 out of the box.
+need to install LLVM as the Fedora 42 base image includes LLVM 20 out of the box.
 
 ## Building
 
