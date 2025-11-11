@@ -602,7 +602,7 @@ def main():
             func(f, sys.stdout.buffer)
     else:
         if sys.stdin.isatty():
-            # gh-138775: read input data at once when reading from stdin.
+            # gh-138775: read terminal input data all at once to detect EOF
             import io
             data = sys.stdin.buffer.read()
             buffer = io.BytesIO(data)
