@@ -215,6 +215,7 @@ class WaveOpen(unittest.TestCase):
             cases = (
                 FakePath(fp.name),
                 FakePath(os.fsencode(fp.name)),
+                os.fsencode(fp.name),
                 )
             for fake_path in cases:
                 with self.subTest(fake_path):
