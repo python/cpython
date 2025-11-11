@@ -21,7 +21,6 @@ EXCEPTIONS = frozenset({
 })
 
 IGNORED_EXTENSION = "_ctypes_test"
-# Ignore constructor and destructor functions
 
 
 def is_local_symbol_type(symtype):
@@ -39,7 +38,6 @@ def is_local_symbol_type(symtype):
 def get_exported_symbols(library, dynamic=False):
     print(f"Check that {library} only exports symbols starting with Py or _Py")
 
-    # Only look at dynamic symbols
     args = ['nm', '--no-sort']
     if dynamic:
         args.append('--dynamic')
