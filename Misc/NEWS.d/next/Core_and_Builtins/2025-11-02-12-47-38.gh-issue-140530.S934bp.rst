@@ -1,0 +1,2 @@
+Fix a reference leak when ``raise exc from cause`` fails. Patch by Bénédikt
+Tran.

@@ -1859,7 +1859,7 @@ are always available.  They are listed here in alphabetical order.
    the same data with other ordering tools such as :func:`max` that rely
    on a different underlying method.  Implementing all six comparisons
    also helps avoid confusion for mixed type comparisons which can call
-   reflected the :meth:`~object.__gt__` method.
+   the reflected :meth:`~object.__gt__` method.
 
    For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 

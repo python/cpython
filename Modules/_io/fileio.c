@@ -1329,7 +1329,7 @@ static PyType_Slot fileio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec fileio_spec = {
+PyType_Spec _Py_fileio_spec = {
     .name = "_io.FileIO",
     .basicsize = sizeof(fileio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
