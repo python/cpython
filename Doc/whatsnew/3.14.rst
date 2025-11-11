@@ -1,8 +1,9 @@
+
 ****************************
   What's new in Python 3.14
 ****************************
 
-:Editor: Hugo van Kemenade
+:Editors: Adam Turner and Hugo van Kemenade
 
 .. Rules for maintenance:
 
@@ -45,40 +46,47 @@
    when researching a change.
 
 This article explains the new features in Python 3.14, compared to 3.13.
-
+Python 3.14 was released on 7 October 2025.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
 
    :pep:`745` -- Python 3.14 release schedule
 
-.. note::
 
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.14 moves towards release,
-   so it's worth checking back even after reading earlier versions.
-
-
-Summary -- release highlights
+Summary -- Release highlights
 =============================
 
 .. This section singles out the most important changes in Python 3.14.
    Brevity is key.
 
-Python 3.14 will be the latest stable release of the Python
-programming language, with a mix of changes to the language, the
-implementation and the standard library.
+Python 3.14 is the latest stable release of the Python programming
+language, with a mix of changes to the language, the implementation,
+and the standard library.
+The biggest changes include :ref:`template string literals
+<whatsnew314-template-string-literals>`,
+:ref:`deferred evaluation of annotations <whatsnew314-deferred-annotations>`,
+and support for :ref:`subinterpreters <whatsnew314-multiple-interpreters>` in
+the standard library.
 
-The biggest changes to the implementation include template strings (:pep:`750`),
-deferred evaluation of annotations (:pep:`649`),
-and a new type of interpreter that uses tail calls.
-
-The library changes include the addition of a new :mod:`!annotationlib` module
-for introspecting and wrapping annotations (:pep:`749`),
-a new :mod:`!compression.zstd` module for Zstandard support (:pep:`784`),
-plus syntax highlighting in the REPL,
+The library changes include significantly improved capabilities for
+:ref:`introspection in asyncio <whatsnew314-asyncio-introspection>`,
+:ref:`support for Zstandard <whatsnew314-zstandard>` via a new
+:mod:`compression.zstd` module, syntax highlighting in the REPL,
 as well as the usual deprecations and removals,
 and improvements in user-friendliness and correctness.
+
+This article doesn't attempt to provide a complete specification
+of all new features, but instead gives a convenient overview.
+For full details refer to the documentation,
+such as the :ref:`Library Reference <library-index>`
+and :ref:`Language Reference <reference-index>`.
+To understand the complete implementation and design rationale for a change,
+refer to the PEP for a particular new feature;
+but note that PEPs usually are not kept up-to-date
+once a feature has been fully implemented.
+See `Porting to Python 3.14`_ for guidance on upgrading from
+earlier versions of Python.
 
 --------------
 
@@ -100,6 +108,7 @@ Interpreter improvements:
 * :ref:`A new type of interpreter <whatsnew314-tail-call-interpreter>`
 * :ref:`Free-threaded mode improvements <whatsnew314-free-threaded-cpython>`
 * :ref:`Improved error messages <whatsnew314-improved-error-messages>`
+* :ref:`Incremental garbage collection <whatsnew314-incremental-gc>`
 
 Significant improvements in the standard library:
 
@@ -124,7 +133,8 @@ Release changes:
 
 * :pep:`779`: :ref:`Free-threaded Python is officially supported
   <whatsnew314-free-threaded-now-supported>`
-* :pep:`761`: :ref:`Discontinuation of PGP signatures <whatsnew314-no-more-pgp>`
+* :pep:`761`: :ref:`PGP signatures have been discontinued for official releases
+  <whatsnew314-no-more-pgp>`
 * :ref:`Windows and macOS binary releases now support the experimental
   just-in-time compiler <whatsnew314-jit-compiler>`
 * :ref:`Binary releases for Android are now provided <whatsnew314-build-changes>`
@@ -207,7 +217,7 @@ has significant benefits:
 * they support a new (to Python), human-friendly concurrency model
 * true multi-core parallelism
 
-For some use cases, concurrency in software enables efficiency and
+For some use cases, concurrency in software improves efficiency and
 can simplify design, at a high level.
 At the same time, implementing and maintaining all but the simplest concurrency
 is often a struggle for the human brain.
@@ -215,9 +225,10 @@ That especially applies to plain threads (for example, :mod:`threading`),
 where all memory is shared between all threads.
 
 With multiple isolated interpreters, you can take advantage of a class
-of concurrency models, like CSP or the actor model, that have found
+of concurrency models, like Communicating Sequential Processes (CSP)
+or the actor model, that have found
 success in other programming languages, like Smalltalk, Erlang,
-Haskell, and Go. Think of multiple interpreters like threads
+Haskell, and Go. Think of multiple interpreters as threads
 but with opt-in sharing.
 
 Regarding multi-core parallelism: as of Python 3.12, interpreters
@@ -239,8 +250,8 @@ having the isolation of processes with the efficiency of threads.
 While the feature has been around for decades, multiple interpreters
 have not been used widely, due to low awareness and the lack of a
 standard library module. Consequently, they currently have several
-notable limitations, which will improve significantly now that the
-feature is finally going mainstream.
+notable limitations, which are expected to improve significantly now
+that the feature is going mainstream.
 
 Current limitations:
 
@@ -439,8 +450,8 @@ depending on platform and architecture.
 The baseline is Python 3.14 built with Clang 19, without this new interpreter.
 
 This interpreter currently only works with Clang 19 and newer
-on x86-64 and AArch64 architectures. However, a future release
-of GCC is expected will support this as well.
+on x86-64 and AArch64 architectures.
+However, a future release of GCC is expected to support this as well.
 
 This feature is opt-in for now. Enabling profile-guided optimization is highly
 recommendeded when using the new interpreter as it is the only configuration
@@ -927,6 +938,19 @@ The compiler now emits a :exc:`SyntaxWarning` when a :keyword:`return`,
 leaving a :keyword:`finally` block.
 This change is specified in :pep:`765`.
 
+In situations where this change is inconvenient (such as those where the
+warnings are redundant due to code linting), the :ref:`warning filter
+<warning-filter>` can be used to turn off all syntax warnings by adding
+``ignore::SyntaxWarning`` as a filter. This can be specified in combination
+with a filter that converts other warnings to errors (for example, passing
+``-Werror -Wignore::SyntaxWarning`` as CLI options, or setting
+``PYTHONWARNINGS=error,ignore::SyntaxWarning``).
+
+Note that applying such a filter at runtime using the :mod:`warnings` module
+will only suppress the warning in code that is compiled *after* the filter is
+adjusted. Code that is compiled prior to the filter adjustment (for example,
+when a module is imported) will still emit the syntax warning.
+
 (Contributed by Irit Katriel in :gh:`130080`.)
 
 
@@ -1116,7 +1140,7 @@ concurrent.futures
 .. _whatsnew314-concurrent-futures-start-method:
 
 * On Unix platforms other than macOS, :ref:`'forkserver'
-  <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
+  <multiprocessing-start-method-forkserver>` is now the default :ref:`start
   method <multiprocessing-start-methods>` for
   :class:`~concurrent.futures.ProcessPoolExecutor`
   (replacing :ref:`'fork' <multiprocessing-start-method-fork>`).
@@ -1567,7 +1591,7 @@ multiprocessing
 .. _whatsnew314-multiprocessing-start-method:
 
 * On Unix platforms other than macOS, :ref:`'forkserver'
-  <multiprocessing-start-method-forkserver>` is now the the default :ref:`start
+  <multiprocessing-start-method-forkserver>` is now the default :ref:`start
   method <multiprocessing-start-methods>`
   (replacing :ref:`'fork' <multiprocessing-start-method-fork>`).
   This change does not affect Windows or macOS, where :ref:`'spawn'
@@ -2440,6 +2464,7 @@ asyncio
          blocking_code()
          runner.run(operation_two())
 
+
 email
 -----
 
@@ -2730,6 +2755,7 @@ CPython bytecode changes
 
 * Add the :opcode:`POP_ITER` opcode to support 'virtual' iterators.
   (Contributed by Mark Shannon in :gh:`132554`.)
+
 
 Pseudo-instructions
 -------------------
@@ -3058,7 +3084,7 @@ Deprecated C APIs
 
 .. _whatsnew314-build-changes:
 
-Build Changes
+Build changes
 =============
 
 * :pep:`776`: Emscripten is now an officially supported platform at

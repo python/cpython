@@ -1,2 +1,0 @@
-Allow negative priority values from :func:`os.sched_get_priority_min` and
-:func:`os.sched_get_priority_max` functions.

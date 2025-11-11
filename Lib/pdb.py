@@ -3577,7 +3577,13 @@ def main():
             parser.error("argument -m: not allowed with argument --pid")
         try:
             attach(opts.pid, opts.commands)
-        except PermissionError as e:
+        except RuntimeError:
+            print(
+                f"Cannot attach to pid {opts.pid}, please make sure that the process exists "
+                "and is using the same Python version."
+            )
+            sys.exit(1)
+        except PermissionError:
             exit_with_permission_help_text()
         return
     elif opts.module:
@@ -3597,7 +3603,6 @@ def main():
         invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
         if invalid_args:
             parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
-            sys.exit(2)
 
     if opts.module:
         file = opts.module
