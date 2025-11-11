@@ -19,7 +19,14 @@ as much as it can.
 
 .. c:function:: int PyWeakref_CheckRef(PyObject *ob)
 
-   Return non-zero if *ob* is a reference object.  This function always succeeds.
+   Return non-zero if *ob* is a reference object or a subclass of the reference
+   type.  This function always succeeds.
+
+
+.. c:function:: int PyWeakref_CheckRefExact(PyObject *ob)
+
+   Return non-zero if *ob* is a reference object, but not a subclass of the
+   reference type.  This function always succeeds.
 
 
 .. c:function:: int PyWeakref_CheckProxy(PyObject *ob)
@@ -62,30 +69,6 @@ as much as it can.
    * On error, raise an exception and return -1.
 
    .. versionadded:: 3.13
-
-
-.. c:function:: PyObject* PyWeakref_GetObject(PyObject *ref)
-
-   Return a :term:`borrowed reference` to the referenced object from a weak
-   reference, *ref*.  If the referent is no longer live, returns ``Py_None``.
-
-   .. note::
-
-      This function returns a :term:`borrowed reference` to the referenced object.
-      This means that you should always call :c:func:`Py_INCREF` on the object
-      except when it cannot be destroyed before the last usage of the borrowed
-      reference.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyWeakref_GetRef` instead.
-
-
-.. c:function:: PyObject* PyWeakref_GET_OBJECT(PyObject *ref)
-
-   Similar to :c:func:`PyWeakref_GetObject`, but does no error checking.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyWeakref_GetRef` instead.
 
 
 .. c:function:: int PyWeakref_IsDead(PyObject *ref)

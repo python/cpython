@@ -29,7 +29,7 @@ build applications which provide an interactive interpreter prompt.
    module.
 
 
-.. class:: InteractiveConsole(locals=None, filename="<console>", local_exit=False)
+.. class:: InteractiveConsole(locals=None, filename="<console>", *, local_exit=False)
 
    Closely emulate the behavior of the interactive Python interpreter. This class
    builds on :class:`InteractiveInterpreter` and adds prompting using the familiar

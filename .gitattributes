@@ -83,6 +83,7 @@ Include/opcode_ids.h                                generated
 Include/token.h                                     generated
 Lib/_opcode_metadata.py                             generated
 Lib/keyword.py                                      generated
+Lib/idlelib/help.html                               generated
 Lib/test/certdata/*.pem                             generated
 Lib/test/certdata/*.0                               generated
 Lib/test/levenshtein_examples.json                  generated
@@ -103,3 +104,4 @@ Python/stdlib_module_names.h                        generated
 Tools/peg_generator/pegen/grammar_parser.py         generated
 aclocal.m4                                          generated
 configure                                           generated
+*.min.js                                            generated
