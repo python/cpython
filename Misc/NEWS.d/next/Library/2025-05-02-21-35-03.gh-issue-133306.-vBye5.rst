@@ -1,1 +1,0 @@
-Support ``\z`` as a synonym for ``\Z`` in :mod:`regular expressions <re>`.

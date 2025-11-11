@@ -42,7 +42,7 @@ if "%~1"=="-O" (set dashO=-O)     & shift & goto CheckOpts
 if "%~1"=="-q" (set qmode=yes)    & shift & goto CheckOpts
 if "%~1"=="-d" (set suffix=_d)    & shift & goto CheckOpts
 rem HACK: Need some way to infer the version number in this script
-if "%~1"=="--disable-gil" (set pyname=python3.14t) & shift & goto CheckOpts
+if "%~1"=="--disable-gil" (set pyname=python3.15t) & shift & goto CheckOpts
 if "%~1"=="-win32" (set prefix=%pcbuild%win32) & shift & goto CheckOpts
 if "%~1"=="-x64" (set prefix=%pcbuild%amd64) & shift & goto CheckOpts
 if "%~1"=="-amd64" (set prefix=%pcbuild%amd64) & shift & goto CheckOpts

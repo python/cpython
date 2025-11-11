@@ -478,6 +478,13 @@ clear_managed_dict(PyObject *self, PyObject *obj)
 }
 
 
+static PyObject *
+is_uniquely_referenced(PyObject *self, PyObject *op)
+{
+    return PyBool_FromLong(PyUnstable_Object_IsUniquelyReferenced(op));
+}
+
+
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},
@@ -503,6 +510,7 @@ static PyMethodDef test_methods[] = {
     {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
+    {"is_uniquely_referenced", is_uniquely_referenced, METH_O},
     {NULL},
 };
 

@@ -1,2 +1,0 @@
-Use ``\z`` instead of ``\Z`` in :func:`fnmatch.translate` and
-:func:`glob.translate`.

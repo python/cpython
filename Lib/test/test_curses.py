@@ -8,7 +8,8 @@ import unittest
 from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
-                          check_disallow_instantiation, MISSING_C_DOCSTRINGS)
+                          check_disallow_instantiation, MISSING_C_DOCSTRINGS,
+                          gc_collect)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -129,6 +130,9 @@ class TestCurses(unittest.TestCase):
         curses.use_env(False)
         curses.use_env(True)
 
+    def test_error(self):
+        self.assertIsSubclass(curses.error, Exception)
+
     def test_create_windows(self):
         win = curses.newwin(5, 10)
         self.assertEqual(win.getbegyx(), (0, 0))
@@ -180,6 +184,14 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win3.getbegyx(), (4, 8))
         self.assertEqual(win3.getparyx(), (2, 1))
         self.assertEqual(win3.getmaxyx(), (6, 11))
+
+    def test_subwindows_references(self):
+        win = curses.newwin(5, 10)
+        win2 = win.subwin(3, 7)
+        del win
+        gc_collect()
+        del win2
+        gc_collect()
 
     def test_move_cursor(self):
         stdscr = self.stdscr
@@ -1248,7 +1260,7 @@ class TestAscii(unittest.TestCase):
 
     def test_controlnames(self):
         for name in curses.ascii.controlnames:
-            self.assertTrue(hasattr(curses.ascii, name), name)
+            self.assertHasAttr(curses.ascii, name)
 
     def test_ctypes(self):
         def check(func, expected):

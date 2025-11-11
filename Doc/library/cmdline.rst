@@ -1,3 +1,5 @@
+.. _library-cmdline:
+
 ++++++++++++++++++++++++++++++++++++
 Modules command-line interface (CLI)
 ++++++++++++++++++++++++++++++++++++

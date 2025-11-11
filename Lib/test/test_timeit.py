@@ -4,8 +4,9 @@ import sys
 import io
 from textwrap import dedent
 
-from test.support import captured_stdout
-from test.support import captured_stderr
+from test.support import (
+    captured_stdout, captured_stderr, force_not_colorized,
+)
 
 # timeit's default number of iterations.
 DEFAULT_NUMBER = 1000000
@@ -222,8 +223,8 @@ class TestTimeit(unittest.TestCase):
     def assert_exc_string(self, exc_string, expected_exc_name):
         exc_lines = exc_string.splitlines()
         self.assertGreater(len(exc_lines), 2)
-        self.assertTrue(exc_lines[0].startswith('Traceback'))
-        self.assertTrue(exc_lines[-1].startswith(expected_exc_name))
+        self.assertStartsWith(exc_lines[0], 'Traceback')
+        self.assertStartsWith(exc_lines[-1], expected_exc_name)
 
     def test_print_exc(self):
         s = io.StringIO()
@@ -351,11 +352,13 @@ class TestTimeit(unittest.TestCase):
         self.assertEqual(error_stringio.getvalue(),
                     "Unrecognized unit. Please select nsec, usec, msec, or sec.\n")
 
+    @force_not_colorized
     def test_main_exception(self):
         with captured_stderr() as error_stringio:
             s = self.run_main(switches=['1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
+    @force_not_colorized
     def test_main_exception_fixed_reps(self):
         with captured_stderr() as error_stringio:
             s = self.run_main(switches=['-n1', '1/0'])

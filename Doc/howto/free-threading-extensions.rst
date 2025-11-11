@@ -6,8 +6,8 @@
 C API Extension Support for Free Threading
 ******************************************
 
-Starting with the 3.13 release, CPython has experimental support for running
-with the :term:`global interpreter lock` (GIL) disabled in a configuration
+Starting with the 3.13 release, CPython has support for running with
+the :term:`global interpreter lock` (GIL) disabled in a configuration
 called :term:`free threading`.  This document describes how to adapt C API
 extensions to support free threading.
 
@@ -22,6 +22,14 @@ You can use it to enable code that only runs under the free-threaded build::
     #ifdef Py_GIL_DISABLED
     /* code that only runs in the free-threaded build */
     #endif
+
+.. note::
+
+   On Windows, this macro is not defined automatically, but must be specified
+   to the compiler when building. The :func:`sysconfig.get_config_var` function
+   can be used to determine whether the current running interpreter had the
+   macro defined.
+
 
 Module Initialization
 =====================
@@ -153,6 +161,8 @@ that return :term:`strong references <strong reference>`.
 +===================================+===================================+
 | :c:func:`PyList_GetItem`          | :c:func:`PyList_GetItemRef`       |
 +-----------------------------------+-----------------------------------+
+| :c:func:`PyList_GET_ITEM`         | :c:func:`PyList_GetItemRef`       |
++-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_GetItem`          | :c:func:`PyDict_GetItemRef`       |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_GetItemWithError` | :c:func:`PyDict_GetItemRef`       |
@@ -163,9 +173,9 @@ that return :term:`strong references <strong reference>`.
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyDict_Next`             | none (see :ref:`PyDict_Next`)     |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyWeakref_GetObject`     | :c:func:`PyWeakref_GetRef`        |
+| :c:func:`!PyWeakref_GetObject`    | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
-| :c:func:`PyWeakref_GET_OBJECT`    | :c:func:`PyWeakref_GetRef`        |
+| :c:func:`!PyWeakref_GET_OBJECT`   | :c:func:`PyWeakref_GetRef`        |
 +-----------------------------------+-----------------------------------+
 | :c:func:`PyImport_AddModule`      | :c:func:`PyImport_AddModuleRef`   |
 +-----------------------------------+-----------------------------------+
@@ -193,7 +203,7 @@ Memory Allocation APIs
 Python's memory management C API provides functions in three different
 :ref:`allocation domains <allocator-domains>`: "raw", "mem", and "object".
 For thread-safety, the free-threaded build requires that only Python objects
-are allocated using the object domain, and that all Python object are
+are allocated using the object domain, and that all Python objects are
 allocated using that domain.  This differs from the prior Python versions,
 where this was only a best practice and not a hard requirement.
 
@@ -334,12 +344,12 @@ This means you cannot rely on nested critical sections to lock multiple objects
 at once, as the inner critical section may suspend the outer ones. Instead, use
 :c:macro:`Py_BEGIN_CRITICAL_SECTION2` to lock two objects simultaneously.
 
-Note that the locks described above are only :c:type:`!PyMutex` based locks.
+Note that the locks described above are only :c:type:`PyMutex` based locks.
 The critical section implementation does not know about or affect other locking
 mechanisms that might be in use, like POSIX mutexes.  Also note that while
-blocking on any :c:type:`!PyMutex` causes the critical sections to be
+blocking on any :c:type:`PyMutex` causes the critical sections to be
 suspended, only the mutexes that are part of the critical sections are
-released.  If :c:type:`!PyMutex` is used without a critical section, it will
+released.  If :c:type:`PyMutex` is used without a critical section, it will
 not be released and therefore does not get the same deadlock avoidance.
 
 Important Considerations
@@ -387,8 +397,9 @@ The wheels, shared libraries, and binaries are indicated by a ``t`` suffix.
 * `pypa/manylinux <https://github.com/pypa/manylinux>`_ supports the
   free-threaded build, with the ``t`` suffix, such as ``python3.13t``.
 * `pypa/cibuildwheel <https://github.com/pypa/cibuildwheel>`_ supports the
-  free-threaded build if you set
-  `CIBW_FREE_THREADED_SUPPORT <https://cibuildwheel.pypa.io/en/stable/options/#free-threaded-support>`_.
+  free-threaded build on Python 3.13 and 3.14. On Python 3.14, free-threaded
+  wheels will be built by default. On Python 3.13, you will need to set
+  `CIBW_ENABLE to cpython-freethreading <https://cibuildwheel.pypa.io/en/stable/options/#enable>`_.
 
 Limited C API and Stable ABI
 ............................

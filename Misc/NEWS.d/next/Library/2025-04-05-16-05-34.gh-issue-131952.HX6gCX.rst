@@ -1,1 +1,0 @@
-Add color output to the :program:`json` CLI. Patch by Tomas Roun.

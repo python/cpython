@@ -1,2 +1,0 @@
-Support passing ``preset`` option to :func:`tarfile.open` when using ``'w|xz'``
-mode.

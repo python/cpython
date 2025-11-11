@@ -12,7 +12,7 @@ import threading
 import types
 import warnings
 
-from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
+from _colorize import get_theme
 from _pyrepl.console import InteractiveColoredConsole
 
 from . import futures
@@ -64,7 +64,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback, context=self.context)
+        self.loop.call_soon_threadsafe(callback, context=self.context)
 
         try:
             return future.result()
@@ -74,7 +74,8 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             return
         except BaseException:
             if keyboard_interrupted:
-                self.write("\nKeyboardInterrupt\n")
+                if not CAN_USE_PYREPL:
+                    self.write("\nKeyboardInterrupt\n")
             else:
                 self.showtraceback()
             return self.STATEMENT_FAILED
@@ -103,15 +104,20 @@ class REPLThread(threading.Thread):
                     exec(startup_code, console.locals)
 
             ps1 = getattr(sys, "ps1", ">>> ")
-            if can_colorize() and CAN_USE_PYREPL:
-                ps1 = f"{ANSIColors.BOLD_MAGENTA}{ps1}{ANSIColors.RESET}"
-            console.write(f"{ps1}import asyncio\n")
+            if CAN_USE_PYREPL:
+                theme = get_theme().syntax
+                ps1 = f"{theme.prompt}{ps1}{theme.reset}"
+                import_line = f'{theme.keyword}import{theme.reset} asyncio'
+            else:
+                import_line = "import asyncio"
+            console.write(f"{ps1}{import_line}\n")
 
             if CAN_USE_PYREPL:
                 from _pyrepl.simple_interact import (
                     run_multiline_interactive_console,
                 )
                 try:
+                    sys.ps1 = ps1
                     run_multiline_interactive_console(console)
                 except SystemExit:
                     # expected via the `exit` and `quit` commands
@@ -145,6 +151,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog="python3 -m asyncio",
         description="Interactive asyncio shell and CLI tools",
+        color=True,
     )
     subparsers = parser.add_subparsers(help="sub-commands", dest="command")
     ps = subparsers.add_parser(

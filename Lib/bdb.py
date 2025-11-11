@@ -267,12 +267,9 @@ class Bdb:
                   is entered.
             return: A function or other code block is about to return.
             exception: An exception has occurred.
-            c_call: A C function is about to be called.
-            c_return: A C function has returned.
-            c_exception: A C function has raised an exception.
 
-        For the Python events, specialized functions (see the dispatch_*()
-        methods) are called.  For the C events, no action is taken.
+        For all the events, specialized functions (see the dispatch_*()
+        methods) are called.
 
         The arg parameter depends on the previous event.
         """
@@ -288,12 +285,6 @@ class Bdb:
                 return self.dispatch_return(frame, arg)
             if event == 'exception':
                 return self.dispatch_exception(frame, arg)
-            if event == 'c_call':
-                return self.trace_dispatch
-            if event == 'c_exception':
-                return self.trace_dispatch
-            if event == 'c_return':
-                return self.trace_dispatch
             if event == 'opcode':
                 return self.dispatch_opcode(frame, arg)
             print('bdb.Bdb.dispatch: unknown debugging event:', repr(event))

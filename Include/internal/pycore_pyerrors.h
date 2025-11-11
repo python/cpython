@@ -94,13 +94,13 @@ extern void _PyErr_Fetch(
     PyObject **value,
     PyObject **traceback);
 
-extern PyObject* _PyErr_GetRaisedException(PyThreadState *tstate);
+PyAPI_FUNC(PyObject*) _PyErr_GetRaisedException(PyThreadState *tstate);
 
 PyAPI_FUNC(int) _PyErr_ExceptionMatches(
     PyThreadState *tstate,
     PyObject *exc);
 
-extern void _PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc);
+PyAPI_FUNC(void) _PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc);
 
 extern void _PyErr_Restore(
     PyThreadState *tstate,

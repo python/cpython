@@ -189,6 +189,11 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto exit;
         }
         bufsize = ival;
+        if (bufsize < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "bufsize cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_pos:
     return_value = zlib_decompress_impl(module, &data, wbits, bufsize);
@@ -567,6 +572,11 @@ zlib_Decompress_decompress(PyObject *self, PyTypeObject *cls, PyObject *const *a
             goto exit;
         }
         max_length = ival;
+        if (max_length < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "max_length cannot be negative");
+            goto exit;
+        }
     }
 skip_optional_pos:
     return_value = zlib_Decompress_decompress_impl((compobject *)self, cls, &data, max_length);
@@ -898,7 +908,7 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(zlib_ZlibDecompressor_decompress__doc__,
+PyDoc_STRVAR(zlib__ZlibDecompressor_decompress__doc__,
 "decompress($self, /, data, max_length=-1)\n"
 "--\n"
 "\n"
@@ -917,15 +927,16 @@ PyDoc_STRVAR(zlib_ZlibDecompressor_decompress__doc__,
 "EOFError.  Any data found after the end of the stream is ignored and saved in\n"
 "the unused_data attribute.");
 
-#define ZLIB_ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF    \
-    {"decompress", _PyCFunction_CAST(zlib_ZlibDecompressor_decompress), METH_FASTCALL|METH_KEYWORDS, zlib_ZlibDecompressor_decompress__doc__},
+#define ZLIB__ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF    \
+    {"decompress", _PyCFunction_CAST(zlib__ZlibDecompressor_decompress), METH_FASTCALL|METH_KEYWORDS, zlib__ZlibDecompressor_decompress__doc__},
 
 static PyObject *
-zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
-                                      Py_buffer *data, Py_ssize_t max_length);
+zlib__ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
+                                       Py_buffer *data,
+                                       Py_ssize_t max_length);
 
 static PyObject *
-zlib_ZlibDecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib__ZlibDecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -984,7 +995,7 @@ zlib_ZlibDecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize
         max_length = ival;
     }
 skip_optional_pos:
-    return_value = zlib_ZlibDecompressor_decompress_impl((ZlibDecompressor *)self, &data, max_length);
+    return_value = zlib__ZlibDecompressor_decompress_impl((ZlibDecompressor *)self, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -992,6 +1003,86 @@ exit:
        PyBuffer_Release(&data);
     }
 
+    return return_value;
+}
+
+PyDoc_STRVAR(zlib__ZlibDecompressor__doc__,
+"_ZlibDecompressor(wbits=MAX_WBITS, zdict=b\'\')\n"
+"--\n"
+"\n"
+"Create a decompressor object for decompressing data incrementally.\n"
+"\n"
+"  zdict\n"
+"    The predefined compression dictionary. This is a sequence of bytes\n"
+"    (such as a bytes object) containing subsequences that are expected\n"
+"    to occur frequently in the data that is to be compressed. Those\n"
+"    subsequences that are expected to be most common should come at the\n"
+"    end of the dictionary. This must be the same dictionary as used by the\n"
+"    compressor that produced the input data.");
+
+static PyObject *
+zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict);
+
+static PyObject *
+zlib__ZlibDecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(wbits), &_Py_ID(zdict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"wbits", "zdict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_ZlibDecompressor",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    int wbits = MAX_WBITS;
+    PyObject *zdict = NULL;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        wbits = PyLong_AsInt(fastargs[0]);
+        if (wbits == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    zdict = fastargs[1];
+skip_optional_pos:
+    return_value = zlib__ZlibDecompressor_impl(type, wbits, zdict);
+
+exit:
     return return_value;
 }
 
@@ -1028,9 +1119,21 @@ zlib_adler32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    value = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (value == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &value, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = zlib_adler32_impl(module, &data, value);
@@ -1041,6 +1144,89 @@ exit:
        PyBuffer_Release(&data);
     }
 
+    return return_value;
+}
+
+PyDoc_STRVAR(zlib_adler32_combine__doc__,
+"adler32_combine($module, adler1, adler2, len2, /)\n"
+"--\n"
+"\n"
+"Combine two Adler-32 checksums into one.\n"
+"\n"
+"  adler1\n"
+"    Adler-32 checksum for sequence A\n"
+"  adler2\n"
+"    Adler-32 checksum for sequence B\n"
+"  len2\n"
+"    Length of sequence B\n"
+"\n"
+"Given the Adler-32 checksum \'adler1\' of a sequence A and the\n"
+"Adler-32 checksum \'adler2\' of a sequence B of length \'len2\',\n"
+"return the Adler-32 checksum of A and B concatenated.");
+
+#define ZLIB_ADLER32_COMBINE_METHODDEF    \
+    {"adler32_combine", _PyCFunction_CAST(zlib_adler32_combine), METH_FASTCALL, zlib_adler32_combine__doc__},
+
+static unsigned int
+zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
+                          unsigned int adler2, PyObject *len2);
+
+static PyObject *
+zlib_adler32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned int adler1;
+    unsigned int adler2;
+    PyObject *len2;
+    unsigned int _return_value;
+
+    if (!_PyArg_CheckPositional("adler32_combine", nargs, 3, 3)) {
+        goto exit;
+    }
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[0], &adler1, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &adler2, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
+    if (!PyLong_Check(args[2])) {
+        _PyArg_BadArgument("adler32_combine", "argument 3", "int", args[2]);
+        goto exit;
+    }
+    len2 = args[2];
+    _return_value = zlib_adler32_combine_impl(module, adler1, adler2, len2);
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+
+exit:
     return return_value;
 }
 
@@ -1078,9 +1264,21 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    value = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (value == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &value, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     _return_value = zlib_crc32_impl(module, &data, value);
@@ -1095,6 +1293,89 @@ exit:
        PyBuffer_Release(&data);
     }
 
+    return return_value;
+}
+
+PyDoc_STRVAR(zlib_crc32_combine__doc__,
+"crc32_combine($module, crc1, crc2, len2, /)\n"
+"--\n"
+"\n"
+"Combine two CRC-32 checksums into one.\n"
+"\n"
+"  crc1\n"
+"    CRC-32 checksum for sequence A\n"
+"  crc2\n"
+"    CRC-32 checksum for sequence B\n"
+"  len2\n"
+"    Length of sequence B\n"
+"\n"
+"Given the CRC-32 checksum \'crc1\' of a sequence A and the\n"
+"CRC-32 checksum \'crc2\' of a sequence B of length \'len2\',\n"
+"return the CRC-32 checksum of A and B concatenated.");
+
+#define ZLIB_CRC32_COMBINE_METHODDEF    \
+    {"crc32_combine", _PyCFunction_CAST(zlib_crc32_combine), METH_FASTCALL, zlib_crc32_combine__doc__},
+
+static unsigned int
+zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
+                        unsigned int crc2, PyObject *len2);
+
+static PyObject *
+zlib_crc32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned int crc1;
+    unsigned int crc2;
+    PyObject *len2;
+    unsigned int _return_value;
+
+    if (!_PyArg_CheckPositional("crc32_combine", nargs, 3, 3)) {
+        goto exit;
+    }
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[0], &crc1, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &crc2, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
+    if (!PyLong_Check(args[2])) {
+        _PyArg_BadArgument("crc32_combine", "argument 3", "int", args[2]);
+        goto exit;
+    }
+    len2 = args[2];
+    _return_value = zlib_crc32_combine_impl(module, crc1, crc2, len2);
+    if ((_return_value == (unsigned int)-1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
+
+exit:
     return return_value;
 }
 
@@ -1121,4 +1402,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=33938c7613a8c1c7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fa5fc356f3090cce input=a9049054013a1b77]*/

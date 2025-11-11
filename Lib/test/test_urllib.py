@@ -109,7 +109,7 @@ class urlopen_FileTests(unittest.TestCase):
         finally:
             f.close()
         self.pathname = os_helper.TESTFN
-        self.quoted_pathname = urllib.parse.quote(self.pathname)
+        self.quoted_pathname = urllib.parse.quote(os.fsencode(self.pathname))
         self.returned_obj = urllib.request.urlopen("file:%s" % self.quoted_pathname)
 
     def tearDown(self):
@@ -1526,6 +1526,14 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('////foo/bar'), f'{sep}{sep}foo{sep}bar')
         self.assertEqual(fn('data:blah'), 'data:blah')
         self.assertEqual(fn('data://blah'), f'data:{sep}{sep}blah')
+        self.assertEqual(fn('foo?bar'), 'foo')
+        self.assertEqual(fn('foo#bar'), 'foo')
+        self.assertEqual(fn('foo?bar=baz'), 'foo')
+        self.assertEqual(fn('foo?bar#baz'), 'foo')
+        self.assertEqual(fn('foo%3Fbar'), 'foo?bar')
+        self.assertEqual(fn('foo%23bar'), 'foo#bar')
+        self.assertEqual(fn('foo%3Fbar%3Dbaz'), 'foo?bar=baz')
+        self.assertEqual(fn('foo%3Fbar%23baz'), 'foo?bar#baz')
 
     def test_url2pathname_require_scheme(self):
         sep = os.path.sep
@@ -1551,7 +1559,8 @@ class Pathname_Tests(unittest.TestCase):
                     urllib.request.url2pathname(url, require_scheme=True),
                     expected_path)
 
-        error_subtests = [
+    def test_url2pathname_require_scheme_errors(self):
+        subtests = [
             '',
             ':',
             'foo',
@@ -1561,18 +1570,30 @@ class Pathname_Tests(unittest.TestCase):
             'data:file:foo',
             'data:file://foo',
         ]
-        for url in error_subtests:
+        for url in subtests:
             with self.subTest(url=url):
                 self.assertRaises(
                     urllib.error.URLError,
                     urllib.request.url2pathname,
                     url, require_scheme=True)
 
+    @unittest.skipIf(support.is_emscripten, "Fixed by https://github.com/emscripten-core/emscripten/pull/24593")
+    def test_url2pathname_resolve_host(self):
+        fn = urllib.request.url2pathname
+        sep = os.path.sep
+        self.assertEqual(fn('//127.0.0.1/foo/bar', resolve_host=True), f'{sep}foo{sep}bar')
+        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), f'{sep}foo{sep}bar')
+        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar', resolve_host=True), f'{sep}foo{sep}bar')
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
     def test_url2pathname_win(self):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/C:/'), 'C:\\')
+        self.assertEqual(fn('//C:'), 'C:')
+        self.assertEqual(fn('//C:/'), 'C:\\')
+        self.assertEqual(fn('//C:\\'), 'C:\\')
+        self.assertEqual(fn('//C:80/'), 'C:80\\')
         self.assertEqual(fn("///C|"), 'C:')
         self.assertEqual(fn("///C:"), 'C:')
         self.assertEqual(fn('///C:/'), 'C:\\')
@@ -1598,6 +1619,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('//server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('////server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('/////server/path/to/file'), '\\\\server\\path\\to\\file')
+        self.assertEqual(fn('//127.0.0.1/path/to/file'), '\\\\127.0.0.1\\path\\to\\file')
         # Localhost paths
         self.assertEqual(fn('//localhost/C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('//localhost/C|/path/to/file'), 'C:\\path\\to\\file')
@@ -1622,8 +1644,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertRaises(urllib.error.URLError, fn, '//:80/foo/bar')
         self.assertRaises(urllib.error.URLError, fn, '//:/foo/bar')
         self.assertRaises(urllib.error.URLError, fn, '//c:80/foo/bar')
-        self.assertEqual(fn('//127.0.0.1/foo/bar'), '/foo/bar')
-        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), '/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//127.0.0.1/foo/bar')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_url2pathname_nonascii(self):

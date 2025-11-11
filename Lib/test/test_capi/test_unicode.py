@@ -1739,6 +1739,20 @@ class CAPITest(unittest.TestCase):
                 # Check that the second call returns the same result
                 self.assertEqual(getargs_s_hash(s), chr(k).encode() * (i + 1))
 
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_GET_CACHED_HASH(self):
+        from _testcapi import unicode_GET_CACHED_HASH
+        content_bytes = b'some new string'
+        # avoid parser interning & constant folding
+        obj = str(content_bytes, 'ascii')
+        # impl detail: fresh strings do not have cached hash
+        self.assertEqual(unicode_GET_CACHED_HASH(obj), -1)
+        # impl detail: adding string to a dict caches its hash
+        {obj: obj}
+        # impl detail: ASCII string hashes are equal to bytes ones
+        self.assertEqual(unicode_GET_CACHED_HASH(obj), hash(content_bytes))
+
 
 class PyUnicodeWriterTest(unittest.TestCase):
     def create_writer(self, size):
@@ -1775,6 +1789,13 @@ class PyUnicodeWriterTest(unittest.TestCase):
         writer.write_char('.')
         self.assertEqual(writer.finish(),
                          "ascii-latin1=\xE9-euro=\u20AC.")
+
+    def test_ascii(self):
+        writer = self.create_writer(0)
+        writer.write_ascii(b"Hello ", -1)
+        writer.write_ascii(b"", 0)
+        writer.write_ascii(b"Python! <truncated>", 6)
+        self.assertEqual(writer.finish(), "Hello Python")
 
     def test_invalid_utf8(self):
         writer = self.create_writer(0)

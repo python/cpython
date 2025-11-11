@@ -170,6 +170,7 @@ venv:
 		echo "venv already exists."; \
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
+		set -e; \
 		echo "Creating venv in $(VENVDIR)"; \
 		if $(UV) --version >/dev/null 2>&1; then \
 			$(UV) venv --python=$(PYTHON) $(VENVDIR); \
@@ -183,7 +184,7 @@ venv:
 	fi
 
 .PHONY: dist-no-html
-dist-no-html: dist-text dist-pdf dist-epub dist-texinfo
+dist-no-html: dist-text dist-epub dist-texinfo
 
 .PHONY: dist
 dist:
@@ -240,7 +241,8 @@ dist-pdf:
 	# as otherwise the full latexmk process is run twice.
 	# ($$ is needed to escape the $; https://www.gnu.org/software/make/manual/make.html#Basics-of-Variable-References)
 	-sed -i 's/: all-$$(FMT)/:/' build/latex/Makefile
-	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`nproc`+1)) --output-sync LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
+	if [ -n "$(filter output-sync,$(value .FEATURES))" ]; then OUTPUTSYNC=--output-sync; else OUTPUTSYNC=; fi && \
+	(cd build/latex; $(MAKE) clean && $(MAKE) --jobs=$$((`getconf _NPROCESSORS_ONLN`+1)) $$OUTPUTSYNC LATEXMKOPTS='-quiet' all-pdf && $(MAKE) FMT=pdf zip bz2)
 	cp build/latex/docs-pdf.zip dist/python-$(DISTVERSION)-docs-pdf-a4.zip
 	cp build/latex/docs-pdf.tar.bz2 dist/python-$(DISTVERSION)-docs-pdf-a4.tar.bz2
 	@echo "Build finished and archived!"
