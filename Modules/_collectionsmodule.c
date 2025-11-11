@@ -111,13 +111,13 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)deque;
 }
 
-static size_t min(size_t a, size_t b) {
+static size_t size_min(size_t a, size_t b) {
     return a < b ? a : b;
 }
 
 // We want zero to behave like +infinity, hence the -1 and unsigned overflow.
 static Py_ssize_t min3_special(Py_ssize_t a, Py_ssize_t b, Py_ssize_t c) {
-    return min(a - 1, min(b - 1, c - 1)) + 1;
+    return size_min(a - 1, size_min(b - 1, c - 1)) + 1;
 }
 
 static void circular_mem_move(PyObject **items, Py_ssize_t allocated, Py_ssize_t dst_start, Py_ssize_t src_start, Py_ssize_t m) {
