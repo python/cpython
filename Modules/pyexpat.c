@@ -76,6 +76,15 @@ typedef struct {
     PyObject_HEAD
 
     XML_Parser itself;
+    /*
+     * Strong reference to a parent `xmlparseobject` if this parser
+     * is a child parser. Set to NULL if this parser is a root parser.
+     * This is needed to keep the parent parser alive as long as it has
+     * at least one child parser.
+     *
+     * See https://github.com/python/cpython/issues/139400 for details.
+     */
+    PyObject *parent;
     int ordered_attributes;     /* Return attributes as a list. */
     int specified_attributes;   /* Report only specified attributes. */
     int in_callback;            /* Is a callback active? */
@@ -198,12 +207,14 @@ set_error(pyexpat_state *state, xmlparseobject *self, enum XML_Error code)
     return NULL;
 }
 
+#if XML_COMBINED_VERSION >= 20400
 static PyObject *
 set_invalid_arg(pyexpat_state *state, xmlparseobject *self, const char *errmsg)
 {
     SET_XML_ERROR(state, self, XML_ERROR_INVALID_ARGUMENT, errmsg);
     return NULL;
 }
+#endif
 
 #undef SET_XML_ERROR
 
@@ -631,7 +642,7 @@ my_ElementDeclHandler(void *userData,
         PyObject *modelobj, *nameobj;
 
         if (PyErr_Occurred())
-            return;
+            goto finally;
 
         if (flush_character_buffer(self) < 0)
             goto finally;
@@ -1065,6 +1076,11 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
         return NULL;
     }
 
+    // The new subparser will make use of the parent XML_Parser inside of Expat.
+    // So we need to take subparsers into account with the reference counting
+    // of their parent parser.
+    Py_INCREF(self);
+
     new_parser->buffer_size = self->buffer_size;
     new_parser->buffer_used = 0;
     new_parser->buffer = NULL;
@@ -1074,6 +1090,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->ns_prefixes = self->ns_prefixes;
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
                                                         encoding);
+    new_parser->parent = (PyObject *)self;
     new_parser->handlers = 0;
     new_parser->intern = Py_XNewRef(self->intern);
 
@@ -1081,11 +1098,13 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
         new_parser->buffer = PyMem_Malloc(new_parser->buffer_size);
         if (new_parser->buffer == NULL) {
             Py_DECREF(new_parser);
+            Py_DECREF(self);
             return PyErr_NoMemory();
         }
     }
     if (!new_parser->itself) {
         Py_DECREF(new_parser);
+        Py_DECREF(self);
         return PyErr_NoMemory();
     }
 
@@ -1099,6 +1118,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->handlers = PyMem_New(PyObject *, i);
     if (!new_parser->handlers) {
         Py_DECREF(new_parser);
+        Py_DECREF(self);
         return PyErr_NoMemory();
     }
     clear_handlers(new_parser, 1);
@@ -1479,6 +1499,7 @@ newxmlparseobject(pyexpat_state *state, const char *encoding,
     /* namespace_separator is either NULL or contains one char + \0 */
     self->itself = XML_ParserCreate_MM(encoding, &ExpatMemoryHandler,
                                        namespace_separator);
+    self->parent = NULL;
     if (self->itself == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "XML_ParserCreate failed");
@@ -1515,6 +1536,7 @@ xmlparse_traverse(PyObject *op, visitproc visit, void *arg)
     for (size_t i = 0; handler_info[i].name != NULL; i++) {
         Py_VISIT(self->handlers[i]);
     }
+    Py_VISIT(self->parent);
     Py_VISIT(Py_TYPE(op));
     return 0;
 }
@@ -1525,6 +1547,10 @@ xmlparse_clear(PyObject *op)
     xmlparseobject *self = xmlparseobject_CAST(op);
     clear_handlers(self, 0);
     Py_CLEAR(self->intern);
+    // NOTE: We cannot call Py_CLEAR(self->parent) prior to calling
+    //       XML_ParserFree(self->itself), or a subparser could lose its parent
+    //       XML_Parser while still making use of it internally.
+    //       https://github.com/python/cpython/issues/139400
     return 0;
 }
 
@@ -1538,6 +1564,7 @@ xmlparse_dealloc(PyObject *op)
         XML_ParserFree(self->itself);
     }
     self->itself = NULL;
+    Py_CLEAR(self->parent);
 
     if (self->handlers != NULL) {
         PyMem_Free(self->handlers);

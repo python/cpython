@@ -2399,6 +2399,53 @@ simple_pending_call(PyObject *self, PyObject *callable)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+vectorcall_nop(PyObject *callable, PyObject *const *args,
+               size_t nargsf, PyObject *kwnames)
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+set_vectorcall_nop(PyObject *self, PyObject *func)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "expected function");
+        return NULL;
+    }
+
+    ((PyFunctionObject*)func)->vectorcall = vectorcall_nop;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+module_get_gc_hooks(PyObject *self, PyObject *arg)
+{
+    PyModuleObject *mod = (PyModuleObject *)arg;
+    PyObject *traverse = NULL;
+    PyObject *clear = NULL;
+    PyObject *free = NULL;
+    PyObject *result = NULL;
+    traverse = PyLong_FromVoidPtr(mod->md_state_traverse);
+    if (!traverse) {
+        goto finally;
+    }
+    clear = PyLong_FromVoidPtr(mod->md_state_clear);
+    if (!clear) {
+        goto finally;
+    }
+    free = PyLong_FromVoidPtr(mod->md_state_free);
+    if (!free) {
+        goto finally;
+    }
+    result = PyTuple_FromArray((PyObject*[]){ traverse, clear, free }, 3);
+finally:
+    Py_XDECREF(traverse);
+    Py_XDECREF(clear);
+    Py_XDECREF(free);
+    return result;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2507,6 +2554,8 @@ static PyMethodDef module_functions[] = {
     {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
 #endif
     {"simple_pending_call", simple_pending_call, METH_O},
+    {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
+    {"module_get_gc_hooks", module_get_gc_hooks, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

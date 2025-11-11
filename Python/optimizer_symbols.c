@@ -7,7 +7,6 @@
 #include "pycore_long.h"
 #include "pycore_optimizer.h"
 #include "pycore_stats.h"
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -1044,7 +1043,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         "tuple item does not match value used to create tuple"
     );
     PyObject *pair[2] = { val_42, val_43 };
-    tuple = _PyTuple_FromArray(pair, 2);
+    tuple = PyTuple_FromArray(pair, 2);
     ref = _Py_uop_sym_new_const(ctx, tuple);
     TEST_PREDICATE(
         _Py_uop_sym_get_const(ctx, _Py_uop_sym_tuple_getitem(ctx, ref, 1)) == val_43,

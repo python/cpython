@@ -1,2 +1,0 @@
-Fix bug where some bytecode instructions of a boolean expression are not
-associated with the correct exception handler.
