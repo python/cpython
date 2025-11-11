@@ -429,6 +429,14 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+inspect
+-------
+
+* Add parameters *inherit_class_doc* and *fallback_to_class_doc*
+  for :func:`~inspect.getdoc`.
+  (Contributed by Serhiy Storchaka in :gh:`132686`.)
+
+
 locale
 ------
 
