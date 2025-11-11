@@ -125,10 +125,6 @@ _PyOptimizer_Optimize(
     assert(!interp->compiling);
     assert(_tstate->jit_tracer_state.initial_state.stack_depth >= 0);
 #ifndef Py_GIL_DISABLED
-    // Trace got stomped on by another thread.
-    if (_tstate->jit_tracer_state.initial_state.func == NULL) {
-        return 0;
-    }
     assert(_tstate->jit_tracer_state.initial_state.func != NULL);
     interp->compiling = true;
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*

@@ -139,7 +139,6 @@ class TestUops(unittest.TestCase):
         self.assertIn("_JUMP_TO_TOP", uops)
         self.assertIn("_LOAD_FAST_BORROW_0", uops)
 
-    @unittest.skip("gh-139109 WIP")
     def test_extended_arg(self):
         "Check EXTENDED_ARG handling in superblock creation"
         ns = {}
