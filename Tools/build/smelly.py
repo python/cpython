@@ -34,12 +34,6 @@ def is_local_symbol_type(symtype):
     if symtype.islower() and symtype not in "uvw":
         return True
 
-    # Ignore the initialized data section (d and D) and the BSS data
-    # section. For example, ignore "__bss_start (type: B)"
-    # and "_edata (type: D)".
-    if symtype in "bBdD":
-        return True
-
     return False
 
 
