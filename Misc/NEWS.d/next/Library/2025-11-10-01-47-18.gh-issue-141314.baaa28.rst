@@ -1,0 +1,1 @@
+Fix assertion failure in :meth:`io.TextIOWrapper.tell` when reading files with standalone carriage return (``\r``) line endings.

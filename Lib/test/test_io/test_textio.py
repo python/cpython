@@ -686,6 +686,25 @@ class TextIOWrapperTest:
         self.assertEqual(f.tell(), p1)
         f.close()
 
+    def test_tell_after_readline_with_cr(self):
+        # Test for gh-141314: TextIOWrapper.tell() assertion failure
+        # when dealing with standalone carriage returns
+        data = b'line1\r'
+        with self.open(os_helper.TESTFN, "wb") as f:
+            f.write(data)
+
+        with self.open(os_helper.TESTFN, "r") as f:
+            # Read line that ends with \r
+            line = f.readline()
+            self.assertEqual(line, "line1\n")
+            # This should not cause an assertion failure
+            pos = f.tell()
+            # Verify we can seek back to this position
+            f.seek(pos)
+            remaining = f.read()
+            self.assertEqual(remaining, "")
+
+
     def test_seek_with_encoder_state(self):
         f = self.open(os_helper.TESTFN, "w", encoding="euc_jis_2004")
         f.write("\u00e6\u0300")
