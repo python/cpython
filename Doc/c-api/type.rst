@@ -341,7 +341,7 @@ Type Objects
 
 .. c:function:: int PyType_SUPPORTS_WEAKREFS(PyTypeObject *type)
 
-   Return true if instances of *type* supports creating weak references, false
+   Return true if instances of *type* support creating weak references, false
    otherwise. This function always succeeds. *type* must not be ``NULL``.
 
    .. seealso::
