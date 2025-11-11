@@ -27,7 +27,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    that support a full repertoire of SMTP and ESMTP operations.
 
    If the host parameter is set to a truthy value, :meth:`SMTP.connect` is called with
-   host and port automatically when the object is created; otherwise, :meth:`connect` must
+   host and port automatically when the object is created; otherwise, :meth:`!connect` must
    be called manually.
 
    If specified, *local_hostname* is used as the FQDN of the local host in the HELO/EHLO
