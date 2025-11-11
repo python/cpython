@@ -2486,44 +2486,51 @@ process_frame_chain(
                 return -1;
             }
         }
-
+        if (frame == NULL && PyList_GET_SIZE(frame_info) == 0) {
+            // If the first frame is missing, the chain is broken:
+            const char *e = "Failed to parse initial frame in chain";
+            PyErr_SetString(PyExc_RuntimeError, e);
+            return -1;
+        }
+        _Py_DECLARE_STR(native, "<native>");
+        _Py_DECLARE_STR(gc, "<GC>");
+        PyObject *extra_frame = NULL;
+        // This frame kicked off the current GC collection:
         if (unwinder->gc && frame_addr == gc_frame) {
-            _Py_DECLARE_STR(gc, "<GC>");
-            // Use "~" as file and 0 as line, since that's what pstats uses:
-            PyObject *gc_info = make_frame_info(unwinder, _Py_LATIN1_CHR('~'),
-                                                _PyLong_GetZero(), &_Py_STR(gc));
-            if (gc_info == NULL) {
-                return -1;
+            extra_frame = &_Py_STR(gc);
+        }
+        // Otherwise, check for native frames to insert:
+        else if (unwinder->native) {
+            // Topmost frame spilled its stack pointer for a native call:
+            if (PyList_GET_SIZE(frame_info) == 0 &&
+                GET_MEMBER(uintptr_t, frame_addr, unwinder->debug_offsets.interpreter_frame.stackpointer))
+            {
+                extra_frame = &_Py_STR(native);
             }
-            int error = PyList_Append(frame_info, gc_info);
-            Py_DECREF(gc_info);
-            if (error) {
-                const char *e = "Failed to append GC to frame info list";
-                set_exception_cause(unwinder, PyExc_RuntimeError, e);
-                return -1;
+            // Or, we've reached an interpreter trampoline frame:
+            else if (frame == NULL &&
+                     // Bottommost frame is always native, so skip that one:
+                     next_frame_addr &&
+                     // If the next frame will be reported as a GC frame, then
+                     // don't add an extra native frame below it:
+                     !(unwinder->gc && next_frame_addr == gc_frame))
+            {
+                extra_frame = &_Py_STR(native);
             }
         }
-        if (frame == NULL) {
-            if (PyList_GET_SIZE(frame_info) == 0) {
-                // If the first frame is missing, the chain is broken:
-                const char *e = "Failed to parse initial frame in chain";
-                PyErr_SetString(PyExc_RuntimeError, e);
+        if (extra_frame) {
+            // Use "~" as file and 0 as line, since that's what pstats uses:
+            PyObject *extra_frame_info = make_frame_info(
+                unwinder, _Py_LATIN1_CHR('~'), _PyLong_GetZero(), extra_frame);
+            if (extra_frame_info == NULL) {
                 return -1;
             }
-            if (unwinder->native &&
-                // The last frame is always native, so skip that one:
-                next_frame_addr &&
-                // If the next frame will be reported as a GC frame, then don't
-                // add an extra native frame below it:
-                !(unwinder->gc && next_frame_addr == gc_frame))
-            {
-                _Py_DECLARE_STR(native, "<native>");
-                // Use "~" as file and 0 as line, since that's what pstats uses:
-                frame = make_frame_info(unwinder, _Py_LATIN1_CHR('~'),
-                                        _PyLong_GetZero(), &_Py_STR(native));
-                if (frame == NULL) {
-                    return -1;
-                }
+            int error = PyList_Append(frame_info, extra_frame_info);
+            Py_DECREF(extra_frame_info);
+            if (error) {
+                const char *e = "Failed to append extra frame to frame info list";
+                set_exception_cause(unwinder, PyExc_RuntimeError, e);
+                return -1;
             }
         }
         if (frame) {
