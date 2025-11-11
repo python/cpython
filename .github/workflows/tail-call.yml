@@ -83,8 +83,7 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         shell: cmd
         run: |
-          curl.exe -o C:\Temp\vs_buildtools.exe -L https://aka.ms/vs/stable/vs_buildtools.exe
-          call C:\Temp\vs_buildtools.exe
+          choco install visualstudio2026enterprise-preview --pre
           set PATH=C:\Program Files\Microsoft Visual Studio\2026\Enterprise\MSBuild\Current\Bin\;%PATH%
           ./PCbuild/build.bat --tail-call-interp --pgo -p ${{ matrix.architecture }} "/p:PlatformToolset=v145"
           ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
