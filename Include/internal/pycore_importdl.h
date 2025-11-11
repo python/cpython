@@ -27,6 +27,7 @@ extern const char *_PyImport_DynLoadFiletab[];
      function cannot be found in it.
 */
 #ifdef MS_WINDOWS
+#include <windows.h>
 typedef FARPROC dl_funcptr;
 extern dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                                                      const char *shortname,
@@ -139,7 +140,6 @@ extern int _PyImport_RunModInitFunc(
 #define MAXSUFFIXSIZE 12
 
 #ifdef MS_WINDOWS
-#include <windows.h>
 
 #ifdef Py_DEBUG
 #  define PYD_DEBUG_SUFFIX "_d"
