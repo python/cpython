@@ -54,6 +54,12 @@ class MemorySeekTestMixin:
         self.assertEqual(buf[3:], bytesIo.read())
         self.assertRaises(TypeError, bytesIo.seek, 0.0)
 
+        self.assertEqual(sys.maxsize, bytesIo.seek(sys.maxsize))
+        self.assertEqual(self.EOF, bytesIo.read(4))
+
+        self.assertEqual(sys.maxsize - 2, bytesIo.seek(sys.maxsize - 2))
+        self.assertEqual(self.EOF, bytesIo.read(4))
+
     def testTell(self):
         buf = self.buftype("1234567890")
         bytesIo = self.ioclass(buf)

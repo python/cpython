@@ -436,6 +436,15 @@ read_bytes_lock_held(bytesio *self, Py_ssize_t size)
         return Py_NewRef(self->buf);
     }
 
+    /* gh-141311: avoid overflow with self->buf + self->pos */
+    if (self->pos >= PY_SSIZE_T_MAX - size) {
+        self->pos = PY_SSIZE_T_MAX;
+        size = 0;
+    }
+    if (size == 0) {
+        return PyBytes_FromStringAndSize(NULL, 0);
+    }
+
     output = PyBytes_AS_STRING(self->buf) + self->pos;
     self->pos += size;
     return PyBytes_FromStringAndSize(output, size);
@@ -610,6 +619,7 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
     if (len > n) {
         len = n;
         if (len < 0) {
+            /* gh-141311: avoid overflow with self->buf + self->pos */
             return PyLong_FromSsize_t(0);
         }
     }
