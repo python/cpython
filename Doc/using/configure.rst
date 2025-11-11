@@ -266,7 +266,7 @@ General Options
 
    The JSON file should map missing module names to custom error message strings.
    For example, if your distribution packages :mod:`tkinter` and
-   :mod:`_tkinter` separately and excludes :mod:`_gdbm` for legal reasons,
+   :mod:`_tkinter` separately and excludes :mod:`!_gdbm` for legal reasons,
    the configuration could contain:
 
    .. code-block:: json
