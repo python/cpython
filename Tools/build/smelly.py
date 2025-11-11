@@ -5,6 +5,7 @@ import os.path
 import subprocess
 import sys
 import sysconfig
+import _colorize
 
 ALLOWED_PREFIXES = ('Py', '_Py')
 if sys.platform == 'darwin':
@@ -43,8 +44,9 @@ def is_local_symbol_type(symtype):
     return False
 
 
-def get_exported_symbols(library, dynamic=False):
-    print(f"Check that {library} only exports symbols starting with Py or _Py")
+def get_exported_symbols(library, dynamic=False, *, colors):
+    name, dot, ext = os.path.basename(library).partition('.')
+    print(f"Check {colors.INTENSE_WHITE}{name}{colors.RESET}{dot}{ext}")
 
     # Only look at dynamic symbols
     args = ['nm', '--no-sort']
@@ -99,12 +101,13 @@ def get_smelly_symbols(stdout, dynamic=False):
     return smelly_symbols, python_symbols
 
 
-def check_library(library, dynamic=False):
-    nm_output = get_exported_symbols(library, dynamic)
+def check_library(library, dynamic=False, *, colors):
+    nm_output = get_exported_symbols(library, dynamic, colors=colors)
     smelly_symbols, python_symbols = get_smelly_symbols(nm_output, dynamic)
 
     if not smelly_symbols:
-        print(f"OK: no smelly symbol found ({len(python_symbols)} Python symbols)")
+        print(f"{colors.GREEN}OK{colors.RESET}:",
+              f"no smelly symbol found ({len(python_symbols)} Python symbols)")
         return 0
 
     print()
@@ -113,11 +116,12 @@ def check_library(library, dynamic=False):
         print(f"Smelly symbol: {symbol}")
 
     print()
-    print(f"ERROR: Found {len(smelly_symbols)} smelly symbols!")
+    print(f"{colors.RED}ERROR{colors.RESET}:",
+          f"Found {len(smelly_symbols)} smelly symbols!")
     return len(smelly_symbols)
 
 
-def check_extensions():
+def check_extensions(colors):
     print(__file__)
     # This assumes pybuilddir.txt is in same directory as pyconfig.h.
     # In the case of out-of-tree builds, we can't assume pybuilddir.txt is
@@ -144,12 +148,14 @@ def check_extensions():
 
         print()
         filename = os.path.join(builddir, name)
-        nsymbol += check_library(filename, dynamic=True)
+        nsymbol += check_library(filename, dynamic=True, colors=colors)
 
     return nsymbol
 
 
 def main():
+    colors = _colorize.get_colors()
+
     nsymbol = 0
 
     # static library
@@ -157,7 +163,7 @@ def main():
     if not LIBRARY:
         raise Exception("failed to get LIBRARY variable from sysconfig")
     if os.path.exists(LIBRARY):
-        nsymbol += check_library(LIBRARY)
+        nsymbol += check_library(LIBRARY, colors=colors)
 
     # dynamic library
     LDLIBRARY = sysconfig.get_config_var('LDLIBRARY')
@@ -165,19 +171,22 @@ def main():
         raise Exception("failed to get LDLIBRARY variable from sysconfig")
     if LDLIBRARY != LIBRARY:
         print()
-        nsymbol += check_library(LDLIBRARY, dynamic=True)
+        nsymbol += check_library(LDLIBRARY, dynamic=True, colors=colors)
 
     # Check extension modules like _ssl.cpython-310d-x86_64-linux-gnu.so
-    nsymbol += check_extensions()
+    nsymbol += check_extensions(colors=colors)
 
     if nsymbol:
         print()
-        print(f"ERROR: Found {nsymbol} smelly symbols in total!")
+        print(f"{colors.RED}ERROR{colors.RESET}:",
+              f"Found {nsymbol} smelly symbols in total!")
         sys.exit(1)
 
     print()
-    print(f"OK: all exported symbols of all libraries "
-          f"are prefixed with {' or '.join(map(repr, ALLOWED_PREFIXES))}")
+    print(f"{colors.GREEN}OK{colors.RESET}:",
+          f"all exported symbols of all libraries",
+          f"are prefixed with {' or '.join(map(repr, ALLOWED_PREFIXES))}",
+          f"or are covered by exceptions")
 
 
 if __name__ == "__main__":
