@@ -2747,7 +2747,9 @@ PySet_Contains(PyObject *anyset, PyObject *key)
         PyErr_BadInternalCall();
         return -1;
     }
-
+    if (PyFrozenSet_CheckExact(anyset)) {
+        return set_contains_key((PySetObject *)anyset, key);
+    }
     int rv;
     Py_BEGIN_CRITICAL_SECTION(anyset);
     rv = set_contains_key((PySetObject *)anyset, key);
