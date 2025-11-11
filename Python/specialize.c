@@ -19,6 +19,7 @@
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_unicodeobject.h" // _PyUnicodeASCIIIter_Type
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include <stdlib.h> // rand()
 
@@ -1627,8 +1628,13 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             bool pop = (next.op.code == POP_TOP);
             int oparg = instr->op.arg;
             if ((PyObject *)descr == list_append && oparg == 1 && pop) {
-                specialize(instr, CALL_LIST_APPEND);
-                return 0;
+                PyThreadState *tstate = _PyThreadState_GET();
+                _PyStackRef *stack_pointer = tstate->current_frame->stackpointer;
+                PyObject *self = PyStackRef_AsPyObjectBorrow(stack_pointer[-2]);
+                if (PyList_CheckExact(self)) {
+                    specialize(instr, CALL_LIST_APPEND);
+                    return 0;
+                }
             }
             specialize(instr, CALL_METHOD_DESCRIPTOR_O);
             return 0;
