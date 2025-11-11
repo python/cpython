@@ -290,14 +290,6 @@ class ModuleChecker:
         return names
 
     def generate_stdlib_info(self, config_path: str | None = None) -> None:
-
-        disabled_modules = {modinfo.name for modinfo in self.modules
-                           if modinfo.state in (ModuleState.DISABLED, ModuleState.DISABLED_SETUP)}
-        missing_modules = {modinfo.name for modinfo in self.modules
-                          if modinfo.state == ModuleState.MISSING}
-        na_modules = {modinfo.name for modinfo in self.modules
-                     if modinfo.state == ModuleState.NA}
-
         config_messages = {}
         if config_path:
             try:
@@ -306,25 +298,21 @@ class ModuleChecker:
             except (FileNotFoundError, json.JSONDecodeError) as e:
                 logger.error("Failed to load distributor config %s: %s", config_path, e)
 
-        default_messages = {
-            **{name: f"Windows-only standard library module '{name}' was not found"
-               for name in WINDOWS_MODULES},
-            **{name: f"Standard library module disabled during build '{name}' was not found"
-               for name in disabled_modules},
-            **{name: f"Unsupported platform for standard library module '{name}'"
-               for name in na_modules},
-        }
+        messages = {}
+        for name in WINDOWS_MODULES:
+            messages[name] = f"Unsupported platform for Windows-only standard library module {name!r}"
 
-        messages = {**default_messages, **config_messages}
+        for modinfo in self.modules:
+            if modinfo.state in (ModuleState.DISABLED, ModuleState.DISABLED_SETUP):
+                messages[modinfo.name] = f"Standard library module disabled during build {modinfo.name!r} was not found"
+            elif modinfo.state == ModuleState.NA:
+                messages[modinfo.name] = f"Unsupported platform for standard library module {modinfo.name!r}"
+
+        messages.update(config_messages)
 
         content = f'''\
 # Standard library information used by the traceback module for more informative
 # ModuleNotFound error messages.
-
-DISABLED_MODULES = {sorted(disabled_modules)!r}
-MISSING_MODULES = {sorted(missing_modules)!r}
-NOT_AVAILABLE_MODULES = {sorted(na_modules)!r}
-WINDOWS_ONLY_MODULES = {sorted(WINDOWS_MODULES)!r}
 
 MISSING_STDLIB_MODULE_MESSAGES = {messages!r}
 '''

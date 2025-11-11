@@ -5072,6 +5072,16 @@ class MiscTest(unittest.TestCase):
 
         self.assertIn(b"Install 'spam4life' for 'spam'", stderr)
 
+    @unittest.skipIf(sys.platform == "win32", "Non-Windows test")
+    def test_windows_only_module_error(self):
+        try:
+            import msvcrt  # noqa: F401
+        except ModuleNotFoundError:
+            formatted = traceback.format_exc()
+            self.assertIn("Unsupported platform for Windows-only standard library module 'msvcrt'", formatted)
+        else:
+            self.fail("ModuleNotFoundError was not raised")
+
 
 class TestColorizedTraceback(unittest.TestCase):
     maxDiff = None

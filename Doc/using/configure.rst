@@ -265,11 +265,14 @@ General Options
    modules that are packaged separately.
 
    The JSON file should map missing module names to custom error message strings.
-   For example, a configuration for the :mod:`tkinter` module:
+   For example, if your distribution packages :mod:`tkinter` and
+   :mod:`_tkinter` separately and excludes :mod:`_gdbm` for legal reasons,
+   the configuration could contain:
 
    .. code-block:: json
 
       {
+          "_gdbm": "The '_gdbm' module is not available in this distribution"
           "tkinter": "Install the python-tk package to use tkinter",
           "_tkinter": "Install the python-tk package to use tkinter",
       }

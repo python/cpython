@@ -1118,11 +1118,11 @@ class TracebackException:
                 if MISSING_STDLIB_MODULE_MESSAGES is not None:
                     message = MISSING_STDLIB_MODULE_MESSAGES.get(
                         module_name,
-                        f"Standard library module '{module_name}' was not found"
+                        f"Standard library module {module_name!r} was not found"
                     )
                     self._str = message
                 else:
-                    self._str = f"Standard library module '{module_name}' was not found"
+                    self._str = f"Standard library module {module_name!r} was not found"
             elif sys.flags.no_site:
                 self._str += (". Site initialization is disabled, did you forget to "
                     + "add the site-packages directory to sys.path "
