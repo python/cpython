@@ -83,7 +83,7 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         shell: cmd
         run: |
-          choco install visualstudio2026buildtools-preview --pre 
+          choco install visualstudio2026buildtools-preview --pre
           call ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }} "/p:PlatformToolset=v145"
           call ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
