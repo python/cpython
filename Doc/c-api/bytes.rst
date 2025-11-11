@@ -237,7 +237,7 @@ called with a non-bytes parameter.
    If *smartquotes* is true, the representation will use a double-quoted string
    instead of single-quoted string when single-quotes are present in *bytes*.
    For example, the byte string ``'Python'`` would be represented as
-   ``b"'Python'"`` when *smartquotes* is true, or b'\'Python\'' when it is
+   ``b"'Python'"`` when *smartquotes* is true, or ``b'\'Python\''`` when it is
    false.
 
    On success, this function returns a :term:`strong reference` to a
