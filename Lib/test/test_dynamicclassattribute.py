@@ -199,7 +199,7 @@ class PropertyTests(unittest.TestCase):
     @support.requires_docstrings
     def test_empty_docstring(self):
         attr = DynamicClassAttribute(fget=None, fset=None, fdel=None, doc='')
-        self.assertEqual(attr.__doc__, '',)
+        self.assertEqual(attr.__doc__, '')
         def fget():
             """fget's docstring"""
         attr_with_fget = DynamicClassAttribute(fget=fget, doc='')
