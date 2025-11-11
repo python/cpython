@@ -1,1 +1,0 @@
-Remove unused variables and comment in ``_pyrepl.windows_console.py``.
