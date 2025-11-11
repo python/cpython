@@ -155,6 +155,67 @@ error:
     return NULL;
 }
 
+static PyObject *
+test_set_contains_does_not_convert_unhashable_key(PyObject *self, PyObject *Py_UNUSED(obj))
+{
+    // The documentation of PySet_Contains state:
+    //
+    // int PySet_Contains(PyObject *anyset, PyObject *key)
+    //
+    // Part of the Stable ABI.
+    //
+    // ... Unlike the Python __contains__() method, this function does not
+    // automatically convert unhashable sets [key] into temporary frozensets.
+    // Raise a TypeError if the key is unhashable.
+    //
+    // That is to say {2,3} in {1, 2, frozenset({2,3})}
+    //                ^_ will be converted in a frozenset in Python code.
+    // But not if using PySet_Contains(..., key)
+    //
+    // We test that this behavior is unchanged as this is a stable API.
+
+    PyObject *outer_set = PySet_New(NULL);
+
+    PyObject *needle = PySet_New(NULL);
+    if (needle == NULL) {
+        Py_DECREF(outer_set);
+        return NULL;
+    }
+
+    PyObject *num = PyLong_FromLong(42);
+    if (num == NULL) {
+        Py_DECREF(outer_set);
+        Py_DECREF(needle);
+        return NULL;
+    }
+
+    // Add an element to needle to make it {42}
+    if (PySet_Add(needle, num) < 0) {
+        Py_DECREF(outer_set);
+        Py_DECREF(needle);
+        Py_DECREF(num);
+        return NULL;
+    }
+
+    int result = PySet_Contains(outer_set, needle);
+
+    Py_DECREF(num);
+    Py_DECREF(needle);
+    Py_DECREF(outer_set);
+
+    if (result < 0) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+            Py_RETURN_NONE;
+        }
+        return NULL;
+    }
+
+    PyErr_SetString(PyExc_AssertionError,
+                    "PySet_Contains should have raised TypeError for unhashable key");
+    return NULL;
+}
+
 static PyMethodDef test_methods[] = {
     {"set_check", set_check, METH_O},
     {"set_checkexact", set_checkexact, METH_O},
@@ -174,6 +235,8 @@ static PyMethodDef test_methods[] = {
     {"set_clear", set_clear, METH_O},
 
     {"test_frozenset_add_in_capi", test_frozenset_add_in_capi, METH_NOARGS},
+    {"test_set_contains_does_not_convert_unhashable_key",
+     test_set_contains_does_not_convert_unhashable_key, METH_NOARGS},
 
     {NULL},
 };
