@@ -84,6 +84,7 @@ jobs:
         shell: cmd
         run: |
           choco install visualstudio2026buildtools-preview --pre
+          set MSBUILD=C:\Program Files\Microsoft Visual Studio\18\Insiders\MSBuild\Current\Bin\msbuild.exe
           call ./PCbuild/build.bat --tail-call-interp --pgo -p ${{ matrix.architecture }} "/p:PlatformToolset=v145"
           call ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
