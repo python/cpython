@@ -3,6 +3,7 @@ import bisect
 import contextlib
 import copy
 import decimal
+import fractions
 import io
 import itertools
 import os
@@ -2626,6 +2627,10 @@ class TestDateTime(TestDate):
         expected = time.localtime(ts)
         got = self.theclass.fromtimestamp(ts)
         self.verify_field_equality(expected, got)
+        got = self.theclass.fromtimestamp(decimal.Decimal(ts))
+        self.verify_field_equality(expected, got)
+        got = self.theclass.fromtimestamp(fractions.Fraction(ts))
+        self.verify_field_equality(expected, got)
 
     def test_fromtimestamp_keyword_arg(self):
         import time
@@ -2640,6 +2645,12 @@ class TestDateTime(TestDate):
         expected = time.gmtime(ts)
         with self.assertWarns(DeprecationWarning):
             got = self.theclass.utcfromtimestamp(ts)
+        self.verify_field_equality(expected, got)
+        with self.assertWarns(DeprecationWarning):
+            got = self.theclass.utcfromtimestamp(decimal.Decimal(ts))
+        self.verify_field_equality(expected, got)
+        with self.assertWarns(DeprecationWarning):
+            got = self.theclass.utcfromtimestamp(fractions.Fraction(ts))
         self.verify_field_equality(expected, got)
 
     # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
@@ -2725,6 +2736,108 @@ class TestDateTime(TestDate):
             self.assertEqual(t.second, 1)
             self.assertEqual(t.microsecond, 0)
             t = fts(1/2**7)
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 7812)
+
+    @support.run_with_tz('MSK-03')  # Something east of Greenwich
+    def test_microsecond_rounding_decimal(self):
+        D = decimal.Decimal
+        def utcfromtimestamp(*args, **kwargs):
+            with self.assertWarns(DeprecationWarning):
+                return self.theclass.utcfromtimestamp(*args, **kwargs)
+
+        for fts in [self.theclass.fromtimestamp,
+                    utcfromtimestamp]:
+            zero = fts(D(0))
+            self.assertEqual(zero.second, 0)
+            self.assertEqual(zero.microsecond, 0)
+            one = fts(D('0.000_001'))
+            try:
+                minus_one = fts(D('-0.000_001'))
+            except OSError:
+                # localtime(-1) and gmtime(-1) is not supported on Windows
+                pass
+            else:
+                self.assertEqual(minus_one.second, 59)
+                self.assertEqual(minus_one.microsecond, 999_999)
+
+                t = fts(D('-0.000_000_1'))
+                self.assertEqual(t, zero)
+                t = fts(D('-0.000_000_9'))
+                self.assertEqual(t, minus_one)
+                t = fts(D(-1)/2**7)
+                self.assertEqual(t.second, 59)
+                self.assertEqual(t.microsecond, 992188)
+
+            t = fts(D('0.000_000_1'))
+            self.assertEqual(t, zero)
+            t = fts(D('0.000_000_5'))
+            self.assertEqual(t, zero)
+            t = fts(D('0.000_000_500_000_000_000_000_1'))
+            self.assertEqual(t, one)
+            t = fts(D('0.000_000_9'))
+            self.assertEqual(t, one)
+            t = fts(D('0.999_999_499_999_999_9'))
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 999_999)
+            t = fts(D('0.999_999_5'))
+            self.assertEqual(t.second, 1)
+            self.assertEqual(t.microsecond, 0)
+            t = fts(D('0.999_999_9'))
+            self.assertEqual(t.second, 1)
+            self.assertEqual(t.microsecond, 0)
+            t = fts(D(1)/2**7)
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 7812)
+
+    @support.run_with_tz('MSK-03')  # Something east of Greenwich
+    def test_microsecond_rounding_fraction(self):
+        F = fractions.Fraction
+        def utcfromtimestamp(*args, **kwargs):
+            with self.assertWarns(DeprecationWarning):
+                return self.theclass.utcfromtimestamp(*args, **kwargs)
+
+        for fts in [self.theclass.fromtimestamp,
+                    utcfromtimestamp]:
+            zero = fts(F(0))
+            self.assertEqual(zero.second, 0)
+            self.assertEqual(zero.microsecond, 0)
+            one = fts(F(1, 1_000_000))
+            try:
+                minus_one = fts(F(-1, 1_000_000))
+            except OSError:
+                # localtime(-1) and gmtime(-1) is not supported on Windows
+                pass
+            else:
+                self.assertEqual(minus_one.second, 59)
+                self.assertEqual(minus_one.microsecond, 999_999)
+
+                t = fts(F(-1, 10_000_000))
+                self.assertEqual(t, zero)
+                t = fts(F(-9, 10_000_000))
+                self.assertEqual(t, minus_one)
+                t = fts(F(-1, 2**7))
+                self.assertEqual(t.second, 59)
+                self.assertEqual(t.microsecond, 992188)
+
+            t = fts(F(1, 10_000_000))
+            self.assertEqual(t, zero)
+            t = fts(F(5, 10_000_000))
+            self.assertEqual(t, zero)
+            t = fts(F(5_000_000_000, 9_999_999_999_999_999))
+            self.assertEqual(t, one)
+            t = fts(F(9, 10_000_000))
+            self.assertEqual(t, one)
+            t = fts(F(9_999_995_000_000_000, 10_000_000_000_000_001))
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 999_999)
+            t = fts(F(9_999_995, 10_000_000))
+            self.assertEqual(t.second, 1)
+            self.assertEqual(t.microsecond, 0)
+            t = fts(F(9_999_999, 10_000_000))
+            self.assertEqual(t.second, 1)
+            self.assertEqual(t.microsecond, 0)
+            t = fts(F(1, 2**7))
             self.assertEqual(t.second, 0)
             self.assertEqual(t.microsecond, 7812)
 

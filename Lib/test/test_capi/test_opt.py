@@ -15,7 +15,7 @@ from test.support import (script_helper, requires_specialization,
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
-from _testinternalcapi import TIER2_THRESHOLD
+from _testinternalcapi import _PY_NSMALLPOSINTS, TIER2_THRESHOLD
 
 #For test of issue 136154
 GLOBAL_136154 = 42
@@ -2093,6 +2093,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
     def test_call_len_known_length_small_int(self):
+        # Make sure that len(t) is optimized for a tuple of length 5.
+        # See https://github.com/python/cpython/issues/139393.
+        self.assertGreater(_PY_NSMALLPOSINTS, 5)
+
         def testfunc(n):
             x = 0
             for _ in range(n):
@@ -2113,13 +2117,17 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_len_known_length(self):
+        # Make sure that len(t) is not optimized for a tuple of length 2048.
+        # See https://github.com/python/cpython/issues/139393.
+        self.assertLess(_PY_NSMALLPOSINTS, 2048)
+
         def testfunc(n):
             class C:
-                t = tuple(range(300))
+                t = tuple(range(2048))
 
             x = 0
             for _ in range(n):
-                if len(C.t) == 300:  # comparison + guard removed
+                if len(C.t) == 2048:  # comparison + guard removed
                     x += 1
             return x
 
@@ -2628,6 +2636,30 @@ class TestUopsOptimization(unittest.TestCase):
                 tuple((31, -17, 25, "won't occur elsewhere"))
 
         f2()
+
+    def test_next_instr_for_exception_handler_set(self):
+        # gh-140104: We just want the exception to be caught properly.
+        def f():
+            for i in range(TIER2_THRESHOLD + 3):
+                try:
+                    undefined_variable(i)
+                except Exception:
+                    pass
+
+        f()
+
+    def test_next_instr_for_exception_handler_set_lasts_instr(self):
+        # gh-140104: We just want the exception to be caught properly.
+        def f():
+            a_list = []
+            for _ in range(TIER2_THRESHOLD + 3):
+                try:
+                    a_list[""] = 0
+                except Exception:
+                    pass
+
+        f()
+
 
 
 def global_identity(x):

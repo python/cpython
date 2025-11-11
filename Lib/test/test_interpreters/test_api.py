@@ -459,7 +459,12 @@ class InterpreterObjectTests(TestBase):
             error = proc.stderr.read()
             self.assertIn(b"KeyboardInterrupt", error)
             retcode = proc.wait()
-            self.assertEqual(retcode, 0)
+            # Sometimes we send the SIGINT after the subthread yields the GIL to
+            # the main thread, which results in the main thread getting the
+            # KeyboardInterrupt before finalization is reached. There's not
+            # any great way to protect against that, so we just allow a -2
+            # return code as well.
+            self.assertIn(retcode, (0, -signal.SIGINT))
 
 
 class TestInterpreterIsRunning(TestBase):

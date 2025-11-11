@@ -30,4 +30,4 @@ class Collector(ABC):
                     continue
                 frames = thread_info.frame_info
                 if frames:
-                    yield frames
+                    yield frames, thread_info.thread_id

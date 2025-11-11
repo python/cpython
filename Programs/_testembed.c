@@ -340,8 +340,18 @@ static int test_pre_initialization_sys_options(void)
     size_t xoption_len = wcslen(static_xoption);
     wchar_t *dynamic_once_warnoption = \
              (wchar_t *) calloc(warnoption_len+1, sizeof(wchar_t));
+    if (dynamic_once_warnoption == NULL) {
+        error("out of memory allocating warnoption");
+        return 1;
+    }
     wchar_t *dynamic_xoption = \
              (wchar_t *) calloc(xoption_len+1, sizeof(wchar_t));
+    if (dynamic_xoption == NULL) {
+        free(dynamic_once_warnoption);
+        error("out of memory allocating xoption");
+        return 1;
+    }
+
     wcsncpy(dynamic_once_warnoption, static_warnoption, warnoption_len+1);
     wcsncpy(dynamic_xoption, static_xoption, xoption_len+1);
 
@@ -1496,44 +1506,6 @@ static int test_audit_run_stdin(void)
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
-static int test_init_read_set(void)
-{
-    PyStatus status;
-    PyConfig config;
-    PyConfig_InitPythonConfig(&config);
-
-    config_set_string(&config, &config.program_name, L"./init_read_set");
-
-    status = PyConfig_Read(&config);
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
-
-    status = PyWideStringList_Insert(&config.module_search_paths,
-                                     1, L"test_path_insert1");
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
-
-    status = PyWideStringList_Append(&config.module_search_paths,
-                                     L"test_path_append");
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
-
-    /* override executable computed by PyConfig_Read() */
-    config_set_string(&config, &config.executable, L"my_executable");
-    init_from_config_clear(&config);
-
-    dump_config();
-    Py_Finalize();
-    return 0;
-
-fail:
-    PyConfig_Clear(&config);
-    Py_ExitStatusException(status);
-}
-
 
 static int test_init_sys_add(void)
 {
@@ -2388,7 +2360,6 @@ static struct TestCase TestCases[] = {
     {"test_preinit_isolated2", test_preinit_isolated2},
     {"test_preinit_parse_argv", test_preinit_parse_argv},
     {"test_preinit_dont_parse_argv", test_preinit_dont_parse_argv},
-    {"test_init_read_set", test_init_read_set},
     {"test_init_run_main", test_init_run_main},
     {"test_init_sys_add", test_init_sys_add},
     {"test_init_setpath", test_init_setpath},
