@@ -228,6 +228,23 @@ called with a non-bytes parameter.
       The function is :term:`soft deprecated`,
       use the :c:type:`PyBytesWriter` API instead.
 
+
+.. c:function:: PyObject *PyBytes_Repr(PyObject *bytes, int smartquotes)
+
+   Get the string representation of *bytes*. This function is used to
+   implement :meth:`bytes.__repr__` in Python.
+
+   If *smartquotes* is true, the representation will use a double-quoted string
+   instead of single-quoted string when single-quotes are present in *bytes*.
+   For example, the byte string ``'Python'`` would be represented as
+   ``b"'Python'"`` when *smartquotes* is true, or b'\'Python\'' when it is
+   false.
+
+   On success, this function returns a :term:`strong reference` to a
+   :class:`str` object containing the representation. On failure, this
+   returns ``NULL`` with an exception set.
+
+
 .. _pybyteswriter:
 
 PyBytesWriter
