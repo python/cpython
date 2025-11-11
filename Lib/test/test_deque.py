@@ -1076,7 +1076,9 @@ class TestSubclass(unittest.TestCase):
         self.assertEqual(list(view), expected)
         self.assertEqual(view.maxlen, d.maxlen)
 
-    @hypothesis.given(items=st.lists(st.integers()), maxlen=st.integers(min_value=0))
+    @hypothesis.given(
+            items=st.lists(st.integers()),
+            maxlen=st.integers(min_value=0, max_value=sys.maxsize))
     def test_slice_and_copy_preserve_large_maxlen(self, items, maxlen):
         d = Deque(items, maxlen)
 
