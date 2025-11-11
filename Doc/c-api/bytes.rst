@@ -231,7 +231,7 @@ called with a non-bytes parameter.
 
 .. c:function:: PyObject *PyBytes_Repr(PyObject *bytes, int smartquotes)
 
-   Get the string representation of *bytes*. This function is used to
+   Get the string representation of *bytes*. This function is currently used to
    implement :meth:`!bytes.__repr__` in Python.
 
    If *smartquotes* is true, the representation will use a double-quoted string
