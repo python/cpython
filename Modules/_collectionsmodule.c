@@ -1383,6 +1383,7 @@ deque_subscript(PyObject *self, PyObject *item)
                  "deque indices must be integers or slices, not %.200s",
                  Py_TYPE(item)->tp_name);
 done:
+    ;  // keep label legal even when Py_END_CRITICAL_SECTION() is empty
     Py_END_CRITICAL_SECTION();
     return result;
 }
