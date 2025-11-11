@@ -445,7 +445,9 @@ mimetypes
 
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
-  (Contributed by Charlie Lin in :gh:`140165`)
+  (Contributed by Charlie Lin in :gh:`140165`.)
+* Changed the MIME type for ``.ai`` files to ``application/pdf``.
+  (Contributed by Stan Ulbrych in :gh:`141239`.)
 
 
 mmap
