@@ -2041,12 +2041,8 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             bool pop = (next.op.code == POP_TOP);
             int oparg = instr->op.arg;
             if ((PyObject *)descr == list_append && oparg == 1 && pop) {
-                PyThreadState *tstate = PyThreadState_GET();
-                PyObject *self = PyStackRef_AsPyObjectBorrow(tstate->current_frame->stackpointer[-2]);
-                if (PyList_CheckExact(self)) {
-                    specialize(instr, CALL_LIST_APPEND);
-                    return 0;
-                }
+                specialize(instr, CALL_LIST_APPEND);
+                return 0;
             }
             specialize(instr, CALL_METHOD_DESCRIPTOR_O);
             return 0;
