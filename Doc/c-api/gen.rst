@@ -44,3 +44,8 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
    A reference to *frame* is stolen by this function.  The *frame* argument
    must not be ``NULL``.
+
+.. c:function:: PyCodeObject *PyGen_GetCode(PyGenObject *gen)
+
+   Return a new :term:`strong reference` to the code object wrapped by *gen*.
+   This function always succeeds.
