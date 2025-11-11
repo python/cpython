@@ -19,7 +19,6 @@
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_unicodeobject.h" // _PyUnicodeASCIIIter_Type
-#include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include <stdlib.h> // rand()
 
@@ -1603,8 +1602,8 @@ generic:
 }
 
 static int
-specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
-                             int nargs)
+specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
+                             _Py_CODEUNIT *instr, int nargs)
 {
     switch (descr->d_method->ml_flags &
         (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O |
@@ -1628,10 +1627,8 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             bool pop = (next.op.code == POP_TOP);
             int oparg = instr->op.arg;
             if ((PyObject *)descr == list_append && oparg == 1 && pop) {
-                PyThreadState *tstate = _PyThreadState_GET();
-                _PyStackRef *stack_pointer = tstate->current_frame->stackpointer;
-                PyObject *self = PyStackRef_AsPyObjectBorrow(stack_pointer[-2]);
-                if (PyList_CheckExact(self)) {
+                assert(self_or_null != NULL);
+                if (PyList_CheckExact(self_or_null)) {
                     specialize(instr, CALL_LIST_APPEND);
                     return 0;
                 }
@@ -1772,7 +1769,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
 }
 
 Py_NO_INLINE void
-_Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
+_Py_Specialize_Call(_PyStackRef callable_st, _PyStackRef self_or_null_st, _Py_CODEUNIT *instr, int nargs)
 {
     PyObject *callable = PyStackRef_AsPyObjectBorrow(callable_st);
 
@@ -1790,7 +1787,9 @@ _Py_Specialize_Call(_PyStackRef callable_st, _Py_CODEUNIT *instr, int nargs)
         fail = specialize_class_call(callable, instr, nargs);
     }
     else if (Py_IS_TYPE(callable, &PyMethodDescr_Type)) {
-        fail = specialize_method_descriptor((PyMethodDescrObject *)callable, instr, nargs);
+        PyObject *self_or_null = PyStackRef_AsPyObjectBorrow(self_or_null_st);
+        fail = specialize_method_descriptor((PyMethodDescrObject *)callable,
+                                            self_or_null, instr, nargs);
     }
     else if (PyMethod_Check(callable)) {
         PyObject *func = ((PyMethodObject *)callable)->im_func;
