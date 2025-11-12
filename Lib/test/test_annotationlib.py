@@ -1647,6 +1647,30 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": Format.VALUE * 5 * 6})
 
+    def test_callable_cache_annotate_forwardref_value_fallback(self):
+        import random
+        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
+        # supported fall back to Format.VALUE and convert to strings
+        @functools.cache
+        def format(format, /, __Format=Format,
+                   __NotImplementedError=NotImplementedError):
+            if format == __Format.VALUE:
+                return {"x": random.random()}
+            else:
+                raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(
+            format,
+            Format.FORWARDREF,
+        )
+
+        self.assertIsInstance(annotations, dict)
+        self.assertIn("x", annotations)
+        self.assertIsInstance(annotations["x"], float)
+
+        new_anns = annotationlib.call_annotate_function(format, Format.FORWARDREF)
+        self.assertEqual(annotations, new_anns)
+
     def test_callable_object_annotate_string_fakeglobals(self):
         # If Format.STRING is not supported but Format.VALUE_WITH_FAKE_GLOBALS is
         # prefer that over Format.VALUE

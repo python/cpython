@@ -894,9 +894,14 @@ def _get_annotate_attr(annotate, attr, default):
     if isinstance(annotate.__call__, types.MethodType):
         if call_func := getattr(annotate.__call__, "__func__", None):
             return getattr(call_func, attr, default)
-    elif isinstance(annotate, type):
+
+    if isinstance(annotate, type):
         return getattr(annotate.__init__, attr, default)
-    elif (
+
+    if (wrapped := getattr(annotate, "__wrapped__", None)) is not None:
+        return getattr(wrapped, attr, default)
+
+    if (
         (functools := sys.modules.get("functools", None))
         and isinstance(annotate, functools.partial)
     ):
@@ -919,12 +924,21 @@ def _direct_call_annotate(func, annotate, format):
         func(inst, format)
         return inst
 
-    # If annotate is a partial function, re-create it with the new function object.
-    # We could call the function directly, but then we'd have to handle placeholders,
-    # and this way should be more robust for future changes.
     if functools := sys.modules.get("functools", None):
+        # If annotate is a partial function, re-create it with the new function object.
+        # We could call the function directly, but then we'd have to handle placeholders,
+        # and this way should be more robust for future changes.
         if isinstance(annotate, functools.partial):
             return functools.partial(func, *annotate.args, **annotate.keywords)(format)
+
+        # If annotate is a cached function, re-create it with the new function object.
+        # We want a new, clean, cache, as we've updated the function data, so let's
+        # re-create with the new function and old cache parameters.
+        if isinstance(annotate, functools._lru_cache_wrapper):
+            return functools._lru_cache_wrapper(
+                func, **annotate.cache_parameters(),
+                cache_info_type=(0, 0, 0, annotate.cache_parameters()["maxsize"])
+            )(format)
 
     return func(format)
 
