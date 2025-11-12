@@ -638,6 +638,11 @@ by setting ``color`` to ``False``::
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--help'])
 
+Note that when ``color=True``, colored output depends on both environment
+variables and terminal capabilities.  However, if ``color=False``, colored
+output is always disabled, even if environment variables like ``FORCE_COLOR``
+are set.
+
 .. versionadded:: 3.14
 
 
@@ -2065,7 +2070,9 @@ Parser defaults
      >>> parser.parse_args(['736'])
      Namespace(bar=42, baz='badger', foo=736)
 
-   Note that parser-level defaults always override argument-level defaults::
+   Note that defaults can be set at both the parser level using :meth:`set_defaults`
+   and at the argument level using :meth:`add_argument`. If both are called for the
+   same argument, the last default set for an argument is used::
 
      >>> parser = argparse.ArgumentParser()
      >>> parser.add_argument('--foo', default='bar')
