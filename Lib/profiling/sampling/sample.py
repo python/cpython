@@ -136,7 +136,7 @@ def _run_with_sync(original_cmd):
 
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=True, gc=True):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
@@ -613,7 +613,7 @@ def sample(
     output_format="pstats",
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
-    native=True,
+    native=False,
     gc=True,
 ):
     profiler = SampleProfiler(
@@ -763,10 +763,9 @@ def main():
         help="Print real-time sampling statistics (Hz, mean, min, max, stdev) during profiling",
     )
     sampling_group.add_argument(
-        "--no-native",
-        action="store_false",
-        dest="native",
-        help="Don't include artificial \"<native>\" frames to denote calls to non-Python code.",
+        "--native",
+        action="store_true",
+        help="Include artificial \"<native>\" frames to denote calls to non-Python code.",
     )
     sampling_group.add_argument(
         "--no-gc",

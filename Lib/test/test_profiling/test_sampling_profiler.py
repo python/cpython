@@ -2165,7 +2165,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 output_format="pstats",
                 realtime_stats=False,
                 mode=0,
-                native=True,
+                native=False,
                 gc=True,
             )
 
@@ -2195,7 +2195,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 output_format="pstats",
                 realtime_stats=False,
                 mode=0,
-                native=True,
+                native=False,
                 gc=True,
             )
 
@@ -2225,7 +2225,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 output_format="pstats",
                 realtime_stats=False,
                 mode=0,
-                native=True,
+                native=False,
                 gc=True,
             )
 
@@ -2327,7 +2327,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 output_format="pstats",
                 realtime_stats=False,
                 mode=0,
-                native=True,
+                native=False,
                 gc=True,
             )
 
@@ -2363,7 +2363,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 output_format="collapsed",
                 realtime_stats=False,
                 mode=0,
-                native=True,
+                native=False,
                 gc=True,
             )
 
@@ -2577,7 +2577,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 output_format="pstats",
                 realtime_stats=False,
                 mode=0,
-                native=True,
+                native=False,
                 gc=True,
             )
 
@@ -3067,7 +3067,7 @@ if __name__ == "__main__":
                     duration_sec=1,
                     sample_interval_usec=5000,
                     show_summary=False,
-                    native=True,
+                    native=False,
                     gc=True,
                 )
             except PermissionError:
@@ -3095,7 +3095,7 @@ if __name__ == "__main__":
                     duration_sec=1,
                     sample_interval_usec=5000,
                     show_summary=False,
-                    native=True,
+                    native=False,
                     gc=False,
                 )
             except PermissionError:
