@@ -294,6 +294,25 @@ def clear_caches():
     else:
         importlib_metadata.FastPath.__new__.cache_clear()
 
+    try:
+        encodings = sys.modules['encodings']
+    except KeyError:
+        pass
+    else:
+        encodings._cache.clear()
+
+    try:
+        codecs = sys.modules['codecs']
+    except KeyError:
+        pass
+    else:
+        # There's no direct API to clear the codecs search cache, but
+        # `unregister` clears it implicitly.
+        def noop_search_function(name):
+            return None
+        codecs.register(noop_search_function)
+        codecs.unregister(noop_search_function)
+
 
 def get_build_info():
     # Get most important configure and build options as a list of strings.
