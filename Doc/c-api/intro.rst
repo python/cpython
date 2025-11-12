@@ -121,6 +121,10 @@ complete listing.
 
    Return the absolute value of ``x``.
 
+   If the result cannot be represented (for example, if ``x`` has
+   :c:macro:`!INT_MIN` value for :c:expr:`int` type), the behavior is
+   undefined.
+
    .. versionadded:: 3.3
 
 .. c:macro:: Py_ALWAYS_INLINE
