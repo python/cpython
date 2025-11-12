@@ -181,10 +181,12 @@ Type Objects
    Python's default memory allocation mechanism to allocate a new instance and
    initialize all its contents to ``NULL``.
 
+
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
    Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type object.  Create a
    new instance using the type's :c:member:`~PyTypeObject.tp_alloc` slot.
+
 
 .. c:function:: int PyType_Ready(PyTypeObject *type)
 
@@ -202,12 +204,14 @@ Type Objects
        GC protocol itself by at least implementing the
        :c:member:`~PyTypeObject.tp_traverse` handle.
 
+
 .. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
 
    Return the type's name. Equivalent to getting the type's
    :attr:`~type.__name__` attribute.
 
    .. versionadded:: 3.11
+
 
 .. c:function:: PyObject* PyType_GetQualName(PyTypeObject *type)
 
@@ -224,12 +228,14 @@ Type Objects
 
    .. versionadded:: 3.13
 
+
 .. c:function:: PyObject* PyType_GetModuleName(PyTypeObject *type)
 
    Return the type's module name. Equivalent to getting the
    :attr:`type.__module__` attribute.
 
    .. versionadded:: 3.13
+
 
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
@@ -246,6 +252,7 @@ Type Objects
    .. versionchanged:: 3.10
       :c:func:`PyType_GetSlot` can now accept all types.
       Previously, it was limited to :ref:`heap types <heap-types>`.
+
 
 .. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
 
@@ -266,6 +273,7 @@ Type Objects
 
    .. versionadded:: 3.9
 
+
 .. c:function:: void* PyType_GetModuleState(PyTypeObject *type)
 
    Return the state of the module object associated with the given type.
@@ -279,6 +287,7 @@ Type Objects
    returns ``NULL`` without setting an exception.
 
    .. versionadded:: 3.9
+
 
 .. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 
@@ -299,6 +308,7 @@ Type Objects
 
    .. versionadded:: 3.11
 
+
 .. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 
    Attempt to assign a version tag to the given type.
@@ -307,6 +317,16 @@ Type Objects
    assigned, or 0 if a new tag could not be assigned.
 
    .. versionadded:: 3.12
+
+
+.. c:function:: int PyType_SUPPORTS_WEAKREFS(PyTypeObject *type)
+
+   Return true if instances of *type* support creating weak references, false
+   otherwise. This function always succeeds. *type* must not be ``NULL``.
+
+   .. seealso::
+      * :ref:`weakrefobjects`
+      * :py:mod:`weakref`
 
 
 Creating Heap-Allocated Types
@@ -361,6 +381,7 @@ The following functions and structs are used to create
 
    .. versionadded:: 3.12
 
+
 .. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
    Equivalent to ``PyType_FromMetaclass(NULL, module, spec, bases)``.
@@ -383,6 +404,7 @@ The following functions and structs are used to create
       :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
       will be no longer allowed.
 
+
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
    Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, bases)``.
@@ -399,6 +421,7 @@ The following functions and structs are used to create
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is deprecated and in Python 3.14+ it
       will be no longer allowed.
+
 
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 

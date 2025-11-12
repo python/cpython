@@ -45,6 +45,10 @@ as much as it can.
    weakly referenceable object, or if *callback* is not callable, ``None``, or
    ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
 
+   .. seealso::
+      :c:func:`PyType_SUPPORTS_WEAKREFS` for checking if *ob* is weakly
+      referenceable.
+
 
 .. c:function:: PyObject* PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
 
@@ -56,6 +60,10 @@ as much as it can.
    reference object itself. *callback* may also be ``None`` or ``NULL``.  If *ob*
    is not a weakly referenceable object, or if *callback* is not callable,
    ``None``, or ``NULL``, this will return ``NULL`` and raise :exc:`TypeError`.
+
+   .. seealso::
+      :c:func:`PyType_SUPPORTS_WEAKREFS` for checking if *ob* is weakly
+      referenceable.
 
 
 .. c:function:: int PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
