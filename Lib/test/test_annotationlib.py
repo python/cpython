@@ -1648,6 +1648,31 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": Format.VALUE * 5 * 6})
 
+    def test_callable_partialmethod_annotate_forwardref_value_fallback(self):
+        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
+        # supported fall back to Format.VALUE and convert to strings
+        class Annotate:
+            def _internal_format(self, format, second, /, *, third, __Format=Format,
+                       __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    return {"x": format * second * third}
+                else:
+                    raise __NotImplementedError(format)
+
+            format = functools.partialmethod(
+                _internal_format,
+                functools.Placeholder,
+                5,
+                third=6
+            )
+
+        annotations = annotationlib.call_annotate_function(
+            Annotate().format,
+            Format.FORWARDREF,
+        )
+
+        self.assertEqual(annotations, {"x": Format.VALUE * 5 * 6})
+
     def test_callable_cache_annotate_forwardref_value_fallback(self):
         # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
         # supported fall back to Format.VALUE and convert to strings

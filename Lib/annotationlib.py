@@ -905,7 +905,7 @@ def _get_annotate_attr(annotate, attr, default):
         (functools := sys.modules.get("functools", None))
         and isinstance(annotate, functools.partial)
     ):
-        return getattr(annotate.func, attr, default)
+        return _get_annotate_attr(annotate.func, attr, default)
 
     return default
 
@@ -929,6 +929,9 @@ def _direct_call_annotate(func, annotate, format):
         # We could call the function directly, but then we'd have to handle placeholders,
         # and this way should be more robust for future changes.
         if isinstance(annotate, functools.partial):
+            # Partial methods
+            if self := getattr(annotate, "__self__", None):
+                return functools.partial(func, self, *annotate.args, **annotate.keywords)(format)
             return functools.partial(func, *annotate.args, **annotate.keywords)(format)
 
     # If annotate is a cached function, we've now updated the function data, so
