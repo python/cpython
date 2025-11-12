@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -252,7 +253,7 @@ def update_test_plan(testbed_path, platform, args):
         test_plan = json.load(f)
 
     test_plan["defaultOptions"]["commandLineArgumentEntries"] = [
-        {"argument": arg} for arg in args
+        {"argument": shlex.quote(arg)} for arg in args
     ]
 
     with test_plan_path.open("w", encoding="utf-8") as f:
