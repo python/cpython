@@ -3124,7 +3124,7 @@ import operator
 
 def python_to_c():
     # Native code at the top of the stack:
-    sum(range(200))
+    sum(range(100))
     # Python code at the top of the stack:
     for _ in range(100):
         pass
