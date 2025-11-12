@@ -43,6 +43,7 @@ Lib/venv/scripts/posix/* text eol=lf
 *.ps1               dos
 *.sln               dos
 *.vcxproj*          dos
+Platforms/Windows/* dos
 PC/readme.txt       dos
 PCbuild/readme.txt  dos
 
