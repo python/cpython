@@ -167,8 +167,9 @@ def main():
             if symbol.is_smelly:
                 smelly_symbols.append(symbol)
 
+    print()
+
     if smelly_symbols:
-        print()
         print(f"Found {len(smelly_symbols)} smelly symbols in total!")
         for symbol in sorted(smelly_symbols):
             print(f"    - {symbol.name} from {symbol.library.path}")
