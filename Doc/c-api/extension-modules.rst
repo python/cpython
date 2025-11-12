@@ -26,28 +26,45 @@ and must be named after the module name plus an extension listed in
 
 .. _extension-export-hook:
 
+Extension export hook
+.....................
+
+.. versionadded:: next
+
+   Support for the :samp:`PyModExport_{<name>}` export hook was added in Python
+   3.15. The older way of defining modules is still available: consult either
+   the :ref:`extension-pyinit` section or earlier versions of this
+   documentation if you plan to support earlier Python versions.
+
 The export hook must be an exported function with the following signature:
 
 .. c:function:: PyModuleDef_Slot *PyModExport_modulename(void)
 
-Its name should be :samp:`PyModExport_{<name>}`, with ``<name>`` replaced by
-the name of the module.
-See :ref:`extension-export-hook-name` for full details.
+For modules with ASCII-only names, the :ref:`export hook <extension-export-hook>`
+must be named :samp:`PyModExport_{<name>}`,
+with ``<name>`` replaced by the module's name.
 
-.. versionadded:: next
+For non-ASCII module names, the export hook must instead be named
+:samp:`PyModExportU_{<name>}` (note the ``U``), with ``<name>`` encoded using
+Python's *punycode* encoding with hyphens replaced by underscores. In Python:
 
-   The :samp:`PyModExport_{<name>}` export hook was added in Python 3.15.
-   The older way of defining modules is still available: consult either the
-   :ref:`extension-pyinit` section or earlier versions of this documentation
-   if you plan to support earlier Python versions.
+.. code-block:: python
+
+    def hook_name(name):
+        try:
+            suffix = b'_' + name.encode('ascii')
+        except UnicodeEncodeError:
+            suffix = b'U_' + name.encode('punycode').replace(b'-', b'_')
+        return b'PyModExport' + suffix
 
 The export hook returns an array of :c:type:`PyModuleDef_Slot` entries,
 terminated by an entry with a slot ID of ``0``.
 These slots describe how the module should be created and initialized.
 
 This array must remain valid and constant until interpreter shutdown.
-Typically, it should use ``static`` storage; for dynamic behavior you should
-use the :c:macro:`Py_mod_create` and :c:macro:`Py_mod_exec` slots.
+Typically, it should use ``static`` storage.
+Prefer using the :c:macro:`Py_mod_create` and :c:macro:`Py_mod_exec` slots
+for any dynamic behavior.
 
 The export hook may return ``NULL`` with an exception set to signal failure.
 
@@ -98,27 +115,6 @@ rather than crash, in common cases of ABI mismatch.
    finds the function corresponding to the filename.
    See the `Multiple modules in one library <https://peps.python.org/pep-0489/#multiple-modules-in-one-library>`__
    section in :pep:`489` for details.
-
-.. _extension-export-hook-name:
-
-Export hook name
-................
-
-For modules with ASCII-only names, the export hook must be named
-:samp:`PyModExport_{<name>}`, with ``<name>`` replaced by the module's name.
-
-For non-ASCII module names, the export hook must be named
-:samp:`PyModExportU_{<name>}` (note the ``U``), with ``<name>`` encoded using
-Python's *punycode* encoding with hyphens replaced by underscores. In Python:
-
-.. code-block:: python
-
-    def hook_name(name):
-        try:
-            suffix = b'_' + name.encode('ascii')
-        except UnicodeEncodeError:
-            suffix = b'U_' + name.encode('punycode').replace(b'-', b'_')
-        return b'PyModExport' + suffix
 
 
 .. _multi-phase-initialization:
@@ -208,7 +204,9 @@ an older-style :dfn:`initialization function` with the signature:
 Its name should be :samp:`PyInit_{<name>}`, with ``<name>`` replaced by the
 name of the module.
 For non-ASCII module names, use :samp:`PyInitU_{<name>}` instead, with
-``<name>`` encoded :ref:`as for the export hook <extension-export-hook-name>`.
+``<name>`` encoded in the same way as for the
+:ref:`export hook <extension-export-hook>` (that is, using Punycode
+with underscores).
 
 If a module exports both :samp:`PyInit_{<name>}` and
 :samp:`PyModExport_{<name>}`, the  :samp:`PyInit_{<name>}` function
@@ -331,11 +329,6 @@ in the following ways:
 
   A single-phase ``PyInit_modulename`` function should create “its” module
   object as soon as possible, before any other module objects can be created.
-
-* Attempts to import a single-phase initialization module reentrantly
-  from its own initialization function are likely to cause infinite recursion.
-  (The extension author may prevent this by manually inserting a partially
-  initialized module object in :py:attr:`sys.modules`.)
 
 * Non-ASCII module names (``PyInitU_modulename``) are not supported.
 

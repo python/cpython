@@ -3,10 +3,9 @@
 .. _moduleobjects:
 
 Module Objects
---------------
+==============
 
 .. index:: pair: object; module
-
 
 .. c:var:: PyTypeObject PyModule_Type
 
@@ -139,8 +138,9 @@ Module Objects
 Module definition
 -----------------
 
-Modules defined using the C API are typically defined using an array of *slots*
-The slots provide a “description" of how a module should be created.
+Modules created using the C API are typically defined using an
+array of :dfn:`slots`.
+The slots provide a "description" of how a module should be created.
 
 .. versionchanged:: next
 
@@ -162,7 +162,7 @@ in an array of slots.
 
    .. c:member:: int slot
 
-      A slot ID, chosen from the available values explained below.
+      A slot ID, chosen from the available ``Py_mod_*`` values explained below.
 
       An ID of 0 marks the end of a :c:type:`!PyModuleDef_Slot` array.
 
@@ -175,11 +175,9 @@ in an array of slots.
 
    .. versionadded:: 3.5
 
-The available slot types are:
 
-
-Description slots
-.................
+Metadata slots
+..............
 
 .. c:macro:: Py_mod_name
 
@@ -213,9 +211,6 @@ Feature slots
    A pointer to a :c:struct:`PyABIInfo` structure that describes the ABI that
    the extension is using.
 
-   When the module is loaded, the :c:struct:`!PyABIInfo` in this slot is checked
-   using :c:func:`PyABIInfo_Check`.
-
    A suitable :c:struct:`!PyABIInfo` variable can be defined using the
    :c:macro:`PyABIInfo_VAR` macro, as in:
 
@@ -227,6 +222,9 @@ Feature slots
          {Py_mod_abi, &abi_info},
          ...
       };
+
+   When creating a module, Python checks the value of this slot
+   using :c:func:`PyABIInfo_Check`.
 
    .. versionadded:: 3.15
 
@@ -255,9 +253,6 @@ Feature slots
    This slot determines whether or not importing this module
    in a subinterpreter will fail.
 
-   Multiple ``Py_mod_multiple_interpreters`` slots may not be specified
-   in one module definition.
-
    If ``Py_mod_multiple_interpreters`` is not specified, the import
    machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED``.
 
@@ -283,8 +278,6 @@ Feature slots
    this module will cause the GIL to be automatically enabled. See
    :ref:`whatsnew313-free-threaded-cpython` for more detail.
 
-   Multiple ``Py_mod_gil`` slots may not be specified in one module definition.
-
    If ``Py_mod_gil`` is not specified, the import machinery defaults to
    ``Py_MOD_GIL_USED``.
 
@@ -306,8 +299,8 @@ Creation and initialization slots
    The function will be called with:
 
    - *spec*: a ``ModuleSpec``-like object, meaning that any attributes defined
-     for :py:class:`importlib.machinery.ModuleSpec`
-     have matching semantics. However, any of the attributes may be missing.
+     for :py:class:`importlib.machinery.ModuleSpec` have matching semantics.
+     However, any of the attributes may be missing.
    - *def*: ``NULL``, or the module definition if the module is created from one.
 
    The function should return a new module object, or set an error
@@ -324,21 +317,27 @@ Creation and initialization slots
    names through symlinks, all while sharing a single module definition.
 
    There is no requirement for the returned object to be an instance of
-   :c:type:`PyModule_Type`. Any type can be used, as long as it supports
-   setting and getting import-related attributes.
-   However, only ``PyModule_Type`` instances may be returned if the
-   ``PyModuleDef`` has non-``NULL`` ``m_traverse``, ``m_clear``,
-   ``m_free``; non-zero ``m_size``; or slots other than ``Py_mod_create``.
+   :c:type:`PyModule_Type`.
+   However, some slots may only be used with
+   :c:type:`!PyModule_Type` instances; in particular:
+
+   - :c:macro:`Py_mod_exec`,
+   - :ref:`module state slots <ext-module-state-slots>` (``Py_mod_state_*``),
+   - :c:macro:`Py_mod_token`.
 
    .. versionchanged:: next
 
-      The *slots* argument may be ``ModuleSpec``-like object, rather than
+      The *slots* argument may be a ``ModuleSpec``-like object, rather than
       a true :py:class:`~importlib.machinery.ModuleSpec` instance.
       Note that previous versions of CPython did not enforce this.
 
+      The *def* argument may now be ``NULL``, since modules are not necessarily
+      made from definitions.
+
 .. c:macro:: Py_mod_exec
 
-   Specifies a function that is called to *execute* the module.
+   Specifies a function that is called to :dfn:`execute`, or initialize,
+   the module.
    This is equivalent to executing the code of a Python module: typically,
    this function adds classes and constants to the module.
    The signature of the function is:
@@ -380,13 +379,63 @@ Creation and initialization slots
 
       Use :c:member:`PyModuleDef.m_methods` instead to support previous versions.
 
+.. _ext-module-state:
+
+Module state
+------------
+
+Extension modules can have *module state* -- a
+piece of memory that is allocated on module creation,
+and freed when the module object is deallocated.
+The module state is specified using :ref:`dedicated slots <ext-module-state-slots>`.
+
+A typical use of module state is storing an exception type -- or indeed *any*
+type object defined by the module --
+
+Unlike the module's Python attributes, Python code cannot replace or delete
+data stored in module state.
+
+Keeping per-module information in attributes and module state, rather than in
+static globals, makes module objects *isolated* and safer for use in
+multiple sub-interpreters.
+It also helps Python do an orderly clean-up when it shuts down.
+
+Extensions that keep references to Python objects as part of module state must
+implement :c:macro:`Py_mod_state_traverse` and :c:macro:`Py_mod_state_clear`
+functions to avoid reference leaks.
+
+To retrieve the state from a given module, use the following functions:
+
+.. c:function:: void* PyModule_GetState(PyObject *module)
+
+   Return the "state" of the module, that is, a pointer to the block of memory
+   allocated at module creation time, or ``NULL``.  See
+   :c:macro:`Py_mod_state_size`.
+
+   On error, return ``NULL`` with an exception set.
+   Use :c:func:`PyErr_Occurred` to tell this case apart from missing
+   module state.
+
+
+.. c:function:: int PyModule_GetStateSize(PyObject *, Py_ssize_t *result)
+
+   Set *\*result* to the size of the module's state, as specified using
+   :c:macro:`Py_mod_state_size` (or :c:member:`PyModuleDef.m_size`),
+   and return 0.
+
+   On error, set *\*result* to -1, and return -1 with an exception set.
+
+   .. versionadded:: next
+
+
 
 .. _ext-module-state-slots:
 
 Slots for defining module state
 ...............................
 
-See :ref:`ext-module-state` for an explanation of module state.
+The following :c:member:`PyModuleDef_Slot.slot` IDs are available for
+defining the module state.
 
 .. c:macro:: Py_mod_state_size
 
@@ -400,7 +449,8 @@ See :ref:`ext-module-state` for an explanation of module state.
    module does not support sub-interpreters, because it has global state.
    Negative *size* is only allowed when using
    :ref:`legacy single-phase initialization <single-phase-initialization>`
-   or when :ref:`creating modules dynamically <module-from-slots>`.
+   or when creating modules dynamically using :c:func:`PyModule_Create`
+   or :c:func:`PyModule_Create2`.
 
    See :PEP:`3121` for more details.
 
@@ -502,51 +552,6 @@ See :ref:`ext-module-state` for an explanation of module state.
    Modules created from :c:type:`PyModuleDef` allways use the address of
    the :c:type:`PyModuleDef` as the token; :c:macro:`!Py_mod_token` cannot
    be used in :c:member:`PyModuleDef.m_slots`.
-
-   .. versionadded:: next
-
-.. _ext-module-state:
-
-Module state
-------------
-
-Extension modules can have *module state* -- a
-piece of memory that is allocated on module creation,
-and freed when the module object is deallocated.
-The module state is specified using :ref:`dedicated slots <ext-module-state-slots>`.
-
-Unlike the module's Python attributes, Python code cannot replace or delete
-data stored in module state.
-
-Keeping per-module information in attributes and module state, rather than in
-static globals, makes module objects *isolated* and safer for use in
-multiple sub-interpreters.
-It also helps Python do an orderly clean-up when it shuts down.
-
-Extensions that keep references to Python objects as part of module state must
-implement :c:macro:`Py_mod_state_traverse` and :c:macro:`Py_mod_state_clear`
-functions to avoid reference leaks.
-
-To retrieve the state from a given module, use the following functions:
-
-.. c:function:: void* PyModule_GetState(PyObject *module)
-
-   Return the "state" of the module, that is, a pointer to the block of memory
-   allocated at module creation time, or ``NULL``.  See
-   :c:macro:`Py_mod_state_size`.
-
-   On error, return ``NULL`` with an exception set.
-   Use :c:func:`PyErr_Occurred` to tell this case apart from a missing
-   :c:type:`!PyModuleDef`.
-
-
-.. c:function:: int PyModule_GetStateSize(PyObject *, Py_ssize_t *result)
-
-   Set *\*result* to the size of the module's state, as specified using
-   :c:macro:`Py_mod_state_size` (or :c:member:`PyModuleDef.m_size`),
-   and return 0.
-
-   On error, set *\*result* to -1, and return -1 with an exception set.
 
    .. versionadded:: next
 
