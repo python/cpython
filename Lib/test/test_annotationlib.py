@@ -1132,6 +1132,26 @@ class TestGetAnnotations(unittest.TestCase):
             {"x": "int"},
         )
 
+    def test_non_function_annotate(self):
+        class AnnotateCallable:
+            def __call__(self, format, /):
+                if format > 2:
+                    raise NotImplementedError
+                return {"x": int}
+
+        class OnlyAnnotate:
+            @property
+            def __annotate__(self):
+                return AnnotateCallable()
+
+        oa = OnlyAnnotate()
+        self.assertEqual(get_annotations(oa, format=Format.VALUE), {"x": int})
+        self.assertEqual(get_annotations(oa, format=Format.FORWARDREF), {"x": int})
+        self.assertEqual(
+            get_annotations(oa, format=Format.STRING),
+            {"x": "int"},
+        )
+
     def test_non_dict_annotate(self):
         class WeirdAnnotate:
             def __annotate__(self, *args, **kwargs):
