@@ -85,7 +85,7 @@ item defined in the module's C source.
 
 The hook should be kept short -- ideally, one line as above.
 If you do need to use Python C API in this function, it is recommended to call
-:c:expr:`PyABIInfo_Check(&abi_info, "modulename")` first to raise an exception,
+``PyABIInfo_Check(&abi_info, "modulename")`` first to raise an exception,
 rather than crash, in common cases of ABI mismatch.
 
 
@@ -335,7 +335,7 @@ in the following ways:
 * Attempts to import a single-phase initialization module reentrantly
   from its own initialization function are likely to cause infinite recursion.
   (The extension author may prevent this by manually inserting a partially
-  initialized module object in `sys.modules`.)
+  initialized module object in :py:attr:`sys.modules`.)
 
 * Non-ASCII module names (``PyInitU_modulename``) are not supported.
 

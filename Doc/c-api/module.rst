@@ -533,7 +533,7 @@ To retrieve the state from a given module, use the following functions:
 
    Return the "state" of the module, that is, a pointer to the block of memory
    allocated at module creation time, or ``NULL``.  See
-   :c:macro:`Py_mod_size`.
+   :c:macro:`Py_mod_state_size`.
 
    On error, return ``NULL`` with an exception set.
    Use :c:func:`PyErr_Occurred` to tell this case apart from a missing
@@ -543,7 +543,7 @@ To retrieve the state from a given module, use the following functions:
 .. c:function:: int PyModule_GetStateSize(PyObject *, Py_ssize_t *result)
 
    Set *\*result* to the size of the module's state, as specified using
-   :c:macro:`Py_mod_size` (or :c:member:`PyModuleDef.m_size`),
+   :c:macro:`Py_mod_state_size` (or :c:member:`PyModuleDef.m_size`),
    and return 0.
 
    On error, set *\*result* to -1, and return -1 with an exception set.
@@ -681,7 +681,17 @@ remove it.
 
    .. c:member:: PyModuleDef_Base m_base
 
-      Always initialize this member to :c:macro:`PyModuleDef_HEAD_INIT`.
+      Always initialize this member to :c:macro:`PyModuleDef_HEAD_INIT`:
+
+      .. c:namespace:: NULL
+
+      .. c:type:: PyModuleDef_Base
+
+         The type of :c:member:`!PyModuleDef.m_base`.
+
+      .. c:macro:: PyModuleDef_HEAD_INIT
+
+         The required initial value for :c:member:`!PyModuleDef.m_base`.
 
    .. c:member:: const char *m_name
                  const char *m_doc
@@ -733,6 +743,7 @@ remove it.
 
          :c:member:`!m_traverse`, :c:member:`m_clear` and :c:member:`m_free`
          functions are longer called before the module state is allocated.
+
 
 .. _moduledef-dynamic:
 
