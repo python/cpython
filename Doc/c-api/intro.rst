@@ -119,7 +119,8 @@ complete listing.
 
 .. c:macro:: Py_ABS(x)
 
-   Return the absolute value of ``x``.
+   Return the absolute value of ``x``.  If the result cannot be represented in
+   same type, the behavior is undefined.
 
    .. versionadded:: 3.3
 
