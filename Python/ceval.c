@@ -2191,6 +2191,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
                               "calling %R should have returned an instance of "
                               "BaseException, not %R",
                               cause, Py_TYPE(fixed_cause));
+                Py_DECREF(fixed_cause);
                 goto raise_error;
             }
             Py_DECREF(cause);
