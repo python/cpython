@@ -12273,7 +12273,7 @@ JUMP_TO_LABEL(error);
             if (full) {
                 LEAVE_TRACING();
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = bail_tracing_and_jit(tstate, frame);
+                int err = stop_tracing_and_jit(tstate, frame);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err < 0) {
                     JUMP_TO_LABEL(error);
@@ -12318,7 +12318,7 @@ JUMP_TO_LABEL(error);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LEAVE_TRACING();
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = bail_tracing_and_jit(tstate, frame);
+            int err = stop_tracing_and_jit(tstate, frame);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 JUMP_TO_LABEL(error);

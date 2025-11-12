@@ -5462,33 +5462,33 @@ dummy_func(
         }
 
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF(_PUSH_FRAME);
+            _Py_CODEUNIT *target = frame->instr_ptr + IP_OFFSET_OF(_PUSH_FRAME);
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF(_PUSH_FRAME);
+                frame->instr_ptr += IP_OFFSET_OF(_PUSH_FRAME);
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_YIELD_VALUE, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF(YIELD_VALUE);
+            _Py_CODEUNIT *target = frame->instr_ptr + IP_OFFSET_OF(YIELD_VALUE);
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF(YIELD_VALUE);
+                frame->instr_ptr += IP_OFFSET_OF(YIELD_VALUE);
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_RETURN_VALUE, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr + OFFSET_OF(RETURN_VALUE);
+            _Py_CODEUNIT *target = frame->instr_ptr + IP_OFFSET_OF(RETURN_VALUE);
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF(RETURN_VALUE);
+                frame->instr_ptr += IP_OFFSET_OF(RETURN_VALUE);
                 EXIT_IF(true);
             }
         }
 
         tier2 op(_GUARD_IP_RETURN_GENERATOR, (ip/4 --)) {
-            _Py_CODEUNIT *target = frame->instr_ptr +  OFFSET_OF(RETURN_GENERATOR);
+            _Py_CODEUNIT *target = frame->instr_ptr +  IP_OFFSET_OF(RETURN_GENERATOR);
             if (target != (_Py_CODEUNIT *)ip) {
-                frame->instr_ptr += OFFSET_OF(RETURN_GENERATOR);
+                frame->instr_ptr += IP_OFFSET_OF(RETURN_GENERATOR);
                 EXIT_IF(true);
             }
         }
@@ -5647,7 +5647,7 @@ dummy_func(
             int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing);
             if (full) {
                 LEAVE_TRACING();
-                int err = bail_tracing_and_jit(tstate, frame);
+                int err = stop_tracing_and_jit(tstate, frame);
                 ERROR_IF(err < 0);
                 DISPATCH_GOTO_NON_TRACING();
             }
@@ -5686,7 +5686,7 @@ dummy_func(
             int opcode = next_instr->op.code;
             _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, true);
             LEAVE_TRACING();
-            int err = bail_tracing_and_jit(tstate, frame);
+            int err = stop_tracing_and_jit(tstate, frame);
             ERROR_IF(err < 0);
             DISPATCH_GOTO_NON_TRACING();
 #else

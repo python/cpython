@@ -63,7 +63,7 @@ class Tier2Emitter(Emitter):
     def __init__(self, out: CWriter, labels: dict[str, Label]):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
-        self._replacers["OFFSET_OF"] = self.offset_of
+        self._replacers["IP_OFFSET_OF"] = self.ip_offset_of
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
@@ -135,7 +135,7 @@ class Tier2Emitter(Emitter):
         self.out.emit_at(uop.name[-1], tkn)
         return True
 
-    def offset_of(
+    def ip_offset_of(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,

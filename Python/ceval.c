@@ -993,7 +993,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #if _Py_TIER2
 // 0 for success, -1  for error.
 static int
-bail_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
+stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 {
     int _is_sys_tracing = (tstate->c_tracefunc != NULL) || (tstate->c_profilefunc != NULL);
     int err = 0;
@@ -1245,7 +1245,7 @@ tier2_dispatch:
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (frame->lltrace >= 3) {
-            // dump_stack(frame, stack_pointer);
+            dump_stack(frame, stack_pointer);
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }
