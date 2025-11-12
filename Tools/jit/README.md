@@ -66,6 +66,9 @@ Otherwise, just configure and build as you normally would. Cross-compiling "just
 
 The JIT can also be enabled or disabled using the `PYTHON_JIT` environment variable, even on builds where it is enabled or disabled by default. More details about configuring CPython with the JIT and optional values for `--enable-experimental-jit` can be found [here](https://docs.python.org/dev/using/configure.html#cmdoption-enable-experimental-jit).
 
+## Miscellaneous
+If you're looking for information on how to update the JIT build dependencies, see [JIT Build Infrastructure](jit_infra.md).
+
 [^pep-744]: [PEP 744](https://peps.python.org/pep-0744/)
 
 [^why-llvm]: Clang is specifically needed because it's the only C compiler with support for guaranteed tail calls (`musttail`), which are required by CPython's continuation-passing-style approach to JIT compilation. Since LLVM also includes other functionalities we need (namely, object file parsing and disassembly), it's convenient to only support one toolchain at this time.
