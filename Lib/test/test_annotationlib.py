@@ -1613,6 +1613,24 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": str})
 
+    def test_callable_method_annotate_forwardref_value_fallback(self):
+        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
+        # supported fall back to Format.VALUE and convert to strings
+        class Annotate:
+            def format(self, format, /, __Format=Format,
+                         __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    return {"x": str}
+                else:
+                    raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(
+            Annotate().format,
+            Format.FORWARDREF,
+        )
+
+        self.assertEqual(annotations, {"x": str})
+
     def test_callable_classmethod_annotate_forwardref_value_fallback(self):
         # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
         # supported fall back to Format.VALUE and convert to strings
