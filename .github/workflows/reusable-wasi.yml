@@ -53,7 +53,7 @@ jobs:
     - name: "Configure build Python"
       run: python3 Tools/wasm/wasi configure-build-python -- --config-cache --with-pydebug
     - name: "Make build Python"
-      run: python3 Tools/wasm/wasi.py make-build-python
+      run: python3 Tools/wasm/wasi make-build-python
     - name: "Configure host"
       # `--with-pydebug` inferred from configure-build-python
       run: python3 Tools/wasm/wasi configure-host -- --config-cache
