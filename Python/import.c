@@ -2447,6 +2447,11 @@ PyObject*
 PyImport_CreateModuleFromInitfunc(
     PyObject *spec, PyObject* (*initfunc)(void))
 {
+    if (initfunc == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
     PyThreadState *tstate = _PyThreadState_GET();
 
     PyObject *name = PyObject_GetAttr(spec, &_Py_ID(name));
