@@ -1143,3 +1143,9 @@ that may require changes to your code.
 
 * :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
+
+* Resource warning is now emitted for unclosed
+  :func:`xml.etree.ElementTree.iterparse` iterator if it opened a file.
+  Use its :meth:`!close` method or the :func:`contextlib.closing` context
+  manager to close it.
+  (Contributed by Osama Abdelkader and Serhiy Storchaka in :gh:`140601`.)

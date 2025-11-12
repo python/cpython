@@ -590,6 +590,7 @@ class ElementTreeTest(unittest.TestCase):
                 ('end', 'root'),
             ])
         self.assertEqual(context.root.tag, 'root')
+        context.close()
 
         context = iterparse(SIMPLE_NS_XMLFILE)
         self.assertEqual([(action, elem.tag) for action, elem in context], [
@@ -598,6 +599,7 @@ class ElementTreeTest(unittest.TestCase):
                 ('end', '{namespace}empty-element'),
                 ('end', '{namespace}root'),
             ])
+        context.close()
 
         with open(SIMPLE_XMLFILE, 'rb') as source:
             context = iterparse(source)
@@ -613,10 +615,12 @@ class ElementTreeTest(unittest.TestCase):
         events = ()
         context = iterparse(SIMPLE_XMLFILE, events)
         self.assertEqual([(action, elem.tag) for action, elem in context], [])
+        context.close()
 
         events = ()
         context = iterparse(SIMPLE_XMLFILE, events=events)
         self.assertEqual([(action, elem.tag) for action, elem in context], [])
+        context.close()
 
         events = ("start", "end")
         context = iterparse(SIMPLE_XMLFILE, events)
@@ -630,6 +634,7 @@ class ElementTreeTest(unittest.TestCase):
                 ('end', 'empty-element'),
                 ('end', 'root'),
             ])
+        context.close()
 
         events = ("start", "end", "start-ns", "end-ns")
         context = iterparse(SIMPLE_NS_XMLFILE, events)
@@ -647,11 +652,13 @@ class ElementTreeTest(unittest.TestCase):
                 ('end', '{namespace}root'),
                 ('end-ns', None),
             ])
+        context.close()
 
         events = ('start-ns', 'end-ns')
         context = iterparse(io.StringIO(r"<root xmlns=''/>"), events)
         res = [action for action, elem in context]
         self.assertEqual(res, ['start-ns', 'end-ns'])
+        context.close()
 
         events = ("start", "end", "bogus")
         with open(SIMPLE_XMLFILE, "rb") as f:
@@ -686,9 +693,68 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                 'junk after document element: line 1, column 12')
 
+        with self.assertRaises(FileNotFoundError):
+            iterparse("nonexistent")
+
+    def test_iterparse_not_close(self):
+        # Not exhausting the iterator still closes the underlying file (bpo-43292)
+        # Not closing before del should emit ResourceWarning
+        iterparse = ET.iterparse
+
+        # Not started iteration.
+        with self.assertWarns(ResourceWarning) as wm:
+            it = iterparse(SIMPLE_XMLFILE)
+            del it
+            gc_collect()
+        # Not 'unclosed file'.
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
+
+        with warnings_helper.check_no_resource_warning(self):
+            it = iterparse(SIMPLE_XMLFILE)
+            it.close()
+            del it
+            gc_collect()
+
+        # Started but not completed iteration.
+        with self.assertWarns(ResourceWarning) as wm:
+            it = iterparse(SIMPLE_XMLFILE)
+            action, elem = next(it)
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            del it, elem
+            gc_collect()
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
+
+        with warnings_helper.check_no_resource_warning(self):
+            it = iterparse(SIMPLE_XMLFILE)
+            action, elem = next(it)
+            it.close()
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            del it, elem
+            gc_collect()
+
+        # Parsing error in iteration.
         self.addCleanup(os_helper.unlink, TESTFN)
         with open(TESTFN, "wb") as f:
             f.write(b"<document />junk")
+
+        it = iterparse(TESTFN)
+        action, elem = next(it)
+        self.assertEqual((action, elem.tag), ('end', 'document'))
+        with self.assertWarns(ResourceWarning) as wm:
+            with self.assertRaises(ET.ParseError) as cm:
+                next(it)
+            self.assertEqual(str(cm.exception),
+                    'junk after document element: line 1, column 12')
+            del cm, it
+            gc_collect()
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(TESTFN), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
+
         it = iterparse(TESTFN)
         action, elem = next(it)
         self.assertEqual((action, elem.tag), ('end', 'document'))
@@ -697,47 +763,26 @@ class ElementTreeTest(unittest.TestCase):
                 next(it)
             self.assertEqual(str(cm.exception),
                     'junk after document element: line 1, column 12')
+            it.close()
             del cm, it
             gc_collect()
 
-        with self.assertRaises(FileNotFoundError):
-            iterparse("nonexistent")
-
-    def test_iterparse_not_close(self):
-        # Not closing before del should emit ResourceWarning
-        iterparse = ET.iterparse
-
-        # Not exhausting the iterator still closes the resource (bpo-43292)
+        # Exhausted iteration.
         with self.assertWarns(ResourceWarning) as wm:
             it = iterparse(SIMPLE_XMLFILE)
+            list(it)
             del it
             gc_collect()
-        self.assertIn('unclosed file', str(wm.warning))
-        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
-        self.assertEqual(wm.filename, __file__)
-
-        # Explicitly calling close() should not emit warning
-        with warnings_helper.check_no_resource_warning(self):
-            it = iterparse(SIMPLE_XMLFILE)
-            it.close()
-            del it
-
-        with self.assertWarns(ResourceWarning) as wm:
-            it = iterparse(SIMPLE_XMLFILE)
-            action, elem = next(it)
-            self.assertEqual((action, elem.tag), ('end', 'element'))
-            del it, elem
-            gc_collect()
-        self.assertIn('unclosed file', str(wm.warning))
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
         self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
         self.assertEqual(wm.filename, __file__)
 
         with warnings_helper.check_no_resource_warning(self):
             it = iterparse(SIMPLE_XMLFILE)
-            action, elem = next(it)
+            list(it)
             it.close()
-            self.assertEqual((action, elem.tag), ('end', 'element'))
             del it, elem
+            gc_collect()
 
     def test_iterparse_close(self):
         iterparse = ET.iterparse

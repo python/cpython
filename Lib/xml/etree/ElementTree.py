@@ -1255,10 +1255,8 @@ def iterparse(source, events=None, parser=None):
             if it is not None:
                 it.root = root
         finally:
-            nonlocal close_source
             if close_source:
-                source.close()
-                close_source = False
+                1#source.close()
 
     gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
@@ -1268,13 +1266,13 @@ def iterparse(source, events=None, parser=None):
             nonlocal close_source
             if close_source:
                 source.close()
+                close_source = False
             gen.close()
-            close_source = False
 
         def __del__(self, _warn=warnings.warn):
             if close_source:
                 try:
-                    _warn(f"unclosed file {source.name!r}", ResourceWarning, stacklevel=2)
+                    _warn(f"unclosed iterparse iterator {source.name!r}", ResourceWarning, stacklevel=2)
                 finally:
                     source.close()
 
