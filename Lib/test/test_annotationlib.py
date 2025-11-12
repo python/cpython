@@ -1655,7 +1655,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
         def format(format, /, __Format=Format,
                    __NotImplementedError=NotImplementedError):
             if format == __Format.VALUE:
-                return {"x": random.random()}
+                return {"x": random.random(), "y": str}
             else:
                 raise __NotImplementedError(format)
 
@@ -1667,6 +1667,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertIsInstance(annotations, dict)
         self.assertIn("x", annotations)
         self.assertIsInstance(annotations["x"], float)
+        self.assertIs(annotations["y"], str)
 
         new_anns = annotationlib.call_annotate_function(format, Format.FORWARDREF)
         self.assertEqual(annotations, new_anns)
