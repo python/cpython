@@ -395,7 +395,7 @@ m_tgamma(double x)
     if (x == 0.0) {
         errno = EDOM;
         /* tgamma(+-0.0) = +-inf, divide-by-zero */
-        return copysign(Py_INFINITY, x);
+        return copysign(INFINITY, x);
     }
 
     /* integer arguments */
@@ -426,7 +426,7 @@ m_tgamma(double x)
         }
         else {
             errno = ERANGE;
-            return Py_INFINITY;
+            return INFINITY;
         }
     }
 
@@ -490,14 +490,14 @@ m_lgamma(double x)
         if (isnan(x))
             return x;  /* lgamma(nan) = nan */
         else
-            return Py_INFINITY; /* lgamma(+-inf) = +inf */
+            return INFINITY; /* lgamma(+-inf) = +inf */
     }
 
     /* integer arguments */
     if (x == floor(x) && x <= 2.0) {
         if (x <= 0.0) {
             errno = EDOM;  /* lgamma(n) = inf, divide-by-zero for */
-            return Py_INFINITY; /* integers n <= 0 */
+            return INFINITY; /* integers n <= 0 */
         }
         else {
             return 0.0; /* lgamma(1) = lgamma(2) = 0.0 */
@@ -633,7 +633,7 @@ m_log(double x)
             return log(x);
         errno = EDOM;
         if (x == 0.0)
-            return -Py_INFINITY; /* log(0) = -inf */
+            return -INFINITY; /* log(0) = -inf */
         else
             return Py_NAN; /* log(-ve) = nan */
     }
@@ -676,7 +676,7 @@ m_log2(double x)
     }
     else if (x == 0.0) {
         errno = EDOM;
-        return -Py_INFINITY; /* log2(0) = -inf, divide-by-zero */
+        return -INFINITY; /* log2(0) = -inf, divide-by-zero */
     }
     else {
         errno = EDOM;
@@ -692,7 +692,7 @@ m_log10(double x)
             return log10(x);
         errno = EDOM;
         if (x == 0.0)
-            return -Py_INFINITY; /* log10(0) = -inf */
+            return -INFINITY; /* log10(0) = -inf */
         else
             return Py_NAN; /* log10(-ve) = nan */
     }
@@ -1500,7 +1500,7 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
         errno = 0;
     } else if (exp > INT_MAX) {
         /* overflow */
-        r = copysign(Py_INFINITY, x);
+        r = copysign(INFINITY, x);
         errno = ERANGE;
     } else if (exp < INT_MIN) {
         /* underflow to +-0 */
@@ -2983,7 +2983,7 @@ math_ulp_impl(PyObject *module, double x)
     if (isinf(x)) {
         return x;
     }
-    double inf = Py_INFINITY;
+    double inf = INFINITY;
     double x2 = nextafter(x, inf);
     if (isinf(x2)) {
         /* special case: x is the largest positive representable float */
@@ -3007,7 +3007,7 @@ math_exec(PyObject *module)
     if (PyModule_Add(module, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_Add(module, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
+    if (PyModule_Add(module, "inf", PyFloat_FromDouble(INFINITY)) < 0) {
         return -1;
     }
     if (PyModule_Add(module, "nan", PyFloat_FromDouble(fabs(Py_NAN))) < 0) {
