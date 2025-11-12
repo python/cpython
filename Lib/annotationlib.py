@@ -728,13 +728,18 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             annotate, owner, is_class, globals, allow_evaluation=False
         )
         func = types.FunctionType(
-            annotate.__code__,
+            _get_annotate_attr(annotate, "__code__", None),
             globals,
             closure=closure,
-            argdefs=annotate.__defaults__,
-            kwdefaults=annotate.__kwdefaults__,
+            argdefs=_get_annotate_attr(annotate, "__defaults__", None),
+            kwdefaults=_get_annotate_attr(annotate, "__kwdefaults__", None),
         )
-        annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        if isinstance(annotate.__call__, types.MethodType):
+            annos = func(
+                annotate.__call__.__self__, Format.VALUE_WITH_FAKE_GLOBALS
+            )
+        else:
+            annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
         if _is_evaluate:
             return _stringify_single(annos)
         return {
