@@ -2118,6 +2118,7 @@ parse_frame_from_chunks(
     PyObject **result,
     uintptr_t address,
     uintptr_t *previous_frame,
+    uintptr_t *stackpointer,
     StackChunkList *chunks
 ) {
     void *frame_ptr = find_frame_in_chunks(chunks, address);
@@ -2128,6 +2129,7 @@ parse_frame_from_chunks(
 
     char *frame = (char *)frame_ptr;
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
+    *stackpointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.stackpointer);
     uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame_ptr, unwinder->debug_offsets.interpreter_frame.executable);
     int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
     if (frame_valid != 1) {
@@ -2470,6 +2472,7 @@ process_frame_chain(
     while ((void*)frame_addr != NULL) {
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
+        uintptr_t stackpointer = 0;
 
         if (++frame_count > MAX_FRAMES) {
             PyErr_SetString(PyExc_RuntimeError, "Too many stack frames (possible infinite loop)");
@@ -2478,7 +2481,7 @@ process_frame_chain(
         }
 
         // Try chunks first, fallback to direct memory read
-        if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, chunks) < 0) {
+        if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, chunks) < 0) {
             PyErr_Clear();
             uintptr_t address_of_code_object = 0;
             if (parse_frame_object(unwinder, &frame, frame_addr, &address_of_code_object ,&next_frame_addr) < 0) {
@@ -2502,9 +2505,7 @@ process_frame_chain(
         // Otherwise, check for native frames to insert:
         else if (unwinder->native) {
             // Topmost frame spilled its stack pointer for a native call:
-            if (PyList_GET_SIZE(frame_info) == 0 &&
-                GET_MEMBER(uintptr_t, frame_addr, unwinder->debug_offsets.interpreter_frame.stackpointer))
-            {
+            if (PyList_GET_SIZE(frame_info) == 0 && stackpointer) {
                 extra_frame = &_Py_STR(native);
             }
             // Or, we've reached an interpreter trampoline frame:
