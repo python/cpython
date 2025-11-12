@@ -125,6 +125,7 @@ class IOTest:
             self.assertRaises(exc, fp.readline)
         with self.open(os_helper.TESTFN, "wb", buffering=0) as fp:
             self.assertRaises(exc, fp.read)
+            self.assertRaises(exc, fp.readall)
             self.assertRaises(exc, fp.readline)
         with self.open(os_helper.TESTFN, "rb", buffering=0) as fp:
             self.assertRaises(exc, fp.write, b"blah")
