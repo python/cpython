@@ -26,8 +26,9 @@ Generating Symbol Tables
    Return the toplevel :class:`SymbolTable` for the Python source *code*.
    *filename* is the name of the file containing the code.  *compile_type* is
    like the *mode* argument to :func:`compile`.
-   The optional argument *module* specifies the module name used
-   when filtering syntax warnings.
+   The optional argument *module* specifies the module name.
+   It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
+   by module name.
 
    .. versionadded:: next
       Added the *module* parameter.

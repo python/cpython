@@ -471,8 +471,9 @@ ABC hierarchy::
         With the subsequent code object one can execute it in a module by
         running ``exec(code, module.__dict__)``.
 
-        The optional argument *fullname* specifies the name of the module used
-        when filtering syntax warnings.
+        The optional argument *fullname* specifies the module name.
+        It is needed to unambiguous :ref:`filter <warning-filter>` syntax
+        warnings by module name.
 
         .. versionadded:: 3.4
 
