@@ -3124,9 +3124,9 @@ import operator
 
 def python_to_c():
     # Native code at the top of the stack:
-    sum(range(1_000_000))
+    sum(range(200))
     # Python code at the top of the stack:
-    for _ in range(1_000_000):
+    for _ in range(100):
         pass
 
 def main_loop():
@@ -3159,7 +3159,7 @@ if __name__ == "__main__":
                         duration_sec=1,
                         filename=collapsed_file.name,
                         output_format="collapsed",
-                        sample_interval_usec=5000,
+                        sample_interval_usec=1000,
                         native=True,
                     )
                 except PermissionError:
@@ -3172,6 +3172,8 @@ if __name__ == "__main__":
             # Check file format
             with open(collapsed_file.name, "r") as f:
                 content = f.read()
+            print()
+            print(content)  # For debugging purposes
 
         lines = content.strip().split("\n")
         self.assertGreater(len(lines), 0)
