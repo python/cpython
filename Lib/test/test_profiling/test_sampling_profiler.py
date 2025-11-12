@@ -3172,8 +3172,6 @@ if __name__ == "__main__":
             # Check file format
             with open(collapsed_file.name, "r") as f:
                 content = f.read()
-            print()
-            print(content)  # For debugging purposes
 
         lines = content.strip().split("\n")
         self.assertGreater(len(lines), 0)
