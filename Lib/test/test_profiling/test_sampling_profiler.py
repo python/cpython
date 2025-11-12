@@ -3156,7 +3156,7 @@ if __name__ == "__main__":
                 try:
                     profiling.sampling.sample.sample(
                         subproc.process.pid,
-                        duration_sec=1,
+                        duration_sec=2,
                         filename=collapsed_file.name,
                         output_format="collapsed",
                         sample_interval_usec=1000,
