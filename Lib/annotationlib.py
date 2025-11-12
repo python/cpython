@@ -734,12 +734,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             argdefs=_get_annotate_attr(annotate, "__defaults__", None),
             kwdefaults=_get_annotate_attr(annotate, "__kwdefaults__", None),
         )
-        if isinstance(annotate.__call__, types.MethodType):
-            annos = func(
-                annotate.__call__.__self__, Format.VALUE_WITH_FAKE_GLOBALS
-            )
-        else:
-            annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        annos = _direct_call_annotate(func, annotate, Format.VALUE_WITH_FAKE_GLOBALS)
         if _is_evaluate:
             return _stringify_single(annos)
         return {
@@ -791,10 +786,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             kwdefaults=annotate_kwdefaults,
         )
         try:
-            if isinstance(annotate.__call__, types.MethodType):
-                result = func(annotate.__call__.__self__, Format.VALUE_WITH_FAKE_GLOBALS)
-            else:
-                result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+            result = _direct_call_annotate(func, annotate, Format.VALUE_WITH_FAKE_GLOBALS)
         except NotImplementedError:
             # FORWARDREF and VALUE_WITH_FAKE_GLOBALS not supported, fall back to VALUE
             return annotate(Format.VALUE)
@@ -823,10 +815,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             argdefs=annotate_defaults,
             kwdefaults=annotate_kwdefaults,
         )
-        if isinstance(annotate.__call__, types.MethodType):
-            result = func(annotate.__call__.__self__, Format.VALUE_WITH_FAKE_GLOBALS)
-        else:
-            result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        result = _direct_call_annotate(func, annotate, Format.VALUE_WITH_FAKE_GLOBALS)
         globals.transmogrify(cell_dict)
         if _is_evaluate:
             if isinstance(result, ForwardRef):
@@ -902,11 +891,28 @@ def _get_annotate_attr(annotate, attr, default):
     if (value := getattr(annotate, attr, None)) is not None:
         return value
 
-    if call_method := getattr(annotate, "__call__", None):
-        if call_func := getattr(call_method, "__func__", None):
+    if isinstance(annotate.__call__, types.MethodType):
+        if call_func := getattr(annotate.__call__, "__func__", None):
             return getattr(call_func, attr, default)
+    elif isinstance(annotate, type):
+        return getattr(annotate.__init__, attr, default)
 
     return default
+
+def _direct_call_annotate(func, annotate, format):
+    # If annotate is a method, we need to pass its self as the first param
+    if (
+        hasattr(annotate.__call__, "__func__") and
+        (self := getattr(annotate.__call__, "__self__", None))
+    ):
+        return func(self, format)
+
+    if isinstance(annotate, type):
+        inst = annotate.__new__(annotate)
+        func(inst, format)
+        return inst
+
+    return func(format)
 
 
 def get_annotate_from_class_namespace(obj):
