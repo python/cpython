@@ -369,6 +369,16 @@ collections.abc
   :mod:`!collections.abc` module.
 
 
+concurrent.futures
+------------------
+
+* Improved error reporting when a child process in a
+  :class:`concurrent.futures.ProcessPoolExecutor` terminates abruptly.
+  The resulting traceback will now tell you the PID and exit code of the
+  terminated process.
+  (Contributed by Jonathan Berg in :gh:`139486`.)
+
+
 dataclasses
 -----------
 
@@ -429,6 +439,14 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+inspect
+-------
+
+* Add parameters *inherit_class_doc* and *fallback_to_class_doc*
+  for :func:`~inspect.getdoc`.
+  (Contributed by Serhiy Storchaka in :gh:`132686`.)
+
+
 locale
 ------
 
@@ -451,6 +469,7 @@ math
 mimetypes
 ---------
 
+* Add ``application/node`` MIME type for ``.cjs`` extension. (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
   (Contributed by Charlie Lin in :gh:`140165`)
