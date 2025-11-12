@@ -29,19 +29,21 @@ INF = float("inf")
 NAN = float("nan")
 
 
-def make_nan(size, sign, quiet, payload):
+def make_nan(size, sign, quiet, payload=None):
     if size == 8:
-        payload &= 0x7ffffffffffff
-        i = (sign << 63) + (0x7ff << 52) + (quiet << 51) + payload
+        payload_mask = 0x7ffffffffffff
+        i = (sign << 63) + (0x7ff << 52) + (quiet << 51)
     elif size == 4:
-        payload &= 0x3fffff
-        i = (sign << 31) + (0xff << 23) + (quiet << 22) + payload
+        payload_mask = 0x3fffff
+        i = (sign << 31) + (0xff << 23) + (quiet << 22)
     elif size == 2:
-        payload &= 0x1ff
-        i = (sign << 15) + (0x1f << 10) + (quiet << 9) + payload
+        payload_mask = 0x1ff
+        i = (sign << 15) + (0x1f << 10) + (quiet << 9)
     else:
         raise ValueError("size must be either 2, 4, or 8")
-    return i
+    if payload is None:
+        payload = random.randint(not quiet, payload_mask)
+    return i + payload
 
 
 class CAPIFloatTest(unittest.TestCase):
@@ -217,8 +219,7 @@ class CAPIFloatTest(unittest.TestCase):
                         # HP PA RISC uses 0 for quiet, see:
                         # https://en.wikipedia.org/wiki/NaN#Encoding
                         signaling = 1
-                payload = random.randint(signaling, 0xfffffffffffff)
-                i = make_nan(size, sign, not signaling, payload)
+                i = make_nan(size, sign, not signaling)
                 data = bytes.fromhex(f'{i:x}')
                 for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
                     with self.subTest(data=data, size=size, endian=endian):
