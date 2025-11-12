@@ -897,8 +897,8 @@ def _get_annotate_attr(annotate, attr, default):
     elif isinstance(annotate, type):
         return getattr(annotate.__init__, attr, default)
     elif (
-        "functools" in sys.modules
-        and isinstance(annotate, sys.modules["functools"].partial)
+        (functools := sys.modules.get("functools", None))
+        and isinstance(annotate, functools.partial)
     ):
         return getattr(annotate.func, attr, default)
 
@@ -912,16 +912,19 @@ def _direct_call_annotate(func, annotate, format):
     ):
         return func(self, format)
 
+    # If annotate is a class, `func` is the __init__ method, so we still need to call
+    # __new__() to create the instance
     if isinstance(annotate, type):
         inst = annotate.__new__(annotate)
         func(inst, format)
         return inst
 
-    if (
-        "functools" in sys.modules
-        and isinstance(annotate, sys.modules["functools"].partial)
-    ):
-        return func(*annotate.args, format, **annotate.keywords)
+    # If annotate is a partial function, re-create it with the new function object.
+    # We could call the function directly, but then we'd have to handle placeholders,
+    # and this way should be more robust for future changes.
+    if functools := sys.modules.get("functools", None):
+        if isinstance(annotate, functools.partial):
+            return functools.partial(func, *annotate.args, **annotate.keywords)(format)
 
     return func(format)
 
