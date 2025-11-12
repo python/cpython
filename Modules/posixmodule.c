@@ -8499,7 +8499,7 @@ warn_about_fork_with_threads(
 
 // If this returns <= 0, we were unable to successfully use any OS APIs.
 // Returns a positive number of threads otherwise.
-static Py_ssize_t get_number_of_os_threads()
+static Py_ssize_t get_number_of_os_threads(void)
 {
     // TODO: Consider making an `os` module API to return the current number
     // of threads in the process. That'd presumably use this platform code but
