@@ -8423,33 +8423,6 @@ unicode_iter(PyObject *seq)
 }
 
 
-#ifdef MS_WINDOWS
-int
-_PyUnicode_EnableLegacyWindowsFSEncoding(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyConfig *config = (PyConfig *)_PyInterpreterState_GetConfig(interp);
-
-    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
-    wchar_t *encoding = _PyMem_RawWcsdup(L"mbcs");
-    wchar_t *errors = _PyMem_RawWcsdup(L"replace");
-    if (encoding == NULL || errors == NULL) {
-        PyMem_RawFree(encoding);
-        PyMem_RawFree(errors);
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    PyMem_RawFree(config->filesystem_encoding);
-    config->filesystem_encoding = encoding;
-    PyMem_RawFree(config->filesystem_errors);
-    config->filesystem_errors = errors;
-
-    return init_fs_codec(interp);
-}
-#endif
-
-
 #ifdef Py_DEBUG
 static inline int
 unicode_is_finalizing(void)

@@ -85,6 +85,8 @@ raise_encode_exception(PyObject **exceptionObject,
                        PyObject *unicode,
                        Py_ssize_t startpos, Py_ssize_t endpos,
                        const char *reason);
+static int
+init_fs_codec(PyInterpreterState *interp);
 
 
 /* Compilation of templated routines */
@@ -6485,6 +6487,33 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
     assert(_PyUnicode_CheckConsistency(result, 1));
     return result;
 }
+
+
+#ifdef MS_WINDOWS
+int
+_PyUnicode_EnableLegacyWindowsFSEncoding(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyConfig *config = (PyConfig *)_PyInterpreterState_GetConfig(interp);
+
+    /* Set the filesystem encoding to mbcs/replace (PEP 529) */
+    wchar_t *encoding = _PyMem_RawWcsdup(L"mbcs");
+    wchar_t *errors = _PyMem_RawWcsdup(L"replace");
+    if (encoding == NULL || errors == NULL) {
+        PyMem_RawFree(encoding);
+        PyMem_RawFree(errors);
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    PyMem_RawFree(config->filesystem_encoding);
+    config->filesystem_encoding = encoding;
+    PyMem_RawFree(config->filesystem_errors);
+    config->filesystem_errors = errors;
+
+    return init_fs_codec(interp);
+}
+#endif
 
 
 static int
