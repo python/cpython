@@ -931,15 +931,10 @@ def _direct_call_annotate(func, annotate, format):
         if isinstance(annotate, functools.partial):
             return functools.partial(func, *annotate.args, **annotate.keywords)(format)
 
-        # If annotate is a cached function, re-create it with the new function object.
-        # We want a new, clean, cache, as we've updated the function data, so let's
-        # re-create with the new function and old cache parameters.
-        if isinstance(annotate, functools._lru_cache_wrapper):
-            return functools._lru_cache_wrapper(
-                func, **annotate.cache_parameters(),
-                cache_info_type=(0, 0, 0, annotate.cache_parameters()["maxsize"])
-            )(format)
-
+    # If annotate is a cached function, we've now updated the function data, so
+    # let's not use the old cache. Furthermore, we're about to call the function
+    # and never use it again, so let's not bother trying to cache it.
+    # Or, if it's a normal function or unsupported callable, we should just call it.
     return func(format)
 
 
