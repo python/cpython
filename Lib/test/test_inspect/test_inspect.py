@@ -716,10 +716,10 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getdoc(b, fallback_to_class_doc=False), 'Instance')
 
     def test_getdoc_inherited_cached_property(self):
-        self.assertEqual(inspect.getdoc(mod3.ChildInheritDoc.foo),
-                         'docstring for foo defined in parent')
-        self.assertEqual(inspect.getdoc(mod3.ChildInheritDefineDoc.foo),
-                         'docstring for foo defined in parent')
+        doc = inspect.getdoc(mod3.ParentInheritDoc.foo)
+        self.assertEqual(doc, 'docstring for foo defined in parent')
+        self.assertEqual(inspect.getdoc(mod3.ChildInheritDoc.foo), doc)
+        self.assertEqual(inspect.getdoc(mod3.ChildInheritDefineDoc.foo), doc)
 
     def test_getdoc_redefine_cached_property_as_other(self):
         self.assertEqual(inspect.getdoc(mod3.ChildPropertyFoo.foo),
