@@ -732,8 +732,7 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'docstring for foo defined in child')
 
     def test_getdoc_nodoc_inherited(self):
-        self.assertEqual(inspect.getdoc(mod3.ChildNoDoc.foo),
-                         None)
+        self.assertIsNone(inspect.getdoc(mod3.ChildNoDoc.foo))
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
     def test_finddoc(self):

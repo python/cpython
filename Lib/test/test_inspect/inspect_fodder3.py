@@ -6,7 +6,8 @@ class ParentInheritDoc:
     def foo(self):
         """docstring for foo defined in parent"""
 
-class ChildInheritDoc(ParentInheritDoc): pass
+class ChildInheritDoc(ParentInheritDoc):
+    pass
 
 class ChildInheritDefineDoc(ParentInheritDoc):
     @cached_property
@@ -18,7 +19,6 @@ class ChildPropertyFoo(ParentInheritDoc):
     @property
     def foo(self):
         """docstring for the property foo"""
-        pass
 
 class ChildMethodFoo(ParentInheritDoc):
     def foo(self):
@@ -30,7 +30,8 @@ class ParentNoDoc:
     def foo(self):
         pass
 
-class ChildNoDoc(ParentNoDoc): pass
+class ChildNoDoc(ParentNoDoc):
+    pass
 
 class ChildDefineDoc(ParentNoDoc):
     @cached_property
