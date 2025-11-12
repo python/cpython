@@ -125,8 +125,7 @@ class CodeTestCase(unittest.TestCase):
     def test_many_codeobjects(self):
         # Issue2957: bad recursion count on code objects
         # more than MAX_MARSHAL_STACK_DEPTH
-        count = support.exceeds_recursion_limit()
-        codes = (ExceptionTestCase.test_exceptions.__code__,) * count
+        codes = (ExceptionTestCase.test_exceptions.__code__,) * 10_000
         marshal.loads(marshal.dumps(codes))
 
     def test_different_filenames(self):

@@ -1,9 +1,9 @@
-#include <stdbool.h>
-
 #include "Python.h"
 
 #include "pycore_index_pool.h"
 #include "pycore_lock.h"
+
+#include <stdbool.h>
 
 #ifdef Py_GIL_DISABLED
 
@@ -172,6 +172,9 @@ _PyIndexPool_AllocIndex(_PyIndexPool *pool)
     else {
         index = heap_pop(free_indices);
     }
+
+    pool->tlbc_generation++;
+
     UNLOCK_POOL(pool);
     return index;
 }
@@ -180,6 +183,7 @@ void
 _PyIndexPool_FreeIndex(_PyIndexPool *pool, int32_t index)
 {
     LOCK_POOL(pool);
+    pool->tlbc_generation++;
     heap_add(&pool->free_indices, index);
     UNLOCK_POOL(pool);
 }

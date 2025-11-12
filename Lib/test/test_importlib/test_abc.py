@@ -43,14 +43,12 @@ class InheritanceTests:
     def test_subclasses(self):
         # Test that the expected subclasses inherit.
         for subclass in self.subclasses:
-            self.assertTrue(issubclass(subclass, self.__test),
-                "{0} is not a subclass of {1}".format(subclass, self.__test))
+            self.assertIsSubclass(subclass, self.__test)
 
     def test_superclasses(self):
         # Test that the class inherits from the expected superclasses.
         for superclass in self.superclasses:
-            self.assertTrue(issubclass(self.__test, superclass),
-               "{0} is not a superclass of {1}".format(superclass, self.__test))
+            self.assertIsSubclass(self.__test, superclass)
 
 
 class MetaPathFinder(InheritanceTests):
@@ -416,14 +414,14 @@ class InspectLoaderSourceToCodeTests:
         # Since compile() can handle strings, so should source_to_code().
         source = 'attr = 42'
         module = self.source_to_module(source)
-        self.assertTrue(hasattr(module, 'attr'))
+        self.assertHasAttr(module, 'attr')
         self.assertEqual(module.attr, 42)
 
     def test_source_to_code_bytes(self):
         # Since compile() can handle bytes, so should source_to_code().
         source = b'attr = 42'
         module = self.source_to_module(source)
-        self.assertTrue(hasattr(module, 'attr'))
+        self.assertHasAttr(module, 'attr')
         self.assertEqual(module.attr, 42)
 
     def test_source_to_code_path(self):
@@ -757,7 +755,7 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
                     warnings.simplefilter('ignore', DeprecationWarning)
                     module = self.loader.load_module(self.name)
                 self.verify_module(module)
-                self.assertFalse(hasattr(module, '__path__'))
+                self.assertNotHasAttr(module, '__path__')
 
     def test_get_source_encoding(self):
         # Source is considered encoded in UTF-8 by default unless otherwise
@@ -795,6 +793,9 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
             data.extend(self.init._pack_uint32(0))
             data.extend(self.init._pack_uint32(self.loader.source_mtime))
             data.extend(self.init._pack_uint32(self.loader.source_size))
+            # Make sure there's > 1 reference to code_object so that the
+            # marshaled representation below matches the cached representation
+            l = [code_object]
             data.extend(marshal.dumps(code_object))
             self.assertEqual(self.loader.written[self.cached], bytes(data))
 
@@ -911,6 +912,31 @@ class SourceLoaderGetSourceTests:
  Source_SourceOnlyLoaderGetSourceTests
  ) = test_util.test_both(SourceLoaderGetSourceTests,
                          SourceOnlyLoaderMock=SPLIT_SOL)
+
+
+class SourceLoaderDeprecationWarningsTests(unittest.TestCase):
+    """Tests SourceLoader deprecation warnings."""
+
+    def test_deprecated_path_mtime(self):
+        from importlib.abc import SourceLoader
+        class DummySourceLoader(SourceLoader):
+            def get_data(self, path):
+                return b''
+
+            def get_filename(self, fullname):
+                return 'foo.py'
+
+            def path_stats(self, path):
+                return {'mtime': 1}
+
+        loader = DummySourceLoader()
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            r"SourceLoader\.path_mtime is deprecated in favour of "
+            r"SourceLoader\.path_stats\(\)\."
+        ):
+            loader.path_mtime('foo.py')
 
 
 if __name__ == '__main__':

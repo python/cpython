@@ -15,6 +15,7 @@ import marshal
 import os
 import py_compile
 import random
+import re
 import shutil
 import stat
 import subprocess
@@ -23,15 +24,28 @@ import textwrap
 import threading
 import time
 import types
+import warnings
 import unittest
 from unittest import mock
 import _imp
 
 from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, swap_attr, swap_item, cpython_only, is_apple_mobile, is_emscripten,
-    is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS,
-    requires_gil_enabled, Py_GIL_DISABLED, no_rerun)
+    STDLIB_DIR,
+    swap_attr,
+    swap_item,
+    cpython_only,
+    is_apple_mobile,
+    is_emscripten,
+    is_wasm32,
+    run_in_subinterp,
+    run_in_subinterp_with_config,
+    Py_TRACE_REFS,
+    requires_gil_enabled,
+    Py_GIL_DISABLED,
+    no_rerun,
+    force_not_colorized_test_class,
+)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
     DirsOnSysPath, CleanImport, import_module)
@@ -39,7 +53,7 @@ from test.support.os_helper import (
     TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE)
 from test.support import script_helper
 from test.support import threading_helper
-from test.test_importlib.util import uncache
+from test.test_importlib.util import uncache, temporary_pycache_prefix
 from types import ModuleType
 try:
     import _testsinglephase
@@ -333,6 +347,7 @@ class ModuleSnapshot(types.SimpleNamespace):
         return cls.parse(text.decode())
 
 
+@force_not_colorized_test_class
 class ImportTests(unittest.TestCase):
 
     def setUp(self):
@@ -399,7 +414,6 @@ class ImportTests(unittest.TestCase):
         self.assertIsNotNone(cm.exception)
 
     def test_from_import_star_invalid_type(self):
-        import re
         with ready_to_import() as (name, path):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("__all__ = [b'invalid_type']")
@@ -431,7 +445,7 @@ class ImportTests(unittest.TestCase):
         # (SF bug 422177).
         from test.test_import.data import double_const
         unload('test.test_import.data.double_const')
-        from test.test_import.data import double_const
+        from test.test_import.data import double_const  # noqa: F811
 
     def test_import(self):
         def test_with_extension(ext):
@@ -539,7 +553,7 @@ class ImportTests(unittest.TestCase):
         import test as x
         import test.support
         self.assertIs(x, test, x.__name__)
-        self.assertTrue(hasattr(test.support, "__file__"))
+        self.assertHasAttr(test.support, "__file__")
 
         # import x.y.z as w binds z as w
         import test.support as y
@@ -560,7 +574,7 @@ class ImportTests(unittest.TestCase):
 
         # import in a 'for' loop resulted in segmentation fault
         for i in range(2):
-            import test.support.script_helper as x
+            import test.support.script_helper as x  # noqa: F811
 
     def test_failing_reload(self):
         # A failing reload should leave the module object in sys.modules.
@@ -610,7 +624,7 @@ class ImportTests(unittest.TestCase):
         sys.path.insert(0, os.curdir)
         try:
             mod = __import__(TESTFN)
-            self.assertTrue(mod.__file__.endswith('.py'))
+            self.assertEndsWith(mod.__file__, '.py')
             os.remove(source)
             del sys.modules[TESTFN]
             make_legacy_pyc(source)
@@ -851,6 +865,29 @@ from os import this_will_never_exist
                 stdout, stderr = popen.communicate()
                 self.assertIn(expected_error, stdout)
 
+    def test_non_module_from_import_error(self):
+        prefix = """
+import sys
+class NotAModule: ...
+nm = NotAModule()
+nm.symbol = 123
+sys.modules["not_a_module"] = nm
+from not_a_module import symbol
+"""
+        scripts = [
+            prefix + "from not_a_module import missing_symbol",
+            prefix + "nm.__spec__ = []\nfrom not_a_module import missing_symbol",
+        ]
+        for script in scripts:
+            with self.subTest(script=script):
+                expected_error = (
+                    b"ImportError: cannot import name 'missing_symbol' from "
+                    b"'<unknown module name>' (unknown location)"
+                )
+            popen = script_helper.spawn_python("-c", script)
+            stdout, stderr = popen.communicate()
+            self.assertIn(expected_error, stdout)
+
     def test_script_shadowing_stdlib(self):
         script_errors = [
             (
@@ -965,7 +1002,7 @@ from os import this_will_never_exist
 
                 expected_error = error + (
                     rb" \(consider renaming '.*numpy.py' if it has the "
-                    rb"same name as a library you intended to import\)\s+\Z"
+                    rb"same name as a library you intended to import\)\s+\z"
                 )
 
                 popen = script_helper.spawn_python(os.path.join(tmp, "numpy.py"))
@@ -986,14 +1023,14 @@ from os import this_will_never_exist
                 f.write("this_script_does_not_attempt_to_import_numpy = True")
 
             expected_error = (
-                rb"AttributeError: module 'numpy' has no attribute 'attr'\s+\Z"
+                rb"AttributeError: module 'numpy' has no attribute 'attr'\s+\z"
             )
             popen = script_helper.spawn_python('-c', 'import numpy; numpy.attr', cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
             expected_error = (
-                rb"ImportError: cannot import name 'attr' from 'numpy' \(.*\)\s+\Z"
+                rb"ImportError: cannot import name 'attr' from 'numpy' \(.*\)\s+\z"
             )
             popen = script_helper.spawn_python('-c', 'from numpy import attr', cwd=tmp)
             stdout, stderr = popen.communicate()
@@ -1019,7 +1056,7 @@ except TypeError as e:
 """)
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            self.assertEqual(stdout.rstrip(), b"unhashable type: 'substr'")
+            self.assertIn(b"unhashable type: 'substr'", stdout.rstrip())
 
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
                 f.write("""
@@ -1036,7 +1073,7 @@ except TypeError as e:
 
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            self.assertEqual(stdout.rstrip(), b"unhashable type: 'substr'")
+            self.assertIn(b"unhashable type: 'substr'", stdout.rstrip())
 
             # Various issues with sys module
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
@@ -1149,6 +1186,30 @@ except ImportError as e:
             for line in lines:
                 self.assertRegex(line, rb"cannot import name 'Fraction' from 'fractions' \(.*\)")
 
+    @unittest.skipIf(sys.platform == 'win32', 'Cannot delete cwd on Windows')
+    @unittest.skipIf(sys.platform == 'sunos5', 'Cannot delete cwd on Solaris/Illumos')
+    @unittest.skipIf(sys.platform.startswith('aix'), 'Cannot delete cwd on AIX')
+    def test_script_shadowing_stdlib_cwd_failure(self):
+        with os_helper.temp_dir() as tmp:
+            subtmp = os.path.join(tmp, "subtmp")
+            os.mkdir(subtmp)
+            with open(os.path.join(subtmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write(f"""
+import sys
+assert sys.path[0] == ''
+
+import os
+import shutil
+shutil.rmtree(os.getcwd())
+
+os.does_not_exist
+""")
+            # Use -c to ensure sys.path[0] is ""
+            popen = script_helper.spawn_python("-c", "import main", cwd=subtmp)
+            stdout, stderr = popen.communicate()
+            expected_error = rb"AttributeError: module 'os' has no attribute 'does_not_exist'"
+            self.assertRegex(stdout, expected_error)
+
     def test_script_shadowing_stdlib_sys_path_modification(self):
         script_errors = [
             (
@@ -1190,6 +1251,35 @@ except ImportError as e:
                 origin = "a\x00b"
             _imp.create_dynamic(Spec2())
 
+    def test_filter_syntax_warnings_by_module(self):
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        unload('test.test_import.data.syntax_warnings')
+        with (os_helper.temp_dir() as tmpdir,
+              temporary_pycache_prefix(tmpdir),
+              warnings.catch_warnings(record=True) as wlog):
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            import test.test_import.data.syntax_warnings
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        filename = test.test_import.data.syntax_warnings.__file__
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+        module_re = r'syntax_warnings\z'
+        unload('test.test_import.data.syntax_warnings')
+        with (os_helper.temp_dir() as tmpdir,
+              temporary_pycache_prefix(tmpdir),
+              warnings.catch_warnings(record=True) as wlog):
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            import test.test_import.data.syntax_warnings
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        filename = test.test_import.data.syntax_warnings.__file__
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
 
 @skip_if_dont_write_bytecode
 class FilePermissionTests(unittest.TestCase):
@@ -1198,7 +1288,7 @@ class FilePermissionTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "Emscripten's/WASI's umask is a stub."
     )
     def test_creation_mode(self):
@@ -1420,7 +1510,7 @@ class PathsTests(unittest.TestCase):
             self.fail("could not import 'test_unc_path' from %r: %r"
                       % (unc, e))
         self.assertEqual(mod.testdata, 'test_unc_path')
-        self.assertTrue(mod.__file__.startswith(unc), mod.__file__)
+        self.assertStartsWith(mod.__file__, unc)
         unload("test_unc_path")
 
 
@@ -1433,7 +1523,7 @@ class RelativeImportTests(unittest.TestCase):
     def test_relimport_star(self):
         # This will import * from .test_import.
         from .. import relimport
-        self.assertTrue(hasattr(relimport, "RelativeImportTests"))
+        self.assertHasAttr(relimport, "RelativeImportTests")
 
     def test_issue3221(self):
         # Note for mergers: the 'absolute' tests from the 2.x branch
@@ -1763,7 +1853,7 @@ class ImportlibBootstrapTests(unittest.TestCase):
         self.assertIs(mod, _bootstrap)
         self.assertEqual(mod.__name__, 'importlib._bootstrap')
         self.assertEqual(mod.__package__, 'importlib')
-        self.assertTrue(mod.__file__.endswith('_bootstrap.py'), mod.__file__)
+        self.assertEndsWith(mod.__file__, '_bootstrap.py')
 
     def test_frozen_importlib_external_is_bootstrap_external(self):
         from importlib import _bootstrap_external
@@ -1771,7 +1861,7 @@ class ImportlibBootstrapTests(unittest.TestCase):
         self.assertIs(mod, _bootstrap_external)
         self.assertEqual(mod.__name__, 'importlib._bootstrap_external')
         self.assertEqual(mod.__package__, 'importlib')
-        self.assertTrue(mod.__file__.endswith('_bootstrap_external.py'), mod.__file__)
+        self.assertEndsWith(mod.__file__, '_bootstrap_external.py')
 
     def test_there_can_be_only_one(self):
         # Issue #15386 revealed a tricky loophole in the bootstrapping
@@ -2350,8 +2440,10 @@ class SubinterpImportTests(unittest.TestCase):
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_compat(self):
+        # Module with Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
         module = '_testmultiphase'
         require_extension(module)
+
         if not Py_GIL_DISABLED:
             with self.subTest(f'{module}: not strict'):
                 self.check_compatible_here(module, strict=False)
@@ -2362,6 +2454,8 @@ class SubinterpImportTests(unittest.TestCase):
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_non_isolated_compat(self):
+        # Module with Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED
+        # and Py_MOD_GIL_NOT_USED
         modname = '_test_non_isolated'
         filename = _testmultiphase.__file__
         module = import_extension_from_file(modname, filename)
@@ -2377,20 +2471,46 @@ class SubinterpImportTests(unittest.TestCase):
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_per_interpreter_gil_compat(self):
-        modname = '_test_shared_gil_only'
-        filename = _testmultiphase.__file__
-        module = import_extension_from_file(modname, filename)
 
-        require_extension(module)
-        with self.subTest(f'{modname}: isolated, strict'):
-            self.check_incompatible_here(modname, filename, isolated=True)
-        with self.subTest(f'{modname}: not isolated, strict'):
-            self.check_compatible_here(modname, filename,
-                                       strict=True, isolated=False)
-        if not Py_GIL_DISABLED:
-            with self.subTest(f'{modname}: not isolated, not strict'):
-                self.check_compatible_here(modname, filename,
-                                           strict=False, isolated=False)
+        # _test_shared_gil_only:
+        #   Explicit Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED (default)
+        #   and Py_MOD_GIL_NOT_USED
+        # _test_no_multiple_interpreter_slot:
+        #   No Py_mod_multiple_interpreters slot
+        #   and Py_MOD_GIL_NOT_USED
+        for modname in ('_test_shared_gil_only',
+                        '_test_no_multiple_interpreter_slot'):
+            with self.subTest(modname=modname):
+
+                filename = _testmultiphase.__file__
+                module = import_extension_from_file(modname, filename)
+
+                require_extension(module)
+                with self.subTest(f'{modname}: isolated, strict'):
+                    self.check_incompatible_here(modname, filename,
+                                                 isolated=True)
+                with self.subTest(f'{modname}: not isolated, strict'):
+                    self.check_compatible_here(modname, filename,
+                                               strict=True, isolated=False)
+                if not Py_GIL_DISABLED:
+                    with self.subTest(f'{modname}: not isolated, not strict'):
+                        self.check_compatible_here(
+                            modname, filename, strict=False, isolated=False)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_testmultiphase_exec_multiple(self):
+        modname = '_testmultiphase_exec_multiple'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        # All three exec's were called.
+        self.assertEqual(module.a, 1)
+        self.assertEqual(module.b, 2)
+        self.assertEqual(module.c, 3)
+        # They were called in order.
+        keys = list(module.__dict__)
+        self.assertLess(keys.index('a'), keys.index('b'))
+        self.assertLess(keys.index('b'), keys.index('c'))
 
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_python_compat(self):
@@ -2777,7 +2897,7 @@ class SinglephaseInitTests(unittest.TestCase):
         self.assertEqual(mod.__file__, self.FILE)
         self.assertEqual(mod.__spec__.origin, self.ORIGIN)
         if not isolated:
-            self.assertTrue(issubclass(mod.error, Exception))
+            self.assertIsSubclass(mod.error, Exception)
         self.assertEqual(mod.int_const, 1969)
         self.assertEqual(mod.str_const, 'something different')
         self.assertIsInstance(mod._module_initialized, float)
@@ -3085,6 +3205,7 @@ class SinglephaseInitTests(unittest.TestCase):
     # Also, we test with a single-phase module that has global state,
     # which is shared by all interpreters.
 
+    @no_rerun(reason="module state is not cleared (see gh-140657)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_main_no_reset(self):
         # without resetting; already loaded in main interpreter
@@ -3288,29 +3409,82 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * module's global state was initialized, not reset
 
 
-@cpython_only
-class CAPITests(unittest.TestCase):
-    def test_pyimport_addmodule(self):
-        # gh-105922: Test PyImport_AddModuleRef(), PyImport_AddModule()
-        # and PyImport_AddModuleObject()
+@unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+class ModexportTests(unittest.TestCase):
+    def test_from_modexport(self):
+        modname = '_test_from_modexport'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+
+        self.assertEqual(module.__name__, modname)
+
+    def test_from_modexport_null(self):
+        modname = '_test_from_modexport_null'
+        filename = _testmultiphase.__file__
+        with self.assertRaises(SystemError):
+            import_extension_from_file(modname, filename,
+                                       put_in_sys_modules=False)
+
+    def test_from_modexport_exception(self):
+        modname = '_test_from_modexport_exception'
+        filename = _testmultiphase.__file__
+        with self.assertRaises(ValueError):
+            import_extension_from_file(modname, filename,
+                                       put_in_sys_modules=False)
+
+    def test_from_modexport_create_nonmodule(self):
+        modname = '_test_from_modexport_create_nonmodule'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        self.assertIsInstance(module, str)
+
+    def test_from_modexport_smoke(self):
+        # General positive test for sundry features
+        # (PyModule_FromSlotsAndSpec tests exercise these more carefully)
+        modname = '_test_from_modexport_smoke'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        self.assertEqual(module.__doc__, "the expected docstring")
+        self.assertEqual(module.number, 147)
+        self.assertEqual(module.get_state_int(), 258)
+        self.assertGreater(module.get_test_token(), 0)
+
+    def test_from_modexport_smoke_token(self):
         _testcapi = import_module("_testcapi")
-        for name in (
-            'sys',     # frozen module
-            'test',    # package
-            __name__,  # package.module
-        ):
-            _testcapi.check_pyimport_addmodule(name)
 
-    def test_pyimport_addmodule_create(self):
-        # gh-105922: Test PyImport_AddModuleRef(), create a new module
+        modname = '_test_from_modexport_smoke'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        token = module.get_test_token()
+        self.assertEqual(_testcapi.pymodule_get_token(module), token)
+
+        tp = module.Example
+        self.assertEqual(_testcapi.pytype_getmodulebytoken(tp, token), module)
+        class Sub(tp):
+            pass
+        self.assertEqual(_testcapi.pytype_getmodulebytoken(Sub, token), module)
+
+    def test_from_modexport_empty_slots(self):
+        # Module to test that:
+        # - no slots are mandatory for PyModExport
+        # - the slots array is used as the default token
+        modname = '_test_from_modexport_empty_slots'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(
+            modname, filename, put_in_sys_modules=False)
+
+        self.assertEqual(module.__name__, modname)
+        self.assertEqual(module.__doc__, None)
+
         _testcapi = import_module("_testcapi")
-        name = 'dontexist'
-        self.assertNotIn(name, sys.modules)
-        self.addCleanup(unload, name)
-
-        mod = _testcapi.check_pyimport_addmodule(name)
-        self.assertIs(mod, sys.modules[name])
-
+        smoke_mod = import_extension_from_file(
+            '_test_from_modexport_smoke', filename, put_in_sys_modules=False)
+        self.assertEqual(_testcapi.pymodule_get_token(module),
+                         smoke_mod.get_modexport_empty_slots())
 
 @cpython_only
 class TestMagicNumber(unittest.TestCase):

@@ -1,3 +1,0 @@
-Fix support of localized error messages reported by :manpage:`dlerror(3)` and
-:manpage:`gdbm_strerror <gdbm(3)>` in :mod:`ctypes` and :mod:`dbm.gnu`
-functions respectively. Patch by Bénédikt Tran.

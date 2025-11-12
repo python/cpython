@@ -55,7 +55,7 @@ Reflection
 
 .. c:function:: PyFrameObject* PyEval_GetFrame(void)
 
-   Return the current thread state's frame, which is ``NULL`` if no frame is
+   Return the :term:`attached thread state`'s frame, which is ``NULL`` if no frame is
    currently executing.
 
    See also :c:func:`PyThreadState_GetFrame`.

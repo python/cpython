@@ -5,9 +5,14 @@ from test.support import check_syntax_error, run_code
 from test.typinganndata import mod_generics_cache
 
 from typing import (
-    Callable, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, get_args,
+    Callable, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, Unpack, get_args,
 )
 
+type GlobalTypeAlias = int
+
+def get_type_alias():
+    type TypeAliasInFunc = str
+    return TypeAliasInFunc
 
 class TypeParamsInvalidTest(unittest.TestCase):
     def test_name_collisions(self):
@@ -70,6 +75,8 @@ class TypeParamsAccessTest(unittest.TestCase):
 
 
 class TypeParamsAliasValueTest(unittest.TestCase):
+    type TypeAliasInClass = dict
+
     def test_alias_value_01(self):
         type TA1 = int
 
@@ -142,33 +149,67 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         self.assertIs(specialized2.__origin__, VeryGeneric)
         self.assertEqual(specialized2.__args__, (int, str, float, [bool, range]))
 
+    def test___name__(self):
+        type TypeAliasLocal = GlobalTypeAlias
+
+        self.assertEqual(GlobalTypeAlias.__name__, 'GlobalTypeAlias')
+        self.assertEqual(get_type_alias().__name__, 'TypeAliasInFunc')
+        self.assertEqual(self.TypeAliasInClass.__name__, 'TypeAliasInClass')
+        self.assertEqual(TypeAliasLocal.__name__, 'TypeAliasLocal')
+
+        with self.assertRaisesRegex(
+            AttributeError,
+            "readonly attribute",
+        ):
+            setattr(TypeAliasLocal, '__name__', 'TA')
+
+    def test___qualname__(self):
+        type TypeAliasLocal = GlobalTypeAlias
+
+        self.assertEqual(GlobalTypeAlias.__qualname__,
+                         'GlobalTypeAlias')
+        self.assertEqual(get_type_alias().__qualname__,
+                         'get_type_alias.<locals>.TypeAliasInFunc')
+        self.assertEqual(self.TypeAliasInClass.__qualname__,
+                         'TypeParamsAliasValueTest.TypeAliasInClass')
+        self.assertEqual(TypeAliasLocal.__qualname__,
+                         'TypeParamsAliasValueTest.test___qualname__.<locals>.TypeAliasLocal')
+
+        with self.assertRaisesRegex(
+            AttributeError,
+            "readonly attribute",
+        ):
+            setattr(TypeAliasLocal, '__qualname__', 'TA')
+
     def test_repr(self):
         type Simple = int
-        type VeryGeneric[T, *Ts, **P] = Callable[P, tuple[T, *Ts]]
+        self.assertEqual(repr(Simple), Simple.__qualname__)
 
-        self.assertEqual(repr(Simple), "Simple")
-        self.assertEqual(repr(VeryGeneric), "VeryGeneric")
+        type VeryGeneric[T, *Ts, **P] = Callable[P, tuple[T, *Ts]]
+        self.assertEqual(repr(VeryGeneric), VeryGeneric.__qualname__)
+        fullname = f"{VeryGeneric.__module__}.{VeryGeneric.__qualname__}"
         self.assertEqual(repr(VeryGeneric[int, bytes, str, [float, object]]),
-                         "VeryGeneric[int, bytes, str, [float, object]]")
+                         f"{fullname}[int, bytes, str, [float, object]]")
         self.assertEqual(repr(VeryGeneric[int, []]),
-                         "VeryGeneric[int, []]")
+                         f"{fullname}[int, []]")
         self.assertEqual(repr(VeryGeneric[int, [VeryGeneric[int], list[str]]]),
-                         "VeryGeneric[int, [VeryGeneric[int], list[str]]]")
+                         f"{fullname}[int, [{fullname}[int], list[str]]]")
 
     def test_recursive_repr(self):
         type Recursive = Recursive
-        self.assertEqual(repr(Recursive), "Recursive")
+        self.assertEqual(repr(Recursive), Recursive.__qualname__)
 
         type X = list[Y]
         type Y = list[X]
-        self.assertEqual(repr(X), "X")
-        self.assertEqual(repr(Y), "Y")
+        self.assertEqual(repr(X), X.__qualname__)
+        self.assertEqual(repr(Y), Y.__qualname__)
 
         type GenericRecursive[X] = list[X | GenericRecursive[X]]
-        self.assertEqual(repr(GenericRecursive), "GenericRecursive")
-        self.assertEqual(repr(GenericRecursive[int]), "GenericRecursive[int]")
+        self.assertEqual(repr(GenericRecursive), GenericRecursive.__qualname__)
+        fullname = f"{GenericRecursive.__module__}.{GenericRecursive.__qualname__}"
+        self.assertEqual(repr(GenericRecursive[int]), f"{fullname}[int]")
         self.assertEqual(repr(GenericRecursive[GenericRecursive[int]]),
-                         "GenericRecursive[GenericRecursive[int]]")
+                         f"{fullname}[{fullname}[int]]")
 
     def test_raising(self):
         type MissingName = list[_My_X]
@@ -193,7 +234,16 @@ class TypeAliasConstructorTest(unittest.TestCase):
     def test_basic(self):
         TA = TypeAliasType("TA", int)
         self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "TA")
         self.assertIs(TA.__value__, int)
+        self.assertEqual(TA.__type_params__, ())
+        self.assertEqual(TA.__module__, __name__)
+
+    def test_with_qualname(self):
+        TA = TypeAliasType("TA", str, qualname="Class.TA")
+        self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "Class.TA")
+        self.assertIs(TA.__value__, str)
         self.assertEqual(TA.__type_params__, ())
         self.assertEqual(TA.__module__, __name__)
 
@@ -202,6 +252,7 @@ class TypeAliasConstructorTest(unittest.TestCase):
         exec("type TA = int", ns, ns)
         TA = ns["TA"]
         self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "TA")
         self.assertIs(TA.__value__, int)
         self.assertEqual(TA.__type_params__, ())
         self.assertIs(TA.__module__, None)
@@ -210,6 +261,7 @@ class TypeAliasConstructorTest(unittest.TestCase):
         T = TypeVar("T")
         TA = TypeAliasType("TA", list[T], type_params=(T,))
         self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "TA")
         self.assertEqual(TA.__value__, list[T])
         self.assertEqual(TA.__type_params__, (T,))
         self.assertEqual(TA.__module__, __name__)
@@ -218,6 +270,7 @@ class TypeAliasConstructorTest(unittest.TestCase):
     def test_not_generic(self):
         TA = TypeAliasType("TA", list[int], type_params=())
         self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "TA")
         self.assertEqual(TA.__value__, list[int])
         self.assertEqual(TA.__type_params__, ())
         self.assertEqual(TA.__module__, __name__)
@@ -268,8 +321,9 @@ class TypeAliasConstructorTest(unittest.TestCase):
             TypeAliasType("A", int, type_params=(T, 2))
 
     def test_keywords(self):
-        TA = TypeAliasType(name="TA", value=int)
+        TA = TypeAliasType(name="TA", value=int, type_params=(), qualname=None)
         self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__qualname__, "TA")
         self.assertIs(TA.__value__, int)
         self.assertEqual(TA.__type_params__, ())
         self.assertEqual(TA.__module__, __name__)
@@ -283,6 +337,8 @@ class TypeAliasConstructorTest(unittest.TestCase):
             TypeAliasType("TA", list, ())
         with self.assertRaises(TypeError):
             TypeAliasType("TA", list, type_params=42)
+        with self.assertRaises(TypeError):
+            TypeAliasType("TA", list, qualname=range(5))
 
 
 class TypeAliasTypeTest(unittest.TestCase):
@@ -316,6 +372,17 @@ class TypeAliasTypeTest(unittest.TestCase):
                          mod_generics_cache.__name__)
         self.assertEqual(mod_generics_cache.OldStyle.__module__,
                          mod_generics_cache.__name__)
+
+    def test_unpack(self):
+        type Alias = tuple[int, int]
+        unpacked = (*Alias,)[0]
+        self.assertEqual(unpacked, Unpack[Alias])
+
+        class Foo[*Ts]:
+            pass
+
+        x = Foo[str, *Alias]
+        self.assertEqual(x.__args__, (str, Unpack[Alias]))
 
 
 # All these type aliases are used for pickling tests:

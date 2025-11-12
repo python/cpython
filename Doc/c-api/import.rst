@@ -16,19 +16,6 @@ Importing Modules
    This is a wrapper around :c:func:`PyImport_Import()` which takes a
    :c:expr:`const char *` as an argument instead of a :c:expr:`PyObject *`.
 
-.. c:function:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
-
-   This function is a deprecated alias of :c:func:`PyImport_ImportModule`.
-
-   .. versionchanged:: 3.3
-      This function used to fail immediately when the import lock was held
-      by another thread.  In Python 3.3 though, the locking scheme switched
-      to per-module locks for most purposes, so this function's special
-      behaviour isn't needed anymore.
-
-   .. deprecated-removed:: 3.13 3.15
-      Use :c:func:`PyImport_ImportModule` instead.
-
 
 .. c:function:: PyObject* PyImport_ImportModuleEx(const char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)
 
@@ -325,3 +312,24 @@ Importing Modules
    If Python is initialized multiple times, :c:func:`PyImport_AppendInittab` or
    :c:func:`PyImport_ExtendInittab` must be called before each Python
    initialization.
+
+
+.. c:function:: PyObject* PyImport_ImportModuleAttr(PyObject *mod_name, PyObject *attr_name)
+
+   Import the module *mod_name* and get its attribute *attr_name*.
+
+   Names must be Python :class:`str` objects.
+
+   Helper function combining :c:func:`PyImport_Import` and
+   :c:func:`PyObject_GetAttr`. For example, it can raise :exc:`ImportError` if
+   the module is not found, and :exc:`AttributeError` if the attribute doesn't
+   exist.
+
+   .. versionadded:: 3.14
+
+.. c:function:: PyObject* PyImport_ImportModuleAttrString(const char *mod_name, const char *attr_name)
+
+   Similar to :c:func:`PyImport_ImportModuleAttr`, but names are UTF-8 encoded
+   strings instead of Python :class:`str` objects.
+
+   .. versionadded:: 3.14

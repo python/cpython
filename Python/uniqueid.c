@@ -86,7 +86,7 @@ _PyObject_AssignUniqueId(PyObject *obj)
     if (pool->freelist == NULL) {
         if (resize_interp_type_id_pool(pool) < 0) {
             UNLOCK_POOL(pool);
-            return -1;
+            return _Py_INVALID_UNIQUE_ID;
         }
     }
 
@@ -94,7 +94,9 @@ _PyObject_AssignUniqueId(PyObject *obj)
     pool->freelist = entry->next;
     entry->obj = obj;
     _PyObject_SetDeferredRefcount(obj);
-    Py_ssize_t unique_id = (entry - pool->table);
+    // The unique id is one plus the index of the entry in the table.
+    Py_ssize_t unique_id = (entry - pool->table) + 1;
+    assert(unique_id > 0);
     UNLOCK_POOL(pool);
     return unique_id;
 }
@@ -106,8 +108,9 @@ _PyObject_ReleaseUniqueId(Py_ssize_t unique_id)
     struct _Py_unique_id_pool *pool = &interp->unique_ids;
 
     LOCK_POOL(pool);
-    assert(unique_id >= 0 && unique_id < pool->size);
-    _Py_unique_id_entry *entry = &pool->table[unique_id];
+    assert(unique_id > 0 && unique_id <= pool->size);
+    Py_ssize_t idx = unique_id - 1;
+    _Py_unique_id_entry *entry = &pool->table[idx];
     entry->next = pool->freelist;
     pool->freelist = entry;
     UNLOCK_POOL(pool);
@@ -116,18 +119,18 @@ _PyObject_ReleaseUniqueId(Py_ssize_t unique_id)
 static Py_ssize_t
 clear_unique_id(PyObject *obj)
 {
-    Py_ssize_t id = -1;
+    Py_ssize_t id = _Py_INVALID_UNIQUE_ID;
     if (PyType_Check(obj)) {
         if (PyType_HasFeature((PyTypeObject *)obj, Py_TPFLAGS_HEAPTYPE)) {
             PyHeapTypeObject *ht = (PyHeapTypeObject *)obj;
             id = ht->unique_id;
-            ht->unique_id = -1;
+            ht->unique_id = _Py_INVALID_UNIQUE_ID;
         }
     }
     else if (PyCode_Check(obj)) {
         PyCodeObject *co = (PyCodeObject *)obj;
         id = co->_co_unique_id;
-        co->_co_unique_id = -1;
+        co->_co_unique_id = _Py_INVALID_UNIQUE_ID;
     }
     else if (PyDict_Check(obj)) {
         PyDictObject *mp = (PyDictObject *)obj;
@@ -141,23 +144,23 @@ void
 _PyObject_DisablePerThreadRefcounting(PyObject *obj)
 {
     Py_ssize_t id = clear_unique_id(obj);
-    if (id >= 0) {
+    if (id != _Py_INVALID_UNIQUE_ID) {
         _PyObject_ReleaseUniqueId(id);
     }
 }
 
 void
-_PyObject_ThreadIncrefSlow(PyObject *obj, Py_ssize_t unique_id)
+_PyObject_ThreadIncrefSlow(PyObject *obj, size_t idx)
 {
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-    if (unique_id < 0 || resize_local_refcounts(tstate) < 0) {
+    if (((Py_ssize_t)idx) < 0 || resize_local_refcounts(tstate) < 0) {
         // just incref the object directly.
         Py_INCREF(obj);
         return;
     }
 
-    assert(unique_id < tstate->refcounts.size);
-    tstate->refcounts.values[unique_id]++;
+    assert(idx < (size_t)tstate->refcounts.size);
+    tstate->refcounts.values[idx]++;
 #ifdef Py_REF_DEBUG
     _Py_IncRefTotal((PyThreadState *)tstate);
 #endif
@@ -217,7 +220,7 @@ _PyObject_FinalizeUniqueIdPool(PyInterpreterState *interp)
         if (obj != NULL) {
             Py_ssize_t id = clear_unique_id(obj);
             (void)id;
-            assert(id == i);
+            assert(id == i + 1);
         }
     }
     PyMem_Free(pool->table);

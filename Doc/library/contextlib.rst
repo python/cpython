@@ -49,7 +49,7 @@ Functions and classes provided:
 
    While many objects natively support use in with statements, sometimes a
    resource needs to be managed that isn't a context manager in its own right,
-   and doesn't implement a ``close()`` method for use with ``contextlib.closing``
+   and doesn't implement a ``close()`` method for use with ``contextlib.closing``.
 
    An abstract example would be the following to ensure correct resource
    management::
@@ -327,10 +327,10 @@ Functions and classes provided:
 .. function:: redirect_stdout(new_target)
 
    Context manager for temporarily redirecting :data:`sys.stdout` to
-   another file or file-like object.
+   another :term:`file object`.
 
    This tool adds flexibility to existing functions or classes whose output
-   is hardwired to stdout.
+   is hardwired to :data:`sys.stdout`.
 
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
    You can capture that output in a string by redirecting the output to an
@@ -366,8 +366,8 @@ Functions and classes provided:
 
 .. function:: redirect_stderr(new_target)
 
-   Similar to :func:`~contextlib.redirect_stdout` but redirecting
-   :data:`sys.stderr` to another file or file-like object.
+   Similar to :func:`~contextlib.redirect_stdout` but redirecting the global
+   :data:`sys.stderr` to another :term:`file object`.
 
    This context manager is :ref:`reentrant <reentrant-cms>`.
 
@@ -629,7 +629,8 @@ Functions and classes provided:
    The :meth:`~ExitStack.close` method is not implemented; :meth:`aclose` must be used
    instead.
 
-   .. coroutinemethod:: enter_async_context(cm)
+   .. method:: enter_async_context(cm)
+      :async:
 
       Similar to :meth:`ExitStack.enter_context` but expects an asynchronous context
       manager.
@@ -647,7 +648,8 @@ Functions and classes provided:
 
       Similar to :meth:`ExitStack.callback` but expects a coroutine function.
 
-   .. coroutinemethod:: aclose()
+   .. method:: aclose()
+      :async:
 
       Similar to :meth:`ExitStack.close` but properly handles awaitables.
 

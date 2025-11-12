@@ -40,9 +40,11 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Return a new :c:type:`PyLongObject` object from *v*, or ``NULL`` on failure.
 
-   The current implementation keeps an array of integer objects for all integers
-   between ``-5`` and ``256``. When you create an int in that range you actually
-   just get back a reference to the existing object.
+   .. impl-detail::
+
+      CPython keeps an array of integer objects for all integers
+      between ``-5`` and ``1024``.  When you create an int in that range
+      you actually just get back a reference to the existing object.
 
 
 .. c:function:: PyObject* PyLong_FromUnsignedLong(unsigned long v)
@@ -157,6 +159,17 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    most-significant bit is not a sign bit. Flags other than endian are ignored.
 
    .. versionadded:: 3.13
+
+
+.. c:macro:: PyLong_FromPid(pid)
+
+   Macro for creating a Python integer from a process identifier.
+
+   This can be defined as an alias to :c:func:`PyLong_FromLong` or
+   :c:func:`PyLong_FromLongLong`, depending on the size of the system's
+   PID type.
+
+   .. versionadded:: 3.2
 
 
 .. c:function:: long PyLong_AsLong(PyObject *obj)
@@ -372,6 +385,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Set *\*value* to a signed C :c:expr:`int32_t` or :c:expr:`int64_t`
    representation of *obj*.
 
+   If *obj* is not an instance of :c:type:`PyLongObject`, first call its
+   :meth:`~object.__index__` method (if present) to convert it to a
+   :c:type:`PyLongObject`.
+
    If the *obj* value is out of range, raise an :exc:`OverflowError`.
 
    Set *\*value* and return ``0`` on success.
@@ -439,7 +456,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    All *n_bytes* of the buffer are written: large buffers are padded with
    zeroes.
 
-   If the returned value is greater than than *n_bytes*, the value was
+   If the returned value is greater than *n_bytes*, the value was
    truncated: as many of the lowest bits of the value as could fit are written,
    and the higher bits are ignored. This matches the typical behavior
    of a C-style downcast.
@@ -567,6 +584,17 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       This matches typical C cast behavior.
 
    .. versionadded:: 3.13
+
+
+.. c:macro:: PyLong_AsPid(pid)
+
+   Macro for converting a Python integer into a process identifier.
+
+   This can be defined as an alias to :c:func:`PyLong_AsLong`,
+   :c:func:`PyLong_FromLongLong`, or :c:func:`PyLong_AsInt`, depending on the
+   size of the system's PID type.
+
+   .. versionadded:: 3.2
 
 
 .. c:function:: int PyLong_GetSign(PyObject *obj, int *sign)
@@ -824,6 +852,6 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
    Discard a :c:type:`PyLongWriter` created by :c:func:`PyLongWriter_Create`.
 
-   *writer* must not be ``NULL``.
+   If *writer* is ``NULL``, no operation is performed.
 
    The writer instance and the *digits* array are invalid after the call.
