@@ -3109,6 +3109,8 @@ if __name__ == "__main__":
 
         # GC frames should NOT be present
         self.assertNotIn("<GC>", output)
+
+
 @requires_subprocess()
 @skip_if_not_supported
 class TestNativeFrameTracking(unittest.TestCase):
@@ -3170,16 +3172,15 @@ if __name__ == "__main__":
             # Check file format
             with open(collapsed_file.name, "r") as f:
                 content = f.read()
-
-            lines = [line.rsplit(" ", 1)[0] for line in content.strip().split("\n")]
-            self.assertGreater(len(lines), 0)
-
-            # All samples should have native code in the middle of the stack:
-            self.assertTrue(all(";<native>;" in line for line in lines))
-            # Some samples should have native code at the top of the stack:
-            self.assertTrue(any(line.endswith(";<native>") for line in lines))
-            # Some samples should have Python code at the top of the stack:
-            self.assertTrue(any(not line.endswith(";<native>") for line in lines))
+        lines = content.strip().split("\n")
+        self.assertGreater(len(lines), 0)
+        stacks = [line.rsplit(" ", 1)[0] for line in lines]
+        # All samples should have native code in the middle of the stack:
+        self.assertTrue(all(";<native>;" in stack for stack in stacks))
+        # Some samples should have native code at the top of the stack:
+        self.assertTrue(any(stack.endswith(";<native>") for stack in stacks))
+        # Some samples should have Python code at the top of the stack:
+        self.assertTrue(any(not stack.endswith(";<native>") for stack in stacks))
 
     def test_native_frames_disabled(self):
         """Test that native frames do not appear when native tracking is disabled."""
@@ -3197,10 +3198,8 @@ if __name__ == "__main__":
                 )
             except PermissionError:
                 self.skipTest("Insufficient permissions for remote profiling")
-
             output = captured_output.getvalue()
-
-        # native frames should NOT be present
+        # Native frames should NOT be present:
         self.assertNotIn("<native>", output)
 
 if __name__ == "__main__":
