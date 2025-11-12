@@ -11,8 +11,8 @@ import typing
 import _targets
 
 
-_LLVM_VERSION = "20"
-_EXTERNALS_LLVM_TAG = "llvm-20.1.8.0"
+_LLVM_VERSION = "21"
+_EXTERNALS_LLVM_TAG = "llvm-21.1.4.0"
 
 _P = typing.ParamSpec("_P")
 _R = typing.TypeVar("_R")
