@@ -241,7 +241,21 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_create_module_from_initfunc(self):
         out, err = self.run_embedded_interpreter("test_create_module_from_initfunc")
-        self.assertEqual(err, "")
+        if support.Py_GIL_DISABLED:
+            # the test imports a singlephase init extension, so it emits a warning
+            # under the free-threaded build
+            expected_runtime_warning = (
+                "RuntimeWarning: The global interpreter lock (GIL)"
+                " has been enabled to load module 'embedded_ext'"
+            )
+            filtered_err_lines = [
+                line
+                for line in err.strip().splitlines()
+                if expected_runtime_warning not in line
+            ]
+            self.assertEqual(filtered_err_lines, [])
+        else:
+            self.assertEqual(err, "")
         self.assertEqual(out,
                          "<module 'my_test_extension' (static-extension)>\n"
                          "my_test_extension.executed='yes'\n"
