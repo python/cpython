@@ -2415,7 +2415,7 @@ PyFloat_Unpack2(const char *data, int le)
     if (e == 0x1f) {
         if (f == 0) {
             /* Infinity */
-            return sign ? -Py_INFINITY : Py_INFINITY;
+            return sign ? -INFINITY : INFINITY;
         }
         else {
             /* NaN */

@@ -83,8 +83,11 @@ Floating-Point Objects
    This macro expands a to constant expression of type :c:expr:`double`, that
    represents the positive infinity.
 
-   On most platforms, this is equivalent to the :c:macro:`!INFINITY` macro from
-   the C11 standard ``<math.h>`` header.
+   It is equivalent to the :c:macro:`!INFINITY` macro from the C11 standard
+   ``<math.h>`` header.
+
+   .. deprecated:: 3.15
+      The macro is soft deprecated.
 
 
 .. c:macro:: Py_NAN
