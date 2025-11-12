@@ -41,7 +41,6 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     PyMutex lock;
-    PyObject *weakreflist; /* List of weak references */
 } lockobject;
 
 #define lockobject_CAST(op) ((lockobject *)(op))
@@ -49,7 +48,6 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     _PyRecursiveMutex lock;
-    PyObject *weakreflist; /* List of weak references */
 } rlockobject;
 
 #define rlockobject_CAST(op)    ((rlockobject *)(op))
@@ -769,6 +767,7 @@ static PyType_Spec ThreadHandle_Type_spec = {
 static void
 lock_dealloc(PyObject *self)
 {
+    PyObject_GC_UnTrack(self);
     PyObject_ClearWeakRefs(self);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
@@ -1000,10 +999,6 @@ lock_new_impl(PyTypeObject *type)
     return (PyObject *)self;
 }
 
-static PyMemberDef lock_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(lockobject, weakreflist), Py_READONLY},
-    {NULL}
-};
 
 static PyMethodDef lock_methods[] = {
     _THREAD_LOCK_ACQUIRE_LOCK_METHODDEF
@@ -1039,8 +1034,8 @@ static PyType_Slot lock_type_slots[] = {
     {Py_tp_dealloc, lock_dealloc},
     {Py_tp_repr, lock_repr},
     {Py_tp_doc, (void *)lock_doc},
-    {Py_tp_members, lock_members},
     {Py_tp_methods, lock_methods},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_new, lock_new},
     {0, 0}
 };
@@ -1048,7 +1043,8 @@ static PyType_Slot lock_type_slots[] = {
 static PyType_Spec lock_type_spec = {
     .name = "_thread.lock",
     .basicsize = sizeof(lockobject),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = lock_type_slots,
 };
 
@@ -1063,6 +1059,7 @@ rlock_locked_impl(rlockobject *self)
 static void
 rlock_dealloc(PyObject *self)
 {
+    PyObject_GC_UnTrack(self);
     PyObject_ClearWeakRefs(self);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
@@ -1322,11 +1319,6 @@ _thread_RLock__at_fork_reinit_impl(rlockobject *self)
 #endif  /* HAVE_FORK */
 
 
-static PyMemberDef rlock_members[] = {
-    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(rlockobject, weakreflist), Py_READONLY},
-    {NULL}
-};
-
 static PyMethodDef rlock_methods[] = {
     _THREAD_RLOCK_ACQUIRE_METHODDEF
     _THREAD_RLOCK_RELEASE_METHODDEF
@@ -1347,10 +1339,10 @@ static PyMethodDef rlock_methods[] = {
 static PyType_Slot rlock_type_slots[] = {
     {Py_tp_dealloc, rlock_dealloc},
     {Py_tp_repr, rlock_repr},
-    {Py_tp_members, rlock_members},
     {Py_tp_methods, rlock_methods},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, rlock_new},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, 0},
 };
 
@@ -1358,7 +1350,7 @@ static PyType_Spec rlock_type_spec = {
     .name = "_thread.RLock",
     .basicsize = sizeof(rlockobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_WEAKREF),
     .slots = rlock_type_slots,
 };
 
