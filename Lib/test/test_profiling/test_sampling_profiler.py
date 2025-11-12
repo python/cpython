@@ -3122,17 +3122,15 @@ class TestNativeFrameTracking(unittest.TestCase):
         cls.native_test_script = '''
 import operator
 
-def python_to_c():
-    # Native code at the top of the stack:
-    sum(range(100))
-    # Python code at the top of the stack:
-    for _ in range(100):
-        pass
-
 def main_loop():
     while True:
         # Native code in the middle of the stack:
-        operator.call(python_to_c)
+        operator.call(inner)
+
+def inner():
+    # A mixture of native and Python code at the top of the stack:
+    for _ in range(1_000_0000):
+        pass
 
 if __name__ == "__main__":
     main_loop()
@@ -3156,7 +3154,7 @@ if __name__ == "__main__":
                 try:
                     profiling.sampling.sample.sample(
                         subproc.process.pid,
-                        duration_sec=2,
+                        duration_sec=1,
                         filename=collapsed_file.name,
                         output_format="collapsed",
                         sample_interval_usec=1000,
