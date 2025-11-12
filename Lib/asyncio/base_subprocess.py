@@ -26,6 +26,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         self._pending_calls = collections.deque()
         self._pipes = {}
         self._finished = False
+        self._pipes_connected = False
 
         if stdin == subprocess.PIPE:
             self._pipes[0] = None
@@ -213,6 +214,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         else:
             if waiter is not None and not waiter.cancelled():
                 waiter.set_result(None)
+            self._pipes_connected = True
 
     def _call(self, cb, *data):
         if self._pending_calls is not None:
@@ -256,6 +258,15 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         assert not self._finished
         if self._returncode is None:
             return
+        if not self._pipes_connected:
+            # self._pipes_connected can be False if not all pipes were connected
+            # because either the process failed to start or the self._connect_pipes task
+            # got cancelled. In this broken state we consider all pipes disconnected and
+            # to avoid hanging forever in self._wait as otherwise _exit_waiters
+            # would never be woken up, we wake them up here.
+            for waiter in self._exit_waiters:
+                if not waiter.cancelled():
+                    waiter.set_result(self._returncode)
         if all(p is not None and p.disconnected
                for p in self._pipes.values()):
             self._finished = True
