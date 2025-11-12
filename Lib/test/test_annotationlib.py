@@ -1618,7 +1618,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
         # supported fall back to Format.VALUE and convert to strings
         class Annotate:
             @classmethod
-            def __call__(cls, format, /, __Format=Format,
+            def format(cls, format, /, __Format=Format,
                          __NotImplementedError=NotImplementedError):
                 if format == __Format.VALUE:
                     return {"x": str}
@@ -1626,7 +1626,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
                     raise __NotImplementedError(format)
 
         annotations = annotationlib.call_annotate_function(
-            Annotate.__call__,
+            Annotate.format,
             Format.FORWARDREF,
         )
 
@@ -1637,7 +1637,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
         # supported fall back to Format.VALUE and convert to strings
         class Annotate:
             @staticmethod
-            def __call__(format, /, __Format=Format,
+            def format(format, /, __Format=Format,
                          __NotImplementedError=NotImplementedError):
                 if format == __Format.VALUE:
                     return {"x": str}
@@ -1645,7 +1645,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
                     raise __NotImplementedError(format)
 
         annotations = annotationlib.call_annotate_function(
-            Annotate.__call__,
+            Annotate.format,
             Format.FORWARDREF,
         )
 
