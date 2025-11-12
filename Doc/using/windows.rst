@@ -457,6 +457,25 @@ customization.
      - Specify the default format used by the ``py list`` command.
        By default, ``table``.
 
+   * - ``install_dir``
+     - (none)
+     - Specify the root directory that runtimes will be installed into.
+       If you change this setting, previously installed runtimes will not be
+       usable unless you move them to the new location.
+
+   * - ``global_dir``
+     - (none)
+     - Specify the directory where global commands (such as ``python3.14.exe``)
+       are stored.
+       This directory should be added to your :envvar:`PATH` to make the
+       commands available from your terminal.
+
+   * - ``download_dir``
+     - (none)
+     - Specify the directory where downloaded files are stored.
+       This directory is a temporary cache, and can be cleaned up from time to
+       time.
+
 Dotted names should be nested inside JSON objects, for example, ``list.format``
 would be specified as ``{"list": {"format": "table"}}``.
 
