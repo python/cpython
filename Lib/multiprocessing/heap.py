@@ -21,12 +21,6 @@ from . import util
 __all__ = ['BufferWrapper']
 
 #
-# Module constants
-#
-
-_MAXSIZE = sys.maxsize
-
-#
 # Inheritable class which wraps an mmap, and from which blocks can be allocated
 #
 
@@ -113,17 +107,6 @@ else:
         return Arena(size, dupfd.detach())
 
     reduction.register(Arena, reduce_arena)
-
-#
-# Validation helpers
-#
-
-def _validate_size(size):
-    """Validate requested size; raise ValueError if < 0, OverflowError if >= _MAXSIZE."""
-    if size < 0:
-        raise ValueError("Size {0:n} out of range".format(size))
-    if _MAXSIZE <= size:
-        raise OverflowError("Size {0:n} too large".format(size))
 
 #
 # Class allowing allocation of chunks of memory from arenas
@@ -312,7 +295,10 @@ class Heap(object):
 
     def malloc(self, size):
         # return a block of right size (possibly rounded up)
-        _validate_size(size)
+        if size < 0:
+            raise ValueError("Size {0:n} out of range".format(size))
+        if sys.maxsize <= size:
+            raise OverflowError("Size {0:n} too large".format(size))
         if os.getpid() != self._lastpid:
             self.__init__()                     # reinitialize after fork
         with self._lock:
@@ -338,7 +324,6 @@ class BufferWrapper(object):
     _heap = Heap()
 
     def __init__(self, size):
-        _validate_size(size)
         block = BufferWrapper._heap.malloc(size)
         self._state = (block, size)
         util.Finalize(self, BufferWrapper._heap.free, args=(block,))
