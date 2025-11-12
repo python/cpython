@@ -891,6 +891,11 @@ def _get_annotate_attr(annotate, attr, default):
     if (value := getattr(annotate, attr, None)) is not None:
         return value
 
+    if isinstance(annotate, types.MethodType):
+        if call_func := getattr(annotate, "__func__", None):
+            return getattr(call_func, attr, default)
+
+    # Class instances themselves aren't methods, their __call__ functions are.
     if isinstance(annotate.__call__, types.MethodType):
         if call_func := getattr(annotate.__call__, "__func__", None):
             return getattr(call_func, attr, default)
@@ -910,7 +915,14 @@ def _get_annotate_attr(annotate, attr, default):
     return default
 
 def _direct_call_annotate(func, annotate, format):
-    # If annotate is a method, we need to pass its self as the first param
+    # If annotate is a method, we need to pass self as the first param.
+    if (
+        hasattr(annotate, "__func__") and
+        (self := getattr(annotate, "__self__", None))
+    ):
+        return func(self, format)
+
+    # If annotate is a class instance, its __call__ function is the method.
     if (
         hasattr(annotate.__call__, "__func__") and
         (self := getattr(annotate.__call__, "__self__", None))
