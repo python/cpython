@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import TextIO
 
 # Fail if NEWS nit found before this line number
-NEWS_NIT_THRESHOLD = 1700
+NEWS_NIT_THRESHOLD = 8550
 
 # Exclude these whether they're dirty or clean,
 # because they trigger a rebuild of dirty files.

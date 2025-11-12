@@ -1,1 +1,0 @@
-Allow the JIT to remove unnecessary ``_ITER_CHECK_TUPLE`` ops.
