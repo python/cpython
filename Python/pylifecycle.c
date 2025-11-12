@@ -26,6 +26,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
@@ -655,6 +656,14 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef Py_STATS
+    // initialize pystats.  This must be done after the settings are loaded.
+    status = _PyStats_InterpInit(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
@@ -2468,6 +2477,14 @@ new_interpreter(PyThreadState **tstate_p,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef Py_STATS
+    // initialize pystats.  This must be done after the settings are loaded.
+    status = _PyStats_InterpInit(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
