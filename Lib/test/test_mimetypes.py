@@ -229,6 +229,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/octet-stream", ".bin"),
                 ("application/gzip", ".gz"),
                 ("application/ogg", ".ogx"),
+                ("application/pdf", ".pdf"),
                 ("application/postscript", ".ps"),
                 ("application/texinfo", ".texi"),
                 ("application/toml", ".toml"),
