@@ -158,7 +158,7 @@ error:
 static PyObject *
 test_set_contains_does_not_convert_unhashable_key(PyObject *self, PyObject *Py_UNUSED(obj))
 {
-    // see documentation of int PySet_Contains in c-api/set.rst
+    // See https://docs.python.org/3/c-api/set.html#c.PySet_Contains
     PyObject *outer_set = PySet_New(NULL);
 
     PyObject *needle = PySet_New(NULL);
