@@ -896,6 +896,11 @@ def _get_annotate_attr(annotate, attr, default):
             return getattr(call_func, attr, default)
     elif isinstance(annotate, type):
         return getattr(annotate.__init__, attr, default)
+    elif (
+        "functools" in sys.modules
+        and isinstance(annotate, sys.modules["functools"].partial)
+    ):
+        return getattr(annotate.func, attr, default)
 
     return default
 
@@ -911,6 +916,12 @@ def _direct_call_annotate(func, annotate, format):
         inst = annotate.__new__(annotate)
         func(inst, format)
         return inst
+
+    if (
+        "functools" in sys.modules
+        and isinstance(annotate, sys.modules["functools"].partial)
+    ):
+        return func(*annotate.args, format, **annotate.keywords)
 
     return func(format)
 
