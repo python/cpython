@@ -3109,7 +3109,99 @@ if __name__ == "__main__":
 
         # GC frames should NOT be present
         self.assertNotIn("<GC>", output)
+@requires_subprocess()
+@skip_if_not_supported
+class TestNativeFrameTracking(unittest.TestCase):
+    """Tests for native frame tracking in the sampling profiler."""
 
+    @classmethod
+    def setUpClass(cls):
+        """Create a static test script with native frames and CPU-intensive work."""
+        cls.native_test_script = '''
+import operator
+
+def python_to_c():
+    # Native code at the top of the stack:
+    sum(range(1_000_000))
+    # Python code at the top of the stack:
+    for _ in range(1_000_000):
+        pass
+
+def main_loop():
+    while True:
+        # Native code in the middle of the stack:
+        operator.call(python_to_c)
+
+if __name__ == "__main__":
+    main_loop()
+'''
+
+    def test_native_frames_enabled(self):
+        """Test that native frames appear when native tracking is enabled."""
+        collapsed_file = tempfile.NamedTemporaryFile(
+            suffix=".txt", delete=False
+        )
+        self.addCleanup(close_and_unlink, collapsed_file)
+
+        with (
+            test_subprocess(self.native_test_script) as subproc,
+        ):
+            # Suppress profiler output when testing file export
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        subproc.process.pid,
+                        duration_sec=1,
+                        filename=collapsed_file.name,
+                        output_format="collapsed",
+                        sample_interval_usec=5000,
+                        native=True,
+                    )
+                except PermissionError:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+            # Verify file was created and contains valid data
+            self.assertTrue(os.path.exists(collapsed_file.name))
+            self.assertGreater(os.path.getsize(collapsed_file.name), 0)
+
+            # Check file format
+            with open(collapsed_file.name, "r") as f:
+                content = f.read()
+
+            lines = [line.rsplit(" ", 1)[0] for line in content.strip().split("\n")]
+            self.assertGreater(len(lines), 0)
+
+            # All samples should have native code in the middle of the stack:
+            self.assertTrue(all(";<native>;" in line for line in lines))
+            # Some samples should have native code at the top of the stack:
+            self.assertTrue(any(line.endswith(";<native>") for line in lines))
+            # Some samples should have Python code at the top of the stack:
+            self.assertTrue(any(not line.endswith(";<native>") for line in lines))
+
+    def test_native_frames_disabled(self):
+        """Test that native frames do not appear when native tracking is disabled."""
+        with (
+            test_subprocess(self.native_test_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    duration_sec=1,
+                    sample_interval_usec=5000,
+                    show_summary=False,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # native frames should NOT be present
+        self.assertNotIn("<native>", output)
 
 if __name__ == "__main__":
     unittest.main()
