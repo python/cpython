@@ -854,7 +854,7 @@ def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluat
     closure = _get_annotate_attr(annotate, "__closure__", None)
     if not closure:
         return None, None
-    freevars = annotate.__code__.co_freevars
+    freevars = _get_annotate_attr(annotate, "__code__", None).co_freevars
     new_closure = []
     cell_dict = {}
     for i, cell in enumerate(closure):
