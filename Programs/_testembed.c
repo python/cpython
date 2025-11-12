@@ -166,6 +166,8 @@ static PyModuleDef embedded_ext = {
 static PyObject*
 PyInit_embedded_ext(void)
 {
+    // keep this a single-phase initialization module;
+    // see test_create_module_from_initfunc
     return PyModule_Create(&embedded_ext);
 }
 
@@ -1894,8 +1896,16 @@ static int test_initconfig_exit(void)
 }
 
 
+int
+extension_module_exec(PyObject *mod)
+{
+    return PyModule_AddStringConstant(mod, "exec_slot_ran", "yes");
+}
+
+
 static PyModuleDef_Slot extension_slots[] = {
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {Py_mod_exec, extension_module_exec},
     {0, NULL}
 };
 
@@ -2214,11 +2224,33 @@ static int test_repeated_init_and_inittab(void)
 }
 
 static PyObject* create_module(PyObject* self, PyObject* spec) {
-    return PyImport_CreateModuleFromInitfunc(spec, init_my_test_extension);
+    PyObject *name = PyObject_GetAttrString(spec, "name");
+    if (!name) {
+        return NULL;
+    }
+    if (PyUnicode_EqualToUTF8(name, "my_test_extension")) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, init_my_test_extension);
+    }
+    if (PyUnicode_EqualToUTF8(name, "embedded_ext")) {
+        Py_DECREF(name);
+        return PyImport_CreateModuleFromInitfunc(spec, PyInit_embedded_ext);
+    }
+    PyErr_Format(PyExc_LookupError, "static module %R not found", name);
+    Py_DECREF(name);
+    return NULL;
+}
+
+static PyObject* exec_module(PyObject* self, PyObject* mod) {
+    if (PyModule_Exec(mod) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef create_static_module_methods[] = {
     {"create_module", create_module, METH_O, NULL},
+    {"exec_module", exec_module, METH_O, NULL},
     {}
 };
 
@@ -2236,7 +2268,19 @@ PyMODINIT_FUNC PyInit_create_static_module(void) {
 
 static int test_create_module_from_initfunc(void)
 {
-    wchar_t* argv[] = {PROGRAM_NAME, L"-c", L"import my_test_extension; print(my_test_extension)"};
+    wchar_t* argv[] = {
+        PROGRAM_NAME,
+        L"-c",
+        // Multi-phase initialization
+        L"import my_test_extension;"
+        L"print(my_test_extension);"
+        L"print(f'{my_test_extension.executed=}');"
+        L"print(f'{my_test_extension.exec_slot_ran=}');"
+        // Single-phase initialization
+        L"import embedded_ext;"
+        L"print(embedded_ext);"
+        L"print(f'{embedded_ext.executed=}');"
+    };
     PyConfig config;
     if (PyImport_AppendInittab("create_static_module",
                                &PyInit_create_static_module) != 0) {
@@ -2249,22 +2293,22 @@ static int test_create_module_from_initfunc(void)
     init_from_config_clear(&config);
     int result = PyRun_SimpleString(
         "import sys\n"
-        "from importlib._bootstrap import spec_from_loader, _call_with_frames_removed\n"
-        "import _imp\n"
+        "from importlib.util import spec_from_loader\n"
         "import create_static_module\n"
         "class StaticExtensionImporter:\n"
         "   _ORIGIN = \"static-extension\"\n"
         "   @classmethod\n"
         "   def find_spec(cls, fullname, path, target=None):\n"
-        "       if fullname == \"my_test_extension\":\n"
+        "       if fullname in {'my_test_extension', 'embedded_ext'}:\n"
         "           return spec_from_loader(fullname, cls, origin=cls._ORIGIN)\n"
         "       return None\n"
         "   @staticmethod\n"
         "   def create_module(spec):\n"
-        "       return _call_with_frames_removed(create_static_module.create_module, spec)\n"
+        "       return create_static_module.create_module(spec)\n"
         "   @staticmethod\n"
         "   def exec_module(module):\n"
-        "       _call_with_frames_removed(_imp.exec_builtin, module)\n"
+        "       create_static_module.exec_module(module)\n"
+        "       module.executed = 'yes'\n"
         "sys.meta_path.append(StaticExtensionImporter)\n"
     );
     if (result < 0) {
