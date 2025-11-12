@@ -5444,7 +5444,7 @@ PyUnicode_DecodeCharmap(const char *s,
 /*[clinic input]
 class EncodingMap "struct encoding_map *" "&_Py_EncodingMapType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=14e46bbb6c522d22]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fae4d9a01a221dba]*/
 
 struct encoding_map {
     PyObject_HEAD
