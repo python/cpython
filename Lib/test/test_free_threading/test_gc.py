@@ -35,24 +35,30 @@ class TestGC(TestCase):
             pass
 
     def test_get_referrers(self):
+        NUM_GC = 2
+        NUM_MUTATORS = 4
+
+        b = threading.Barrier(NUM_GC + NUM_MUTATORS)
         event = threading.Event()
 
         obj = MyObj()
 
         def gc_thread():
+            b.wait()
             for i in range(100):
                 o = gc.get_referrers(obj)
             event.set()
 
         def mutator_thread():
+            b.wait()
             while not event.is_set():
                 d1 = { "key": obj }
                 d2 = { "key": obj }
                 d3 = { "key": obj }
                 d4 = { "key": obj }
 
-        gcs = [Thread(target=gc_thread) for _ in range(2)]
-        mutators = [Thread(target=mutator_thread) for _ in range(4)]
+        gcs = [Thread(target=gc_thread) for _ in range(NUM_GC)]
+        mutators = [Thread(target=mutator_thread) for _ in range(NUM_MUTATORS)]
         with threading_helper.start_threads(gcs + mutators):
             pass
 

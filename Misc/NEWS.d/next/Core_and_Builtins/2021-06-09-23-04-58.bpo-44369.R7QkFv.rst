@@ -1,1 +1,0 @@
-Improve syntax errors for incorrectly closed strings. Patch by Pablo Galindo

@@ -112,7 +112,7 @@ Context Variables
 
        assert var.get() == 'default value'
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
       Added support for usage as a context manager.
 
@@ -313,7 +313,7 @@ client::
         addr = writer.transport.get_extra_info('socket').getpeername()
         client_addr_var.set(addr)
 
-        # In any code that we call is now possible to get
+        # In any code that we call, it is now possible to get the
         # client's address by calling 'client_addr_var.get()'.
 
         while True:

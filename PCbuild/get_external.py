@@ -4,24 +4,61 @@ import argparse
 import os
 import pathlib
 import sys
+import tarfile
 import time
+import urllib.error
+import urllib.request
 import zipfile
-from urllib.request import urlretrieve
 
+
+def retrieve_with_retries(download_location, output_path, reporthook,
+                          max_retries=7):
+    """Download a file with exponential backoff retry and save to disk."""
+    for attempt in range(max_retries + 1):
+        try:
+            resp = urllib.request.urlretrieve(
+                download_location,
+                output_path,
+                reporthook=reporthook,
+            )
+        except (urllib.error.URLError, ConnectionError) as ex:
+            if attempt == max_retries:
+                raise OSError(f'Download from {download_location} failed.') from ex
+            time.sleep(2.25**attempt)
+        else:
+            return resp
 
 def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
-    repo = f'cpython-{"bin" if binary else "source"}-deps'
+    repo = 'cpython-bin-deps' if binary else 'cpython-source-deps'
     url = f'https://github.com/{org}/{repo}/archive/{commit_hash}.zip'
     reporthook = None
     if verbose:
         reporthook = print
     zip_dir.mkdir(parents=True, exist_ok=True)
-    filename, headers = urlretrieve(
+    filename, _headers = retrieve_with_retries(
         url,
         zip_dir / f'{commit_hash}.zip',
-        reporthook=reporthook,
+        reporthook
     )
     return filename
+
+
+def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
+    url = f'https://github.com/{org}/cpython-bin-deps/releases/download/{tag}/{tag}.tar.xz'
+    reporthook = None
+    if verbose:
+        reporthook = print
+    tarball_dir.mkdir(parents=True, exist_ok=True)
+    output_path = tarball_dir / f'{tag}.tar.xz'
+    retrieve_with_retries(url, output_path, reporthook)
+    return output_path
+
+
+def extract_tarball(externals_dir, tarball_path, tag):
+    output_path = externals_dir / tag
+    with tarfile.open(tarball_path) as tf:
+        tf.extractall(os.fspath(externals_dir))
+    return output_path
 
 
 def extract_zip(externals_dir, zip_path):
@@ -35,6 +72,8 @@ def parse_args():
     p.add_argument('-v', '--verbose', action='store_true')
     p.add_argument('-b', '--binary', action='store_true',
                    help='Is the dependency in the binary repo?')
+    p.add_argument('-r', '--release', action='store_true',
+                   help='Download from GitHub release assets instead of branch')
     p.add_argument('-O', '--organization',
                    help='Organization owning the deps repos', default='python')
     p.add_argument('-e', '--externals-dir', type=pathlib.Path,
@@ -47,30 +86,53 @@ def parse_args():
 
 def main():
     args = parse_args()
-    zip_path = fetch_zip(
-        args.tag,
-        args.externals_dir / 'zips',
-        org=args.organization,
-        binary=args.binary,
-        verbose=args.verbose,
-    )
     final_name = args.externals_dir / args.tag
-    extracted = extract_zip(args.externals_dir, zip_path)
-    for wait in [1, 2, 3, 5, 8, 0]:
-        try:
-            extracted.replace(final_name)
-            break
-        except PermissionError as ex:
-            retry = f" Retrying in {wait}s..." if wait else ""
-            print(f"Encountered permission error '{ex}'.{retry}", file=sys.stderr)
-            time.sleep(wait)
-    else:
-        print(
-            f"ERROR: Failed to extract {final_name}.",
-            "You may need to restart your build",
-            file=sys.stderr,
+
+    # Check if the dependency already exists in externals/ directory
+    # (either already downloaded/extracted, or checked into the git tree)
+    if final_name.exists():
+        if args.verbose:
+            print(f'{args.tag} already exists at {final_name}, skipping download.')
+        return
+
+    # Determine download method: release artifacts for large deps (like LLVM),
+    # otherwise zip download from GitHub branches
+    if args.release:
+        tarball_path = fetch_release(
+            args.tag,
+            args.externals_dir / 'tarballs',
+            org=args.organization,
+            verbose=args.verbose,
         )
-        sys.exit(1)
+        extracted = extract_tarball(args.externals_dir, tarball_path, args.tag)
+    else:
+        # Use zip download from GitHub branches
+        # (cpython-bin-deps if --binary, cpython-source-deps otherwise)
+        zip_path = fetch_zip(
+            args.tag,
+            args.externals_dir / 'zips',
+            org=args.organization,
+            binary=args.binary,
+            verbose=args.verbose,
+        )
+        extracted = extract_zip(args.externals_dir, zip_path)
+
+    if extracted != final_name:
+        for wait in [1, 2, 3, 5, 8, 0]:
+            try:
+                extracted.replace(final_name)
+                break
+            except PermissionError as ex:
+                retry = f" Retrying in {wait}s..." if wait else ""
+                print(f"Encountered permission error '{ex}'.{retry}", file=sys.stderr)
+                time.sleep(wait)
+        else:
+            print(
+                f"ERROR: Failed to rename {extracted} to {final_name}.",
+                "You may need to restart your build",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
 
 if __name__ == '__main__':

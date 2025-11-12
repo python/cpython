@@ -1,2 +1,0 @@
-Remove *dirs_exist_ok* argument from :meth:`pathlib.Path.copy` and
-:meth:`~pathlib.Path.copy_into`. These methods are new in Python 3.14.

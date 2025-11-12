@@ -1,1 +1,0 @@
-Allow building the JIT with the tailcall interpreter.

@@ -1,1 +1,0 @@
-Correctly reset ``msgctxt`` when compiling messages in :program:`msgfmt`.

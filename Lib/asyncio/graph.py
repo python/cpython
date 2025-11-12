@@ -1,6 +1,7 @@
 """Introspection utils for tasks call graphs."""
 
 import dataclasses
+import io
 import sys
 import types
 
@@ -15,9 +16,6 @@ __all__ = (
     'FrameCallGraphEntry',
     'FutureCallGraph',
 )
-
-if False:  # for type checkers
-    from typing import TextIO
 
 # Sadly, we can't re-use the traceback module's datastructures as those
 # are tailored for error reporting, whereas we need to represent an
@@ -270,7 +268,7 @@ def print_call_graph(
     future: futures.Future | None = None,
     /,
     *,
-    file: TextIO | None = None,
+    file: io.Writer[str] | None = None,
     depth: int = 1,
     limit: int | None = None,
 ) -> None:

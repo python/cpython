@@ -382,6 +382,9 @@ class _ModuleLock:
                     self.waiters.pop()
                     self.wakeup.release()
 
+    def locked(self):
+        return bool(self.count)
+
     def __repr__(self):
         return f'_ModuleLock({self.name!r}) at {id(self)}'
 
@@ -1304,6 +1307,14 @@ _ERR_MSG_PREFIX = 'No module named '
 
 def _find_and_load_unlocked(name, import_):
     path = None
+    sys.audit(
+        "import",
+        name,
+        path,
+        getattr(sys, "path", None),
+        getattr(sys, "meta_path", None),
+        getattr(sys, "path_hooks", None)
+    )
     parent = name.rpartition('.')[0]
     parent_spec = None
     if parent:

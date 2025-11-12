@@ -8,7 +8,7 @@ from unittest.mock import patch
 from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
 from test import support
-from test.support import force_not_colorized
+from test.support import force_not_colorized, warnings_helper
 from test.support import os_helper
 from test.support import threading_helper
 
@@ -354,6 +354,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         # everything is fine
         return 0
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def test_fork(self):
         # check that tracemalloc is still working after fork
@@ -1114,6 +1115,7 @@ class TestCAPI(unittest.TestCase):
     @threading_helper.requires_working_threading()
     # gh-128679: Test crash on a debug build (especially on FreeBSD).
     @unittest.skipIf(support.Py_DEBUG, 'need release build')
+    @support.skip_if_sanitizer('gh-131566: race when setting allocator', thread=True)
     def test_tracemalloc_track_race(self):
         # gh-128679: Test fix for tracemalloc.stop() race condition
         _testcapi.tracemalloc_track_race()

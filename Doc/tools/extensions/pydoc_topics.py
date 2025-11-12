@@ -144,7 +144,7 @@ class PydocTopicsBuilder(TextBuilder):
                 visitor = TextTranslator(document, builder=self)
                 document.walkabout(visitor)
                 body = "\n".join(map(str.rstrip, visitor.body.splitlines()))
-                self.topics[topic_label] = body
+                self.topics[topic_label] = body + "\n"
 
     def finish(self) -> None:
         topics_repr = "\n".join(

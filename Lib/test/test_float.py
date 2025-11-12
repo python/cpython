@@ -9,8 +9,10 @@ import unittest
 
 from test import support
 from test.support.testcase import FloatsAreIdenticalMixin
-from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
-                               INVALID_UNDERSCORE_LITERALS)
+from test.support.numbers import (
+    VALID_UNDERSCORE_LITERALS,
+    INVALID_UNDERSCORE_LITERALS,
+)
 from math import isinf, isnan, copysign, ldexp
 import math
 
@@ -793,6 +795,8 @@ class FormatTestCase(unittest.TestCase):
         self.assertRaises(ValueError, format, x, '.6,n')
 
     @support.requires_IEEE_754
+    @unittest.skipUnless(sys.float_repr_style == 'short',
+                         "applies only when using short float repr style")
     def test_format_testfile(self):
         with open(format_testfile, encoding="utf-8") as testfile:
             for line in testfile:

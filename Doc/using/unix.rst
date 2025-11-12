@@ -53,7 +53,7 @@ In some cases, IDLE might not be included in your Python installation.
 
 * For SUSE and OpenSUSE users::
 
-   sudo zypper in python3-idle
+   sudo zypper install python3-idle
 
 * For Alpine Linux users::
 
@@ -84,11 +84,17 @@ On FreeBSD and OpenBSD
 Building Python
 ===============
 
+.. seealso::
+
+   If you want to contribute to CPython, refer to the
+   `devguide <https://devguide.python.org/getting-started/setup-building/>`_,
+   which includes build instructions and other tips on setting up environment.
+
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/downloads/source/>`_. You can download either the
-latest release's source or just grab a fresh `clone
-<https://devguide.python.org/setup/#get-the-source-code>`_.  (If you want
-to contribute patches, you will need a clone.)
+latest release's source or grab a fresh `clone
+<https://devguide.python.org/setup/#get-the-source-code>`_.
+You will also need to install the :ref:`build requirements <build-requirements>`.
 
 The build process consists of the usual commands::
 

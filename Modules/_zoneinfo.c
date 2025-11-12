@@ -6,11 +6,14 @@
 #include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "datetime.h"             // PyDateTime_TZInfo
 
 #include <stddef.h>               // offsetof()
-#include <stdint.h>
+#include <stdint.h>               // int64_t
+
 
 #include "clinic/_zoneinfo.c.h"
 /*[clinic input]
@@ -373,9 +376,7 @@ zoneinfo_dealloc(PyObject *obj_self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
 
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(obj_self);
-    }
+    FT_CLEAR_WEAKREFS(obj_self, self->weakreflist);
 
     if (self->trans_list_utc != NULL) {
         PyMem_Free(self->trans_list_utc);
@@ -547,6 +548,7 @@ zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 zoneinfo.ZoneInfo.utcoffset
 
     cls: defining_class
@@ -559,7 +561,7 @@ Retrieve a timedelta representing the UTC offset in a zone at the given datetime
 static PyObject *
 zoneinfo_ZoneInfo_utcoffset_impl(PyObject *self, PyTypeObject *cls,
                                  PyObject *dt)
-/*[clinic end generated code: output=b71016c319ba1f91 input=2bb6c5364938f19c]*/
+/*[clinic end generated code: output=b71016c319ba1f91 input=8ce0dc2d179f01c5]*/
 {
     zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
     _ttinfo *tti = find_ttinfo(state, PyZoneInfo_ZoneInfo_CAST(self), dt);
@@ -570,6 +572,7 @@ zoneinfo_ZoneInfo_utcoffset_impl(PyObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 zoneinfo.ZoneInfo.dst
 
     cls: defining_class
@@ -581,7 +584,7 @@ Retrieve a timedelta representing the amount of DST applied in a zone at the giv
 
 static PyObject *
 zoneinfo_ZoneInfo_dst_impl(PyObject *self, PyTypeObject *cls, PyObject *dt)
-/*[clinic end generated code: output=cb6168d7723a6ae6 input=2167fb80cf8645c6]*/
+/*[clinic end generated code: output=cb6168d7723a6ae6 input=22b2abdf9388423c]*/
 {
     zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
     _ttinfo *tti = find_ttinfo(state, PyZoneInfo_ZoneInfo_CAST(self), dt);
@@ -592,6 +595,7 @@ zoneinfo_ZoneInfo_dst_impl(PyObject *self, PyTypeObject *cls, PyObject *dt)
 }
 
 /*[clinic input]
+@permit_long_summary
 zoneinfo.ZoneInfo.tzname
 
     cls: defining_class
@@ -604,7 +608,7 @@ Retrieve a string containing the abbreviation for the time zone that applies in 
 static PyObject *
 zoneinfo_ZoneInfo_tzname_impl(PyObject *self, PyTypeObject *cls,
                               PyObject *dt)
-/*[clinic end generated code: output=3b6ae6c3053ea75a input=15a59a4f92ed1f1f]*/
+/*[clinic end generated code: output=3b6ae6c3053ea75a input=0882926c4e95a1e2]*/
 {
     zoneinfo_state *state = zoneinfo_get_state_by_cls(cls);
     _ttinfo *tti = find_ttinfo(state, PyZoneInfo_ZoneInfo_CAST(self), dt);
@@ -2578,14 +2582,14 @@ initialize_caches(zoneinfo_state *state)
 }
 
 static PyObject *
-zoneinfo_init_subclass(PyTypeObject *cls, PyObject *args, PyObject **kwargs)
+zoneinfo_init_subclass(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
     PyObject *weak_cache = new_weak_cache();
     if (weak_cache == NULL) {
         return NULL;
     }
 
-    if (PyObject_SetAttrString((PyObject *)cls, "_weak_cache",
+    if (PyObject_SetAttrString(cls, "_weak_cache",
                                weak_cache) < 0) {
         Py_DECREF(weak_cache);
         return NULL;
@@ -2603,13 +2607,13 @@ static PyMethodDef zoneinfo_methods[] = {
     ZONEINFO_ZONEINFO_UTCOFFSET_METHODDEF
     ZONEINFO_ZONEINFO_DST_METHODDEF
     ZONEINFO_ZONEINFO_TZNAME_METHODDEF
-    {"fromutc", (PyCFunction)zoneinfo_fromutc, METH_O,
+    {"fromutc", zoneinfo_fromutc, METH_O,
      PyDoc_STR("Given a datetime with local time in UTC, retrieve an adjusted "
                "datetime in local time.")},
-    {"__reduce__", (PyCFunction)zoneinfo_reduce, METH_NOARGS,
+    {"__reduce__", zoneinfo_reduce, METH_NOARGS,
      PyDoc_STR("Function for serialization with the pickle protocol.")},
     ZONEINFO_ZONEINFO__UNPICKLE_METHODDEF
-    {"__init_subclass__", (PyCFunction)(void (*)(void))zoneinfo_init_subclass,
+    {"__init_subclass__", _PyCFunction_CAST(zoneinfo_init_subclass),
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("Function to initialize subclasses.")},
     {NULL} /* Sentinel */

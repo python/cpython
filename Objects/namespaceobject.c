@@ -124,9 +124,10 @@ namespace_repr(PyObject *ns)
         if (PyUnicode_Check(key) && PyUnicode_GET_LENGTH(key) > 0) {
             PyObject *value, *item;
 
-            value = PyDict_GetItemWithError(d, key);
-            if (value != NULL) {
+            int has_key = PyDict_GetItemRef(d, key, &value);
+            if (has_key == 1) {
                 item = PyUnicode_FromFormat("%U=%R", key, value);
+                Py_DECREF(value);
                 if (item == NULL) {
                     loop_error = 1;
                 }
@@ -135,7 +136,7 @@ namespace_repr(PyObject *ns)
                     Py_DECREF(item);
                 }
             }
-            else if (PyErr_Occurred()) {
+            else if (has_key < 0) {
                 loop_error = 1;
             }
         }
@@ -193,10 +194,14 @@ namespace_clear(PyObject *op)
 static PyObject *
 namespace_richcompare(PyObject *self, PyObject *other, int op)
 {
-    if (PyObject_TypeCheck(self, &_PyNamespace_Type) &&
-        PyObject_TypeCheck(other, &_PyNamespace_Type))
+    if (
+        (op == Py_EQ || op == Py_NE) &&
+        PyObject_TypeCheck(self, &_PyNamespace_Type) &&
+        PyObject_TypeCheck(other, &_PyNamespace_Type)
+    ) {
         return PyObject_RichCompare(((_PyNamespaceObject *)self)->ns_dict,
                                    ((_PyNamespaceObject *)other)->ns_dict, op);
+    }
     Py_RETURN_NOTIMPLEMENTED;
 }
 
@@ -204,8 +209,9 @@ namespace_richcompare(PyObject *self, PyObject *other, int op)
 PyDoc_STRVAR(namespace_reduce__doc__, "Return state information for pickling");
 
 static PyObject *
-namespace_reduce(_PyNamespaceObject *ns, PyObject *Py_UNUSED(ignored))
+namespace_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    _PyNamespaceObject *ns = (_PyNamespaceObject*)op;
     PyObject *result, *args = PyTuple_New(0);
 
     if (!args)
@@ -245,7 +251,7 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
 
 
 static PyMethodDef namespace_methods[] = {
-    {"__reduce__", (PyCFunction)namespace_reduce, METH_NOARGS,
+    {"__reduce__", namespace_reduce, METH_NOARGS,
      namespace_reduce__doc__},
     {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"

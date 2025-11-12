@@ -1,2 +1,0 @@
-Building with ``PlatformToolset=ClangCL`` on Windows now supports PGO
-(profile guided optimization). Patch by Chris Eibl with invaluable support from Steve Dover.
