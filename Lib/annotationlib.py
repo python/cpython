@@ -759,11 +759,18 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # reconstruct the source. But in the dictionary that we eventually return, we
         # want to return objects with more user-friendly behavior, such as an __eq__
         # that returns a bool and an defined set of attributes.
-        namespace = {**annotate.__builtins__, **annotate.__globals__}
+        annotate_globals = _get_annotate_attr(annotate, "__globals__", {})
+        annotate_code = _get_annotate_attr(annotate, "__code__", None)
+        annotate_defaults = _get_annotate_attr(annotate, "__defaults__", None)
+        annotate_kwdefaults = _get_annotate_attr(annotate, "__kwdefaults__", None)
+        namespace = {
+            **_get_annotate_attr(annotate, "__builtins__", {}),
+            **annotate_globals
+        }
         is_class = isinstance(owner, type)
         globals = _StringifierDict(
             namespace,
-            globals=annotate.__globals__,
+            globals=annotate_globals,
             owner=owner,
             is_class=is_class,
             format=format,
@@ -772,14 +779,17 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             annotate, owner, is_class, globals, allow_evaluation=True
         )
         func = types.FunctionType(
-            annotate.__code__,
+            annotate_code,
             globals,
             closure=closure,
-            argdefs=annotate.__defaults__,
-            kwdefaults=annotate.__kwdefaults__,
+            argdefs=annotate_defaults,
+            kwdefaults=annotate_kwdefaults,
         )
         try:
-            result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+            if isinstance(annotate.__call__, types.MethodType):
+                result = func(annotate.__call__.__self__, Format.VALUE_WITH_FAKE_GLOBALS)
+            else:
+                result = func(Format.VALUE_WITH_FAKE_GLOBALS)
         except NotImplementedError:
             # FORWARDREF and VALUE_WITH_FAKE_GLOBALS not supported, fall back to VALUE
             return annotate(Format.VALUE)
@@ -793,7 +803,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # a value in certain cases where an exception gets raised during evaluation.
         globals = _StringifierDict(
             {},
-            globals=annotate.__globals__,
+            globals=annotate_globals,
             owner=owner,
             is_class=is_class,
             format=format,
@@ -802,13 +812,16 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             annotate, owner, is_class, globals, allow_evaluation=False
         )
         func = types.FunctionType(
-            annotate.__code__,
+            annotate_code,
             globals,
             closure=closure,
-            argdefs=annotate.__defaults__,
-            kwdefaults=annotate.__kwdefaults__,
+            argdefs=annotate_defaults,
+            kwdefaults=annotate_kwdefaults,
         )
-        result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        if isinstance(annotate.__call__, types.MethodType):
+            result = func(annotate.__call__.__self__, Format.VALUE_WITH_FAKE_GLOBALS)
+        else:
+            result = func(Format.VALUE_WITH_FAKE_GLOBALS)
         globals.transmogrify(cell_dict)
         if _is_evaluate:
             if isinstance(result, ForwardRef):
@@ -833,12 +846,13 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
 
 
 def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
-    if not annotate.__closure__:
+    closure = _get_annotate_attr(annotate, "__closure__", None)
+    if not closure:
         return None, None
     freevars = annotate.__code__.co_freevars
     new_closure = []
     cell_dict = {}
-    for i, cell in enumerate(annotate.__closure__):
+    for i, cell in enumerate(closure):
         if i < len(freevars):
             name = freevars[i]
         else:
@@ -857,7 +871,7 @@ def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluat
                 name,
                 cell=cell,
                 owner=owner,
-                globals=annotate.__globals__,
+                globals=_get_annotate_attr(annotate, "__globals__", {}),
                 is_class=is_class,
                 stringifier_dict=stringifier_dict,
             )
@@ -877,6 +891,17 @@ def _stringify_single(anno):
         return ast.unparse(_template_to_ast(anno))
     else:
         return repr(anno)
+
+
+def _get_annotate_attr(annotate, attr, default):
+    if (value := getattr(annotate, attr, None)) is not None:
+        return value
+
+    if call_method := getattr(annotate, "__call__", None):
+        if call_func := getattr(call_method, "__func__", None):
+            return getattr(call_func, attr, default)
+
+    return default
 
 
 def get_annotate_from_class_namespace(obj):
