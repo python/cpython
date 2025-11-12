@@ -158,22 +158,7 @@ error:
 static PyObject *
 test_set_contains_does_not_convert_unhashable_key(PyObject *self, PyObject *Py_UNUSED(obj))
 {
-    // The documentation of PySet_Contains state:
-    //
-    // int PySet_Contains(PyObject *anyset, PyObject *key)
-    //
-    // Part of the Stable ABI.
-    //
-    // ... Unlike the Python __contains__() method, this function does not
-    // automatically convert unhashable sets [key] into temporary frozensets.
-    // Raise a TypeError if the key is unhashable.
-    //
-    // That is to say {2,3} in {1, 2, frozenset({2,3})}
-    //                ^_ will be converted in a frozenset in Python code.
-    // But not if using PySet_Contains(..., key)
-    //
-    // We test that this behavior is unchanged as this is a stable API.
-
+    // see documentation of int PySet_Contains in c-api/set.rst
     PyObject *outer_set = PySet_New(NULL);
 
     PyObject *needle = PySet_New(NULL);
@@ -189,7 +174,6 @@ test_set_contains_does_not_convert_unhashable_key(PyObject *self, PyObject *Py_U
         return NULL;
     }
 
-    // Add an element to needle to make it {42}
     if (PySet_Add(needle, num) < 0) {
         Py_DECREF(outer_set);
         Py_DECREF(needle);
