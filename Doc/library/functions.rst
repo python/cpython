@@ -1616,6 +1616,31 @@ are always available.  They are listed here in alphabetical order.
    Output buffering is usually determined by *file*.
    However, if *flush* is true, the stream is forcibly flushed.
 
+.. note::
+
+   In Python, printing a string containing newline characters does not automatically flush stdout. 
+   Python performs buffering at the write/operation level, so newlines inside a single write 
+   do not necessarily trigger an immediate flush. The exact timing of output may vary depending 
+   on the environment:
+
+   - When stdout is connected to a terminal (TTY), output is line-buffered and typically flushes 
+     after the write completes.
+   - When stdout is redirected to a file or pipe, output may be fully buffered and not flush 
+     until the buffer fills or flush is requested.
+
+   For guaranteed immediate output, use ``flush=True`` or call ``sys.stdout.flush()`` explicitly. 
+   Running Python with the ``-u`` flag also forces unbuffered output, which may be useful in 
+   scripts requiring immediate writes.
+
+   Example:
+
+   .. code-block:: python
+
+      from time import sleep
+
+      print("Hello\nWorld", end='')  # Both lines appear together on TTY
+      sleep(3)
+      print("Hi there!")
 
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.
