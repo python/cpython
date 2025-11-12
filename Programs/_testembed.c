@@ -2223,7 +2223,9 @@ static int test_repeated_init_and_inittab(void)
     return 0;
 }
 
-static PyObject* create_module(PyObject* self, PyObject* spec) {
+static PyObject*
+create_module(PyObject* self, PyObject* spec)
+{
     PyObject *name = PyObject_GetAttrString(spec, "name");
     if (!name) {
         return NULL;
@@ -2241,7 +2243,9 @@ static PyObject* create_module(PyObject* self, PyObject* spec) {
     return NULL;
 }
 
-static PyObject* exec_module(PyObject* self, PyObject* mod) {
+static PyObject*
+exec_module(PyObject* self, PyObject* mod)
+{
     if (PyModule_Exec(mod) < 0) {
         return NULL;
     }
@@ -2266,7 +2270,8 @@ PyMODINIT_FUNC PyInit_create_static_module(void) {
     return PyModuleDef_Init(&create_static_module_def);
 }
 
-static int test_create_module_from_initfunc(void)
+static int
+test_create_module_from_initfunc(void)
 {
     wchar_t* argv[] = {
         PROGRAM_NAME,
