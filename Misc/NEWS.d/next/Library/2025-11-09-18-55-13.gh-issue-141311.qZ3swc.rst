@@ -1,0 +1,2 @@
+Fix assertion failure in :func:`!io.BytesIO.readinto` and undefined behavior
+arising when read position is above capcity in :class:`io.BytesIO`.
