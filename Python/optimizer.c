@@ -118,7 +118,13 @@ _PyOptimizer_Optimize(
 {
     _PyStackRef *stack_pointer = frame->stackpointer;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->jit);
+    if (!interp->jit) {
+        // gh-140936: It is possible that interp->jit will become false during
+        // interpreter finalization. However, the specialized JUMP_BACKWARD_JIT
+        // instruction may still be present. In this case, we should
+        // return immediately without optimization.
+        return 0;
+    }
     assert(!interp->compiling);
 #ifndef Py_GIL_DISABLED
     interp->compiling = true;
