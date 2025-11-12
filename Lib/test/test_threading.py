@@ -2264,12 +2264,8 @@ class TimerTests(BaseTestCase):
 class LockTests(lock_tests.LockTests):
     locktype = staticmethod(threading.Lock)
 
-class PyRLockTests(lock_tests.RLockTests):
-    locktype = staticmethod(threading._PyRLock)
-
-@unittest.skipIf(threading._CRLock is None, 'RLock not implemented in C')
-class CRLockTests(lock_tests.RLockTests):
-    locktype = staticmethod(threading._CRLock)
+class RLockTests(lock_tests.RLockTests):
+    locktype = staticmethod(threading.RLock)
 
     def test_signature(self):  # gh-102029
         with warnings.catch_warnings(record=True) as warnings_log:
