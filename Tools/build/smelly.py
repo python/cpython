@@ -127,7 +127,7 @@ def get_extension_libraries():
 
     builddir = config_dir / pybuilddir
     result = []
-    for path in builddir.glob('**/*.so'):
+    for path in sorted(builddir.glob('**/*.so')):
         if path.stem == IGNORED_EXTENSION:
             continue
         result.append(Library(path, is_dynamic=True))
@@ -162,7 +162,7 @@ def main():
     for library in libraries:
         symbols = get_exported_symbols(library)
         print(f"{library.path}: {len(symbols)} symbol(s) found")
-        for symbol in symbols:
+        for symbol in sorted(symbols):
             print("    -", symbol.name)
             if symbol.is_smelly:
                 smelly_symbols.append(symbol)
