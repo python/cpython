@@ -516,9 +516,28 @@ characters:
 Non-ASCII characters in names
 -----------------------------
 
-Besides ``A-Z``, ``a-z``, ``_`` and ``0-9``, names can use "letter-like"
-and "number-like" characters from outside the ASCII range,
-as detailed in this section.
+Python identifiers may contain all sorts of characters.
+For example, ``ř_1``, ``蛇``, or ``साँप``  are valid identifiers.
+However, ``r〰2``, ``€``, or ``🐍`` are not.
+Additionally, some variations are considered equivalent: for example,
+``fi`` (2 letters) and ``ﬁ`` (1 ligature).
+
+
+A :ref:`name token <identifiers>` that only contains ASCII characters
+(``A-Z``, ``a-z``, ``_`` and ``0-9``) is always valid, and distinct from
+different ASCII-only names.
+The rules are somewhat more complicated when using non-ASCII characters.
+
+Informally, all names must be composed of letters, digits, numbers and
+underscores, and cannot start with a digit.
+
+
+
+
+Besides ``A-Z``, ``a-z``, ``_`` and ``0-9``, names can use characters
+from outside the ASCII range.
+
+, as detailed in this section.
 
 All names are converted into the `normalization form`_ NFKC while parsing.
 This means that, for example, some typographic variants of characters are
@@ -537,6 +556,9 @@ converted to their "basic" form. For example, ``nᵘₘᵇₑʳ`` normalizes to
    For example, the variable defined above is accessible at run time in the
    :func:`globals` dictionary as ``globals()["number"]`` but not
    ``globals()["nᵘₘᵇₑʳ"]``.
+
+Similarly to how ASCII-only names must contain only letters, numbers and
+the underscore, and cannot start with a digit, the normalized name must
 
 The first character of a normalized identifier must be "letter-like".
 Formally, this means it must belong to the set ``id_start``,
