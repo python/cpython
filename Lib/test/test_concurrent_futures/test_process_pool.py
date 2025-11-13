@@ -106,6 +106,21 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertIn('raise RuntimeError(123) # some comment',
                       f1.getvalue())
 
+    def test_traceback_when_child_process_terminates_abruptly(self):
+        # gh-139462 enhancement - BrokenProcessPool exceptions
+        # should describe which process terminated.
+        exit_code = 99
+        with self.executor_type(max_workers=1) as executor:
+            future = executor.submit(os._exit, exit_code)
+            with self.assertRaises(BrokenProcessPool) as bpe:
+                future.result()
+
+        cause = bpe.exception.__cause__
+        self.assertIsInstance(cause, futures.process._RemoteTraceback)
+        self.assertIn(
+            f"terminated abruptly with exit code {exit_code}", cause.tb
+        )
+
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @hashlib_helper.requires_hashdigest('md5')
     def test_ressources_gced_in_workers(self):

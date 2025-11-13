@@ -307,6 +307,13 @@ Other language changes
   not only integers or floats, although this does not improve precision.
   (Contributed by Serhiy Storchaka in :gh:`67795`.)
 
+* Many functions related to compiling or parsing Python code, such as
+  :func:`compile`, :func:`ast.parse`, :func:`symtable.symtable`,
+  and :func:`importlib.abc.InspectLoader.source_to_code`, now allow to pass
+  the module name. It is needed to unambiguous :ref:`filter <warning-filter>`
+  syntax warnings by module name.
+  (Contributed by Serhiy Storchaka in :gh:`135801`.)
+
 
 New modules
 ===========
@@ -369,6 +376,16 @@ collections.abc
   :mod:`!collections.abc` module.
 
 
+concurrent.futures
+------------------
+
+* Improved error reporting when a child process in a
+  :class:`concurrent.futures.ProcessPoolExecutor` terminates abruptly.
+  The resulting traceback will now tell you the PID and exit code of the
+  terminated process.
+  (Contributed by Jonathan Berg in :gh:`139486`.)
+
+
 dataclasses
 -----------
 
@@ -429,6 +446,14 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+inspect
+-------
+
+* Add parameters *inherit_class_doc* and *fallback_to_class_doc*
+  for :func:`~inspect.getdoc`.
+  (Contributed by Serhiy Storchaka in :gh:`132686`.)
+
+
 locale
 ------
 
@@ -451,9 +476,12 @@ math
 mimetypes
 ---------
 
+* Add ``application/node`` MIME type for ``.cjs`` extension. (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
-  (Contributed by Charlie Lin in :gh:`140165`)
+  (Contributed by Charlie Lin in :gh:`140165`.)
+* Changed the MIME type for ``.ai`` files to ``application/pdf``.
+  (Contributed by Stan Ulbrych in :gh:`141239`.)
 
 
 mmap
@@ -1075,6 +1103,10 @@ Deprecated C APIs
 * :c:member:`~PyConfig.bytes_warning` is deprecated
   since 3.15 and will be removed in 3.17.
   (Contributed by Nikita Sobolev in :gh:`136355`.)
+
+* :c:macro:`!Py_INFINITY` macro is :term:`soft deprecated`,
+  use the C11 standard ``<math.h>`` :c:macro:`!INFINITY` instead.
+  (Contributed by Sergey B Kirpichev in :gh:`141004`.)
 
 * :c:macro:`!Py_MATH_El` and :c:macro:`!Py_MATH_PIl` are deprecated
   since 3.15 and will be removed in 3.20.
