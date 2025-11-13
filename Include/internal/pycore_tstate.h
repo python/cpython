@@ -37,6 +37,10 @@ typedef struct _PyThreadStateImpl {
     uintptr_t c_stack_soft_limit;
     uintptr_t c_stack_hard_limit;
 
+    // PyUnstable_ThreadState_ResetStackProtection() values
+    uintptr_t c_stack_init_base;
+    uintptr_t c_stack_init_top;
+
     PyObject *asyncio_running_loop; // Strong reference
     PyObject *asyncio_running_task; // Strong reference
 
