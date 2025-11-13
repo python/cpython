@@ -1,0 +1,2 @@
+Ignore :exc:`AttributeError` when setting a module's ``__file__`` attribute
+when loading an extension module packaged as Apple Framework.

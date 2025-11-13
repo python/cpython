@@ -2637,6 +2637,49 @@ class TestUopsOptimization(unittest.TestCase):
 
         f2()
 
+    def test_next_instr_for_exception_handler_set(self):
+        # gh-140104: We just want the exception to be caught properly.
+        def f():
+            for i in range(TIER2_THRESHOLD + 3):
+                try:
+                    undefined_variable(i)
+                except Exception:
+                    pass
+
+        f()
+
+    def test_next_instr_for_exception_handler_set_lasts_instr(self):
+        # gh-140104: We just want the exception to be caught properly.
+        def f():
+            a_list = []
+            for _ in range(TIER2_THRESHOLD + 3):
+                try:
+                    a_list[""] = 0
+                except Exception:
+                    pass
+
+        f()
+
+    def test_interpreter_finalization_with_generator_alive(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import sys
+            t = tuple(range(%d))
+            def simple_for():
+                for x in t:
+                    x
+
+            def gen():
+                try:
+                    yield
+                except:
+                    simple_for()
+
+            sys.settrace(lambda *args: None)
+            simple_for()
+            g = gen()
+            next(g)
+        """ % _testinternalcapi.SPECIALIZATION_THRESHOLD))
+
 
 def global_identity(x):
     return x

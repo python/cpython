@@ -1308,8 +1308,8 @@ The parts are separated by a decimal point, ``.``::
    2.71828
    4.0
 
-Unlike in integer literals, leading zeros are allowed in the numeric parts.
-For example, ``077.010`` is legal, and denotes the same number as ``77.10``.
+Unlike in integer literals, leading zeros are allowed.
+For example, ``077.010`` is legal, and denotes the same number as ``77.01``.
 
 As in integer literals, single underscores may occur between digits to help
 readability::

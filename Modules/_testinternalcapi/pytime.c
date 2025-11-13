@@ -17,7 +17,7 @@ test_pytime_fromseconds(PyObject *self, PyObject *args)
         return NULL;
     }
     PyTime_t ts = _PyTime_FromSeconds(seconds);
-    return _PyTime_AsLong(ts);
+    return PyLong_FromInt64(ts);
 }
 
 static int
@@ -49,7 +49,7 @@ test_pytime_fromsecondsobject(PyObject *self, PyObject *args)
     if (_PyTime_FromSecondsObject(&ts, obj, round) == -1) {
         return NULL;
     }
-    return _PyTime_AsLong(ts);
+    return PyLong_FromInt64(ts);
 }
 
 static PyObject *
@@ -64,7 +64,7 @@ test_PyTime_AsTimeval(PyObject *self, PyObject *args)
         return NULL;
     }
     PyTime_t t;
-    if (_PyTime_FromLong(&t, obj) < 0) {
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     struct timeval tv;
@@ -91,7 +91,7 @@ test_PyTime_AsTimeval_clamp(PyObject *self, PyObject *args)
         return NULL;
     }
     PyTime_t t;
-    if (_PyTime_FromLong(&t, obj) < 0) {
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     struct timeval tv;
@@ -113,7 +113,7 @@ test_PyTime_AsTimespec(PyObject *self, PyObject *args)
         return NULL;
     }
     PyTime_t t;
-    if (_PyTime_FromLong(&t, obj) < 0) {
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     struct timespec ts;
@@ -131,7 +131,7 @@ test_PyTime_AsTimespec_clamp(PyObject *self, PyObject *args)
         return NULL;
     }
     PyTime_t t;
-    if (_PyTime_FromLong(&t, obj) < 0) {
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     struct timespec ts;
@@ -149,14 +149,14 @@ test_PyTime_AsMilliseconds(PyObject *self, PyObject *args)
         return NULL;
     }
     PyTime_t t;
-    if (_PyTime_FromLong(&t, obj) < 0) {
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     if (check_time_rounding(round) < 0) {
         return NULL;
     }
     PyTime_t ms = _PyTime_AsMilliseconds(t, round);
-    return _PyTime_AsLong(ms);
+    return PyLong_FromInt64(ms);
 }
 
 static PyObject *
@@ -168,14 +168,14 @@ test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
         return NULL;
     }
     PyTime_t t;
-    if (_PyTime_FromLong(&t, obj) < 0) {
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     if (check_time_rounding(round) < 0) {
         return NULL;
     }
     PyTime_t us = _PyTime_AsMicroseconds(t, round);
-    return _PyTime_AsLong(us);
+    return PyLong_FromInt64(us);
 }
 
 static PyObject *

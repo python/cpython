@@ -1848,6 +1848,7 @@ class Misc:
         return self.tk.call(self._w, 'cget', '-' + key)
 
     __getitem__ = cget
+    __iter__ = None  # prevent using __getitem__ for iteration
 
     def __setitem__(self, key, value):
         self.configure({key: value})
@@ -4279,6 +4280,8 @@ class Image:
 
     def __getitem__(self, key):
         return self.tk.call(self.name, 'configure', '-'+key)
+
+    __iter__ = None  # prevent using __getitem__ for iteration
 
     def configure(self, **kw):
         """Configure the image."""

@@ -2157,6 +2157,19 @@ expression support in the :mod:`re` module).
    character, for example uppercase characters may only follow uncased characters
    and lowercase characters only cased ones.  Return ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Spam, Spam, Spam'.istitle()
+      True
+      >>> 'spam, spam, spam'.istitle()
+      False
+      >>> 'SPAM, SPAM, SPAM'.istitle()
+      False
+
+   See also :meth:`title`.
+
 
 .. method:: str.isupper()
 
@@ -2533,6 +2546,8 @@ expression support in the :mod:`re` module).
         ...
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
+
+   See also :meth:`istitle`.
 
 
 .. method:: str.translate(table, /)
@@ -3157,6 +3172,30 @@ objects.
       (bytearray(b'abc\x00\x00'), 5)
 
       .. versionadded:: 3.14
+
+   .. method:: take_bytes(n=None, /)
+
+      Remove the first *n* bytes from the bytearray and return them as an immutable
+      :class:`bytes`.
+      By default (if *n* is ``None``), return all bytes and clear the bytearray.
+
+      If *n* is negative, index from the end and take the first :func:`len`
+      plus *n* bytes. If *n* is out of bounds, raise :exc:`IndexError`.
+
+      Taking less than the full length will leave remaining bytes in the
+      :class:`bytearray`, which requires a copy. If the remaining bytes should be
+      discarded, use :func:`~bytearray.resize` or :keyword:`del` to truncate
+      then :func:`~bytearray.take_bytes` without a size.
+
+      .. impl-detail::
+
+         Taking all bytes is a zero-copy operation.
+
+      .. versionadded:: next
+
+         See the :ref:`What's New <whatsnew315-bytearray-take-bytes>` entry for
+         common code patterns which can be optimized with
+         :func:`bytearray.take_bytes`.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -5929,7 +5968,7 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is commonly used used to indicate that something is omitted.
+This object is commonly used to indicate that something is omitted.
 It supports no special operations.  There is exactly one ellipsis object, named
 :const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()`` produces the
 :const:`Ellipsis` singleton.
