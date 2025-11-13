@@ -953,7 +953,7 @@ class Thread:
     def __repr__(self):
         assert self._initialized, "Thread.__init__() was not called"
         status = "initial"
-        if self._os_thread_handle.is_running():
+        if self._os_thread_handle.is_bootstraped():
             status = "started"
         if self._os_thread_handle.is_done():
             status = "stopped"
@@ -976,7 +976,7 @@ class Thread:
         if not self._initialized:
             raise RuntimeError("thread.__init__() not called")
 
-        if self._os_thread_handle.is_running():
+        if self._os_thread_handle.is_bootstraped():
             raise RuntimeError("threads can only be started once")
 
         with _active_limbo_lock:
@@ -999,13 +999,15 @@ class Thread:
             with _active_limbo_lock:
                 del _limbo[self]
             raise
-        self._os_thread_handle.wait_bootstrap_done()
+        self._os_thread_handle.wait_bootstraped()
 
         # It's possible that the _started event never occurs from the new Thread;
         # e.g., it didn't have enough memory to call the initialization part of _bootstrap_inner.
-        if self._os_thread_handle.is_done():
+        if self._os_thread_handle.is_failed():
             with _active_limbo_lock:
                 _limbo.pop(self, None)
+                if self._ident:
+                    _active.pop(self._ident, None)
 
     def run(self):
         """Method representing the thread's activity.
@@ -1065,7 +1067,7 @@ class Thread:
             if _HAVE_THREAD_NATIVE_ID:
                 self._set_native_id()
             self._set_os_name()
-            self._os_thread_handle.set_bootstrap_done()
+            self._os_thread_handle.set_bootstraped()
             with _active_limbo_lock:
                 _active[self._ident] = self
                 del _limbo[self]
@@ -1113,7 +1115,7 @@ class Thread:
         """
         if not self._initialized:
             raise RuntimeError("Thread.__init__() not called")
-        if not self._os_thread_handle.is_done() and not self._os_thread_handle.is_running():
+        if not self._os_thread_handle.is_done() and not self._os_thread_handle.is_bootstraped():
             raise RuntimeError("cannot join thread before it is started")
         if self is current_thread():
             raise RuntimeError("cannot join current thread")
@@ -1176,7 +1178,7 @@ class Thread:
 
         """
         assert self._initialized, "Thread.__init__() not called"
-        return self._os_thread_handle.is_running() and not self._os_thread_handle.is_done()
+        return self._os_thread_handle.is_bootstraped() and not self._os_thread_handle.is_done()
 
     @property
     def daemon(self):
@@ -1199,7 +1201,7 @@ class Thread:
             raise RuntimeError("Thread.__init__() not called")
         if daemonic and not _daemon_threads_allowed():
             raise RuntimeError('daemon threads are disabled in this interpreter')
-        if self._os_thread_handle.is_running() or self._os_thread_handle.is_done():
+        if self._os_thread_handle.is_bootstraped() or self._os_thread_handle.is_done():
             raise RuntimeError("cannot set daemon status of active thread")
         self._daemonic = daemonic
 
@@ -1441,7 +1443,7 @@ class _DummyThread(Thread):
         _DeleteDummyThreadOnDel(self)
 
     def is_alive(self):
-        if self._os_thread_handle.is_running() and not self._os_thread_handle.is_done():
+        if self._os_thread_handle.is_bootstraped() and not self._os_thread_handle.is_done():
             return True
         raise RuntimeError("thread is not alive")
 

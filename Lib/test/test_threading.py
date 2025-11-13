@@ -1476,6 +1476,7 @@ class ThreadTests(BaseTestCase):
                 mock.patch.object(thread, '_set_ident', _set_ident_memory_error)
             ):
                 thread.start()
+                thread.join()
                 self.assertFalse(thread.is_alive())
                 self.assertFalse(thread in threading._limbo)
                 self.assertFalse(thread in threading._active)

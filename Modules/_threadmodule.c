@@ -103,7 +103,8 @@ typedef enum {
     THREAD_HANDLE_NOT_STARTED = 1,
     THREAD_HANDLE_STARTING = 2,
     THREAD_HANDLE_RUNNING = 3,
-    THREAD_HANDLE_DONE = 4,
+    THREAD_HANDLE_FAILED = 4,
+    THREAD_HANDLE_DONE = 5,
 } ThreadHandleState;
 
 // A handle to wait for thread completion.
@@ -288,7 +289,8 @@ ThreadHandle_decref(ThreadHandle *self)
     //   1. This is the destructor; nothing else holds a reference.
     //   2. The refcount going to zero is a "synchronizes-with" event; all
     //      changes from other threads are visible.
-    if (self->state == THREAD_HANDLE_RUNNING && !detach_thread(self)) {
+    if ((self->state == THREAD_HANDLE_RUNNING || self->state == THREAD_HANDLE_FAILED) 
+        && !detach_thread(self)) {
         self->state = THREAD_HANDLE_DONE;
     }
 
@@ -396,8 +398,8 @@ thread_run(void *boot_raw)
             PyErr_FormatUnraisable(
                 "Exception ignored in thread started by %R", boot->func);
         }
-        // TODO: should we use a new state for failed bootsrap Thread
-        set_thread_handle_state(handle, THREAD_HANDLE_DONE);
+        set_thread_handle_state(handle, THREAD_HANDLE_FAILED);
+        // Notify that the bootstraped is done, in case the Python call didn't manage too (e.g. Memory error)
         _PyEvent_Notify(&handle->thread_is_bootstraped);
     }
     else {
@@ -509,7 +511,10 @@ static int
 join_thread(void *arg)
 {
     ThreadHandle *handle = (ThreadHandle*)arg;
-    assert(get_thread_handle_state(handle) >= THREAD_HANDLE_RUNNING);
+    assert(
+        get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING ||
+        get_thread_handle_state(handle) == THREAD_HANDLE_FAILED
+    );
     PyThread_handle_t os_handle;
     if (ThreadHandle_get_os_handle(handle, &os_handle)) {
         int err = 0;
@@ -629,7 +634,7 @@ ThreadHandle_set_done(ThreadHandle *self)
 }
 
 static void
-ThreadHandle_set_bootstrap_done(ThreadHandle *self)
+ThreadHandle_set_bootstraped(ThreadHandle *self)
 {
     _PyEvent_Notify(&self->thread_is_bootstraped);
 }
@@ -721,11 +726,10 @@ PyThreadHandleObject_join(PyObject *op, PyObject *args)
 }
 
 static PyObject *
-PyThreadHandleObject_is_running(PyObject *op, PyObject *Py_UNUSED(dummy))
+PyThreadHandleObject_is_bootstraped(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
-    ThreadHandleState state = get_thread_handle_state(self->handle);
-    if (state == THREAD_HANDLE_RUNNING) {
+    if (_PyEvent_IsSet(&self->handle->thread_is_bootstraped)) {
         Py_RETURN_TRUE;
     }
     else {
@@ -734,7 +738,7 @@ PyThreadHandleObject_is_running(PyObject *op, PyObject *Py_UNUSED(dummy))
 }
 
 static PyObject *
-PyThreadHandleObject_wait_bootstrap_done(PyObject *op, PyObject *Py_UNUSED(dummy))
+PyThreadHandleObject_wait_bootstraped(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
     PyEvent_Wait(&self->handle->thread_is_bootstraped);
@@ -742,11 +746,23 @@ PyThreadHandleObject_wait_bootstrap_done(PyObject *op, PyObject *Py_UNUSED(dummy
 }
 
 static PyObject *
-PyThreadHandleObject_set_bootstrap_done(PyObject *op, PyObject *Py_UNUSED(dummy))
+PyThreadHandleObject_set_bootstraped(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
-    ThreadHandle_set_bootstrap_done(self->handle);
+    ThreadHandle_set_bootstraped(self->handle);
     Py_RETURN_NONE;
+}
+
+static PyObject *
+PyThreadHandleObject_is_failed(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
+    if (get_thread_handle_state(self->handle) == THREAD_HANDLE_FAILED) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
 }
 
 static PyObject *
@@ -782,9 +798,10 @@ static PyGetSetDef ThreadHandle_getsetlist[] = {
 static PyMethodDef ThreadHandle_methods[] = {
     {"join", PyThreadHandleObject_join, METH_VARARGS, NULL},
     {"_set_done", PyThreadHandleObject_set_done, METH_NOARGS, NULL},
-    {"wait_bootstrap_done", PyThreadHandleObject_wait_bootstrap_done, METH_NOARGS, NULL},
-    {"set_bootstrap_done", PyThreadHandleObject_set_bootstrap_done, METH_NOARGS, NULL},
-    {"is_running", PyThreadHandleObject_is_running, METH_NOARGS, NULL},
+    {"wait_bootstraped", PyThreadHandleObject_wait_bootstraped, METH_NOARGS, NULL},
+    {"set_bootstraped", PyThreadHandleObject_set_bootstraped, METH_NOARGS, NULL},
+    {"is_bootstraped", PyThreadHandleObject_is_bootstraped, METH_NOARGS, NULL},
+    {"is_failed", PyThreadHandleObject_is_failed, METH_NOARGS, NULL},
     {"is_done", PyThreadHandleObject_is_done, METH_NOARGS, NULL},
     {0, 0}
 };
@@ -2511,6 +2528,7 @@ thread__make_thread_handle(PyObject *module, PyObject *identobj)
     hobj->handle->ident = ident;
     hobj->handle->state = THREAD_HANDLE_RUNNING;
     PyMutex_Unlock(&hobj->handle->mutex);
+    _PyEvent_Notify(&hobj->handle->thread_is_bootstraped);
     return (PyObject*) hobj;
 }
 
