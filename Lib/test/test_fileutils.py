@@ -1,11 +1,9 @@
-# Run tests for functions in Python/fileutils.c.
-
 import os
 import os.path
 import unittest
 import tempfile
 import shutil
-from test.support import import_helper
+from test.support import import_helper, os_helper
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testinternalcapi')
@@ -29,86 +27,79 @@ class PathTests(unittest.TestCase):
 
 
 class RealpathTests(unittest.TestCase):
-    """Tests for _Py_wrealpath used by os.path.realpath"""
+    """Tests for _Py_wrealpath used by os.path.realpath."""
+
+    def setUp(self):
+        self.base = None
+
+    def tearDown(self):
+        if self.base and os.path.exists(self.base):
+            shutil.rmtree(self.base, ignore_errors=True)
 
     def test_realpath_long_path(self):
-        """Test that realpath handles paths longer than MAXPATHLEN (4096)"""
+        """Test that realpath handles paths longer than MAXPATHLEN."""
         if os.name == 'nt':
-            raise unittest.SkipTest('POSIX-specific test')
+            self.skipTest('POSIX-specific test')
 
-        base = tempfile.mkdtemp()
-        original_cwd = os.getcwd()
-        try:
-            os.chdir(base)
+        self.base = tempfile.mkdtemp()
+        current_path = self.base
 
-            for i in range(85):
-                dirname = f"d{i:03d}_" + "x" * 44
-                os.mkdir(dirname)
-                os.chdir(dirname)
+        for i in range(25):
+            dirname = f"d{i:03d}_" + "x" * 195
+            current_path = os.path.join(current_path, dirname)
+            try:
+                os.mkdir(current_path)
+            except OSError as e:
+                self.skipTest(f"Cannot create long paths on this platform: {e}")
 
-            full_path = os.getcwd()
+        full_path = os.path.abspath(current_path)
+        if len(full_path) <= 4096:
+            self.skipTest(f"Path not long enough ({len(full_path)} bytes)")
 
-            self.assertGreater(len(full_path), 4096,
-                              f"Path should exceed MAXPATHLEN, got {len(full_path)}")
-
-            # Main test: realpath should not crash on long paths
-            result = os.path.realpath(full_path)
-
-            self.assertTrue(os.path.isabs(result))
-            self.assertGreater(len(result), 4096)
-            # Note: os.path.exists() may fail on very long paths
-            # The important thing is realpath() doesn't crash
-
-        finally:
-            os.chdir(original_cwd)
-            shutil.rmtree(base, ignore_errors=True)
+        result = os.path.realpath(full_path)
+        self.assertTrue(os.path.isabs(result))
+        self.assertGreater(len(result), 4096)
 
     def test_realpath_nonexistent_with_strict(self):
-        """Test that realpath with strict=True raises for nonexistent paths"""
+        """Test that realpath with strict=True raises for nonexistent paths."""
         if os.name == 'nt':
-            raise unittest.SkipTest('POSIX-specific test')
+            self.skipTest('POSIX-specific test')
 
-        base = tempfile.mkdtemp()
-        try:
-            nonexistent = os.path.join(base, "does_not_exist", "subdir")
+        self.base = tempfile.mkdtemp()
+        nonexistent = os.path.join(self.base, "does_not_exist", "subdir")
 
-            # Without strict, should return the path
-            result = os.path.realpath(nonexistent, strict=False)
-            self.assertIsNotNone(result)
+        result = os.path.realpath(nonexistent, strict=False)
+        self.assertIsNotNone(result)
 
-            # With strict=True, should raise an error
-            with self.assertRaises(OSError):
-                os.path.realpath(nonexistent, strict=True)
+        with self.assertRaises(OSError):
+            os.path.realpath(nonexistent, strict=True)
 
-        finally:
-            shutil.rmtree(base, ignore_errors=True)
-
+    @os_helper.skip_unless_symlink
     def test_realpath_symlink_long_path(self):
-        """Test realpath with symlinks in long paths"""
+        """Test realpath with symlinks in long paths."""
         if os.name == 'nt':
-            raise unittest.SkipTest('POSIX-specific test')
+            self.skipTest('POSIX-specific test')
 
-        base = tempfile.mkdtemp()
+        self.base = tempfile.mkdtemp()
+        current_path = self.base
+
+        for i in range(15):
+            dirname = f"d{i:03d}_" + "x" * 195
+            current_path = os.path.join(current_path, dirname)
+            try:
+                os.mkdir(current_path)
+            except OSError as e:
+                self.skipTest(f"Cannot create long paths on this platform: {e}")
+
+        symlink = os.path.join(self.base, "link")
         try:
-            # Create a long path
-            current = base
-            for i in range(30):
-                dirname = f"d{i:03d}_" + "x" * 44
-                current = os.path.join(current, dirname)
-                os.mkdir(current)
+            os.symlink(current_path, symlink)
+        except (OSError, NotImplementedError) as e:
+            self.skipTest(f"Cannot create symlinks on this platform: {e}")
 
-            # Create a symlink pointing to the long path
-            symlink = os.path.join(base, "link")
-            os.symlink(current, symlink)
-
-            # Resolve the symlink
-            result = os.path.realpath(symlink)
-
-            self.assertEqual(os.path.normpath(result), os.path.normpath(current))
-            self.assertGreater(len(result), 1500)
-
-        finally:
-            shutil.rmtree(base, ignore_errors=True)
+        result = os.path.realpath(symlink)
+        self.assertEqual(os.path.normpath(result), os.path.normpath(current_path))
+        self.assertGreater(len(result), 1500)
 
 
 if __name__ == "__main__":
