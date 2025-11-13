@@ -1397,6 +1397,16 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b.append(ord('p'))
         self.assertEqual(b, b'p')
 
+        # Cleared object should be empty.
+        b = bytearray(b'abc')
+        b.clear()
+        self.assertEqual(b.__alloc__(), 0)
+        base_size = sys.getsizeof(bytearray())
+        self.assertEqual(sys.getsizeof(b), base_size)
+        c = b.copy()
+        self.assertEqual(c.__alloc__(), 0)
+        self.assertEqual(sys.getsizeof(c), base_size)
+
     def test_copy(self):
         b = bytearray(b'abc')
         bb = b.copy()
@@ -1458,6 +1468,61 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
         self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
 
+    def test_take_bytes(self):
+        ba = bytearray(b'ab')
+        self.assertEqual(ba.take_bytes(), b'ab')
+        self.assertEqual(len(ba), 0)
+        self.assertEqual(ba, bytearray(b''))
+        self.assertEqual(ba.__alloc__(), 0)
+        base_size = sys.getsizeof(bytearray())
+        self.assertEqual(sys.getsizeof(ba), base_size)
+
+        # Positive and negative slicing.
+        ba = bytearray(b'abcdef')
+        self.assertEqual(ba.take_bytes(1), b'a')
+        self.assertEqual(ba, bytearray(b'bcdef'))
+        self.assertEqual(len(ba), 5)
+        self.assertEqual(ba.take_bytes(-5), b'')
+        self.assertEqual(ba, bytearray(b'bcdef'))
+        self.assertEqual(len(ba), 5)
+        self.assertEqual(ba.take_bytes(-3), b'bc')
+        self.assertEqual(ba, bytearray(b'def'))
+        self.assertEqual(len(ba), 3)
+        self.assertEqual(ba.take_bytes(3), b'def')
+        self.assertEqual(ba, bytearray(b''))
+        self.assertEqual(len(ba), 0)
+
+        # Take nothing from emptiness.
+        self.assertEqual(ba.take_bytes(0), b'')
+        self.assertEqual(ba.take_bytes(), b'')
+        self.assertEqual(ba.take_bytes(None), b'')
+
+        # Out of bounds, bad take value.
+        self.assertRaises(IndexError, ba.take_bytes, -1)
+        self.assertRaises(TypeError, ba.take_bytes, 3.14)
+        ba = bytearray(b'abcdef')
+        self.assertRaises(IndexError, ba.take_bytes, 7)
+
+        # Offset between physical and logical start (ob_bytes != ob_start).
+        ba = bytearray(b'abcde')
+        del ba[:2]
+        self.assertEqual(ba, bytearray(b'cde'))
+        self.assertEqual(ba.take_bytes(), b'cde')
+
+        # Overallocation at end.
+        ba = bytearray(b'abcde')
+        del ba[-2:]
+        self.assertEqual(ba, bytearray(b'abc'))
+        self.assertEqual(ba.take_bytes(), b'abc')
+        ba = bytearray(b'abcde')
+        ba.resize(4)
+        self.assertEqual(ba.take_bytes(), b'abcd')
+
+        # Take of a bytearray with references should fail.
+        ba = bytearray(b'abc')
+        with memoryview(ba) as mv:
+            self.assertRaises(BufferError, ba.take_bytes)
+        self.assertEqual(ba.take_bytes(), b'abc')
 
     def test_setitem(self):
         def setitem_as_mapping(b, i, val):
@@ -2564,6 +2629,18 @@ class FreeThreadingTest(unittest.TestCase):
             c = a.zfill(0x400000)
             assert not c or c[-1] not in (0xdd, 0xcd)
 
+        def take_bytes(b, a):  # MODIFIES!
+            b.wait()
+            c = a.take_bytes()
+            assert not c or c[0] == 48  # '0'
+
+        def take_bytes_n(b, a):  # MODIFIES!
+            b.wait()
+            try:
+                c = a.take_bytes(10)
+                assert c == b'0123456789'
+            except IndexError: pass
+
         def check(funcs, a=None, *args):
             if a is None:
                 a = bytearray(b'0' * 0x400000)
@@ -2624,6 +2701,10 @@ class FreeThreadingTest(unittest.TestCase):
         check([clear] + [splitlines] * 10, bytearray(b'\n' * 0x400))
         check([clear] + [startswith] * 10)
         check([clear] + [strip] * 10)
+
+        check([clear] + [take_bytes] * 10)
+        check([take_bytes_n] * 10, bytearray(b'0123456789' * 0x400))
+        check([take_bytes_n] * 10, bytearray(b'0123456789' * 5))
 
         check([clear] + [contains] * 10)
         check([clear] + [subscript] * 10)

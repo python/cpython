@@ -788,6 +788,17 @@ Exception Classes
 Exception Objects
 =================
 
+.. c:function:: int PyExceptionInstance_Check(PyObject *op)
+
+   Return true if *op* is an instance of :class:`BaseException`, false
+   otherwise. This function always succeeds.
+
+
+.. c:macro:: PyExceptionInstance_Class(op)
+
+   Equivalent to :c:func:`Py_TYPE(op) <Py_TYPE>`.
+
+
 .. c:function:: PyObject* PyException_GetTraceback(PyObject *ex)
 
    Return the traceback associated with the exception as a new reference, as
@@ -964,6 +975,9 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    *where* should be a UTF-8 encoded string such as ``" in instance check"`` to
    be concatenated to the :exc:`RecursionError` message caused by the recursion
    depth limit.
+
+   .. seealso::
+      The :c:func:`PyUnstable_ThreadState_SetStackProtection` function.
 
    .. versionchanged:: 3.9
       This function is now also available in the :ref:`limited API <limited-c-api>`.
