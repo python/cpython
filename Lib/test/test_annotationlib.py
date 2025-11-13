@@ -2149,6 +2149,51 @@ class TestForwardRefClass(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             fr.evaluate()
 
+    def test_re_evaluate_generics(self):
+        global global_alias
+
+        # If we've already run this test before,
+        # ensure the variable is still undefined
+        if "global_alias" in globals():
+            del global_alias
+
+        class C:
+            x: global_alias[int]
+
+        # Evaluate the ForwardRef once
+        evaluated = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            format=Format.FORWARDREF
+        )
+
+        # Now define the global and ensure that the ForwardRef evaluates
+        global_alias = list
+        self.assertEqual(evaluated.evaluate(), list[int])
+
+    def test_fwdref_evaluate_argument_mutation(self):
+        class C[T]:
+            nonlocal alias
+            x: alias[T]
+
+        # Mutable arguments
+        globals_ = globals()
+        globals_copy = globals_.copy()
+        locals_ = locals()
+        locals_copy = locals_.copy()
+
+        # Evaluate the ForwardRef, ensuring we use __cell__ and type params
+        get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            globals=globals_,
+            locals=locals_,
+            type_params=C.__type_params__,
+            format=Format.FORWARDREF,
+        )
+
+        # Check if the passed in mutable arguments equal the originals
+        self.assertEqual(globals_, globals_copy)
+        self.assertEqual(locals_, locals_copy)
+
+        alias = list
+
     def test_fwdref_final_class(self):
         with self.assertRaises(TypeError):
             class C(ForwardRef):
