@@ -483,16 +483,14 @@ Ordered Dictionaries
 ^^^^^^^^^^^^^^^^^^^^
 
 Python's C API provides interface for :class:`collections.OrderedDict` from C.
-These APIs are mostly redundant; prefer ``PyDict*`` where possible.
+Since Python 3.7, dictionaries are ordered by default, so there is usually
+little need for these functions; prefer ``PyDict*`` where possible.
 
 
 .. c:var:: PyTypeObject PyODict_Type
 
    Type object for ordered dictionaries. This is the same object as
    :class:`collections.OrderedDict` in the Python layer.
-
-   Since Python 3.7, dictionaries are ordered by default, so there is usually
-   little need for this object.
 
 
 .. c:function:: int PyODict_Check(PyObject *od)
