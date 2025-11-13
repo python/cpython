@@ -928,41 +928,40 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
     }
 
     b = PyByteArray_FromStringAndSize(NULL, n);
-    if (b == NULL)
+    if (b == NULL) {
         return NULL;
+    }
 
     res = PyObject_CallMethodObjArgs(self, &_Py_ID(readinto), b, NULL);
     if (res == NULL || res == Py_None) {
-        Py_DECREF(b);
-        return res;
+        goto cleanup;
     }
 
     Py_ssize_t bytes_filled = PyNumber_AsSsize_t(res, PyExc_ValueError);
-    Py_DECREF(res);
+    Py_CLEAR(res);
     if (bytes_filled == -1 && PyErr_Occurred()) {
-        Py_DECREF(b);
-        return NULL;
+        goto cleanup;
     }
     if (bytes_filled < 0 || bytes_filled > n) {
-        Py_DECREF(b);
         PyErr_Format(PyExc_ValueError,
                      "readinto returned %zd outside buffer size %zd",
                      bytes_filled, n);
-        return NULL;
+        goto cleanup;
     }
 
     res = PyObject_CallMethod(b, "resize", "i", bytes_filled);
     if (res != Py_None) {
-        Py_DECREF(b);
         if (res != NULL) {
             PyErr_Format(PyExc_ValueError,
                          "resize returned unexpected value %R",
                          res);
             Py_CLEAR(res);
         }
-        return res;
+        goto cleanup;
     }
     res = PyObject_CallMethod(b, "take_bytes", NULL);
+
+cleanup:
     Py_DECREF(b);
     return res;
 }
