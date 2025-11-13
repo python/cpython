@@ -106,14 +106,12 @@ _PyCriticalSection_BeginMutex(PyThreadState *tstate, PyCriticalSection *c, PyMut
         _PyCriticalSection_BeginSlow(tstate, c, m);
     }
 }
-#define PyCriticalSection_BeginMutex(...) _PyCriticalSection_BeginMutex(_PyThreadState_GET(), __VA_ARGS__)
 
 static inline void
 _PyCriticalSection_Begin(PyThreadState *tstate, PyCriticalSection *c, PyObject *op)
 {
     _PyCriticalSection_BeginMutex(tstate, c, &op->ob_mutex);
 }
-#define PyCriticalSection_Begin(...) _PyCriticalSection_Begin(_PyThreadState_GET(), __VA_ARGS__)
 
 // Removes the top-most critical section from the thread's stack of critical
 // sections. If the new top-most critical section is inactive, then it is
@@ -141,7 +139,6 @@ _PyCriticalSection_End(PyThreadState *tstate, PyCriticalSection *c)
     PyMutex_Unlock(c->_cs_mutex);
     _PyCriticalSection_Pop(tstate, c);
 }
-#define PyCriticalSection_End(...) _PyCriticalSection_End(_PyThreadState_GET(), __VA_ARGS__)
 
 static inline void
 _PyCriticalSection2_BeginMutex(PyThreadState *tstate, PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
@@ -180,14 +177,12 @@ _PyCriticalSection2_BeginMutex(PyThreadState *tstate, PyCriticalSection2 *c, PyM
         _PyCriticalSection2_BeginSlow(tstate, c, m1, m2, 0);
     }
 }
-#define PyCriticalSection2_BeginMutex(...) _PyCriticalSection2_BeginMutex(_PyThreadState_GET(), __VA_ARGS__)
 
 static inline void
 _PyCriticalSection2_Begin(PyThreadState *tstate, PyCriticalSection2 *c, PyObject *a, PyObject *b)
 {
     _PyCriticalSection2_BeginMutex(tstate, c, &a->ob_mutex, &b->ob_mutex);
 }
-#define PyCriticalSection2_Begin(...) _PyCriticalSection2_Begin(_PyThreadState_GET(), __VA_ARGS__)
 
 static inline void
 _PyCriticalSection2_End(PyThreadState *tstate, PyCriticalSection2 *c)
@@ -206,7 +201,6 @@ _PyCriticalSection2_End(PyThreadState *tstate, PyCriticalSection2 *c)
     PyMutex_Unlock(c->_cs_base._cs_mutex);
     _PyCriticalSection_Pop(tstate, &c->_cs_base);
 }
-#define PyCriticalSection2_End(...) _PyCriticalSection2_End(_PyThreadState_GET(), __VA_ARGS__)
 
 static inline void
 _PyCriticalSection_AssertHeld(PyMutex *mutex)
