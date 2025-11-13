@@ -561,5 +561,7 @@ These are :term:`soft deprecated` aliases to ``PyDict`` APIs:
      * :c:func:`PyDict_GetItemString`
    * * .. c:macro:: PyODict_Contains(od, key)
      * :c:func:`PyDict_Contains`
+   * * .. c:macro:: PyODict_Size(od)
+     * :c:func:`PyDict_Size`
    * * .. c:macro:: PyODict_SIZE(od)
      * :c:func:`PyDict_GET_SIZE`
