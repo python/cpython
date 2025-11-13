@@ -1197,6 +1197,8 @@ AS_CASE([$ac_sys_system],
   [SOABI_PLATFORM=$PLATFORM_TRIPLET]
 )
 
+AC_DEFINE_UNQUOTED([SOABI_PLATFORM], ["${SOABI_PLATFORM}"], [Platform tag, used in binary module extension filenames.])
+
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
