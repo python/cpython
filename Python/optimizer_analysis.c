@@ -142,8 +142,10 @@ incorrect_keys(PyObject *obj, uint32_t version)
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
 #define STACK_SIZE()      ((int)(ctx->frame->stack_len))
 
+#define CURRENT_FRAME_IS_INIT_SHIM() (ctx->frame->code == ((PyCodeObject *)&_Py_InitCleanup))
+
 #define WITHIN_STACK_BOUNDS() \
-    (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE())
+    (CURRENT_FRAME_IS_INIT_SHIM() || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
@@ -267,7 +269,7 @@ static
 PyCodeObject *
 get_current_code_object(JitOptContext *ctx)
 {
-    return (PyCodeObject *)ctx->frame->func->func_code;
+    return (PyCodeObject *)ctx->frame->code;
 }
 
 static PyObject *
@@ -298,10 +300,6 @@ optimize_uops(
     JitOptContext context;
     JitOptContext *ctx = &context;
     uint32_t opcode = UINT16_MAX;
-    int curr_space = 0;
-    int max_space = 0;
-    _PyUOpInstruction *first_valid_check_stack = NULL;
-    _PyUOpInstruction *corresponding_check_stack = NULL;
 
     // Make sure that watchers are set up
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -320,13 +318,18 @@ optimize_uops(
     ctx->frame = frame;
 
     _PyUOpInstruction *this_instr = NULL;
+    JitOptRef *stack_pointer = ctx->frame->stack_pointer;
+
     for (int i = 0; !ctx->done; i++) {
         assert(i < trace_len);
         this_instr = &trace[i];
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        JitOptRef *stack_pointer = ctx->frame->stack_pointer;
+
+        if (!CURRENT_FRAME_IS_INIT_SHIM()) {
+            stack_pointer = ctx->frame->stack_pointer;
+        }
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
@@ -345,9 +348,11 @@ optimize_uops(
                 Py_UNREACHABLE();
         }
         assert(ctx->frame != NULL);
-        DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
-        ctx->frame->stack_pointer = stack_pointer;
-        assert(STACK_LEVEL() >= 0);
+        if (!CURRENT_FRAME_IS_INIT_SHIM()) {
+            DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
+            ctx->frame->stack_pointer = stack_pointer;
+            assert(STACK_LEVEL() >= 0);
+        }
     }
     if (ctx->out_of_space) {
         DPRINTF(3, "\n");
@@ -355,27 +360,21 @@ optimize_uops(
     }
     if (ctx->contradiction) {
         // Attempted to push a "bottom" (contradiction) symbol onto the stack.
-        // This means that the abstract interpreter has hit unreachable code.
+        // This means that the abstract interpreter has optimized to trace
+        // to an unreachable estate.
         // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
-        // bottom indicates type instability, so we are probably better off
+        // bottom usually indicates an optimizer bug, so we are probably better off
         // retrying later.
         DPRINTF(3, "\n");
         DPRINTF(1, "Hit bottom in abstract interpreter\n");
         _Py_uop_abstractcontext_fini(ctx);
+        OPT_STAT_INC(optimizer_contradiction);
         return 0;
     }
 
     /* Either reached the end or cannot optimize further, but there
      * would be no benefit in retrying later */
     _Py_uop_abstractcontext_fini(ctx);
-    if (first_valid_check_stack != NULL) {
-        assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
-        assert(max_space > 0);
-        assert(max_space <= INT_MAX);
-        assert(max_space <= INT32_MAX);
-        first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
-        first_valid_check_stack->operand0 = max_space;
-    }
     return trace_len;
 
 error:
@@ -460,6 +459,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _NOP;
                 }
                 break;
+            case _EXIT_TRACE:
             default:
             {
                 // Cancel out pushes and pops, repeatedly. So:
@@ -493,7 +493,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 }
                 /* _PUSH_FRAME doesn't escape or error, but it
                  * does need the IP for the return address */
-                bool needs_ip = opcode == _PUSH_FRAME;
+                bool needs_ip = (opcode == _PUSH_FRAME || opcode == _YIELD_VALUE || opcode == _DYNAMIC_EXIT || opcode == _EXIT_TRACE);
                 if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
                     needs_ip = true;
                     may_have_escaped = true;
@@ -503,10 +503,14 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[last_set_ip].opcode = _SET_IP;
                     last_set_ip = -1;
                 }
+                if (opcode == _EXIT_TRACE) {
+                    return pc + 1;
+                }
                 break;
             }
             case _JUMP_TO_TOP:
-            case _EXIT_TRACE:
+            case _DYNAMIC_EXIT:
+            case _DEOPT:
                 return pc + 1;
         }
     }
@@ -518,7 +522,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 //  > 0 - length of optimized trace
 int
 _Py_uop_analyze_and_optimize(
-    _PyInterpreterFrame *frame,
+    PyFunctionObject *func,
     _PyUOpInstruction *buffer,
     int length,
     int curr_stacklen,
@@ -528,8 +532,8 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     length = optimize_uops(
-        _PyFrame_GetFunction(frame), buffer,
-        length, curr_stacklen, dependencies);
+         func, buffer,
+         length, curr_stacklen, dependencies);
 
     if (length == 0) {
         return length;

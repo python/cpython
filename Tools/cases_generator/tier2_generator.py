@@ -63,6 +63,7 @@ class Tier2Emitter(Emitter):
     def __init__(self, out: CWriter, labels: dict[str, Label]):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
+        self._replacers["IP_OFFSET_OF"] = self.ip_offset_of
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
@@ -134,10 +135,30 @@ class Tier2Emitter(Emitter):
         self.out.emit_at(uop.name[-1], tkn)
         return True
 
+    def ip_offset_of(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        assert uop.name.startswith("_GUARD_IP")
+        # LPAREN
+        next(tkn_iter)
+        tok = next(tkn_iter)
+        self.emit(f" OFFSET_OF_{tok.text};\n")
+        # RPAREN
+        next(tkn_iter)
+        # SEMI
+        next(tkn_iter)
+        return True
 
-def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack, offset_strs: dict[str, tuple[str, str]]) -> Stack:
     locals: dict[str, Local] = {}
     try:
+        if name_offset_pair := offset_strs.get(uop.name):
+            emitter.emit(f"#define OFFSET_OF_{name_offset_pair[0]} ({name_offset_pair[1]})\n")
         emitter.out.start_line()
         if uop.properties.oparg:
             emitter.emit("oparg = CURRENT_OPARG();\n")
@@ -158,12 +179,37 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                 idx += 1
         _, storage = emitter.emit_tokens(uop, storage, None, False)
         storage.flush(emitter.out)
+        if name_offset_pair:
+            emitter.emit(f"#undef OFFSET_OF_{name_offset_pair[0]}\n")
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body.open) from None
     return storage.stack
 
 SKIPS = ("_EXTENDED_ARG",)
 
+
+def populate_offset_strs(analysis: Analysis) -> dict[str, tuple[str, str]]:
+    offset_strs: dict[str, tuple[str, str]] = {}
+    for name, uop in analysis.uops.items():
+        if not f"_GUARD_IP_{name}" in analysis.uops:
+            continue
+        tkn_iter = uop.body.tokens()
+        found = False
+        offset_str = ""
+        for token in tkn_iter:
+            if token.kind == "IDENTIFIER" and token.text == "LOAD_IP":
+                if found:
+                    raise analysis_error("Cannot have two LOAD_IP in a guarded single uop.", uop.body.open)
+                offset = []
+                while token.kind != "SEMI":
+                    offset.append(token.text)
+                    token = next(tkn_iter)
+                # 1: to remove the LOAD_IP text
+                offset_str = "".join(offset[1:])
+                found = True
+        assert offset_str
+        offset_strs[f"_GUARD_IP_{name}"] = (name, offset_str)
+    return offset_strs
 
 def generate_tier2(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
@@ -179,7 +225,9 @@ def generate_tier2(
     )
     out = CWriter(outfile, 2, lines)
     emitter = Tier2Emitter(out, analysis.labels)
+    offset_strs = populate_offset_strs(analysis)
     out.emit("\n")
+
     for name, uop in analysis.uops.items():
         if uop.properties.tier == 1:
             continue
@@ -194,13 +242,15 @@ def generate_tier2(
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
         stack = Stack()
-        stack = write_uop(uop, emitter, stack)
+        stack = write_uop(uop, emitter, stack, offset_strs)
         out.start_line()
         if not uop.properties.always_exits:
             out.emit("break;\n")
         out.start_line()
         out.emit("}")
         out.emit("\n\n")
+
+    out.emit("\n")
     outfile.write("#undef TIER_TWO\n")
 
 
