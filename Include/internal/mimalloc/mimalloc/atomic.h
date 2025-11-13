@@ -389,4 +389,4 @@ static inline void mi_atomic_yield(void) {
 #endif
 
 
-#endif // MIMALLOC_ATOMIC_H
+#endif // __MIMALLOC_ATOMIC_H
