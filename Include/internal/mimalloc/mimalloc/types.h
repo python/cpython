@@ -5,8 +5,8 @@ terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
 #pragma once
-#ifndef MIMALLOC_TYPES_H
-#define MIMALLOC_TYPES_H
+#ifndef Py_MIMALLOC_TYPES_H
+#define Py_MIMALLOC_TYPES_H
 
 // --------------------------------------------------------------------------
 // This file contains the main type definitions for mimalloc:

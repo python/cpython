@@ -5,8 +5,8 @@ terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
 #pragma once
-#ifndef MIMALLOC_INTERNAL_H
-#define MIMALLOC_INTERNAL_H
+#ifndef Py_MIMALLOC_INTERNAL_H
+#define Py_MIMALLOC_INTERNAL_H
 
 
 // --------------------------------------------------------------------------
