@@ -2005,7 +2005,6 @@ class VarianceStdevMixin(UnivariateCommonMixin):
         expected = self.func(data)
         self.assertEqual(self.func(iter(data)), expected)
 
-
 class TestPVariance(VarianceStdevMixin, NumericTestCase, UnivariateTypeMixin):
     # Tests for population variance.
     def setUp(self):
@@ -2113,6 +2112,12 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         self.assertEqual(self.func(data), 2.5)
         self.assertEqual(self.func(data, mu=0.5), 6.5)
 
+    def test_gh_140938(self):
+        # Inputs with math.inf should raise a ValueError
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.inf])
+
+        
 class TestSqrtHelpers(unittest.TestCase):
 
     def test_integer_sqrt_of_frac_rto(self):
