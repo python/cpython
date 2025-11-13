@@ -900,7 +900,9 @@ def _get_annotate_attr(annotate, attr, default):
         if call_func := getattr(annotate.__call__, "__func__", None):
             return getattr(call_func, attr, default)
 
-    if isinstance(annotate, type):
+    # Classes and generics are callable, usually the __init__ method sets attributes,
+    # so let's access this method for fake globals and the like.
+    if isinstance(annotate, type) or isinstance(annotate, types.GenericAlias):
         return getattr(annotate.__init__, attr, default)
 
     if (wrapped := getattr(annotate, "__wrapped__", None)) is not None:
@@ -934,6 +936,17 @@ def _direct_call_annotate(func, annotate, format):
     if isinstance(annotate, type):
         inst = annotate.__new__(annotate)
         func(inst, format)
+        return inst
+
+    # Generic instantiation is slightly different.
+    if isinstance(annotate, types.GenericAlias):
+        inst = annotate.__new__(annotate.__origin__)
+        func(inst, format)
+        # Try to set the original class on the instance, if possible.
+        try:
+            inst.__orig_class__ = annotate
+        except Exception:
+            pass
         return inst
 
     if functools := sys.modules.get("functools", None):
