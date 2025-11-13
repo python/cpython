@@ -508,17 +508,17 @@ little need for these functions; prefer ``PyDict*`` where possible.
 
 .. c:var:: PyTypeObject PyODictKeys_Type
 
-   Analogous to :c:type:`!PyDictKeys_Type` for ordered dictionaries.
+   Analogous to :c:type:`PyDictKeys_Type` for ordered dictionaries.
 
 
 .. c:var:: PyTypeObject PyODictValues_Type
 
-   Analogous to :c:type:`!PyDictValues_Type` for ordered dictionaries.
+   Analogous to :c:type:`PyDictValues_Type` for ordered dictionaries.
 
 
 .. c:var:: PyTypeObject PyODictItems_Type
 
-   Analogous to :c:type:`!PyDictItems_Type` for ordered dictionaries.
+   Analogous to :c:type:`PyDictItems_Type` for ordered dictionaries.
 
 
 .. c:function:: PyObject *PyODict_New(void)
