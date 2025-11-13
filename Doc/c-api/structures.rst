@@ -79,7 +79,7 @@ under :ref:`reference counting <countingrefs>`.
 .. c:macro:: PyObject_HEAD
 
    This is a macro used when declaring new types which represent objects
-   without a varying length.  The PyObject_HEAD macro expands to::
+   without a varying length.  The :c:macro:`!PyObject_HEAD` macro expands to::
 
       PyObject ob_base;
 
@@ -90,7 +90,7 @@ under :ref:`reference counting <countingrefs>`.
 
    This is a macro used when declaring new types which represent objects
    with a length that varies from instance to instance.
-   The PyObject_VAR_HEAD macro expands to::
+   The :c:macro:`!PyObject_VAR_HEAD` macro expands to::
 
       PyVarObject ob_base;
 

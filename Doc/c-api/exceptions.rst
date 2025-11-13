@@ -868,6 +868,22 @@ Exception Objects
 
    .. versionadded:: 3.12
 
+.. c:macro:: PyException_HEAD
+
+   This is a macro used when declaring new exception types.
+   The :c:macro:`!PyException_HEAD` macro expands to::
+
+      PyObject_HEAD
+      PyObject *dict;
+      PyObject *args;
+      PyObject *notes;
+      PyObject *traceback;
+      PyObject *context;
+      PyObject *cause;
+      char suppress_context;
+
+   See :c:macro:`PyObject_HEAD` for the base object header.
+
 .. _unicodeexceptions:
 
 Unicode Exception Objects
