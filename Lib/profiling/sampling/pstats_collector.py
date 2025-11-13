@@ -43,7 +43,7 @@ class PstatsCollector(Collector):
     def collect(self, stack_frames):
         if stack_frames and hasattr(stack_frames[0], "awaited_by"):
             # Async frame processing
-            for frames, thread_id, _depth in self._iter_async_frames(stack_frames):
+            for frames, thread_id in self._iter_async_frames(stack_frames):
                 self._process_frames(frames)
         else:
             # Regular frame processing
