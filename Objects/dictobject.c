@@ -5595,7 +5595,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
     Py_ssize_t i;
     PyDictKeysObject *k;
 
-    assert (PyDict_Check(d));
+    assert (_PyAnyDict_Check(d));
 
     if (di->di_used != _Py_atomic_load_ssize_relaxed(&d->ma_used)) {
         PyErr_SetString(PyExc_RuntimeError,
