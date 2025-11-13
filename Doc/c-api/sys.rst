@@ -130,7 +130,7 @@ Operating System Utilities
    Returns ``1`` if a :c:macro:`!SIGINT` has occurred and clears the signal flag,
    or ``0`` otherwise.
 
-   This function is async-signal-safe.
+   This function is async-signal-safe and this function cannot fail.
    The caller must hold an :term:`attached thread state`.
 
    In most cases, you should prefer :c:func:`PyErr_CheckSignals` over this function.
