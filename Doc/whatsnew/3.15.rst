@@ -498,6 +498,14 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+functools
+---------
+
+* :func:`~functools.singledispatchmethod` now supports non-:term:`descriptor`
+  callables.
+  (Contributed by Serhiy Storchaka in :gh:`140873`.)
+
+
 hashlib
 -------
 
