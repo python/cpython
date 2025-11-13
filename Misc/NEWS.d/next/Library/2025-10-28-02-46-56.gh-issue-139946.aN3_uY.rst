@@ -1,0 +1,1 @@
+Error and warning keywords in ``argparse.ArgumentParser`` messages are now colorized when color output is enabled, fixing a visual inconsistency in which they remained plain text while other output was colorized.

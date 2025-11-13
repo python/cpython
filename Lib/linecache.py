@@ -123,9 +123,12 @@ def updatecache(filename, module_globals=None):
     if _source_unavailable(filename):
         return []
 
-    if filename.startswith('<frozen ') and module_globals is not None:
+    if filename.startswith('<frozen '):
         # This is a frozen module, so we need to use the filename
         # from the module globals.
+        if module_globals is None:
+            return []
+
         fullname = module_globals.get('__file__')
         if fullname is None:
             return []

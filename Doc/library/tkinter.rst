@@ -36,6 +36,8 @@ details that are unchanged.
    Most documentation you will find online still uses the old API and
    can be woefully outdated.
 
+.. include:: ../includes/optional-module.rst
+
 .. seealso::
 
    * `TkDocs <https://tkdocs.com/>`_
@@ -392,7 +394,7 @@ by spaces. Without getting into too many details, notice the following:
 * Operations which are implemented as separate *commands* in Tcl (like
   ``grid`` or ``destroy``) are represented as *methods* on Tkinter widget
   objects. As you'll see shortly, at other times Tcl uses what appear to be
-  method calls on widget objects, which more closely mirror what would is
+  method calls on widget objects, which more closely mirror what is
   used in Tkinter.
 
 
@@ -839,8 +841,7 @@ geometry
    For example: ``fred["geometry"] = "200x100"``.
 
 justify
-   Legal values are the strings: ``"left"``, ``"center"``, ``"right"``, and
-   ``"fill"``.
+   Legal values are the strings: ``"left"``, ``"center"``, and ``"right"``.
 
 region
    This is a string with four space-delimited elements, each of which is a legal

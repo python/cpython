@@ -14,8 +14,6 @@ extern "C" {
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
-#include "pycore_uop.h"           // struct _PyUOpInstruction
-
 
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
@@ -199,7 +197,7 @@ enum _GCPhase {
 };
 
 /* If we change this, we need to change the default value in the
-   signature of gc.collect. */
+   signature of gc.collect and change the size of PyStats.gc_stats */
 #define NUM_GENERATIONS 3
 
 struct _gc_runtime_state {
@@ -769,12 +767,6 @@ struct _is {
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
 
-    /* This structure is carefully allocated so that it's correctly aligned
-     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
-     * field stores the allocated pointer address that will later be freed.
-     */
-    void *_malloced;
-
     PyInterpreterState *next;
 
     int64_t id;
@@ -940,12 +932,12 @@ struct _is {
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     bool compiling;
-    struct _PyUOpInstruction *jit_uop_buffer;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;
+    struct _PyExecutorObject *cold_dynamic_executor;
     int executor_deletion_list_remaining_capacity;
-    size_t trace_run_counter;
+    size_t executor_creation_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 
@@ -969,6 +961,18 @@ struct _is {
 #  ifdef Py_STACKREF_CLOSE_DEBUG
     _Py_hashtable_t *closed_stackrefs_table;
 #  endif
+#endif
+
+#ifdef Py_STATS
+    // true if recording of pystats is on, this is used when new threads
+    // are created to decide if recording should be on for them
+    int pystats_enabled;
+    // allocated when (and if) stats are first enabled
+    PyStats *pystats_struct;
+#ifdef Py_GIL_DISABLED
+    // held when pystats related interpreter state is being updated
+    PyMutex pystats_mutex;
+#endif
 #endif
 
     /* the initial PyInterpreterState.threads.head */

@@ -1679,22 +1679,21 @@ class TestSpecifics(unittest.TestCase):
         self.assertRaises(NameError, ns['foo'])
 
     def test_compile_warnings(self):
-        # See gh-131927
-        # Compile warnings originating from the same file and
-        # line are now only emitted once.
+        # Each invocation of compile() emits compiler warnings, even if they
+        # have the same message and line number.
+        source = textwrap.dedent(r"""
+            # tokenizer
+            1or 0  # line 3
+            # code generator
+            1 is 1  # line 5
+        """)
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("default")
-            compile('1 is 1', '<stdin>', 'eval')
-            compile('1 is 1', '<stdin>', 'eval')
+            for i in range(2):
+                # Even if compile() is at the same line.
+                compile(source, '<stdin>', 'exec')
 
-        self.assertEqual(len(caught), 1)
-
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            compile('1 is 1', '<stdin>', 'eval')
-            compile('1 is 1', '<stdin>', 'eval')
-
-        self.assertEqual(len(caught), 2)
+        self.assertEqual([wm.lineno for wm in caught], [3, 5] * 2)
 
     def test_compile_warning_in_finally(self):
         # Ensure that warnings inside finally blocks are
@@ -1705,16 +1704,131 @@ class TestSpecifics(unittest.TestCase):
             try:
                 pass
             finally:
-                1 is 1
+                1 is 1  # line 5
+                try:
+                    pass
+                finally: # nested
+                    1 is 1  # line 9
         """)
 
         with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("default")
+            warnings.simplefilter("always")
             compile(source, '<stdin>', 'exec')
 
-        self.assertEqual(len(caught), 1)
-        self.assertEqual(caught[0].category, SyntaxWarning)
-        self.assertIn("\"is\" with 'int' literal", str(caught[0].message))
+        self.assertEqual(sorted(wm.lineno for wm in caught), [5, 9])
+        for wm in caught:
+            self.assertEqual(wm.category, SyntaxWarning)
+            self.assertIn("\"is\" with 'int' literal", str(wm.message))
+
+        # Other code path is used for "try" with "except*".
+        source = textwrap.dedent("""
+            try:
+                pass
+            except *Exception:
+                pass
+            finally:
+                1 is 1  # line 7
+                try:
+                    pass
+                except *Exception:
+                    pass
+                finally: # nested
+                    1 is 1  # line 13
+        """)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            compile(source, '<stdin>', 'exec')
+
+        self.assertEqual(sorted(wm.lineno for wm in caught), [7, 13])
+        for wm in caught:
+            self.assertEqual(wm.category, SyntaxWarning)
+            self.assertIn("\"is\" with 'int' literal", str(wm.message))
+
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            compile(source, filename, 'exec')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=module_re)
+            compile(source, filename, 'exec', module='package.module')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+    @support.subTests('src', [
+        textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    return 42
+            """),
+        textwrap.dedent("""
+            for x in y:
+                try:
+                    pass
+                finally:
+                    break
+            """),
+        textwrap.dedent("""
+            for x in y:
+                try:
+                    pass
+                finally:
+                    continue
+            """),
+    ])
+    def test_pep_765_warnings(self, src):
+        with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+            compile(src, '<string>', 'exec')
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            tree = ast.parse(src)
+        with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+            compile(tree, '<string>', 'exec')
+
+    @support.subTests('src', [
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                def f():
+                    return 42
+            """),
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                for x in y:
+                    break
+            """),
+        textwrap.dedent("""
+            try:
+                pass
+            finally:
+                for x in y:
+                    continue
+            """),
+    ])
+    def test_pep_765_no_warnings(self, src):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            compile(src, '<string>', 'exec')
+
 
 class TestBooleanExpression(unittest.TestCase):
     class Value:

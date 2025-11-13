@@ -33,6 +33,8 @@ The :mod:`!compression.zstd` module contains:
 * The :class:`CompressionParameter`, :class:`DecompressionParameter`, and
   :class:`Strategy` classes for setting advanced (de)compression parameters.
 
+.. include:: ../includes/optional-module.rst
+
 
 Exceptions
 ----------
