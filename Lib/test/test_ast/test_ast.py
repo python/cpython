@@ -1083,6 +1083,16 @@ class AST_Tests(unittest.TestCase):
             self.assertEqual(wm.filename, '<unknown>')
             self.assertIs(wm.category, SyntaxWarning)
 
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=r'<unknown>')
+            ast.parse(source, filename, module='package.module')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
 
 class CopyTests(unittest.TestCase):
     """Test copying and pickling AST nodes."""
