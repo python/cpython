@@ -304,9 +304,9 @@ PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame
 PyAPI_FUNC(bool) _PyEval_NoToolsForUnwind(PyThreadState *tstate);
 PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, _PyStackRef *sp);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
-PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
+PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyThreadStateImpl *_tstate, _PyStackRef *input, Py_ssize_t nargs);
 
-PyAPI_FUNC(void) _PyObjectArray_Free(PyObject **array, PyObject **scratch);
+PyAPI_FUNC(void) _PyObjectArray_Free(_PyThreadStateImpl *_tstate, PyObject **array, Py_ssize_t nargs, PyObject **temp_arr);
 
 PyAPI_FUNC(PyObject *) _PyEval_GetANext(PyObject *aiter);
 PyAPI_FUNC(void) _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name, _PyStackRef *writeto);
