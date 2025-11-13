@@ -800,6 +800,10 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
 
+    @unittest.skipIf(
+        support.is_android or support.is_apple_mobile,
+        "Subinterpreters are not supported on Android and iOS"
+    )
     def test_endian_table_init_subinterpreters(self):
         # Verify that the _struct extension module can be initialized
         # concurrently in subinterpreters (gh-140260).
