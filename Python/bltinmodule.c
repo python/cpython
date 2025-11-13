@@ -1135,7 +1135,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         locals = Py_NewRef(globals);
     }
 
-    if (!PyDict_Check(globals)) {
+    if (!_PyAnyDict_Check(globals)) {
         PyErr_Format(PyExc_TypeError, "exec() globals must be a dict, not %.100s",
                      Py_TYPE(globals)->tp_name);
         goto error;

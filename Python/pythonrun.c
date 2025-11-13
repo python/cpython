@@ -1353,7 +1353,7 @@ static PyObject *
 run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, PyObject *locals)
 {
     /* Set globals['__builtins__'] if it doesn't exist */
-    if (!globals || !PyDict_Check(globals)) {
+    if (!globals || !_PyAnyDict_Check(globals)) {
         PyErr_SetString(PyExc_SystemError, "globals must be a real dict");
         return NULL;
     }

@@ -2623,7 +2623,7 @@ _PyDict_LoadGlobalStackRef(PyDictObject *globals, PyDictObject *builtins, PyObje
 PyObject *
 _PyDict_LoadBuiltinsFromGlobals(PyObject *globals)
 {
-    if (!PyDict_Check(globals)) {
+    if (!_PyAnyDict_Check(globals)) {
         PyErr_BadInternalCall();
         return NULL;
     }
