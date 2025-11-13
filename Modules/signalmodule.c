@@ -2025,7 +2025,7 @@ _PyOS_InterruptOccurred(PyThreadState *tstate)
 }
 
 
-// The caller must to hold the GIL
+// The caller must hold the GIL
 int
 PyOS_InterruptOccurred(void)
 {

@@ -123,6 +123,16 @@ Operating System Utilities
    This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`.  Do
    not call those functions directly!
 
+
+.. c:function:: int PyOS_InterruptOccurred(void)
+
+   Check if a :c:macro:`!SIGINT` signal has been received.
+   Returns ``1`` if a :c:macro:`!SIGINT` has occurred and clears the signal flag,
+   or ``0`` otherwise.
+
+   The caller must hold an :term:`attached thread state`.
+
+
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
 
    .. warning::
