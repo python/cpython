@@ -953,7 +953,18 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
         return NULL;
     }
 
-    res = PyBytes_FromStringAndSize(PyByteArray_AsString(b), bytes_filled);
+    res = PyObject_CallMethod(b, "resize", "i", bytes_filled);
+    if (res != Py_None) {
+        Py_DECREF(b);
+        if (res != NULL) {
+            PyErr_Format(PyExc_ValueError,
+                         "resize returned unexpected value %R",
+                        res);
+            Py_DECREF(res);
+        }
+        return res;
+    }
+    res = PyObject_CallMethod(b, "take_bytes", NULL);
     Py_DECREF(b);
     return res;
 }
