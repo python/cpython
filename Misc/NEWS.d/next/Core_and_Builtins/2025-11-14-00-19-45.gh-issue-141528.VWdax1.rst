@@ -1,4 +1,4 @@
 Fix warning message about remaining :mod:`subinterpreters
 <concurrent.interpreters>` while finalizing :mod:`"main" interpreter
-<concurrent.interpreters>` and suggest using of :method:`Interpreter.close`.
+<concurrent.interpreters>` and suggest using of :meth:`Interpreter.close`.
 Patch by Sergey Miryanov.
