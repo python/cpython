@@ -1,3 +1,5 @@
+# Run tests for functions in Python/fileutils.c.
+
 import os
 import os.path
 import unittest
