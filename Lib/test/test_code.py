@@ -1555,6 +1555,13 @@ if check_impl_detail(cpython=True) and ctypes is not None:
 
     FREE_FUNC = freefunc(myfree)
     FREE_INDEX = RequestCodeExtraIndex(FREE_FUNC)
+    # Make sure myfree sticks around at least as long as the interpreter,
+    # since we (currently) can't unregister the function and leaving a
+    # dangling pointer will cause a crash on deallocation of code objects if
+    # something else uses co_extras, like test_capi.test_misc. (Maybe this
+    # should use PyInterpreterState_GetDict, but that isn't easily exposed
+    # to Python code.)
+    setattr(sys, f'_test_code.{myfree!r}', myfree)
 
     class CoExtra(unittest.TestCase):
         def get_func(self):
