@@ -948,15 +948,7 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
                      bytes_filled, n);
         goto cleanup;
     }
-
-    res = PyObject_CallMethod(b, "resize", "n", bytes_filled);
-    if (res != Py_None) {
-        if (res != NULL) {
-            PyErr_Format(PyExc_ValueError,
-                         "resize returned unexpected value %R",
-                         res);
-            Py_CLEAR(res);
-        }
+    if (PyByteArray_Resize(b, bytes_filled) < 0) {
         goto cleanup;
     }
     res = PyObject_CallMethod(b, "take_bytes", NULL);
