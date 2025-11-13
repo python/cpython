@@ -4926,8 +4926,8 @@ Mapping Types --- :class:`dict`, :class:`frozendict`
    pair: built-in function; len
 
 A :term:`mapping` object maps :term:`hashable` values to arbitrary objects.
-Mappings are mutable objects.  There is currently two standard mapping
-types, the :dfn:`dictionary` and :class:`frozendict`.
+There are currently two standard mapping types, the :dfn:`dictionary` and
+:class:`frozendict`.
 (For other containers see the built-in
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
