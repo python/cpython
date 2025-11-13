@@ -428,15 +428,15 @@ Dictionary Objects
    .. versionadded:: 3.12
 
 
+Dictionary View Objects
+^^^^^^^^^^^^^^^^^^^^^^^
+
 .. c:function:: int PyDictViewSet_Check(PyObject *op)
 
    Return true if *op* is a view of a set inside a dictionary. This is currently
    equivalent to :c:expr:`PyDictKeys_Check(op) || PyDictItems_Check(op)`. This
    function always succeeds.
 
-
-Dictionary Keys Objects
-^^^^^^^^^^^^^^^^^^^^^^^
 
 .. c:var:: PyTypeObject PyDictKeys_Type
 
@@ -450,9 +450,6 @@ Dictionary Keys Objects
    always succeeds.
 
 
-Dictionary Values Objects
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
 .. c:var:: PyTypeObject PyDictValues_Type
 
    Type object for a view of dictionary values. In Python, this is the type of
@@ -464,9 +461,6 @@ Dictionary Values Objects
    Return true if *op* is an instance of a dictionary values view. This function
    always succeeds.
 
-
-Dictionary Items Objects
-^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. c:var:: PyTypeObject PyDictItems_Type
 
