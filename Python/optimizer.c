@@ -588,10 +588,6 @@ _PyJit_translate_single_bytecode_to_trace(
     PyCodeObject *old_code = _tstate->jit_tracer_state.prev_state.instr_code;
     bool progress_needed = (_tstate->jit_tracer_state.initial_state.chain_depth % MAX_CHAIN_DEPTH) == 0;
     _PyBloomFilter *dependencies = &_tstate->jit_tracer_state.prev_state.dependencies;
-    // Can be NULL for the entry frame.
-    if (old_code != NULL) {
-        _Py_BloomFilter_Add(dependencies, old_code);
-    }
     int trace_length = _tstate->jit_tracer_state.prev_state.code_curr_size;
     _PyUOpInstruction *trace = _tstate->jit_tracer_state.code_buffer;
     int max_length = _tstate->jit_tracer_state.prev_state.code_max_size;
@@ -744,6 +740,10 @@ _PyJit_translate_single_bytecode_to_trace(
         ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
     }
 
+    // Can be NULL for the entry frame.
+    if (old_code != NULL) {
+        _Py_BloomFilter_Add(dependencies, old_code);
+    }
 
     switch (opcode) {
         case POP_JUMP_IF_NONE:
