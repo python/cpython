@@ -52,6 +52,18 @@ typedef struct _PyJitTracerState {
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
 } _PyJitTracerState;
+
+typedef struct _PyJitExecutorState {
+    bool jit;
+    bool compiling;
+    struct _PyExecutorObject *executor_list_head;
+    struct _PyExecutorObject *executor_deletion_list_head;
+    struct _PyExecutorObject *cold_executor;
+    struct _PyExecutorObject *cold_dynamic_executor;
+    int executor_deletion_list_remaining_capacity;
+    size_t executor_creation_counter;
+} _PyJitExecutorState;
+
 #endif
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
@@ -120,6 +132,7 @@ typedef struct _PyThreadStateImpl {
 #endif
 #if _Py_TIER2
     _PyJitTracerState jit_tracer_state;
+    _PyJitExecutorState jit_executor_state;
 #endif
 } _PyThreadStateImpl;
 

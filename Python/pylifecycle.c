@@ -1361,7 +1361,7 @@ init_interp_main(PyThreadState *tstate)
             } else
 #endif
             {
-                interp->jit = true;
+                ((_PyThreadStateImpl *)(tstate))->jit_executor_state.jit = true;
             }
         }
     }
@@ -1718,8 +1718,8 @@ finalize_modules(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
 
     // Invalidate all executors and turn off JIT:
-    interp->jit = false;
-    interp->compiling = false;
+    ((_PyThreadStateImpl *)tstate)->jit_executor_state.jit = false;
+    ((_PyThreadStateImpl *)tstate)->jit_executor_state.compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
 #endif

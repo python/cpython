@@ -5495,7 +5495,7 @@
                 }
                 DISPATCH_GOTO();
             }
-            assert(executor != tstate->interp->cold_executor);
+            assert(executor != ((_PyThreadStateImpl *)tstate)->jit_executor_state.cold_executor);
             tstate->jit_exit = NULL;
             TIER1_TO_TIER2(executor);
             #else
@@ -7595,7 +7595,7 @@
             {
                 #if ENABLE_SPECIALIZATION
                 if (this_instr->op.code == JUMP_BACKWARD) {
-                    uint8_t desired = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
+                    uint8_t desired = ((_PyThreadStateImpl*)tstate)->jit_executor_state.jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
                     FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, desired);
                     next_instr = this_instr;
                     DISPATCH_SAME_OPARG();

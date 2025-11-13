@@ -24,7 +24,11 @@ typedef struct _PyExecutorLinkListNode {
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
+#ifdef Py_GIL_DISABLED
+    uint8_t valid;
+#else
     uint8_t valid:1;
+#endif
     uint8_t linked:1;
     uint8_t chain_depth:6;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
     bool warm;
@@ -359,7 +363,7 @@ extern void _PyExecutor_Free(_PyExecutorObject *self);
 
 PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 #ifdef _Py_TIER2
-extern void _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
+extern void _Py_ClearExecutorDeletionList(PyThreadState *tstate);
 #endif
 
 int _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, bool stop_tracing);

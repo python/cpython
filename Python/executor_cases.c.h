@@ -7153,7 +7153,7 @@
         }
 
         case _CHECK_VALIDITY: {
-            if (!current_executor->vm_data.valid) {
+            if (!FT_ATOMIC_LOAD_UINT8(current_executor->vm_data.valid)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
