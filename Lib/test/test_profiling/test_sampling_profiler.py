@@ -2165,7 +2165,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                async_aware=False
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2193,7 +2194,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                async_aware=False
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2221,7 +2223,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                async_aware=False
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2321,7 +2324,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                async_aware=False
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2355,7 +2359,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="collapsed",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                async_aware=False
             )
 
     def test_cli_empty_module_name(self):
@@ -2567,7 +2572,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                async_aware=False
             )
 
     def test_sort_options(self):

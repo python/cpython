@@ -154,7 +154,7 @@ class SampleProfiler:
         self.total_samples = 0
         self.realtime_stats = False
 
-    def sample(self, collector, async_aware, duration_sec=10):
+    def sample(self, collector, duration_sec=10, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
         running_time = 0
         num_samples = 0
