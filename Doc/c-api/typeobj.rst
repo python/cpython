@@ -1351,8 +1351,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. c:macro:: Py_TPFLAGS_BASE_EXC_SUBCLASS
    .. c:macro:: Py_TPFLAGS_TYPE_SUBCLASS
 
-      These flags are used by functions such as
-      :c:func:`PyLong_Check` to quickly determine if a type is a subclass
+      Functions such as :c:func:`PyLong_Check` will call :c:func:`PyType_FastSubclass`
+      with one of these flags to quickly determine if a type is a subclass
       of a built-in type; such specific checks are faster than a generic
       check, like :c:func:`PyObject_IsInstance`. Custom types that inherit
       from built-ins should have their :c:member:`~PyTypeObject.tp_flags`
