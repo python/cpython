@@ -1256,7 +1256,7 @@ def iterparse(source, events=None, parser=None):
                 it.root = root
         finally:
             if close_source:
-                1#source.close()
+                source.close()
 
     gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):

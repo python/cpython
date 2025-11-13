@@ -656,7 +656,7 @@ Functions
    .. versionchanged:: 3.13
       Added the :meth:`!close` method.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       A :exc:`ResourceWarning` is now emitted if the iterator opened a file
       and is not explicitly closed.
 
