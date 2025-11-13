@@ -802,6 +802,13 @@ class BaseBytesTest:
             with self.assertRaisesRegex(TypeError, msg):
                 operator.mod(format_bytes, value)
 
+    def test_memory_leak_gh_140939(self):
+        # gh-140939: MemoryError is raised without leaking
+        _testcapi = import_helper.import_module('_testcapi')
+        with self.assertRaises(MemoryError):
+            b = self.type2test(b'%*b')
+            b % (_testcapi.PY_SSIZE_T_MAX, b'abc')
+
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
         orig = b
@@ -1979,7 +1986,7 @@ class AssortedBytesTest(unittest.TestCase):
         self.assertEqual(f(bytearray([7, 8, 9, 10, 11, 12, 13])),
                             r"bytearray(b'\x07\x08\t\n\x0b\x0c\r')")
         self.assertEqual(f(bytearray(b'"')), """bytearray(b'"')""") # '"'
-        self.assertEqual(f(bytearray(b"'")), r'''bytearray(b"\'")''') # "\'"
+        self.assertEqual(f(bytearray(b"'")), '''bytearray(b"'")''') # "'"
         self.assertEqual(f(bytearray(b"'\"")), r"""bytearray(b'\'"')""") # '\'"'
         self.assertEqual(f(bytearray(b"\"'\"")), r"""bytearray(b'"\'"')""") # '"\'"'
         self.assertEqual(f(bytearray(b'\'"\'')), r"""bytearray(b'\'"\'')""") # '\'"\''
