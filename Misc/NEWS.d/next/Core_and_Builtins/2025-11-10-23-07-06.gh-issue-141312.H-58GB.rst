@@ -1,2 +1,2 @@
-Restict passing of non-integer object to the ``rangeiter.__setstate__``
-and ``longrangeiter.__setstate__``. Patch by Sergey Miryanov.
+Restict passing of non-integer object to the ``longrangeiter.__setstate__``.
+Patch by Sergey Miryanov.

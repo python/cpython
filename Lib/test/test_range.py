@@ -470,24 +470,37 @@ class RangeTest(unittest.TestCase):
         it.__setstate__(2**64 - 7)
         self.assertEqual(list(it), [12, 10])
 
-    def test_iterator_invalid_setstate(self):
+        class I:
+            def __int__(self): return 2
+            def __index__(self): return 2
+            def __repr__(self): return "I()"
+
+        it = iter(range(10, 20, 2))
+        it.__setstate__(I())
+        self.assertEqual(list(it), [14, 16, 18])
+
+    def test_rangeiter_invalid_setstate(self):
+
+        for invalid_value in (1.0, ""):
+            invalid_msg = "object cannot be interpreted as an integer"
+            with self.subTest(invalid_value=invalid_value):
+                it = iter(range(10, 100, 2))
+                with self.assertRaisesRegex(TypeError, invalid_msg):
+                    it.__setstate__(invalid_value)
+
+    def test_longrangeiter_invalid_setstate(self):
 
         class I:
             def __int__(self): return 1
             def __index__(self): return 1
             def __repr__(self): return "I()"
 
-        invalid_values = (1.0, I(), "")
-
-        for invalid_value in invalid_values:
-            invalid_msg = F"state must be an int, not "
-            ranges = (("range_iter", range(10, 100, 2)),
-                      ("longrange_iter", range(10, 2**65, 2)))
-            for name, rng in ranges:
-                with self.subTest(invalid_value=invalid_value, range_name=name):
-                    it = iter(rng)
-                    with self.assertRaisesRegex(TypeError, invalid_msg):
-                        it.__setstate__(invalid_value)
+        for invalid_value in (1.0, "", I()):
+            invalid_msg = "state must be an int, not "
+            with self.subTest(invalid_value=invalid_value):
+                it = iter(range(10, 2**65, 2))
+                with self.assertRaisesRegex(TypeError, invalid_msg):
+                    it.__setstate__(invalid_value)
 
     def test_odd_bug(self):
         # This used to raise a "SystemError: NULL result without error"
