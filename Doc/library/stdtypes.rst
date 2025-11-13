@@ -3173,6 +3173,30 @@ objects.
 
       .. versionadded:: 3.14
 
+   .. method:: take_bytes(n=None, /)
+
+      Remove the first *n* bytes from the bytearray and return them as an immutable
+      :class:`bytes`.
+      By default (if *n* is ``None``), return all bytes and clear the bytearray.
+
+      If *n* is negative, index from the end and take the first :func:`len`
+      plus *n* bytes. If *n* is out of bounds, raise :exc:`IndexError`.
+
+      Taking less than the full length will leave remaining bytes in the
+      :class:`bytearray`, which requires a copy. If the remaining bytes should be
+      discarded, use :func:`~bytearray.resize` or :keyword:`del` to truncate
+      then :func:`~bytearray.take_bytes` without a size.
+
+      .. impl-detail::
+
+         Taking all bytes is a zero-copy operation.
+
+      .. versionadded:: next
+
+         See the :ref:`What's New <whatsnew315-bytearray-take-bytes>` entry for
+         common code patterns which can be optimized with
+         :func:`bytearray.take_bytes`.
+
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
 a bytearray object of length 1.  (This contrasts with text strings, where
