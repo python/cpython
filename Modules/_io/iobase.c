@@ -927,8 +927,6 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
         return PyObject_CallMethodNoArgs(self, &_Py_ID(readall));
     }
 
-    /* TODO: allocate a bytes object directly instead and manually construct
-       a writable memoryview pointing to it. */
     b = PyByteArray_FromStringAndSize(NULL, n);
     if (b == NULL)
         return NULL;

@@ -609,6 +609,25 @@ class IOTest:
             with self.assertRaises(ValueError):
                 Misbehaved(bad_size).read()
 
+    def test_RawIOBase_read_gh60107(self):
+        # gh-60107: Ensure a "Raw I/O" which keeps a reference to the
+        # mutable memory doesn't allow making a mutable bytes.
+        class RawIOKeepsReference(self.MockRawIOWithoutRead):
+            def __init__(self, *args, **kwargs):
+                self.buf = None
+                super().__init__(*args, **kwargs)
+
+            def readinto(self, buf):
+                # buf is the bytearray so keeping a reference to it doesn't keep
+                # the memory alive; a memoryview does.
+                self.buf = memoryview(buf)
+                buf[0:4] = self._read_stack.pop()
+                return 3
+
+        with self.assertRaises(BufferError):
+            rawio = RawIOKeepsReference([b"1234"])
+            rawio.read(4)
+
     def test_types_have_dict(self):
         test = (
             self.IOBase(),
@@ -723,26 +742,6 @@ class IOTest:
         self.assertEqual(rawio.read(), b"abcdefg")
         rawio = self.MockRawIOWithoutRead((b"abc", b"d", b"efg"))
         self.assertEqual(rawio.readall(), b"abcdefg")
-
-        # gh-60107: Ensure a "Raw I/O" which keeps a reference to the
-        # mutable memory doesn't allow making a mutable bytes.
-        class RawIOKeepsReference(self.MockRawIOWithoutRead):
-            def __init__(self, *args, **kwargs):
-                self.buf = None
-                super().__init__(*args, **kwargs)
-
-            def readinto(self, buf):
-                # buf is the bytearray so keeping a reference to it doesn't keep
-                # the memory alive; a memoryview does.
-                self.buf = memoryview(buf)
-                buf[0:4] = self._read_stack.pop()
-                return 3
-
-        with self.assertRaises(BufferError):
-            rawio = RawIOKeepsReference([b"1234"])
-            rawio.read(4)
-
-
 
     def test_BufferedIOBase_readinto(self):
         # Exercise the default BufferedIOBase.readinto() and readinto1()
