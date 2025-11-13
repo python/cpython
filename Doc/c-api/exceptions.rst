@@ -976,6 +976,9 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    be concatenated to the :exc:`RecursionError` message caused by the recursion
    depth limit.
 
+   .. seealso::
+      The :c:func:`PyUnstable_ThreadState_SetStackProtection` function.
+
    .. versionchanged:: 3.9
       This function is now also available in the :ref:`limited API <limited-c-api>`.
 

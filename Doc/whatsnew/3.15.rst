@@ -1066,6 +1066,12 @@ New features
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
 
+* Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and
+  :c:func:`PyUnstable_ThreadState_ResetStackProtection` functions to set
+  the stack protection base address and stack protection size of a Python
+  thread state.
+  (Contributed by Victor Stinner in :gh:`139653`.)
+
 
 Changed C APIs
 --------------
