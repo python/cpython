@@ -820,6 +820,7 @@ _Py_uop_frame_new(
     if (ctx->curr_frame_depth >= MAX_ABSTRACT_FRAME_DEPTH) {
         ctx->done = true;
         ctx->out_of_space = true;
+        OPT_STAT_INC(optimizer_frame_overflow);
         return NULL;
     }
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];

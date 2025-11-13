@@ -368,6 +368,7 @@ optimize_uops(
         DPRINTF(3, "\n");
         DPRINTF(1, "Hit bottom in abstract interpreter\n");
         _Py_uop_abstractcontext_fini(ctx);
+        OPT_STAT_INC(optimizer_contradiction);
         return 0;
     }
 
