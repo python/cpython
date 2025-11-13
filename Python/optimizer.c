@@ -1172,6 +1172,7 @@ allocate_executor(int exit_count, int length)
     res->trace = (_PyUOpInstruction *)(res->exits + exit_count);
     res->code_size = length;
     res->exit_count = exit_count;
+    res->tstate = _PyThreadState_GET();
     return res;
 }
 
@@ -1534,7 +1535,7 @@ unlink_executor(_PyExecutorObject *executor)
     }
     else {
         // prev == NULL implies that executor is the list head
-        _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+        _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)executor->tstate;
         assert(_tstate->jit_executor_state.executor_list_head == executor);
         _tstate->jit_executor_state.executor_list_head = next;
     }
@@ -1680,6 +1681,19 @@ _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
     _Py_BloomFilter_Add(&executor->vm_data.bloom, obj);
 }
 
+void
+_PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
+{
+    _PyBloomFilter obj_filter;
+    _Py_BloomFilter_Init(&obj_filter);
+    _Py_BloomFilter_Add(&obj_filter, obj);
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (bloom_filter_may_contain(&_tstate->jit_tracer_state.prev_state.dependencies, &obj_filter))
+    {
+        _tstate->jit_tracer_state.prev_state.dependencies_still_valid = false;
+    }
+}
+
 /* Invalidate all executors that depend on `obj`
  * May cause other executors to be invalidated as well
  */
@@ -1695,19 +1709,26 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     if (invalidate == NULL) {
         goto error;
     }
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl*)_PyThreadState_GET();
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
-    for (_PyExecutorObject *exec = _tstate->jit_executor_state.executor_list_head; exec != NULL;) {
-        assert(exec->vm_data.valid);
-        _PyExecutorObject *next = exec->vm_data.links.next;
-        if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter) &&
-            PyList_Append(invalidate, (PyObject *)exec))
-        {
-            goto error;
+    _PyEval_StopTheWorldAll(&_PyRuntime);
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+        _PyJit_Tracer_InvalidateDependency(p, obj);
+        for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
+            assert(exec->vm_data.valid);
+            if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
+                if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
+                    PyErr_Clear();
+                    Py_DECREF(invalidate);
+                    _PyEval_StartTheWorldAll(&_PyRuntime);
+                    return;
+                }
+            }
+            _PyExecutorObject *next = exec->vm_data.links.next;
+            exec = next;
         }
-        exec = next;
     }
+    _PyEval_StartTheWorldAll(&_PyRuntime);
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
         PyObject *exec = PyList_GET_ITEM(invalidate, i);
         executor_clear(exec);
@@ -1724,41 +1745,56 @@ error:
     _Py_Executors_InvalidateAll(interp, is_invalidation);
 }
 
-void
-_PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
-{
-    _PyBloomFilter obj_filter;
-    _Py_BloomFilter_Init(&obj_filter);
-    _Py_BloomFilter_Add(&obj_filter, obj);
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (bloom_filter_may_contain(&_tstate->jit_tracer_state.prev_state.dependencies, &obj_filter))
-    {
-        _tstate->jit_tracer_state.prev_state.dependencies_still_valid = false;
-    }
-}
 /* Invalidate all executors */
 void
 _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl*)_PyThreadState_GET();
-    while (_tstate->jit_executor_state.executor_list_head) {
-        _PyExecutorObject *executor = _tstate->jit_executor_state.executor_list_head;
-        assert(executor->vm_data.valid == 1 && executor->vm_data.linked == 1);
+    PyObject *invalidate = PyList_New(0);
+    if (invalidate == NULL) {
+        PyErr_Clear();
+        return;
+    }
+    /* Clearing an executor can deallocate others, so we need to make a list of
+     * executors to invalidate first */
+    _PyEval_StopTheWorldAll(&_PyRuntime);
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+        for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
+            assert(exec->vm_data.valid);
+            assert(exec->tstate == p);
+            _PyExecutorObject *next = exec->vm_data.links.next;
+            if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
+                PyErr_Clear();
+                Py_DECREF(invalidate);
+                _PyEval_StartTheWorldAll(&_PyRuntime);
+                return;
+            }
+            exec = next;
+        }
+    }
+    _PyEval_StartTheWorldAll(&_PyRuntime);
+    Py_ssize_t list_len = PyList_GET_SIZE(invalidate);
+    for (Py_ssize_t i = 0; i < list_len; i++) {
+        _PyExecutorObject *executor = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+
+        assert(executor->vm_data.valid == 1);
         if (executor->vm_data.code) {
             // Clear the entire code object so its co_executors array be freed:
             _PyCode_Clear_Executors(executor->vm_data.code);
         }
-        else {
-            executor_clear((PyObject *)executor);
-        }
+        executor_clear((PyObject *)executor);
         if (is_invalidation) {
             OPT_STAT_INC(executors_invalidated);
         }
     }
+    Py_DECREF(invalidate);
 }
 
+
+// Unlike _PyExecutor_InvalidateDependency, this is not for correctness but memory savings.
+// Thus there is no need to lock the runtime or traverse everything. We simply make a
+// best-effort attempt to clean things up.
 void
-_Py_Executors_InvalidateCold(PyInterpreterState *interp)
+_Py_Executors_InvalidateCold(PyThreadState *tstate)
 {
     /* Walk the list of executors */
     /* TO DO -- Use a tree to avoid traversing as many objects */
@@ -1766,7 +1802,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
     if (invalidate == NULL) {
         goto error;
     }
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl*)_PyThreadState_GET();
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl*)tstate;
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
     for (_PyExecutorObject *exec = _tstate->jit_executor_state.executor_list_head; exec != NULL;) {
@@ -1792,7 +1828,7 @@ error:
     PyErr_Clear();
     Py_XDECREF(invalidate);
     // If we're truly out of memory, wiping out everything is a fine fallback
-    _Py_Executors_InvalidateAll(interp, 0);
+    _Py_Executors_InvalidateAll(_PyInterpreterState_GET(), 0);
 }
 
 static void

@@ -1785,8 +1785,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     if (code->co_executors != NULL) {
         _PyCode_Clear_Executors(code);
     }
-    _Py_Executors_InvalidateDependency(interp, code, 1);
-    _PyJit_Tracer_InvalidateDependency(PyThreadState_GET(), code);
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), code, 1);
 #endif
     int code_len = (int)Py_SIZE(code);
     /* Exit early to avoid creating instrumentation

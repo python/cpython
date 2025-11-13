@@ -49,6 +49,7 @@ typedef struct _PyExitData {
 
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
+    PyThreadState *tstate;
     const _PyUOpInstruction *trace;
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
     uint32_t exit_count;
@@ -78,7 +79,7 @@ PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 #ifdef _Py_TIER2
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
-PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
+PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyThreadState *tstate);
 
 #else
 #  define _Py_Executors_InvalidateDependency(A, B, C) ((void)0)
