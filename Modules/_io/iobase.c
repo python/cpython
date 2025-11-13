@@ -957,7 +957,7 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
         if (res != NULL) {
             PyErr_Format(PyExc_ValueError,
                          "resize returned unexpected value %R",
-                        res);
+                         res);
             Py_DECREF(res);
             res = NULL;
         }
