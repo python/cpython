@@ -642,7 +642,7 @@ def sample(
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
 
-    profiler.sample(collector, async_aware, duration_sec)
+    profiler.sample(collector, duration_sec, async_aware=async_aware)
 
     if output_format == "pstats" and not filename:
         stats = pstats.SampledStats(collector).strip_dirs()
