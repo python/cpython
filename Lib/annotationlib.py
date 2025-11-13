@@ -176,11 +176,13 @@ class ForwardRef:
         # Similar logic can be used for nonlocals, which should not
         # override locals.
         if isinstance(self.__cell__, dict):
-            for cell_name, cell_value in self.__cell__.items():
+            for cell_name, cell in self.__cell__.items():
                 try:
-                    locals.setdefault(cell_name, cell_value.cell_contents)
+                    cell_value = cell.cell_contents
                 except ValueError:
                     pass
+                else:
+                    locals.setdefault(cell_name, cell_value)
 
         if self.__extra_names__:
             locals.update(self.__extra_names__)
