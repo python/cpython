@@ -9,7 +9,7 @@ preserve
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 PyDoc_STRVAR(depr_star_new__doc__,
 "DeprStarNew(a=None)\n"
@@ -2474,4 +2474,4 @@ depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=68fe32f7febd367c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c8305058a6aa073 input=a9049054013a1b77]*/

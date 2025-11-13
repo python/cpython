@@ -599,7 +599,7 @@ PyDoc_STRVAR(bytearray_resize__doc__,
 "Resize the internal buffer of bytearray to len.\n"
 "\n"
 "  size\n"
-"    New size to resize to..");
+"    New size to resize to.");
 
 #define BYTEARRAY_RESIZE_METHODDEF    \
     {"resize", (PyCFunction)bytearray_resize, METH_O, bytearray_resize__doc__},
@@ -1796,4 +1796,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=f6a43146aef9ff60 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=336dbc58a15f0998 input=a9049054013a1b77]*/

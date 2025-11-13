@@ -7,7 +7,6 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
@@ -102,7 +101,7 @@ sys_audit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    __clinic_args = _PyTuple_FromArray(args + 1, nargs - 1);
+    __clinic_args = PyTuple_FromArray(args + 1, nargs - 1);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -1948,4 +1947,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=e93a2ebc4188a6ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4f8714024ebcdff1 input=a9049054013a1b77]*/

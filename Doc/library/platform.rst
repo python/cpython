@@ -56,6 +56,8 @@ Cross platform
    Returns the machine type, e.g. ``'AMD64'``. An empty string is returned if the
    value cannot be determined.
 
+   The output is platform-dependent and may differ in casing and naming conventions.
+
 
 .. function:: node()
 

@@ -448,7 +448,8 @@ class ParseArgsTestCase(unittest.TestCase):
 
         return regrtest
 
-    def check_ci_mode(self, args, use_resources, *, rerun=True, randomize=True):
+    def check_ci_mode(self, args, use_resources,
+                      *, rerun=True, randomize=True, output_on_failure=True):
         regrtest = self.create_regrtest(args)
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
@@ -457,7 +458,7 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertIsInstance(regrtest.random_seed, int)
         self.assertTrue(regrtest.fail_env_changed)
         self.assertTrue(regrtest.print_slowest)
-        self.assertTrue(regrtest.output_on_failure)
+        self.assertEqual(regrtest.output_on_failure, output_on_failure)
         self.assertEqual(sorted(regrtest.use_resources), sorted(use_resources))
         return regrtest
 
@@ -483,6 +484,14 @@ class ParseArgsTestCase(unittest.TestCase):
         use_resources.remove('cpu')
         use_resources.remove('network')
         self.check_ci_mode(args, use_resources)
+
+    def test_fast_ci_verbose(self):
+        args = ['--fast-ci', '--verbose']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        use_resources.remove('cpu')
+        regrtest = self.check_ci_mode(args, use_resources,
+                                      output_on_failure=False)
+        self.assertEqual(regrtest.verbose, True)
 
     def test_slow_ci(self):
         args = ['--slow-ci']

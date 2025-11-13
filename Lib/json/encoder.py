@@ -111,9 +111,10 @@ class JSONEncoder(object):
         encoding of keys that are not str, int, float, bool or None.
         If skipkeys is True, such items are simply skipped.
 
-        If ensure_ascii is true, the output is guaranteed to be str
-        objects with all incoming non-ASCII characters escaped.  If
-        ensure_ascii is false, the output can contain non-ASCII characters.
+        If ensure_ascii is true, the output is guaranteed to be str objects
+        with all incoming non-ASCII and non-printable characters escaped.
+        If ensure_ascii is false, the output can contain non-ASCII and
+        non-printable characters.
 
         If check_circular is true, then lists, dicts, and custom encoded
         objects will be checked for circular references during encoding to
@@ -134,14 +135,15 @@ class JSONEncoder(object):
         indent level.  An indent level of 0 will only insert newlines.
         None is the most compact representation.
 
-        If specified, separators should be an (item_separator, key_separator)
-        tuple.  The default is (', ', ': ') if *indent* is ``None`` and
-        (',', ': ') otherwise.  To get the most compact JSON representation,
-        you should specify (',', ':') to eliminate whitespace.
+        If specified, separators should be an (item_separator,
+        key_separator) tuple.  The default is (', ', ': ') if *indent* is
+        ``None`` and (',', ': ') otherwise.  To get the most compact JSON
+        representation, you should specify (',', ':') to eliminate
+        whitespace.
 
         If specified, default is a function that gets called for objects
-        that can't otherwise be serialized.  It should return a JSON encodable
-        version of the object or raise a ``TypeError``.
+        that can't otherwise be serialized.  It should return a JSON
+        encodable version of the object or raise a ``TypeError``.
 
         """
 

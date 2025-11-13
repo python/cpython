@@ -4341,7 +4341,7 @@ test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     a = args[0];
-    __clinic_args = _PyTuple_FromArray(args + 1, nargs - 1);
+    __clinic_args = PyTuple_FromArray(args + 1, nargs - 1);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4356,7 +4356,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=0c11c475e240869e input=2c49a482f68545c0]*/
+/*[clinic end generated code: output=83cbe9554d04add2 input=2c49a482f68545c0]*/
 
 /*[clinic input]
 test_vararg
@@ -4421,7 +4421,7 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     }
     a = fastargs[0];
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -4437,7 +4437,10 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=2255ff43c00f7af4 input=7448995636d9186a]*/
+/*[clinic end generated code: output=d694383b328e09bd input=7448995636d9186a]*/
+=======
+/*[clinic end generated code: output=d773f7b54e61f73a input=7448995636d9186a]*/
+>>>>>>> master
 
 /*[clinic input]
 test_vararg_with_default
@@ -4514,7 +4517,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
 skip_optional_kwonly:
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -4531,7 +4534,10 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=80952dcd9d3de194 input=3a0f9f557ce1f712]*/
+/*[clinic end generated code: output=ba65b2097d722f88 input=3a0f9f557ce1f712]*/
+=======
+/*[clinic end generated code: output=d25e56802c197344 input=3a0f9f557ce1f712]*/
+>>>>>>> master
 
 /*[clinic input]
 test_vararg_with_only_defaults
@@ -4612,7 +4618,7 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
     }
     c = fastargs[1];
 skip_optional_kwonly:
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4628,7 +4634,10 @@ exit:
 static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=4bcd7f97b7ac3cf2 input=6983e66817f82924]*/
+/*[clinic end generated code: output=1162fb090edfe15f input=6983e66817f82924]*/
+=======
+/*[clinic end generated code: output=7366943a7df42e05 input=6983e66817f82924]*/
+>>>>>>> master
 
 /*[clinic input]
 test_paramname_module
