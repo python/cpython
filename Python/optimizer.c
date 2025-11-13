@@ -968,7 +968,7 @@ _PyJit_TryInitializeTracing(
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     // A recursive trace.
     // Don't trace into the inner call because it will stomp on the previous trace, causing endless retraces.
-    if (_tstate->jit_tracer_state.prev_state.code_curr_size > CODE_SIZE_NO_PROGRESS) {
+    if (_tstate->jit_tracer_state.prev_state.code_curr_size > CODE_SIZE_EMPTY) {
         return 0;
     }
     if (oparg > 0xFFFF) {
