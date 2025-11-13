@@ -215,6 +215,11 @@ class ThreadTests(BaseTestCase):
             self.assertRegex(repr(t), r'^<TestThread\(.*, initial\)>$')
             t.start()
 
+        if hasattr(threading, 'get_native_id'):
+            native_ids = set(t.native_id for t in threads) | {threading.get_native_id()}
+            self.assertNotIn(None, native_ids)
+            self.assertEqual(len(native_ids), NUMTASKS + 1)
+
         if verbose:
             print('waiting for all tasks to complete')
         for t in threads:
@@ -223,11 +228,6 @@ class ThreadTests(BaseTestCase):
             self.assertNotEqual(t.ident, 0)
             self.assertIsNotNone(t.ident)
             self.assertRegex(repr(t), r'^<TestThread\(.*, stopped -?\d+\)>$')
-
-        if hasattr(threading, 'get_native_id'):
-            native_ids = set(t.native_id for t in threads) | {threading.get_native_id()}
-            self.assertNotIn(None, native_ids)
-            self.assertEqual(len(native_ids), NUMTASKS + 1)
 
         if verbose:
             print('all tasks done')
@@ -1477,11 +1477,15 @@ class ThreadTests(BaseTestCase):
             ):
                 thread.start()
                 self.assertFalse(thread.is_alive())
+                self.assertFalse(thread in threading._limbo)
+                self.assertFalse(thread in threading._active)
 
         serving_thread = threading.Thread(target=serving_thread)
         serving_thread.start()
         serving_thread.join(0.1)
         self.assertFalse(serving_thread.is_alive())
+        self.assertFalse(serving_thread in threading._limbo)
+        self.assertFalse(serving_thread in threading._active)
 
 
 class ThreadJoinOnShutdown(BaseTestCase):
