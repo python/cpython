@@ -17,7 +17,7 @@ class StackTraceCollector(Collector):
     def collect(self, stack_frames, skip_idle=False):
         if stack_frames and hasattr(stack_frames[0], "awaited_by"):
             # Async-aware mode: process async task frames
-            for frames, thread_id in self._iter_async_frames(stack_frames):
+            for frames, thread_id, task_id in self._iter_async_frames(stack_frames):
                 if not frames:
                     continue
                 self.process_frames(frames, thread_id)
