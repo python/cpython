@@ -888,8 +888,3 @@ class TestTurtleMotion(CustomTestCase):
             t.reset()
         screen.clear()
         screen.resetscreen()
-
-
-def tearDownModule():
-    # Clean up turtle graphics at the end of all tests
-    turtle.bye()
