@@ -3128,7 +3128,7 @@ def main_loop():
         operator.call(inner)
 
 def inner():
-    # A mixture of native and Python code at the top of the stack:
+    # Python code at the top of the stack:
     for _ in range(1_000_0000):
         pass
 
@@ -3179,11 +3179,8 @@ if __name__ == "__main__":
         # Most samples should have native code in the middle of the stack:
         self.assertTrue(any(";<native>;" in stack for stack in stacks))
 
-        # Some samples should have native code at the top of the stack:
-        self.assertTrue(any(stack.endswith(";<native>") for stack in stacks))
-
-        # Some samples should have Python code at the top of the stack:
-        self.assertTrue(any(not stack.endswith(";<native>") for stack in stacks))
+        # No samples should have native code at the top of the stack:
+        self.assertFalse(any(stack.endswith(";<native>") for stack in stacks))
 
     def test_native_frames_disabled(self):
         """Test that native frames do not appear when native tracking is disabled."""

@@ -2495,29 +2495,24 @@ process_frame_chain(
             PyErr_SetString(PyExc_RuntimeError, e);
             return -1;
         }
-        _Py_DECLARE_STR(native, "<native>");
-        _Py_DECLARE_STR(gc, "<GC>");
         PyObject *extra_frame = NULL;
         // This frame kicked off the current GC collection:
         if (unwinder->gc && frame_addr == gc_frame) {
+            _Py_DECLARE_STR(gc, "<GC>");
             extra_frame = &_Py_STR(gc);
         }
         // Otherwise, check for native frames to insert:
-        else if (unwinder->native) {
-            // Topmost frame spilled its stack pointer for a native call:
-            if (PyList_GET_SIZE(frame_info) == 0 && stackpointer) {
-                extra_frame = &_Py_STR(native);
-            }
-            // Or, we've reached an interpreter trampoline frame:
-            else if (frame == NULL &&
-                     // Bottommost frame is always native, so skip that one:
-                     next_frame_addr &&
-                     // If the next frame will be reported as a GC frame, then
-                     // don't add an extra native frame below it:
-                     !(unwinder->gc && next_frame_addr == gc_frame))
-            {
-                extra_frame = &_Py_STR(native);
-            }
+        else if (unwinder->native &&
+                 // We've reached an interpreter trampoline frame:
+                 frame == NULL &&
+                 // Bottommost frame is always native, so skip that one:
+                 next_frame_addr &&
+                 // If the next frame will be reported as a GC frame, then
+                 // don't add an extra native frame below it:
+                 !(unwinder->gc && next_frame_addr == gc_frame))
+        {
+            _Py_DECLARE_STR(native, "<native>");
+            extra_frame = &_Py_STR(native);
         }
         if (extra_frame) {
             // Use "~" as file and 0 as line, since that's what pstats uses:
