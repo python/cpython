@@ -121,6 +121,10 @@ complete listing.
 
    Return the absolute value of ``x``.
 
+   If the result cannot be represented (for example, if ``x`` has
+   :c:macro:`!INT_MIN` value for :c:expr:`int` type), the behavior is
+   undefined.
+
    .. versionadded:: 3.3
 
 .. c:macro:: Py_ALWAYS_INLINE
@@ -232,6 +236,29 @@ complete listing.
    warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
 
    .. versionadded:: 3.4
+
+.. c:macro:: Py_BUILD_ASSERT(cond)
+
+   Asserts a compile-time condition *cond*, as a statement.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      Py_BUILD_ASSERT(sizeof(PyTime_t) == sizeof(int64_t));
+
+   .. versionadded:: 3.3
+
+.. c:macro:: Py_BUILD_ASSERT_EXPR(cond)
+
+   Asserts a compile-time condition *cond*, as an expression that evaluates to ``0``.
+   The build will fail if the condition is false or cannot be evaluated at compile time.
+
+   For example::
+
+      #define foo_to_char(foo) \
+          ((char *)(foo) + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+
+   .. versionadded:: 3.3
 
 .. c:macro:: PyDoc_STRVAR(name, str)
 
