@@ -5,8 +5,8 @@ terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
 #pragma once
-#ifndef Py_MIMALLOC_TRACK_H
-#define Py_MIMALLOC_TRACK_H
+#ifndef MIMALLOC_TRACK_H
+#define MIMALLOC_TRACK_H
 
 /* ------------------------------------------------------------------------------------------------------
 Track memory ranges with macros for tools like Valgrind address sanitizer, or other memory checkers.
