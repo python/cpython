@@ -914,7 +914,7 @@ new_dict_with_shared_keys(PyDictKeysObject *keys)
 static PyDictKeysObject *
 clone_combined_dict_keys(PyDictObject *orig)
 {
-    assert(PyDict_Check(orig));
+    assert(_PyAnyDict_Check(orig));
     assert(Py_TYPE(orig)->tp_iter == dict_iter);
     assert(orig->ma_values == NULL);
     assert(orig->ma_keys != Py_EMPTY_KEYS);
@@ -2374,7 +2374,7 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
     PyDictObject *mp = (PyDictObject *)op;
     PyObject *value;
 
-    if (!PyDict_Check(op)) {
+    if (!_PyAnyDict_Check(op)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -3280,8 +3280,8 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
         return NULL;
 
 
-    if (PyDict_CheckExact(d)) {
-        if (PyDict_CheckExact(iterable)) {
+    if (_PyAnyDict_CheckExact(d)) {
+        if (_PyAnyDict_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
 
             Py_BEGIN_CRITICAL_SECTION2(d, iterable);
@@ -3496,7 +3496,7 @@ dict_subscript(PyObject *self, PyObject *key)
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix == DKIX_EMPTY || value == NULL) {
-        if (!PyDict_CheckExact(mp)) {
+        if (!_PyAnyDict_CheckExact(mp)) {
             /* Look up __missing__ method if we're a subclass. */
             PyObject *missing, *res;
             missing = _PyObject_LookupSpecial(
@@ -3535,7 +3535,7 @@ keys_lock_held(PyObject *dict)
 {
     ASSERT_DICT_LOCKED(dict);
 
-    if (dict == NULL || !PyDict_Check(dict)) {
+    if (dict == NULL || !_PyAnyDict_Check(dict)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -3584,7 +3584,7 @@ values_lock_held(PyObject *dict)
 {
     ASSERT_DICT_LOCKED(dict);
 
-    if (dict == NULL || !PyDict_Check(dict)) {
+    if (dict == NULL || !_PyAnyDict_Check(dict)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -3632,7 +3632,7 @@ items_lock_held(PyObject *dict)
 {
     ASSERT_DICT_LOCKED(dict);
 
-    if (dict == NULL || !PyDict_Check(dict)) {
+    if (dict == NULL || !_PyAnyDict_Check(dict)) {
         PyErr_BadInternalCall();
         return NULL;
     }
@@ -3712,7 +3712,7 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
 static int
 dict_update_arg(PyObject *self, PyObject *arg)
 {
-    if (PyDict_CheckExact(arg)) {
+    if (_PyAnyDict_CheckExact(arg)) {
         return PyDict_Merge(self, arg, 1);
     }
     int has_keys = PyObject_HasAttrWithError(arg, &_Py_ID(keys));
@@ -3982,7 +3982,7 @@ dict_merge(PyInterpreterState *interp, PyObject *a, PyObject *b, int override)
     }
     mp = (PyDictObject*)a;
     int res = 0;
-    if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == dict_iter)) {
+    if (_PyAnyDict_Check(b) && (Py_TYPE(b)->tp_iter == dict_iter)) {
         other = (PyDictObject*)b;
         int res;
         Py_BEGIN_CRITICAL_SECTION2(a, b);
@@ -4243,7 +4243,7 @@ PyDict_Copy(PyObject *o)
 Py_ssize_t
 PyDict_Size(PyObject *mp)
 {
-    if (mp == NULL || !PyDict_Check(mp)) {
+    if (mp == NULL || !_PyAnyDict_Check(mp)) {
         PyErr_BadInternalCall();
         return -1;
     }
@@ -5789,7 +5789,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
 {
     dictiterobject *di = (dictiterobject *)self;
 
-    assert (PyDict_Check(d));
+    assert (_PyAnyDict_Check(d));
     ASSERT_DICT_LOCKED(d);
 
     if (di->di_used != d->ma_used) {
@@ -5919,7 +5919,7 @@ static PyObject *
 dict___reversed___impl(PyDictObject *self)
 /*[clinic end generated code: output=e674483336d1ed51 input=23210ef3477d8c4d]*/
 {
-    assert (PyDict_Check(self));
+    assert (_PyAnyDict_Check(self));
     return dictiter_new(self, &PyDictRevIterKey_Type);
 }
 
@@ -6194,7 +6194,7 @@ dictviews_to_set(PyObject *self)
     if (PyDictKeys_Check(self)) {
         // PySet_New() has fast path for the dict object.
         PyObject *dict = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
-        if (PyDict_CheckExact(dict)) {
+        if (_PyAnyDict_CheckExact(dict)) {
             left = dict;
         }
     }
@@ -7714,7 +7714,7 @@ validate_watcher_id(PyInterpreterState *interp, int watcher_id)
 int
 PyDict_Watch(int watcher_id, PyObject* dict)
 {
-    if (!PyDict_Check(dict)) {
+    if (!_PyAnyDict_Check(dict)) {
         PyErr_SetString(PyExc_ValueError, "Cannot watch non-dictionary");
         return -1;
     }
@@ -7729,7 +7729,7 @@ PyDict_Watch(int watcher_id, PyObject* dict)
 int
 PyDict_Unwatch(int watcher_id, PyObject* dict)
 {
-    if (!PyDict_Check(dict)) {
+    if (!_PyAnyDict_Check(dict)) {
         PyErr_SetString(PyExc_ValueError, "Cannot watch non-dictionary");
         return -1;
     }

@@ -2403,7 +2403,7 @@ defdict_or(PyObject* left, PyObject* right)
         self = right;
         other = left;
     }
-    if (!PyDict_Check(other)) {
+    if (!_PyAnyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
     // Like copy(), this calls the object's class.

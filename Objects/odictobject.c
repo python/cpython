@@ -2272,7 +2272,7 @@ static int
 mutablemapping_update_arg(PyObject *self, PyObject *arg)
 {
     int res = 0;
-    if (PyDict_CheckExact(arg)) {
+    if (_PyAnyDict_CheckExact(arg)) {
         PyObject *items = PyDict_Items(arg);
         if (items == NULL) {
             return -1;
