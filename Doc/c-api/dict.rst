@@ -444,9 +444,9 @@ Dictionary Keys Objects
    the object returned by :meth:`dict.keys`.
 
 
-.. c:function:: int PyDictKeys_Check(PyObject *o)
+.. c:function:: int PyDictKeys_Check(PyObject *op)
 
-   Return true if *o* is an instance of a dictionary keys view. This function
+   Return true if *op* is an instance of a dictionary keys view. This function
    always succeeds.
 
 
@@ -459,9 +459,9 @@ Dictionary Values Objects
    the object returned by :meth:`dict.values`.
 
 
-.. c:function:: int PyDictValues_Check(PyObject *o)
+.. c:function:: int PyDictValues_Check(PyObject *op)
 
-   Return true if *o* is an instance of a dictionary values view. This function
+   Return true if *op* is an instance of a dictionary values view. This function
    always succeeds.
 
 
@@ -474,7 +474,7 @@ Dictionary Items Objects
    the object returned by :meth:`dict.items`.
 
 
-.. c:function:: int PyDictItems_Check(PyObject *o)
+.. c:function:: int PyDictItems_Check(PyObject *op)
 
-   Return true if *o* is an instance of a dictionary items view. This function
+   Return true if *op* is an instance of a dictionary items view. This function
    always succeeds.
