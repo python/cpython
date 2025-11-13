@@ -5,8 +5,8 @@ terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
 -----------------------------------------------------------------------------*/
 #pragma once
-#ifndef Py_MIMALLOC_PRIM_H
-#define Py_MIMALLOC_PRIM_H
+#ifndef MIMALLOC_PRIM_H
+#define MIMALLOC_PRIM_H
 
 
 // --------------------------------------------------------------------------
@@ -326,4 +326,4 @@ static inline mi_heap_t* mi_prim_get_default_heap(void) {
 
 
 
-#endif  // Py_MIMALLOC_PRIM_H
+#endif  // MIMALLOC_PRIM_H
