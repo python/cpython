@@ -33,6 +33,12 @@ extern const char* _Py_SourceAsString(
     PyCompilerFlags *cf,
     PyObject **cmd_copy);
 
+extern PyObject * _Py_CompileStringObjectWithModule(
+    const char *str,
+    PyObject *filename, int start,
+    PyCompilerFlags *flags, int optimize,
+    PyObject *module);
+
 
 /* Stack size, in "pointers". This must be large enough, so
  * no two calls to check recursion depth are more than this far
