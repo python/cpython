@@ -398,8 +398,8 @@ thread_run(void *boot_raw)
             PyErr_FormatUnraisable(
                 "Exception ignored in thread started by %R", boot->func);
         }
+        // Notify that the bootstraped is done and failed (e.g. Memory error).
         set_thread_handle_state(handle, THREAD_HANDLE_FAILED);
-        // Notify that the bootstraped is done, in case the Python didn't bootstrap correctly (e.g. Memory error)
         _PyEvent_Notify(&handle->thread_is_bootstraped);
     }
     else {
@@ -432,7 +432,6 @@ force_done(void *arg)
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_STARTING);
     _PyEvent_Notify(&handle->thread_is_exiting);
     set_thread_handle_state(handle, THREAD_HANDLE_DONE);
-    _PyEvent_Notify(&handle->thread_is_bootstraped);
     return 0;
 }
 
