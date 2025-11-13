@@ -135,6 +135,7 @@ Tools/unicode/data/
 /config.log
 /config.status
 /config.status.lineno
+/.ccache
 /cross-build/
 /jit_stencils*.h
 /platform
