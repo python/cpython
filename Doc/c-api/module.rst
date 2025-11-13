@@ -181,7 +181,8 @@ Metadata slots
 
 .. c:macro:: Py_mod_name
 
-   Name for the new module, as a NUL-terminated UTF8-encoded ``const char *``.
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for the name of the new module,
+   as a NUL-terminated UTF8-encoded ``const char *``.
 
    Note that modules are typically created using a
    :py:class:`~importlib.machinery.ModuleSpec`, and when they are, the
@@ -195,8 +196,10 @@ Metadata slots
 
 .. c:macro:: Py_mod_doc
 
-   Docstring for the module, as a NUL-terminated UTF8-encoded ``const char *``.
-   Usually set to a docstring variable created with :c:macro:`PyDoc_STRVAR`.
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for the docstring of the new
+   module, as a NUL-terminated UTF8-encoded ``const char *``.
+
+   Usually it is set to a variable created with :c:macro:`PyDoc_STRVAR`.
 
    .. versionadded:: next
 
@@ -208,7 +211,8 @@ Feature slots
 
 .. c:macro:: Py_mod_abi
 
-   A pointer to a :c:struct:`PyABIInfo` structure that describes the ABI that
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` whose value points to
+   a :c:struct:`PyABIInfo` structure describing the ABI that
    the extension is using.
 
    A suitable :c:struct:`!PyABIInfo` variable can be defined using the
@@ -230,7 +234,7 @@ Feature slots
 
 .. c:macro:: Py_mod_multiple_interpreters
 
-   Specifies one of the following values:
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` whose value is one of:
 
    .. c:namespace:: NULL
 
@@ -260,7 +264,7 @@ Feature slots
 
 .. c:macro:: Py_mod_gil
 
-   Specifies one of the following values:
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` whose value is one of:
 
    .. c:namespace:: NULL
 
@@ -289,8 +293,9 @@ Creation and initialization slots
 
 .. c:macro:: Py_mod_create
 
-   Specifies a function that is called to create the module object itself.
-   The *value* pointer of this slot must point to a function of the signature:
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a function that creates
+   the module object itself.
+   The function must have the signature:
 
    .. c:function:: PyObject* create_module(PyObject *spec, PyModuleDef *def)
       :no-index-entry:
@@ -336,10 +341,10 @@ Creation and initialization slots
 
 .. c:macro:: Py_mod_exec
 
-   Specifies a function that is called to :dfn:`execute`, or initialize,
-   the module.
-   This is equivalent to executing the code of a Python module: typically,
-   this function adds classes and constants to the module.
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a function that will
+   :dfn:`execute`, or initialize, the module.
+   This function does the equivalent to executing the code of a Python module:
+   typically, it adds classes and constants to the module.
    The signature of the function is:
 
    .. c:function:: int exec_module(PyObject* module)
@@ -363,9 +368,9 @@ Creation and initialization slots
 
 .. c:macro:: Py_mod_methods
 
-   A pointer to a table of module-level functions, as an array of
-   :c:type:`PyMethodDef` values suitable as the *functions* argument to
-   :c:func:`PyModule_AddFunctions`.
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a table of module-level
+   functions, as an array of :c:type:`PyMethodDef` values suitable as the
+   *functions* argument to :c:func:`PyModule_AddFunctions`.
 
    Like other slot IDs, a slots array may only contain one
    :c:macro:`!Py_mod_methods` entry.
@@ -439,18 +444,12 @@ defining the module state.
 
 .. c:macro:: Py_mod_state_size
 
-   Size of the module state, cast to a ``void*`` pointer.
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for the size of the module state,
+   in bytes.
 
-   Setting this to a non-negative value means that the module can be
+   Setting the value to a non-negative value means that the module can be
    re-initialized and specifies the additional amount of memory it requires
    for its state.
-
-   Setting the size to ``-1`` means that the
-   module does not support sub-interpreters, because it has global state.
-   Negative *size* is only allowed when using
-   :ref:`legacy single-phase initialization <single-phase-initialization>`
-   or when creating modules dynamically using :c:func:`PyModule_Create`
-   or :c:func:`PyModule_Create2`.
 
    See :PEP:`3121` for more details.
 
@@ -462,7 +461,8 @@ defining the module state.
 
 .. c:macro:: Py_mod_state_traverse
 
-   A traversal function to call during GC traversal of the module object.
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a traversal function to call
+   during GC traversal of the module object.
 
    The signature of the function, and meanings of the arguments,
    is similar as for :c:member:`PyTypeObject.tp_traverse`:
@@ -484,7 +484,8 @@ defining the module state.
 
 .. c:macro:: Py_mod_state_clear
 
-   A clear function to call during GC clearing of the module object.
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a clear function to call
+   during GC clearing of the module object.
 
    The signature of the function is:
 
@@ -511,7 +512,8 @@ defining the module state.
 
 .. c:macro:: Py_mod_state_free
 
-   A function to call during deallocation of the module object.
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for a function to call during
+   deallocation of the module object.
 
    The signature of the function is:
 
@@ -530,38 +532,13 @@ defining the module state.
 
       Use :c:member:`PyModuleDef.m_free` instead to support previous versions.
 
-.. c:macro:: Py_mod_token
-
-   A pointer intended to identify of the module state's memory layout.
-   See the :ref:`ext-module-token` section for details.
-
-   This slot is not needed for typical extensions; it exists for specialized
-   use cases -- namely, dynamically created modules.
-   If you use the slot, you must ensure that:
-
-   * The pointer outlives the class, so it's not reused for something else
-     while the class exists.
-   * It "belongs" to the extension module where the class lives, so it will not
-     clash with other extensions.
-     (Preventing clashes with other modules defined in the same extension is
-     the extension's responsibility; you don't need to use the token for this.)
-   * If the token points to a :c:type:`PyModuleDef` struct, the module should
-     behave as if it was created from that :c:type:`PyModuleDef`.
-     In particular, the module state must have matching layout and semantics.
-
-   Modules created from :c:type:`PyModuleDef` allways use the address of
-   the :c:type:`PyModuleDef` as the token; :c:macro:`!Py_mod_token` cannot
-   be used in :c:member:`PyModuleDef.m_slots`.
-
-   .. versionadded:: next
-
 
 .. _ext-module-token:
 
 Module token
 ............
 
-Each module has an associated *token*, a pointer-sized value intended to
+Each module may have an associated *token*: a pointer-sized value intended to
 identify of the module state's memory layout.
 This means that if you have a module object, but you are not sure if it
 “belongs” to your extension, you can check using code like this:
@@ -575,32 +552,48 @@ This means that if you have a module object, but you are not sure if it
        return NULL;
    }
    if (module_token != your_token) {
-       if (!PyErr_Occurred()) {
-           PyErr_SetString(PyExc_ValueError, "unexpected module")
-       }
+       PyErr_SetString(PyExc_ValueError, "unexpected module")
        return NULL;
    }
 
-   // Now it's safe to cast: this module's state has the expected memory layout
+   // This module's state has the expected memory layout; it's safe to cast
    struct my_state state = (struct my_state*)PyModule_GetState(module)
-   if (state == NULL) {
-       return NULL;
-   }
 
 A module's token -- and the *your_token* value to use in the above code -- is:
 
+- For modules created with :c:type:`PyModuleDef`: the address of that
+  :c:type:`PyModuleDef`;
 - For modules defined with the :c:macro:`Py_mod_token` slot: the value
   of that slot;
 - For modules created from an ``PyModExport_*``
   :ref:`export hook <extension-export-hook>`: the slots array that the export
   hook returned (unless overriden with :c:macro:`Py_mod_token`).
-- For modules created with :c:type:`PyModuleDef`: the address of that
-  :c:type:`PyModuleDef`.
+
+.. c:macro:: Py_mod_token
+
+   :c:type:`Slot ID <PyModuleDef_Slot.slot>` for the module token.
+
+   If you use this slot to set the module token (rather than rely on the
+   default), you must ensure that:
+
+   * The pointer outlives the class, so it's not reused for something else
+     while the class exists.
+   * It "belongs" to the extension module where the class lives, so it will not
+     clash with other extensions.
+   * If the token points to a :c:type:`PyModuleDef` struct, the module should
+     behave as if it was created from that :c:type:`PyModuleDef`.
+     In particular, the module state must have matching layout and semantics.
+
+   Modules created from :c:type:`PyModuleDef` allways use the address of
+   the :c:type:`PyModuleDef` as the token.
+   This means that :c:macro:`!Py_mod_token` cannot be used in
+   :c:member:`PyModuleDef.m_slots`.
+
+   .. versionadded:: next
 
 .. c:function:: int PyModule_GetToken(PyObject *module, void** result)
 
    Set *\*result* to the module's token and return 0.
-   See :c:macro:`Py_mod_token` for information about module tokens.
 
    On error, set *\*result* to NULL, and return -1 with an exception set.
 
@@ -638,10 +631,7 @@ rather than from an extension's :ref:`export hook <extension-export-hook>`.
    (:c:data:`Py_mod_exec`).
    Both :c:func:`!PyModule_FromSlotsAndSpec` and :c:func:`PyModule_Exec`
    must be called to fully initialize a module.
-   (Python's default import machinery takes additional steps between
-   these two calls, such as inserting the module object in
-   :py:attr:`sys.modules` and setting
-   :ref:`import-related attributes <import-mod-attrs>`.)
+   (See also :ref:`multi-phase-initialization`.)
 
    The *slots* array only needs to be valid for the duration of the
    :c:func:`!PyModule_FromSlotsAndSpec` call.
@@ -649,12 +639,16 @@ rather than from an extension's :ref:`export hook <extension-export-hook>`.
 
    .. versionadded:: next
 
-.. c:function:: int PyModule_Exec(PyObject *)
+.. c:function:: int PyModule_Exec(PyObject *module)
 
-   Execute the :c:data:`Py_mod_exec` slot(s) of the given module.
+   Execute the :c:data:`Py_mod_exec` slot(s) of the given *module*.
 
    On success, return 0.
    On error, return -1 with an exception set.
+
+   For clarity: If *module* has no slots, for example if it uses
+   :ref:`legacy single-phase initialization <single-phase-initialization>`,
+   this function does nothing and returns 0.
 
    .. versionadded:: next
 
@@ -699,16 +693,29 @@ remove it.
          The required initial value for :c:member:`!PyModuleDef.m_base`.
 
    .. c:member:: const char *m_name
-                 const char *m_doc
-                 Py_ssize_t m_size
-                 PyMethodDef *m_methods
 
-      These members correspond to the :c:macro:`Py_mod_name`,
-      :c:macro:`Py_mod_doc`, :c:macro:`Py_mod_state_size`,
-      and :c:macro:`Py_mod_methods` slots, respectively.
+      Corresponds to the :c:macro:`Py_mod_name` slot.
 
-      Setting these members to NULL is equivalent to omitting the
-      corresponding slots.
+   .. c:member:: const char *m_doc
+
+      These members correspond to the :c:macro:`Py_mod_doc` slot.
+      Setting this to NULL is equivalent to omitting the slot.
+
+   .. c:member:: Py_ssize_t m_size
+
+      Corresponds to the :c:macro:`Py_mod_state_size` slot.
+      Setting this to zero is equivalent to omitting the slot.
+
+      When using :ref:`legacy single-phase initialization <single-phase-initialization>`
+      or when creating modules dynamically using :c:func:`PyModule_Create`
+      or :c:func:`PyModule_Create2`, :c:member:`!m_size` may be set to -1.
+      This indicates that the module does not support sub-interpreters,
+      because it has global state.
+
+   .. c:member:: PyMethodDef *m_methods
+
+      Corresponds to the :c:macro:`Py_mod_methods` slot.
+      Setting this to NULL is equivalent to omitting the slot.
 
    .. c:member:: PyModuleDef_Slot* m_slots
 
@@ -716,8 +723,8 @@ remove it.
 
       This array may not contain slots corresponding to :c:type:`PyModuleDef`
       members.
-      For example, you cannot use a :c:macro:`Py_mod_name` slot; the module
-      name must be given as :c:member:`PyModuleDef.m_name`.
+      For example, you cannot use :c:macro:`Py_mod_name` in :c:member:`!m_slots`;
+      the module name must be given as :c:member:`PyModuleDef.m_name`.
 
       .. versionchanged:: 3.5
 
@@ -725,13 +732,6 @@ remove it.
          and was defined as:
 
            .. c:member:: inquiry m_reload
-
-                 const char *m_doc
-                 Py_ssize_t m_size
-                 PyMethodDef* m_methods
-                 traverseproc m_traverse
-                 inquiry m_clear
-                 freefunc m_free
 
    .. c:member:: traverseproc m_traverse
                  inquiry m_clear
@@ -746,7 +746,7 @@ remove it.
 
       .. versionchanged:: 3.9
 
-         :c:member:`!m_traverse`, :c:member:`m_clear` and :c:member:`m_free`
+         :c:member:`m_traverse`, :c:member:`m_clear` and :c:member:`m_free`
          functions are longer called before the module state is allocated.
 
 

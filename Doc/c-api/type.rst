@@ -304,10 +304,10 @@ Type Objects
    .. versionadded:: 3.9
 
 
-.. c:function:: PyObject* PyType_GetModuleByToken(PyTypeObject *type, const void *token)
+.. c:function:: PyObject* PyType_GetModuleByToken(PyTypeObject *type, const void *mod_token)
 
-   Find the first superclass whose module has the given *token*, and
-   return that module.
+   Find the first superclass whose module has the given
+   :ref:`module token <ext-module-token>`, and return that module.
 
    If no module is found, raises a :py:class:`TypeError` and returns ``NULL``.
 
@@ -316,8 +316,6 @@ Type Objects
    :c:member:`~PyTypeObject.tp_init` or :c:member:`~PyNumberMethods.nb_add`)
    and other places where a method's defining class cannot be passed using the
    :c:type:`PyCMethod` calling convention.
-
-   See :ref:`ext-module-token` for more information on module tokens.
 
    .. versionadded:: next
 
@@ -330,9 +328,11 @@ Type Objects
 
    Note that modules created from a :c:type:`PyModuleDef` always have their
    token set to the :c:type:`PyModuleDef`'s address.
+   In other words, this function is equivalent to
+   :c:func:`PyType_GetModuleByToken`, except that it:
 
-   This function is equivalent to :c:func:`PyType_GetModuleByToken`, except
-   it returns a borrowed reference.
+   - returns a borrowed reference, and
+   - has a non-``void*`` argument type (which is a cosmetic difference in C).
 
    The returned reference is :term:`borrowed <borrowed reference>` from *type*,
    and will be valid as long as you hold a reference to *type*.
@@ -341,7 +341,7 @@ Type Objects
    .. versionadded:: 3.11
 
 
-.. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+.. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *tp_token, PyTypeObject **result)
 
    Find the first superclass in *type*'s :term:`method resolution order` whose
    :c:macro:`Py_tp_token` token is equal to the given one.
