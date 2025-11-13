@@ -2117,7 +2117,7 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         with self.assertRaises(ValueError):
             self.func([1.0, math.inf])
 
-        
+
 class TestSqrtHelpers(unittest.TestCase):
 
     def test_integer_sqrt_of_frac_rto(self):
