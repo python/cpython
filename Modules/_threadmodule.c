@@ -289,7 +289,7 @@ ThreadHandle_decref(ThreadHandle *self)
     //   1. This is the destructor; nothing else holds a reference.
     //   2. The refcount going to zero is a "synchronizes-with" event; all
     //      changes from other threads are visible.
-    if ((self->state == THREAD_HANDLE_RUNNING || self->state == THREAD_HANDLE_FAILED) 
+    if ((self->state == THREAD_HANDLE_RUNNING || self->state == THREAD_HANDLE_FAILED)
         && !detach_thread(self)) {
         self->state = THREAD_HANDLE_DONE;
     }
@@ -399,7 +399,7 @@ thread_run(void *boot_raw)
                 "Exception ignored in thread started by %R", boot->func);
         }
         set_thread_handle_state(handle, THREAD_HANDLE_FAILED);
-        // Notify that the bootstraped is done, in case the Python call didn't manage too (e.g. Memory error)
+        // Notify that the bootstraped is done, in case the Python didn't bootstrap correctly (e.g. Memory error)
         _PyEvent_Notify(&handle->thread_is_bootstraped);
     }
     else {
@@ -497,7 +497,7 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     self->state = THREAD_HANDLE_RUNNING;
     PyMutex_Unlock(&self->mutex);
 
-    // Unblock the thread and wait the running signal
+    // Unblock the thread
     _PyEvent_Notify(&boot->handle_ready);
 
     return 0;
@@ -633,12 +633,6 @@ ThreadHandle_set_done(ThreadHandle *self)
     return 0;
 }
 
-static void
-ThreadHandle_set_bootstraped(ThreadHandle *self)
-{
-    _PyEvent_Notify(&self->thread_is_bootstraped);
-}
-
 // A wrapper around a ThreadHandle.
 typedef struct {
     PyObject_HEAD
@@ -749,7 +743,7 @@ static PyObject *
 PyThreadHandleObject_set_bootstraped(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
-    ThreadHandle_set_bootstraped(self->handle);
+    _PyEvent_Notify(&self->handle->thread_is_bootstraped);
     Py_RETURN_NONE;
 }
 

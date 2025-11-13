@@ -228,7 +228,6 @@ class ThreadTests(BaseTestCase):
             self.assertNotEqual(t.ident, 0)
             self.assertIsNotNone(t.ident)
             self.assertRegex(repr(t), r'^<TestThread\(.*, stopped -?\d+\)>$')
-
         if verbose:
             print('all tasks done')
         self.assertEqual(numrunning.get(), 0)
