@@ -105,7 +105,7 @@ _copy_atomic_types = frozenset({types.NoneType, int, float, bool, complex, str, 
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
           weakref.ref, super})
-_copy_builtin_containers = frozenset({list, dict, set, bytearray})
+_copy_builtin_containers = frozenset({list, dict, frozendict, set, bytearray})
 
 def deepcopy(x, memo=None):
     """Deep copy operation on arbitrary Python objects.
@@ -202,6 +202,11 @@ def _deepcopy_dict(x, memo, deepcopy=deepcopy):
         y[deepcopy(key, memo)] = deepcopy(value, memo)
     return y
 d[dict] = _deepcopy_dict
+
+def _deepcopy_frozendict(x, memo, deepcopy=deepcopy):
+    y = _deepcopy_dict(x, memo, deepcopy)
+    return frozendict(y)
+d[frozendict] = _deepcopy_frozendict
 
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))

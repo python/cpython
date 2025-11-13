@@ -133,6 +133,18 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(y, x)
         self.assertIsNot(y, x)
 
+    def test_copy_frozendict(self):
+        x = frozendict(foo=1, bar=2)
+        y = copy.copy(x)
+        self.assertEqual(y, x)
+        self.assertEqual(type(y), frozendict)
+        self.assertIsNot(y, x)
+        x = frozendict()
+        y = copy.copy(x)
+        self.assertEqual(y, x)
+        self.assertEqual(type(y), frozendict)
+        self.assertIsNot(y, x)
+
     def test_copy_set(self):
         x = {1, 2, 3}
         y = copy.copy(x)
