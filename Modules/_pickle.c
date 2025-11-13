@@ -325,7 +325,7 @@ _Pickle_InitState(PickleState *st)
         PyObject_GetAttrString(compat_pickle, "NAME_MAPPING");
     if (!st->name_mapping_2to3)
         goto error;
-    if (!_PyAnyDict_CheckExact(st->name_mapping_2to3)) {
+    if (!PyAnyDict_CheckExact(st->name_mapping_2to3)) {
         PyErr_Format(PyExc_RuntimeError,
                      "_compat_pickle.NAME_MAPPING should be a dict, not %.200s",
                      Py_TYPE(st->name_mapping_2to3)->tp_name);
@@ -335,7 +335,7 @@ _Pickle_InitState(PickleState *st)
         PyObject_GetAttrString(compat_pickle, "IMPORT_MAPPING");
     if (!st->import_mapping_2to3)
         goto error;
-    if (!_PyAnyDict_CheckExact(st->import_mapping_2to3)) {
+    if (!PyAnyDict_CheckExact(st->import_mapping_2to3)) {
         PyErr_Format(PyExc_RuntimeError,
                      "_compat_pickle.IMPORT_MAPPING should be a dict, "
                      "not %.200s", Py_TYPE(st->import_mapping_2to3)->tp_name);

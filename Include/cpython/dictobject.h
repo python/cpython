@@ -37,9 +37,9 @@ PyAPI_DATA(PyTypeObject) PyFrozenDict_Type;
 #define PyFrozenDict_Check(op) PyObject_TypeCheck((op), &PyFrozenDict_Type)
 #define PyFrozenDict_CheckExact(op) Py_IS_TYPE((op), &PyFrozenDict_Type)
 
-#define _PyAnyDict_CheckExact(ob) \
+#define PyAnyDict_CheckExact(ob) \
     (PyDict_CheckExact(ob) || PyFrozenDict_CheckExact(ob))
-#define _PyAnyDict_Check(ob) \
+#define PyAnyDict_Check(ob) \
     (PyDict_Check(ob) || PyFrozenDict_Check(ob))
 
 PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
@@ -62,7 +62,7 @@ PyAPI_FUNC(int) PyDict_SetDefaultRef(PyObject *mp, PyObject *key, PyObject *defa
 /* Get the number of items of a dictionary. */
 static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
     PyDictObject *mp;
-    assert(_PyAnyDict_Check(op));
+    assert(PyAnyDict_Check(op));
     mp = _Py_CAST(PyDictObject*, op);
 #ifdef Py_GIL_DISABLED
     return _Py_atomic_load_ssize_relaxed(&mp->ma_used);

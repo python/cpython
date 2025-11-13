@@ -1089,7 +1089,7 @@ static int
 mappingproxy_contains(PyObject *self, PyObject *key)
 {
     mappingproxyobject *pp = (mappingproxyobject *)self;
-    if (_PyAnyDict_CheckExact(pp->mapping))
+    if (PyAnyDict_CheckExact(pp->mapping))
         return PyDict_Contains(pp->mapping, key);
     else
         return PySequence_Contains(pp->mapping, key);

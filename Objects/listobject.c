@@ -1424,7 +1424,7 @@ _list_extend(PyListObject *self, PyObject *iterable)
         res = list_extend_set(self, (PySetObject *)iterable);
         Py_END_CRITICAL_SECTION2();
     }
-    else if (_PyAnyDict_CheckExact(iterable)) {
+    else if (PyAnyDict_CheckExact(iterable)) {
         Py_BEGIN_CRITICAL_SECTION2(self, iterable);
         res = list_extend_dict(self, (PyDictObject *)iterable, 0 /*keys*/);
         Py_END_CRITICAL_SECTION2();
