@@ -480,7 +480,6 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(list(it), [14, 16, 18])
 
     def test_rangeiter_invalid_setstate(self):
-
         for invalid_value in (1.0, ""):
             invalid_msg = "object cannot be interpreted as an integer"
             with self.subTest(invalid_value=invalid_value):
@@ -489,7 +488,6 @@ class RangeTest(unittest.TestCase):
                     it.__setstate__(invalid_value)
 
     def test_longrangeiter_invalid_setstate(self):
-
         class I:
             def __int__(self): return 1
             def __index__(self): return 1
