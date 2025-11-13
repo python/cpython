@@ -8010,7 +8010,7 @@ reduce_newobj(PyObject *obj)
         return NULL;
     }
 
-    state = object_getstate(obj, !(hasargs || PyList_Check(obj) || PyDict_Check(obj)));
+    state = object_getstate(obj, !(hasargs || PyList_Check(obj) || _PyAnyDict_Check(obj)));
     if (state == NULL) {
         Py_DECREF(newobj);
         Py_DECREF(newargs);
