@@ -502,8 +502,9 @@ little need for these functions; prefer ``PyDict*`` where possible.
 
 .. c:function:: int PyODict_CheckExact(PyObject *od)
 
-   Return true if *od* is a dict object, but not an instance of a subtype of
-   the :class:`~collections.OrderedDict` type.  This function always succeeds.
+   Return true if *od* is an ordered dictionary object, but not an instance of
+   a subtype of the :class:`~collections.OrderedDict` type.
+   This function always succeeds.
 
 
 .. c:var:: PyTypeObject PyODictKeys_Type
