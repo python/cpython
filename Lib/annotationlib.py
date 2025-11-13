@@ -846,7 +846,7 @@ def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluat
         return None, None
     new_closure = []
     cell_dict = {}
-    for name, cell in zip(annotate.__code__.co_freevars, annotate.__closure__):
+    for name, cell in zip(annotate.__code__.co_freevars, annotate.__closure__, strict=True):
         cell_dict[name] = cell
         new_cell = None
         if allow_evaluation:
