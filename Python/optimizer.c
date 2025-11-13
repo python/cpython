@@ -588,7 +588,10 @@ _PyJit_translate_single_bytecode_to_trace(
     PyCodeObject *old_code = _tstate->jit_tracer_state.prev_state.instr_code;
     bool progress_needed = (_tstate->jit_tracer_state.initial_state.chain_depth % MAX_CHAIN_DEPTH) == 0;
     _PyBloomFilter *dependencies = &_tstate->jit_tracer_state.prev_state.dependencies;
-    _Py_BloomFilter_Add(dependencies, old_code);
+    // Can be NULL for the entry frame.
+    if (old_code != NULL) {
+        _Py_BloomFilter_Add(dependencies, old_code);
+    }
     int trace_length = _tstate->jit_tracer_state.prev_state.code_curr_size;
     _PyUOpInstruction *trace = _tstate->jit_tracer_state.code_buffer;
     int max_length = _tstate->jit_tracer_state.prev_state.code_max_size;
@@ -1348,17 +1351,7 @@ uop_optimize(
     bool progress_needed)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    // Note: the executor has a slightly different set of dependencies than the tracer.
-    // For example: the tracer depends on function and code objects.
-    // The executor may only depend on the code object.
-    // Furthermore, it may decide to cut the trace early, meaning it does not depend on the rest
-    // of the code objects in the trace.
-    // It is crucial we differentiate them for performance reasons.
-    // This prevents endless re-tracing for nested functions.
-    // It is the optimizer's responsibility to add the dependencies it requires on its own.
-    _PyBloomFilter new_dependencies;
-    _Py_BloomFilter_Init(&new_dependencies);
-    _Py_BloomFilter_Add(&new_dependencies, _tstate->jit_tracer_state.initial_state.code);
+    _PyBloomFilter *dependencies = &_tstate->jit_tracer_state.prev_state.dependencies;
     _PyUOpInstruction *buffer = _tstate->jit_tracer_state.code_buffer;
     OPT_STAT_INC(attempts);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
@@ -1378,7 +1371,7 @@ uop_optimize(
         length = _Py_uop_analyze_and_optimize(
             _tstate->jit_tracer_state.initial_state.func,
             buffer,length,
-            curr_stackentries, &new_dependencies);
+            curr_stackentries, dependencies);
         if (length <= 0) {
             return length;
         }
@@ -1402,7 +1395,7 @@ uop_optimize(
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
     _PyExecutorObject *executor = make_executor_from_uops(
-        buffer, length, &new_dependencies, _tstate->jit_tracer_state.initial_state.chain_depth);
+        buffer, length, dependencies, _tstate->jit_tracer_state.initial_state.chain_depth);
     if (executor == NULL) {
         return -1;
     }

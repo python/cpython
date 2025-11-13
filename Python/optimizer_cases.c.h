@@ -1121,7 +1121,6 @@
                 ctx->done = true;
                 break;
             }
-            _Py_BloomFilter_Add(dependencies, returning_code);
             int returning_stacklevel = this_instr->operand1;
             if (ctx->curr_frame_depth >= 2) {
                 PyCodeObject *expected_code = ctx->frames[ctx->curr_frame_depth - 2].code;
@@ -2641,8 +2640,6 @@
             }
             if (!(operand & 1)) {
                 PyFunctionObject *func = (PyFunctionObject *)operand;
-                PyCodeObject *co = (PyCodeObject *)func->func_code;
-                _Py_BloomFilter_Add(dependencies, co);
                 ctx->frame->func = func;
             }
             if ((this_instr-1)->opcode == _SAVE_RETURN_OFFSET ||

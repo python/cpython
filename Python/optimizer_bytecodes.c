@@ -796,7 +796,6 @@ dummy_func(void) {
             ctx->done = true;
             break;
         }
-        _Py_BloomFilter_Add(dependencies, returning_code);
         int returning_stacklevel = this_instr->operand1;
         if (ctx->curr_frame_depth >= 2) {
             PyCodeObject *expected_code = ctx->frames[ctx->curr_frame_depth - 2].code;
@@ -900,8 +899,8 @@ dummy_func(void) {
         }
         if (!(operand & 1)) {
             PyFunctionObject *func = (PyFunctionObject *)operand;
-            PyCodeObject *co = (PyCodeObject *)func->func_code;
-            _Py_BloomFilter_Add(dependencies, co);
+            // No need to re-add to dependencies here. Already
+            // handled by the tracer.
             ctx->frame->func = func;
         }
         // Fixed calls don't need IP guards.
