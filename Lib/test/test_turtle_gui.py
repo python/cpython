@@ -3,8 +3,12 @@ from itertools import zip_longest
 from test import support
 from test.support import import_helper
 import os
-from tkinter import _tkinter, PhotoImage
 import time
+
+# Skip entire module if tkinter is not available
+tkinter = import_helper.import_module('tkinter')
+_tkinter = tkinter._tkinter
+PhotoImage = tkinter.PhotoImage
 
 turtle = import_helper.import_module('turtle')
 
