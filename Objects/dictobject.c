@@ -7987,5 +7987,5 @@ PyTypeObject PyFrozenDict_Type = {
     frozendict_new,                             /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = dict_vectorcall,
-    .tp_version_tag = _Py_TYPE_VERSION_DICT,
+    .tp_version_tag = _Py_TYPE_VERSION_FROZENDICT,
 };
