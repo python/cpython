@@ -2445,7 +2445,7 @@ finally:
 
 PyObject*
 PyImport_CreateModuleFromInitfunc(
-    PyObject *spec, PyObject* (*initfunc)(void))
+    PyObject *spec, PyObject *(*initfunc)(void))
 {
     if (initfunc == NULL) {
         PyErr_BadInternalCall();

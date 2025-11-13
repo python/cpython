@@ -15,7 +15,7 @@ PyAPI_FUNC(int) PyImport_ExtendInittab(struct _inittab *newtab);
 // without needing to go through inittab
 PyAPI_FUNC(PyObject *) PyImport_CreateModuleFromInitfunc(
     PyObject *spec,
-    PyObject* (*initfunc)(void));
+    PyObject *(*initfunc)(void));
 
 struct _frozen {
     const char *name;                 /* ASCII encoded string */

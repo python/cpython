@@ -166,7 +166,7 @@ static PyModuleDef embedded_ext = {
 static PyObject*
 PyInit_embedded_ext(void)
 {
-    // keep this a single-phase initialization module;
+    // keep this as a single-phase initialization module;
     // see test_create_module_from_initfunc
     return PyModule_Create(&embedded_ext);
 }
