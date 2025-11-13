@@ -250,10 +250,13 @@ class OptimizerEmitter(Emitter):
 
                         emitter.emit(f"if (sym_is_const(ctx, {outp.name})) {{\n")
                         emitter.emit(f"PyObject *result = sym_get_const(ctx, {outp.name});\n")
-                        emitter.emit(f"if (_Py_IsImmortal(result)) {{\n")
-                        emitter.emit(f"// Replace with {replacement_uop} since we have {input_desc} and an immortal result\n")
-                        emitter.emit(f"REPLACE_OP(this_instr, {replacement_uop}, 0, (uintptr_t)result);\n")
+                        emitter.emit(f"if (!_Py_IsImmortal(result)) {{\n")
+                        emitter.emit("if (PROMOTE_TO_CONSTANT_POOL(ctx, result) < 0) {\n")
+                        emitter.emit("goto error;\n")
                         emitter.emit("}\n")
+                        emitter.emit("}\n")
+                        emitter.emit(f"// Replace with {replacement_uop} since we have {input_desc} and an immortal/promoted result\n")
+                        emitter.emit(f"REPLACE_OP(this_instr, {replacement_uop}, 0, (uintptr_t)result);\n")
                         emitter.emit("}\n")
 
         storage.flush(self.out)

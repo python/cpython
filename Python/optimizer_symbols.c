@@ -870,9 +870,17 @@ _Py_uop_abstractcontext_fini(JitOptContext *ctx)
             Py_CLEAR(sym->value.value);
         }
     }
+    Py_CLEAR(ctx->constant_pool);
 }
 
-void
+// -1 if err, 0 if success
+int
+_Py_uop_promote_to_constant_pool(JitOptContext *ctx, PyObject *obj)
+{
+    return PyList_Append(ctx->constant_pool, obj);
+}
+
+int
 _Py_uop_abstractcontext_init(JitOptContext *ctx)
 {
     static_assert(sizeof(JitOptSymbol) <= 3 * sizeof(uint64_t), "JitOptSymbol has grown");
@@ -898,6 +906,12 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
     ctx->out_of_space = false;
     ctx->contradiction = false;
     ctx->builtins_watched = false;
+
+    ctx->constant_pool = PyList_New(0);
+    if (ctx->constant_pool == NULL) {
+        return -1;
+    }
+    return 0;
 }
 
 int
@@ -935,7 +949,9 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
     JitOptContext context;
     JitOptContext *ctx = &context;
-    _Py_uop_abstractcontext_init(ctx);
+    if (_Py_uop_abstractcontext_init(ctx) < 0) {
+        return NULL;
+    }
     PyObject *val_42 = NULL;
     PyObject *val_43 = NULL;
     PyObject *val_big = NULL;
