@@ -376,7 +376,9 @@ do {                                                   \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     if (next_instr == NULL) {                          \
-        next_instr = frame->instr_ptr;                 \
+        /* gh-140104: The exception handler expects frame->instr_ptr
+            to after this_instr, not this_instr! */    \
+        next_instr = frame->instr_ptr + 1;             \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     DISPATCH();                                        \
@@ -393,6 +395,7 @@ do { \
 } while (0)
 #endif
 
+#ifdef _Py_JIT
 #define GOTO_TIER_ONE(TARGET)                                         \
     do                                                                \
     {                                                                 \
@@ -409,6 +412,26 @@ do { \
         }                                                             \
         DISPATCH();                                                   \
     } while (0)
+#else
+#define GOTO_TIER_ONE(TARGET)                                         \
+    do                                                                \
+    {                                                                 \
+        tstate->current_executor = NULL;                              \
+        next_instr = (TARGET);                                        \
+        assert(tstate->current_executor == NULL);                     \
+        OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
+        _PyFrame_SetStackPointer(frame, stack_pointer);               \
+        stack_pointer = _PyFrame_GetStackPointer(frame);              \
+        if (next_instr == NULL)                                       \
+        {                                                             \
+            /* gh-140104: The exception handler expects frame->instr_ptr
+                to after this_instr, not this_instr! */               \
+            next_instr = frame->instr_ptr + 1;                        \
+            goto error;                                               \
+        }                                                             \
+        DISPATCH();                                                   \
+    } while (0)
+#endif
 
 #define CURRENT_OPARG()    (next_uop[-1].oparg)
 #define CURRENT_OPERAND0() (next_uop[-1].operand0)
