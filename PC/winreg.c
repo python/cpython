@@ -1835,7 +1835,8 @@ winreg.SetValueEx
         REG_RESOURCE_LIST -- A device-driver resource list.
         REG_SZ -- A null-terminated string.
     value: object
-        A string that specifies the new value.
+        The new value to set. Accepts str, int, list of str, bytes-like object,
+        or None depending on the type parameter.
     /
 
 Stores data in the value field of an open registry key.
