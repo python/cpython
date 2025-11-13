@@ -1,0 +1,2 @@
+Fix :mod:`struct` data race in endian table initialization with
+subinterpreters. Patch by Shamil Abdulaev.

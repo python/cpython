@@ -6,6 +6,7 @@
 #include "pycore_interp.h"
 #include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
+#include "pycore_ceval.h"       // _Py_set_eval_breaker_bit
 #include "pycore_code.h"            // _Py_GetBaseCodeUnit
 #include "pycore_function.h"        // _PyFunction_LookupByVersion()
 #include "pycore_interpframe.h"
@@ -117,7 +118,13 @@ _PyOptimizer_Optimize(
 {
     _PyStackRef *stack_pointer = frame->stackpointer;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->jit);
+    if (!interp->jit) {
+        // gh-140936: It is possible that interp->jit will become false during
+        // interpreter finalization. However, the specialized JUMP_BACKWARD_JIT
+        // instruction may still be present. In this case, we should
+        // return immediately without optimization.
+        return 0;
+    }
     assert(!interp->compiling);
 #ifndef Py_GIL_DISABLED
     interp->compiling = true;
@@ -1343,6 +1350,14 @@ uop_optimize(
         return -1;
     }
     assert(length <= UOP_MAX_TRACE_LENGTH);
+
+    // Check executor coldness
+    PyThreadState *tstate = PyThreadState_Get();
+    // It's okay if this ends up going negative.
+    if (--tstate->interp->executor_creation_counter == 0) {
+        _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
+    }
+
     *exec_ptr = executor;
     return 1;
 }
