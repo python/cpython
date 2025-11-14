@@ -1662,12 +1662,20 @@ class TestCallAnnotateFunction(unittest.TestCase):
                 else:
                     raise __NotImplementedError(format)
 
+        # @staticmethod descriptor means that Annotate.format should be a function object.
         annotations = annotationlib.call_annotate_function(
             Annotate.format,
             Format.FORWARDREF,
         )
-
         self.assertEqual(annotations, {"x": str})
+
+        # But if we access the __dict__, the underlying staticmethod object is returned.
+        annotations = annotationlib.call_annotate_function(
+            Annotate.__dict__["format"],
+            Format.FORWARDREF,
+        )
+        self.assertEqual(annotations, {"x": str})
+
 
     def test_callable_class_annotate_forwardref_value_fallback(self):
         # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
