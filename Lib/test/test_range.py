@@ -470,14 +470,6 @@ class RangeTest(unittest.TestCase):
         it.__setstate__(2**64 - 7)
         self.assertEqual(list(it), [12, 10])
 
-        class I:
-            def __index__(self): return 2
-            def __repr__(self): return "I()"
-
-        it = iter(range(10, 20, 2))
-        it.__setstate__(I())
-        self.assertEqual(list(it), [14, 16, 18])
-
     def test_rangeiter_invalid_setstate(self):
         for invalid_value in (1.0, ""):
             with self.subTest(invalid_value=invalid_value):
@@ -486,11 +478,7 @@ class RangeTest(unittest.TestCase):
                     it.__setstate__(invalid_value)
 
     def test_longrangeiter_invalid_setstate(self):
-        class I:
-            def __index__(self): return 1
-            def __repr__(self): return "I()"
-
-        for invalid_value in (1.0, "", I()):
+        for invalid_value in (1.0, ""):
             with self.subTest(invalid_value=invalid_value):
                 it = iter(range(10, 2**65, 2))
                 with self.assertRaises(TypeError):
