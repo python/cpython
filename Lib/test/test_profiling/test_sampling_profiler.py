@@ -14,13 +14,6 @@ import unittest
 from collections import namedtuple
 from unittest import mock
 
-from profiling.sampling.pstats_collector import PstatsCollector
-from profiling.sampling.stack_collector import (
-    CollapsedStackCollector,
-    FlamegraphCollector,
-)
-from profiling.sampling.gecko_collector import GeckoCollector
-
 from test.support.os_helper import unlink
 from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
 from test.support.socket_helper import find_unused_port
@@ -38,6 +31,12 @@ except ImportError:
     )
 else:
     import profiling.sampling
+    from profiling.sampling.pstats_collector import PstatsCollector
+    from profiling.sampling.stack_collector import (
+        CollapsedStackCollector,
+        FlamegraphCollector,
+    )
+    from profiling.sampling.gecko_collector import GeckoCollector
     from profiling.sampling.sample import SampleProfiler
 
 

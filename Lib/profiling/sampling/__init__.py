@@ -4,6 +4,7 @@ This module provides low-overhead profiling by periodically sampling the
 call stack rather than tracing every function call.
 """
 
+# Profiling requires the _remote_debugging C extension.
 try:
     import _remote_debugging  # noqa: F401
 except ImportError:
