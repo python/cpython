@@ -138,7 +138,7 @@ Operating System Utilities
    signal handlers.
 
    This function is async-signal-safe and this function cannot fail.
-   The caller must hold an :term:`attached thread state`.
+   The caller must hold an attached thread state.
 
 
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
