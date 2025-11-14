@@ -39,7 +39,7 @@ class Collector(ABC):
         """Iterate over linear stacks for all leaf tasks (hot path optimized)."""
         # Build adjacency graph (O(n))
         task_map = {}
-        child_to_parent = {}
+        child_to_parents = {}
         all_task_ids = set()
 
         for awaited_info in awaited_info_list:
@@ -49,32 +49,69 @@ class Collector(ABC):
                 task_map[task_id] = (task_info, thread_id)
                 all_task_ids.add(task_id)
                 if task_info.awaited_by:
-                    child_to_parent[task_id] = task_info.awaited_by[0].task_name
+                    # Store all parent coroutines, not just [0]
+                    child_to_parents[task_id] = task_info.awaited_by
 
         # Identify leaf tasks (O(n))
-        leaf_task_ids = all_task_ids - set(child_to_parent.values())
+        # Collect all parent task IDs from all coroutines
+        all_parent_ids = set()
+        for parent_coros in child_to_parents.values():
+            for parent_coro in parent_coros:
+                all_parent_ids.add(parent_coro.task_name)
+        leaf_task_ids = all_task_ids - all_parent_ids
 
-        # Build linear stacks for each leaf (O(n × depth))
+        # Build linear stacks for each leaf (O(n × depth × num_paths))
+        # For tasks with multiple parents, we generate one stack per parent path
         for leaf_id in leaf_task_ids:
-            frames = []
-            current_id = leaf_id
-            thread_id = None
+            # Use BFS to explore all paths from leaf to root
+            # Queue items: (current_task_id, frames_accumulated)
+            queue = [(leaf_id, [])]
+            visited = set()
 
-            while current_id in task_map:
+            while queue:
+                current_id, frames = queue.pop(0)
+
+                # Avoid processing the same task twice in this path
+                if current_id in visited:
+                    continue
+                visited.add(current_id)
+
+                if current_id not in task_map:
+                    # Reached end of path - yield if we have frames
+                    if frames:
+                        _, thread_id = task_map[leaf_id]
+                        yield frames, thread_id, leaf_id
+                    continue
+
                 task_info, tid = task_map[current_id]
-                if thread_id is None:
-                    thread_id = tid
 
-                # Add frames from coroutine stack
+                # Add this task's frames
+                new_frames = list(frames)
                 if task_info.coroutine_stack:
                     for frame in task_info.coroutine_stack[0].call_stack:
-                        frames.append(frame)
+                        new_frames.append(frame)
 
-                # Add task marker
+                # Add task boundary marker
                 task_name = task_info.task_name or "Task-" + str(task_info.task_id)
-                frames.append(FrameInfo(("<task>", 0, task_name)))
+                new_frames.append(FrameInfo(("<task>", 0, task_name)))
 
-                # Move to parent
-                current_id = child_to_parent.get(current_id)
+                # Get parent coroutines
+                parent_coros = child_to_parents.get(current_id)
+                if not parent_coros:
+                    # No parents - this is the root, yield the complete stack
+                    yield new_frames, tid, leaf_id
+                    continue
 
-            yield frames, thread_id, leaf_id
+                # For each parent coroutine, add its await frames and continue to parent task
+                for parent_coro in parent_coros:
+                    parent_task_id = parent_coro.task_name
+
+                    # Add the parent's await-site frames (where parent awaits this task)
+                    path_frames = list(new_frames)
+                    for frame in parent_coro.call_stack:
+                        path_frames.append(frame)
+
+                    # Continue BFS with parent task
+                    # Note: parent_coro.call_stack contains the frames from the parent task,
+                    # so we should NOT add parent task's coroutine_stack again
+                    queue.append((parent_task_id, path_frames))
