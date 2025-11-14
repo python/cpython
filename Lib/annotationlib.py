@@ -897,10 +897,15 @@ def _get_annotate_attr(annotate, attr, default):
     if isinstance(annotate, types.MethodType):
         return _get_annotate_attr(annotate.__func__, attr, default)
 
-    # Class instances themselves aren't methods, their __call__ functions are.
-    if isinstance(annotate.__call__, types.MethodType):
-        if call_func := getattr(annotate.__call__, "__func__", None):
-            return getattr(call_func, attr, default)
+    # If annotate is a class instance, its __call__ is the relevant function.
+    # However, __call__ Could be a method, a function descriptor, or any other callable.
+    # Normal functions have a __call__ property which is a useless method wrapper,
+    # ignore these.
+    if (
+        (call := getattr(annotate, "__call__", None)) and
+        not isinstance(call, types.MethodWrapperType)
+    ):
+        return _get_annotate_attr(annotate.__call__, attr, default)
 
     # Classes and generics are callable, usually the __init__ method sets attributes,
     # so let's access this method for fake globals and the like.
@@ -932,12 +937,15 @@ def _direct_call_annotate(func, annotate, *args):
         # argument.
         return _direct_call_annotate(func, annotate.__func__, self, *args)
 
-    # If annotate is a class instance, its __call__ function is the method.
+    # If annotate is a class instance, its __call__ is the function.
+    # __call__ Could be a method, a function descriptor, or any other callable.
+    # Normal functions have a __call__ property which is a useless method wrapper,
+    # ignore these.
     if (
-        hasattr(annotate.__call__, "__func__") and
-        (self := getattr(annotate.__call__, "__self__", None))
+        (call := getattr(annotate, "__call__", None)) and
+        not isinstance(call, types.MethodWrapperType)
     ):
-        return func(self, *args)
+        return _direct_call_annotate(func, annotate.__call__, *args)
 
     # If annotate is a class, `func` is the __init__ method, so we still need to call
     # __new__() to create the instance

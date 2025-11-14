@@ -1717,6 +1717,28 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": int})
 
+    def test_callable_object_custom_call_annotate_forwardref_value_fallback(self):
+        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
+        # supported fall back to Format.VALUE and convert to strings
+        class AnnotateClass(dict):
+            def __init__(self, format, /, __Format=Format,
+                         __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    super().__init__({"x": int})
+                else:
+                    raise __NotImplementedError(format)
+
+        class Annotate:
+            __call__ = AnnotateClass
+
+        annotations = annotationlib.call_annotate_function(
+            Annotate(),
+            Format.FORWARDREF,
+        )
+
+        self.assertEqual(annotations, {"x": int})
+
+
     def test_callable_generic_class_annotate_forwardref_value_fallback(self):
         # Generics that inherit from builtins become types.GenericAlias objects.
         # This is special-case in annotationlib to ensure the constructor is handled
