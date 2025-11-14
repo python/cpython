@@ -36,45 +36,45 @@ class Collector(ABC):
                     yield frames, thread_info.thread_id
 
     def _iter_async_frames(self, awaited_info_list):
-        all_tasks = {}
+        """Iterate over linear stacks for all leaf tasks (hot path optimized)."""
+        # Build adjacency graph (O(n))
+        task_map = {}
+        child_to_parent = {}
+        all_task_ids = set()
 
         for awaited_info in awaited_info_list:
             thread_id = awaited_info.thread_id
             for task_info in awaited_info.awaited_by:
-                all_tasks[task_info.task_id] = (task_info, thread_id)
+                task_id = task_info.task_id
+                task_map[task_id] = (task_info, thread_id)
+                all_task_ids.add(task_id)
+                if task_info.awaited_by:
+                    child_to_parent[task_id] = task_info.awaited_by[0].task_name
 
-        # For each task, reconstruct the full call stack by following coroutine chains
-        for task_id, (task_info, thread_id) in all_tasks.items():
-            frames = [
-                frame
-                for coro in task_info.coroutine_stack
-                for frame in coro.call_stack
-            ]
+        # Identify leaf tasks (O(n))
+        leaf_task_ids = all_task_ids - set(child_to_parent.values())
 
-            task_name = task_info.task_name or f"Task-{task_id}"
-            synthetic_frame = FrameInfo(("<task>", 0, task_name))
-            frames.append(synthetic_frame)
+        # Build linear stacks for each leaf (O(n × depth))
+        for leaf_id in leaf_task_ids:
+            frames = []
+            current_id = leaf_id
+            thread_id = None
 
-            current_parents = task_info.awaited_by
-            visited = set()
+            while current_id in task_map:
+                task_info, tid = task_map[current_id]
+                if thread_id is None:
+                    thread_id = tid
 
-            while current_parents:
-                next_parents = []
-                for parent_coro in current_parents:
-                    frames.extend(parent_coro.call_stack)
-                    parent_task_id = parent_coro.task_name
+                # Add frames from coroutine stack
+                if task_info.coroutine_stack:
+                    for frame in task_info.coroutine_stack[0].call_stack:
+                        frames.append(frame)
 
-                    if parent_task_id in visited or parent_task_id not in all_tasks:
-                        continue
-                    visited.add(parent_task_id)
+                # Add task marker
+                task_name = task_info.task_name or "Task-" + str(task_info.task_id)
+                frames.append(FrameInfo(("<task>", 0, task_name)))
 
-                    parent_task_info, _ = all_tasks[parent_task_id]
+                # Move to parent
+                current_id = child_to_parent.get(current_id)
 
-                    parent_name = parent_task_info.task_name or f"Task-{parent_task_id}"
-                    synthetic_parent_frame = FrameInfo(("<task>", 0, parent_name))
-                    frames.append(synthetic_parent_frame)
-
-                    if parent_task_info.awaited_by:
-                        next_parents.extend(parent_task_info.awaited_by)
-                current_parents = next_parents
-            yield frames, thread_id, task_id
+            yield frames, thread_id, leaf_id
