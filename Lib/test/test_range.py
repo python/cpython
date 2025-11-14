@@ -471,7 +471,6 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(list(it), [12, 10])
 
         class I:
-            def __int__(self): return 2
             def __index__(self): return 2
             def __repr__(self): return "I()"
 
@@ -489,7 +488,6 @@ class RangeTest(unittest.TestCase):
 
     def test_longrangeiter_invalid_setstate(self):
         class I:
-            def __int__(self): return 1
             def __index__(self): return 1
             def __repr__(self): return "I()"
 
