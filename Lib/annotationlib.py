@@ -905,8 +905,11 @@ def _get_annotate_attr(annotate, attr, default):
     if isinstance(annotate, type) or isinstance(annotate, types.GenericAlias):
         return getattr(annotate.__init__, attr, default)
 
-    if (wrapped := getattr(annotate, "__wrapped__", None)) is not None:
-        return getattr(wrapped, attr, default)
+    # Most 'wrapped' functions, including functools.cache and staticmethod, need us
+    # to manually, recursively unwrap. For partial.update_wrapper functions, the
+    # attribute is accessible on the function itself, so we never get this far.
+    if (unwrapped := getattr(annotate, "__wrapped__", None)) is not None:
+        return _get_annotate_attr(unwrapped, attr, default)
 
     if (
         (functools := sys.modules.get("functools", None))

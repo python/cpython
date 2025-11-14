@@ -1812,7 +1812,37 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertIsInstance(annotations["x"], float)
         self.assertIs(annotations["y"], str)
 
+        # Check annotations again to ensure that cache is working.
         new_anns = annotationlib.call_annotate_function(format, Format.FORWARDREF)
+        self.assertEqual(annotations, new_anns)
+
+    def test_callable_double_wrapped_annotate_forwardref_value_fallback(self):
+        # The raw staticmethod object returns a 'wrapped' function, and so is
+        # @functools.cache. Here we test that functions unwrap recursively,
+        # allowing wrapping of wrapped functions.
+        class Annotate:
+            @staticmethod
+            @functools.cache
+            def format(format, /, __Format=Format,
+                       __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    return {"x": random.random(), "y": str}
+                else:
+                    raise __NotImplementedError(format)
+
+        # Access the raw staticmethod object which wraps the cached function.
+        annotations = annotationlib.call_annotate_function(
+            Annotate.__dict__["format"],
+            Format.FORWARDREF,
+        )
+
+        self.assertIsInstance(annotations, dict)
+        self.assertIn("x", annotations)
+        self.assertIsInstance(annotations["x"], float)
+        self.assertIs(annotations["y"], str)
+
+        # Check annotations again to ensure that cache is working.
+        new_anns = annotationlib.call_annotate_function(Annotate.format, Format.FORWARDREF)
         self.assertEqual(annotations, new_anns)
 
     def test_callable_wrapped_annotate_forwardref_value_fallback(self):
