@@ -611,6 +611,7 @@ Pdata_poplist2(PickleState *state, Pdata *self, Py_ssize_t start)
     for (Py_ssize_t i = start, j = 0; j < len; i+=2, j++) {
         PyObject *subtuple = PyTuple_New(2);
         if (subtuple == NULL) {
+            Py_DECREF(list);
             return NULL;
         }
 
