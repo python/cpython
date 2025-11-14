@@ -2364,8 +2364,23 @@ is_builtin(PyObject *name)
     return 0;
 }
 
+static PyModInitFunction
+lookup_inittab_initfunc(const struct _Py_ext_module_loader_info* info)
+{
+    for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
+        if (_PyUnicode_EqualToASCIIString(info->name, p->name)) {
+            return (PyModInitFunction)p->initfunc;
+        }
+    }
+    // not found
+    return NULL;
+}
+
 static PyObject*
-create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
+create_builtin(
+    PyThreadState *tstate, PyObject *name,
+    PyObject *spec,
+    PyModInitFunction initfunc)
 {
     struct _Py_ext_module_loader_info info;
     if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
@@ -2396,25 +2411,15 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         _extensions_cache_delete(info.path, info.name);
     }
 
-    struct _inittab *found = NULL;
-    for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
-        if (_PyUnicode_EqualToASCIIString(info.name, p->name)) {
-            found = p;
-            break;
-        }
-    }
-    if (found == NULL) {
-        // not found
-        mod = Py_NewRef(Py_None);
-        goto finally;
-    }
-
-    PyModInitFunction p0 = (PyModInitFunction)found->initfunc;
+    PyModInitFunction p0 = initfunc;
     if (p0 == NULL) {
-        /* Cannot re-init internal module ("sys" or "builtins") */
-        assert(is_core_module(tstate->interp, info.name, info.path));
-        mod = import_add_module(tstate, info.name);
-        goto finally;
+        p0 = lookup_inittab_initfunc(&info);
+        if (p0 == NULL) {
+            /* Cannot re-init internal module ("sys" or "builtins") */
+            assert(is_core_module(tstate->interp, info.name, info.path));
+            mod = import_add_module(tstate, info.name);
+            goto finally;
+        }
     }
 
 #ifdef Py_GIL_DISABLED
@@ -2440,6 +2445,33 @@ finally:
     return mod;
 }
 
+PyObject*
+PyImport_CreateModuleFromInitfunc(
+    PyObject *spec, PyObject *(*initfunc)(void))
+{
+    if (initfunc == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    PyObject *name = PyObject_GetAttr(spec, &_Py_ID(name));
+    if (name == NULL) {
+        return NULL;
+    }
+
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "spec name must be string, not %T", name);
+        Py_DECREF(name);
+        return NULL;
+    }
+
+    PyObject *mod = create_builtin(tstate, name, spec, initfunc);
+    Py_DECREF(name);
+    return mod;
+}
 
 /*****************************/
 /* the builtin modules table */
@@ -3209,7 +3241,7 @@ bootstrap_imp(PyThreadState *tstate)
     }
 
     // Create the _imp module from its definition.
-    PyObject *mod = create_builtin(tstate, name, spec);
+    PyObject *mod = create_builtin(tstate, name, spec, NULL);
     Py_CLEAR(name);
     Py_DECREF(spec);
     if (mod == NULL) {
@@ -4369,7 +4401,7 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
         return NULL;
     }
 
-    PyObject *mod = create_builtin(tstate, name, spec);
+    PyObject *mod = create_builtin(tstate, name, spec, NULL);
     Py_DECREF(name);
     return mod;
 }
