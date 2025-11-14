@@ -7,11 +7,6 @@
 
 .. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
-.. note::
-   The new :term:`REPL` introduced in version 3.13 doesn't support readline.
-   However, readline can still be used by setting the :envvar:`PYTHON_BASIC_REPL`
-   environment variable.
-
 --------------
 
 The :mod:`readline` module defines a number of functions to facilitate
@@ -399,3 +394,7 @@ support history save/restore. ::
        def save_history(self, histfile):
            readline.set_history_length(1000)
            readline.write_history_file(histfile)
+
+The new :term:`REPL` introduced in version 3.13 doesn't support readline.
+However, readline can still be used by setting the :envvar:`PYTHON_BASIC_REPL`
+environment variable.
