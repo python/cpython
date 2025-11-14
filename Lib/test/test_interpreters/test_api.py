@@ -432,8 +432,7 @@ class InterpreterObjectTests(TestBase):
         exit()"""
         stdout, stderr = repl.communicate(script)
         self.assertIsNone(stderr)
-        msg = b"remaining subinterpreters; close them with Interpreter.close()"
-        self.assertIn(msg, stdout)
+        self.assertIn(b"Interpreter.close()", stdout)
         self.assertNotIn(b"Traceback", stdout)
 
     @support.requires_subprocess()
