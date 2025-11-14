@@ -529,7 +529,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_INLINE_VALUES (1 << 2)
 
 /* Placement of weakref pointers are managed by the VM, not by the type.
- * The VM will automatically set tp_weaklistoffset.
+ * The VM will automatically set tp_weaklistoffset. Implies Py_TPFLAGS_HAVE_GC.
  */
 #define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
 
@@ -695,8 +695,13 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #  define Py_NotImplemented (&_Py_NotImplementedStruct)
 #endif
 
-/* Macro for returning Py_NotImplemented from a function */
-#define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
+/* Macro for returning Py_NotImplemented from a function. Only treat
+ * Py_NotImplemented as immortal in the limited C API 3.12 and newer. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#  define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
+#else
+#  define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
+#endif
 
 /* Rich comparison opcodes */
 #define Py_LT 0
@@ -832,6 +837,11 @@ PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
 PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *type,
+                                               const void *token);
 #endif
 
 #ifdef __cplusplus
