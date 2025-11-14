@@ -40,6 +40,17 @@ def get_first_executor(func):
             pass
     return None
 
+def get_all_executors(func):
+    code = func.__code__
+    co_code = code.co_code
+    execs = []
+    for i in range(0, len(co_code), 2):
+        try:
+            execs.append(_opcode.get_executor(code, i))
+        except ValueError:
+            pass
+    return execs
+
 
 def iter_opnames(ex):
     for item in ex:
@@ -2628,6 +2639,18 @@ class TestUopsOptimization(unittest.TestCase):
             g = gen()
             next(g)
         """ % _testinternalcapi.SPECIALIZATION_THRESHOLD))
+
+    def test_executor_side_exits_create_another_executor(self):
+        def f():
+            for x in range(TIER2_THRESHOLD + 3):
+                for y in range(TIER2_THRESHOLD + 3):
+                    z = x + y
+
+        f()
+        # Inner loop warms up first.
+        # Outer loop warms up later, linking to the innter one.
+        # Therefore, at least two executors.
+        self.assertGreaterEqual(len(get_all_executors(f)), 2)
 
 
 def global_identity(x):
