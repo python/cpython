@@ -6,9 +6,6 @@ on:
       sanitizer:
         required: true
         type: string
-      config_hash:
-        required: true
-        type: string
       free-threading:
         description: Whether to use free-threaded mode
         required: false
