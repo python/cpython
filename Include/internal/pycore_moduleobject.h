@@ -30,7 +30,7 @@ typedef struct {
     PyObject *md_name;
     bool md_token_is_def;  /* if true, `md_token` is the PyModuleDef */
 #ifdef Py_GIL_DISABLED
-    void *md_gil;
+    bool md_requires_gil;
 #endif
     Py_ssize_t md_state_size;
     traverseproc md_state_traverse;
@@ -53,7 +53,7 @@ static inline PyModuleDef *_PyModule_GetDefOrNull(PyObject *arg) {
 
 static inline PyModuleDef *_PyModule_GetToken(PyObject *arg) {
     PyModuleObject *mod = _PyModule_CAST(arg);
-    return mod->md_token;
+    return (PyModuleDef *)mod->md_token;
 }
 
 static inline void* _PyModule_GetState(PyObject* mod) {

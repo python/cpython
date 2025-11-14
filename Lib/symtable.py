@@ -17,13 +17,13 @@ from enum import StrEnum
 
 __all__ = ["symtable", "SymbolTableType", "SymbolTable", "Class", "Function", "Symbol"]
 
-def symtable(code, filename, compile_type):
+def symtable(code, filename, compile_type, *, module=None):
     """ Return the toplevel *SymbolTable* for the source code.
 
     *filename* is the name of the file with the code
     and *compile_type* is the *compile()* mode argument.
     """
-    top = _symtable.symtable(code, filename, compile_type)
+    top = _symtable.symtable(code, filename, compile_type, module=module)
     return _newSymbolTable(top, filename)
 
 class SymbolTableFactory:

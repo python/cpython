@@ -26,7 +26,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
-"""#"
+"""
 
 import codecs
 import sys
@@ -55,6 +55,12 @@ def normalize_encoding(encoding):
     """
     if isinstance(encoding, bytes):
         encoding = str(encoding, "ascii")
+
+    if not encoding.isascii():
+        import warnings
+        warnings.warn(
+            "Support for non-ascii encoding names will be removed in 3.17",
+            DeprecationWarning, stacklevel=2)
 
     return _normalize_encoding(encoding)
 
