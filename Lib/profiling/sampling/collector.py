@@ -89,11 +89,7 @@ class Collector(ABC):
                 # End of path (parent ID not in task_map)
                 if current_id not in task_map:
                     if frames:
-                        # Deduplicate yields based on path taken
-                        path_sig = frozenset(path)
-                        if path_sig not in yielded_paths:
-                            yielded_paths.add(path_sig)
-                            yield frames, thread_id, leaf_id
+                        yield frames, thread_id, leaf_id
                     continue
 
                 # Process current task
