@@ -398,6 +398,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         self._current_task = None
 
+        self.lineno = None
+        self.stack = []
+        self.curindex = 0
+        self.curframe = None
+        self._user_requested_quit = False
+
     def set_trace(self, frame=None, *, commands=None):
         Pdb._last_pdb_instance = self
         if frame is None:
@@ -474,7 +480,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.lineno = None
         self.stack = []
         self.curindex = 0
-        if hasattr(self, 'curframe') and self.curframe:
+        if self.curframe:
             self.curframe.f_globals.pop('__pdb_convenience_variables', None)
         self.curframe = None
         self.tb_lineno.clear()
@@ -1493,7 +1499,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         # this method should be callable before starting debugging, so default
         # to "no globals" if there is no current frame
-        frame = getattr(self, 'curframe', None)
+        frame = self.curframe
         if module_globals is None:
             module_globals = frame.f_globals if frame else None
         line = linecache.getline(filename, lineno, module_globals)
@@ -3603,7 +3609,6 @@ def main():
         invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
         if invalid_args:
             parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
-            sys.exit(2)
 
     if opts.module:
         file = opts.module
