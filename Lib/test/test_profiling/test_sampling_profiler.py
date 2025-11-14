@@ -76,6 +76,29 @@ class MockInterpreterInfo:
         return f"MockInterpreterInfo(interpreter_id={self.interpreter_id}, threads={self.threads})"
 
 
+class MockCoroInfo:
+    """Mock CoroInfo for testing async tasks."""
+    def __init__(self, task_name, call_stack):
+        self.task_name = task_name
+        self.call_stack = call_stack
+
+
+class MockTaskInfo:
+    """Mock TaskInfo for testing async tasks."""
+    def __init__(self, task_id, task_name, coroutine_stack, awaited_by=None):
+        self.task_id = task_id
+        self.task_name = task_name
+        self.coroutine_stack = coroutine_stack
+        self.awaited_by = awaited_by or []
+
+
+class MockAwaitedInfo:
+    """Mock AwaitedInfo for testing async tasks."""
+    def __init__(self, thread_id, awaited_by):
+        self.thread_id = thread_id
+        self.awaited_by = awaited_by
+
+
 skip_if_not_supported = unittest.skipIf(
     (
         sys.platform != "darwin"
@@ -739,6 +762,293 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(func1_stats[1], 2)  # nc (non-recursive calls)
         self.assertEqual(func1_stats[2], 2.0)  # tt (total time)
         self.assertEqual(func1_stats[3], 2.0)  # ct (cumulative time)
+
+
+class TestAsyncStackReconstruction(unittest.TestCase):
+    """Test async task tree linear stack reconstruction."""
+
+    def _build_task_tree(self, task_specs):
+        """
+        Helper to build task tree from simple specifications.
+
+        Args:
+            task_specs: List of (task_id, func_name, line, parent_ids) tuples
+                       parent_ids can be a string or list of strings
+
+        Returns:
+            List of MockTaskInfo objects
+        """
+        tasks = {}
+
+        # First pass: create all tasks
+        for task_id, func_name, line, parent_ids in task_specs:
+            tasks[task_id] = MockTaskInfo(
+                task_id=task_id,
+                task_name=task_id,
+                coroutine_stack=[MockCoroInfo(task_id, [MockFrameInfo(f"{func_name}.py", line, func_name)])],
+                awaited_by=[]
+            )
+
+        # Second pass: link parents
+        for task_id, func_name, line, parent_ids in task_specs:
+            if parent_ids:
+                if isinstance(parent_ids, str):
+                    parent_ids = [parent_ids]
+                for parent_id in parent_ids:
+                    tasks[task_id].awaited_by.append(
+                        MockTaskInfo(parent_id, parent_id, [], [])
+                    )
+
+        return list(tasks.values())
+
+    def test_single_parent_chain(self):
+        """Test async stack reconstruction with normal single-parent chains."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Build task tree:
+        #     Task-1 -> Worker-A -> LeafA-1
+        #     Task-1 -> Worker-B -> LeafB-1
+        tasks = self._build_task_tree([
+            ("LeafA-1", "leaf_work", 10, "Worker-A"),
+            ("LeafB-1", "leaf_work", 10, "Worker-B"),
+            ("Worker-A", "worker_a", 20, "Task-1"),
+            ("Worker-B", "worker_b", 25, "Task-1"),
+            ("Task-1", "main", 30, None),
+        ])
+
+        awaited_info_list = [MockAwaitedInfo(thread_id=123, awaited_by=tasks)]
+
+        stacks = list(collector._iter_async_frames(awaited_info_list))
+
+        # Should get 2 stacks (one for LeafA-1, one for LeafB-1)
+        self.assertEqual(len(stacks), 2)
+
+        for frames, thread_id, leaf_id in stacks:
+            self.assertEqual(thread_id, 123)
+            self.assertIn(leaf_id, ["LeafA-1", "LeafB-1"])
+
+            frame_names = [f.funcname for f in frames]
+            self.assertIn("leaf_work", frame_names)
+            self.assertIn("main", frame_names)
+
+            # Check task markers
+            task_markers = [f.funcname for f in frames if f.filename == "<task>"]
+            self.assertEqual(len(task_markers), 3)  # LeafX, Worker-X, Task-1
+
+    def test_multiple_parents_diamond(self):
+        """Test async stack reconstruction with diamond dependency (multiple parents)."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Build task tree:
+        #         Task-1
+        #          /  \
+        #    Parent-1  Parent-2
+        #          \  /
+        #       SharedChild
+        tasks = self._build_task_tree([
+            ("SharedChild", "shared_child", 10, ["Parent-1", "Parent-2"]),
+            ("Parent-1", "parent_1", 20, "Task-1"),
+            ("Parent-2", "parent_2", 30, "Task-1"),
+            ("Task-1", "main", 40, None),
+        ])
+
+        awaited_info_list = [MockAwaitedInfo(thread_id=456, awaited_by=tasks)]
+
+        stacks = list(collector._iter_async_frames(awaited_info_list))
+
+        # Should get 2 stacks (one for each path from SharedChild to Task-1)
+        self.assertEqual(len(stacks), 2)
+
+        # Both stacks should have SharedChild as the leaf
+        for frames, thread_id, leaf_id in stacks:
+            self.assertEqual(thread_id, 456)
+            self.assertEqual(leaf_id, "SharedChild")
+
+            frame_names = [f.funcname for f in frames]
+            self.assertIn("shared_child", frame_names)
+            self.assertIn("main", frame_names)
+
+            # Each stack should have EITHER parent_1 OR parent_2 (not both)
+            has_parent_1 = "parent_1" in frame_names
+            has_parent_2 = "parent_2" in frame_names
+            self.assertTrue(has_parent_1 or has_parent_2)
+            self.assertFalse(has_parent_1 and has_parent_2)
+
+        # Verify we got one path through each parent
+        paths = []
+        for frames, _, _ in stacks:
+            frame_names = [f.funcname for f in frames]
+            if "parent_1" in frame_names:
+                paths.append("Parent-1")
+            elif "parent_2" in frame_names:
+                paths.append("Parent-2")
+
+        self.assertEqual(sorted(paths), ["Parent-1", "Parent-2"])
+
+    def test_multiple_parents_three_levels(self):
+        """Test async stack reconstruction with complex 3-level diamond dependencies."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Build complex task tree with multiple diamonds:
+        #              Root
+        #             /    \
+        #        Mid-A      Mid-B
+        #         / \        / \
+        #    Worker-1 Worker-2 Worker-3
+        #         \     |     /
+        #            LeafTask
+        tasks = self._build_task_tree([
+            ("LeafTask", "leaf_work", 10, ["Worker-1", "Worker-2", "Worker-3"]),
+            ("Worker-1", "worker_1", 20, "Mid-A"),
+            ("Worker-2", "worker_2", 30, ["Mid-A", "Mid-B"]),
+            ("Worker-3", "worker_3", 40, "Mid-B"),
+            ("Mid-A", "mid_a", 50, "Root"),
+            ("Mid-B", "mid_b", 60, "Root"),
+            ("Root", "main", 70, None),
+        ])
+
+        awaited_info_list = [MockAwaitedInfo(thread_id=789, awaited_by=tasks)]
+
+        stacks = list(collector._iter_async_frames(awaited_info_list))
+
+        # Should get 4 stacks:
+        # Path 1: LeafTask -> Worker-1 -> Mid-A -> Root
+        # Path 2: LeafTask -> Worker-2 -> Mid-A -> Root
+        # Path 3: LeafTask -> Worker-2 -> Mid-B -> Root
+        # Path 4: LeafTask -> Worker-3 -> Mid-B -> Root
+        self.assertEqual(len(stacks), 4)
+
+        # All stacks should have LeafTask as the leaf
+        for frames, thread_id, leaf_id in stacks:
+            self.assertEqual(thread_id, 789)
+            self.assertEqual(leaf_id, "LeafTask")
+
+            frame_names = [f.funcname for f in frames]
+            self.assertIn("leaf_work", frame_names)
+            self.assertIn("main", frame_names)
+
+        # Verify we got all 4 unique paths
+        paths = []
+        for frames, _, _ in stacks:
+            frame_names = [f.funcname for f in frames]
+
+            # Determine which worker
+            worker = None
+            if "worker_1" in frame_names:
+                worker = "Worker-1"
+            elif "worker_2" in frame_names:
+                worker = "Worker-2"
+            elif "worker_3" in frame_names:
+                worker = "Worker-3"
+
+            # Determine which mid
+            mid = None
+            if "mid_a" in frame_names:
+                mid = "Mid-A"
+            elif "mid_b" in frame_names:
+                mid = "Mid-B"
+
+            if worker and mid:
+                paths.append((worker, mid))
+
+        # Should have 4 distinct paths
+        self.assertEqual(len(paths), 4)
+        expected_paths = [
+            ("Worker-1", "Mid-A"),
+            ("Worker-2", "Mid-A"),
+            ("Worker-2", "Mid-B"),
+            ("Worker-3", "Mid-B")
+        ]
+        self.assertEqual(sorted(paths), sorted(expected_paths))
+
+    def test_multiple_leaves_shared_ancestors(self):
+        """Test async stack reconstruction with multiple leaves sharing ancestors across 4 levels."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Build complex task tree with shared ancestors:
+        #                Root
+        #               /    \
+        #          Coord-A   Coord-B
+        #            / \       / \
+        #      Worker-1 Worker-2 Worker-3
+        #         /  \     |      /  \
+        #    Leaf-1 Leaf-2 Leaf-3 Leaf-4 Leaf-5
+        tasks = self._build_task_tree([
+            ("Leaf-1", "leaf_1", 10, "Worker-1"),
+            ("Leaf-2", "leaf_2", 20, "Worker-1"),
+            ("Leaf-3", "leaf_3", 30, "Worker-2"),
+            ("Leaf-4", "leaf_4", 40, "Worker-3"),
+            ("Leaf-5", "leaf_5", 50, "Worker-3"),
+            ("Worker-1", "worker_1", 100, "Coord-A"),
+            ("Worker-2", "worker_2", 200, ["Coord-A", "Coord-B"]),
+            ("Worker-3", "worker_3", 300, "Coord-B"),
+            ("Coord-A", "coord_a", 400, "Root"),
+            ("Coord-B", "coord_b", 500, "Root"),
+            ("Root", "main", 600, None),
+        ])
+
+        awaited_info_list = [MockAwaitedInfo(thread_id=999, awaited_by=tasks)]
+
+        stacks = list(collector._iter_async_frames(awaited_info_list))
+
+        # Expected paths:
+        # Leaf-1 -> Worker-1 -> Coord-A -> Root
+        # Leaf-2 -> Worker-1 -> Coord-A -> Root
+        # Leaf-3 -> Worker-2 -> Coord-A -> Root
+        # Leaf-3 -> Worker-2 -> Coord-B -> Root  (Worker-2 has 2 parents!)
+        # Leaf-4 -> Worker-3 -> Coord-B -> Root
+        # Leaf-5 -> Worker-3 -> Coord-B -> Root
+        # Total: 6 stacks
+        self.assertEqual(len(stacks), 6)
+
+        # Verify all thread IDs are correct
+        for frames, thread_id, leaf_id in stacks:
+            self.assertEqual(thread_id, 999)
+            self.assertIn(leaf_id, ["Leaf-1", "Leaf-2", "Leaf-3", "Leaf-4", "Leaf-5"])
+
+        # Collect all (leaf, worker, coord) tuples
+        paths = []
+        for frames, _, leaf_id in stacks:
+            frame_names = [f.funcname for f in frames]
+
+            # All paths should have main at the root
+            self.assertIn("main", frame_names)
+
+            # Determine worker
+            worker = None
+            if "worker_1" in frame_names:
+                worker = "Worker-1"
+            elif "worker_2" in frame_names:
+                worker = "Worker-2"
+            elif "worker_3" in frame_names:
+                worker = "Worker-3"
+
+            # Determine coordinator
+            coord = None
+            if "coord_a" in frame_names:
+                coord = "Coord-A"
+            elif "coord_b" in frame_names:
+                coord = "Coord-B"
+
+            if worker and coord:
+                paths.append((leaf_id, worker, coord))
+
+        # Verify all 6 expected paths
+        expected_paths = [
+            ("Leaf-1", "Worker-1", "Coord-A"),
+            ("Leaf-2", "Worker-1", "Coord-A"),
+            ("Leaf-3", "Worker-2", "Coord-A"),
+            ("Leaf-3", "Worker-2", "Coord-B"),  # Leaf-3 appears twice due to Worker-2 diamond
+            ("Leaf-4", "Worker-3", "Coord-B"),
+            ("Leaf-5", "Worker-3", "Coord-B"),
+        ]
+        self.assertEqual(sorted(paths), sorted(expected_paths))
+
+        # Verify Leaf-3 has 2 different paths (through both coordinators)
+        leaf_3_paths = [p for p in paths if p[0] == "Leaf-3"]
+        self.assertEqual(len(leaf_3_paths), 2)
+        leaf_3_coords = {p[2] for p in leaf_3_paths}
+        self.assertEqual(leaf_3_coords, {"Coord-A", "Coord-B"})
 
 
 class TestSampleProfiler(unittest.TestCase):
