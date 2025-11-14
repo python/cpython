@@ -13,6 +13,7 @@ import pickle
 import ipaddress
 import weakref
 from test.support import LARGEST, SMALLEST
+from typing import Iterator
 
 
 class BaseTestCase(unittest.TestCase):
@@ -1472,12 +1473,16 @@ class IpaddrUnitTest(unittest.TestCase):
                          self.ipv6_scoped_network.supernet(new_prefix=62))
 
     def testHosts(self):
+        hosts = self.ipv4_network.hosts()
+        self.assertIsInstance(hosts, Iterator)
         hosts = list(self.ipv4_network.hosts())
         self.assertEqual(254, len(hosts))
         self.assertEqual(ipaddress.IPv4Address('1.2.3.1'), hosts[0])
         self.assertEqual(ipaddress.IPv4Address('1.2.3.254'), hosts[-1])
 
         ipv6_network = ipaddress.IPv6Network('2001:658:22a:cafe::/120')
+        hosts = ipv6_network.hosts()
+        self.assertIsInstance(hosts, Iterator)
         hosts = list(ipv6_network.hosts())
         self.assertEqual(255, len(hosts))
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), hosts[0])
