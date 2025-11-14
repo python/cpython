@@ -102,7 +102,7 @@ All allocating functions belong to one of three different "domains" (see also
 strategies and are optimized for different purposes. The specific details on
 how every domain allocates memory or what internal functions each domain calls
 is considered an implementation detail, but for debugging purposes a simplified
-table can be found at :ref:`here <default-memory-allocators>`.
+table can be found at :ref:`default-memory-allocators`.
 The APIs used to allocate and free a block of memory must be from the same domain.
 For example, :c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
 
@@ -671,6 +671,10 @@ The arena allocator uses the following functions:
 This allocator is disabled if Python is configured with the
 :option:`--without-pymalloc` option. It can also be disabled at runtime using
 the :envvar:`PYTHONMALLOC` environment variable (ex: ``PYTHONMALLOC=malloc``).
+
+Typically, it makes sense to disable the pymalloc allocator when building
+Python with AddressSanitizer (:option:`--with-address-sanitizer`) which helps
+uncover low level bugs within the C code.
 
 Customize pymalloc Arena Allocator
 ----------------------------------

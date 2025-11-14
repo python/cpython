@@ -101,10 +101,10 @@ Executor Objects
       executor has started running will be completed prior to this method
       returning. The remaining futures are cancelled.
 
-      You can avoid having to call this method explicitly if you use the
-      :keyword:`with` statement, which will shutdown the :class:`Executor`
-      (waiting as if :meth:`Executor.shutdown` were called with *wait* set to
-      ``True``)::
+      You can avoid having to call this method explicitly if you use the executor
+      as a :term:`context manager` via the  :keyword:`with` statement, which
+      will shutdown the :class:`Executor` (waiting as if :meth:`Executor.shutdown`
+      were called with *wait* set to ``True``)::
 
          import shutil
          with ThreadPoolExecutor(max_workers=4) as e:
@@ -239,6 +239,8 @@ ThreadPoolExecutor Example
 InterpreterPoolExecutor
 -----------------------
 
+.. versionadded:: 3.14
+
 The :class:`InterpreterPoolExecutor` class uses a pool of interpreters
 to execute calls asynchronously.  It is a :class:`ThreadPoolExecutor`
 subclass, which means each worker is running in its own thread.
@@ -341,6 +343,11 @@ that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
 
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
+
+Note that the restrictions on functions and arguments needing to picklable as
+per :class:`multiprocessing.Process` apply when using :meth:`~Executor.submit`
+and :meth:`~Executor.map` on a :class:`ProcessPoolExecutor`. A function defined
+in a REPL or a lambda should not be expected to work.
 
 .. class:: ProcessPoolExecutor(max_workers=None, mp_context=None, initializer=None, initargs=(), max_tasks_per_child=None)
 

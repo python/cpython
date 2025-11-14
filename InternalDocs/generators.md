@@ -64,7 +64,7 @@ Iteration
 
 The [`FOR_ITER`](https://docs.python.org/dev/library/dis.html#opcode-FOR_ITER)
 instruction calls `__next__` on the iterator which is on the top of the stack,
-and pushes the result to the stack. It has [`specializations`](adaptive.md)
+and pushes the result to the stack. It has [`specializations`](interpreter.md)
 for a few common iterator types, including `FOR_ITER_GEN`, for iterating over
 a generator. `FOR_ITER_GEN` bypasses the call to `__next__`, and instead
 directly pushes the generator stack and resumes its execution from the

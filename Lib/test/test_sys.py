@@ -739,6 +739,18 @@ class SysModuleTest(unittest.TestCase):
         elif sys.platform == "wasi":
             self.assertEqual(info.name, "pthread-stubs")
 
+    def test_abi_info(self):
+        info = sys.abi_info
+        info_keys = {'pointer_bits', 'free_threaded', 'debug', 'byteorder'}
+        self.assertEqual(set(vars(info)), info_keys)
+        pointer_bits = 64 if sys.maxsize > 2**32 else 32
+        self.assertEqual(info.pointer_bits, pointer_bits)
+        self.assertEqual(info.free_threaded,
+                         bool(sysconfig.get_config_var('Py_GIL_DISABLED')))
+        self.assertEqual(info.debug,
+                         bool(sysconfig.get_config_var('Py_DEBUG')))
+        self.assertEqual(info.byteorder, sys.byteorder)
+
     @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
     def test_emscripten_info(self):
         self.assertEqual(len(sys._emscripten_info), 4)
@@ -1340,6 +1352,7 @@ class SysModuleTest(unittest.TestCase):
 
 
 @test.support.cpython_only
+@force_not_colorized
 class UnraisableHookTest(unittest.TestCase):
     def test_original_unraisablehook(self):
         _testcapi = import_helper.import_module('_testcapi')
@@ -1570,7 +1583,7 @@ class SizeofTest(unittest.TestCase):
         samples = [b'', b'u'*100000]
         for sample in samples:
             x = bytearray(sample)
-            check(x, vsize('n2Pi') + x.__alloc__())
+            check(x, vsize('n2PiP') + x.__alloc__())
         # bytearray_iterator
         check(iter(bytearray()), size('nP'))
         # bytes
@@ -1712,9 +1725,10 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE**2), vsize('') + 3*self.longdigit)
         # module
         if support.Py_GIL_DISABLED:
-            check(unittest, size('PPPPPP'))
+            md_gil = 'P'
         else:
-            check(unittest, size('PPPPP'))
+            md_gil = ''
+        check(unittest, size('PPPP?' + md_gil + 'NPPPPP'))
         # None
         check(None, size(''))
         # NotImplementedType
@@ -2239,9 +2253,10 @@ class TestSysJIT(unittest.TestCase):
 
             def frame_3_jit() -> None:
                 # JITs just before the last loop:
-                for i in range(_testinternalcapi.TIER2_THRESHOLD + 1):
+                # 1 extra iteration for tracing.
+                for i in range(_testinternalcapi.TIER2_THRESHOLD + 2):
                     # Careful, doing this in the reverse order breaks tracing:
-                    expected = {enabled} and i == _testinternalcapi.TIER2_THRESHOLD
+                    expected = {enabled} and i >= _testinternalcapi.TIER2_THRESHOLD + 1
                     assert sys._jit.is_active() is expected
                     frame_2_jit(expected)
                     assert sys._jit.is_active() is expected

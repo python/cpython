@@ -255,6 +255,7 @@ readline_read_init_file_impl(PyObject *module, PyObject *filename_obj)
         if (!PyUnicode_FSConverter(filename_obj, &filename_bytes))
             return NULL;
         if (PySys_Audit("open", "OCi", filename_obj, 'r', 0) < 0) {
+            Py_DECREF(filename_bytes);
             return NULL;
         }
         errno = rl_read_init_file(PyBytes_AS_STRING(filename_bytes));
@@ -298,6 +299,7 @@ readline_read_history_file_impl(PyObject *module, PyObject *filename_obj)
         if (!PyUnicode_FSConverter(filename_obj, &filename_bytes))
             return NULL;
         if (PySys_Audit("open", "OCi", filename_obj, 'r', 0) < 0) {
+            Py_DECREF(filename_bytes);
             return NULL;
         }
         errno = read_history(PyBytes_AS_STRING(filename_bytes));
@@ -343,6 +345,7 @@ readline_write_history_file_impl(PyObject *module, PyObject *filename_obj)
             return NULL;
         filename = PyBytes_AS_STRING(filename_bytes);
         if (PySys_Audit("open", "OCi", filename_obj, 'w', 0) < 0) {
+            Py_DECREF(filename_bytes);
             return NULL;
         }
     } else {
@@ -400,6 +403,7 @@ readline_append_history_file_impl(PyObject *module, int nelements,
             return NULL;
         filename = PyBytes_AS_STRING(filename_bytes);
         if (PySys_Audit("open", "OCi", filename_obj, 'a', 0) < 0) {
+            Py_DECREF(filename_bytes);
             return NULL;
         }
     } else {
@@ -1020,6 +1024,7 @@ readline_insert_text_impl(PyObject *module, PyObject *string)
 /* Redisplay the line buffer */
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 readline.redisplay
 
@@ -1028,7 +1033,7 @@ Change what's displayed on the screen to reflect contents of the line buffer.
 
 static PyObject *
 readline_redisplay_impl(PyObject *module)
-/*[clinic end generated code: output=a8b9725827c3c34b input=5895fd014615ff58]*/
+/*[clinic end generated code: output=a8b9725827c3c34b input=fb6ce76959c6f0ec]*/
 {
     rl_redisplay();
     Py_RETURN_NONE;

@@ -3,6 +3,78 @@
 Remote debugging attachment protocol
 ====================================
 
+This protocol enables external tools to attach to a running CPython process and
+execute Python code remotely.
+
+Most platforms require elevated privileges to attach to another Python process.
+
+.. _permission-requirements:
+
+Permission requirements
+=======================
+
+Attaching to a running Python process for remote debugging requires elevated
+privileges on most platforms. The specific requirements and troubleshooting
+steps depend on your operating system:
+
+.. rubric:: Linux
+
+The tracer process must have the ``CAP_SYS_PTRACE`` capability or equivalent
+privileges. You can only trace processes you own and can signal. Tracing may
+fail if the process is already being traced, or if it is running with
+set-user-ID or set-group-ID. Security modules like Yama may further restrict
+tracing.
+
+To temporarily relax ptrace restrictions (until reboot), run:
+
+  ``echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope``
+
+.. note::
+
+   Disabling ``ptrace_scope`` reduces system hardening and should only be done
+   in trusted environments.
+
+If running inside a container, use ``--cap-add=SYS_PTRACE`` or
+``--privileged``, and run as root if needed.
+
+Try re-running the command with elevated privileges:
+
+  ``sudo -E !!``
+
+
+.. rubric:: macOS
+
+To attach to another process, you typically need to run your debugging tool
+with elevated privileges. This can be done by using ``sudo`` or running as
+root.
+
+Even when attaching to processes you own, macOS may block debugging unless
+the debugger is run with root privileges due to system security restrictions.
+
+
+.. rubric:: Windows
+
+To attach to another process, you usually need to run your debugging tool
+with administrative privileges. Start the command prompt or terminal as
+Administrator.
+
+Some processes may still be inaccessible even with Administrator rights,
+unless you have the ``SeDebugPrivilege`` privilege enabled.
+
+To resolve file or folder access issues, adjust the security permissions:
+
+  1. Right-click the file or folder and select **Properties**.
+  2. Go to the **Security** tab to view users and groups with access.
+  3. Click **Edit** to modify permissions.
+  4. Select your user account.
+  5. In **Permissions**, check **Read** or **Full control** as needed.
+  6. Click **Apply**, then **OK** to confirm.
+
+
+.. note::
+
+   Ensure you've satisfied all :ref:`permission-requirements` before proceeding.
+
 This section describes the low-level protocol that enables external tools to
 inject and execute a Python script within a running CPython process.
 
@@ -374,13 +446,13 @@ To locate a thread:
    reliable thread to target.
 
 3. Optionally, use the offset ``interpreter_state.threads_head`` to iterate
-through the linked list of all thread states. Each ``PyThreadState`` structure
-contains a ``native_thread_id`` field, which may be compared to a target thread
-ID to find a specific thread.
+   through the linked list of all thread states. Each ``PyThreadState``
+   structure contains a ``native_thread_id`` field, which may be compared to
+   a target thread ID to find a specific thread.
 
-1. Once a valid ``PyThreadState`` has been found, its address can be used in
-later steps of the protocol, such as writing debugger control fields and
-scheduling execution.
+4. Once a valid ``PyThreadState`` has been found, its address can be used in
+   later steps of the protocol, such as writing debugger control fields and
+   scheduling execution.
 
 The following is an example implementation that locates the main thread state::
 
@@ -454,15 +526,15 @@ its fields are defined by the ``_Py_DebugOffsets`` structure and include the
 following:
 
 - ``debugger_script_path``: A fixed-size buffer that holds the full path to a
-   Python source file (``.py``).  This file must be accessible and readable by
-   the target process when execution is triggered.
+  Python source file (``.py``).  This file must be accessible and readable by
+  the target process when execution is triggered.
 
 - ``debugger_pending_call``: An integer flag. Setting this to ``1`` tells the
-   interpreter that a script is ready to be executed.
+  interpreter that a script is ready to be executed.
 
 - ``eval_breaker``: A field checked by the interpreter during execution.
-   Setting bit 5 (``_PY_EVAL_PLEASE_STOP_BIT``, value ``1U << 5``) in this
-   field causes the interpreter to pause and check for debugger activity.
+  Setting bit 5 (``_PY_EVAL_PLEASE_STOP_BIT``, value ``1U << 5``) in this
+  field causes the interpreter to pause and check for debugger activity.
 
 To complete the injection, the debugger must perform the following steps:
 

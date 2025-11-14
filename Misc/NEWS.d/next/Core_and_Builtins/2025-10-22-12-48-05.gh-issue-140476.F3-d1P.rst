@@ -1,0 +1,2 @@
+Optimize :c:func:`PySet_Add` for :class:`frozenset` in :term:`free threaded
+<free threading>` build.
