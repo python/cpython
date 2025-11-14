@@ -1366,6 +1366,43 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.11
 
 
+.. c:function:: int PyUnstable_ThreadState_SetStackProtection(PyThreadState *tstate, void *stack_start_addr, size_t stack_size)
+
+   Set the stack protection start address and stack protection size
+   of a Python thread state.
+
+   On success, return ``0``.
+   On failure, set an exception and return ``-1``.
+
+   CPython implements :ref:`recursion control <recursion>` for C code by raising
+   :py:exc:`RecursionError` when it notices that the machine execution stack is close
+   to overflow. See for example the :c:func:`Py_EnterRecursiveCall` function.
+   For this, it needs to know the location of the current thread's stack, which it
+   normally gets from the operating system.
+   When the stack is changed, for example using context switching techniques like the
+   Boost library's ``boost::context``, you must call
+   :c:func:`~PyUnstable_ThreadState_SetStackProtection` to inform CPython of the change.
+
+   Call :c:func:`~PyUnstable_ThreadState_SetStackProtection` either before
+   or after changing the stack.
+   Do not call any other Python C API between the call and the stack
+   change.
+
+   See :c:func:`PyUnstable_ThreadState_ResetStackProtection` for undoing this operation.
+
+   .. versionadded:: next
+
+
+.. c:function:: void PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
+
+   Reset the stack protection start address and stack protection size
+   of a Python thread state to the operating system defaults.
+
+   See :c:func:`PyUnstable_ThreadState_SetStackProtection` for an explanation.
+
+   .. versionadded:: next
+
+
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
 
    Get the current interpreter.
