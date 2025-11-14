@@ -24,7 +24,7 @@ macros.
 
    .. code-block::
 
-      PyDateTime_IMPORT();  // semi-colon is optional but recommended
+      PyDateTime_IMPORT;  // semi-colon is optional but recommended
       if (PyErr_Occurred()) { /* cleanup */ }
 
    .. warning::
