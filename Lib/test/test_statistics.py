@@ -2116,6 +2116,8 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         # Inputs with math.inf should raise a ValueError
         with self.assertRaises(ValueError):
             self.func([1.0, math.inf])
+        with self.assertRaises(ValueError):
+            self.func([1.0, math.nan])
 
 
 class TestSqrtHelpers(unittest.TestCase):
