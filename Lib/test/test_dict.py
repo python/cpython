@@ -1668,5 +1668,41 @@ class FrozenDictMappingTests(mapping_tests.BasicTestImmutableMappingProtocol):
     type2test = frozendict
 
 
+class FrozenDict(frozendict):
+    pass
+
+
+class FrozenDictTests(unittest.TestCase):
+    def test_copy(self):
+        d = frozendict(x=1, y=2)
+        d2 = d.copy()
+        self.assertIs(d2, d)
+
+        d = FrozenDict(x=1, y=2)
+        d2 = d.copy()
+        self.assertIsNot(d2, d)
+        self.assertEqual(d2, frozendict(x=1, y=2))
+        self.assertEqual(type(d2), frozendict)
+
+    def test_merge(self):
+        # test "a | b" operator
+        self.assertEqual(frozendict(x=1) | frozendict(y=2),
+                         frozendict({'x': 1, 'y': 2}))
+        self.assertEqual(frozendict(x=1) | dict(y=2),
+                         frozendict({'x': 1, 'y': 2}))
+        self.assertEqual(frozendict(x=1, y=2) | frozendict(y=5),
+                         frozendict({'x': 1, 'y': 5}))
+
+    def test_update(self):
+        # test "a |= b" operator
+        d = frozendict(x=1)
+        copy = d
+        self.assertIs(copy, d)
+        d |= frozendict(y=2)
+        self.assertIsNot(copy, d)
+        self.assertEqual(d, frozendict({'x': 1, 'y': 2}))
+        self.assertEqual(copy, frozendict({'x': 1}))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -4096,6 +4096,9 @@ static PyObject *
 dict_copy_impl(PyDictObject *self)
 /*[clinic end generated code: output=ffb782cf970a5c39 input=73935f042b639de4]*/
 {
+    if (PyFrozenDict_CheckExact(self)) {
+        return Py_NewRef(self);
+    }
     return PyDict_Copy((PyObject *)self);
 }
 
@@ -4229,10 +4232,6 @@ PyDict_Copy(PyObject *o)
     if (o == NULL || !PyAnyDict_Check(o)) {
         PyErr_BadInternalCall();
         return NULL;
-    }
-
-    if (PyFrozenDict_CheckExact(o)) {
-        return Py_NewRef(o);
     }
 
     PyObject *res;
