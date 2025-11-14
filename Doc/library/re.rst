@@ -1376,9 +1376,9 @@ Since :meth:`~Pattern.match` and :meth:`~Pattern.search` return ``None``
 when there is no match, you can test whether there was a match with a simple
 ``if`` statement::
 
-   match = re.search(pattern, string)
-   if match:
-       process(match)
+   m = re.search(pattern, string)
+   if m:
+       process(m)
 
 .. class:: Match
 
