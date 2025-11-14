@@ -358,6 +358,7 @@ Macros for the convenience of modules implementing the DB API:
    Create and return a new :class:`datetime.date` object given an argument
    tuple suitable for passing to :meth:`datetime.date.fromtimestamp`.
 
+
 Internal data
 -------------
 
