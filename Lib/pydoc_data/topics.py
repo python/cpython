@@ -13174,7 +13174,7 @@ class dict(iterable, /, **kwargs)
 
 See also:
 
-  "frozendict" can be used to create a read-only view of a "dict".
+  "frozendict" can be used to create a read-only copy of a "dict".
 
 
 Dictionary view objects
