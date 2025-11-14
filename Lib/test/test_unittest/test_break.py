@@ -233,6 +233,7 @@ class TestBreak(unittest.TestCase):
                 self.failfast = failfast
                 self.catchbreak = catchbreak
                 self.tb_locals = False
+                self.debug = False
                 self.testRunner = FakeRunner
                 self.test = test
                 self.result = None
