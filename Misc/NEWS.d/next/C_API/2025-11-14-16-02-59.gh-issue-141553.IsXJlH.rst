@@ -1,2 +1,0 @@
-Fix UBSan-reported incorrect function signatures in ``_testmultiphase``
-(patched by Shamil Abdulaev).
