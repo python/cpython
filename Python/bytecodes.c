@@ -3303,11 +3303,9 @@ dummy_func(
 
         // Only used by Tier 2
         op(_GUARD_NOT_EXHAUSTED_LIST, (iter, null_or_index -- iter, null_or_index)) {
-#ifndef Py_GIL_DISABLED
             PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(list_o) == &PyList_Type);
             EXIT_IF((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyList_GET_SIZE(list_o));
-#endif
         }
 
         replaced op(_ITER_NEXT_LIST, (iter, null_or_index -- iter, null_or_index, next)) {
@@ -5663,7 +5661,7 @@ dummy_func(
             bool stop_tracing = (opcode == WITH_EXCEPT_START ||
                 opcode == RERAISE || opcode == CLEANUP_THROW ||
                 opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
-            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing);
+            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             if (full) {
                 LEAVE_TRACING();
                 int err = stop_tracing_and_jit(tstate, frame);
@@ -5703,7 +5701,7 @@ dummy_func(
 #if _Py_TIER2
             assert(IS_JIT_TRACING());
             int opcode = next_instr->op.code;
-            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, true);
+            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, _EXIT_TRACE);
             LEAVE_TRACING();
             int err = stop_tracing_and_jit(tstate, frame);
             ERROR_IF(err < 0);

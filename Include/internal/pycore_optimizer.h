@@ -368,7 +368,7 @@ PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 extern void _Py_ClearExecutorDeletionList(PyThreadState *tstate);
 #endif
 
-int _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, bool stop_tracing);
+int _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int stop_tracing_exit);
 
 int
 _PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
