@@ -2,6 +2,7 @@
 
 from idlelib import iomenu
 import unittest
+import builtins
 from test.support import requires
 from tkinter import Tk
 from idlelib.editor import EditorWindow
@@ -101,7 +102,7 @@ class IOBindingTest(unittest.TestCase):
             self.assertEqual(text.get('1.0', 'end-1c'), "# Original content\n")
 
             # Modify the file content externally
-            with open(temp_filename, 'w') as f:
+            with builtins.open(temp_filename, 'w') as f:
                 f.write("# Modified content\n")
 
             # Reload should update the content
