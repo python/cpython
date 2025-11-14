@@ -1508,6 +1508,8 @@ class IpaddrUnitTest(unittest.TestCase):
         addrs = [ipaddress.IPv4Address('1.2.3.4')]
         str_args = '1.2.3.4/32'
         tpl_args = ('1.2.3.4', 32)
+        self.assertIsInstance(ipaddress.ip_network(str_args).hosts(), Iterator)
+        self.assertIsInstance(ipaddress.ip_network(tpl_args).hosts(), Iterator)
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
@@ -1517,6 +1519,8 @@ class IpaddrUnitTest(unittest.TestCase):
                  ipaddress.IPv6Address('2001:658:22a:cafe::1')]
         str_args = '2001:658:22a:cafe::/127'
         tpl_args = ('2001:658:22a:cafe::', 127)
+        self.assertIsInstance(ipaddress.ip_network(str_args).hosts(), Iterator)
+        self.assertIsInstance(ipaddress.ip_network(tpl_args).hosts(), Iterator)
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
