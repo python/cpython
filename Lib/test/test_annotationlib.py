@@ -1514,6 +1514,25 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": int})
 
+    def test_callable_class_annotate_forwardref_fakeglobals(self):
+        # If Format.FORWARDREF is not supported, use Format.VALUE_WITH_FAKE_GLOBALS
+        # before falling back to Format.VALUE
+        class Annotate(dict):
+            def __init__(self, format, /, __Format=Format, __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    super().__init__({'x': str})
+                elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                    super().__init__({'x': int})
+                else:
+                    raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(
+            Annotate,
+            Format.FORWARDREF
+        )
+
+        self.assertEqual(annotations, {"x": int})
+
     def test_user_annotate_forwardref_value_fallback(self):
         # If Format.FORWARDREF and Format.VALUE_WITH_FAKE_GLOBALS are not supported
         # use Format.VALUE
