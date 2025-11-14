@@ -295,23 +295,23 @@ test_critical_section1_reacquisition(PyObject *self, PyObject *Py_UNUSED(args))
     PyCriticalSection cs1, cs2;
     // First acquisition of critical section on object locks it
     PyCriticalSection_Begin(&cs1, a);
-    assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
-    assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
-    assert_nogil(_PyThreadState_GET()->critical_section == (uintptr_t)&cs1);
+    assert(PyMutex_IsLocked(&a->ob_mutex));
+    assert(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
+    assert(_PyThreadState_GET()->critical_section == (uintptr_t)&cs1);
     // Attempting to re-acquire critical section on same object which
     // is already locked by top-most critical section is a no-op.
     PyCriticalSection_Begin(&cs2, a);
-    assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
-    assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
-    assert_nogil(_PyThreadState_GET()->critical_section == (uintptr_t)&cs1);
+    assert(PyMutex_IsLocked(&a->ob_mutex));
+    assert(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
+    assert(_PyThreadState_GET()->critical_section == (uintptr_t)&cs1);
     // Releasing second critical section is a no-op.
     PyCriticalSection_End(&cs2);
-    assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
-    assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
-    assert_nogil(_PyThreadState_GET()->critical_section == (uintptr_t)&cs1);
+    assert(PyMutex_IsLocked(&a->ob_mutex));
+    assert(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
+    assert(_PyThreadState_GET()->critical_section == (uintptr_t)&cs1);
     // Releasing first critical section unlocks the object
     PyCriticalSection_End(&cs1);
-    assert_nogil(!PyMutex_IsLocked(&a->ob_mutex));
+    assert(!PyMutex_IsLocked(&a->ob_mutex));
 
     Py_DECREF(a);
     Py_RETURN_NONE;
@@ -328,10 +328,10 @@ test_critical_section2_reacquisition(PyObject *self, PyObject *Py_UNUSED(args))
     PyCriticalSection2 cs;
     // First acquisition of critical section on objects locks them
     PyCriticalSection2_Begin(&cs, a, b);
-    assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
-    assert_nogil(PyMutex_IsLocked(&b->ob_mutex));
-    assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
-    assert_nogil((_PyThreadState_GET()->critical_section &
+    assert(PyMutex_IsLocked(&a->ob_mutex));
+    assert(PyMutex_IsLocked(&b->ob_mutex));
+    assert(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
+    assert((_PyThreadState_GET()->critical_section &
                   ~_Py_CRITICAL_SECTION_MASK) == (uintptr_t)&cs);
 
     // Attempting to re-acquire critical section on either of two
@@ -340,39 +340,39 @@ test_critical_section2_reacquisition(PyObject *self, PyObject *Py_UNUSED(args))
     // Check re-acquiring on first object
     PyCriticalSection a_cs;
     PyCriticalSection_Begin(&a_cs, a);
-    assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
-    assert_nogil(PyMutex_IsLocked(&b->ob_mutex));
-    assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
-    assert_nogil((_PyThreadState_GET()->critical_section &
+    assert(PyMutex_IsLocked(&a->ob_mutex));
+    assert(PyMutex_IsLocked(&b->ob_mutex));
+    assert(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
+    assert((_PyThreadState_GET()->critical_section &
                   ~_Py_CRITICAL_SECTION_MASK) == (uintptr_t)&cs);
     // Releasing critical section on either object is a no-op.
     PyCriticalSection_End(&a_cs);
-    assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
-    assert_nogil(PyMutex_IsLocked(&b->ob_mutex));
-    assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
-    assert_nogil((_PyThreadState_GET()->critical_section &
+    assert(PyMutex_IsLocked(&a->ob_mutex));
+    assert(PyMutex_IsLocked(&b->ob_mutex));
+    assert(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
+    assert((_PyThreadState_GET()->critical_section &
                   ~_Py_CRITICAL_SECTION_MASK) == (uintptr_t)&cs);
 
     // Check re-acquiring on second object
     PyCriticalSection b_cs;
     PyCriticalSection_Begin(&b_cs, b);
-    assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
-    assert_nogil(PyMutex_IsLocked(&b->ob_mutex));
-    assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
-    assert_nogil((_PyThreadState_GET()->critical_section &
+    assert(PyMutex_IsLocked(&a->ob_mutex));
+    assert(PyMutex_IsLocked(&b->ob_mutex));
+    assert(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
+    assert((_PyThreadState_GET()->critical_section &
                   ~_Py_CRITICAL_SECTION_MASK) == (uintptr_t)&cs);
     // Releasing critical section on either object is a no-op.
     PyCriticalSection_End(&b_cs);
-    assert_nogil(PyMutex_IsLocked(&a->ob_mutex));
-    assert_nogil(PyMutex_IsLocked(&b->ob_mutex));
-    assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
-    assert_nogil((_PyThreadState_GET()->critical_section &
+    assert(PyMutex_IsLocked(&a->ob_mutex));
+    assert(PyMutex_IsLocked(&b->ob_mutex));
+    assert(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
+    assert((_PyThreadState_GET()->critical_section &
                   ~_Py_CRITICAL_SECTION_MASK) == (uintptr_t)&cs);
 
     // Releasing critical section on both objects unlocks them
     PyCriticalSection2_End(&cs);
-    assert_nogil(!PyMutex_IsLocked(&a->ob_mutex));
-    assert_nogil(!PyMutex_IsLocked(&b->ob_mutex));
+    assert(!PyMutex_IsLocked(&a->ob_mutex));
+    assert(!PyMutex_IsLocked(&b->ob_mutex));
 
     Py_DECREF(a);
     Py_DECREF(b);
