@@ -101,7 +101,7 @@ Floating-Point Objects
 
 .. c:macro:: Py_HUGE_VAL
 
-   Equivalent to :c:macro:`Py_INFINITY`.
+   Equivalent to :c:macro:`!INFINITY`.
 
    .. deprecated:: 3.14
       The macro is :term:`soft deprecated`.
@@ -155,16 +155,16 @@ Floating-Point Objects
       return PyFloat_FromDouble(copysign(INFINITY, sign));
 
 
-.. c:macro:: Py_IS_FINITE
+.. c:macro:: Py_IS_FINITE(X)
 
-   Determines if the given floating-point number has finite value i.e. it is
-   normal, subnormal or zero, but not infinite or NaN.
+   Determines if the given floating-point number has finite value,
+   that is, it is normal, subnormal or zero, but not infinite or NaN.
 
    .. deprecated:: 3.14
       The macro is :term:`soft deprecated`.  Use :c:macro:`!isfinite` instead.
 
 
-.. c:macro:: Py_IS_INFINITE
+.. c:macro:: Py_IS_INFINITY(X)
 
    Determines if the given floating-point number is positive or negative
    infinity.
@@ -173,7 +173,7 @@ Floating-Point Objects
       The macro is :term:`soft deprecated`.  Use :c:macro:`!isinf` instead.
 
 
-.. c:macro:: Py_IS_NAN
+.. c:macro:: Py_IS_NAN(X)
 
    Determines if the given floating-point number is a not-a-number (NaN) value.
 
