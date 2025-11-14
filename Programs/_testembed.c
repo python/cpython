@@ -2255,7 +2255,7 @@ exec_module(PyObject* self, PyObject* mod)
 static PyMethodDef create_static_module_methods[] = {
     {"create_module", create_module, METH_O, NULL},
     {"exec_module", exec_module, METH_O, NULL},
-    {}
+    {NULL}
 };
 
 static struct PyModuleDef create_static_module_def = {
