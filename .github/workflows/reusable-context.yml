@@ -17,9 +17,6 @@ on:  # yamllint disable-line rule:truthy
       #        || 'falsy-branch'
       #   }}
       #
-      config-hash:
-        description: Config hash value for use in cache keys
-        value: ${{ jobs.compute-changes.outputs.config-hash }}  # str
       run-docs:
         description: Whether to build the docs
         value: ${{ jobs.compute-changes.outputs.run-docs }}  # bool
@@ -42,7 +39,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      config-hash: ${{ steps.config-hash.outputs.hash }}
       run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
       run-docs: ${{ steps.changes.outputs.run-docs }}
       run-tests: ${{ steps.changes.outputs.run-tests }}
@@ -100,8 +96,3 @@ jobs:
         GITHUB_EVENT_NAME: ${{ github.event_name }}
         CCF_TARGET_REF: ${{ github.base_ref || github.event.repository.default_branch }}
         CCF_HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-
-    - name: Compute hash for config cache key
-      id: config-hash
-      run: |
-        echo "hash=${{ hashFiles('configure', 'configure.ac', '.github/workflows/build.yml') }}" >> "$GITHUB_OUTPUT"
