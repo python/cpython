@@ -9,6 +9,7 @@ import itertools
 import pickle
 from string.templatelib import Template, Interpolation
 import random
+import types
 import typing
 import sys
 import unittest
@@ -1696,8 +1697,9 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": int})
 
     def test_callable_generic_class_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
+        # Generics that inherit from builtins become types.GenericAlias objects.
+        # This is special-case in annotationlib to ensure the constructor is handled
+        # as with standard classes and __orig_class__ is set correctly.
         class Annotate[T](dict[T]):
             def __init__(self, format, /, __Format=Format,
                          __NotImplementedError=NotImplementedError):
@@ -1705,6 +1707,39 @@ class TestCallAnnotateFunction(unittest.TestCase):
                     super().__init__({"x": int})
                 else:
                     raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(
+            Annotate[int],
+            Format.FORWARDREF,
+        )
+
+        self.assertEqual(annotations, {"x": int})
+        self.assertEqual(annotations.__orig_class__, Annotate[int])
+
+    def test_callable_typing_generic_class_annotate_forwardref_value_fallback(self):
+        # Standard generics are 'typing._GenericAlias' objects. These are implemented
+        # in Python with a __call__ method (in _typing.BaseGenericAlias), so should work
+        # as with any callable class instance.
+        class Annotate[T]:
+            def __init__(self, format, /, __Format=Format,
+                         __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    self.data = {"x": int}
+                else:
+                    raise __NotImplementedError(format)
+            def __getitem__(self, item):
+                return self.data[item]
+            def __iter__(self):
+                return iter(self.data)
+            def __len__(self):
+                return len(self.data)
+            def __getattr__(self, attr):
+                val = getattr(collections.abc.Mapping, attr)
+                if isinstance(val, types.FunctionType):
+                    return types.MethodType(val, self)
+                return val
+            def __eq__(self, other):
+                return dict(self.items()) == dict(other.items())
 
         annotations = annotationlib.call_annotate_function(
             Annotate[int],
