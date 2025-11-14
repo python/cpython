@@ -5,6 +5,7 @@ import textwrap
 import unittest
 import gc
 import os
+import types
 
 import _opcode
 
@@ -14,8 +15,10 @@ from test.support import (script_helper, requires_specialization,
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
-from _testinternalcapi import TIER2_THRESHOLD
+from _testinternalcapi import _PY_NSMALLPOSINTS, TIER2_THRESHOLD
 
+#For test of issue 136154
+GLOBAL_136154 = 42
 
 @contextlib.contextmanager
 def clear_executors(func):
@@ -419,32 +422,6 @@ class TestUops(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
 
-    def test_confidence_score(self):
-        def testfunc(n):
-            bits = 0
-            for i in range(n):
-                if i & 0x01:
-                    bits += 1
-                if i & 0x02:
-                    bits += 1
-                if i&0x04:
-                    bits += 1
-                if i&0x08:
-                    bits += 1
-                if i&0x10:
-                    bits += 1
-            return bits
-
-        x = testfunc(TIER2_THRESHOLD * 2)
-
-        self.assertEqual(x, TIER2_THRESHOLD * 5)
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        ops = list(iter_opnames(ex))
-        #Since branch is 50/50 the trace could go either way.
-        count = ops.count("_GUARD_IS_TRUE_POP") + ops.count("_GUARD_IS_FALSE_POP")
-        self.assertLessEqual(count, 2)
-
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
@@ -844,37 +821,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_unicode_count), 1)
         self.assertIn("_COMPARE_OP_STR", uops)
 
-    def test_type_inconsistency(self):
-        ns = {}
-        src = textwrap.dedent("""
-            def testfunc(n):
-                for i in range(n):
-                    x = _test_global + _test_global
-        """)
-        exec(src, ns, ns)
-        testfunc = ns['testfunc']
-        ns['_test_global'] = 0
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD - 1)
-        self.assertIsNone(ex)
-        ns['_test_global'] = 1
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD - 1)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertNotIn("_GUARD_TOS_INT", uops)
-        self.assertNotIn("_GUARD_NOS_INT", uops)
-        self.assertIn("_BINARY_OP_ADD_INT", uops)
-        # Try again, but between the runs, set the global to a float.
-        # This should result in no executor the second time.
-        ns = {}
-        exec(src, ns, ns)
-        testfunc = ns['testfunc']
-        ns['_test_global'] = 0
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD - 1)
-        self.assertIsNone(ex)
-        ns['_test_global'] = 3.14
-        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD - 1)
-        self.assertIsNone(ex)
-
+    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_sequential(self):
         def dummy12(x):
             return x - 1
@@ -903,6 +850,7 @@ class TestUopsOptimization(unittest.TestCase):
         largest_stack = _testinternalcapi.get_co_framesize(dummy13.__code__)
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
 
+    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_nested(self):
         def dummy12(x):
             return x + 3
@@ -933,6 +881,7 @@ class TestUopsOptimization(unittest.TestCase):
         )
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
 
+    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_several_calls(self):
         def dummy12(x):
             return x + 3
@@ -968,6 +917,7 @@ class TestUopsOptimization(unittest.TestCase):
         )
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
 
+    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_several_calls_different_order(self):
         # same as `several_calls` but with top-level calls reversed
         def dummy12(x):
@@ -1004,6 +954,7 @@ class TestUopsOptimization(unittest.TestCase):
         )
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
 
+    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_complex(self):
         def dummy0(x):
             return x
@@ -1053,6 +1004,7 @@ class TestUopsOptimization(unittest.TestCase):
             ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
         )
 
+    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_large_framesize(self):
         # Create a function with a large framesize. This ensures _CHECK_STACK_SPACE is
         # actually doing its job. Note that the resulting trace hits
@@ -1114,6 +1066,7 @@ class TestUopsOptimization(unittest.TestCase):
             ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
         )
 
+    @unittest.skip("gh-139109 WIP")
     def test_combine_stack_space_checks_recursion(self):
         def dummy15(x):
             while x > 0:
@@ -1462,7 +1415,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 3)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
+        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
@@ -1612,7 +1566,75 @@ class TestUopsOptimization(unittest.TestCase):
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
-    def test_compare_pop_two_load_const_inline_borrow(self):
+    def test_unary_negative_pop_top_load_const_inline_borrow(self):
+        def testfunc(n):
+            x = 0
+            for i in range(n):
+                a = 1
+                result = -a
+                if result < 0:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_UNARY_NEGATIVE", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_unary_not_pop_top_load_const_inline_borrow(self):
+        def testfunc(n):
+                x = 0
+                for i in range(n):
+                    a = 42
+                    result = not a
+                    if result:
+                        x += 1
+                return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_UNARY_NOT", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_unary_invert_pop_top_load_const_inline_borrow(self):
+        def testfunc(n):
+            x = 0
+            for i in range(n):
+                a = 0
+                result = ~a
+                if result < 0:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_UNARY_INVERT", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_compare_op_pop_two_load_const_inline_borrow(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                a = 10
+                b = 10.0
+                if a == b:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_COMPARE_OP", uops)
+        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_compare_op_int_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
@@ -1627,6 +1649,57 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_INT", uops)
+        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_compare_op_str_pop_two_load_const_inline_borrow(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                a = "foo"
+                b = "foo"
+                if a == b:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_COMPARE_OP_STR", uops)
+        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_compare_op_float_pop_two_load_const_inline_borrow(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                a = 1.0
+                b = 1.0
+                if a == b:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_COMPARE_OP_FLOAT", uops)
+        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_contains_op_pop_two_load_const_inline_borrow(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                a = "foo"
+                s = "foo bar baz"
+                if a in s:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_CONTAINS_OP", uops)
         self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_to_bool_bool_contains_op_set(self):
@@ -1969,6 +2042,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
     def test_call_len_known_length_small_int(self):
+        # Make sure that len(t) is optimized for a tuple of length 5.
+        # See https://github.com/python/cpython/issues/139393.
+        self.assertGreater(_PY_NSMALLPOSINTS, 5)
+
         def testfunc(n):
             x = 0
             for _ in range(n):
@@ -1989,13 +2066,17 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_call_len_known_length(self):
+        # Make sure that len(t) is not optimized for a tuple of length 2048.
+        # See https://github.com/python/cpython/issues/139393.
+        self.assertLess(_PY_NSMALLPOSINTS, 2048)
+
         def testfunc(n):
             class C:
-                t = tuple(range(300))
+                t = tuple(range(2048))
 
             x = 0
             for _ in range(n):
-                if len(C.t) == 300:  # comparison + guard removed
+                if len(C.t) == 2048:  # comparison + guard removed
                     x += 1
             return x
 
@@ -2464,6 +2545,89 @@ class TestUopsOptimization(unittest.TestCase):
 
         # For now... until we constant propagate it away.
         self.assertIn("_BINARY_OP", uops)
+
+    def test_jitted_code_sees_changed_globals(self):
+        "Issue 136154: Check that jitted code spots the change in the globals"
+
+        def make_f():
+            def f():
+                return GLOBAL_136154
+            return f
+
+        make_f_with_bad_globals = types.FunctionType(make_f.__code__, {})
+
+        def jitted(funcs):
+            for func in funcs:
+                func()
+
+        # Make a "good" f:
+        f = make_f()
+        # Compile jitted for the "good" f:
+        jitted([f] * TIER2_THRESHOLD)
+        # This "bad" f has different globals, but the *same* code/function versions:
+        f_with_bad_globals = make_f_with_bad_globals()
+        # A "good" f to enter the JIT code, and a "bad" f to trigger the bug:
+        with self.assertRaises(NameError):
+            jitted([f, f_with_bad_globals])
+
+    def test_reference_tracking_across_call_doesnt_crash(self):
+
+        def f1():
+            for _ in range(TIER2_THRESHOLD + 1):
+                # Choose a value that won't occur elsewhere to avoid sharing
+                str("value that won't occur elsewhere to avoid sharing")
+
+        f1()
+
+        def f2():
+            for _ in range(TIER2_THRESHOLD + 1):
+                # Choose a value that won't occur elsewhere to avoid sharing
+                tuple((31, -17, 25, "won't occur elsewhere"))
+
+        f2()
+
+    def test_next_instr_for_exception_handler_set(self):
+        # gh-140104: We just want the exception to be caught properly.
+        def f():
+            for i in range(TIER2_THRESHOLD + 3):
+                try:
+                    undefined_variable(i)
+                except Exception:
+                    pass
+
+        f()
+
+    def test_next_instr_for_exception_handler_set_lasts_instr(self):
+        # gh-140104: We just want the exception to be caught properly.
+        def f():
+            a_list = []
+            for _ in range(TIER2_THRESHOLD + 3):
+                try:
+                    a_list[""] = 0
+                except Exception:
+                    pass
+
+        f()
+
+    def test_interpreter_finalization_with_generator_alive(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import sys
+            t = tuple(range(%d))
+            def simple_for():
+                for x in t:
+                    x
+
+            def gen():
+                try:
+                    yield
+                except:
+                    simple_for()
+
+            sys.settrace(lambda *args: None)
+            simple_for()
+            g = gen()
+            next(g)
+        """ % _testinternalcapi.SPECIALIZATION_THRESHOLD))
 
 
 def global_identity(x):

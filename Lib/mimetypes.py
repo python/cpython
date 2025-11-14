@@ -486,6 +486,7 @@ def _default_mime_types():
         '.wiz'    : 'application/msword',
         '.nq'     : 'application/n-quads',
         '.nt'     : 'application/n-triples',
+        '.cjs'    : 'application/node',
         '.bin'    : 'application/octet-stream',
         '.a'      : 'application/octet-stream',
         '.dll'    : 'application/octet-stream',
@@ -496,10 +497,13 @@ def _default_mime_types():
         '.oda'    : 'application/oda',
         '.ogx'    : 'application/ogg',
         '.pdf'    : 'application/pdf',
+        '.ai'     : 'application/pdf',
         '.p7c'    : 'application/pkcs7-mime',
         '.ps'     : 'application/postscript',
-        '.ai'     : 'application/postscript',
         '.eps'    : 'application/postscript',
+        '.texi'   : 'application/texinfo',
+        '.texinfo': 'application/texinfo',
+        '.toml'   : 'application/toml',
         '.trig'   : 'application/trig',
         '.m3u'    : 'application/vnd.apple.mpegurl',
         '.m3u8'   : 'application/vnd.apple.mpegurl',
@@ -548,8 +552,6 @@ def _default_mime_types():
         '.tar'    : 'application/x-tar',
         '.tcl'    : 'application/x-tcl',
         '.tex'    : 'application/x-tex',
-        '.texi'   : 'application/x-texinfo',
-        '.texinfo': 'application/x-texinfo',
         '.roff'   : 'application/x-troff',
         '.t'      : 'application/x-troff',
         '.tr'     : 'application/x-troff',
@@ -587,9 +589,9 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/vnd.wave',
+        '.weba'   : 'audio/webm',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
-        '.weba'   : 'audio/webm',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
         '.avif'   : 'image/avif',
@@ -718,24 +720,30 @@ def _parse_args(args):
 
 def _main(args=None):
     """Run the mimetypes command-line interface and return a text to print."""
-    import sys
-
     args, help_text = _parse_args(args)
 
+    results = []
     if args.extension:
         for gtype in args.type:
             guess = guess_extension(gtype, not args.lenient)
             if guess:
-                return str(guess)
-            sys.exit(f"error: unknown type {gtype}")
+                results.append(str(guess))
+            else:
+                results.append(f"error: unknown type {gtype}")
+        return results
     else:
         for gtype in args.type:
             guess, encoding = guess_type(gtype, not args.lenient)
             if guess:
-                return f"type: {guess} encoding: {encoding}"
-            sys.exit(f"error: media type unknown for {gtype}")
-    return help_text
+                results.append(f"type: {guess} encoding: {encoding}")
+            else:
+                results.append(f"error: media type unknown for {gtype}")
+        return results
 
 
 if __name__ == '__main__':
-    print(_main())
+    import sys
+
+    results = _main()
+    print("\n".join(results))
+    sys.exit(any(result.startswith("error: ") for result in results))

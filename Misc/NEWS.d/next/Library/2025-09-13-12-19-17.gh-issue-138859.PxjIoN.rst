@@ -1,0 +1,1 @@
+Fix generic type parameterization raising a :exc:`TypeError` when omitting a :class:`ParamSpec` that has a default which is not a list of types.

@@ -2673,8 +2673,12 @@ class FreeThreadingMethodTests(unittest.TestCase):
         input = b'a'* (16*_1K)
         num_threads = 8
 
+        # gh-136394: the first output of .compress() includes the frame header
+        # we run the first .compress() call outside of the threaded portion
+        # to make the test order-independent
+
         comp = ZstdCompressor()
-        parts = []
+        parts = [comp.compress(input, ZstdCompressor.FLUSH_BLOCK)]
         for _ in range(num_threads):
             res = comp.compress(input, ZstdCompressor.FLUSH_BLOCK)
             if res:
@@ -2683,7 +2687,7 @@ class FreeThreadingMethodTests(unittest.TestCase):
         expected = b''.join(parts) + rest1
 
         comp = ZstdCompressor()
-        output = []
+        output = [comp.compress(input, ZstdCompressor.FLUSH_BLOCK)]
         def run_method(method, input_data, output_data):
             res = method(input_data, ZstdCompressor.FLUSH_BLOCK)
             if res:

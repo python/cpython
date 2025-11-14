@@ -671,8 +671,7 @@ Formatter Objects
        which is just the logged message.
    :type fmt: str
 
-   :param datefmt: A format string in the given *style* for
-       the date/time portion of the logged output.
+   :param datefmt: A format string for the date/time portion of the logged output.
        If not specified, the default described in :meth:`formatTime` is used.
    :type datefmt: str
 
@@ -680,7 +679,7 @@ Formatter Objects
        how the format string will be merged with its data: using one of
        :ref:`old-string-formatting` (``%``), :meth:`str.format` (``{``)
        or :class:`string.Template` (``$``). This only applies to
-       *fmt* and *datefmt* (e.g. ``'%(message)s'`` versus ``'{message}'``),
+       *fmt* (e.g. ``'%(message)s'`` versus ``'{message}'``),
        not to the actual log messages passed to the logging methods.
        However, there are :ref:`other ways <formatting-styles>`
        to use ``{``- and ``$``-formatting for log messages.
@@ -1083,12 +1082,13 @@ LoggerAdapter Objects
 information into logging calls. For a usage example, see the section on
 :ref:`adding contextual information to your logging output <context-info>`.
 
-.. class:: LoggerAdapter(logger, extra, merge_extra=False)
+.. class:: LoggerAdapter(logger, extra=None, merge_extra=False)
 
    Returns an instance of :class:`LoggerAdapter` initialized with an
-   underlying :class:`Logger` instance, a dict-like object (*extra*), and a
-   boolean (*merge_extra*) indicating whether or not the *extra* argument of
-   individual log calls should be merged with the :class:`LoggerAdapter` extra.
+   underlying :class:`Logger` instance, an optional dict-like object (*extra*),
+   and an optional boolean (*merge_extra*) indicating whether or not
+   the *extra* argument of individual log calls should be merged with
+   the :class:`LoggerAdapter` extra.
    The default behavior is to ignore the *extra* argument of individual log
    calls and only use the one of the :class:`LoggerAdapter` instance
 
@@ -1128,16 +1128,20 @@ information into logging calls. For a usage example, see the section on
       Attribute :attr:`!manager` and method :meth:`!_log` were added, which
       delegate to the underlying logger and allow adapters to be nested.
 
+   .. versionchanged:: 3.10
+
+      The *extra* argument is now optional.
+
    .. versionchanged:: 3.13
 
-      The *merge_extra* argument was added.
+      The *merge_extra* parameter was added.
 
 
 Thread Safety
 -------------
 
 The logging module is intended to be thread-safe without any special work
-needing to be done by its clients. It achieves this though using threading
+needing to be done by its clients. It achieves this through using threading
 locks; there is one lock to serialize access to the module's shared data, and
 each handler also creates a lock to serialize access to its underlying I/O.
 
@@ -1317,7 +1321,7 @@ functions.
       In Python versions earlier than 3.4, this function could also be passed a
       text level, and would return the corresponding numeric value of the level.
       This undocumented behaviour was considered a mistake, and was removed in
-      Python 3.4, but reinstated in 3.4.2 due to retain backward compatibility.
+      Python 3.4, but reinstated in 3.4.2 in order to retain backward compatibility.
 
 .. function:: getHandlerByName(name)
 

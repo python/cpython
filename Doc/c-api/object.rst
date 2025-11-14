@@ -73,7 +73,7 @@ Object Protocol
 
    Flag to be used with multiple functions that print the object (like
    :c:func:`PyObject_Print` and :c:func:`PyFile_WriteObject`).
-   If passed, these function would use the :func:`str` of the object
+   If passed, these functions use the :func:`str` of the object
    instead of the :func:`repr`.
 
 
@@ -197,11 +197,11 @@ Object Protocol
    in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
    plans to remove it.
 
-   The function must not be called with ``NULL`` *v* and an an exception set.
+   The function must not be called with a ``NULL`` *v* and an exception set.
    This case can arise from forgetting ``NULL`` checks and would delete the
    attribute.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Must not be called with NULL value if an exception is set.
 
 
@@ -214,7 +214,7 @@ Object Protocol
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
-   The function must not be called with ``NULL`` *v* and an an exception set.
+   The function must not be called with a ``NULL`` *v* and an exception set.
    This case can arise from forgetting ``NULL`` checks and would delete the
    attribute.
 
@@ -226,7 +226,7 @@ Object Protocol
    For more details, see :c:func:`PyUnicode_InternFromString`, which may be
    used internally to create a key object.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Must not be called with NULL value if an exception is set.
 
 
@@ -600,7 +600,7 @@ Object Protocol
 
    Clear the managed dictionary of *obj*.
 
-   This function must only be called in a traverse function of the type which
+   This function must only be called in a clear function of the type which
    has the :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag set.
 
    .. versionadded:: 3.13
@@ -611,12 +611,13 @@ Object Protocol
    if supported by the runtime.  In the :term:`free-threaded <free threading>` build,
    this allows the interpreter to avoid reference count adjustments to *obj*,
    which may improve multi-threaded performance.  The tradeoff is
-   that *obj* will only be deallocated by the tracing garbage collector.
+   that *obj* will only be deallocated by the tracing garbage collector, and
+   not when the interpreter no longer has any references to it.
 
-   This function returns ``1`` if deferred reference counting is enabled on *obj*
-   (including when it was enabled before the call),
+   This function returns ``1`` if deferred reference counting is enabled on *obj*,
    and ``0`` if deferred reference counting is not supported or if the hint was
-   ignored by the runtime. This function is thread-safe, and cannot fail.
+   ignored by the interpreter, such as when deferred reference counting is already
+   enabled on *obj*. This function is thread-safe, and cannot fail.
 
    This function does nothing on builds with the :term:`GIL` enabled, which do
    not support deferred reference counting. This also does nothing if *obj* is not
@@ -624,7 +625,8 @@ Object Protocol
    :c:func:`PyObject_GC_IsTracked`).
 
    This function is intended to be used soon after *obj* is created,
-   by the code that creates it.
+   by the code that creates it, such as in the object's :c:member:`~PyTypeObject.tp_new`
+   slot.
 
    .. versionadded:: 3.14
 

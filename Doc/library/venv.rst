@@ -22,10 +22,10 @@ The :mod:`!venv` module supports creating lightweight "virtual environments",
 each with their own independent set of Python packages installed in
 their :mod:`site` directories.
 A virtual environment is created on top of an existing
-Python installation, known as the virtual environment's "base" Python, and may
-optionally be isolated from the packages in the base environment,
-so only those explicitly installed in the virtual environment are available.
-See :ref:`sys-path-init-virtual-environments` and :mod:`site`'s
+Python installation, known as the virtual environment's "base" Python, and by
+default is isolated from the packages in the base environment,
+so that only those explicitly installed in the virtual environment are
+available. See :ref:`sys-path-init-virtual-environments` and :mod:`site`'s
 :ref:`virtual environments documentation <site-virtual-environments-configuration>`
 for more information.
 
@@ -78,7 +78,7 @@ It also creates a :file:`bin` (or :file:`Scripts` on Windows) subdirectory
 containing a copy or symlink of the Python executable
 (as appropriate for the platform or arguments used at environment creation time).
 It also creates a :file:`lib/pythonX.Y/site-packages` subdirectory
-(on Windows, this is :file:`Lib\site-packages`).
+(on Windows, this is :file:`Lib\\site-packages`).
 If an existing directory is specified, it will be re-used.
 
 .. versionchanged:: 3.5
@@ -407,6 +407,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
         * ``lib_path`` - The purelib path for the virtual environment.
 
+        * ``platlib_path`` - The platlib path for the virtual environment.
+
         * ``bin_path`` - The script path for the virtual environment.
 
         * ``bin_name`` - The name of the script path relative to the virtual
@@ -430,6 +432,9 @@ creation according to their needs, the :class:`EnvBuilder` class.
         .. versionchanged:: 3.12
            The attribute ``lib_path`` was added to the context, and the context
            object was documented.
+
+        .. versionchanged:: 3.15
+           The attribute ``platlib_path`` was added to the context.
 
     .. method:: create_configuration(context)
 
