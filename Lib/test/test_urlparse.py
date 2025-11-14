@@ -1,5 +1,4 @@
 import copy
-import functools
 import sys
 import unicodedata
 import unittest
