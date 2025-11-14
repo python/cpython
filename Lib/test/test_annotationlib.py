@@ -1533,6 +1533,28 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": int})
 
+    def test_callable_generic_class_annotate_forwardref_fakeglobals(self):
+        # If Format.FORWARDREF is not supported, use Format.VALUE_WITH_FAKE_GLOBALS
+        # before falling back to Format.VALUE
+        class Annotate[K, V](dict[K, V]):
+            def __init__(self, format, /, __Format=Format, __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    super().__init__({'x': str})
+                elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                    super().__init__({'x': int})
+                else:
+                    raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(
+            Annotate[str, type],
+            Format.FORWARDREF
+        )
+
+        self.assertEqual(annotations, {"x": int})
+
+        # We will have to manually set the __orig_class__, ensure it is correct.
+        self.assertEqual(annotations.__orig_class__, Annotate[str, type])
+
     def test_user_annotate_forwardref_value_fallback(self):
         # If Format.FORWARDREF and Format.VALUE_WITH_FAKE_GLOBALS are not supported
         # use Format.VALUE
@@ -1585,6 +1607,48 @@ class TestCallAnnotateFunction(unittest.TestCase):
         )
 
         self.assertEqual(annotations, {"x": "int"})
+
+    def test_callable_generic_class_annotate_string_fakeglobals(self):
+        # If Format.STRING is not supported but Format.VALUE_WITH_FAKE_GLOBALS is
+        # prefer that over Format.VALUE
+        class Annotate[T]:
+            __slots__ = "data",
+
+            def __init__(self, format, /, __Format=Format,
+                         __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    self.data = {"x": str}
+                elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                    self.data = {"x": int}
+                else:
+                    raise __NotImplementedError(format)
+            def __getitem__(self, item):
+                return self.data[item]
+            def __iter__(self):
+                return iter(self.data)
+            def __len__(self):
+                return len(self.data)
+            def __getattr__(self, attr):
+                val = getattr(collections.abc.Mapping, attr)
+                if isinstance(val, types.FunctionType):
+                    return types.MethodType(val, self)
+                return val
+            def __eq__(self, other):
+                return dict(self.items()) == dict(other.items())
+
+        # Subscripting a user-created class will return a typing._GenericAlias.
+        # We want to check that types.GenericAlias objects are created properly,
+        # so manually create it with the documented constructor.
+        annotations = annotationlib.call_annotate_function(
+            types.GenericAlias(Annotate, (int,)),
+            Format.STRING,
+        )
+
+        self.assertEqual(annotations, {"x": "int"})
+
+        # A __slots__ class can't have __orig_class__ set unless already specified.
+        # Ensure that the error passes silently.
+        self.assertNotHasAttr(annotations, "__orig_class__")
 
     def test_user_annotate_string_value_fallback(self):
         # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not

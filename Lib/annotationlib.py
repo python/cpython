@@ -959,6 +959,7 @@ def _direct_call_annotate(func, annotate, *args):
         inst = annotate.__new__(annotate.__origin__)
         func(inst, *args)
         # Try to set the original class on the instance, if possible.
+        # This is the same logic used in typing for custom generics.
         try:
             inst.__orig_class__ = annotate
         except Exception:
