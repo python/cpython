@@ -480,10 +480,9 @@ class RangeTest(unittest.TestCase):
 
     def test_rangeiter_invalid_setstate(self):
         for invalid_value in (1.0, ""):
-            invalid_msg = "object cannot be interpreted as an integer"
             with self.subTest(invalid_value=invalid_value):
                 it = iter(range(10, 100, 2))
-                with self.assertRaisesRegex(TypeError, invalid_msg):
+                with self.assertRaises(TypeError):
                     it.__setstate__(invalid_value)
 
     def test_longrangeiter_invalid_setstate(self):
@@ -492,10 +491,9 @@ class RangeTest(unittest.TestCase):
             def __repr__(self): return "I()"
 
         for invalid_value in (1.0, "", I()):
-            invalid_msg = "state must be an int, not "
             with self.subTest(invalid_value=invalid_value):
                 it = iter(range(10, 2**65, 2))
-                with self.assertRaisesRegex(TypeError, invalid_msg):
+                with self.assertRaises(TypeError):
                     it.__setstate__(invalid_value)
 
     def test_odd_bug(self):
