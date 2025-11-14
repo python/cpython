@@ -1,0 +1,2 @@
+In :mod:`ipaddress`, ensure that the methods ``IPv6Network.hosts()`` and
+``IPv4Network.hosts()`` always returns an iterator.
