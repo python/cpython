@@ -361,7 +361,7 @@ Macros for the convenience of modules implementing the DB API:
 Internal data
 -------------
 
-The following symbol are exposed by the C API but should be considered
+The following symbols are exposed by the C API but should be considered
 internal-only.
 
 .. c:macro:: PyDateTime_CAPSULE_NAME
