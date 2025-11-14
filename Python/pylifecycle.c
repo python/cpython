@@ -1719,7 +1719,6 @@ finalize_modules(PyThreadState *tstate)
 
     // Invalidate all executors and turn off JIT:
     ((_PyThreadStateImpl *)tstate)->jit_executor_state.jit = false;
-    ((_PyThreadStateImpl *)tstate)->jit_executor_state.compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
 #endif

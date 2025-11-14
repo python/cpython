@@ -50,8 +50,6 @@ def get_opnames(ex):
     return list(iter_opnames(ex))
 
 
-@requires_specialization
-@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @requires_jit_enabled
 class TestExecutorInvalidation(unittest.TestCase):
 
@@ -115,12 +113,8 @@ class TestExecutorInvalidation(unittest.TestCase):
         self.assertTrue(exe.is_valid())
         sys._clear_internal_caches()
         self.assertFalse(exe.is_valid())
-        exe = get_first_executor(f)
-        self.assertIsNone(exe)
 
 
-@requires_specialization
-@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @requires_jit_enabled
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):

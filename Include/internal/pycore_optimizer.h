@@ -78,7 +78,9 @@ PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 
 #ifdef _Py_TIER2
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation);
+PyAPI_FUNC(void) _Py_Executors_InvalidateDependencyLockHeld(PyInterpreterState *interp, void *obj, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
+PyAPI_FUNC(void) _Py_Executors_InvalidateAllLockHeld(PyInterpreterState *interp, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyThreadState *tstate);
 PyAPI_FUNC(void) _Py_Executors_ClearExecutorList(PyObject *invalidate, int is_invalidation);
 #else

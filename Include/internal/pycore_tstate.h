@@ -54,8 +54,7 @@ typedef struct _PyJitTracerState {
 } _PyJitTracerState;
 
 typedef struct _PyJitExecutorState {
-    bool jit;
-    bool compiling;
+    char jit;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;

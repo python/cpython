@@ -121,6 +121,14 @@ uop_optimize(_PyInterpreterFrame *frame, PyThreadState *tstate,
              _PyExecutorObject **exec_ptr,
              bool progress_needed);
 
+#if Py_GIL_DISABLED
+#define LOCK_CODE(code)     PyMutex_Lock(&((PyObject *)code)->ob_mutex)
+#define UNLOCK_CODE(code)   PyMutex_Unlock(&((PyObject *)code)->ob_mutex)
+#else
+#define LOCK_CODE(code)     ((void)(code))
+#define UNLOCK_CODE(code)   ((void)(code))
+#endif
+
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
  * If optimized, *executor_ptr contains a new reference to the executor
  */
@@ -131,18 +139,15 @@ _PyOptimizer_Optimize(
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     int chain_depth = _tstate->jit_tracer_state.initial_state.chain_depth;
-    if (!_tstate->jit_executor_state.jit) {
+    if (!FT_ATOMIC_LOAD_CHAR_RELAXED(_tstate->jit_executor_state.jit)) {
         // gh-140936: It is possible that interp->jit will become false during
         // interpreter finalization. However, the specialized JUMP_BACKWARD_JIT
         // instruction may still be present. In this case, we should
         // return immediately without optimization.
         return 0;
     }
-    assert(!_tstate->jit_executor_state.compiling);
     assert(_tstate->jit_tracer_state.initial_state.stack_depth >= 0);
-#ifndef Py_GIL_DISABLED
     assert(_tstate->jit_tracer_state.initial_state.func != NULL);
-    _tstate->jit_executor_state.compiling = true;
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
@@ -150,20 +155,21 @@ _PyOptimizer_Optimize(
     chain_depth %= MAX_CHAIN_DEPTH;
     bool progress_needed = chain_depth == 0;
     PyCodeObject *code = (PyCodeObject *)_tstate->jit_tracer_state.initial_state.code;
+    LOCK_CODE(code);
     _Py_CODEUNIT *start = _tstate->jit_tracer_state.initial_state.start_instr;
     if (progress_needed && !has_space_for_executor(code, start)) {
-        _tstate->jit_executor_state.compiling = false;
+        UNLOCK_CODE(code);
         return 0;
     }
     // One of our dependencies while tracing was invalidated. Not worth compiling.
     if (!_tstate->jit_tracer_state.prev_state.dependencies_still_valid) {
-        _tstate->jit_executor_state.compiling = false;
+        UNLOCK_CODE(code);
         return 0;
     }
     _PyExecutorObject *executor;
     int err = uop_optimize(frame, tstate, &executor, progress_needed);
     if (err <= 0) {
-        _tstate->jit_executor_state.compiling = false;
+        UNLOCK_CODE(code);
         return err;
     }
     assert(executor != NULL);
@@ -177,7 +183,7 @@ _PyOptimizer_Optimize(
              * it might get confused by the executor disappearing,
              * but there is not much we can do about that here. */
             Py_DECREF(executor);
-            _tstate->jit_executor_state.compiling = false;
+            UNLOCK_CODE(code);
             return 0;
         }
         insert_executor(code, start, index, executor);
@@ -191,11 +197,8 @@ _PyOptimizer_Optimize(
     }
     executor->vm_data.chain_depth = chain_depth;
     assert(executor->vm_data.valid);
-    _tstate->jit_executor_state.compiling = false;
+    UNLOCK_CODE(code);
     return 1;
-#else
-    return 0;
-#endif
 }
 
 static _PyExecutorObject *
@@ -444,7 +447,11 @@ static PyMethodDef uop_executor_methods[] = {
 static int
 executor_is_gc(PyObject *o)
 {
+#ifdef Py_GIL_DISABLED
+    return 1;
+#else
     return !_Py_IsImmortal(o);
+#endif
 }
 
 PyTypeObject _PyUOpExecutor_Type = {
@@ -1315,6 +1322,9 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
 #endif
     _PyObject_GC_TRACK(executor);
+    // Executors are cleared by coldness or invalidation.
+    // Thus there's no point for them to be refcounted.
+    _Py_SetImmortal((PyObject *)executor);
     return executor;
 }
 
@@ -1637,6 +1647,7 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     if (code == NULL) {
         return;
     }
+    assert(_PyInterpreterState_GET()->stoptheworld.world_stopped || PyMutex_IsLocked(&((PyObject *)code)->ob_mutex));
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);
     int index = instruction->op.arg;
@@ -1645,7 +1656,6 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     instruction->op.arg = executor->vm_data.oparg;
     executor->vm_data.code = NULL;
     code->co_executors->executors[index] = NULL;
-    Py_DECREF(executor);
 }
 
 static int
@@ -1695,20 +1705,21 @@ _PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
         _tstate->jit_tracer_state.prev_state.dependencies_still_valid = false;
     }
 }
+
 void
-_Py_Executors_ClearExecutorList(PyObject *invalidate, int is_invalidation)
+invalidate_sub_executors(_PyThreadStateImpl *tstate, _PyExecutorObject *executor)
 {
-    if (invalidate == NULL) {
+    if (!executor->vm_data.valid) {
         return;
     }
-    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
-        PyObject *exec = PyList_GET_ITEM(invalidate, i);
-        executor_clear(exec);
-        if (is_invalidation) {
-            OPT_STAT_INC(executors_invalidated);
+    executor->vm_data.valid = 0;
+    executor_clear((PyObject *)executor);
+    for (uint32_t i = 0; i < executor->exit_count; i++) {
+        _PyExecutorObject *next = executor->exits[i].executor;
+        if (next != tstate->jit_executor_state.cold_dynamic_executor && next != tstate->jit_executor_state.cold_executor) {
+            invalidate_sub_executors(tstate, next);
         }
     }
-    Py_DECREF(invalidate);
 }
 
 /* Invalidate all executors that depend on `obj`
@@ -1717,7 +1728,7 @@ _Py_Executors_ClearExecutorList(PyObject *invalidate, int is_invalidation)
  * on their own later.
  */
 void
-_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
+_Py_Executors_InvalidateDependencyLockHeld(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
@@ -1728,9 +1739,8 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         _PyJit_Tracer_InvalidateDependency(p, obj);
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
-            assert(exec->vm_data.valid);
             if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
-                exec->vm_data.valid = 0;
+                invalidate_sub_executors((_PyThreadStateImpl *)p, exec);
             }
             _PyExecutorObject *next = exec->vm_data.links.next;
             exec = next;
@@ -1738,16 +1748,24 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     }
 }
 
+void
+_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
+{
+    _PyEval_StopTheWorld(interp);
+    _Py_Executors_InvalidateDependencyLockHeld(interp, obj, is_invalidation);
+    _PyEval_StartTheWorld(interp);
+}
+
 // To avoid deadlocks due to stop the world, we just invalidate the executors but leave them to be freed
 // on their own later.
 void
-_Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
+_Py_Executors_InvalidateAllLockHeld(PyInterpreterState *interp, int is_invalidation)
 {
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+        ((_PyThreadStateImpl *)p)->jit_tracer_state.prev_state.dependencies_still_valid = false;
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
-            assert(exec->vm_data.valid);
             assert(exec->tstate == p);
             exec->vm_data.valid = 0;
             _PyExecutorObject *next = exec->vm_data.links.next;
@@ -1756,6 +1774,13 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
     }
 }
 
+void
+_Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
+{
+    _PyEval_StopTheWorld(interp);
+    _Py_Executors_InvalidateAllLockHeld(interp, is_invalidation);
+    _PyEval_StartTheWorld(interp);
+}
 
 // Unlike _PyExecutor_InvalidateDependency, this is not for correctness but memory savings.
 // Thus there is no need to lock the runtime or traverse everything. We simply make a
@@ -1773,11 +1798,12 @@ _Py_Executors_InvalidateCold(PyThreadState *tstate)
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
     for (_PyExecutorObject *exec = _tstate->jit_executor_state.executor_list_head; exec != NULL;) {
-        assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
 
-        if (!exec->vm_data.warm && PyList_Append(invalidate, (PyObject *)exec) < 0) {
-            goto error;
+        if (!exec->vm_data.warm || !exec->vm_data.valid) {
+            if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
+                goto error;
+            }
         }
         else {
             exec->vm_data.warm = false;

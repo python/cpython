@@ -1505,7 +1505,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 #ifdef _Py_TIER2
     _tstate->jit_tracer_state.code_buffer = NULL;
     _tstate->jit_executor_state.jit = false;
-    _tstate->jit_executor_state.compiling = false;
     _tstate->jit_executor_state.executor_list_head = NULL;
     _tstate->jit_executor_state.executor_deletion_list_head = NULL;
     _tstate->jit_executor_state.executor_deletion_list_remaining_capacity = 0;
@@ -1537,6 +1536,18 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
     tstate->next = next;
     assert(tstate->prev == NULL);
     interp->threads.head = tstate;
+#if defined(_Py_TIER2) && defined(Py_GIL_DISABLED)
+    // There's more than one thread. In FT mode,
+    // disable the JIT completely for now.
+    if (next != NULL) {
+        _Py_Executors_InvalidateAllLockHeld(interp, 1);
+    }
+    PyThreadState *curr = interp->threads.head;
+    while (curr != NULL) {
+        _Py_atomic_store_char_relaxed(&((_PyThreadStateImpl*)curr)->jit_executor_state.jit, false);
+        curr = curr->next;
+    }
+#endif
 }
 
 static PyThreadState *

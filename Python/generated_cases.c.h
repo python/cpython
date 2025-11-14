@@ -5481,11 +5481,26 @@
                 JUMP_TO_LABEL(stop_tracing);
             }
             PyCodeObject *code = _PyFrame_GetCode(frame);
+            #ifdef Py_GIL_DISABLED
+            LOCK_OBJECT_SLOW(code);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+            if (!_Py_atomic_load_uint8_relaxed(&executor->vm_data.valid)) {
+                opcode = executor->vm_data.opcode;
+                oparg = (oparg & ~255) | executor->vm_data.oparg;
+                next_instr = this_instr;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _Py_ExecutorDetach(executor);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                UNLOCK_OBJECT_SLOW(code);
+                DISPATCH_GOTO();
+            }
+            #else
+            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+            assert(executor->vm_data.valid);
+            #endif
+            assert(tstate->current_executor == NULL);
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
             assert(executor->vm_data.code == code);
-            assert(executor->vm_data.valid);
-            assert(tstate->current_executor == NULL);
             if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
@@ -5493,10 +5508,15 @@
                 if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                     PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
+                #ifdef Py_GIL_DISABLED
+                UNLOCK_OBJECT_SLOW(code);
+                #endif
                 DISPATCH_GOTO();
             }
             assert(executor != ((_PyThreadStateImpl *)tstate)->jit_executor_state.cold_executor);
             tstate->jit_exit = NULL;
+            Py_INCREF(executor);
+            UNLOCK_OBJECT_SLOW(code);
             TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
@@ -7593,9 +7613,9 @@
             /* Skip 1 cache entry */
             // _SPECIALIZE_JUMP_BACKWARD
             {
-                #if ENABLE_SPECIALIZATION
+                #if ENABLE_SPECIALIZATION_FT
                 if (this_instr->op.code == JUMP_BACKWARD) {
-                    uint8_t desired = ((_PyThreadStateImpl*)tstate)->jit_executor_state.jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
+                    uint8_t desired = FT_ATOMIC_LOAD_CHAR_RELAXED(((_PyThreadStateImpl*)tstate)->jit_executor_state.jit) ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
                     FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, desired);
                     next_instr = this_instr;
                     DISPATCH_SAME_OPARG();
