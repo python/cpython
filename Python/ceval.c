@@ -523,13 +523,6 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
     ts->c_stack_init_base = base;
     ts->c_stack_init_top = top;
-
-    // Test the stack pointer
-#if !defined(NDEBUG) && !defined(__wasi__)
-    uintptr_t here_addr = _Py_get_machine_stack_pointer();
-    assert(ts->c_stack_soft_limit < here_addr);
-    assert(here_addr < ts->c_stack_top);
-#endif
 }
 
 
