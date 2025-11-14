@@ -208,7 +208,7 @@ or on combining URL components into a URL string.
       Characters that affect netloc parsing under NFKC normalization will
       now raise :exc:`ValueError`.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Added the *allow_none* parameter.
 
 
@@ -321,7 +321,7 @@ or on combining URL components into a URL string.
    By default, *keep_empty* is true if *parts* is the result of the
    :func:`urlparse` call with ``allow_none=True``.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Added the *keep_empty* parameter.
 
 
@@ -400,7 +400,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.12
       Leading WHATWG C0 control and space characters are stripped from the URL.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Added the *allow_none* parameter.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
@@ -422,7 +422,7 @@ or on combining URL components into a URL string.
    By default, *keep_empty* is true if *parts* is the result of the
    :func:`urlsplit` call with ``allow_none=True``.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Added the *keep_empty* parameter.
 
 
@@ -495,7 +495,7 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.2
       Result is a structured object rather than a simple 2-tuple.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Added the *allow_none* parameter.
 
 .. function:: unwrap(url)

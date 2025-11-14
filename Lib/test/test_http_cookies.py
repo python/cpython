@@ -48,6 +48,29 @@ class CookieTests(unittest.TestCase):
                     'Set-Cookie: d=r',
                     'Set-Cookie: f=h'
                 ))
+            },
+
+            # gh-92936: allow double quote in cookie values
+            {
+                'data': 'cookie="{"key": "value"}"',
+                'dict': {'cookie': '{"key": "value"}'},
+                'repr': "<SimpleCookie: cookie='{\"key\": \"value\"}'>",
+                'output': 'Set-Cookie: cookie="{"key": "value"}"',
+            },
+            {
+                'data': 'key="some value; surrounded by quotes"',
+                'dict': {'key': 'some value; surrounded by quotes'},
+                'repr': "<SimpleCookie: key='some value; surrounded by quotes'>",
+                'output': 'Set-Cookie: key="some value; surrounded by quotes"',
+            },
+            {
+                'data': 'session="user123"; preferences="{"theme": "dark"}"',
+                'dict': {'session': 'user123', 'preferences': '{"theme": "dark"}'},
+                'repr': "<SimpleCookie: preferences='{\"theme\": \"dark\"}' session='user123'>",
+                'output': '\n'.join((
+                    'Set-Cookie: preferences="{"theme": "dark"}"',
+                    'Set-Cookie: session="user123"',
+                ))
             }
         ]
 
@@ -58,6 +81,52 @@ class CookieTests(unittest.TestCase):
             self.assertEqual(C.output(sep='\n'), case['output'])
             for k, v in sorted(case['dict'].items()):
                 self.assertEqual(C[k].value, v)
+
+    def test_obsolete_rfc850_date_format(self):
+        # Test cases with different days and dates in obsolete RFC 850 format
+        test_cases = [
+            # from RFC 850, change EST to GMT
+            # https://datatracker.ietf.org/doc/html/rfc850#section-2
+            {
+                'data': 'key=value; expires=Saturday, 01-Jan-83 00:00:00 GMT',
+                'output': 'Saturday, 01-Jan-83 00:00:00 GMT'
+            },
+            {
+                'data': 'key=value; expires=Friday, 19-Nov-82 16:59:30 GMT',
+                'output': 'Friday, 19-Nov-82 16:59:30 GMT'
+            },
+            # from RFC 9110
+            # https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.7-6
+            {
+                'data': 'key=value; expires=Sunday, 06-Nov-94 08:49:37 GMT',
+                'output': 'Sunday, 06-Nov-94 08:49:37 GMT'
+            },
+            # other test cases
+            {
+                'data': 'key=value; expires=Wednesday, 09-Nov-94 08:49:37 GMT',
+                'output': 'Wednesday, 09-Nov-94 08:49:37 GMT'
+            },
+            {
+                'data': 'key=value; expires=Friday, 11-Nov-94 08:49:37 GMT',
+                'output': 'Friday, 11-Nov-94 08:49:37 GMT'
+            },
+            {
+                'data': 'key=value; expires=Monday, 14-Nov-94 08:49:37 GMT',
+                'output': 'Monday, 14-Nov-94 08:49:37 GMT'
+            },
+        ]
+
+        for case in test_cases:
+            with self.subTest(data=case['data']):
+                C = cookies.SimpleCookie()
+                C.load(case['data'])
+
+                # Extract the cookie name from the data string
+                cookie_name = case['data'].split('=')[0]
+
+                # Check if the cookie is loaded correctly
+                self.assertIn(cookie_name, C)
+                self.assertEqual(C[cookie_name].get('expires'), case['output'])
 
     def test_unquote(self):
         cases = [
@@ -134,7 +203,7 @@ class CookieTests(unittest.TestCase):
         C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
         C['Customer']['expires'] = 0
         # can't test exact output, it always depends on current date/time
-        self.assertTrue(C.output().endswith('GMT'))
+        self.assertEndsWith(C.output(), 'GMT')
 
         # loading 'expires'
         C = cookies.SimpleCookie()
@@ -158,6 +227,14 @@ class CookieTests(unittest.TestCase):
         C['Customer']['httponly'] = True
         self.assertEqual(C.output(),
             'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Secure')
+
+    def test_set_secure_httponly_partitioned_attrs(self):
+        C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
+        C['Customer']['secure'] = True
+        C['Customer']['httponly'] = True
+        C['Customer']['partitioned'] = True
+        self.assertEqual(C.output(),
+            'Set-Cookie: Customer="WILE_E_COYOTE"; HttpOnly; Partitioned; Secure')
 
     def test_samesite_attrs(self):
         samesite_values = ['Strict', 'Lax', 'strict', 'lax']

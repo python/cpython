@@ -5,6 +5,7 @@ import gc
 import math
 import operator
 import unittest
+import platform
 import struct
 import sys
 import weakref
@@ -21,12 +22,6 @@ byteorders = '', '@', '=', '<', '>', '!'
 
 INF = float('inf')
 NAN = float('nan')
-
-try:
-    struct.pack('C', 1j)
-    have_c_complex = True
-except struct.error:
-    have_c_complex = False
 
 def iter_integer_formats(byteorders=byteorders):
     for code in integer_codes:
@@ -694,7 +689,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         rc, stdout, stderr = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
         self.assertEqual(stdout.rstrip(), b"")
-        self.assertIn(b"Exception ignored in:", stderr)
+        self.assertIn(b"Exception ignored while calling deallocator", stderr)
         self.assertIn(b"C.__del__", stderr)
 
     def test__struct_reference_cycle_cleaned_up(self):
@@ -796,28 +791,31 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')
 
-    @unittest.skipUnless(have_c_complex, "requires C11 complex type support")
     def test_c_complex_round_trip(self):
         values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
                                                      -3, INF, -INF, NAN], 2)]
         for z in values:
-            for f in ['E', 'C', '>E', '>C', '<E', '<C']:
+            for f in ['F', 'D', '>F', '>D', '<F', '<D']:
                 with self.subTest(z=z, format=f):
                     round_trip = struct.unpack(f, struct.pack(f, z))[0]
                     self.assertComplexesAreIdentical(z, round_trip)
 
-    @unittest.skipIf(have_c_complex, "requires no C11 complex type support")
-    def test_c_complex_error(self):
-        msg1 = "'E' format not supported on this system"
-        msg2 = "'C' format not supported on this system"
-        with self.assertRaisesRegex(struct.error, msg1):
-            struct.pack('E', 1j)
-        with self.assertRaisesRegex(struct.error, msg1):
-            struct.unpack('E', b'1')
-        with self.assertRaisesRegex(struct.error, msg2):
-            struct.pack('C', 1j)
-        with self.assertRaisesRegex(struct.error, msg2):
-            struct.unpack('C', b'1')
+    @unittest.skipIf(
+        support.is_android or support.is_apple_mobile,
+        "Subinterpreters are not supported on Android and iOS"
+    )
+    def test_endian_table_init_subinterpreters(self):
+        # Verify that the _struct extension module can be initialized
+        # concurrently in subinterpreters (gh-140260).
+        try:
+            from concurrent.futures import InterpreterPoolExecutor
+        except ImportError:
+            raise unittest.SkipTest("InterpreterPoolExecutor not available")
+
+        code = "import struct"
+        with InterpreterPoolExecutor(max_workers=5) as executor:
+            results = executor.map(exec, [code] * 5)
+            self.assertListEqual(list(results), [None] * 5)
 
 
 class UnpackIteratorTest(unittest.TestCase):
@@ -937,10 +935,17 @@ class UnpackIteratorTest(unittest.TestCase):
 
         # Check that packing produces a bit pattern representing a quiet NaN:
         # all exponent bits and the msb of the fraction should all be 1.
+        if platform.machine().startswith('parisc'):
+            # HP PA RISC uses 0 for quiet, see:
+            # https://en.wikipedia.org/wiki/NaN#Encoding
+            expected = 0x7c
+        else:
+            expected = 0x7e
+
         packed = struct.pack('<e', math.nan)
-        self.assertEqual(packed[1] & 0x7e, 0x7e)
+        self.assertEqual(packed[1] & 0x7e, expected)
         packed = struct.pack('<e', -math.nan)
-        self.assertEqual(packed[1] & 0x7e, 0x7e)
+        self.assertEqual(packed[1] & 0x7e, expected)
 
         # Checks for round-to-even behavior
         format_bits_float__rounding_list = [

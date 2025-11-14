@@ -1,0 +1,2 @@
+:mod:`zlib`: Deprecate ``__version__`` and schedule for removal in Python
+3.20.

@@ -354,6 +354,27 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_venv_posix_without_home_key(self):
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python3",
+            PREFIX="/usr",
+            ENV_PATH="/usr/bin",
+        )
+        # Setup the bare minimum venv
+        ns.add_known_xfile("/usr/bin/python3")
+        ns.add_known_xfile("/venv/bin/python3")
+        ns.add_known_link("/venv/bin/python3", "/usr/bin/python3")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            # home = key intentionally omitted
+        ])
+        expected = dict(
+            executable="/venv/bin/python3",
+            prefix="/venv",
+            base_prefix="/usr",
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_venv_changed_name_posix(self):
         "Test a venv layout on *nix."
         ns = MockPosixNamespace(
@@ -832,6 +853,37 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_PYTHONHOME_in_venv(self):
+        "Make sure prefix/exec_prefix still point to the venv if PYTHONHOME was used."
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python",
+            PREFIX="/usr",
+            ENV_PYTHONHOME="/pythonhome",
+        )
+        # Setup venv
+        ns.add_known_xfile("/venv/bin/python")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            r"home = /usr/bin"
+        ])
+        # Seutup PYTHONHOME
+        ns.add_known_file("/pythonhome/lib/python9.8/os.py")
+        ns.add_known_dir("/pythonhome/lib/python9.8/lib-dynload")
+
+        expected = dict(
+            executable="/venv/bin/python",
+            prefix="/venv",
+            exec_prefix="/venv",
+            base_prefix="/pythonhome",
+            base_exec_prefix="/pythonhome",
+            module_search_paths_set=1,
+            module_search_paths=[
+                "/pythonhome/lib/python98.zip",
+                "/pythonhome/lib/python9.8",
+                "/pythonhome/lib/python9.8/lib-dynload",
+            ],
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
 
 # ******************************************************************************
 

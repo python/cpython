@@ -8,11 +8,28 @@ static_assert(_Alignof(PyCriticalSection) >= 4,
               "critical section must be aligned to at least 4 bytes");
 #endif
 
+#ifdef Py_GIL_DISABLED
+static PyCriticalSection *
+untag_critical_section(uintptr_t tag)
+{
+    return (PyCriticalSection *)(tag & ~_Py_CRITICAL_SECTION_MASK);
+}
+#endif
+
 void
 _PyCriticalSection_BeginSlow(PyCriticalSection *c, PyMutex *m)
 {
 #ifdef Py_GIL_DISABLED
     PyThreadState *tstate = _PyThreadState_GET();
+    // As an optimisation for locking the same object recursively, skip
+    // locking if the mutex is currently locked by the top-most critical
+    // section.
+    if (tstate->critical_section &&
+        untag_critical_section(tstate->critical_section)->_cs_mutex == m) {
+        c->_cs_mutex = NULL;
+        c->_cs_prev = 0;
+        return;
+    }
     c->_cs_mutex = NULL;
     c->_cs_prev = (uintptr_t)tstate->critical_section;
     tstate->critical_section = (uintptr_t)c;
@@ -42,13 +59,6 @@ _PyCriticalSection2_BeginSlow(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2,
 #endif
 }
 
-#ifdef Py_GIL_DISABLED
-static PyCriticalSection *
-untag_critical_section(uintptr_t tag)
-{
-    return (PyCriticalSection *)(tag & ~_Py_CRITICAL_SECTION_MASK);
-}
-#endif
 
 // Release all locks held by critical sections. This is called by
 // _PyThreadState_Detach.
@@ -120,6 +130,15 @@ PyCriticalSection_Begin(PyCriticalSection *c, PyObject *op)
 #endif
 }
 
+#undef PyCriticalSection_BeginMutex
+void
+PyCriticalSection_BeginMutex(PyCriticalSection *c, PyMutex *m)
+{
+#ifdef Py_GIL_DISABLED
+    _PyCriticalSection_BeginMutex(c, m);
+#endif
+}
+
 #undef PyCriticalSection_End
 void
 PyCriticalSection_End(PyCriticalSection *c)
@@ -135,6 +154,15 @@ PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b)
 {
 #ifdef Py_GIL_DISABLED
     _PyCriticalSection2_Begin(c, a, b);
+#endif
+}
+
+#undef PyCriticalSection2_BeginMutex
+void
+PyCriticalSection2_BeginMutex(PyCriticalSection2 *c, PyMutex *m1, PyMutex *m2)
+{
+#ifdef Py_GIL_DISABLED
+    _PyCriticalSection2_BeginMutex(c, m1, m2);
 #endif
 }
 

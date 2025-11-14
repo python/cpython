@@ -4,6 +4,7 @@ import unittest
 
 from .util import memory_database
 from .util import MemoryDatabaseMixin
+from .util import requires_virtual_table
 
 
 class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
@@ -206,6 +207,7 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         self.assertEqual(expected, actual)
         self.assertEqual(self.cx.row_factory, dict_factory)
 
+    @requires_virtual_table("fts4")
     def test_dump_virtual_tables(self):
         # gh-64662
         expected = [

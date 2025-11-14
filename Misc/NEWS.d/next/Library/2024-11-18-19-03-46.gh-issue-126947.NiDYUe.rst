@@ -1,2 +1,0 @@
-Raise :exc:`TypeError` in :meth:`!_pydatetime.timedelta.__new__` if the passed arguments are not :class:`int` or :class:`float`, so that the Python
-implementation is in line with the C implementation.

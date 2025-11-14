@@ -7,7 +7,6 @@ import platform
 import random
 import re
 import shlex
-import signal
 import subprocess
 import sys
 import sysconfig
@@ -32,7 +31,7 @@ WORKER_WORK_DIR_PREFIX = WORK_DIR_PREFIX + 'worker_'
 EXIT_TIMEOUT = 120.0
 
 
-ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
+ALL_RESOURCES = ('audio', 'console', 'curses', 'largefile', 'network',
                  'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
 
 # Other resources excluded from --use=all:
@@ -295,6 +294,25 @@ def clear_caches():
     else:
         importlib_metadata.FastPath.__new__.cache_clear()
 
+    try:
+        encodings = sys.modules['encodings']
+    except KeyError:
+        pass
+    else:
+        encodings._cache.clear()
+
+    try:
+        codecs = sys.modules['codecs']
+    except KeyError:
+        pass
+    else:
+        # There's no direct API to clear the codecs search cache, but
+        # `unregister` clears it implicitly.
+        def noop_search_function(name):
+            return None
+        codecs.register(noop_search_function)
+        codecs.unregister(noop_search_function)
+
 
 def get_build_info():
     # Get most important configure and build options as a list of strings.
@@ -336,43 +354,11 @@ def get_build_info():
             build.append('with_assert')
 
     # --enable-experimental-jit
-    tier2 = re.search('-D_Py_TIER2=([0-9]+)', cflags)
-    if tier2:
-        tier2 = int(tier2.group(1))
-
-    if not sys.flags.ignore_environment:
-        PYTHON_JIT = os.environ.get('PYTHON_JIT', None)
-        if PYTHON_JIT:
-            PYTHON_JIT = (PYTHON_JIT != '0')
-    else:
-        PYTHON_JIT = None
-
-    if tier2 == 1:  # =yes
-        if PYTHON_JIT == False:
-            jit = 'JIT=off'
+    if sys._jit.is_available():
+        if sys._jit.is_enabled():
+            build.append("JIT")
         else:
-            jit = 'JIT'
-    elif tier2 == 3:  # =yes-off
-        if PYTHON_JIT:
-            jit = 'JIT'
-        else:
-            jit = 'JIT=off'
-    elif tier2 == 4:  # =interpreter
-        if PYTHON_JIT == False:
-            jit = 'JIT-interpreter=off'
-        else:
-            jit = 'JIT-interpreter'
-    elif tier2 == 6:  # =interpreter-off (Secret option!)
-        if PYTHON_JIT:
-            jit = 'JIT-interpreter'
-        else:
-            jit = 'JIT-interpreter=off'
-    elif '-D_Py_JIT' in cflags:
-        jit = 'JIT'
-    else:
-        jit = None
-    if jit:
-        build.append(jit)
+            build.append("JIT (disabled)")
 
     # --enable-framework=name
     framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
@@ -478,17 +464,6 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
     return os.path.abspath(tmp_dir)
 
 
-def fix_umask() -> None:
-    if support.is_emscripten:
-        # Emscripten has default umask 0o777, which breaks some tests.
-        # see https://github.com/emscripten-core/emscripten/issues/17269
-        old_mask = os.umask(0)
-        if old_mask == 0o777:
-            os.umask(0o027)
-        else:
-            os.umask(old_mask)
-
-
 def get_work_dir(parent_dir: StrPath, worker: bool = False) -> StrPath:
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel
@@ -580,7 +555,7 @@ def normalize_test_name(test_full_name: str, *,
     if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
         if test_full_name.startswith(('setUpModule (', 'tearDownModule (')):
             # if setUpModule() or tearDownModule() failed, don't filter
-            # tests with the test file name, don't use use filters.
+            # tests with the test file name, don't use filters.
             return None
 
         # This means that we have a failure in a life-cycle hook,

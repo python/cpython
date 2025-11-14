@@ -7,6 +7,7 @@ import test.test_unittest
 from test.test_unittest.test_result import BufferedWriter
 
 
+@support.force_not_colorized_test_class
 class Test_TestProgram(unittest.TestCase):
 
     def test_discovery_from_dotted_path(self):
@@ -126,14 +127,14 @@ class Test_TestProgram(unittest.TestCase):
                                 argv=["foobar"],
                                 testRunner=unittest.TextTestRunner(stream=stream),
                                 testLoader=self.TestLoader(self.FooBar))
-        self.assertTrue(hasattr(program, 'result'))
+        self.assertHasAttr(program, 'result')
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
         self.assertIn('\nERROR: testError ', out)
         self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
-        self.assertTrue(out.endswith(expected))
+        self.assertEndsWith(out, expected)
 
     def test_Exit(self):
         stream = BufferedWriter()
@@ -150,7 +151,7 @@ class Test_TestProgram(unittest.TestCase):
         self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
-        self.assertTrue(out.endswith(expected))
+        self.assertEndsWith(out, expected)
 
     def test_ExitAsDefault(self):
         stream = BufferedWriter()
@@ -165,7 +166,7 @@ class Test_TestProgram(unittest.TestCase):
         self.assertIn('\nUNEXPECTED SUCCESS: testUnexpectedSuccess ', out)
         expected = ('\n\nFAILED (failures=1, errors=1, skipped=1, '
                     'expected failures=1, unexpected successes=1)\n')
-        self.assertTrue(out.endswith(expected))
+        self.assertEndsWith(out, expected)
 
     def test_ExitSkippedSuite(self):
         stream = BufferedWriter()
@@ -177,7 +178,7 @@ class Test_TestProgram(unittest.TestCase):
         self.assertEqual(cm.exception.code, 0)
         out = stream.getvalue()
         expected = '\n\nOK (skipped=1)\n'
-        self.assertTrue(out.endswith(expected))
+        self.assertEndsWith(out, expected)
 
     def test_ExitEmptySuite(self):
         stream = BufferedWriter()

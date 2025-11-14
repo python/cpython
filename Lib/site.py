@@ -73,8 +73,9 @@ import sys
 import os
 import builtins
 import _sitebuiltins
-import io
+import _io as io
 import stat
+import errno
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -332,7 +333,7 @@ def _get_path(userbase):
     if sys.platform == 'darwin' and sys._framework:
         return f'{userbase}/lib/{implementation_lower}/site-packages'
 
-    return f'{userbase}/lib/python{version[0]}.{version[1]}{abi_thread}/site-packages'
+    return f'{userbase}/lib/{implementation_lower}{version[0]}.{version[1]}{abi_thread}/site-packages'
 
 
 def getuserbase():
@@ -448,9 +449,9 @@ def setcopyright():
     """Set 'copyright' and 'credits' in builtins"""
     builtins.copyright = _sitebuiltins._Printer("copyright", sys.copyright)
     builtins.credits = _sitebuiltins._Printer("credits", """\
-    Thanks to CWI, CNRI, BeOpen, Zope Corporation, the Python Software
-    Foundation, and a cast of thousands for supporting Python
-    development.  See www.python.org for more information.""")
+Thanks to CWI, CNRI, BeOpen, Zope Corporation, the Python Software
+Foundation, and a cast of thousands for supporting Python
+development.  See www.python.org for more information.""")
     files, dirs = [], []
     # Not all modules are required to have a __file__ attribute.  See
     # PEP 420 for more details.
@@ -578,10 +579,15 @@ def register_readline():
         def write_history():
             try:
                 readline_module.write_history_file(history)
-            except (FileNotFoundError, PermissionError):
+            except FileNotFoundError, PermissionError:
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891
                 pass
+            except OSError:
+                if errno.EROFS:
+                    pass  # gh-128066: read-only file system
+                else:
+                    raise
 
         atexit.register(write_history)
 
@@ -633,12 +639,9 @@ def venv(known_paths):
         # Doing this here ensures venv takes precedence over user-site
         addsitepackages(known_paths, [sys.prefix])
 
-        # addsitepackages will process site_prefix again if its in PREFIXES,
-        # but that's ok; known_paths will prevent anything being added twice
         if system_site == "true":
-            PREFIXES.insert(0, sys.prefix)
+            PREFIXES += [sys.base_prefix, sys.base_exec_prefix]
         else:
-            PREFIXES = [sys.prefix]
             ENABLE_USER_SITE = False
 
     return known_paths

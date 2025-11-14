@@ -1,2 +1,0 @@
-:mod:`grp`: Make :func:`grp.getgrall` thread-safe by adding a mutex. Patch
-by Victor Stinner.
