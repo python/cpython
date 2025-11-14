@@ -1751,9 +1751,9 @@ _Py_Executors_InvalidateDependencyLockHeld(PyInterpreterState *interp, void *obj
 void
 _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
-    _PyEval_StopTheWorld(interp);
+    HEAD_LOCK(&_PyRuntime);
     _Py_Executors_InvalidateDependencyLockHeld(interp, obj, is_invalidation);
-    _PyEval_StartTheWorld(interp);
+    HEAD_UNLOCK(&_PyRuntime);
 }
 
 // To avoid deadlocks due to stop the world, we just invalidate the executors but leave them to be freed
@@ -1777,9 +1777,9 @@ _Py_Executors_InvalidateAllLockHeld(PyInterpreterState *interp, int is_invalidat
 void
 _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
-    _PyEval_StopTheWorld(interp);
+    HEAD_LOCK(&_PyRuntime);
     _Py_Executors_InvalidateAllLockHeld(interp, is_invalidation);
-    _PyEval_StartTheWorld(interp);
+    HEAD_UNLOCK(&_PyRuntime);
 }
 
 // Unlike _PyExecutor_InvalidateDependency, this is not for correctness but memory savings.
