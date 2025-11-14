@@ -338,6 +338,52 @@ class NewIMAPTestsMixin:
         self.assertRaises(imaplib.IMAP4.abort, self.imap_class,
                           *server.server_address)
 
+    def test_create_quoted(self):
+        # https://bugs.python.org/issue13940
+        class CreateHandler(SimpleIMAPHandler):
+            def cmd_CREATE(self, tag, args):
+                if ' '.join(args) == '"quoted name with spaces and escaped \\" \\\\ specials"':
+                    self._send_tagged(tag, 'OK', 'CREATE completed')
+                return self._send_tagged(tag, 'BAD', args[0])
+        client, server = self._setup(CreateHandler)
+        client.state = 'AUTH'
+        typ, data = client.create('quoted name with spaces and escaped " \\ specials')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'CREATE completed')
+
+    def test_create_unquoted(self):
+        # https://bugs.python.org/issue13940
+        class CreateHandler(SimpleIMAPHandler):
+            def cmd_CREATE(self, tag, args):
+                if args[0] == 'unquoted-name-with-no-sp3cials':
+                    self._send_tagged(tag, 'OK', 'CREATE completed')
+                return self._send_tagged(tag, 'BAD', args[0])
+        client, server = self._setup(CreateHandler)
+        client.state = 'AUTH'
+        typ, data = client.create('unquoted-name-with-no-sp3cials')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'CREATE completed')
+
+    def test_create_force_unquoted(self):
+        # https://bugs.python.org/issue13940
+        class CreateHandler(SimpleIMAPHandler):
+            def cmd_CREATE(self, tag, args):
+                if ' '.join(args) == 'unquoted name with spaces and " \\ specials':
+                    self._send_tagged(tag, 'OK', 'CREATE completed')
+                return self._send_tagged(tag, 'BAD', args[0])
+        client, server = self._setup(CreateHandler)
+        client.state = 'AUTH'
+        typ, data = client.create('(unquoted name with spaces and " \\ specials)')
+        self.assertEqual(typ, 'OK')
+        self.assertEqual(data[0], b'CREATE completed')
+
+    def test_create_crlf(self):
+        client, server = self._setup(SimpleIMAPHandler)
+        client.state = 'AUTH'
+        with self.assertRaisesRegex(imaplib.IMAP4.error,
+                'illegal cr or lf in argument'):
+            typ, data = client.create('name with CR and LF \n\r')
+
     def test_enable_raises_error_if_not_AUTH(self):
         class EnableHandler(SimpleIMAPHandler):
             capabilities = 'AUTH ENABLE UTF8=ACCEPT'
