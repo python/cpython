@@ -2113,7 +2113,7 @@ class TestPStdev(VarianceStdevMixin, NumericTestCase):
         self.assertEqual(self.func(data, mu=0.5), 6.5)
 
     def test_gh_140938(self):
-        # Inputs with math.inf should raise a ValueError
+        # Inputs with inf/nan should raise a ValueError
         with self.assertRaises(ValueError):
             self.func([1.0, math.inf])
         with self.assertRaises(ValueError):
