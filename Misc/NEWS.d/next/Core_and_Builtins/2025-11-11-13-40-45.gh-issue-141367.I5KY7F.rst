@@ -1,0 +1,2 @@
+Specialize ``CALL_LIST_APPEND`` instruction only for lists, not for list
+subclasses, to avoid unnecessary deopt. Patch by Mikhail Efimov.
