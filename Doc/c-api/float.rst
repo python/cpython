@@ -99,6 +99,14 @@ Floating-Point Objects
    the C11 standard ``<math.h>`` header.
 
 
+.. c:macro:: Py_HUGE_VAL
+
+   Same as :c:macro:`Py_INFINITY`.
+
+   .. deprecated:: 3.14
+      The macro is soft deprecated.
+
+
 .. c:macro:: Py_MATH_E
 
    The definition (accurate for a :c:expr:`double` type) of the :data:`math.e` constant.
@@ -145,6 +153,32 @@ Floating-Point Objects
    On most platforms, this is equivalent to the following::
 
       return PyFloat_FromDouble(copysign(INFINITY, sign));
+
+
+.. c:macro:: Py_IS_FINITE
+
+   Determines if the given floating-point number has finite value i.e. it is
+   normal, subnormal or zero, but not infinite or NaN.
+
+   .. deprecated:: 3.14
+      The macro is soft deprecated.  Use :c:macro:`!isfinite` instead.
+
+
+.. c:macro:: Py_IS_INFINITE
+
+   Determines if the given floating-point number arg is positive or negative
+   infinity.
+
+   .. deprecated:: 3.14
+      The macro is soft deprecated.  Use :c:macro:`!isinf` instead.
+
+
+.. c:macro:: Py_IS_NAN
+
+   Determines if the given floating-point number is a not-a-number (NaN) value.
+
+   .. deprecated:: 3.14
+      The macro is soft deprecated.  Use :c:macro:`!isnan` instead.
 
 
 Pack and Unpack functions
