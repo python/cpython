@@ -400,8 +400,7 @@ static int _PyObject_InlineValuesConsistencyCheck(PyObject *obj);
 static inline Py_hash_t
 unicode_get_hash(PyObject *o)
 {
-    assert(PyUnicode_CheckExact(o));
-    return FT_ATOMIC_LOAD_SSIZE_RELAXED(_PyASCIIObject_CAST(o)->hash);
+    return PyUnstable_Unicode_GET_CACHED_HASH(o);
 }
 
 /* Print summary info about the state of the optimized allocator */
