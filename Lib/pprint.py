@@ -221,13 +221,13 @@ class PrettyPrinter:
     def _pprint_dict(self, object, stream, indent, allowance, context, level):
         write = stream.write
         typ = object.__class__
-        if typ is dict:
-            write('{')
-            end = '}'
-        else:
+        if typ is frozendict:
             stream.write(typ.__name__ + '({')
             end = '})'
             indent += len(typ.__name__) + 1
+        else:
+            write('{')
+            end = '}'
         if self._indent_per_level > 1:
             write((self._indent_per_level - 1) * ' ')
         length = len(object)
