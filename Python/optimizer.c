@@ -81,6 +81,7 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
         if (new == NULL) {
             return -1;
         }
+        new->is_finalizing = 0;
         new->capacity = new_capacity;
         new->size = size;
         code->co_executors = new;
@@ -1698,7 +1699,7 @@ _PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
  * May cause other executors to be invalidated as well
  */
 void
-_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
+_Py_Executors_InvalidateDependencyWorldStopped(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
@@ -1711,7 +1712,6 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     }
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
-    _PyEval_StopTheWorldAll(&_PyRuntime);
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         _PyJit_Tracer_InvalidateDependency(p, obj);
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
@@ -1728,7 +1728,6 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
             exec = next;
         }
     }
-    _PyEval_StartTheWorldAll(&_PyRuntime);
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
         PyObject *exec = PyList_GET_ITEM(invalidate, i);
         executor_clear(exec);
@@ -1741,13 +1740,19 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
 error:
     PyErr_Clear();
     Py_XDECREF(invalidate);
-    // If we're truly out of memory, wiping out everything is a fine fallback:
-    _Py_Executors_InvalidateAll(interp, is_invalidation);
+    // If we're truly out of memory, DO NOT wipe everything as the world is stopped, and we might deadlock.
 }
 
-/* Invalidate all executors */
 void
-_Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
+_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
+{
+    _PyEval_StopTheWorld(interp);
+    _Py_Executors_InvalidateDependencyWorldStopped(interp, obj, is_invalidation);
+    _PyEval_StartTheWorld(interp);
+}
+
+void
+_Py_Executors_InvalidateAllWorldStopped(PyInterpreterState *interp, int is_invalidation)
 {
     PyObject *invalidate = PyList_New(0);
     if (invalidate == NULL) {
@@ -1756,7 +1761,6 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
     }
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
-    _PyEval_StopTheWorldAll(&_PyRuntime);
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
             assert(exec->vm_data.valid);
@@ -1771,7 +1775,6 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
             exec = next;
         }
     }
-    _PyEval_StartTheWorldAll(&_PyRuntime);
     Py_ssize_t list_len = PyList_GET_SIZE(invalidate);
     for (Py_ssize_t i = 0; i < list_len; i++) {
         _PyExecutorObject *executor = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
@@ -1787,6 +1790,16 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
         }
     }
     Py_DECREF(invalidate);
+    // If we're truly out of memory, DO NOT wipe everything as the world is stopped, and we might deadlock.
+}
+
+/* Invalidate all executors */
+void
+_Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
+{
+    _PyEval_StopTheWorld(interp);
+    _Py_Executors_InvalidateAllWorldStopped(interp, is_invalidation);
+    _PyEval_StartTheWorld(interp);
 }
 
 

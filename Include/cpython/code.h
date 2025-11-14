@@ -16,6 +16,7 @@ typedef struct {
 } _PyCoCached;
 
 typedef struct {
+    uint8_t is_finalizing;
     int size;
     int capacity;
     struct _PyExecutorObject *executors[1];
