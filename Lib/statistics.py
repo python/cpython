@@ -646,7 +646,7 @@ def pstdev(data, mu=None):
         mss_numerator = mss.numerator
         mss_denominator = mss.denominator
     except AttributeError:
-        raise ValueError
+        raise ValueError('inf or nan encountered in data')
     if issubclass(T, Decimal):
         return _decimal_sqrt_of_frac(mss_numerator, mss_denominator)
     return _float_sqrt_of_frac(mss_numerator, mss_denominator)
