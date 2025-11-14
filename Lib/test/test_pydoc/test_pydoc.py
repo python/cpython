@@ -1413,7 +1413,7 @@ class TestDescriptions(unittest.TestCase):
             self.assertIn('NoReturn = typing.NoReturn', doc)
             self.assertIn(typing.NoReturn.__doc__.strip().splitlines()[0], doc)
         else:
-            self.assertIn('NoReturn = class _SpecialForm(_Final)', doc)
+            self.assertIn('NoReturn = class _SpecialForm(_Final, _NotIterable)', doc)
 
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],
@@ -2102,6 +2102,7 @@ class PydocUrlHandlerTest(PydocBaseTest):
             ("index", "Pydoc: Index of Modules"),
             ("topics", "Pydoc: Topics"),
             ("keywords", "Pydoc: Keywords"),
+            ("symbols", "Pydoc: Symbols"),
             ("pydoc", "Pydoc: module pydoc"),
             ("get?key=pydoc", "Pydoc: module pydoc"),
             ("search?key=pydoc", "Pydoc: Search Results"),
