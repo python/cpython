@@ -7878,7 +7878,7 @@ static Py_hash_t
 frozendict_hash(PyObject *op)
 {
     PyFrozenDictObject *self = _PyFrozenDictObject_CAST(op);
-    Py_hash_t hash = self->ma_hash;
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ma_hash);
     if (hash != -1) {
         return hash;
     }
@@ -7899,7 +7899,7 @@ frozendict_hash(PyObject *op)
         return -1;
     }
 
-    self->ma_hash = hash;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(self->ma_hash, hash);
     return hash;
 }
 
