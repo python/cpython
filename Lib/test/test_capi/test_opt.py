@@ -2648,7 +2648,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         f()
         # Inner loop warms up first.
-        # Outer loop warms up later, linking to the innter one.
+        # Outer loop warms up later, linking to the inner one.
         # Therefore, at least two executors.
         self.assertGreaterEqual(len(get_all_executors(f)), 2)
 
