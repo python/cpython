@@ -1138,11 +1138,13 @@ modexport_get_empty_slots(PyObject *mod, PyObject *arg)
 }
 
 static void
-modexport_smoke_free(void *mod_state)
+modexport_smoke_free(void *mod)
 {
-    int *state = (int *)mod_state;
+    int *state = PyModule_GetState((PyObject *)mod);
     if (!state) {
-        PyErr_FormatUnraisable("Exception ignored in module state free", NULL);
+        PyErr_FormatUnraisable(
+            "Exception ignored in module %R free", (PyObject *)mod
+        );
         return;
     }
     assert(*state == 258);
