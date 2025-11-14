@@ -2,10 +2,6 @@ name: Reusable WASI
 
 on:
   workflow_call:
-    inputs:
-      config_hash:
-        required: true
-        type: string
 
 env:
   FORCE_COLOR: 1
