@@ -1715,13 +1715,13 @@ invalidate_sub_executors(_PyThreadStateImpl *tstate, _PyExecutorObject *executor
         return;
     }
     executor->vm_data.valid = 0;
-    executor_clear((PyObject *)executor);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         _PyExecutorObject *next = executor->exits[i].executor;
         if (next != tstate->jit_executor_state.cold_dynamic_executor && next != tstate->jit_executor_state.cold_executor) {
             invalidate_sub_executors(tstate, next);
         }
     }
+    executor_clear((PyObject *)executor);
 }
 
 /* Invalidate all executors that depend on `obj`
