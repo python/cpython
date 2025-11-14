@@ -284,6 +284,8 @@ test_critical_sections_gc(PyObject *self, PyObject *Py_UNUSED(args))
 
 #endif
 
+#ifdef Py_GIL_DISABLED
+
 static PyObject *
 test_critical_section1_reacquisition(PyObject *self, PyObject *Py_UNUSED(args))
 {
@@ -377,12 +379,16 @@ test_critical_section2_reacquisition(PyObject *self, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
+#endif // Py_GIL_DISABLED
+
 static PyMethodDef test_methods[] = {
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"test_critical_sections_nest", test_critical_sections_nest, METH_NOARGS},
     {"test_critical_sections_suspend", test_critical_sections_suspend, METH_NOARGS},
+#ifdef Py_GIL_DISABLED
     {"test_critical_section1_reacquisition", test_critical_section1_reacquisition, METH_NOARGS},
     {"test_critical_section2_reacquisition", test_critical_section2_reacquisition, METH_NOARGS},
+#endif
 #ifdef Py_CAN_START_THREADS
     {"test_critical_sections_threads", test_critical_sections_threads, METH_NOARGS},
     {"test_critical_sections_gc", test_critical_sections_gc, METH_NOARGS},
