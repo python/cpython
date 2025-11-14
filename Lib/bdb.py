@@ -199,6 +199,8 @@ class Bdb:
         self.frame_returning = None
         self.trace_opcodes = False
         self.enterframe = None
+        self.cmdframe = None
+        self.cmdlineno = None
         self.code_linenos = weakref.WeakKeyDictionary()
         self.backend = backend
         if backend == 'monitoring':
