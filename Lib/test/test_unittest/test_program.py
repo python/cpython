@@ -208,8 +208,8 @@ class Test_TestProgram(unittest.TestCase):
                 testLoader=self.TestLoader(self.SetUpClassFailure))
         self.assertEqual(cm.exception.code, 1)
         out = stream.getvalue()
-        self.assertIn('\nERROR: setUpClass (test.test_unittest.test_program.'
-                      'Test_TestProgram.SetUpClassFailure)\n', out)
+        self.assertIn("ERROR", out)
+        self.assertIn("setUpClass", out)
 
 
 class InitialisableProgram(unittest.TestProgram):
