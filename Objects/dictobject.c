@@ -4231,6 +4231,10 @@ PyDict_Copy(PyObject *o)
         return NULL;
     }
 
+    if (PyFrozenDict_CheckExact(o)) {
+        return Py_NewRef(o);
+    }
+
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(o);
 
