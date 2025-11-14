@@ -1597,7 +1597,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
         _Py_LeaveRecursiveCall();
         return rv;
     }
-    else if (PyDict_Check(obj) || PyFrozenDict_Check(obj)) {
+    else if (PyAnyDict_Check(obj)) {
         if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
             return -1;
         rv = encoder_listencode_dict(s, writer, obj, indent_level, indent_cache);
