@@ -1317,7 +1317,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     // from being immediately detected as cold and invalidated.
     executor->vm_data.warm = true;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
-        Py_DECREF(executor);
+        executor->vm_data.warm = false;
         return NULL;
     }
 #endif
@@ -1399,8 +1399,10 @@ uop_optimize(
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
+    HEAD_LOCK(&_PyRuntime);
     _PyExecutorObject *executor = make_executor_from_uops(
         buffer, length, dependencies, _tstate->jit_tracer_state.initial_state.chain_depth);
+    HEAD_UNLOCK(&_PyRuntime);
     if (executor == NULL) {
         return -1;
     }

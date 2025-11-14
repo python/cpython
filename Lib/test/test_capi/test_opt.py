@@ -1167,6 +1167,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIs(type(s), float)
         self.assertEqual(s, 1024.0)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions/classes")
     def test_guard_type_version_removed(self):
         def thing(a):
             x = 0
@@ -1185,6 +1186,7 @@ class TestUopsOptimization(unittest.TestCase):
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 1)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions/classes")
     def test_guard_type_version_removed_inlined(self):
         """
         Verify that the guard type version if we have an inlined function
@@ -1211,6 +1213,7 @@ class TestUopsOptimization(unittest.TestCase):
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 1)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions")
     def test_guard_type_version_removed_invalidation(self):
 
         def thing(a):
@@ -1241,6 +1244,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
         self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions")
     def test_guard_type_version_removed_escaping(self):
 
         def thing(a):
@@ -1264,6 +1268,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
         self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions/classes")
     def test_guard_type_version_executor_invalidated(self):
         """
         Verify that the executor is invalided on a type change.
@@ -2033,6 +2038,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build immortalizes constants")
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
         # See https://github.com/python/cpython/issues/139393.
@@ -2057,6 +2063,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build immortalizes constants")
     def test_call_len_known_length(self):
         # Make sure that len(t) is not optimized for a tuple of length 2048.
         # See https://github.com/python/cpython/issues/139393.
@@ -2308,6 +2315,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_TO_BOOL_BOOL", uops)
         self.assertIn("_GUARD_IS_TRUE_POP", uops)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions/classes")
     def test_set_type_version_sets_type(self):
         class C:
             A = 1
@@ -2340,6 +2348,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_SMALL_INT", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions")
     def test_cached_attributes(self):
         class C:
             A = 1
