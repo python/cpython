@@ -1,0 +1,1 @@
+Let Python Launcher recognize pyw file as Python GUI Script file type correctly.
