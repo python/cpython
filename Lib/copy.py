@@ -101,11 +101,11 @@ def copy(x):
 
 
 _copy_atomic_types = frozenset({types.NoneType, int, float, bool, complex, str, tuple,
-          bytes, frozenset, type, range, slice, property,
+          bytes, frozenset, frozendict, type, range, slice, property,
           types.BuiltinFunctionType, types.EllipsisType,
           types.NotImplementedType, types.FunctionType, types.CodeType,
           weakref.ref, super})
-_copy_builtin_containers = frozenset({list, dict, frozendict, set, bytearray})
+_copy_builtin_containers = frozenset({list, dict, set, bytearray})
 
 def deepcopy(x, memo=None):
     """Deep copy operation on arbitrary Python objects.
