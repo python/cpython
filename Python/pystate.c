@@ -1844,6 +1844,13 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
         _PyObject_VirtualFree(_tstate->jit_tracer_state.code_buffer, UOP_BUFFER_SIZE);
         _tstate->jit_tracer_state.code_buffer = NULL;
     }
+#ifdef Py_GIL_DISABLED
+    // There's only one thread. Re-enable JIT.
+    PyThreadState *curr = interp->threads.head;
+    if (curr != NULL && curr->prev == NULL && curr->next == NULL) {
+        _Py_atomic_store_char_relaxed(&((_PyThreadStateImpl*)curr)->jit_executor_state.jit, true);
+    }
+#endif
 #endif
 
     HEAD_UNLOCK(runtime);

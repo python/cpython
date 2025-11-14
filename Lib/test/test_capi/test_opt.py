@@ -417,8 +417,6 @@ class TestUops(unittest.TestCase):
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
 
 
-@requires_specialization
-@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @requires_jit_enabled
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
