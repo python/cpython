@@ -87,7 +87,7 @@ Floating-Point Objects
    ``<math.h>`` header.
 
    .. deprecated:: 3.15
-      The macro is soft deprecated.
+      The macro is :term:`soft deprecated`.
 
 
 .. c:macro:: Py_NAN
@@ -101,10 +101,10 @@ Floating-Point Objects
 
 .. c:macro:: Py_HUGE_VAL
 
-   Same as :c:macro:`Py_INFINITY`.
+   Equivalent to :c:macro:`Py_INFINITY`.
 
    .. deprecated:: 3.14
-      The macro is soft deprecated.
+      The macro is :term:`soft deprecated`.
 
 
 .. c:macro:: Py_MATH_E
@@ -161,7 +161,7 @@ Floating-Point Objects
    normal, subnormal or zero, but not infinite or NaN.
 
    .. deprecated:: 3.14
-      The macro is soft deprecated.  Use :c:macro:`!isfinite` instead.
+      The macro is :term:`soft deprecated`.  Use :c:macro:`!isfinite` instead.
 
 
 .. c:macro:: Py_IS_INFINITE
@@ -170,7 +170,7 @@ Floating-Point Objects
    infinity.
 
    .. deprecated:: 3.14
-      The macro is soft deprecated.  Use :c:macro:`!isinf` instead.
+      The macro is :term:`soft deprecated`.  Use :c:macro:`!isinf` instead.
 
 
 .. c:macro:: Py_IS_NAN
@@ -178,7 +178,7 @@ Floating-Point Objects
    Determines if the given floating-point number is a not-a-number (NaN) value.
 
    .. deprecated:: 3.14
-      The macro is soft deprecated.  Use :c:macro:`!isnan` instead.
+      The macro is :term:`soft deprecated`.  Use :c:macro:`!isnan` instead.
 
 
 Pack and Unpack functions
