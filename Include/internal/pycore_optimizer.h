@@ -77,12 +77,10 @@ PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6
 
 #ifdef _Py_TIER2
-PyAPI_FUNC(void) _Py_Executors_InvalidateDependencyWorldStopped(PyInterpreterState *interp, void *obj, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation);
-PyAPI_FUNC(void) _Py_Executors_InvalidateAllWorldStopped(PyInterpreterState *interp, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyThreadState *tstate);
-
+PyAPI_FUNC(void) _Py_Executors_ClearExecutorList(PyObject *invalidate, int is_invalidation);
 #else
 #  define _Py_Executors_InvalidateDependency(A, B, C) ((void)0)
 #  define _Py_Executors_InvalidateAll(A, B) ((void)0)

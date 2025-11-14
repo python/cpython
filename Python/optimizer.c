@@ -1021,7 +1021,8 @@ _PyJit_TryInitializeTracing(
     _tstate->jit_tracer_state.initial_state.jump_backward_instr = curr_instr;
 
     if (_PyOpcode_Caches[_PyOpcode_Deopt[close_loop_instr->op.code]]) {
-        close_loop_instr[1].counter = trigger_backoff_counter();
+        _Py_BackoffCounter zero = trigger_backoff_counter();;
+        FT_ATOMIC_STORE_UINT16_RELAXED(close_loop_instr[1].counter.value_and_backoff, zero.value_and_backoff);
     }
     _Py_BloomFilter_Init(&_tstate->jit_tracer_state.prev_state.dependencies);
     return 1;
@@ -1694,39 +1695,11 @@ _PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
         _tstate->jit_tracer_state.prev_state.dependencies_still_valid = false;
     }
 }
-
-/* Invalidate all executors that depend on `obj`
- * May cause other executors to be invalidated as well
- */
 void
-_Py_Executors_InvalidateDependencyWorldStopped(PyInterpreterState *interp, void *obj, int is_invalidation)
+_Py_Executors_ClearExecutorList(PyObject *invalidate, int is_invalidation)
 {
-    _PyBloomFilter obj_filter;
-    _Py_BloomFilter_Init(&obj_filter);
-    _Py_BloomFilter_Add(&obj_filter, obj);
-    /* Walk the list of executors */
-    /* TO DO -- Use a tree to avoid traversing as many objects */
-    PyObject *invalidate = PyList_New(0);
     if (invalidate == NULL) {
-        goto error;
-    }
-    /* Clearing an executor can deallocate others, so we need to make a list of
-     * executors to invalidate first */
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
-        _PyJit_Tracer_InvalidateDependency(p, obj);
-        for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
-            assert(exec->vm_data.valid);
-            if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
-                if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
-                    PyErr_Clear();
-                    Py_DECREF(invalidate);
-                    _PyEval_StartTheWorldAll(&_PyRuntime);
-                    return;
-                }
-            }
-            _PyExecutorObject *next = exec->vm_data.links.next;
-            exec = next;
-        }
+        return;
     }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
         PyObject *exec = PyList_GET_ITEM(invalidate, i);
@@ -1736,70 +1709,51 @@ _Py_Executors_InvalidateDependencyWorldStopped(PyInterpreterState *interp, void 
         }
     }
     Py_DECREF(invalidate);
-    return;
-error:
-    PyErr_Clear();
-    Py_XDECREF(invalidate);
-    // If we're truly out of memory, DO NOT wipe everything as the world is stopped, and we might deadlock.
 }
 
+/* Invalidate all executors that depend on `obj`
+ * May cause other executors to be invalidated as well
+ * To avoid deadlocks due to stop the world, we just invalidate the executors but leave them to be freed
+ * on their own later.
+ */
 void
 _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
-    _PyEval_StopTheWorld(interp);
-    _Py_Executors_InvalidateDependencyWorldStopped(interp, obj, is_invalidation);
-    _PyEval_StartTheWorld(interp);
+    _PyBloomFilter obj_filter;
+    _Py_BloomFilter_Init(&obj_filter);
+    _Py_BloomFilter_Add(&obj_filter, obj);
+    /* Walk the list of executors */
+    /* Clearing an executor can deallocate others, so we need to make a list of
+     * executors to invalidate first */
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
+        _PyJit_Tracer_InvalidateDependency(p, obj);
+        for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
+            assert(exec->vm_data.valid);
+            if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
+                exec->vm_data.valid = 0;
+            }
+            _PyExecutorObject *next = exec->vm_data.links.next;
+            exec = next;
+        }
+    }
 }
 
+// To avoid deadlocks due to stop the world, we just invalidate the executors but leave them to be freed
+// on their own later.
 void
-_Py_Executors_InvalidateAllWorldStopped(PyInterpreterState *interp, int is_invalidation)
+_Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
-    PyObject *invalidate = PyList_New(0);
-    if (invalidate == NULL) {
-        PyErr_Clear();
-        return;
-    }
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
             assert(exec->vm_data.valid);
             assert(exec->tstate == p);
+            exec->vm_data.valid = 0;
             _PyExecutorObject *next = exec->vm_data.links.next;
-            if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
-                PyErr_Clear();
-                Py_DECREF(invalidate);
-                _PyEval_StartTheWorldAll(&_PyRuntime);
-                return;
-            }
             exec = next;
         }
     }
-    Py_ssize_t list_len = PyList_GET_SIZE(invalidate);
-    for (Py_ssize_t i = 0; i < list_len; i++) {
-        _PyExecutorObject *executor = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
-
-        assert(executor->vm_data.valid == 1);
-        if (executor->vm_data.code) {
-            // Clear the entire code object so its co_executors array be freed:
-            _PyCode_Clear_Executors(executor->vm_data.code);
-        }
-        executor_clear((PyObject *)executor);
-        if (is_invalidation) {
-            OPT_STAT_INC(executors_invalidated);
-        }
-    }
-    Py_DECREF(invalidate);
-    // If we're truly out of memory, DO NOT wipe everything as the world is stopped, and we might deadlock.
-}
-
-/* Invalidate all executors */
-void
-_Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
-{
-    _PyEval_StopTheWorld(interp);
-    _Py_Executors_InvalidateAllWorldStopped(interp, is_invalidation);
-    _PyEval_StartTheWorld(interp);
 }
 
 
