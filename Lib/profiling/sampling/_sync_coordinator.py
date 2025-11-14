@@ -182,7 +182,7 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
 
     try:
         # Compile and execute the script
-        code = compile(source_code, script_path, 'exec')
+        code = compile(source_code, script_path, 'exec', module='__main__')
         exec(code, {'__name__': '__main__', '__file__': script_path})
     except SyntaxError as e:
         raise TargetError(f"Syntax error in script {script_path}: {e}") from e

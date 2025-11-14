@@ -83,8 +83,11 @@ Floating-Point Objects
    This macro expands a to constant expression of type :c:expr:`double`, that
    represents the positive infinity.
 
-   On most platforms, this is equivalent to the :c:macro:`!INFINITY` macro from
-   the C11 standard ``<math.h>`` header.
+   It is equivalent to the :c:macro:`!INFINITY` macro from the C11 standard
+   ``<math.h>`` header.
+
+   .. deprecated:: 3.15
+      The macro is soft deprecated.
 
 
 .. c:macro:: Py_NAN
@@ -96,6 +99,11 @@ Floating-Point Objects
    the C11 standard ``<math.h>`` header.
 
 
+.. c:macro:: Py_MATH_E
+
+   The definition (accurate for a :c:expr:`double` type) of the :data:`math.e` constant.
+
+
 .. c:macro:: Py_MATH_El
 
    High precision (long double) definition of :data:`~math.e` constant.
@@ -103,11 +111,23 @@ Floating-Point Objects
    .. deprecated-removed:: 3.15 3.20
 
 
+.. c:macro:: Py_MATH_PI
+
+   The definition (accurate for a :c:expr:`double` type) of the :data:`math.pi` constant.
+
+
 .. c:macro:: Py_MATH_PIl
 
    High precision (long double) definition of :data:`~math.pi` constant.
 
    .. deprecated-removed:: 3.15 3.20
+
+
+.. c:macro:: Py_MATH_TAU
+
+   The definition (accurate for a :c:expr:`double` type) of the :data:`math.tau` constant.
+
+   .. versionadded:: 3.6
 
 
 .. c:macro:: Py_RETURN_NAN

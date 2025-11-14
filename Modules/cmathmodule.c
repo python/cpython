@@ -150,7 +150,7 @@ special_type(double d)
 #define P14 0.25*Py_MATH_PI
 #define P12 0.5*Py_MATH_PI
 #define P34 0.75*Py_MATH_PI
-#define INF Py_INFINITY
+#define INF INFINITY
 #define N Py_NAN
 #define U -9.5426319407711027e33 /* unlikely value, used as placeholder */
 
@@ -1186,11 +1186,11 @@ cmath_exec(PyObject *mod)
     if (PyModule_Add(mod, "tau", PyFloat_FromDouble(Py_MATH_TAU)) < 0) {
         return -1;
     }
-    if (PyModule_Add(mod, "inf", PyFloat_FromDouble(Py_INFINITY)) < 0) {
+    if (PyModule_Add(mod, "inf", PyFloat_FromDouble(INFINITY)) < 0) {
         return -1;
     }
 
-    Py_complex infj = {0.0, Py_INFINITY};
+    Py_complex infj = {0.0, INFINITY};
     if (PyModule_Add(mod, "infj", PyComplex_FromCComplex(infj)) < 0) {
         return -1;
     }

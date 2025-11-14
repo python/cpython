@@ -8431,53 +8431,19 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 // running in the process. Best effort, silent if unable to count threads.
 // Constraint: Quick. Never overcounts. Never leaves an error set.
 //
-// This should only be called from the parent process after
+// This MUST only be called from the parent process after
 // PyOS_AfterFork_Parent().
 static int
-warn_about_fork_with_threads(const char* name)
+warn_about_fork_with_threads(
+    const char* name,  // Name of the API to use in the warning message.
+    const Py_ssize_t num_os_threads  // Only trusted when >= 1.
+)
 {
     // It's not safe to issue the warning while the world is stopped, because
     // other threads might be holding locks that we need, which would deadlock.
     assert(!_PyRuntime.stoptheworld.world_stopped);
 
-    // TODO: Consider making an `os` module API to return the current number
-    // of threads in the process. That'd presumably use this platform code but
-    // raise an error rather than using the inaccurate fallback.
-    Py_ssize_t num_python_threads = 0;
-#if defined(__APPLE__) && defined(HAVE_GETPID)
-    mach_port_t macos_self = mach_task_self();
-    mach_port_t macos_task;
-    if (task_for_pid(macos_self, getpid(), &macos_task) == KERN_SUCCESS) {
-        thread_array_t macos_threads;
-        mach_msg_type_number_t macos_n_threads;
-        if (task_threads(macos_task, &macos_threads,
-                         &macos_n_threads) == KERN_SUCCESS) {
-            num_python_threads = macos_n_threads;
-        }
-    }
-#elif defined(__linux__)
-    // Linux /proc/self/stat 20th field is the number of threads.
-    FILE* proc_stat = fopen("/proc/self/stat", "r");
-    if (proc_stat) {
-        size_t n;
-        // Size chosen arbitrarily. ~60% more bytes than a 20th column index
-        // observed on the author's workstation.
-        char stat_line[160];
-        n = fread(&stat_line, 1, 159, proc_stat);
-        stat_line[n] = '\0';
-        fclose(proc_stat);
-
-        char *saveptr = NULL;
-        char *field = strtok_r(stat_line, " ", &saveptr);
-        unsigned int idx;
-        for (idx = 19; idx && field; --idx) {
-            field = strtok_r(NULL, " ", &saveptr);
-        }
-        if (idx == 0 && field) {  // found the 20th field
-            num_python_threads = atoi(field);  // 0 on error
-        }
-    }
-#endif
+    Py_ssize_t num_python_threads = num_os_threads;
     if (num_python_threads <= 0) {
         // Fall back to just the number our threading module knows about.
         // An incomplete view of the world, but better than nothing.
@@ -8530,6 +8496,51 @@ warn_about_fork_with_threads(const char* name)
     }
     return 0;
 }
+
+// If this returns <= 0, we were unable to successfully use any OS APIs.
+// Returns a positive number of threads otherwise.
+static Py_ssize_t get_number_of_os_threads(void)
+{
+    // TODO: Consider making an `os` module API to return the current number
+    // of threads in the process. That'd presumably use this platform code but
+    // raise an error rather than using the inaccurate fallback.
+    Py_ssize_t num_python_threads = 0;
+#if defined(__APPLE__) && defined(HAVE_GETPID)
+    mach_port_t macos_self = mach_task_self();
+    mach_port_t macos_task;
+    if (task_for_pid(macos_self, getpid(), &macos_task) == KERN_SUCCESS) {
+        thread_array_t macos_threads;
+        mach_msg_type_number_t macos_n_threads;
+        if (task_threads(macos_task, &macos_threads,
+                         &macos_n_threads) == KERN_SUCCESS) {
+            num_python_threads = macos_n_threads;
+        }
+    }
+#elif defined(__linux__)
+    // Linux /proc/self/stat 20th field is the number of threads.
+    FILE* proc_stat = fopen("/proc/self/stat", "r");
+    if (proc_stat) {
+        size_t n;
+        // Size chosen arbitrarily. ~60% more bytes than a 20th column index
+        // observed on the author's workstation.
+        char stat_line[160];
+        n = fread(&stat_line, 1, 159, proc_stat);
+        stat_line[n] = '\0';
+        fclose(proc_stat);
+
+        char *saveptr = NULL;
+        char *field = strtok_r(stat_line, " ", &saveptr);
+        unsigned int idx;
+        for (idx = 19; idx && field; --idx) {
+            field = strtok_r(NULL, " ", &saveptr);
+        }
+        if (idx == 0 && field) {  // found the 20th field
+            num_python_threads = atoi(field);  // 0 on error
+        }
+    }
+#endif
+    return num_python_threads;
+}
 #endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
 #ifdef HAVE_FORK1
@@ -8564,10 +8575,12 @@ os_fork1_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
+        // Called before AfterFork_Parent in case those hooks start threads.
+        Py_ssize_t num_os_threads = get_number_of_os_threads();
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        if (warn_about_fork_with_threads("fork1") < 0) {
+        if (warn_about_fork_with_threads("fork1", num_os_threads) < 0) {
             return NULL;
         }
     }
@@ -8615,10 +8628,12 @@ os_fork_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
+        // Called before AfterFork_Parent in case those hooks start threads.
+        Py_ssize_t num_os_threads = get_number_of_os_threads();
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        if (warn_about_fork_with_threads("fork") < 0)
+        if (warn_about_fork_with_threads("fork", num_os_threads) < 0)
             return NULL;
     }
     if (pid == -1) {
@@ -9476,6 +9491,8 @@ os_forkpty_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
+        // Called before AfterFork_Parent in case those hooks start threads.
+        Py_ssize_t num_os_threads = get_number_of_os_threads();
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         /* set O_CLOEXEC on master_fd */
@@ -9485,7 +9502,7 @@ os_forkpty_impl(PyObject *module)
         }
 
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        if (warn_about_fork_with_threads("forkpty") < 0)
+        if (warn_about_fork_with_threads("forkpty", num_os_threads) < 0)
             return NULL;
     }
     if (pid == -1) {
