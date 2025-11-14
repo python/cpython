@@ -15,7 +15,7 @@ macros.
 
 .. c:macro:: PyDateTime_IMPORT()
 
-   Import the datetime C API. The macro does not need a semi-colon to be called.
+   Import the datetime C API.
 
    On success, populate the :c:var:`PyDateTimeAPI` pointer.
 
@@ -24,7 +24,7 @@ macros.
 
    .. code-block::
 
-      PyDateTime_IMPORT;  // semi-colon is optional but recommended
+      PyDateTime_IMPORT;
       if (PyErr_Occurred()) { /* cleanup */ }
 
    .. warning::
