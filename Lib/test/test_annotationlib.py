@@ -1632,6 +1632,27 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": str})
 
+    def test_callable_custom_method_annotate_forwardref_value_fallback(self):
+        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
+        # supported fall back to Format.VALUE and convert to strings
+        class Annotate(dict):
+            def __init__(inst, self, format, /, __Format=Format,
+                         __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    super().__init__({"x": str})
+                else:
+                    raise __NotImplementedError(format)
+
+        # This wouldn't happen on a normal class, but it's technically legal.
+        custom_method = types.MethodType(Annotate, Annotate(None, Format.VALUE))
+
+        annotations = annotationlib.call_annotate_function(
+            custom_method,
+            Format.FORWARDREF,
+        )
+
+        self.assertEqual(annotations, {"x": str})
+
     def test_callable_classmethod_annotate_forwardref_value_fallback(self):
         # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
         # supported fall back to Format.VALUE and convert to strings

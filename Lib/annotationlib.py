@@ -891,9 +891,11 @@ def _get_annotate_attr(annotate, attr, default):
     if (value := getattr(annotate, attr, None)) is not None:
         return value
 
+    # Redirect method attribute access to the underlying function. The C code
+    # verifies that the __func__ attribute is some kind of callable, so we need
+    # to look for attributes recursively.
     if isinstance(annotate, types.MethodType):
-        if call_func := getattr(annotate, "__func__", None):
-            return getattr(call_func, attr, default)
+        return _get_annotate_attr(annotate.__func__, attr, default)
 
     # Class instances themselves aren't methods, their __call__ functions are.
     if isinstance(annotate.__call__, types.MethodType):
@@ -919,32 +921,35 @@ def _get_annotate_attr(annotate, attr, default):
 
     return default
 
-def _direct_call_annotate(func, annotate, format):
+def _direct_call_annotate(func, annotate, *args):
     # If annotate is a method, we need to pass self as the first param.
     if (
         hasattr(annotate, "__func__") and
         (self := getattr(annotate, "__self__", None))
     ):
-        return func(self, format)
+        # We don't know what type of callable will be in the __func__ attribute,
+        # so let's try again with knowledge of that type, including self as the first
+        # argument.
+        return _direct_call_annotate(func, annotate.__func__, self, *args)
 
     # If annotate is a class instance, its __call__ function is the method.
     if (
         hasattr(annotate.__call__, "__func__") and
         (self := getattr(annotate.__call__, "__self__", None))
     ):
-        return func(self, format)
+        return func(self, *args)
 
     # If annotate is a class, `func` is the __init__ method, so we still need to call
     # __new__() to create the instance
     if isinstance(annotate, type):
         inst = annotate.__new__(annotate)
-        func(inst, format)
+        func(inst, *args)
         return inst
 
     # Generic instantiation is slightly different.
     if isinstance(annotate, types.GenericAlias):
         inst = annotate.__new__(annotate.__origin__)
-        func(inst, format)
+        func(inst, *args)
         # Try to set the original class on the instance, if possible.
         try:
             inst.__orig_class__ = annotate
@@ -959,14 +964,14 @@ def _direct_call_annotate(func, annotate, format):
         if isinstance(annotate, functools.partial):
             # Partial methods
             if self := getattr(annotate, "__self__", None):
-                return functools.partial(func, self, *annotate.args, **annotate.keywords)(format)
-            return functools.partial(func, *annotate.args, **annotate.keywords)(format)
+                return functools.partial(func, self, *annotate.args, **annotate.keywords)(*args)
+            return functools.partial(func, *annotate.args, **annotate.keywords)(*args)
 
     # If annotate is a cached function, we've now updated the function data, so
     # let's not use the old cache. Furthermore, we're about to call the function
     # and never use it again, so let's not bother trying to cache it.
     # Or, if it's a normal function or unsupported callable, we should just call it.
-    return func(format)
+    return func(*args)
 
 
 def get_annotate_from_class_namespace(obj):
