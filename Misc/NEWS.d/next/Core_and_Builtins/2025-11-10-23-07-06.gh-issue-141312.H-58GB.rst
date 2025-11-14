@@ -1,2 +1,2 @@
-Restrict passing of non-integer object to the ``longrangeiter.__setstate__``.
-Patch by Sergey Miryanov.
+Fix the assertion failure in the ``__setstate__`` method of the range iterator
+when a non-integer argument is passed. Patch by Sergey Miryanov.
