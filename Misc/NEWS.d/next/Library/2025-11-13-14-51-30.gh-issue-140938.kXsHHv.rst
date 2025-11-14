@@ -1,0 +1,2 @@
+The :func:`statistics.stdev` and :func:`statistics.pstdev` functions now raise a
+:exc:`ValueError` when the input contains an infinity or a NaN.
