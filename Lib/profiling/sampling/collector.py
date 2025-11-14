@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import deque
 
 from _remote_debugging import FrameInfo
 
@@ -71,11 +72,15 @@ class Collector(ABC):
 
     def _build_linear_stacks(self, leaf_task_ids, task_map, child_to_parents):
         for leaf_id in leaf_task_ids:
-            # BFS queue: (current_task_id, frames_so_far, path_for_cycle_detection)
-            queue = [(leaf_id, [], frozenset())]
+            # Track yielded paths to avoid duplicates from multiple parent paths
+            yielded_paths = set()
+
+            # BFS queue: (current_task_id, frames_so_far, path_for_cycle_detection, thread_id)
+            # Use deque for O(1) popleft instead of O(n) list.pop(0)
+            queue = deque([(leaf_id, [], frozenset(), None)])
 
             while queue:
-                current_id, frames, path = queue.pop(0)
+                current_id, frames, path, thread_id = queue.popleft()
 
                 # Cycle detection
                 if current_id in path:
@@ -84,12 +89,20 @@ class Collector(ABC):
                 # End of path (parent ID not in task_map)
                 if current_id not in task_map:
                     if frames:
-                        _, thread_id = task_map[leaf_id]
-                        yield frames, thread_id, leaf_id
+                        # Deduplicate yields based on path taken
+                        path_sig = frozenset(path)
+                        if path_sig not in yielded_paths:
+                            yielded_paths.add(path_sig)
+                            yield frames, thread_id, leaf_id
                     continue
 
                 # Process current task
                 task_info, tid = task_map[current_id]
+
+                # Set thread_id from first task if not already set
+                if thread_id is None:
+                    thread_id = tid
+
                 new_frames = list(frames)
                 new_path = path | {current_id}
 
@@ -107,9 +120,12 @@ class Collector(ABC):
                 parent_ids = child_to_parents.get(current_id, [])
 
                 if not parent_ids:
-                    # Root task - yield complete stack
-                    yield new_frames, tid, leaf_id
+                    # Root task - yield complete stack (deduplicate)
+                    path_sig = frozenset(new_path)
+                    if path_sig not in yielded_paths:
+                        yielded_paths.add(path_sig)
+                        yield new_frames, thread_id, leaf_id
                 else:
                     # Continue to each parent (creates multiple paths if >1 parent)
                     for parent_id in parent_ids:
-                        queue.append((parent_id, new_frames, new_path))
+                        queue.append((parent_id, new_frames, new_path, thread_id))
