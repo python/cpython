@@ -1,2 +1,2 @@
-Restict passing of non-integer object to the ``longrangeiter.__setstate__``.
+Restrict passing of non-integer object to the ``longrangeiter.__setstate__``.
 Patch by Sergey Miryanov.
