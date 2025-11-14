@@ -819,13 +819,14 @@ class SourceLoader(_LoaderBasics):
                               name=fullname) from exc
         return decode_source(source_bytes)
 
-    def source_to_code(self, data, path, *, _optimize=-1):
+    def source_to_code(self, data, path, fullname=None, *, _optimize=-1):
         """Return the code object compiled from source.
 
         The 'data' argument can be any object type that compile() supports.
         """
         return _bootstrap._call_with_frames_removed(compile, data, path, 'exec',
-                                        dont_inherit=True, optimize=_optimize)
+                                        dont_inherit=True, optimize=_optimize,
+                                        module=fullname)
 
     def get_code(self, fullname):
         """Concrete implementation of InspectLoader.get_code.
@@ -894,7 +895,7 @@ class SourceLoader(_LoaderBasics):
                                                  source_path=source_path)
         if source_bytes is None:
             source_bytes = self.get_data(source_path)
-        code_object = self.source_to_code(source_bytes, source_path)
+        code_object = self.source_to_code(source_bytes, source_path, fullname)
         _bootstrap._verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
                 source_mtime is not None):
@@ -1186,7 +1187,7 @@ class NamespaceLoader:
         return ''
 
     def get_code(self, fullname):
-        return compile('', '<string>', 'exec', dont_inherit=True)
+        return compile('', '<string>', 'exec', dont_inherit=True, module=fullname)
 
     def create_module(self, spec):
         """Use default semantics for module creation."""

@@ -150,33 +150,42 @@ class ForwardRef:
         if globals is None:
             globals = {}
 
+        if type_params is None and owner is not None:
+            type_params = getattr(owner, "__type_params__", None)
+
         if locals is None:
             locals = {}
             if isinstance(owner, type):
                 locals.update(vars(owner))
+        elif (
+            type_params is not None
+            or isinstance(self.__cell__, dict)
+            or self.__extra_names__
+        ):
+            # Create a new locals dict if necessary,
+            # to avoid mutating the argument.
+            locals = dict(locals)
 
-        if type_params is None and owner is not None:
-            # "Inject" type parameters into the local namespace
-            # (unless they are shadowed by assignments *in* the local namespace),
-            # as a way of emulating annotation scopes when calling `eval()`
-            type_params = getattr(owner, "__type_params__", None)
-
-        # Type parameters exist in their own scope, which is logically
-        # between the locals and the globals. We simulate this by adding
-        # them to the globals. Similar reasoning applies to nonlocals stored in cells.
-        if type_params is not None or isinstance(self.__cell__, dict):
-            globals = dict(globals)
+        # "Inject" type parameters into the local namespace
+        # (unless they are shadowed by assignments *in* the local namespace),
+        # as a way of emulating annotation scopes when calling `eval()`
         if type_params is not None:
             for param in type_params:
-                globals[param.__name__] = param
+                locals.setdefault(param.__name__, param)
+
+        # Similar logic can be used for nonlocals, which should not
+        # override locals.
         if isinstance(self.__cell__, dict):
-            for cell_name, cell_value in self.__cell__.items():
+            for cell_name, cell in self.__cell__.items():
                 try:
-                    globals[cell_name] = cell_value.cell_contents
+                    cell_value = cell.cell_contents
                 except ValueError:
                     pass
+                else:
+                    locals.setdefault(cell_name, cell_value)
+
         if self.__extra_names__:
-            locals = {**locals, **self.__extra_names__}
+            locals.update(self.__extra_names__)
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
