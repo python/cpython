@@ -166,7 +166,7 @@ Floating-Point Objects
 
 .. c:macro:: Py_IS_INFINITE
 
-   Determines if the given floating-point number arg is positive or negative
+   Determines if the given floating-point number is positive or negative
    infinity.
 
    .. deprecated:: 3.14
