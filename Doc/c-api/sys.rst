@@ -127,17 +127,18 @@ Operating System Utilities
 .. c:function:: int PyOS_InterruptOccurred(void)
 
    Check if a :c:macro:`!SIGINT` signal has been received.
+
    Returns ``1`` if a :c:macro:`!SIGINT` has occurred and clears the signal flag,
    or ``0`` otherwise.
-
-   This function is async-signal-safe and this function cannot fail.
-   The caller must hold an :term:`attached thread state`.
 
    In most cases, you should prefer :c:func:`PyErr_CheckSignals` over this function.
    :c:func:`!PyErr_CheckSignals` invokes the appropriate signal handlers
    for all pending signals, allowing Python code to handle the signal properly.
    This function only detects :c:macro:`!SIGINT` and does not invoke any Python
    signal handlers.
+
+   This function is async-signal-safe and this function cannot fail.
+   The caller must hold an :term:`attached thread state`.
 
 
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
