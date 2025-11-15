@@ -940,14 +940,30 @@ class TestMktemp(BaseTestCase):
 # We test _TemporaryFileWrapper by testing NamedTemporaryFile.
 
 
-class TestNamedTemporaryFile(BaseTestCase):
+class BaseTemporaryFileTestCases:
+    def test_wronly_mode(self):
+        with mock.patch('os.open', wraps=os.open) as spy:
+            with self.do_create(mode='wb') as fileobj:
+                fileobj.write(b'abc')
+                fileobj.seek(0)
+                self.assertRaises(io.UnsupportedOperation, fileobj.read)
+                with self.assertRaises(OSError):
+                    os.read(fileobj.fileno(), 1)
+
+        flags = spy.call_args[0][1]
+        self.assertEqual(flags & os.O_RDONLY, 0x0)
+        self.assertNotEqual(flags & os.O_RDWR, os.O_RDWR)
+        self.assertEqual(flags & os.O_WRONLY, os.O_WRONLY)
+        self.assertEqual(flags & os.O_EXCL, os.O_EXCL)
+
+class TestNamedTemporaryFile(BaseTestCase, BaseTemporaryFileTestCases):
     """Test NamedTemporaryFile()."""
 
-    def do_create(self, dir=None, pre="", suf="", delete=True):
+    def do_create(self, dir=None, pre="", suf="", delete=True, mode='w+b'):
         if dir is None:
             dir = tempfile.gettempdir()
         file = tempfile.NamedTemporaryFile(dir=dir, prefix=pre, suffix=suf,
-                                           delete=delete)
+                                           delete=delete, mode=mode)
 
         self.nameCheck(file.name, dir, pre, suf)
         return file
@@ -1519,8 +1535,11 @@ class TestSpooledTemporaryFile(BaseTestCase):
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
 
-    class TestTemporaryFile(BaseTestCase):
+    class TestTemporaryFile(BaseTestCase, BaseTemporaryFileTestCases):
         """Test TemporaryFile()."""
+
+        def do_create(self, *args, **kwargs):
+            return tempfile.TemporaryFile(*args, **kwargs)
 
         def test_basic(self):
             # TemporaryFile can create files
