@@ -36,10 +36,16 @@ class CollapsedStackCollector(StackTraceCollector):
     def export(self, filename):
         lines = []
         for (call_tree, thread_id), count in self.stack_counter.items():
-            stack_str = ";".join(
-                f"{os.path.basename(f[0])}:{f[2]}:{f[1]}" for f in call_tree
-            )
-            lines.append((f"tid:{thread_id};{stack_str}", count))
+            parts = [f"tid:{thread_id}"]
+            for file, line, func in call_tree:
+                # This is what pstats does for "special" frames:
+                if file == "~" and line == 0:
+                    part = func
+                else:
+                    part = f"{os.path.basename(file)}:{func}:{line}"
+                parts.append(part)
+            stack_str = ";".join(parts)
+            lines.append((stack_str, count))
 
         lines.sort(key=lambda x: (-x[1], x[0]))
 
@@ -97,6 +103,10 @@ class FlamegraphCollector(StackTraceCollector):
     @functools.lru_cache(maxsize=None)
     def _format_function_name(func):
         filename, lineno, funcname = func
+
+        # Special frames like <GC> and <native> should not show file:line
+        if filename == "~" and lineno == 0:
+            return funcname
 
         if len(filename) > 50:
             parts = filename.split("/")

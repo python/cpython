@@ -153,6 +153,8 @@ class TestGetStackTrace(unittest.TestCase):
                 FrameInfo([script_name, 12, "baz"]),
                 FrameInfo([script_name, 9, "bar"]),
                 FrameInfo([threading.__file__, ANY, "Thread.run"]),
+                FrameInfo([threading.__file__, ANY, "Thread._bootstrap_inner"]),
+                FrameInfo([threading.__file__, ANY, "Thread._bootstrap"]),
             ]
             # Is possible that there are more threads, so we check that the
             # expected stack traces are in the result (looking at you Windows!)

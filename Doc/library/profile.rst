@@ -265,6 +265,14 @@ Profile with real-time sampling statistics::
 
    Sample all threads in the process instead of just the main thread
 
+.. option:: --native
+
+   Include artificial ``<native>`` frames to denote calls to non-Python code.
+
+.. option:: --no-gc
+
+   Don't include artificial ``<GC>`` frames to denote active garbage collection.
+
 .. option:: --realtime-stats
 
    Print real-time sampling statistics during profiling
@@ -349,7 +357,7 @@ This section documents the programmatic interface for the :mod:`!profiling.sampl
 For command-line usage, see :ref:`sampling-profiler-cli`. For conceptual information
 about statistical profiling, see :ref:`statistical-profiling`
 
-.. function:: sample(pid, *, sort=2, sample_interval_usec=100, duration_sec=10, filename=None, all_threads=False, limit=None, show_summary=True, output_format="pstats", realtime_stats=False)
+.. function:: sample(pid, *, sort=2, sample_interval_usec=100, duration_sec=10, filename=None, all_threads=False, limit=None, show_summary=True, output_format="pstats", realtime_stats=False, native=False, gc=True)
 
    Sample a Python process and generate profiling data.
 
@@ -367,6 +375,8 @@ about statistical profiling, see :ref:`statistical-profiling`
    :param bool show_summary: Whether to show summary statistics (default: True)
    :param str output_format: Output format - 'pstats' or 'collapsed' (default: 'pstats')
    :param bool realtime_stats: Whether to display real-time statistics (default: False)
+   :param bool native: Whether to include ``<native>`` frames (default: False)
+   :param bool gc: Whether to include ``<GC>`` frames (default: True)
 
    :raises ValueError: If output_format is not 'pstats' or 'collapsed'
 

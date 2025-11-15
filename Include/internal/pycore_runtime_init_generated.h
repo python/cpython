@@ -1321,10 +1321,12 @@ extern "C" {
     INIT_STR(dot_locals, ".<locals>"), \
     INIT_STR(empty, ""), \
     INIT_STR(format, ".format"), \
+    INIT_STR(gc, "<GC>"), \
     INIT_STR(generic_base, ".generic_base"), \
     INIT_STR(json_decoder, "json.decoder"), \
     INIT_STR(kwdefaults, ".kwdefaults"), \
     INIT_STR(list_err, "list index out of range"), \
+    INIT_STR(native, "<native>"), \
     INIT_STR(str_replace_inf, "1e309"), \
     INIT_STR(type_params, ".type_params"), \
     INIT_STR(utf_8, "utf-8"), \
@@ -1761,6 +1763,7 @@ extern "C" {
     INIT_ID(fullerror), \
     INIT_ID(func), \
     INIT_ID(future), \
+    INIT_ID(gc), \
     INIT_ID(generation), \
     INIT_ID(get), \
     INIT_ID(get_debug), \
@@ -1904,6 +1907,7 @@ extern "C" {
     INIT_ID(name_from), \
     INIT_ID(namespace_separator), \
     INIT_ID(namespaces), \
+    INIT_ID(native), \
     INIT_ID(ndigits), \
     INIT_ID(nested), \
     INIT_ID(new_file_name), \

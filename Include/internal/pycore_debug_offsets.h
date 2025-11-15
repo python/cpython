@@ -210,6 +210,7 @@ typedef struct _Py_DebugOffsets {
     struct _gc {
         uint64_t size;
         uint64_t collecting;
+        uint64_t frame;
     } gc;
 
     // Generator object offset;
@@ -351,6 +352,7 @@ typedef struct _Py_DebugOffsets {
     .gc = { \
         .size = sizeof(struct _gc_runtime_state), \
         .collecting = offsetof(struct _gc_runtime_state, collecting), \
+        .frame = offsetof(struct _gc_runtime_state, frame), \
     }, \
     .gen_object = { \
         .size = sizeof(PyGenObject), \
