@@ -449,6 +449,12 @@ class CodeTest(unittest.TestCase):
             if not value:
                 return None
             ...
+        def spam_while1():
+            while True:
+                pass
+        def spam_while2():
+            while True:
+                return None
         lambda1 = (lambda: None)
         for func in [
             spam1,
@@ -456,6 +462,8 @@ class CodeTest(unittest.TestCase):
             spam3,
             spam4,
             spam5,
+            spam_while1,
+            spam_while2,
             lambda1,
         ]:
             with self.subTest(func):
@@ -474,12 +482,24 @@ class CodeTest(unittest.TestCase):
             if value:
                 return True
             return None
+        def spam_while3():
+            i = 0
+            while True:
+                if i > 5:
+                    return i
+                else:
+                    i += 1
+        def spam_while4():
+            while True:
+                return True
         lambda2 = (lambda: True)
         for func in [
             spam6,
             spam7,
             spam8,
             spam9,
+            spam_while3,
+            spam_while4,
             lambda2,
         ]:
             with self.subTest(func):
