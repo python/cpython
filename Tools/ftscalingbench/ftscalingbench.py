@@ -202,7 +202,7 @@ def method_caller():
     obj = MyClass()
     for i in range(1000 * WORK_SCALE):
         mc(obj)
-        
+
 @dataclass
 class MyDataClass:
     x: int
