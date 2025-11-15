@@ -757,6 +757,7 @@ locale_encoding_alias = {
 for k, v in sorted(locale_encoding_alias.items()):
     k = k.replace('_', '')
     locale_encoding_alias.setdefault(k, v)
+locale_encoding_alias = frozendict(locale_encoding_alias)
 del k, v
 
 #
@@ -909,7 +910,7 @@ del k, v
 #    removed 'el_gr@euro'
 #    removed 'uz_uz@cyrillic'
 
-locale_alias = {
+locale_alias = frozendict({
     'a3':                                   'az_AZ.KOI8-C',
     'a3_az':                                'az_AZ.KOI8-C',
     'a3_az.koic':                           'az_AZ.KOI8-C',
@@ -1509,7 +1510,7 @@ locale_alias = {
     'zh_tw.euctw':                          'zh_TW.eucTW',
     'zu':                                   'zu_ZA.ISO8859-1',
     'zu_za':                                'zu_ZA.ISO8859-1',
-}
+})
 
 #
 # This maps Windows language identifiers to locale strings.
@@ -1525,7 +1526,7 @@ locale_alias = {
 # locale code.
 #
 
-windows_locale = {
+windows_locale = frozendict({
     0x0436: "af_ZA", # Afrikaans
     0x041c: "sq_AL", # Albanian
     0x0484: "gsw_FR",# Alsatian - France
@@ -1736,7 +1737,7 @@ windows_locale = {
     0x0478: "ii_CN", # Yi - PRC
     0x046a: "yo_NG", # Yoruba - Nigeria
     0x0435: "zu_ZA", # Zulu
-}
+})
 
 def _print_locale():
 

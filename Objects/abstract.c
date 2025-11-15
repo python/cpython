@@ -208,7 +208,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 int
 PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
 {
-    if (PyDict_CheckExact(obj)) {
+    if (PyAnyDict_CheckExact(obj)) {
         return PyDict_GetItemRef(obj, key, result);
     }
 
@@ -1672,7 +1672,7 @@ PyNumber_ToBase(PyObject *n, int base)
 int
 PySequence_Check(PyObject *s)
 {
-    if (PyDict_Check(s))
+    if (PyAnyDict_Check(s))
         return 0;
     return Py_TYPE(s)->tp_as_sequence &&
         Py_TYPE(s)->tp_as_sequence->sq_item != NULL;
@@ -2454,7 +2454,7 @@ PyMapping_Keys(PyObject *o)
     if (o == NULL) {
         return null_error();
     }
-    if (PyDict_CheckExact(o)) {
+    if (PyAnyDict_CheckExact(o)) {
         return PyDict_Keys(o);
     }
     return method_output_as_list(o, &_Py_ID(keys));
@@ -2466,7 +2466,7 @@ PyMapping_Items(PyObject *o)
     if (o == NULL) {
         return null_error();
     }
-    if (PyDict_CheckExact(o)) {
+    if (PyAnyDict_CheckExact(o)) {
         return PyDict_Items(o);
     }
     return method_output_as_list(o, &_Py_ID(items));
@@ -2478,7 +2478,7 @@ PyMapping_Values(PyObject *o)
     if (o == NULL) {
         return null_error();
     }
-    if (PyDict_CheckExact(o)) {
+    if (PyAnyDict_CheckExact(o)) {
         return PyDict_Values(o);
     }
     return method_output_as_list(o, &_Py_ID(values));

@@ -269,14 +269,15 @@ N_TOKENS = %d
 # Special definitions for cooperation with parser
 NT_OFFSET = %d
 
-tok_name = {value: name
-            for name, value in globals().items()
-            if isinstance(value, int) and not name.startswith('_')}
+tok_name = frozendict({
+    value: name
+    for name, value in globals().items()
+    if isinstance(value, int) and not name.startswith('_')})
 __all__.extend(tok_name.values())
 
-EXACT_TOKEN_TYPES = {
+EXACT_TOKEN_TYPES = frozendict({
 %s
-}
+})
 
 def ISTERMINAL(x: int) -> bool:
     return x < NT_OFFSET

@@ -1035,6 +1035,11 @@ pydict = StackObject(
     obtype=dict,
     doc="A Python dict object.")
 
+pyfrozendict = StackObject(
+    name="frozendict",
+    obtype=frozendict,
+    doc="A Python frozendict object.")
+
 pyset = StackObject(
     name="set",
     obtype=set,
@@ -1383,6 +1388,23 @@ opcodes = [
       stack_after=[pybuffer],
       proto=5,
       doc="Make an out-of-band buffer object read-only."),
+
+    I(name='FROZENDICT',
+      code='\x99',
+      arg=None,
+      stack_before=[markobject, stackslice],
+      stack_after=[pyfrozendict],
+      proto=5,
+      doc="""Build a frozendict out of the topmost stack slice, after markobject.
+
+      All the stack entries following the topmost markobject are placed into
+      a single Python dict, which single dict object replaces all of the
+      stack from the topmost markobject onward.  The stack slice alternates
+      key, value, key, value, ....  For example,
+
+      Stack before: ... markobject 1 2 3 'abc'
+      Stack after:  ... {1: 2, 3: 'abc'}
+      """),
 
     # Ways to spell None.
 

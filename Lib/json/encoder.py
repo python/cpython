@@ -30,6 +30,9 @@ ESCAPE_DCT = {
 for i in range(0x20):
     ESCAPE_DCT.setdefault(chr(i), '\\u{0:04x}'.format(i))
     #ESCAPE_DCT.setdefault(chr(i), '\\u%04x' % (i,))
+
+# freeze the dict to prevent accidental modifications
+ESCAPE_DCT = frozendict(ESCAPE_DCT)
 del i
 
 INFINITY = float('inf')
@@ -79,7 +82,7 @@ class JSONEncoder(object):
     +-------------------+---------------+
     | Python            | JSON          |
     +===================+===============+
-    | dict              | object        |
+    | dict, frozendict  | object        |
     +-------------------+---------------+
     | list, tuple       | array         |
     +-------------------+---------------+
@@ -267,6 +270,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         ## HACK: hand-optimized bytecode; turn globals into locals
         ValueError=ValueError,
         dict=dict,
+        frozendict=frozendict,
         float=float,
         id=id,
         int=int,
@@ -319,7 +323,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     yield buf
                     if isinstance(value, (list, tuple)):
                         chunks = _iterencode_list(value, _current_indent_level)
-                    elif isinstance(value, dict):
+                    elif isinstance(value, (dict, frozendict)):
                         chunks = _iterencode_dict(value, _current_indent_level)
                     else:
                         chunks = _iterencode(value, _current_indent_level)
@@ -406,7 +410,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 else:
                     if isinstance(value, (list, tuple)):
                         chunks = _iterencode_list(value, _current_indent_level)
-                    elif isinstance(value, dict):
+                    elif isinstance(value, (dict, frozendict)):
                         chunks = _iterencode_dict(value, _current_indent_level)
                     else:
                         chunks = _iterencode(value, _current_indent_level)
@@ -440,7 +444,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             yield _floatstr(o)
         elif isinstance(o, (list, tuple)):
             yield from _iterencode_list(o, _current_indent_level)
-        elif isinstance(o, dict):
+        elif isinstance(o, (dict, frozendict)):
             yield from _iterencode_dict(o, _current_indent_level)
         else:
             if markers is not None:

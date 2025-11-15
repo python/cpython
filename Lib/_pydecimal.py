@@ -331,10 +331,11 @@ _signals = [Clamped, DivisionByZero, Inexact, Overflow, Rounded,
             Underflow, InvalidOperation, Subnormal, FloatOperation]
 
 # Map conditions (per the spec) to signals
-_condition_map = {ConversionSyntax:InvalidOperation,
-                  DivisionImpossible:InvalidOperation,
-                  DivisionUndefined:InvalidOperation,
-                  InvalidContext:InvalidOperation}
+_condition_map = frozendict({
+    ConversionSyntax:InvalidOperation,
+    DivisionImpossible:InvalidOperation,
+    DivisionUndefined:InvalidOperation,
+    InvalidContext:InvalidOperation})
 
 # Valid rounding modes
 _rounding_modes = (ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_CEILING,

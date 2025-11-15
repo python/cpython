@@ -1135,7 +1135,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         locals = Py_NewRef(globals);
     }
 
-    if (!PyDict_Check(globals)) {
+    if (!PyAnyDict_Check(globals)) {
         PyErr_Format(PyExc_TypeError, "exec() globals must be a dict, not %.100s",
                      Py_TYPE(globals)->tp_name);
         goto error;
@@ -3479,6 +3479,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("enumerate",             &PyEnum_Type);
     SETBUILTIN("filter",                &PyFilter_Type);
     SETBUILTIN("float",                 &PyFloat_Type);
+    SETBUILTIN("frozendict",            &PyFrozenDict_Type);
     SETBUILTIN("frozenset",             &PyFrozenSet_Type);
     SETBUILTIN("property",              &PyProperty_Type);
     SETBUILTIN("int",                   &PyLong_Type);

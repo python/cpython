@@ -506,7 +506,7 @@ class MiscTestCase(unittest.TestCase):
             'StackObject',
             'pyint', 'pylong', 'pyinteger_or_bool', 'pybool', 'pyfloat',
             'pybytes_or_str', 'pystring', 'pybytes', 'pybytearray',
-            'pyunicode', 'pynone', 'pytuple', 'pylist', 'pydict',
+            'pyunicode', 'pynone', 'pytuple', 'pylist', 'pydict', 'pyfrozendict',
             'pyset', 'pyfrozenset', 'pybuffer', 'anyobject',
             'markobject', 'stackslice', 'OpcodeInfo', 'opcodes',
             'code2op',

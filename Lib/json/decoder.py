@@ -43,19 +43,19 @@ class JSONDecodeError(ValueError):
         return self.__class__, (self.msg, self.doc, self.pos)
 
 
-_CONSTANTS = {
+_CONSTANTS = frozendict({
     '-Infinity': NegInf,
     'Infinity': PosInf,
     'NaN': NaN,
-}
+})
 
 
 HEXDIGITS = re.compile(r'[0-9A-Fa-f]{4}', FLAGS)
 STRINGCHUNK = re.compile(r'(.*?)(["\\\x00-\x1f])', FLAGS)
-BACKSLASH = {
+BACKSLASH = frozendict({
     '"': '"', '\\': '\\', '/': '/',
     'b': '\b', 'f': '\f', 'n': '\n', 'r': '\r', 't': '\t',
-}
+})
 
 def _decode_uXXXX(s, pos, _m=HEXDIGITS.match):
     esc = _m(s, pos + 1)

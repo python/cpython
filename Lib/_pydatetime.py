@@ -164,13 +164,13 @@ def _build_struct_time(y, m, d, hh, mm, ss, dstflag):
     return _time.struct_time((y, m, d, hh, mm, ss, wday, dnum, dstflag))
 
 def _format_time(hh, mm, ss, us, timespec='auto'):
-    specs = {
-        'hours': '{:02d}',
-        'minutes': '{:02d}:{:02d}',
-        'seconds': '{:02d}:{:02d}:{:02d}',
-        'milliseconds': '{:02d}:{:02d}:{:02d}.{:03d}',
-        'microseconds': '{:02d}:{:02d}:{:02d}.{:06d}'
-    }
+    specs = frozendict(
+        hours= '{:02d}',
+        minutes= '{:02d}:{:02d}',
+        seconds= '{:02d}:{:02d}:{:02d}',
+        milliseconds= '{:02d}:{:02d}:{:02d}.{:03d}',
+        microseconds= '{:02d}:{:02d}:{:02d}.{:06d}'
+    )
 
     if timespec == 'auto':
         # Skip trailing microseconds when us==0.

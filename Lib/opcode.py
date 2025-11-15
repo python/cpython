@@ -45,78 +45,78 @@ _nb_ops = _opcode.get_nb_ops()
 
 hascompare = [opmap["COMPARE_OP"]]
 
-_cache_format = {
-    "LOAD_GLOBAL": {
+_cache_format = frozendict(
+    LOAD_GLOBAL= {
         "counter": 1,
         "index": 1,
         "module_keys_version": 1,
         "builtin_keys_version": 1,
     },
-    "BINARY_OP": {
+    BINARY_OP= {
         "counter": 1,
         "descr": 4,
     },
-    "UNPACK_SEQUENCE": {
+    UNPACK_SEQUENCE= {
         "counter": 1,
     },
-    "COMPARE_OP": {
+    COMPARE_OP= {
         "counter": 1,
     },
-    "CONTAINS_OP": {
+    CONTAINS_OP= {
         "counter": 1,
     },
-    "FOR_ITER": {
+    FOR_ITER= {
         "counter": 1,
     },
-    "LOAD_SUPER_ATTR": {
+    LOAD_SUPER_ATTR= {
         "counter": 1,
     },
-    "LOAD_ATTR": {
+    LOAD_ATTR= {
         "counter": 1,
         "version": 2,
         "keys_version": 2,
         "descr": 4,
     },
-    "STORE_ATTR": {
+    STORE_ATTR= {
         "counter": 1,
         "version": 2,
         "index": 1,
     },
-    "CALL": {
+    CALL= {
         "counter": 1,
         "func_version": 2,
     },
-    "CALL_KW": {
+    CALL_KW= {
         "counter": 1,
         "func_version": 2,
     },
-    "STORE_SUBSCR": {
+    STORE_SUBSCR= {
         "counter": 1,
     },
-    "SEND": {
+    SEND= {
         "counter": 1,
     },
-    "JUMP_BACKWARD": {
+    JUMP_BACKWARD= {
         "counter": 1,
     },
-    "TO_BOOL": {
+    TO_BOOL= {
         "counter": 1,
         "version": 2,
     },
-    "POP_JUMP_IF_TRUE": {
+    POP_JUMP_IF_TRUE= {
         "counter": 1,
     },
-    "POP_JUMP_IF_FALSE": {
+    POP_JUMP_IF_FALSE= {
         "counter": 1,
     },
-    "POP_JUMP_IF_NONE": {
+    POP_JUMP_IF_NONE= {
         "counter": 1,
     },
-    "POP_JUMP_IF_NOT_NONE": {
+    POP_JUMP_IF_NOT_NONE= {
         "counter": 1,
     },
-}
+)
 
-_inline_cache_entries = {
+_inline_cache_entries = frozendict({
     name : sum(value.values()) for (name, value) in _cache_format.items()
-}
+})

@@ -957,7 +957,8 @@ def _hash_exception(cls, fields, func_builder):
 #                |      |      |      |        +-------  action
 #                |      |      |      |        |
 #                v      v      v      v        v
-_hash_action = {(False, False, False, False): None,
+_hash_action = frozendict(
+               {(False, False, False, False): None,
                 (False, False, False, True ): None,
                 (False, False, True,  False): None,
                 (False, False, True,  True ): None,
@@ -973,7 +974,7 @@ _hash_action = {(False, False, False, False): None,
                 (True,  True,  False, True ): _hash_exception,
                 (True,  True,  True,  False): _hash_add,
                 (True,  True,  True,  True ): _hash_exception,
-                }
+                })
 # See https://bugs.python.org/issue32929#msg312829 for an if-statement
 # version of this table.
 

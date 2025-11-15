@@ -150,7 +150,8 @@ _IntEnum._convert_(
     source=_ssl)
 
 PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_SSLv23 = _SSLMethod.PROTOCOL_TLS
-_PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()}
+_PROTOCOL_NAMES = frozendict({
+    value: name for name, value in _SSLMethod.__members__.items()})
 
 _SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
 

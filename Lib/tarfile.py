@@ -133,14 +133,14 @@ PAX_NAME_FIELDS = {"path", "linkpath", "uname", "gname"}
 
 # Fields in a pax header that are numbers, all other fields
 # are treated as strings.
-PAX_NUMBER_FIELDS = {
+PAX_NUMBER_FIELDS = frozendict({
     "atime": float,
     "ctime": float,
     "mtime": float,
     "uid": int,
     "gid": int,
     "size": int
-}
+})
 
 #---------------------------------------------------------
 # initialization
@@ -860,11 +860,11 @@ def data_filter(member, dest_path):
         return member.replace(**new_attrs, deep=False)
     return member
 
-_NAMED_FILTERS = {
+_NAMED_FILTERS = frozendict({
     "fully_trusted": fully_trusted_filter,
     "tar": tar_filter,
     "data": data_filter,
-}
+})
 
 #------------------
 # Exported Classes
