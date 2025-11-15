@@ -23,6 +23,7 @@ from __future__ import annotations
 import _imp
 import argparse
 import enum
+import json
 import logging
 import os
 import pathlib
@@ -114,6 +115,13 @@ parser.add_argument(
     "--list-module-names",
     action="store_true",
     help="Print a list of module names to stdout and exit",
+)
+
+parser.add_argument(
+    "--generate-stdlib-info",
+    nargs="?",
+    const=True,
+    help="Generate file with stdlib module info, with optional config file",
 )
 
 
@@ -280,6 +288,38 @@ class ModuleChecker:
         if all:
             names.update(WINDOWS_MODULES)
         return names
+
+    def generate_stdlib_info(self, config_path: str | None = None) -> None:
+        config_messages = {}
+        if config_path:
+            try:
+                with open(config_path, encoding='utf-8') as f:
+                    config_messages = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                logger.error("Failed to load distributor config %s: %s", config_path, e)
+
+        messages = {}
+        for name in WINDOWS_MODULES:
+            messages[name] = f"Unsupported platform for Windows-only standard library module {name!r}"
+
+        for modinfo in self.modules:
+            if modinfo.state in (ModuleState.DISABLED, ModuleState.DISABLED_SETUP):
+                messages[modinfo.name] = f"Standard library module disabled during build {modinfo.name!r} was not found"
+            elif modinfo.state == ModuleState.NA:
+                messages[modinfo.name] = f"Unsupported platform for standard library module {modinfo.name!r}"
+
+        messages.update(config_messages)
+
+        content = f'''\
+# Standard library information used by the traceback module for more informative
+# ModuleNotFound error messages.
+
+MISSING_STDLIB_MODULE_MESSAGES = {messages!r}
+'''
+
+        output_path = self.builddir / "_stdlib_modules_info.py"
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(content)
 
     def get_builddir(self) -> pathlib.Path:
         try:
@@ -499,6 +539,10 @@ def main() -> None:
         names = checker.list_module_names(all=True)
         for name in sorted(names):
             print(name)
+    elif args.generate_stdlib_info:
+        checker.check()
+        config_path = None if args.generate_stdlib_info is True else args.generate_stdlib_info
+        checker.generate_stdlib_info(config_path)
     else:
         checker.check()
         checker.summary(verbose=args.verbose)
