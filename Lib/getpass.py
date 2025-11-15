@@ -73,15 +73,27 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
                 old = termios.tcgetattr(fd)     # a copy to save
                 new = old[:]
                 new[3] &= ~termios.ECHO  # 3 == 'lflags'
+                # Extract control characters before changing terminal mode
+                term_ctrl_chars = None
                 if echo_char:
                     new[3] &= ~termios.ICANON
+                    # Get control characters from terminal settings
+                    # Index 6 is cc (control characters array)
+                    cc = old[6]
+                    term_ctrl_chars = {
+                        'ERASE': cc[termios.VERASE] if termios.VERASE < len(cc) else b'\x7f',
+                        'KILL': cc[termios.VKILL] if termios.VKILL < len(cc) else b'\x15',
+                        'WERASE': cc[termios.VWERASE] if termios.VWERASE < len(cc) else b'\x17',
+                        'LNEXT': cc[termios.VLNEXT] if termios.VLNEXT < len(cc) else b'\x16',
+                    }
                 tcsetattr_flags = termios.TCSAFLUSH
                 if hasattr(termios, 'TCSASOFT'):
                     tcsetattr_flags |= termios.TCSASOFT
                 try:
                     termios.tcsetattr(fd, tcsetattr_flags, new)
                     passwd = _raw_input(prompt, stream, input=input,
-                                        echo_char=echo_char)
+                                        echo_char=echo_char,
+                                        term_ctrl_chars=term_ctrl_chars)
 
                 finally:
                     termios.tcsetattr(fd, tcsetattr_flags, old)
@@ -159,7 +171,8 @@ def _check_echo_char(echo_char):
                          f"character, got: {echo_char!r}")
 
 
-def _raw_input(prompt="", stream=None, input=None, echo_char=None):
+def _raw_input(prompt="", stream=None, input=None, echo_char=None,
+               term_ctrl_chars=None):
     # This doesn't save the string in the GNU readline history.
     if not stream:
         stream = sys.stderr
@@ -177,7 +190,8 @@ def _raw_input(prompt="", stream=None, input=None, echo_char=None):
         stream.flush()
     # NOTE: The Python C API calls flockfile() (and unlock) during readline.
     if echo_char:
-        return _readline_with_echo_char(stream, input, echo_char)
+        return _readline_with_echo_char(stream, input, echo_char,
+                                        term_ctrl_chars)
     line = input.readline()
     if not line:
         raise EOFError
@@ -186,20 +200,33 @@ def _raw_input(prompt="", stream=None, input=None, echo_char=None):
     return line
 
 
-def _readline_with_echo_char(stream, input, echo_char):
+def _readline_with_echo_char(stream, input, echo_char, term_ctrl_chars=None):
     passwd = ""
     eof_pressed = False
+    literal_next = False  # For LNEXT (Ctrl+V)
+
+    # Convert terminal control characters to strings for comparison
+    # Default to standard POSIX values if not provided
+    if term_ctrl_chars:
+        # Control chars from termios are bytes, convert to str
+        erase_char = term_ctrl_chars['ERASE'].decode('latin-1') if isinstance(term_ctrl_chars['ERASE'], bytes) else term_ctrl_chars['ERASE']
+        kill_char = term_ctrl_chars['KILL'].decode('latin-1') if isinstance(term_ctrl_chars['KILL'], bytes) else term_ctrl_chars['KILL']
+        werase_char = term_ctrl_chars['WERASE'].decode('latin-1') if isinstance(term_ctrl_chars['WERASE'], bytes) else term_ctrl_chars['WERASE']
+        lnext_char = term_ctrl_chars['LNEXT'].decode('latin-1') if isinstance(term_ctrl_chars['LNEXT'], bytes) else term_ctrl_chars['LNEXT']
+    else:
+        # Standard POSIX defaults
+        erase_char = '\x7f'  # DEL
+        kill_char = '\x15'   # Ctrl+U
+        werase_char = '\x17' # Ctrl+W
+        lnext_char = '\x16'  # Ctrl+V
+
     while True:
         char = input.read(1)
+
         if char == '\n' or char == '\r':
             break
         elif char == '\x03':
             raise KeyboardInterrupt
-        elif char == '\x7f' or char == '\b':
-            if passwd:
-                stream.write("\b \b")
-                stream.flush()
-            passwd = passwd[:-1]
         elif char == '\x04':
             if eof_pressed:
                 break
@@ -207,6 +234,44 @@ def _readline_with_echo_char(stream, input, echo_char):
                 eof_pressed = True
         elif char == '\x00':
             continue
+        # Handle LNEXT (Ctrl+V) - insert next character literally
+        elif literal_next:
+            passwd += char
+            stream.write(echo_char)
+            stream.flush()
+            literal_next = False
+            eof_pressed = False
+        elif char == lnext_char:
+            literal_next = True
+            eof_pressed = False
+        # Handle ERASE (Backspace/DEL) - delete one character
+        elif char == erase_char or char == '\b':
+            if passwd:
+                stream.write("\b \b")
+                stream.flush()
+                passwd = passwd[:-1]
+            eof_pressed = False
+        # Handle KILL (Ctrl+U) - erase entire line
+        elif char == kill_char:
+            # Clear all echoed characters
+            while passwd:
+                stream.write("\b \b")
+                passwd = passwd[:-1]
+            stream.flush()
+            eof_pressed = False
+        # Handle WERASE (Ctrl+W) - erase previous word
+        elif char == werase_char:
+            # Delete backwards until we find a space or reach the beginning
+            # First, skip any trailing spaces
+            while passwd and passwd[-1] == ' ':
+                stream.write("\b \b")
+                passwd = passwd[:-1]
+            # Then delete the word
+            while passwd and passwd[-1] != ' ':
+                stream.write("\b \b")
+                passwd = passwd[:-1]
+            stream.flush()
+            eof_pressed = False
         else:
             passwd += char
             stream.write(echo_char)
