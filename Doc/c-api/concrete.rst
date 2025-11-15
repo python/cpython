@@ -125,3 +125,4 @@ C API for extension modules
 
    curses.rst
    datetime.rst
+   expat.rst
