@@ -1085,6 +1085,8 @@ Drawing state
 
    :param width: a positive number
 
+   :raises TurtleGraphicsError: If *width* is less than zero.
+
    Set the line thickness to *width* or return it.  If resizemode is set to
    "auto" and turtleshape is a polygon, that polygon is drawn with the same line
    thickness.  If no argument is given, the current pensize is returned.
@@ -1095,6 +1097,9 @@ Drawing state
       >>> turtle.pensize()
       1
       >>> turtle.pensize(10)   # from here on lines of width 10 are drawn
+
+   .. versionchanged:: next
+      Raise :exc:`TurtleGraphicsError` if *width* is less than zero.
 
 
 .. function:: pen(pen=None, **pendict)
