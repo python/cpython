@@ -35,17 +35,27 @@ if not supports_trampoline_profiling():
 
 
 class TestPerfTrampoline(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.perf_files = set(pathlib.Path("/tmp/").glob("perf-*.map"))
+    #
+    # We've removed the buggy setUp and tearDown methods.
+    # They caused race conditions by scanning /tmp for `perf-*.map` files.
+    # Instead, we now use `addCleanup()` inside each test to delete
+    # the *specific* files we know that test created.
+    #
 
-    def tearDown(self) -> None:
-        super().tearDown()
-        files_to_delete = (
-            set(pathlib.Path("/tmp/").glob("perf-*.map")) - self.perf_files
-        )
-        for file in files_to_delete:
-            file.unlink()
+    def _cleanup_perf_map(self, pid):
+        """
+        Helper to safely delete a specific perf map file.
+        We register this with addCleanup() to make sure it runs
+        even if the test assertions fail.
+        """
+        perf_map = pathlib.Path(f"/tmp/perf-{pid}.map")
+        try:
+            if perf_map.exists():
+                perf_map.unlink()
+        except OSError:
+            # Surpress errors, e.g., file already removed or
+            # another kind of race condition.
+            pass
 
     @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works(self):
@@ -64,13 +74,21 @@ class TestPerfTrampoline(unittest.TestCase):
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
             env = {**os.environ, "PYTHON_JIT": "0"}
-            with subprocess.Popen(
+
+            # Start the subprocess...
+            process = subprocess.Popen(
                 [sys.executable, "-Xperf", script],
                 text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 env=env,
-            ) as process:
+            )
+
+            # ...and immediately register a cleanup task for its PID.
+            # This is guaranteed to run after the test.
+            self.addCleanup(self._cleanup_perf_map, process.pid)
+
+            with process:
                 stdout, stderr = process.communicate()
 
         self.assertEqual(stderr, "")
@@ -116,9 +134,11 @@ class TestPerfTrampoline(unittest.TestCase):
                 def foo():
                     pid = os.fork()
                     if pid == 0:
+                        # We're in the child process
                         print(os.getpid())
                         baz_fork()
                     else:
+                        # We're in the parent process
                         _, status = os.waitpid(-1, 0)
                         sys.exit(status)
 
@@ -140,11 +160,19 @@ class TestPerfTrampoline(unittest.TestCase):
                 stdout=subprocess.PIPE,
                 env=env,
             ) as process:
+                # Register cleanup for the PARENT process
+                self.addCleanup(self._cleanup_perf_map, process.pid)
                 stdout, stderr = process.communicate()
 
         self.assertEqual(process.returncode, 0)
         self.assertEqual(stderr, "")
+
+        # The child process printed its PID to stdout
         child_pid = int(stdout.strip())
+
+        # Register cleanup for the CHILD process
+        self.addCleanup(self._cleanup_perf_map, child_pid)
+
         perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
         perf_child_file = pathlib.Path(f"/tmp/perf-{child_pid}.map")
         self.assertTrue(perf_file.exists())
@@ -199,6 +227,8 @@ class TestPerfTrampoline(unittest.TestCase):
                     stdout=subprocess.PIPE,
                     env=env,
                 ) as process:
+                    # Register cleanup inside the loop for each process created
+                    self.addCleanup(self._cleanup_perf_map, process.pid)
                     stdout, stderr = process.communicate()
 
             self.assertEqual(stderr, "")
@@ -308,6 +338,10 @@ def perf_command_works():
 
 
 def run_perf(cwd, *args, use_jit=False, **env_vars):
+    # This helper function runs perf and stores its output files *inside*
+    # the 'cwd' (which is a temp_dir()). This is good! It means
+    # those files (`perf_output.perf`, `jit_output.dump`)
+    # are automatically cleaned up when the temp_dir() context manager exits.
     env = os.environ.copy()
     if env_vars:
         env.update(env_vars)
@@ -434,22 +468,29 @@ class TestPerfProfilerMixin:
     "Unwinding is unreliable with frame pointers",
 )
 class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
+    #
+    # Just like in TestPerfTrampoline, we remove the racy
+    # setUp/tearDown methods.
+    #
+
+    def _cleanup_perf_map(self, pid):
+        """
+        Helper to safely delete a specific perf map file.
+        We need this for test_pre_fork_compile.
+        """
+        perf_map = pathlib.Path(f"/tmp/perf-{pid}.map")
+        try:
+            if perf_map.exists():
+                perf_map.unlink()
+        except OSError:
+            pass
+
     def run_perf(self, script_dir, script, activate_trampoline=True):
+        # The run_perf helper handles its own temp files inside script_dir
+        # so we don't need to add cleanups for it here.
         if activate_trampoline:
             return run_perf(script_dir, sys.executable, "-Xperf", script)
         return run_perf(script_dir, sys.executable, script)
-
-    def setUp(self):
-        super().setUp()
-        self.perf_files = set(pathlib.Path("/tmp/").glob("perf-*.map"))
-
-    def tearDown(self) -> None:
-        super().tearDown()
-        files_to_delete = (
-            set(pathlib.Path("/tmp/").glob("perf-*.map")) - self.perf_files
-        )
-        for file in files_to_delete:
-            file.unlink()
 
     def test_pre_fork_compile(self):
         code = """if 1:
@@ -499,11 +540,17 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
                 stdout=subprocess.PIPE,
                 env=env,
             ) as process:
+                # This test also creates map files, so we clean them up
+                # just like in TestPerfTrampoline.
+                self.addCleanup(self._cleanup_perf_map, process.pid)
                 stdout, stderr = process.communicate()
 
         self.assertEqual(process.returncode, 0)
         self.assertNotIn("Error:", stderr)
+
         child_pid = int(stdout.strip())
+        self.addCleanup(self._cleanup_perf_map, child_pid)
+
         perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
         perf_child_file = pathlib.Path(f"/tmp/perf-{child_pid}.map")
         self.assertTrue(perf_file.exists())
@@ -550,6 +597,14 @@ def _is_perf_version_at_least(major, minor):
     _is_perf_version_at_least(6, 6), "perf command may not work due to a perf bug"
 )
 class TestPerfProfilerWithDwarf(unittest.TestCase, TestPerfProfilerMixin):
+    #
+    # We've removed the racy setUp/tearDown methods from here, too.
+    # The `run_perf` function (with use_jit=True) already creates its
+    # .dump and .so files inside the `temp_dir()`, which gets
+    # cleaned up automatically. The old setUp/tearDown were
+    # trying to clean up /tmp, which was buggy and unreliable.
+    #
+
     def run_perf(self, script_dir, script, activate_trampoline=True):
         if activate_trampoline:
             return run_perf(
@@ -557,18 +612,9 @@ class TestPerfProfilerWithDwarf(unittest.TestCase, TestPerfProfilerMixin):
             )
         return run_perf(script_dir, sys.executable, script, use_jit=True)
 
-    def setUp(self):
-        super().setUp()
-        self.perf_files = set(pathlib.Path("/tmp/").glob("jit*.dump"))
-        self.perf_files |= set(pathlib.Path("/tmp/").glob("jitted-*.so"))
-
-    def tearDown(self) -> None:
-        super().tearDown()
-        files_to_delete = set(pathlib.Path("/tmp/").glob("jit*.dump"))
-        files_to_delete |= set(pathlib.Path("/tmp/").glob("jitted-*.so"))
-        files_to_delete = files_to_delete - self.perf_files
-        for file in files_to_delete:
-            file.unlink()
+    #
+    # No setUp or tearDown needed!
+    #
 
 
 if __name__ == "__main__":
