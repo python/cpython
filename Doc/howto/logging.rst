@@ -190,7 +190,7 @@ following example::
    numeric_level = getattr(logging, loglevel.upper(), None)
    if not isinstance(numeric_level, int):
        raise ValueError('Invalid log level: %s' % loglevel)
-   logging.basicConfig(level=numeric_level, ...)
+   logging.basicConfig(..., level=numeric_level)
 
 The call to :func:`basicConfig` should come *before* any calls to a logger's
 methods such as :meth:`~Logger.debug`, :meth:`~Logger.info`, etc. Otherwise,
