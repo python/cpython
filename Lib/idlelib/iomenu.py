@@ -262,22 +262,8 @@ class IOBinding:
                 self.text.focus_set()
                 return "break"
 
-        # Save cursor position
-        insert_pos = self.text.index("insert")
-        yview_pos = self.text.yview()
-
         # Reload the file
-        if self.loadfile(self.filename):
-            # Try to restore cursor position if the file still has that line
-            try:
-                self.text.mark_set("insert", insert_pos)
-                self.text.see("insert")
-                # Restore vertical scroll position
-                self.text.yview_moveto(yview_pos[0])
-            except Exception:
-                # If position doesn't exist anymore, go to top
-                self.text.mark_set("insert", "1.0")
-                self.text.see("insert")
+        self.loadfile(self.filename)
 
         self.text.focus_set()
         return "break"
