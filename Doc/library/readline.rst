@@ -394,6 +394,7 @@ support history save/restore. ::
        def save_history(self, histfile):
            readline.set_history_length(1000)
            readline.write_history_file(histfile)
+
 .. note::
 
    The new :term:`REPL` introduced in version 3.13 doesn't support readline.
