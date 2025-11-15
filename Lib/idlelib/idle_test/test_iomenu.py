@@ -2,6 +2,8 @@
 
 from idlelib import iomenu
 import builtins
+import os
+import tempfile
 import unittest
 from test.support import requires
 from tkinter import Tk
@@ -60,9 +62,6 @@ class IOBindingTest(unittest.TestCase):
 
     def test_reload_no_file(self):
         # Test reload when no file is associated
-        import tempfile
-        import os
-        from unittest.mock import Mock
 
         io = self.io
         # Ensure no filename is set
@@ -85,8 +84,6 @@ class IOBindingTest(unittest.TestCase):
 
     def test_reload_with_file(self):
         # Test reload with an actual file
-        import tempfile
-        import os
 
         io = self.io
         text = io.editwin.text
@@ -114,8 +111,6 @@ class IOBindingTest(unittest.TestCase):
 
     def test_reload_with_unsaved_changes_cancel(self):
         # Test reload with unsaved changes and user cancels
-        import tempfile
-        import os
 
         io = self.io
         text = io.editwin.text
@@ -149,8 +144,6 @@ class IOBindingTest(unittest.TestCase):
 
     def test_reload_with_unsaved_changes_confirm(self):
         # Test reload with unsaved changes and user confirms
-        import tempfile
-        import os
 
         io = self.io
         text = io.editwin.text
