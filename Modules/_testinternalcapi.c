@@ -35,6 +35,7 @@
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_structs.h" // _PY_NSMALLPOSINTS
+#include "pycore_stackref.h"      // PyStackRef_FunctionCheck()
 #include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -2446,7 +2447,6 @@ finally:
     return result;
 }
 
-
 static void
 check_threadstate_set_stack_protection(PyThreadState *tstate,
                                        void *start, size_t size)
@@ -2495,6 +2495,86 @@ test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
     assert(ts->c_stack_init_top == init_top);
 
     Py_RETURN_NONE;
+}
+
+static PyObject *
+stackref_from_object_new(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
+    PyObject *obj = _PyStackRef_AsTuple(ref, op);
+    PyStackRef_CLOSE(ref);
+    return obj;
+}
+
+static PyObject *
+stackref_from_object_steal_with_incref(PyObject *self, PyObject *op)
+{
+    // The next two lines are equivalent to PyStackRef_FromPyObjectNew.
+    Py_INCREF(op);
+    _PyStackRef ref = PyStackRef_FromPyObjectSteal(op);
+    PyObject *obj = _PyStackRef_AsTuple(ref, op);
+    // The next two lines are equivalent to PyStackRef_CLOSE.
+    PyObject *op2 = PyStackRef_AsPyObjectSteal(ref);
+    Py_DECREF(op2);
+    return obj;
+}
+
+static PyObject *
+stackref_make_heap_safe(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
+    // For no-GIL release build ref2 is equal to ref.
+    _PyStackRef ref2 = PyStackRef_MakeHeapSafe(ref);
+    PyObject *obj = _PyStackRef_AsTuple(ref2, op);
+    PyStackRef_CLOSE(ref2);
+    return obj;
+}
+
+static PyObject *
+stackref_make_heap_safe_with_borrow(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectNew(op);
+    _PyStackRef ref2 = PyStackRef_Borrow(ref);
+    _PyStackRef ref3 = PyStackRef_MakeHeapSafe(ref2);
+    // We can close ref, since ref3 is heap safe.
+    PyStackRef_CLOSE(ref);
+    PyObject *obj = _PyStackRef_AsTuple(ref3, op);
+    PyStackRef_CLOSE(ref3);
+    return obj;
+}
+
+static PyObject *
+stackref_strong_reference(PyObject *self, PyObject *op)
+{
+    // The next two lines are equivalent to op2 = Py_NewRef(op).
+    _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
+    PyObject *op2 = PyStackRef_AsPyObjectSteal(ref);
+    _PyStackRef ref2 = PyStackRef_FromPyObjectSteal(op2);
+    PyObject *obj = _PyStackRef_AsTuple(ref2, op);
+    PyStackRef_CLOSE(ref2);
+    return obj;
+}
+
+static PyObject *
+stackref_from_object_borrow(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
+    PyObject *obj = _PyStackRef_AsTuple(ref, op);
+    PyStackRef_CLOSE(ref);
+    return obj;
+}
+
+static PyObject *
+stackref_dup_borrowed_with_close(PyObject *self, PyObject *op)
+{
+    _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
+    // For no-GIL release build ref2 is equal to ref.
+    _PyStackRef ref2 = PyStackRef_DUP(ref);
+    // For release build closing borrowed ref is no-op.
+    PyStackRef_XCLOSE(ref);
+    PyObject *obj = _PyStackRef_AsTuple(ref2, op);
+    PyStackRef_XCLOSE(ref2);
+    return obj;
 }
 
 
@@ -2610,6 +2690,13 @@ static PyMethodDef module_functions[] = {
     {"module_get_gc_hooks", module_get_gc_hooks, METH_O},
     {"test_threadstate_set_stack_protection",
      test_threadstate_set_stack_protection, METH_NOARGS},
+    {"stackref_from_object_new", stackref_from_object_new, METH_O},
+    {"stackref_from_object_steal_with_incref", stackref_from_object_steal_with_incref, METH_O},
+    {"stackref_make_heap_safe", stackref_make_heap_safe, METH_O},
+    {"stackref_make_heap_safe_with_borrow", stackref_make_heap_safe_with_borrow, METH_O},
+    {"stackref_strong_reference", stackref_strong_reference, METH_O},
+    {"stackref_from_object_borrow", stackref_from_object_borrow, METH_O},
+    {"stackref_dup_borrowed_with_close", stackref_dup_borrowed_with_close, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
