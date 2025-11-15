@@ -1,4 +1,3 @@
 Add "Reload from Disk" menu item to IDLE's File menu. This allows users to
 easily reload a file from disk, discarding any unsaved changes in the editor.
-The feature is particularly useful when working with version control systems
-or when external tools modify files. Patch by Shamil Abdulaev.
+Patch by Shamil Abdulaev.
