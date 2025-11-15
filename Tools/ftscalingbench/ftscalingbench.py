@@ -61,11 +61,6 @@ def namedtuple():
         _ = Bar(x=1)
 
 @register_benchmark
-def namedtuple():
-    for i in range(1000 * WORK_SCALE):
-        _ = Foo(x=1)
-
-@register_benchmark
 def object_cfunction():
     accu = 0
     tab = [1] * 100
