@@ -37,6 +37,7 @@ from _pyrepl.readline import (
     ReadlineConfig,
     _ReadlineWrapper,
 )
+from _pyrepl.utils import disp_str
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
 try:
@@ -1911,3 +1912,19 @@ class TestPyReplCtrlD(TestCase):
         )
         reader, _ = handle_all_events(events)
         self.assertEqual("hello", "".join(reader.buffer))
+
+
+class TestDispStr(TestCase):
+    def test_disp_str_width_calculation(self):
+        test_cases = [
+            ("\tX", [8, 1]),                              # column 0 -> 8 spaces
+            ("X\t", [1, 7]),                              # column 1 -> 7 spaces
+            ("ABC\tX", [1, 1, 1, 5, 1]),                  # column 3 -> 5 spaces
+            ("XXXXXXX\t", [1, 1, 1, 1, 1, 1, 1, 1]),      # column 7 -> 1 space
+            ("XXXXXXXX\t", [1, 1, 1, 1, 1, 1, 1, 1, 8]),  # column 8 -> 8 spaces
+            ("中\tX", [2, 6, 1]),                         # wide char + tab
+        ]
+        for buffer, expected_widths in test_cases:
+            with self.subTest(buffer=repr(buffer)):
+                _, widths = disp_str(buffer, 0)
+                self.assertEqual(widths, expected_widths)
