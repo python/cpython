@@ -1,0 +1,1 @@
+Fix flaky test_profiling tests on i686 and s390x architectures by increasing slow_fibonacci call frequency from every 5th iteration to every 2nd iteration.
