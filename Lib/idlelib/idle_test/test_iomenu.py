@@ -1,8 +1,8 @@
 "Test , coverage 17%."
 
 from idlelib import iomenu
-import unittest
 import builtins
+import unittest
 from test.support import requires
 from tkinter import Tk
 from idlelib.editor import EditorWindow
