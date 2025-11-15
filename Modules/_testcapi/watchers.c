@@ -630,36 +630,33 @@ allocate_too_many_func_watchers(PyObject *self, PyObject *args)
 static int context_watcher_ids[NUM_CONTEXT_WATCHERS] = {-1, -1};
 static PyObject *context_switches[NUM_CONTEXT_WATCHERS];
 
-static int
+static void
 handle_context_watcher_event(int which_watcher, PyContextEvent event, PyObject *ctx) {
     if (event == Py_CONTEXT_SWITCHED) {
         PyList_Append(context_switches[which_watcher], ctx);
     }
     else {
-        return -1;
+        Py_UNREACHABLE();
     }
-    return 0;
 }
 
-static int
+static void
 first_context_watcher_callback(PyContextEvent event, PyObject *ctx) {
-    return handle_context_watcher_event(0, event, ctx);
+    handle_context_watcher_event(0, event, ctx);
 }
 
-static int
+static void
 second_context_watcher_callback(PyContextEvent event, PyObject *ctx) {
-    return handle_context_watcher_event(1, event, ctx);
+    handle_context_watcher_event(1, event, ctx);
 }
 
-static int
+static void
 noop_context_event_handler(PyContextEvent event, PyObject *ctx) {
-    return 0;
 }
 
-static int
+static void
 error_context_event_handler(PyContextEvent event, PyObject *ctx) {
     PyErr_SetString(PyExc_RuntimeError, "boom!");
-    return -1;
 }
 
 static PyObject *
