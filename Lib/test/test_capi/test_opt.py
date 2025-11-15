@@ -40,6 +40,17 @@ def get_first_executor(func):
             pass
     return None
 
+def get_all_executors(func):
+    code = func.__code__
+    co_code = code.co_code
+    executors = []
+    for i in range(0, len(co_code), 2):
+        try:
+            executors.append(_opcode.get_executor(code, i))
+        except ValueError:
+            pass
+    return executors
+
 
 def iter_opnames(ex):
     for item in ex:
@@ -2628,6 +2639,31 @@ class TestUopsOptimization(unittest.TestCase):
             g = gen()
             next(g)
         """ % _testinternalcapi.SPECIALIZATION_THRESHOLD))
+
+    def test_executor_side_exits_create_another_executor(self):
+        def f():
+            for x in range(TIER2_THRESHOLD + 3):
+                for y in range(TIER2_THRESHOLD + 3):
+                    z = x + y
+
+        f()
+        all_executors = get_all_executors(f)
+        # Inner loop warms up first.
+        # Outer loop warms up later, linking to the inner one.
+        # Therefore, we have at least two executors.
+        self.assertGreaterEqual(len(all_executors), 2)
+        for executor in all_executors:
+            opnames = list(get_opnames(executor))
+            # Assert all executors first terminator ends in
+            # _EXIT_TRACE or _JUMP_TO_TOP, not _DEOPT
+            for idx, op in enumerate(opnames):
+                if op == "_EXIT_TRACE" or op == "_JUMP_TO_TOP":
+                    break
+                elif op == "_DEOPT":
+                    self.fail(f"_DEOPT encountered first at executor"
+                              f" {executor} at offset {idx} rather"
+                              f" than expected _EXIT_TRACE")
+
 
 
 def global_identity(x):
