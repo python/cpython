@@ -32,6 +32,13 @@ extern PyObject* _PyUnicode_ResizeCompact(
     PyObject *unicode,
     Py_ssize_t length);
 extern PyObject* _PyUnicode_GetEmpty(void);
+extern PyObject* _PyUnicode_FromUCS1(const Py_UCS1* u, Py_ssize_t size);
+extern void _PyUnicode_FiniEncodings(struct _Py_unicode_fs_codec *fs_codec);
+extern PyObject* _PyUnicode_TranslateCharmap(
+    PyObject *input,
+    PyObject *mapping,
+    const char *errors);
+extern PyTypeObject _Py_EncodingMapType;
 
 
 /* Generic helper macro to convert characters of different types.
