@@ -1,0 +1,2 @@
+Change ``backoff counter`` to use powers of 4 instead of powers of 2. Patch
+by Mikhail Efimov.
