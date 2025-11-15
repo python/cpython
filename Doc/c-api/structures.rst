@@ -280,6 +280,8 @@ Implementing functions and methods
 
       Name of the method.
 
+      A ``NULL`` *ml_name* marks the end of a :c:type:`!PyMethodDef` array.
+
    .. c:member:: PyCFunction ml_meth
 
       Pointer to the C implementation.
