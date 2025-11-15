@@ -119,16 +119,12 @@ class IOBindingTest(unittest.TestCase):
         io.set_saved(False)
 
         # Mock askokcancel to return False (cancel)
-        orig_askokcancel = iomenu.messagebox.askokcancel
-        iomenu.messagebox.askokcancel = lambda *args, **kwargs: False
-
-        try:
+        with patch('idlelib.iomenu.messagebox.askokcancel', return_value=False) as mock_askokcancel:
             result = io.reload(None)
             self.assertEqual(result, "break")
             # Content should not change
             self.assertIn("# Unsaved change", text.get('1.0', 'end-1c'))
-        finally:
-            iomenu.messagebox.askokcancel = orig_askokcancel
+            mock_askokcancel.assert_called_once()
 
     def test_reload_with_unsaved_changes_confirm(self):
         # Test reload with unsaved changes and user confirms
@@ -149,16 +145,12 @@ class IOBindingTest(unittest.TestCase):
         io.set_saved(False)
 
         # Mock askokcancel to return True (confirm)
-        orig_askokcancel = iomenu.messagebox.askokcancel
-        iomenu.messagebox.askokcancel = lambda *args, **kwargs: True
-
-        try:
+        with patch('idlelib.iomenu.messagebox.askokcancel', return_value=True) as mock_askokcancel:
             result = io.reload(None)
             self.assertEqual(result, "break")
             # Content should be reverted to original
             self.assertEqual(text.get('1.0', 'end-1c'), "# Original content\n")
-        finally:
-            iomenu.messagebox.askokcancel = orig_askokcancel
+            mock_askokcancel.assert_called_once()
 
 
 def _extension_in_filetypes(extension):
