@@ -2847,6 +2847,27 @@ class FMATests(unittest.TestCase):
         )
 
 
+class MiscTests(unittest.TestCase):
+
+    def test_module_name(self):
+        # gh-140824: _math and _math_integer extensions are exported as math
+        # and math.integer names.
+        math_integer_names = {'comb', 'factorial', 'gcd', 'isqrt', 'lcm', 'perm'}
+        for name in dir(math):
+            if name.startswith('_'):
+                continue
+            obj = getattr(math, name)
+            if not hasattr(obj, '__module__'):
+                continue
+
+            if name in math_integer_names:
+                module = 'math.integer'
+            else:
+                module = 'math'
+            with self.subTest(name=name):
+                self.assertEqual(obj.__module__, module)
+
+
 def load_tests(loader, tests, pattern):
     from doctest import DocFileSuite
     tests.addTest(DocFileSuite(os.path.join("mathdata", "ieee754.txt")))
