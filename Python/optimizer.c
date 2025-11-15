@@ -1797,8 +1797,8 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 // Unlike _PyExecutor_InvalidateDependency, this is not for correctness but memory savings.
 // Thus there is no need to lock the runtime or traverse everything. We simply make a
 // best-effort attempt to clean things up.
-void
-_Py_Executors_InvalidateCold(PyThreadState *tstate)
+PyObject *
+_Py_Executors_CollectCold(PyThreadState *tstate)
 {
     /* Walk the list of executors */
     /* TO DO -- Use a tree to avoid traversing as many objects */
@@ -1813,8 +1813,8 @@ _Py_Executors_InvalidateCold(PyThreadState *tstate)
         _PyExecutorObject *next = exec->vm_data.links.next;
 
         if (!exec->vm_data.warm || !exec->vm_data.valid) {
+            FT_ATOMIC_STORE_UINT8(exec->vm_data.valid, 0);
             if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
-                FT_ATOMIC_STORE_UINT8(exec->vm_data.valid, 0);
                 goto error;
             }
         }
@@ -1824,18 +1824,69 @@ _Py_Executors_InvalidateCold(PyThreadState *tstate)
 
         exec = next;
     }
+    return invalidate;
+error:
+    PyErr_Clear();
+    Py_XDECREF(invalidate);
+    return NULL;
+}
+
+void
+_Py_Executors_ClearColdList(PyObject *invalidate)
+{
+    if (invalidate == NULL) {
+        return;
+    }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
         PyObject *exec = PyList_GET_ITEM(invalidate, i);
         executor_clear(exec);
     }
     Py_DECREF(invalidate);
+}
+
+void
+_Py_Executors_InvalidateCold(PyThreadState *tstate)
+{
+    _Py_Executors_ClearColdList(_Py_Executors_CollectCold(tstate));
+}
+
+void
+_Py_Executors_InvalidateColdGC(PyInterpreterState *interp)
+{
+    PyObject *invalidate = PyList_New(0);
+    if (invalidate == NULL) {
+        PyErr_Clear();
+        return;
+    }
+    _PyEval_StopTheWorld(interp);
+    HEAD_LOCK(interp->runtime);
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p)
+    {
+        PyObject *more_invalidate = _Py_Executors_CollectCold(p);
+        if (more_invalidate == NULL) {
+            goto error;
+        }
+        int err = PyList_Extend(invalidate, more_invalidate);
+        Py_DECREF(more_invalidate);
+        if (err) {
+            goto error;
+        }
+    }
+    HEAD_UNLOCK(interp->runtime);
+    _PyEval_StartTheWorld(interp);
+    // We can only clear the list after unlocking the runtime.
+    // Otherwise, it may deadlock.
+    _Py_Executors_ClearColdList(invalidate);
     return;
 error:
     PyErr_Clear();
-    Py_XDECREF(invalidate);
-    // If we're truly out of memory, wiping out everything is a fine fallback
-    _Py_Executors_InvalidateAll(_PyInterpreterState_GET(), 0);
+    Py_DECREF(invalidate);
+    // Invalidate all the executors if we run out of memory.
+    // This means the next run will remove all executors.
+    _Py_Executors_InvalidateAllLockHeld(interp, 0);
+    HEAD_UNLOCK(interp->runtime);
 }
+
 
 static void
 write_str(PyObject *str, FILE *out)

@@ -10,6 +10,7 @@
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
+#include "pycore_optimizer.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
@@ -2309,6 +2310,8 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         clear_weakrefs(state);
     }
     _PyEval_StartTheWorld(interp);
+
+    _Py_Executors_InvalidateColdGC(interp);
 
     if (err < 0) {
         cleanup_worklist(&state->unreachable);

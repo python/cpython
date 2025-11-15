@@ -82,11 +82,12 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateDependencyLockHeld(PyInterpreterState *
 PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateAllLockHeld(PyInterpreterState *interp, int is_invalidation);
 PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyThreadState *tstate);
+PyAPI_FUNC(void) _Py_Executors_InvalidateColdGC(PyInterpreterState *interp);
 #else
 #  define _Py_Executors_InvalidateDependency(A, B, C) ((void)0)
 #  define _Py_Executors_InvalidateAll(A, B) ((void)0)
 #  define _Py_Executors_InvalidateCold(A) ((void)0)
-
+#  define _Py_Executors_InvalidateColdGC(A) ((void)0)
 #endif
 
 // Used as the threshold to trigger executor invalidation when
