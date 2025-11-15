@@ -79,7 +79,7 @@ class IOBindingTest(unittest.TestCase):
             result = io.reload(None)
             self.assertEqual(result, "break")
             self.assertEqual(len(showinfo_called), 1)
-            self.assertIn("No File", showinfo_called[0][0])
+            self.assertIn("File Not Found", showinfo_called[0][0])
         finally:
             iomenu.messagebox.showinfo = orig_showinfo
 
