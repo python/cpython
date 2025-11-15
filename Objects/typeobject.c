@@ -10860,6 +10860,7 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         _PyThreadState_PopCStackRef(tstate, &c_stackref);
         return NULL;
     }
+    assert(meth_found);
     func = PyStackRef_AsPyObjectBorrow(c_stackref.ref);
     assert(func != NULL);
     result = _PyObject_Call_Prepend(tstate, func, (PyObject *)type, args, kwds);
