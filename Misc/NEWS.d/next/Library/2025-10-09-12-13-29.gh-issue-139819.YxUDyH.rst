@@ -1,0 +1,3 @@
+:mod:`rlcompleter`: Avoid suggesting attributes that are not accessible on
+instances (e.g., Enum members showing ``__name__``). Patch by Peter
+(ttw225).
