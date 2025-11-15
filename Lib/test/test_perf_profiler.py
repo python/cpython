@@ -36,9 +36,19 @@ if not supports_trampoline_profiling():
 
 class TestPerfTrampoline(unittest.TestCase):
 
+    def setUp(self):
+        # Register cleanup for JIT files for all tests in this class
+        self.addCleanup(self._cleanup_jit_files)
+
     def _cleanup_perf_map(self, pid):
         """Helper to safely delete a specific perf map file."""
         unlink(f"/tmp/perf-{pid}.map")
+
+    def _cleanup_jit_files(self):
+        """Helper to safely delete JIT-related temp files."""
+        for pattern in ("jit*.dump", "jitted-*.so"):
+            for path in pathlib.Path("/tmp/").glob(pattern):
+                unlink(path)
 
     @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works(self):
@@ -57,7 +67,6 @@ class TestPerfTrampoline(unittest.TestCase):
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
             env = {**os.environ, "PYTHON_JIT": "0"}
-
             with subprocess.Popen(
                 [sys.executable, "-Xperf", script],
                 text=True,
@@ -276,6 +285,7 @@ def perf_command_works():
     if "perf.data" not in stdout:
         return False
 
+    # Check that we can run a simple perf run
     with temp_dir() as script_dir:
         try:
             output_file = script_dir + "/perf_output.perf"
@@ -372,6 +382,10 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
 
 
 class TestPerfProfilerMixin:
+    def setUp(self):
+        # This setUp is added to make super() calls in child classes work smoothly.
+        pass
+
     def run_perf(self, script_dir, perf_mode, script):
         raise NotImplementedError()
 
@@ -431,11 +445,11 @@ class TestPerfProfilerMixin:
     is_unwinding_reliable_with_frame_pointers(),
     "Unwinding is unreliable with frame pointers",
 )
-class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
+class TestPerfProfiler(TestPerfTrampoline, TestPerfProfilerMixin):
 
-    def _cleanup_perf_map(self, pid):
-        """Helper to safely delete a specific perf map file."""
-        unlink(f"/tmp/perf-{pid}.map")
+    def setUp(self):
+        super().setUp()
+        TestPerfProfilerMixin.setUp(self)
 
     def run_perf(self, script_dir, script, activate_trampoline=True):
         if activate_trampoline:
@@ -495,7 +509,6 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
 
         self.assertEqual(process.returncode, 0)
         self.assertNotIn("Error:", stderr)
-
         child_pid = int(stdout.strip())
         self.addCleanup(self._cleanup_perf_map, child_pid)
 
@@ -544,7 +557,13 @@ def _is_perf_version_at_least(major, minor):
 @unittest.skipUnless(
     _is_perf_version_at_least(6, 6), "perf command may not work due to a perf bug"
 )
-class TestPerfProfilerWithDwarf(unittest.TestCase, TestPerfProfilerMixin):
+class TestPerfProfilerWithDwarf(TestPerfTrampoline, TestPerfProfilerMixin):
+
+    def setUp(self):
+        # This calls TestPerfTrampoline.setUp() which registers jit_cleanup
+        super().setUp()
+        # This calls TestPerfProfilerMixin.setUp()
+        TestPerfProfilerMixin.setUp(self)
 
     def run_perf(self, script_dir, script, activate_trampoline=True):
         if activate_trampoline:
