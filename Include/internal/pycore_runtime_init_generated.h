@@ -1662,6 +1662,7 @@ extern "C" {
     INIT_ID(coro), \
     INIT_ID(count), \
     INIT_ID(covariant), \
+    INIT_ID(create_only), \
     INIT_ID(ctx), \
     INIT_ID(cwd), \
     INIT_ID(d_parameter_type), \
