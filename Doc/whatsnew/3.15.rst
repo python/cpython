@@ -533,6 +533,12 @@ http.cookies
 * Allow '``"``' double quotes in cookie values.
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
+idle
+----
+
+*   Add a "Reload from Disk" item to the File menu. This allows discarding
+    unsaved changes and reloading the current version of the file from the disk.
+    Patch by Shamil Abdulaev. (Contributed by Shamil Abdulaev in :gh:`44968`.)
 
 inspect
 -------
