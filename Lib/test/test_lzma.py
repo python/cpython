@@ -1,4 +1,5 @@
 import array
+import binascii
 from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
 import os
 import pickle
@@ -8,7 +9,7 @@ from test import support
 import unittest
 from compression._common import _streams
 
-from test.support import _4G, bigmemtest
+from test.support import _1G, _4G, bigmemtest
 from test.support.import_helper import import_module
 from test.support.os_helper import (
     TESTFN, unlink, FakePath
@@ -16,6 +17,44 @@ from test.support.os_helper import (
 
 lzma = import_module("lzma")
 from lzma import LZMACompressor, LZMADecompressor, LZMAError, LZMAFile
+
+class ChecksumTestCase(unittest.TestCase):
+    # checksum test cases
+    def test_crc32start(self):
+        self.assertEqual(lzma.crc32(b""), lzma.crc32(b"", 0))
+        self.assertTrue(lzma.crc32(b"abc", 0xffffffff))
+
+    def test_crc32empty(self):
+        self.assertEqual(lzma.crc32(b"", 0), 0)
+        self.assertEqual(lzma.crc32(b"", 1), 1)
+        self.assertEqual(lzma.crc32(b"", 432), 432)
+
+    def test_penguins(self):
+        self.assertEqual(lzma.crc32(b"penguin", 0), 0x0e5c1a120)
+        self.assertEqual(lzma.crc32(b"penguin", 1), 0x43b6aa94)
+        self.assertEqual(lzma.crc32(b"penguin"), lzma.crc32(b"penguin", 0))
+
+    def test_crc32_unsigned(self):
+        foo = b'abcdefghijklmnop'
+        # explicitly test signed behavior
+        self.assertEqual(lzma.crc32(foo), 2486878355)
+        self.assertEqual(lzma.crc32(b'spam'), 1138425661)
+
+    def test_same_as_binascii_crc32(self):
+        foo = b'abcdefghijklmnop'
+        crc = 2486878355
+        self.assertEqual(binascii.crc32(foo), crc)
+        self.assertEqual(lzma.crc32(foo), crc)
+        self.assertEqual(binascii.crc32(b'spam'), lzma.crc32(b'spam'))
+
+
+# GH-54485 - check that inputs >=4 GiB are handled correctly.
+class ChecksumBigBufferTestCase(unittest.TestCase):
+
+    @bigmemtest(size=_4G + 4, memuse=1, dry_run=False)
+    def test_big_buffer(self, size):
+        data = b"nyan" * (_1G + 1)
+        self.assertEqual(lzma.crc32(data), 1044521549)
 
 
 class CompressorDecompressorTestCase(unittest.TestCase):
