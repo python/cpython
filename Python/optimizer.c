@@ -140,7 +140,7 @@ _PyOptimizer_Optimize(
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     int chain_depth = _tstate->jit_tracer_state.initial_state.chain_depth;
     if (!FT_ATOMIC_LOAD_CHAR_RELAXED(_tstate->jit_executor_state.jit)) {
-        // gh-140936: It is possible that interp->jit will become false during
+        // gh-140936: It is possible that jit_executor_state.jit will become false during
         // interpreter finalization. However, the specialized JUMP_BACKWARD_JIT
         // instruction may still be present. In this case, we should
         // return immediately without optimization.
@@ -1546,7 +1546,7 @@ unlink_executor(_PyExecutorObject *executor)
         return;
     }
     _PyExecutorLinkListNode *links = &executor->vm_data.links;
-    assert(executor->vm_data.valid);
+    assert(FT_ATOMIC_LOAD_UINT8_RELAXED(executor->vm_data.valid) == 0);
     _PyExecutorObject *next = links->next;
     _PyExecutorObject *prev = links->previous;
     if (next != NULL) {
@@ -1657,9 +1657,7 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     if (code == NULL) {
         return;
     }
-#ifdef Py_GIL_DISABLED
-    assert(_PyInterpreterState_GET()->stoptheworld.world_stopped || PyMutex_IsLocked(&((PyObject *)code)->ob_mutex));
-#endif
+    Py_BEGIN_CRITICAL_SECTION(code);
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);
     int index = instruction->op.arg;
@@ -1668,33 +1666,27 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     instruction->op.arg = executor->vm_data.oparg;
     executor->vm_data.code = NULL;
     code->co_executors->executors[index] = NULL;
+    Py_END_CRITICAL_SECTION();
 }
 
 static int
 executor_clear(PyObject *op)
 {
     _PyExecutorObject *executor = _PyExecutorObject_CAST(op);
-    if (!executor->vm_data.valid) {
-        return 0;
-    }
-    assert(executor->vm_data.valid == 1);
+    assert(FT_ATOMIC_LOAD_UINT8_RELAXED(executor->vm_data.valid) == 0);
     unlink_executor(executor);
-    executor->vm_data.valid = 0;
 
     /* It is possible for an executor to form a reference
      * cycle with itself, so decref'ing a side exit could
      * free the executor unless we hold a strong reference to it
      */
     _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
-    Py_INCREF(executor);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         executor->exits[i].temperature = initial_unreachable_backoff_counter();
         _PyExecutorObject *e = executor->exits[i].executor;
         executor->exits[i].executor = cold;
-        Py_DECREF(e);
     }
     _Py_ExecutorDetach(executor);
-    Py_DECREF(executor);
     return 0;
 }
 
@@ -1705,8 +1697,8 @@ _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
     _Py_BloomFilter_Add(&executor->vm_data.bloom, obj);
 }
 
-void
-_PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
+static void
+jit_tracer_invalidate_dependency(PyThreadState *tstate, void *obj)
 {
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
@@ -1726,7 +1718,7 @@ invalidate_sub_executors(_PyThreadStateImpl *tstate, _PyExecutorObject *executor
     if (!executor->vm_data.valid) {
         return;
     }
-    executor->vm_data.valid = 0;
+    FT_ATOMIC_STORE_UINT8(executor->vm_data.valid, 0);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         _PyExecutorObject *next = executor->exits[i].executor;
         if (next != tstate->jit_executor_state.cold_dynamic_executor && next != tstate->jit_executor_state.cold_executor) {
@@ -1751,10 +1743,13 @@ _Py_Executors_InvalidateDependencyLockHeld(PyInterpreterState *interp, void *obj
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
-        _PyJit_Tracer_InvalidateDependency(p, obj);
+        jit_tracer_invalidate_dependency(p, obj);
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
             if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
                 invalidate_sub_executors((_PyThreadStateImpl *)p, exec);
+                if (is_invalidation) {
+                    OPT_STAT_INC(executors_invalidated);
+                }
             }
             _PyExecutorObject *next = exec->vm_data.links.next;
             exec = next;
@@ -1781,7 +1776,10 @@ _Py_Executors_InvalidateAllLockHeld(PyInterpreterState *interp, int is_invalidat
         FT_ATOMIC_STORE_UINT8(((_PyThreadStateImpl *)p)->jit_tracer_state.prev_state.dependencies_still_valid, 0);
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
             assert(exec->tstate == p);
-            exec->vm_data.valid = 0;
+            FT_ATOMIC_STORE_UINT8(exec->vm_data.valid, 0);
+            if (is_invalidation) {
+                OPT_STAT_INC(executors_invalidated);
+            }
             _PyExecutorObject *next = exec->vm_data.links.next;
             exec = next;
         }
@@ -1816,6 +1814,7 @@ _Py_Executors_InvalidateCold(PyThreadState *tstate)
 
         if (!exec->vm_data.warm || !exec->vm_data.valid) {
             if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
+                FT_ATOMIC_STORE_UINT8(exec->vm_data.valid, 0);
                 goto error;
             }
         }
