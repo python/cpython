@@ -730,6 +730,21 @@ Macro name                       C type                        Python type
 
       Always ``None``. Must be used with :c:macro:`Py_READONLY`.
 
+   .. c:macro:: Py_ARRAY_LENGTH(array)
+
+      Compute the length (number of elements) of a statically allocated C array at
+      compile time.
+
+      The *array* argument must be a C array with a size known at compile time,
+      not a pointer. Using this macro with a pointer will produce incorrect results.
+
+      This macro is defined as::
+
+          #define Py_ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
+
+   .. versionadded:: 3.13
+
+
 Defining Getters and Setters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
