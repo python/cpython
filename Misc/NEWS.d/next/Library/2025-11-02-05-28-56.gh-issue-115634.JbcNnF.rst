@@ -1,0 +1,3 @@
+Fix deadlock in :class:`concurrent.futures.ProcessPoolExecutor` when using
+``max_tasks_per_child``. The executor would hang after a worker process exited
+due to incorrect idle worker accounting. Patch by tabrezm and Tian Gao.
