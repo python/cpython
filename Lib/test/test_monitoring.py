@@ -1079,6 +1079,25 @@ class ExceptionMonitoringTest(CheckEvents):
 
         self.assertEqual(events, expected)
 
+    # gh-140373
+    def test_gen_unwind(self):
+        def gen():
+            yield 1
+
+        def f():
+            g = gen()
+            next(g)
+            g.close()
+
+        recorders = (
+            UnwindRecorder,
+        )
+        events = self.get_events(f, TEST_TOOL, recorders)
+        expected = [
+            ("unwind", GeneratorExit, "gen"),
+        ]
+        self.assertEqual(events, expected)
+
 class LineRecorder:
 
     event_type = E.LINE
