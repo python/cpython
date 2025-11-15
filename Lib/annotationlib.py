@@ -737,13 +737,13 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             annotate, owner, is_class, globals, allow_evaluation=False
         )
         func = types.FunctionType(
-            annotate.__code__,
+            _get_annotate_attr(annotate, "__code__", None),
             globals,
             closure=closure,
-            argdefs=annotate.__defaults__,
-            kwdefaults=annotate.__kwdefaults__,
+            argdefs=_get_annotate_attr(annotate, "__defaults__", None),
+            kwdefaults=_get_annotate_attr(annotate, "__kwdefaults__", None),
         )
-        annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        annos = _direct_call_annotate(func, annotate, Format.VALUE_WITH_FAKE_GLOBALS)
         if _is_evaluate:
             return _stringify_single(annos)
         return {
@@ -768,11 +768,18 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # reconstruct the source. But in the dictionary that we eventually return, we
         # want to return objects with more user-friendly behavior, such as an __eq__
         # that returns a bool and an defined set of attributes.
-        namespace = {**annotate.__builtins__, **annotate.__globals__}
+        annotate_globals = _get_annotate_attr(annotate, "__globals__", {})
+        annotate_code = _get_annotate_attr(annotate, "__code__", None)
+        annotate_defaults = _get_annotate_attr(annotate, "__defaults__", None)
+        annotate_kwdefaults = _get_annotate_attr(annotate, "__kwdefaults__", None)
+        namespace = {
+            **_get_annotate_attr(annotate, "__builtins__", {}),
+            **annotate_globals
+        }
         is_class = isinstance(owner, type)
         globals = _StringifierDict(
             namespace,
-            globals=annotate.__globals__,
+            globals=annotate_globals,
             owner=owner,
             is_class=is_class,
             format=format,
@@ -781,14 +788,14 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             annotate, owner, is_class, globals, allow_evaluation=True
         )
         func = types.FunctionType(
-            annotate.__code__,
+            annotate_code,
             globals,
             closure=closure,
-            argdefs=annotate.__defaults__,
-            kwdefaults=annotate.__kwdefaults__,
+            argdefs=annotate_defaults,
+            kwdefaults=annotate_kwdefaults,
         )
         try:
-            result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+            result = _direct_call_annotate(func, annotate, Format.VALUE_WITH_FAKE_GLOBALS)
         except NotImplementedError:
             # FORWARDREF and VALUE_WITH_FAKE_GLOBALS not supported, fall back to VALUE
             return annotate(Format.VALUE)
@@ -802,7 +809,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # a value in certain cases where an exception gets raised during evaluation.
         globals = _StringifierDict(
             {},
-            globals=annotate.__globals__,
+            globals=annotate_globals,
             owner=owner,
             is_class=is_class,
             format=format,
@@ -811,13 +818,13 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             annotate, owner, is_class, globals, allow_evaluation=False
         )
         func = types.FunctionType(
-            annotate.__code__,
+            annotate_code,
             globals,
             closure=closure,
-            argdefs=annotate.__defaults__,
-            kwdefaults=annotate.__kwdefaults__,
+            argdefs=annotate_defaults,
+            kwdefaults=annotate_kwdefaults,
         )
-        result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        result = _direct_call_annotate(func, annotate, Format.VALUE_WITH_FAKE_GLOBALS)
         globals.transmogrify(cell_dict)
         if _is_evaluate:
             if isinstance(result, ForwardRef):
@@ -842,12 +849,13 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
 
 
 def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
-    if not annotate.__closure__:
+    closure = _get_annotate_attr(annotate, "__closure__", None)
+    if not closure:
         return None, None
-    freevars = annotate.__code__.co_freevars
+    freevars = _get_annotate_attr(annotate, "__code__", None).co_freevars
     new_closure = []
     cell_dict = {}
-    for i, cell in enumerate(annotate.__closure__):
+    for i, cell in enumerate(closure):
         if i < len(freevars):
             name = freevars[i]
         else:
@@ -866,7 +874,7 @@ def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluat
                 name,
                 cell=cell,
                 owner=owner,
-                globals=annotate.__globals__,
+                globals=_get_annotate_attr(annotate, "__globals__", {}),
                 is_class=is_class,
                 stringifier_dict=stringifier_dict,
             )
@@ -886,6 +894,102 @@ def _stringify_single(anno):
         return ast.unparse(_template_to_ast(anno))
     else:
         return repr(anno)
+
+
+def _get_annotate_attr(annotate, attr, default):
+    if (value := getattr(annotate, attr, None)) is not None:
+        return value
+
+    # Redirect method attribute access to the underlying function. The C code
+    # verifies that the __func__ attribute is some kind of callable, so we need
+    # to look for attributes recursively.
+    if isinstance(annotate, types.MethodType):
+        return _get_annotate_attr(annotate.__func__, attr, default)
+
+    # If annotate is a class instance, its __call__ is the relevant function.
+    # However, __call__ Could be a method, a function descriptor, or any other callable.
+    # Normal functions have a __call__ property which is a useless method wrapper,
+    # ignore these.
+    if (
+        (call := getattr(annotate, "__call__", None)) and
+        not isinstance(call, types.MethodWrapperType)
+    ):
+        return _get_annotate_attr(annotate.__call__, attr, default)
+
+    # Classes and generics are callable, usually the __init__ method sets attributes,
+    # so let's access this method for fake globals and the like.
+    if isinstance(annotate, type) or isinstance(annotate, types.GenericAlias):
+        return getattr(annotate.__init__, attr, default)
+
+    # Most 'wrapped' functions, including functools.cache and staticmethod, need us
+    # to manually, recursively unwrap. For partial.update_wrapper functions, the
+    # attribute is accessible on the function itself, so we never get this far.
+    if (unwrapped := getattr(annotate, "__wrapped__", None)) is not None:
+        return _get_annotate_attr(unwrapped, attr, default)
+
+    if (
+        (functools := sys.modules.get("functools", None))
+        and isinstance(annotate, functools.partial)
+    ):
+        return _get_annotate_attr(annotate.func, attr, default)
+
+    return default
+
+def _direct_call_annotate(func, annotate, *args):
+    # If annotate is a method, we need to pass self as the first param.
+    if (
+        hasattr(annotate, "__func__") and
+        (self := getattr(annotate, "__self__", None))
+    ):
+        # We don't know what type of callable will be in the __func__ attribute,
+        # so let's try again with knowledge of that type, including self as the first
+        # argument.
+        return _direct_call_annotate(func, annotate.__func__, self, *args)
+
+    # If annotate is a class instance, its __call__ is the function.
+    # __call__ Could be a method, a function descriptor, or any other callable.
+    # Normal functions have a __call__ property which is a useless method wrapper,
+    # ignore these.
+    if (
+        (call := getattr(annotate, "__call__", None)) and
+        not isinstance(call, types.MethodWrapperType)
+    ):
+        return _direct_call_annotate(func, annotate.__call__, *args)
+
+    # If annotate is a class, `func` is the __init__ method, so we still need to call
+    # __new__() to create the instance
+    if isinstance(annotate, type):
+        inst = annotate.__new__(annotate)
+        func(inst, *args)
+        return inst
+
+    # Generic instantiation is slightly different.
+    if isinstance(annotate, types.GenericAlias):
+        inst = annotate.__new__(annotate.__origin__)
+        func(inst, *args)
+        # Try to set the original class on the instance, if possible.
+        # This is the same logic used in typing for custom generics.
+        try:
+            inst.__orig_class__ = annotate
+        except Exception:
+            pass
+        return inst
+
+    if functools := sys.modules.get("functools", None):
+        # If annotate is a partial function, re-create it with the new function object.
+        # We could call the function directly, but then we'd have to handle placeholders,
+        # and this way should be more robust for future changes.
+        if isinstance(annotate, functools.partial):
+            # Partial methods
+            if self := getattr(annotate, "__self__", None):
+                return functools.partial(func, self, *annotate.args, **annotate.keywords)(*args)
+            return functools.partial(func, *annotate.args, **annotate.keywords)(*args)
+
+    # If annotate is a cached function, we've now updated the function data, so
+    # let's not use the old cache. Furthermore, we're about to call the function
+    # and never use it again, so let's not bother trying to cache it.
+    # Or, if it's a normal function or unsupported callable, we should just call it.
+    return func(*args)
 
 
 def get_annotate_from_class_namespace(obj):
