@@ -312,6 +312,7 @@ complete listing.
    not a pointer. Using this macro with a pointer will produce incorrect results.
 
    This is generally equivalent to::
+
       sizeof(array) / sizeof((array)[0])
 
 
