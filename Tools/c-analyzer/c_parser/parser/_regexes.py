@@ -59,6 +59,7 @@ _KEYWORD = textwrap.dedent(r'''
             register |
             static |
             _Thread_local |
+            _Alignof |
             typedef |
 
             const |
