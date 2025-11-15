@@ -86,22 +86,20 @@ class IOBindingTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as f:
             f.write("# Original content\n")
             temp_filename = f.name
+        self.addCleanup(os.unlink, temp_filename)
 
-        try:
-            # Load the file
-            io.loadfile(temp_filename)
-            self.assertEqual(text.get('1.0', 'end-1c'), "# Original content\n")
+        # Load the file
+        io.loadfile(temp_filename)
+        self.assertEqual(text.get('1.0', 'end-1c'), "# Original content\n")
 
-            # Modify the file content externally
-            with builtins.open(temp_filename, 'w') as f:
-                f.write("# Modified content\n")
+        # Modify the file content externally
+        with builtins.open(temp_filename, 'w') as f:
+            f.write("# Modified content\n")
 
-            # Reload should update the content
-            result = io.reload(None)
-            self.assertEqual(result, "break")
-            self.assertEqual(text.get('1.0', 'end-1c'), "# Modified content\n")
-        finally:
-            os.unlink(temp_filename)
+        # Reload should update the content
+        result = io.reload(None)
+        self.assertEqual(result, "break")
+        self.assertEqual(text.get('1.0', 'end-1c'), "# Modified content\n")
 
     def test_reload_with_unsaved_changes_cancel(self):
         # Test reload with unsaved changes and user cancels
@@ -113,28 +111,26 @@ class IOBindingTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as f:
             f.write("# Original content\n")
             temp_filename = f.name
+        self.addCleanup(os.unlink, temp_filename)
+
+        # Load the file
+        io.loadfile(temp_filename)
+
+        # Make unsaved changes
+        text.insert('end-1c', "\n# Unsaved change")
+        io.set_saved(False)
+
+        # Mock askokcancel to return False (cancel)
+        orig_askokcancel = iomenu.messagebox.askokcancel
+        iomenu.messagebox.askokcancel = lambda *args, **kwargs: False
 
         try:
-            # Load the file
-            io.loadfile(temp_filename)
-
-            # Make unsaved changes
-            text.insert('end-1c', "\n# Unsaved change")
-            io.set_saved(False)
-
-            # Mock askokcancel to return False (cancel)
-            orig_askokcancel = iomenu.messagebox.askokcancel
-            iomenu.messagebox.askokcancel = lambda *args, **kwargs: False
-
-            try:
-                result = io.reload(None)
-                self.assertEqual(result, "break")
-                # Content should not change
-                self.assertIn("# Unsaved change", text.get('1.0', 'end-1c'))
-            finally:
-                iomenu.messagebox.askokcancel = orig_askokcancel
+            result = io.reload(None)
+            self.assertEqual(result, "break")
+            # Content should not change
+            self.assertIn("# Unsaved change", text.get('1.0', 'end-1c'))
         finally:
-            os.unlink(temp_filename)
+            iomenu.messagebox.askokcancel = orig_askokcancel
 
     def test_reload_with_unsaved_changes_confirm(self):
         # Test reload with unsaved changes and user confirms
@@ -146,28 +142,26 @@ class IOBindingTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as f:
             f.write("# Original content\n")
             temp_filename = f.name
+        self.addCleanup(os.unlink, temp_filename)
+
+        # Load the file
+        io.loadfile(temp_filename)
+
+        # Make unsaved changes
+        text.insert('end-1c', "\n# Unsaved change")
+        io.set_saved(False)
+
+        # Mock askokcancel to return True (confirm)
+        orig_askokcancel = iomenu.messagebox.askokcancel
+        iomenu.messagebox.askokcancel = lambda *args, **kwargs: True
 
         try:
-            # Load the file
-            io.loadfile(temp_filename)
-
-            # Make unsaved changes
-            text.insert('end-1c', "\n# Unsaved change")
-            io.set_saved(False)
-
-            # Mock askokcancel to return True (confirm)
-            orig_askokcancel = iomenu.messagebox.askokcancel
-            iomenu.messagebox.askokcancel = lambda *args, **kwargs: True
-
-            try:
-                result = io.reload(None)
-                self.assertEqual(result, "break")
-                # Content should be reverted to original
-                self.assertEqual(text.get('1.0', 'end-1c'), "# Original content\n")
-            finally:
-                iomenu.messagebox.askokcancel = orig_askokcancel
+            result = io.reload(None)
+            self.assertEqual(result, "break")
+            # Content should be reverted to original
+            self.assertEqual(text.get('1.0', 'end-1c'), "# Original content\n")
         finally:
-            os.unlink(temp_filename)
+            iomenu.messagebox.askokcancel = orig_askokcancel
 
 
 def _extension_in_filetypes(extension):
