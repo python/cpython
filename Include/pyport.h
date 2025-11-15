@@ -677,4 +677,10 @@ extern "C" {
 #endif
 
 
+// Assume the stack grows down unless specified otherwise
+#ifndef _Py_STACK_GROWS_DOWN
+#  define _Py_STACK_GROWS_DOWN 1
+#endif
+
+
 #endif /* Py_PYPORT_H */
