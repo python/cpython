@@ -818,10 +818,8 @@ list_repeat_lock_held(PyListObject *a, Py_ssize_t n)
             _Py_RefcntAdd(*src, n);
             *dest++ = *src++;
         }
-        // TODO: _Py_memory_repeat calls are not safe for shared lists in
-        // GIL_DISABLED builds. (See issue #129069)
-        _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
-                                        sizeof(PyObject *)*input_size);
+        _Py_memory_ptrs_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
+                               sizeof(PyObject *)*input_size);
     }
 
     Py_SET_SIZE(np, output_size);
@@ -954,12 +952,10 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
     if (d < 0) { /* Delete -d items */
         Py_ssize_t tail;
         tail = (Py_SIZE(a) - ihigh) * sizeof(PyObject *);
-        // TODO: these memmove/memcpy calls are not safe for shared lists in
-        // GIL_DISABLED builds. (See issue #129069)
-        memmove(&item[ihigh+d], &item[ihigh], tail);
+        FT_ATOMIC_MEMMOVE_PTR_STORE_RELAXED(&item[ihigh+d], &item[ihigh], tail);
         if (list_resize(a, Py_SIZE(a) + d) < 0) {
-            memmove(&item[ihigh], &item[ihigh+d], tail);
-            memcpy(&item[ilow], recycle, s);
+            FT_ATOMIC_MEMMOVE_PTR_STORE_RELAXED(&item[ihigh], &item[ihigh+d], tail);
+            FT_ATOMIC_MEMCPY_PTR_STORE_RELAXED(&item[ilow], recycle, s);
             goto Error;
         }
         item = a->ob_item;
@@ -969,10 +965,8 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
         if (list_resize(a, k+d) < 0)
             goto Error;
         item = a->ob_item;
-        // TODO: these memmove/memcpy calls are not safe for shared lists in
-        // GIL_DISABLED builds. (See issue #129069)
-        memmove(&item[ihigh+d], &item[ihigh],
-            (k - ihigh)*sizeof(PyObject *));
+        FT_ATOMIC_MEMMOVE_PTR_STORE_RELAXED(&item[ihigh+d], &item[ihigh],
+                                            (k - ihigh)*sizeof(PyObject *));
     }
     for (k = 0; k < n; k++, ilow++) {
         PyObject *w = vitem[k];
@@ -1056,10 +1050,8 @@ list_inplace_repeat_lock_held(PyListObject *self, Py_ssize_t n)
     for (Py_ssize_t j = 0; j < input_size; j++) {
         _Py_RefcntAdd(items[j], n-1);
     }
-    // TODO: _Py_memory_repeat calls are not safe for shared lists in
-    // GIL_DISABLED builds. (See issue #129069)
-    _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size,
-                      sizeof(PyObject *)*input_size);
+    _Py_memory_ptrs_repeat((char *)items, sizeof(PyObject *)*output_size,
+                           sizeof(PyObject *)*input_size);
     return 0;
 }
 
