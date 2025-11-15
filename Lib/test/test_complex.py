@@ -626,8 +626,7 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 return None
 
         check(complex(complex0(1j)), 0.0, 42.0)
-        with self.assertWarns(DeprecationWarning):
-            check(complex(complex1(1j)), 0.0, 2.0)
+        self.assertRaises(TypeError, complex, complex1(1j))
         self.assertRaises(TypeError, complex, complex2(1j))
 
     def test___complex__(self):
