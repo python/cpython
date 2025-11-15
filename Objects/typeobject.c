@@ -10862,9 +10862,7 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     func = PyStackRef_AsPyObjectBorrow(c_stackref.ref);
     assert(func != NULL);
-
     result = _PyObject_Call_Prepend(tstate, func, (PyObject *)type, args, kwds);
-    //Py_DECREF(func);
     _PyThreadState_PopCStackRef(tstate, &c_stackref);
     return result;
 }
