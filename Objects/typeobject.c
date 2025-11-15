@@ -6546,6 +6546,18 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_INLINE_VALUES));
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_MANAGED_DICT));
 
+#ifdef Py_GIL_DISABLED
+    if (value != NULL && PyFunction_Check(value)) {
+        if (!_PyObject_HasDeferredRefcount(value)) {
+            BEGIN_TYPE_LOCK();
+            if (!_PyObject_HasDeferredRefcount(value)) {
+                PyUnstable_Object_EnableDeferredRefcount(value);
+            }
+            END_TYPE_LOCK();
+        }
+    }
+#endif
+
     PyObject *old_value = NULL;
     PyObject *descr = _PyType_LookupRef(metatype, name);
     if (descr != NULL) {
@@ -6573,6 +6585,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         }
     }
 
+    
     BEGIN_TYPE_DICT_LOCK(dict);
     res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
     assert(_PyType_CheckConsistency(type));
