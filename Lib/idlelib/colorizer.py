@@ -17,27 +17,30 @@ def any(name, alternates):
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
     match_softkw = (
+        r"(?<!\\\n)" +  # last line doesn't end in slash
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<MATCH_SOFTKW>match)\b" +
         r"(?![ \t]*(?:" + "|".join([  # not followed by ...
-            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
-                                 # pattern-matching statement
+            r"[.:,;=^&|@~)\]}]",  # a character which means it can't be a
+                                  # pattern-matching statement
             r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
         ]) +
         r"))"
     )
     case_default = (
+        r"(?<!\\\n)" +  # last line doesn't end in slash
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<CASE_SOFTKW>case)" +
         r"[ \t]+(?P<CASE_DEFAULT_UNDERSCORE>_\b)"
     )
     case_softkw_and_pattern = (
+        r"(?<!\\\n)" +  # last line doesn't end in slash
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<CASE_SOFTKW2>case)\b" +
         r"(?![ \t]*(?:" + "|".join([  # not followed by ...
             r"_\b",  # a lone underscore
-            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
-                                 # pattern-matching case
+            r"[.:,;=^&|@~)\]}]",  # a character which means it can't be a
+                                  # pattern-matching case
             r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
         ]) +
         r"))"
@@ -45,7 +48,30 @@ def make_pat():
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
                    name not in keyword.kwlist]
-    builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
+    builtin = (
+        r"(?<!" +  # make sure there isn't
+            r"\\\n" +  # a slash followed by a newline
+        r")" +
+        r"(?<!" +  # make sure that there also isn't
+            r"|".join([
+                r"\.",  # a dot or
+                r" ",   # a space
+            ]) +
+        r")" +
+        r"(" +  # match any number of
+            r"[ \t]*" +     # spaces/tabs followed by
+            r"(\\\\)*\\" +  # an odd number of slashes followed by
+            r"\n" +         # a newline
+        r")*" +
+        r"(" +  # also match
+            r"|".join([  # either
+                r"[ \t]+",  # indentation or
+                r"\b",      # a word boundary
+            ]) +
+        r")" +
+        any("BUILTIN", builtinlist) +  # followed by a builtin
+        r"\b"  # followed by another word boundary
+    )
     comment = any("COMMENT", [r"#[^\n]*"])
     stringprefix = r"(?i:r|u|f|fr|rf|b|br|rb|t|rt|tr)?"
     sqstring = stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?"
@@ -53,11 +79,12 @@ def make_pat():
     sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
     dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
+    sync = any("SYNC", [r"(?<!\\)\n"])  #  no sync if line ends with slash
     prog = re.compile("|".join([
                                 builtin, comment, string, kw,
                                 match_softkw, case_default,
                                 case_softkw_and_pattern,
-                                any("SYNC", [r"\n"]),
+                                sync,
                                ]),
                       re.DOTALL | re.MULTILINE)
     return prog
