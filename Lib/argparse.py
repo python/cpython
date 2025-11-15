@@ -175,7 +175,7 @@ class HelpFormatter(object):
             width = shutil.get_terminal_size().columns
             width -= 2
 
-        self._set_color(color)
+        self._color = color
         self._prog = prog
         self._indent_increment = indent_increment
         self._max_help_position = min(max_help_position,
