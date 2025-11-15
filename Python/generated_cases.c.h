@@ -5476,16 +5476,16 @@
                 JUMP_TO_LABEL(stop_tracing);
             }
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            LOCK_OBJECT_SLOW(code);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             if (!FT_ATOMIC_LOAD_UINT8_RELAXED(executor->vm_data.valid)) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_BEGIN_CRITICAL_SECTION(code);
                 _Py_ExecutorDetach(executor);
+                Py_END_CRITICAL_SECTION();
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                UNLOCK_OBJECT_SLOW(code);
                 DISPATCH_GOTO();
             }
             assert(tstate->current_executor == NULL);
@@ -5498,15 +5498,10 @@
                 if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
                     PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 }
-                #ifdef Py_GIL_DISABLED
-                UNLOCK_OBJECT_SLOW(code);
-                #endif
                 DISPATCH_GOTO();
             }
             assert(executor != ((_PyThreadStateImpl *)tstate)->jit_executor_state.cold_executor);
             tstate->jit_exit = NULL;
-            Py_INCREF(executor);
-            UNLOCK_OBJECT_SLOW(code);
             TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");

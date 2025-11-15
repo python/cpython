@@ -294,13 +294,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #ifdef Py_GIL_DISABLED
 #  define LOCK_OBJECT(op) PyMutex_LockFast(&(_PyObject_CAST(op))->ob_mutex)
 #  define UNLOCK_OBJECT(op) PyMutex_Unlock(&(_PyObject_CAST(op))->ob_mutex)
-#  define LOCK_OBJECT_SLOW(op) PyMutex_LockFast(&(_PyObject_CAST(op))->ob_mutex)
-#  define UNLOCK_OBJECT_SLOW(op) PyMutex_Unlock(&(_PyObject_CAST(op))->ob_mutex)
 #else
 #  define LOCK_OBJECT(op) (1)
 #  define UNLOCK_OBJECT(op) ((void)0)
-#  define LOCK_OBJECT_SLOW(op) ((void)0)
-#  define UNLOCK_OBJECT_SLOW(op) ((void)0)
 #endif
 
 #define GLOBALS() frame->f_globals
