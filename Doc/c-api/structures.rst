@@ -730,7 +730,7 @@ Macro name                       C type                        Python type
 
       Always ``None``. Must be used with :c:macro:`Py_READONLY`.
 
-      
+
 
 Defining Getters and Setters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
