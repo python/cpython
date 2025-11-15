@@ -32,6 +32,10 @@ _nodeTypes_with_children = (xml.dom.Node.ELEMENT_NODE,
 
 
 class Node(xml.dom.Node):
+    """Base class representing a node in the DOM tree.
+
+    Provides core properties and methods that all DOM nodes must implement.
+    """
     namespaceURI = None # this is non-null only for elements and attributes
     parentNode = None
     ownerDocument = None
@@ -44,6 +48,7 @@ class Node(xml.dom.Node):
         return True
 
     def toxml(self, encoding=None, standalone=None):
+        """Generate a string representation of a DOM."""
         return self.toprettyxml("", "", encoding, standalone)
 
     def toprettyxml(self, indent="\t", newl="\n", encoding=None,
@@ -80,6 +85,14 @@ class Node(xml.dom.Node):
             return self.childNodes[-1]
 
     def insertBefore(self, newChild, refChild):
+        """Insert a new DOM Node before an existing Node.
+
+        newChild
+          The new node to insert
+        refChild
+          The existing node that will be the next sibling of newChild.
+          If None, newChild is appended to the end.
+        """
         if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
             for c in tuple(newChild.childNodes):
                 self.insertBefore(c, refChild)
@@ -112,6 +125,7 @@ class Node(xml.dom.Node):
         return newChild
 
     def appendChild(self, node):
+        """Append a child node to an existing node."""
         if node.nodeType == self.DOCUMENT_FRAGMENT_NODE:
             for c in tuple(node.childNodes):
                 self.appendChild(c)
@@ -129,6 +143,7 @@ class Node(xml.dom.Node):
         return node
 
     def replaceChild(self, newChild, oldChild):
+        """Replace child node *oldChild* with *newChild*."""
         if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
             refChild = oldChild.nextSibling
             self.removeChild(oldChild)
@@ -161,6 +176,7 @@ class Node(xml.dom.Node):
         return oldChild
 
     def removeChild(self, oldChild):
+        """Remove an existing child."""
         try:
             self.childNodes.remove(oldChild)
         except ValueError:
@@ -177,6 +193,12 @@ class Node(xml.dom.Node):
         return oldChild
 
     def normalize(self):
+        """Transform this node into its normalized form.
+
+        Remove empty exclusive Text nodes and concatenate data of
+        remaining contiguous exclusive Text nodes into the first of
+        their nodes.
+        """
         L = []
         for child in self.childNodes:
             if child.nodeType == Node.TEXT_NODE:
@@ -204,6 +226,12 @@ class Node(xml.dom.Node):
         self.childNodes[:] = L
 
     def cloneNode(self, deep):
+        """Create and return a duplicate of this node.
+
+        deep
+          If True, recursively clone this node's descendants.
+          If False, clone only this node.
+        """
         return _clone_node(self, deep, self.ownerDocument or self)
 
     def isSupported(self, feature, version):
@@ -1341,6 +1369,12 @@ class DocumentType(Identified, Childless, Node):
         return self.internalSubset
 
     def cloneNode(self, deep):
+        """Create and return a duplicate of this node.
+
+        deep
+          If True, recursively clone this node's descendants.
+          If False, clone only this node.
+        """
         if self.ownerDocument is None:
             # it's ok
             clone = DocumentType(None)
@@ -1903,9 +1937,15 @@ defproperty(Document, "documentElement",
 
 
 def _clone_node(node, deep, newOwnerDocument):
-    """
-    Clone a node and give it the new owner document.
-    Called by Node.cloneNode and Document.importNode
+    """Create and return a clone of a DOM node.
+
+    node
+      The DOM node to clone.
+    deep
+      If True, recursively clone the node's descendants.
+      If False, only clone the node itself.
+    newOwnerDocument
+      The document that will own the cloned node.
     """
     if node.ownerDocument.isSameNode(newOwnerDocument):
         operation = xml.dom.UserDataHandler.NODE_CLONED
