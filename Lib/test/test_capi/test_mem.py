@@ -1,7 +1,7 @@
 import re
+import sys
 import textwrap
 import unittest
-
 
 from test import support
 from test.support import import_helper, requires_subprocess
@@ -80,12 +80,20 @@ class PyMemDebugTests(unittest.TestCase):
     def test_pymem_malloc_without_gil(self):
         # Debug hooks must raise an error if PyMem_Malloc() is called
         # without holding the GIL
+        if support.check_sanitizer(thread=True) and sys.platform == 'darwin':
+            # See: gh-120696
+            raise unittest.SkipTest("this test will hang on macOS with TSAN")
+
         code = 'import _testcapi; _testcapi.pymem_malloc_without_gil()'
         self.check_malloc_without_gil(code)
 
     def test_pyobject_malloc_without_gil(self):
         # Debug hooks must raise an error if PyObject_Malloc() is called
         # without holding the GIL
+        if support.check_sanitizer(thread=True) and sys.platform == 'darwin':
+            # See: gh-120696
+            raise unittest.SkipTest("this test will hang on macOS with TSAN")
+
         code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
         self.check_malloc_without_gil(code)
 
