@@ -521,7 +521,7 @@ definition with the same method name.
 
 .. c:function:: int PyCFunction_GetFlags(PyObject *func)
 
-   Get the function flags on *func* as they were passed to
+   Get the function's flags on *func* as they were passed to
    :c:member:`~PyMethodDef.ml_flags`.
 
    This function returns the function's flags on success, and ``-1`` with an
