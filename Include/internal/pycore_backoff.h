@@ -32,8 +32,10 @@ extern "C" {
 */
 
 #define BACKOFF_BITS 4
+#define BACKOFF_MASK 0xF
 #define MAX_BACKOFF 12
 #define UNREACHABLE_BACKOFF 15
+#define MAX_VALUE 0xFFF
 
 static inline bool
 is_unreachable_backoff_counter(_Py_BackoffCounter counter)
@@ -44,8 +46,8 @@ is_unreachable_backoff_counter(_Py_BackoffCounter counter)
 static inline _Py_BackoffCounter
 make_backoff_counter(uint16_t value, uint16_t backoff)
 {
-    assert(backoff <= 15);
-    assert(value <= 0xFFF);
+    assert(backoff <= UNREACHABLE_BACKOFF);
+    assert(value <= MAX_VALUE);
     _Py_BackoffCounter result;
     result.value_and_backoff = (value << BACKOFF_BITS) | backoff;
     return result;
@@ -63,7 +65,7 @@ static inline _Py_BackoffCounter
 restart_backoff_counter(_Py_BackoffCounter counter)
 {
     assert(!is_unreachable_backoff_counter(counter));
-    int backoff = counter.value_and_backoff & 15;
+    int backoff = counter.value_and_backoff & BACKOFF_MASK;
     if (backoff < MAX_BACKOFF) {
         return make_backoff_counter((1 << (backoff + 1)) - 1, backoff + 1);
     }
