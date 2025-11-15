@@ -454,13 +454,13 @@ definition with the same method name.
    available as :class:`types.BuiltinMethodType` in the Python layer.
 
 
-.. c:function:: int PyCMethod_Check(PyObject *f)
+.. c:function:: int PyCMethod_Check(PyObject *op)
 
-   Return true if *f* is an instance of the :c:type:`PyCMethod_Type` type
+   Return true if *op* is an instance of the :c:type:`PyCMethod_Type` type
    or a subtype of it. This function always succeeds.
 
 
-.. c:function:: int PyCMethod_CheckExact(PyObject *f)
+.. c:function:: int PyCMethod_CheckExact(PyObject *op)
 
    This is the same as :c:func:`PyCMethod_Check`, but does not account for
    subtypes.
@@ -497,13 +497,13 @@ definition with the same method name.
    available as :class:`types.BuiltinFunctionType` in the Python layer.
 
 
-.. c:function:: int PyCFunction_Check(PyObject *f)
+.. c:function:: int PyCFunction_Check(PyObject *op)
 
-   Return true if *f* is an instance of the :c:type:`PyCFunction_Type` type
+   Return true if *op* is an instance of the :c:type:`PyCFunction_Type` type
    or a subtype of it. This function always succeeds.
 
 
-.. c:function:: int PyCFunction_CheckExact(PyObject *f)
+.. c:function:: int PyCFunction_CheckExact(PyObject *op)
 
    This is the same as :c:func:`PyCFunction_Check`, but does not account for
    subtypes.
