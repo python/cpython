@@ -108,6 +108,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_id = k; /* ste owns reference to k */
 
     ste->ste_name = Py_NewRef(name);
+    ste->ste_function_name = NULL;
 
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
@@ -185,6 +186,7 @@ ste_dealloc(PyObject *op)
     ste->ste_table = NULL;
     Py_XDECREF(ste->ste_id);
     Py_XDECREF(ste->ste_name);
+    Py_XDECREF(ste->ste_function_name);
     Py_XDECREF(ste->ste_symbols);
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
@@ -2830,6 +2832,7 @@ symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_
                               (void *)a, LOCATION(o))) {
         return 0;
     }
+    Py_XSETREF(st->st_cur->ste_function_name, Py_NewRef(function_ste->ste_name));
     if (is_in_class || current_type == ClassBlock) {
         st->st_cur->ste_can_see_class_scope = 1;
         if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(o))) {
