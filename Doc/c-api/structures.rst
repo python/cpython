@@ -524,6 +524,9 @@ definition with the same method name.
    Get the function's flags on *func* as they were passed to
    :c:member:`~PyMethodDef.ml_flags`.
 
+   If *func* is not a C function object, this fails with a
+   :class:`SystemError`.
+
    This function returns the function's flags on success, and ``-1`` with an
    exception set on failure.
 
@@ -531,7 +534,7 @@ definition with the same method name.
 .. c:function:: int PyCFunction_GET_FLAGS(PyObject *func)
 
    This is the same as :c:func:`PyCFunction_GetFlags`, but without error
-   checking.
+   or type checking.
 
 
 .. c:function:: PyCFunction PyCFunction_GetFunction(PyObject *func)
@@ -539,14 +542,18 @@ definition with the same method name.
    Get the function pointer on *func* as it was passed to
    :c:member:`~PyMethodDef.ml_meth`.
 
+   If *func* is not a C function object, this fails with a
+   :class:`SystemError`.
+
    This function returns the function pointer on success, and ``NULL`` with an
    exception set on failure.
+
 
 
 .. c:function:: int PyCFunction_GET_FUNCTION(PyObject *func)
 
    This is the same as :c:func:`PyCFunction_GetFunction`, but without error
-   checking.
+   or type checking.
 
 
 .. c:function:: PyObject *PyCFunction_GetSelf(PyObject *func)
@@ -555,14 +562,17 @@ definition with the same method name.
    to the first argument of a :c:type:`PyCFunction`. In modules, this is the
    module object.
 
+   If *func* is not a C function object, this fails with a
+   :class:`SystemError`.
+
    This function returns a :term:`borrowed reference` to the "self" object
    on success, and ``NULL`` with an exception set on failure.
 
 
 .. c:function:: PyObject *PyCFunction_GET_SELF(PyObject *func)
 
-   This is the same as :c:func:`PyCFunction_GetSelf`, but without error
-   checking.
+   This is the same as :c:func:`PyCFunction_GetSelf`, but without error or
+   type checking.
 
 
 Accessing attributes of extension types
