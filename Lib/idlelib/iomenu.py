@@ -246,7 +246,7 @@ class IOBinding:
         """
         if not self.filename:
             messagebox.showinfo(
-                "No File",
+                “File Not Found",
                 "This window has no associated file to reload.",
                 parent=self.text)
             self.text.focus_set()
