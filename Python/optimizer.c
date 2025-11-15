@@ -1657,7 +1657,9 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     if (code == NULL) {
         return;
     }
+#ifdef Py_GIL_DISABLED
     assert(_PyInterpreterState_GET()->stoptheworld.world_stopped || PyMutex_IsLocked(&((PyObject *)code)->ob_mutex));
+#endif
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);
     int index = instruction->op.arg;

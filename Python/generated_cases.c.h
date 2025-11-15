@@ -5481,10 +5481,9 @@
                 JUMP_TO_LABEL(stop_tracing);
             }
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            #ifdef Py_GIL_DISABLED
             LOCK_OBJECT_SLOW(code);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            if (!_Py_atomic_load_uint8_relaxed(&executor->vm_data.valid)) {
+            if (!FT_ATOMIC_LOAD_UINT8_RELAXED(executor->vm_data.valid)) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
@@ -5494,10 +5493,6 @@
                 UNLOCK_OBJECT_SLOW(code);
                 DISPATCH_GOTO();
             }
-            #else
-            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            assert(executor->vm_data.valid);
-            #endif
             assert(tstate->current_executor == NULL);
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
             assert(executor->vm_data.code == code);
