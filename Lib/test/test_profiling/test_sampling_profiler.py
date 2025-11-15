@@ -21,11 +21,17 @@ from profiling.sampling.stack_collector import (
 )
 from profiling.sampling.gecko_collector import GeckoCollector
 
+from test.support import (
+    SHORT_TIMEOUT,
+    captured_stderr,
+    captured_stdout,
+    force_not_colorized_test_class,
+    is_emscripten,
+    is_slow_machine,
+    requires_subprocess,
+)
 from test.support.os_helper import unlink
-from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
 from test.support.socket_helper import find_unused_port
-from test.support import requires_subprocess, is_emscripten
-from test.support import captured_stdout, captured_stderr
 
 PROCESS_VM_READV_SUPPORTED = False
 
@@ -1754,6 +1760,7 @@ if __name__ == "__main__":
 '''
 
     def test_sampling_basic_functionality(self):
+        duration_sec = 10 if is_slow_machine else 2
         with (
             test_subprocess(self.test_script) as subproc,
             io.StringIO() as captured_output,
@@ -1762,7 +1769,7 @@ if __name__ == "__main__":
             try:
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
-                    duration_sec=2,
+                    duration_sec=duration_sec,
                     sample_interval_usec=1000,  # 1ms
                     show_summary=False,
                 )
@@ -1904,7 +1911,10 @@ if __name__ == "__main__":
         script_file.flush()
         self.addCleanup(close_and_unlink, script_file)
 
-        test_args = ["profiling.sampling.sample", "-d", "1", script_file.name]
+        duration = 10 if is_slow_machine else 1
+        test_args = [
+            "profiling.sampling.sample", "-d", str(duration), script_file.name
+        ]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -1936,7 +1946,12 @@ if __name__ == "__main__":
         with open(module_path, "w") as f:
             f.write(self.test_script)
 
-        test_args = ["profiling.sampling.sample", "-d", "1", "-m", "test_module"]
+        duration = 10 if is_slow_machine else 1
+        test_args = [
+            "profiling.sampling.sample",
+            "-d", str(duration),
+            "-m", "test_module"
+        ]
 
         with (
             mock.patch("sys.argv", test_args),
