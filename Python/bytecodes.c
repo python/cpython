@@ -3021,7 +3021,7 @@ dummy_func(
 
             LOCK_OBJECT_SLOW(code);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            // On FT, we are responsible for cleaning up after ourselves.
+            // We are responsible for cleaning up after ourselves.
             if (!FT_ATOMIC_LOAD_UINT8_RELAXED(executor->vm_data.valid)) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
