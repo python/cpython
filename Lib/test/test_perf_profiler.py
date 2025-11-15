@@ -35,17 +35,17 @@ if not supports_trampoline_profiling():
 
 
 class TestPerfTrampoline(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.perf_files = set(pathlib.Path("/tmp/").glob("perf-*.map"))
 
-    def tearDown(self) -> None:
-        super().tearDown()
-        files_to_delete = (
-            set(pathlib.Path("/tmp/").glob("perf-*.map")) - self.perf_files
-        )
-        for file in files_to_delete:
-            file.unlink()
+    def _cleanup_perf_map(self, pid):
+        """
+        Helper to safely delete a specific perf map file.
+        """
+        perf_map = pathlib.Path(f"/tmp/perf-{pid}.map")
+        try:
+            if perf_map.exists():
+                perf_map.unlink()
+        except OSError:
+            pass
 
     @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_trampoline_works(self):
@@ -64,13 +64,18 @@ class TestPerfTrampoline(unittest.TestCase):
         with temp_dir() as script_dir:
             script = make_script(script_dir, "perftest", code)
             env = {**os.environ, "PYTHON_JIT": "0"}
-            with subprocess.Popen(
+
+            process = subprocess.Popen(
                 [sys.executable, "-Xperf", script],
                 text=True,
                 stderr=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 env=env,
-            ) as process:
+            )
+
+            self.addCleanup(self._cleanup_perf_map, process.pid)
+
+            with process:
                 stdout, stderr = process.communicate()
 
         self.assertEqual(stderr, "")
@@ -140,11 +145,15 @@ class TestPerfTrampoline(unittest.TestCase):
                 stdout=subprocess.PIPE,
                 env=env,
             ) as process:
+                self.addCleanup(self._cleanup_perf_map, process.pid)
                 stdout, stderr = process.communicate()
 
         self.assertEqual(process.returncode, 0)
         self.assertEqual(stderr, "")
+
         child_pid = int(stdout.strip())
+        self.addCleanup(self._cleanup_perf_map, child_pid)
+
         perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
         perf_child_file = pathlib.Path(f"/tmp/perf-{child_pid}.map")
         self.assertTrue(perf_file.exists())
@@ -199,6 +208,7 @@ class TestPerfTrampoline(unittest.TestCase):
                     stdout=subprocess.PIPE,
                     env=env,
                 ) as process:
+                    self.addCleanup(self._cleanup_perf_map, process.pid)
                     stdout, stderr = process.communicate()
 
             self.assertEqual(stderr, "")
@@ -271,12 +281,9 @@ def perf_command_works():
     except (subprocess.SubprocessError, OSError):
         return False
 
-    # perf version does not return a version number on Fedora. Use presence
-    # of "perf.data" in help as indicator that it's perf from Linux tools.
     if "perf.data" not in stdout:
         return False
 
-    # Check that we can run a simple perf run
     with temp_dir() as script_dir:
         try:
             output_file = script_dir + "/perf_output.perf"
@@ -358,7 +365,6 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
         if proc.returncode:
             print(proc.stderr, file=sys.stderr)
             raise ValueError(f"Perf failed with return code {proc.returncode}")
-        # Copy the jit_output_file to the output_file
         os.rename(jit_output_file, output_file)
 
     base_cmd = ("perf", "script")
@@ -434,22 +440,22 @@ class TestPerfProfilerMixin:
     "Unwinding is unreliable with frame pointers",
 )
 class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
+
+    def _cleanup_perf_map(self, pid):
+        """
+        Helper to safely delete a specific perf map file.
+        """
+        perf_map = pathlib.Path(f"/tmp/perf-{pid}.map")
+        try:
+            if perf_map.exists():
+                perf_map.unlink()
+        except OSError:
+            pass
+
     def run_perf(self, script_dir, script, activate_trampoline=True):
         if activate_trampoline:
             return run_perf(script_dir, sys.executable, "-Xperf", script)
         return run_perf(script_dir, sys.executable, script)
-
-    def setUp(self):
-        super().setUp()
-        self.perf_files = set(pathlib.Path("/tmp/").glob("perf-*.map"))
-
-    def tearDown(self) -> None:
-        super().tearDown()
-        files_to_delete = (
-            set(pathlib.Path("/tmp/").glob("perf-*.map")) - self.perf_files
-        )
-        for file in files_to_delete:
-            file.unlink()
 
     def test_pre_fork_compile(self):
         code = """if 1:
@@ -499,11 +505,15 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
                 stdout=subprocess.PIPE,
                 env=env,
             ) as process:
+                self.addCleanup(self._cleanup_perf_map, process.pid)
                 stdout, stderr = process.communicate()
 
         self.assertEqual(process.returncode, 0)
         self.assertNotIn("Error:", stderr)
+
         child_pid = int(stdout.strip())
+        self.addCleanup(self._cleanup_perf_map, child_pid)
+
         perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
         perf_child_file = pathlib.Path(f"/tmp/perf-{child_pid}.map")
         self.assertTrue(perf_file.exists())
@@ -519,8 +529,6 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
         self.assertIn(f"py::foo_fork:{script}", child_perf_file_contents)
         self.assertIn(f"py::bar_fork:{script}", child_perf_file_contents)
 
-        # Pre-compiled perf-map entries of a forked process must be
-        # identical in both the parent and child perf-map files.
         perf_file_lines = perf_file_contents.split("\n")
         for line in perf_file_lines:
             if f"py::foo_fork:{script}" in line or f"py::bar_fork:{script}" in line:
@@ -528,12 +536,6 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
 
 
 def _is_perf_version_at_least(major, minor):
-    # The output of perf --version looks like "perf version 6.7-3" but
-    # it can also be perf version "perf version 5.15.143", or even include
-    # a commit hash in the version string, like "6.12.9.g242e6068fd5c"
-    #
-    # PermissionError is raised if perf does not exist on the Windows Subsystem
-    # for Linux, see #134987
     try:
         output = subprocess.check_output(["perf", "--version"], text=True)
     except (subprocess.CalledProcessError, FileNotFoundError, PermissionError):
@@ -550,25 +552,13 @@ def _is_perf_version_at_least(major, minor):
     _is_perf_version_at_least(6, 6), "perf command may not work due to a perf bug"
 )
 class TestPerfProfilerWithDwarf(unittest.TestCase, TestPerfProfilerMixin):
+
     def run_perf(self, script_dir, script, activate_trampoline=True):
         if activate_trampoline:
             return run_perf(
                 script_dir, sys.executable, "-Xperf_jit", script, use_jit=True
             )
         return run_perf(script_dir, sys.executable, script, use_jit=True)
-
-    def setUp(self):
-        super().setUp()
-        self.perf_files = set(pathlib.Path("/tmp/").glob("jit*.dump"))
-        self.perf_files |= set(pathlib.Path("/tmp/").glob("jitted-*.so"))
-
-    def tearDown(self) -> None:
-        super().tearDown()
-        files_to_delete = set(pathlib.Path("/tmp/").glob("jit*.dump"))
-        files_to_delete |= set(pathlib.Path("/tmp/").glob("jitted-*.so"))
-        files_to_delete = files_to_delete - self.perf_files
-        for file in files_to_delete:
-            file.unlink()
 
 
 if __name__ == "__main__":
