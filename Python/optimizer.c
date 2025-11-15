@@ -1329,10 +1329,10 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         return NULL;
     }
 #endif
-    _PyObject_GC_TRACK(executor);
     // Executors are cleared by coldness or invalidation.
     // Thus there's no point for them to be refcounted.
     _Py_SetImmortal((PyObject *)executor);
+    _PyObject_GC_TRACK(executor);
     return executor;
 }
 
