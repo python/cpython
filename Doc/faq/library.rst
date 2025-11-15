@@ -4,9 +4,7 @@
 Library and Extension FAQ
 =========================
 
-.. only:: html
-
-   .. contents::
+.. contents::
 
 General Library Questions
 =========================

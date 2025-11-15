@@ -4,9 +4,7 @@
 Programming FAQ
 ===============
 
-.. only:: html
-
-   .. contents::
+.. contents::
 
 General Questions
 =================
