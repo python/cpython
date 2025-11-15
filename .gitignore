@@ -45,6 +45,8 @@ gmon.out
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+__install__.json
+build-details.json
 
 *.exe
 

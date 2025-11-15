@@ -1,4 +1,3 @@
-import importlib
 import json
 import os
 import os.path
@@ -6,27 +5,14 @@ import sys
 import sysconfig
 import string
 import unittest
-from pathlib import Path
 
 from test.support import is_android, is_apple_mobile, is_wasm32
-
-BASE_PATH = Path(
-    __file__,  # Lib/test/test_build_details.py
-    '..',  # Lib/test
-    '..',  # Lib
-    '..',  # <src/install dir>
-).resolve()
-MODULE_PATH = BASE_PATH / 'Tools' / 'build' / 'generate-build-details.py'
+from test.test_tools import imports_under_tool
 
 try:
-    # Import "generate-build-details.py" as "generate_build_details"
-    spec = importlib.util.spec_from_file_location(
-        "generate_build_details", MODULE_PATH
-    )
-    generate_build_details = importlib.util.module_from_spec(spec)
-    sys.modules["generate_build_details"] = generate_build_details
-    spec.loader.exec_module(generate_build_details)
-except (FileNotFoundError, ImportError):
+    with imports_under_tool('build'):
+        import generate_build_details
+except ImportError:
     generate_build_details = None
 
 
@@ -116,7 +102,6 @@ needs_installed_python = unittest.skipIf(
 )
 
 
-@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
 @unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     """Test CPython's install details file implementation."""
@@ -124,10 +109,13 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     @property
     def location(self):
         if sysconfig.is_python_build():
-            projectdir = sysconfig.get_config_var('projectbase')
-            pybuilddir = os.path.join(projectdir, 'pybuilddir.txt')
-            with open(pybuilddir, encoding='utf-8') as f:
-                dirname = os.path.join(projectdir, f.read())
+            if sys.platform == 'win32':
+                dirname = sysconfig.get_config_var('BINDIR')
+            else:
+                projectdir = sysconfig.get_config_var('projectbase')
+                pybuilddir = os.path.join(projectdir, 'pybuilddir.txt')
+                with open(pybuilddir, encoding='utf-8') as f:
+                    dirname = os.path.join(projectdir, f.read())
         else:
             dirname = sysconfig.get_path('stdlib')
         return os.path.join(dirname, 'build-details.json')
@@ -176,9 +164,8 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
 
 @unittest.skipIf(
     generate_build_details is None,
-    "Failed to import generate-build-details"
+    "Failed to import generate_build_details",
 )
-@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
 @unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class BuildDetailsRelativePathsTests(unittest.TestCase):
     @property
@@ -189,7 +176,7 @@ class BuildDetailsRelativePathsTests(unittest.TestCase):
     @property
     def build_details_relative_paths(self):
         data = self.build_details_absolute_paths
-        generate_build_details.make_paths_relative(data, config_path=None)
+        generate_build_details.make_paths_relative(data, base_path=None)
         return data
 
     def test_round_trip(self):
