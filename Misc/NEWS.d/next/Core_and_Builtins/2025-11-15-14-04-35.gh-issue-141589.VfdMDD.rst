@@ -1,2 +1,2 @@
-Change ``backoff counter`` to use powers of 4 instead of powers of 2. Patch
-by Mikhail Efimov.
+Change ``backoff counter`` to use powers of 4 instead of powers of 2.
+This allows to support values up to 8191. Patch by Mikhail Efimov.
