@@ -537,9 +537,9 @@ http.cookies
 idlelib
 -------
 
-*   Add a "Reload from Disk" item to the File menu. This allows discarding
-    unsaved changes and reloading the current version of the file from the disk.
-    (Contributed by Shamil Abdulaev in :gh:`44968`.)
+*  Add a "Reload from Disk" item to the File menu. This allows discarding
+   unsaved changes and reloading the current version of the file from the disk.
+   (Contributed by Shamil Abdulaev in :gh:`44968`.)
 
 
 inspect
