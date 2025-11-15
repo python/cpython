@@ -6585,7 +6585,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         }
     }
 
-    
+
     BEGIN_TYPE_DICT_LOCK(dict);
     res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
     assert(_PyType_CheckConsistency(type));
