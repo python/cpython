@@ -160,7 +160,8 @@ class DebuggerTests(unittest.TestCase):
                         breakpoint=BREAKPOINT_FN,
                         cmds_after_breakpoint=None,
                         import_site=False,
-                        ignore_stderr=False):
+                        ignore_stderr=False,
+                        verbose_output=False):
         '''
         Run 'python -c SOURCE' under gdb with a breakpoint.
 
@@ -209,6 +210,9 @@ class DebuggerTests(unittest.TestCase):
         # Disable this:
         if GDB_VERSION >= (7, 4):
             commands += ['set print entry-values no']
+
+        if verbose_output:
+            commands += ['set py-verbose-print on']
 
         if cmds_after_breakpoint:
             if CET_PROTECTION:
