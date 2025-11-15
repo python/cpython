@@ -9,9 +9,13 @@ import types
 
 import _opcode
 
-from test.support import (script_helper, requires_specialization,
-                          import_helper, Py_GIL_DISABLED, requires_jit_enabled,
-                          reset_code)
+from test.support import (
+    script_helper,
+    import_helper,
+    Py_GIL_DISABLED,
+    requires_jit_enabled,
+    reset_code
+)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
