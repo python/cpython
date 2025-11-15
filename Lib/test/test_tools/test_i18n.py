@@ -591,6 +591,22 @@ class Test_pygettext(unittest.TestCase):
             '\tkeyword="_": Expected a string constant for argument 1, got 42\n'
             '\tkeyword="_:2": Expected a string constant for argument 2, got y\n')
 
+    def test_utf8_encoding(self):
+        with temp_cwd(None):
+            with open('test.py', 'w', encoding='utf-8') as fp:
+                fp.write('_("áscii")')
+
+            res = assert_python_ok(self.script,
+                                   'test.py',
+                                   PYTHONCOERCECLOCALE="0",
+                                   PYTHONUTF8="0",
+                                   LANG="C",
+                                   LC_ALL="C")
+            self.assertEqual(res.err, b'')
+
+            with open('messages.pot', encoding='utf-8') as fp:
+                pot_content = fp.read()
+            self.assertIn('áscii', pot_content)
 
 def extract_from_snapshots():
     snapshots = {
