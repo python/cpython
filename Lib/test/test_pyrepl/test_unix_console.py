@@ -310,6 +310,18 @@ class TestConsole(TestCase):
             os.environ = []
             self.assertIsInstance(console.getheightwidth(), tuple)
 
+    def test_wait_reentry_protection(self, _os_write):
+        # gh-130168: Test signal handler re-entry protection
+        console = UnixConsole(term="xterm")
+        console.prepare()
+
+        console._polling_thread = threading.current_thread()
+        with self.assertRaisesRegex(RuntimeError, "can't re-enter readline"):
+            console.wait(timeout=0)
+
+        console._polling_thread = None
+        console.restore()
+
     @unittest.skipUnless(sys.platform == "darwin", "requires macOS")
     def test_restore_with_invalid_environ_on_macos(self, _os_write):
         # gh-128636 for macOS
