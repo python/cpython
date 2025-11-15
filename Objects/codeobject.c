@@ -113,7 +113,7 @@ PyCode_ClearWatcher(int watcher_id)
 
 #define _PyCodeObject_CAST(op)  (assert(PyCode_Check(op)), (PyCodeObject *)(op))
 
-static int
+static inline int
 should_intern_string(PyObject *o)
 {
 #ifdef Py_GIL_DISABLED
@@ -196,6 +196,7 @@ intern_strings(PyObject *tuple)
     return 0;
 }
 
+
 /* Intern constants. In the default build, this interns selected string
    constants. In the free-threaded build, this also interns non-string
    constants. */
@@ -203,10 +204,26 @@ static int
 intern_constants(PyObject *tuple, int *modified)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *interned_dict = _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
+    Py_INCREF(interned_dict);
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
-        if (PyUnicode_CheckExact(v)) {
-            if (should_intern_string(v)) {
+        if (PyUnicode_CheckExact(v) && PyUnicode_GET_LENGTH(v) > 1) {
+            if (PyUnicode_CHECK_INTERNED(v) != 0) {
+                continue;
+            }
+            PyObject *interned = PyDict_GetItemWithError(interned_dict, v);
+            if (interned == NULL && PyErr_Occurred()) {
+                goto error;
+            }
+            if (interned != NULL && interned != v) {
+                Py_INCREF(interned);
+                PyTuple_SET_ITEM(tuple, i, interned);
+                Py_DECREF(v);
+                if (modified) {
+                    *modified = 1;
+                }
+            } else if (should_intern_string(v)) {
                 PyObject *w = v;
                 _PyUnicode_InternMortal(interp, &v);
                 if (w != v) {
@@ -219,25 +236,25 @@ intern_constants(PyObject *tuple, int *modified)
         }
         else if (PyTuple_CheckExact(v)) {
             if (intern_constants(v, NULL) < 0) {
-                return -1;
+                goto error;
             }
         }
         else if (PyFrozenSet_CheckExact(v)) {
             PyObject *w = v;
             PyObject *tmp = PySequence_Tuple(v);
             if (tmp == NULL) {
-                return -1;
+                goto error;
             }
             int tmp_modified = 0;
             if (intern_constants(tmp, &tmp_modified) < 0) {
                 Py_DECREF(tmp);
-                return -1;
+                goto error;
             }
             if (tmp_modified) {
                 v = PyFrozenSet_New(tmp);
                 if (v == NULL) {
                     Py_DECREF(tmp);
-                    return -1;
+                    goto error;
                 }
 
                 PyTuple_SET_ITEM(tuple, i, v);
@@ -253,7 +270,7 @@ intern_constants(PyObject *tuple, int *modified)
             PySliceObject *slice = (PySliceObject *)v;
             PyObject *tmp = PyTuple_New(3);
             if (tmp == NULL) {
-                return -1;
+                goto error;
             }
             PyTuple_SET_ITEM(tmp, 0, Py_NewRef(slice->start));
             PyTuple_SET_ITEM(tmp, 1, Py_NewRef(slice->stop));
@@ -261,7 +278,7 @@ intern_constants(PyObject *tuple, int *modified)
             int tmp_modified = 0;
             if (intern_constants(tmp, &tmp_modified) < 0) {
                 Py_DECREF(tmp);
-                return -1;
+                goto error;
             }
             if (tmp_modified) {
                 v = PySlice_New(PyTuple_GET_ITEM(tmp, 0),
@@ -269,7 +286,7 @@ intern_constants(PyObject *tuple, int *modified)
                                 PyTuple_GET_ITEM(tmp, 2));
                 if (v == NULL) {
                     Py_DECREF(tmp);
-                    return -1;
+                    goto error;
                 }
                 PyTuple_SET_ITEM(tuple, i, v);
                 Py_DECREF(slice);
@@ -288,7 +305,7 @@ intern_constants(PyObject *tuple, int *modified)
         {
             PyObject *interned = intern_one_constant(v);
             if (interned == NULL) {
-                return -1;
+                goto error;
             }
             else if (interned != v) {
                 PyTuple_SET_ITEM(tuple, i, interned);
@@ -300,7 +317,12 @@ intern_constants(PyObject *tuple, int *modified)
         }
 #endif
     }
+    Py_DECREF(interned_dict);
     return 0;
+
+error:
+    Py_DECREF(interned_dict);
+    return -1;
 }
 
 /* Return a shallow copy of a tuple that is
