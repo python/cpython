@@ -31,6 +31,7 @@ class IOBinding:
                                           self.save_as)
         self.__id_savecopy = self.text.bind("<<save-copy-of-window-as-file>>",
                                             self.save_a_copy)
+        self.__id_reload = self.text.bind("<<reload-window>>", self.reload)
         self.fileencoding = 'utf-8'
         self.__id_print = self.text.bind("<<print-window>>", self.print_window)
 
@@ -40,6 +41,7 @@ class IOBinding:
         self.text.unbind("<<save-window>>", self.__id_save)
         self.text.unbind("<<save-window-as-file>>",self.__id_saveas)
         self.text.unbind("<<save-copy-of-window-as-file>>", self.__id_savecopy)
+        self.text.unbind("<<reload-window>>", self.__id_reload)
         self.text.unbind("<<print-window>>", self.__id_print)
         # Break cycles
         self.editwin = None
@@ -235,6 +237,35 @@ class IOBinding:
             self.writefile(filename)
         self.text.focus_set()
         self.updaterecentfileslist(filename)
+        return "break"
+
+    def reload(self, event):
+        """Reload the file from disk, discarding any unsaved changes.
+
+        If the file has unsaved changes, ask the user to confirm.
+        """
+        if not self.filename:
+            messagebox.showinfo(
+                "File Not Found",
+                "This window has no associated file to reload.",
+                parent=self.text)
+            self.text.focus_set()
+            return "break"
+
+        if not self.get_saved():
+            confirm = messagebox.askokcancel(
+                title="Reload File",
+                message=f"Discard changes to {self.filename}?",
+                default=messagebox.CANCEL,
+                parent=self.text)
+            if not confirm:
+                self.text.focus_set()
+                return "break"
+
+        # Reload the file
+        self.loadfile(self.filename)
+
+        self.text.focus_set()
         return "break"
 
     def writefile(self, filename):

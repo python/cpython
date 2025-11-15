@@ -31,6 +31,7 @@ menudefs = [
    ('_Save', '<<save-window>>'),
    ('Save _As...', '<<save-window-as-file>>'),
    ('Save Cop_y As...', '<<save-copy-of-window-as-file>>'),
+   ('Re_load from Disk', '<<reload-window>>'),
    None,
    ('Prin_t Window', '<<print-window>>'),
    None,
