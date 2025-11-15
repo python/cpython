@@ -82,7 +82,6 @@ class IOBindingTest(unittest.TestCase):
         io = self.io
         text = io.editwin.text
 
-        # Create a temporary file
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as f:
             f.write("# Original content\n")
             temp_filename = f.name
@@ -107,7 +106,6 @@ class IOBindingTest(unittest.TestCase):
         io = self.io
         text = io.editwin.text
 
-        # Create a temporary file
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as f:
             f.write("# Original content\n")
             temp_filename = f.name
@@ -138,7 +136,6 @@ class IOBindingTest(unittest.TestCase):
         io = self.io
         text = io.editwin.text
 
-        # Create a temporary file
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as f:
             f.write("# Original content\n")
             temp_filename = f.name
