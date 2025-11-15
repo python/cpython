@@ -106,6 +106,7 @@ if "%~1"=="-E" (set IncludeExternals=false) & shift & goto CheckOpts
 if "%~1"=="--no-ctypes" (set IncludeCTypes=false) & shift & goto CheckOpts
 if "%~1"=="--no-ssl" (set IncludeSSL=false) & shift & goto CheckOpts
 if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
+if "%~1"=="--stackref-debug" (set StackRefDebug=true) & shift & goto CheckOpts
 
 if "%IncludeExternals%"=="" set IncludeExternals=true
 if "%IncludeCTypes%"=="" set IncludeCTypes=true
@@ -202,6 +203,7 @@ echo on
  /p:PyStats=%PyStats%^
  /p:UseTailCallInterp=%UseTailCallInterp%^
  /p:DisableRemoteDebug=%DisableRemoteDebug%^
+ /p:StackRefDebug=%StackRefDebug%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off
