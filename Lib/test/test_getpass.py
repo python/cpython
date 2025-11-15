@@ -174,7 +174,8 @@ class UnixGetpassTest(unittest.TestCase):
 
             result = getpass.unix_getpass(echo_char='*')
             mock_input.assert_called_once_with('Password: ', textio(),
-                                               input=textio(), echo_char='*')
+                                               input=textio(), echo_char='*',
+                                               term_ctrl_chars=mock.ANY)
             self.assertEqual(result, mock_result)
 
     def test_raw_input_with_echo_char(self):
@@ -199,6 +200,41 @@ class UnixGetpassTest(unittest.TestCase):
                                         '*')
         self.assertEqual(result, expect_result)
         self.assertEqual('Password: *******\x08 \x08', mock_output.getvalue())
+
+    def test_kill_ctrl_u_with_echo_char(self):
+        # Ctrl+U (KILL) should clear the entire line
+        passwd = 'foo\x15bar'  # Type "foo", hit Ctrl+U, type "bar"
+        expect_result = 'bar'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, expect_result)
+        # Should show "***" then clear all 3, then show "***" for "bar"
+        output = mock_output.getvalue()
+        self.assertIn('***', output)
+        # Should have backspaces to clear the "foo" part
+        self.assertIn('\b', output)
+
+    def test_werase_ctrl_w_with_echo_char(self):
+        # Ctrl+W (WERASE) should delete the previous word
+        passwd = 'hello world\x17end'  # Type "hello world", hit Ctrl+W, type "end"
+        expect_result = 'hello end'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, expect_result)
+
+    def test_lnext_ctrl_v_with_echo_char(self):
+        # Ctrl+V (LNEXT) should insert the next character literally
+        passwd = 'test\x16\x15more'  # Type "test", hit Ctrl+V, then Ctrl+U (literal), type "more"
+        expect_result = 'test\x15more'  # Should contain literal Ctrl+U
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                    '*')
+        self.assertEqual(result, expect_result)
 
 
 class GetpassEchoCharTest(unittest.TestCase):
