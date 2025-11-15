@@ -1,0 +1,3 @@
+Add the :attr:`~multiprocessing.Process.closed` property to
+:class:`multiprocessing.Process` objects to determine whether
+they have been closed or not.
