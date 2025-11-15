@@ -43,13 +43,13 @@ def get_first_executor(func):
 def get_all_executors(func):
     code = func.__code__
     co_code = code.co_code
-    execs = []
+    executors = []
     for i in range(0, len(co_code), 2):
         try:
-            execs.append(_opcode.get_executor(code, i))
+            executors.append(_opcode.get_executor(code, i))
         except ValueError:
             pass
-    return execs
+    return executors
 
 
 def iter_opnames(ex):
@@ -2647,10 +2647,23 @@ class TestUopsOptimization(unittest.TestCase):
                     z = x + y
 
         f()
+        all_executors = get_all_executors(f)
         # Inner loop warms up first.
         # Outer loop warms up later, linking to the inner one.
-        # Therefore, at least two executors.
-        self.assertGreaterEqual(len(get_all_executors(f)), 2)
+        # Therefore, we have at least two executors.
+        self.assertGreaterEqual(len(all_executors), 2)
+        for executor in all_executors:
+            opnames = list(get_opnames(executor))
+            # Assert all executors first terminator ends in
+            # _JUMP_TO_TOP or _EXIT_TRACE, not _DEOPT
+            for idx, op in enumerate(opnames):
+                if op == "_EXIT_TRACE" or op == "_JUMP_TO_TOP":
+                    break
+                elif op == "_DEOPT":
+                    self.fail(f"_DEOPT encountered first at executor"
+                              f" {executor} at offset {idx} rather"
+                              f" than expected _EXIT_TRACE")
+
 
 
 def global_identity(x):
