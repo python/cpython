@@ -112,13 +112,12 @@ class MimeTypesTestCase(unittest.TestCase):
         eq = self.assertEqual
         # First try strict
         eq(self.db.guess_file_type('foo.xul', strict=True), (None, None))
-        eq(self.db.guess_extension('image/jpg', strict=True), None)
         # And then non-strict
         eq(self.db.guess_file_type('foo.xul', strict=False), ('text/xul', None))
         eq(self.db.guess_file_type('foo.XUL', strict=False), ('text/xul', None))
         eq(self.db.guess_file_type('foo.invalid', strict=False), (None, None))
-        eq(self.db.guess_extension('image/jpg', strict=False), '.jpg')
-        eq(self.db.guess_extension('image/JPG', strict=False), '.jpg')
+        eq(self.db.guess_extension('image/jpeg', strict=False), '.jpg')
+        eq(self.db.guess_extension('image/JPEG', strict=False), '.jpg')
 
     def test_filename_with_url_delimiters(self):
         # bpo-38449: URL delimiters cases should be handled also.
@@ -179,8 +178,8 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertTrue(set(all) >= {'.bat', '.c', '.h', '.ksh', '.pl', '.txt'})
         self.assertEqual(len(set(all)), len(all))  # no duplicates
         # And now non-strict
-        all = self.db.guess_all_extensions('image/jpg', strict=False)
-        self.assertEqual(all, ['.jpg'])
+        all = self.db.guess_all_extensions('image/jpeg', strict=False)
+        self.assertEqual(all, ['.jpg', '.jpe', '.jpeg'])
         # And now for no hits
         all = self.db.guess_all_extensions('image/jpg', strict=True)
         self.assertEqual(all, [])
@@ -231,6 +230,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/ogg", ".ogx"),
                 ("application/pdf", ".pdf"),
                 ("application/postscript", ".ps"),
+                ("application/rtf", ".rtf"),
                 ("application/texinfo", ".texi"),
                 ("application/toml", ".toml"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
@@ -281,7 +281,6 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("model/stl", ".stl"),
                 ("text/html", ".html"),
                 ("text/plain", ".txt"),
-                ("text/rtf", ".rtf"),
                 ("text/x-rst", ".rst"),
                 ("video/matroska", ".mkv"),
                 ("video/matroska-3d", ".mk3d"),
@@ -372,9 +371,7 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(self.db.guess_type(
             url="scheme:foo.html", strict=True), ("text/html", None))
         self.assertEqual(self.db.guess_all_extensions(
-            type='image/jpg', strict=True), [])
-        self.assertEqual(self.db.guess_extension(
-            type='image/jpg', strict=False), '.jpg')
+            type='image/jpeg', strict=True), ['.jpg', '.jpe', '.jpeg'])
 
     def test_added_types_are_used(self):
         mimetypes.add_type('testing/default-type', '')
@@ -452,15 +449,15 @@ class CommandLineTest(unittest.TestCase):
         args, help_text = mimetypes._parse_args("--invalid")
         self.assertTrue(help_text.startswith("usage: "))
 
-        args, _ = mimetypes._parse_args(shlex.split("-l -e image/jpg"))
+        args, _ = mimetypes._parse_args(shlex.split("-l -e image/jpeg"))
         self.assertTrue(args.extension)
         self.assertTrue(args.lenient)
-        self.assertEqual(args.type, ["image/jpg"])
+        self.assertEqual(args.type, ["image/jpeg"])
 
-        args, _ = mimetypes._parse_args(shlex.split("-e image/jpg"))
+        args, _ = mimetypes._parse_args(shlex.split("-e image/jpeg"))
         self.assertTrue(args.extension)
         self.assertFalse(args.lenient)
-        self.assertEqual(args.type, ["image/jpg"])
+        self.assertEqual(args.type, ["image/jpeg"])
 
         args, _ = mimetypes._parse_args(shlex.split("-l foo.webp"))
         self.assertFalse(args.extension)
@@ -491,7 +488,6 @@ class CommandLineTest(unittest.TestCase):
 
     def test_invocation(self):
         for command, expected in [
-            ("-l -e image/jpg", ".jpg"),
             ("-e image/jpeg", ".jpg"),
             ("-l foo.webp", "type: image/webp encoding: None"),
         ]:
