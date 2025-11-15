@@ -1,0 +1,3 @@
+:mod:`collections`: Ensure that the methods ``UserString.rindex()`` and
+``UserString.index()`` accept :class:`collections.UserString` instances as the
+sub argument.
