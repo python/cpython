@@ -10627,7 +10627,7 @@ class SpecialAttrsTests(BaseTestCase):
             # Subscribed ABC classes
             typing.AbstractSet[Any]: 'AbstractSet',
             typing.AsyncContextManager[Any, Any]: 'AsyncContextManager',
-            typing.AsyncGenerator[Any, Any]: 'AsyncGenerator',
+            typing.AsyncGenerator[Any, Any, Any]: 'AsyncGenerator',
             typing.AsyncIterable[Any]: 'AsyncIterable',
             typing.AsyncIterator[Any]: 'AsyncIterator',
             typing.Awaitable[Any]: 'Awaitable',
