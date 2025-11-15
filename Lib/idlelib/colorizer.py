@@ -21,8 +21,8 @@ def make_pat():
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<MATCH_SOFTKW>match)\b" +
         r"(?![ \t]*(?:" + "|".join([  # not followed by ...
-            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
-                                 # pattern-matching statement
+            r"[.:,;=^&|@~)\]}]",  # a character which means it can't be a
+                                  # pattern-matching statement
             r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
         ]) +
         r"))"
@@ -39,8 +39,8 @@ def make_pat():
         r"(?P<CASE_SOFTKW2>case)\b" +
         r"(?![ \t]*(?:" + "|".join([  # not followed by ...
             r"_\b",  # a lone underscore
-            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
-                                 # pattern-matching case
+            r"[.:,;=^&|@~)\]}]",  # a character which means it can't be a
+                                  # pattern-matching case
             r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
         ]) +
         r"))"
