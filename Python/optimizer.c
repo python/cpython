@@ -574,7 +574,7 @@ _PyJit_translate_single_bytecode_to_trace(
     PyThreadState *tstate,
     _PyInterpreterFrame *frame,
     _Py_CODEUNIT *next_instr,
-    int stop_tracing_exit)
+    int stop_tracing_opcode)
 {
 
 #ifdef Py_DEBUG
@@ -637,8 +637,8 @@ _PyJit_translate_single_bytecode_to_trace(
         goto full;
     }
 
-    if (stop_tracing_exit) {
-        ADD_TO_TRACE(stop_tracing_exit, 0, 0, target);
+    if (stop_tracing_opcode != 0) {
+        ADD_TO_TRACE(stop_tracing_opcode, 0, 0, target);
         goto done;
     }
 
