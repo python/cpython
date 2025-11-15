@@ -559,8 +559,9 @@ definition with the same method name.
 .. c:function:: PyObject *PyCFunction_GetSelf(PyObject *func)
 
    Get the "self" object on *func*. This is the object that would be passed
-   to the first argument of a :c:type:`PyCFunction`. In modules, this is the
-   module object.
+   to the first argument of a :c:type:`PyCFunction`. For C function objects
+   created through a :c:type:`PyMethodDef` on a :c:type:`PyModuleDef`, this
+   is the resulting module object.
 
    If *func* is not a C function object, this fails with a
    :class:`SystemError`.
