@@ -34,6 +34,7 @@ import warnings
 import errno
 
 from .readline import _get_reader, multiline_input, append_history_file
+from .utils import DEFAULT_PS1, DEFAULT_PS2
 
 
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -137,8 +138,8 @@ def run_multiline_interactive_console(
             except Exception:
                 pass
 
-            ps1 = getattr(sys, "ps1", ">>> ")
-            ps2 = getattr(sys, "ps2", "... ")
+            ps1 = getattr(sys, "ps1", DEFAULT_PS1)
+            ps2 = getattr(sys, "ps2", DEFAULT_PS2)
             try:
                 statement = multiline_input(more_lines, ps1, ps2)
             except EOFError:
