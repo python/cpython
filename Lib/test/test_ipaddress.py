@@ -13,7 +13,7 @@ import pickle
 import ipaddress
 import weakref
 from test.support import LARGEST, SMALLEST
-from typing import Iterator
+from collections.abc import Iterator
 
 
 class BaseTestCase(unittest.TestCase):
@@ -1475,6 +1475,7 @@ class IpaddrUnitTest(unittest.TestCase):
     def testHosts(self):
         hosts = self.ipv4_network.hosts()
         self.assertIsInstance(hosts, Iterator)
+        self.assertIsNotNone(next(hosts))
         hosts = list(self.ipv4_network.hosts())
         self.assertEqual(254, len(hosts))
         self.assertEqual(ipaddress.IPv4Address('1.2.3.1'), hosts[0])
@@ -1483,6 +1484,7 @@ class IpaddrUnitTest(unittest.TestCase):
         ipv6_network = ipaddress.IPv6Network('2001:658:22a:cafe::/120')
         hosts = ipv6_network.hosts()
         self.assertIsInstance(hosts, Iterator)
+        self.assertIsNotNone(next(hosts))
         hosts = list(ipv6_network.hosts())
         self.assertEqual(255, len(hosts))
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), hosts[0])
@@ -1510,6 +1512,10 @@ class IpaddrUnitTest(unittest.TestCase):
         tpl_args = ('1.2.3.4', 32)
         self.assertIsInstance(ipaddress.ip_network(str_args).hosts(), Iterator)
         self.assertIsInstance(ipaddress.ip_network(tpl_args).hosts(), Iterator)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsNotNone(next(hosts))
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsNotNone(next(hosts))
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
@@ -1521,6 +1527,10 @@ class IpaddrUnitTest(unittest.TestCase):
         tpl_args = ('2001:658:22a:cafe::', 127)
         self.assertIsInstance(ipaddress.ip_network(str_args).hosts(), Iterator)
         self.assertIsInstance(ipaddress.ip_network(tpl_args).hosts(), Iterator)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsNotNone(next(hosts))
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsNotNone(next(hosts))
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
@@ -1529,6 +1539,12 @@ class IpaddrUnitTest(unittest.TestCase):
         addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::1'), ]
         str_args = '2001:658:22a:cafe::1/128'
         tpl_args = ('2001:658:22a:cafe::1', 128)
+        self.assertIsInstance(ipaddress.ip_network(str_args).hosts(), Iterator)
+        self.assertIsInstance(ipaddress.ip_network(tpl_args).hosts(), Iterator)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsNotNone(next(hosts))
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsNotNone(next(hosts))
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
