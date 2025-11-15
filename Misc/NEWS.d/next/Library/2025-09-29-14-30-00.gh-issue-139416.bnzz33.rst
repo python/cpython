@@ -1,0 +1,3 @@
+:func:`shutil.copyfile`: Detect problem seen on Lustre filesystems
+giving "Errno 61" due to the sendfile(2) optimised implementation and
+fall back to the Posix standard read/write implementation.
