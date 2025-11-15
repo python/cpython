@@ -1,11 +1,8 @@
 "Test , coverage 17%."
 
 from idlelib import iomenu
-import builtins
-import os
-import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
 from test.support import requires
 from tkinter import Tk
 from idlelib.editor import EditorWindow
@@ -63,12 +60,9 @@ class IOBindingTest(unittest.TestCase):
 
     def test_reload_no_file(self):
         # Test reload when no file is associated
-
         io = self.io
-        # Ensure no filename is set
         io.filename = None
 
-        # Mock the messagebox.showinfo using unittest.mock
         with patch.object(iomenu.messagebox, 'showinfo') as mock_showinfo:
             result = io.reload(None)
             self.assertEqual(result, "break")
@@ -78,79 +72,68 @@ class IOBindingTest(unittest.TestCase):
 
     def test_reload_with_file(self):
         # Test reload with an actual file
-
         io = self.io
         text = io.editwin.text
+        io.filename = "/dummy/path/test.py"
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as f:
-            f.write("# Original content\n")
-            temp_filename = f.name
-        self.addCleanup(os.unlink, temp_filename)
+        original_content = "# Original content\n"
+        modified_content = "# Modified content\n"
 
-        # Load the file
-        io.loadfile(temp_filename)
-        self.assertEqual(text.get('1.0', 'end-1c'), "# Original content\n")
+        m = mock_open()
+        m.side_effect = [
+            mock_open(read_data=original_content).return_value,
+            mock_open(read_data=modified_content).return_value,
+        ]
 
-        # Modify the file content externally
-        with builtins.open(temp_filename, 'w') as f:
-            f.write("# Modified content\n")
+        with patch('builtins.open', m):
+            io.loadfile(io.filename)
+            self.assertEqual(text.get('1.0', 'end-1c'), original_content)
+            result = io.reload(None)
 
-        # Reload should update the content
-        result = io.reload(None)
         self.assertEqual(result, "break")
-        self.assertEqual(text.get('1.0', 'end-1c'), "# Modified content\n")
+        self.assertEqual(text.get('1.0', 'end-1c'), modified_content)
 
     def test_reload_with_unsaved_changes_cancel(self):
         # Test reload with unsaved changes and user cancels
-
         io = self.io
         text = io.editwin.text
+        io.filename = "/dummy/path/test.py"
+        original_content = "# Original content\n"
+        unsaved_content = original_content + "\n# Unsaved change"
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as f:
-            f.write("# Original content\n")
-            temp_filename = f.name
-        self.addCleanup(os.unlink, temp_filename)
+        # Mock the initial file load.
+        with patch('builtins.open', mock_open(read_data=original_content)):
+            io.loadfile(io.filename)
 
-        # Load the file
-        io.loadfile(temp_filename)
-
-        # Make unsaved changes
-        text.insert('end-1c', "\n# Unsaved change")
+        text.insert('end', "\n# Unsaved change")
         io.set_saved(False)
 
-        # Mock askokcancel to return False (cancel)
-        with patch('idlelib.iomenu.messagebox.askokcancel', return_value=False) as mock_askokcancel:
+        with patch('idlelib.iomenu.messagebox.askokcancel', return_value=False) as mock_ask:
             result = io.reload(None)
             self.assertEqual(result, "break")
-            # Content should not change
-            self.assertIn("# Unsaved change", text.get('1.0', 'end-1c'))
-            mock_askokcancel.assert_called_once()
+            # Content should not change.
+            self.assertEqual(text.get('1.0', 'end-1c'), unsaved_content)
+            mock_ask.assert_called_once()
 
     def test_reload_with_unsaved_changes_confirm(self):
         # Test reload with unsaved changes and user confirms
-
         io = self.io
         text = io.editwin.text
+        io.filename = "/dummy/path/test.py"
+        original_content = "# Original content\n"
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.py') as f:
-            f.write("# Original content\n")
-            temp_filename = f.name
-        self.addCleanup(os.unlink, temp_filename)
+        with patch('builtins.open', mock_open(read_data=original_content)):
+            io.loadfile(io.filename)
+            text.insert('end', "\n# Unsaved change")
+            io.set_saved(False)
 
-        # Load the file
-        io.loadfile(temp_filename)
+            with patch('idlelib.iomenu.messagebox.askokcancel', return_value=True) as mock_ask:
+                result = io.reload(None)
 
-        # Make unsaved changes
-        text.insert('end-1c', "\n# Unsaved change")
-        io.set_saved(False)
-
-        # Mock askokcancel to return True (confirm)
-        with patch('idlelib.iomenu.messagebox.askokcancel', return_value=True) as mock_askokcancel:
-            result = io.reload(None)
-            self.assertEqual(result, "break")
-            # Content should be reverted to original
-            self.assertEqual(text.get('1.0', 'end-1c'), "# Original content\n")
-            mock_askokcancel.assert_called_once()
+        self.assertEqual(result, "break")
+        # Content should be reverted to original.
+        self.assertEqual(text.get('1.0', 'end-1c'), original_content)
+        mock_ask.assert_called_once()
 
 
 def _extension_in_filetypes(extension):
