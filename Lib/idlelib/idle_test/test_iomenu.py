@@ -5,6 +5,7 @@ import builtins
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from test.support import requires
 from tkinter import Tk
 from idlelib.editor import EditorWindow
@@ -67,20 +68,13 @@ class IOBindingTest(unittest.TestCase):
         # Ensure no filename is set
         io.filename = None
 
-        # Mock the messagebox.showinfo
-        orig_showinfo = iomenu.messagebox.showinfo
-        showinfo_called = []
-        def mock_showinfo(*args, **kwargs):
-            showinfo_called.append((args, kwargs))
-        iomenu.messagebox.showinfo = mock_showinfo
-
-        try:
+        # Mock the messagebox.showinfo using unittest.mock
+        with patch.object(iomenu.messagebox, 'showinfo') as mock_showinfo:
             result = io.reload(None)
             self.assertEqual(result, "break")
-            self.assertEqual(len(showinfo_called), 1)
-            self.assertIn("File Not Found", showinfo_called[0][0])
-        finally:
-            iomenu.messagebox.showinfo = orig_showinfo
+            mock_showinfo.assert_called_once()
+            args, kwargs = mock_showinfo.call_args
+            self.assertIn("File Not Found", args[0])
 
     def test_reload_with_file(self):
         # Test reload with an actual file
