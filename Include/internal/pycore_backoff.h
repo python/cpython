@@ -22,20 +22,20 @@ extern "C" {
    Another use is for the Tier 2 optimizer to decide when to create
    a new Tier 2 trace (executor). Again, exponential backoff is used.
 
-   The 16-bit counter is structured as a 12-bit unsigned 'value'
-   and a 4-bit 'backoff' field. When resetting the counter, the
+   The 16-bit counter is structured as a 13-bit unsigned 'value'
+   and a 3-bit 'backoff' field. When resetting the counter, the
    backoff field is incremented (until it reaches a limit) and the
-   value is set to a bit mask representing the value 2**backoff - 1.
-   The maximum backoff is 12 (the number of bits in the value).
+   value is set to a bit mask representing the value 2**(2*backoff+1) - 1.
+   The maximum backoff is 6, since 7 is an UNREACHABLE_BACKOFF.
 
    There is an exceptional value which must not be updated, 0xFFFF.
 */
 
-#define BACKOFF_BITS 4
-#define BACKOFF_MASK 0xF
-#define MAX_BACKOFF 12
-#define UNREACHABLE_BACKOFF 15
-#define MAX_VALUE 0xFFF
+#define BACKOFF_BITS 3
+#define BACKOFF_MASK 7
+#define MAX_BACKOFF 6
+#define UNREACHABLE_BACKOFF 7
+#define MAX_VALUE 0x1FFF
 
 static inline bool
 is_unreachable_backoff_counter(_Py_BackoffCounter counter)
@@ -67,10 +67,10 @@ restart_backoff_counter(_Py_BackoffCounter counter)
     assert(!is_unreachable_backoff_counter(counter));
     int backoff = counter.value_and_backoff & BACKOFF_MASK;
     if (backoff < MAX_BACKOFF) {
-        return make_backoff_counter((1 << (backoff + 1)) - 1, backoff + 1);
+        return make_backoff_counter((1 << (2 * backoff + 3)) - 1, backoff + 1);
     }
     else {
-        return make_backoff_counter((1 << MAX_BACKOFF) - 1, MAX_BACKOFF);
+        return make_backoff_counter((1 << (2 * MAX_BACKOFF + 1)) - 1, MAX_BACKOFF);
     }
 }
 
@@ -115,7 +115,7 @@ trigger_backoff_counter(void)
 // as we always end up tracing the loop iteration's
 // exhaustion iteration. Which aborts our current tracer.
 #define JUMP_BACKWARD_INITIAL_VALUE 4000
-#define JUMP_BACKWARD_INITIAL_BACKOFF 12
+#define JUMP_BACKWARD_INITIAL_BACKOFF 6
 static inline _Py_BackoffCounter
 initial_jump_backoff_counter(void)
 {
@@ -128,7 +128,7 @@ initial_jump_backoff_counter(void)
  * otherwise when a side exit warms up we may construct
  * a new trace before the Tier 1 code has properly re-specialized. */
 #define SIDE_EXIT_INITIAL_VALUE 4000
-#define SIDE_EXIT_INITIAL_BACKOFF 12
+#define SIDE_EXIT_INITIAL_BACKOFF 6
 
 static inline _Py_BackoffCounter
 initial_temperature_backoff_counter(void)
