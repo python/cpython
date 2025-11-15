@@ -2655,7 +2655,7 @@ class TestUopsOptimization(unittest.TestCase):
         for executor in all_executors:
             opnames = list(get_opnames(executor))
             # Assert all executors first terminator ends in
-            # _JUMP_TO_TOP or _EXIT_TRACE, not _DEOPT
+            # _EXIT_TRACE or _JUMP_TO_TOP, not _DEOPT
             for idx, op in enumerate(opnames):
                 if op == "_EXIT_TRACE" or op == "_JUMP_TO_TOP":
                     break
