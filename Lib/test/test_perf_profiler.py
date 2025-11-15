@@ -238,6 +238,24 @@ class TestPerfTrampoline(unittest.TestCase):
                 """
         assert_python_ok("-c", code, PYTHON_JIT="0")
 
+    def test_sys_api_perf_jit_backend(self):
+        code = """if 1:
+                import sys
+                sys.activate_stack_trampoline("perf_jit")
+                assert sys.is_stack_trampoline_active() is True
+                sys.deactivate_stack_trampoline()
+                assert sys.is_stack_trampoline_active() is False
+                """
+        assert_python_ok("-c", code, PYTHON_JIT="0")
+
+    def test_sys_api_with_existing_perf_jit_trampoline(self):
+        code = """if 1:
+                import sys
+                sys.activate_stack_trampoline("perf_jit")
+                sys.activate_stack_trampoline("perf_jit")
+                """
+        assert_python_ok("-c", code, PYTHON_JIT="0")
+
 
 def is_unwinding_reliable_with_frame_pointers():
     cflags = sysconfig.get_config_var("PY_CORE_CFLAGS")
