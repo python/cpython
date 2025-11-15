@@ -603,7 +603,7 @@ _PyJit_translate_single_bytecode_to_trace(
     // Rewind EXTENDED_ARG so that we see the whole thing.
     // We must point to the first EXTENDED_ARG when deopting.
     int oparg = _tstate->jit_tracer_state.prev_state.instr_oparg;
-    int opcode = this_instr->op.code;
+    int opcode = FT_ATOMIC_LOAD_UINT8_RELAXED(this_instr->op.code);
     int rewind_oparg = oparg;
     while (rewind_oparg > 255) {
         rewind_oparg >>= 8;
@@ -977,16 +977,23 @@ _PyJit_TryInitializeTracing(
     if (oparg > 0xFFFF) {
         return 0;
     }
+
+    PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+    if (func == NULL) {
+        return 0;
+    }
+
+    if (!PyMutex_LockFast(&_tstate->jit_tracer_state.lock)) {
+        return 0;
+    }
+
     if (_tstate->jit_tracer_state.code_buffer == NULL) {
         _tstate->jit_tracer_state.code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
         if (_tstate->jit_tracer_state.code_buffer == NULL) {
             // Don't error, just go to next instruction.
+            PyMutex_Unlock(&_tstate->jit_tracer_state.lock);
             return 0;
         }
-    }
-    PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-    if (func == NULL) {
-        return 0;
     }
     PyCodeObject *code = _PyFrame_GetCode(frame);
 #ifdef Py_DEBUG
@@ -1017,7 +1024,7 @@ _PyJit_TryInitializeTracing(
     _tstate->jit_tracer_state.initial_state.stack_depth = curr_stackdepth;
     _tstate->jit_tracer_state.initial_state.chain_depth = chain_depth;
     _tstate->jit_tracer_state.prev_state.instr_frame = frame;
-    _tstate->jit_tracer_state.prev_state.dependencies_still_valid = true;
+    _tstate->jit_tracer_state.prev_state.dependencies_still_valid = 1;
     _tstate->jit_tracer_state.prev_state.instr_code = (PyCodeObject *)Py_NewRef(_PyFrame_GetCode(frame));
     _tstate->jit_tracer_state.prev_state.instr = curr_instr;
     _tstate->jit_tracer_state.prev_state.instr_frame = frame;
@@ -1032,6 +1039,7 @@ _PyJit_TryInitializeTracing(
         FT_ATOMIC_STORE_UINT16_RELAXED(close_loop_instr[1].counter.value_and_backoff, zero.value_and_backoff);
     }
     _Py_BloomFilter_Init(&_tstate->jit_tracer_state.prev_state.dependencies);
+    PyMutex_Unlock(&_tstate->jit_tracer_state.lock);
     return 1;
 }
 
@@ -1702,10 +1710,12 @@ _PyJit_Tracer_InvalidateDependency(PyThreadState *tstate, void *obj)
     _Py_BloomFilter_Init(&obj_filter);
     _Py_BloomFilter_Add(&obj_filter, obj);
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    PyMutex_Lock(&_tstate->jit_tracer_state.lock);
     if (bloom_filter_may_contain(&_tstate->jit_tracer_state.prev_state.dependencies, &obj_filter))
     {
-        _tstate->jit_tracer_state.prev_state.dependencies_still_valid = false;
+        FT_ATOMIC_STORE_UINT8(_tstate->jit_tracer_state.prev_state.dependencies_still_valid, 0);
     }
+    PyMutex_Unlock(&_tstate->jit_tracer_state.lock);
 }
 
 void
@@ -1766,7 +1776,7 @@ _Py_Executors_InvalidateAllLockHeld(PyInterpreterState *interp, int is_invalidat
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
-        ((_PyThreadStateImpl *)p)->jit_tracer_state.prev_state.dependencies_still_valid = false;
+        FT_ATOMIC_STORE_UINT8(((_PyThreadStateImpl *)p)->jit_tracer_state.prev_state.dependencies_still_valid, 0);
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
             assert(exec->tstate == p);
             exec->vm_data.valid = 0;
