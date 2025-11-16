@@ -1489,8 +1489,7 @@ PyDoc_STRVAR(winreg_SetValueEx__doc__,
 "    REG_RESOURCE_LIST -- A device-driver resource list.\n"
 "    REG_SZ -- A null-terminated string.\n"
 "  value\n"
-"    The new value to set. Accepts str, int, list of str, bytes-like object,\n"
-"    or None depending on the type parameter.\n"
+"    A string that specifies the new value.\n"
 "\n"
 "This method can also set additional value and type information for the\n"
 "specified key.  The key identified by the key parameter must have been\n"
@@ -1939,4 +1938,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=61270aaf14fc8725 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2d216be22c6219ba input=a9049054013a1b77]*/

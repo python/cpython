@@ -1837,8 +1837,7 @@ winreg.SetValueEx
         REG_RESOURCE_LIST -- A device-driver resource list.
         REG_SZ -- A null-terminated string.
     value: object
-        The new value to set. Accepts str, int, list of str, bytes-like object,
-        or None depending on the type parameter.
+        A string that specifies the new value.
     /
 
 Stores data in the value field of an open registry key.
@@ -1857,7 +1856,7 @@ the configuration registry to help the registry perform efficiently.
 static PyObject *
 winreg_SetValueEx_impl(PyObject *module, HKEY key, const wchar_t *value_name,
                        PyObject *reserved, DWORD type, PyObject *value)
-/*[clinic end generated code: output=295db04deb456d9e input=2dd9471b4aff5b84]*/
+/*[clinic end generated code: output=295db04deb456d9e input=900a9e3990bfb196]*/
 {
     LONG rc;
     BYTE *data = NULL;
