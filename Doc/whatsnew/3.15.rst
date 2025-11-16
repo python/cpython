@@ -168,8 +168,6 @@ production systems where traditional profiling approaches would be too intrusive
 
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953`.)
 
-=======
-
 Improved error messages
 -----------------------
 
