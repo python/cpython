@@ -64,6 +64,7 @@ def iter_opnames(ex):
 def get_opnames(ex):
     return list(iter_opnames(ex))
 
+FT_TEST_DISABLED_REVERSE_TYPE_CACHE = "FT build reverse type cache is disabled for now"
 
 @requires_jit_enabled
 class TestExecutorInvalidation(unittest.TestCase):
@@ -1182,7 +1183,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIs(type(s), float)
         self.assertEqual(s, 1024.0)
 
-    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions/classes")
+    @unittest.skipIf(Py_GIL_DISABLED, FT_TEST_DISABLED_REVERSE_TYPE_CACHE)
     def test_guard_type_version_removed(self):
         def thing(a):
             x = 0
@@ -1201,7 +1202,7 @@ class TestUopsOptimization(unittest.TestCase):
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 1)
 
-    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions/classes")
+    @unittest.skipIf(Py_GIL_DISABLED, FT_TEST_DISABLED_REVERSE_TYPE_CACHE)
     def test_guard_type_version_removed_inlined(self):
         """
         Verify that the guard type version if we have an inlined function
@@ -1228,7 +1229,7 @@ class TestUopsOptimization(unittest.TestCase):
         guard_type_version_count = opnames.count("_GUARD_TYPE_VERSION")
         self.assertEqual(guard_type_version_count, 1)
 
-    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions")
+    @unittest.skipIf(Py_GIL_DISABLED, FT_TEST_DISABLED_REVERSE_TYPE_CACHE)
     def test_guard_type_version_removed_invalidation(self):
 
         def thing(a):
@@ -1259,7 +1260,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
         self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
-    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions")
+    @unittest.skipIf(Py_GIL_DISABLED, FT_TEST_DISABLED_REVERSE_TYPE_CACHE)
     def test_guard_type_version_removed_escaping(self):
 
         def thing(a):
@@ -2363,7 +2364,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_SMALL_INT", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW", uops)
 
-    @unittest.skipIf(Py_GIL_DISABLED, "FT build only specializes on deferred methods/functions")
+    @unittest.skipIf(Py_GIL_DISABLED, FT_TEST_DISABLED_REVERSE_TYPE_CACHE)
     def test_cached_attributes(self):
         class C:
             A = 1
