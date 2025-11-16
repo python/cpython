@@ -429,7 +429,7 @@ force_done(void *arg)
 
 static int
 ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
-                   PyObject *kwargs)
+                   PyObject *kwargs, int daemon)
 {
     // Mark the handle as starting to prevent any other threads from doing so
     PyMutex_Lock(&self->mutex);
@@ -453,7 +453,8 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
         goto start_failed;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
+    uint8_t whence = daemon ? _PyThreadState_WHENCE_THREADING_DAEMON : _PyThreadState_WHENCE_THREADING;
+    boot->tstate = _PyThreadState_New(interp, whence);
     if (boot->tstate == NULL) {
         PyMem_RawFree(boot);
         if (!PyErr_Occurred()) {
@@ -711,6 +712,9 @@ PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
     if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
+        if (_PyOnceFlag_CallOnce(&self->handle->once, join_thread, self->handle) == -1) {
+            return NULL;
+        }
         Py_RETURN_TRUE;
     }
     else {
@@ -1913,7 +1917,7 @@ do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
         add_to_shutdown_handles(state, handle);
     }
 
-    if (ThreadHandle_start(handle, func, args, kwargs) < 0) {
+    if (ThreadHandle_start(handle, func, args, kwargs, daemon) < 0) {
         if (!daemon) {
             remove_from_shutdown_handles(handle);
         }
@@ -2425,10 +2429,8 @@ thread_shutdown(PyObject *self, PyObject *args)
         // Wait for the thread to finish. If we're interrupted, such
         // as by a ctrl-c we print the error and exit early.
         if (ThreadHandle_join(handle, -1) < 0) {
-            PyErr_FormatUnraisable("Exception ignored while joining a thread "
-                                   "in _thread._shutdown()");
             ThreadHandle_decref(handle);
-            Py_RETURN_NONE;
+            return NULL;
         }
 
         ThreadHandle_decref(handle);
@@ -2523,7 +2525,9 @@ _thread__get_name_impl(PyObject *module)
     }
 
 #ifdef __sun
-    return PyUnicode_DecodeUTF8(name, strlen(name), "surrogateescape");
+    // gh-138004: Decode Solaris/Illumos (e.g. OpenIndiana) thread names
+    // from ASCII, since OpenIndiana only supports ASCII names.
+    return PyUnicode_DecodeASCII(name, strlen(name), "surrogateescape");
 #else
     return PyUnicode_DecodeFSDefault(name);
 #endif
@@ -2561,8 +2565,9 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 {
 #ifndef MS_WINDOWS
 #ifdef __sun
-    // Solaris always uses UTF-8
-    const char *encoding = "utf-8";
+    // gh-138004: Encode Solaris/Illumos thread names to ASCII,
+    // since OpenIndiana does not support non-ASCII names.
+    const char *encoding = "ascii";
 #else
     // Encode the thread name to the filesystem encoding using the "replace"
     // error handler

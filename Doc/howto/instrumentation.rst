@@ -269,6 +269,8 @@ should instead read:
 (assuming a :ref:`debug build <debug-build>` of CPython 3.6)
 
 
+.. _static-markers:
+
 Available static markers
 ------------------------
 

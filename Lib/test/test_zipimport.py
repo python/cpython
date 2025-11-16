@@ -14,7 +14,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 
-from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
+from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED, ZIP_ZSTANDARD
 
 import zipimport
 import linecache
@@ -193,19 +193,38 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # occur in that case (builtin modules are always found first),
         # so we'll simply skip it then. Bug #765456.
         #
-        if "zlib" in sys.builtin_module_names:
-            self.skipTest('zlib is a builtin module')
-        if "zlib" in sys.modules:
-            del sys.modules["zlib"]
-        files = {"zlib.py": test_src}
-        try:
-            self.doTest(".py", files, "zlib")
-        except ImportError:
-            if self.compression != ZIP_DEFLATED:
-                self.fail("expected test to not raise ImportError")
+        if self.compression == ZIP_DEFLATED:
+            mod_name = "zlib"
+            if zipimport._zlib_decompress:  # validate attr name
+                # reset the cached import to avoid test order dependencies
+                zipimport._zlib_decompress = None  # reset cache
+        elif self.compression == ZIP_ZSTANDARD:
+            mod_name = "_zstd"
+            if zipimport._zstd_decompressor_class:  # validate attr name
+                # reset the cached import to avoid test order dependencies
+                zipimport._zstd_decompressor_class = None
         else:
+            mod_name = "zlib"  # the ZIP_STORED case below
+
+        if mod_name in sys.builtin_module_names:
+            self.skipTest(f"{mod_name} is a builtin module")
+        if mod_name in sys.modules:
+            del sys.modules[mod_name]
+        files = {f"{mod_name}.py": test_src}
+        try:
+            self.doTest(".py", files, mod_name)
+        except ImportError:
             if self.compression != ZIP_STORED:
-                self.fail("expected test to raise ImportError")
+                # Expected - fake compression module can't decompress
+                pass
+            else:
+                self.fail("expected test to not raise ImportError for uncompressed")
+        else:
+            if self.compression == ZIP_STORED:
+                # Expected - no compression needed, so fake module works
+                pass
+            else:
+                self.fail("expected test to raise ImportError for compressed zip with fake compression module")
 
     def testPy(self):
         files = {TESTMOD + ".py": test_src}
@@ -1000,8 +1019,13 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
 
 @support.requires_zlib()
-class CompressedZipImportTestCase(UncompressedZipImportTestCase):
+class DeflateCompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
+
+
+@support.requires_zstd()
+class ZStdCompressedZipImportTestCase(UncompressedZipImportTestCase):
+    compression = ZIP_ZSTANDARD
 
 
 class BadFileZipImportTestCase(unittest.TestCase):

@@ -1946,7 +1946,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                sre_match() code is robust even if they don't, and the worst
                you can get is nonsensical match results. */
             GET_ARG;
-            if (arg > 2 * (size_t)groups + 1) {
+            if (arg >= 2 * (size_t)groups) {
                 VTRACE(("arg=%d, groups=%d\n", (int)arg, (int)groups));
                 FAIL;
             }
@@ -2359,7 +2359,7 @@ match_getindex(MatchObject* self, PyObject* index)
     }
 
     // Check that i*2 cannot overflow to make static analyzers happy
-    assert(i <= SRE_MAXGROUPS);
+    assert((size_t)i <= SRE_MAXGROUPS);
     return i;
 }
 
