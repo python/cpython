@@ -524,8 +524,8 @@ definition with the same method name.
    Get the function's flags on *func* as they were passed to
    :c:member:`~PyMethodDef.ml_flags`.
 
-   If *func* is not a C function object, this fails with a
-   :class:`SystemError`.
+   If *func* is not a C function object, this fails with an exception.
+   *func* must not be ``NULL``.
 
    This function returns the function's flags on success, and ``-1`` with an
    exception set on failure.
@@ -542,8 +542,8 @@ definition with the same method name.
    Get the function pointer on *func* as it was passed to
    :c:member:`~PyMethodDef.ml_meth`.
 
-   If *func* is not a C function object, this fails with a
-   :class:`SystemError`.
+   If *func* is not a C function object, this fails with an exception.
+   *func* must not be ``NULL``.
 
    This function returns the function pointer on success, and ``NULL`` with an
    exception set on failure.
@@ -563,8 +563,8 @@ definition with the same method name.
    created through a :c:type:`PyMethodDef` on a :c:type:`PyModuleDef`, this
    is the resulting module object.
 
-   If *func* is not a C function object, this fails with a
-   :class:`SystemError`.
+   If *func* is not a C function object, this fails with an exception.
+   *func* must not be ``NULL``.
 
    This function returns a :term:`borrowed reference` to the "self" object
    on success, and ``NULL`` with an exception set on failure.
