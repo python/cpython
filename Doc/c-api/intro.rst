@@ -313,7 +313,7 @@ complete listing.
    compilation error, otherwise, using this macro with a pointer will
    produce incorrect results.
 
-   
+
 .. _api-objects:
 
 Objects, Types and Reference Counts
