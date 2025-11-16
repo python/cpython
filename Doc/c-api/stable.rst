@@ -364,3 +364,32 @@ Contents of Limited API
 Currently, the :ref:`Limited API <limited-c-api>` includes the following items:
 
 .. limited-api-list::
+
+
+Soft-deprecated Symbols
+=======================
+
+There are a few symbols included in Python's C API are :term:`soft deprecated`.
+Soft deprecated symbols should not be used in new code, but have no planned
+removal for compatibility's sake.
+
+The following is a list of soft deprecated symbols that were included in
+Python's public C API by mistake. They intentionally come with no additional
+documentation. In practice, very few extensions use these APIs.
+
+.. c:function:: PyObject *PyFile_NewStdPrinter(void)
+
+.. c:var:: PyTypeObject PyStdPrinter_Type
+
+.. c:macro:: PyLong_BASE
+
+.. c:macro:: PyLong_MASK
+
+.. c:macro:: PyLong_SHIFT
+
+.. c:macro:: PySet_MINSIZE
+
+.. c:macro:: PyAsyncGenASend_CheckExact(op)
+
+   Do not use these APIs in your extension. They expose Python implementation
+   details and attempts to use them will not be supported by Python maintainers.
