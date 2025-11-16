@@ -157,8 +157,9 @@ Floating-Point Objects
 
 .. c:macro:: Py_IS_FINITE(X)
 
-   Determines if the given floating-point number *X* has finite value,
-   that is, it is normal, subnormal or zero, but not infinite or NaN.
+   Return ``1`` if the given floating-point number *X* is finite,
+   that is, it is normal, subnormal or zero, but not infinite or NaN;
+   else ``0``.
 
    .. deprecated:: 3.14
       The macro is :term:`soft deprecated`.  Use :c:macro:`!isfinite` instead.
@@ -166,8 +167,8 @@ Floating-Point Objects
 
 .. c:macro:: Py_IS_INFINITY(X)
 
-   Determines if the given floating-point number *X* is positive or negative
-   infinity.
+   Return ``1`` if the given floating-point number *X* is positive or negative
+   infinity, else ``0``.
 
    .. deprecated:: 3.14
       The macro is :term:`soft deprecated`.  Use :c:macro:`!isinf` instead.
@@ -175,7 +176,8 @@ Floating-Point Objects
 
 .. c:macro:: Py_IS_NAN(X)
 
-   Determines if the given floating-point number *X* is a not-a-number (NaN) value.
+   Return ``1`` if the given floating-point number *X* is a not-a-number (NaN) value,
+   else ``0``.
 
    .. deprecated:: 3.14
       The macro is :term:`soft deprecated`.  Use :c:macro:`!isnan` instead.
