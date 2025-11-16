@@ -549,7 +549,6 @@ definition with the same method name.
    exception set on failure.
 
 
-
 .. c:function:: int PyCFunction_GET_FUNCTION(PyObject *func)
 
    This is the same as :c:func:`PyCFunction_GetFunction`, but without error
