@@ -28,13 +28,20 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 
 from . import commands, console, input
-from .utils import wlen, unbracket, disp_str, gen_colors, THEME
+from .utils import wlen, unbracket, disp_str, gen_colors, ColorSpan, THEME
 from .trace import trace
 
 
 # types
 Command = commands.Command
-from .types import Callback, SimpleContextManager, KeySpec, CommandName
+from .types import (
+    Callable,
+    Callback,
+    Iterator,
+    SimpleContextManager,
+    KeySpec,
+    CommandName,
+)
 
 
 # syntax classes
@@ -213,6 +220,7 @@ class Reader:
     lxy: tuple[int, int] = field(init=False)
     scheduled_commands: list[str] = field(default_factory=list)
     can_colorize: bool = False
+    gen_colors: Callable[[str], Iterator[ColorSpan]] = field(default=gen_colors)
     threading_hook: Callback | None = None
 
     ## cached metadata to speed up screen refreshes
@@ -312,7 +320,7 @@ class Reader:
         prompt_from_cache = (offset and self.buffer[offset - 1] != "\n")
 
         if self.can_colorize:
-            colors = list(gen_colors(self.get_unicode()))
+            colors = list(self.gen_colors(self.get_unicode()))
         else:
             colors = None
         trace("colors = {colors}", colors=colors)
