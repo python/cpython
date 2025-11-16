@@ -369,9 +369,9 @@ Currently, the :ref:`Limited API <limited-c-api>` includes the following items:
 Soft-deprecated Symbols
 =======================
 
-There are a few symbols included in Python's C API are :term:`soft deprecated`.
-Soft deprecated symbols should not be used in new code, but have no planned
-removal for compatibility's sake.
+There are a few symbols included in Python's C API that are
+:term:`soft deprecated`. Soft deprecated symbols should not be used in new
+code, but have no planned removal for compatibility's sake.
 
 The following is a list of soft deprecated symbols that were included in
 Python's public C API by mistake. They intentionally come with no additional
