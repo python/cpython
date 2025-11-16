@@ -1,0 +1,1 @@
+The :mod:`shelve` module will now provide descriptive error messages to better distinguish key and value type errors. Patch by Furkan Onder.
