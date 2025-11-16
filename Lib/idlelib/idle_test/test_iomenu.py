@@ -70,7 +70,8 @@ class IOBindingTest(unittest.TestCase):
             args, kwargs = mock_showinfo.call_args
             self.assertIn("File Not Found", args[0])
 
-    def test_reload_with_file(self):
+    @patch('idlelib.iomenu.messagebox.showerror')
+    def test_reload_with_file(self, mock_showerror):
         # Test reload with an actual file
         io = self.io
         text = io.editwin.text
@@ -90,6 +91,7 @@ class IOBindingTest(unittest.TestCase):
             self.assertEqual(text.get('1.0', 'end-1c'), original_content)
             result = io.reload(None)
 
+        mock_showerror.assert_not_called()
         self.assertEqual(result, "break")
         self.assertEqual(text.get('1.0', 'end-1c'), modified_content)
 
