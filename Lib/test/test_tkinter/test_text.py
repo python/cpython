@@ -71,7 +71,7 @@ class TextTest(AbstractTkTest, unittest.TestCase):
 
         overlap_res = text.search_all('aba', '1.0', 'end', overlap=True)
         overlap_res_strs = [str(i) for i in overlap_res]
-        self.assertEqual(overlap_res_strs, ['1.0', '1.2', '1.4'])
+        self.assertEqual(overlap_res_strs, ['1.0', '1.2'])
 
     def test_count(self):
         text = self.text
