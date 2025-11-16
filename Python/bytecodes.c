@@ -5289,6 +5289,7 @@ dummy_func(
         }
 
         tier2 op(_CHECK_VALIDITY, (--)) {
+            // For FT:
             // This doesn't need atomics (for now) as there is only a single time
             // where a write from another thread is possible:
             // when a new thread is spawned and it invalidates all current
