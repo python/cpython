@@ -5,8 +5,8 @@
 .. index::
    pair: object; PickleBuffer
 
-PickleBuffer objects
---------------------
+Pickle buffer objects
+---------------------
 
 .. versionadded:: 3.8
 
@@ -29,6 +29,7 @@ A :class:`pickle.PickleBuffer` object wraps a :ref:`buffer-providing object
 .. c:function:: PyObject *PyPickleBuffer_FromObject(PyObject *obj)
 
    Create a pickle buffer from the object *obj*.
+
    This function will fail if *obj* doesn't support the :ref:`buffer protocol <bufferobjects>`.
 
    On success, return a new pickle buffer instance.
@@ -43,10 +44,10 @@ A :class:`pickle.PickleBuffer` object wraps a :ref:`buffer-providing object
 
    The returned pointer is valid as long as *picklebuf* is alive and has not been
    released. The caller must not modify or free the returned :c:type:`Py_buffer`.
+   If the pickle buffer has been released, raise :exc:`ValueError`.
 
    On success, return a pointer to the buffer view.
    On failure, set an exception and return ``NULL``.
-   If the pickle buffer has been released, raise :exc:`ValueError`.
 
 
 .. c:function:: int PyPickleBuffer_Release(PyObject *picklebuf)
