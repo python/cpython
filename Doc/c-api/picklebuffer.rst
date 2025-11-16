@@ -41,10 +41,10 @@ A :class:`pickle.PickleBuffer` object wraps a :ref:`buffer-providing object
 
    Get a pointer to the underlying :c:type:`Py_buffer` that the pickle buffer wraps.
 
-   On success, return a pointer to the buffer view.
    The returned pointer is valid as long as *picklebuf* is alive and has not been
    released. The caller must not modify or free the returned :c:type:`Py_buffer`.
 
+   On success, return a pointer to the buffer view.
    On failure, set an exception and return ``NULL``.
    If the pickle buffer has been released, raise :exc:`ValueError`.
 
