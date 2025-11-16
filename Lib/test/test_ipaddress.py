@@ -12,8 +12,8 @@ import operator
 import pickle
 import ipaddress
 import weakref
-from test.support import LARGEST, SMALLEST
 from collections.abc import Iterator
+from test.support import LARGEST, SMALLEST
 
 
 class BaseTestCase(unittest.TestCase):
@@ -1491,6 +1491,9 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::ff'), hosts[-1])
 
         ipv6_scoped_network = ipaddress.IPv6Network('2001:658:22a:cafe::%scope/120')
+        hosts = ipv6_scoped_network.hosts()
+        self.assertIsInstance(hosts, Iterator)
+        self.assertIsNotNone(next(hosts))
         hosts = list(ipv6_scoped_network.hosts())
         self.assertEqual(255, len(hosts))
         self.assertEqual(ipaddress.IPv6Address('2001:658:22a:cafe::1'), hosts[0])
@@ -1501,6 +1504,12 @@ class IpaddrUnitTest(unittest.TestCase):
                  ipaddress.IPv4Address('2.0.0.1')]
         str_args = '2.0.0.0/31'
         tpl_args = ('2.0.0.0', 31)
+        self.assertIsInstance(ipaddress.ip_network(str_args).hosts(), Iterator)
+        self.assertIsInstance(ipaddress.ip_network(tpl_args).hosts(), Iterator)
+        hosts = ipaddress.ip_network(str_args).hosts()
+        self.assertIsNotNone(next(hosts))
+        hosts = ipaddress.ip_network(tpl_args).hosts()
+        self.assertIsNotNone(next(hosts))
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
