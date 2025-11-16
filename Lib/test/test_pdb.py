@@ -3232,6 +3232,37 @@ def test_pdb_issue_gh_127321():
     """
 
 
+def test_pdb_issue_gh_136057():
+    """See GH-136057
+    "step" and "next" commands should be able to get over list comprehensions
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     lst = [i for i in range(10)]
+    ...     for i in lst: pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'next',
+    ...     'next',
+    ...     'step',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(3)test_function()
+    -> lst = [i for i in range(10)]
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(4)test_function()
+    -> for i in lst: pass
+    (Pdb) step
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(4)test_function()->None
+    -> for i in lst: pass
+    (Pdb) continue
+    """
+
+
 def test_pdb_issue_gh_80731():
     """See GH-80731
 
