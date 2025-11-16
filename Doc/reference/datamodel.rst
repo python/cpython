@@ -2630,9 +2630,10 @@ Notes on using *__slots__*:
   descriptor directly from the base class). This renders the meaning of the
   program undefined.  In the future, a check may be added to prevent this.
 
-* :exc:`TypeError` will be raised if nonempty *__slots__* are defined for a
-  class derived from a
-  :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
+* :exc:`TypeError` will be raised if *__slots__* other than *__dict__* and
+  *__weakref__* are defined for a class derived from a
+  :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>`
+  without the :c:macro:`Py_TPFLAGS_ITEMS_AT_END` flag such as
   :class:`int`, :class:`bytes`, and :class:`tuple`.
 
 * Any non-string :term:`iterable` may be assigned to *__slots__*.
@@ -2655,6 +2656,14 @@ Notes on using *__slots__*:
   created for each
   of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
+
+.. versionchanged:: next
+   Allowed defining the *__dict__* and *__weakref__* *__slots__* for any class.
+
+   Allowed defining any *__slots__* for a class derived from :class:`type` or
+   other :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>`
+   with the :c:macro:`Py_TPFLAGS_ITEMS_AT_END` flag.
+
 
 .. _class-customization:
 
