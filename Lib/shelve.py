@@ -114,9 +114,7 @@ class Shelf(collections.abc.MutableMapping):
                 invalid_type = "None"
             else:
                 invalid_type = type(serialized_value).__name__
-            msg = (f"Serializer returned {serialized_value!r} for value "
-                   f"{original_value!r}, but database values must be "
-                   f"bytes or str, not {invalid_type}")
+            msg = f"Serializer must return bytes or str, not {invalid_type}"
             raise ShelveError(msg)
 
     def __iter__(self):
