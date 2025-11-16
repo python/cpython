@@ -2498,6 +2498,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_POP_TOP_NOP", uops)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT might immortalize this.")
     def test_pop_top_specialize_int(self):
         def testfunc(n):
             for _ in range(n):
@@ -2511,6 +2512,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_POP_TOP_INT", uops)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT might immortalize this.")
     def test_pop_top_specialize_float(self):
         def testfunc(n):
             for _ in range(n):
