@@ -1,1 +1,1 @@
-Make :c:func:`type_setattro` use defer refcount in free-threading for functions without defer refcount.
+Make ``type_setattro`` use defer refcount in free-threading for functions without defer refcount.
