@@ -1655,12 +1655,12 @@ jit_tracer_invalidate_dependency(PyThreadState *tstate, void *obj)
     _Py_BloomFilter_Init(&obj_filter);
     _Py_BloomFilter_Add(&obj_filter, obj);
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    PyMutex_Lock(&_tstate->jit_tracer_state.lock);
+    FT_MUTEX_LOCK(&_tstate->jit_tracer_state.lock);
     if (bloom_filter_may_contain(&_tstate->jit_tracer_state.prev_state.dependencies, &obj_filter))
     {
         FT_ATOMIC_STORE_UINT8(_tstate->jit_tracer_state.prev_state.dependencies_still_valid, 0);
     }
-    PyMutex_Unlock(&_tstate->jit_tracer_state.lock);
+    FT_MUTEX_UNLOCK(&_tstate->jit_tracer_state.lock);
 }
 
 void

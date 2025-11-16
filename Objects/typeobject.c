@@ -1148,8 +1148,9 @@ static void
 set_version_unlocked(PyTypeObject *tp, unsigned int version)
 {
     assert(version == 0 || (tp->tp_versions_used != _Py_ATTR_CACHE_UNUSED));
-#ifndef Py_GIL_DISABLED
+#if _Py_TIER2
     PyInterpreterState *interp = _PyInterpreterState_GET();
+    BEGIN_TYPE_LOCK();
     // lookup the old version and set to null
     if (tp->tp_version_tag != 0) {
         PyTypeObject **slot =
@@ -1157,6 +1158,8 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
             + (tp->tp_version_tag % TYPE_VERSION_CACHE_SIZE);
         *slot = NULL;
     }
+#endif
+#ifndef Py_GIL_DISABLED
     if (version) {
         tp->tp_versions_used++;
     }
@@ -1166,13 +1169,14 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
     }
 #endif
     FT_ATOMIC_STORE_UINT_RELAXED(tp->tp_version_tag, version);
-#ifndef Py_GIL_DISABLED
+#if _Py_TIER2
     if (version != 0) {
         PyTypeObject **slot =
             interp->types.type_version_cache
             + (version % TYPE_VERSION_CACHE_SIZE);
         *slot = tp;
     }
+    END_TYPE_LOCK();
 #endif
 }
 
@@ -1357,9 +1361,12 @@ _PyType_SetVersion(PyTypeObject *tp, unsigned int version)
 PyTypeObject *
 _PyType_LookupByVersion(unsigned int version)
 {
-#ifdef Py_GIL_DISABLED
+#ifndef _Py_TIER2
     return NULL;
 #else
+    // This function does not need locking/atomics as it can only be
+    // called from the optimizer, which is currently disabled
+    // when there are multiple threads.
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyTypeObject **slot =
         interp->types.type_version_cache
