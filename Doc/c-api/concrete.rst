@@ -109,6 +109,7 @@ Other Objects
    descriptor.rst
    slice.rst
    memoryview.rst
+   picklebuffer.rst
    weakref.rst
    capsule.rst
    frame.rst
