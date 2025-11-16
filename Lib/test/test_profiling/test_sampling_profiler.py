@@ -2516,7 +2516,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock_run_with_sync.assert_called_once_with((
                 sys.executable, "script.py",
                 "--input", "file.txt", "-v", "--output=/tmp/out", "positional",
-            ))
+            ), suppress_output=False)
 
     def test_cli_collapsed_format_validation(self):
         """Test that CLI properly validates incompatible options with collapsed format."""
