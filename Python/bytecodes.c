@@ -5301,7 +5301,7 @@ dummy_func(
             // there is a strict happens-before relation between that
             // uop's invalidation of validity and this check.
             // So for now, while the JIT does not run on multiple threads,
-            // it is safe for this to be nona-atomic.
+            // it is safe for this to be non-atomic.
             DEOPT_IF(!current_executor->vm_data.valid);
         }
 
