@@ -1855,7 +1855,7 @@ the configuration registry to help the registry perform efficiently.
 static PyObject *
 winreg_SetValueEx_impl(PyObject *module, HKEY key, const wchar_t *value_name,
                        PyObject *reserved, DWORD type, PyObject *value)
-/*[clinic end generated code: output=295db04deb456d9e input=900a9e3990bfb196]*/
+/*[clinic end generated code: output=295db04deb456d9e input=2dd9471b4aff5b84]*/
 {
     LONG rc;
     BYTE *data = NULL;
@@ -2034,6 +2034,97 @@ winreg_DeleteTree_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
 }
 
 /*[clinic input]
+winreg.GetValue
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(accept={str, NoneType})
+        A string that names the subkey with which the value is associated.
+        If this parameter is None or empty, the value will be read from key.
+    name: Py_UNICODE(accept={str, NoneType})
+        A string indicating the value to query.
+    flags: int(c_default='RRF_RT_ANY') = winreg.RRF_RT_ANY
+        Restrict the data type of value to be queried.
+    /
+
+Retrieves the type and data for the specified registry value.
+
+Behaves mostly like QueryValueEx(), but you needn't OpenKey() and CloseKey()
+if the key is any one of the predefined HKEY_* constants.
+
+The return value is a tuple of the value and the type_id.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_GetValue_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
+                     const wchar_t *name, int flags)
+/*[clinic end generated code: output=31668fd98e5cd5dc input=9f879d56439779e9]*/
+{
+    LONG rc;
+    BYTE *retBuf, *tmp;
+    DWORD bufSize = 0, retSize;
+    DWORD typ;
+    PyObject *obData;
+    PyObject *result;
+
+    if (PySys_Audit("winreg.GetValue", "nuui",
+                    (Py_ssize_t)key, sub_key, name, flags) < 0) {
+        return NULL;
+    }
+
+    /* First call to get the required buffer size */
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegGetValueW(key, sub_key, name, flags, &typ, NULL, &bufSize);
+    Py_END_ALLOW_THREADS
+
+    if (rc == ERROR_MORE_DATA) {
+        bufSize = 256;
+    }
+    else if (rc != ERROR_SUCCESS) {
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegGetValue");
+    }
+
+    retBuf = (BYTE *)PyMem_Malloc(bufSize);
+    if (retBuf == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    /* Second call to get the actual data */
+    while (1) {
+        retSize = bufSize;
+        Py_BEGIN_ALLOW_THREADS
+        rc = RegGetValueW(key, sub_key, name, flags, &typ,
+                          (BYTE *)retBuf, &retSize);
+        Py_END_ALLOW_THREADS
+        if (rc != ERROR_MORE_DATA) {
+            break;
+        }
+
+        bufSize *= 2;
+        tmp = (char *) PyMem_Realloc(retBuf, bufSize);
+        if (tmp == NULL) {
+            PyMem_Free(retBuf);
+            return PyErr_NoMemory();
+        }
+        retBuf = tmp;
+    }
+
+    if (rc != ERROR_SUCCESS) {
+        PyMem_Free(retBuf);
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegGetValue");
+    }
+
+    obData = Reg2Py(retBuf, retSize, typ);
+    PyMem_Free(retBuf);
+    if (obData == NULL) {
+        return NULL;
+    }
+    result = Py_BuildValue("Oi", obData, typ);
+    Py_DECREF(obData);
+    return result;
+}
+
+/*[clinic input]
 winreg.QueryReflectionKey
 
     key: HKEY
@@ -2205,6 +2296,18 @@ exec_module(PyObject *m)
     ADD_INT(REG_RESOURCE_LIST);
     ADD_INT(REG_FULL_RESOURCE_DESCRIPTOR);
     ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
+    ADD_INT(RRF_RT_ANY);
+    ADD_INT(RRF_RT_DWORD);
+    ADD_INT(RRF_RT_QWORD);
+    ADD_INT(RRF_RT_REG_BINARY);
+    ADD_INT(RRF_RT_REG_EXPAND_SZ);
+    ADD_INT(RRF_RT_REG_MULTI_SZ);
+    ADD_INT(RRF_RT_REG_NONE);
+    ADD_INT(RRF_RT_REG_SZ);
+    ADD_INT(RRF_NOEXPAND);
+    ADD_INT(RRF_SUBKEY_WOW6464KEY);
+    ADD_INT(RRF_SUBKEY_WOW6432KEY);
+    ADD_INT(RRF_WOW64_MASK);
 
 #undef ADD_INT
     return 0;
