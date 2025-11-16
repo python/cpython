@@ -47,7 +47,7 @@ class TextTest(AbstractTkTest, unittest.TestCase):
             'Another line.\n'
             'Yet another line.')
 
-        result_plain = text.search('line', '1.0', 'end', nolinestop=True)
+        result_plain = text.search('line', '1.0', 'end')
         self.assertEqual(result_plain, '2.8')
 
         # With regexp (same literal pattern, should behave the same)
