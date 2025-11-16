@@ -16,22 +16,22 @@ A :class:`pickle.PickleBuffer` object wraps a :ref:`buffer-providing object
 
 .. c:var:: PyTypeObject PyPickleBuffer_Type
 
-   This instance of :c:type:`PyTypeObject` represents the Python PickleBuffer type.
+   This instance of :c:type:`PyTypeObject` represents the Python pickle buffer type.
    This is the same object as :class:`pickle.PickleBuffer` in the Python layer.
 
 
 .. c:function:: int PyPickleBuffer_Check(PyObject *op)
 
-   Return true if *op* is a PickleBuffer instance.
+   Return true if *op* is a pickle buffer instance.
    This function always succeeds.
 
 
 .. c:function:: PyObject *PyPickleBuffer_FromObject(PyObject *obj)
 
-   Create a PickleBuffer from the object *obj*.
-   *obj* must support the :ref:`buffer protocol <bufferobjects>`.
+   Create a pickle buffer from the object *obj*.
+   This function will fail if *obj* doesn't support the :ref:`buffer protocol <bufferobjects>`.
 
-   On success, return a new PickleBuffer instance.
+   On success, return a new pickle buffer instance.
    On failure, set an exception and return ``NULL``.
 
    Analogous to calling :class:`pickle.PickleBuffer` with *obj* in Python.
@@ -39,20 +39,19 @@ A :class:`pickle.PickleBuffer` object wraps a :ref:`buffer-providing object
 
 .. c:function:: const Py_buffer *PyPickleBuffer_GetBuffer(PyObject *picklebuf)
 
-   Get a pointer to the underlying :c:type:`Py_buffer` that the PickleBuffer wraps.
-   *picklebuf* must be a PickleBuffer instance.
+   Get a pointer to the underlying :c:type:`Py_buffer` that the pickle buffer wraps.
 
    On success, return a pointer to the buffer view.
    The returned pointer is valid as long as *picklebuf* is alive and has not been
    released. The caller must not modify or free the returned :c:type:`Py_buffer`.
 
    On failure, set an exception and return ``NULL``.
-   If the PickleBuffer has been released, raise :exc:`ValueError`.
+   If the pickle buffer has been released, raise :exc:`ValueError`.
 
 
 .. c:function:: int PyPickleBuffer_Release(PyObject *picklebuf)
 
-   Release the underlying buffer held by the PickleBuffer.
+   Release the underlying buffer held by the pickle buffer.
 
    Return ``0`` on success. On failure, set an exception and return ``-1``.
 
