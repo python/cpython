@@ -114,7 +114,7 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop)
     if (res == NULL) {
         return NULL;
     }
-    if (_Py_IsImmortal(res)) {
+    if (_Py_IsImmortal(res) || _PyObject_HasDeferredRefcount(res)) {
         inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE_BORROW;
     }
     else {
@@ -233,7 +233,7 @@ lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
     if (type && PyType_Check(type)) {
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
-            int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
+            int opcode = _Py_IsImmortal(lookup) || _PyObject_HasDeferredRefcount(lookup) ? immortal : mortal;
             REPLACE_OP(this_instr, opcode, 0, (uintptr_t)lookup);
             return sym_new_const(ctx, lookup);
         }
