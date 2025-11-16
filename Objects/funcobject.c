@@ -402,6 +402,8 @@ _PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
         return slot->func;
     }
     return NULL;
+#else
+    return NULL;
 #endif
 }
 
