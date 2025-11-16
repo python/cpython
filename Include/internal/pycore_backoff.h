@@ -95,11 +95,24 @@ backoff_counter_triggers(_Py_BackoffCounter counter)
     return counter.value_and_backoff < UNREACHABLE_BACKOFF;
 }
 
+static inline _Py_BackoffCounter
+trigger_backoff_counter(void)
+{
+    _Py_BackoffCounter result;
+    result.value_and_backoff = 0;
+    return result;
+}
+
 // Initial JUMP_BACKWARD counter.
 // Must be larger than ADAPTIVE_COOLDOWN_VALUE, otherwise when JIT code is
 // invalidated we may construct a new trace before the bytecode has properly
 // re-specialized:
-#define JUMP_BACKWARD_INITIAL_VALUE 4095
+// Note: this should be a prime number-1. This increases the likelihood of
+// finding a "good" loop iteration to trace.
+// For example, 4095 does not work for the nqueens benchmark on pyperformance
+// as we always end up tracing the loop iteration's
+// exhaustion iteration. Which aborts our current tracer.
+#define JUMP_BACKWARD_INITIAL_VALUE 4000
 #define JUMP_BACKWARD_INITIAL_BACKOFF 12
 static inline _Py_BackoffCounter
 initial_jump_backoff_counter(void)
@@ -112,7 +125,7 @@ initial_jump_backoff_counter(void)
  * Must be larger than ADAPTIVE_COOLDOWN_VALUE,
  * otherwise when a side exit warms up we may construct
  * a new trace before the Tier 1 code has properly re-specialized. */
-#define SIDE_EXIT_INITIAL_VALUE 4095
+#define SIDE_EXIT_INITIAL_VALUE 4000
 #define SIDE_EXIT_INITIAL_BACKOFF 12
 
 static inline _Py_BackoffCounter

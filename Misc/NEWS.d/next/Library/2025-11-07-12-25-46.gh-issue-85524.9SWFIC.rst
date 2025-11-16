@@ -1,0 +1,3 @@
+Update ``io.FileIO.readall``, an implementation of :meth:`io.RawIOBase.readall`,
+to follow :class:`io.IOBase` guidelines and raise :exc:`io.UnsupportedOperation`
+when a file is in "w" mode rather than :exc:`OSError`
