@@ -93,7 +93,6 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
 static void
 insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorObject *executor)
 {
-    Py_INCREF(executor);
     if (instr->op.code == ENTER_EXECUTOR) {
         assert(index == instr->op.arg);
         _Py_ExecutorDetach(code->co_executors->executors[index]);
@@ -209,7 +208,6 @@ get_executor_lock_held(PyCodeObject *code, int offset)
         if (_PyCode_CODE(code)[i].op.code == ENTER_EXECUTOR && i*2 == offset) {
             int oparg = _PyCode_CODE(code)[i].op.arg;
             _PyExecutorObject *res = code->co_executors->executors[oparg];
-            Py_INCREF(res);
             return res;
         }
         i += _PyInstruction_GetLength(code, i);
@@ -1638,14 +1636,12 @@ _PyExecutor_ClearExit(_PyExitData *exit)
     if (exit == NULL) {
         return;
     }
-    _PyExecutorObject *old = exit->executor;
     if (exit->is_dynamic) {
         exit->executor = _PyExecutor_GetColdDynamicExecutor();
     }
     else {
         exit->executor = _PyExecutor_GetColdExecutor();
     }
-    Py_DECREF(old);
 }
 
 /* Detaches the executor from the code object (if any) that
@@ -1683,7 +1679,6 @@ executor_clear(PyObject *op)
     _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         executor->exits[i].temperature = initial_unreachable_backoff_counter();
-        _PyExecutorObject *e = executor->exits[i].executor;
         executor->exits[i].executor = cold;
     }
     _Py_ExecutorDetach(executor);
