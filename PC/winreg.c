@@ -68,6 +68,8 @@ PyDoc_STRVAR(module_doc,
 "               specified key in the registry.\n"
 "QueryValueEx() - Retrieves the type and data for a specified value name\n"
 "                 associated with an open registry key.\n"
+"GetValue() - Retrieves the type and data for a specified registry value\n"
+"             without requiring the key to be opened first.\n"
 "QueryInfoKey() - Returns information about the specified key.\n"
 "SaveKey() - Saves the specified key, and all its subkeys a file.\n"
 "SetValue() - Associates a value with a specified key.\n"
@@ -2301,14 +2303,16 @@ exec_module(PyObject *m)
     ADD_INT(RRF_RT_DWORD);
     ADD_INT(RRF_RT_QWORD);
     ADD_INT(RRF_RT_REG_BINARY);
+    ADD_INT(RRF_RT_REG_DWORD);
     ADD_INT(RRF_RT_REG_EXPAND_SZ);
     ADD_INT(RRF_RT_REG_MULTI_SZ);
     ADD_INT(RRF_RT_REG_NONE);
+    ADD_INT(RRF_RT_REG_QWORD);
     ADD_INT(RRF_RT_REG_SZ);
     ADD_INT(RRF_NOEXPAND);
+    ADD_INT(RRF_ZEROONFAILURE);
     ADD_INT(RRF_SUBKEY_WOW6464KEY);
     ADD_INT(RRF_SUBKEY_WOW6432KEY);
-    ADD_INT(RRF_WOW64_MASK);
 
 #undef ADD_INT
     return 0;
