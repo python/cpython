@@ -249,21 +249,9 @@ class WindowsConsole(Console):
     def __write_changed_line(
         self, y: int, oldline: str, newline: str, px_coord: int
     ) -> None:
-        # this is frustrating; there's no reason to test (say)
-        # self.dch1 inside the loop -- but alternative ways of
-        # structuring this function are equally painful (I'm trying to
-        # avoid writing code generators these days...)
         minlen = min(wlen(oldline), wlen(newline))
         x_pos = 0
         x_coord = 0
-
-        px_pos = 0
-        j = 0
-        for c in oldline:
-            if j >= px_coord:
-                break
-            j += wlen(c)
-            px_pos += 1
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
@@ -358,7 +346,6 @@ class WindowsConsole(Console):
         self.height, self.width = self.getheightwidth()
 
         self.posxy = 0, 0
-        self.__gone_tall = 0
         self.__offset = 0
 
         if self.__vt_support:
