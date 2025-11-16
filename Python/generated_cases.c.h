@@ -5477,7 +5477,7 @@
             }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            if (!FT_ATOMIC_LOAD_UINT8_RELAXED(executor->vm_data.valid)) {
+            if (!executor->vm_data.valid) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;

@@ -3021,7 +3021,7 @@ dummy_func(
 
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             // We are responsible for cleaning up after ourselves.
-            if (!FT_ATOMIC_LOAD_UINT8_RELAXED(executor->vm_data.valid)) {
+            if (!executor->vm_data.valid) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
@@ -5289,7 +5289,19 @@ dummy_func(
         }
 
         tier2 op(_CHECK_VALIDITY, (--)) {
-            DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(current_executor->vm_data.valid));
+            // This doesn't need atomics (for now) as there is only a single time
+            // where a write from another thread is possible:
+            // when a new thread is spawned and it invalidates all current
+            // executors.
+            // The new thread can only be created by an executing uop prior to the
+            // _CHECK_VALIDITY check. New thread creation is synchronized by
+            // locking of the runtime, and the current thread is naturally
+            // paused/waiting for the new thread to be created. Thus,
+            // there is a strict happens-before relation between that
+            // uop's invalidation of validity and this check.
+            // So for now, while the JIT does not run on multiple threads,
+            // it is safe for this to be nona-atomic.
+            DEOPT_IF(!current_executor->vm_data.valid);
         }
 
         tier2 pure op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {

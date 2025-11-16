@@ -1504,7 +1504,7 @@ unlink_executor(_PyExecutorObject *executor)
         return;
     }
     _PyExecutorLinkListNode *links = &executor->vm_data.links;
-    assert(FT_ATOMIC_LOAD_UINT8_RELAXED(executor->vm_data.valid) == 0);
+    assert(executor->vm_data.valid == 0);
     _PyExecutorObject *next = links->next;
     _PyExecutorObject *prev = links->previous;
     if (next != NULL) {
@@ -1629,7 +1629,7 @@ static int
 executor_clear(PyObject *op)
 {
     _PyExecutorObject *executor = _PyExecutorObject_CAST(op);
-    assert(FT_ATOMIC_LOAD_UINT8_RELAXED(executor->vm_data.valid) == 0);
+    assert(executor->vm_data.valid == 0);
     unlink_executor(executor);
 
     _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
@@ -1669,7 +1669,7 @@ invalidate_sub_executors(_PyThreadStateImpl *tstate, _PyExecutorObject *executor
     if (!executor->vm_data.valid) {
         return;
     }
-    FT_ATOMIC_STORE_UINT8(executor->vm_data.valid, 0);
+    executor->vm_data.valid = 0;
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         _PyExecutorObject *next = executor->exits[i].executor;
         if (next != tstate->jit_executor_state.cold_dynamic_executor && next != tstate->jit_executor_state.cold_executor) {
@@ -1729,7 +1729,7 @@ _Py_Executors_InvalidateAllLockHeld(PyInterpreterState *interp, int is_invalidat
         FT_ATOMIC_STORE_UINT8(((_PyThreadStateImpl *)p)->jit_tracer_state.prev_state.dependencies_still_valid, 0);
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
             assert(exec->tstate == p);
-            FT_ATOMIC_STORE_UINT8(exec->vm_data.valid, 0);
+            exec->vm_data.valid = 0;
             // Let it be cleared up by cold executor invalidation later.
             exec->vm_data.warm = 0;
             if (is_invalidation) {
@@ -1768,7 +1768,7 @@ _Py_Executors_CollectCold(PyThreadState *tstate)
         _PyExecutorObject *next = exec->vm_data.links.next;
 
         if (!exec->vm_data.warm || !exec->vm_data.valid) {
-            FT_ATOMIC_STORE_UINT8(exec->vm_data.valid, 0);
+            exec->vm_data.valid = 0;
             if (PyList_Append(invalidate, (PyObject *)exec) < 0) {
                 goto error;
             }
