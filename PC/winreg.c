@@ -1855,7 +1855,7 @@ the configuration registry to help the registry perform efficiently.
 static PyObject *
 winreg_SetValueEx_impl(PyObject *module, HKEY key, const wchar_t *value_name,
                        PyObject *reserved, DWORD type, PyObject *value)
-/*[clinic end generated code: output=295db04deb456d9e input=900a9e3990bfb196]*/
+/*[clinic end generated code: output=295db04deb456d9e input=2dd9471b4aff5b84]*/
 {
     LONG rc;
     BYTE *data = NULL;
