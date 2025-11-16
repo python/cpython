@@ -34,14 +34,8 @@ from .trace import trace
 
 # types
 Command = commands.Command
-from .types import (
-    Callable,
-    Callback,
-    Iterator,
-    SimpleContextManager,
-    KeySpec,
-    CommandName,
-)
+from collections.abc import Callable, Iterator
+from .types import Callback, SimpleContextManager, KeySpec, CommandName
 
 
 # syntax classes
