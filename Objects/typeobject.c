@@ -4641,7 +4641,9 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
     if (et->ht_slots != NULL) {
         PyMemberDef *mp = _PyHeapType_GET_MEMBERS(et);
         Py_ssize_t nslot = PyTuple_GET_SIZE(et->ht_slots);
-        if (ctx->base->tp_itemsize != 0) {
+        int after_items = (ctx->base->tp_itemsize != 0 &&
+                           !(ctx->base->tp_flags & Py_TPFLAGS_ITEMS_AT_END));
+        if (after_items) {
             PyErr_Format(PyExc_TypeError,
                          "arbitrary __slots__ not supported for subtype of '%s'",
                          ctx->base->tp_name);
