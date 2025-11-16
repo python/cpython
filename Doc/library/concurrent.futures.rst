@@ -151,7 +151,7 @@ And::
        print(f.result())
 
    executor = ThreadPoolExecutor(max_workers=1)
-   executor.submit(wait_on_future)
+   executor.submit(wait_on_future).result()
 
 
 .. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
