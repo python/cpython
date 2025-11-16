@@ -168,6 +168,7 @@ production systems where traditional profiling approaches would be too intrusive
 
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953`.)
 
+
 Improved error messages
 -----------------------
 
@@ -205,6 +206,7 @@ Improved error messages
         print(container.area)
               ^^^^^^^^^^^^^^
      AttributeError: 'Container' object has no attribute 'area'. Did you mean: 'inner.area'?
+
 
 Other language changes
 ======================
