@@ -3,9 +3,6 @@ name: Reusable Ubuntu
 on:
   workflow_call:
     inputs:
-      config_hash:
-        required: true
-        type: string
       bolt-optimizations:
         description: Whether to enable BOLT optimizations
         required: false
