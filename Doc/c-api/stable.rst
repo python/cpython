@@ -375,7 +375,8 @@ removal for compatibility's sake.
 
 The following is a list of soft deprecated symbols that were included in
 Python's public C API by mistake. They intentionally come with no additional
-documentation. In practice, very few extensions use these APIs.
+documentation and are only here for completeness. In practice, very few
+extensions use these APIs.
 
 .. c:function:: PyObject *PyFile_NewStdPrinter(void)
 
