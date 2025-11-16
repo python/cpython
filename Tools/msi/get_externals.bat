@@ -53,7 +53,6 @@ set binaries=
 rem We always use whatever's latest in the repo for these
 set binaries=%binaries%     binutils
 set binaries=%binaries%     gpg
-set binaries=%binaries%     htmlhelp
 set binaries=%binaries%     nuget
 set binaries=%binaries%     redist-1
 set binaries=%binaries%     wix-314

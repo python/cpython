@@ -30,7 +30,6 @@ OPTIONS = {
     "appxmanifest": {"help": "an appxmanifest"},
     "props": {"help": "a python.props file"},
     "nuspec": {"help": "a python.nuspec file"},
-    "chm": {"help": "the CHM documentation"},
     "html-doc": {"help": "the HTML documentation"},
     "freethreaded": {"help": "freethreaded binaries", "not-in-all": True},
     "alias": {"help": "aliased python.exe entry-point binaries"},

@@ -77,9 +77,5 @@ PYTHON_STABLE_DLL_NAME = "python{}.dll".format(VER_MAJOR)
 PYTHON_ZIP_NAME = "python{}{}.zip".format(VER_MAJOR, VER_MINOR)
 PYTHON_PTH_NAME = "python{}{}._pth".format(VER_MAJOR, VER_MINOR)
 
-PYTHON_CHM_NAME = "python{}{}{}{}.chm".format(
-    VER_MAJOR, VER_MINOR, VER_MICRO, VER_SUFFIX
-)
-
 FREETHREADED_PYTHON_DLL_NAME = "python{}{}t.dll".format(VER_MAJOR, VER_MINOR)
 FREETHREADED_PYTHON_STABLE_DLL_NAME = "python{}t.dll".format(VER_MAJOR)
