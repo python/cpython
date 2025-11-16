@@ -1757,8 +1757,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->context);
 
 #ifdef _Py_TIER2
-    ((_PyThreadStateImpl *)(tstate))->jit_executor_state.jit = false;
-    _Py_ClearExecutorDeletionList(tstate);
+    FT_ATOMIC_STORE_CHAR_RELAXED(((_PyThreadStateImpl *)(tstate))->jit_executor_state.jit, false);
 
     // We can't clear the cold executors here until the interpreter
     // clear process starts.

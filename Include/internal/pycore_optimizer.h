@@ -365,9 +365,7 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
 extern void _PyExecutor_Free(_PyExecutorObject *self);
 
 PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
-#ifdef _Py_TIER2
-extern void _Py_ClearExecutorDeletionList(PyThreadState *tstate);
-#endif
+
 
 int _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int stop_tracing_opcode);
 

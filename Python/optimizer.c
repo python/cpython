@@ -260,46 +260,6 @@ _PyExecutor_Free(_PyExecutorObject *self)
     PyObject_GC_Del(self);
 }
 
-void
-_Py_ClearExecutorDeletionList(PyThreadState *tstate)
-{
-    _PyThreadStateImpl* ts = (_PyThreadStateImpl* )tstate;
-    _PyExecutorObject **prev_to_next_ptr = &ts->jit_executor_state.executor_deletion_list_head;
-    _PyExecutorObject *exec = *prev_to_next_ptr;
-    // Mark the currently executing executor.
-    if (tstate->current_executor != NULL) {
-        ((_PyExecutorObject *)tstate->current_executor)->vm_data.linked = 1;
-    }
-    while (exec != NULL) {
-        if (exec->vm_data.linked) {
-            // This executor is currently executing
-            exec->vm_data.linked = 0;
-            prev_to_next_ptr = &exec->vm_data.links.next;
-        }
-        else {
-            *prev_to_next_ptr = exec->vm_data.links.next;
-            assert(exec != _PyExecutor_GetColdDynamicExecutor());
-            assert(exec != _PyExecutor_GetColdExecutor());
-            _PyExecutor_Free(exec);
-        }
-        exec = *prev_to_next_ptr;
-    }
-    ts->jit_executor_state.executor_deletion_list_remaining_capacity = EXECUTOR_DELETE_LIST_MAX;
-}
-
-static void
-add_to_pending_deletion_list(_PyExecutorObject *self)
-{
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl*)_PyThreadState_GET();
-    self->vm_data.links.next = _tstate->jit_executor_state.executor_deletion_list_head;
-    _tstate->jit_executor_state.executor_deletion_list_head = self;
-    if (_tstate->jit_executor_state.executor_deletion_list_remaining_capacity > 0) {
-        _tstate->jit_executor_state.executor_deletion_list_remaining_capacity--;
-    }
-    else {
-        _Py_ClearExecutorDeletionList(&_tstate->base);
-    }
-}
 
 static void
 uop_dealloc(PyObject *op) {
@@ -309,7 +269,7 @@ uop_dealloc(PyObject *op) {
     unlink_executor(self);
     // Once unlinked it becomes impossible to invalidate an executor, so do it here.
     self->vm_data.valid = 0;
-    add_to_pending_deletion_list(self);
+    PyObject_GC_Del(self);
 }
 
 const char *
@@ -1672,10 +1632,6 @@ executor_clear(PyObject *op)
     assert(FT_ATOMIC_LOAD_UINT8_RELAXED(executor->vm_data.valid) == 0);
     unlink_executor(executor);
 
-    /* It is possible for an executor to form a reference
-     * cycle with itself, so decref'ing a side exit could
-     * free the executor unless we hold a strong reference to it
-     */
     _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         executor->exits[i].temperature = initial_unreachable_backoff_counter();
@@ -1720,7 +1676,8 @@ invalidate_sub_executors(_PyThreadStateImpl *tstate, _PyExecutorObject *executor
             invalidate_sub_executors(tstate, next);
         }
     }
-    executor_clear((PyObject *)executor);
+    // Let it be cleared up by cold executor invalidation later.
+    executor->vm_data.warm = 0;
 }
 
 /* Invalidate all executors that depend on `obj`
@@ -1737,6 +1694,7 @@ _Py_Executors_InvalidateDependencyLockHeld(PyInterpreterState *interp, void *obj
     /* Walk the list of executors */
     /* Clearing an executor can deallocate others, so we need to make a list of
      * executors to invalidate first */
+    assert(PyMutex_IsLocked(&(interp->runtime)->interpreters.mutex));
     _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
         jit_tracer_invalidate_dependency(p, obj);
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
@@ -1755,9 +1713,9 @@ _Py_Executors_InvalidateDependencyLockHeld(PyInterpreterState *interp, void *obj
 void
 _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
-    HEAD_LOCK(&_PyRuntime);
+    HEAD_LOCK(interp->runtime);
     _Py_Executors_InvalidateDependencyLockHeld(interp, obj, is_invalidation);
-    HEAD_UNLOCK(&_PyRuntime);
+    HEAD_UNLOCK(interp->runtime);
 }
 
 // To avoid deadlocks due to stop the world, we just invalidate the executors but leave them to be freed
@@ -1772,6 +1730,8 @@ _Py_Executors_InvalidateAllLockHeld(PyInterpreterState *interp, int is_invalidat
         for (_PyExecutorObject *exec = ((_PyThreadStateImpl *)p)->jit_executor_state.executor_list_head; exec != NULL;) {
             assert(exec->tstate == p);
             FT_ATOMIC_STORE_UINT8(exec->vm_data.valid, 0);
+            // Let it be cleared up by cold executor invalidation later.
+            exec->vm_data.warm = 0;
             if (is_invalidation) {
                 OPT_STAT_INC(executors_invalidated);
             }
@@ -1854,8 +1814,7 @@ _Py_Executors_InvalidateColdGC(PyInterpreterState *interp)
         return;
     }
     _PyEval_StopTheWorld(interp);
-    HEAD_LOCK(interp->runtime);
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p)
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p)
     {
         PyObject *more_invalidate = _Py_Executors_CollectCold(p);
         if (more_invalidate == NULL) {
@@ -1867,7 +1826,7 @@ _Py_Executors_InvalidateColdGC(PyInterpreterState *interp)
             goto error;
         }
     }
-    HEAD_UNLOCK(interp->runtime);
+    _Py_FOR_EACH_TSTATE_END(interp);
     _PyEval_StartTheWorld(interp);
     // We can only clear the list after unlocking the runtime.
     // Otherwise, it may deadlock.
