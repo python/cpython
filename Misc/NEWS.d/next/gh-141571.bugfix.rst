@@ -1,0 +1,1 @@
+Fix redundant early _set_color() call in argparse.HelpFormatter to avoid double color initialization.
