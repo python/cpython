@@ -313,12 +313,7 @@ complete listing.
    compilation error, otherwise, using this macro with a pointer will
    produce incorrect results.
 
-   This is generally equivalent to::
-
-      sizeof(array) / sizeof((array)[0])
-
-
-
+   
 .. _api-objects:
 
 Objects, Types and Reference Counts
