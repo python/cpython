@@ -24,9 +24,9 @@ The following modules have a command-line interface.
 * :ref:`idlelib <idlelib-cli>`
 * :ref:`inspect <inspect-module-cli>`
 * :ref:`json.tool <json-commandline>`
-* :ref:`mimetypes <mimetypes-cli>`
+* :mod:`mimetypes`
 * :ref:`pdb <pdb-cli>`
-* :ref:`pickle <pickle-cli>`
+* :mod:`pickle`
 * :ref:`pickletools <pickletools-cli>`
 * :ref:`platform <platform-cli>`
 * :mod:`poplib`
