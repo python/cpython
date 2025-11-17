@@ -35,6 +35,8 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         # Invalid text index.
         self.assertRaises(tkinter.TclError, text.search, '', 0)
 
+        # Check if we are getting the indices as strings -- you are likely
+        # to get Tcl_Obj under Tk 8.5 if Tkinter doesn't convert it.
         text.insert('1.0', 'hi-test')
         self.assertEqual(text.search('-test', '1.0', 'end'), '1.2')
         self.assertEqual(text.search('test', '1.0', 'end'), '1.3')
@@ -45,19 +47,29 @@ class TextTest(AbstractTkTest, unittest.TestCase):
             'Another line.\n'
             'Yet another line.')
 
-        result_plain = text.search('line', '1.0', 'end')
-        self.assertEqual(result_plain, '2.8')
+        self.assertEqual(text.search('line', '3.0'), '3.12')
+        self.assertEqual(text.search('line', '3.0', backwards=True), '2.8')
+        self.assertEqual(text.search('line', '3.0', forwards=True), '3.12')
+        self.assertEqual(text.search('line', '3.0', forwards=True, backwards=True), '2.8')
 
-        # With regexp (same literal pattern, should behave the same)
-        result_regexp = text.search('line', '1.0', 'end', nolinestop=True, regexp=True)
-        self.assertEqual(result_regexp, '2.8')
+        self.assertEqual(text.search('t.', '1.0'), '1.13')
+        self.assertEqual(text.search('t.', '1.0', exact=True), '1.13')
+        self.assertEqual(text.search('t.', '1.0', regexp=True), '1.10')
+        self.assertEqual(text.search('t.', '1.0', exact=True, regexp=True), '1.10')
 
-        # With a true regex pattern (e.g. "l.n.") to show difference
-        result_regex_pattern = text.search(r'l.n.', '1.0', 'end', nolinestop=True, regexp=True)
-        self.assertEqual(result_regex_pattern, '2.8')
+        self.assertEqual(text.search('TEST', '1.0'), '')
+        self.assertEqual(text.search('TEST', '1.0', nocase=True), '1.10')
 
-        strict_res = text.search('test', '1.0', '1.20', strictlimits=True)
-        self.assertEqual(strict_res, '1.10')
+        var = tkinter.Variable(self.root)
+        self.assertEqual(text.search('test', '1.0', count=var), '1.10')
+        self.assertEqual(var.get(), 4 if self.wantobjects else '4')
+
+        self.assertEqual(text.search('.*line', '1.0', regexp=True), '2.0')
+        self.assertEqual(text.search('.*line', '1.0', regexp=True, nolinestop=True), '1.0')
+
+        self.assertEqual(text.search('test', '1.0', '1.13'), '1.10')
+        self.assertEqual(text.search('test', '1.0', '1.13', strictlimits=True), '')
+        self.assertEqual(text.search('test', '1.0', '1.14', strictlimits=True), '1.10')
 
     def test_search_all(self):
         text = self.text
@@ -123,6 +135,7 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.count('1.3', '1.5', 'update'), (2,))
         self.assertEqual(text.count('1.3', '1.3', 'update', return_ints=True), 0)
         self.assertEqual(text.count('1.3', '1.3', 'update'), None)
+
 
 if __name__ == "__main__":
     unittest.main()
