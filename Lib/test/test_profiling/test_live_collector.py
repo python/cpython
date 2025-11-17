@@ -839,6 +839,77 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
         self.assertEqual(line, 1)
         self.assertGreater(self.collector._max_sample_rate, 0)
 
+    def test_progress_bar_uses_target_rate(self):
+        """Test that progress bar uses target rate instead of max rate."""
+        # Set up collector with specific sampling interval
+        collector = LiveStatsCollector(10000, pid=12345, display=self.mock_display)  # 10ms = 100Hz target
+        collector.start_time = time.perf_counter()
+        collector.total_samples = 500
+        collector._max_sample_rate = 150  # Higher than target to test we don't use this
+
+        colors = {"cyan": curses.A_BOLD, "green": curses.A_BOLD}
+        collector._initialize_widgets(colors)
+
+        # Clear the display buffer to capture only our progress bar content
+        self.mock_display.buffer.clear()
+
+        # Draw sample stats with a known elapsed time that gives us a specific sample rate
+        elapsed = 10.0  # 500 samples in 10 seconds = 50 samples/second
+        line = collector._header_widget.draw_sample_stats(0, 160, elapsed)
+
+        # Verify display was updated
+        self.assertEqual(line, 1)
+        self.assertGreater(len(self.mock_display.buffer), 0)
+
+        # Verify the label shows current/target format with units instead of "max"
+        found_current_target_label = False
+        found_max_label = False
+        for (line_num, col), (text, attr) in self.mock_display.buffer.items():
+            # Should show "50.0Hz/100.0Hz (50.0%)" since we're at 50% of target (50/100)
+            if "50.0Hz/100.0Hz" in text and "50.0%" in text:
+                found_current_target_label = True
+            if "max:" in text:
+                found_max_label = True
+
+        self.assertTrue(found_current_target_label, "Should display current/target rate with percentage")
+        self.assertFalse(found_max_label, "Should not display max rate label")
+
+    def test_progress_bar_different_intervals(self):
+        """Test that progress bar adapts to different sampling intervals."""
+        test_cases = [
+            (1000, "1.0KHz", "100.0Hz"),    # 1ms interval -> 1000Hz target (1.0KHz), 100Hz current
+            (5000, "200.0Hz", "100.0Hz"),   # 5ms interval -> 200Hz target, 100Hz current
+            (20000, "50.0Hz", "100.0Hz"),   # 20ms interval -> 50Hz target, 100Hz current
+            (100000, "10.0Hz", "100.0Hz"),  # 100ms interval -> 10Hz target, 100Hz current
+        ]
+
+        for interval_usec, expected_target_formatted, expected_current_formatted in test_cases:
+            with self.subTest(interval=interval_usec):
+                collector = LiveStatsCollector(interval_usec, display=MockDisplay())
+                collector.start_time = time.perf_counter()
+                collector.total_samples = 100
+
+                colors = {"cyan": curses.A_BOLD, "green": curses.A_BOLD}
+                collector._initialize_widgets(colors)
+
+                # Clear buffer
+                collector.display.buffer.clear()
+
+                # Draw with 1 second elapsed time (gives us current rate of 100Hz)
+                collector._header_widget.draw_sample_stats(0, 160, 1.0)
+
+                # Check that the current/target format appears in the display with proper units
+                found_current_target_format = False
+                for (line_num, col), (text, attr) in collector.display.buffer.items():
+                    # Looking for format like "100.0Hz/1.0KHz" or "100.0Hz/200.0Hz"
+                    expected_format = f"{expected_current_formatted}/{expected_target_formatted}"
+                    if expected_format in text and "%" in text:
+                        found_current_target_format = True
+                        break
+
+                self.assertTrue(found_current_target_format,
+                    f"Should display current/target rate format with units for {interval_usec}µs interval")
+
     def test_draw_efficiency_bar(self):
         """Test drawing efficiency bar."""
         self.collector._successful_samples = 900

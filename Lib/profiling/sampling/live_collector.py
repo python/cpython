@@ -347,6 +347,15 @@ class HeaderWidget(Widget):
                 col += len(text)
         return line + 1
 
+    def format_rate_with_units(self, rate_hz):
+        """Format a rate in Hz with appropriate units (Hz, KHz, MHz)."""
+        if rate_hz >= 1_000_000:
+            return f"{rate_hz / 1_000_000:.1f}MHz"
+        elif rate_hz >= 1_000:
+            return f"{rate_hz / 1_000:.1f}KHz"
+        else:
+            return f"{rate_hz:.1f}Hz"
+
     def draw_sample_stats(self, line, width, elapsed):
         """Draw sample statistics with visual progress bar."""
         sample_rate = (
@@ -373,15 +382,29 @@ class HeaderWidget(Widget):
         col += 23
 
         # Draw sample rate bar
-        max_label = f" max: {self.collector._max_sample_rate:>7.1f}/s"
-        available_width = width - col - len(max_label) - 3
+        target_rate = MICROSECONDS_PER_SECOND / self.collector.sample_interval_usec
+
+        # Show current/target ratio with percentage
+        if sample_rate > 0 and target_rate > 0:
+            percentage = min((sample_rate / target_rate) * 100, 100)
+            current_formatted = self.format_rate_with_units(sample_rate)
+            target_formatted = self.format_rate_with_units(target_rate)
+
+            if percentage >= 99.5:  # Show 100% when very close
+                rate_label = f" {current_formatted}/{target_formatted} (100%)"
+            else:
+                rate_label = f" {current_formatted}/{target_formatted} ({percentage:>4.1f}%)"
+        else:
+            target_formatted = self.format_rate_with_units(target_rate)
+            rate_label = f" target: {target_formatted}"
+
+        available_width = width - col - len(rate_label) - 3
 
         if available_width >= MIN_BAR_WIDTH:
             bar_width = min(MAX_SAMPLE_RATE_BAR_WIDTH, available_width)
-            max_rate = max(
-                self.collector._max_sample_rate, MIN_SAMPLE_RATE_FOR_SCALING
-            )
-            normalized_rate = min(sample_rate / max_rate, 1.0)
+            # Use target rate as the reference, with a minimum for scaling
+            reference_rate = max(target_rate, MIN_SAMPLE_RATE_FOR_SCALING)
+            normalized_rate = min(sample_rate / reference_rate, 1.0)
             bar_fill = int(normalized_rate * bar_width)
 
             bar = "["
@@ -391,8 +414,8 @@ class HeaderWidget(Widget):
             self.add_str(line, col, bar, self.colors["green"])
             col += len(bar)
 
-            if col + len(max_label) < width - 1:
-                self.add_str(line, col + 1, max_label, curses.A_DIM)
+            if col + len(rate_label) < width - 1:
+                self.add_str(line, col + 1, rate_label, curses.A_DIM)
         return line + 1
 
     def draw_efficiency_bar(self, line, width):
