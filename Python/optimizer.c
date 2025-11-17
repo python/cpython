@@ -1674,6 +1674,7 @@ executor_clear(PyObject *op)
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         executor->exits[i].temperature = initial_unreachable_backoff_counter();
         _PyExecutorObject *e = executor->exits[i].executor;
+        executor->exits[i].executor = NULL;
         if (e != cold && e != cold_dynamic) {
             executor_clear(e);
         }
