@@ -80,7 +80,7 @@ static inline PyObject *
 _PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
 {
     int flags = ref.index & Py_TAG_BITS;
-    return Py_BuildValue("(Ii)", Py_REFCNT(op), flags);
+    return Py_BuildValue("(ni)", Py_REFCNT(op), flags);
 }
 
 static inline _PyStackRef
@@ -480,7 +480,7 @@ static inline PyObject *
 _PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
 {
     // Do not check StackRef flags in the free threading build.
-    return Py_BuildValue("(Ii)", Py_REFCNT(op), -1);
+    return Py_BuildValue("(ni)", Py_REFCNT(op), flags);
 }
 
 static inline PyObject *
@@ -671,7 +671,7 @@ static inline PyObject *
 _PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
 {
     int flags = ref.bits & Py_TAG_BITS;
-    return Py_BuildValue("(Ii)", Py_REFCNT(op), flags);
+    return Py_BuildValue("(ni)", Py_REFCNT(op), -1);
 }
 
 #ifdef Py_DEBUG
