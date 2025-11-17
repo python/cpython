@@ -833,9 +833,7 @@ than raw I/O does.
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered binary stream providing higher-level access to a seekable
-   :class:`RawIOBase` raw binary stream.  It inherits from :class:`BufferedIOBase`
-   and provides the combined functionality of :class:`BufferedReader` and
-   :class:`BufferedWriter` for random access streams.
+   :class:`RawIOBase` raw binary stream.
 
    The constructor creates a reader and writer for a seekable raw stream, given
    in the first argument.  If the *buffer_size* is omitted it defaults to
