@@ -2365,7 +2365,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 #ifdef _Py_JIT
-    if (((_PyThreadStateImpl *)_PyThreadState_GET())->jit_executor_state.jit) {
+    if (FT_ATOMIC_LOAD_UINT8(_PyInterpreterState_GET()->jit)) {
         PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
         return NULL;
     }

@@ -1928,9 +1928,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 {
     int res;
     LOCK_CODE(code);
-    HEAD_LOCK(interp->runtime);
     res = instrument_lock_held(code, interp);
-    HEAD_UNLOCK(interp->runtime);
     UNLOCK_CODE();
     return res;
 }
@@ -2064,10 +2062,7 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     }
     set_local_events(local, tool_id, events);
 
-    HEAD_LOCK(interp->runtime);
-    int res = force_instrument_lock_held(code, interp);
-    HEAD_UNLOCK(interp->runtime);
-    return res;
+    return force_instrument_lock_held(code, interp);
 }
 
 int

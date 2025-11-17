@@ -128,7 +128,6 @@ class TestExecutorInvalidation(unittest.TestCase):
         self.assertTrue(exe.is_valid())
         sys._clear_internal_caches()
         self.assertFalse(exe.is_valid())
-        gc.collect()
         exe = get_first_executor(f)
         self.assertIsNone(exe)
 

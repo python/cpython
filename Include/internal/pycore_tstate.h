@@ -35,7 +35,7 @@ typedef struct _PyJitTracerInitialState {
 } _PyJitTracerInitialState;
 
 typedef struct _PyJitTracerPreviousState {
-    uint8_t dependencies_still_valid;
+    bool dependencies_still_valid;
     bool instr_is_super;
     int code_max_size;
     int code_curr_size;
