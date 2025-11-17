@@ -4068,7 +4068,7 @@ class Text(Widget, XView, YView):
         if pattern and pattern[0] == '-': args.append('--')
         args.append(pattern)
         args.append(index)
-        if stopindex: args.append(stopindex)
+        if stopindex is not None: args.append(stopindex)
         return str(self.tk.call(tuple(args)))
 
     def search_all(self, pattern, index, stopindex=None, *,
@@ -4092,7 +4092,7 @@ class Text(Widget, XView, YView):
         if pattern and pattern[0] == '-': args.append('--')
         args.append(pattern)
         args.append(index)
-        if stopindex: args.append(stopindex)
+        if stopindex is not None: args.append(stopindex)
         result = self.tk.call(tuple(args))
         return self.tk.splitlist(result)
 
