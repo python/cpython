@@ -67,7 +67,7 @@ you should guard the slot with a :c:data:`PY_VERSION_HEX` check.
 Single-Phase Initialization
 ...........................
 
-Extensions that use :ref:`legacy single-phase initialization <single-phase-initialization>`
+Extensions that use legacy :ref:`single-phase initialization <single-phase-initialization>`
 (that is, :c:func:`PyModule_Create`) should call :c:func:`PyUnstable_Module_SetGIL` to
 indicate that they support running with the GIL disabled.  The function is
 only defined in the free-threaded build, so you should guard the call with
