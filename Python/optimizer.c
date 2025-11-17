@@ -1676,7 +1676,7 @@ executor_clear(PyObject *op)
         _PyExecutorObject *e = executor->exits[i].executor;
         executor->exits[i].executor = NULL;
         if (e != cold && e != cold_dynamic) {
-            executor_clear(e);
+            executor_clear((PyObject *)e);
         }
     }
     _Py_ExecutorDetach(executor);
