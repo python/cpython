@@ -945,7 +945,7 @@ def main():
         action="store_const",
         const="live",
         dest="format",
-        help="Display live top-like statistics using ncurses",
+        help="Display live top-like live statistics in a terminal UI",
     )
 
     output_group.add_argument(
