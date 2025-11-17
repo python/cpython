@@ -183,6 +183,14 @@ complete listing.
 
    .. versionadded:: 3.6
 
+.. c:macro:: Py_MEMCPY(dest, src, n)
+
+   This is a :term:`soft deprecated` alias to :c:func:`!memcpy`.
+   Use :c:func:`!memcpy` directly instead.
+
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.
+
 .. c:macro:: Py_MIN(x, y)
 
    Return the minimum value between ``x`` and ``y``.

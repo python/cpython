@@ -6092,7 +6092,7 @@ Patch by Victor Stinner.
 .. nonce: qOr9GF
 .. section: C API
 
-Soft deprecate the :c:macro:`!Py_MEMCPY` macro: use directly ``memcpy()``
+Soft deprecate the :c:macro:`Py_MEMCPY` macro: use directly ``memcpy()``
 instead.  Patch by Victor Stinner.
 
 ..
