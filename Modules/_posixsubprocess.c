@@ -515,8 +515,8 @@ _close_open_fds_maybe_unsafe(int start_fd, int *fds_to_keep,
     else
 #endif
 #if defined(_AIX)
-        char fd_path[PATH_MAX]; 
-        snprintf(fd_path, sizeof(fd_path), "/proc/%ld/fd", (long)getpid()); 
+        char fd_path[PATH_MAX];
+        snprintf(fd_path, sizeof(fd_path), "/proc/%ld/fd", (long)getpid());
         proc_fd_dir = opendir(fd_path);
 #else
         proc_fd_dir = opendir(FD_DIR);
