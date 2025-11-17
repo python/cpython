@@ -567,11 +567,10 @@ class _BaseAddress(_IPAddressBase):
         return self._ip
 
     def __eq__(self, other):
-        try:
-            return (self._ip == other._ip
-                    and self.version == other.version)
-        except AttributeError:
+        if not isinstance(other, _BaseAddress):
             return NotImplemented
+        return (self._ip == other._ip
+                and self.version == other.version)
 
     def __lt__(self, other):
         if not isinstance(other, _BaseAddress):
@@ -718,12 +717,11 @@ class _BaseNetwork(_IPAddressBase):
         return False
 
     def __eq__(self, other):
-        try:
-            return (self.version == other.version and
-                    self.network_address == other.network_address and
-                    int(self.netmask) == int(other.netmask))
-        except AttributeError:
+        if not isinstance(other, _BaseNetwork):
             return NotImplemented
+        return (self.version == other.version and
+                self.network_address == other.network_address and
+                int(self.netmask) == int(other.netmask))
 
     def __hash__(self):
         return hash((int(self.network_address), int(self.netmask)))
