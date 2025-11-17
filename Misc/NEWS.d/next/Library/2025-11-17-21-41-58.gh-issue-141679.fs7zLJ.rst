@@ -1,2 +1,1 @@
-Add colour to defaults in :module:`argparse` help. Patch by Hugo van
-Kemenade.
+Add colour to defaults in :mod:`argparse` help. Patch by Hugo van Kemenade.
