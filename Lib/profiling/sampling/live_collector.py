@@ -52,6 +52,7 @@
                 │ │  • PID, uptime, time, interval  │ │
                 │ │  • Sample stats & progress bar  │ │
                 │ │  • Efficiency bar               │ │
+                │ │  • Thread status & GC stats     │ │
                 │ │  • Function summary             │ │
                 │ │  • Top 3 hottest functions      │ │
                 │ ├─────────────────────────────────┤ │
@@ -109,7 +110,16 @@ import sys
 import sysconfig
 import time
 from abc import ABC, abstractmethod
-from .collector import Collector, THREAD_STATE_RUNNING
+from .collector import Collector
+from .constants import (
+    THREAD_STATUS_HAS_GIL,
+    THREAD_STATUS_ON_CPU,
+    THREAD_STATUS_UNKNOWN,
+    THREAD_STATUS_GIL_REQUESTED,
+    PROFILING_MODE_CPU,
+    PROFILING_MODE_GIL,
+    PROFILING_MODE_WALL,
+)
 
 # Time conversion constants
 MICROSECONDS_PER_SECOND = 1_000_000
@@ -129,7 +139,7 @@ WIDTH_THRESHOLD_CUMUL_PCT = 120
 WIDTH_THRESHOLD_CUMTIME = 140
 
 # Display layout constants
-HEADER_LINES = 9
+HEADER_LINES = 10  # Increased to include thread status line
 FOOTER_LINES = 2
 SAFETY_MARGIN = 1
 TOP_FUNCTIONS_DISPLAY_COUNT = 3
@@ -274,6 +284,7 @@ class HeaderWidget(Widget):
         line = self.draw_header_info(line, width, elapsed)
         line = self.draw_sample_stats(line, width, elapsed)
         line = self.draw_efficiency_bar(line, width)
+        line = self.draw_thread_status(line, width)
         line = self.draw_function_stats(
             line, width, kwargs.get("stats_list", [])
         )
@@ -461,6 +472,61 @@ class HeaderWidget(Widget):
             col += 1
 
             self.add_str(line, col + 1, label, curses.A_NORMAL)
+        return line + 1
+
+    def _add_percentage_stat(self, line, col, value, label, color, add_separator=False):
+        """Add a percentage stat to the display.
+
+        Args:
+            line: Line number
+            col: Starting column
+            value: Percentage value
+            label: Label text
+            color: Color attribute
+            add_separator: Whether to add separator before the stat
+
+        Returns:
+            Updated column position
+        """
+        if add_separator:
+            self.add_str(line, col, " │ ", curses.A_DIM)
+            col += 3
+
+        self.add_str(line, col, f"{value:>4.1f}", color)
+        col += 4
+        self.add_str(line, col, f"% {label}", curses.A_NORMAL)
+        col += len(label) + 2
+
+        return col
+
+    def draw_thread_status(self, line, width):
+        """Draw thread status statistics and GC information."""
+        # Calculate percentages
+        total_threads = max(1, self.collector._thread_status_counts['total'])
+        pct_on_gil = (self.collector._thread_status_counts['has_gil'] / total_threads) * 100
+        pct_off_gil = 100.0 - pct_on_gil
+        pct_gil_requested = (self.collector._thread_status_counts['gil_requested'] / total_threads) * 100
+
+        total_samples = max(1, self.collector.total_samples)
+        pct_gc = (self.collector._gc_frame_samples / total_samples) * 100
+
+        col = 0
+        self.add_str(line, col, "Threads:   ", curses.A_BOLD)
+        col += 11
+
+        # Show GIL stats only if mode is not GIL (GIL mode filters to only GIL holders)
+        if self.collector.mode != PROFILING_MODE_GIL:
+            col = self._add_percentage_stat(line, col, pct_on_gil, "on gil", self.colors["green"])
+            col = self._add_percentage_stat(line, col, pct_off_gil, "off gil", self.colors["red"], add_separator=True)
+
+        # Show "waiting for gil" only if mode is not GIL
+        if self.collector.mode != PROFILING_MODE_GIL and col < width - 30:
+            col = self._add_percentage_stat(line, col, pct_gil_requested, "waiting for gil", self.colors["yellow"], add_separator=True)
+
+        # Always show GC stats
+        if col < width - 15:
+            col = self._add_percentage_stat(line, col, pct_gc, "GC", self.colors["magenta"], add_separator=(col > 11))
+
         return line + 1
 
     def draw_function_stats(self, line, width, stats_list):
@@ -1204,6 +1270,7 @@ class LiveStatsCollector(Collector):
         limit=DEFAULT_DISPLAY_LIMIT,
         pid=None,
         display=None,
+        mode=None,
     ):
         """
         Initialize the live stats collector.
@@ -1215,6 +1282,7 @@ class LiveStatsCollector(Collector):
             limit: Maximum number of functions to display
             pid: Process ID being profiled
             display: DisplayInterface implementation (None means curses will be used)
+            mode: Profiling mode ('cpu', 'gil', etc.) - affects what stats are shown
         """
         self.result = collections.defaultdict(
             lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)
@@ -1232,6 +1300,7 @@ class LiveStatsCollector(Collector):
         self.display = display  # DisplayInterface implementation
         self.running = True
         self.pid = pid
+        self.mode = mode  # Profiling mode
         self._saved_stdout = None
         self._saved_stderr = None
         self._devnull = None
@@ -1239,6 +1308,16 @@ class LiveStatsCollector(Collector):
         self._max_sample_rate = 0  # Track maximum sample rate seen
         self._successful_samples = 0  # Track samples that captured frames
         self._failed_samples = 0  # Track samples that failed to capture frames
+
+        # Thread status statistics (bit flags)
+        self._thread_status_counts = {
+            'has_gil': 0,
+            'on_cpu': 0,
+            'gil_requested': 0,
+            'unknown': 0,
+            'total': 0,  # Total thread count across all samples
+        }
+        self._gc_frame_samples = 0  # Track samples with GC frames
 
         # Interactive controls state
         self.paused = False  # Pause UI updates (profiling continues)
@@ -1333,15 +1412,58 @@ class LiveStatsCollector(Collector):
             self.start_time = time.perf_counter()
             self._last_display_update = self.start_time
 
+        # Thread status counts for this sample
+        temp_status_counts = {
+            'has_gil': 0,
+            'on_cpu': 0,
+            'gil_requested': 0,
+            'unknown': 0,
+            'total': 0,
+        }
+        has_gc_frame = False
+
         # Always collect data, even when paused
-        # Track if we got any frames this sample
-        got_frames = False
-        for frames, thread_id in self._iter_all_frames(
-            stack_frames, skip_idle=self.skip_idle
-        ):
-            self._process_frames(frames)
-            if frames:
-                got_frames = True
+        # Track thread status flags and GC frames
+        for interpreter_info in stack_frames:
+            threads = getattr(interpreter_info, 'threads', [])
+            for thread_info in threads:
+                temp_status_counts['total'] += 1
+
+                # Track thread status using bit flags
+                status_flags = getattr(thread_info, 'status', 0)
+
+                if status_flags & THREAD_STATUS_HAS_GIL:
+                    temp_status_counts['has_gil'] += 1
+                if status_flags & THREAD_STATUS_ON_CPU:
+                    temp_status_counts['on_cpu'] += 1
+                if status_flags & THREAD_STATUS_GIL_REQUESTED:
+                    temp_status_counts['gil_requested'] += 1
+                if status_flags & THREAD_STATUS_UNKNOWN:
+                    temp_status_counts['unknown'] += 1
+
+                # Process frames (respecting skip_idle)
+                if self.skip_idle:
+                    has_gil = bool(status_flags & THREAD_STATUS_HAS_GIL)
+                    on_cpu = bool(status_flags & THREAD_STATUS_ON_CPU)
+                    if not (has_gil or on_cpu):
+                        continue
+
+                frames = getattr(thread_info, 'frame_info', None)
+                if frames:
+                    self._process_frames(frames)
+                    # Check if any frame is in GC
+                    for frame in frames:
+                        funcname = getattr(frame, 'funcname', '')
+                        if '<GC>' in funcname or 'gc_collect' in funcname:
+                            has_gc_frame = True
+                            break
+
+        # Update cumulative thread status counts
+        for key, count in temp_status_counts.items():
+            self._thread_status_counts[key] += count
+
+        if has_gc_frame:
+            self._gc_frame_samples += 1
 
         self._successful_samples += 1
         self.total_samples += 1
@@ -1633,6 +1755,14 @@ class LiveStatsCollector(Collector):
         self._successful_samples = 0
         self._failed_samples = 0
         self._max_sample_rate = 0
+        self._thread_status_counts = {
+            'has_gil': 0,
+            'on_cpu': 0,
+            'gil_requested': 0,
+            'unknown': 0,
+            'total': 0,
+        }
+        self._gc_frame_samples = 0
         self.start_time = time.perf_counter()
         self._last_display_update = self.start_time
 

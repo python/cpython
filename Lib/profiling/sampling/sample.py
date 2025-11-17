@@ -14,26 +14,24 @@ from _colorize import ANSIColors
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .gecko_collector import GeckoCollector
+from .constants import (
+    PROFILING_MODE_WALL,
+    PROFILING_MODE_CPU,
+    PROFILING_MODE_GIL,
+    PROFILING_MODE_ALL,
+    SORT_MODE_NSAMPLES,
+    SORT_MODE_TOTTIME,
+    SORT_MODE_CUMTIME,
+    SORT_MODE_SAMPLE_PCT,
+    SORT_MODE_CUMUL_PCT,
+    SORT_MODE_NSAMPLES_CUMUL,
+)
 try:
     from .live_collector import LiveStatsCollector
 except ImportError:
     LiveStatsCollector = None
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
-
-# Profiling mode constants
-PROFILING_MODE_WALL = 0
-PROFILING_MODE_CPU = 1
-PROFILING_MODE_GIL = 2
-PROFILING_MODE_ALL = 3  # Combines GIL + CPU checks
-
-# Sort mode constants
-SORT_MODE_NSAMPLES = 0
-SORT_MODE_TOTTIME = 1
-SORT_MODE_CUMTIME = 2
-SORT_MODE_SAMPLE_PCT = 3
-SORT_MODE_CUMUL_PCT = 4
-SORT_MODE_NSAMPLES_CUMUL = 5
 
 
 def _parse_mode(mode_string):
@@ -694,7 +692,8 @@ def sample(
                 skip_idle=skip_idle,
                 sort_by=sort_by,
                 limit=limit or 20,
-                pid=pid
+                pid=pid,
+                mode=mode,
             )
             # Live mode is interactive, don't save file by default
             # User can specify -o if they want to save stats
