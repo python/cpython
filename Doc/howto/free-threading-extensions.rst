@@ -46,7 +46,8 @@ Multi-Phase Initialization
 ..........................
 
 Extensions that use :ref:`multi-phase initialization <multi-phase-initialization>`
-(functions like :c:func:`PyModuleDef_Init`, :c:func:`PyModExport_modulename`,
+(functions like :c:func:`PyModuleDef_Init`,
+:c:func:`PyModExport_* <PyModExport_modulename>` export hook,
 :c:func:`PyModule_FromSlotsAndSpec`) should add a
 :c:data:`Py_mod_gil` slot in the module definition.
 If your extension supports older versions of CPython,
