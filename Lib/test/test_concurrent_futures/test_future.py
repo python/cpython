@@ -135,6 +135,16 @@ class FutureTests(BaseTestCase):
                 repr(SUCCESSFUL_FUTURE),
                 '<Future at 0x[0-9a-f]+ state=finished returned int>')
 
+    def test_class_str(self):
+        self.assertEqual(str(futures.Future),
+                         "<class 'concurrent.futures.Future'>")
+        self.assertEqual(str(futures.CancelledError),
+                         "<class 'concurrent.futures.CancelledError'>")
+        self.assertEqual(str(futures.TimeoutError),
+                         "<class 'TimeoutError'>")
+        self.assertEqual(str(futures.Executor),
+                         "<class 'concurrent.futures.Executor'>")
+
     def test_cancel(self):
         f1 = create_future(state=PENDING)
         f2 = create_future(state=RUNNING)
