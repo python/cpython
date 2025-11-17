@@ -1,0 +1,2 @@
+Add colour to defaults in :module:`argparse` help. Patch by Hugo van
+Kemenade.
