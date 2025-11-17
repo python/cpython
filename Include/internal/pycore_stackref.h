@@ -57,6 +57,13 @@ extern "C" {
 
 #define Py_TAGGED_SHIFT 2
 
+/* References to immortal objects always have their tag bit set to Py_TAG_REFCNT
+ * as they can (must) have their reclamation deferred */
+
+#if _Py_IMMORTAL_FLAGS != Py_TAG_REFCNT
+#  error "_Py_IMMORTAL_FLAGS != Py_TAG_REFCNT"
+#endif
+
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
 PyAPI_FUNC(PyObject *) _Py_stackref_get_object(_PyStackRef ref);
@@ -635,13 +642,6 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 #else // Py_GIL_DISABLED
 
 // With GIL
-
-/* References to immortal objects always have their tag bit set to Py_TAG_REFCNT
- * as they can (must) have their reclamation deferred */
-
-#if _Py_IMMORTAL_FLAGS != Py_TAG_REFCNT
-#  error "_Py_IMMORTAL_FLAGS != Py_TAG_REFCNT"
-#endif
 
 #define BITS_TO_PTR(REF) ((PyObject *)((REF).bits))
 #define BITS_TO_PTR_MASKED(REF) ((PyObject *)(((REF).bits) & (~Py_TAG_REFCNT)))
