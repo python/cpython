@@ -22,7 +22,13 @@ from profiling.sampling.stack_collector import (
 from profiling.sampling.gecko_collector import GeckoCollector
 
 from test.support.os_helper import unlink
-from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
+from test.support import (
+    force_not_colorized_test_class,
+    SHORT_TIMEOUT,
+    script_helper,
+    os_helper,
+    SuppressCrashReport,
+)
 from test.support.socket_helper import find_unused_port
 from test.support import requires_subprocess, is_emscripten
 from test.support import captured_stdout, captured_stderr
@@ -57,12 +63,14 @@ class MockFrameInfo:
 class MockThreadInfo:
     """Mock ThreadInfo for testing since the real one isn't accessible."""
 
-    def __init__(self, thread_id, frame_info):
+    def __init__(self, thread_id, frame_info, status=0, gc_collecting=False):  # Default to THREAD_STATE_RUNNING (0)
         self.thread_id = thread_id
         self.frame_info = frame_info
+        self.status = status
+        self.gc_collecting = gc_collecting
 
     def __repr__(self):
-        return f"MockThreadInfo(thread_id={self.thread_id}, frame_info={self.frame_info})"
+        return f"MockThreadInfo(thread_id={self.thread_id}, frame_info={self.frame_info}, status={self.status}, gc_collecting={self.gc_collecting})"
 
 
 class MockInterpreterInfo:
@@ -667,6 +675,97 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("func1", string_array)
         self.assertIn("func2", string_array)
         self.assertIn("other_func", string_array)
+
+    def test_gecko_collector_markers(self):
+        """Test Gecko profile markers for GIL and CPU state tracking."""
+        try:
+            from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_GIL_REQUESTED
+        except ImportError:
+            THREAD_STATUS_HAS_GIL = (1 << 0)
+            THREAD_STATUS_ON_CPU = (1 << 1)
+            THREAD_STATUS_GIL_REQUESTED = (1 << 3)
+
+        collector = GeckoCollector()
+
+        # Status combinations for different thread states
+        HAS_GIL_ON_CPU = THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU  # Running Python code
+        NO_GIL_ON_CPU = THREAD_STATUS_ON_CPU  # Running native code
+        WAITING_FOR_GIL = THREAD_STATUS_GIL_REQUESTED  # Waiting for GIL
+
+        # Simulate thread state transitions
+        collector.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [("test.py", 10, "python_func")], status=HAS_GIL_ON_CPU)
+            ])
+        ])
+
+        collector.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [("test.py", 15, "wait_func")], status=WAITING_FOR_GIL)
+            ])
+        ])
+
+        collector.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [("test.py", 20, "python_func2")], status=HAS_GIL_ON_CPU)
+            ])
+        ])
+
+        collector.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [("native.c", 100, "native_func")], status=NO_GIL_ON_CPU)
+            ])
+        ])
+
+        profile_data = collector._build_profile()
+
+        # Verify we have threads with markers
+        self.assertIn("threads", profile_data)
+        self.assertEqual(len(profile_data["threads"]), 1)
+        thread_data = profile_data["threads"][0]
+
+        # Check markers exist
+        self.assertIn("markers", thread_data)
+        markers = thread_data["markers"]
+
+        # Should have marker arrays
+        self.assertIn("name", markers)
+        self.assertIn("startTime", markers)
+        self.assertIn("endTime", markers)
+        self.assertIn("category", markers)
+        self.assertGreater(markers["length"], 0, "Should have generated markers")
+
+        # Get marker names from string table
+        string_array = profile_data["shared"]["stringArray"]
+        marker_names = [string_array[idx] for idx in markers["name"]]
+
+        # Verify we have different marker types
+        marker_name_set = set(marker_names)
+
+        # Should have "Has GIL" markers (when thread had GIL)
+        self.assertIn("Has GIL", marker_name_set, "Should have 'Has GIL' markers")
+
+        # Should have "No GIL" markers (when thread didn't have GIL)
+        self.assertIn("No GIL", marker_name_set, "Should have 'No GIL' markers")
+
+        # Should have "On CPU" markers (when thread was on CPU)
+        self.assertIn("On CPU", marker_name_set, "Should have 'On CPU' markers")
+
+        # Should have "Waiting for GIL" markers (when thread was waiting)
+        self.assertIn("Waiting for GIL", marker_name_set, "Should have 'Waiting for GIL' markers")
+
+        # Verify marker structure
+        for i in range(markers["length"]):
+            # All markers should be interval markers (phase = 1)
+            self.assertEqual(markers["phase"][i], 1, f"Marker {i} should be interval marker")
+
+            # All markers should have valid time range
+            start_time = markers["startTime"][i]
+            end_time = markers["endTime"][i]
+            self.assertLessEqual(start_time, end_time, f"Marker {i} should have valid time range")
+
+            # All markers should have valid category
+            self.assertGreaterEqual(markers["category"][i], 0, f"Marker {i} should have valid category")
 
     def test_pstats_collector_export(self):
         collector = PstatsCollector(
@@ -2630,19 +2729,30 @@ class TestCpuModeFiltering(unittest.TestCase):
 
     def test_frames_filtered_with_skip_idle(self):
         """Test that frames are actually filtered when skip_idle=True."""
+        # Import thread status flags
+        try:
+            from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU
+        except ImportError:
+            THREAD_STATUS_HAS_GIL = (1 << 0)
+            THREAD_STATUS_ON_CPU = (1 << 1)
+
         # Create mock frames with different thread statuses
         class MockThreadInfoWithStatus:
             def __init__(self, thread_id, frame_info, status):
                 self.thread_id = thread_id
                 self.frame_info = frame_info
                 self.status = status
+                self.gc_collecting = False
 
-        # Create test data: running thread, idle thread, and another running thread
+        # Create test data: active thread (HAS_GIL | ON_CPU), idle thread (neither), and another active thread
+        ACTIVE_STATUS = THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU  # Has GIL and on CPU
+        IDLE_STATUS = 0  # Neither has GIL nor on CPU
+
         test_frames = [
             MockInterpreterInfo(0, [
-                MockThreadInfoWithStatus(1, [MockFrameInfo("active1.py", 10, "active_func1")], 0),  # RUNNING
-                MockThreadInfoWithStatus(2, [MockFrameInfo("idle.py", 20, "idle_func")], 1),        # IDLE
-                MockThreadInfoWithStatus(3, [MockFrameInfo("active2.py", 30, "active_func2")], 0),  # RUNNING
+                MockThreadInfoWithStatus(1, [MockFrameInfo("active1.py", 10, "active_func1")], ACTIVE_STATUS),
+                MockThreadInfoWithStatus(2, [MockFrameInfo("idle.py", 20, "idle_func")], IDLE_STATUS),
+                MockThreadInfoWithStatus(3, [MockFrameInfo("active2.py", 30, "active_func2")], ACTIVE_STATUS),
             ])
         ]
 
@@ -3202,5 +3312,46 @@ if __name__ == "__main__":
         # Native frames should NOT be present:
         self.assertNotIn("<native>", output)
 
+
+class TestProcessPoolExecutorSupport(unittest.TestCase):
+    """
+    Test that ProcessPoolExecutor works correctly with profiling.sampling.
+    """
+
+    def test_process_pool_executor_pickle(self):
+        # gh-140729: test use ProcessPoolExecutor.map() can sampling
+        test_script = '''
+import concurrent.futures
+
+def worker(x):
+    return x * 2
+
+if __name__ == "__main__":
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        results = list(executor.map(worker, [1, 2, 3]))
+        print(f"Results: {results}")
+'''
+        with os_helper.temp_dir() as temp_dir:
+            script = script_helper.make_script(
+                temp_dir, 'test_process_pool_executor_pickle', test_script
+            )
+            with SuppressCrashReport():
+                with script_helper.spawn_python(
+                    "-m", "profiling.sampling.sample",
+                    "-d", "5",
+                    "-i", "100000",
+                    script,
+                    stderr=subprocess.PIPE,
+                    text=True
+                ) as proc:
+                    proc.wait(timeout=SHORT_TIMEOUT)
+                    stdout = proc.stdout.read()
+                    stderr = proc.stderr.read()
+
+        if "PermissionError" in stderr:
+            self.skipTest("Insufficient permissions for remote profiling")
+
+        self.assertIn("Results: [2, 4, 6]", stdout)
+        self.assertNotIn("Can't pickle", stderr)
 if __name__ == "__main__":
     unittest.main()
