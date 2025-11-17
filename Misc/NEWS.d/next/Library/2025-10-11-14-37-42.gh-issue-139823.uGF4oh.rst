@@ -1,2 +1,0 @@
-:mod:`ensurepip` now fails with a nicer error message when the :mod:`zlib`
-module is not available.

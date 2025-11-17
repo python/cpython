@@ -46,6 +46,7 @@ from test import support
 
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
+from test.test_inspect import inspect_fodder3 as mod3
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_deferred_annotations
 
@@ -688,10 +689,56 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getdoc(mod.FesteringGob.contradiction),
                          'The automatic gainsaying.')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_getdoc_inherited_class_doc(self):
+        class A:
+            """Common base class"""
+        class B(A):
+            pass
+
+        a = A()
+        self.assertEqual(inspect.getdoc(A), 'Common base class')
+        self.assertEqual(inspect.getdoc(A, inherit_class_doc=False),
+                         'Common base class')
+        self.assertEqual(inspect.getdoc(a), 'Common base class')
+        self.assertIsNone(inspect.getdoc(a, fallback_to_class_doc=False))
+        a.__doc__ = 'Instance'
+        self.assertEqual(inspect.getdoc(a, fallback_to_class_doc=False),
+                          'Instance')
+
+        b = B()
+        self.assertEqual(inspect.getdoc(B), 'Common base class')
+        self.assertIsNone(inspect.getdoc(B, inherit_class_doc=False))
+        self.assertIsNone(inspect.getdoc(b))
+        self.assertIsNone(inspect.getdoc(b, fallback_to_class_doc=False))
+        b.__doc__ = 'Instance'
+        self.assertEqual(inspect.getdoc(b, fallback_to_class_doc=False), 'Instance')
+
+    def test_getdoc_inherited_cached_property(self):
+        doc = inspect.getdoc(mod3.ParentInheritDoc.foo)
+        self.assertEqual(doc, 'docstring for foo defined in parent')
+        self.assertEqual(inspect.getdoc(mod3.ChildInheritDoc.foo), doc)
+        self.assertEqual(inspect.getdoc(mod3.ChildInheritDefineDoc.foo), doc)
+
+    def test_getdoc_redefine_cached_property_as_other(self):
+        self.assertEqual(inspect.getdoc(mod3.ChildPropertyFoo.foo),
+                         'docstring for the property foo')
+        self.assertEqual(inspect.getdoc(mod3.ChildMethodFoo.foo),
+                         'docstring for the method foo')
+
+    def test_getdoc_define_cached_property(self):
+        self.assertEqual(inspect.getdoc(mod3.ChildDefineDoc.foo),
+                         'docstring for foo defined in child')
+
+    def test_getdoc_nodoc_inherited(self):
+        self.assertIsNone(inspect.getdoc(mod3.ChildNoDoc.foo))
+
     @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
     def test_finddoc(self):
         finddoc = inspect._finddoc
         self.assertEqual(finddoc(int), int.__doc__)
+        self.assertIsNone(finddoc(int, search_in_class=False))
         self.assertEqual(finddoc(int.to_bytes), int.to_bytes.__doc__)
         self.assertEqual(finddoc(int().to_bytes), int.to_bytes.__doc__)
         self.assertEqual(finddoc(int.from_bytes), int.from_bytes.__doc__)

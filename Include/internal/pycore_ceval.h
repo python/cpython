@@ -217,7 +217,11 @@ extern void _PyEval_DeactivateOpCache(void);
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+#if _Py_STACK_GROWS_DOWN
     return here_addr < _tstate->c_stack_soft_limit;
+#else
+    return here_addr > _tstate->c_stack_soft_limit;
+#endif
 }
 
 // Export for '_json' shared extension, used via _Py_EnterRecursiveCall()
@@ -249,7 +253,11 @@ static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     assert(_tstate->c_stack_hard_limit != 0);
+#if _Py_STACK_GROWS_DOWN
     return here_addr <= _tstate->c_stack_soft_limit;
+#else
+    return here_addr >= _tstate->c_stack_soft_limit;
+#endif
 }
 
 static inline void _Py_LeaveRecursiveCall(void)  {
@@ -301,6 +309,7 @@ PyAPI_FUNC(PyObject *) _PyEval_ImportName(PyThreadState *, _PyInterpreterFrame *
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
+PyAPI_FUNC(bool) _PyEval_NoToolsForUnwind(PyThreadState *tstate);
 PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, _PyStackRef *sp);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
@@ -390,6 +399,8 @@ _PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame
 #define SPECIAL___AENTER__  2
 #define SPECIAL___AEXIT__   3
 #define SPECIAL_MAX   3
+
+PyAPI_DATA(const _Py_CODEUNIT *) _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR;
 
 #ifdef __cplusplus
 }

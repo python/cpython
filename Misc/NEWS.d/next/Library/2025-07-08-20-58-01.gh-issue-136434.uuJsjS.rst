@@ -1,2 +1,0 @@
-Fix docs generation of ``UnboundItem`` in :mod:`concurrent.interpreters`
-when running with :option:`-OO`.

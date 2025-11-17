@@ -205,7 +205,7 @@ AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
-  [python$PACKAGE_VERSION python3.13 python3.12 python3.11 python3.10 python3 python],
+  [python$PACKAGE_VERSION python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
   [python3])
 AC_SUBST([PYTHON_FOR_REGEN])
 
@@ -1202,6 +1202,14 @@ if test x$MULTIARCH != x; then
 fi
 AC_SUBST([MULTIARCH_CPPFLAGS])
 
+# Guess C stack direction
+AS_CASE([$host],
+  [hppa*], [_Py_STACK_GROWS_DOWN=0],
+  [_Py_STACK_GROWS_DOWN=1])
+AC_DEFINE_UNQUOTED([_Py_STACK_GROWS_DOWN], [$_Py_STACK_GROWS_DOWN],
+  [Define to 1 if the machine stack grows down (default); 0 if it grows up.])
+AC_SUBST([_Py_STACK_GROWS_DOWN])
+
 dnl Support tiers according to https://peps.python.org/pep-0011/
 dnl
 dnl NOTE: Windows support tiers are defined in PC/pyconfig.h.
@@ -2162,7 +2170,8 @@ then
       dnl At least LLVM 19.x doesn't support computed gotos in PIC compiled code.
       dnl Exclude functions containing computed gotos.
       dnl TODO this may be fixed in LLVM 20.x via https://github.com/llvm/llvm-project/pull/120267.
-      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1]
+      dnl GCC's LTO creates .lto_priv.0 clones of these functions.
+      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1]
     ")]
   )
 fi
@@ -5257,6 +5266,12 @@ AC_CHECK_FUNCS([ \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
+# os.statx uses Linux's statx function.  AIX also has a function named statx,
+# but it's unrelated.  Check only on Linux (including Android).
+AS_CASE([$ac_sys_system],
+  [Linux*], [AC_CHECK_FUNCS([statx])]
+)
+
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
 # returns an error.
@@ -5424,7 +5439,7 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 dnl detect zlib from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.2.1], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
@@ -5818,6 +5833,24 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
 ]])
 # Issue #21085: In Cygwin, siginfo_t does not have si_band field.
 AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[@%:@include <signal.h>]])
+
+if test "$ac_cv_func_statx" = yes; then
+  # Some systems have the definitions of the mask bits without having the
+  # corresponding members in struct statx.  Check for members added after Linux
+  # 4.11 (when statx itself was added).
+  AC_CHECK_MEMBERS([struct statx.stx_mnt_id])
+  AC_CHECK_MEMBERS([struct statx.stx_dio_mem_align])
+  # stx_dio_offset_align was added together with stx_dio_mem_align
+  AC_CHECK_MEMBERS([struct statx.stx_subvol])
+  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_min])
+  # stx_atomic_write_unit_max and stx_atomic_write_segments_max were added
+  # together with stx_atomic_write_unit_min
+  AC_CHECK_MEMBERS([struct statx.stx_dio_read_offset_align])
+  # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
+  # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
+  # doesn't imply having the member.
+  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_max_opt])
+fi
 
 AC_CACHE_CHECK([for time.h that defines altzone], [ac_cv_header_time_altzone], [
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <time.h>]], [[return altzone;]])],
@@ -7856,6 +7889,7 @@ PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
 
 dnl always enabled extension modules
 PY_STDLIB_MOD_SIMPLE([array])
+PY_STDLIB_MOD_SIMPLE([_math_integer])
 PY_STDLIB_MOD_SIMPLE([_asyncio])
 PY_STDLIB_MOD_SIMPLE([_bisect])
 PY_STDLIB_MOD_SIMPLE([_csv])
@@ -8193,10 +8227,10 @@ AS_VAR_IF([enable_experimental_jit], [no],
       JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
       ;;
     aarch64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
       ;;
     x86_64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
       ;;
   esac])
 
