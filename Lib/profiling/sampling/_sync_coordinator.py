@@ -10,6 +10,7 @@ import sys
 import socket
 import runpy
 import time
+import types
 from typing import List, NoReturn
 
 
@@ -175,15 +176,21 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
     try:
         with open(script_path, 'rb') as f:
             source_code = f.read()
+
     except FileNotFoundError as e:
         raise TargetError(f"Script file not found: {script_path}") from e
     except PermissionError as e:
         raise TargetError(f"Permission denied reading script: {script_path}") from e
 
     try:
-        # Compile and execute the script
+        main_module = types.ModuleType("__main__")
+        main_module.__file__ = script_path
+        main_module.__builtins__ = __builtins__
+        # gh-140729: Create a __mp_main__ module to allow pickling
+        sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
+
         code = compile(source_code, script_path, 'exec', module='__main__')
-        exec(code, {'__name__': '__main__', '__file__': script_path})
+        exec(code, main_module.__dict__)
     except SyntaxError as e:
         raise TargetError(f"Syntax error in script {script_path}: {e}") from e
     except SystemExit:
