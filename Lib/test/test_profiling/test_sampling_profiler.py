@@ -22,7 +22,13 @@ from profiling.sampling.stack_collector import (
 from profiling.sampling.gecko_collector import GeckoCollector
 
 from test.support.os_helper import unlink
-from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
+from test.support import (
+    force_not_colorized_test_class,
+    SHORT_TIMEOUT,
+    script_helper,
+    os_helper,
+    SuppressCrashReport,
+)
 from test.support.socket_helper import find_unused_port
 from test.support import requires_subprocess, is_emscripten
 from test.support import captured_stdout, captured_stderr
@@ -3007,6 +3013,50 @@ main()
         # Test invalid mode raises KeyError
         with self.assertRaises(KeyError):
             profiling.sampling.sample._parse_mode("invalid")
+
+
+@requires_subprocess()
+@skip_if_not_supported
+class TestProcessPoolExecutorSupport(unittest.TestCase):
+    """
+    Test that ProcessPoolExecutor works correctly with profiling.sampling.
+    """
+
+    def test_process_pool_executor_pickle(self):
+        # gh-140729: test use ProcessPoolExecutor.map() can sampling
+        test_script = '''
+import concurrent.futures
+
+def worker(x):
+    return x * 2
+
+if __name__ == "__main__":
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        results = list(executor.map(worker, [1, 2, 3]))
+        print(f"Results: {results}")
+'''
+        with os_helper.temp_dir() as temp_dir:
+            script = script_helper.make_script(
+                temp_dir, 'test_process_pool_executor_pickle', test_script
+            )
+            with SuppressCrashReport():
+                with script_helper.spawn_python(
+                    "-m", "profiling.sampling.sample",
+                    "-d", "5",
+                    "-i", "100000",
+                    script,
+                    stderr=subprocess.PIPE,
+                    text=True
+                ) as proc:
+                    proc.wait(timeout=SHORT_TIMEOUT)
+                    stdout = proc.stdout.read()
+                    stderr = proc.stderr.read()
+
+        if "PermissionError" in stderr:
+            self.skipTest("Insufficient permissions for remote profiling")
+
+        self.assertIn("Results: [2, 4, 6]", stdout)
+        self.assertNotIn("Can't pickle", stderr)
 
 
 if __name__ == "__main__":
