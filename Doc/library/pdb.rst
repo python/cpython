@@ -74,12 +74,13 @@ The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug
    command arguments, e.g. the current global and local names are offered as
    arguments of the ``p`` command.
 
-.. _pdb-cli:
 
-.. program:: pdb
+.. _pdb-cli:
 
 Command-line interface
 ----------------------
+
+.. program:: pdb
 
 You can also invoke :mod:`pdb` from the command line to debug other scripts.  For
 example::
