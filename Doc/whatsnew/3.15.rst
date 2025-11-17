@@ -734,6 +734,19 @@ timeit
   :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Yi Hong in :gh:`139374`.)
 
+tkinter
+-------
+
+* The :meth:`!tkinter.Text.search` method now supports two additional
+  arguments: *nolinestop* which allows the search to
+  continue across line boundaries;
+  and *strictlimits* which restricts the search to within the specified range.
+  (Contributed by Rihaan Meher in :gh:`130848`)
+
+* A new method :meth:`!tkinter.Text.search_all` has been introduced.
+  This method allows for searching for all matches of a pattern
+  using Tcl's ``-all`` and ``-overlap`` options.
+  (Contributed by Rihaan Meher in :gh:`130848`)
 
 types
 ------

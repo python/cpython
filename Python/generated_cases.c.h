@@ -1533,7 +1533,7 @@
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                     next_instr = this_instr;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _Py_Specialize_Call(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
+                    _Py_Specialize_Call(callable, self_or_null, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     DISPATCH_SAME_OPARG();
                 }
@@ -3470,11 +3470,6 @@
                 self = nos;
                 assert(oparg == 1);
                 PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
-                if (!PyList_CheckExact(self_o)) {
-                    UPDATE_MISS_STATS(CALL);
-                    assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
-                }
                 if (!LOCK_OBJECT(self_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -12268,7 +12263,7 @@ JUMP_TO_LABEL(error);
                                  opcode == RERAISE || opcode == CLEANUP_THROW ||
                                  opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing);
+            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (full) {
                 LEAVE_TRACING();
@@ -12314,7 +12309,7 @@ JUMP_TO_LABEL(error);
             assert(IS_JIT_TRACING());
             int opcode = next_instr->op.code;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, true);
+            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, _EXIT_TRACE);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LEAVE_TRACING();
             _PyFrame_SetStackPointer(frame, stack_pointer);
