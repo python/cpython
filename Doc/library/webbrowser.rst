@@ -51,10 +51,10 @@ a new tab, with the browser being brought to the foreground. The use of the
 
 .. _webbrowser-cli:
 
-.. program:: webbrowser
-
 Command-line interface
 ----------------------
+
+.. program:: webbrowser
 
 The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts a URL as the argument. It accepts the following optional
