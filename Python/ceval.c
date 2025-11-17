@@ -471,9 +471,9 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
 #    ifdef _Py_THREAD_SANITIZER
         // Thread sanitizer crashes if we use a bit more than half the stack.
 #      if _Py_STACK_GROWS_DOWN
-        base += stacksize / 2;
+        base += stack_size / 2;
 #      else
-        top -= stacksize / 2;
+        top -= stack_size / 2;
 #      endif
 #    endif
 #    if _Py_STACK_GROWS_DOWN
