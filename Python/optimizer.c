@@ -1710,7 +1710,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     }
 
     // It doesn't matter if we don't invalidate all threads.
-    // If more thread are spawned, we force the jit not to compile anyways
+    // If more threads are spawned, we force the jit not to compile anyways
     // so the trace gets abandoned.
     jit_tracer_invalidate_dependency(_PyThreadState_GET(), obj);
 
