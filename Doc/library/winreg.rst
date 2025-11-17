@@ -7,6 +7,8 @@
 
 .. sectionauthor:: Mark Hammond <MarkH@ActiveState.com>
 
+**Source code:** :source:`PC/winreg.c`
+
 --------------
 
 These functions expose the Windows registry API to Python.  Instead of using an
@@ -25,7 +27,7 @@ to explicitly close them.
 .. _functions:
 
 Functions
-------------------
+---------
 
 This module offers the following functions:
 
@@ -554,7 +556,7 @@ This module offers the following functions:
 .. _constants:
 
 Constants
-------------------
+---------
 
 The following constants are defined for use in many :mod:`winreg` functions.
 

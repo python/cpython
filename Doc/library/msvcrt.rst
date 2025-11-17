@@ -7,6 +7,8 @@
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`PC/msvcrtmodule.c`
+
 --------------
 
 These functions provide access to some useful capabilities on Windows platforms.
