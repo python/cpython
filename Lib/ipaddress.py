@@ -1545,7 +1545,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         if self._prefixlen == (self.max_prefixlen - 1):
             self.hosts = self.__iter__
         elif self._prefixlen == (self.max_prefixlen):
-            self.hosts = lambda: [IPv4Address(addr)]
+            self.hosts = lambda: iter((IPv4Address(addr),))
 
     @property
     @functools.lru_cache()
@@ -2336,7 +2336,7 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         if self._prefixlen == (self.max_prefixlen - 1):
             self.hosts = self.__iter__
         elif self._prefixlen == self.max_prefixlen:
-            self.hosts = lambda: [IPv6Address(addr)]
+            self.hosts = lambda: iter((IPv6Address(addr),))
 
     def hosts(self):
         """Generate Iterator over usable hosts in a network.
