@@ -18,6 +18,7 @@
 #include "pycore_tuple.h"         // _PyTuple_FromArraySteal()
 
 #include "opcode_ids.h"
+#include "pycore_optimizer.h"
 
 
 /* Uncomment this to dump debugging output when assertions fail */
@@ -1785,6 +1786,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
         _PyCode_Clear_Executors(code);
     }
     _Py_Executors_InvalidateDependency(interp, code, 1);
+    _PyJit_Tracer_InvalidateDependency(PyThreadState_GET(), code);
 #endif
     int code_len = (int)Py_SIZE(code);
     /* Exit early to avoid creating instrumentation

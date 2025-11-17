@@ -21,7 +21,14 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "prepare_protocol.h"
+
+#include "pycore_object.h"        // _PyObject_VisitType()
+
 
 static int
 pysqlite_prepare_protocol_init(PyObject *self, PyObject *args, PyObject *kwargs)

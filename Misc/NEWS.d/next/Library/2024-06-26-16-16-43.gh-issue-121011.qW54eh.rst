@@ -1,0 +1,2 @@
+:func:`math.log` now supports arbitrary large integer-like arguments in the
+same way as arbitrary large integer arguments.
