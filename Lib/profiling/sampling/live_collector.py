@@ -1405,6 +1405,7 @@ class LiveStatsCollector(Collector):
 
     def collect_failed_sample(self, exeption):
         self._failed_samples += 1
+        self.total_samples += 1
 
     def collect(self, stack_frames):
         """Collect and display profiling data."""
