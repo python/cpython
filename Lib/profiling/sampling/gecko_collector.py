@@ -141,7 +141,6 @@ class GeckoCollector(Collector):
             for thread_info in interpreter_info.threads:
                 frames = thread_info.frame_info
                 tid = thread_info.thread_id
-                gc_collecting = thread_info.gc_collecting
 
                 # Initialize thread if needed
                 if tid not in self.threads:
@@ -197,16 +196,16 @@ class GeckoCollector(Collector):
                     self._add_marker(tid, "Waiting for GIL", self.gil_wait_start.pop(tid),
                                    current_time, CATEGORY_GIL)
 
-                # Track GC events - attribute to all threads that hold the GIL during GC
-                # (GC is interpreter-wide but runs on whichever thread(s) have the GIL)
-                # If GIL switches during GC, multiple threads will get GC markers
-                if gc_collecting and has_gil:
-                    # Start GC marker if not already started for this thread
+                # Track GC events by detecting <GC> frames in the stack trace
+                # This leverages the improved GC frame tracking from commit 336366fd7ca
+                # which precisely identifies the thread that initiated GC collection
+                has_gc_frame = any(frame[2] == "<GC>" for frame in frames)
+                if has_gc_frame:
+                    # This thread initiated GC collection
                     if tid not in self.gc_start_per_thread:
                         self.gc_start_per_thread[tid] = current_time
                 elif tid in self.gc_start_per_thread:
-                    # End GC marker if it was running for this thread
-                    # (either GC finished or thread lost GIL)
+                    # End GC marker when no more GC frames are detected
                     self._add_marker(tid, "GC Collecting", self.gc_start_per_thread.pop(tid),
                                    current_time, CATEGORY_GC)
 
