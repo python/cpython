@@ -187,6 +187,9 @@ have fast appends and pops from both ends.  For example::
    'John'
    >>> queue                           # Remaining queue in order of arrival
    deque(['Michael', 'Terry', 'Graham'])
+   >>> queue.appendleft("John")        # John is added to front of queue
+   >>> queue
+   deque(['John', 'Michael', 'Terry', 'Graham'])
 
 
 .. _tut-listcomps:
