@@ -1141,6 +1141,9 @@ PyInterpreterState_Clear:PyInterpreterState*:interp::
 PyInterpreterState_Delete:void:::
 PyInterpreterState_Delete:PyInterpreterState*:interp::
 
+PyInterpreterState_GetDict:PyObject*::0:
+PyInterpreterState_GetDict:PyInterpreterState*:interp::
+
 PyInterpreterState_GetID:int64_t:::
 PyInterpreterState_GetID:PyInterpreterState*:interp::
 
@@ -2946,12 +2949,6 @@ PyWeakref_CheckProxy:PyObject*:ob:0:
 
 PyWeakref_CheckRef:int:::
 PyWeakref_CheckRef:PyObject*:ob:0:
-
-PyWeakref_GET_OBJECT:PyObject*::0:
-PyWeakref_GET_OBJECT:PyObject*:ref:0:
-
-PyWeakref_GetObject:PyObject*::0:
-PyWeakref_GetObject:PyObject*:ref:0:
 
 PyWeakref_GetRef:int:::
 PyWeakref_GetRef:PyObject*:ref:0:

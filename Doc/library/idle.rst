@@ -13,7 +13,7 @@ IDLE --- Python editor and shell
    single: Integrated Development Environment
 
 ..
-   Remember to update Lib/idlelib/help.html with idlelib.help.copy_source() when modifying this file.
+   Remember to update Lib/idlelib/help.html with idlelib.help.copy_strip() when modifying this file.
 
 --------------
 
@@ -36,6 +36,10 @@ IDLE has the following features:
   of global and local namespaces
 
 * configuration, browsers, and other dialogs
+
+The IDLE application is implemented in the :mod:`idlelib` package.
+
+.. include:: ../includes/optional-module.rst
 
 Menus
 -----
@@ -88,7 +92,7 @@ Save
 
 Save As...
    Save the current window with a Save As dialog.  The file saved becomes the
-   new associated file for the window. (If your file namager is set to hide
+   new associated file for the window. (If your file manager is set to hide
    extensions, the current extension will be omitted in the file name box.
    If the new filename has no '.', '.py' and '.txt' will be added for Python
    and text files, except that on macOS Aqua,'.py' is added for all files.)
@@ -204,9 +208,9 @@ New Indent Width
    Open a dialog to change indent width. The accepted default by the Python
    community is 4 spaces.
 
-Strip Trailing Chitespace
+Strip Trailing Whitespace
    Remove trailing space and other whitespace characters after the last
-   non-whitespace character of a line by applying str.rstrip to each line,
+   non-whitespace character of a line by applying :meth:`str.rstrip` to each line,
    including lines within multiline strings.  Except for Shell windows,
    remove extra newlines at the end of the file.
 

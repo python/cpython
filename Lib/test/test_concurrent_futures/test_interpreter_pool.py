@@ -1,8 +1,11 @@
+import _thread
 import asyncio
 import contextlib
 import io
 import os
+import subprocess
 import sys
+import textwrap
 import time
 import unittest
 from concurrent.futures.interpreter import BrokenInterpreterPool
@@ -457,6 +460,59 @@ class InterpreterPoolExecutorTest(
         # Weak references don't cross between interpreters.
         raise unittest.SkipTest('not applicable')
 
+    @support.requires_subprocess()
+    def test_import_interpreter_pool_executor(self):
+        # Test the import behavior normally if _interpreters is unavailable.
+        code = textwrap.dedent("""
+        import sys
+        # Set it to None to emulate the case when _interpreter is unavailable.
+        sys.modules['_interpreters'] = None
+        from concurrent import futures
+
+        try:
+            futures.InterpreterPoolExecutor
+        except AttributeError:
+            pass
+        else:
+            print('AttributeError not raised!', file=sys.stderr)
+            sys.exit(1)
+
+        try:
+            from concurrent.futures import InterpreterPoolExecutor
+        except ImportError:
+            pass
+        else:
+            print('ImportError not raised!', file=sys.stderr)
+            sys.exit(1)
+
+        from concurrent.futures import *
+
+        if 'InterpreterPoolExecutor' in globals():
+            print('InterpreterPoolExecutor should not be imported!',
+                  file=sys.stderr)
+            sys.exit(1)
+        """)
+
+        cmd = [sys.executable, '-c', code]
+        p = subprocess.run(cmd, capture_output=True)
+        self.assertEqual(p.returncode, 0, p.stderr.decode())
+        self.assertEqual(p.stdout.decode(), '')
+        self.assertEqual(p.stderr.decode(), '')
+
+    def test_thread_name_prefix(self):
+        self.assertStartsWith(self.executor._thread_name_prefix,
+                              "InterpreterPoolExecutor-")
+
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_thread_name_prefix_with_thread_get_name(self):
+        def get_thread_name():
+            import _thread
+            return _thread._get_name()
+
+        # Some platforms (Linux) are using 16 bytes to store the thread name,
+        # so only compare the first 15 bytes (without the trailing \n).
+        self.assertStartsWith(self.executor.submit(get_thread_name).result(),
+                              "InterpreterPoolExecutor-"[:15])
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
 
@@ -471,7 +527,7 @@ class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
         # tests left a policy in place, just in case.
         policy = support.maybe_get_event_loop_policy()
         assert policy is None, policy
-        cls.addClassCleanup(lambda: asyncio._set_event_loop_policy(None))
+        cls.addClassCleanup(lambda: asyncio.events._set_event_loop_policy(None))
 
     def setUp(self):
         super().setUp()

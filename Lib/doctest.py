@@ -94,6 +94,7 @@ __all__ = [
 
 import __future__
 import difflib
+import functools
 import inspect
 import linecache
 import os
@@ -103,7 +104,7 @@ import sys
 import traceback
 import types
 import unittest
-from io import StringIO, IncrementalNewlineDecoder
+from io import StringIO, TextIOWrapper, BytesIO
 from collections import namedtuple
 import _colorize  # Used in doctests
 from _colorize import ANSIColors, can_colorize
@@ -236,10 +237,6 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
-def _newline_convert(data):
-    # The IO module provides a handy decoder for universal newline conversion
-    return IncrementalNewlineDecoder(None, True).decode(data, True)
-
 def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
@@ -251,10 +248,9 @@ def _load_testfile(filename, package, module_relative, encoding):
                 pass
         if hasattr(loader, 'get_data'):
             file_contents = loader.get_data(filename)
-            file_contents = file_contents.decode(encoding)
             # get_data() opens files as 'rb', so one must do the equivalent
             # conversion as universal newlines would do.
-            return _newline_convert(file_contents), filename
+            return TextIOWrapper(BytesIO(file_contents), encoding=encoding, newline=None).read(), filename
     with open(filename, encoding=encoding) as f:
         return f.read(), filename
 
@@ -1141,7 +1137,9 @@ class DocTestFinder:
         if inspect.ismethod(obj): obj = obj.__func__
         if isinstance(obj, property):
             obj = obj.fget
-        if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
+        if isinstance(obj, functools.cached_property):
+            obj = obj.func
+        if inspect.isroutine(obj) and getattr(obj, '__doc__', None):
             # We don't use `docstring` var here, because `obj` can be changed.
             obj = inspect.unwrap(obj)
             try:
@@ -1997,8 +1995,8 @@ def testmod(m=None, name=None, globs=None, verbose=None,
     from module m (or the current module if m is not supplied), starting
     with m.__doc__.
 
-    Also test examples reachable from dict m.__test__ if it exists and is
-    not None.  m.__test__ maps names to functions, classes and strings;
+    Also test examples reachable from dict m.__test__ if it exists.
+    m.__test__ maps names to functions, classes and strings;
     function and class docstrings are tested even if the name is private;
     strings are tested directly, as if they were docstrings.
 

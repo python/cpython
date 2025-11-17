@@ -376,7 +376,7 @@ pairwise_next(PyObject *op)
     }
 
     result = po->result;
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         PyObject *last_old = PyTuple_GET_ITEM(result, 0);
         PyObject *last_new = PyTuple_GET_ITEM(result, 1);
@@ -802,7 +802,7 @@ teedataobject_traverse(PyObject *op, visitproc visit, void * arg)
 static void
 teedataobject_safe_decref(PyObject *obj)
 {
-    while (obj && Py_REFCNT(obj) == 1) {
+    while (obj && _PyObject_IsUniquelyReferenced(obj)) {
         teedataobject *tmp = teedataobject_CAST(obj);
         PyObject *nextlink = tmp->nextlink;
         tmp->nextlink = NULL;
@@ -1069,22 +1069,18 @@ static PyType_Spec tee_spec = {
 /*[clinic input]
 itertools.tee
     iterable: object
-    n: Py_ssize_t = 2
+    n: Py_ssize_t(allow_negative=False) = 2
     /
 Returns a tuple of n independent iterators.
 [clinic start generated code]*/
 
 static PyObject *
 itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
-/*[clinic end generated code: output=1c64519cd859c2f0 input=c99a1472c425d66d]*/
+/*[clinic end generated code: output=1c64519cd859c2f0 input=0f72d78e655f45cb]*/
 {
     Py_ssize_t i;
     PyObject *it, *to, *result;
 
-    if (n < 0) {
-        PyErr_SetString(PyExc_ValueError, "n must be >= 0");
-        return NULL;
-    }
     result = PyTuple_New(n);
     if (result == NULL)
         return NULL;
@@ -1129,6 +1125,7 @@ typedef struct {
 #define cycleobject_CAST(op)    ((cycleobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.cycle.__new__
     iterable: object
@@ -1138,7 +1135,7 @@ Return elements from the iterable until it is exhausted. Then repeat the sequenc
 
 static PyObject *
 itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=f60e5ec17a45b35c input=9d1d84bcf66e908b]*/
+/*[clinic end generated code: output=f60e5ec17a45b35c input=ead392f4aac7afd8]*/
 {
     PyObject *it;
     PyObject *saved;
@@ -1386,6 +1383,7 @@ typedef struct {
 #define takewhileobject_CAST(op)    ((takewhileobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.takewhile.__new__
     predicate as func: object
@@ -1396,7 +1394,7 @@ Return successive entries from an iterable as long as the predicate evaluates to
 
 static PyObject *
 itertools_takewhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=bb179ea7864e2ef6 input=ba5255f7519aa119]*/
+/*[clinic end generated code: output=bb179ea7864e2ef6 input=61e42255dd0a7657]*/
 {
     PyObject *it;
     takewhileobject *lz;
@@ -1695,6 +1693,7 @@ typedef struct {
 #define starmapobject_CAST(op)  ((starmapobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.starmap.__new__
     function as func: object
@@ -1705,7 +1704,7 @@ Return an iterator whose values are returned from the function evaluated with an
 
 static PyObject *
 itertools_starmap_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=79eeb81d452c6e8d input=844766df6a0d4dad]*/
+/*[clinic end generated code: output=79eeb81d452c6e8d input=8c9068da0692d6d2]*/
 {
     PyObject *it;
     starmapobject *lz;
@@ -1838,6 +1837,7 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.chain.from_iterable
     iterable as arg: object
@@ -1847,7 +1847,7 @@ Alternative chain() constructor taking a single iterable argument that evaluates
 
 static PyObject *
 itertools_chain_from_iterable_impl(PyTypeObject *type, PyObject *arg)
-/*[clinic end generated code: output=3d7ea7d46b9e43f5 input=72c39e3a2ca3be85]*/
+/*[clinic end generated code: output=3d7ea7d46b9e43f5 input=a9bf8227221c75b3]*/
 {
     PyObject *source;
 
@@ -1880,8 +1880,8 @@ chain_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
-static PyObject *
-chain_next(PyObject *op)
+static inline PyObject *
+chain_next_lock_held(PyObject *op)
 {
     chainobject *lz = chainobject_CAST(op);
     PyObject *item;
@@ -1917,6 +1917,16 @@ chain_next(PyObject *op)
     }
     /* Everything had been consumed already. */
     return NULL;
+}
+
+static PyObject *
+chain_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = chain_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 PyDoc_STRVAR(chain_doc,
@@ -2086,7 +2096,7 @@ product_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-product_next(PyObject *op)
+product_next_lock_held(PyObject *op)
 {
     productobject *lz = productobject_CAST(op);
     PyObject *pool;
@@ -2119,9 +2129,9 @@ product_next(PyObject *op)
         Py_ssize_t *indices = lz->indices;
 
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), npools);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), npools);
             if (result == NULL)
                 goto empty;
             lz->result = result;
@@ -2170,6 +2180,16 @@ product_next(PyObject *op)
 empty:
     lz->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+product_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = product_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef product_methods[] = {
@@ -2231,7 +2251,7 @@ typedef struct {
 @classmethod
 itertools.combinations.__new__
     iterable: object
-    r: Py_ssize_t
+    r: Py_ssize_t(allow_negative=False)
 Return successive r-length combinations of elements in the iterable.
 
 combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)
@@ -2240,7 +2260,7 @@ combinations(range(4), 3) --> (0,1,2), (0,1,3), (0,2,3), (1,2,3)
 static PyObject *
 itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
                             Py_ssize_t r)
-/*[clinic end generated code: output=87a689b39c40039c input=06bede09e3da20f8]*/
+/*[clinic end generated code: output=87a689b39c40039c input=a32f07a15cfa4676]*/
 {
     combinationsobject *co;
     Py_ssize_t n;
@@ -2252,10 +2272,6 @@ itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
     if (pool == NULL)
         goto error;
     n = PyTuple_GET_SIZE(pool);
-    if (r < 0) {
-        PyErr_SetString(PyExc_ValueError, "r must be non-negative");
-        goto error;
-    }
 
     indices = PyMem_New(Py_ssize_t, r);
     if (indices == NULL) {
@@ -2319,7 +2335,7 @@ combinations_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-combinations_next(PyObject *op)
+combinations_next_lock_held(PyObject *op)
 {
     combinationsobject *co = combinationsobject_CAST(op);
     PyObject *elem;
@@ -2348,9 +2364,9 @@ combinations_next(PyObject *op)
         }
     } else {
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             co->result = result;
@@ -2402,6 +2418,16 @@ combinations_next(PyObject *op)
 empty:
     co->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+combinations_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = combinations_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef combinations_methods[] = {
@@ -2471,10 +2497,12 @@ typedef struct {
 #define cwrobject_CAST(op)  ((cwrobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 @classmethod
 itertools.combinations_with_replacement.__new__
     iterable: object
-    r: Py_ssize_t
+    r: Py_ssize_t(allow_negative=False)
 Return successive r-length combinations of elements in the iterable allowing individual elements to have successive repeats.
 
 combinations_with_replacement('ABC', 2) --> ('A','A'), ('A','B'), ('A','C'), ('B','B'), ('B','C'), ('C','C')
@@ -2484,7 +2512,7 @@ static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
                                              PyObject *iterable,
                                              Py_ssize_t r)
-/*[clinic end generated code: output=48b26856d4e659ca input=1dc58e82a0878fdc]*/
+/*[clinic end generated code: output=48b26856d4e659ca input=828696750169e84f]*/
 {
     cwrobject *co;
     Py_ssize_t n;
@@ -2496,10 +2524,6 @@ itertools_combinations_with_replacement_impl(PyTypeObject *type,
     if (pool == NULL)
         goto error;
     n = PyTuple_GET_SIZE(pool);
-    if (r < 0) {
-        PyErr_SetString(PyExc_ValueError, "r must be non-negative");
-        goto error;
-    }
 
     indices = PyMem_New(Py_ssize_t, r);
     if (indices == NULL) {
@@ -2594,9 +2618,9 @@ cwr_next(PyObject *op)
         }
     } else {
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             co->result = result;
@@ -2855,9 +2879,9 @@ permutations_next(PyObject *op)
             goto empty;
 
         /* Copy the previous result tuple or re-use it if available */
-        if (Py_REFCNT(result) > 1) {
+        if (!_PyObject_IsUniquelyReferenced(result)) {
             PyObject *old_result = result;
-            result = _PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
+            result = PyTuple_FromArray(_PyTuple_ITEMS(old_result), r);
             if (result == NULL)
                 goto empty;
             po->result = result;
@@ -3823,7 +3847,7 @@ zip_longest_next(PyObject *op)
         return NULL;
     if (lz->numactive == 0)
         return NULL;
-    if (Py_REFCNT(result) == 1) {
+    if (_PyObject_IsUniquelyReferenced(result)) {
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);

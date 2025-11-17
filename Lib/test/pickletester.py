@@ -1012,6 +1012,16 @@ class AbstractUnpickleTests:
         self.assertIs(self.loads(b'I01\n.'), True)
         self.assertIs(self.loads(b'I00\n.'), False)
 
+    def test_issue135241(self):
+        # C implementation should check for hardcoded values 00 and 01
+        # when getting booleans from the INT opcode. Doing a str comparison
+        # to bypass truthy/falsy comparisons. These payloads should return
+        # 0, not False.
+        out1 = self.loads(b'I+0\n.')
+        self.assertEqual(str(out1), '0')
+        out2 = self.loads(b'I 0\n.')
+        self.assertEqual(str(out2), '0')
+
     def test_zero_padded_integers(self):
         self.assertEqual(self.loads(b'I010\n.'), 10)
         self.assertEqual(self.loads(b'I-010\n.'), -10)
@@ -1872,7 +1882,7 @@ class AbstractPicklingErrorTests:
                     with self.assertRaises(TypeError) as cm:
                         self.dumps(obj, proto)
                     self.assertEqual(str(cm.exception),
-                        'functools.partial() argument after ** must be a mapping, not list')
+                        'Value after ** must be a mapping, not list')
                     self.assertEqual(cm.exception.__notes__, [
                         'when serializing test.pickletester.REX object'])
         else:

@@ -1404,7 +1404,15 @@ expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
     if (PyBytes_AsStringAndSize(tok->bytes, &bstr, &bsize) == -1) {
         return NULL;
     }
-    PyObject* str = _PyPegen_decode_string(p, 0, bstr, bsize, tok);
+
+    // Check if we're inside a raw f-string for format spec decoding
+    int is_raw = 0;
+    if (INSIDE_FSTRING(p->tok)) {
+        tokenizer_mode *mode = TOK_GET_MODE(p->tok);
+        is_raw = mode->raw;
+    }
+
+    PyObject* str = _PyPegen_decode_string(p, is_raw, bstr, bsize, tok);
     if (str == NULL) {
         return NULL;
     }
@@ -1604,19 +1612,46 @@ _build_concatenated_bytes(Parser *p, asdl_expr_seq *strings, int lineno,
     Py_ssize_t len = asdl_seq_LEN(strings);
     assert(len > 0);
 
-    PyObject* res = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
-
     /* Bytes literals never get a kind, but just for consistency
         since they are represented as Constant nodes, we'll mirror
         the same behavior as unicode strings for determining the
         kind. */
-    PyObject* kind = asdl_seq_GET(strings, 0)->v.Constant.kind;
+    PyObject *kind = asdl_seq_GET(strings, 0)->v.Constant.kind;
+
+    Py_ssize_t total = 0;
     for (Py_ssize_t i = 0; i < len; i++) {
         expr_ty elem = asdl_seq_GET(strings, i);
-        PyBytes_Concat(&res, elem->v.Constant.value);
+        PyObject *bytes = elem->v.Constant.value;
+        Py_ssize_t part = PyBytes_GET_SIZE(bytes);
+        if (part > PY_SSIZE_T_MAX - total) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        total += part;
     }
-    if (!res || _PyArena_AddPyObject(arena, res) < 0) {
-        Py_XDECREF(res);
+
+    PyBytesWriter *writer = PyBytesWriter_Create(total);
+    if (writer == NULL) {
+        return NULL;
+    }
+    char *out = PyBytesWriter_GetData(writer);
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        expr_ty elem = asdl_seq_GET(strings, i);
+        PyObject *bytes = elem->v.Constant.value;
+        Py_ssize_t part = PyBytes_GET_SIZE(bytes);
+        if (part > 0) {
+            memcpy(out, PyBytes_AS_STRING(bytes), part);
+            out += part;
+        }
+    }
+
+    PyObject *res = PyBytesWriter_Finish(writer);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(arena, res) < 0) {
+        Py_DECREF(res);
         return NULL;
     }
     return _PyAST_Constant(res, kind, lineno, col_offset, end_lineno, end_col_offset, p->arena);
@@ -1834,8 +1869,8 @@ _build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
     return _PyAST_JoinedStr(values, lineno, col_offset, end_lineno, end_col_offset, p->arena);
 }
 
-static expr_ty
-_build_concatenated_template_str(Parser *p, asdl_expr_seq *strings,
+expr_ty
+_PyPegen_concatenate_tstrings(Parser *p, asdl_expr_seq *strings,
                                int lineno, int col_offset, int end_lineno,
                                int end_col_offset, PyArena *arena)
 {
@@ -1853,7 +1888,6 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     Py_ssize_t len = asdl_seq_LEN(strings);
     assert(len > 0);
 
-    int t_string_found = 0;
     int f_string_found = 0;
     int unicode_string_found = 0;
     int bytes_found = 0;
@@ -1873,7 +1907,8 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
                 f_string_found = 1;
                 break;
             case TemplateStr_kind:
-                t_string_found = 1;
+                // python.gram handles this; we should never get here
+                assert(0);
                 break;
             default:
                 f_string_found = 1;
@@ -1882,13 +1917,13 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     }
 
     // Cannot mix unicode and bytes
-    if ((unicode_string_found || f_string_found || t_string_found) && bytes_found) {
+    if ((unicode_string_found || f_string_found) && bytes_found) {
         RAISE_SYNTAX_ERROR("cannot mix bytes and nonbytes literals");
         return NULL;
     }
 
     // If it's only bytes or only unicode string, do a simple concat
-    if (!f_string_found && !t_string_found) {
+    if (!f_string_found) {
         if (len == 1) {
             return asdl_seq_GET(strings, 0);
         }
@@ -1900,11 +1935,6 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
             return _build_concatenated_unicode(p, strings, lineno, col_offset,
                 end_lineno, end_col_offset, arena);
         }
-    }
-
-    if (t_string_found) {
-        return _build_concatenated_template_str(p, strings, lineno,
-            col_offset, end_lineno, end_col_offset, arena);
     }
 
     return _build_concatenated_joined_str(p, strings, lineno,
@@ -1936,6 +1966,9 @@ _PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts) {
         return stmts;
     }
     stmt_ty last_stmt = asdl_seq_GET(stmts, len - 1);
+    if (p->last_stmt_location.lineno > last_stmt->lineno) {
+        return stmts;
+    }
     p->last_stmt_location.lineno = last_stmt->lineno;
     p->last_stmt_location.col_offset = last_stmt->col_offset;
     p->last_stmt_location.end_lineno = last_stmt->end_lineno;
