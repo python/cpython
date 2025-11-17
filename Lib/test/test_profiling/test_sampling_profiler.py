@@ -63,14 +63,13 @@ class MockFrameInfo:
 class MockThreadInfo:
     """Mock ThreadInfo for testing since the real one isn't accessible."""
 
-    def __init__(self, thread_id, frame_info, status=0, gc_collecting=False):  # Default to THREAD_STATE_RUNNING (0)
+    def __init__(self, thread_id, frame_info, status=0):  # Default to THREAD_STATE_RUNNING (0)
         self.thread_id = thread_id
         self.frame_info = frame_info
         self.status = status
-        self.gc_collecting = gc_collecting
 
     def __repr__(self):
-        return f"MockThreadInfo(thread_id={self.thread_id}, frame_info={self.frame_info}, status={self.status}, gc_collecting={self.gc_collecting})"
+        return f"MockThreadInfo(thread_id={self.thread_id}, frame_info={self.frame_info}, status={self.status})"
 
 
 class MockInterpreterInfo:
@@ -2742,7 +2741,6 @@ class TestCpuModeFiltering(unittest.TestCase):
                 self.thread_id = thread_id
                 self.frame_info = frame_info
                 self.status = status
-                self.gc_collecting = False
 
         # Create test data: active thread (HAS_GIL | ON_CPU), idle thread (neither), and another active thread
         ACTIVE_STATUS = THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU  # Has GIL and on CPU
