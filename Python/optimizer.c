@@ -1675,7 +1675,9 @@ executor_clear(PyObject *op)
         executor->exits[i].temperature = initial_unreachable_backoff_counter();
         _PyExecutorObject *e = executor->exits[i].executor;
         executor->exits[i].executor = NULL;
-        if (e != cold && e != cold_dynamic) {
+        // Only clear side exit executors in the chain, not
+        // those that have progress (inserted into bytecode).
+        if (e != cold && e != cold_dynamic && e->vm_data.code != NULL) {
             executor_clear((PyObject *)e);
         }
     }
