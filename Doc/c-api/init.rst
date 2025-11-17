@@ -1445,11 +1445,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    The *throwflag* parameter is used by the ``throw()`` method of generators:
    if non-zero, handle the current exception.
 
-   .. versionchanged:: 3.9
-      The function now takes a *tstate* parameter.
-
-   .. versionchanged:: 3.11
-      The *frame* parameter changed from ``PyFrameObject*`` to ``_PyInterpreterFrame*``.
+   .. versionadded:: next
 
 .. c:function:: PyUnstable_FrameEvalFunction PyUnstable_InterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
