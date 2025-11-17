@@ -4051,7 +4051,7 @@ class Text(Widget, XView, YView):
     def search(self, pattern, index, stopindex=None,
             forwards=None, backwards=None, exact=None,
             regexp=None, nocase=None, count=None,
-            elide=None, nolinestop=None, strictlimits=None):
+            elide=None, *, nolinestop=None, strictlimits=None):
         """Search PATTERN beginning from INDEX until STOPINDEX.
         Return the index of the first character of a match or an
         empty string."""
