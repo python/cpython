@@ -135,30 +135,6 @@ class Emitter:
         self.cannot_escape = cannot_escape
         self.jump_prefix = jump_prefix
 
-    def emit_to_with_replacement(
-        self,
-        out: CWriter,
-        tkn_iter: TokenIterator,
-        end: str,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None
-    ) -> Token:
-        parens = 0
-        for tkn in tkn_iter:
-            if tkn.kind == end and parens == 0:
-                return tkn
-            if tkn.kind == "LPAREN":
-                parens += 1
-            if tkn.kind == "RPAREN":
-                parens -= 1
-            if tkn.text in self._replacers:
-                self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst)
-            else:
-                out.emit(tkn)
-        raise analysis_error(f"Expecting {end}. Reached end of file", tkn)
-
-
     def dispatch(
         self,
         tkn: Token,
@@ -186,7 +162,7 @@ class Emitter:
         lparen = next(tkn_iter)
         assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
-        self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
+        emit_to(self.out, tkn_iter, "RPAREN")
         self.emit(") {\n")
         next(tkn_iter)  # Semi colon
         assert inst is not None

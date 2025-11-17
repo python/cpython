@@ -64,8 +64,6 @@ class Tier2Emitter(Emitter):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
         self._replacers["IP_OFFSET_OF"] = self.ip_offset_of
-        self._replacers["LOCK_OBJECT"] = self.lock_object
-        self._replacers["UNLOCK_OBJECT"] = self.unlock_object
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
@@ -86,7 +84,7 @@ class Tier2Emitter(Emitter):
         self.emit(lparen)
         assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
-        self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
+        emit_to(self.out, tkn_iter, "RPAREN")
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
@@ -106,7 +104,7 @@ class Tier2Emitter(Emitter):
         lparen = next(tkn_iter)
         self.emit(lparen)
         first_tkn = tkn_iter.peek()
-        self.emit_to_with_replacement(self.out, tkn_iter, "RPAREN", uop, storage, inst)
+        emit_to(self.out, tkn_iter, "RPAREN")
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
@@ -154,29 +152,6 @@ class Tier2Emitter(Emitter):
         next(tkn_iter)
         # SEMI
         next(tkn_iter)
-        return True
-
-    def lock_object(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.emit("1 && ")
-        return True
-
-    def unlock_object(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.out.start_line()
-        self.emit("(void)")
         return True
 
 def write_uop(uop: Uop, emitter: Emitter, stack: Stack, offset_strs: dict[str, tuple[str, str]]) -> Stack:

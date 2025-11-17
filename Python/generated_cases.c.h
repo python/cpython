@@ -5479,6 +5479,7 @@
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
             assert(executor->vm_data.code == code);
+            assert(executor->vm_data.valid);
             assert(tstate->current_executor == NULL);
             if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                 opcode = executor->vm_data.opcode;
