@@ -2570,7 +2570,7 @@ stackref_dup_borrowed_with_close(PyObject *self, PyObject *op)
     _PyStackRef ref = PyStackRef_FromPyObjectBorrow(op);
     // For no-GIL release build ref2 is equal to ref.
     _PyStackRef ref2 = PyStackRef_DUP(ref);
-    // For release build closing borrowed ref is no-op.
+    // Closing borrowed ref is no-op.
     PyStackRef_XCLOSE(ref);
     PyObject *res = _PyStackRef_AsTuple(ref2, op);
     PyStackRef_XCLOSE(ref2);
