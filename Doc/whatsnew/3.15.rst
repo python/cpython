@@ -316,9 +316,7 @@ Other language changes
   and compression. Common code patterns which can be optimized with
   :func:`~bytearray.take_bytes` are listed below.
 
-  (Contributed by Cody Maloney in :gh:`139871`.)
-
-  .. list-table:: Suggested Optimizing Refactors
+  .. list-table:: Suggested optimizing refactors
       :header-rows: 1
 
       * - Description
@@ -386,6 +384,8 @@ Other language changes
               n = buffer.find(b'\n')
               buffer.resize(n)
               data = buffer.take_bytes()
+
+  (Contributed by Cody Maloney in :gh:`139871`.)
 
 * Many functions related to compiling or parsing Python code, such as
   :func:`compile`, :func:`ast.parse`, :func:`symtable.symtable`,
