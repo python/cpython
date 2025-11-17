@@ -376,6 +376,19 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 
 static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
 
+static inline PyObject *
+_PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
+{
+    int flags = ref.bits & Py_TAG_BITS;
+#ifdef Py_GIL_DISABLED
+    if (_Py_IsImmortal(op)) {
+        // Do not check flags on immortal objects in the free threading build.
+        flags = -1;
+    }
+#endif
+    return Py_BuildValue("(ni)", Py_REFCNT(op), flags);
+}
+
 /* Wrap a pointer in a stack ref.
  * The resulting stack reference is not safe and should only be used
  * in the interpreter to pass values from one uop to another.
@@ -475,13 +488,6 @@ static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
 #define PyStackRef_IsFalse(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_False)
 
 #define PyStackRef_IsNullOrInt(stackref) (PyStackRef_IsNull(stackref) || PyStackRef_IsTaggedInt(stackref))
-
-static inline PyObject *
-_PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
-{
-    // Do not check StackRef flags in the free threading build.
-    return Py_BuildValue("(ni)", Py_REFCNT(op), -1);
-}
 
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
@@ -666,13 +672,6 @@ static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 #define PyStackRef_IsTrue(REF) ((REF).bits == (((uintptr_t)&_Py_TrueStruct) | Py_TAG_REFCNT))
 #define PyStackRef_IsFalse(REF) ((REF).bits == (((uintptr_t)&_Py_FalseStruct) | Py_TAG_REFCNT))
 #define PyStackRef_IsNone(REF) ((REF).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT))
-
-static inline PyObject *
-_PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
-{
-    int flags = ref.bits & Py_TAG_BITS;
-    return Py_BuildValue("(ni)", Py_REFCNT(op), flags);
-}
 
 #ifdef Py_DEBUG
 

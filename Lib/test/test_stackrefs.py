@@ -49,7 +49,7 @@ class TestDefinition(unittest.TestCase):
             for func in funcs_with_incref:
                 refcount, flags = run_with_refcount_check(self, func, obj)
                 self.assertLess(refcount, self.BIG_REFCOUNT)
-                self.assertIn(flags, (0, -1))
+                self.assertEqual(flags, 0)
                 results.add((refcount, flags))
             self.assertEqual(len(results), 1)
 
@@ -57,7 +57,7 @@ class TestDefinition(unittest.TestCase):
             for func in funcs_with_borrow:
                 refcount, flags = run_with_refcount_check(self, func, obj)
                 self.assertLess(refcount, self.BIG_REFCOUNT)
-                self.assertIn(flags, (1, -1))
+                self.assertEqual(flags, 1)
                 results.add((refcount, flags))
             self.assertEqual(len(results), 1)
 
