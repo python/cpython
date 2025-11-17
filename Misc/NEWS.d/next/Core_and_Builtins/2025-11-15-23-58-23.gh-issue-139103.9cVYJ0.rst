@@ -1,1 +1,1 @@
-Make ``type_setattro`` use defer refcount in free-threading for functions without defer refcount.
+Improve multithreaded scaling of dataclasses on the free-threaded build.
