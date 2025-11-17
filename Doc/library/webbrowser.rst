@@ -40,6 +40,11 @@ a new tab, with the browser being brought to the foreground. The use of the
 :mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
 :mod:`ctypes` isn't available, calls to :func:`.open` will fail.
 
+.. _webbrowser-cli:
+
+Command-line interface
+----------------------
+
 .. program:: webbrowser
 
 The script :program:`webbrowser` can be used as a command-line interface for the
@@ -223,7 +228,7 @@ Here are some simple examples::
 
 .. _browser-controllers:
 
-Browser Controller Objects
+Browser controller objects
 --------------------------
 
 Browser controllers provide the :attr:`~controller.name` attribute,

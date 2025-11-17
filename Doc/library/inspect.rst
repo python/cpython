@@ -1740,7 +1740,7 @@ Buffer flags
 
 .. _inspect-module-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`inspect` module also provides a basic introspection capability
