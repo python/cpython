@@ -47,9 +47,16 @@ class TextTest(AbstractTkTest, unittest.TestCase):
             'Another line.\n'
             'Yet another line.')
 
+        self.assertEqual(text.search('test', '1.0'), '1.10')
+        self.assertEqual(text.search('test', '1.0', 'end'), '1.10')
+        self.assertEqual(text.search('test', '1.0', '1.10'), '')
+        self.assertEqual(text.search('test', '1.11'), '1.31')
+        self.assertEqual(text.search('test', '1.32', 'end'), '')
+        self.assertEqual(text.search('test', '1.32'), '1.10')
+
         self.assertEqual(text.search('line', '3.0'), '3.12')
-        self.assertEqual(text.search('line', '3.0', backwards=True), '2.8')
         self.assertEqual(text.search('line', '3.0', forwards=True), '3.12')
+        self.assertEqual(text.search('line', '3.0', backwards=True), '2.8')
         self.assertEqual(text.search('line', '3.0', forwards=True, backwards=True), '2.8')
 
         self.assertEqual(text.search('t.', '1.0'), '1.13')
@@ -60,10 +67,6 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.search('TEST', '1.0'), '')
         self.assertEqual(text.search('TEST', '1.0', nocase=True), '1.10')
 
-        var = tkinter.Variable(self.root)
-        self.assertEqual(text.search('test', '1.0', count=var), '1.10')
-        self.assertEqual(var.get(), 4 if self.wantobjects else '4')
-
         self.assertEqual(text.search('.*line', '1.0', regexp=True), '2.0')
         self.assertEqual(text.search('.*line', '1.0', regexp=True, nolinestop=True), '1.0')
 
@@ -71,17 +74,50 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.search('test', '1.0', '1.13', strictlimits=True), '')
         self.assertEqual(text.search('test', '1.0', '1.14', strictlimits=True), '1.10')
 
+        var = tkinter.Variable(self.root)
+        self.assertEqual(text.search('test', '1.0', count=var), '1.10')
+        self.assertEqual(var.get(), 4 if self.wantobjects else '4')
+
+        # TODO: Add test for elide=True
+
     def test_search_all(self):
         text = self.text
-        text.insert('1.0', 'ababa')
+        text.insert('1.0', 'ababa\naba')
 
-        all_res = text.search_all('aba', '1.0', 'end')
-        all_res_strs = [str(i) for i in all_res]
-        self.assertEqual(all_res_strs, ['1.0'])
+        def eq(res, expected):
+            self.assertIsInstance(res, tuple)
+            self.assertEqual([str(i) for i in res], expected)
 
-        overlap_res = text.search_all('aba', '1.0', 'end', overlap=True)
-        overlap_res_strs = [str(i) for i in overlap_res]
-        self.assertEqual(overlap_res_strs, ['1.0', '1.2'])
+        eq(text.search_all('aba', '1.0'), ['1.0', '2.0'])
+        eq(text.search_all('aba', '1.0', 'end'), ['1.0', '2.0'])
+        eq(text.search_all('aba', '1.1', 'end'), ['1.2', '2.0'])
+        eq(text.search_all('aba', '1.1'), ['1.2', '2.0', '1.0'])
+
+        eq(text.search_all('aba', '1.0', 'end', forwards=True), ['1.0', '2.0'])
+        eq(text.search_all('aba', 'end', '1.0', backwards=True), ['2.0', '1.2'])
+
+        eq(text.search_all('aba', '1.0', overlap=True), ['1.0', '1.2', '2.0'])
+        eq(text.search_all('aba', 'end', '1.0', overlap=True, backwards=True), ['2.0', '1.2', '1.0'])
+
+        eq(text.search_all('aba', '1.0', exact=True), ['1.0', '2.0'])
+        eq(text.search_all('a.a', '1.0', exact=True), [])
+        eq(text.search_all('a.a', '1.0', regexp=True), ['1.0', '2.0'])
+
+        eq(text.search_all('ABA', '1.0'), [])
+        eq(text.search_all('ABA', '1.0', nocase=True), ['1.0', '2.0'])
+
+        eq(text.search_all('a.a', '1.0', regexp=True), ['1.0', '2.0'])
+        eq(text.search_all('a.a', '1.0', regexp=True, nolinestop=True), ['1.0', '1.4'])
+
+        eq(text.search_all('aba', '1.0', '2.2'), ['1.0', '2.0'])
+        eq(text.search_all('aba', '1.0', '2.2', strictlimits=True), ['1.0'])
+        eq(text.search_all('aba', '1.0', '2.3', strictlimits=True), ['1.0', '2.0'])
+
+        var = tkinter.Variable(self.root)
+        eq(text.search_all('aba', '1.0', count=var), ['1.0', '2.0'])
+        self.assertEqual(var.get(), (3, 3) if self.wantobjects else '3 3')
+
+        # TODO: Add test for elide=True
 
     def test_count(self):
         text = self.text
