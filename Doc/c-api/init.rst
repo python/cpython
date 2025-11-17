@@ -1438,7 +1438,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.8
 
 
-.. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
+.. c:type:: PyObject* (*PyUnstable_FrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 
    Type of a frame evaluation function.
 
@@ -1451,21 +1451,21 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionchanged:: 3.11
       The *frame* parameter changed from ``PyFrameObject*`` to ``_PyInterpreterFrame*``.
 
-.. c:function:: _PyFrameEvalFunction _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
+.. c:function:: PyUnstable_FrameEvalFunction PyUnstable_InterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
    Get the frame evaluation function.
 
    See the :pep:`523` "Adding a frame evaluation API to CPython".
 
-   .. versionadded:: 3.9
+   .. versionadded:: next
 
-.. c:function:: void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame)
+.. c:function:: void PyUnstable_InterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, PyUnstable_FrameEvalFunction eval_frame)
 
    Set the frame evaluation function.
 
    See the :pep:`523` "Adding a frame evaluation API to CPython".
 
-   .. versionadded:: 3.9
+   .. versionadded:: next
 
 
 .. c:function:: PyObject* PyThreadState_GetDict()

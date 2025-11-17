@@ -657,7 +657,8 @@ static PyObject *
 set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 {
     module_state *state = get_module_state(self);
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), _PyEval_EvalFrameDefault);
+    PyUnstable_InterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(),
+                                                 _PyEval_EvalFrameDefault);
     Py_CLEAR(state->record_list);
     Py_RETURN_NONE;
 }
@@ -689,7 +690,8 @@ set_eval_frame_record(PyObject *self, PyObject *list)
         return NULL;
     }
     Py_XSETREF(state->record_list, Py_NewRef(list));
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval);
+    PyUnstable_InterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(),
+                                                 record_eval);
     Py_RETURN_NONE;
 }
 
