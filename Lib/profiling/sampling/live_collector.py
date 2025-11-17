@@ -947,7 +947,7 @@ class FooterWidget(Widget):
         elif self.collector.paused:
             status.append("[PAUSED]")
         if self.collector.filter_pattern:
-            status.append(f"[Filter: {self.collector.filter_pattern}]")
+            status.append(f"[Filter: {self.collector.filter_pattern} (c to clear)]")
         status_str = " ".join(status) + " " if status else ""
 
         if self.collector.finished:
