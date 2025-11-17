@@ -340,6 +340,34 @@ safe access from C) and the module's ``__dict__`` (for access from
 Python code).
 
 
+Type Checking with Heap Types
+------------------------------
+
+.. versionadded:: 3.14
+
+Heap types defined with :c:func:`PyType_FromModuleAndSpec` can use the
+:c:data:`Py_tp_token` slot to enable type checking across module boundaries
+and inheritance hierarchies.
+
+Setting ``Py_tp_token`` to :c:data:`Py_TP_USE_SPEC` uses the
+:c:type:`PyType_Spec`'s address as a unique identifier. This allows
+:c:func:`PyType_GetBaseByToken` to search the :term:`method resolution order`
+for types with compatible memory layouts::
+
+    static PyType_Slot MyType_slots[] = {
+        {Py_tp_token, Py_TP_USE_SPEC},
+        // ... other slots
+    };
+
+This addresses the type-checking problem for heap types described in
+:pep:`630#type-checking`. See the
+`xxlimited module <https://github.com/python/cpython/blob/main/Modules/xxlimited.c>`__
+for a complete example.
+
+For details, see :c:data:`Py_tp_token` and :c:func:`PyType_GetBaseByToken`
+(added in :gh:`124153`).
+
+
 Garbage-Collection Protocol
 ---------------------------
 
