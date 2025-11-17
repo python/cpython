@@ -40,7 +40,6 @@ class TestDefinition(unittest.TestCase):
                 self.assertGreater(refcount, self.BIG_REFCOUNT)
                 self.assertIn(flags, (1, -1))
                 results.add((refcount, flags))
-
             self.assertEqual(len(results), 1)
 
         mortal_objs = (object(), range(10), iter([1, 2, 3]))
