@@ -583,7 +583,7 @@ class SocketHandler(logging.Handler):
         A factory method which allows subclasses to define the precise
         type of socket they want.
         """
-        if self.port is not None:
+        if isinstance(self.address, tuple):
             result = socket.create_connection(self.address, timeout=timeout)
         else:
             result = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
