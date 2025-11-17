@@ -310,8 +310,7 @@ complete listing.
 
    The *array* argument must be a C array with a size known at compile time,
    not a pointer. On supported compilers, passing a pointer will result in a
-   compilation error, otherwise, using this macro with a pointer will
-   produce incorrect results.
+   compilation error or otherwise produce incorrect results.
 
 
 .. _api-objects:
