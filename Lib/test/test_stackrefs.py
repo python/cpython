@@ -37,6 +37,7 @@ class TestDefinition(unittest.TestCase):
         immortal_objs = (None, True, False, 42, '1')
 
         for obj in immortal_objs:
+            self.assertTrue(sys._is_immortal(obj))
             results = set()
             for func in funcs_with_incref + funcs_with_borrow:
                 refcount, flags = run_with_refcount_check(self, func, obj)
@@ -48,6 +49,7 @@ class TestDefinition(unittest.TestCase):
         mortal_objs = (object(), range(10), iter([1, 2, 3]))
 
         for obj in mortal_objs:
+            self.assertFalse(sys._is_immortal(obj))
             results = set()
             for func in funcs_with_incref:
                 refcount, flags = run_with_refcount_check(self, func, obj)
