@@ -1438,7 +1438,7 @@ Glossary
       See :mod:`typing` and :pep:`484`, which describe this functionality.
 
    type hint
-      An :term:`annotation` that specifies the expected type for a variable, a class
+      An :term:`annotation` that specifies the expected types for a variable, a class
       attribute, or a function parameter or return value.
 
       Type hints are optional and are not enforced by Python but
