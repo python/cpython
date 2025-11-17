@@ -2025,7 +2025,6 @@ if __name__ == "__main__":
         # Should see some of our test functions
         self.assertIn("slow_fibonacci", output)
 
-
     def test_sample_target_module(self):
         tempdir = tempfile.TemporaryDirectory(delete=False)
         self.addCleanup(lambda x: shutil.rmtree(x), tempdir.name)
@@ -2264,7 +2263,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2292,7 +2293,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2320,7 +2323,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2420,7 +2425,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2454,7 +2461,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="collapsed",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     def test_cli_empty_module_name(self):
@@ -2666,7 +2675,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     def test_sort_options(self):
@@ -3121,6 +3132,187 @@ main()
 
 @requires_subprocess()
 @skip_if_not_supported
+class TestGCFrameTracking(unittest.TestCase):
+    """Tests for GC frame tracking in the sampling profiler."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Create a static test script with GC frames and CPU-intensive work."""
+        cls.gc_test_script = '''
+import gc
+
+class ExpensiveGarbage:
+    """Class that triggers GC with expensive finalizer (callback)."""
+    def __init__(self):
+        self.cycle = self
+
+    def __del__(self):
+        # CPU-intensive work in the finalizer callback
+        result = 0
+        for i in range(100000):
+            result += i * i
+            if i % 1000 == 0:
+                result = result % 1000000
+
+def main_loop():
+    """Main loop that triggers GC with expensive callback."""
+    while True:
+        ExpensiveGarbage()
+        gc.collect()
+
+if __name__ == "__main__":
+    main_loop()
+'''
+
+    def test_gc_frames_enabled(self):
+        """Test that GC frames appear when gc tracking is enabled."""
+        with (
+            test_subprocess(self.gc_test_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    duration_sec=1,
+                    sample_interval_usec=5000,
+                    show_summary=False,
+                    native=False,
+                    gc=True,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # Should capture samples
+        self.assertIn("Captured", output)
+        self.assertIn("samples", output)
+
+        # GC frames should be present
+        self.assertIn("<GC>", output)
+
+    def test_gc_frames_disabled(self):
+        """Test that GC frames do not appear when gc tracking is disabled."""
+        with (
+            test_subprocess(self.gc_test_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    duration_sec=1,
+                    sample_interval_usec=5000,
+                    show_summary=False,
+                    native=False,
+                    gc=False,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # Should capture samples
+        self.assertIn("Captured", output)
+        self.assertIn("samples", output)
+
+        # GC frames should NOT be present
+        self.assertNotIn("<GC>", output)
+
+
+@requires_subprocess()
+@skip_if_not_supported
+class TestNativeFrameTracking(unittest.TestCase):
+    """Tests for native frame tracking in the sampling profiler."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Create a static test script with native frames and CPU-intensive work."""
+        cls.native_test_script = '''
+import operator
+
+def main_loop():
+    while True:
+        # Native code in the middle of the stack:
+        operator.call(inner)
+
+def inner():
+    # Python code at the top of the stack:
+    for _ in range(1_000_0000):
+        pass
+
+if __name__ == "__main__":
+    main_loop()
+'''
+
+    def test_native_frames_enabled(self):
+        """Test that native frames appear when native tracking is enabled."""
+        collapsed_file = tempfile.NamedTemporaryFile(
+            suffix=".txt", delete=False
+        )
+        self.addCleanup(close_and_unlink, collapsed_file)
+
+        with (
+            test_subprocess(self.native_test_script) as subproc,
+        ):
+            # Suppress profiler output when testing file export
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        subproc.process.pid,
+                        duration_sec=1,
+                        filename=collapsed_file.name,
+                        output_format="collapsed",
+                        sample_interval_usec=1000,
+                        native=True,
+                    )
+                except PermissionError:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+            # Verify file was created and contains valid data
+            self.assertTrue(os.path.exists(collapsed_file.name))
+            self.assertGreater(os.path.getsize(collapsed_file.name), 0)
+
+            # Check file format
+            with open(collapsed_file.name, "r") as f:
+                content = f.read()
+
+        lines = content.strip().split("\n")
+        self.assertGreater(len(lines), 0)
+
+        stacks = [line.rsplit(" ", 1)[0] for line in lines]
+
+        # Most samples should have native code in the middle of the stack:
+        self.assertTrue(any(";<native>;" in stack for stack in stacks))
+
+        # No samples should have native code at the top of the stack:
+        self.assertFalse(any(stack.endswith(";<native>") for stack in stacks))
+
+    def test_native_frames_disabled(self):
+        """Test that native frames do not appear when native tracking is disabled."""
+        with (
+            test_subprocess(self.native_test_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    duration_sec=1,
+                    sample_interval_usec=5000,
+                    show_summary=False,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+            output = captured_output.getvalue()
+        # Native frames should NOT be present:
+        self.assertNotIn("<native>", output)
+
+
 class TestProcessPoolExecutorSupport(unittest.TestCase):
     """
     Test that ProcessPoolExecutor works correctly with profiling.sampling.
@@ -3161,7 +3353,5 @@ if __name__ == "__main__":
 
         self.assertIn("Results: [2, 4, 6]", stdout)
         self.assertNotIn("Can't pickle", stderr)
-
-
 if __name__ == "__main__":
     unittest.main()
