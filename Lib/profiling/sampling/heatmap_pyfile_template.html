@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><!-- FILENAME --> - Heatmap</title>
+    <!-- INLINE_CSS -->
+</head>
+<body class="code-view">
+    <header class="code-header">
+        <div class="code-header-content">
+            <h1>📄 <!-- FILENAME --></h1>
+            <a href="index.html" class="back-link">← Back to Index</a>
+        </div>
+    </header>
+
+    <div class="file-stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value"><!-- TOTAL_SAMPLES --></div>
+                <div class="stat-label">Total Samples</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value"><!-- NUM_LINES --></div>
+                <div class="stat-label">Lines Hit</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value"><!-- PERCENTAGE -->%</div>
+                <div class="stat-label">% of Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value"><!-- MAX_SAMPLES --></div>
+                <div class="stat-label">Max Samples/Line</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-content">
+            <span class="legend-title">🔥 Intensity:</span>
+            <div class="legend-gradient"></div>
+            <div class="legend-labels">
+                <span>Cold (0)</span>
+                <span>→</span>
+                <span>Hot (Max)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="code-container">
+<!-- CODE_LINES -->
+    </div>
+
+    <!-- INLINE_JS -->
+</body>
+</html>
