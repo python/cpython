@@ -137,19 +137,19 @@ def _run_with_sync(original_cmd):
 
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, skip_non_matching_threads=True):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, skip_non_matching_threads=True):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, mode=mode,
+                self.pid, all_threads=self.all_threads, mode=mode, native=native, gc=gc,
                 skip_non_matching_threads=skip_non_matching_threads
             )
         else:
             only_active_threads = bool(self.all_threads)
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=only_active_threads, mode=mode,
+                self.pid, only_active_thread=only_active_threads, mode=mode, native=native, gc=gc,
                 skip_non_matching_threads=skip_non_matching_threads
             )
         # Track sample intervals and total sample count
@@ -616,6 +616,8 @@ def sample(
     output_format="pstats",
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
+    native=False,
+    gc=True,
 ):
     # PROFILING_MODE_ALL implies no skipping at all
     if mode == PROFILING_MODE_ALL:
@@ -627,7 +629,7 @@ def sample(
         skip_idle = mode != PROFILING_MODE_WALL
 
     profiler = SampleProfiler(
-        pid, sample_interval_usec, all_threads=all_threads, mode=mode,
+        pid, sample_interval_usec, all_threads=all_threads, mode=mode, native=native, gc=gc,
         skip_non_matching_threads=skip_non_matching_threads
     )
     profiler.realtime_stats = realtime_stats
@@ -717,6 +719,8 @@ def wait_for_process_and_sample(pid, sort_value, args):
         output_format=args.format,
         realtime_stats=args.realtime_stats,
         mode=mode,
+        native=args.native,
+        gc=args.gc,
     )
 
 
@@ -767,8 +771,18 @@ def main():
     sampling_group.add_argument(
         "--realtime-stats",
         action="store_true",
-        default=False,
         help="Print real-time sampling statistics (Hz, mean, min, max, stdev) during profiling",
+    )
+    sampling_group.add_argument(
+        "--native",
+        action="store_true",
+        help="Include artificial \"<native>\" frames to denote calls to non-Python code.",
+    )
+    sampling_group.add_argument(
+        "--no-gc",
+        action="store_false",
+        dest="gc",
+        help="Don't include artificial \"<GC>\" frames to denote active garbage collection.",
     )
 
     # Mode options
@@ -934,6 +948,8 @@ def main():
             output_format=args.format,
             realtime_stats=args.realtime_stats,
             mode=mode,
+            native=args.native,
+            gc=args.gc,
         )
     elif args.module or args.args:
         if args.module:

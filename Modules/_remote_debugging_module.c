@@ -26,8 +26,9 @@
 #include "Python.h"
 #include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
 #include <internal/pycore_frame.h>          // FRAME_SUSPENDED_YIELD_FROM
-#include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_CSTACK
+#include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_INTERPRETER
 #include <internal/pycore_llist.h>          // struct llist_node
+#include <internal/pycore_long.h>           // _PyLong_GetZero
 #include <internal/pycore_stackref.h>       // Py_TAG_BITS
 #include "../Python/remote_debug.h"
 
@@ -92,14 +93,16 @@ typedef enum _WIN32_THREADSTATE {
 #endif
 
 #ifdef Py_GIL_DISABLED
-#define INTERP_STATE_MIN_SIZE MAX(MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
-                                          offsetof(PyInterpreterState, tlbc_indices.tlbc_generation) + sizeof(uint32_t)), \
-                                      offsetof(PyInterpreterState, threads.head) + sizeof(void*)), \
-                                  offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*))
+#define INTERP_STATE_MIN_SIZE MAX(MAX(MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
+                                              offsetof(PyInterpreterState, tlbc_indices.tlbc_generation) + sizeof(uint32_t)), \
+                                          offsetof(PyInterpreterState, threads.head) + sizeof(void*)), \
+                                      offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*)), \
+                                  offsetof(PyInterpreterState, gc.frame) + sizeof(_PyInterpreterFrame *))
 #else
-#define INTERP_STATE_MIN_SIZE MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
-                                      offsetof(PyInterpreterState, threads.head) + sizeof(void*)), \
-                                  offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*))
+#define INTERP_STATE_MIN_SIZE MAX(MAX(MAX(offsetof(PyInterpreterState, _code_object_generation) + sizeof(uint64_t), \
+                                          offsetof(PyInterpreterState, threads.head) + sizeof(void*)), \
+                                      offsetof(PyInterpreterState, _gil.last_holder) + sizeof(PyThreadState*)), \
+                                  offsetof(PyInterpreterState, gc.frame) + sizeof(_PyInterpreterFrame *))
 #endif
 #define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
 
@@ -276,6 +279,8 @@ typedef struct {
     int only_active_thread;
     int mode;  // Use enum _ProfilingMode values
     int skip_non_matching_threads;  // New option to skip threads that don't match mode
+    int native;
+    int gc;
     RemoteDebuggingState *cached_state;  // Cached module state
 #ifdef Py_GIL_DISABLED
     // TLBC cache invalidation tracking
@@ -1812,6 +1817,25 @@ parse_linetable(const uintptr_t addrq, const char* linetable, int firstlineno, L
  * CODE OBJECT AND FRAME PARSING FUNCTIONS
  * ============================================================================ */
 
+static PyObject *
+make_frame_info(RemoteUnwinderObject *unwinder, PyObject *file, PyObject *line,
+                PyObject *func)
+{
+    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
+    PyObject *info = PyStructSequence_New(state->FrameInfo_Type);
+    if (info == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create FrameInfo");
+        return NULL;
+    }
+    Py_INCREF(file);
+    Py_INCREF(line);
+    Py_INCREF(func);
+    PyStructSequence_SetItem(info, 0, file);
+    PyStructSequence_SetItem(info, 1, line);
+    PyStructSequence_SetItem(info, 2, func);
+    return info;
+}
+
 static int
 parse_code_object(RemoteUnwinderObject *unwinder,
                   PyObject **result,
@@ -1825,8 +1849,6 @@ parse_code_object(RemoteUnwinderObject *unwinder,
     PyObject *func = NULL;
     PyObject *file = NULL;
     PyObject *linetable = NULL;
-    PyObject *lineno = NULL;
-    PyObject *tuple = NULL;
 
 #ifdef Py_GIL_DISABLED
     // In free threading builds, code object addresses might have the low bit set
@@ -1948,24 +1970,17 @@ done_tlbc:
         info.lineno = -1;
     }
 
-    lineno = PyLong_FromLong(info.lineno);
+    PyObject *lineno = PyLong_FromLong(info.lineno);
     if (!lineno) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create line number object");
         goto error;
     }
 
-    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
-    tuple = PyStructSequence_New(state->FrameInfo_Type);
+    PyObject *tuple = make_frame_info(unwinder, meta->file_name, lineno, meta->func_name);
+    Py_DECREF(lineno);
     if (!tuple) {
-        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create FrameInfo for code object");
         goto error;
     }
-
-    Py_INCREF(meta->func_name);
-    Py_INCREF(meta->file_name);
-    PyStructSequence_SetItem(tuple, 0, meta->file_name);
-    PyStructSequence_SetItem(tuple, 1, lineno);
-    PyStructSequence_SetItem(tuple, 2, meta->func_name);
 
     *result = tuple;
     return 0;
@@ -1974,8 +1989,6 @@ error:
     Py_XDECREF(func);
     Py_XDECREF(file);
     Py_XDECREF(linetable);
-    Py_XDECREF(lineno);
-    Py_XDECREF(tuple);
     return -1;
 }
 
@@ -2116,6 +2129,7 @@ parse_frame_from_chunks(
     PyObject **result,
     uintptr_t address,
     uintptr_t *previous_frame,
+    uintptr_t *stackpointer,
     StackChunkList *chunks
 ) {
     void *frame_ptr = find_frame_in_chunks(chunks, address);
@@ -2126,6 +2140,7 @@ parse_frame_from_chunks(
 
     char *frame = (char *)frame_ptr;
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
+    *stackpointer = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.stackpointer);
     uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame_ptr, unwinder->debug_offsets.interpreter_frame.executable);
     int frame_valid = is_frame_valid(unwinder, (uintptr_t)frame, code_object);
     if (frame_valid != 1) {
@@ -2238,8 +2253,7 @@ is_frame_valid(
 
     void* frame = (void*)frame_addr;
 
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_CSTACK ||
-        GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
+    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
         return 0;  // C frame
     }
 
@@ -2458,8 +2472,9 @@ process_frame_chain(
     RemoteUnwinderObject *unwinder,
     uintptr_t initial_frame_addr,
     StackChunkList *chunks,
-    PyObject *frame_info
-) {
+    PyObject *frame_info,
+    uintptr_t gc_frame)
+{
     uintptr_t frame_addr = initial_frame_addr;
     uintptr_t prev_frame_addr = 0;
     const size_t MAX_FRAMES = 1024;
@@ -2468,6 +2483,7 @@ process_frame_chain(
     while ((void*)frame_addr != NULL) {
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
+        uintptr_t stackpointer = 0;
 
         if (++frame_count > MAX_FRAMES) {
             PyErr_SetString(PyExc_RuntimeError, "Too many stack frames (possible infinite loop)");
@@ -2476,7 +2492,7 @@ process_frame_chain(
         }
 
         // Try chunks first, fallback to direct memory read
-        if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, chunks) < 0) {
+        if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, chunks) < 0) {
             PyErr_Clear();
             uintptr_t address_of_code_object = 0;
             if (parse_frame_object(unwinder, &frame, frame_addr, &address_of_code_object ,&next_frame_addr) < 0) {
@@ -2484,26 +2500,63 @@ process_frame_chain(
                 return -1;
             }
         }
-
-        if (!frame) {
-            break;
-        }
-
-        if (prev_frame_addr && frame_addr != prev_frame_addr) {
-            PyErr_Format(PyExc_RuntimeError,
-                        "Broken frame chain: expected frame at 0x%lx, got 0x%lx",
-                        prev_frame_addr, frame_addr);
-            Py_DECREF(frame);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Frame chain consistency check failed");
+        if (frame == NULL && PyList_GET_SIZE(frame_info) == 0) {
+            // If the first frame is missing, the chain is broken:
+            const char *e = "Failed to parse initial frame in chain";
+            PyErr_SetString(PyExc_RuntimeError, e);
             return -1;
         }
-
-        if (PyList_Append(frame_info, frame) == -1) {
-            Py_DECREF(frame);
-            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append frame to frame info list");
-            return -1;
+        PyObject *extra_frame = NULL;
+        // This frame kicked off the current GC collection:
+        if (unwinder->gc && frame_addr == gc_frame) {
+            _Py_DECLARE_STR(gc, "<GC>");
+            extra_frame = &_Py_STR(gc);
         }
-        Py_DECREF(frame);
+        // Otherwise, check for native frames to insert:
+        else if (unwinder->native &&
+                 // We've reached an interpreter trampoline frame:
+                 frame == NULL &&
+                 // Bottommost frame is always native, so skip that one:
+                 next_frame_addr &&
+                 // Only suppress native frames if GC tracking is enabled and the next frame will be a GC frame:
+                 !(unwinder->gc && next_frame_addr == gc_frame))
+        {
+            _Py_DECLARE_STR(native, "<native>");
+            extra_frame = &_Py_STR(native);
+        }
+        if (extra_frame) {
+            // Use "~" as file and 0 as line, since that's what pstats uses:
+            PyObject *extra_frame_info = make_frame_info(
+                unwinder, _Py_LATIN1_CHR('~'), _PyLong_GetZero(), extra_frame);
+            if (extra_frame_info == NULL) {
+                return -1;
+            }
+            int error = PyList_Append(frame_info, extra_frame_info);
+            Py_DECREF(extra_frame_info);
+            if (error) {
+                const char *e = "Failed to append extra frame to frame info list";
+                set_exception_cause(unwinder, PyExc_RuntimeError, e);
+                return -1;
+            }
+        }
+        if (frame) {
+            if (prev_frame_addr && frame_addr != prev_frame_addr) {
+                const char *f = "Broken frame chain: expected frame at 0x%lx, got 0x%lx";
+                PyErr_Format(PyExc_RuntimeError, f, prev_frame_addr, frame_addr);
+                Py_DECREF(frame);
+                const char *e = "Frame chain consistency check failed";
+                set_exception_cause(unwinder, PyExc_RuntimeError, e);
+                return -1;
+            }
+
+            if (PyList_Append(frame_info, frame) == -1) {
+                Py_DECREF(frame);
+                const char *e = "Failed to append frame to frame info list";
+                set_exception_cause(unwinder, PyExc_RuntimeError, e);
+                return -1;
+            }
+            Py_DECREF(frame);
+        }
 
         prev_frame_addr = next_frame_addr;
         frame_addr = next_frame_addr;
@@ -2644,7 +2697,8 @@ static PyObject*
 unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
     uintptr_t *current_tstate,
-    uintptr_t gil_holder_tstate
+    uintptr_t gil_holder_tstate,
+    uintptr_t gc_frame
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
@@ -2746,7 +2800,7 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info) < 0) {
+    if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info, gc_frame) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
         goto error;
     }
@@ -2818,6 +2872,8 @@ _remote_debugging.RemoteUnwinder.__init__
     mode: int = 0
     debug: bool = False
     skip_non_matching_threads: bool = True
+    native: bool = False
+    gc: bool = False
 
 Initialize a new RemoteUnwinder object for debugging a remote Python process.
 
@@ -2832,6 +2888,10 @@ Args:
            lead to the exception.
     skip_non_matching_threads: If True, skip threads that don't match the selected mode.
                               If False, include all threads regardless of mode.
+    native: If True, include artificial "<native>" frames to denote calls to
+            non-Python code.
+    gc: If True, include artificial "<GC>" frames to denote active garbage
+        collection.
 
 The RemoteUnwinder provides functionality to inspect and debug a running Python
 process, including examining thread states, stack frames and other runtime data.
@@ -2848,8 +2908,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int pid, int all_threads,
                                                int only_active_thread,
                                                int mode, int debug,
-                                               int skip_non_matching_threads)
-/*[clinic end generated code: output=abf5ea5cd58bcb36 input=08fb6ace023ec3b5]*/
+                                               int skip_non_matching_threads,
+                                               int native, int gc)
+/*[clinic end generated code: output=e9eb6b4df119f6e0 input=606d099059207df2]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -2866,6 +2927,8 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     }
 #endif
 
+    self->native = native;
+    self->gc = gc;
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->mode = mode;
@@ -3026,6 +3089,13 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             goto exit;
         }
 
+        uintptr_t gc_frame = 0;
+        if (self->gc) {
+            gc_frame = GET_MEMBER(uintptr_t, interp_state_buffer,
+                                  self->debug_offsets.interpreter_state.gc
+                                  + self->debug_offsets.gc.frame);
+        }
+
         int64_t interpreter_id = GET_MEMBER(int64_t, interp_state_buffer,
                 self->debug_offsets.interpreter_state.id);
 
@@ -3085,7 +3155,9 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         }
 
         while (current_tstate != 0) {
-            PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate, gil_holder_tstate);
+            PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
+                                                           gil_holder_tstate,
+                                                           gc_frame);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
                 if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL) && !PyErr_Occurred()) {
