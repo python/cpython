@@ -1557,6 +1557,16 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: next
 
+      .. warning::
+
+         This function was added in a bugfix release, and
+         extensions that use it will be incompatible with Python 3.14.0.
+         Most packaging tools for Python are not able to handle this
+         incompatibility automatically, and will need.
+         When using PyPA standards (wheels and source distributions),
+         specify ``Requires-Python: != 3.14.0.*`` in
+         `core metadata <https://packaging.python.org/en/latest/specifications/core-metadata/#requires-python>`_.
+
 
 .. c:function:: void PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
 
@@ -1566,6 +1576,16 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    See :c:func:`PyUnstable_ThreadState_SetStackProtection` for an explanation.
 
    .. versionadded:: next
+
+      .. warning::
+
+         This function was added in a bugfix release, and
+         extensions that use it will be incompatible with Python 3.14.0.
+         Most packaging tools for Python are not able to handle this
+         incompatibility automatically, and will need.
+         When using PyPA standards (wheels and source distributions),
+         specify ``Requires-Python: != 3.14.0.*`` in
+         `core metadata <https://packaging.python.org/en/latest/specifications/core-metadata/#requires-python>`_.
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
