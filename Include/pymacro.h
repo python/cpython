@@ -115,6 +115,7 @@
 #define Py_MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 /* Absolute value of the number x */
+#define _Py_ABS_CAST(T,x) ((x) >= 0 ? ((T) (x)) : (- (((T) ((x) + 1)) - 1)))
 #define Py_ABS(x) ((x) < 0 ? -(x) : (x))
 
 #define _Py_XSTRINGIFY(x) #x
