@@ -1,0 +1,4 @@
+:mod:`ipaddress`: ensure that the methods
+:meth:`IPv4Network.hosts() <ipaddress.IPv4Network.hosts>` and
+:meth:`IPv6Network.hosts() <ipaddress.IPv6Network.hosts>` always return an
+iterator.
