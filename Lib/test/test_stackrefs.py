@@ -10,6 +10,9 @@ except ImportError:
 class TestDefinition(unittest.TestCase):
 
     BIG_REFCOUNT = 1000
+    FLAGS_REFCOUNT = 1
+    FLAGS_NO_REFCOUNT = 0
+    FLAGS_INVALID = -1
 
     def test_equivalence(self):
         def run_with_refcount_check(self, func, obj):
@@ -38,7 +41,7 @@ class TestDefinition(unittest.TestCase):
             for func in funcs_with_incref + funcs_with_borrow:
                 refcount, flags = run_with_refcount_check(self, func, obj)
                 self.assertGreater(refcount, self.BIG_REFCOUNT)
-                self.assertIn(flags, (1, -1))
+                self.assertIn(flags, (self.FLAGS_REFCOUNT, self.FLAGS_INVALID))
                 results.add((refcount, flags))
             self.assertEqual(len(results), 1)
 
@@ -49,7 +52,7 @@ class TestDefinition(unittest.TestCase):
             for func in funcs_with_incref:
                 refcount, flags = run_with_refcount_check(self, func, obj)
                 self.assertLess(refcount, self.BIG_REFCOUNT)
-                self.assertEqual(flags, 0)
+                self.assertEqual(flags, self.FLAGS_NO_REFCOUNT)
                 results.add((refcount, flags))
             self.assertEqual(len(results), 1)
 
@@ -57,7 +60,7 @@ class TestDefinition(unittest.TestCase):
             for func in funcs_with_borrow:
                 refcount, flags = run_with_refcount_check(self, func, obj)
                 self.assertLess(refcount, self.BIG_REFCOUNT)
-                self.assertEqual(flags, 1)
+                self.assertEqual(flags, self.FLAGS_REFCOUNT)
                 results.add((refcount, flags))
             self.assertEqual(len(results), 1)
 
