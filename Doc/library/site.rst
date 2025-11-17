@@ -270,7 +270,7 @@ Module contents
 
 .. _site-commandline:
 
-Command-line Interface
+Command-line interface
 ----------------------
 
 .. program:: site

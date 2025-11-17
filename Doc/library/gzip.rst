@@ -267,7 +267,7 @@ Example of how to GZIP compress a binary string::
 
 .. _gzip-cli:
 
-Command-line Interface
+Command-line interface
 ----------------------
 
 The :mod:`gzip` module provides a simple command line interface to compress or

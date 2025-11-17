@@ -53,6 +53,9 @@ a new tab, with the browser being brought to the foreground. The use of the
 
 .. program:: webbrowser
 
+Command-line interface
+----------------------
+
 The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts a URL as the argument. It accepts the following optional
 parameters:
@@ -234,7 +237,7 @@ Here are some simple examples::
 
 .. _browser-controllers:
 
-Browser Controller Objects
+Browser controller objects
 --------------------------
 
 Browser controllers provide the :attr:`~controller.name` attribute,
