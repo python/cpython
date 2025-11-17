@@ -2305,7 +2305,7 @@ Porting to Python 3.11
   be used for ``size``.
   (Contributed by Kumar Aditya in :issue:`46608`.)
 
-* :c:func:`_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
+* :c:func:`!_PyFrameEvalFunction` now takes ``_PyInterpreterFrame*``
   as its second parameter, instead of ``PyFrameObject*``.
   See :pep:`523` for more details of how to use this function pointer type.
 

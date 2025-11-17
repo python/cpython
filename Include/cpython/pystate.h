@@ -312,5 +312,16 @@ PyAPI_FUNC(void) PyUnstable_InterpreterState_SetEvalFrameFunc(
 
 // Deprecated aliases kept for backward compatibility
 #define _PyFrameEvalFunction PyUnstable_FrameEvalFunction
-#define _PyInterpreterState_GetEvalFrameFunc PyUnstable_InterpreterState_GetEvalFrameFunc
-#define _PyInterpreterState_SetEvalFrameFunc PyUnstable_InterpreterState_SetEvalFrameFunc
+
+Py_DEPRECATED(3.15) static inline PyUnstable_FrameEvalFunction
+_PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
+{
+    return PyUnstable_InterpreterState_GetEvalFrameFunc(interp);
+}
+
+Py_DEPRECATED(3.15) static inline void
+_PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
+                                     PyUnstable_FrameEvalFunction eval_frame)
+{
+    PyUnstable_InterpreterState_SetEvalFrameFunc(interp, eval_frame);
+}
