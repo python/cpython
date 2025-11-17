@@ -50,14 +50,15 @@ URL Parsing
 The URL parsing functions focus on splitting a URL string into its components,
 or on combining URL components into a URL string.
 
-.. function:: urlparse(urlstring, scheme=None, allow_fragments=True, *, allow_none=False)
+.. function:: urlparse(urlstring, scheme=None, allow_fragments=True, *, missing_as_none=False)
 
    Parse a URL into six components, returning a 6-item :term:`named tuple`.  This
    corresponds to the general structure of a URL:
    ``scheme://netloc/path;parameters?query#fragment``.
-   Each tuple item is a string, possibly empty, or ``None`` if *allow_none* is true.
+   Each tuple item is a string, possibly empty, or ``None`` if
+   *missing_as_none* is true.
    Not defined component are represented an empty string (by default) or
-   ``None`` if *allow_none* is true.
+   ``None`` if *missing_as_none* is true.
    The components are not broken up
    into smaller parts (for example, the network location is a single string), and %
    escapes are not expanded. The delimiters as shown above are not part of the
@@ -90,7 +91,7 @@ or on combining URL components into a URL string.
       >>> urlparse("http://docs.python.org?")
       ParseResult(scheme='http', netloc='docs.python.org',
                   path='', params='', query='', fragment='')
-      >>> urlparse("http://docs.python.org?", allow_none=True)
+      >>> urlparse("http://docs.python.org?", missing_as_none=True)
       ParseResult(scheme='http', netloc='docs.python.org',
                   path='', params=None, query='', fragment=None)
 
@@ -112,7 +113,7 @@ or on combining URL components into a URL string.
       >>> urlparse('help/Python.html')
       ParseResult(scheme='', netloc='', path='help/Python.html',
                   params='', query='', fragment='')
-      >>> urlparse('help/Python.html', allow_none=True)
+      >>> urlparse('help/Python.html', missing_as_none=True)
       ParseResult(scheme=None, netloc=None, path='help/Python.html',
                   params=None, query=None, fragment=None)
 
@@ -124,7 +125,7 @@ or on combining URL components into a URL string.
    If the *allow_fragments* argument is false, fragment identifiers are not
    recognized.  Instead, they are parsed as part of the path, parameters
    or query component, and :attr:`fragment` is set to ``None`` or the empty
-   string (depending on the value of *allow_none*) in the return value.
+   string (depending on the value of *missing_as_none*) in the return value.
 
    The return value is a :term:`named tuple`, which means that its items can
    be accessed by index or as named attributes, which are:
@@ -156,7 +157,7 @@ or on combining URL components into a URL string.
    |                  |       | if present              |                               |
    +------------------+-------+-------------------------+-------------------------------+
 
-   .. [1] Depending on the value of the *allow_none* argument.
+   .. [1] Depending on the value of the *missing_as_none* argument.
 
    Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
    an invalid port is specified in the URL.  See section
@@ -209,7 +210,7 @@ or on combining URL components into a URL string.
       now raise :exc:`ValueError`.
 
    .. versionchanged:: next
-      Added the *allow_none* parameter.
+      Added the *missing_as_none* parameter.
 
 
 .. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace', max_num_fields=None, separator='&')
@@ -317,15 +318,15 @@ or on combining URL components into a URL string.
    If *keep_empty* is true, empty strings are kept in the result (for example,
    a ``?`` for an empty query), only ``None`` components are omitted.
    This allows to restore the URL that was parsed with option
-   ``allow_none=True``.
+   ``missing_as_none=True``.
    By default, *keep_empty* is true if *parts* is the result of the
-   :func:`urlparse` call with ``allow_none=True``.
+   :func:`urlparse` call with ``missing_as_none=True``.
 
    .. versionchanged:: next
       Added the *keep_empty* parameter.
 
 
-.. function:: urlsplit(urlstring, scheme=None, allow_fragments=True, *, allow_none=False)
+.. function:: urlsplit(urlstring, scheme=None, allow_fragments=True, *, missing_as_none=False)
 
    This is similar to :func:`urlparse`, but does not split the params from the URL.
    This should generally be used instead of :func:`urlparse` if the more recent URL
@@ -363,7 +364,7 @@ or on combining URL components into a URL string.
    |                  |       | if present              |                               |
    +------------------+-------+-------------------------+-------------------------------+
 
-   .. [2] Depending on the value of the *allow_none* argument.
+   .. [2] Depending on the value of the *missing_as_none* argument.
 
    Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
    an invalid port is specified in the URL.  See section
@@ -401,7 +402,7 @@ or on combining URL components into a URL string.
       Leading WHATWG C0 control and space characters are stripped from the URL.
 
    .. versionchanged:: next
-      Added the *allow_none* parameter.
+      Added the *missing_as_none* parameter.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
@@ -418,9 +419,9 @@ or on combining URL components into a URL string.
    If *keep_empty* is true, empty strings are kept in the result (for example,
    a ``?`` for an empty query), only ``None`` components are omitted.
    This allows to restore the URL that was parsed with option
-   ``allow_none=True``.
+   ``missing_as_none=True``.
    By default, *keep_empty* is true if *parts* is the result of the
-   :func:`urlsplit` call with ``allow_none=True``.
+   :func:`urlsplit` call with ``missing_as_none=True``.
 
    .. versionchanged:: next
       Added the *keep_empty* parameter.
@@ -469,12 +470,12 @@ or on combining URL components into a URL string.
       Behavior updated to match the semantics defined in :rfc:`3986`.
 
 
-.. function:: urldefrag(url, *, allow_none=False)
+.. function:: urldefrag(url, *, missing_as_none=False)
 
    If *url* contains a fragment identifier, return a modified version of *url*
    with no fragment identifier, and the fragment identifier as a separate
    string.  If there is no fragment identifier in *url*, return *url* unmodified
-   and an empty string (by default) or ``None`` if *allow_none* is true.
+   and an empty string (by default) or ``None`` if *missing_as_none* is true.
 
    The return value is a :term:`named tuple`, its items can be accessed by index
    or as named attributes:
@@ -487,7 +488,7 @@ or on combining URL components into a URL string.
    | :attr:`fragment` | 1     | Fragment identifier     | ``None`` or empty string [3]_ |
    +------------------+-------+-------------------------+-------------------------------+
 
-   .. [3] Depending on the value of the *allow_none* argument.
+   .. [3] Depending on the value of the *missing_as_none* argument.
 
    See section :ref:`urlparse-result-object` for more information on the result
    object.
@@ -496,7 +497,7 @@ or on combining URL components into a URL string.
       Result is a structured object rather than a simple 2-tuple.
 
    .. versionchanged:: next
-      Added the *allow_none* parameter.
+      Added the *missing_as_none* parameter.
 
 .. function:: unwrap(url)
 
@@ -518,7 +519,7 @@ purity.
 
 Instead of raising an exception on unusual input, they may instead return some
 component parts as empty strings or ``None`` (depending on the value of the
-*allow_none* argument).
+*missing_as_none* argument).
 Or components may contain more than perhaps they should.
 
 We recommend that users of these APIs where the values may be used anywhere
@@ -596,7 +597,7 @@ previous section, as well as an additional method:
    differ from the original URL in that the scheme may be normalized to lower
    case and empty components may be dropped. Specifically, empty parameters,
    queries, and fragment identifiers will be removed unless the URL was parsed
-   with ``allow_none=True``.
+   with ``missing_as_none=True``.
 
    For :func:`urldefrag` results, only empty fragment identifiers will be removed.
    For :func:`urlsplit` and :func:`urlparse` results, all noted changes will be
@@ -613,7 +614,7 @@ previous section, as well as an additional method:
       >>> r2 = urlsplit(r1.geturl())
       >>> r2.geturl()
       'http://www.Python.org/doc/'
-      >>> r3 = urlsplit(url, allow_none=True)
+      >>> r3 = urlsplit(url, missing_as_none=True)
       >>> r3.geturl()
       'http://www.Python.org/doc/#'
 

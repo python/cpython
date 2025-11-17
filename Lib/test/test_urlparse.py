@@ -109,32 +109,32 @@ class UrlParseTestCase(unittest.TestCase):
     def checkRoundtrips(self, url, parsed, split, url2=None):
         if url2 is None:
             url2 = url
-        self.checkRoundtrips1(url, parsed, split, allow_none=True)
+        self.checkRoundtrips1(url, parsed, split, missing_as_none=True)
         empty = url[:0]
         parsed = tuple(x or empty for x in parsed)
         split = tuple(x or empty for x in split)
-        self.checkRoundtrips1(url, parsed, split, url2, allow_none=False)
+        self.checkRoundtrips1(url, parsed, split, url2, missing_as_none=False)
 
-        result = urlparse(url, allow_none=True)
+        result = urlparse(url, missing_as_none=True)
         self.assertEqual(urlunparse(result, keep_empty=False), url2)
         self.assertEqual(urlunparse(tuple(result), keep_empty=False), url2)
-        result = urlparse(url, allow_none=False)
+        result = urlparse(url, missing_as_none=False)
         with self.assertRaises(ValueError):
             urlunparse(result, keep_empty=True)
         urlunparse(tuple(result), keep_empty=True)
 
-        result = urlsplit(url, allow_none=True)
+        result = urlsplit(url, missing_as_none=True)
         self.assertEqual(urlunsplit(result, keep_empty=False), url2)
         self.assertEqual(urlunsplit(tuple(result), keep_empty=False), url2)
-        result = urlsplit(url, allow_none=False)
+        result = urlsplit(url, missing_as_none=False)
         with self.assertRaises(ValueError):
             urlunsplit(result, keep_empty=True)
         urlunsplit(tuple(result), keep_empty=True)
 
-    def checkRoundtrips1(self, url, parsed, split, url2=None, *, allow_none):
+    def checkRoundtrips1(self, url, parsed, split, url2=None, *, missing_as_none):
         if url2 is None:
             url2 = url
-        result = urlparse(url, allow_none=allow_none)
+        result = urlparse(url, missing_as_none=missing_as_none)
         self.assertSequenceEqual(result, parsed)
         t = (result.scheme, result.netloc, result.path,
              result.params, result.query, result.fragment)
@@ -143,12 +143,12 @@ class UrlParseTestCase(unittest.TestCase):
         result2 = urlunparse(result)
         self.assertEqual(result2, url2)
         self.assertEqual(result2, result.geturl())
-        self.assertEqual(urlunparse(result, keep_empty=allow_none), url2)
-        self.assertEqual(urlunparse(tuple(result), keep_empty=allow_none), result2)
+        self.assertEqual(urlunparse(result, keep_empty=missing_as_none), url2)
+        self.assertEqual(urlunparse(tuple(result), keep_empty=missing_as_none), result2)
 
         # the result of geturl() is a fixpoint; we can always parse it
         # again to get the same result:
-        result3 = urlparse(result.geturl(), allow_none=allow_none)
+        result3 = urlparse(result.geturl(), missing_as_none=missing_as_none)
         self.assertEqual(result3.geturl(), result.geturl())
         self.assertSequenceEqual(result3, result)
         self.assertEqual(result3.scheme,   result.scheme)
@@ -163,7 +163,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(result3.port,     result.port)
 
         # check the roundtrip using urlsplit() as well
-        result = urlsplit(url, allow_none=allow_none)
+        result = urlsplit(url, missing_as_none=missing_as_none)
         self.assertSequenceEqual(result, split)
         t = (result.scheme, result.netloc, result.path,
             result.query, result.fragment)
@@ -171,10 +171,10 @@ class UrlParseTestCase(unittest.TestCase):
         result2 = urlunsplit(result)
         self.assertEqual(result2, url2)
         self.assertEqual(result2, result.geturl())
-        self.assertEqual(urlunsplit(tuple(result), keep_empty=allow_none), result2)
+        self.assertEqual(urlunsplit(tuple(result), keep_empty=missing_as_none), result2)
 
         # check the fixpoint property of re-parsing the result of geturl()
-        result3 = urlsplit(result.geturl(), allow_none=allow_none)
+        result3 = urlsplit(result.geturl(), missing_as_none=missing_as_none)
         self.assertEqual(result3.geturl(), result.geturl())
         self.assertSequenceEqual(result3, result)
         self.assertEqual(result3.scheme,   result.scheme)
@@ -383,9 +383,9 @@ class UrlParseTestCase(unittest.TestCase):
                 relurlb2 = urlunsplit(urlsplit(relurlb))
                 self.assertEqual(urllib.parse.urljoin(baseb, relurlb2), expectedb)
 
-            relurl3 = urlunsplit(urlsplit(relurl, allow_none=True))
+            relurl3 = urlunsplit(urlsplit(relurl, missing_as_none=True))
             self.assertEqual(urllib.parse.urljoin(base, relurl3), expected)
-            relurlb3 = urlunsplit(urlsplit(relurlb, allow_none=True))
+            relurlb3 = urlunsplit(urlsplit(relurlb, missing_as_none=True))
             self.assertEqual(urllib.parse.urljoin(baseb, relurlb3), expectedb)
 
     @support.subTests('bytes', (False, True))
@@ -448,7 +448,7 @@ class UrlParseTestCase(unittest.TestCase):
         # Issue 11467: path that starts with a number is not parsed correctly
         self.assertEqual(urlparse('mailto:1337@example.org'),
                 ('mailto', '', '1337@example.org', '', '', ''))
-        self.assertEqual(urlparse('mailto:1337@example.org', allow_none=True),
+        self.assertEqual(urlparse('mailto:1337@example.org', missing_as_none=True),
                 ('mailto', None, '1337@example.org', None, None, None))
 
     def test_RFC2396(self):
@@ -801,14 +801,14 @@ class UrlParseTestCase(unittest.TestCase):
             ('//a/b/c;p?q#f', '//a/b/c;p?q', 'f'),
             ('://a/b/c;p?q#f', '://a/b/c;p?q', 'f'),
         ])
-    @support.subTests('allow_none', (False, True))
-    def test_urldefrag(self, bytes, url, defrag, frag, allow_none):
+    @support.subTests('missing_as_none', (False, True))
+    def test_urldefrag(self, bytes, url, defrag, frag, missing_as_none):
         if bytes:
             url = str_encode(url)
             defrag = str_encode(defrag)
             frag = str_encode(frag)
-        result = urllib.parse.urldefrag(url, allow_none=allow_none)
-        if not allow_none:
+        result = urllib.parse.urldefrag(url, missing_as_none=missing_as_none)
+        if not missing_as_none:
             hash = '#' if isinstance(url, str) else b'#'
             url = url.rstrip(hash)
             if frag is None:
@@ -1043,27 +1043,27 @@ class UrlParseTestCase(unittest.TestCase):
             if not url.isascii():
                 self.skipTest('non-ASCII bytes')
             url = url.encode("ascii")
-        p = parse(url, allow_none=True)
+        p = parse(url, missing_as_none=True)
         self.assertIsNone(p.scheme)
 
-    @support.subTests('allow_none', (False, True))
-    def test_attributes_without_netloc(self, allow_none):
+    @support.subTests('missing_as_none', (False, True))
+    def test_attributes_without_netloc(self, missing_as_none):
         # This example is straight from RFC 3261.  It looks like it
         # should allow the username, hostname, and port to be filled
         # in, but doesn't.  Since it's a URI and doesn't use the
         # scheme://netloc syntax, the netloc and related attributes
         # should be left empty.
         uri = "sip:alice@atlanta.com;maddr=239.255.255.1;ttl=15"
-        p = urllib.parse.urlsplit(uri, allow_none=allow_none)
-        self.assertEqual(p.netloc, None if allow_none else "")
+        p = urllib.parse.urlsplit(uri, missing_as_none=missing_as_none)
+        self.assertEqual(p.netloc, None if missing_as_none else "")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, None)
         self.assertEqual(p.port, None)
         self.assertEqual(p.geturl(), uri)
 
-        p = urllib.parse.urlparse(uri, allow_none=allow_none)
-        self.assertEqual(p.netloc, None if allow_none else "")
+        p = urllib.parse.urlparse(uri, missing_as_none=missing_as_none)
+        self.assertEqual(p.netloc, None if missing_as_none else "")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, None)
@@ -1072,16 +1072,16 @@ class UrlParseTestCase(unittest.TestCase):
 
         # You guessed it, repeating the test with bytes input
         uri = b"sip:alice@atlanta.com;maddr=239.255.255.1;ttl=15"
-        p = urllib.parse.urlsplit(uri, allow_none=allow_none)
-        self.assertEqual(p.netloc, None if allow_none else b"")
+        p = urllib.parse.urlsplit(uri, missing_as_none=missing_as_none)
+        self.assertEqual(p.netloc, None if missing_as_none else b"")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, None)
         self.assertEqual(p.port, None)
         self.assertEqual(p.geturl(), uri)
 
-        p = urllib.parse.urlparse(uri, allow_none=allow_none)
-        self.assertEqual(p.netloc, None if allow_none else b"")
+        p = urllib.parse.urlparse(uri, missing_as_none=missing_as_none)
+        self.assertEqual(p.netloc, None if missing_as_none else b"")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, None)
@@ -1095,85 +1095,85 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(urllib.parse.urlparse(b"http://example.com?blahblah=/foo"),
                          (b'http', b'example.com', b'', b'', b'blahblah=/foo', b''))
 
-    @support.subTests('allow_none', (False, True))
-    def test_withoutscheme(self, allow_none):
+    @support.subTests('missing_as_none', (False, True))
+    def test_withoutscheme(self, missing_as_none):
         # Test urlparse without scheme
         # Issue 754016: urlparse goes wrong with IP:port without scheme
         # RFC 1808 specifies that netloc should start with //, urlparse expects
         # the same, otherwise it classifies the portion of url as path.
-        none = None if allow_none else ''
-        self.assertEqual(urlparse("path", allow_none=allow_none),
+        none = None if missing_as_none else ''
+        self.assertEqual(urlparse("path", missing_as_none=missing_as_none),
                 (none, none, 'path', none, none, none))
-        self.assertEqual(urlparse("//www.python.org:80", allow_none=allow_none),
+        self.assertEqual(urlparse("//www.python.org:80", missing_as_none=missing_as_none),
                 (none, 'www.python.org:80', '', none, none, none))
-        self.assertEqual(urlparse("http://www.python.org:80", allow_none=allow_none),
+        self.assertEqual(urlparse("http://www.python.org:80", missing_as_none=missing_as_none),
                 ('http', 'www.python.org:80', '', none, none, none))
         # Repeat for bytes input
-        none = None if allow_none else b''
-        self.assertEqual(urlparse(b"path", allow_none=allow_none),
+        none = None if missing_as_none else b''
+        self.assertEqual(urlparse(b"path", missing_as_none=missing_as_none),
                 (none, none, b'path', none, none, none))
-        self.assertEqual(urlparse(b"//www.python.org:80", allow_none=allow_none),
+        self.assertEqual(urlparse(b"//www.python.org:80", missing_as_none=missing_as_none),
                 (none, b'www.python.org:80', b'', none, none, none))
-        self.assertEqual(urlparse(b"http://www.python.org:80", allow_none=allow_none),
+        self.assertEqual(urlparse(b"http://www.python.org:80", missing_as_none=missing_as_none),
                 (b'http', b'www.python.org:80', b'', none, none, none))
 
-    @support.subTests('allow_none', (False, True))
-    def test_portseparator(self, allow_none):
+    @support.subTests('missing_as_none', (False, True))
+    def test_portseparator(self, missing_as_none):
         # Issue 754016 makes changes for port separator ':' from scheme separator
-        none = None if allow_none else ''
-        self.assertEqual(urlparse("http:80", allow_none=allow_none),
+        none = None if missing_as_none else ''
+        self.assertEqual(urlparse("http:80", missing_as_none=missing_as_none),
                 ('http', none, '80', none, none, none))
-        self.assertEqual(urlparse("https:80", allow_none=allow_none),
+        self.assertEqual(urlparse("https:80", missing_as_none=missing_as_none),
                 ('https', none, '80', none, none, none))
-        self.assertEqual(urlparse("path:80", allow_none=allow_none),
+        self.assertEqual(urlparse("path:80", missing_as_none=missing_as_none),
                 ('path', none, '80', none, none, none))
-        self.assertEqual(urlparse("http:", allow_none=allow_none),
+        self.assertEqual(urlparse("http:", missing_as_none=missing_as_none),
                 ('http', none, '', none, none, none))
-        self.assertEqual(urlparse("https:", allow_none=allow_none),
+        self.assertEqual(urlparse("https:", missing_as_none=missing_as_none),
                 ('https', none, '', none, none, none))
-        self.assertEqual(urlparse("http://www.python.org:80", allow_none=allow_none),
+        self.assertEqual(urlparse("http://www.python.org:80", missing_as_none=missing_as_none),
                 ('http', 'www.python.org:80', '', none, none, none))
         # As usual, need to check bytes input as well
-        none = None if allow_none else b''
-        self.assertEqual(urlparse(b"http:80", allow_none=allow_none),
+        none = None if missing_as_none else b''
+        self.assertEqual(urlparse(b"http:80", missing_as_none=missing_as_none),
                 (b'http', none, b'80', none, none, none))
-        self.assertEqual(urlparse(b"https:80", allow_none=allow_none),
+        self.assertEqual(urlparse(b"https:80", missing_as_none=missing_as_none),
                 (b'https', none, b'80', none, none, none))
-        self.assertEqual(urlparse(b"path:80", allow_none=allow_none),
+        self.assertEqual(urlparse(b"path:80", missing_as_none=missing_as_none),
                 (b'path', none, b'80', none, none, none))
-        self.assertEqual(urlparse(b"http:", allow_none=allow_none),
+        self.assertEqual(urlparse(b"http:", missing_as_none=missing_as_none),
                 (b'http', none, b'', none, none, none))
-        self.assertEqual(urlparse(b"https:", allow_none=allow_none),
+        self.assertEqual(urlparse(b"https:", missing_as_none=missing_as_none),
                 (b'https', none, b'', none, none, none))
-        self.assertEqual(urlparse(b"http://www.python.org:80", allow_none=allow_none),
+        self.assertEqual(urlparse(b"http://www.python.org:80", missing_as_none=missing_as_none),
                 (b'http', b'www.python.org:80', b'', none, none, none))
 
     def test_usingsys(self):
         # Issue 3314: sys module is used in the error
         self.assertRaises(TypeError, urllib.parse.urlencode, "foo")
 
-    @support.subTests('allow_none', (False, True))
-    def test_anyscheme(self, allow_none):
+    @support.subTests('missing_as_none', (False, True))
+    def test_anyscheme(self, missing_as_none):
         # Issue 7904: s3://foo.com/stuff has netloc "foo.com".
-        none = None if allow_none else ''
-        self.assertEqual(urlparse("s3://foo.com/stuff", allow_none=allow_none),
+        none = None if missing_as_none else ''
+        self.assertEqual(urlparse("s3://foo.com/stuff", missing_as_none=missing_as_none),
                          ('s3', 'foo.com', '/stuff', none, none, none))
-        self.assertEqual(urlparse("x-newscheme://foo.com/stuff", allow_none=allow_none),
+        self.assertEqual(urlparse("x-newscheme://foo.com/stuff", missing_as_none=missing_as_none),
                          ('x-newscheme', 'foo.com', '/stuff', none, none, none))
-        self.assertEqual(urlparse("x-newscheme://foo.com/stuff?query#fragment", allow_none=allow_none),
+        self.assertEqual(urlparse("x-newscheme://foo.com/stuff?query#fragment", missing_as_none=missing_as_none),
                          ('x-newscheme', 'foo.com', '/stuff', none, 'query', 'fragment'))
-        self.assertEqual(urlparse("x-newscheme://foo.com/stuff?query", allow_none=allow_none),
+        self.assertEqual(urlparse("x-newscheme://foo.com/stuff?query", missing_as_none=missing_as_none),
                          ('x-newscheme', 'foo.com', '/stuff', none, 'query', none))
 
         # And for bytes...
-        none = None if allow_none else b''
-        self.assertEqual(urlparse(b"s3://foo.com/stuff", allow_none=allow_none),
+        none = None if missing_as_none else b''
+        self.assertEqual(urlparse(b"s3://foo.com/stuff", missing_as_none=missing_as_none),
                          (b's3', b'foo.com', b'/stuff', none, none, none))
-        self.assertEqual(urlparse(b"x-newscheme://foo.com/stuff", allow_none=allow_none),
+        self.assertEqual(urlparse(b"x-newscheme://foo.com/stuff", missing_as_none=missing_as_none),
                          (b'x-newscheme', b'foo.com', b'/stuff', none, none, none))
-        self.assertEqual(urlparse(b"x-newscheme://foo.com/stuff?query#fragment", allow_none=allow_none),
+        self.assertEqual(urlparse(b"x-newscheme://foo.com/stuff?query#fragment", missing_as_none=missing_as_none),
                          (b'x-newscheme', b'foo.com', b'/stuff', none, b'query', b'fragment'))
-        self.assertEqual(urlparse(b"x-newscheme://foo.com/stuff?query", allow_none=allow_none),
+        self.assertEqual(urlparse(b"x-newscheme://foo.com/stuff?query", missing_as_none=missing_as_none),
                          (b'x-newscheme', b'foo.com', b'/stuff', none, b'query', none))
 
     @support.subTests('func', (urllib.parse.urlparse, urllib.parse.urlsplit))
@@ -1187,11 +1187,11 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(func("path", scheme="ftp").scheme, "ftp")
         self.assertEqual(func(b"path", scheme=b"ftp").scheme, b"ftp")
         self.assertEqual(func("path").scheme, "")
-        self.assertEqual(func("path", allow_none=True).scheme, None)
+        self.assertEqual(func("path", missing_as_none=True).scheme, None)
         self.assertEqual(func(b"path").scheme, b"")
-        self.assertEqual(func(b"path", allow_none=True).scheme, None)
+        self.assertEqual(func(b"path", missing_as_none=True).scheme, None)
         self.assertEqual(func(b"path", "").scheme, b"")
-        self.assertEqual(func(b"path", "", allow_none=True).scheme, b"")
+        self.assertEqual(func(b"path", "", missing_as_none=True).scheme, b"")
 
     @support.subTests('url,attr,expected_frag', (
             ("http:#frag", "path", "frag"),
@@ -1216,11 +1216,11 @@ class UrlParseTestCase(unittest.TestCase):
                             "#" + expected_frag)
         self.assertEqual(func(url, "", False).fragment, "")
 
-        result = func(url, allow_fragments=False, allow_none=True)
+        result = func(url, allow_fragments=False, missing_as_none=True)
         self.assertIsNone(result.fragment)
         self.assertTrue(
                 getattr(result, attr).endswith("#" + expected_frag))
-        self.assertIsNone(func(url, "", False, allow_none=True).fragment)
+        self.assertIsNone(func(url, "", False, missing_as_none=True).fragment)
 
         result = func(url, allow_fragments=True)
         self.assertEqual(result.fragment, expected_frag)
@@ -1301,7 +1301,7 @@ class UrlParseTestCase(unittest.TestCase):
         url = 'http://example.com/?#'
         burl = url.encode()
         for func in urldefrag, urlsplit, urlparse:
-            check(func(url, allow_none=True), func(burl, allow_none=True))
+            check(func(url, missing_as_none=True), func(burl, missing_as_none=True))
             check(func(url), func(burl))
 
     def test_result_copying(self):
@@ -1319,9 +1319,9 @@ class UrlParseTestCase(unittest.TestCase):
         burl = url.encode()
         for func in urldefrag, urlsplit, urlparse:
             check(func(url))
-            check(func(url, allow_none=True))
+            check(func(url, missing_as_none=True))
             check(func(burl))
-            check(func(burl, allow_none=True))
+            check(func(burl, missing_as_none=True))
 
     def test_parse_qs_encoding(self):
         result = urllib.parse.parse_qs("key=\u0141%E9", encoding="latin-1")
@@ -1566,7 +1566,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p1.path, '+1-201-555-0123')
         self.assertEqual(p1.params, '')
 
-        p1 = urllib.parse.urlparse('tel:+1-201-555-0123', allow_none=True)
+        p1 = urllib.parse.urlparse('tel:+1-201-555-0123', missing_as_none=True)
         self.assertEqual(p1.scheme, 'tel')
         self.assertEqual(p1.path, '+1-201-555-0123')
         self.assertEqual(p1.params, None)

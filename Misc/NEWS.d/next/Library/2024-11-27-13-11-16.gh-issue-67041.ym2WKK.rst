@@ -1,4 +1,4 @@
-Add the *allow_none* parameter to :func:`~urllib.parse.urlparse`,
+Add the *missing_as_none* parameter to :func:`~urllib.parse.urlparse`,
 :func:`~urllib.parse.urlsplit` and :func:`~urllib.parse.urldefrag`
 functions. Add the *keep_empty* parameter to
 :func:`~urllib.parse.urlunparse` and :func:`~urllib.parse.urlunsplit`

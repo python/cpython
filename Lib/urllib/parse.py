@@ -276,7 +276,7 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
 
 
 _UNSPECIFIED = ['not specified']
-_ALLOW_NONE_DEFAULT = False
+_MISSING_AS_NONE_DEFAULT = False
 
 class _ResultBase:
     def __replace__(self, /, **kwargs):
@@ -305,7 +305,7 @@ class _ResultBase:
 class _DefragResultBase(_ResultBase, namedtuple('_DefragResultBase', 'url fragment')):
     def geturl(self):
         if self.fragment or (self.fragment is not None and
-                             getattr(self, '_keep_empty', _ALLOW_NONE_DEFAULT)):
+                             getattr(self, '_keep_empty', _MISSING_AS_NONE_DEFAULT)):
             return self.url + self._HASH + self.fragment
         else:
             return self.url
@@ -423,7 +423,7 @@ def _fix_result_transcoding():
 _fix_result_transcoding()
 del _fix_result_transcoding
 
-def urlparse(url, scheme=None, allow_fragments=True, *, allow_none=_ALLOW_NONE_DEFAULT):
+def urlparse(url, scheme=None, allow_fragments=True, *, missing_as_none=_MISSING_AS_NONE_DEFAULT):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
 
@@ -447,7 +447,7 @@ def urlparse(url, scheme=None, allow_fragments=True, *, allow_none=_ALLOW_NONE_D
     if url is None:
         url = ''
     scheme, netloc, url, params, query, fragment = _urlparse(url, scheme, allow_fragments)
-    if not allow_none:
+    if not missing_as_none:
         if scheme is None: scheme = ''
         if netloc is None: netloc = ''
         if params is None: params = ''
@@ -455,22 +455,22 @@ def urlparse(url, scheme=None, allow_fragments=True, *, allow_none=_ALLOW_NONE_D
         if fragment is None: fragment = ''
     result = ParseResult(scheme, netloc, url, params, query, fragment)
     result = _coerce_result(result)
-    result._keep_empty = allow_none
+    result._keep_empty = missing_as_none
     return result
 
 def _urlparse(url, scheme=None, allow_fragments=True):
     scheme, netloc, url, query, fragment = _urlsplit(url, scheme, allow_fragments)
     if (scheme or '') in uses_params and ';' in url:
-        url, params = _splitparams(url, allow_none=True)
+        url, params = _splitparams(url, missing_as_none=True)
     else:
         params = None
     return (scheme, netloc, url, params, query, fragment)
 
-def _splitparams(url, allow_none=False):
+def _splitparams(url, missing_as_none=False):
     if '/'  in url:
         i = url.find(';', url.rfind('/'))
         if i < 0:
-            return url, None if allow_none else ''
+            return url, None if missing_as_none else ''
     else:
         i = url.find(';')
     return url[:i], url[i+1:]
@@ -532,7 +532,7 @@ def _check_bracketed_host(hostname):
 # typed=True avoids BytesWarnings being emitted during cache key
 # comparison since this API supports both bytes and str input.
 @functools.lru_cache(typed=True)
-def urlsplit(url, scheme=None, allow_fragments=True, *, allow_none=_ALLOW_NONE_DEFAULT):
+def urlsplit(url, scheme=None, allow_fragments=True, *, missing_as_none=_MISSING_AS_NONE_DEFAULT):
     """Parse a URL into 5 components:
     <scheme>://<netloc>/<path>?<query>#<fragment>
 
@@ -557,14 +557,14 @@ def urlsplit(url, scheme=None, allow_fragments=True, *, allow_none=_ALLOW_NONE_D
     if url is None:
         url = ''
     scheme, netloc, url, query, fragment = _urlsplit(url, scheme, allow_fragments)
-    if not allow_none:
+    if not missing_as_none:
         if scheme is None: scheme = ''
         if netloc is None: netloc = ''
         if query is None: query = ''
         if fragment is None: fragment = ''
     result = SplitResult(scheme, netloc, url, query, fragment)
     result = _coerce_result(result)
-    result._keep_empty = allow_none
+    result._keep_empty = missing_as_none
     return result
 
 def _urlsplit(url, scheme=None, allow_fragments=True):
@@ -606,15 +606,16 @@ def urlunparse(components, *, keep_empty=_UNSPECIFIED):
     slightly different, but equivalent URL, if the URL that was parsed
     originally had redundant delimiters, e.g. a ? with an empty query
     (the draft states that these are equivalent) and keep_empty is false
-    or components is the result of the urlparse() call with allow_none=False."""
+    or components is the result of the urlparse() call with
+    missing_as_none=False."""
     scheme, netloc, url, params, query, fragment, _coerce_result = (
                                                   _coerce_args(*components))
     if keep_empty is _UNSPECIFIED:
-        keep_empty = getattr(components, '_keep_empty', _ALLOW_NONE_DEFAULT)
+        keep_empty = getattr(components, '_keep_empty', _MISSING_AS_NONE_DEFAULT)
     elif keep_empty and not getattr(components, '_keep_empty', True):
         raise ValueError('Cannot distinguish between empty and not defined '
                          'URI components in the result of parsing URL with '
-                         'allow_none=False')
+                         'missing_as_none=False')
     if not keep_empty:
         if not netloc:
             if scheme and scheme in uses_netloc and (not url or url[:1] == '/'):
@@ -636,15 +637,15 @@ def urlunsplit(components, *, keep_empty=_UNSPECIFIED):
     was parsed originally had unnecessary delimiters (for example, a ? with an
     empty query; the RFC states that these are equivalent) and keep_empty
     is false or components is the result of the urlsplit() call with
-    allow_none=False."""
+    missing_as_none=False."""
     scheme, netloc, url, query, fragment, _coerce_result = (
                                           _coerce_args(*components))
     if keep_empty is _UNSPECIFIED:
-        keep_empty = getattr(components, '_keep_empty', _ALLOW_NONE_DEFAULT)
+        keep_empty = getattr(components, '_keep_empty', _MISSING_AS_NONE_DEFAULT)
     elif keep_empty and not getattr(components, '_keep_empty', True):
         raise ValueError('Cannot distinguish between empty and not defined '
                          'URI components in the result of parsing URL with '
-                         'allow_none=False')
+                         'missing_as_none=False')
     if not keep_empty:
         if not netloc:
             if scheme and scheme in uses_netloc and (not url or url[:1] == '/'):
@@ -742,12 +743,12 @@ def urljoin(base, url, allow_fragments=True):
         resolved_path) or '/', query, fragment))
 
 
-def urldefrag(url, *, allow_none=_ALLOW_NONE_DEFAULT):
+def urldefrag(url, *, missing_as_none=_MISSING_AS_NONE_DEFAULT):
     """Removes any existing fragment from URL.
 
     Returns a tuple of the defragmented URL and the fragment.  If
     the URL contained no fragments, the second element is the
-    empty string or None if allow_none is True.
+    empty string or None if missing_as_none is True.
     """
     url, _coerce_result = _coerce_args(url)
     if '#' in url:
@@ -756,9 +757,9 @@ def urldefrag(url, *, allow_none=_ALLOW_NONE_DEFAULT):
     else:
         frag = None
         defrag = url
-    if not allow_none and frag is None: frag = ''
+    if not missing_as_none and frag is None: frag = ''
     result = _coerce_result(DefragResult(defrag, frag))
-    result._keep_empty = allow_none
+    result._keep_empty = missing_as_none
     return result
 
 _hexdig = '0123456789ABCDEFabcdef'
