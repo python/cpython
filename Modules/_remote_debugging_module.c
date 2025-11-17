@@ -2518,8 +2518,7 @@ process_frame_chain(
                  frame == NULL &&
                  // Bottommost frame is always native, so skip that one:
                  next_frame_addr &&
-                 // If the next frame will be reported as a GC frame, then
-                 // don't add an extra native frame below it:
+                 // Only suppress native frames if GC tracking is enabled and the next frame will be a GC frame:
                  !(unwinder->gc && next_frame_addr == gc_frame))
         {
             _Py_DECLARE_STR(native, "<native>");
