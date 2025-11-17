@@ -433,7 +433,7 @@ class HeaderWidget(Widget):
         self.add_str(line, col, "Efficiency:", curses.A_BOLD)
         col += 11
 
-        label = f" {success_pct:>5.1f}% good, {failed_pct:>4.1f}% failed"
+        label = f" {success_pct:>5.2f}% good, {failed_pct:>4.2f}% failed"
         available_width = width - col - len(label) - 3
 
         if available_width >= MIN_BAR_WIDTH:
@@ -1324,6 +1324,9 @@ class LiveStatsCollector(Collector):
         )
         self.result[top_location]["direct_calls"] += 1
 
+    def collect_failed_sample(self, exeption):
+        self._failed_samples += 1
+
     def collect(self, stack_frames):
         """Collect and display profiling data."""
         if self.start_time is None:
@@ -1340,11 +1343,7 @@ class LiveStatsCollector(Collector):
             if frames:
                 got_frames = True
 
-        if got_frames:
-            self._successful_samples += 1
-        else:
-            self._failed_samples += 1
-
+        self._successful_samples += 1
         self.total_samples += 1
 
         # Handle input on every sample for instant responsiveness

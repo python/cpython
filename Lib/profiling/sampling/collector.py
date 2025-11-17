@@ -15,6 +15,10 @@ class Collector(ABC):
     def collect(self, stack_frames):
         """Collect profiling data from stack frames."""
 
+    def collect_failed_sample(self, exeption):
+        """Collect data about a failed sample attempt."""
+        pass
+
     @abstractmethod
     def export(self, filename):
         """Export collected data to a file."""

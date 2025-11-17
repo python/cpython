@@ -202,7 +202,8 @@ class SampleProfiler:
                 except ProcessLookupError:
                     duration_sec = current_time - start_time
                     break
-                except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
+                except (RuntimeError, UnicodeDecodeError, MemoryError, OSError) as e:
+                    collector.collect_failed_sample(e)
                     errors += 1
                 except Exception as e:
                     if not self._is_process_running():
