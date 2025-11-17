@@ -37,10 +37,6 @@ typedef struct _PyThreadStateImpl {
     uintptr_t c_stack_soft_limit;
     uintptr_t c_stack_hard_limit;
 
-    // PyUnstable_ThreadState_ResetStackProtection() values
-    uintptr_t c_stack_init_base;
-    uintptr_t c_stack_init_top;
-
     PyObject *asyncio_running_loop; // Strong reference
     PyObject *asyncio_running_task; // Strong reference
 
@@ -79,6 +75,10 @@ typedef struct _PyThreadStateImpl {
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     Py_ssize_t reftotal;  // this thread's total refcount operations
 #endif
+
+    // PyUnstable_ThreadState_ResetStackProtection() values
+    uintptr_t c_stack_init_base;
+    uintptr_t c_stack_init_top;
 
 } _PyThreadStateImpl;
 
