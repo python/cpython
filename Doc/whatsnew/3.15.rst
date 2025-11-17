@@ -389,8 +389,8 @@ Other language changes
 
 * Many functions related to compiling or parsing Python code, such as
   :func:`compile`, :func:`ast.parse`, :func:`symtable.symtable`,
-  and :func:`importlib.abc.InspectLoader.source_to_code`, now allow to pass
-  the module name. It is needed to unambiguous :ref:`filter <warning-filter>`
+  and :func:`importlib.abc.InspectLoader.source_to_code`, now allow the module
+  name to be passed. It is needed to unambiguously :ref:`filter <warning-filter>`
   syntax warnings by module name.
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
 
@@ -1229,7 +1229,7 @@ Porting to Python 3.15
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
-* :class:`sqlite3.Connection` APIs has been cleaned up.
+* :class:`sqlite3.Connection` APIs have been cleaned up.
 
   * All parameters of :func:`sqlite3.connect` except *database* are now keyword-only.
   * The first three parameters of methods :meth:`~sqlite3.Connection.create_function`
@@ -1249,7 +1249,7 @@ that may require changes to your code.
 * :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
 
-* Resource warning is now emitted for unclosed
+* A resource warning is now emitted for an unclosed
   :func:`xml.etree.ElementTree.iterparse` iterator if it opened a file.
   Use its :meth:`!close` method or the :func:`contextlib.closing` context
   manager to close it.
