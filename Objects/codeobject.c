@@ -2185,13 +2185,6 @@ _PyCode_ReturnsOnlyNone(PyCodeObject *co)
 static void
 clear_executors(PyCodeObject *co)
 {
-#ifdef Py_GIL_DISABLED
-    uint8_t expected = 0;
-    if (!_Py_atomic_compare_exchange_uint8(&co->co_executors->is_finalizing, &expected, 1)) {
-        // Another thread is already finalizing this.
-        return;
-    }
-#endif
     assert(co->co_executors);
     for (int i = 0; i < co->co_executors->size; i++) {
         if (co->co_executors->executors[i]) {

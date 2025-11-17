@@ -5477,20 +5477,9 @@
             }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            if (!executor->vm_data.valid) {
-                opcode = executor->vm_data.opcode;
-                oparg = (oparg & ~255) | executor->vm_data.oparg;
-                next_instr = this_instr;
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                Py_BEGIN_CRITICAL_SECTION(code);
-                _Py_ExecutorDetach(executor);
-                Py_END_CRITICAL_SECTION();
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                DISPATCH_GOTO();
-            }
-            assert(tstate->current_executor == NULL);
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
             assert(executor->vm_data.code == code);
+            assert(tstate->current_executor == NULL);
             if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
@@ -5500,7 +5489,7 @@
                 }
                 DISPATCH_GOTO();
             }
-            assert(executor != ((_PyThreadStateImpl *)tstate)->jit_executor_state.cold_executor);
+            assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
             TIER1_TO_TIER2(executor);
             #else
@@ -7600,7 +7589,7 @@
             {
                 #if ENABLE_SPECIALIZATION_FT
                 if (this_instr->op.code == JUMP_BACKWARD) {
-                    uint8_t desired = FT_ATOMIC_LOAD_CHAR_RELAXED(((_PyThreadStateImpl*)tstate)->jit_executor_state.jit) ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
+                    uint8_t desired = FT_ATOMIC_LOAD_UINT8(tstate->interp->jit) ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
                     FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, desired);
                     next_instr = this_instr;
                     DISPATCH_SAME_OPARG();

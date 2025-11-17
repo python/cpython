@@ -52,20 +52,7 @@ typedef struct _PyJitTracerState {
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;
 } _PyJitTracerState;
-
 #endif
-
-typedef struct _PyJitExecutorState {
-    char jit;
-#if _Py_TIER2
-    struct _PyExecutorObject *executor_list_head;
-    struct _PyExecutorObject *executor_deletion_list_head;
-    struct _PyExecutorObject *cold_executor;
-    struct _PyExecutorObject *cold_dynamic_executor;
-    int executor_deletion_list_remaining_capacity;
-    size_t executor_creation_counter;
-#endif
-} _PyJitExecutorState;
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
@@ -134,7 +121,6 @@ typedef struct _PyThreadStateImpl {
 #if _Py_TIER2
     _PyJitTracerState jit_tracer_state;
 #endif
-    _PyJitExecutorState jit_executor_state;
 } _PyThreadStateImpl;
 
 #ifdef __cplusplus

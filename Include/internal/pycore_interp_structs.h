@@ -930,6 +930,14 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
+    uint8_t jit;
+    bool compiling;
+    struct _PyExecutorObject *executor_list_head;
+    struct _PyExecutorObject *executor_deletion_list_head;
+    struct _PyExecutorObject *cold_executor;
+    struct _PyExecutorObject *cold_dynamic_executor;
+    int executor_deletion_list_remaining_capacity;
+    size_t executor_creation_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 

@@ -12,7 +12,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
-#include "pycore_optimizer.h"     // _Py_Executors_InvalidateColdGC
 
 #include "pydtrace.h"
 
@@ -1736,7 +1735,6 @@ gc_collect_full(PyThreadState *tstate,
     gcstate->old[1].count = 0;
     completed_scavenge(gcstate);
     _PyGC_ClearAllFreeLists(tstate->interp);
-    _Py_Executors_InvalidateColdGC(tstate->interp);
     validate_spaces(gcstate);
     add_stats(gcstate, 2, stats);
 }

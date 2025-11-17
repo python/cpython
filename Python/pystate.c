@@ -566,6 +566,12 @@ init_interpreter(PyInterpreterState *interp,
         interp->monitoring_tool_versions[t] = 0;
     }
     interp->_code_object_generation = 0;
+    interp->jit = 0;
+    interp->compiling = false;
+    interp->executor_list_head = NULL;
+    interp->executor_deletion_list_head = NULL;
+    interp->executor_deletion_list_remaining_capacity = 0;
+    interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -792,46 +798,39 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->after_forkers_child);
 #endif
 
+
+#ifdef _Py_TIER2
+    _Py_ClearExecutorDeletionList(interp);
+#endif
     _PyAST_Fini(interp);
     _PyAtExit_Fini(interp);
+
     // All Python types must be destroyed before the last GC collection. Python
     // types create a reference cycle to themselves in their in their
     // PyTypeObject.tp_mro member (the tuple contains the type).
 
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
-
-#ifdef _Py_TIER2
-    // This can only be done after the last GC of the interpreter, as we may
-    // have pending executors that point to cold executors that expect it
-    // not to have been freed.
-    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
-        HEAD_UNLOCK(runtime);
-        struct _PyExecutorObject *cold = ((_PyThreadStateImpl *)(p))->jit_executor_state.cold_executor;
-        if (cold != NULL) {
-            ((_PyThreadStateImpl *)(p))->jit_executor_state.cold_executor = NULL;
-            assert(cold->vm_data.valid);
-            assert(cold->vm_data.warm);
-            _PyExecutor_Free(cold);
-        }
-
-        struct _PyExecutorObject *cold_dynamic = ((_PyThreadStateImpl *)(p))->jit_executor_state.cold_dynamic_executor;
-        if (cold_dynamic != NULL) {
-            ((_PyThreadStateImpl *)(p))->jit_executor_state.cold_dynamic_executor = NULL;
-            assert(cold_dynamic->vm_data.valid);
-            assert(cold_dynamic->vm_data.warm);
-            _PyExecutor_Free(cold_dynamic);
-        }
-        HEAD_LOCK(runtime);
-    }
-    _Py_FOR_EACH_TSTATE_END(interp);
-#endif
-
     _PyGC_Fini(interp);
 
     // Finalize warnings after last gc so that any finalizers can
     // access warnings state
     _PyWarnings_Fini(interp);
+    struct _PyExecutorObject *cold = interp->cold_executor;
+    if (cold != NULL) {
+        interp->cold_executor = NULL;
+        assert(cold->vm_data.valid);
+        assert(cold->vm_data.warm);
+        _PyExecutor_Free(cold);
+    }
+
+    struct _PyExecutorObject *cold_dynamic = interp->cold_dynamic_executor;
+    if (cold_dynamic != NULL) {
+        interp->cold_dynamic_executor = NULL;
+        assert(cold_dynamic->vm_data.valid);
+        assert(cold_dynamic->vm_data.warm);
+        _PyExecutor_Free(cold_dynamic);
+    }
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
        which requires sysdict and builtins. */
@@ -1504,13 +1503,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
 #ifdef _Py_TIER2
     _tstate->jit_tracer_state.code_buffer = NULL;
-    _tstate->jit_executor_state.jit = false;
-    _tstate->jit_executor_state.executor_list_head = NULL;
-    _tstate->jit_executor_state.executor_deletion_list_head = NULL;
-    _tstate->jit_executor_state.executor_deletion_list_remaining_capacity = 0;
-    _tstate->jit_executor_state.executor_creation_counter = JIT_CLEANUP_THRESHOLD;
-    _tstate->jit_executor_state.cold_executor = NULL;
-    _tstate->jit_executor_state.cold_dynamic_executor = NULL;
 #endif
     tstate->delete_later = NULL;
 
@@ -1540,12 +1532,8 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
     // There's more than one thread. In FT mode,
     // disable the JIT completely for now.
     if (next != NULL) {
-        _Py_Executors_InvalidateAllLockHeld(interp, 1);
-    }
-    PyThreadState *curr = interp->threads.head;
-    while (curr != NULL) {
-        _Py_atomic_store_char_relaxed(&((_PyThreadStateImpl*)curr)->jit_executor_state.jit, false);
-        curr = curr->next;
+        _Py_Executors_InvalidateAll(interp, 1);
+        FT_ATOMIC_STORE_UINT8(interp->jit, 0);
     }
 #endif
 }
@@ -1756,13 +1744,6 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(tstate->context);
 
-#ifdef _Py_TIER2
-    FT_ATOMIC_STORE_CHAR_RELAXED(((_PyThreadStateImpl *)(tstate))->jit_executor_state.jit, false);
-
-    // We can't clear the cold executors here until the interpreter
-    // clear process starts.
-#endif
-
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
     struct _Py_freelists *freelists = _Py_freelists_GET();
@@ -1847,7 +1828,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     // There's only one thread. Re-enable JIT.
     PyThreadState *curr = interp->threads.head;
     if (curr != NULL && curr->prev == NULL && curr->next == NULL) {
-        _Py_atomic_store_char_relaxed(&((_PyThreadStateImpl*)curr)->jit_executor_state.jit, true);
+       FT_ATOMIC_STORE_UINT8(interp->jit, 1);
     }
 #endif
 #endif

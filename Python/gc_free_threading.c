@@ -2311,8 +2311,6 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     }
     _PyEval_StartTheWorld(interp);
 
-    _Py_Executors_InvalidateColdGC(interp);
-
     if (err < 0) {
         cleanup_worklist(&state->unreachable);
         cleanup_worklist(&state->legacy_finalizers);
