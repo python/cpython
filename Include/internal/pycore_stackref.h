@@ -502,7 +502,12 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
     assert(obj != NULL);
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
-    return (_PyStackRef){ .bits = (uintptr_t)obj };
+    if (_Py_IsImmortal(obj)) {
+        return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
+    }
+    else {
+        return (_PyStackRef){ .bits = (uintptr_t)obj };
+    }
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
 
@@ -542,7 +547,7 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
     assert(obj != NULL);
-    if (_PyObject_HasDeferredRefcount(obj)) {
+    if (_PyObject_HasDeferredRefcount(obj) || _Py_IsImmortal(obj)) {
         return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
     }
     else {
