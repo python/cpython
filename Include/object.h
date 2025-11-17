@@ -529,7 +529,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_INLINE_VALUES (1 << 2)
 
 /* Placement of weakref pointers are managed by the VM, not by the type.
- * The VM will automatically set tp_weaklistoffset.
+ * The VM will automatically set tp_weaklistoffset. Implies Py_TPFLAGS_HAVE_GC.
  */
 #define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
 
@@ -837,6 +837,11 @@ PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
 PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *type,
+                                               const void *token);
 #endif
 
 #ifdef __cplusplus
