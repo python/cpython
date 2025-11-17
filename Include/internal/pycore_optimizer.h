@@ -24,11 +24,7 @@ typedef struct _PyExecutorLinkListNode {
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
-#ifdef Py_GIL_DISABLED
-    uint8_t valid;
-#else
     uint8_t valid:1;
-#endif
     uint8_t linked:1;
     uint8_t chain_depth:6;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
     bool warm;

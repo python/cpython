@@ -48,7 +48,6 @@ typedef struct _PyJitTracerPreviousState {
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerState {
-    PyMutex lock;
     _PyUOpInstruction *code_buffer;
     _PyJitTracerInitialState initial_state;
     _PyJitTracerPreviousState prev_state;

@@ -941,15 +941,11 @@ _PyJit_TryInitializeTracing(
         return 0;
     }
 
-    if (!PyMutex_LockFast(&_tstate->jit_tracer_state.lock)) {
-        return 0;
-    }
 
     if (_tstate->jit_tracer_state.code_buffer == NULL) {
         _tstate->jit_tracer_state.code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
         if (_tstate->jit_tracer_state.code_buffer == NULL) {
             // Don't error, just go to next instruction.
-            PyMutex_Unlock(&_tstate->jit_tracer_state.lock);
             return 0;
         }
     }
@@ -997,7 +993,6 @@ _PyJit_TryInitializeTracing(
         FT_ATOMIC_STORE_UINT16_RELAXED(close_loop_instr[1].counter.value_and_backoff, zero.value_and_backoff);
     }
     _Py_BloomFilter_Init(&_tstate->jit_tracer_state.prev_state.dependencies);
-    PyMutex_Unlock(&_tstate->jit_tracer_state.lock);
     return 1;
 }
 
@@ -1655,12 +1650,10 @@ jit_tracer_invalidate_dependency(PyThreadState *tstate, void *obj)
     _Py_BloomFilter_Init(&obj_filter);
     _Py_BloomFilter_Add(&obj_filter, obj);
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    FT_MUTEX_LOCK(&_tstate->jit_tracer_state.lock);
     if (bloom_filter_may_contain(&_tstate->jit_tracer_state.prev_state.dependencies, &obj_filter))
     {
         FT_ATOMIC_STORE_UINT8(_tstate->jit_tracer_state.prev_state.dependencies_still_valid, 0);
-    }
-    FT_MUTEX_UNLOCK(&_tstate->jit_tracer_state.lock);
+    };
 }
 
 void
