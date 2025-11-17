@@ -1522,20 +1522,18 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
 {
     assert(interp->threads.head != tstate);
     if (next != NULL) {
+#if defined(_Py_TIER2) && defined(Py_GIL_DISABLED)
+        FT_ATOMIC_STORE_UINT8(interp->jit, 0);
+        // There's more than one thread. In FT mode,
+        // disable the JIT completely for now.
+        _Py_Executors_InvalidateAll(interp, 1);
+#endif
         assert(next->prev == NULL || next->prev == tstate);
         next->prev = tstate;
     }
     tstate->next = next;
     assert(tstate->prev == NULL);
     interp->threads.head = tstate;
-#if defined(_Py_TIER2) && defined(Py_GIL_DISABLED)
-    // There's more than one thread. In FT mode,
-    // disable the JIT completely for now.
-    if (next != NULL) {
-        _Py_Executors_InvalidateAll(interp, 1);
-        FT_ATOMIC_STORE_UINT8(interp->jit, 0);
-    }
-#endif
 }
 
 static PyThreadState *

@@ -2434,9 +2434,7 @@ code_dealloc(PyObject *self)
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateDependency(tstate->interp, self, 1);
     if (co->co_executors != NULL) {
-        Py_BEGIN_CRITICAL_SECTION(co);
         clear_executors(co);
-        Py_END_CRITICAL_SECTION();
     }
 #endif
 

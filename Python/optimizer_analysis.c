@@ -226,14 +226,14 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 
 static JitOptRef
 lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
-            PyTypeObject *type, PyObject *name, uint16_t immortal,
+            PyTypeObject *type, PyObject *name, uint16_t deferred_refcount,
             uint16_t mortal)
 {
     // The cached value may be dead, so we need to do the lookup again... :(
     if (type && PyType_Check(type)) {
         PyObject *lookup = _PyType_Lookup(type, name);
         if (lookup) {
-            int opcode = _Py_IsImmortal(lookup) || _PyObject_HasDeferredRefcount(lookup) ? immortal : mortal;
+            int opcode = _Py_IsImmortal(lookup) || _PyObject_HasDeferredRefcount(lookup) ? deferred_refcount : mortal;
             REPLACE_OP(this_instr, opcode, 0, (uintptr_t)lookup);
             return sym_new_const(ctx, lookup);
         }

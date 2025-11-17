@@ -411,8 +411,9 @@ uint32_t
 _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
 {
     // This function does not need locking/atomics as it can only be
-    // called from the optimizer, which is currently disabled
-    // when there are multiple threads.
+    // called from the specializing interpreter or optimizer.
+    // The specializing interpreter holds a strong reference to the function.
+    // The optimizer is currently disabled when there are multiple threads.
     return func->func_version;
 }
 
