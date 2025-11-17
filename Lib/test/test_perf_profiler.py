@@ -154,7 +154,6 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertIn(f"py::foo:{script}", perf_file_contents)
         self.assertIn(f"py::bar:{script}", perf_file_contents)
         self.assertIn(f"py::baz:{script}", perf_file_contents)
-        # The parent's map should not contain the child's symbols
         child_perf_file_contents = perf_child_file.read_text()
         self.assertIn(f"py::foo_fork:{script}", child_perf_file_contents)
         self.assertIn(f"py::bar_fork:{script}", child_perf_file_contents)
