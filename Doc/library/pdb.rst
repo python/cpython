@@ -76,7 +76,6 @@ The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug
 
 .. _pdb-cli:
 
-.. _pdb-cli:
 .. program:: pdb
 
 Command-line interface
