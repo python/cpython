@@ -1,4 +1,4 @@
-Fix :meth:`~ipaddress._BaseAddress.__eq__` and
-:meth:`~ipaddress._BaseNetwork.__eq__` to return ``NotImplemented`` instead
-of ``False`` when comparing with objects that have matching attribute names
-but are not actual address or network objects.
+Fix :mod:`ipaddress` address and network objects' ``__eq__`` methods to
+return ``NotImplemented`` instead of ``False`` when comparing with objects
+that have matching attribute names but are not actual address or network
+objects.
