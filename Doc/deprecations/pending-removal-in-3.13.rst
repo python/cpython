@@ -38,15 +38,3 @@ APIs:
 * :meth:`!unittest.TestProgram.usageExit` (:gh:`67048`)
 * :class:`!webbrowser.MacOSX` (:gh:`86421`)
 * :class:`classmethod` descriptor chaining (:gh:`89519`)
-* :mod:`importlib.resources` deprecated methods:
-
-  * ``contents()``
-  * ``is_resource()``
-  * ``open_binary()``
-  * ``open_text()``
-  * ``path()``
-  * ``read_binary()``
-  * ``read_text()``
-
-  Use :func:`importlib.resources.files` instead.  Refer to `importlib-resources: Migrating from Legacy
-  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_ (:gh:`106531`)

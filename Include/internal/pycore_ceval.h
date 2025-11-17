@@ -217,7 +217,11 @@ extern void _PyEval_DeactivateOpCache(void);
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+#if _Py_STACK_GROWS_DOWN
     return here_addr < _tstate->c_stack_soft_limit;
+#else
+    return here_addr > _tstate->c_stack_soft_limit;
+#endif
 }
 
 // Export for '_json' shared extension, used via _Py_EnterRecursiveCall()
@@ -249,7 +253,11 @@ static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     assert(_tstate->c_stack_hard_limit != 0);
+#if _Py_STACK_GROWS_DOWN
     return here_addr <= _tstate->c_stack_soft_limit;
+#else
+    return here_addr >= _tstate->c_stack_soft_limit;
+#endif
 }
 
 static inline void _Py_LeaveRecursiveCall(void)  {
