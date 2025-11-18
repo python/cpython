@@ -339,22 +339,18 @@ class LiveStatsCollector(Collector):
                 self.display.refresh()
                 return
 
+            # Setup colors and initialize widgets (needed for both help and normal display)
+            colors = self._setup_colors()
+            self._initialize_widgets(colors)
+
             # Show help screen if requested
             if self.show_help:
-                colors = self._setup_colors()
-                self._initialize_widgets(colors)
                 self._help_widget.render(0, width, height=height)
                 self.display.refresh()
                 return
 
             # Prepare data
             elapsed, stats_list = self._prepare_display_data(height)
-
-            # Setup colors
-            colors = self._setup_colors()
-
-            # Initialize widgets if needed
-            self._initialize_widgets(colors)
 
             # Render all sections
             self._render_display_sections(
