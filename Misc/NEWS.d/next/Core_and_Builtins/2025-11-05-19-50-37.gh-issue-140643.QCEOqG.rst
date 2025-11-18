@@ -1,3 +1,0 @@
-Add support for ``<GC>`` and ``<native>`` frames to
-:mod:`!profiling.sampling` output to denote active garbage collection and
-calls to native code.
