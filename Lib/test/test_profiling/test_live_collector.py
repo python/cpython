@@ -361,6 +361,44 @@ class TestLiveStatsCollectorSortCycle(unittest.TestCase):
         collector._cycle_sort()
         self.assertEqual(collector.sort_by, "nsamples")
 
+    def test_cycle_sort_backward_from_nsamples(self):
+        """Test cycling backward from nsamples goes to cumtime."""
+        collector = LiveStatsCollector(1000, sort_by="nsamples")
+        collector._cycle_sort(reverse=True)
+        self.assertEqual(collector.sort_by, "cumtime")
+
+    def test_cycle_sort_backward_from_cumtime(self):
+        """Test cycling backward from cumtime goes to cumul_pct."""
+        collector = LiveStatsCollector(1000, sort_by="cumtime")
+        collector._cycle_sort(reverse=True)
+        self.assertEqual(collector.sort_by, "cumul_pct")
+
+    def test_cycle_sort_backward_from_sample_pct(self):
+        """Test cycling backward from sample_pct goes to nsamples."""
+        collector = LiveStatsCollector(1000, sort_by="sample_pct")
+        collector._cycle_sort(reverse=True)
+        self.assertEqual(collector.sort_by, "nsamples")
+
+    def test_input_lowercase_s_cycles_forward(self):
+        """Test that lowercase 's' cycles forward."""
+        display = MockDisplay()
+        collector = LiveStatsCollector(1000, sort_by="nsamples", display=display)
+
+        display.simulate_input(ord("s"))
+        collector._handle_input()
+
+        self.assertEqual(collector.sort_by, "sample_pct")
+
+    def test_input_uppercase_s_cycles_backward(self):
+        """Test that uppercase 'S' cycles backward."""
+        display = MockDisplay()
+        collector = LiveStatsCollector(1000, sort_by="nsamples", display=display)
+
+        display.simulate_input(ord("S"))
+        collector._handle_input()
+
+        self.assertEqual(collector.sort_by, "cumtime")
+
 
 class TestLiveStatsCollectorFormatting(unittest.TestCase):
     """Tests for formatting methods."""
@@ -780,7 +818,7 @@ class TestLiveStatsCollectorCursesIntegration(unittest.TestCase):
         self.assertEqual(collector.sort_by, "sample_pct")
 
     def test_handle_input_cycle_sort_uppercase(self):
-        """Test handling 'S' key to cycle sort."""
+        """Test handling 'S' key to cycle sort backward."""
         mock_display = MockDisplay()
         mock_display.simulate_input(ord("S"))
         collector = LiveStatsCollector(
@@ -788,7 +826,7 @@ class TestLiveStatsCollectorCursesIntegration(unittest.TestCase):
         )
 
         collector._handle_input()
-        self.assertEqual(collector.sort_by, "sample_pct")
+        self.assertEqual(collector.sort_by, "cumtime")
 
     def test_handle_input_no_key(self):
         """Test handling when no key is pressed."""
