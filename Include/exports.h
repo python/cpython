@@ -25,7 +25,6 @@
 #       define HAVE_DECLSPEC_DLL
 #endif
 
-
 #if defined(_WIN32) || defined(__CYGWIN__)
     #if defined(Py_ENABLE_SHARED)
         #define Py_IMPORTED_SYMBOL __declspec(dllimport)
