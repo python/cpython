@@ -3232,6 +3232,37 @@ def test_pdb_issue_gh_127321():
     """
 
 
+def test_pdb_issue_gh_136057():
+    """See GH-136057
+    "step" and "next" commands should be able to get over list comprehensions
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     lst = [i for i in range(10)]
+    ...     for i in lst: pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'next',
+    ...     'next',
+    ...     'step',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(3)test_function()
+    -> lst = [i for i in range(10)]
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(4)test_function()
+    -> for i in lst: pass
+    (Pdb) step
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(4)test_function()->None
+    -> for i in lst: pass
+    (Pdb) continue
+    """
+
+
 def test_pdb_issue_gh_80731():
     """See GH-80731
 
@@ -3974,7 +4005,10 @@ def bœr():
         commands = """
             continue
         """
-        self._run_pdb(["calendar", "-m"], commands, expected_returncode=2)
+        self._run_pdb(["calendar", "-m"], commands, expected_returncode=1)
+
+        _, stderr = self._run_pdb(["-m", "calendar", "-p", "1"], commands)
+        self.assertIn("unrecognized arguments: -p", stderr)
 
         stdout, _ = self._run_pdb(["-m", "calendar", "1"], commands)
         self.assertIn("December", stdout)
@@ -4687,6 +4721,28 @@ class PdbTestInline(unittest.TestCase):
         """
         stdout, _ = self._run_script(script, commands)
         self.assertIn("42", stdout)
+
+    def test_readline_not_imported(self):
+        """GH-138860
+        Directly or indirectly importing readline might deadlock a subprocess
+        if it's launched with process_group=0 or preexec_fn=setpgrp
+
+        It's also a pattern that readline is never imported with just import pdb.
+
+        This test is to ensure that readline is not imported for import pdb.
+        It's possible that we have a good reason to do that in the future.
+        """
+
+        script = textwrap.dedent("""
+            import sys
+            import pdb
+            if "readline" in sys.modules:
+                print("readline imported")
+        """)
+        commands = ""
+        stdout, stderr = self._run_script(script, commands)
+        self.assertNotIn("readline imported", stdout)
+        self.assertEqual(stderr, "")
 
 
 @support.force_colorized_test_class

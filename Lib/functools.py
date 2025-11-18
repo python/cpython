@@ -1083,7 +1083,10 @@ class _singledispatchmethod_get:
                                'singledispatchmethod method')
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-        return self._dispatch(args[0].__class__).__get__(self._obj, self._cls)(*args, **kwargs)
+        method = self._dispatch(args[0].__class__)
+        if hasattr(method, "__get__"):
+            method = method.__get__(self._obj, self._cls)
+        return method(*args, **kwargs)
 
     def __getattr__(self, name):
         # Resolve these attributes lazily to speed up creation of
