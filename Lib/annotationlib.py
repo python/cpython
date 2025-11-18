@@ -759,6 +759,9 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # reconstruct the source. But in the dictionary that we eventually return, we
         # want to return objects with more user-friendly behavior, such as an __eq__
         # that returns a bool and an defined set of attributes.
+
+        # Grab and store all the annotate function attributes that we might need to access
+        # multiple times as variables, as this could be a bit expensive for non-functions.
         annotate_globals = _get_annotate_attr(annotate, "__globals__", {})
         annotate_code = _get_annotate_attr(annotate, "__code__", None)
         annotate_defaults = _get_annotate_attr(annotate, "__defaults__", None)
@@ -929,6 +932,8 @@ def _get_annotate_attr(annotate, attr, default):
     if (unwrapped := getattr(annotate, "__wrapped__", None)) is not None:
         return _get_annotate_attr(unwrapped, attr, default)
 
+    # Partial functions and methods both store their underlying function as a
+    # func attribute. They can wrap any callable, so we need to recursively unwrap.
     if (
         (functools := sys.modules.get("functools", None))
         and isinstance(annotate, functools.partial)
@@ -1004,9 +1009,10 @@ def _direct_call_annotate(func, annotate, *args):
                 return functools.partial(func, self, *annotate.args, **annotate.keywords)(*args)
             return functools.partial(func, *annotate.args, **annotate.keywords)(*args)
 
-    # If annotate is a cached function, we've now updated the function data, so
-    # let's not use the old cache. Furthermore, we're about to call the function
-    # and never use it again, so let's not bother trying to cache it.
+        # If annotate is a cached function, we've now updated the function data, so
+        # let's not use the old cache. Furthermore, we're about to call the function
+        # and never use it again, so let's not bother trying to cache it.
+
     # Or, if it's a normal function or unsupported callable, we should just call it.
     return func(*args)
 
