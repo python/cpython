@@ -64,6 +64,8 @@ class DummyProcess(threading.Thread):
 Process = DummyProcess
 current_process = threading.current_thread
 current_process()._children = weakref.WeakKeyDictionary()
+main_process = threading.main_thread
+
 
 def active_children():
     children = current_process()._children
