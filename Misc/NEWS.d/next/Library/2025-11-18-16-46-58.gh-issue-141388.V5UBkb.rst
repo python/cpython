@@ -1,0 +1,1 @@
+Support arbitrary callables as annotate functions.
