@@ -411,7 +411,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
                     "-v",
                     "--output=/tmp/out",
                     "positional",
-                )
+                ),
+                suppress_output=False
             )
 
     def test_cli_collapsed_format_validation(self):
