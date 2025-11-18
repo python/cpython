@@ -1732,7 +1732,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
         # This wouldn't happen on a normal class, but it's technically legal.
         # Ensure that methods (which are special-cased) can wrap class construction
         # (which is also special-cased).
-        custom_method = types.MethodType(Annotate, Annotate(None, Format.VALUE))
+        custom_method = types.MethodType(Annotate, Annotate)
 
         annotations = annotationlib.call_annotate_function(
             custom_method,
@@ -1815,7 +1815,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
         class Annotate[T]:
             def __init__(self, format, /, __Format=Format,
                          __NotImplementedError=NotImplementedError):
-                if format == __Format.VALUE:
+                if format == __Format.VALUE_WITH_FAKE_GLOBALS:
                     self.data = {"x": int}
                 else:
                     raise __NotImplementedError(format)
