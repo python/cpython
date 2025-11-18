@@ -383,8 +383,8 @@ The following functions and structs are used to create
 
    The *bases* argument can be used to specify base classes; it can either
    be only one class or a tuple of classes.
-   If *bases* is ``NULL``, the *Py_tp_bases* slot is used instead.
-   If that also is ``NULL``, the *Py_tp_base* slot is used instead.
+   If *bases* is ``NULL``, the :c:data:`Py_tp_bases` slot is used instead.
+   If that also is ``NULL``, the :c:data:`Py_tp_base` slot is used instead.
    If that also is ``NULL``, the new type derives from :class:`object`.
 
    The *module* argument can be used to record the module in which the new
@@ -590,9 +590,9 @@ The following functions and structs are used to create
       :c:type:`PyAsyncMethods` with an added ``Py_`` prefix.
       For example, use:
 
-      * ``Py_tp_dealloc`` to set :c:member:`PyTypeObject.tp_dealloc`
-      * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
-      * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
+      * :c:data:`Py_tp_dealloc` to set :c:member:`PyTypeObject.tp_dealloc`
+      * :c:data:`Py_nb_add` to set :c:member:`PyNumberMethods.nb_add`
+      * :c:data:`Py_sq_length` to set :c:member:`PySequenceMethods.sq_length`
 
       An additional slot is supported that does not correspond to a
       :c:type:`!PyTypeObject` struct field:
@@ -611,7 +611,7 @@ The following functions and structs are used to create
 
       If it is not possible to switch to a ``MANAGED`` flag (for example,
       for vectorcall or to support Python older than 3.12), specify the
-      offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
+      offset in :c:data:`Py_tp_members`.
       See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
       for details.
 
@@ -639,7 +639,7 @@ The following functions and structs are used to create
 
       .. versionchanged:: 3.14
          The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
-         using ``Py_tp_vectorcall``.  See the field's documentation
+         using :c:data:`Py_tp_vectorcall`.  See the field's documentation
          for details.
 
    .. c:member:: void *pfunc
@@ -649,7 +649,7 @@ The following functions and structs are used to create
 
       *pfunc* values may not be ``NULL``, except for the following slots:
 
-      * ``Py_tp_doc``
+      * :c:data:`Py_tp_doc`
       * :c:data:`Py_tp_token` (for clarity, prefer :c:data:`Py_TP_USE_SPEC`
         rather than ``NULL``)
 
