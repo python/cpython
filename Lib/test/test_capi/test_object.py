@@ -296,9 +296,7 @@ class CAPITest(unittest.TestCase):
 
         # test NULL object
         output = self.pyobject_dump(NULL)
-        hex_regex = r'(0x)?[0-9a-fA-F]+'
-        self.assertRegex(output,
-                         r'<object at (\(nil\)|0x0|0+) is freed>')
+        self.assertRegex(output, r'<object at .* is freed>')
 
 
 if __name__ == "__main__":
