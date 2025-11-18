@@ -8,6 +8,7 @@ import site
 import sys
 import sysconfig
 import time
+import _colorize
 
 from ..collector import Collector
 from ..constants import (
@@ -119,6 +120,9 @@ class LiveStatsCollector(Collector):
         self._table_widget = None
         self._footer_widget = None
         self._help_widget = None
+
+        # Color mode
+        self._can_colorize = _colorize.can_colorize()
 
     def _get_common_path_prefixes(self):
         """Get common path prefixes to strip from file paths."""
@@ -373,8 +377,12 @@ class LiveStatsCollector(Collector):
         except Exception:
             pass
 
-    def _cycle_sort(self):
-        """Cycle through different sort modes in column order (left to right)."""
+    def _cycle_sort(self, reverse=False):
+        """Cycle through different sort modes in column order.
+
+        Args:
+            reverse: If True, cycle backwards (right to left), otherwise forward (left to right)
+        """
         sort_modes = [
             "nsamples",
             "sample_pct",
@@ -384,18 +392,23 @@ class LiveStatsCollector(Collector):
         ]
         try:
             current_idx = sort_modes.index(self.sort_by)
-            self.sort_by = sort_modes[(current_idx + 1) % len(sort_modes)]
+            if reverse:
+                self.sort_by = sort_modes[(current_idx - 1) % len(sort_modes)]
+            else:
+                self.sort_by = sort_modes[(current_idx + 1) % len(sort_modes)]
         except ValueError:
             self.sort_by = "nsamples"
 
     def _setup_colors(self):
         """Set up color pairs and return color attributes."""
+
         A_BOLD = self.display.get_attr("A_BOLD")
         A_REVERSE = self.display.get_attr("A_REVERSE")
         A_UNDERLINE = self.display.get_attr("A_UNDERLINE")
         A_NORMAL = self.display.get_attr("A_NORMAL")
 
-        if self.display.has_colors():
+        # Check both curses color support and _colorize.can_colorize()
+        if self.display.has_colors() and self._can_colorize:
             with contextlib.suppress(Exception):
                 # Color constants (using curses values for compatibility)
                 COLOR_CYAN = 6
@@ -685,8 +698,11 @@ class LiveStatsCollector(Collector):
         if ch == ord("q") or ch == ord("Q"):
             self.running = False
 
-        elif ch == ord("s") or ch == ord("S"):
-            self._cycle_sort()
+        elif ch == ord("s"):
+            self._cycle_sort(reverse=False)
+
+        elif ch == ord("S"):
+            self._cycle_sort(reverse=True)
 
         elif ch == ord("h") or ch == ord("H") or ch == ord("?"):
             self.show_help = not self.show_help
