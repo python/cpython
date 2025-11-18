@@ -2692,6 +2692,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_pathlib/support \
 		test/test_peg_generator \
 		test/test_profiling \
+		test/test_profiling/test_sampling_profiler \
 		test/test_pydoc \
 		test/test_pyrepl \
 		test/test_string \
