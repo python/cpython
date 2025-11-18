@@ -210,7 +210,7 @@ except ImportError:
     ctypes = None
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
-                          gc_collect, Py_GIL_DISABLED)
+                          gc_collect, Py_GIL_DISABLED, late_deletion)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
@@ -1558,10 +1558,8 @@ if check_impl_detail(cpython=True) and ctypes is not None:
     # Make sure myfree sticks around at least as long as the interpreter,
     # since we (currently) can't unregister the function and leaving a
     # dangling pointer will cause a crash on deallocation of code objects if
-    # something else uses co_extras, like test_capi.test_misc. (Maybe this
-    # should use PyInterpreterState_GetDict, but that isn't easily exposed
-    # to Python code.)
-    setattr(sys, f'_test_code.{myfree!r}', myfree)
+    # something else uses co_extras, like test_capi.test_misc.
+    late_deletion(myfree)
 
     class CoExtra(unittest.TestCase):
         def get_func(self):
