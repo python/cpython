@@ -166,14 +166,15 @@ class IMAP4:
 
     Errors raise the exception class <instance>.error("<reason>").
     IMAP4 server errors raise <instance>.abort("<reason>"),
-    which is a sub-class of 'error'. Mailbox status changes
-    from READ-WRITE to READ-ONLY raise the exception class
-    <instance>.readonly("<reason>"), which is a sub-class of 'abort'.
+    which is a sub-class of 'error'.
+
+    When the server returns a READ-ONLY response code, the is_readonly
+    attribute is set to True. Applications should check this attribute
+    to determine mailbox access level.
 
     "error" exceptions imply a program error.
     "abort" exceptions imply the connection should be reset, and
             the command re-tried.
-    "readonly" exceptions imply the command should be re-tried.
 
     Note: to use this module, you must read the RFCs pertaining to the
     IMAP4 protocol, as the semantics of the arguments to each IMAP4
@@ -860,12 +861,8 @@ class IMAP4:
             self.state = 'AUTH'     # Might have been 'SELECTED'
             return typ, dat
         self.state = 'SELECTED'
-        if 'READ-ONLY' in self.untagged_responses \
-                and not readonly:
-            if __debug__:
-                if self.debug >= 1:
-                    self._dump_ur(self.untagged_responses)
-            raise self.readonly('%s is not writable' % mailbox)
+        if 'READ-ONLY' in self.untagged_responses:
+            self.is_readonly = True
         return typ, self.untagged_responses.get('EXISTS', [None])
 
 
@@ -1094,9 +1091,8 @@ class IMAP4:
             if typ in self.untagged_responses:
                 del self.untagged_responses[typ]
 
-        if 'READ-ONLY' in self.untagged_responses \
-        and not self.is_readonly:
-            raise self.readonly('mailbox status changed to READ-ONLY')
+        if 'READ-ONLY' in self.untagged_responses:
+            self.is_readonly = True
 
         tag = self._new_tag()
         name = bytes(name, self._encoding)
