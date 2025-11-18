@@ -3,17 +3,14 @@
 Tests for interactive controls, filtering, filter input, and thread navigation.
 """
 
-import os
-import sys
 import time
 import unittest
-from unittest import mock
 from test.support import requires
 from test.support.import_helper import import_module
 
 # Only run these tests if curses is available
-requires('curses')
-curses = import_module('curses')
+requires("curses")
+curses = import_module("curses")
 
 from profiling.sampling.live_collector import LiveStatsCollector, MockDisplay
 from profiling.sampling.constants import (
@@ -26,12 +23,14 @@ from ._live_collector_helpers import (
     MockInterpreterInfo,
 )
 
+
 class TestLiveCollectorInteractiveControls(unittest.TestCase):
     """Tests for interactive control features."""
 
     def setUp(self):
         """Set up collector with mock display."""
         from profiling.sampling.live_collector import constants
+
         # Save and reset the display update interval
         self._saved_interval = constants.DISPLAY_UPDATE_INTERVAL
         constants.DISPLAY_UPDATE_INTERVAL = 0.1
@@ -45,6 +44,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
     def tearDown(self):
         """Restore the display update interval."""
         from profiling.sampling.live_collector import constants
+
         constants.DISPLAY_UPDATE_INTERVAL = self._saved_interval
 
     def test_pause_functionality(self):
@@ -124,9 +124,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         self.display.simulate_input(ord("+"))
         self.collector._handle_input()
 
-        self.assertLess(
-            constants.DISPLAY_UPDATE_INTERVAL, initial_interval
-        )
+        self.assertLess(constants.DISPLAY_UPDATE_INTERVAL, initial_interval)
 
     def test_decrease_refresh_rate(self):
         """Test decreasing refresh rate (slower updates)."""
@@ -138,9 +136,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         self.display.simulate_input(ord("-"))
         self.collector._handle_input()
 
-        self.assertGreater(
-            constants.DISPLAY_UPDATE_INTERVAL, initial_interval
-        )
+        self.assertGreater(constants.DISPLAY_UPDATE_INTERVAL, initial_interval)
 
     def test_refresh_rate_minimum(self):
         """Test that refresh rate has a minimum (max speed)."""
@@ -302,9 +298,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         self.display.simulate_input(ord("="))
         self.collector._handle_input()
 
-        self.assertLess(
-            constants.DISPLAY_UPDATE_INTERVAL, initial_interval
-        )
+        self.assertLess(constants.DISPLAY_UPDATE_INTERVAL, initial_interval)
 
     def test_decrease_refresh_rate_with_underscore(self):
         """Test decreasing refresh rate with '_' key."""
@@ -316,9 +310,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         self.display.simulate_input(ord("_"))
         self.collector._handle_input()
 
-        self.assertGreater(
-            constants.DISPLAY_UPDATE_INTERVAL, initial_interval
-        )
+        self.assertGreater(constants.DISPLAY_UPDATE_INTERVAL, initial_interval)
 
     def test_finished_state_displays_banner(self):
         """Test that finished state shows prominent banner."""
@@ -777,7 +769,9 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         # Navigate backward (should wrap around)
         self.mock_display.simulate_input(curses.KEY_LEFT)
         self.collector._handle_input()
-        self.assertEqual(self.collector.current_thread_index, 2)  # Wrapped to last
+        self.assertEqual(
+            self.collector.current_thread_index, 2
+        )  # Wrapped to last
 
         self.mock_display.simulate_input(curses.KEY_LEFT)
         self.collector._handle_input()
@@ -903,6 +897,256 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         # Each function should have 1 direct call
         for func_location, counts in self.collector.result.items():
             self.assertEqual(counts["direct_calls"], 1)
+
+    def test_per_thread_status_tracking(self):
+        """Test that per-thread status statistics are tracked."""
+        # Each thread should have status counts
+        self.assertIn(111, self.collector.per_thread_status)
+        self.assertIn(222, self.collector.per_thread_status)
+        self.assertIn(333, self.collector.per_thread_status)
+
+        # Each thread should have the expected keys
+        for thread_id in [111, 222, 333]:
+            status = self.collector.per_thread_status[thread_id]
+            self.assertIn("has_gil", status)
+            self.assertIn("on_cpu", status)
+            self.assertIn("gil_requested", status)
+            self.assertIn("unknown", status)
+            self.assertIn("total", status)
+            # Each thread was sampled once
+            self.assertEqual(status["total"], 1)
+
+    def test_reset_stats_clears_thread_status(self):
+        """Test that reset_stats clears per-thread status data."""
+        self.assertGreater(len(self.collector.per_thread_status), 0)
+
+        self.collector.reset_stats()
+
+        self.assertEqual(len(self.collector.per_thread_status), 0)
+
+    def test_per_thread_sample_counts(self):
+        """Test that per-thread sample counts are tracked correctly."""
+        # Each thread should have exactly 1 sample (we collected once)
+        for thread_id in [111, 222, 333]:
+            self.assertIn(thread_id, self.collector.per_thread_samples)
+            self.assertEqual(self.collector.per_thread_samples[thread_id], 1)
+
+    def test_per_thread_gc_samples(self):
+        """Test that per-thread GC samples are tracked correctly."""
+        # Initially no threads have GC frames
+        for thread_id in [111, 222, 333]:
+            self.assertIn(thread_id, self.collector.per_thread_gc_samples)
+            self.assertEqual(
+                self.collector.per_thread_gc_samples[thread_id], 0
+            )
+
+        # Now collect a sample with a GC frame in thread 222
+        gc_frames = [MockFrameInfo("gc.py", 100, "gc_collect")]
+        thread_with_gc = MockThreadInfo(222, gc_frames)
+        interpreter_info = MockInterpreterInfo(0, [thread_with_gc])
+        stack_frames = [interpreter_info]
+
+        self.collector.collect(stack_frames)
+
+        # Thread 222 should now have 1 GC sample
+        self.assertEqual(self.collector.per_thread_gc_samples[222], 1)
+        # Other threads should still have 0
+        self.assertEqual(self.collector.per_thread_gc_samples[111], 0)
+        self.assertEqual(self.collector.per_thread_gc_samples[333], 0)
+
+    def test_only_threads_with_frames_are_tracked(self):
+        """Test that only threads with actual frame data are added to thread_ids."""
+        # Create a new collector
+        collector = LiveStatsCollector(1000, display=MockDisplay())
+
+        # Create threads: one with frames, one without
+        frames = [MockFrameInfo("test.py", 10, "test_func")]
+        thread_with_frames = MockThreadInfo(111, frames)
+        thread_without_frames = MockThreadInfo(222, None)  # No frames
+        interpreter_info = MockInterpreterInfo(
+            0, [thread_with_frames, thread_without_frames]
+        )
+        stack_frames = [interpreter_info]
+
+        collector.collect(stack_frames)
+
+        # Only thread 111 should be tracked (it has frames)
+        self.assertIn(111, collector.thread_ids)
+        self.assertNotIn(222, collector.thread_ids)
+
+    def test_per_thread_status_isolation(self):
+        """Test that per-thread status counts are isolated per thread."""
+        # Create threads with different status flags
+
+        frames1 = [MockFrameInfo("file1.py", 10, "func1")]
+        frames2 = [MockFrameInfo("file2.py", 20, "func2")]
+
+        # Thread 444: has GIL but not on CPU
+        thread1 = MockThreadInfo(444, frames1, status=THREAD_STATUS_HAS_GIL)
+        # Thread 555: on CPU but not has GIL
+        thread2 = MockThreadInfo(555, frames2, status=THREAD_STATUS_ON_CPU)
+
+        interpreter_info = MockInterpreterInfo(0, [thread1, thread2])
+        stack_frames = [interpreter_info]
+
+        collector = LiveStatsCollector(1000, display=MockDisplay())
+        collector.collect(stack_frames)
+
+        # Check thread 444 status
+        self.assertEqual(collector.per_thread_status[444]["has_gil"], 1)
+        self.assertEqual(collector.per_thread_status[444]["on_cpu"], 0)
+
+        # Check thread 555 status
+        self.assertEqual(collector.per_thread_status[555]["has_gil"], 0)
+        self.assertEqual(collector.per_thread_status[555]["on_cpu"], 1)
+
+    def test_display_uses_per_thread_stats_in_per_thread_mode(self):
+        """Test that display widget uses per-thread stats when in PER_THREAD mode."""
+
+        # Create collector with mock display
+        collector = LiveStatsCollector(1000, display=MockDisplay())
+        collector.start_time = time.perf_counter()
+
+        # Create 2 threads with different characteristics
+        # Thread 111: always has GIL (10 samples)
+        # Thread 222: never has GIL (10 samples)
+        for _ in range(10):
+            frames1 = [MockFrameInfo("file1.py", 10, "func1")]
+            frames2 = [MockFrameInfo("file2.py", 20, "func2")]
+            thread1 = MockThreadInfo(
+                111, frames1, status=THREAD_STATUS_HAS_GIL
+            )
+            thread2 = MockThreadInfo(222, frames2, status=0)  # No flags
+            interpreter_info = MockInterpreterInfo(0, [thread1, thread2])
+            collector.collect([interpreter_info])
+
+        # In ALL mode, should show mixed stats (50% on GIL, 50% off GIL)
+        self.assertEqual(collector.view_mode, "ALL")
+        total_has_gil = collector._thread_status_counts["has_gil"]
+        total_threads = collector._thread_status_counts["total"]
+        self.assertEqual(total_has_gil, 10)  # Only thread 111 has GIL
+        self.assertEqual(total_threads, 20)  # 10 samples * 2 threads
+
+        # Switch to PER_THREAD mode and select thread 111
+        collector.view_mode = "PER_THREAD"
+        collector.current_thread_index = 0  # Thread 111
+
+        # Thread 111 should show 100% on GIL
+        thread_111_status = collector.per_thread_status[111]
+        self.assertEqual(thread_111_status["has_gil"], 10)
+        self.assertEqual(thread_111_status["total"], 10)
+
+        # Switch to thread 222
+        collector.current_thread_index = 1  # Thread 222
+
+        # Thread 222 should show 0% on GIL
+        thread_222_status = collector.per_thread_status[222]
+        self.assertEqual(thread_222_status["has_gil"], 0)
+        self.assertEqual(thread_222_status["total"], 10)
+
+    def test_display_uses_per_thread_gc_stats_in_per_thread_mode(self):
+        """Test that GC percentage uses per-thread data in PER_THREAD mode."""
+        # Create collector with mock display
+        collector = LiveStatsCollector(1000, display=MockDisplay())
+        collector.start_time = time.perf_counter()
+
+        # Thread 111: 5 samples, 2 with GC
+        # Thread 222: 5 samples, 0 with GC
+        for i in range(5):
+            if i < 2:
+                # First 2 samples for thread 111 have GC
+                frames1 = [MockFrameInfo("gc.py", 100, "gc_collect")]
+            else:
+                frames1 = [MockFrameInfo("file1.py", 10, "func1")]
+
+            frames2 = [MockFrameInfo("file2.py", 20, "func2")]  # No GC
+
+            thread1 = MockThreadInfo(111, frames1)
+            thread2 = MockThreadInfo(222, frames2)
+            interpreter_info = MockInterpreterInfo(0, [thread1, thread2])
+            collector.collect([interpreter_info])
+
+        # Check aggregated GC stats (ALL mode)
+        # 2 GC samples out of 10 total = 20%
+        self.assertEqual(collector._gc_frame_samples, 2)
+        self.assertEqual(collector.total_samples, 5)  # 5 collect() calls
+
+        # Check per-thread GC stats
+        # Thread 111: 2 GC samples out of 5 = 40%
+        self.assertEqual(collector.per_thread_gc_samples[111], 2)
+        self.assertEqual(collector.per_thread_samples[111], 5)
+
+        # Thread 222: 0 GC samples out of 5 = 0%
+        self.assertEqual(collector.per_thread_gc_samples[222], 0)
+        self.assertEqual(collector.per_thread_samples[222], 5)
+
+        # Now verify the display would use the correct stats
+        collector.view_mode = "PER_THREAD"
+
+        # For thread 111
+        collector.current_thread_index = 0
+        thread_id = collector.thread_ids[0]
+        self.assertEqual(thread_id, 111)
+        thread_gc_pct = (
+            collector.per_thread_gc_samples[111]
+            / collector.per_thread_samples[111]
+        ) * 100
+        self.assertEqual(thread_gc_pct, 40.0)
+
+        # For thread 222
+        collector.current_thread_index = 1
+        thread_id = collector.thread_ids[1]
+        self.assertEqual(thread_id, 222)
+        thread_gc_pct = (
+            collector.per_thread_gc_samples[222]
+            / collector.per_thread_samples[222]
+        ) * 100
+        self.assertEqual(thread_gc_pct, 0.0)
+
+    def test_function_counts_are_per_thread_in_per_thread_mode(self):
+        """Test that function counts (total/exec/stack) are per-thread in PER_THREAD mode."""
+        # Create collector with mock display
+        collector = LiveStatsCollector(1000, display=MockDisplay())
+        collector.start_time = time.perf_counter()
+
+        # Thread 111: calls func1, func2, func3 (3 functions)
+        # Thread 222: calls func4, func5 (2 functions)
+        frames1 = [
+            MockFrameInfo("file1.py", 10, "func1"),
+            MockFrameInfo("file1.py", 20, "func2"),
+            MockFrameInfo("file1.py", 30, "func3"),
+        ]
+        frames2 = [
+            MockFrameInfo("file2.py", 40, "func4"),
+            MockFrameInfo("file2.py", 50, "func5"),
+        ]
+
+        thread1 = MockThreadInfo(111, frames1)
+        thread2 = MockThreadInfo(222, frames2)
+        interpreter_info = MockInterpreterInfo(0, [thread1, thread2])
+        collector.collect([interpreter_info])
+
+        # In ALL mode, should have 5 total functions
+        self.assertEqual(len(collector.result), 5)
+
+        # In PER_THREAD mode for thread 111, should have 3 functions
+        collector.view_mode = "PER_THREAD"
+        collector.current_thread_index = 0  # Thread 111
+        thread_111_result = collector.per_thread_result[111]
+        self.assertEqual(len(thread_111_result), 3)
+
+        # Verify the functions are the right ones
+        thread_111_funcs = {loc[2] for loc in thread_111_result.keys()}
+        self.assertEqual(thread_111_funcs, {"func1", "func2", "func3"})
+
+        # In PER_THREAD mode for thread 222, should have 2 functions
+        collector.current_thread_index = 1  # Thread 222
+        thread_222_result = collector.per_thread_result[222]
+        self.assertEqual(len(thread_222_result), 2)
+
+        # Verify the functions are the right ones
+        thread_222_funcs = {loc[2] for loc in thread_222_result.keys()}
+        self.assertEqual(thread_222_funcs, {"func4", "func5"})
 
 
 if __name__ == "__main__":

@@ -96,11 +96,11 @@ class LiveStatsCollector(Collector):
 
         # Thread status statistics (bit flags)
         self._thread_status_counts = {
-            'has_gil': 0,
-            'on_cpu': 0,
-            'gil_requested': 0,
-            'unknown': 0,
-            'total': 0,  # Total thread count across all samples
+            "has_gil": 0,
+            "on_cpu": 0,
+            "gil_requested": 0,
+            "unknown": 0,
+            "total": 0,  # Total thread count across all samples
         }
         self._gc_frame_samples = 0  # Track samples with GC frames
 
@@ -111,6 +111,17 @@ class LiveStatsCollector(Collector):
         self.filter_input_mode = False  # Currently entering filter text
         self.filter_input_buffer = ""  # Buffer for filter input
         self.finished = False  # Program has finished, showing final state
+
+        # Thread tracking state
+        self.thread_ids = []  # List of thread IDs seen
+        self.view_mode = "ALL"  # "ALL" or "PER_THREAD"
+        self.current_thread_index = (
+            0  # Index into thread_ids when in PER_THREAD mode
+        )
+        self.per_thread_result = {}  # {thread_id: {func: {direct_calls, cumulative_calls}}}
+        self.per_thread_status = {}  # {thread_id: {has_gil: count, on_cpu: count, ...}}
+        self.per_thread_samples = {}  # {thread_id: sample_count}
+        self.per_thread_gc_samples = {}  # {thread_id: gc_frame_sample_count}
 
         # Calculate common path prefixes to strip
         self._path_prefixes = self._get_common_path_prefixes()
@@ -173,8 +184,13 @@ class LiveStatsCollector(Collector):
         # If no match, return the original path
         return filepath
 
-    def _process_frames(self, frames):
-        """Process a single thread's frame stack."""
+    def _process_frames(self, frames, thread_id=None):
+        """Process a single thread's frame stack.
+
+        Args:
+            frames: List of frame information
+            thread_id: Thread ID for per-thread tracking (optional)
+        """
         if not frames:
             return
 
@@ -183,6 +199,18 @@ class LiveStatsCollector(Collector):
             location = (frame.filename, frame.lineno, frame.funcname)
             self.result[location]["cumulative_calls"] += 1
 
+            # Also track per-thread if thread_id is provided
+            if thread_id is not None:
+                if thread_id not in self.per_thread_result:
+                    self.per_thread_result[thread_id] = (
+                        collections.defaultdict(
+                            lambda: dict(direct_calls=0, cumulative_calls=0)
+                        )
+                    )
+                self.per_thread_result[thread_id][location][
+                    "cumulative_calls"
+                ] += 1
+
         # The top frame gets counted as an inline call (directly executing)
         top_location = (
             frames[0].filename,
@@ -190,6 +218,16 @@ class LiveStatsCollector(Collector):
             frames[0].funcname,
         )
         self.result[top_location]["direct_calls"] += 1
+
+        # Also track per-thread
+        if thread_id is not None:
+            if thread_id not in self.per_thread_result:
+                self.per_thread_result[thread_id] = collections.defaultdict(
+                    lambda: dict(direct_calls=0, cumulative_calls=0)
+                )
+            self.per_thread_result[thread_id][top_location][
+                "direct_calls"
+            ] += 1
 
     def collect_failed_sample(self):
         self._failed_samples += 1
@@ -203,32 +241,66 @@ class LiveStatsCollector(Collector):
 
         # Thread status counts for this sample
         temp_status_counts = {
-            'has_gil': 0,
-            'on_cpu': 0,
-            'gil_requested': 0,
-            'unknown': 0,
-            'total': 0,
+            "has_gil": 0,
+            "on_cpu": 0,
+            "gil_requested": 0,
+            "unknown": 0,
+            "total": 0,
         }
         has_gc_frame = False
 
         # Always collect data, even when paused
         # Track thread status flags and GC frames
         for interpreter_info in stack_frames:
-            threads = getattr(interpreter_info, 'threads', [])
+            threads = getattr(interpreter_info, "threads", [])
             for thread_info in threads:
-                temp_status_counts['total'] += 1
+                temp_status_counts["total"] += 1
 
                 # Track thread status using bit flags
-                status_flags = getattr(thread_info, 'status', 0)
+                status_flags = getattr(thread_info, "status", 0)
+                thread_id = getattr(thread_info, "thread_id", None)
 
+                # Initialize per-thread status tracking
+                if (
+                    thread_id is not None
+                    and thread_id not in self.per_thread_status
+                ):
+                    self.per_thread_status[thread_id] = {
+                        "has_gil": 0,
+                        "on_cpu": 0,
+                        "gil_requested": 0,
+                        "unknown": 0,
+                        "total": 0,
+                    }
+
+                # Update aggregated counts
                 if status_flags & THREAD_STATUS_HAS_GIL:
-                    temp_status_counts['has_gil'] += 1
+                    temp_status_counts["has_gil"] += 1
+                    if thread_id is not None:
+                        self.per_thread_status[thread_id]["has_gil"] += 1
                 if status_flags & THREAD_STATUS_ON_CPU:
-                    temp_status_counts['on_cpu'] += 1
+                    temp_status_counts["on_cpu"] += 1
+                    if thread_id is not None:
+                        self.per_thread_status[thread_id]["on_cpu"] += 1
                 if status_flags & THREAD_STATUS_GIL_REQUESTED:
-                    temp_status_counts['gil_requested'] += 1
+                    temp_status_counts["gil_requested"] += 1
+                    if thread_id is not None:
+                        self.per_thread_status[thread_id]["gil_requested"] += 1
                 if status_flags & THREAD_STATUS_UNKNOWN:
-                    temp_status_counts['unknown'] += 1
+                    temp_status_counts["unknown"] += 1
+                    if thread_id is not None:
+                        self.per_thread_status[thread_id]["unknown"] += 1
+
+                # Update per-thread total count
+                if thread_id is not None:
+                    self.per_thread_status[thread_id]["total"] += 1
+
+                # Initialize per-thread sample tracking
+                if thread_id is not None:
+                    if thread_id not in self.per_thread_samples:
+                        self.per_thread_samples[thread_id] = 0
+                    if thread_id not in self.per_thread_gc_samples:
+                        self.per_thread_gc_samples[thread_id] = 0
 
                 # Process frames (respecting skip_idle)
                 if self.skip_idle:
@@ -237,15 +309,33 @@ class LiveStatsCollector(Collector):
                     if not (has_gil or on_cpu):
                         continue
 
-                frames = getattr(thread_info, 'frame_info', None)
+                frames = getattr(thread_info, "frame_info", None)
                 if frames:
-                    self._process_frames(frames)
+                    self._process_frames(frames, thread_id=thread_id)
+
+                    # Track thread IDs only for threads that actually have samples
+                    if (
+                        thread_id is not None
+                        and thread_id not in self.thread_ids
+                    ):
+                        self.thread_ids.append(thread_id)
+
+                    # Increment per-thread sample count
+                    if thread_id is not None:
+                        self.per_thread_samples[thread_id] += 1
+
                     # Check if any frame is in GC
+                    thread_has_gc_frame = False
                     for frame in frames:
-                        funcname = getattr(frame, 'funcname', '')
-                        if '<GC>' in funcname or 'gc_collect' in funcname:
+                        funcname = getattr(frame, "funcname", "")
+                        if "<GC>" in funcname or "gc_collect" in funcname:
                             has_gc_frame = True
+                            thread_has_gc_frame = True
                             break
+
+                    # Track per-thread GC samples
+                    if thread_has_gc_frame and thread_id is not None:
+                        self.per_thread_gc_samples[thread_id] += 1
 
         # Update cumulative thread status counts
         for key, count in temp_status_counts.items():
@@ -483,7 +573,20 @@ class LiveStatsCollector(Collector):
     def _build_stats_list(self):
         """Build and sort the statistics list."""
         stats_list = []
-        for func, call_counts in self.result.items():
+
+        # Determine which data source to use based on view mode
+        if self.view_mode == "ALL":
+            # ALL threads - use aggregated result
+            result_source = self.result
+        else:
+            # PER_THREAD mode - use specific thread result
+            if self.current_thread_index < len(self.thread_ids):
+                thread_id = self.thread_ids[self.current_thread_index]
+                result_source = self.per_thread_result.get(thread_id, {})
+            else:
+                result_source = self.result
+
+        for func, call_counts in result_source.items():
             # Apply filter if set (using substring matching)
             if self.filter_pattern:
                 filename, lineno, funcname = func
@@ -501,8 +604,8 @@ class LiveStatsCollector(Collector):
                 if not matched:
                     continue
 
-            direct_calls = call_counts["direct_calls"]
-            cumulative_calls = call_counts["cumulative_calls"]
+            direct_calls = call_counts.get("direct_calls", 0)
+            cumulative_calls = call_counts.get("cumulative_calls", 0)
             total_time = direct_calls * self.sample_interval_sec
             cumulative_time = cumulative_calls * self.sample_interval_sec
 
@@ -545,16 +648,23 @@ class LiveStatsCollector(Collector):
     def reset_stats(self):
         """Reset all collected statistics."""
         self.result.clear()
+        self.per_thread_result.clear()
+        self.per_thread_status.clear()
+        self.per_thread_samples.clear()
+        self.per_thread_gc_samples.clear()
+        self.thread_ids.clear()
+        self.view_mode = "ALL"
+        self.current_thread_index = 0
         self.total_samples = 0
         self._successful_samples = 0
         self._failed_samples = 0
         self._max_sample_rate = 0
         self._thread_status_counts = {
-            'has_gil': 0,
-            'on_cpu': 0,
-            'gil_requested': 0,
-            'unknown': 0,
-            'total': 0,
+            "has_gil": 0,
+            "on_cpu": 0,
+            "gil_requested": 0,
+            "unknown": 0,
+            "total": 0,
         }
         self._gc_frame_samples = 0
         self.start_time = time.perf_counter()
@@ -718,7 +828,9 @@ class LiveStatsCollector(Collector):
 
         elif ch == ord("-") or ch == ord("_"):
             # Increase update interval (slower refresh)
-            new_interval = min(1.0, constants.DISPLAY_UPDATE_INTERVAL + 0.05)  # Max 1Hz
+            new_interval = min(
+                1.0, constants.DISPLAY_UPDATE_INTERVAL + 0.05
+            )  # Max 1Hz
             constants.DISPLAY_UPDATE_INTERVAL = new_interval
 
         elif ch == ord("c") or ch == ord("C"):
@@ -728,6 +840,29 @@ class LiveStatsCollector(Collector):
         elif ch == ord("/"):
             self.filter_input_mode = True
             self.filter_input_buffer = self.filter_pattern or ""
+
+        elif ch == ord("t") or ch == ord("T"):
+            # Toggle between ALL and PER_THREAD modes
+            if self.view_mode == "ALL":
+                if len(self.thread_ids) > 0:
+                    self.view_mode = "PER_THREAD"
+                    self.current_thread_index = 0
+            else:
+                self.view_mode = "ALL"
+
+        elif ch == curses.KEY_LEFT or ch == curses.KEY_UP:
+            # Navigate to previous thread in PER_THREAD mode
+            if self.view_mode == "PER_THREAD" and len(self.thread_ids) > 0:
+                self.current_thread_index = (
+                    self.current_thread_index - 1
+                ) % len(self.thread_ids)
+
+        elif ch == curses.KEY_RIGHT or ch == curses.KEY_DOWN:
+            # Navigate to next thread in PER_THREAD mode
+            if self.view_mode == "PER_THREAD" and len(self.thread_ids) > 0:
+                self.current_thread_index = (
+                    self.current_thread_index + 1
+                ) % len(self.thread_ids)
 
     def init_curses(self, stdscr):
         """Initialize curses display and suppress stdout/stderr."""

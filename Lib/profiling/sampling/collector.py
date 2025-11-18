@@ -11,7 +11,7 @@ class Collector(ABC):
     def collect(self, stack_frames):
         """Collect profiling data from stack frames."""
 
-    def collect_failed_sample(self, exeption):
+    def collect_failed_sample(self):
         """Collect data about a failed sample attempt."""
 
     @abstractmethod

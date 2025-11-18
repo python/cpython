@@ -183,9 +183,31 @@ class HeaderWidget(Widget):
             1.0 / DISPLAY_UPDATE_INTERVAL if DISPLAY_UPDATE_INTERVAL > 0 else 0
         )
 
+        # Get current view mode and thread display
+        if self.collector.view_mode == "ALL":
+            thread_name = "ALL"
+            thread_color = self.colors["green"]
+        else:
+            # PER_THREAD mode
+            if self.collector.current_thread_index < len(
+                self.collector.thread_ids
+            ):
+                thread_id = self.collector.thread_ids[
+                    self.collector.current_thread_index
+                ]
+                num_threads = len(self.collector.thread_ids)
+                thread_name = f"{thread_id} ({self.collector.current_thread_index + 1}/{num_threads})"
+                thread_color = self.colors["magenta"]
+            else:
+                thread_name = "ALL"
+                thread_color = self.colors["green"]
+
         header_parts = [
             ("PID: ", curses.A_BOLD),
             (f"{self.collector.pid}", self.colors["cyan"]),
+            (" │ ", curses.A_DIM),
+            ("Thread: ", curses.A_BOLD),
+            (thread_name, thread_color),
             (" │ ", curses.A_DIM),
             ("Uptime: ", curses.A_BOLD),
             (uptime, self.colors["green"]),
@@ -245,7 +267,9 @@ class HeaderWidget(Widget):
         col += 23
 
         # Draw sample rate bar
-        target_rate = MICROSECONDS_PER_SECOND / self.collector.sample_interval_usec
+        target_rate = (
+            MICROSECONDS_PER_SECOND / self.collector.sample_interval_usec
+        )
 
         # Show current/target ratio with percentage
         if sample_rate > 0 and target_rate > 0:
@@ -326,7 +350,9 @@ class HeaderWidget(Widget):
             self.add_str(line, col + 1, label, curses.A_NORMAL)
         return line + 1
 
-    def _add_percentage_stat(self, line, col, value, label, color, add_separator=False):
+    def _add_percentage_stat(
+        self, line, col, value, label, color, add_separator=False
+    ):
         """Add a percentage stat to the display.
 
         Args:
@@ -353,14 +379,63 @@ class HeaderWidget(Widget):
 
     def draw_thread_status(self, line, width):
         """Draw thread status statistics and GC information."""
-        # Calculate percentages
-        total_threads = max(1, self.collector._thread_status_counts['total'])
-        pct_on_gil = (self.collector._thread_status_counts['has_gil'] / total_threads) * 100
-        pct_off_gil = 100.0 - pct_on_gil
-        pct_gil_requested = (self.collector._thread_status_counts['gil_requested'] / total_threads) * 100
+        # Determine which status counts to use based on view mode
+        if (
+            self.collector.view_mode == "PER_THREAD"
+            and len(self.collector.thread_ids) > 0
+        ):
+            # Use per-thread stats for the selected thread
+            if self.collector.current_thread_index < len(
+                self.collector.thread_ids
+            ):
+                thread_id = self.collector.thread_ids[
+                    self.collector.current_thread_index
+                ]
+                if thread_id in self.collector.per_thread_status:
+                    status_counts = self.collector.per_thread_status[thread_id]
+                else:
+                    status_counts = self.collector._thread_status_counts
+            else:
+                status_counts = self.collector._thread_status_counts
+        else:
+            # Use aggregated stats
+            status_counts = self.collector._thread_status_counts
 
-        total_samples = max(1, self.collector.total_samples)
-        pct_gc = (self.collector._gc_frame_samples / total_samples) * 100
+        # Calculate percentages
+        total_threads = max(1, status_counts["total"])
+        pct_on_gil = (status_counts["has_gil"] / total_threads) * 100
+        pct_off_gil = 100.0 - pct_on_gil
+        pct_gil_requested = (
+            status_counts["gil_requested"] / total_threads
+        ) * 100
+
+        # Get GC percentage based on view mode
+        if (
+            self.collector.view_mode == "PER_THREAD"
+            and len(self.collector.thread_ids) > 0
+        ):
+            if self.collector.current_thread_index < len(
+                self.collector.thread_ids
+            ):
+                thread_id = self.collector.thread_ids[
+                    self.collector.current_thread_index
+                ]
+                thread_samples = self.collector.per_thread_samples.get(
+                    thread_id, 1
+                )
+                thread_gc_samples = self.collector.per_thread_gc_samples.get(
+                    thread_id, 0
+                )
+                total_samples = max(1, thread_samples)
+                pct_gc = (thread_gc_samples / total_samples) * 100
+            else:
+                total_samples = max(1, self.collector.total_samples)
+                pct_gc = (
+                    self.collector._gc_frame_samples / total_samples
+                ) * 100
+        else:
+            total_samples = max(1, self.collector.total_samples)
+            pct_gc = (self.collector._gc_frame_samples / total_samples) * 100
 
         col = 0
         self.add_str(line, col, "Threads:   ", curses.A_BOLD)
@@ -368,25 +443,58 @@ class HeaderWidget(Widget):
 
         # Show GIL stats only if mode is not GIL (GIL mode filters to only GIL holders)
         if self.collector.mode != PROFILING_MODE_GIL:
-            col = self._add_percentage_stat(line, col, pct_on_gil, "on gil", self.colors["green"])
-            col = self._add_percentage_stat(line, col, pct_off_gil, "off gil", self.colors["red"], add_separator=True)
+            col = self._add_percentage_stat(
+                line, col, pct_on_gil, "on gil", self.colors["green"]
+            )
+            col = self._add_percentage_stat(
+                line,
+                col,
+                pct_off_gil,
+                "off gil",
+                self.colors["red"],
+                add_separator=True,
+            )
 
         # Show "waiting for gil" only if mode is not GIL
         if self.collector.mode != PROFILING_MODE_GIL and col < width - 30:
-            col = self._add_percentage_stat(line, col, pct_gil_requested, "waiting for gil", self.colors["yellow"], add_separator=True)
+            col = self._add_percentage_stat(
+                line,
+                col,
+                pct_gil_requested,
+                "waiting for gil",
+                self.colors["yellow"],
+                add_separator=True,
+            )
 
         # Always show GC stats
         if col < width - 15:
-            col = self._add_percentage_stat(line, col, pct_gc, "GC", self.colors["magenta"], add_separator=(col > 11))
+            col = self._add_percentage_stat(
+                line,
+                col,
+                pct_gc,
+                "GC",
+                self.colors["magenta"],
+                add_separator=(col > 11),
+            )
 
         return line + 1
 
     def draw_function_stats(self, line, width, stats_list):
         """Draw function statistics summary."""
-        total_funcs = len(self.collector.result)
+        # Determine which result set to use based on view mode
+        if self.collector.view_mode == "PER_THREAD" and len(self.collector.thread_ids) > 0:
+            if self.collector.current_thread_index < len(self.collector.thread_ids):
+                thread_id = self.collector.thread_ids[self.collector.current_thread_index]
+                result_set = self.collector.per_thread_result.get(thread_id, {})
+            else:
+                result_set = self.collector.result
+        else:
+            result_set = self.collector.result
+
+        total_funcs = len(result_set)
         funcs_shown = len(stats_list)
         executing_funcs = sum(
-            1 for f in self.collector.result.values() if f["direct_calls"] > 0
+            1 for f in result_set.values() if f.get("direct_calls", 0) > 0
         )
         stack_only = total_funcs - executing_funcs
 
@@ -799,13 +907,15 @@ class FooterWidget(Widget):
         elif self.collector.paused:
             status.append("[PAUSED]")
         if self.collector.filter_pattern:
-            status.append(f"[Filter: {self.collector.filter_pattern} (c to clear)]")
+            status.append(
+                f"[Filter: {self.collector.filter_pattern} (c to clear)]"
+            )
         status_str = " ".join(status) + " " if status else ""
 
         if self.collector.finished:
             footer = f"{status_str}"
         else:
-            footer = f"{status_str}Sort: {sort_display} | 'h':help 'q':quit"
+            footer = f"{status_str}Sort: {sort_display} | 't':mode ←→:thread 'h':help 'q':quit"
         self.add_str(
             line,
             0,
@@ -852,6 +962,8 @@ class HelpWidget(Widget):
             ("Navigation & Display:", A_BOLD),
             ("  s           - Cycle through sort modes (forward)", A_NORMAL),
             ("  S           - Cycle through sort modes (backward)", A_NORMAL),
+            ("  t           - Toggle view mode (ALL / per-thread)", A_NORMAL),
+            ("  ← →  ↑ ↓   - Navigate threads (in per-thread mode)", A_NORMAL),
             ("  +           - Faster display refresh rate", A_NORMAL),
             ("  -           - Slower display refresh rate", A_NORMAL),
             ("", A_NORMAL),

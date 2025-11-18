@@ -4,7 +4,6 @@ Tests for MockDisplay, curses integration, display methods,
 edge cases, update display, and display helpers.
 """
 
-import os
 import sys
 import time
 import unittest
@@ -13,19 +12,15 @@ from test.support import requires
 from test.support.import_helper import import_module
 
 # Only run these tests if curses is available
-requires('curses')
-curses = import_module('curses')
+requires("curses")
+curses = import_module("curses")
 
 from profiling.sampling.live_collector import LiveStatsCollector, MockDisplay
-from profiling.sampling.constants import (
-    THREAD_STATUS_HAS_GIL,
-    THREAD_STATUS_ON_CPU,
-)
 from ._live_collector_helpers import (
-    MockFrameInfo,
     MockThreadInfo,
     MockInterpreterInfo,
 )
+
 
 class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
     """Tests for display functionality using MockDisplay."""
@@ -465,10 +460,14 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
     def test_progress_bar_uses_target_rate(self):
         """Test that progress bar uses target rate instead of max rate."""
         # Set up collector with specific sampling interval
-        collector = LiveStatsCollector(10000, pid=12345, display=self.mock_display)  # 10ms = 100Hz target
+        collector = LiveStatsCollector(
+            10000, pid=12345, display=self.mock_display
+        )  # 10ms = 100Hz target
         collector.start_time = time.perf_counter()
         collector.total_samples = 500
-        collector._max_sample_rate = 150  # Higher than target to test we don't use this
+        collector._max_sample_rate = (
+            150  # Higher than target to test we don't use this
+        )
 
         colors = {"cyan": curses.A_BOLD, "green": curses.A_BOLD}
         collector._initialize_widgets(colors)
@@ -494,21 +493,46 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
             if "max:" in text:
                 found_max_label = True
 
-        self.assertTrue(found_current_target_label, "Should display current/target rate with percentage")
+        self.assertTrue(
+            found_current_target_label,
+            "Should display current/target rate with percentage",
+        )
         self.assertFalse(found_max_label, "Should not display max rate label")
 
     def test_progress_bar_different_intervals(self):
         """Test that progress bar adapts to different sampling intervals."""
         test_cases = [
-            (1000, "1.0KHz", "100.0Hz"),    # 1ms interval -> 1000Hz target (1.0KHz), 100Hz current
-            (5000, "200.0Hz", "100.0Hz"),   # 5ms interval -> 200Hz target, 100Hz current
-            (20000, "50.0Hz", "100.0Hz"),   # 20ms interval -> 50Hz target, 100Hz current
-            (100000, "10.0Hz", "100.0Hz"),  # 100ms interval -> 10Hz target, 100Hz current
+            (
+                1000,
+                "1.0KHz",
+                "100.0Hz",
+            ),  # 1ms interval -> 1000Hz target (1.0KHz), 100Hz current
+            (
+                5000,
+                "200.0Hz",
+                "100.0Hz",
+            ),  # 5ms interval -> 200Hz target, 100Hz current
+            (
+                20000,
+                "50.0Hz",
+                "100.0Hz",
+            ),  # 20ms interval -> 50Hz target, 100Hz current
+            (
+                100000,
+                "10.0Hz",
+                "100.0Hz",
+            ),  # 100ms interval -> 10Hz target, 100Hz current
         ]
 
-        for interval_usec, expected_target_formatted, expected_current_formatted in test_cases:
+        for (
+            interval_usec,
+            expected_target_formatted,
+            expected_current_formatted,
+        ) in test_cases:
             with self.subTest(interval=interval_usec):
-                collector = LiveStatsCollector(interval_usec, display=MockDisplay())
+                collector = LiveStatsCollector(
+                    interval_usec, display=MockDisplay()
+                )
                 collector.start_time = time.perf_counter()
                 collector.total_samples = 100
 
@@ -523,15 +547,20 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
 
                 # Check that the current/target format appears in the display with proper units
                 found_current_target_format = False
-                for (line_num, col), (text, attr) in collector.display.buffer.items():
+                for (line_num, col), (
+                    text,
+                    attr,
+                ) in collector.display.buffer.items():
                     # Looking for format like "100.0Hz/1.0KHz" or "100.0Hz/200.0Hz"
                     expected_format = f"{expected_current_formatted}/{expected_target_formatted}"
                     if expected_format in text and "%" in text:
                         found_current_target_format = True
                         break
 
-                self.assertTrue(found_current_target_format,
-                    f"Should display current/target rate format with units for {interval_usec}µs interval")
+                self.assertTrue(
+                    found_current_target_format,
+                    f"Should display current/target rate format with units for {interval_usec}µs interval",
+                )
 
     def test_draw_efficiency_bar(self):
         """Test drawing efficiency bar."""
@@ -675,7 +704,6 @@ class TestLiveStatsCollectorEdgeCases(unittest.TestCase):
         self.assertEqual(stats_list[0]["func"][2], long_name)
 
 
-
 class TestLiveStatsCollectorUpdateDisplay(unittest.TestCase):
     """Tests for the _update_display method."""
 
@@ -785,7 +813,6 @@ class TestLiveCollectorWithMockDisplayHelpers(unittest.TestCase):
 
         # Should have header content
         self.assertTrue(any("PID" in line for line in lines))
-
 
 
 if __name__ == "__main__":

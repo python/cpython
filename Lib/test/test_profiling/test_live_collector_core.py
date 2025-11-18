@@ -10,8 +10,8 @@ from test.support import requires
 from test.support.import_helper import import_module
 
 # Only run these tests if curses is available
-requires('curses')
-curses = import_module('curses')
+requires("curses")
+curses = import_module("curses")
 
 from profiling.sampling.live_collector import LiveStatsCollector, MockDisplay
 from profiling.sampling.constants import (
@@ -47,7 +47,6 @@ class TestLiveStatsCollectorPathSimplification(unittest.TestCase):
         test_path = "/some/unknown/path/file.py"
         simplified = collector._simplify_path(test_path)
         self.assertEqual(simplified, test_path)
-
 
 
 class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
@@ -122,8 +121,12 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
 
         # Check per-thread result
         self.assertIn(123, collector.per_thread_result)
-        self.assertEqual(collector.per_thread_result[123][location]["direct_calls"], 1)
-        self.assertEqual(collector.per_thread_result[123][location]["cumulative_calls"], 1)
+        self.assertEqual(
+            collector.per_thread_result[123][location]["direct_calls"], 1
+        )
+        self.assertEqual(
+            collector.per_thread_result[123][location]["cumulative_calls"], 1
+        )
 
     def test_process_frames_multiple_threads(self):
         """Test processing frames from multiple threads."""
@@ -143,11 +146,15 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
         loc2 = ("test.py", 20, "other_func")
 
         # Thread 123 should only have func1
-        self.assertEqual(collector.per_thread_result[123][loc1]["direct_calls"], 1)
+        self.assertEqual(
+            collector.per_thread_result[123][loc1]["direct_calls"], 1
+        )
         self.assertNotIn(loc2, collector.per_thread_result[123])
 
         # Thread 456 should only have func2
-        self.assertEqual(collector.per_thread_result[456][loc2]["direct_calls"], 1)
+        self.assertEqual(
+            collector.per_thread_result[456][loc2]["direct_calls"], 1
+        )
         self.assertNotIn(loc1, collector.per_thread_result[456])
 
 
@@ -340,7 +347,6 @@ class TestLiveStatsCollectorStatisticsBuilding(unittest.TestCase):
         self.assertEqual(stats_list[2]["func"][2], "func3")  # 25%
 
 
-
 class TestLiveStatsCollectorSortCycle(unittest.TestCase):
     """Tests for sort mode cycling."""
 
@@ -402,7 +408,9 @@ class TestLiveStatsCollectorSortCycle(unittest.TestCase):
     def test_input_lowercase_s_cycles_forward(self):
         """Test that lowercase 's' cycles forward."""
         display = MockDisplay()
-        collector = LiveStatsCollector(1000, sort_by="nsamples", display=display)
+        collector = LiveStatsCollector(
+            1000, sort_by="nsamples", display=display
+        )
 
         display.simulate_input(ord("s"))
         collector._handle_input()
@@ -412,7 +420,9 @@ class TestLiveStatsCollectorSortCycle(unittest.TestCase):
     def test_input_uppercase_s_cycles_backward(self):
         """Test that uppercase 'S' cycles backward."""
         display = MockDisplay()
-        collector = LiveStatsCollector(1000, sort_by="nsamples", display=display)
+        collector = LiveStatsCollector(
+            1000, sort_by="nsamples", display=display
+        )
 
         display.simulate_input(ord("S"))
         collector._handle_input()

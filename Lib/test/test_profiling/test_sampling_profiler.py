@@ -3351,5 +3351,6 @@ if __name__ == "__main__":
 
         self.assertIn("Results: [2, 4, 6]", stdout)
         self.assertNotIn("Can't pickle", stderr)
+
 if __name__ == "__main__":
     unittest.main()
