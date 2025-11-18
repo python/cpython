@@ -33,8 +33,9 @@ usage of the backslash in string literals now generate a :exc:`SyntaxWarning`
 and in the future this will become a :exc:`SyntaxError`. This behaviour
 will happen even if it is a valid escape sequence for a regular expression.
 
-The solution is to use Python's raw string notation for regular expression
-patterns; backslashes are not handled in any special way in a string literal
+The solution is to use :ref:`Python's raw string notation
+for regular expression patterns <raw-string-notation>`; backslashes are not
+handled in any special way in a string literal
 prefixed with ``'r'``.  So ``r"\n"`` is a two-character string containing
 ``'\'`` and ``'n'``, while ``"\n"`` is a one-character string containing a
 newline.  Usually patterns will be expressed in Python code using this raw
@@ -83,6 +84,12 @@ characters, so ``last`` matches the string ``'last'``.  (In the rest of this
 section, we'll write RE's in ``this special style``, usually without quotes, and
 strings to be matched ``'in single quotes'``.)
 
+
+.. _re-special-characters:
+
+Special characters
+^^^^^^^^^^^^^^^^^^
+
 Some characters, like ``'|'`` or ``'('``, are special. Special
 characters either stand for classes of ordinary characters, or affect
 how the regular expressions around them are interpreted.
@@ -92,7 +99,6 @@ directly nested. This avoids ambiguity with the non-greedy modifier suffix
 ``?``, and with other modifiers in other implementations. To apply a second
 repetition to an inner repetition, parentheses may be used. For example,
 the expression ``(?:a{6})*`` matches any multiple of six ``'a'`` characters.
-
 
 The special characters are:
 
@@ -114,9 +120,11 @@ The special characters are:
 ``$``
    Matches the end of the string or just before the newline at the end of the
    string, and in :const:`MULTILINE` mode also matches before a newline.  ``foo``
-   matches both 'foo' and 'foobar', while the regular expression ``foo$`` matches
-   only 'foo'.  More interestingly, searching for ``foo.$`` in ``'foo1\nfoo2\n'``
-   matches 'foo2' normally, but 'foo1' in :const:`MULTILINE` mode; searching for
+   matches both ``'foo'`` and ``'foobar'``, while the regular expression ``foo$``
+   matches
+   only ``'foo'``.  More interestingly, searching for ``foo.$`` in ``'foo1\nfoo2\n'``
+   matches ``'foo2'`` normally, but also ``'foo1'`` in :const:`MULTILINE` mode; searching
+   for
    a single ``$`` in ``'foo\n'`` will find two (empty) matches: one just before
    the newline, and one at the end of the string.
 
@@ -124,21 +132,21 @@ The special characters are:
 
 ``*``
    Causes the resulting RE to match 0 or more repetitions of the preceding RE, as
-   many repetitions as are possible.  ``ab*`` will match 'a', 'ab', or 'a' followed
-   by any number of 'b's.
+   many repetitions as are possible.  ``ab*`` will match ``'a'``, ``'ab'``, or
+   ``'a'``  followed by any number of ``'b'``\ s.
 
 .. index:: single: + (plus); in regular expressions
 
 ``+``
    Causes the resulting RE to match 1 or more repetitions of the preceding RE.
-   ``ab+`` will match 'a' followed by any non-zero number of 'b's; it will not
-   match just 'a'.
+   ``ab+`` will match ``'a'`` followed by any non-zero number of ``'b'``\ s; it
+   will not match just ``'a'``.
 
 .. index:: single: ? (question mark); in regular expressions
 
 ``?``
    Causes the resulting RE to match 0 or 1 repetitions of the preceding RE.
-   ``ab?`` will match either 'a' or 'ab'.
+   ``ab?`` will match either ``'a'`` or ``'ab'``.
 
 .. index::
    single: *?; in regular expressions
@@ -224,7 +232,8 @@ The special characters are:
    ``'*'``, ``'?'``, and so forth), or signals a special sequence; special
    sequences are discussed below.
 
-   If you're not using a raw string to express the pattern, remember that Python
+   If you're not using a :ref:`raw string to express the
+   pattern<raw-string-notation>`, remember that Python
    also uses the backslash as an escape sequence in string literals; if the escape
    sequence isn't recognized by Python's parser, the backslash and subsequent
    character are included in the resulting string.  However, if Python would
@@ -323,6 +332,12 @@ The special characters are:
    has been performed, and can be matched later in the string with the ``\number``
    special sequence, described below.  To match the literals ``'('`` or ``')'``,
    use ``\(`` or ``\)``, or enclose them inside a character class: ``[(]``, ``[)]``.
+
+
+.. _re_extension_notation:
+
+Extension notation
+""""""""""""""""""
 
 .. index:: single: (?; in regular expressions
 
@@ -523,6 +538,9 @@ The special characters are:
 
 .. _re-special-sequences:
 
+Escape sequences
+""""""""""""""""
+
 The special sequences consist of ``'\'`` and a character from the list below.
 If the ordinary character is not an ASCII digit or an ASCII letter, then the
 resulting RE will match the second character.  For example, ``\$`` matches the
@@ -672,6 +690,12 @@ character ``'$'``.
 ``\Z``
    The same as ``\z``.  For compatibility with old Python versions.
 
+
+.. _re-escape-sequences:
+
+String literal escapes
+""""""""""""""""""""""
+
 .. index::
    single: \a; in regular expressions
    single: \b; in regular expressions
@@ -783,11 +807,11 @@ Flags
 
    Note that when the Unicode patterns ``[a-z]`` or ``[A-Z]`` are used in
    combination with the :const:`IGNORECASE` flag, they will match the 52 ASCII
-   letters and 4 additional non-ASCII letters: 'İ' (U+0130, Latin capital
-   letter I with dot above), 'ı' (U+0131, Latin small letter dotless i),
-   'ſ' (U+017F, Latin small letter long s) and 'K' (U+212A, Kelvin sign).
-   If the :py:const:`~re.ASCII` flag is used, only letters 'a' to 'z'
-   and 'A' to 'Z' are matched.
+   letters and 4 additional non-ASCII letters: ``'İ'`` (U+0130, Latin capital
+   letter I with dot above), ``'ı'`` (U+0131, Latin small letter dotless i),
+   ``'ſ'`` (U+017F, Latin small letter long s) and ``'K'`` (U+212A, Kelvin sign).
+   If the :py:const:`~re.ASCII` flag is used, only letters  ``'a'`` to ``'z'``
+   and ``'A'`` to ``'Z'`` are matched.
 
 .. data:: L
           LOCALE
@@ -1205,25 +1229,26 @@ Exceptions
    error if a string contains no match for a pattern.  The ``PatternError`` instance has
    the following additional attributes:
 
-   .. attribute:: msg
+   .. list-table::
+      :header-rows: 1
 
-      The unformatted error message.
+      * - Attribute
+        - Meaning
 
-   .. attribute:: pattern
+      * - .. attribute:: msg
+        - The unformatted error message.
 
-      The regular expression pattern.
+      * - .. attribute:: pattern
+        - The regular expression pattern.
 
-   .. attribute:: pos
+      * - .. attribute:: pos
+        - The index in *pattern* where compilation failed (may be ``None``).
 
-      The index in *pattern* where compilation failed (may be ``None``).
+      * - .. attribute:: lineno
+        - The line corresponding to *pos* (may be ``None``).
 
-   .. attribute:: lineno
-
-      The line corresponding to *pos* (may be ``None``).
-
-   .. attribute:: colno
-
-      The column corresponding to *pos* (may be ``None``).
+      * - .. attribute:: colno
+        - The column corresponding to *pos* (may be ``None``).
 
    .. versionchanged:: 3.5
       Added additional attributes.
@@ -1592,6 +1617,8 @@ Regular Expression Examples
 ---------------------------
 
 
+.. _checking-for-a-pair:
+
 Checking for a Pair
 ^^^^^^^^^^^^^^^^^^^
 
@@ -1645,6 +1672,8 @@ To find out what card the pair consists of, one could use the
    >>> pair.match("354aa").group(1)
    'a'
 
+
+.. _simulating-scanf:
 
 Simulating scanf()
 ^^^^^^^^^^^^^^^^^^
@@ -1733,6 +1762,8 @@ beginning with ``'^'`` will match at the beginning of each line. ::
    <re.Match object; span=(4, 5), match='X'>
 
 
+.. _making-a-phonebook:
+
 Making a Phonebook
 ^^^^^^^^^^^^^^^^^^
 
@@ -1794,6 +1825,8 @@ house number from the street name:
    ['Heather', 'Albrecht', '548.326.4584', '919', 'Park Place']]
 
 
+.. _text-munging:
+
 Text Munging
 ^^^^^^^^^^^^
 
@@ -1814,6 +1847,8 @@ in each word of a sentence except for the first and last characters::
    'Pofsroser Aodlambelk, plasee reoprt yuor asnebces potlmrpy.'
 
 
+.. _finding-all-adverbs:
+
 Finding all Adverbs
 ^^^^^^^^^^^^^^^^^^^
 
@@ -1826,6 +1861,8 @@ the following manner::
    >>> re.findall(r"\w+ly\b", text)
    ['carefully', 'quickly']
 
+
+.. _finding-all-adverbs-and-their-positions:
 
 Finding all Adverbs and their Positions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1842,6 +1879,8 @@ to find all of the adverbs *and their positions* in some text, they would use
    07-16: carefully
    40-47: quickly
 
+
+.. _raw-string-notation:
 
 Raw String Notation
 ^^^^^^^^^^^^^^^^^^^
@@ -1866,6 +1905,8 @@ functionally identical::
    >>> re.match("\\\\", r"\\")
    <re.Match object; span=(0, 1), match='\\'>
 
+
+.. _writing-a-tokenizer:
 
 Writing a Tokenizer
 ^^^^^^^^^^^^^^^^^^^
