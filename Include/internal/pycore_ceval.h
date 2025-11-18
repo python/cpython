@@ -221,9 +221,9 @@ static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     // If it is below the hardware stack base, assume that we have the wrong stack limits, and do nothing.
     // We could have the wrong stack limits becuase of limited platform support, or user-space threads.
 #if _Py_STACK_GROWS_DOWN
-    return here_addr < _tstate->c_stack_soft_limit && here_addr >= _tstate->c_stack_soft_limit - 2 * _PyOS_STACK_MARGIN_BYTES;;
+    return here_addr < _tstate->c_stack_soft_limit && here_addr >= _tstate->c_stack_soft_limit - 2 * _PyOS_STACK_MARGIN_BYTES;
 #else
-    return here_addr > _tstate->c_stack_soft_limit && here_addr <= _tstate->c_stack_soft_limit + 2 * _PyOS_STACK_MARGIN_BYTES;;
+    return here_addr > _tstate->c_stack_soft_limit && here_addr <= _tstate->c_stack_soft_limit + 2 * _PyOS_STACK_MARGIN_BYTES;
 #endif
 }
 
