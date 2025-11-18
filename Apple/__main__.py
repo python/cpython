@@ -487,6 +487,12 @@ def lib_platform_files(dirname, names):
                 or name == "build-details.json"
             )
         )
+    elif path.parts[-1] == "lib":
+        ignored_names = {
+            name
+            for name in names
+            if name.startswith("libpython") and name.endswith(".dylib")
+        }
     else:
         ignored_names = set()
 
@@ -621,6 +627,12 @@ def create_xcframework(platform: str) -> str:
             slice_framework / "Headers/pyconfig.h",
         )
 
+        print(f" - {slice_name} shared library")
+        # Create a simlink for the fat library
+        shared_lib = slice_path / f"lib/libpython{version_tag}.dylib"
+        shared_lib.parent.mkdir()
+        shared_lib.symlink_to("../Python.framework/Python")
+
         print(f" - {slice_name} architecture-specific files")
         for host_triple, multiarch in slice_parts.items():
             print(f"   - {multiarch} standard library")
@@ -632,6 +644,7 @@ def create_xcframework(platform: str) -> str:
                     framework_path(host_triple, multiarch) / "lib",
                     package_path / "Python.xcframework/lib",
                     ignore=lib_platform_files,
+                    symlinks=True,
                 )
                 has_common_stdlib = True
 
@@ -639,6 +652,7 @@ def create_xcframework(platform: str) -> str:
                 framework_path(host_triple, multiarch) / "lib",
                 slice_path / f"lib-{arch}",
                 ignore=lib_non_platform_files,
+                symlinks=True,
             )
 
             # Copy the host's pyconfig.h to an architecture-specific name.
