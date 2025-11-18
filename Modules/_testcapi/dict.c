@@ -258,6 +258,76 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject*
+dict_fromkeysandvalues(PyObject* self, PyObject *args)
+{
+    PyObject *keys_obj = UNINITIALIZED_PTR, *values_obj = UNINITIALIZED_PTR;
+    Py_ssize_t length = UNINITIALIZED_SIZE;
+    if (!PyArg_ParseTuple(args, "|O!O!n",
+                          &PyTuple_Type, &keys_obj,
+                          &PyTuple_Type, &values_obj,
+                          &length)) {
+        return NULL;
+    }
+
+    PyObject **keys, **values;
+    if (keys_obj != UNINITIALIZED_PTR) {
+        keys = &PyTuple_GET_ITEM(keys_obj, 0);
+        if (values_obj != UNINITIALIZED_PTR) {
+            values = &PyTuple_GET_ITEM(values_obj, 0);
+        }
+        else {
+            values = keys + 1;
+        }
+    }
+    else {
+        keys = NULL;
+        values = NULL;
+    }
+
+    if (length == UNINITIALIZED_SIZE) {
+        if (keys_obj != UNINITIALIZED_PTR) {
+            length = PyTuple_GET_SIZE(keys_obj);
+        }
+        else {
+            length = 0;
+        }
+    }
+
+    return PyDict_FromKeysAndValues(keys, values, length);
+}
+
+
+static PyObject*
+dict_fromitems(PyObject* self, PyObject *args)
+{
+    PyObject *items_obj = UNINITIALIZED_PTR;
+    Py_ssize_t length = UNINITIALIZED_SIZE;
+    if (!PyArg_ParseTuple(args, "|O!n", &PyTuple_Type, &items_obj, &length)) {
+        return NULL;
+    }
+
+    PyObject **items;
+    if (items_obj != UNINITIALIZED_PTR) {
+        items = &PyTuple_GET_ITEM(items_obj, 0);
+    }
+    else {
+        items = NULL;
+    }
+
+    if (length == UNINITIALIZED_SIZE) {
+        if (items_obj != UNINITIALIZED_PTR) {
+            length = PyTuple_GET_SIZE(items_obj) / 2;
+        }
+        else {
+            length = 0;
+        }
+    }
+
+    return PyDict_FromItems(items, length);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"dict_containsstring", dict_containsstring, METH_VARARGS},
     {"dict_getitemref", dict_getitemref, METH_VARARGS},
@@ -268,7 +338,9 @@ static PyMethodDef test_methods[] = {
     {"dict_pop_null", dict_pop_null, METH_VARARGS},
     {"dict_popstring", dict_popstring, METH_VARARGS},
     {"dict_popstring_null", dict_popstring_null, METH_VARARGS},
-    {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
+    {"test_dict_iteration", test_dict_iteration, METH_NOARGS},
+    {"dict_fromkeysandvalues", dict_fromkeysandvalues, METH_VARARGS},
+    {"dict_fromitems", dict_fromitems, METH_VARARGS},
     {NULL},
 };
 

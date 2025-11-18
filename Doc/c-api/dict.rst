@@ -36,6 +36,31 @@ Dictionary Objects
    Return a new empty dictionary, or ``NULL`` on failure.
 
 
+.. c:function:: PyObject* PyDict_FromKeysAndValues(PyObject *const *keys, PyObject *const *values, Py_ssize_t length)
+
+   Create a dictionary from *keys* and *values* of *length* items.
+
+   If *length* is ``0``, *keys* and *values* can be NULL.
+
+   Return a new dictionary, or ``NULL`` on failure with an exception set.
+
+   .. versionadded:: next
+
+
+.. c:function:: PyObject* PyDict_FromItems(PyObject *const *items, Py_ssize_t length)
+
+   Create a dictionary from *items* of *length* pairs (``(key, value)``).
+
+   *items* is an array made of keys and values such as:
+   ``key1, value1, key2, value2, ..., keyN, valueN``.
+
+   If *length* is ``0``, *items* can be NULL.
+
+   Return a new dictionary, or ``NULL`` on failure with an exception set.
+
+   .. versionadded:: next
+
+
 .. c:function:: PyObject* PyDictProxy_New(PyObject *mapping)
 
    Return a :class:`types.MappingProxyType` object for a mapping which

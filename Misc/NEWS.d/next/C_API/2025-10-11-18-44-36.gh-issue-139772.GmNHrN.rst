@@ -1,0 +1,2 @@
+Add :c:func:`PyDict_FromItems` to create a dictionary from an array of items.
+Patch by Victor Stinner.
