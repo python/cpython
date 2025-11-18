@@ -66,6 +66,28 @@ class ThreadData:
     sample_count: int = 0
     gc_frame_samples: int = 0
 
+    def increment_status_flag(self, status_flags):
+        """Update status counts based on status bit flags."""
+        if status_flags & THREAD_STATUS_HAS_GIL:
+            self.has_gil += 1
+        if status_flags & THREAD_STATUS_ON_CPU:
+            self.on_cpu += 1
+        if status_flags & THREAD_STATUS_GIL_REQUESTED:
+            self.gil_requested += 1
+        if status_flags & THREAD_STATUS_UNKNOWN:
+            self.unknown += 1
+        self.total += 1
+
+    def as_status_dict(self):
+        """Return status counts as a dict for compatibility."""
+        return {
+            "has_gil": self.has_gil,
+            "on_cpu": self.on_cpu,
+            "gil_requested": self.gil_requested,
+            "unknown": self.unknown,
+            "total": self.total,
+        }
+
 
 class LiveStatsCollector(Collector):
     """Collector that displays live top-like statistics using ncurses."""
@@ -156,6 +178,26 @@ class LiveStatsCollector(Collector):
         # Color mode
         self._can_colorize = _colorize.can_colorize()
 
+    def _get_or_create_thread_data(self, thread_id):
+        """Get or create ThreadData for a thread ID."""
+        if thread_id not in self.per_thread_data:
+            self.per_thread_data[thread_id] = ThreadData(thread_id=thread_id)
+        return self.per_thread_data[thread_id]
+
+    def _get_current_thread_data(self):
+        """Get ThreadData for currently selected thread in PER_THREAD mode."""
+        if self.view_mode == "PER_THREAD" and self.current_thread_index < len(self.thread_ids):
+            thread_id = self.thread_ids[self.current_thread_index]
+            return self.per_thread_data.get(thread_id)
+        return None
+
+    def _get_current_result_source(self):
+        """Get result dict for current view mode (aggregated or per-thread)."""
+        if self.view_mode == "ALL":
+            return self.result
+        thread_data = self._get_current_thread_data()
+        return thread_data.result if thread_data else {}
+
     def _get_common_path_prefixes(self):
         """Get common path prefixes to strip from file paths."""
         prefixes = []
@@ -215,30 +257,21 @@ class LiveStatsCollector(Collector):
         if not frames:
             return
 
+        # Get per-thread data if tracking per-thread
+        thread_data = self._get_or_create_thread_data(thread_id) if thread_id is not None else None
+
         # Process each frame in the stack to track cumulative calls
         for frame in frames:
             location = (frame.filename, frame.lineno, frame.funcname)
             self.result[location]["cumulative_calls"] += 1
-
-            # Also track per-thread if thread_id is provided
-            if thread_id is not None:
-                if thread_id not in self.per_thread_data:
-                    self.per_thread_data[thread_id] = ThreadData(thread_id=thread_id)
-                self.per_thread_data[thread_id].result[location]["cumulative_calls"] += 1
+            if thread_data:
+                thread_data.result[location]["cumulative_calls"] += 1
 
         # The top frame gets counted as an inline call (directly executing)
-        top_location = (
-            frames[0].filename,
-            frames[0].lineno,
-            frames[0].funcname,
-        )
+        top_location = (frames[0].filename, frames[0].lineno, frames[0].funcname)
         self.result[top_location]["direct_calls"] += 1
-
-        # Also track per-thread
-        if thread_id is not None:
-            if thread_id not in self.per_thread_data:
-                self.per_thread_data[thread_id] = ThreadData(thread_id=thread_id)
-            self.per_thread_data[thread_id].result[top_location]["direct_calls"] += 1
+        if thread_data:
+            thread_data.result[top_location]["direct_calls"] += 1
 
     def collect_failed_sample(self):
         self._failed_samples += 1
@@ -271,31 +304,20 @@ class LiveStatsCollector(Collector):
                 status_flags = getattr(thread_info, "status", 0)
                 thread_id = getattr(thread_info, "thread_id", None)
 
-                # Initialize per-thread data if needed
-                if thread_id is not None and thread_id not in self.per_thread_data:
-                    self.per_thread_data[thread_id] = ThreadData(thread_id=thread_id)
-
                 # Update aggregated counts
                 if status_flags & THREAD_STATUS_HAS_GIL:
                     temp_status_counts["has_gil"] += 1
-                    if thread_id is not None:
-                        self.per_thread_data[thread_id].has_gil += 1
                 if status_flags & THREAD_STATUS_ON_CPU:
                     temp_status_counts["on_cpu"] += 1
-                    if thread_id is not None:
-                        self.per_thread_data[thread_id].on_cpu += 1
                 if status_flags & THREAD_STATUS_GIL_REQUESTED:
                     temp_status_counts["gil_requested"] += 1
-                    if thread_id is not None:
-                        self.per_thread_data[thread_id].gil_requested += 1
                 if status_flags & THREAD_STATUS_UNKNOWN:
                     temp_status_counts["unknown"] += 1
-                    if thread_id is not None:
-                        self.per_thread_data[thread_id].unknown += 1
 
-                # Update per-thread total count
+                # Update per-thread status counts
                 if thread_id is not None:
-                    self.per_thread_data[thread_id].total += 1
+                    thread_data = self._get_or_create_thread_data(thread_id)
+                    thread_data.increment_status_flag(status_flags)
 
                 # Process frames (respecting skip_idle)
                 if self.skip_idle:
@@ -315,11 +337,7 @@ class LiveStatsCollector(Collector):
                     ):
                         self.thread_ids.append(thread_id)
 
-                    # Increment per-thread sample count
-                    if thread_id is not None:
-                        self.per_thread_data[thread_id].sample_count += 1
-
-                    # Check if any frame is in GC
+                    # Increment per-thread sample count and check for GC frames
                     thread_has_gc_frame = False
                     for frame in frames:
                         funcname = getattr(frame, "funcname", "")
@@ -328,9 +346,11 @@ class LiveStatsCollector(Collector):
                             thread_has_gc_frame = True
                             break
 
-                    # Track per-thread GC samples
-                    if thread_has_gc_frame and thread_id is not None:
-                        self.per_thread_data[thread_id].gc_frame_samples += 1
+                    if thread_id is not None:
+                        thread_data = self._get_or_create_thread_data(thread_id)
+                        thread_data.sample_count += 1
+                        if thread_has_gc_frame:
+                            thread_data.gc_frame_samples += 1
 
         # Update cumulative thread status counts
         for key, count in temp_status_counts.items():
@@ -568,21 +588,7 @@ class LiveStatsCollector(Collector):
     def _build_stats_list(self):
         """Build and sort the statistics list."""
         stats_list = []
-
-        # Determine which data source to use based on view mode
-        if self.view_mode == "ALL":
-            # ALL threads - use aggregated result
-            result_source = self.result
-        else:
-            # PER_THREAD mode - use specific thread result
-            if self.current_thread_index < len(self.thread_ids):
-                thread_id = self.thread_ids[self.current_thread_index]
-                if thread_id in self.per_thread_data:
-                    result_source = self.per_thread_data[thread_id].result
-                else:
-                    result_source = {}
-            else:
-                result_source = self.result
+        result_source = self._get_current_result_source()
 
         for func, call_counts in result_source.items():
             # Apply filter if set (using substring matching)

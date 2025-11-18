@@ -379,68 +379,20 @@ class HeaderWidget(Widget):
 
     def draw_thread_status(self, line, width):
         """Draw thread status statistics and GC information."""
-        # Determine which status counts to use based on view mode
-        if (
-            self.collector.view_mode == "PER_THREAD"
-            and len(self.collector.thread_ids) > 0
-        ):
-            # Use per-thread stats for the selected thread
-            if self.collector.current_thread_index < len(
-                self.collector.thread_ids
-            ):
-                thread_id = self.collector.thread_ids[
-                    self.collector.current_thread_index
-                ]
-                if thread_id in self.collector.per_thread_data:
-                    thread_data = self.collector.per_thread_data[thread_id]
-                    status_counts = {
-                        "has_gil": thread_data.has_gil,
-                        "on_cpu": thread_data.on_cpu,
-                        "gil_requested": thread_data.gil_requested,
-                        "unknown": thread_data.unknown,
-                        "total": thread_data.total,
-                    }
-                else:
-                    status_counts = self.collector._thread_status_counts
-            else:
-                status_counts = self.collector._thread_status_counts
-        else:
-            # Use aggregated stats
-            status_counts = self.collector._thread_status_counts
+        # Get status counts for current view mode
+        thread_data = self.collector._get_current_thread_data()
+        status_counts = thread_data.as_status_dict() if thread_data else self.collector._thread_status_counts
 
         # Calculate percentages
         total_threads = max(1, status_counts["total"])
         pct_on_gil = (status_counts["has_gil"] / total_threads) * 100
         pct_off_gil = 100.0 - pct_on_gil
-        pct_gil_requested = (
-            status_counts["gil_requested"] / total_threads
-        ) * 100
+        pct_gil_requested = (status_counts["gil_requested"] / total_threads) * 100
 
         # Get GC percentage based on view mode
-        if (
-            self.collector.view_mode == "PER_THREAD"
-            and len(self.collector.thread_ids) > 0
-        ):
-            if self.collector.current_thread_index < len(
-                self.collector.thread_ids
-            ):
-                thread_id = self.collector.thread_ids[
-                    self.collector.current_thread_index
-                ]
-                if thread_id in self.collector.per_thread_data:
-                    thread_data = self.collector.per_thread_data[thread_id]
-                    thread_samples = thread_data.sample_count
-                    thread_gc_samples = thread_data.gc_frame_samples
-                else:
-                    thread_samples = 1
-                    thread_gc_samples = 0
-                total_samples = max(1, thread_samples)
-                pct_gc = (thread_gc_samples / total_samples) * 100
-            else:
-                total_samples = max(1, self.collector.total_samples)
-                pct_gc = (
-                    self.collector._gc_frame_samples / total_samples
-                ) * 100
+        if thread_data:
+            total_samples = max(1, thread_data.sample_count)
+            pct_gc = (thread_data.gc_frame_samples / total_samples) * 100
         else:
             total_samples = max(1, self.collector.total_samples)
             pct_gc = (self.collector._gc_frame_samples / total_samples) * 100
@@ -489,19 +441,7 @@ class HeaderWidget(Widget):
 
     def draw_function_stats(self, line, width, stats_list):
         """Draw function statistics summary."""
-        # Determine which result set to use based on view mode
-        if self.collector.view_mode == "PER_THREAD" and len(self.collector.thread_ids) > 0:
-            if self.collector.current_thread_index < len(self.collector.thread_ids):
-                thread_id = self.collector.thread_ids[self.collector.current_thread_index]
-                if thread_id in self.collector.per_thread_data:
-                    result_set = self.collector.per_thread_data[thread_id].result
-                else:
-                    result_set = {}
-            else:
-                result_set = self.collector.result
-        else:
-            result_set = self.collector.result
-
+        result_set = self.collector._get_current_result_source()
         total_funcs = len(result_set)
         funcs_shown = len(stats_list)
         executing_funcs = sum(
