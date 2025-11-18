@@ -567,7 +567,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             raise ValueError(
                 f"Missing colon in %:z before '{rest}', got '{data_string}'"
             )
-        raise ValueError("unconverted data remains: %s" % rest)
+        raise ValueError("unconverted data remains: %r" % rest)
 
     iso_year = year = None
     month = day = 1
