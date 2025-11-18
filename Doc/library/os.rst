@@ -558,7 +558,7 @@ process and user.
 
 .. function:: initgroups(username, gid, /)
 
-   Call the system initgroups() to initialize the group access list with all of
+   Call the system ``initgroups()`` to initialize the group access list with all of
    the groups of which the specified username is a member, plus the specified
    group id.
 
