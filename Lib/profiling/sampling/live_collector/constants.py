@@ -55,5 +55,5 @@ COLOR_PAIR_RED = 9
 COLOR_PAIR_SORTED_HEADER = 10
 
 # Default display settings
-DEFAULT_SORT_BY = "tottime"
+DEFAULT_SORT_BY = "nsamples"  # Number of samples in leaf (self time)
 DEFAULT_DISPLAY_LIMIT = 20
