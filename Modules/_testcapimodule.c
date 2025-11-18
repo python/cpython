@@ -2604,7 +2604,7 @@ noop_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
 static PyObject *
 test_interpreter_setevalframefunc(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    PyInterpreterState *interp  = PyInterpreterState_Get();
+    PyInterpreterState *interp = PyInterpreterState_Get();
     PyUnstable_FrameEvalFunction eval_func;
 
     eval_func = PyUnstable_InterpreterState_GetEvalFrameFunc(interp);
