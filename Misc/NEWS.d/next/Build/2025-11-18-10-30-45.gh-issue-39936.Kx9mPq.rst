@@ -1,0 +1,4 @@
+Fixed ``pyconfig.h`` installation to respect ``--includedir`` configure option.
+Previously, ``pyconfig.h`` was always installed to ``$(exec_prefix)/include``
+instead of the directory specified by ``--includedir``.
+Patch by Shamil Abdulaev.
