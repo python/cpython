@@ -68,7 +68,7 @@ The module provides the following classes:
    .. versionchanged:: 3.7
       *blocksize* parameter was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       *max_response_headers* parameter was added.
 
 
@@ -114,7 +114,7 @@ The module provides the following classes:
       The deprecated *key_file*, *cert_file* and *check_hostname* parameters
       have been removed.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       *max_response_headers* parameter was added.
 
 
@@ -133,7 +133,7 @@ This module provides the following function:
 
    Parse the headers from a file pointer *fp* representing a HTTP
    request/response. The file has to be a :class:`~io.BufferedIOBase` reader
-   (i.e. not text) and must provide a valid :rfc:`2822` style header.
+   (i.e. not text) and must provide a valid :rfc:`5322` style header.
 
    This function returns an instance of :class:`http.client.HTTPMessage`
    that holds the header fields, but no payload
@@ -429,7 +429,7 @@ HTTPConnection Objects
    The maximum number of allowed response headers to help prevent denial-of-service
    attacks. By default, the maximum number of allowed headers is set to 100.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 As an alternative to using the :meth:`~HTTPConnection.request` method described above, you can
