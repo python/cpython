@@ -1515,10 +1515,12 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": int})
 
     def test_callable_class_annotate_forwardref_fakeglobals(self):
-        # If Format.FORWARDREF is not supported, use Format.VALUE_WITH_FAKE_GLOBALS
-        # before falling back to Format.VALUE
+        # Calling the class will construct a new instance and call its __init__ function
+        # as an annotate function, returning the instance. This is fine as long as
+        # the class inherits from dict.
         class Annotate(dict):
-            def __init__(self, format, /, __Format=Format, __NotImplementedError=NotImplementedError):
+            def __init__(self, format, /, __Format=Format,
+                         __NotImplementedError=NotImplementedError):
                 if format == __Format.VALUE:
                     super().__init__({'x': str})
                 elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
@@ -1534,10 +1536,12 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": int})
 
     def test_callable_generic_class_annotate_forwardref_fakeglobals(self):
-        # If Format.FORWARDREF is not supported, use Format.VALUE_WITH_FAKE_GLOBALS
-        # before falling back to Format.VALUE
+        # Subscripted generic classes are types.GenericAlias instances
+        # for dict subclasses. Check that they are still
+        # callable as annotate functions, just like regular classes.
         class Annotate[K, V](dict[K, V]):
-            def __init__(self, format, /, __Format=Format, __NotImplementedError=NotImplementedError):
+            def __init__(self, format, /, __Format=Format,
+                         __NotImplementedError=NotImplementedError):
                 if format == __Format.VALUE:
                     super().__init__({'x': str})
                 elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
@@ -1552,7 +1556,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": int})
 
-        # We will have to manually set the __orig_class__, ensure it is correct.
+        # We manually set the __orig_class__ for this special-case, check this too.
         self.assertEqual(annotations.__orig_class__, Annotate[str, type])
 
     def test_user_annotate_forwardref_value_fallback(self):
@@ -1609,11 +1613,13 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": "int"})
 
     def test_callable_generic_class_annotate_string_fakeglobals(self):
-        # If Format.STRING is not supported but Format.VALUE_WITH_FAKE_GLOBALS is
-        # prefer that over Format.VALUE
+        # If a generic class uses slots, we may not be able to set
+        # its __orig_class__ attr.
         class Annotate[T]:
             __slots__ = "data",
 
+            # If Format.STRING is not supported but Format.VALUE_WITH_FAKE_GLOBALS is,
+            # prefer that over Format.VALUE
             def __init__(self, format, /, __Format=Format,
                          __NotImplementedError=NotImplementedError):
                 if format == __Format.VALUE:
@@ -1636,8 +1642,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
             def __eq__(self, other):
                 return dict(self.items()) == dict(other.items())
 
-        # Subscripting a user-created class will return a typing._GenericAlias.
-        # We want to check that types.GenericAlias objects are created properly,
+        # Subscripting a user-created class will usually return a typing._GenericAlias.
+        # We want to check that types.GenericAlias objects are still interpreted properly,
         # so manually create it with the documented constructor.
         annotations = annotationlib.call_annotate_function(
             types.GenericAlias(Annotate, (int,)),
@@ -1647,7 +1653,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": "int"})
 
         # A __slots__ class can't have __orig_class__ set unless already specified.
-        # Ensure that the error passes silently.
+        # Ensure that the error passes silently, as is the case in typing.
         self.assertNotHasAttr(annotations, "__orig_class__")
 
     def test_user_annotate_string_value_fallback(self):
@@ -1667,21 +1673,38 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": "str"})
 
     def test_callable_object_annotate(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
         class Annotate:
             def __call__(self, format, /):
                 return {"x": str}
 
+        # Check that all formats work with a standard callable object as an
+        # annotate function.
         for fmt in [Format.VALUE, Format.FORWARDREF, Format.STRING]:
             self.assertEqual(
                 annotationlib.call_annotate_function(Annotate(), format=fmt),
                 {"x": str}
             )
 
+    def test_callable_method_annotate_forwardref_value_fallback(self):
+        # Calling a method requires call_annotate_function() to add the self param.
+        class Annotate:
+            def format(self, format, /, __Format=Format,
+                       __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    return {"x": str}
+                else:
+                    raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(
+            Annotate().format,
+            Format.FORWARDREF,
+        )
+
+        self.assertEqual(annotations, {"x": str})
+
     def test_callable_object_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
+        # Calling an object is special-cased in call_annotate_function()
+        # to call its __call__ method.
         class Annotate:
             def __call__(self, format, /, __Format=Format,
                          __NotImplementedError=NotImplementedError):
@@ -1697,27 +1720,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": str})
 
-    def test_callable_method_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
-        class Annotate:
-            def format(self, format, /, __Format=Format,
-                         __NotImplementedError=NotImplementedError):
-                if format == __Format.VALUE:
-                    return {"x": str}
-                else:
-                    raise __NotImplementedError(format)
-
-        annotations = annotationlib.call_annotate_function(
-            Annotate().format,
-            Format.FORWARDREF,
-        )
-
-        self.assertEqual(annotations, {"x": str})
-
     def test_callable_custom_method_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
         class Annotate(dict):
             def __init__(inst, self, format, /, __Format=Format,
                          __NotImplementedError=NotImplementedError):
@@ -1727,6 +1730,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
                     raise __NotImplementedError(format)
 
         # This wouldn't happen on a normal class, but it's technically legal.
+        # Ensure that methods (which are special-cased) can wrap class construction
+        # (which is also special-cased).
         custom_method = types.MethodType(Annotate, Annotate(None, Format.VALUE))
 
         annotations = annotationlib.call_annotate_function(
@@ -1737,13 +1742,13 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": str})
 
     def test_callable_classmethod_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
+        # @classmethod returns a descriptor to a method.
+        # Ensure that the class itself is correctly bound to the cls param.
         class Annotate:
             @classmethod
             def format(cls, format, /, __Format=Format,
                          __NotImplementedError=NotImplementedError):
-                if format == __Format.VALUE:
+                if format == __Format.VALUE and cls is Annotate:
                     return {"x": str}
                 else:
                     raise __NotImplementedError(format)
@@ -1756,8 +1761,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": str})
 
     def test_callable_staticmethod_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
+        # @staticmethod returns a descriptor which means that Annotate.format
+        # should be a normal function object.
         class Annotate:
             @staticmethod
             def format(format, /, __Format=Format,
@@ -1767,14 +1772,14 @@ class TestCallAnnotateFunction(unittest.TestCase):
                 else:
                     raise __NotImplementedError(format)
 
-        # @staticmethod descriptor means that Annotate.format should be a function object.
         annotations = annotationlib.call_annotate_function(
             Annotate.format,
             Format.FORWARDREF,
         )
         self.assertEqual(annotations, {"x": str})
 
-        # But if we access the __dict__, the underlying staticmethod object is returned.
+        # But if we access via __dict__, the underlying staticmethod object is returned.
+        # Ensure that call_annotate_function() can handle this special case.
         annotations = annotationlib.call_annotate_function(
             Annotate.__dict__["format"],
             Format.FORWARDREF,
@@ -1782,27 +1787,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": str})
 
 
-    def test_callable_class_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
-        class Annotate(dict):
-            def __init__(self, format, /, __Format=Format,
-                         __NotImplementedError=NotImplementedError):
-                if format == __Format.VALUE:
-                    super().__init__({"x": int})
-                else:
-                    raise __NotImplementedError(format)
-
-        annotations = annotationlib.call_annotate_function(
-            Annotate,
-            Format.FORWARDREF,
-        )
-
-        self.assertEqual(annotations, {"x": int})
-
     def test_callable_object_custom_call_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
         class AnnotateClass(dict):
             def __init__(self, format, /, __Format=Format,
                          __NotImplementedError=NotImplementedError):
@@ -1812,6 +1797,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
                     raise __NotImplementedError(format)
 
         class Annotate:
+            # In this case, calling the instance returns a callable class, instead of
+            # the usual method.
             __call__ = AnnotateClass
 
         annotations = annotationlib.call_annotate_function(
@@ -1821,29 +1808,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": int})
 
-
-    def test_callable_generic_class_annotate_forwardref_value_fallback(self):
-        # Generics that inherit from builtins become types.GenericAlias objects.
-        # This is special-case in annotationlib to ensure the constructor is handled
-        # as with standard classes and __orig_class__ is set correctly.
-        class Annotate[T](dict[T]):
-            def __init__(self, format, /, __Format=Format,
-                         __NotImplementedError=NotImplementedError):
-                if format == __Format.VALUE:
-                    super().__init__({"x": int})
-                else:
-                    raise __NotImplementedError(format)
-
-        annotations = annotationlib.call_annotate_function(
-            Annotate[int],
-            Format.FORWARDREF,
-        )
-
-        self.assertEqual(annotations, {"x": int})
-        self.assertEqual(annotations.__orig_class__, Annotate[int])
-
     def test_callable_typing_generic_class_annotate_forwardref_value_fallback(self):
-        # Standard generics are 'typing._GenericAlias' objects. These are implemented
+        # Normally, generics are 'typing._GenericAlias' objects. These are implemented
         # in Python with a __call__ method (in _typing.BaseGenericAlias), so should work
         # as with any callable class instance.
         class Annotate[T]:
@@ -1876,8 +1842,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations.__orig_class__, Annotate[int])
 
     def test_callable_partial_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
+        # functools.partial is implemented in C. Ensure that the annotate function
+        # is extracted and called correctly, particularly with Placeholder args.
         def format(format, second, /, *, third, __Format=Format,
                      __NotImplementedError=NotImplementedError):
             if format == __Format.VALUE:
@@ -1893,8 +1859,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": Format.VALUE * 5 * 6})
 
     def test_callable_partialmethod_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
+        # partialmethod is a Python wrapper around functools.partial,
+        # ensure that self is passed in and partial works as usual.
         class Annotate:
             def _internal_format(self, format, second, /, *, third, __Format=Format,
                        __NotImplementedError=NotImplementedError):
@@ -1918,8 +1884,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": Format.VALUE * 5 * 6})
 
     def test_callable_cache_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
+        # lru cache is a C wrapper around functions, ensure that the underlying
+        # function is accessed correctly.
         @functools.cache
         def format(format, /, __Format=Format,
                    __NotImplementedError=NotImplementedError):
@@ -1938,14 +1904,14 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertIsInstance(annotations["x"], float)
         self.assertIs(annotations["y"], str)
 
-        # Check annotations again to ensure that cache is working.
+        # Check annotations again to ensure that the result is still cached.
         new_anns = annotationlib.call_annotate_function(format, Format.FORWARDREF)
         self.assertEqual(annotations, new_anns)
 
     def test_callable_double_wrapped_annotate_forwardref_value_fallback(self):
-        # The raw staticmethod object returns a 'wrapped' function, and so is
+        # The raw staticmethod object returns a 'wrapped' function, and so does
         # @functools.cache. Here we test that functions unwrap recursively,
-        # allowing wrapping of wrapped functions.
+        # allowing annotate functions which wrap already wrapped functions.
         class Annotate:
             @staticmethod
             @functools.cache
@@ -1967,18 +1933,17 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertIsInstance(annotations["x"], float)
         self.assertIs(annotations["y"], str)
 
-        # Check annotations again to ensure that cache is working.
+        # Check annotations again to ensure that the result is still cached.
         new_anns = annotationlib.call_annotate_function(Annotate.format, Format.FORWARDREF)
         self.assertEqual(annotations, new_anns)
 
     def test_callable_wrapped_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
+        # Test unwrapping of @functools.wraps functions, similar to @functools.cache.
         def multiple_format(fn):
             inputs = {"x": int}
             @functools.wraps(fn)
             def format(format, /, __Format=Format,
-            __NotImplementedError=NotImplementedError):
+                       __NotImplementedError=NotImplementedError):
                 if format == __Format.VALUE:
                     return {**inputs, **fn()}
                 else:
@@ -1994,8 +1959,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": int, "y": str})
 
     def test_callable_singledispatch_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
+        # Ensure that the correct singledispatch function is used when calling
+        # a singledispatch annotate function.
         @functools.singledispatch
         def format(format, /, __Format=Format,
                    __NotImplementedError=NotImplementedError):
@@ -2006,7 +1971,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         @format.register(float)
         def _(format, /, __Format=Format,
-                   __NotImplementedError=NotImplementedError):
+              __NotImplementedError=NotImplementedError):
             if format == __Format.VALUE:
                 return {"x": float}
             else:
@@ -2020,6 +1985,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
             else:
                 raise __NotImplementedError(format)
 
+        print("Single dispatch")
         annotations = annotationlib.call_annotate_function(
             format,
             Format.FORWARDREF,
@@ -2028,8 +1994,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
         self.assertEqual(annotations, {"x": int})
 
     def test_callable_singledispatchmethod_annotate_forwardref_value_fallback(self):
-        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
-        # supported fall back to Format.VALUE and convert to strings
+        # Ensure that the correct singledispatch method is used, along with the self
+        # parameter when calling a singledispatchmethod annotate function.
         class Annotate:
             @functools.singledispatchmethod
             def format(self, format, /, __Format=Format,
@@ -2061,26 +2027,6 @@ class TestCallAnnotateFunction(unittest.TestCase):
         )
 
         self.assertEqual(annotations, {"x": int})
-
-    def test_callable_object_annotate_string_fakeglobals(self):
-        # If Format.STRING is not supported but Format.VALUE_WITH_FAKE_GLOBALS is
-        # prefer that over Format.VALUE
-        class Annotate:
-            def __call__(self, format, /, __Format=Format,
-                         __NotImplementedError=NotImplementedError):
-                if format == __Format.VALUE:
-                    return {'x': str}
-                elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
-                    return {'x': int}
-                else:
-                    raise __NotImplementedError(format)
-
-        annotations = annotationlib.call_annotate_function(
-            Annotate(),
-            Format.STRING,
-        )
-
-        self.assertEqual(annotations, {"x": "int"})
 
     def test_condition_not_stringified(self):
         # Make sure the first condition isn't evaluated as True by being converted
