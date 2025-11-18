@@ -36,6 +36,18 @@ Dictionary Objects
    Return a new empty dictionary, or ``NULL`` on failure.
 
 
+.. c:function:: PyObject* PyDict_NewPresized(Py_ssize_t size, int unicode_keys)
+
+   Return a new empty dictionary with preallocated items, or ``NULL`` on
+   failure.
+
+   *size* is a hint to preallocate items.
+
+   If *unicode_keys* is non-zero, optimize lookup for Unicode keys.
+
+   .. versionadded:: next
+
+
 .. c:function:: PyObject* PyDictProxy_New(PyObject *mapping)
 
    Return a :class:`types.MappingProxyType` object for a mapping which
