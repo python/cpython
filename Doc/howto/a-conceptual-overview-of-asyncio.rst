@@ -358,7 +358,7 @@ call stack to the event loop.
 Then, the event loop needs to manage its internal state and work through
 its processing logic to resume the next job.
 That might sound minor, but in a large program with many ``await``\ s, that
-overhead can add up to a meaningful performance drag.
+overhead can add up to a non-negligible performance drag.
 
 ------------------------------------------------
 A conceptual overview part 2: the nuts and bolts
