@@ -77,9 +77,7 @@
         /* Under Cygwin, auto-import functions to prevent compilation */
         /* failures similar to those described at the bottom of 4.1: */
         /* http://docs.python.org/extending/windows.html#a-cookbook-approach */
-#                       if defined(__CYGWIN__)
-#                               define _PyINIT_FUNC_DECLSPEC _PyINIT_EXPORTED_SYMBOL
-#                       else /* __CYGWIN__ */
+#                       if !defined(__CYGWIN__)
 #                               define PyAPI_FUNC(RTYPE) Py_IMPORTED_SYMBOL RTYPE
 #                       endif /* !__CYGWIN__ */
 #                       define PyAPI_DATA(RTYPE) extern Py_IMPORTED_SYMBOL RTYPE
