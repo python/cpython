@@ -1102,7 +1102,7 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
         }
         return NULL;
     }
-    if (_Py_EnterRecursiveCallTstate(tstate, " in comparison")) {
+    if (_Py_EnterRecursiveCallTstate(tstate, " while performing rich comparison")) {
         return NULL;
     }
     PyObject *res = do_richcompare(tstate, v, w, op);
