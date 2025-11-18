@@ -308,7 +308,7 @@ the bytes over a shared :mod:`socket <socket>` or
 
    .. note::
       The executor may replace uncaught exceptions from *initializer*
-      with :class:`~concurrent.futures.interpreter.ExecutionFailed`.
+      with :class:`~concurrent.interpreters.ExecutionFailed`.
 
    Other caveats from parent :class:`ThreadPoolExecutor` apply here.
 
@@ -320,11 +320,11 @@ likewise serializes the return value when sending it back.
 When a worker's current task raises an uncaught exception, the worker
 always tries to preserve the exception as-is.  If that is successful
 then it also sets the ``__cause__`` to a corresponding
-:class:`~concurrent.futures.interpreter.ExecutionFailed`
+:class:`~concurrent.interpreters.ExecutionFailed`
 instance, which contains a summary of the original exception.
 In the uncommon case that the worker is not able to preserve the
 original as-is then it directly preserves the corresponding
-:class:`~concurrent.futures.interpreter.ExecutionFailed`
+:class:`~concurrent.interpreters.ExecutionFailed`
 instance instead.
 
 
