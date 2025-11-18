@@ -42,6 +42,7 @@ from .constants import (
 )
 from .display import CursesDisplay
 from .widgets import HeaderWidget, TableWidget, FooterWidget, HelpWidget
+from .trend_tracker import TrendTracker
 
 
 @dataclass
@@ -178,6 +179,9 @@ class LiveStatsCollector(Collector):
 
         # Color mode
         self._can_colorize = _colorize.can_colorize()
+
+        # Trend tracking (initialized after colors are set up)
+        self._trend_tracker = None
 
     def _get_or_create_thread_data(self, thread_id):
         """Get or create ThreadData for a thread ID."""
@@ -405,6 +409,10 @@ class LiveStatsCollector(Collector):
     def _initialize_widgets(self, colors):
         """Initialize widgets with display and colors."""
         if self._header_widget is None:
+            # Initialize trend tracker with colors
+            if self._trend_tracker is None:
+                self._trend_tracker = TrendTracker(colors, enabled=True)
+
             self._header_widget = HeaderWidget(self.display, colors, self)
             self._table_widget = TableWidget(self.display, colors, self)
             self._footer_widget = FooterWidget(self.display, colors, self)
@@ -569,6 +577,10 @@ class LiveStatsCollector(Collector):
                     "color_samples": self.display.get_color_pair(1),
                     "color_file": self.display.get_color_pair(2),
                     "color_func": self.display.get_color_pair(3),
+                    # Trend colors (stock-like indicators)
+                    "trend_up": self.display.get_color_pair(COLOR_PAIR_GREEN) | A_BOLD,
+                    "trend_down": self.display.get_color_pair(COLOR_PAIR_RED) | A_BOLD,
+                    "trend_stable": A_NORMAL,
                 }
 
         # Fallback to non-color attributes
@@ -584,6 +596,10 @@ class LiveStatsCollector(Collector):
             "color_samples": A_NORMAL,
             "color_file": A_NORMAL,
             "color_func": A_NORMAL,
+            # Trend colors (fallback to bold/normal for monochrome)
+            "trend_up": A_BOLD,
+            "trend_down": A_BOLD,
+            "trend_stable": A_NORMAL,
         }
 
     def _build_stats_list(self):
@@ -614,6 +630,24 @@ class LiveStatsCollector(Collector):
             total_time = direct_calls * self.sample_interval_sec
             cumulative_time = cumulative_calls * self.sample_interval_sec
 
+            # Calculate sample percentages
+            sample_pct = (direct_calls / self.total_samples * 100) if self.total_samples > 0 else 0
+            cumul_pct = (cumulative_calls / self.total_samples * 100) if self.total_samples > 0 else 0
+
+            # Calculate trends for all columns using TrendTracker
+            trends = {}
+            if self._trend_tracker is not None:
+                trends = self._trend_tracker.update_metrics(
+                    func,
+                    {
+                        'nsamples': direct_calls,
+                        'tottime': total_time,
+                        'cumtime': cumulative_time,
+                        'sample_pct': sample_pct,
+                        'cumul_pct': cumul_pct,
+                    }
+                )
+
             stats_list.append(
                 {
                     "func": func,
@@ -621,6 +655,7 @@ class LiveStatsCollector(Collector):
                     "cumulative_calls": cumulative_calls,
                     "total_time": total_time,
                     "cumulative_time": cumulative_time,
+                    "trends": trends,  # Dictionary of trends for all columns
                 }
             )
 
@@ -669,6 +704,9 @@ class LiveStatsCollector(Collector):
             "total": 0,
         }
         self._gc_frame_samples = 0
+        # Clear trend tracking
+        if self._trend_tracker is not None:
+            self._trend_tracker.clear()
         self.start_time = time.perf_counter()
         self._last_display_update = self.start_time
 
@@ -849,6 +887,11 @@ class LiveStatsCollector(Collector):
                     self.current_thread_index = 0
             else:
                 self.view_mode = "ALL"
+
+        elif ch == ord("x") or ch == ord("X"):
+            # Toggle trend colors on/off
+            if self._trend_tracker is not None:
+                self._trend_tracker.toggle()
 
         elif ch == curses.KEY_LEFT or ch == curses.KEY_UP:
             # Navigate to previous thread in PER_THREAD mode

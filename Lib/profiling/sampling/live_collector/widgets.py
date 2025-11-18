@@ -727,6 +727,9 @@ class TableWidget(Widget):
         color_file = self.colors.get("color_file", curses.A_NORMAL)
         color_func = self.colors.get("color_func", curses.A_NORMAL)
 
+        # Get trend tracker for color decisions
+        trend_tracker = self.collector._trend_tracker
+
         for stat in stats_list:
             if line >= height - FOOTER_LINES:
                 break
@@ -736,6 +739,7 @@ class TableWidget(Widget):
             cumulative_calls = stat["cumulative_calls"]
             total_time = stat["total_time"]
             cumulative_time = stat["cumulative_time"]
+            trends = stat.get("trends", {})
 
             sample_pct = (
                 (direct_calls / self.collector.total_samples * 100)
@@ -748,32 +752,44 @@ class TableWidget(Widget):
                 else 0
             )
 
+            # Helper function to get trend color for a specific column
+            def get_trend_color(column_name):
+                trend = trends.get(column_name, "stable")
+                if trend_tracker is not None:
+                    return trend_tracker.get_color(trend)
+                return curses.A_NORMAL
+
             filename, lineno, funcname = func[0], func[1], func[2]
             samples_str = f"{direct_calls}/{cumulative_calls}"
             col = 0
 
-            # Samples column
-            self.add_str(line, col, f"{samples_str:>13}", color_samples)
+            # Samples column - apply trend color based on nsamples trend
+            nsamples_color = get_trend_color("nsamples")
+            self.add_str(line, col, f"{samples_str:>13}", nsamples_color)
             col += 15
 
             # Sample % column
             if show_sample_pct:
-                self.add_str(line, col, f"{sample_pct:>5.1f}")
+                sample_pct_color = get_trend_color("sample_pct")
+                self.add_str(line, col, f"{sample_pct:>5.1f}", sample_pct_color)
                 col += 7
 
             # Total time column
             if show_tottime:
-                self.add_str(line, col, f"{total_time:>10.3f}")
+                tottime_color = get_trend_color("tottime")
+                self.add_str(line, col, f"{total_time:>10.3f}", tottime_color)
                 col += 12
 
             # Cumul % column
             if show_cumul_pct:
-                self.add_str(line, col, f"{cum_pct:>5.1f}")
+                cumul_pct_color = get_trend_color("cumul_pct")
+                self.add_str(line, col, f"{cum_pct:>5.1f}", cumul_pct_color)
                 col += 7
 
             # Cumul time column
             if show_cumtime:
-                self.add_str(line, col, f"{cumulative_time:>10.3f}")
+                cumtime_color = get_trend_color("cumtime")
+                self.add_str(line, col, f"{cumulative_time:>10.3f}", cumtime_color)
                 col += 12
 
             # Function name column
@@ -861,12 +877,15 @@ class FooterWidget(Widget):
             status.append(
                 f"[Filter: {self.collector.filter_pattern} (c to clear)]"
             )
+        # Show trend colors status if disabled
+        if self.collector._trend_tracker is not None and not self.collector._trend_tracker.enabled:
+            status.append("[Trend colors: OFF]")
         status_str = " ".join(status) + " " if status else ""
 
         if self.collector.finished:
             footer = f"{status_str}"
         else:
-            footer = f"{status_str}Sort: {sort_display} | 't':mode ←→:thread 'h':help 'q':quit"
+            footer = f"{status_str}Sort: {sort_display} | 't':mode 'x':trends ←→:thread 'h':help 'q':quit"
         self.add_str(
             line,
             0,
@@ -914,6 +933,7 @@ class HelpWidget(Widget):
             ("  s           - Cycle through sort modes (forward)", A_NORMAL),
             ("  S           - Cycle through sort modes (backward)", A_NORMAL),
             ("  t           - Toggle view mode (ALL / per-thread)", A_NORMAL),
+            ("  x           - Toggle trend colors (on/off)", A_NORMAL),
             ("  ← →  ↑ ↓   - Navigate threads (in per-thread mode)", A_NORMAL),
             ("  +           - Faster display refresh rate", A_NORMAL),
             ("  -           - Slower display refresh rate", A_NORMAL),
