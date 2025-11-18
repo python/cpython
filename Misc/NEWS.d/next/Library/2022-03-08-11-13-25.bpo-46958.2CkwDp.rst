@@ -1,0 +1,3 @@
+Added optional argument *list_oneline* to :meth:`json.dump` and
+:meth:`json.dumps` for printing array output on a single
+line. Patch by Daniel Marshall.
