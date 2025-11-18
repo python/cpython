@@ -27,6 +27,7 @@ from test.support import (
     requires_subprocess,
     captured_stdout,
     captured_stderr,
+    SHORT_TIMEOUT,
 )
 
 from .helpers import (
@@ -36,6 +37,9 @@ from .helpers import (
     PROCESS_VM_READV_SUPPORTED,
 )
 from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo
+
+# Duration for profiling tests - long enough for process to complete naturally
+PROFILING_TIMEOUT = str(int(SHORT_TIMEOUT))
 
 
 @skip_if_not_supported
@@ -405,9 +409,11 @@ def nested_calls():
 
 def main_loop():
     """Main test loop with different execution paths."""
+    max_iterations = 1000
+
     iteration = 0
 
-    while True:
+    while iteration < max_iterations:
         iteration += 1
 
         # Different execution paths - focus on CPU intensive work
@@ -434,9 +440,10 @@ if __name__ == "__main__":
             mock.patch("sys.stdout", captured_output),
         ):
             try:
+                # Sample for up to SHORT_TIMEOUT seconds, but process exits after fixed iterations
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
-                    duration_sec=2,
+                    duration_sec=SHORT_TIMEOUT,
                     sample_interval_usec=1000,  # 1ms
                     show_summary=False,
                 )
@@ -578,7 +585,8 @@ if __name__ == "__main__":
         script_file.flush()
         self.addCleanup(close_and_unlink, script_file)
 
-        test_args = ["profiling.sampling.sample", "-d", "1", script_file.name]
+        # Sample for up to SHORT_TIMEOUT seconds, but process exits after fixed iterations
+        test_args = ["profiling.sampling.sample", "-d", PROFILING_TIMEOUT, script_file.name]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -612,7 +620,7 @@ if __name__ == "__main__":
         test_args = [
             "profiling.sampling.sample",
             "-d",
-            "1",
+            PROFILING_TIMEOUT,
             "-m",
             "test_module",
         ]
