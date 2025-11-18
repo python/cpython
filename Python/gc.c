@@ -1384,7 +1384,6 @@ gc_collect_young(PyThreadState *tstate,
     gc_list_init(&survivors);
     gc_list_set_space(young, gcstate->visited_space);
     gc_collect_region(tstate, young, &survivors, stats);
-    stats->visited += gcstate->young.count;
     gc_list_merge(&survivors, visited);
     validate_spaces(gcstate);
     gcstate->young.count = 0;
@@ -1699,7 +1698,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     PyGC_Head survivors;
     gc_list_init(&survivors);
     gc_collect_region(tstate, &increment, &survivors, stats);
-    stats->visited += increment_size;
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
     gcstate->work_to_do -= increment_size;
@@ -1732,7 +1730,6 @@ gc_collect_full(PyThreadState *tstate,
 
     gc_collect_region(tstate, visited, visited,
                       stats);
-    stats->visited += gcstate->young.count + gcstate->old[0].count + gcstate->old[1].count;
     validate_spaces(gcstate);
     gcstate->young.count = 0;
     gcstate->old[0].count = 0;
