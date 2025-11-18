@@ -11740,6 +11740,7 @@
             }
             DISPATCH_GOTO_NON_TRACING();
             #else
+            (void)prev_instr;
             Py_FatalError("JIT instruction executed in non-jit build.");
             #endif
         }

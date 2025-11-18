@@ -84,7 +84,7 @@ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
     # Emit the tracing dispatch table.
     out.emit("static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {\n")
     for name in sorted(analysis.instructions.keys()):
-        out.emit(f"[{name}] = _TAIL_CALL_record_previous_inst,\n")
+        out.emit(f"[{name}] = _TAIL_CALL_TRACE_RECORD,\n")
     named_values = analysis.opmap.values()
     for rest in range(256):
         if rest not in named_values:
