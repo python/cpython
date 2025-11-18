@@ -91,7 +91,7 @@ def build_menu(
         #          D E F                       B E
         #          G                           C F
         #
-        # "fill" the table with empty words, so we always have the same amout
+        # "fill" the table with empty words, so we always have the same amount
         # of rows for each column
         missing = cols*rows - len(wordlist)
         wordlist = wordlist + ['']*missing
@@ -187,18 +187,20 @@ class complete(commands.Command):
             if p:
                 r.insert(p)
             if last_is_completer:
-                if not r.cmpltn_menu_visible:
-                    r.cmpltn_menu_visible = True
+                r.cmpltn_menu_visible = True
+                r.cmpltn_message_visible = False
                 r.cmpltn_menu, r.cmpltn_menu_end = build_menu(
                     r.console, completions, r.cmpltn_menu_end,
                     r.use_brackets, r.sort_in_column)
                 r.dirty = True
-            elif stem + p in completions:
-                r.msg = "[ complete but not unique ]"
-                r.dirty = True
-            else:
-                r.msg = "[ not unique ]"
-                r.dirty = True
+            elif not r.cmpltn_menu_visible:
+                r.cmpltn_message_visible = True
+                if stem + p in completions:
+                    r.msg = "[ complete but not unique ]"
+                    r.dirty = True
+                else:
+                    r.msg = "[ not unique ]"
+                    r.dirty = True
 
 
 class self_insert(commands.self_insert):
@@ -207,7 +209,6 @@ class self_insert(commands.self_insert):
         r = self.reader  # type: ignore[assignment]
 
         commands.self_insert.do(self)
-
         if r.cmpltn_menu_visible:
             stem = r.get_stem()
             if len(stem) < 1:
@@ -236,6 +237,7 @@ class CompletingReader(Reader):
     ### Instance variables
     cmpltn_menu: list[str] = field(init=False)
     cmpltn_menu_visible: bool = field(init=False)
+    cmpltn_message_visible: bool = field(init=False)
     cmpltn_menu_end: int = field(init=False)
     cmpltn_menu_choices: list[str] = field(init=False)
 
@@ -255,13 +257,18 @@ class CompletingReader(Reader):
         if not isinstance(cmd, (complete, self_insert)):
             self.cmpltn_reset()
 
-    def calc_complete_screen(self) -> list[str]:
-        screen = super().calc_complete_screen()
+    def calc_screen(self) -> list[str]:
+        screen = super().calc_screen()
         if self.cmpltn_menu_visible:
-            ly = self.lxy[1]
+            # We display the completions menu below the current prompt
+            ly = self.lxy[1] + 1
             screen[ly:ly] = self.cmpltn_menu
-            self.screeninfo[ly:ly] = [(0, [])]*len(self.cmpltn_menu)
-            self.cxy = self.cxy[0], self.cxy[1] + len(self.cmpltn_menu)
+            # If we're not in the middle of multiline edit, don't append to screeninfo
+            # since that screws up the position calculation in pos2xy function.
+            # This is a hack to prevent the cursor jumping
+            # into the completions menu when pressing left or down arrow.
+            if self.pos != len(self.buffer):
+                self.screeninfo[ly:ly] = [(0, [])]*len(self.cmpltn_menu)
         return screen
 
     def finish(self) -> None:
@@ -271,6 +278,7 @@ class CompletingReader(Reader):
     def cmpltn_reset(self) -> None:
         self.cmpltn_menu = []
         self.cmpltn_menu_visible = False
+        self.cmpltn_message_visible = False
         self.cmpltn_menu_end = 0
         self.cmpltn_menu_choices = []
 
@@ -285,3 +293,7 @@ class CompletingReader(Reader):
 
     def get_completions(self, stem: str) -> list[str]:
         return []
+
+    def get_line(self) -> str:
+        """Return the current line until the cursor position."""
+        return ''.join(self.buffer[:self.pos])

@@ -11,7 +11,9 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_pystate.h"   // _PyThreadState_GET()
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_signal.h"        // _PyOS_SigintEvent()
 #ifdef MS_WINDOWS
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN
@@ -28,7 +30,7 @@
 PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
 PyThreadState *_PyOS_ReadlineTState = NULL;
 
-static PyThread_type_lock _PyOS_ReadlineLock = NULL;
+static PyMutex _PyOS_ReadlineLock;
 
 int (*PyOS_InputHook)(void) = NULL;
 
@@ -373,28 +375,21 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     size_t len;
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_PyOS_ReadlineTState == tstate) {
+    if (_Py_atomic_load_ptr_relaxed(&_PyOS_ReadlineTState) == tstate) {
         PyErr_SetString(PyExc_RuntimeError,
                         "can't re-enter readline");
         return NULL;
     }
 
-
+    // GH-123321: We need to acquire the lock before setting
+    // _PyOS_ReadlineTState, otherwise the variable may be nullified by a
+    // different thread.
+    Py_BEGIN_ALLOW_THREADS
+    PyMutex_Lock(&_PyOS_ReadlineLock);
+    _Py_atomic_store_ptr_relaxed(&_PyOS_ReadlineTState, tstate);
     if (PyOS_ReadlineFunctionPointer == NULL) {
         PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
     }
-
-    if (_PyOS_ReadlineLock == NULL) {
-        _PyOS_ReadlineLock = PyThread_allocate_lock();
-        if (_PyOS_ReadlineLock == NULL) {
-            PyErr_SetString(PyExc_MemoryError, "can't allocate lock");
-            return NULL;
-        }
-    }
-
-    _PyOS_ReadlineTState = tstate;
-    Py_BEGIN_ALLOW_THREADS
-    PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
 
     /* This is needed to handle the unlikely case that the
      * interpreter is in interactive mode *and* stdin/out are not
@@ -418,11 +413,12 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     else {
         rv = (*PyOS_ReadlineFunctionPointer)(sys_stdin, sys_stdout, prompt);
     }
+
+    // gh-123321: Must set the variable and then release the lock before
+    // taking the GIL. Otherwise a deadlock or segfault may occur.
+    _Py_atomic_store_ptr_relaxed(&_PyOS_ReadlineTState, NULL);
+    PyMutex_Unlock(&_PyOS_ReadlineLock);
     Py_END_ALLOW_THREADS
-
-    PyThread_release_lock(_PyOS_ReadlineLock);
-
-    _PyOS_ReadlineTState = NULL;
 
     if (rv == NULL)
         return NULL;

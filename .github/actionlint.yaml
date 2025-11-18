@@ -1,0 +1,12 @@
+self-hosted-runner:
+  # Pending https://github.com/rhysd/actionlint/issues/533
+  # and https://github.com/rhysd/actionlint/issues/571
+  labels: ["windows-11-arm", "macos-15-intel"]
+
+config-variables: null
+
+paths:
+  .github/workflows/**/*.yml:
+     ignore:
+     - 1st argument of function call is not assignable
+     - SC2(015|038|086|091|097|098|129|155)

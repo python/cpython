@@ -28,7 +28,7 @@ struct _PyInterpreterFrame;
  * Does not raise an exception. */
 PyAPI_FUNC(PyObject *) PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
 
-/* Returns a byte ofsset into the last executed instruction.
+/* Returns a byte offset into the last executed instruction.
  * Does not raise an exception. */
 PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
 
