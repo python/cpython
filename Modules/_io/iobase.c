@@ -951,7 +951,7 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
     if (PyByteArray_Resize(b, bytes_filled) < 0) {
         goto cleanup;
     }
-    res = PyObject_CallMethod(b, "take_bytes", NULL);
+    res = _PyObject_CallMethod(b, &_Py_ID(takes_bytes), NULL);
 
 cleanup:
     Py_DECREF(b);
