@@ -620,7 +620,7 @@ The :mod:`functools` module defines the following functions:
    dispatch>` :term:`generic function`.
 
    To define a generic method, decorate it with the ``@singledispatchmethod``
-   decorator. When defining a function using ``@singledispatchmethod``, note
+   decorator. When defining a method using ``@singledispatchmethod``, note
    that the dispatch happens on the type of the first non-*self* or non-*cls*
    argument::
 
