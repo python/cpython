@@ -404,6 +404,25 @@ definition with the same method name.
    slot.  This is helpful because calls to PyCFunctions are optimized more
    than wrapper object calls.
 
+
+.. c:var:: PyTypeObject PyCMethod_Type
+
+   The type object corresponding to Python C method objects. This is
+   available as :class:`types.BuiltinMethodType` in the Python layer.
+
+
+.. c:function:: int PyCMethod_Check(PyObject *op)
+
+   Return true if *op* is an instance of the :c:type:`PyCMethod_Type` type
+   or a subtype of it. This function always succeeds.
+
+
+.. c:function:: int PyCMethod_CheckExact(PyObject *op)
+
+   This is the same as :c:func:`PyCMethod_Check`, but does not account for
+   subtypes.
+
+
 .. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
 
    Turn *ml* into a Python :term:`callable` object.
@@ -429,6 +448,24 @@ definition with the same method name.
    .. versionadded:: 3.9
 
 
+.. c:var:: PyTypeObject PyCFunction_Type
+
+   The type object corresponding to Python C function objects. This is
+   available as :class:`types.BuiltinFunctionType` in the Python layer.
+
+
+.. c:function:: int PyCFunction_Check(PyObject *op)
+
+   Return true if *op* is an instance of the :c:type:`PyCFunction_Type` type
+   or a subtype of it. This function always succeeds.
+
+
+.. c:function:: int PyCFunction_CheckExact(PyObject *op)
+
+   This is the same as :c:func:`PyCFunction_Check`, but does not account for
+   subtypes.
+
+
 .. c:function:: PyObject * PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 
    Equivalent to ``PyCMethod_New(ml, self, module, NULL)``.
@@ -437,6 +474,62 @@ definition with the same method name.
 .. c:function:: PyObject * PyCFunction_New(PyMethodDef *ml, PyObject *self)
 
    Equivalent to ``PyCMethod_New(ml, self, NULL, NULL)``.
+
+
+.. c:function:: int PyCFunction_GetFlags(PyObject *func)
+
+   Get the function's flags on *func* as they were passed to
+   :c:member:`~PyMethodDef.ml_flags`.
+
+   If *func* is not a C function object, this fails with an exception.
+   *func* must not be ``NULL``.
+
+   This function returns the function's flags on success, and ``-1`` with an
+   exception set on failure.
+
+
+.. c:function:: int PyCFunction_GET_FLAGS(PyObject *func)
+
+   This is the same as :c:func:`PyCFunction_GetFlags`, but without error
+   or type checking.
+
+
+.. c:function:: PyCFunction PyCFunction_GetFunction(PyObject *func)
+
+   Get the function pointer on *func* as it was passed to
+   :c:member:`~PyMethodDef.ml_meth`.
+
+   If *func* is not a C function object, this fails with an exception.
+   *func* must not be ``NULL``.
+
+   This function returns the function pointer on success, and ``NULL`` with an
+   exception set on failure.
+
+
+.. c:function:: int PyCFunction_GET_FUNCTION(PyObject *func)
+
+   This is the same as :c:func:`PyCFunction_GetFunction`, but without error
+   or type checking.
+
+
+.. c:function:: PyObject *PyCFunction_GetSelf(PyObject *func)
+
+   Get the "self" object on *func*. This is the object that would be passed
+   to the first argument of a :c:type:`PyCFunction`. For C function objects
+   created through a :c:type:`PyMethodDef` on a :c:type:`PyModuleDef`, this
+   is the resulting module object.
+
+   If *func* is not a C function object, this fails with an exception.
+   *func* must not be ``NULL``.
+
+   This function returns a :term:`borrowed reference` to the "self" object
+   on success, and ``NULL`` with an exception set on failure.
+
+
+.. c:function:: PyObject *PyCFunction_GET_SELF(PyObject *func)
+
+   This is the same as :c:func:`PyCFunction_GetSelf`, but without error or
+   type checking.
 
 
 Accessing attributes of extension types

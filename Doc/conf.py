@@ -225,9 +225,6 @@ nitpick_ignore = [
 # Temporary undocumented names.
 # In future this list must be empty.
 nitpick_ignore += [
-    # Undocumented public C macros
-    ('c:macro', 'Py_BUILD_ASSERT'),
-    ('c:macro', 'Py_BUILD_ASSERT_EXPR'),
     # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
     # be resolved, as the method is currently undocumented. For context, see
     # https://github.com/python/cpython/pull/103289.
@@ -360,6 +357,7 @@ latex_elements = {
     'papersize': 'a4paper',
     # The font size ('10pt', '11pt' or '12pt').
     'pointsize': '10pt',
+    'maxlistdepth': '8',  # See https://github.com/python/cpython/issues/139588
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

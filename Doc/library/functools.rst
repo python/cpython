@@ -42,11 +42,11 @@ The :mod:`functools` module defines the following functions:
         def factorial(n):
             return n * factorial(n-1) if n else 1
 
-        >>> factorial(10)      # no previously cached result, makes 11 recursive calls
+        >>> factorial(10)   # no previously cached result, makes 11 recursive calls
         3628800
-        >>> factorial(5)       # just looks up cached value result
+        >>> factorial(5)    # no new calls, just returns the cached result
         120
-        >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
+        >>> factorial(12)   # two new recursive calls, factorial(10) is cached
         479001600
 
    The cache is threadsafe so that the wrapped function can be used in
@@ -620,7 +620,7 @@ The :mod:`functools` module defines the following functions:
    dispatch>` :term:`generic function`.
 
    To define a generic method, decorate it with the ``@singledispatchmethod``
-   decorator. When defining a function using ``@singledispatchmethod``, note
+   decorator. When defining a method using ``@singledispatchmethod``, note
    that the dispatch happens on the type of the first non-*self* or non-*cls*
    argument::
 

@@ -463,6 +463,7 @@ timed intervals.
    .. method:: getFilesToDelete()
 
       Returns a list of filenames which should be deleted as part of rollover. These
+      are the absolute paths of the oldest backup log files written by the handler.
 
    .. method:: shouldRollover(record)
 

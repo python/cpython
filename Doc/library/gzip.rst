@@ -262,7 +262,7 @@ Example of how to GZIP compress a binary string::
 
 .. _gzip-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`gzip` module provides a simple command line interface to compress or
@@ -275,7 +275,7 @@ Once executed the :mod:`gzip` module keeps the input file(s).
    Add a new command line interface with a usage.
    By default, when you will execute the CLI, the default compression level is 6.
 
-Command line options
+Command-line options
 ^^^^^^^^^^^^^^^^^^^^
 
 .. option:: file

@@ -1,0 +1,1 @@
+Fix hang when cancelling process created by :func:`asyncio.create_subprocess_exec` or :func:`asyncio.create_subprocess_shell`. Patch by Kumar Aditya.
