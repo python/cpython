@@ -12263,7 +12263,7 @@ JUMP_TO_LABEL(error);
                                  opcode == RERAISE || opcode == CLEANUP_THROW ||
                                  opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing);
+            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (full) {
                 LEAVE_TRACING();
@@ -12309,7 +12309,7 @@ JUMP_TO_LABEL(error);
             assert(IS_JIT_TRACING());
             int opcode = next_instr->op.code;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, true);
+            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, _EXIT_TRACE);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LEAVE_TRACING();
             _PyFrame_SetStackPointer(frame, stack_pointer);
