@@ -789,6 +789,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(symmetric_difference_update)
         STRUCT_FOR_ID(tabsize)
         STRUCT_FOR_ID(tag)
+        STRUCT_FOR_ID(take_bytes)
         STRUCT_FOR_ID(target)
         STRUCT_FOR_ID(target_is_directory)
         STRUCT_FOR_ID(task)
