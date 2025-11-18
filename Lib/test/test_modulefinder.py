@@ -76,6 +76,18 @@ a/c.py
                                 from sys import version_info
 """]
 
+namespace_pkg_test = [
+    "a.module",
+    ["a", "a.module", "b"],
+    [], [],
+    """\
+a/__init__.py
+a/module.py
+                                from b import c
+b/c.py
+                                import sys
+"""]
+
 absolute_import_test = [
     "a.module",
     ["a", "a.module",
@@ -352,6 +364,9 @@ class ModuleFinderTest(unittest.TestCase):
 
     def test_package(self):
         self._do_test(package_test)
+
+    def test_namespace_pkg(self):
+        self._do_test(namespace_pkg_test)
 
     def test_maybe(self):
         self._do_test(maybe_test)
