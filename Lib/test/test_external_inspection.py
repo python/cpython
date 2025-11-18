@@ -19,6 +19,17 @@ from test.support.socket_helper import find_unused_port
 
 import subprocess
 
+# Profiling mode constants
+PROFILING_MODE_WALL = 0
+PROFILING_MODE_CPU = 1
+PROFILING_MODE_GIL = 2
+PROFILING_MODE_ALL = 3
+
+# Thread status flags
+THREAD_STATUS_HAS_GIL = (1 << 0)
+THREAD_STATUS_ON_CPU = (1 << 1)
+THREAD_STATUS_UNKNOWN = (1 << 2)
+
 try:
     from concurrent import interpreters
 except ImportError:
@@ -148,6 +159,8 @@ class TestGetStackTrace(unittest.TestCase):
                 FrameInfo([script_name, 12, "baz"]),
                 FrameInfo([script_name, 9, "bar"]),
                 FrameInfo([threading.__file__, ANY, "Thread.run"]),
+                FrameInfo([threading.__file__, ANY, "Thread._bootstrap_inner"]),
+                FrameInfo([threading.__file__, ANY, "Thread._bootstrap"]),
             ]
             # Is possible that there are more threads, so we check that the
             # expected stack traces are in the result (looking at you Windows!)
@@ -1669,6 +1682,360 @@ class TestUnsupportedPlatformHandling(unittest.TestCase):
             "Reading the PyRuntime section is not supported on this platform",
             str(cm.exception)
         )
+
+class TestDetectionOfThreadStatus(unittest.TestCase):
+    @unittest.skipIf(
+        sys.platform not in ("linux", "darwin", "win32"),
+        "Test only runs on unsupported platforms (not Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(sys.platform == "android", "Android raises Linux-specific exception")
+    def test_thread_status_detection(self):
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import time, sys, socket, threading
+            import os
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def sleeper():
+                tid = threading.get_native_id()
+                sock.sendall(f'ready:sleeper:{{tid}}\\n'.encode())
+                time.sleep(10000)
+
+            def busy():
+                tid = threading.get_native_id()
+                sock.sendall(f'ready:busy:{{tid}}\\n'.encode())
+                x = 0
+                while True:
+                    x = x + 1
+                time.sleep(0.5)
+
+            t1 = threading.Thread(target=sleeper)
+            t2 = threading.Thread(target=busy)
+            t1.start()
+            t2.start()
+            sock.sendall(b'ready:main\\n')
+            t1.join()
+            t2.join()
+            sock.close()
+            """
+        )
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(1)
+
+            script_name = _make_test_script(script_dir, "thread_status_script", script)
+            client_socket = None
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+                response = b""
+                sleeper_tid = None
+                busy_tid = None
+                while True:
+                    chunk = client_socket.recv(1024)
+                    response += chunk
+                    if b"ready:main" in response and b"ready:sleeper" in response and b"ready:busy" in response:
+                        # Parse TIDs from the response
+                        for line in response.split(b"\n"):
+                            if line.startswith(b"ready:sleeper:"):
+                                try:
+                                    sleeper_tid = int(line.split(b":")[-1])
+                                except Exception:
+                                    pass
+                            elif line.startswith(b"ready:busy:"):
+                                try:
+                                    busy_tid = int(line.split(b":")[-1])
+                                except Exception:
+                                    pass
+                        break
+
+                attempts = 10
+                statuses = {}
+                try:
+                    unwinder = RemoteUnwinder(p.pid, all_threads=True, mode=PROFILING_MODE_CPU,
+                                                skip_non_matching_threads=False)
+                    for _ in range(attempts):
+                        traces = unwinder.get_stack_trace()
+                        # Find threads and their statuses
+                        statuses = {}
+                        for interpreter_info in traces:
+                            for thread_info in interpreter_info.threads:
+                                statuses[thread_info.thread_id] = thread_info.status
+
+                        # Check if sleeper thread is off CPU and busy thread is on CPU
+                        # In the new flags system:
+                        # - sleeper should NOT have ON_CPU flag (off CPU)
+                        # - busy should have ON_CPU flag
+                        if (sleeper_tid in statuses and
+                            busy_tid in statuses and
+                            not (statuses[sleeper_tid] & THREAD_STATUS_ON_CPU) and
+                            (statuses[busy_tid] & THREAD_STATUS_ON_CPU)):
+                            break
+                        time.sleep(0.5)  # Give a bit of time to let threads settle
+                except PermissionError:
+                    self.skipTest(
+                        "Insufficient permissions to read the stack trace"
+                    )
+
+                self.assertIsNotNone(sleeper_tid, "Sleeper thread id not received")
+                self.assertIsNotNone(busy_tid, "Busy thread id not received")
+                self.assertIn(sleeper_tid, statuses, "Sleeper tid not found in sampled threads")
+                self.assertIn(busy_tid, statuses, "Busy tid not found in sampled threads")
+                self.assertFalse(statuses[sleeper_tid] & THREAD_STATUS_ON_CPU, "Sleeper thread should be off CPU")
+                self.assertTrue(statuses[busy_tid] & THREAD_STATUS_ON_CPU, "Busy thread should be on CPU")
+
+            finally:
+                if client_socket is not None:
+                    client_socket.close()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+    @unittest.skipIf(
+        sys.platform not in ("linux", "darwin", "win32"),
+        "Test only runs on unsupported platforms (not Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(sys.platform == "android", "Android raises Linux-specific exception")
+    def test_thread_status_gil_detection(self):
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import time, sys, socket, threading
+            import os
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def sleeper():
+                tid = threading.get_native_id()
+                sock.sendall(f'ready:sleeper:{{tid}}\\n'.encode())
+                time.sleep(10000)
+
+            def busy():
+                tid = threading.get_native_id()
+                sock.sendall(f'ready:busy:{{tid}}\\n'.encode())
+                x = 0
+                while True:
+                    x = x + 1
+                time.sleep(0.5)
+
+            t1 = threading.Thread(target=sleeper)
+            t2 = threading.Thread(target=busy)
+            t1.start()
+            t2.start()
+            sock.sendall(b'ready:main\\n')
+            t1.join()
+            t2.join()
+            sock.close()
+            """
+        )
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(1)
+
+            script_name = _make_test_script(script_dir, "thread_status_script", script)
+            client_socket = None
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+                response = b""
+                sleeper_tid = None
+                busy_tid = None
+                while True:
+                    chunk = client_socket.recv(1024)
+                    response += chunk
+                    if b"ready:main" in response and b"ready:sleeper" in response and b"ready:busy" in response:
+                        # Parse TIDs from the response
+                        for line in response.split(b"\n"):
+                            if line.startswith(b"ready:sleeper:"):
+                                try:
+                                    sleeper_tid = int(line.split(b":")[-1])
+                                except Exception:
+                                    pass
+                            elif line.startswith(b"ready:busy:"):
+                                try:
+                                    busy_tid = int(line.split(b":")[-1])
+                                except Exception:
+                                    pass
+                        break
+
+                attempts = 10
+                statuses = {}
+                try:
+                    unwinder = RemoteUnwinder(p.pid, all_threads=True, mode=PROFILING_MODE_GIL,
+                                                skip_non_matching_threads=False)
+                    for _ in range(attempts):
+                        traces = unwinder.get_stack_trace()
+                        # Find threads and their statuses
+                        statuses = {}
+                        for interpreter_info in traces:
+                            for thread_info in interpreter_info.threads:
+                                statuses[thread_info.thread_id] = thread_info.status
+
+                        # Check if sleeper thread doesn't have GIL and busy thread has GIL
+                        # In the new flags system:
+                        # - sleeper should NOT have HAS_GIL flag (waiting for GIL)
+                        # - busy should have HAS_GIL flag
+                        if (sleeper_tid in statuses and
+                            busy_tid in statuses and
+                            not (statuses[sleeper_tid] & THREAD_STATUS_HAS_GIL) and
+                            (statuses[busy_tid] & THREAD_STATUS_HAS_GIL)):
+                            break
+                        time.sleep(0.5)  # Give a bit of time to let threads settle
+                except PermissionError:
+                    self.skipTest(
+                        "Insufficient permissions to read the stack trace"
+                    )
+
+                self.assertIsNotNone(sleeper_tid, "Sleeper thread id not received")
+                self.assertIsNotNone(busy_tid, "Busy thread id not received")
+                self.assertIn(sleeper_tid, statuses, "Sleeper tid not found in sampled threads")
+                self.assertIn(busy_tid, statuses, "Busy tid not found in sampled threads")
+                self.assertFalse(statuses[sleeper_tid] & THREAD_STATUS_HAS_GIL, "Sleeper thread should not have GIL")
+                self.assertTrue(statuses[busy_tid] & THREAD_STATUS_HAS_GIL, "Busy thread should have GIL")
+
+            finally:
+                if client_socket is not None:
+                    client_socket.close()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+    @unittest.skipIf(
+        sys.platform not in ("linux", "darwin", "win32"),
+        "Test only runs on supported platforms (Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(sys.platform == "android", "Android raises Linux-specific exception")
+    def test_thread_status_all_mode_detection(self):
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import socket
+            import threading
+            import time
+            import sys
+
+            def sleeper_thread():
+                conn = socket.create_connection(("localhost", {port}))
+                conn.sendall(b"sleeper:" + str(threading.get_native_id()).encode())
+                while True:
+                    time.sleep(1)
+
+            def busy_thread():
+                conn = socket.create_connection(("localhost", {port}))
+                conn.sendall(b"busy:" + str(threading.get_native_id()).encode())
+                while True:
+                    sum(range(100000))
+
+            t1 = threading.Thread(target=sleeper_thread)
+            t2 = threading.Thread(target=busy_thread)
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+            """
+        )
+
+        with os_helper.temp_dir() as tmp_dir:
+            script_file = make_script(tmp_dir, "script", script)
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.listen(2)
+            server_socket.settimeout(SHORT_TIMEOUT)
+
+            p = subprocess.Popen(
+                [sys.executable, script_file],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
+            client_sockets = []
+            try:
+                sleeper_tid = None
+                busy_tid = None
+
+                # Receive thread IDs from the child process
+                for _ in range(2):
+                    client_socket, _ = server_socket.accept()
+                    client_sockets.append(client_socket)
+                    line = client_socket.recv(1024)
+                    if line:
+                        if line.startswith(b"sleeper:"):
+                            try:
+                                sleeper_tid = int(line.split(b":")[-1])
+                            except Exception:
+                                pass
+                        elif line.startswith(b"busy:"):
+                            try:
+                                busy_tid = int(line.split(b":")[-1])
+                            except Exception:
+                                pass
+
+                server_socket.close()
+
+                attempts = 10
+                statuses = {}
+                try:
+                    unwinder = RemoteUnwinder(p.pid, all_threads=True, mode=PROFILING_MODE_ALL,
+                                                skip_non_matching_threads=False)
+                    for _ in range(attempts):
+                        traces = unwinder.get_stack_trace()
+                        # Find threads and their statuses
+                        statuses = {}
+                        for interpreter_info in traces:
+                            for thread_info in interpreter_info.threads:
+                                statuses[thread_info.thread_id] = thread_info.status
+
+                        # Check ALL mode provides both GIL and CPU info
+                        # - sleeper should NOT have ON_CPU and NOT have HAS_GIL
+                        # - busy should have ON_CPU and have HAS_GIL
+                        if (sleeper_tid in statuses and
+                            busy_tid in statuses and
+                            not (statuses[sleeper_tid] & THREAD_STATUS_ON_CPU) and
+                            not (statuses[sleeper_tid] & THREAD_STATUS_HAS_GIL) and
+                            (statuses[busy_tid] & THREAD_STATUS_ON_CPU) and
+                            (statuses[busy_tid] & THREAD_STATUS_HAS_GIL)):
+                            break
+                        time.sleep(0.5)
+                except PermissionError:
+                    self.skipTest(
+                        "Insufficient permissions to read the stack trace"
+                    )
+
+                self.assertIsNotNone(sleeper_tid, "Sleeper thread id not received")
+                self.assertIsNotNone(busy_tid, "Busy thread id not received")
+                self.assertIn(sleeper_tid, statuses, "Sleeper tid not found in sampled threads")
+                self.assertIn(busy_tid, statuses, "Busy tid not found in sampled threads")
+
+                # Sleeper thread: off CPU, no GIL
+                self.assertFalse(statuses[sleeper_tid] & THREAD_STATUS_ON_CPU, "Sleeper should be off CPU")
+                self.assertFalse(statuses[sleeper_tid] & THREAD_STATUS_HAS_GIL, "Sleeper should not have GIL")
+
+                # Busy thread: on CPU, has GIL
+                self.assertTrue(statuses[busy_tid] & THREAD_STATUS_ON_CPU, "Busy should be on CPU")
+                self.assertTrue(statuses[busy_tid] & THREAD_STATUS_HAS_GIL, "Busy should have GIL")
+
+            finally:
+                for client_socket in client_sockets:
+                    client_socket.close()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+                p.stdout.close()
+                p.stderr.close()
 
 
 if __name__ == "__main__":

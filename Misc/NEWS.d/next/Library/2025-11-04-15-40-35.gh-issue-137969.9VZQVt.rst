@@ -1,0 +1,3 @@
+Fix :meth:`annotationlib.ForwardRef.evaluate` returning
+:class:`~annotationlib.ForwardRef` objects which don't update with new
+globals.

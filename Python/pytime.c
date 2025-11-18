@@ -2,7 +2,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_ERR
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 #include "pycore_runtime.h"       // _PyRuntime
-#include "pycore_time.h"          // PyTime_t
+#include "pycore_time.h"          // export _PyLong_FromTime_t()
 
 #include <time.h>                 // gmtime_r()
 #ifdef HAVE_SYS_TIME_H
@@ -368,8 +368,20 @@ pytime_object_to_denominator(PyObject *obj, time_t *sec, long *numerator,
 {
     assert(denominator >= 1);
 
-    if (PyFloat_Check(obj)) {
+    if (PyIndex_Check(obj)) {
+        *sec = _PyLong_AsTime_t(obj);
+        *numerator = 0;
+        if (*sec == (time_t)-1 && PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+    else {
         double d = PyFloat_AsDouble(obj);
+        if (d == -1 && PyErr_Occurred()) {
+            *numerator = 0;
+            return -1;
+        }
         if (isnan(d)) {
             *numerator = 0;
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
@@ -378,30 +390,28 @@ pytime_object_to_denominator(PyObject *obj, time_t *sec, long *numerator,
         return pytime_double_to_denominator(d, sec, numerator,
                                             denominator, round);
     }
-    else {
-        *sec = _PyLong_AsTime_t(obj);
-        *numerator = 0;
-        if (*sec == (time_t)-1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                PyErr_Format(PyExc_TypeError,
-                             "argument must be int or float, not %T", obj);
-            }
-            return -1;
-        }
-        return 0;
-    }
 }
 
 
 int
 _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
 {
-    if (PyFloat_Check(obj)) {
+    if (PyIndex_Check(obj)) {
+        *sec = _PyLong_AsTime_t(obj);
+        if (*sec == (time_t)-1 && PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+    else {
         double intpart;
         /* volatile avoids optimization changing how numbers are rounded */
         volatile double d;
 
         d = PyFloat_AsDouble(obj);
+        if (d == -1 && PyErr_Occurred()) {
+            return -1;
+        }
         if (isnan(d)) {
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
             return -1;
@@ -416,13 +426,6 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
             return -1;
         }
         *sec = (time_t)intpart;
-        return 0;
-    }
-    else {
-        *sec = _PyLong_AsTime_t(obj);
-        if (*sec == (time_t)-1 && PyErr_Occurred()) {
-            return -1;
-        }
         return 0;
     }
 }
@@ -466,31 +469,6 @@ _PyTime_FromMicrosecondsClamp(PyTime_t us)
 {
     PyTime_t ns = _PyTime_Mul(us, US_TO_NS);
     return ns;
-}
-
-
-int
-_PyTime_FromLong(PyTime_t *tp, PyObject *obj)
-{
-    if (!PyLong_Check(obj)) {
-        PyErr_Format(PyExc_TypeError, "expect int, got %s",
-                     Py_TYPE(obj)->tp_name);
-        return -1;
-    }
-
-    static_assert(sizeof(long long) == sizeof(PyTime_t),
-                  "PyTime_t is not long long");
-    long long nsec = PyLong_AsLongLong(obj);
-    if (nsec == -1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            pytime_overflow();
-        }
-        return -1;
-    }
-
-    PyTime_t t = (PyTime_t)nsec;
-    *tp = t;
-    return 0;
 }
 
 
@@ -586,39 +564,38 @@ static int
 pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
                    long unit_to_ns)
 {
-    if (PyFloat_Check(obj)) {
+    if (PyIndex_Check(obj)) {
+        long long sec = PyLong_AsLongLong(obj);
+        if (sec == -1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                pytime_overflow();
+            }
+            return -1;
+        }
+
+        static_assert(sizeof(long long) <= sizeof(PyTime_t),
+                    "PyTime_t is smaller than long long");
+        PyTime_t ns = (PyTime_t)sec;
+        if (pytime_mul(&ns, unit_to_ns) < 0) {
+            pytime_overflow();
+            return -1;
+        }
+
+        *tp = ns;
+        return 0;
+    }
+    else {
         double d;
         d = PyFloat_AsDouble(obj);
+        if (d == -1 && PyErr_Occurred()) {
+            return -1;
+        }
         if (isnan(d)) {
             PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
             return -1;
         }
         return pytime_from_double(tp, d, round, unit_to_ns);
     }
-
-    long long sec = PyLong_AsLongLong(obj);
-    if (sec == -1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            pytime_overflow();
-        }
-        else if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Format(PyExc_TypeError,
-                         "'%T' object cannot be interpreted as an integer or float",
-                         obj);
-        }
-        return -1;
-    }
-
-    static_assert(sizeof(long long) <= sizeof(PyTime_t),
-                  "PyTime_t is smaller than long long");
-    PyTime_t ns = (PyTime_t)sec;
-    if (pytime_mul(&ns, unit_to_ns) < 0) {
-        pytime_overflow();
-        return -1;
-    }
-
-    *tp = ns;
-    return 0;
 }
 
 
@@ -655,14 +632,6 @@ PyTime_AsSecondsDouble(PyTime_t ns)
     return d;
 }
 
-
-PyObject *
-_PyTime_AsLong(PyTime_t ns)
-{
-    static_assert(sizeof(long long) >= sizeof(PyTime_t),
-                  "PyTime_t is larger than long long");
-    return PyLong_FromLongLong((long long)ns);
-}
 
 int
 _PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round, PyTime_t *result)

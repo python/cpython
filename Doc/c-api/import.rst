@@ -333,3 +333,24 @@ Importing Modules
    strings instead of Python :class:`str` objects.
 
    .. versionadded:: 3.14
+
+.. c:function:: PyObject* PyImport_CreateModuleFromInitfunc(PyObject *spec, PyObject* (*initfunc)(void))
+
+   This function is a building block that enables embedders to implement
+   the :py:meth:`~importlib.abc.Loader.create_module` step of custom
+   static extension importers (e.g. of statically-linked extensions).
+
+   *spec* must be a :class:`~importlib.machinery.ModuleSpec` object.
+
+   *initfunc* must be an :ref:`initialization function <extension-export-hook>`,
+   the same as for :c:func:`PyImport_AppendInittab`.
+
+   On success, create and return a module object.
+   This module will not be initialized; call :c:func:`!PyModule_Exec`
+   to initialize it.
+   (Custom importers should do this in their
+   :py:meth:`~importlib.abc.Loader.exec_module` method.)
+
+   On error, return NULL with an exception set.
+
+   .. versionadded:: next

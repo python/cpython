@@ -41,7 +41,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyObject_SetArenaAllocator`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
-  * :c:func:`PySys_ResetWarnOptions`
   * the configuration functions covered in :ref:`init-config`
 
 * Informative functions:
@@ -1114,7 +1113,7 @@ code, or when embedding the Python interpreter:
    This function is safe to call without an :term:`attached thread state`; it
    will simply return ``NULL`` indicating that there was no prior thread state.
 
-   .. seealso:
+   .. seealso::
       :c:func:`PyEval_ReleaseThread`
 
    .. note::
@@ -1124,6 +1123,19 @@ code, or when embedding the Python interpreter:
 
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
+
+.. c:type:: PyGILState_STATE
+
+   The type of the value returned by :c:func:`PyGILState_Ensure` and passed to
+   :c:func:`PyGILState_Release`.
+
+   .. c:enumerator:: PyGILState_LOCKED
+
+      The GIL was already held when :c:func:`PyGILState_Ensure` was called.
+
+   .. c:enumerator:: PyGILState_UNLOCKED
+
+      The GIL was not held when :c:func:`PyGILState_Ensure` was called.
 
 .. c:function:: PyGILState_STATE PyGILState_Ensure()
 
@@ -1175,12 +1187,12 @@ with sub-interpreters:
    made on the main thread.  This is mainly a helper/diagnostic function.
 
    .. note::
-      This function does not account for :term:`thread states <thread state>` created
-      by something other than :c:func:`PyGILState_Ensure` (such as :c:func:`PyThreadState_New`).
+      This function may return non-``NULL`` even when the :term:`thread state`
+      is detached.
       Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
       for most cases.
 
-   .. seealso: :c:func:`PyThreadState_Get``
+   .. seealso:: :c:func:`PyThreadState_Get`
 
 .. c:function:: int PyGILState_Check()
 
@@ -1279,11 +1291,11 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    must be :term:`attached <attached thread state>`
 
    .. versionchanged:: 3.9
-      This function now calls the :c:member:`PyThreadState.on_delete` callback.
+      This function now calls the :c:member:`!PyThreadState.on_delete` callback.
       Previously, that happened in :c:func:`PyThreadState_Delete`.
 
    .. versionchanged:: 3.13
-      The :c:member:`PyThreadState.on_delete` callback was removed.
+      The :c:member:`!PyThreadState.on_delete` callback was removed.
 
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
@@ -1354,6 +1366,43 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.11
 
 
+.. c:function:: int PyUnstable_ThreadState_SetStackProtection(PyThreadState *tstate, void *stack_start_addr, size_t stack_size)
+
+   Set the stack protection start address and stack protection size
+   of a Python thread state.
+
+   On success, return ``0``.
+   On failure, set an exception and return ``-1``.
+
+   CPython implements :ref:`recursion control <recursion>` for C code by raising
+   :py:exc:`RecursionError` when it notices that the machine execution stack is close
+   to overflow. See for example the :c:func:`Py_EnterRecursiveCall` function.
+   For this, it needs to know the location of the current thread's stack, which it
+   normally gets from the operating system.
+   When the stack is changed, for example using context switching techniques like the
+   Boost library's ``boost::context``, you must call
+   :c:func:`~PyUnstable_ThreadState_SetStackProtection` to inform CPython of the change.
+
+   Call :c:func:`~PyUnstable_ThreadState_SetStackProtection` either before
+   or after changing the stack.
+   Do not call any other Python C API between the call and the stack
+   change.
+
+   See :c:func:`PyUnstable_ThreadState_ResetStackProtection` for undoing this operation.
+
+   .. versionadded:: next
+
+
+.. c:function:: void PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
+
+   Reset the stack protection start address and stack protection size
+   of a Python thread state to the operating system defaults.
+
+   See :c:func:`PyUnstable_ThreadState_SetStackProtection` for an explanation.
+
+   .. versionadded:: next
+
+
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
 
    Get the current interpreter.
@@ -1382,6 +1431,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    This is not a replacement for :c:func:`PyModule_GetState()`, which
    extensions should use to store interpreter-specific state information.
+
+   The returned dictionary is borrowed from the interpreter and is valid until
+   interpreter shutdown.
 
    .. versionadded:: 3.8
 
@@ -1835,6 +1887,10 @@ pointer and a void pointer argument.
       called from the main interpreter. Each subinterpreter now has its own
       list of scheduled calls.
 
+   .. versionchanged:: 3.12
+      This function now always schedules *func* to be run in the main
+      interpreter.
+
 .. _profiling:
 
 Profiling and Tracing
@@ -2011,6 +2067,11 @@ Reference tracing
    is set to :c:data:`PyRefTracer_DESTROY`). The **data** argument is the opaque pointer
    that was provided when :c:func:`PyRefTracer_SetTracer` was called.
 
+   If a new tracing function is registered replacing the current a call to the
+   trace function will be made with the object set to **NULL** and **event** set to
+   :c:data:`PyRefTracer_TRACKER_REMOVED`. This will happen just before the new
+   function is registered.
+
 .. versionadded:: 3.13
 
 .. c:var:: int PyRefTracer_CREATE
@@ -2022,6 +2083,13 @@ Reference tracing
 
    The value for the *event* parameter to :c:type:`PyRefTracer` functions when a Python
    object has been destroyed.
+
+.. c:var:: int PyRefTracer_TRACKER_REMOVED
+
+   The value for the *event* parameter to :c:type:`PyRefTracer` functions when the
+   current tracer is about to be replaced by a new one.
+
+   .. versionadded:: 3.14
 
 .. c:function:: int PyRefTracer_SetTracer(PyRefTracer tracer, void *data)
 
@@ -2037,6 +2105,10 @@ Reference tracing
    every time the tracer function is called.
 
    There must be an :term:`attached thread state` when calling this function.
+
+   If another tracer function was already registered, the old function will be
+   called with **event** set to :c:data:`PyRefTracer_TRACKER_REMOVED` just before
+   the new function is registered.
 
 .. versionadded:: 3.13
 
@@ -2105,7 +2177,7 @@ use a thread key and functions to associate a :c:expr:`void*` value per
 thread.
 
 A :term:`thread state` does *not* need to be :term:`attached <attached thread state>`
-when calling these functions; they suppl their own locking.
+when calling these functions; they supply their own locking.
 
 Note that :file:`Python.h` does not include the declaration of the TLS APIs,
 you need to include :file:`pythread.h` to use thread-local storage.
