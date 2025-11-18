@@ -258,6 +258,59 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
 }
 
 
+static PyObject*
+dict_fromitems(PyObject* self, PyObject *args)
+{
+    PyObject *keys_obj = UNINITIALIZED_PTR, *values_obj = UNINITIALIZED_PTR;
+    Py_ssize_t keys_offset = UNINITIALIZED_SIZE, values_offset = UNINITIALIZED_SIZE;
+    Py_ssize_t length = UNINITIALIZED_SIZE;
+    if (!PyArg_ParseTuple(args, "|O!nO!nn",
+                          &PyTuple_Type, &keys_obj, &keys_offset,
+                          &PyTuple_Type, &values_obj, &values_offset,
+                          &length)) {
+        return NULL;
+    }
+
+    PyObject **keys, **values;
+    if (keys_obj != UNINITIALIZED_PTR) {
+        keys = &PyTuple_GET_ITEM(keys_obj, 0);
+        if (values_obj != UNINITIALIZED_PTR) {
+            values = &PyTuple_GET_ITEM(values_obj, 0);
+        }
+        else {
+            values = keys + 1;
+        }
+    }
+    else {
+        keys = NULL;
+        values = NULL;
+    }
+
+    if (keys_offset == UNINITIALIZED_SIZE) {
+        keys_offset = 0;
+    }
+    if (values_offset == UNINITIALIZED_SIZE) {
+        values_offset = keys_offset;
+    }
+
+    if (length == UNINITIALIZED_SIZE) {
+        if (keys_obj != UNINITIALIZED_PTR) {
+            if (keys_offset >= 1) {
+                length = PyTuple_GET_SIZE(keys_obj) / keys_offset;
+            }
+            else {
+                length = PyTuple_GET_SIZE(keys_obj);
+            }
+        }
+        else {
+            length = 0;
+        }
+    }
+
+    return PyDict_FromItems(keys, keys_offset, values, values_offset, length);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"dict_containsstring", dict_containsstring, METH_VARARGS},
     {"dict_getitemref", dict_getitemref, METH_VARARGS},
@@ -268,7 +321,8 @@ static PyMethodDef test_methods[] = {
     {"dict_pop_null", dict_pop_null, METH_VARARGS},
     {"dict_popstring", dict_popstring, METH_VARARGS},
     {"dict_popstring_null", dict_popstring_null, METH_VARARGS},
-    {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
+    {"test_dict_iteration", test_dict_iteration, METH_NOARGS},
+    {"dict_fromitems", dict_fromitems, METH_VARARGS},
     {NULL},
 };
 

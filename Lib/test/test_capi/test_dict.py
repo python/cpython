@@ -545,6 +545,51 @@ class CAPITest(unittest.TestCase):
         # CRASHES dict_popstring({}, NULL)
         # CRASHES dict_popstring({"a": 1}, NULL)
 
+    def test_dict_fromitems(self):
+        # Test PyDict_FromItems()
+        dict_fromitems = _testcapi.dict_fromitems
+
+        d = dict_fromitems((), 1, (), 1)
+        self.assertEqual(d, {})
+
+        d = dict_fromitems(tuple(range(1, 4)), 1, tuple('abc'), 1)
+        self.assertEqual(d, {1: 'a', 2: 'b', 3: 'c'})
+
+        # test unicode keys
+        d = dict_fromitems(tuple('abc'), 1, tuple(range(1, 4)), 1)
+        self.assertEqual(d, {'a': 1, 'b': 2, 'c': 3})
+
+        # test "large" dict (1024 items)
+        d = dict_fromitems(tuple(range(1024)), 1,
+                           tuple(map(str, range(1024))), 1)
+        self.assertEqual(d, {i: str(i) for i in range(1024)})
+
+        # same array for keys and values with keys_offset=values_offset=2
+        array = ('a', 1, 'b', 2, 'c', 3)
+        d = dict_fromitems(array, 2)
+        self.assertEqual(d, {'a': 1, 'b': 2, 'c': 3})
+
+        array = ('a', 1, None, 'b', 2, None, 'c', 3, None)
+        d = dict_fromitems(array, 3)
+        self.assertEqual(d, {'a': 1, 'b': 2, 'c': 3})
+
+        # Test PyDict_FromItems(NULL, 0, NULL, 0, 0)
+        d = dict_fromitems()
+        self.assertEqual(d, {})
+
+        # test invalid arguments
+        errmsg = "keys_offset must be greater than 0"
+        with self.assertRaisesRegex(ValueError, errmsg):
+            dict_fromitems(tuple('abc'), 0, tuple(range(1, 4)), 1)
+
+        errmsg = "values_offset must be greater than 0"
+        with self.assertRaisesRegex(ValueError, errmsg):
+            dict_fromitems(tuple('abc'), 1, tuple(range(1, 4)), 0)
+
+        errmsg = "length must be greater than or equal to 0"
+        with self.assertRaisesRegex(ValueError, errmsg):
+            dict_fromitems(tuple('abc'), 1, tuple(range(1, 4)), 1, -1)
+
 
 if __name__ == "__main__":
     unittest.main()
