@@ -121,6 +121,10 @@ complete listing.
 
    Return the absolute value of ``x``.
 
+   If the result cannot be represented (for example, if ``x`` has
+   :c:macro:`!INT_MIN` value for :c:expr:`int` type), the behavior is
+   undefined.
+
    .. versionadded:: 3.3
 
 .. c:macro:: Py_ALWAYS_INLINE
@@ -178,6 +182,14 @@ complete listing.
    Return the size of a structure (``type``) ``member`` in bytes.
 
    .. versionadded:: 3.6
+
+.. c:macro:: Py_MEMCPY(dest, src, n)
+
+   This is a :term:`soft deprecated` alias to :c:func:`!memcpy`.
+   Use :c:func:`!memcpy` directly instead.
+
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.
 
 .. c:macro:: Py_MIN(x, y)
 

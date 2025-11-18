@@ -639,6 +639,9 @@ Retrieving source code
    .. versionchanged:: next
       Added parameters *inherit_class_doc* and *fallback_to_class_doc*.
 
+      Documentation strings on :class:`~functools.cached_property`
+      objects are now inherited if not overriden.
+
 
 .. function:: getcomments(object)
 
@@ -1785,7 +1788,7 @@ Buffer flags
 
 .. _inspect-module-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`inspect` module also provides a basic introspection capability

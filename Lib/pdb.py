@@ -398,6 +398,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         self._current_task = None
 
+        self.lineno = None
+        self.stack = []
+        self.curindex = 0
+        self.curframe = None
+        self._user_requested_quit = False
+
     def set_trace(self, frame=None, *, commands=None):
         Pdb._last_pdb_instance = self
         if frame is None:
@@ -474,7 +480,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.lineno = None
         self.stack = []
         self.curindex = 0
-        if hasattr(self, 'curframe') and self.curframe:
+        if self.curframe:
             self.curframe.f_globals.pop('__pdb_convenience_variables', None)
         self.curframe = None
         self.tb_lineno.clear()
@@ -1493,7 +1499,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         # this method should be callable before starting debugging, so default
         # to "no globals" if there is no current frame
-        frame = getattr(self, 'curframe', None)
+        frame = self.curframe
         if module_globals is None:
             module_globals = frame.f_globals if frame else None
         line = linecache.getline(filename, lineno, module_globals)
@@ -3542,7 +3548,15 @@ def exit_with_permission_help_text():
     sys.exit(1)
 
 
-def main():
+def parse_args():
+    # We want pdb to be as intuitive as possible to users, so we need to do some
+    # heuristic parsing to deal with ambiguity.
+    # For example:
+    # "python -m pdb -m foo -p 1" should pass "-p 1" to "foo".
+    # "python -m pdb foo.py -m bar" should pass "-m bar" to "foo.py".
+    # "python -m pdb -m foo -m bar" should pass "-m bar" to "foo".
+    # This require some customized parsing logic to find the actual debug target.
+
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -3553,28 +3567,48 @@ def main():
         color=True,
     )
 
-    # We need to maunally get the script from args, because the first positional
-    # arguments could be either the script we need to debug, or the argument
-    # to the -m module
+    # Get all the commands out first. For backwards compatibility, we allow
+    # -c commands to be after the target.
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
                         help='pdb commands to execute as if given in a .pdbrc file')
-    parser.add_argument('-m', metavar='module', dest='module')
-    parser.add_argument('-p', '--pid', type=int, help="attach to the specified PID", default=None)
-
-    if len(sys.argv) == 1:
-        # If no arguments were given (python -m pdb), print the whole help message.
-        # Without this check, argparse would only complain about missing required arguments.
-        parser.print_help()
-        sys.exit(2)
 
     opts, args = parser.parse_known_args()
 
-    if opts.pid:
-        # If attaching to a remote pid, unrecognized arguments are not allowed.
-        # This will raise an error if there are extra unrecognized arguments.
-        opts = parser.parse_args()
-        if opts.module:
-            parser.error("argument -m: not allowed with argument --pid")
+    if not args:
+        # If no arguments were given (python -m pdb), print the whole help message.
+        # Without this check, argparse would only complain about missing required arguments.
+        # We need to add the arguments definitions here to get a proper help message.
+        parser.add_argument('-m', metavar='module', dest='module')
+        parser.add_argument('-p', '--pid', type=int, help="attach to the specified PID", default=None)
+        parser.print_help()
+        sys.exit(2)
+    elif args[0] == '-p' or args[0] == '--pid':
+        # Attach to a pid
+        parser.add_argument('-p', '--pid', type=int, help="attach to the specified PID", default=None)
+        opts, args = parser.parse_known_args()
+        if args:
+            # For --pid, any extra arguments are invalid.
+            parser.error(f"unrecognized arguments: {' '.join(args)}")
+    elif args[0] == '-m':
+        # Debug a module, we only need the first -m module argument.
+        # The rest is passed to the module itself.
+        parser.add_argument('-m', metavar='module', dest='module')
+        opt_module = parser.parse_args(args[:2])
+        opts.module = opt_module.module
+        args = args[2:]
+    elif args[0].startswith('-'):
+        # Invalid argument before the script name.
+        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
+        parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
+
+    # Otherwise it's debugging a script and we already parsed all -c commands.
+
+    return opts, args
+
+def main():
+    opts, args = parse_args()
+
+    if getattr(opts, 'pid', None) is not None:
         try:
             attach(opts.pid, opts.commands)
         except RuntimeError:
@@ -3586,30 +3620,10 @@ def main():
         except PermissionError:
             exit_with_permission_help_text()
         return
-    elif opts.module:
-        # If a module is being debugged, we consider the arguments after "-m module" to
-        # be potential arguments to the module itself. We need to parse the arguments
-        # before "-m" to check if there is any invalid argument.
-        # e.g. "python -m pdb -m foo --spam" means passing "--spam" to "foo"
-        #      "python -m pdb --spam -m foo" means passing "--spam" to "pdb" and is invalid
-        idx = sys.argv.index('-m')
-        args_to_pdb = sys.argv[1:idx]
-        # This will raise an error if there are invalid arguments
-        parser.parse_args(args_to_pdb)
-    else:
-        # If a script is being debugged, then pdb expects the script name as the first argument.
-        # Anything before the script is considered an argument to pdb itself, which would
-        # be invalid because it's not parsed by argparse.
-        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
-        if invalid_args:
-            parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
-
-    if opts.module:
+    elif getattr(opts, 'module', None) is not None:
         file = opts.module
         target = _ModuleTarget(file)
     else:
-        if not args:
-            parser.error("no module or script to run")
         file = args.pop(0)
         if file.endswith('.pyz'):
             target = _ZipTarget(file)
