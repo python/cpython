@@ -78,23 +78,47 @@ py_UuidCreate(PyObject *Py_UNUSED(context),
     return NULL;
 }
 
+static int
+py_windows_has_stable_node(void)
+{
+    UUID uuid;
+    RPC_STATUS res;
+    Py_BEGIN_ALLOW_THREADS
+    res = UuidCreateSequential(&uuid);
+    Py_END_ALLOW_THREADS
+    return res == RPC_S_OK;
+}
 #endif /* MS_WINDOWS */
 
 
 static int
-uuid_exec(PyObject *module) {
+uuid_exec(PyObject *module)
+{
+#define ADD_INT(NAME, VALUE)                                        \
+    do {                                                            \
+        if (PyModule_AddIntConstant(module, (NAME), (VALUE)) < 0) { \
+           return -1;                                               \
+        }                                                           \
+    } while (0)
+
     assert(sizeof(uuid_t) == 16);
 #if defined(MS_WINDOWS)
-    int has_uuid_generate_time_safe = 0;
+    ADD_INT("has_uuid_generate_time_safe", 0);
 #elif defined(HAVE_UUID_GENERATE_TIME_SAFE)
-    int has_uuid_generate_time_safe = 1;
+    ADD_INT("has_uuid_generate_time_safe", 1);
 #else
-    int has_uuid_generate_time_safe = 0;
+    ADD_INT("has_uuid_generate_time_safe", 0);
 #endif
-    if (PyModule_AddIntConstant(module, "has_uuid_generate_time_safe",
-                                has_uuid_generate_time_safe) < 0) {
-        return -1;
-    }
+
+#if defined(MS_WINDOWS)
+    ADD_INT("has_stable_extractable_node", py_windows_has_stable_node());
+#elif defined(HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC)
+    ADD_INT("has_stable_extractable_node", 1);
+#else
+    ADD_INT("has_stable_extractable_node", 0);
+#endif
+
+#undef ADD_INT
     return 0;
 }
 

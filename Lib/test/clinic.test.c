@@ -1020,12 +1020,19 @@ test_unsigned_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t
         goto skip_optional;
     }
     {
-        unsigned long ival = PyLong_AsUnsignedLongMask(args[2]);
-        if (ival == (unsigned long)-1 && PyErr_Occurred()) {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned char),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
             goto exit;
         }
-        else {
-            c = (unsigned char) ival;
+        if ((size_t)_bytes > sizeof(unsigned char)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
         }
     }
 skip_optional:
@@ -1038,7 +1045,7 @@ exit:
 static PyObject *
 test_unsigned_char_converter_impl(PyObject *module, unsigned char a,
                                   unsigned char b, unsigned char c)
-/*[clinic end generated code: output=45920dbedc22eb55 input=021414060993e289]*/
+/*[clinic end generated code: output=49eda9faaf53372a input=021414060993e289]*/
 
 
 /*[clinic input]
@@ -1151,9 +1158,21 @@ test_unsigned_short_converter(PyObject *module, PyObject *const *args, Py_ssize_
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = (unsigned short)PyLong_AsUnsignedLongMask(args[2]);
-    if (c == (unsigned short)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned short),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned short)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = test_unsigned_short_converter_impl(module, a, b, c);
@@ -1165,7 +1184,7 @@ exit:
 static PyObject *
 test_unsigned_short_converter_impl(PyObject *module, unsigned short a,
                                    unsigned short b, unsigned short c)
-/*[clinic end generated code: output=e6e990df729114fc input=cdfd8eff3d9176b4]*/
+/*[clinic end generated code: output=f591c7797e150f49 input=cdfd8eff3d9176b4]*/
 
 
 /*[clinic input]
@@ -1298,9 +1317,21 @@ test_unsigned_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t 
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = (unsigned int)PyLong_AsUnsignedLongMask(args[2]);
-    if (c == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = test_unsigned_int_converter_impl(module, a, b, c);
@@ -1312,7 +1343,7 @@ exit:
 static PyObject *
 test_unsigned_int_converter_impl(PyObject *module, unsigned int a,
                                  unsigned int b, unsigned int c)
-/*[clinic end generated code: output=f9cdbe410ccc98a3 input=5533534828b62fc0]*/
+/*[clinic end generated code: output=50a413f1cc82dc11 input=5533534828b62fc0]*/
 
 
 /*[clinic input]
@@ -1410,11 +1441,26 @@ test_unsigned_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (!PyLong_Check(args[2])) {
+    if (!PyIndex_Check(args[2])) {
         _PyArg_BadArgument("test_unsigned_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
-    c = PyLong_AsUnsignedLongMask(args[2]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
 skip_optional:
     return_value = test_unsigned_long_converter_impl(module, a, b, c);
 
@@ -1425,7 +1471,7 @@ exit:
 static PyObject *
 test_unsigned_long_converter_impl(PyObject *module, unsigned long a,
                                   unsigned long b, unsigned long c)
-/*[clinic end generated code: output=540bb0ba2894e1fe input=f450d94cae1ef73b]*/
+/*[clinic end generated code: output=1bbf5620093cc914 input=f450d94cae1ef73b]*/
 
 
 /*[clinic input]
@@ -1525,11 +1571,26 @@ test_unsigned_long_long_converter(PyObject *module, PyObject *const *args, Py_ss
     if (nargs < 3) {
         goto skip_optional;
     }
-    if (!PyLong_Check(args[2])) {
+    if (!PyIndex_Check(args[2])) {
         _PyArg_BadArgument("test_unsigned_long_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
-    c = PyLong_AsUnsignedLongLongMask(args[2]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned long long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
 skip_optional:
     return_value = test_unsigned_long_long_converter_impl(module, a, b, c);
 
@@ -1542,7 +1603,7 @@ test_unsigned_long_long_converter_impl(PyObject *module,
                                        unsigned long long a,
                                        unsigned long long b,
                                        unsigned long long c)
-/*[clinic end generated code: output=3d69994f618b46bb input=a15115dc41866ff4]*/
+/*[clinic end generated code: output=582a6623dc845824 input=a15115dc41866ff4]*/
 
 
 /*[clinic input]
@@ -1551,12 +1612,17 @@ test_Py_ssize_t_converter
     a: Py_ssize_t = 12
     b: Py_ssize_t(accept={int}) = 34
     c: Py_ssize_t(accept={int, NoneType}) = 56
+    d: Py_ssize_t(accept={int}, allow_negative=False) = 78
+    e: Py_ssize_t(accept={int, NoneType}, allow_negative=False) = 90
+    f: Py_ssize_t(accept={int}, allow_negative=True) = -12
+    g: Py_ssize_t(accept={int, NoneType}, allow_negative=True) = -34
     /
 
 [clinic start generated code]*/
 
 PyDoc_STRVAR(test_Py_ssize_t_converter__doc__,
-"test_Py_ssize_t_converter($module, a=12, b=34, c=56, /)\n"
+"test_Py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, f=-12,\n"
+"                          g=-34, /)\n"
 "--\n"
 "\n");
 
@@ -1565,7 +1631,8 @@ PyDoc_STRVAR(test_Py_ssize_t_converter__doc__,
 
 static PyObject *
 test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                               Py_ssize_t c);
+                               Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
+                               Py_ssize_t f, Py_ssize_t g);
 
 static PyObject *
 test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1574,8 +1641,12 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     Py_ssize_t a = 12;
     Py_ssize_t b = 34;
     Py_ssize_t c = 56;
+    Py_ssize_t d = 78;
+    Py_ssize_t e = 90;
+    Py_ssize_t f = -12;
+    Py_ssize_t g = -34;
 
-    if (!_PyArg_CheckPositional("test_Py_ssize_t_converter", nargs, 0, 3)) {
+    if (!_PyArg_CheckPositional("test_Py_ssize_t_converter", nargs, 0, 7)) {
         goto exit;
     }
     if (nargs < 1) {
@@ -1614,8 +1685,55 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     if (!_Py_convert_optional_to_ssize_t(args[2], &c)) {
         goto exit;
     }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[3]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        d = ival;
+        if (d < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "d cannot be negative");
+            goto exit;
+        }
+    }
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_non_negative_ssize_t(args[4], &e)) {
+        goto exit;
+    }
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[5]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        f = ival;
+    }
+    if (nargs < 7) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[6], &g)) {
+        goto exit;
+    }
 skip_optional:
-    return_value = test_Py_ssize_t_converter_impl(module, a, b, c);
+    return_value = test_Py_ssize_t_converter_impl(module, a, b, c, d, e, f, g);
 
 exit:
     return return_value;
@@ -1623,8 +1741,9 @@ exit:
 
 static PyObject *
 test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                               Py_ssize_t c)
-/*[clinic end generated code: output=48214bc3d01f4dd7 input=3855f184bb3f299d]*/
+                               Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
+                               Py_ssize_t f, Py_ssize_t g)
+/*[clinic end generated code: output=4ae0a56a1447fba9 input=a25bac8ecf2890aa]*/
 
 
 /*[clinic input]
@@ -4019,13 +4138,14 @@ test_preprocessor_guarded_if_with_continuation_impl(PyObject *module)
 #if CONDITION_E || CONDITION_F
 #warning "different type of CPP directive"
 /*[clinic input]
+@permit_long_summary
 test_preprocessor_guarded_if_e_or_f
 Makes sure cpp.Monitor handles other directives than preprocessor conditionals.
 [clinic start generated code]*/
 
 static PyObject *
 test_preprocessor_guarded_if_e_or_f_impl(PyObject *module)
-/*[clinic end generated code: output=e49d24ff64ad88bc input=57b9c37f938bc4f1]*/
+/*[clinic end generated code: output=e49d24ff64ad88bc input=3ca9ab4e883300ed]*/
 #endif
 
 /*[clinic input]
@@ -4221,7 +4341,7 @@ test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto exit;
     }
     a = args[0];
-    __clinic_args = _PyTuple_FromArray(args + 1, nargs - 1);
+    __clinic_args = PyTuple_FromArray(args + 1, nargs - 1);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4236,45 +4356,7 @@ exit:
 
 static PyObject *
 test_vararg_and_posonly_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=0c11c475e240869e input=2c49a482f68545c0]*/
-
-PyDoc_STRVAR(test_vararg_and_posonly__doc__,
-"test_vararg_and_posonly($module, a, /, *args)\n"
-"--\n"
-"\n");
-
-#define TEST_VARARG_AND_POSONLY_METHODDEF    \
-    {"test_vararg_and_posonly", _PyCFunction_CAST(test_vararg_and_posonly), METH_FASTCALL, test_vararg_and_posonly__doc__},
-
-static PyObject *
-test_vararg_and_posonly_impl(PyObject *module, PyObject *a, Py_ssize_t nargs,
-                             PyObject *const *args);
-
-static PyObject *
-test_vararg_and_posonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t nvararg = nargs - 1;
-    PyObject *a;
-    PyObject *const *__clinic_args = NULL;
-
-    if (!_PyArg_CheckPositional("test_vararg_and_posonly", nargs, 1, PY_SSIZE_T_MAX)) {
-        goto exit;
-    }
-    a = args[0];
-    __clinic_args = _PyTuple_FromArray(args + 1, nargs - 1);
-    if (__clinic_args == NULL) {
-        goto exit;
-    }
-    return_value = test_vararg_and_posonly_impl(module, a, nvararg, __clinic_args);
-
-exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
-
-    return return_value;
-}
-
+/*[clinic end generated code: output=83cbe9554d04add2 input=2c49a482f68545c0]*/
 
 /*[clinic input]
 test_vararg
@@ -4339,7 +4421,7 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     }
     a = fastargs[0];
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -4355,7 +4437,7 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=17ba625cdd0369c1 input=7448995636d9186a]*/
+/*[clinic end generated code: output=d773f7b54e61f73a input=7448995636d9186a]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -4432,7 +4514,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
     }
 skip_optional_kwonly:
     __clinic_args = nargs > 1
-        ? _PyTuple_FromArray(args + 1, nargs - 1)
+        ? PyTuple_FromArray(args + 1, nargs - 1)
         : PyTuple_New(0);
     if (__clinic_args == NULL) {
         goto exit;
@@ -4449,7 +4531,7 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=3f2b06ab08d5d0be input=3a0f9f557ce1f712]*/
+/*[clinic end generated code: output=d25e56802c197344 input=3a0f9f557ce1f712]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
@@ -4530,7 +4612,7 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
     }
     c = fastargs[1];
 skip_optional_kwonly:
-    __clinic_args = _PyTuple_FromArray(args, nargs);
+    __clinic_args = PyTuple_FromArray(args, nargs);
     if (__clinic_args == NULL) {
         goto exit;
     }
@@ -4546,7 +4628,7 @@ exit:
 static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=f46666f0b1bf86b9 input=6983e66817f82924]*/
+/*[clinic end generated code: output=7366943a7df42e05 input=6983e66817f82924]*/
 
 /*[clinic input]
 test_paramname_module
@@ -5061,14 +5143,18 @@ Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
 Test.__init__
     *args: tuple
 
-Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.
+Varargs init method.
+
+For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(Test___init____doc__,
 "Test(*args)\n"
 "--\n"
 "\n"
-"Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.");
+"Varargs init method.\n"
+"\n"
+"For example, nargs is translated to PyTuple_GET_SIZE.");
 
 static int
 Test___init___impl(TestObj *self, PyObject *args);
@@ -5097,54 +5183,25 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *args)
-/*[clinic end generated code: output=f172425cec373cd6 input=4b8388c4e6baab6f]*/
-
-PyDoc_STRVAR(Test___init____doc__,
-"Test(*args)\n"
-"--\n"
-"\n"
-"Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.");
-
-static int
-Test___init___impl(TestObj *self, Py_ssize_t nargs, PyObject *const *args);
-
-static int
-Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-    PyTypeObject *base_tp = TestType;
-    PyObject *const *__clinic_args = NULL;
-
-    if ((Py_IS_TYPE(self, base_tp) ||
-         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
-        !_PyArg_NoKeywords("Test", kwargs)) {
-        goto exit;
-    }
-    __clinic_args = Py_NewRef(args);
-    return_value = Test___init___impl((TestObj *)self, nvararg, __clinic_args);
-
-exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
-
-    return return_value;
-}
-
-
+/*[clinic end generated code: output=0e5836c40dbc2397 input=a615a4485c0fc3e2]*/
 
 /*[clinic input]
 @classmethod
 Test.__new__
     *args: tuple
 
-Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.
+Varargs new method.
+
+For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(Test__doc__,
 "Test(*args)\n"
 "--\n"
 "\n"
-"Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.");
+"Varargs new method.\n"
+"\n"
+"For example, nargs is translated to PyTuple_GET_SIZE.");
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args);
@@ -5172,38 +5229,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=ee1e8892a67abd4a input=a8259521129cad20]*/
-
-PyDoc_STRVAR(Test__doc__,
-"Test(*args)\n"
-"--\n"
-"\n"
-"Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.");
-
-static PyObject *
-Test_impl(PyTypeObject *type, Py_ssize_t nargs, PyObject *const *args);
-
-static PyObject *
-Test(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    PyTypeObject *base_tp = TestType;
-    PyObject *const *__clinic_args = NULL;
-
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("Test", kwargs)) {
-        goto exit;
-    }
-    __clinic_args = Py_NewRef(args);
-    return_value = Test_impl(type, nvararg, __clinic_args);
-
-exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
-
-    return return_value;
-}
-
+/*[clinic end generated code: output=e6fba0c8951882fd input=8ce30adb836aeacb]*/
 
 
 /*[clinic input]
@@ -6080,37 +6106,6 @@ static PyObject *
 test_critical_section_object_impl(PyObject *module, PyObject *a)
 /*[clinic end generated code: output=ec06df92232b0fb5 input=6f67f91b523c875f]*/
 
-PyDoc_STRVAR(test_critical_section_object__doc__,
-"test_critical_section_object($module, a, /)\n"
-"--\n"
-"\n"
-"test_critical_section_object");
-
-#define TEST_CRITICAL_SECTION_OBJECT_METHODDEF    \
-    {"test_critical_section_object", (PyCFunction)test_critical_section_object, METH_O, test_critical_section_object__doc__},
-
-static PyObject *
-test_critical_section_object_impl(PyObject *module, PyObject *a);
-
-static PyObject *
-test_critical_section_object(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    PyObject *a;
-
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("test_critical_section_object", "argument", "str", arg);
-        goto exit;
-    }
-    a = arg;
-    Py_BEGIN_CRITICAL_SECTION(a);
-    return_value = test_critical_section_object_impl(module, a);
-    Py_END_CRITICAL_SECTION();
-
-exit:
-    return return_value;
-}
-
 /*[clinic input]
 @critical_section a b
 test_critical_section_object2
@@ -6165,44 +6160,3 @@ static PyObject *
 test_critical_section_object2_impl(PyObject *module, PyObject *a,
                                    PyObject *b)
 /*[clinic end generated code: output=d73a1657c18df17a input=638824e41419a466]*/
-
-PyDoc_STRVAR(test_critical_section_object2__doc__,
-"test_critical_section_object2($module, a, b, /)\n"
-"--\n"
-"\n"
-"test_critical_section_object2");
-
-#define TEST_CRITICAL_SECTION_OBJECT2_METHODDEF    \
-    {"test_critical_section_object2", _PyCFunction_CAST(test_critical_section_object2), METH_FASTCALL, test_critical_section_object2__doc__},
-
-static PyObject *
-test_critical_section_object2_impl(PyObject *module, PyObject *a,
-                                   PyObject *b);
-
-static PyObject *
-test_critical_section_object2(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *a;
-    PyObject *b;
-
-    if (!_PyArg_CheckPositional("test_critical_section_object2", nargs, 2, 2)) {
-        goto exit;
-    }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("test_critical_section_object2", "argument 1", "str", args[0]);
-        goto exit;
-    }
-    a = args[0];
-    if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("test_critical_section_object2", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    b = args[1];
-    Py_BEGIN_CRITICAL_SECTION2(a, b);
-    return_value = test_critical_section_object2_impl(module, a, b);
-    Py_END_CRITICAL_SECTION2();
-
-exit:
-    return return_value;
-}

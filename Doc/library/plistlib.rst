@@ -147,8 +147,9 @@ The following classes are available:
    Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
    encoded data, which contains UID (see PList manual).
 
-   It has one attribute, :attr:`data`, which can be used to retrieve the int value
-   of the UID.  :attr:`data` must be in the range ``0 <= data < 2**64``.
+   .. attribute:: data
+
+      Int value of the UID.  It must be in the range ``0 <= data < 2**64``.
 
    .. versionadded:: 3.8
 

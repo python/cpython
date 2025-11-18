@@ -1,16 +1,24 @@
 import itertools
 import functools
 import rlcompleter
+from textwrap import dedent
 from unittest import TestCase
 from unittest.mock import MagicMock
+from test.support import force_colorized_test_class, force_not_colorized_test_class
 
 from .support import handle_all_events, handle_events_narrow_console
 from .support import ScreenEqualMixin, code_to_events
 from .support import prepare_reader, prepare_console
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
+from _colorize import default_theme
 
 
+overrides = {"reset": "z", "soft_keyword": "K"}
+colors = {overrides.get(k, k[0].lower()): v for k, v in default_theme.syntax.items()}
+
+
+@force_not_colorized_test_class
 class TestReader(ScreenEqualMixin, TestCase):
     def test_calc_screen_wrap_simple(self):
         events = code_to_events(10 * "a")
@@ -119,12 +127,6 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         reader.setpos_from_xy(0, 0)
         self.assertEqual(reader.pos, 0)
-
-    def test_control_characters(self):
-        code = 'flag = "🏳️‍🌈"'
-        events = code_to_events(code)
-        reader, _ = handle_all_events(events)
-        self.assert_screen_equal(reader, 'flag = "🏳️\\u200d🌈"', clean=True)
 
     def test_setpos_from_xy_multiple_lines(self):
         # fmt: off
@@ -355,3 +357,204 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         reader.setpos_from_xy(8, 0)
         self.assertEqual(reader.pos, 7)
+
+@force_colorized_test_class
+class TestReaderInColor(ScreenEqualMixin, TestCase):
+    def test_syntax_highlighting_basic(self):
+        code = dedent(
+            """\
+            import re, sys
+            def funct(case: str = sys.platform) -> None:
+                match = re.search(
+                    "(me)",
+                    '''
+                    Come on
+                      Come on now
+                        You know that it's time to emerge
+                    ''',
+                )
+                match case:
+                    case "emscripten": print("on the web")
+                    case "ios" | "android":
+                        print("on the phone")
+                    case _: print('arms around', match.group(1))
+            type type = type[type]
+            """
+        )
+        expected = dedent(
+            """\
+            {k}import{z} re{o},{z} sys
+            {a}{k}def{z} {d}funct{z}{o}({z}case{o}:{z} {b}str{z} {o}={z} sys{o}.{z}platform{o}){z} {o}->{z} {k}None{z}{o}:{z}
+                match {o}={z} re{o}.{z}search{o}({z}
+                    {s}"(me)"{z}{o},{z}
+                    {s}'''{z}
+            {s}        Come on{z}
+            {s}          Come on now{z}
+            {s}            You know that it's time to emerge{z}
+            {s}        '''{z}{o},{z}
+                {o}){z}
+                {K}match{z} case{o}:{z}
+                    {K}case{z} {s}"emscripten"{z}{o}:{z} {b}print{z}{o}({z}{s}"on the web"{z}{o}){z}
+                    {K}case{z} {s}"ios"{z} {o}|{z} {s}"android"{z}{o}:{z}
+                        {b}print{z}{o}({z}{s}"on the phone"{z}{o}){z}
+                    {K}case{z} {K}_{z}{o}:{z} {b}print{z}{o}({z}{s}'arms around'{z}{o},{z} match{o}.{z}group{o}({z}{n}1{z}{o}){z}{o}){z}
+            {K}type{z} {b}type{z} {o}={z} {b}type{z}{o}[{z}{b}type{z}{o}]{z}
+            """
+        )
+        expected_sync = expected.format(a="", **colors)
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.assert_screen_equal(reader, expected_sync)
+        self.assertEqual(reader.pos, 419)
+        self.assertEqual(reader.cxy, (0, 16))
+
+        async_msg = "{k}async{z} ".format(**colors)
+        expected_async = expected.format(a=async_msg, **colors)
+        more_events = itertools.chain(
+            code_to_events(code),
+            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))] * 15,
+            code_to_events("async "),
+        )
+        reader, _ = handle_all_events(more_events)
+        self.assert_screen_equal(reader, expected_async)
+        self.assertEqual(reader.pos, 21)
+        self.assertEqual(reader.cxy, (6, 1))
+
+    def test_syntax_highlighting_incomplete_string_first_line(self):
+        code = dedent(
+            """\
+            def unfinished_function(arg: str = "still typing
+            """
+        )
+        expected = dedent(
+            """\
+            {k}def{z} {d}unfinished_function{z}{o}({z}arg{o}:{z} {b}str{z} {o}={z} {s}"still typing{z}
+            """
+        ).format(**colors)
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.assert_screen_equal(reader, expected)
+
+    def test_syntax_highlighting_incomplete_string_another_line(self):
+        code = dedent(
+            """\
+            def unfinished_function(
+                arg: str = "still typing
+            """
+        )
+        expected = dedent(
+            """\
+            {k}def{z} {d}unfinished_function{z}{o}({z}
+                arg{o}:{z} {b}str{z} {o}={z} {s}"still typing{z}
+            """
+        ).format(**colors)
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.assert_screen_equal(reader, expected)
+
+    def test_syntax_highlighting_incomplete_multiline_string(self):
+        code = dedent(
+            """\
+            def unfinished_function():
+                '''Still writing
+                the docstring
+            """
+        )
+        expected = dedent(
+            """\
+            {k}def{z} {d}unfinished_function{z}{o}({z}{o}){z}{o}:{z}
+                {s}'''Still writing{z}
+            {s}    the docstring{z}
+            """
+        ).format(**colors)
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.assert_screen_equal(reader, expected)
+
+    def test_syntax_highlighting_incomplete_fstring(self):
+        code = dedent(
+            """\
+            def unfinished_function():
+                var = f"Single-quote but {
+                1
+                +
+                1
+                } multi-line!
+            """
+        )
+        expected = dedent(
+            """\
+            {k}def{z} {d}unfinished_function{z}{o}({z}{o}){z}{o}:{z}
+                var {o}={z} {s}f"{z}{s}Single-quote but {z}{o}{OB}{z}
+                {n}1{z}
+                {o}+{z}
+                {n}1{z}
+                {o}{CB}{z}{s} multi-line!{z}
+            """
+        ).format(OB="{", CB="}", **colors)
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.assert_screen_equal(reader, expected)
+
+    def test_syntax_highlighting_indentation_error(self):
+        code = dedent(
+            """\
+            def unfinished_function():
+                var = 1
+               oops
+            """
+        )
+        expected = dedent(
+            """\
+            {k}def{z} {d}unfinished_function{z}{o}({z}{o}){z}{o}:{z}
+                var {o}={z} {n}1{z}
+               oops
+            """
+        ).format(**colors)
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.assert_screen_equal(reader, expected)
+
+    def test_syntax_highlighting_literal_brace_in_fstring_or_tstring(self):
+        code = dedent(
+            """\
+            f"{{"
+            f"}}"
+            f"a{{b"
+            f"a}}b"
+            f"a{{b}}c"
+            t"a{{b}}c"
+            f"{{{0}}}"
+            f"{ {0} }"
+            """
+        )
+        expected = dedent(
+            """\
+            {s}f"{z}{s}<<{z}{s}"{z}
+            {s}f"{z}{s}>>{z}{s}"{z}
+            {s}f"{z}{s}a<<{z}{s}b{z}{s}"{z}
+            {s}f"{z}{s}a>>{z}{s}b{z}{s}"{z}
+            {s}f"{z}{s}a<<{z}{s}b>>{z}{s}c{z}{s}"{z}
+            {s}t"{z}{s}a<<{z}{s}b>>{z}{s}c{z}{s}"{z}
+            {s}f"{z}{s}<<{z}{o}<{z}{n}0{z}{o}>{z}{s}>>{z}{s}"{z}
+            {s}f"{z}{o}<{z} {o}<{z}{n}0{z}{o}>{z} {o}>{z}{s}"{z}
+            """
+        ).format(**colors).replace("<", "{").replace(">", "}")
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.maxDiff=None
+        self.assert_screen_equal(reader, expected)
+
+    def test_control_characters(self):
+        code = 'flag = "🏳️‍🌈"'
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, 'flag = "🏳️\\u200d🌈"', clean=True)
+        self.assert_screen_equal(reader, 'flag {o}={z} {s}"🏳️\\u200d🌈"{z}'.format(**colors))

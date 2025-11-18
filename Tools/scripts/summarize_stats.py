@@ -288,7 +288,7 @@ class OpcodeStats:
                 opcode = "SUPER"
             elif opcode.endswith("ATTR"):
                 opcode = "ATTR"
-            elif opcode in ("FOR_ITER", "SEND"):
+            elif opcode in ("FOR_ITER", "GET_ITER", "SEND"):
                 opcode = "ITER"
             elif opcode.endswith("SUBSCR"):
                 opcode = "SUBSCR"
@@ -492,7 +492,7 @@ class Stats:
             ): (trace_too_long, attempts),
             Doc(
                 "Trace too short",
-                "A potential trace is abandoned because it it too short.",
+                "A potential trace is abandoned because it is too short.",
             ): (trace_too_short, attempts),
             Doc(
                 "Inner loop found", "A trace is truncated because it has an inner loop"

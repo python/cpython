@@ -53,7 +53,7 @@ The :mod:`csv` module defines the following functions:
 .. index::
    single: universal newlines; csv.reader function
 
-.. function:: reader(csvfile, dialect='excel', **fmtparams)
+.. function:: reader(csvfile, /, dialect='excel', **fmtparams)
 
    Return a :ref:`reader object <reader-objects>` that will process
    lines from the given *csvfile*.  A csvfile must be an iterable of
@@ -70,7 +70,7 @@ The :mod:`csv` module defines the following functions:
    section :ref:`csv-fmt-params`.
 
    Each row read from the csv file is returned as a list of strings.  No
-   automatic data type conversion is performed unless the ``QUOTE_NONNUMERIC`` format
+   automatic data type conversion is performed unless the :data:`QUOTE_NONNUMERIC` format
    option is specified (in which case unquoted fields are transformed into floats).
 
    A short usage example::
@@ -84,7 +84,7 @@ The :mod:`csv` module defines the following functions:
       Spam, Lovely Spam, Wonderful Spam
 
 
-.. function:: writer(csvfile, dialect='excel', **fmtparams)
+.. function:: writer(csvfile, /, dialect='excel', **fmtparams)
 
    Return a writer object responsible for converting the user's data into delimited
    strings on the given file-like object.  *csvfile* can be any object with a
@@ -113,7 +113,7 @@ The :mod:`csv` module defines the following functions:
           spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 
 
-.. function:: register_dialect(name[, dialect[, **fmtparams]])
+.. function:: register_dialect(name, /, dialect='excel', **fmtparams)
 
    Associate *dialect* with *name*.  *name* must be a string. The
    dialect can be specified either by passing a sub-class of :class:`Dialect`, or
@@ -139,7 +139,8 @@ The :mod:`csv` module defines the following functions:
    Return the names of all registered dialects.
 
 
-.. function:: field_size_limit([new_limit])
+.. function:: field_size_limit()
+              field_size_limit(new_limit)
 
    Returns the current maximum field size allowed by the parser. If *new_limit* is
    given, this becomes the new limit.
@@ -294,8 +295,8 @@ The :mod:`csv` module defines the following classes:
       - the second through n-th rows contain strings where at least one value's
         length differs from that of the putative header of that column.
 
-      Twenty rows after the first row are sampled; if more than half of columns +
-      rows meet the criteria, :const:`True` is returned.
+      Twenty-one rows after the header are sampled; if more than half of the
+      columns + rows meet the criteria, :const:`True` is returned.
 
    .. note::
 
@@ -323,23 +324,32 @@ The :mod:`csv` module defines the following constants:
 .. data:: QUOTE_MINIMAL
 
    Instructs :class:`writer` objects to only quote those fields which contain
-   special characters such as *delimiter*, *quotechar* or any of the characters in
-   *lineterminator*.
+   special characters such as *delimiter*, *quotechar*, ``'\r'``, ``'\n'``
+   or any of the characters in *lineterminator*.
 
 
 .. data:: QUOTE_NONNUMERIC
 
    Instructs :class:`writer` objects to quote all non-numeric fields.
 
-   Instructs :class:`reader` objects to convert all non-quoted fields to type *float*.
+   Instructs :class:`reader` objects to convert all non-quoted fields to type :class:`float`.
 
+   .. note::
+      Some numeric types, such as :class:`bool`, :class:`~fractions.Fraction`,
+      or :class:`~enum.IntEnum`, have a string representation that cannot be
+      converted to :class:`float`.
+      They cannot be read in the :data:`QUOTE_NONNUMERIC` and
+      :data:`QUOTE_STRINGS` modes.
 
 .. data:: QUOTE_NONE
 
-   Instructs :class:`writer` objects to never quote fields.  When the current
-   *delimiter* occurs in output data it is preceded by the current *escapechar*
-   character.  If *escapechar* is not set, the writer will raise :exc:`Error` if
+   Instructs :class:`writer` objects to never quote fields.
+   When the current *delimiter*, *quotechar*, *escapechar*, ``'\r'``, ``'\n'``
+   or any of the characters in *lineterminator* occurs in output data
+   it is preceded by the current *escapechar* character.
+   If *escapechar* is not set, the writer will raise :exc:`Error` if
    any characters that require escaping are encountered.
+   Set *quotechar* to ``None`` to prevent its escaping.
 
    Instructs :class:`reader` objects to perform no special processing of quote characters.
 
@@ -408,9 +418,16 @@ Dialects support the following attributes:
 
 .. attribute:: Dialect.escapechar
 
-   A one-character string used by the writer to escape the *delimiter* if *quoting*
-   is set to :const:`QUOTE_NONE` and the *quotechar* if *doublequote* is
-   :const:`False`. On reading, the *escapechar* removes any special meaning from
+   A one-character string used by the writer to escape characters that
+   require escaping:
+
+      * the *delimiter*, the *quotechar*, ``'\r'``, ``'\n'`` and any of the
+        characters in *lineterminator* are escaped if *quoting* is set to
+        :const:`QUOTE_NONE`;
+      * the *quotechar* is escaped if *doublequote* is :const:`False`;
+      * the *escapechar* itself.
+
+   On reading, the *escapechar* removes any special meaning from
    the following character. It defaults to :const:`None`, which disables escaping.
 
    .. versionchanged:: 3.11
@@ -430,9 +447,12 @@ Dialects support the following attributes:
 
 .. attribute:: Dialect.quotechar
 
-   A one-character string used to quote fields containing special characters, such
-   as the *delimiter* or *quotechar*, or which contain new-line characters.  It
-   defaults to ``'"'``.
+   A one-character string used to quote fields containing special characters,
+   such as the *delimiter* or the *quotechar*, or which contain new-line
+   characters (``'\r'``, ``'\n'`` or any of the characters in *lineterminator*).
+   It defaults to ``'"'``.
+   Can be set to ``None`` to prevent escaping ``'"'`` if *quoting* is set
+   to :const:`QUOTE_NONE`.
 
    .. versionchanged:: 3.11
       An empty *quotechar* is not allowed.
@@ -441,13 +461,15 @@ Dialects support the following attributes:
 
    Controls when quotes should be generated by the writer and recognised by the
    reader.  It can take on any of the :ref:`QUOTE_\* constants <csv-constants>`
-   and defaults to :const:`QUOTE_MINIMAL`.
+   and defaults to :const:`QUOTE_MINIMAL` if *quotechar* is not ``None``,
+   and :const:`QUOTE_NONE` otherwise.
 
 
 .. attribute:: Dialect.skipinitialspace
 
    When :const:`True`, spaces immediately following the *delimiter* are ignored.
-   The default is :const:`False`.
+   The default is :const:`False`.  When combining ``delimiter=' '`` with
+   ``skipinitialspace=True``, unquoted empty fields are not allowed.
 
 
 .. attribute:: Dialect.strict
@@ -506,7 +528,7 @@ out surrounded by parens. This may cause some problems for other programs which
 read CSV files (assuming they support complex numbers at all).
 
 
-.. method:: csvwriter.writerow(row)
+.. method:: csvwriter.writerow(row, /)
 
    Write the *row* parameter to the writer's file object, formatted according
    to the current :class:`Dialect`. Return the return value of the call to the
@@ -515,7 +537,7 @@ read CSV files (assuming they support complex numbers at all).
    .. versionchanged:: 3.5
       Added support of arbitrary iterables.
 
-.. method:: csvwriter.writerows(rows)
+.. method:: csvwriter.writerows(rows, /)
 
    Write all elements in *rows* (an iterable of *row* objects as described
    above) to the writer's file object, formatted according to the current
@@ -603,7 +625,7 @@ A slightly more advanced use of the reader --- catching and reporting errors::
            for row in reader:
                print(row)
        except csv.Error as e:
-           sys.exit('file {}, line {}: {}'.format(filename, reader.line_num, e))
+           sys.exit(f'file {filename}, line {reader.line_num}: {e}')
 
 And while the module doesn't directly support parsing strings, it can easily be
 done::
@@ -616,7 +638,7 @@ done::
 .. rubric:: Footnotes
 
 .. [1] If ``newline=''`` is not specified, newlines embedded inside quoted fields
-   will not be interpreted correctly, and on platforms that use ``\r\n`` linendings
+   will not be interpreted correctly, and on platforms that use ``\r\n`` line endings
    on write an extra ``\r`` will be added.  It should always be safe to specify
    ``newline=''``, since the csv module does its own
    (:term:`universal <universal newlines>`) newline handling.

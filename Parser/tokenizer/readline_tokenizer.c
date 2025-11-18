@@ -90,14 +90,14 @@ tok_underflow_readline(struct tok_state* tok) {
         tok->implicit_newline = 1;
     }
 
-    if (tok->tok_mode_stack_index && !_PyLexer_update_fstring_expr(tok, 0)) {
+    if (tok->tok_mode_stack_index && !_PyLexer_update_ftstring_expr(tok, 0)) {
         return 0;
     }
 
     ADVANCE_LINENO();
     /* The default encoding is UTF-8, so make sure we don't have any
        non-UTF-8 sequences in it. */
-    if (!tok->encoding && !_PyTokenizer_ensure_utf8(tok->cur, tok)) {
+    if (!tok->encoding && !_PyTokenizer_ensure_utf8(tok->cur, tok, tok->lineno)) {
         _PyTokenizer_error_ret(tok);
         return 0;
     }

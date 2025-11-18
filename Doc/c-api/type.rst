@@ -116,6 +116,20 @@ Type Objects
    .. versionadded:: 3.12
 
 
+.. c:function:: int PyType_Unwatch(int watcher_id, PyObject *type)
+
+   Mark *type* as not watched. This undoes a previous call to
+   :c:func:`PyType_Watch`. *type* must not be ``NULL``.
+
+   An extension should never call this function with a *watcher_id* that was
+   not returned to it by a previous call to :c:func:`PyType_AddWatcher`.
+
+   On success, this function returns ``0``. On failure, this function returns
+   ``-1`` with an exception set.
+
+   .. versionadded:: 3.12
+
+
 .. c:type:: int (*PyType_WatchCallback)(PyObject *type)
 
    Type of a type-watcher callback function.
@@ -131,6 +145,18 @@ Type Objects
 
    Return non-zero if the type object *o* sets the feature *feature*.
    Type features are denoted by single bit flags.
+
+
+.. c:function:: int PyType_FastSubclass(PyTypeObject *type, int flag)
+
+   Return non-zero if the type object *type* sets the subclass flag *flag*.
+   Subclass flags are denoted by
+   :c:macro:`Py_TPFLAGS_*_SUBCLASS <Py_TPFLAGS_LONG_SUBCLASS>`.
+   This function is used by many ``_Check`` functions for common types.
+
+   .. seealso::
+       :c:func:`PyObject_TypeCheck`, which is used as a slower alternative in
+       ``_Check`` functions for types that don't come with subclass flags.
 
 
 .. c:function:: int PyType_IS_GC(PyTypeObject *o)
@@ -151,14 +177,31 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 
-   Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type object.  Use
-   Python's default memory allocation mechanism to allocate a new instance and
-   initialize all its contents to ``NULL``.
+   Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type
+   object.  Uses Python's default memory allocation mechanism to allocate memory
+   for a new instance, zeros the memory, then initializes the memory as if by
+   calling :c:func:`PyObject_Init` or :c:func:`PyObject_InitVar`.
+
+   Do not call this directly to allocate memory for an object; call the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot instead.
+
+   For types that support garbage collection (i.e., the
+   :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set), this function behaves like
+   :c:macro:`PyObject_GC_New` or :c:macro:`PyObject_GC_NewVar` (except the
+   memory is guaranteed to be zeroed before initialization), and should be
+   paired with :c:func:`PyObject_GC_Del` in :c:member:`~PyTypeObject.tp_free`.
+   Otherwise, it behaves like :c:macro:`PyObject_New` or
+   :c:macro:`PyObject_NewVar` (except the memory is guaranteed to be zeroed
+   before initialization) and should be paired with :c:func:`PyObject_Free` in
+   :c:member:`~PyTypeObject.tp_free`.
+
 
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
-   Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type object.  Create a
-   new instance using the type's :c:member:`~PyTypeObject.tp_alloc` slot.
+   Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type
+   object.  Creates a new instance using the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot and returns the resulting object.
+
 
 .. c:function:: int PyType_Ready(PyTypeObject *type)
 
@@ -176,12 +219,14 @@ Type Objects
        GC protocol itself by at least implementing the
        :c:member:`~PyTypeObject.tp_traverse` handle.
 
+
 .. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
 
    Return the type's name. Equivalent to getting the type's
    :attr:`~type.__name__` attribute.
 
    .. versionadded:: 3.11
+
 
 .. c:function:: PyObject* PyType_GetQualName(PyTypeObject *type)
 
@@ -198,12 +243,14 @@ Type Objects
 
    .. versionadded:: 3.13
 
+
 .. c:function:: PyObject* PyType_GetModuleName(PyTypeObject *type)
 
    Return the type's module name. Equivalent to getting the
    :attr:`type.__module__` attribute.
 
    .. versionadded:: 3.13
+
 
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
@@ -220,6 +267,7 @@ Type Objects
    .. versionchanged:: 3.10
       :c:func:`PyType_GetSlot` can now accept all types.
       Previously, it was limited to :ref:`heap types <heap-types>`.
+
 
 .. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
 
@@ -240,6 +288,7 @@ Type Objects
 
    .. versionadded:: 3.9
 
+
 .. c:function:: void* PyType_GetModuleState(PyTypeObject *type)
 
    Return the state of the module object associated with the given type.
@@ -254,6 +303,7 @@ Type Objects
 
    .. versionadded:: 3.9
 
+
 .. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 
    Find the first superclass whose module was created from
@@ -267,7 +317,12 @@ Type Objects
    and other places where a method's defining class cannot be passed using the
    :c:type:`PyCMethod` calling convention.
 
+   The returned reference is :term:`borrowed <borrowed reference>` from *type*,
+   and will be valid as long as you hold a reference to *type*.
+   Do not release it with :c:func:`Py_DECREF` or similar.
+
    .. versionadded:: 3.11
+
 
 .. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 
@@ -287,6 +342,7 @@ Type Objects
 
    .. versionadded:: 3.14
 
+
 .. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 
    Attempt to assign a version tag to the given type.
@@ -295,6 +351,16 @@ Type Objects
    assigned, or 0 if a new tag could not be assigned.
 
    .. versionadded:: 3.12
+
+
+.. c:function:: int PyType_SUPPORTS_WEAKREFS(PyTypeObject *type)
+
+   Return true if instances of *type* support creating weak references, false
+   otherwise. This function always succeeds. *type* must not be ``NULL``.
+
+   .. seealso::
+      * :ref:`weakrefobjects`
+      * :py:mod:`weakref`
 
 
 Creating Heap-Allocated Types
@@ -345,6 +411,7 @@ The following functions and structs are used to create
 
    .. versionadded:: 3.12
 
+
 .. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
    Equivalent to ``PyType_FromMetaclass(NULL, module, spec, bases)``.
@@ -371,6 +438,7 @@ The following functions and structs are used to create
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
+
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
    Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, bases)``.
@@ -392,6 +460,7 @@ The following functions and structs are used to create
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
 
+
 .. c:function:: PyObject* PyType_FromSpec(PyType_Spec *spec)
 
    Equivalent to ``PyType_FromMetaclass(NULL, NULL, spec, NULL)``.
@@ -411,6 +480,7 @@ The following functions and structs are used to create
 
       Creating classes whose metaclass overrides
       :c:member:`~PyTypeObject.tp_new` is no longer allowed.
+
 
 .. c:function:: int PyType_Freeze(PyTypeObject *type)
 
@@ -582,6 +652,7 @@ The following functions and structs are used to create
       * ``Py_tp_doc``
       * :c:data:`Py_tp_token` (for clarity, prefer :c:data:`Py_TP_USE_SPEC`
         rather than ``NULL``)
+
 
 .. c:macro:: Py_tp_token
 

@@ -13,10 +13,13 @@ extern "C" {
 #endif
 
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
+PyAPI_FUNC(PyObject) *_PyList_SliceSubscript(PyObject*, PyObject*);
 extern void _PyList_DebugMallocStats(FILE *out);
 // _PyList_GetItemRef should be used only when the object is known as a list
 // because it doesn't raise TypeError when the object is not a list, whereas PyList_GetItemRef does.
 extern PyObject* _PyList_GetItemRef(PyListObject *, Py_ssize_t i);
+
+
 #ifdef Py_GIL_DISABLED
 // Returns -1 in case of races with other threads.
 extern int _PyList_GetItemRefNoLock(PyListObject *, Py_ssize_t, _PyStackRef *);

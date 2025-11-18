@@ -657,7 +657,7 @@ def fd_count():
     """
     if sys.platform.startswith(('linux', 'android', 'freebsd', 'emscripten')):
         fd_path = "/proc/self/fd"
-    elif sys.platform == "darwin":
+    elif support.is_apple:
         fd_path = "/dev/fd"
     else:
         fd_path = None

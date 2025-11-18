@@ -47,8 +47,10 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
         goto error;
     }
 
-    args = Py_BuildValue("(O(OiiNii))", errmsg, tok->filename, tok->lineno,
-                         col_offset, errtext, tok->lineno, end_col_offset);
+    args = Py_BuildValue("(O(OiiNii))", errmsg,
+                         tok->filename ? tok->filename : Py_None,
+                         tok->lineno, col_offset, errtext,
+                         tok->lineno, end_col_offset);
     if (args) {
         PyErr_SetObject(PyExc_SyntaxError, args);
         Py_DECREF(args);
@@ -125,7 +127,7 @@ _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_inval
     }
 
     if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, tok->filename,
-                                 tok->lineno, NULL, NULL) < 0) {
+                                 tok->lineno, tok->module, NULL) < 0) {
         Py_DECREF(msg);
 
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
@@ -164,7 +166,7 @@ _PyTokenizer_parser_warn(struct tok_state *tok, PyObject *category, const char *
     }
 
     if (PyErr_WarnExplicitObject(category, errmsg, tok->filename,
-                                 tok->lineno, NULL, NULL) < 0) {
+                                 tok->lineno, tok->module, NULL) < 0) {
         if (PyErr_ExceptionMatches(category)) {
             /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
@@ -422,10 +424,13 @@ _PyTokenizer_check_coding_spec(const char* line, Py_ssize_t size, struct tok_sta
         tok->encoding = cs;
     } else {                /* then, compare cs with BOM */
         if (strcmp(tok->encoding, cs) != 0) {
-            _PyTokenizer_error_ret(tok);
-            PyErr_Format(PyExc_SyntaxError,
-                         "encoding problem: %s with BOM", cs);
+            tok->line_start = line;
+            tok->cur = (char *)line;
+            assert(size <= INT_MAX);
+            _PyTokenizer_syntaxerror_known_range(tok, 0, (int)size,
+                        "encoding problem: %s with BOM", cs);
             PyMem_Free(cs);
+            _PyTokenizer_error_ret(tok);
             return 0;
         }
         PyMem_Free(cs);
@@ -496,24 +501,38 @@ valid_utf8(const unsigned char* s)
 }
 
 int
-_PyTokenizer_ensure_utf8(char *line, struct tok_state *tok)
+_PyTokenizer_ensure_utf8(const char *line, struct tok_state *tok, int lineno)
 {
-    int badchar = 0;
-    unsigned char *c;
+    const char *badchar = NULL;
+    const char *c;
     int length;
-    for (c = (unsigned char *)line; *c; c += length) {
-        if (!(length = valid_utf8(c))) {
-            badchar = *c;
+    int col_offset = 0;
+    const char *line_start = line;
+    for (c = line; *c; c += length) {
+        if (!(length = valid_utf8((const unsigned char *)c))) {
+            badchar = c;
             break;
+        }
+        col_offset++;
+        if (*c == '\n') {
+            lineno++;
+            col_offset = 0;
+            line_start = c + 1;
         }
     }
     if (badchar) {
-        PyErr_Format(PyExc_SyntaxError,
-                     "Non-UTF-8 code starting with '\\x%.2x' "
-                     "in file %U on line %i, "
-                     "but no encoding declared; "
-                     "see https://peps.python.org/pep-0263/ for details",
-                     badchar, tok->filename, tok->lineno);
+        tok->lineno = lineno;
+        tok->line_start = line_start;
+        tok->cur = (char *)badchar;
+        _PyTokenizer_syntaxerror_known_range(tok,
+                col_offset + 1, col_offset + 1,
+                "Non-UTF-8 code starting with '\\x%.2x'"
+                "%s%V on line %i, "
+                "but no encoding declared; "
+                "see https://peps.python.org/pep-0263/ for details",
+                (unsigned char)*badchar,
+                tok->filename ? " in file " : "", tok->filename, "",
+                lineno);
         return 0;
     }
     return 1;

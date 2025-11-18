@@ -16,6 +16,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsASCIIString()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "_iomodule.h"
 
@@ -52,6 +53,7 @@ _unsupported(_PyIO_State *state, const char *message)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io._TextIOBase.detach
     cls: defining_class
     /
@@ -63,7 +65,7 @@ After the underlying buffer has been detached, the TextIO is in an unusable stat
 
 static PyObject *
 _io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=50915f40c609eaa4 input=987ca3640d0a3776]*/
+/*[clinic end generated code: output=50915f40c609eaa4 input=8cd0652c17d7f015]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "detach");
@@ -206,7 +208,7 @@ static PyType_Slot textiobase_slots[] = {
 };
 
 /* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
-PyType_Spec textiobase_spec = {
+PyType_Spec _Py_textiobase_spec = {
     .name = "_io._TextIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -1185,7 +1187,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     }
 
     /* Check we have been asked for a real text encoding */
-    codec_info = _PyCodec_LookupTextEncoding(encoding, "codecs.open()");
+    codec_info = _PyCodec_LookupTextEncoding(encoding, NULL);
     if (codec_info == NULL) {
         Py_CLEAR(self->encoding);
         goto error;
@@ -1324,8 +1326,7 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
     }
 
     // Create new encoder & decoder
-    PyObject *codec_info = _PyCodec_LookupTextEncoding(
-        c_encoding, "codecs.open()");
+    PyObject *codec_info = _PyCodec_LookupTextEncoding(c_encoding, NULL);
     if (codec_info == NULL) {
         Py_DECREF(encoding);
         Py_DECREF(errors);
@@ -1470,8 +1471,7 @@ textiowrapper_dealloc(PyObject *op)
         return;
     self->ok = 0;
     _PyObject_GC_UNTRACK(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     (void)textiowrapper_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1579,6 +1579,8 @@ _io_TextIOWrapper_detach_impl(textio *self)
 static int
 _textiowrapper_writeflush(textio *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+
     if (self->pending_bytes == NULL)
         return 0;
 
@@ -2843,7 +2845,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
        current pos */
     skip_bytes = (Py_ssize_t) (self->b2cratio * chars_to_skip);
     skip_back = 1;
-    assert(skip_back <= PyBytes_GET_SIZE(next_input));
+    assert(skip_bytes <= PyBytes_GET_SIZE(next_input));
     input = PyBytes_AS_STRING(next_input);
     while (skip_bytes > 0) {
         /* Decode up to temptative start point */
@@ -3174,8 +3176,9 @@ _io_TextIOWrapper_close_impl(textio *self)
 }
 
 static PyObject *
-textiowrapper_iternext(PyObject *op)
+textiowrapper_iternext_lock_held(PyObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyObject *line;
     textio *self = textio_CAST(op);
 
@@ -3209,6 +3212,16 @@ textiowrapper_iternext(PyObject *op)
     }
 
     return line;
+}
+
+static PyObject *
+textiowrapper_iternext(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = textiowrapper_iternext_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 /*[clinic input]
@@ -3339,7 +3352,7 @@ static PyType_Slot nldecoder_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec nldecoder_spec = {
+PyType_Spec _Py_nldecoder_spec = {
     .name = "_io.IncrementalNewlineDecoder",
     .basicsize = sizeof(nldecoder_object),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -3367,8 +3380,7 @@ static PyMethodDef textiowrapper_methods[] = {
     _IO_TEXTIOWRAPPER_TELL_METHODDEF
     _IO_TEXTIOWRAPPER_TRUNCATE_METHODDEF
 
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -3392,7 +3404,7 @@ static PyGetSetDef textiowrapper_getset[] = {
     {NULL}
 };
 
-PyType_Slot textiowrapper_slots[] = {
+static PyType_Slot textiowrapper_slots[] = {
     {Py_tp_dealloc, textiowrapper_dealloc},
     {Py_tp_repr, textiowrapper_repr},
     {Py_tp_doc, (void *)_io_TextIOWrapper___init____doc__},
@@ -3406,7 +3418,7 @@ PyType_Slot textiowrapper_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec textiowrapper_spec = {
+PyType_Spec _Py_textiowrapper_spec = {
     .name = "_io.TextIOWrapper",
     .basicsize = sizeof(textio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

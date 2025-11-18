@@ -17,7 +17,7 @@
    section.
 
 
-Cross Platform
+Cross platform
 --------------
 
 
@@ -55,6 +55,8 @@ Cross Platform
 
    Returns the machine type, e.g. ``'AMD64'``. An empty string is returned if the
    value cannot be determined.
+
+   The output is platform-dependent and may differ in casing and naming conventions.
 
 
 .. function:: node()
@@ -176,8 +178,8 @@ Cross Platform
    :attr:`processor` is resolved late, on demand.
 
    Note: the first two attribute names differ from the names presented by
-   :func:`os.uname`, where they are named :attr:`sysname` and
-   :attr:`nodename`.
+   :func:`os.uname`, where they are named :attr:`!sysname` and
+   :attr:`!nodename`.
 
    Entries which cannot be determined are set to ``''``.
 
@@ -187,26 +189,16 @@ Cross Platform
    .. versionchanged:: 3.9
       :attr:`processor` is resolved late instead of immediately.
 
+.. function:: invalidate_caches()
 
-Java Platform
--------------
+   Clear out the internal cache of information, such as the :func:`uname`.
+   This is typically useful when the platform's :func:`node` is changed
+   by an external process and one needs to retrieve the updated value.
 
-
-.. function:: java_ver(release='', vendor='', vminfo=('','',''), osinfo=('','',''))
-
-   Version interface for Jython.
-
-   Returns a tuple ``(release, vendor, vminfo, osinfo)`` with *vminfo* being a
-   tuple ``(vm_name, vm_release, vm_vendor)`` and *osinfo* being a tuple
-   ``(os_name, os_version, os_arch)``. Values which cannot be determined are set to
-   the defaults given as parameters (which all default to ``''``).
-
-   .. deprecated-removed:: 3.13 3.15
-      It was largely untested, had a confusing API,
-      and was only useful for Jython support.
+   .. versionadded:: 3.14
 
 
-Windows Platform
+Windows platform
 ----------------
 
 
@@ -240,7 +232,7 @@ Windows Platform
    .. versionadded:: 3.8
 
 
-macOS Platform
+macOS platform
 --------------
 
 .. function:: mac_ver(release='', versioninfo=('','',''), machine='')
@@ -252,7 +244,7 @@ macOS Platform
    Entries which cannot be determined are set to ``''``.  All tuple entries are
    strings.
 
-iOS Platform
+iOS platform
 ------------
 
 .. function:: ios_ver(system='', release='', model='', is_simulator=False)
@@ -271,7 +263,7 @@ iOS Platform
    parameters.
 
 
-Unix Platforms
+Unix platforms
 --------------
 
 .. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=16384)
@@ -287,7 +279,7 @@ Unix Platforms
    The file is read and scanned in chunks of *chunksize* bytes.
 
 
-Linux Platforms
+Linux platforms
 ---------------
 
 .. function:: freedesktop_os_release()
@@ -325,7 +317,7 @@ Linux Platforms
    .. versionadded:: 3.10
 
 
-Android Platform
+Android platform
 ----------------
 
 .. function:: android_ver(release="", api_level=0, manufacturer="", \
@@ -360,14 +352,31 @@ Android Platform
 
    .. versionadded:: 3.13
 
+.. _platform-cli:
 
-Miscellaneous
--------------
+Command-line usage
+------------------
 
-.. function:: invalidate_caches()
+:mod:`platform` can also be invoked directly using the :option:`-m`
+switch of the interpreter::
 
-   Clear out the internal cache of information, such as the :func:`uname`.
-   This is typically useful when the platform's :func:`node` is changed
-   by an external process and one needs to retrieve the updated value.
+   python -m platform [--terse] [--nonaliased] [{nonaliased,terse} ...]
 
-   .. versionadded:: 3.14
+The following options are accepted:
+
+.. program:: platform
+
+.. option:: --terse
+
+   Print terse information about the platform. This is equivalent to
+   calling :func:`platform.platform` with the *terse* argument set to ``True``.
+
+.. option:: --nonaliased
+
+   Print platform information without system/OS name aliasing. This is
+   equivalent to calling :func:`platform.platform` with the *aliased* argument
+   set to ``True``.
+
+You can also pass one or more positional arguments (``terse``, ``nonaliased``)
+to explicitly control the output format. These behave similarly to their
+corresponding options.

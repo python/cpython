@@ -4,10 +4,12 @@ import linecache
 import unittest
 import os.path
 import tempfile
+import threading
 import tokenize
 from importlib.machinery import ModuleSpec
 from test import support
 from test.support import os_helper
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -257,22 +259,44 @@ class LineCacheTests(unittest.TestCase):
     def test_loader(self):
         filename = 'scheme://path'
 
-        for loader in (None, object(), NoSourceLoader()):
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': None}
+        self.assertEqual(linecache.getlines(filename, module_globals), [])
+
+        for loader in object(), NoSourceLoader():
             linecache.clearcache()
             module_globals = {'__name__': 'a.b.c', '__loader__': loader}
-            self.assertEqual(linecache.getlines(filename, module_globals), [])
+            with self.assertWarns(DeprecationWarning) as w:
+                self.assertEqual(linecache.getlines(filename, module_globals), [])
+            self.assertEqual(str(w.warning),
+                             'Module globals is missing a __spec__.loader')
 
         linecache.clearcache()
         module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader()}
-        self.assertEqual(linecache.getlines(filename, module_globals),
-                         ['source for a.b.c\n'])
+        with self.assertWarns(DeprecationWarning) as w:
+            self.assertEqual(linecache.getlines(filename, module_globals),
+                             ['source for a.b.c\n'])
+        self.assertEqual(str(w.warning),
+                         'Module globals is missing a __spec__.loader')
 
-        for spec in (None, object(), ModuleSpec('', FakeLoader())):
+        for spec in None, object():
             linecache.clearcache()
             module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader(),
                               '__spec__': spec}
+            with self.assertWarns(DeprecationWarning) as w:
+                self.assertEqual(linecache.getlines(filename, module_globals),
+                                 ['source for a.b.c\n'])
+            self.assertEqual(str(w.warning),
+                             'Module globals is missing a __spec__.loader')
+
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader(),
+                          '__spec__': ModuleSpec('', FakeLoader())}
+        with self.assertWarns(DeprecationWarning) as w:
             self.assertEqual(linecache.getlines(filename, module_globals),
                              ['source for a.b.c\n'])
+        self.assertEqual(str(w.warning),
+                         'Module globals; __loader__ != __spec__.loader')
 
         linecache.clearcache()
         spec = ModuleSpec('x.y.z', FakeLoader())
@@ -372,6 +396,41 @@ class LineCacheInvalidationTests(unittest.TestCase):
         self.assertNotIn(self.deleted_file, linecache.cache)
         self.assertNotIn(self.modified_file, linecache.cache)
         self.assertIn(self.unchanged_file, linecache.cache)
+
+
+class MultiThreadingTest(unittest.TestCase):
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_read_write_safety(self):
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            filenames = []
+            for i in range(10):
+                name = os.path.join(tmpdirname, f"test_{i}.py")
+                with open(name, "w") as h:
+                    h.write("import time\n")
+                    h.write("import system\n")
+                filenames.append(name)
+
+            def linecache_get_line(b):
+                b.wait()
+                for _ in range(100):
+                    for name in filenames:
+                        linecache.getline(name, 1)
+
+            def check(funcs):
+                barrier = threading.Barrier(len(funcs))
+                threads = []
+
+                for func in funcs:
+                    thread = threading.Thread(target=func, args=(barrier,))
+
+                    threads.append(thread)
+
+                with threading_helper.start_threads(threads):
+                    pass
+
+            check([linecache_get_line] * 20)
 
 
 if __name__ == "__main__":

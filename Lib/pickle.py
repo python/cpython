@@ -17,7 +17,6 @@ Functions:
 
 Misc variables:
 
-    __version__
     format_version
     compatible_formats
 
@@ -1933,7 +1932,9 @@ def _main(args=None):
     import argparse
     import pprint
     parser = argparse.ArgumentParser(
-        description='display contents of the pickle files')
+        description='display contents of the pickle files',
+        color=True,
+    )
     parser.add_argument(
         'pickle_file',
         nargs='+', help='the pickle file')
