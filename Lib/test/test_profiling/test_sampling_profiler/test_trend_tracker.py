@@ -1,7 +1,12 @@
 """Simple unit tests for TrendTracker."""
 
 import unittest
-import curses
+from test.support import requires
+from test.support.import_helper import import_module
+
+# Only run these tests if curses is available
+requires("curses")
+curses = import_module("curses")
 
 from profiling.sampling.live_collector.trend_tracker import TrendTracker
 
