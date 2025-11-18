@@ -897,6 +897,17 @@ def _get_annotate_attr(annotate, attr, default):
     if isinstance(annotate, types.MethodType):
         return _get_annotate_attr(annotate.__func__, attr, default)
 
+    # Python generics are callable. Usually, the __init__ method sets attributes.
+    # However, typing._BaseGenericAlias overrides the __init__ method, so we need
+    # to use the original class method for fake globals and the like.
+    # _BaseGenericAlias also override __call__, so let's handle this earlier than
+    # other class construction.
+    if (
+        (typing := sys.modules.get("typing", None))
+        and isinstance(annotate, typing._BaseGenericAlias)
+    ):
+        return getattr(annotate.__origin__.__init__, attr, default)
+
     # If annotate is a class instance, its __call__ is the relevant function.
     # However, __call__ Could be a method, a function descriptor, or any other callable.
     # Normal functions have a __call__ property which is a useless method wrapper,
@@ -937,6 +948,22 @@ def _direct_call_annotate(func, annotate, *args):
         # argument.
         return _direct_call_annotate(func, annotate.__func__, self, *args)
 
+    # Python generics (typing._BaseGenericAlias) override __call__, so let's handle
+    # them earlier than other class construction.
+    if (
+        (typing := sys.modules.get("typing", None))
+        and isinstance(annotate, typing._BaseGenericAlias)
+    ):
+        inst = annotate.__new__(annotate.__origin__)
+        func(inst, *args)
+        # Try to set the original class on the instance, if possible.
+        # This is the same logic used in typing for custom generics.
+        try:
+            inst.__orig_class__ = annotate
+        except Exception:
+            pass
+        return inst
+
     # If annotate is a class instance, its __call__ is the function.
     # __call__ Could be a method, a function descriptor, or any other callable.
     # Normal functions have a __call__ property which is a useless method wrapper,
@@ -954,7 +981,8 @@ def _direct_call_annotate(func, annotate, *args):
         func(inst, *args)
         return inst
 
-    # Generic instantiation is slightly different.
+    # Generic instantiation is slightly different. Since we want to give
+    # __call__ priority, the custom logic for builtin generics is here.
     if isinstance(annotate, types.GenericAlias):
         inst = annotate.__new__(annotate.__origin__)
         func(inst, *args)

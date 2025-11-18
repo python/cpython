@@ -1559,6 +1559,44 @@ class TestCallAnnotateFunction(unittest.TestCase):
         # We manually set the __orig_class__ for this special-case, check this too.
         self.assertEqual(annotations.__orig_class__, Annotate[str, type])
 
+    def test_callable_typing_generic_class_annotate_forwardref_fakeglobals(self):
+        # Normally, generics are 'typing._GenericAlias' objects. These are implemented
+        # in Python with a __call__ method (in _typing.BaseGenericAlias), but this
+        # needs to be bypassed so we can inject fake globals into the origin class'
+        # __init__ method.
+        class Annotate[T]:
+            def __init__(self, format, /, __Format=Format,
+                         __NotImplementedError=NotImplementedError):
+                if format == __Format.VALUE:
+                    self.data = {'x': str}
+                elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                    self.data = {"x": int}
+                else:
+                    raise __NotImplementedError(format)
+            def __getitem__(self, item):
+                return self.data[item]
+            def __iter__(self):
+                return iter(self.data)
+            def __len__(self):
+                return len(self.data)
+            def __getattr__(self, attr):
+                val = getattr(collections.abc.Mapping, attr)
+                if isinstance(val, types.FunctionType):
+                    return types.MethodType(val, self)
+                return val
+            def __eq__(self, other):
+                return dict(self.items()) == dict(other.items())
+
+        annotations = annotationlib.call_annotate_function(
+            Annotate[int],
+            Format.FORWARDREF,
+        )
+
+        self.assertEqual(annotations, {"x": int})
+
+        # We manually set the __orig_class__ for this special-case, check this too.
+        self.assertEqual(annotations.__orig_class__, Annotate[int])
+
     def test_user_annotate_forwardref_value_fallback(self):
         # If Format.FORWARDREF and Format.VALUE_WITH_FAKE_GLOBALS are not supported
         # use Format.VALUE
@@ -1807,39 +1845,6 @@ class TestCallAnnotateFunction(unittest.TestCase):
         )
 
         self.assertEqual(annotations, {"x": int})
-
-    def test_callable_typing_generic_class_annotate_forwardref_value_fallback(self):
-        # Normally, generics are 'typing._GenericAlias' objects. These are implemented
-        # in Python with a __call__ method (in _typing.BaseGenericAlias), so should work
-        # as with any callable class instance.
-        class Annotate[T]:
-            def __init__(self, format, /, __Format=Format,
-                         __NotImplementedError=NotImplementedError):
-                if format == __Format.VALUE_WITH_FAKE_GLOBALS:
-                    self.data = {"x": int}
-                else:
-                    raise __NotImplementedError(format)
-            def __getitem__(self, item):
-                return self.data[item]
-            def __iter__(self):
-                return iter(self.data)
-            def __len__(self):
-                return len(self.data)
-            def __getattr__(self, attr):
-                val = getattr(collections.abc.Mapping, attr)
-                if isinstance(val, types.FunctionType):
-                    return types.MethodType(val, self)
-                return val
-            def __eq__(self, other):
-                return dict(self.items()) == dict(other.items())
-
-        annotations = annotationlib.call_annotate_function(
-            Annotate[int],
-            Format.FORWARDREF,
-        )
-
-        self.assertEqual(annotations, {"x": int})
-        self.assertEqual(annotations.__orig_class__, Annotate[int])
 
     def test_callable_partial_annotate_forwardref_value_fallback(self):
         # functools.partial is implemented in C. Ensure that the annotate function
