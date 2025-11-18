@@ -27,7 +27,6 @@
 
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-    #define _PyINIT_EXPORTED_SYMBOL __declspec(dllexport)
     #if defined(Py_ENABLE_SHARED)
         #define Py_IMPORTED_SYMBOL __declspec(dllimport)
         #define Py_EXPORTED_SYMBOL __declspec(dllexport)
@@ -36,6 +35,12 @@
         #define Py_IMPORTED_SYMBOL
         #define Py_EXPORTED_SYMBOL
         #define Py_LOCAL_SYMBOL
+    #endif
+    /* module init functions outside the core must be exported */
+    #if defined(Py_BUILD_CORE)
+        #define _PyINIT_EXPORTED_SYMBOL Py_EXPORTED_SYMBOL
+    #else
+        #define _PyINIT_EXPORTED_SYMBOL __declspec(dllexport)
     #endif
 #else
 /*
@@ -80,13 +85,6 @@
 #                               define PyAPI_FUNC(RTYPE) Py_IMPORTED_SYMBOL RTYPE
 #                       endif /* !__CYGWIN__ */
 #                       define PyAPI_DATA(RTYPE) extern Py_IMPORTED_SYMBOL RTYPE
-        /* module init functions outside the core must be exported */
-#                       if defined(__cplusplus)
-#                               define _PyINIT_FUNC_DECLSPEC extern "C" \
-                                    _PyINIT_EXPORTED_SYMBOL
-#                       else /* __cplusplus */
-#                               define _PyINIT_FUNC_DECLSPEC _PyINIT_EXPORTED_SYMBOL
-#                       endif /* __cplusplus */
 #               endif /* Py_BUILD_CORE */
 #       endif /* HAVE_DECLSPEC_DLL */
 #endif /* Py_ENABLE_SHARED */
