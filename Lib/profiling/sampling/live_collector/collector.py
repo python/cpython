@@ -894,18 +894,26 @@ class LiveStatsCollector(Collector):
                 self._trend_tracker.toggle()
 
         elif ch == curses.KEY_LEFT or ch == curses.KEY_UP:
-            # Navigate to previous thread in PER_THREAD mode
-            if self.view_mode == "PER_THREAD" and len(self.thread_ids) > 0:
-                self.current_thread_index = (
-                    self.current_thread_index - 1
-                ) % len(self.thread_ids)
+            # Navigate to previous thread in PER_THREAD mode, or switch from ALL to PER_THREAD
+            if len(self.thread_ids) > 0:
+                if self.view_mode == "ALL":
+                    self.view_mode = "PER_THREAD"
+                    self.current_thread_index = 0
+                else:
+                    self.current_thread_index = (
+                        self.current_thread_index - 1
+                    ) % len(self.thread_ids)
 
         elif ch == curses.KEY_RIGHT or ch == curses.KEY_DOWN:
-            # Navigate to next thread in PER_THREAD mode
-            if self.view_mode == "PER_THREAD" and len(self.thread_ids) > 0:
-                self.current_thread_index = (
-                    self.current_thread_index + 1
-                ) % len(self.thread_ids)
+            # Navigate to next thread in PER_THREAD mode, or switch from ALL to PER_THREAD
+            if len(self.thread_ids) > 0:
+                if self.view_mode == "ALL":
+                    self.view_mode = "PER_THREAD"
+                    self.current_thread_index = 0
+                else:
+                    self.current_thread_index = (
+                        self.current_thread_index + 1
+                    ) % len(self.thread_ids)
 
     def init_curses(self, stdscr):
         """Initialize curses display and suppress stdout/stderr."""

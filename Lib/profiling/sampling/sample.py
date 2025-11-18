@@ -965,7 +965,7 @@ def main():
         action="store_const",
         const=SORT_MODE_NSAMPLES,
         dest="sort",
-        help="Sort by number of direct samples (nsamples column)",
+        help="Sort by number of direct samples (nsamples column, default)",
     )
     sort_group.add_argument(
         "--sort-tottime",
@@ -979,7 +979,7 @@ def main():
         action="store_const",
         const=SORT_MODE_CUMTIME,
         dest="sort",
-        help="Sort by cumulative time (cumtime column, default)",
+        help="Sort by cumulative time (cumtime column)",
     )
     sort_group.add_argument(
         "--sort-sample-pct",
@@ -1039,7 +1039,7 @@ def main():
     elif args.format == "live":
         _validate_live_format_args(args, parser)
 
-    sort_value = args.sort if args.sort is not None else SORT_MODE_CUMTIME
+    sort_value = args.sort if args.sort is not None else SORT_MODE_NSAMPLES
 
     if args.module is not None and not args.module:
         parser.error("argument -m/--module: expected one argument")

@@ -779,13 +779,13 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         self.collector._handle_input()
         self.assertEqual(self.collector.current_thread_index, 2)  # Wrapped
 
-    def test_arrow_keys_do_nothing_in_all_mode(self):
-        """Test that arrow keys have no effect in ALL mode."""
+    def test_arrow_keys_switch_to_per_thread_mode(self):
+        """Test that arrow keys switch from ALL mode to PER_THREAD mode."""
         self.assertEqual(self.collector.view_mode, "ALL")
 
         self.mock_display.simulate_input(curses.KEY_RIGHT)
         self.collector._handle_input()
-        self.assertEqual(self.collector.view_mode, "ALL")
+        self.assertEqual(self.collector.view_mode, "PER_THREAD")
         self.assertEqual(self.collector.current_thread_index, 0)
 
     def test_stats_list_in_all_mode(self):
