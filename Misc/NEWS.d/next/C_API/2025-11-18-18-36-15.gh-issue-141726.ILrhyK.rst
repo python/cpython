@@ -1,0 +1,1 @@
+Add PyDict_SetDefaultRef to the Stable ABI
