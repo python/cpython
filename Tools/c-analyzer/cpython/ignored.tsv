@@ -24,6 +24,7 @@ Modules/posixmodule.c	os_dup2_impl	dup3_works	-
 
 ## guards around resource init
 Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
+Modules/_struct.c	-	endian_tables_init_once	-
 
 ##-----------------------
 ## other values (not Python-specific)
@@ -56,7 +57,7 @@ Python/pyhash.c	-	_Py_HashSecret	-
 Python/parking_lot.c	-	buckets	-
 
 ## data needed for introspecting asyncio state from debuggers and profilers
-Modules/_asynciomodule.c	-	_AsyncioDebug	-
+Modules/_asynciomodule.c	-	_Py_AsyncioDebug	-
 
 
 ##################################
@@ -358,6 +359,7 @@ Parser/parser.c	-	soft_keywords	-
 Parser/lexer/lexer.c	-	type_comment_prefix	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
+Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	codecs_builtin_error_handlers	-
 Python/codecs.c	-	ucnhash_capi	-

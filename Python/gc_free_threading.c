@@ -675,10 +675,11 @@ gc_mark_span_push(gc_span_stack_t *ss, PyObject **start, PyObject **end)
         else {
             ss->capacity *= 2;
         }
-        ss->stack = (gc_span_t *)PyMem_Realloc(ss->stack, ss->capacity * sizeof(gc_span_t));
-        if (ss->stack == NULL) {
+        gc_span_t *new_stack = (gc_span_t *)PyMem_Realloc(ss->stack, ss->capacity * sizeof(gc_span_t));
+        if (new_stack == NULL) {
             return -1;
         }
+        ss->stack = new_stack;
     }
     assert(end > start);
     ss->stack[ss->size].start = start;
@@ -2358,6 +2359,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         _Py_atomic_store_int(&gcstate->collecting, 0);
         return 0;
     }
+    gcstate->frame = tstate->current_frame;
 
     assert(generation >= 0 && generation < NUM_GENERATIONS);
 
@@ -2446,6 +2448,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 
     assert(!_PyErr_Occurred(tstate));
+    gcstate->frame = NULL;
     _Py_atomic_store_int(&gcstate->collecting, 0);
     return n + m;
 }

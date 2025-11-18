@@ -22,7 +22,13 @@ from profiling.sampling.stack_collector import (
 from profiling.sampling.gecko_collector import GeckoCollector
 
 from test.support.os_helper import unlink
-from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
+from test.support import (
+    force_not_colorized_test_class,
+    SHORT_TIMEOUT,
+    script_helper,
+    os_helper,
+    SuppressCrashReport,
+)
 from test.support.socket_helper import find_unused_port
 from test.support import requires_subprocess, is_emscripten
 from test.support import captured_stdout, captured_stderr
@@ -57,12 +63,13 @@ class MockFrameInfo:
 class MockThreadInfo:
     """Mock ThreadInfo for testing since the real one isn't accessible."""
 
-    def __init__(self, thread_id, frame_info):
+    def __init__(self, thread_id, frame_info, status=0):  # Default to THREAD_STATE_RUNNING (0)
         self.thread_id = thread_id
         self.frame_info = frame_info
+        self.status = status
 
     def __repr__(self):
-        return f"MockThreadInfo(thread_id={self.thread_id}, frame_info={self.frame_info})"
+        return f"MockThreadInfo(thread_id={self.thread_id}, frame_info={self.frame_info}, status={self.status})"
 
 
 class MockInterpreterInfo:
@@ -667,6 +674,97 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn("func1", string_array)
         self.assertIn("func2", string_array)
         self.assertIn("other_func", string_array)
+
+    def test_gecko_collector_markers(self):
+        """Test Gecko profile markers for GIL and CPU state tracking."""
+        try:
+            from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_GIL_REQUESTED
+        except ImportError:
+            THREAD_STATUS_HAS_GIL = (1 << 0)
+            THREAD_STATUS_ON_CPU = (1 << 1)
+            THREAD_STATUS_GIL_REQUESTED = (1 << 3)
+
+        collector = GeckoCollector()
+
+        # Status combinations for different thread states
+        HAS_GIL_ON_CPU = THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU  # Running Python code
+        NO_GIL_ON_CPU = THREAD_STATUS_ON_CPU  # Running native code
+        WAITING_FOR_GIL = THREAD_STATUS_GIL_REQUESTED  # Waiting for GIL
+
+        # Simulate thread state transitions
+        collector.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [("test.py", 10, "python_func")], status=HAS_GIL_ON_CPU)
+            ])
+        ])
+
+        collector.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [("test.py", 15, "wait_func")], status=WAITING_FOR_GIL)
+            ])
+        ])
+
+        collector.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [("test.py", 20, "python_func2")], status=HAS_GIL_ON_CPU)
+            ])
+        ])
+
+        collector.collect([
+            MockInterpreterInfo(0, [
+                MockThreadInfo(1, [("native.c", 100, "native_func")], status=NO_GIL_ON_CPU)
+            ])
+        ])
+
+        profile_data = collector._build_profile()
+
+        # Verify we have threads with markers
+        self.assertIn("threads", profile_data)
+        self.assertEqual(len(profile_data["threads"]), 1)
+        thread_data = profile_data["threads"][0]
+
+        # Check markers exist
+        self.assertIn("markers", thread_data)
+        markers = thread_data["markers"]
+
+        # Should have marker arrays
+        self.assertIn("name", markers)
+        self.assertIn("startTime", markers)
+        self.assertIn("endTime", markers)
+        self.assertIn("category", markers)
+        self.assertGreater(markers["length"], 0, "Should have generated markers")
+
+        # Get marker names from string table
+        string_array = profile_data["shared"]["stringArray"]
+        marker_names = [string_array[idx] for idx in markers["name"]]
+
+        # Verify we have different marker types
+        marker_name_set = set(marker_names)
+
+        # Should have "Has GIL" markers (when thread had GIL)
+        self.assertIn("Has GIL", marker_name_set, "Should have 'Has GIL' markers")
+
+        # Should have "No GIL" markers (when thread didn't have GIL)
+        self.assertIn("No GIL", marker_name_set, "Should have 'No GIL' markers")
+
+        # Should have "On CPU" markers (when thread was on CPU)
+        self.assertIn("On CPU", marker_name_set, "Should have 'On CPU' markers")
+
+        # Should have "Waiting for GIL" markers (when thread was waiting)
+        self.assertIn("Waiting for GIL", marker_name_set, "Should have 'Waiting for GIL' markers")
+
+        # Verify marker structure
+        for i in range(markers["length"]):
+            # All markers should be interval markers (phase = 1)
+            self.assertEqual(markers["phase"][i], 1, f"Marker {i} should be interval marker")
+
+            # All markers should have valid time range
+            start_time = markers["startTime"][i]
+            end_time = markers["endTime"][i]
+            self.assertLessEqual(start_time, end_time, f"Marker {i} should have valid time range")
+
+            # All markers should have valid category
+            self.assertGreaterEqual(markers["category"][i], 0, f"Marker {i} should have valid category")
 
     def test_pstats_collector_export(self):
         collector = PstatsCollector(
@@ -1926,7 +2024,6 @@ if __name__ == "__main__":
         # Should see some of our test functions
         self.assertIn("slow_fibonacci", output)
 
-
     def test_sample_target_module(self):
         tempdir = tempfile.TemporaryDirectory(delete=False)
         self.addCleanup(lambda x: shutil.rmtree(x), tempdir.name)
@@ -2165,7 +2262,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2193,7 +2292,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2221,7 +2322,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2321,7 +2424,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2355,7 +2460,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="collapsed",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     def test_cli_empty_module_name(self):
@@ -2567,7 +2674,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                mode=0
+                mode=0,
+                native=False,
+                gc=True,
             )
 
     def test_sort_options(self):
@@ -2619,6 +2728,13 @@ class TestCpuModeFiltering(unittest.TestCase):
 
     def test_frames_filtered_with_skip_idle(self):
         """Test that frames are actually filtered when skip_idle=True."""
+        # Import thread status flags
+        try:
+            from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU
+        except ImportError:
+            THREAD_STATUS_HAS_GIL = (1 << 0)
+            THREAD_STATUS_ON_CPU = (1 << 1)
+
         # Create mock frames with different thread statuses
         class MockThreadInfoWithStatus:
             def __init__(self, thread_id, frame_info, status):
@@ -2626,12 +2742,15 @@ class TestCpuModeFiltering(unittest.TestCase):
                 self.frame_info = frame_info
                 self.status = status
 
-        # Create test data: running thread, idle thread, and another running thread
+        # Create test data: active thread (HAS_GIL | ON_CPU), idle thread (neither), and another active thread
+        ACTIVE_STATUS = THREAD_STATUS_HAS_GIL | THREAD_STATUS_ON_CPU  # Has GIL and on CPU
+        IDLE_STATUS = 0  # Neither has GIL nor on CPU
+
         test_frames = [
             MockInterpreterInfo(0, [
-                MockThreadInfoWithStatus(1, [MockFrameInfo("active1.py", 10, "active_func1")], 0),  # RUNNING
-                MockThreadInfoWithStatus(2, [MockFrameInfo("idle.py", 20, "idle_func")], 1),        # IDLE
-                MockThreadInfoWithStatus(3, [MockFrameInfo("active2.py", 30, "active_func2")], 0),  # RUNNING
+                MockThreadInfoWithStatus(1, [MockFrameInfo("active1.py", 10, "active_func1")], ACTIVE_STATUS),
+                MockThreadInfoWithStatus(2, [MockFrameInfo("idle.py", 20, "idle_func")], IDLE_STATUS),
+                MockThreadInfoWithStatus(3, [MockFrameInfo("active2.py", 30, "active_func2")], ACTIVE_STATUS),
             ])
         ]
 
@@ -3009,5 +3128,233 @@ main()
             profiling.sampling.sample._parse_mode("invalid")
 
 
+@requires_subprocess()
+@skip_if_not_supported
+class TestGCFrameTracking(unittest.TestCase):
+    """Tests for GC frame tracking in the sampling profiler."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Create a static test script with GC frames and CPU-intensive work."""
+        cls.gc_test_script = '''
+import gc
+
+class ExpensiveGarbage:
+    """Class that triggers GC with expensive finalizer (callback)."""
+    def __init__(self):
+        self.cycle = self
+
+    def __del__(self):
+        # CPU-intensive work in the finalizer callback
+        result = 0
+        for i in range(100000):
+            result += i * i
+            if i % 1000 == 0:
+                result = result % 1000000
+
+def main_loop():
+    """Main loop that triggers GC with expensive callback."""
+    while True:
+        ExpensiveGarbage()
+        gc.collect()
+
+if __name__ == "__main__":
+    main_loop()
+'''
+
+    def test_gc_frames_enabled(self):
+        """Test that GC frames appear when gc tracking is enabled."""
+        with (
+            test_subprocess(self.gc_test_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    duration_sec=1,
+                    sample_interval_usec=5000,
+                    show_summary=False,
+                    native=False,
+                    gc=True,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # Should capture samples
+        self.assertIn("Captured", output)
+        self.assertIn("samples", output)
+
+        # GC frames should be present
+        self.assertIn("<GC>", output)
+
+    def test_gc_frames_disabled(self):
+        """Test that GC frames do not appear when gc tracking is disabled."""
+        with (
+            test_subprocess(self.gc_test_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    duration_sec=1,
+                    sample_interval_usec=5000,
+                    show_summary=False,
+                    native=False,
+                    gc=False,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # Should capture samples
+        self.assertIn("Captured", output)
+        self.assertIn("samples", output)
+
+        # GC frames should NOT be present
+        self.assertNotIn("<GC>", output)
+
+
+@requires_subprocess()
+@skip_if_not_supported
+class TestNativeFrameTracking(unittest.TestCase):
+    """Tests for native frame tracking in the sampling profiler."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Create a static test script with native frames and CPU-intensive work."""
+        cls.native_test_script = '''
+import operator
+
+def main_loop():
+    while True:
+        # Native code in the middle of the stack:
+        operator.call(inner)
+
+def inner():
+    # Python code at the top of the stack:
+    for _ in range(1_000_0000):
+        pass
+
+if __name__ == "__main__":
+    main_loop()
+'''
+
+    def test_native_frames_enabled(self):
+        """Test that native frames appear when native tracking is enabled."""
+        collapsed_file = tempfile.NamedTemporaryFile(
+            suffix=".txt", delete=False
+        )
+        self.addCleanup(close_and_unlink, collapsed_file)
+
+        with (
+            test_subprocess(self.native_test_script) as subproc,
+        ):
+            # Suppress profiler output when testing file export
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        subproc.process.pid,
+                        duration_sec=1,
+                        filename=collapsed_file.name,
+                        output_format="collapsed",
+                        sample_interval_usec=1000,
+                        native=True,
+                    )
+                except PermissionError:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+            # Verify file was created and contains valid data
+            self.assertTrue(os.path.exists(collapsed_file.name))
+            self.assertGreater(os.path.getsize(collapsed_file.name), 0)
+
+            # Check file format
+            with open(collapsed_file.name, "r") as f:
+                content = f.read()
+
+        lines = content.strip().split("\n")
+        self.assertGreater(len(lines), 0)
+
+        stacks = [line.rsplit(" ", 1)[0] for line in lines]
+
+        # Most samples should have native code in the middle of the stack:
+        self.assertTrue(any(";<native>;" in stack for stack in stacks))
+
+        # No samples should have native code at the top of the stack:
+        self.assertFalse(any(stack.endswith(";<native>") for stack in stacks))
+
+    def test_native_frames_disabled(self):
+        """Test that native frames do not appear when native tracking is disabled."""
+        with (
+            test_subprocess(self.native_test_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    duration_sec=1,
+                    sample_interval_usec=5000,
+                    show_summary=False,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+            output = captured_output.getvalue()
+        # Native frames should NOT be present:
+        self.assertNotIn("<native>", output)
+
+
+@requires_subprocess()
+@skip_if_not_supported
+class TestProcessPoolExecutorSupport(unittest.TestCase):
+    """
+    Test that ProcessPoolExecutor works correctly with profiling.sampling.
+    """
+
+    def test_process_pool_executor_pickle(self):
+        # gh-140729: test use ProcessPoolExecutor.map() can sampling
+        test_script = '''
+import concurrent.futures
+
+def worker(x):
+    return x * 2
+
+if __name__ == "__main__":
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        results = list(executor.map(worker, [1, 2, 3]))
+        print(f"Results: {results}")
+'''
+        with os_helper.temp_dir() as temp_dir:
+            script = script_helper.make_script(
+                temp_dir, 'test_process_pool_executor_pickle', test_script
+            )
+            with SuppressCrashReport():
+                with script_helper.spawn_python(
+                    "-m", "profiling.sampling.sample",
+                    "-d", "5",
+                    "-i", "100000",
+                    script,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                ) as proc:
+                    try:
+                        stdout, stderr = proc.communicate(timeout=SHORT_TIMEOUT)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                        stdout, stderr = proc.communicate()
+
+        if "PermissionError" in stderr:
+            self.skipTest("Insufficient permissions for remote profiling")
+
+        self.assertIn("Results: [2, 4, 6]", stdout)
+        self.assertNotIn("Can't pickle", stderr)
 if __name__ == "__main__":
     unittest.main()

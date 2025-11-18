@@ -1,0 +1,2 @@
+:pep:`793`: Add a new entry point for C extension modules,
+``PyModExport_<modulename>``.
