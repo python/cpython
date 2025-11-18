@@ -191,7 +191,7 @@ class LiveStatsCollector(Collector):
         )
         self.result[top_location]["direct_calls"] += 1
 
-    def collect_failed_sample(self, exeption):
+    def collect_failed_sample(self):
         self._failed_samples += 1
         self.total_samples += 1
 
