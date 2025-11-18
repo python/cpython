@@ -139,6 +139,7 @@ class LiveStatsCollector(Collector):
         self._max_sample_rate = 0  # Track maximum sample rate seen
         self._successful_samples = 0  # Track samples that captured frames
         self._failed_samples = 0  # Track samples that failed to capture frames
+        self._display_update_interval = DISPLAY_UPDATE_INTERVAL  # Instance variable for display refresh rate
 
         # Thread status statistics (bit flags)
         self._thread_status_counts = {
@@ -372,7 +373,7 @@ class LiveStatsCollector(Collector):
             if (
                 self._last_display_update is None
                 or (current_time - self._last_display_update)
-                >= DISPLAY_UPDATE_INTERVAL
+                >= self._display_update_interval
             ):
                 self._update_display()
                 self._last_display_update = current_time
@@ -822,17 +823,15 @@ class LiveStatsCollector(Collector):
 
         elif ch == ord("+") or ch == ord("="):
             # Decrease update interval (faster refresh)
-            new_interval = max(
-                0.05, constants.DISPLAY_UPDATE_INTERVAL - 0.05
+            self._display_update_interval = max(
+                0.05, self._display_update_interval - 0.05
             )  # Min 20Hz
-            constants.DISPLAY_UPDATE_INTERVAL = new_interval
 
         elif ch == ord("-") or ch == ord("_"):
             # Increase update interval (slower refresh)
-            new_interval = min(
-                1.0, constants.DISPLAY_UPDATE_INTERVAL + 0.05
+            self._display_update_interval = min(
+                1.0, self._display_update_interval + 0.05
             )  # Max 1Hz
-            constants.DISPLAY_UPDATE_INTERVAL = new_interval
 
         elif ch == ord("c") or ch == ord("C"):
             if self.filter_pattern:

@@ -180,7 +180,7 @@ class HeaderWidget(Widget):
 
         # Calculate display refresh rate
         refresh_hz = (
-            1.0 / DISPLAY_UPDATE_INTERVAL if DISPLAY_UPDATE_INTERVAL > 0 else 0
+            1.0 / self.collector._display_update_interval if self.collector._display_update_interval > 0 else 0
         )
 
         # Get current view mode and thread display

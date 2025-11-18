@@ -29,23 +29,17 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
 
     def setUp(self):
         """Set up collector with mock display."""
-        from profiling.sampling.live_collector import constants
-
-        # Save and reset the display update interval
-        self._saved_interval = constants.DISPLAY_UPDATE_INTERVAL
-        constants.DISPLAY_UPDATE_INTERVAL = 0.1
-
         self.display = MockDisplay(height=40, width=160)
         self.collector = LiveStatsCollector(
             1000, pid=12345, display=self.display
         )
         self.collector.start_time = time.perf_counter()
+        # Set a consistent display update interval for tests
+        self.collector._display_update_interval = 0.1
 
     def tearDown(self):
-        """Restore the display update interval."""
-        from profiling.sampling.live_collector import constants
-
-        constants.DISPLAY_UPDATE_INTERVAL = self._saved_interval
+        """Clean up after test."""
+        pass
 
     def test_pause_functionality(self):
         """Test pause/resume functionality."""
@@ -116,53 +110,45 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
 
     def test_increase_refresh_rate(self):
         """Test increasing refresh rate (faster updates)."""
-        from profiling.sampling.live_collector import constants
-
-        initial_interval = constants.DISPLAY_UPDATE_INTERVAL
+        initial_interval = self.collector._display_update_interval
 
         # Simulate '+' key press (faster = smaller interval)
         self.display.simulate_input(ord("+"))
         self.collector._handle_input()
 
-        self.assertLess(constants.DISPLAY_UPDATE_INTERVAL, initial_interval)
+        self.assertLess(self.collector._display_update_interval, initial_interval)
 
     def test_decrease_refresh_rate(self):
         """Test decreasing refresh rate (slower updates)."""
-        from profiling.sampling.live_collector import constants
-
-        initial_interval = constants.DISPLAY_UPDATE_INTERVAL
+        initial_interval = self.collector._display_update_interval
 
         # Simulate '-' key press (slower = larger interval)
         self.display.simulate_input(ord("-"))
         self.collector._handle_input()
 
-        self.assertGreater(constants.DISPLAY_UPDATE_INTERVAL, initial_interval)
+        self.assertGreater(self.collector._display_update_interval, initial_interval)
 
     def test_refresh_rate_minimum(self):
         """Test that refresh rate has a minimum (max speed)."""
-        from profiling.sampling.live_collector import constants
-
-        constants.DISPLAY_UPDATE_INTERVAL = 0.05  # Set to minimum
+        self.collector._display_update_interval = 0.05  # Set to minimum
 
         # Try to go faster
         self.display.simulate_input(ord("+"))
         self.collector._handle_input()
 
         # Should stay at minimum
-        self.assertEqual(constants.DISPLAY_UPDATE_INTERVAL, 0.05)
+        self.assertEqual(self.collector._display_update_interval, 0.05)
 
     def test_refresh_rate_maximum(self):
         """Test that refresh rate has a maximum (min speed)."""
-        from profiling.sampling.live_collector import constants
-
-        constants.DISPLAY_UPDATE_INTERVAL = 1.0  # Set to maximum
+        self.collector._display_update_interval = 1.0  # Set to maximum
 
         # Try to go slower
         self.display.simulate_input(ord("-"))
         self.collector._handle_input()
 
         # Should stay at maximum
-        self.assertEqual(constants.DISPLAY_UPDATE_INTERVAL, 1.0)
+        self.assertEqual(self.collector._display_update_interval, 1.0)
 
     def test_help_toggle(self):
         """Test help screen toggle."""
@@ -290,27 +276,23 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
 
     def test_increase_refresh_rate_with_equals(self):
         """Test increasing refresh rate with '=' key."""
-        from profiling.sampling.live_collector import constants
-
-        initial_interval = constants.DISPLAY_UPDATE_INTERVAL
+        initial_interval = self.collector._display_update_interval
 
         # Simulate '=' key press (alternative to '+')
         self.display.simulate_input(ord("="))
         self.collector._handle_input()
 
-        self.assertLess(constants.DISPLAY_UPDATE_INTERVAL, initial_interval)
+        self.assertLess(self.collector._display_update_interval, initial_interval)
 
     def test_decrease_refresh_rate_with_underscore(self):
         """Test decreasing refresh rate with '_' key."""
-        from profiling.sampling.live_collector import constants
-
-        initial_interval = constants.DISPLAY_UPDATE_INTERVAL
+        initial_interval = self.collector._display_update_interval
 
         # Simulate '_' key press (alternative to '-')
         self.display.simulate_input(ord("_"))
         self.collector._handle_input()
 
-        self.assertGreater(constants.DISPLAY_UPDATE_INTERVAL, initial_interval)
+        self.assertGreater(self.collector._display_update_interval, initial_interval)
 
     def test_finished_state_displays_banner(self):
         """Test that finished state shows prominent banner."""
