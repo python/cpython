@@ -480,7 +480,7 @@ ABC hierarchy::
         .. versionchanged:: 3.5
            Made the method static.
 
-        .. versionadded:: next
+        .. versionadded:: 3.15
            Added the *fullname* parameter.
 
 
@@ -1048,7 +1048,7 @@ find and load modules.
       :meth:`PathFinder.invalidate_caches` invalidates :class:`NamespacePath`,
       forcing the path value to be recomputed next time it is accessed.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. class:: SourceFileLoader(fullname, path)

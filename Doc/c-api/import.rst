@@ -353,4 +353,4 @@ Importing Modules
 
    On error, return NULL with an exception set.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15

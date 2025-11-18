@@ -2261,7 +2261,7 @@ and classes for traversing abstract syntax trees:
       The minimum supported version for ``feature_version`` is now ``(3, 7)``.
       The ``optimize`` argument was added.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
       Added the *module* parameter.
 
 

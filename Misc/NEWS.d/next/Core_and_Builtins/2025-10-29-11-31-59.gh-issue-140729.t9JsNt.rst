@@ -1,2 +1,0 @@
-Fix pickling error in the sampling profiler when using ``concurrent.futures.ProcessPoolExecutor``
-script can not be properly pickled and executed in worker processes.

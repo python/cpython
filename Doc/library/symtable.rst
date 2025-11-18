@@ -30,7 +30,7 @@ Generating Symbol Tables
    It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
    by module name.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
       Added the *module* parameter.
 
 
