@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 try:
-    import _remote_debugging
+    import _remote_debugging  # noqa: F401
     from profiling.sampling.pstats_collector import PstatsCollector
     from profiling.sampling.stack_collector import (
         CollapsedStackCollector,

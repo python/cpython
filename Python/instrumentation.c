@@ -191,7 +191,7 @@ is_instrumented(int opcode)
 {
     assert(opcode != 0);
     assert(opcode != RESERVED);
-    return opcode != ENTER_EXECUTOR && opcode >= MIN_INSTRUMENTED_OPCODE;
+    return opcode < ENTER_EXECUTOR && opcode >= MIN_INSTRUMENTED_OPCODE;
 }
 
 #ifndef NDEBUG
@@ -526,7 +526,7 @@ valid_opcode(int opcode)
     if (IS_VALID_OPCODE(opcode) &&
         opcode != CACHE &&
         opcode != RESERVED &&
-        opcode < 255)
+        opcode < 254)
     {
        return true;
     }

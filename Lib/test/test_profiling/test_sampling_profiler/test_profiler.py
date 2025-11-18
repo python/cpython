@@ -5,7 +5,7 @@ from unittest import mock
 import unittest
 
 try:
-    import _remote_debugging
+    import _remote_debugging  # noqa: F401
     from profiling.sampling.sample import SampleProfiler, print_sampled_stats
     from profiling.sampling.pstats_collector import PstatsCollector
 except ImportError:
