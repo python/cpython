@@ -450,8 +450,10 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
 
     def _iterencode_once(o, _current_indent_level):
         nonlocal _iterencode, _iterencode_dict, _iterencode_list
-        yield from _iterencode(o, _current_indent_level)
-        # Break reference cycles due to mutually recursive closures:
-        del _iterencode, _iterencode_dict, _iterencode_list
+        try:
+            yield from _iterencode(o, _current_indent_level)
+        finally:
+            # Break reference cycles due to mutually recursive closures:
+            del _iterencode, _iterencode_dict, _iterencode_list
 
     return _iterencode_once
