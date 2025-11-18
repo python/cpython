@@ -13,7 +13,6 @@ class Collector(ABC):
 
     def collect_failed_sample(self, exeption):
         """Collect data about a failed sample attempt."""
-        pass
 
     @abstractmethod
     def export(self, filename):
