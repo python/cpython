@@ -24,11 +24,24 @@ _PyCriticalSection_BeginSlow(PyCriticalSection *c, PyMutex *m)
     // As an optimisation for locking the same object recursively, skip
     // locking if the mutex is currently locked by the top-most critical
     // section.
-    if (tstate->critical_section &&
-        untag_critical_section(tstate->critical_section)->_cs_mutex == m) {
-        c->_cs_mutex = NULL;
-        c->_cs_prev = 0;
-        return;
+    // If the top-most critical section is a two-mutex critical section,
+    // then locking is skipped if either mutex is m.
+    if (tstate->critical_section) {
+        PyCriticalSection *prev = untag_critical_section(tstate->critical_section);
+        if (prev->_cs_mutex == m) {
+            c->_cs_mutex = NULL;
+            c->_cs_prev = 0;
+            return;
+        }
+        if (tstate->critical_section & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
+            PyCriticalSection2 *prev2 = (PyCriticalSection2 *)
+                untag_critical_section(tstate->critical_section);
+            if (prev2->_cs_mutex2 == m) {
+                c->_cs_mutex = NULL;
+                c->_cs_prev = 0;
+                return;
+            }
+        }
     }
     c->_cs_mutex = NULL;
     c->_cs_prev = (uintptr_t)tstate->critical_section;
