@@ -488,6 +488,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 1;
         case TO_BOOL_STR:
             return 1;
+        case TRACE_RECORD:
+            return 0;
         case UNARY_INVERT:
             return 1;
         case UNARY_NEGATIVE:
@@ -971,6 +973,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case TO_BOOL_STR:
             return 1;
+        case TRACE_RECORD:
+            return 0;
         case UNARY_INVERT:
             return 1;
         case UNARY_NEGATIVE:
@@ -1287,6 +1291,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [TO_BOOL_LIST] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [TO_BOOL_NONE] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG },
     [TO_BOOL_STR] = { true, INSTR_FMT_IXC00, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [TRACE_RECORD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [UNARY_INVERT] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [UNARY_NEGATIVE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [UNARY_NOT] = { true, INSTR_FMT_IX, HAS_PURE_FLAG },
@@ -1738,6 +1743,7 @@ const char *_PyOpcode_OpName[267] = {
     [TO_BOOL_LIST] = "TO_BOOL_LIST",
     [TO_BOOL_NONE] = "TO_BOOL_NONE",
     [TO_BOOL_STR] = "TO_BOOL_STR",
+    [TRACE_RECORD] = "TRACE_RECORD",
     [UNARY_INVERT] = "UNARY_INVERT",
     [UNARY_NEGATIVE] = "UNARY_NEGATIVE",
     [UNARY_NOT] = "UNARY_NOT",
@@ -1809,7 +1815,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [230] = 230,
     [231] = 231,
     [232] = 232,
-    [233] = 233,
     [BINARY_OP] = BINARY_OP,
     [BINARY_OP_ADD_FLOAT] = BINARY_OP,
     [BINARY_OP_ADD_INT] = BINARY_OP,
@@ -2025,6 +2030,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [TO_BOOL_LIST] = TO_BOOL,
     [TO_BOOL_NONE] = TO_BOOL,
     [TO_BOOL_STR] = TO_BOOL,
+    [TRACE_RECORD] = TRACE_RECORD,
     [UNARY_INVERT] = UNARY_INVERT,
     [UNARY_NEGATIVE] = UNARY_NEGATIVE,
     [UNARY_NOT] = UNARY_NOT,
@@ -2070,7 +2076,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 230: \
     case 231: \
     case 232: \
-    case 233: \
         ;
 struct pseudo_targets {
     uint8_t as_sequence;

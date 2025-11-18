@@ -134,8 +134,8 @@
 #  define LABEL(name) name:
 #else
 #  define TARGET(op) case op: TARGET_##op:
-#  define DISPATCH_GOTO() goto dispatch_opcode
-#  define DISPATCH_GOTO_NON_TRACING() goto dispatch_opcode
+#  define DISPATCH_GOTO() dispatch_code = opcode | tracing_mode ; goto dispatch_opcode
+#  define DISPATCH_GOTO_NON_TRACING() dispatch_code = opcode; goto dispatch_opcode
 #  define JUMP_TO_LABEL(name) goto name;
 #  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
 #  define LABEL(name) name:
@@ -148,9 +148,9 @@
 #  define LEAVE_TRACING() \
     DISPATCH_TABLE_VAR = DISPATCH_TABLE;
 #else
-#  define IS_JIT_TRACING() (0)
-#  define ENTER_TRACING()
-#  define LEAVE_TRACING()
+#  define IS_JIT_TRACING() (tracing_mode != 0)
+#  define ENTER_TRACING() tracing_mode = 255
+#  define LEAVE_TRACING() tracing_mode = 0
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */

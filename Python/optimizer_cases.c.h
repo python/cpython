@@ -3483,3 +3483,5 @@
             break;
         }
 
+        /* _TRACE_RECORD is not a viable micro-op for tier 2 */
+

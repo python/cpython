@@ -1179,6 +1179,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+#if !USE_COMPUTED_GOTOS
+    uint8_t tracing_mode = 0;
+    uint8_t dispatch_code;
+#endif
 #endif
     _PyEntryFrame entry;
 

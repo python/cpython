@@ -5636,10 +5636,12 @@ dummy_func(
             DISPATCH();
         }
 
-        label(record_previous_inst) {
+        inst(TRACE_RECORD, (--)) {
 #if _Py_TIER2
             assert(IS_JIT_TRACING());
-            int opcode = next_instr->op.code;
+            next_instr = this_instr;
+            frame->instr_ptr = prev_instr;
+            opcode = next_instr->op.code;
             bool stop_tracing = (opcode == WITH_EXCEPT_START ||
                 opcode == RERAISE || opcode == CLEANUP_THROW ||
                 opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
@@ -5675,7 +5677,8 @@ dummy_func(
             }
             DISPATCH_GOTO_NON_TRACING();
 #else
-            Py_FatalError("JIT label executed in non-jit build.");
+            (void)prev_instr;
+            Py_FatalError("JIT instruction executed in non-jit build.");
 #endif
         }
 
