@@ -11,6 +11,7 @@ requires('gui')
 
 import os
 import unittest
+import unittest.mock as mock
 from tkinter import Tk, TclError, CHAR, NONE, WORD
 from tkinter.ttk import Button
 from idlelib.idle_test.mock_idle import Func
@@ -185,6 +186,32 @@ class ViewFunctionTest(unittest.TestCase):
         view = tv.view_text(root, 'Title', 'test', modal=False, wrap='none')
         text_widget = view.viewframe.textframe.text
         self.assertEqual(text_widget.cget('wrap'), 'none')
+
+    def test_find(self):
+        view = tv.view_text(root, 'Title', 'test text', modal=False)
+        with mock.patch('idlelib.textview.search') as mock_search:
+            view.viewframe.text.event_generate('<<find>>')
+            root.update_idletasks()
+        mock_search.find.assert_called_once()
+
+    def test_find_selection_and_find_again(self):
+        view = tv.view_text(root, 'Title', 'test text', modal=False)
+
+        # Select the first "te".
+        view.viewframe.text.tag_add('sel', '1.0', '1.2')
+        selection_range = view.viewframe.text.tag_nextrange('sel', '1.0')
+        self.assertEqual(selection_range, ('1.0', '1.2'))
+
+        # After <<find-selection>>, the second "te" should be selected.
+        view.viewframe.text.event_generate('<<find-selection>>')
+        root.update_idletasks()
+        selection_range = view.viewframe.text.tag_nextrange('sel', '1.0')
+        self.assertEqual(selection_range, ('1.5', '1.7'))
+
+        # After <<find-again>>, the selection should return to the first "te".
+        view.viewframe.text.event_generate('<<find-again>>')
+        selection_range = view.viewframe.text.tag_nextrange('sel', '1.0')
+        self.assertEqual(selection_range, ('1.0', '1.2'))
 
 
 # Call ViewWindow with _utest=True.

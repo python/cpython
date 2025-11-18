@@ -9,6 +9,17 @@ from tkinter import TclError
 from idlelib import searchengine
 from idlelib.searchbase import SearchDialogBase
 
+
+def _get_selected_text(text):
+    """Return selected text in a text widget.
+
+    Returns None if no text is selected.
+    """
+    try:
+        return text.get("sel.first", "sel.last")
+    except TclError:
+        return None
+
 def _setup(text):
     """Return the new or existing singleton SearchDialog instance.
 
@@ -32,7 +43,7 @@ def find(text):
     used as the search phrase; otherwise, the previous entry
     is used.  No search is done with this command.
     """
-    pat = text.get("sel.first", "sel.last")
+    pat = _get_selected_text(text)
     return _setup(text).open(text, pat)  # Open is inherited from SDBase.
 
 def find_again(text):
@@ -126,7 +137,7 @@ class SearchDialog(SearchDialogBase):
         selected text.  If the selected text isn't changed, then use
         the prior search phrase.
         """
-        pat = text.get("sel.first", "sel.last")
+        pat = _get_selected_text(text)
         if pat:
             self.engine.setcookedpat(pat)
         return self.find_again(text)

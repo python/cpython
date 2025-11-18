@@ -6,7 +6,9 @@ from tkinter import Toplevel, Text, TclError,\
 from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
+from idlelib import search
 from idlelib.colorizer import color_config
+from idlelib.config import idleConf
 
 
 class AutoHideScrollbar(Scrollbar):
@@ -70,21 +72,22 @@ class ScrollableTextFrame(Frame):
 
 
 class ViewFrame(Frame):
-    "Display TextFrame and Close button."
+    """Display a TextFrame and "Close" and "Search" buttons."""
     def __init__(self, parent, contents, wrap='word'):
-        """Create a frame for viewing text with a "Close" button.
+        """Create a frame for viewing text.
 
         parent - parent widget for this frame
         contents - text to display
         wrap - type of text wrapping to use ('word', 'char' or 'none')
 
         The Text widget is accessible via the 'text' attribute.
+        The frame has "Close" and "Search" buttons.
         """
         super().__init__(parent)
         self.parent = parent
         self.bind('<Return>', self.ok)
         self.bind('<Escape>', self.ok)
-        self.textframe = ScrollableTextFrame(self, relief=SUNKEN, height=700)
+        self.textframe = ScrollableTextFrame(self, relief=SUNKEN, height=900)
 
         text = self.text = self.textframe.text
         text.insert('1.0', contents)
@@ -92,14 +95,52 @@ class ViewFrame(Frame):
         color_config(text)
         text.focus_set()
 
+        buttons = Frame(self, padding=2)
         self.button_ok = button_ok = Button(
-                self, text='Close', command=self.ok, takefocus=False)
+            buttons, text='Close', command=self.ok, takefocus=False,
+        )
         self.textframe.pack(side='top', expand=True, fill='both')
-        button_ok.pack(side='bottom')
+        button_ok.pack(side='left', padx=5)
 
-    def ok(self, event=None):
+        self.button_search = button_search = Button(
+            buttons, text='Search',
+            command=lambda: self.find_event(None),
+            takefocus=False,
+        )
+        button_search.pack(side='left', padx=5)
+
+        keydefs = idleConf.GetCurrentKeySet()
+        for pseudoevent, handler in [
+            ('<<find>>', self.find_event),
+            ('<<find-again>>', self.find_again_event),
+            ('<<find-selection>>', self.find_selection_event),
+        ]:
+            keylist = keydefs[pseudoevent]
+            if keylist:
+                text.event_add(pseudoevent, *keylist)
+            text.bind(pseudoevent, handler)
+
+        buttons.pack(side='bottom')
+
+    def ok(self):
         """Dismiss text viewer dialog."""
         self.parent.destroy()
+        return "break"
+
+    def find_event(self, event):
+        """Open the search dialog."""
+        search.find(self.text)
+        return "break"
+
+    def find_again_event(self, event):
+        """Search for the previously searched pattern again."""
+        search.find_again(self.text)
+        return "break"
+
+    def find_selection_event(self, event):
+        """Search for the currently selected text."""
+        search.find_selection(self.text)
+        return "break"
 
 
 class ViewWindow(Toplevel):
@@ -107,7 +148,7 @@ class ViewWindow(Toplevel):
 
     def __init__(self, parent, title, contents, modal=True, wrap=WORD,
                  *, _htest=False, _utest=False):
-        """Show the given text in a scrollable window with a 'close' button.
+        """Show the given text in a scrollable window.
 
         If modal is left True, users cannot interact with other windows
         until the textview window is closed.
@@ -124,13 +165,11 @@ class ViewWindow(Toplevel):
         # Place dialog below parent if running htest.
         x = parent.winfo_rootx() + 10
         y = parent.winfo_rooty() + (10 if not _htest else 100)
-        self.geometry(f'=750x500+{x}+{y}')
+        self.geometry(f'=800x600+{x}+{y}')
 
         self.title(title)
         self.viewframe = ViewFrame(self, contents, wrap=wrap)
         self.protocol("WM_DELETE_WINDOW", self.ok)
-        self.button_ok = button_ok = Button(self, text='Close',
-                                            command=self.ok, takefocus=False)
         self.viewframe.pack(side='top', expand=True, fill='both')
 
         self.is_modal = modal
