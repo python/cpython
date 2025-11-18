@@ -260,7 +260,7 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         }
         else {
             PyErr_SetString(PyExc_TypeError,
-     "tcsetattr: elements of attributes must be characters or integers");
+     "tcsetattr: elements of attributes must be bytes objects of length 1 or integers");
                         return NULL;
                 }
     }
@@ -474,6 +474,7 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 termios.tcsetwinsize
 
     fd: fildes
@@ -488,7 +489,7 @@ is a two-item tuple (ws_row, ws_col) like the one returned by tcgetwinsize().
 
 static PyObject *
 termios_tcsetwinsize_impl(PyObject *module, int fd, PyObject *winsz)
-/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=4a06424465b24aee]*/
+/*[clinic end generated code: output=2ac3c9bb6eda83e1 input=9a163c4e06fc4a41]*/
 {
     if (!PySequence_Check(winsz) || PySequence_Size(winsz) != 2) {
         PyErr_SetString(PyExc_TypeError,
@@ -1352,9 +1353,21 @@ termios_exec(PyObject *mod)
     }
 
     while (constant->name != NULL) {
-        if (PyModule_AddIntConstant(
-            mod, constant->name, constant->value) < 0) {
-            return -1;
+        if (strncmp(constant->name, "TIO", 3) == 0) {
+            // gh-119770: Convert value to unsigned int for ioctl() constants,
+            // constants can be negative on macOS whereas ioctl() expects an
+            // unsigned long 'request'.
+            unsigned int value = constant->value & UINT_MAX;
+            if (PyModule_Add(mod, constant->name,
+                             PyLong_FromUnsignedLong(value)) < 0) {
+                return -1;
+            }
+        }
+        else {
+            if (PyModule_AddIntConstant(
+                mod, constant->name, constant->value) < 0) {
+                return -1;
+            }
         }
         ++constant;
     }

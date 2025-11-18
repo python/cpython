@@ -46,7 +46,7 @@ macros.
 
 .. c:var:: PyTypeObject PyDateTime_DeltaType
 
-   This instance of :c:type:`PyTypeObject` represents Python type for
+   This instance of :c:type:`PyTypeObject` represents the Python type for
    the difference between two datetime values;
    it is the same object as :class:`datetime.timedelta` in the Python layer.
 
@@ -318,10 +318,10 @@ Macros for the convenience of modules implementing the DB API:
 .. c:function:: PyObject* PyDateTime_FromTimestamp(PyObject *args)
 
    Create and return a new :class:`datetime.datetime` object given an argument
-   tuple suitable for passing to :meth:`datetime.datetime.fromtimestamp()`.
+   tuple suitable for passing to :meth:`datetime.datetime.fromtimestamp`.
 
 
 .. c:function:: PyObject* PyDate_FromTimestamp(PyObject *args)
 
    Create and return a new :class:`datetime.date` object given an argument
-   tuple suitable for passing to :meth:`datetime.date.fromtimestamp()`.
+   tuple suitable for passing to :meth:`datetime.date.fromtimestamp`.

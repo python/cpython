@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """Tool for measuring execution time of small code snippets.
 
 This module avoids a number of common traps for measuring execution
@@ -46,7 +44,6 @@ Functions:
     timeit(string, string) -> float
     repeat(string, string) -> list
     default_timer() -> float
-
 """
 
 import gc
@@ -136,7 +133,7 @@ class Timer:
         exec(code, global_ns, local_ns)
         self.inner = local_ns["inner"]
 
-    def print_exc(self, file=None):
+    def print_exc(self, file=None, **kwargs):
         """Helper to print a traceback from the timed code.
 
         Typical use:
@@ -152,6 +149,11 @@ class Timer:
 
         The optional file argument directs where the traceback is
         sent; it defaults to sys.stderr.
+
+        The optional colorize keyword argument controls whether the
+        traceback is colorized; it defaults to False for programmatic
+        usage. When used from the command line, this is automatically
+        set based on terminal capabilities.
         """
         import linecache, traceback
         if self.src is not None:
@@ -161,7 +163,8 @@ class Timer:
                                                dummy_src_name)
         # else the source is already stored somewhere else
 
-        traceback.print_exc(file=file)
+        kwargs['colorize'] = kwargs.get('colorize', False)
+        traceback.print_exc(file=file, **kwargs)
 
     def timeit(self, number=default_number):
         """Time 'number' executions of the main statement.
@@ -260,9 +263,12 @@ def main(args=None, *, _wrap_timer=None):
     is not None, it must be a callable that accepts a timer function
     and returns another timer function (used for unit testing).
     """
+    import getopt
     if args is None:
         args = sys.argv[1:]
-    import getopt
+    import _colorize
+    colorize = _colorize.can_colorize()
+
     try:
         opts, args = getopt.getopt(args, "n:u:s:r:pvh",
                                    ["number=", "setup=", "repeat=",
@@ -304,7 +310,7 @@ def main(args=None, *, _wrap_timer=None):
                 precision += 1
             verbose += 1
         if o in ("-h", "--help"):
-            print(__doc__, end=' ')
+            print(__doc__, end="")
             return 0
     setup = "\n".join(setup) or "pass"
 
@@ -329,7 +335,7 @@ def main(args=None, *, _wrap_timer=None):
         try:
             number, _ = t.autorange(callback)
         except:
-            t.print_exc()
+            t.print_exc(colorize=colorize)
             return 1
 
         if verbose:
@@ -338,7 +344,7 @@ def main(args=None, *, _wrap_timer=None):
     try:
         raw_timings = t.repeat(repeat, number)
     except:
-        t.print_exc()
+        t.print_exc(colorize=colorize)
         return 1
 
     def format_time(dt):

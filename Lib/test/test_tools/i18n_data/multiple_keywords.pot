@@ -1,0 +1,38 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2000-01-01 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: multiple_keywords.py:3
+msgid "bar"
+msgstr ""
+
+#: multiple_keywords.py:5
+msgctxt "baz"
+msgid "qux"
+msgstr ""
+
+#: multiple_keywords.py:9
+msgctxt "corge"
+msgid "grault"
+msgstr ""
+
+#: multiple_keywords.py:11
+msgctxt "xyzzy"
+msgid "foo"
+msgid_plural "foos"
+msgstr[0] ""
+msgstr[1] ""
+

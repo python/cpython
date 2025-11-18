@@ -337,7 +337,7 @@ _tree_widget_spec = {
     'file': 'tree',
     'kwds': {},
     'msg': "The canvas is scrollable.\n"
-           "Click on folders up to to the lowest level."
+           "Click on folders up to the lowest level."
     }
 
 _undo_delegator_spec = {

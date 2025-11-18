@@ -48,11 +48,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "4076a884f0ca96873589b5c8159e2e5bfb8b829a"
+          "checksumValue": "a4395dd0589a97aab0904f7a5f5dc5781a086aa2"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1a434bf3d2f9fb8a0b5adb79201a942788d11824c3e5b46a0b9962c0c482016c"
+          "checksumValue": "610b844bbfa3ec955772cc825db4d4db470827d57adcb214ad372d0eaf00e591"
         }
       ],
       "fileName": "Modules/expat/expat.h"
@@ -62,11 +62,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "b70ce53fdc25ae482681ae2f6623c3c8edc9c1b7"
+          "checksumValue": "c22196e3d8bee88fcdda715623b3b9d2119d2fb3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "86afb425ec9999eb4f1ec9ab2fb41c58c4aa5cb9bf934b8c94264670fc5a961d"
+          "checksumValue": "f2c2283ba03b057e92beefc7f81ba901ebb6dfc1a45b036c8a7d65808eb77a84"
         }
       ],
       "fileName": "Modules/expat/expat_external.h"
@@ -90,11 +90,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "e23d160cc33cc2c25a4b48f7b242f906444418e0"
+          "checksumValue": "7dce7d98943c5db33ae05e54801dcafb4547b9dd"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f7523357d8009749e7dba94b0bd7d0fa60e011cc254e55c4ebccd6313f031122"
+          "checksumValue": "6bfe307d52e7e4c71dbc30d3bd902a4905cdd83bbe4226a7e8dfa8e4c462a157"
         }
       ],
       "fileName": "Modules/expat/internal.h"
@@ -128,29 +128,15 @@
       "fileName": "Modules/expat/nametab.h"
     },
     {
-      "SPDXID": "SPDXRef-FILE-Modules-expat-pyexpatns.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "f50c899172acd93fc539007bfb43315b83d407e4"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "d571b8258cfaa067a20adef553e5fcedd6671ca4a8841483496de031bd904567"
-        }
-      ],
-      "fileName": "Modules/expat/pyexpatns.h"
-    },
-    {
       "SPDXID": "SPDXRef-FILE-Modules-expat-siphash.h",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "4c49b5df2bc702f663ba3b5a52d1940ec363226b"
+          "checksumValue": "aca27f46d9fd387b63ce7ff2e4f172cad130b39b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b5ec29f6560acc183f1ee8ab92bb3aea17b87b4c2120cd2e3f78deba7a12491e"
+          "checksumValue": "f537add526ecda8389503b7ef45fb52b6217e4dc171dcc3a8dc6903ff6134726"
         }
       ],
       "fileName": "Modules/expat/siphash.h"
@@ -188,11 +174,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "fed1311be8577491b7f63085a27014eabf2caec8"
+          "checksumValue": "4c81a1f04fc653877c63c834145c18f93cd95f3e"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "3dc233eca5fa1bb7387c503f8a12d840707e4374b229e05d5657db9645725040"
+          "checksumValue": "04a379615f476d55f95ca1853107e20627b48ca4afe8d0fd5981ac77188bf0a6"
         }
       ],
       "fileName": "Modules/expat/xmlparse.c"
@@ -216,11 +202,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "c961fb1a80f7b0601a63e69fba793fe5f6dff157"
+          "checksumValue": "ac2964cca107f62dd133bfd4736a9a17defbc401"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "228470eb9181a9a7575b63137edcb61b817ee4e0923faffdbeba29e07c939713"
+          "checksumValue": "92e41f373b67f6e0dcd7735faef3c3f1e2c17fe59e007e6b74beef6a2e70fa88"
         }
       ],
       "fileName": "Modules/expat/xmlrole.h"
@@ -230,11 +216,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "8394790c0199c8f88108542ad78f23095d28a3fe"
+          "checksumValue": "1e2d35d90a1c269217f83d3bdf3c71cc22cb4c3f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "5b16c671ccc42496374762768e4bf48f614aecfd2025a07925b8d94244aec645"
+          "checksumValue": "98d0fc735041956cc2e7bbbe2fb8f03130859410e0aee5e8015f406a37c02a3c"
         }
       ],
       "fileName": "Modules/expat/xmltok.c"
@@ -244,11 +230,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "7d2943a0128094455004b1a98007b98734221bae"
+          "checksumValue": "d126831eaa5158cff187a8c93f4bc1c8118f3b17"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "6b8919dc951606dc6f2b0175f8955a9ced901ce8bd08db47f291b6c04227ae7f"
+          "checksumValue": "91bf003a725a675761ea8d92cebc299a76fd28c3a950572f41bc7ce5327ee7b5"
         }
       ],
       "fileName": "Modules/expat/xmltok.h"
@@ -296,15 +282,183 @@
       "fileName": "Modules/expat/xmltok_ns.c"
     },
     {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-HMAC.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "705dc7220dad725881592749f7febaf6135cc9fd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "142adb769ff02b8a5327f0eb837e1f9a797bdf9a1684d21acd749dbb5b2e5be2"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_HMAC.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-HMAC.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "a57d53c35aa916ce0cd1567c8f10dcea58270321"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d68209032703137326f9aadd9abac8fe4a5c92d391e2f43b0414fa63087adc6b"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_HMAC.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "808af7ff8a2cb2b4ef3a9ce3dbfef58d90828c9f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6a492aa586f2d10b1b300ce8ce4c72c976ff7548fee667aded2253f99969ac87"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2b.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "4d767388a34e2a2000e0cbd31f06cf36af1ae10d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fac493e96af252abcf5705f0ab4eec59c1f3bc8244e105d75a57c43552dd1569"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2b.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b-Simd256.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "1bb072f2be9e5d194274fdcc87825cb094e4b32e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9eb22953ce60dde9dc970fec9dfce9d94235f4b7ccd8f0151cad4707dc835d1d"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2b_Simd256.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b-Simd256.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "280fd03ee23e13ecf90711d2be8230035d957343"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "817dcd05d06d804587fce7d8f2f3f42a6fcf6818d2419a3551ef0df70cb7125a"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2b_Simd256.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b-Simd256-universal2.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "5afc433179d71abd6649596797a7e8953e89172d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "db42da82d18641d68d3670e6201e0cbb43415daaa84f29770b8f0ebf33562975"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "cdd6e9ca86dbede92d1a47b9224d2af70c599a71"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f3204f3e60734d811b6630f879b69ce54eaf367f3fca5889c1026e7a1f3ee1e4"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2s.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "79f47ab5458d88bce0f210a566aa117ce2125049"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5cc96313f8c066f055c2819e473c79aeff086ba91a1449d54aa569127cd8601e"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2s.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s-Simd128.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "4056bb6e3ed184400d1610bdfd4260b3fd05ccbb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c93746df2f219cbb1634ee6fb0ab1c4cbd381d1f36c637114c68346c9935326d"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2s_Simd128.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s-Simd128.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "c98890b6193baa3dbd472cfb67f22aea3dd0d3e1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fe3f17bf237166f872ba88c8204333c4f64bdc4bb29c265448581c7bfea4b151"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2s_Simd128.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s-Simd128-universal2.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "d70c6dbcb91d56bbd80f7bf860e508a748042d0d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5b132ab850a5e0fe6f27e08a955f8989ea3aae8e5b3115f0195039034ece8c04"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.c"
+    },
+    {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-MD5.c",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "f8ba39b46ebdfa7d031d9c33130c6ded680a8120"
+          "checksumValue": "61f678cd9234c6eab5d4409ae66f470b068b959b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f71cf6a0e8f09354c2af2c785a1d36e0cba7613a589be01ca8a3d8478f4c8874"
+          "checksumValue": "5b91ed0339074e2e546119833398e2cdb7190c33a59c405bf43b2417c789547d"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_MD5.c"
@@ -314,11 +468,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "eaaab54cea2b0bb8ec0eedf0b373d42f1a0f8f6c"
+          "checksumValue": "2ed70f612a998ef6c04d62f9487a1b2534e6d76a"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "9a02e2a6e163515ea0228a859d5e55c1f57b11fae5908c42f9f9814ce9bca230"
+          "checksumValue": "a34534ef36bc8428ac1169ca5f4f1c17a0817507ebae388e3dd825d1a331f28d"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_MD5.h"
@@ -328,11 +482,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "f4f42faf8da78a230199f649c0f2a1b865799a31"
+          "checksumValue": "c7fc5c9721caf37c5a24c9beff27b0ac2ed68cc9"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "5b29bd9951646861e0e19427be5d923a5bab7a4516824ccc068f696469195eec"
+          "checksumValue": "ce08721d491f3b8a9bd4cde6c27bfcc8fc01471512ccca4bd3c0b764cb551d29"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_SHA1.c"
@@ -342,11 +496,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "722b57139737ceeb88e41d3839e6f7d70578741b"
+          "checksumValue": "a3f9bdc9e73f80eb4a586dc180246cfb8267ffc0"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "5640295c790d56b1b4df147d6a6c58803b1845cd7d93365bf7cc7b75ba3cacd5"
+          "checksumValue": "2d5cae94382f5473cf6d2654760375ff1ee9cebdb8d4506b63ba33f488de1559"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_SHA1.h"
@@ -356,11 +510,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "f2aa3ed6acce621c162bc3a0592780ce5aa3bc4d"
+          "checksumValue": "fffe8c4f67669ac8ccd87c2e0f95db2427481df1"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "30638efb75c8b185bb09c3df6977e3f3c5d21a1e696218cf7ade6bc4d5201b31"
+          "checksumValue": "f8af382de7e29a73c726f9c70770498ddd99e2c4702489ed6e634f0b68597c95"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_SHA2.c"
@@ -370,11 +524,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "4903e10291d07367be3bc283935bc52926e57ba1"
+          "checksumValue": "68b35d0c573f7301ba4d6919b1680d55675a0d98"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "093d7693084af0999d2a13d207311d74b5bdfdc9c08447ed4a979e3f7505ae6b"
+          "checksumValue": "442d8997d2bcda20ddf628665e2e69945400e1ab3019bc14fc7c8e20db20c320"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_SHA2.h"
@@ -384,11 +538,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "66644fd3325c414fef7d985536bb477c849c8f9a"
+          "checksumValue": "77d3d879dfa5949030bca0e8ee75d3d369ec54a7"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "17c0db96d40d1849f02546d5f55428fa89b61b07748d5b5df45cec25c5f29c0f"
+          "checksumValue": "8744f5b6e054c3e5c44f413a60f9154b76dd7230135dcee26fd063755ec64be1"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_SHA3.c"
@@ -398,39 +552,81 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "580e9a73813281e99a98871380b3726576295a96"
+          "checksumValue": "db1008095b64b2f8ee2a4ce72fa7cfc4a622a108"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d8d4d14bbc3a561a4e590d9b18b326e6a8095efb12423edbd949cf3c00953621"
+          "checksumValue": "961a686186b76a1cd6a64bcfd06afdc8657b1f901bac991166f498ed16f9349a"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Hash_SHA3.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Streaming-HMAC.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "eb224e26bc0503a48c88c837e28bbc7a9878ba5c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "29fcf948a3715e09cbbd434cebb6105f276236a6e4947d237b7bf06634bf2432"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Streaming_HMAC.c"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Streaming-HMAC.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "2d6c600024275c780e8313e0a5ab506e025bb4d6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6450aef92f507fb0a8a3086b1d2792e7fca07121580c24fdaedd1b32e9ad0a76"
+        }
+      ],
+      "fileName": "Modules/_hacl/Hacl_Streaming_HMAC.h"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-Hacl-Streaming-Types.h",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "ab7b4d9465a2765a07f8d5bccace7182b28ed1b8"
+          "checksumValue": "ed283b95ebb772b05bdf802b70dbb301ece84e91"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "26913613f3b4f8ffff0a3e211a5ebc849159094e5e11de0a31fcb95b6105b74c"
+          "checksumValue": "efc7bd11460744768425aedf4e004d3ad3397a5489752b80044ae785f30b78d4"
         }
       ],
       "fileName": "Modules/_hacl/Hacl_Streaming_Types.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-Lib-Memzero0.c",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "0a0b7f3714167ad45ddf5a6a48d76f525a119c9c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "135d4afb4812468885c963c9c87a55ba5fae9181df4431af5fbad08588dda229"
+        }
+      ],
+      "fileName": "Modules/_hacl/Lib_Memzero0.c"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-include-krml-FStar-UInt128-Verified.h",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "12c0c680c93b8112b97cc575faacbb3cbbd315b1"
+          "checksumValue": "ae06c415ae7e0e1e85558863f29d1b9013e46e9b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "455e94f24a0900deda7e6e36f4714e4253d32cea077f97e23f90c569a717bc48"
+          "checksumValue": "69dc2e78411e9b271100eb0d2a2d8dc39dd2348afc26f8b4cfba14c025102c7f"
         }
       ],
       "fileName": "Modules/_hacl/include/krml/FStar_UInt128_Verified.h"
@@ -440,11 +636,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "62b44acbbdc77b749c36c242cda027bacf7679f8"
+          "checksumValue": "edefe48ced707327fd6cdf3f18b3ca42dda9a9f7"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "65decdb74c24049aa19430462a51219250cfc65d8c162778e42df88b3142fa42"
+          "checksumValue": "f01e3f0892935f3f659019875f580445b9ea23482afbe11ffbe7cdbd22dbd4d2"
         }
       ],
       "fileName": "Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h"
@@ -454,67 +650,151 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "1987119a563a8fdc5966286e274f716dbcea77ee"
+          "checksumValue": "7f23693151d5409623cbe886e5b45a0e4f0d3c72"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "fe57e1bc5ce3224d106e36cb8829b5399c63a68a70b0ccd0c91d82a4565c8869"
+          "checksumValue": "1c9bee7ac4b987c73cc3aba6b7ceed8ec7e75c9a741810e4411f35602490e0d8"
         }
       ],
       "fileName": "Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-include-krml-internal-compat.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "b901e914ce57063f0ad2d113af4fca5761031d3b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c5a04a1f99807cea29ac1832ba17d8a3d3805862d3a713642583be2106e04edb"
+        }
+      ],
+      "fileName": "Modules/_hacl/include/krml/internal/compat.h"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-include-krml-internal-target.h",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "ba64394679643c6d4ceaf6bd2616d48d12f996a7"
+          "checksumValue": "7a943fbb8f55729a960f9b426e9ff2794453aca9"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d16a59f37a1d4982626870e370889eb9d332a9ad035661b8062f549fc734d061"
+          "checksumValue": "08bb43ef5626a8450f985da0af345b6658ac8bcc4585f77271decd0e41fc02e0"
         }
       ],
       "fileName": "Modules/_hacl/include/krml/internal/target.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-include-krml-internal-types.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "b4e6c5fc5e17864cc2bf452db2688be733d6df72"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "404691cf9b2269ecc754ceca27bb8f8f029f1c8deaa4d967990dcf5ce08cd016"
+        }
+      ],
+      "fileName": "Modules/_hacl/include/krml/internal/types.h"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-include-krml-lowstar-endianness.h",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "964e09bd99ff2366afd6193b59863fc925e7fb05"
+          "checksumValue": "8c3e09e00459951e060ad469c1fa31eeb9b6b9cb"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "3734c7942bec9a434e16df069fa45bdcb84b130f14417bc5f7bfe8546272d9f5"
+          "checksumValue": "6d1a350ec272c83761f1789611d8f60947a4d69fed3d23d8eee38709a0ad2c0a"
         }
       ],
       "fileName": "Modules/_hacl/include/krml/lowstar_endianness.h"
     },
     {
-      "SPDXID": "SPDXRef-FILE-Modules-hacl-include-krml-types.h",
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-HMAC.h",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "df8e0ed74a5970d09d3cc4c6e7c6c7a4c4e5015c"
+          "checksumValue": "c9517c43046de129f02da8b74e454bade4872c00"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "de7444c345caa4c47902c4380500356a3ee7e199d2aab84fd8c4960410154f3d"
+          "checksumValue": "96c2a973bc01b1295f7af67c7de3839facfeee36c8848d7d88c62695de98ab21"
         }
       ],
-      "fileName": "Modules/_hacl/include/krml/types.h"
+      "fileName": "Modules/_hacl/internal/Hacl_HMAC.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Hash-Blake2b.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "1c5eeb5d1866acb6bc8b4e5a01a107e3a87f5694"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f262738390f56e8e9692acadecd1434c688075047d788283e1fb45d920ea6956"
+        }
+      ],
+      "fileName": "Modules/_hacl/internal/Hacl_Hash_Blake2b.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Hash-Blake2b-Simd256.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "b600c1b5eafc34b29a778186737d8a51e2342d85"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f22e088ad9c2eb739aefc3685ef3ab1ccaab3c5ef2e5d06cc846ad9f8e3d2669"
+        }
+      ],
+      "fileName": "Modules/_hacl/internal/Hacl_Hash_Blake2b_Simd256.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Hash-Blake2s.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "eb618ecc6ca2830066448f5f6d4df84a5c09f0f4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a4728e43deb0a9d8213b8ddcbda68a63bc73a12fb99aad54b7d28b314776a0d4"
+        }
+      ],
+      "fileName": "Modules/_hacl/internal/Hacl_Hash_Blake2s.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Hash-Blake2s-Simd128.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "5441b6a97cc053c332b29477238d70fa011c74ac"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dad568d256a2ccbbbcdd419fe0543ea7137d8065a713a5f009aa52521c0f7f6a"
+        }
+      ],
+      "fileName": "Modules/_hacl/internal/Hacl_Hash_Blake2s_Simd128.h"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Hash-MD5.h",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "60f02d21f045c8a4c2b6b84a8f7e023d9490c8e5"
+          "checksumValue": "7081b58f28568f600d4624dd5bd6f735191e068b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "370d8ef9c48cb55472ece11e12eaf94c58118de3f5515b6df1c130b696597828"
+          "checksumValue": "305af1422213ed97e8e5d3d8a9dfee4f21cb2fcd2acf65ee7303ce00b2b4bd2a"
         }
       ],
       "fileName": "Modules/_hacl/internal/Hacl_Hash_MD5.h"
@@ -524,11 +804,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "6346c30a140e7d3010c98fe19d14fa229a54eb16"
+          "checksumValue": "b6fb6219cb40d039e789666e34b43461e3b5c82a"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "ab52c6092bdbbfc9884f841bf4824016792ffa96167577cbe0df00dd96f56a34"
+          "checksumValue": "63c58363ff95e8146d5628dab2da25bc2fd0e8b590fd4823b512c33f843355bb"
         }
       ],
       "fileName": "Modules/_hacl/internal/Hacl_Hash_SHA1.h"
@@ -538,11 +818,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "0018e084339058dd454b4e49d10d236b4f896bf8"
+          "checksumValue": "bcc71e702df1070cb0081cb983aec7683e036719"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "10e959a92b3288a6165a404c8fae2bbcd7fb00a9abbae2b7809fa55d6fe9068d"
+          "checksumValue": "709c6272f77e2368f6cc0bf36527e3b16dd5d5f3dc26a2afdef8238200af8770"
         }
       ],
       "fileName": "Modules/_hacl/internal/Hacl_Hash_SHA2.h"
@@ -552,235 +832,123 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "eae8a5226bf993f07584cf4c0d269022328cf3d4"
+          "checksumValue": "e3b5e6add5357760554b032b818992ce9bc211e0"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "6853125de10d0f605e9bc3a3dbbd7254713709e9893cc3f69929ea8d3f254934"
+          "checksumValue": "cf49d536a5663379fb4517018b4b3f8a232f8d4c7ddc7edfd60163d13f98a530"
         }
       ],
       "fileName": "Modules/_hacl/internal/Hacl_Hash_SHA3.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Impl-Blake2-Constants.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "09a0ea364fb073f5f622a763f1351fbf4bac4627"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "916d54d7217517f0360edea920dc21585fbe6d1c2458eac86826182e12c82ec2"
+        }
+      ],
+      "fileName": "Modules/_hacl/internal/Hacl_Impl_Blake2_Constants.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Streaming-HMAC.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "b082645b43f8841db5e9e57c0b9a3825fa7e52f5"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "059cf0d31427abf84c626797a97c140630a1a6ead578005162f46fad46663389"
+        }
+      ],
+      "fileName": "Modules/_hacl/internal/Hacl_Streaming_HMAC.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Streaming-Types.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "1f85ed69e395829b3ac5af9e2d049af7708cb9cb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "76997c7069a347ac78b65d26354a0324d54add4ca7a02e7be36d6d5e1c9702e0"
+        }
+      ],
+      "fileName": "Modules/_hacl/internal/Hacl_Streaming_Types.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-lib-memzero0.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "66108dcbb7fc9e8aa7adcc440fede22c62164d92"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "284079d2af21a570c58c82e54536b8b9bae0f0a321f229b242c92dc350d10bdf"
+        }
+      ],
+      "fileName": "Modules/_hacl/lib_memzero0.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-libintvector-shim.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "a28d706b06985c14f01a5527e568beb28f28109e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f26e8339da7e0db3d6c8f70247300bd5876110a30e1fb883e59370da48e38f9e"
+        }
+      ],
+      "fileName": "Modules/_hacl/libintvector-shim.h"
+    },
+    {
+      "SPDXID": "SPDXRef-FILE-Modules-hacl-libintvector.h",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "63e47cc290c4ec887dca708000876ac37ee75ba0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d09a6196d65c2645974100eb922002bd387d3ae13f2653780f82ed97a79af635"
+        }
+      ],
+      "fileName": "Modules/_hacl/libintvector.h"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-hacl-python-hacl-namespaces.h",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "d8063060cc707a7ac70108a15934d33e7b448db6"
+          "checksumValue": "682b069d3888f3e8f8cc90f1a49bac9d1a5903d2"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "347dfdf856ed1e584d124d6709b51267598ea5b37c1a2e03beeb358c978beada"
+          "checksumValue": "8551d2c3fde03b92c6fab5febde00347bd9184ea0085077976863c7836e9669d"
         }
       ],
       "fileName": "Modules/_hacl/python_hacl_namespaces.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2-config.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "ff5e3ae2360adf7279a9c54d12a1d32e16a1f223"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "1eb919e885244e43cdf7b2104ad30dc9271513478c0026f6bfb4bad6e2f0ab42"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2-config.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2-impl.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "28b947b43bdc680b9f4335712bb2a5f2d5d32623"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "4277092643b289f1d36d32cf0fd2efc30ead8bdd99342e5da3b3609dd8ea7d86"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2-impl.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "caa3da7953109d0d2961e3b686d2d285c484b901"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "2f6c9d0ecf70be474f2853b52394993625a32960e0a64eae147ef97a3a5c1460"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2b-load-sse2.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "029a98f87a178936d9e5211c7798b3e0fc622f94"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "b392a6e7b43813a05609e994db5fc3552c5912bd482efc781daa0778eb56ab4e"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2b-load-sse2.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2b-load-sse41.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "fb466dd72344170d09e311e5ea12de99ce071357"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "cc3072c92164142bf2f9dda4e6c08db61be68ec15a95442415e861090d08f6a2"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2b-load-sse41.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2b-ref.c",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "4c0d79128cf891a95b1f668031d55c0c6d2e0270"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "07b257d44e9cc2d95d4911629c92138feafd16d63fef0a5fa7b38914dfd82349"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2b-ref.c"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2b-round.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "4c7418e2026417c9c6736fcd305a31f23e05a661"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "fa34a60c2d198a0585033f43fd4003f4ba279c9ebcabdf5d6650def0e6d1e914"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2b-round.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2b.c",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "f935d64cc633c38e09fc2d89281c95edfbc1fb05"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "b932aa273b2504606a48895a50ff08c883f7a68a7e4aced5daa909c43348605a"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2b.c"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2s-load-sse2.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "ad3f79b6cbe3fd812722114a0d5d08064e69e4d0"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "57f1ac6c09f4a50d95811529062220eab4f29cec3805bc6081dec00426c6df62"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2s-load-sse2.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2s-load-sse41.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "51c32d79f419f3d2eb9875cd9a7f5c0d7892f8a8"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "ecc9e09adcbe098629eafd305596bed8d7004be1d83f326995def42bbde93b23"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2s-load-sse41.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2s-load-xop.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "2749a7ba0104b765d4f56f13faf70b6eb89cf203"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "8bc95595cec4c50f5d70f2b330d3798de07cc784e8890791b3328890e602d5c5"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2s-load-xop.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2s-ref.c",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "883fcfe85f9063819f21b1100296d1f9eb55bac1"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "9715c00d0f11587a139b07fa26678e6d26e44d3d4910b96158d158da2b022bfb"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2s-ref.c"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2s-round.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "5d9f69adda40ed163b287b9ed4cedb35b88f2daa"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "65d90111c89c43bb18a9e1d1a4fdbd9f85bebd1ff00129335b85995d0f30ee8b"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2s-round.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-blake2-impl-blake2s.c",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "13ac5bb93578a7ee8f815b4e247e82c849992bbe"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "25ec5dd5c79f916307358059fe9f633781f27df1c0e0962c4fcccdda1feb93a7"
-        }
-      ],
-      "fileName": "Modules/_blake2/impl/blake2s.c"
     },
     {
       "SPDXID": "SPDXRef-FILE-Lib-ctypes-macholib-init-.py",
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "0fbc026a9771d9675e7094790b5b945334d3cb53"
+          "checksumValue": "0d83ed429ede0a2c6617cd2f24490be16d8393f4"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1e77c01eec8f167ed10b754f153c0c743c8e5196ae9c81dffc08f129ab56dbfd"
+          "checksumValue": "876f4486d08d3eac3581a8681d7fb3cec2fe5b823d1bef27cca15e755510365c"
         }
       ],
       "fileName": "Lib/ctypes/macholib/__init__.py"
@@ -1224,11 +1392,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "9dcb50e3f9c3245972731be5da0b28e7583198d9"
+          "checksumValue": "5d6fdd98730584f74f7b731da6e488fe234504b3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "7cac49fef5e9d952ec9390bf81c54d83f1b5da32fdf76091c2f0770ed943b7fe"
+          "checksumValue": "d74f365463166891f62e1326d22b2d39d865776b7ea5e0df2aea5eede4d85b0f"
         }
       ],
       "fileName": "Modules/_decimal/libmpdec/io.c"
@@ -1562,14 +1730,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "d4cf38d26e21a56654ffe4acd9cd5481164619626802328506a2869afab29ab3"
+          "checksumValue": "821ac9710d2c073eaf13e1b1895a9c9aa66c1157a99635c639fbff65cdbdd732"
         }
       ],
-      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_6_2/expat-2.6.2.tar.gz",
+      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_7_3/expat-2.7.3.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.6.2:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.7.3:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1577,21 +1745,21 @@
       "name": "expat",
       "originator": "Organization: Expat development team",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.6.2"
+      "versionInfo": "2.7.3"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-hacl-star",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "e31e4ca10da91c585793c0eaf1b98aee3cb43e3a58d3d8d478593e5a6bd82927"
+          "checksumValue": "61e48893f37cb2280d106cefacf6fb5afe84edf625fec39572d0ee94e1018f26"
         }
       ],
-      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0.zip",
+      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/8ba599b2f6c9701b3dc961db895b0856a2210f76.zip",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:8ba599b2f6c9701b3dc961db895b0856a2210f76:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1599,29 +1767,7 @@
       "name": "hacl-star",
       "originator": "Organization: HACL* Developers",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-libb2",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "53626fddce753c454a3fea581cbbc7fe9bbcf0bc70416d48fdbbf5d87ef6c72e"
-        }
-      ],
-      "downloadLocation": "https://github.com/BLAKE2/libb2/releases/download/v0.98.1/libb2-0.98.1.tar.gz",
-      "externalRefs": [
-        {
-          "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:blake2:libb2:0.98.1:*:*:*:*:*:*:*",
-          "referenceType": "cpe23Type"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "libb2",
-      "originator": "Organization: BLAKE2 - fast secure hashing",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "0.98.1"
+      "versionInfo": "8ba599b2f6c9701b3dc961db895b0856a2210f76"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-macholib",
@@ -1715,11 +1861,6 @@
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-pyexpatns.h",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-expat"
-    },
-    {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-siphash.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
@@ -1775,6 +1916,66 @@
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
     {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-HMAC.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-HMAC.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b-Simd256.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b-Simd256.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2b-Simd256-universal2.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s-Simd128.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s-Simd128.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-Blake2s-Simd128-universal2.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Hash-MD5.c",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
@@ -1815,7 +2016,22 @@
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Streaming-HMAC.c",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Streaming-HMAC.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Hacl-Streaming-Types.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-Lib-Memzero0.c",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
@@ -1835,7 +2051,17 @@
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-include-krml-internal-compat.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-include-krml-internal-target.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-include-krml-internal-types.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
@@ -1845,7 +2071,27 @@
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-include-krml-types.h",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-internal-Hacl-HMAC.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Hash-Blake2b.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Hash-Blake2b-Simd256.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Hash-Blake2s.h",
+      "relationshipType": "CONTAINS",
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Hash-Blake2s-Simd128.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
@@ -1870,79 +2116,39 @@
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-python-hacl-namespaces.h",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Impl-Blake2-Constants.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2-config.h",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Streaming-HMAC.h",
       "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2-impl.h",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-internal-Hacl-Streaming-Types.h",
       "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2.h",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-lib-memzero0.h",
       "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2b-load-sse2.h",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-libintvector-shim.h",
       "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2b-load-sse41.h",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-libintvector.h",
       "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2b-ref.c",
+      "relatedSpdxElement": "SPDXRef-FILE-Modules-hacl-python-hacl-namespaces.h",
       "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2b-round.h",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2b.c",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2s-load-sse2.h",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2s-load-sse41.h",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2s-load-xop.h",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2s-ref.c",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2s-round.h",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-blake2-impl-blake2s.c",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-libb2"
+      "spdxElementId": "SPDXRef-PACKAGE-hacl-star"
     },
     {
       "relatedSpdxElement": "SPDXRef-FILE-Lib-ctypes-macholib-init-.py",

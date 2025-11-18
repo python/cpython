@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "opcode_ids.h"
-
 #define MAX_REAL_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
@@ -45,11 +43,21 @@ extern "C" {
          (opcode) == JUMP_BACKWARD || \
          (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
 
+#define IS_CONDITIONAL_JUMP_OPCODE(opcode) \
+        ((opcode) == POP_JUMP_IF_FALSE || \
+         (opcode) == POP_JUMP_IF_TRUE || \
+         (opcode) == POP_JUMP_IF_NONE || \
+         (opcode) == POP_JUMP_IF_NOT_NONE)
+
 #define IS_SCOPE_EXIT_OPCODE(opcode) \
         ((opcode) == RETURN_VALUE || \
-         (opcode) == RETURN_CONST || \
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
+
+#define IS_RETURN_OPCODE(opcode) \
+        (opcode == RETURN_VALUE)
+#define IS_RAISE_OPCODE(opcode) \
+        (opcode == RAISE_VARARGS || opcode == RERAISE)
 
 
 /* Flags used in the oparg for MAKE_FUNCTION */
@@ -57,6 +65,15 @@ extern "C" {
 #define MAKE_FUNCTION_KWDEFAULTS  0x02
 #define MAKE_FUNCTION_ANNOTATIONS 0x04
 #define MAKE_FUNCTION_CLOSURE     0x08
+#define MAKE_FUNCTION_ANNOTATE    0x10
+
+/* Values used as the oparg for LOAD_COMMON_CONSTANT */
+#define CONSTANT_ASSERTIONERROR 0
+#define CONSTANT_NOTIMPLEMENTEDERROR 1
+#define CONSTANT_BUILTIN_TUPLE 2
+#define CONSTANT_BUILTIN_ALL 3
+#define CONSTANT_BUILTIN_ANY 4
+#define NUM_COMMON_CONSTANTS 5
 
 /* Values used in the oparg for RESUME */
 #define RESUME_AT_FUNC_START 0

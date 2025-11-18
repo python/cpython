@@ -92,57 +92,6 @@ _Py_bytes_isalnum(const char *cptr, Py_ssize_t len)
 }
 
 
-PyDoc_STRVAR_shared(_Py_isascii__doc__,
-"B.isascii() -> bool\n\
-\n\
-Return True if B is empty or all characters in B are ASCII,\n\
-False otherwise.");
-
-// Optimization is copied from ascii_decode in unicodeobject.c
-/* Mask to quickly check whether a C 'size_t' contains a
-   non-ASCII, UTF8-encoded char. */
-#if (SIZEOF_SIZE_T == 8)
-# define ASCII_CHAR_MASK 0x8080808080808080ULL
-#elif (SIZEOF_SIZE_T == 4)
-# define ASCII_CHAR_MASK 0x80808080U
-#else
-# error C 'size_t' size should be either 4 or 8!
-#endif
-
-PyObject*
-_Py_bytes_isascii(const char *cptr, Py_ssize_t len)
-{
-    const char *p = cptr;
-    const char *end = p + len;
-
-    while (p < end) {
-        /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
-           for an explanation. */
-        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
-            /* Help allocation */
-            const char *_p = p;
-            while (_p + SIZEOF_SIZE_T <= end) {
-                size_t value = *(const size_t *) _p;
-                if (value & ASCII_CHAR_MASK) {
-                    Py_RETURN_FALSE;
-                }
-                _p += SIZEOF_SIZE_T;
-            }
-            p = _p;
-            if (_p == end)
-                break;
-        }
-        if ((unsigned char)*p & 0x80) {
-            Py_RETURN_FALSE;
-        }
-        p++;
-    }
-    Py_RETURN_TRUE;
-}
-
-#undef ASCII_CHAR_MASK
-
-
 PyDoc_STRVAR_shared(_Py_isdigit__doc__,
 "B.isdigit() -> bool\n\
 \n\
@@ -407,26 +356,24 @@ The bytes objects frm and to must be of the same length.");
 PyObject *
 _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 {
-    PyObject *res = NULL;
-    Py_ssize_t i;
-    char *p;
-
     if (frm->len != to->len) {
         PyErr_Format(PyExc_ValueError,
                      "maketrans arguments must have same length");
         return NULL;
     }
-    res = PyBytes_FromStringAndSize(NULL, 256);
-    if (!res)
+    PyBytesWriter *writer = PyBytesWriter_Create(256);
+    if (!writer) {
         return NULL;
-    p = PyBytes_AS_STRING(res);
+    }
+    char *p = PyBytesWriter_GetData(writer);
+    Py_ssize_t i;
     for (i = 0; i < 256; i++)
         p[i] = (char) i;
     for (i = 0; i < frm->len; i++) {
         p[((unsigned char *)frm->buf)[i]] = ((char *)to->buf)[i];
     }
 
-    return res;
+    return PyBytesWriter_Finish(writer);
 }
 
 #define FASTSEARCH fastsearch
@@ -438,6 +385,7 @@ _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
 #include "stringlib/find.h"
+#include "stringlib/find_max_char.h"
 
 /*
 Wraps stringlib_parse_args_finds() and additionally checks the first
@@ -482,19 +430,24 @@ parse_args_finds_byte(const char *function_name, PyObject **subobj, char *byte)
 }
 
 /* helper macro to fixup start/end slice values */
-#define ADJUST_INDICES(start, end, len)         \
-    if (end > len)                          \
-        end = len;                          \
-    else if (end < 0) {                     \
-        end += len;                         \
-        if (end < 0)                        \
-        end = 0;                        \
-    }                                       \
-    if (start < 0) {                        \
-        start += len;                       \
-        if (start < 0)                      \
-        start = 0;                      \
-    }
+#define ADJUST_INDICES(start, end, len) \
+    do {                                \
+        if (end > len) {                \
+            end = len;                  \
+        }                               \
+        else if (end < 0) {             \
+            end += len;                 \
+            if (end < 0) {              \
+                end = 0;                \
+            }                           \
+        }                               \
+        if (start < 0) {                \
+            start += len;               \
+            if (start < 0) {            \
+                start = 0;              \
+            }                           \
+        }                               \
+    } while (0)
 
 Py_LOCAL_INLINE(Py_ssize_t)
 find_internal(const char *str, Py_ssize_t len,
@@ -764,4 +717,22 @@ _Py_bytes_endswith(const char *str, Py_ssize_t len, PyObject *subobj,
                    Py_ssize_t start, Py_ssize_t end)
 {
     return _Py_bytes_tailmatch(str, len, "endswith", subobj, start, end, +1);
+}
+
+PyDoc_STRVAR_shared(_Py_isascii__doc__,
+"B.isascii() -> bool\n\
+\n\
+Return True if B is empty or all characters in B are ASCII,\n\
+False otherwise.");
+
+PyObject*
+_Py_bytes_isascii(const char *cptr, Py_ssize_t len)
+{
+    const char *p = cptr;
+    const char *end = p + len;
+    Py_ssize_t max_char = stringlib_find_max_char(cptr, end);
+    if (max_char > 127) {
+        Py_RETURN_FALSE;
+    }
+    Py_RETURN_TRUE;
 }

@@ -15,8 +15,9 @@ import can be suppressed using the interpreter's :option:`-S` option.
 
 .. index:: triple: module; search; path
 
-Importing this module will append site-specific paths to the module search path
-and add a few builtins, unless :option:`-S` was used.  In that case, this module
+Importing this module normally appends site-specific paths to the module search path
+and adds :ref:`callables <site-consts>`, including :func:`help` to the built-in
+namespace. However, Python startup option :option:`-S` blocks this and this module
 can be safely imported with no automatic modifications to the module search path
 or additions to the builtins.  To explicitly trigger the usual site-specific
 additions, call the :func:`main` function.
@@ -32,7 +33,10 @@ It starts by constructing up to four directories from a head and a tail part.
 For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
-:file:`lib/python{X.Y}/site-packages` (on Unix and macOS).  For each
+:file:`lib/python{X.Y[t]}/site-packages` (on Unix and macOS). (The
+optional suffix "t" indicates the :term:`free threading` build, and is
+appended if ``"t"`` is present in the :data:`sys.abiflags` constant.)
+For each
 of the distinct head-tail combinations, it sees if it refers to an existing
 directory, and if so, adds it to ``sys.path`` and also inspects the newly
 added path for configuration files.
@@ -40,14 +44,27 @@ added path for configuration files.
 .. versionchanged:: 3.5
    Support for the "site-python" directory has been removed.
 
-If a file named "pyvenv.cfg" exists one directory above sys.executable,
-sys.prefix and sys.exec_prefix are set to that directory and
-it is also checked for site-packages (sys.base_prefix and
-sys.base_exec_prefix will always be the "real" prefixes of the Python
-installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" set to anything other than "true"
-(case-insensitive), the system-level prefixes will not be
-searched for site-packages; otherwise they will.
+.. versionchanged:: 3.13
+   On Unix, :term:`Free threading <free threading>` Python installations are
+   identified by the "t" suffix in the version-specific directory name, such as
+   :file:`lib/python3.13t/`.
+
+.. versionchanged:: 3.14
+
+   :mod:`site` is no longer responsible for updating :data:`sys.prefix` and
+   :data:`sys.exec_prefix` on :ref:`sys-path-init-virtual-environments`. This is
+   now done during the :ref:`path initialization <sys-path-init>`. As a result,
+   under :ref:`sys-path-init-virtual-environments`, :data:`sys.prefix` and
+   :data:`sys.exec_prefix` no longer depend on the :mod:`site` initialization,
+   and are therefore unaffected by :option:`-S`.
+
+.. _site-virtual-environments-configuration:
+
+When running under a :ref:`virtual environment <sys-path-init-virtual-environments>`,
+the ``pyvenv.cfg`` file in :data:`sys.prefix` is checked for site-specific
+configurations. If the ``include-system-site-packages`` key exists and is set to
+``true`` (case-insensitive), the system-level prefixes will be searched for
+site-packages, otherwise they won't.
 
 .. index::
    single: # (hash); comment
@@ -188,11 +205,12 @@ Module contents
 
    Path to the user site-packages for the running Python.  Can be ``None`` if
    :func:`getusersitepackages` hasn't been called yet.  Default value is
-   :file:`~/.local/lib/python{X.Y}/site-packages` for UNIX and non-framework
+   :file:`~/.local/lib/python{X.Y}[t]/site-packages` for UNIX and non-framework
    macOS builds, :file:`~/Library/Python/{X.Y}/lib/python/site-packages` for macOS
    framework builds, and :file:`{%APPDATA%}\\Python\\Python{XY}\\site-packages`
-   on Windows.  This directory is a site directory, which means that
-   :file:`.pth` files in it will be processed.
+   on Windows.  The optional "t" indicates the free-threaded build.  This
+   directory is a site directory, which means that :file:`.pth` files in it
+   will be processed.
 
 
 .. data:: USER_BASE
@@ -252,7 +270,7 @@ Module contents
 
 .. _site-commandline:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 .. program:: site
