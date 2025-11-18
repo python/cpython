@@ -1061,7 +1061,7 @@ PyModInit__test_from_modexport_exception(void)
 }
 
 static PyObject *
-modexport_create_string(PyObject *spec, PyObject *def)
+modexport_create_string(PyObject *spec, PyModuleDef *def)
 {
     assert(def == NULL);
     return PyUnicode_FromString("is this \xf0\x9f\xa6\x8b... a module?");
@@ -1138,8 +1138,9 @@ modexport_get_empty_slots(PyObject *mod, PyObject *arg)
 }
 
 static void
-modexport_smoke_free(PyObject *mod)
+modexport_smoke_free(void *op)
 {
+    PyObject *mod = (PyObject *)op;
     int *state = PyModule_GetState(mod);
     if (!state) {
         PyErr_FormatUnraisable("Exception ignored in module %R free", mod);

@@ -6037,10 +6037,6 @@
             callable = stack_pointer[-3];
             assert(oparg == 1);
             PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
-            if (!PyList_CheckExact(self_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
             if (!LOCK_OBJECT(self_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -7582,6 +7578,8 @@
             #undef OFFSET_OF_RETURN_GENERATOR
             break;
         }
+
+        /* _TRACE_RECORD is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
 
 #undef TIER_TWO
