@@ -21,7 +21,7 @@ def in_table_b1(code):
     return ord(code) in b1_set
 
 
-b3_exceptions = {
+b3_exceptions = frozendict({
 0xb5:'\u03bc', 0xdf:'ss', 0x130:'i\u0307', 0x149:'\u02bcn',
 0x17f:'s', 0x1f0:'j\u030c', 0x345:'\u03b9', 0x37a:' \u03b9',
 0x390:'\u03b9\u0308\u0301', 0x3b0:'\u03c5\u0308\u0301', 0x3c2:'\u03c3', 0x3d0:'\u03b2',
@@ -184,7 +184,7 @@ b3_exceptions = {
 0x1d79c:'\u03bd', 0x1d79d:'\u03be', 0x1d79e:'\u03bf', 0x1d79f:'\u03c0',
 0x1d7a0:'\u03c1', 0x1d7a1:'\u03b8', 0x1d7a2:'\u03c3', 0x1d7a3:'\u03c4',
 0x1d7a4:'\u03c5', 0x1d7a5:'\u03c6', 0x1d7a6:'\u03c7', 0x1d7a7:'\u03c8',
-0x1d7a8:'\u03c9', 0x1d7bb:'\u03c3', }
+0x1d7a8:'\u03c9', 0x1d7bb:'\u03c3', })
 
 def map_table_b3(code):
     r = b3_exceptions.get(ord(code))

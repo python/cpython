@@ -54,7 +54,7 @@ _MAXLINE = 1000000
 
 #       Commands
 
-Commands = {
+Commands = frozendict({
         # name            valid states
         'APPEND':       ('AUTH', 'SELECTED'),
         'AUTHENTICATE': ('NONAUTH',),
@@ -99,7 +99,7 @@ Commands = {
         'UID':          ('SELECTED',),
         'UNSUBSCRIBE':  ('AUTH', 'SELECTED'),
         'UNSELECT':     ('SELECTED',),
-        }
+        })
 
 #       Patterns to match server responses
 
@@ -1755,7 +1755,7 @@ class _Authenticator:
         return binascii.a2b_base64(inp)
 
 Months = ' Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')
-Mon2num = {s.encode():n+1 for n, s in enumerate(Months[1:])}
+Mon2num = frozendict({s.encode():n+1 for n, s in enumerate(Months[1:])})
 
 def Internaldate2tuple(resp):
     """Parse an IMAP4 INTERNALDATE string.

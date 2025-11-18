@@ -989,7 +989,7 @@ set_iter(PyObject *so)
 static int
 set_update_dict_lock_held(PySetObject *so, PyObject *other)
 {
-    assert(PyDict_CheckExact(other));
+    assert(PyAnyDict_CheckExact(other));
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
@@ -1048,7 +1048,7 @@ set_update_lock_held(PySetObject *so, PyObject *other)
     if (PyAnySet_Check(other)) {
         return set_merge_lock_held(so, other);
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         return set_update_dict_lock_held(so, other);
     }
     return set_update_iterable_lock_held(so, other);
@@ -1066,7 +1066,7 @@ set_update_local(PySetObject *so, PyObject *other)
         Py_END_CRITICAL_SECTION();
         return rv;
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         int rv;
         Py_BEGIN_CRITICAL_SECTION(other);
         rv = set_update_dict_lock_held(so, other);
@@ -1089,7 +1089,7 @@ set_update_internal(PySetObject *so, PyObject *other)
         Py_END_CRITICAL_SECTION2();
         return rv;
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         int rv;
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_update_dict_lock_held(so, other);
@@ -1781,7 +1781,7 @@ set_difference(PySetObject *so, PyObject *other)
     if (PyAnySet_Check(other)) {
         other_size = PySet_GET_SIZE(other);
     }
-    else if (PyDict_CheckExact(other)) {
+    else if (PyAnyDict_CheckExact(other)) {
         other_size = PyDict_GET_SIZE(other);
     }
     else {
@@ -1798,7 +1798,7 @@ set_difference(PySetObject *so, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    if (PyDict_CheckExact(other)) {
+    if (PyAnyDict_CheckExact(other)) {
         while (set_next(so, &pos, &entry)) {
             key = entry->key;
             hash = entry->hash;
@@ -1989,7 +1989,7 @@ set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
     }
 
     int rv;
-    if (PyDict_CheckExact(other)) {
+    if (PyAnyDict_CheckExact(other)) {
         Py_BEGIN_CRITICAL_SECTION2(so, other);
         rv = set_symmetric_difference_update_dict(so, other);
         Py_END_CRITICAL_SECTION2();

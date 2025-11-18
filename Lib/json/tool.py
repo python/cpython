@@ -22,13 +22,13 @@ _color_pattern = re.compile(r'''
     (?P<null>null)
 ''', re.VERBOSE)
 
-_group_to_theme_color = {
+_group_to_theme_color = frozendict({
     "key": "definition",
     "string": "string",
     "number": "number",
     "boolean": "keyword",
     "null": "keyword",
-}
+})
 
 
 def _colorize_json(json_str, theme):

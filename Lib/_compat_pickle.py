@@ -183,6 +183,7 @@ IMPORT_MAPPING.update({
     'StringIO':  'io',
     'cStringIO': 'io',
 })
+IMPORT_MAPPING = frozendict(IMPORT_MAPPING)
 
 REVERSE_IMPORT_MAPPING.update({
     '_bz2': 'bz2',
@@ -198,6 +199,7 @@ NAME_MAPPING.update({
     ('UserDict', 'UserDict'): ('collections', 'UserDict'),
     ('socket', '_socketobject'): ('socket', 'SocketType'),
 })
+NAME_MAPPING = frozendict(NAME_MAPPING)
 
 REVERSE_NAME_MAPPING.update({
     ('_functools', 'reduce'): ('__builtin__', 'reduce'),

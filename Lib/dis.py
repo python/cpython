@@ -65,9 +65,9 @@ for name, op in _specialized_opmap.items():
     _all_opname[op] = name
     _all_opmap[name] = op
 
-deoptmap = {
+deoptmap = frozendict({
     specialized: base for base, family in _specializations.items() for specialized in family
-}
+})
 
 def _try_compile(source, name):
     """Attempts to compile the given source, first as an expression and
@@ -152,7 +152,7 @@ def distb(tb=None, *, file=None, show_caches=False, adaptive=False, show_offsets
 # The inspect module interrogates this dictionary to build its
 # list of CO_* constants. It is also used by pretty_flags to
 # turn the co_flags field into a human readable list.
-COMPILER_FLAG_NAMES = {
+COMPILER_FLAG_NAMES = frozendict({
             1: "OPTIMIZED",
             2: "NEWLOCALS",
             4: "VARARGS",
@@ -165,7 +165,7 @@ COMPILER_FLAG_NAMES = {
           512: "ASYNC_GENERATOR",
     0x4000000: "HAS_DOCSTRING",
     0x8000000: "METHOD",
-}
+})
 
 def pretty_flags(flags):
     """Return pretty representation of code flags."""
