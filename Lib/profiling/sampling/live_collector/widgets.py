@@ -391,8 +391,15 @@ class HeaderWidget(Widget):
                 thread_id = self.collector.thread_ids[
                     self.collector.current_thread_index
                 ]
-                if thread_id in self.collector.per_thread_status:
-                    status_counts = self.collector.per_thread_status[thread_id]
+                if thread_id in self.collector.per_thread_data:
+                    thread_data = self.collector.per_thread_data[thread_id]
+                    status_counts = {
+                        "has_gil": thread_data.has_gil,
+                        "on_cpu": thread_data.on_cpu,
+                        "gil_requested": thread_data.gil_requested,
+                        "unknown": thread_data.unknown,
+                        "total": thread_data.total,
+                    }
                 else:
                     status_counts = self.collector._thread_status_counts
             else:
@@ -420,12 +427,13 @@ class HeaderWidget(Widget):
                 thread_id = self.collector.thread_ids[
                     self.collector.current_thread_index
                 ]
-                thread_samples = self.collector.per_thread_samples.get(
-                    thread_id, 1
-                )
-                thread_gc_samples = self.collector.per_thread_gc_samples.get(
-                    thread_id, 0
-                )
+                if thread_id in self.collector.per_thread_data:
+                    thread_data = self.collector.per_thread_data[thread_id]
+                    thread_samples = thread_data.sample_count
+                    thread_gc_samples = thread_data.gc_frame_samples
+                else:
+                    thread_samples = 1
+                    thread_gc_samples = 0
                 total_samples = max(1, thread_samples)
                 pct_gc = (thread_gc_samples / total_samples) * 100
             else:
@@ -485,7 +493,10 @@ class HeaderWidget(Widget):
         if self.collector.view_mode == "PER_THREAD" and len(self.collector.thread_ids) > 0:
             if self.collector.current_thread_index < len(self.collector.thread_ids):
                 thread_id = self.collector.thread_ids[self.collector.current_thread_index]
-                result_set = self.collector.per_thread_result.get(thread_id, {})
+                if thread_id in self.collector.per_thread_data:
+                    result_set = self.collector.per_thread_data[thread_id].result
+                else:
+                    result_set = {}
             else:
                 result_set = self.collector.result
         else:

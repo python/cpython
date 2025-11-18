@@ -127,6 +127,7 @@ def _run_with_sync(original_cmd, suppress_output=False):
         # Suppress stdout/stderr if requested (for live mode)
         popen_kwargs = {}
         if suppress_output:
+            popen_kwargs['stdin'] = subprocess.DEVNULL
             popen_kwargs['stdout'] = subprocess.DEVNULL
             popen_kwargs['stderr'] = subprocess.DEVNULL
 

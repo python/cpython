@@ -3,6 +3,7 @@
 import collections
 import contextlib
 import curses
+from dataclasses import dataclass, field
 import os
 import site
 import sys
@@ -41,6 +42,29 @@ from .constants import (
 )
 from .display import CursesDisplay
 from .widgets import HeaderWidget, TableWidget, FooterWidget, HelpWidget
+
+
+@dataclass
+class ThreadData:
+    """Encapsulates all profiling data for a single thread."""
+
+    thread_id: int
+
+    # Function call statistics: {location: {direct_calls: int, cumulative_calls: int}}
+    result: dict = field(default_factory=lambda: collections.defaultdict(
+        lambda: dict(direct_calls=0, cumulative_calls=0)
+    ))
+
+    # Thread status statistics
+    has_gil: int = 0
+    on_cpu: int = 0
+    gil_requested: int = 0
+    unknown: int = 0
+    total: int = 0  # Total status samples for this thread
+
+    # Sample counts
+    sample_count: int = 0
+    gc_frame_samples: int = 0
 
 
 class LiveStatsCollector(Collector):
@@ -118,10 +142,7 @@ class LiveStatsCollector(Collector):
         self.current_thread_index = (
             0  # Index into thread_ids when in PER_THREAD mode
         )
-        self.per_thread_result = {}  # {thread_id: {func: {direct_calls, cumulative_calls}}}
-        self.per_thread_status = {}  # {thread_id: {has_gil: count, on_cpu: count, ...}}
-        self.per_thread_samples = {}  # {thread_id: sample_count}
-        self.per_thread_gc_samples = {}  # {thread_id: gc_frame_sample_count}
+        self.per_thread_data = {}  # {thread_id: ThreadData}
 
         # Calculate common path prefixes to strip
         self._path_prefixes = self._get_common_path_prefixes()
@@ -201,15 +222,9 @@ class LiveStatsCollector(Collector):
 
             # Also track per-thread if thread_id is provided
             if thread_id is not None:
-                if thread_id not in self.per_thread_result:
-                    self.per_thread_result[thread_id] = (
-                        collections.defaultdict(
-                            lambda: dict(direct_calls=0, cumulative_calls=0)
-                        )
-                    )
-                self.per_thread_result[thread_id][location][
-                    "cumulative_calls"
-                ] += 1
+                if thread_id not in self.per_thread_data:
+                    self.per_thread_data[thread_id] = ThreadData(thread_id=thread_id)
+                self.per_thread_data[thread_id].result[location]["cumulative_calls"] += 1
 
         # The top frame gets counted as an inline call (directly executing)
         top_location = (
@@ -221,13 +236,9 @@ class LiveStatsCollector(Collector):
 
         # Also track per-thread
         if thread_id is not None:
-            if thread_id not in self.per_thread_result:
-                self.per_thread_result[thread_id] = collections.defaultdict(
-                    lambda: dict(direct_calls=0, cumulative_calls=0)
-                )
-            self.per_thread_result[thread_id][top_location][
-                "direct_calls"
-            ] += 1
+            if thread_id not in self.per_thread_data:
+                self.per_thread_data[thread_id] = ThreadData(thread_id=thread_id)
+            self.per_thread_data[thread_id].result[top_location]["direct_calls"] += 1
 
     def collect_failed_sample(self):
         self._failed_samples += 1
@@ -260,47 +271,31 @@ class LiveStatsCollector(Collector):
                 status_flags = getattr(thread_info, "status", 0)
                 thread_id = getattr(thread_info, "thread_id", None)
 
-                # Initialize per-thread status tracking
-                if (
-                    thread_id is not None
-                    and thread_id not in self.per_thread_status
-                ):
-                    self.per_thread_status[thread_id] = {
-                        "has_gil": 0,
-                        "on_cpu": 0,
-                        "gil_requested": 0,
-                        "unknown": 0,
-                        "total": 0,
-                    }
+                # Initialize per-thread data if needed
+                if thread_id is not None and thread_id not in self.per_thread_data:
+                    self.per_thread_data[thread_id] = ThreadData(thread_id=thread_id)
 
                 # Update aggregated counts
                 if status_flags & THREAD_STATUS_HAS_GIL:
                     temp_status_counts["has_gil"] += 1
                     if thread_id is not None:
-                        self.per_thread_status[thread_id]["has_gil"] += 1
+                        self.per_thread_data[thread_id].has_gil += 1
                 if status_flags & THREAD_STATUS_ON_CPU:
                     temp_status_counts["on_cpu"] += 1
                     if thread_id is not None:
-                        self.per_thread_status[thread_id]["on_cpu"] += 1
+                        self.per_thread_data[thread_id].on_cpu += 1
                 if status_flags & THREAD_STATUS_GIL_REQUESTED:
                     temp_status_counts["gil_requested"] += 1
                     if thread_id is not None:
-                        self.per_thread_status[thread_id]["gil_requested"] += 1
+                        self.per_thread_data[thread_id].gil_requested += 1
                 if status_flags & THREAD_STATUS_UNKNOWN:
                     temp_status_counts["unknown"] += 1
                     if thread_id is not None:
-                        self.per_thread_status[thread_id]["unknown"] += 1
+                        self.per_thread_data[thread_id].unknown += 1
 
                 # Update per-thread total count
                 if thread_id is not None:
-                    self.per_thread_status[thread_id]["total"] += 1
-
-                # Initialize per-thread sample tracking
-                if thread_id is not None:
-                    if thread_id not in self.per_thread_samples:
-                        self.per_thread_samples[thread_id] = 0
-                    if thread_id not in self.per_thread_gc_samples:
-                        self.per_thread_gc_samples[thread_id] = 0
+                    self.per_thread_data[thread_id].total += 1
 
                 # Process frames (respecting skip_idle)
                 if self.skip_idle:
@@ -322,7 +317,7 @@ class LiveStatsCollector(Collector):
 
                     # Increment per-thread sample count
                     if thread_id is not None:
-                        self.per_thread_samples[thread_id] += 1
+                        self.per_thread_data[thread_id].sample_count += 1
 
                     # Check if any frame is in GC
                     thread_has_gc_frame = False
@@ -335,7 +330,7 @@ class LiveStatsCollector(Collector):
 
                     # Track per-thread GC samples
                     if thread_has_gc_frame and thread_id is not None:
-                        self.per_thread_gc_samples[thread_id] += 1
+                        self.per_thread_data[thread_id].gc_frame_samples += 1
 
         # Update cumulative thread status counts
         for key, count in temp_status_counts.items():
@@ -582,7 +577,10 @@ class LiveStatsCollector(Collector):
             # PER_THREAD mode - use specific thread result
             if self.current_thread_index < len(self.thread_ids):
                 thread_id = self.thread_ids[self.current_thread_index]
-                result_source = self.per_thread_result.get(thread_id, {})
+                if thread_id in self.per_thread_data:
+                    result_source = self.per_thread_data[thread_id].result
+                else:
+                    result_source = {}
             else:
                 result_source = self.result
 
@@ -648,10 +646,7 @@ class LiveStatsCollector(Collector):
     def reset_stats(self):
         """Reset all collected statistics."""
         self.result.clear()
-        self.per_thread_result.clear()
-        self.per_thread_status.clear()
-        self.per_thread_samples.clear()
-        self.per_thread_gc_samples.clear()
+        self.per_thread_data.clear()
         self.thread_ids.clear()
         self.view_mode = "ALL"
         self.current_thread_index = 0

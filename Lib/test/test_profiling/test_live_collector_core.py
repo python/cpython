@@ -120,12 +120,12 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
         self.assertEqual(collector.result[location]["cumulative_calls"], 1)
 
         # Check per-thread result
-        self.assertIn(123, collector.per_thread_result)
+        self.assertIn(123, collector.per_thread_data)
         self.assertEqual(
-            collector.per_thread_result[123][location]["direct_calls"], 1
+            collector.per_thread_data[123].result[location]["direct_calls"], 1
         )
         self.assertEqual(
-            collector.per_thread_result[123][location]["cumulative_calls"], 1
+            collector.per_thread_data[123].result[location]["cumulative_calls"], 1
         )
 
     def test_process_frames_multiple_threads(self):
@@ -139,23 +139,23 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
         collector._process_frames(frames2, thread_id=456)
 
         # Check that both threads have their own data
-        self.assertIn(123, collector.per_thread_result)
-        self.assertIn(456, collector.per_thread_result)
+        self.assertIn(123, collector.per_thread_data)
+        self.assertIn(456, collector.per_thread_data)
 
         loc1 = ("test.py", 10, "test_func")
         loc2 = ("test.py", 20, "other_func")
 
         # Thread 123 should only have func1
         self.assertEqual(
-            collector.per_thread_result[123][loc1]["direct_calls"], 1
+            collector.per_thread_data[123].result[loc1]["direct_calls"], 1
         )
-        self.assertNotIn(loc2, collector.per_thread_result[123])
+        self.assertNotIn(loc2, collector.per_thread_data[123].result)
 
         # Thread 456 should only have func2
         self.assertEqual(
-            collector.per_thread_result[456][loc2]["direct_calls"], 1
+            collector.per_thread_data[456].result[loc2]["direct_calls"], 1
         )
-        self.assertNotIn(loc1, collector.per_thread_result[456])
+        self.assertNotIn(loc1, collector.per_thread_data[456].result)
 
 
 class TestLiveStatsCollectorCollect(unittest.TestCase):

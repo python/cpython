@@ -852,12 +852,12 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
     def test_reset_stats_clears_thread_data(self):
         """Test that reset_stats clears thread tracking data."""
         self.assertGreater(len(self.collector.thread_ids), 0)
-        self.assertGreater(len(self.collector.per_thread_result), 0)
+        self.assertGreater(len(self.collector.per_thread_data), 0)
 
         self.collector.reset_stats()
 
         self.assertEqual(len(self.collector.thread_ids), 0)
-        self.assertEqual(len(self.collector.per_thread_result), 0)
+        self.assertEqual(len(self.collector.per_thread_data), 0)
         self.assertEqual(self.collector.view_mode, "ALL")
         self.assertEqual(self.collector.current_thread_index, 0)
 
@@ -875,17 +875,17 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
     def test_per_thread_data_isolation(self):
         """Test that per-thread data is properly isolated."""
         # Check that each thread has its own isolated data
-        self.assertIn(111, self.collector.per_thread_result)
-        self.assertIn(222, self.collector.per_thread_result)
-        self.assertIn(333, self.collector.per_thread_result)
+        self.assertIn(111, self.collector.per_thread_data)
+        self.assertIn(222, self.collector.per_thread_data)
+        self.assertIn(333, self.collector.per_thread_data)
 
         # Thread 111 should only have func1
-        thread1_funcs = list(self.collector.per_thread_result[111].keys())
+        thread1_funcs = list(self.collector.per_thread_data[111].result.keys())
         self.assertEqual(len(thread1_funcs), 1)
         self.assertEqual(thread1_funcs[0][2], "func1")
 
         # Thread 222 should only have func2
-        thread2_funcs = list(self.collector.per_thread_result[222].keys())
+        thread2_funcs = list(self.collector.per_thread_data[222].result.keys())
         self.assertEqual(len(thread2_funcs), 1)
         self.assertEqual(thread2_funcs[0][2], "func2")
 
@@ -901,43 +901,43 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
     def test_per_thread_status_tracking(self):
         """Test that per-thread status statistics are tracked."""
         # Each thread should have status counts
-        self.assertIn(111, self.collector.per_thread_status)
-        self.assertIn(222, self.collector.per_thread_status)
-        self.assertIn(333, self.collector.per_thread_status)
+        self.assertIn(111, self.collector.per_thread_data)
+        self.assertIn(222, self.collector.per_thread_data)
+        self.assertIn(333, self.collector.per_thread_data)
 
-        # Each thread should have the expected keys
+        # Each thread should have the expected attributes
         for thread_id in [111, 222, 333]:
-            status = self.collector.per_thread_status[thread_id]
-            self.assertIn("has_gil", status)
-            self.assertIn("on_cpu", status)
-            self.assertIn("gil_requested", status)
-            self.assertIn("unknown", status)
-            self.assertIn("total", status)
+            thread_data = self.collector.per_thread_data[thread_id]
+            self.assertIsNotNone(thread_data.has_gil)
+            self.assertIsNotNone(thread_data.on_cpu)
+            self.assertIsNotNone(thread_data.gil_requested)
+            self.assertIsNotNone(thread_data.unknown)
+            self.assertIsNotNone(thread_data.total)
             # Each thread was sampled once
-            self.assertEqual(status["total"], 1)
+            self.assertEqual(thread_data.total, 1)
 
     def test_reset_stats_clears_thread_status(self):
         """Test that reset_stats clears per-thread status data."""
-        self.assertGreater(len(self.collector.per_thread_status), 0)
+        self.assertGreater(len(self.collector.per_thread_data), 0)
 
         self.collector.reset_stats()
 
-        self.assertEqual(len(self.collector.per_thread_status), 0)
+        self.assertEqual(len(self.collector.per_thread_data), 0)
 
     def test_per_thread_sample_counts(self):
         """Test that per-thread sample counts are tracked correctly."""
         # Each thread should have exactly 1 sample (we collected once)
         for thread_id in [111, 222, 333]:
-            self.assertIn(thread_id, self.collector.per_thread_samples)
-            self.assertEqual(self.collector.per_thread_samples[thread_id], 1)
+            self.assertIn(thread_id, self.collector.per_thread_data)
+            self.assertEqual(self.collector.per_thread_data[thread_id].sample_count, 1)
 
     def test_per_thread_gc_samples(self):
         """Test that per-thread GC samples are tracked correctly."""
         # Initially no threads have GC frames
         for thread_id in [111, 222, 333]:
-            self.assertIn(thread_id, self.collector.per_thread_gc_samples)
+            self.assertIn(thread_id, self.collector.per_thread_data)
             self.assertEqual(
-                self.collector.per_thread_gc_samples[thread_id], 0
+                self.collector.per_thread_data[thread_id].gc_frame_samples, 0
             )
 
         # Now collect a sample with a GC frame in thread 222
@@ -949,10 +949,10 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         self.collector.collect(stack_frames)
 
         # Thread 222 should now have 1 GC sample
-        self.assertEqual(self.collector.per_thread_gc_samples[222], 1)
+        self.assertEqual(self.collector.per_thread_data[222].gc_frame_samples, 1)
         # Other threads should still have 0
-        self.assertEqual(self.collector.per_thread_gc_samples[111], 0)
-        self.assertEqual(self.collector.per_thread_gc_samples[333], 0)
+        self.assertEqual(self.collector.per_thread_data[111].gc_frame_samples, 0)
+        self.assertEqual(self.collector.per_thread_data[333].gc_frame_samples, 0)
 
     def test_only_threads_with_frames_are_tracked(self):
         """Test that only threads with actual frame data are added to thread_ids."""
@@ -993,12 +993,12 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         collector.collect(stack_frames)
 
         # Check thread 444 status
-        self.assertEqual(collector.per_thread_status[444]["has_gil"], 1)
-        self.assertEqual(collector.per_thread_status[444]["on_cpu"], 0)
+        self.assertEqual(collector.per_thread_data[444].has_gil, 1)
+        self.assertEqual(collector.per_thread_data[444].on_cpu, 0)
 
         # Check thread 555 status
-        self.assertEqual(collector.per_thread_status[555]["has_gil"], 0)
-        self.assertEqual(collector.per_thread_status[555]["on_cpu"], 1)
+        self.assertEqual(collector.per_thread_data[555].has_gil, 0)
+        self.assertEqual(collector.per_thread_data[555].on_cpu, 1)
 
     def test_display_uses_per_thread_stats_in_per_thread_mode(self):
         """Test that display widget uses per-thread stats when in PER_THREAD mode."""
@@ -1032,17 +1032,17 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         collector.current_thread_index = 0  # Thread 111
 
         # Thread 111 should show 100% on GIL
-        thread_111_status = collector.per_thread_status[111]
-        self.assertEqual(thread_111_status["has_gil"], 10)
-        self.assertEqual(thread_111_status["total"], 10)
+        thread_111_data = collector.per_thread_data[111]
+        self.assertEqual(thread_111_data.has_gil, 10)
+        self.assertEqual(thread_111_data.total, 10)
 
         # Switch to thread 222
         collector.current_thread_index = 1  # Thread 222
 
         # Thread 222 should show 0% on GIL
-        thread_222_status = collector.per_thread_status[222]
-        self.assertEqual(thread_222_status["has_gil"], 0)
-        self.assertEqual(thread_222_status["total"], 10)
+        thread_222_data = collector.per_thread_data[222]
+        self.assertEqual(thread_222_data.has_gil, 0)
+        self.assertEqual(thread_222_data.total, 10)
 
     def test_display_uses_per_thread_gc_stats_in_per_thread_mode(self):
         """Test that GC percentage uses per-thread data in PER_THREAD mode."""
@@ -1073,12 +1073,12 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
 
         # Check per-thread GC stats
         # Thread 111: 2 GC samples out of 5 = 40%
-        self.assertEqual(collector.per_thread_gc_samples[111], 2)
-        self.assertEqual(collector.per_thread_samples[111], 5)
+        self.assertEqual(collector.per_thread_data[111].gc_frame_samples, 2)
+        self.assertEqual(collector.per_thread_data[111].sample_count, 5)
 
         # Thread 222: 0 GC samples out of 5 = 0%
-        self.assertEqual(collector.per_thread_gc_samples[222], 0)
-        self.assertEqual(collector.per_thread_samples[222], 5)
+        self.assertEqual(collector.per_thread_data[222].gc_frame_samples, 0)
+        self.assertEqual(collector.per_thread_data[222].sample_count, 5)
 
         # Now verify the display would use the correct stats
         collector.view_mode = "PER_THREAD"
@@ -1088,8 +1088,8 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         thread_id = collector.thread_ids[0]
         self.assertEqual(thread_id, 111)
         thread_gc_pct = (
-            collector.per_thread_gc_samples[111]
-            / collector.per_thread_samples[111]
+            collector.per_thread_data[111].gc_frame_samples
+            / collector.per_thread_data[111].sample_count
         ) * 100
         self.assertEqual(thread_gc_pct, 40.0)
 
@@ -1098,8 +1098,8 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         thread_id = collector.thread_ids[1]
         self.assertEqual(thread_id, 222)
         thread_gc_pct = (
-            collector.per_thread_gc_samples[222]
-            / collector.per_thread_samples[222]
+            collector.per_thread_data[222].gc_frame_samples
+            / collector.per_thread_data[222].sample_count
         ) * 100
         self.assertEqual(thread_gc_pct, 0.0)
 
@@ -1132,7 +1132,7 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         # In PER_THREAD mode for thread 111, should have 3 functions
         collector.view_mode = "PER_THREAD"
         collector.current_thread_index = 0  # Thread 111
-        thread_111_result = collector.per_thread_result[111]
+        thread_111_result = collector.per_thread_data[111].result
         self.assertEqual(len(thread_111_result), 3)
 
         # Verify the functions are the right ones
@@ -1141,7 +1141,7 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
 
         # In PER_THREAD mode for thread 222, should have 2 functions
         collector.current_thread_index = 1  # Thread 222
-        thread_222_result = collector.per_thread_result[222]
+        thread_222_result = collector.per_thread_data[222].result
         self.assertEqual(len(thread_222_result), 2)
 
         # Verify the functions are the right ones
