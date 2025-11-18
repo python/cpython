@@ -494,12 +494,15 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
     }
 #  endif
     // Add some space for caller function then round to minimum page size
+    // This is a guess at the top of the stack, but should be a reasonably
+    // good guess if called from _PyThreadState_Attach when creating a thread.
+    // If the thread is attached deep in a call stack, then the guess will be poor.
 #if _Py_STACK_GROWS_DOWN
-    uintptr_t top_addr = _Py_SIZE_ROUND_UP(sp + 8*sizeof(void*), 4096);
+    uintptr_t top_addr = _Py_SIZE_ROUND_UP(sp + 8*sizeof(void*), SYSTEM_PAGE_SIZE);
     *top = top_addr;
     *base = top_addr - Py_C_STACK_SIZE;
 #  else
-    uintptr_t base_addr = _Py_SIZE_ROUND_DOWN(sp - 8*sizeof(void*), 4096);
+    uintptr_t base_addr = _Py_SIZE_ROUND_DOWN(sp - 8*sizeof(void*), SYSTEM_PAGE_SIZE);
     *base = base_addr;
     *top = base_addr + Py_C_STACK_SIZE;
 #endif
@@ -596,7 +599,7 @@ PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
 
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
-   if the stack poineter is between the stack base and c_stack_hard_limit. */
+   if the stack pointer is between the stack base and c_stack_hard_limit. */
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
