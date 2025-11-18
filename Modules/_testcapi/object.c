@@ -498,12 +498,12 @@ pyobject_dump(PyObject *self, PyObject *args)
 
     if (release_gil) {
         Py_BEGIN_ALLOW_THREADS
-        PyObject_Dump(op);
+        PyUnstable_Object_Dump(op);
         Py_END_ALLOW_THREADS
 
     }
     else {
-        PyObject_Dump(op);
+        PyUnstable_Object_Dump(op);
     }
     Py_RETURN_NONE;
 }

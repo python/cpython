@@ -1,2 +1,2 @@
-Add :c:func:`PyObject_Dump` to dump an object to ``stderr``. Function used
-for debugging. Patch by Victor Stinner.
+Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``. It should
+only be used for debugging. Patch by Victor Stinner.

@@ -947,12 +947,12 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
-* Add :c:func:`PyObject_Dump` to dump an object to ``stderr``. Function used
-  for debugging.
-  (Contributed by Victor Stinner in :gh:`141070`.)
-
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
+
+* Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``.
+  It should only be used for debugging.
+  (Contributed by Victor Stinner in :gh:`141070`.)
 
 
 Changed C APIs

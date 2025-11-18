@@ -2235,7 +2235,7 @@ _PyGC_Fini(PyInterpreterState *interp)
 void
 _PyGC_Dump(PyGC_Head *g)
 {
-    PyObject_Dump(FROM_GC(g));
+    PyUnstable_Object_Dump(FROM_GC(g));
 }
 
 
