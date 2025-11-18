@@ -365,6 +365,25 @@ def _copy_future_state(source, dest):
     else:
         dest.set_result(result)
 
+
+def _cancel_future_in_loop(fut, loop, timeout=None):
+    """Cancel a future in (maybe another) event loop.
+
+    We need to check loop is not running loop to avoid dead lock.
+    """
+    if loop is None or loop is events._get_running_loop():
+        return fut.cancel()
+    cancel_fut = concurrent.futures.Future()
+    def _cancel():
+        try:
+            result = fut.cancel()
+            cancel_fut.set_result(result)
+        except BaseException as exc:
+            cancel_fut.set_exception(exc)
+    loop.call_soon_threadsafe(_cancel)
+    return cancel_fut.result(timeout=timeout)
+
+
 def _chain_future(source, destination):
     """Chain two futures so that when one completes, so does the other.
 
@@ -389,16 +408,13 @@ def _chain_future(source, destination):
 
     def _call_check_cancel(destination):
         if destination.cancelled():
-            if source_loop is None or source_loop is dest_loop:
-                source.cancel()
-            else:
-                source_loop.call_soon_threadsafe(source.cancel)
+            _cancel_future_in_loop(source, source_loop)
 
     def _call_set_state(source):
         if (destination.cancelled() and
                 dest_loop is not None and dest_loop.is_closed()):
             return
-        if dest_loop is None or dest_loop is source_loop:
+        if dest_loop is None or dest_loop is events._get_running_loop():
             _set_state(destination, source)
         else:
             if dest_loop.is_closed():
