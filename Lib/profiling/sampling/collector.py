@@ -1,17 +1,14 @@
 from abc import ABC, abstractmethod
 
-# Enums are slow
-THREAD_STATE_RUNNING = 0
-THREAD_STATE_IDLE = 1
-THREAD_STATE_GIL_WAIT = 2
-THREAD_STATE_UNKNOWN = 3
-
-STATUS = {
-    THREAD_STATE_RUNNING: "running",
-    THREAD_STATE_IDLE: "idle",
-    THREAD_STATE_GIL_WAIT: "gil_wait",
-    THREAD_STATE_UNKNOWN: "unknown",
-}
+# Thread status flags
+try:
+    from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED
+except ImportError:
+    # Fallback for tests or when module is not available
+    THREAD_STATUS_HAS_GIL = (1 << 0)
+    THREAD_STATUS_ON_CPU = (1 << 1)
+    THREAD_STATUS_UNKNOWN = (1 << 2)
+    THREAD_STATUS_GIL_REQUESTED = (1 << 3)
 
 class Collector(ABC):
     @abstractmethod
@@ -26,8 +23,14 @@ class Collector(ABC):
         """Iterate over all frame stacks from all interpreters and threads."""
         for interpreter_info in stack_frames:
             for thread_info in interpreter_info.threads:
-                if skip_idle and thread_info.status != THREAD_STATE_RUNNING:
-                    continue
+                # skip_idle now means: skip if thread is not actively running
+                # A thread is "active" if it has the GIL OR is on CPU
+                if skip_idle:
+                    status_flags = thread_info.status
+                    has_gil = bool(status_flags & THREAD_STATUS_HAS_GIL)
+                    on_cpu = bool(status_flags & THREAD_STATUS_ON_CPU)
+                    if not (has_gil or on_cpu):
+                        continue
                 frames = thread_info.frame_info
                 if frames:
                     yield frames, thread_info.thread_id

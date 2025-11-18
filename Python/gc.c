@@ -2074,6 +2074,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         // Don't start a garbage collection if one is already in progress.
         return 0;
     }
+    gcstate->frame = tstate->current_frame;
 
     struct gc_collection_stats stats = { 0 };
     if (reason != _Py_GC_REASON_SHUTDOWN) {
@@ -2111,13 +2112,15 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     _PyErr_SetRaisedException(tstate, exc);
     GC_STAT_ADD(generation, objects_collected, stats.collected);
 #ifdef Py_STATS
-    if (_Py_stats) {
+    PyStats *s = _PyStats_GET();
+    if (s) {
         GC_STAT_ADD(generation, object_visits,
-            _Py_stats->object_stats.object_visits);
-        _Py_stats->object_stats.object_visits = 0;
+            s->object_stats.object_visits);
+        s->object_stats.object_visits = 0;
     }
 #endif
     validate_spaces(gcstate);
+    gcstate->frame = NULL;
     _Py_atomic_store_int(&gcstate->collecting, 0);
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
@@ -2234,7 +2237,7 @@ _PyGC_Fini(PyInterpreterState *interp)
 void
 _PyGC_Dump(PyGC_Head *g)
 {
-    _PyObject_Dump(FROM_GC(g));
+    PyUnstable_Object_Dump(FROM_GC(g));
 }
 
 
