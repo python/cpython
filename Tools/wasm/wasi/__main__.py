@@ -31,7 +31,7 @@ LOCAL_SETUP_MARKER = (
     b"# Required to statically build extension modules."
 )
 
-WASI_SDK_VERSION = 25
+WASI_SDK_VERSION = 29
 
 WASMTIME_VAR_NAME = "WASMTIME"
 WASMTIME_HOST_RUNNER_VAR = f"{{{WASMTIME_VAR_NAME}}}"
@@ -419,8 +419,8 @@ def main():
         f"{WASMTIME_HOST_RUNNER_VAR} run "
         # Make sure the stack size will work for a pydebug
         # build.
-        # Use 16 MiB stack.
-        "--wasm max-wasm-stack=16777216 "
+        # Use 32 MiB stack.
+        "--wasm max-wasm-stack=33554432 "
         # Enable thread support; causes use of preview1.
         # "--wasm threads=y --wasi threads=y "
         # Map the checkout to / to load the stdlib from /Lib.
