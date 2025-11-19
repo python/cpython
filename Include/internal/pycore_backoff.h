@@ -65,13 +65,11 @@ static inline _Py_BackoffCounter
 restart_backoff_counter(_Py_BackoffCounter counter)
 {
     assert(!is_unreachable_backoff_counter(counter));
-    int backoff = counter.value_and_backoff & BACKOFF_MASK;
-    if (backoff < MAX_BACKOFF) {
-        return make_backoff_counter((1 << (2 * backoff + 3)) - 1, backoff + 1);
-    }
-    else {
-        return make_backoff_counter((1 << (2 * MAX_BACKOFF + 1)) - 1, MAX_BACKOFF);
-    }
+    uint16_t backoff = counter.value_and_backoff & BACKOFF_MASK;
+    assert(backoff <= MAX_BACKOFF);
+    backoff = (backoff == MAX_BACKOFF) ? backoff : backoff + 1;
+    uint16_t value = (1 << (2 * backoff + 1)) - 1;
+    return make_backoff_counter(value, backoff);
 }
 
 static inline _Py_BackoffCounter
