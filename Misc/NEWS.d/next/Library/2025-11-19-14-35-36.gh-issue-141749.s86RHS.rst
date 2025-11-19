@@ -1,0 +1,1 @@
+Fixed incorrect exception types occurring in the CPython Unpickler implementation when loading invalid pickle data. In some cases, the CPython fallback raised internal KeyError and IndexError exceptions instead of UnpicklingError.
