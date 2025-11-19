@@ -1,4 +1,3 @@
-import io
 import os
 import sys
 
@@ -330,7 +329,7 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
 
     try:
         return os.isatty(file.fileno())
-    except io.UnsupportedOperation:
+    except OSError:
         return hasattr(file, "isatty") and file.isatty()
 
 
