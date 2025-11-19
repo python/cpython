@@ -516,36 +516,21 @@ characters:
 Non-ASCII characters in names
 -----------------------------
 
-Python identifiers may contain all sorts of characters.
-For example, ``ř_1``, ``蛇``, or ``साँप``  are valid identifiers.
-However, ``r〰2``, ``€``, or ``🐍`` are not.
-Additionally, some variations are considered equivalent: for example,
-``fi`` (2 letters) and ``ﬁ`` (1 ligature).
+Names that contain non-ASCII characters need additional normalization
+and validation beyond the rules and grammar explained
+:ref:`above <identifiers>`.
+For example, ``ř_1``, ``蛇``, or ``साँप``  are valid names, but ``r〰2``,
+``€``, or ``🐍`` are not.
 
-
-A :ref:`name token <identifiers>` that only contains ASCII characters
-(``A-Z``, ``a-z``, ``_`` and ``0-9``) is always valid, and distinct from
-different ASCII-only names.
-The rules are somewhat more complicated when using non-ASCII characters.
-
-Informally, all names must be composed of letters, digits, numbers and
-underscores, and cannot start with a digit.
-
-
-
-
-Besides ``A-Z``, ``a-z``, ``_`` and ``0-9``, names can use characters
-from outside the ASCII range.
-
-, as detailed in this section.
+This section explains the exact rules.
 
 All names are converted into the `normalization form`_ NFKC while parsing.
 This means that, for example, some typographic variants of characters are
-converted to their "basic" form. For example, ``nᵘₘᵇₑʳ`` normalizes to
-``number``, so Python treats them as the same name::
+converted to their "basic" form. For example, ``ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ`` normalizes to
+``finalization``, so Python treats them as the same name::
 
-   >>> nᵘₘᵇₑʳ = 3
-   >>> number
+   >>> ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ = 3
+   >>> finalization
    3
 
 .. note::
@@ -554,15 +539,26 @@ converted to their "basic" form. For example, ``nᵘₘᵇₑʳ`` normalizes to
    Run-time functions that take names as *strings* generally do not normalize
    their arguments.
    For example, the variable defined above is accessible at run time in the
-   :func:`globals` dictionary as ``globals()["number"]`` but not
-   ``globals()["nᵘₘᵇₑʳ"]``.
+   :func:`globals` dictionary as ``globals()["finalization"]`` but not
+   ``globals()["ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ"]``.
 
-Similarly to how ASCII-only names must contain only letters, numbers and
-the underscore, and cannot start with a digit, the normalized name must
+Similarly to how ASCII-only names must contain only letters, digits and
+the underscore, and cannot start with a digit, a valid name must
+start with a character in the "letter-like" set ``xid_start``,
+and the remaining characters must be in the "letter- and digit-like" set
+``xid_continue``.
 
-The first character of a normalized identifier must be "letter-like".
-Formally, this means it must belong to the set ``id_start``,
-which is defined as the union of:
+These sets based on the *XID_Start* and *XID_Continue* sets as defined by the
+Unicode standard annex `UAX-31`_.
+Python's ``xid_start`` additionally includes the underscore (``_``).
+Note that Python does not necessarily conform to `UAX-31`_.
+
+A non-normative listing of characters in the *XID_Start* and *XID_Continue*
+sets as defined by Unicode is available in the `DerivedCoreProperties.txt`_
+file in the Unicode Character Database.
+For reference, the construction rules for the ``xid_*`` sets are given below.
+
+The set ``id_start`` is defined as the union of:
 
 * Unicode category ``<Lu>`` - uppercase letters (includes ``A`` to ``Z``)
 * Unicode category ``<Ll>`` - lowercase letters (includes ``a`` to ``z``)
@@ -574,9 +570,11 @@ which is defined as the union of:
 * ``<Other_ID_Start>`` - an explicit set of characters in `PropList.txt`_
   to support backwards compatibility
 
-The remaining characters must be "letter-like" or "digit-like".
-Formally, they must belong to the set ``id_continue``, which is defined as
-the union of:
+The set ``xid_start`` then closes this set under NFKC normalization, by
+removing all characters whose normalization is not of the form
+``id_start id_continue*``.
+
+The set ``id_continue`` is defined as the union of:
 
 * ``id_start`` (see above)
 * Unicode category ``<Nd>`` - decimal numbers (includes ``0`` to ``9``)
@@ -586,24 +584,20 @@ the union of:
 * ``<Other_ID_Continue>`` - another explicit set of characters in
   `PropList.txt`_ to support backwards compatibility
 
+Again, ``xid_continue`` closes this set under NFKC normalization.
+
 Unicode categories use the version of the Unicode Character Database as
 included in the :mod:`unicodedata` module.
-
-The ``id_start`` and ``id_continue`` sets are based on the Unicode standard
-annex `UAX-31`_. See also :pep:`3131` for further details.
-Note that Python does not necessarily conform to `UAX-31`_.
-
-A non-normative listing of all valid identifier characters as defined by
-Unicode is available in the `DerivedCoreProperties.txt`_ file in the Unicode
-Character Database.
-The properties *ID_Start* and *ID_Continue* are very similar to Python's
-``id_start`` and ``id_continue`` sets; the properties *XID_Start* and
-*XID_Continue* play similar roles for identifiers before NFKC normalization.
 
 .. _UAX-31: https://www.unicode.org/reports/tr31/
 .. _PropList.txt: https://www.unicode.org/Public/17.0.0/ucd/PropList.txt
 .. _DerivedCoreProperties.txt: https://www.unicode.org/Public/17.0.0/ucd/DerivedCoreProperties.txt
 .. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
+
+.. seealso::
+
+   * :pep:`3131` -- Supporting Non-ASCII Identifiers
+   * :pep:`672` -- Unicode-related Security Considerations for Python
 
 
 .. _literals:
