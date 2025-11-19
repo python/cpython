@@ -267,6 +267,28 @@ Operating System Utilities
    .. versionadded:: 3.14
 
 
+.. c:function:: int PyOS_mystricmp(const char *str1, const char *str2)
+
+   Compare two strings, *str1* and *str2*. The function works almost
+   identically to :c:func:`!strcmp` except that it ignores the case.
+
+   Return ``0`` if the strings are equal, a negative value if *str1* is less
+   than *str2*, or a positive value if *str1* is greater than *str2*.
+
+   This function is async-signal-safe and cannot fail.
+
+
+.. c:function:: int PyOS_mystrnicmp(const char *str1, const char *str2, Py_ssize_t size)
+
+   Compare two strings, *str1* and *str2*. The function works almost
+   identically to :c:func:`!strncmp` except that it ignores the case.
+
+   Return ``0`` if the strings are equal, a negative value if *str1* is less
+   than *str2*, or a positive value if *str1* is greater than *str2*.
+
+   This function is async-signal-safe and cannot fail.
+
+
 .. _systemfunctions:
 
 System Functions
