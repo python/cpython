@@ -48,7 +48,7 @@ elif stack_pointer < soft_limit:
 
 ### User space threads and other oddities
 
-Some libraries provide user-space threads. These will change the C stack are runtime.
+Some libraries provide user-space threads. These will change the C stack at runtime.
 To guard against this we only raise if the stack pointer is in the window between the expected stack base and the soft limit.
 
 ### Diagnosing and fixing stack overflows

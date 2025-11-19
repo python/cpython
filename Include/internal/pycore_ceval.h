@@ -219,7 +219,7 @@ static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     // Overflow if stack pointer is between soft limit and the base of the hardware stack.
     // If it is below the hardware stack base, assume that we have the wrong stack limits, and do nothing.
-    // We could have the wrong stack limits becuase of limited platform support, or user-space threads.
+    // We could have the wrong stack limits because of limited platform support, or user-space threads.
 #if _Py_STACK_GROWS_DOWN
     return here_addr < _tstate->c_stack_soft_limit && here_addr >= _tstate->c_stack_soft_limit - 2 * _PyOS_STACK_MARGIN_BYTES;
 #else
