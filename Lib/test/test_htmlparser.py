@@ -188,24 +188,25 @@ text
         ])
 
     def test_unclosed_entityref(self):
-        self._run_check('&gt z', [('entityref', 'gt'), ('data', ' z')],
+        self._run_check('&gt &lt;', [('entityref', 'gt'), ('data', ' '), ('entityref', 'lt')],
                         convert_charrefs=False)
-        self._run_check('&gt z', [('data', '> z')], convert_charrefs=True)
+        self._run_check('&gt &lt;', [('data', '> <')], convert_charrefs=True)
 
-        self._run_check('&undefined z',
-                        [('entityref', 'undefined'), ('data', ' z')],
+        self._run_check('&undefined &lt;',
+                        [('entityref', 'undefined'), ('data', ' '), ('entityref', 'lt')],
                         convert_charrefs=False)
-        self._run_check('&undefined z', [('data', '&undefined z')],
+        self._run_check('&undefined &lt;', [('data', '&undefined <')],
                         convert_charrefs=True)
 
-        self._run_check('&gtundefined z',
-                        [('entityref', 'gtundefined'), ('data', ' z')],
+        self._run_check('&gtundefined &lt;',
+                        [('entityref', 'gtundefined'), ('data', ' '), ('entityref', 'lt')],
                         convert_charrefs=False)
-        self._run_check('&gtundefined z', [('data', '>undefined z')],
+        self._run_check('&gtundefined &lt;', [('data', '>undefined <')],
                         convert_charrefs=True)
 
-        self._run_check('& z', [('data', '& z')], convert_charrefs=False)
-        self._run_check('& z', [('data', '& z')], convert_charrefs=True)
+        self._run_check('& &lt;', [('data', '& '), ('entityref', 'lt')],
+                        convert_charrefs=False)
+        self._run_check('& &lt;', [('data', '& <')], convert_charrefs=True)
 
     def test_eof_in_entityref(self):
         self._run_check('&gt', [('entityref', 'gt')], convert_charrefs=False)
@@ -228,28 +229,28 @@ text
         self._run_check('&', [('data', '&')], convert_charrefs=True)
 
     def test_unclosed_charref(self):
-        self._run_check('&#123 z', [('charref', '123'), ('data', ' z')],
+        self._run_check('&#123 &lt;', [('charref', '123'), ('data', ' '), ('entityref', 'lt')],
                         convert_charrefs=False)
-        self._run_check('&#123 z', [('data', '{ z')], convert_charrefs=True)
-        self._run_check('&#xab z', [('charref', 'xab'), ('data', ' z')],
+        self._run_check('&#123 &lt;', [('data', '{ <')], convert_charrefs=True)
+        self._run_check('&#xab &lt;', [('charref', 'xab'), ('data', ' '), ('entityref', 'lt')],
                         convert_charrefs=False)
-        self._run_check('&#xab z', [('data', '\xab z')], convert_charrefs=True)
+        self._run_check('&#xab &lt;', [('data', '\xab <')], convert_charrefs=True)
 
-        self._run_check('&#123456789 z',
-                        [('charref', '123456789'), ('data', ' z')],
+        self._run_check('&#123456789 &lt;',
+                        [('charref', '123456789'), ('data', ' '), ('entityref', 'lt')],
                         convert_charrefs=False)
-        self._run_check('&#123456789 z', [('data', '\ufffd z')],
+        self._run_check('&#123456789 &lt;', [('data', '\ufffd <')],
                         convert_charrefs=True)
-        self._run_check('&#x123456789 z',
-                        [('charref', 'x123456789'), ('data', ' z')],
+        self._run_check('&#x123456789 &lt;',
+                        [('charref', 'x123456789'), ('data', ' '), ('entityref', 'lt')],
                         convert_charrefs=False)
-        self._run_check('&#x123456789 z', [('data', '\ufffd z')],
+        self._run_check('&#x123456789 &lt;', [('data', '\ufffd <')],
                         convert_charrefs=True)
 
-        self._run_check('&# z', [('data', '&# z')], convert_charrefs=False)
-        self._run_check('&# z', [('data', '&# z')], convert_charrefs=True)
-        self._run_check('&#x z', [('data', '&#x z')], convert_charrefs=False)
-        self._run_check('&#x z', [('data', '&#x z')], convert_charrefs=True)
+        self._run_check('&# &lt;', [('data', '&# '), ('entityref', 'lt')], convert_charrefs=False)
+        self._run_check('&# &lt;', [('data', '&# <')], convert_charrefs=True)
+        self._run_check('&#x &lt;', [('data', '&#x '), ('entityref', 'lt')], convert_charrefs=False)
+        self._run_check('&#x &lt;', [('data', '&#x <')], convert_charrefs=True)
 
     def test_eof_in_charref(self):
         self._run_check('&#123', [('charref', '123')], convert_charrefs=False)
