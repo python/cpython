@@ -41,13 +41,15 @@ extern "C" {
 
 // We only use values x and backoffs b such that
 // x + 1 is near to 2**(2*b+1) and x + 1 is prime.
-static _Py_BackoffCounter backoff_counter_table[] = {
-    MAKE_BACKOFF_COUNTER(1, 0),
+static _Py_BackoffCounter backoff_counter_next_table[] = {
     MAKE_BACKOFF_COUNTER(6, 1),
     MAKE_BACKOFF_COUNTER(30, 2),
     MAKE_BACKOFF_COUNTER(126, 3),
     MAKE_BACKOFF_COUNTER(508, 4),
     MAKE_BACKOFF_COUNTER(2052, 5),
+    MAKE_BACKOFF_COUNTER(8190, 6),
+    // We use the same backoff counter for all backoffs >= MAX_BACKOFF.
+    MAKE_BACKOFF_COUNTER(8190, 6),
     MAKE_BACKOFF_COUNTER(8190, 6),
 };
 
@@ -64,8 +66,7 @@ restart_backoff_counter(_Py_BackoffCounter counter)
 {
     uint16_t backoff = counter.value_and_backoff & BACKOFF_MASK;
     assert(backoff <= MAX_BACKOFF);
-    backoff = (backoff >= MAX_BACKOFF) ? MAX_BACKOFF : backoff + 1;
-    return backoff_counter_table[backoff];
+    return backoff_counter_next_table[backoff];
 }
 
 static inline _Py_BackoffCounter
