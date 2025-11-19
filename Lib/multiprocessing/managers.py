@@ -185,6 +185,7 @@ class Server(object):
                 util.debug('resetting stdout, stderr')
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__
+            accepter.join()
             sys.exit(0)
 
     def accepter(self):
