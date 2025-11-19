@@ -97,20 +97,11 @@ OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 #endif  /* ! BZ_CONFIG_ERROR */
 
 
-#define ACQUIRE_LOCK(obj) do { \
-    if (!PyThread_acquire_lock((obj)->lock, 0)) { \
-        Py_BEGIN_ALLOW_THREADS \
-        PyThread_acquire_lock((obj)->lock, 1); \
-        Py_END_ALLOW_THREADS \
-    } } while (0)
-#define RELEASE_LOCK(obj) PyThread_release_lock((obj)->lock)
-
-
 typedef struct {
     PyObject_HEAD
     bz_stream bzs;
     int flushed;
-    PyThread_type_lock lock;
+    PyMutex mutex;
 } BZ2Compressor;
 
 typedef struct {
@@ -126,7 +117,7 @@ typedef struct {
        separately. Conversion and looping is encapsulated in
        decompress_buf() */
     size_t bzs_avail_in_real;
-    PyThread_type_lock lock;
+    PyMutex mutex;
 } BZ2Decompressor;
 
 #define _BZ2Compressor_CAST(op)     ((BZ2Compressor *)(op))
@@ -190,7 +181,7 @@ static PyObject *
 compress(BZ2Compressor *c, char *data, size_t len, int action)
 {
     PyObject *result;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
 
     if (OutputBuffer_InitAndGrow(&buffer, -1, &c->bzs.next_out, &c->bzs.avail_out) < 0) {
         goto error;
@@ -271,12 +262,12 @@ _bz2_BZ2Compressor_compress_impl(BZ2Compressor *self, Py_buffer *data)
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->flushed)
         PyErr_SetString(PyExc_ValueError, "Compressor has been flushed");
     else
         result = compress(self, data->buf, data->len, BZ_RUN);
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -296,14 +287,14 @@ _bz2_BZ2Compressor_flush_impl(BZ2Compressor *self)
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->flushed)
         PyErr_SetString(PyExc_ValueError, "Repeated call to flush()");
     else {
         self->flushed = 1;
         result = compress(self, NULL, 0, BZ_FINISH);
     }
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -357,13 +348,7 @@ _bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel)
         return NULL;
     }
 
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return NULL;
-    }
-
+    self->mutex = (PyMutex){0};
     self->bzs.opaque = NULL;
     self->bzs.bzalloc = BZ2_Malloc;
     self->bzs.bzfree = BZ2_Free;
@@ -382,20 +367,11 @@ static void
 BZ2Compressor_dealloc(PyObject *op)
 {
     BZ2Compressor *self = _BZ2Compressor_CAST(op);
+    assert(!PyMutex_IsLocked(&self->mutex));
     BZ2_bzCompressEnd(&self->bzs);
-    if (self->lock != NULL) {
-        PyThread_free_lock(self->lock);
-    }
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
-}
-
-static int
-BZ2Compressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
 }
 
 static PyMethodDef BZ2Compressor_methods[] = {
@@ -409,7 +385,6 @@ static PyType_Slot bz2_compressor_type_slots[] = {
     {Py_tp_methods, BZ2Compressor_methods},
     {Py_tp_new, _bz2_BZ2Compressor},
     {Py_tp_doc, (char *)_bz2_BZ2Compressor__doc__},
-    {Py_tp_traverse, BZ2Compressor_traverse},
     {0, 0}
 };
 
@@ -437,7 +412,7 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
        compare against max_length and PyBytes_GET_SIZE we declare it as
        signed */
     PyObject *result;
-    _BlocksOutputBuffer buffer = {.list = NULL};
+    _BlocksOutputBuffer buffer = {.writer = NULL};
     bz_stream *bzs = &d->bzs;
 
     if (OutputBuffer_InitAndGrow(&buffer, max_length, &bzs->next_out, &bzs->avail_out) < 0) {
@@ -627,12 +602,12 @@ _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
 {
     PyObject *result = NULL;
 
-    ACQUIRE_LOCK(self);
+    PyMutex_Lock(&self->mutex);
     if (self->eof)
         PyErr_SetString(PyExc_EOFError, "End of stream already reached");
     else
         result = decompress(self, data->buf, data->len, max_length);
-    RELEASE_LOCK(self);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
@@ -658,20 +633,12 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
         return NULL;
     }
 
-    self->lock = PyThread_allocate_lock();
-    if (self->lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        return NULL;
-    }
-
+    self->mutex = (PyMutex){0};
     self->needs_input = 1;
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
-    if (self->unused_data == NULL)
-        goto error;
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
     bzerror = BZ2_bzDecompressInit(&self->bzs, 0, 0);
     if (catch_bz2_error(bzerror))
@@ -688,26 +655,17 @@ static void
 BZ2Decompressor_dealloc(PyObject *op)
 {
     BZ2Decompressor *self = _BZ2Decompressor_CAST(op);
+    assert(!PyMutex_IsLocked(&self->mutex));
 
     if(self->input_buffer != NULL) {
         PyMem_Free(self->input_buffer);
     }
     BZ2_bzDecompressEnd(&self->bzs);
     Py_CLEAR(self->unused_data);
-    if (self->lock != NULL) {
-        PyThread_free_lock(self->lock);
-    }
 
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
-}
-
-static int
-BZ2Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
 }
 
 static PyMethodDef BZ2Decompressor_methods[] = {
@@ -740,7 +698,6 @@ static PyType_Slot bz2_decompressor_type_slots[] = {
     {Py_tp_doc, (char *)_bz2_BZ2Decompressor__doc__},
     {Py_tp_members, BZ2Decompressor_members},
     {Py_tp_new, _bz2_BZ2Decompressor},
-    {Py_tp_traverse, BZ2Decompressor_traverse},
     {0, 0}
 };
 
