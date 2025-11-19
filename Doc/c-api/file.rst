@@ -136,10 +136,17 @@ the :mod:`io` APIs instead.
 Deprecated API
 ^^^^^^^^^^^^^^
 
-.. c:function:: PyObject *PyFile_NewStdPrinter(void)
+
+These are :term:`soft deprecated` APIs that were included in Python's C API
+by mistake. They are documented solely for completeness; use other
+``PyFile*`` APIs instead.
+
+.. c:function:: PyObject *PyFile_NewStdPrinter(int fd)
+
+   Use :c:func:`PyFile_FromFd` with defaults (``fd, NULL, "w", -1, NULL, NULL, NULL, 0``) instead.
 
 .. c:var:: PyTypeObject PyStdPrinter_Type
 
-   These are :term:`soft deprecated` APIs that were included in Python's C API
-   by mistake. They are documented solely for completeness; use other
-   ``PyFile*`` APIs instead.
+   Type of file-like objects used internally at Python startup when :py:mod:`io` is
+   not yet available.
+   Use :py:func:`io.open` or :c:func:`PyFile_FromFd` to create file objects instead.
