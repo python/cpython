@@ -1,3 +1,2 @@
-In ``_colorize.can_colorize``, support file objects rising
-:exc:`OSError` from the :meth:`~io.IOBase.fileno` method, as docuemtned. An
-example of such an object is a ``mod_wsgi`` logger.
+Support :term:`file-like object` raising :exc:`OSError` from :meth:`~io.IOBase.fileno` in color 
+detection (``_colorize.can_colorize``). This can occur when `sys.stdout` is redirected.
