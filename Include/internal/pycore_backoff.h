@@ -43,7 +43,7 @@ extern "C" {
 
 // We only use values x and backoffs b such that
 // x + 1 is near to 2**(2*b+1) and x + 1 is prime.
-static uint16_t value_and_backoff_next[] = {
+static const uint16_t value_and_backoff_next[] = {
     MAKE_VALUE_AND_BACKOFF(6, 1),
     MAKE_VALUE_AND_BACKOFF(30, 2),
     MAKE_VALUE_AND_BACKOFF(126, 3),
