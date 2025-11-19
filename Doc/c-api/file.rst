@@ -149,4 +149,4 @@ by mistake. They are documented solely for completeness; use other
 
    Type of file-like objects used internally at Python startup when :py:mod:`io` is
    not yet available.
-   Use :py:func:`io.open` or :c:func:`PyFile_FromFd` to create file objects instead.
+   Use Python :py:func:`open` or :c:func:`PyFile_FromFd` to create file objects instead.
