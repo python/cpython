@@ -193,7 +193,7 @@ class StrAndReprTests(unittest.TestCase):
         self.assertEqual(str(eg), "flat (2 sub-exceptions)")
         self.assertEqual(repr(eg), "MyEG('flat', (ValueError(1), TypeError(2)))")
 
-        # Mutate the list of exceptions passed to BaseExceptionGroup.
+        # Mutate the list of exceptions passed to MyEG.
         # This shouldn't change the EG's functionality, nor its repr.
         eg_excs.clear()
 
