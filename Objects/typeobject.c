@@ -6546,6 +6546,18 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_INLINE_VALUES));
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_MANAGED_DICT));
 
+#ifdef Py_GIL_DISABLED
+    // gh-139103: Enable deferred refcounting for functions assigned
+    // to type objects.  This is important for `dataclass.__init__`,
+    // which is generated dynamically.
+    if (value != NULL &&
+        PyFunction_Check(value) &&
+        !_PyObject_HasDeferredRefcount(value))
+    {
+        PyUnstable_Object_EnableDeferredRefcount(value);
+    }
+#endif
+
     PyObject *old_value = NULL;
     PyObject *descr = _PyType_LookupRef(metatype, name);
     if (descr != NULL) {
