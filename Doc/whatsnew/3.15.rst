@@ -394,6 +394,10 @@ Other language changes
   syntax warnings by module name.
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
 
+* Allowed defining the *__dict__* and *__weakref__* :ref:`__slots__ <slots>`
+  for any class.
+  (Contributed by Serhiy Storchaka in :gh:`41779`.)
+
 
 New modules
 ===========

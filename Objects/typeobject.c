@@ -4343,14 +4343,6 @@ type_new_slots_bases(type_new_ctx *ctx)
 static int
 type_new_slots_impl(type_new_ctx *ctx, PyObject *dict)
 {
-    /* Are slots allowed? */
-    if (ctx->nslot > 0 && ctx->base->tp_itemsize != 0) {
-        PyErr_Format(PyExc_TypeError,
-                     "nonempty __slots__ not supported for subtype of '%s'",
-                     ctx->base->tp_name);
-        return -1;
-    }
-
     if (type_new_visit_slots(ctx) < 0) {
         return -1;
     }
@@ -4377,14 +4369,13 @@ type_new_slots(type_new_ctx *ctx, PyObject *dict)
     ctx->add_dict = 0;
     ctx->add_weak = 0;
     ctx->may_add_dict = (ctx->base->tp_dictoffset == 0);
-    ctx->may_add_weak = (ctx->base->tp_weaklistoffset == 0
-                         && ctx->base->tp_itemsize == 0);
+    ctx->may_add_weak = (ctx->base->tp_weaklistoffset == 0);
 
     if (ctx->slots == NULL) {
         if (ctx->may_add_dict) {
             ctx->add_dict++;
         }
-        if (ctx->may_add_weak) {
+        if (ctx->may_add_weak && ctx->base->tp_itemsize == 0) {
             ctx->add_weak++;
         }
     }
@@ -4650,6 +4641,12 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
     if (et->ht_slots != NULL) {
         PyMemberDef *mp = _PyHeapType_GET_MEMBERS(et);
         Py_ssize_t nslot = PyTuple_GET_SIZE(et->ht_slots);
+        if (ctx->base->tp_itemsize != 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "arbitrary __slots__ not supported for subtype of '%s'",
+                         ctx->base->tp_name);
+            return -1;
+        }
         for (Py_ssize_t i = 0; i < nslot; i++, mp++) {
             mp->name = PyUnicode_AsUTF8(
                 PyTuple_GET_ITEM(et->ht_slots, i));
@@ -4889,8 +4886,14 @@ type_new_init(type_new_ctx *ctx)
     set_tp_dict(type, dict);
 
     PyHeapTypeObject *et = (PyHeapTypeObject*)type;
-    et->ht_slots = ctx->slots;
-    ctx->slots = NULL;
+    if (ctx->slots && PyTuple_GET_SIZE(ctx->slots)) {
+        et->ht_slots = ctx->slots;
+        ctx->slots = NULL;
+    }
+    else {
+        et->ht_slots = NULL;
+        Py_CLEAR(ctx->slots);
+    }
 
     return type;
 
