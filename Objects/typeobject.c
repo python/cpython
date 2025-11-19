@@ -2568,6 +2568,8 @@ _PyHeapType_GET_MEMBERS(PyHeapTypeObject* type)
     return PyObject_GetItemData((PyObject *)type);
 }
 
+void *_PyMember_GetOffset(PyObject *obj, PyMemberDef *l);
+
 static int
 traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)
 {
@@ -2578,7 +2580,7 @@ traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)
     mp = _PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
     for (i = 0; i < n; i++, mp++) {
         if (mp->type == Py_T_OBJECT_EX) {
-            char *addr = (char *)self + mp->offset;
+            void *addr = _PyMember_GetOffset(self, mp);
             PyObject *obj = *(PyObject **)addr;
             if (obj != NULL) {
                 int err = visit(obj, arg);
@@ -2653,7 +2655,7 @@ clear_slots(PyTypeObject *type, PyObject *self)
     mp = _PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
     for (i = 0; i < n; i++, mp++) {
         if (mp->type == Py_T_OBJECT_EX && !(mp->flags & Py_READONLY)) {
-            char *addr = (char *)self + mp->offset;
+            void *addr = _PyMember_GetOffset(self, mp);
             PyObject *obj = *(PyObject **)addr;
             if (obj != NULL) {
                 *(PyObject **)addr = NULL;
@@ -4641,7 +4643,11 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
     if (et->ht_slots != NULL) {
         PyMemberDef *mp = _PyHeapType_GET_MEMBERS(et);
         Py_ssize_t nslot = PyTuple_GET_SIZE(et->ht_slots);
-        if (ctx->base->tp_itemsize != 0) {
+        int after_items = (ctx->base->tp_itemsize != 0 &&
+                           !(ctx->base->tp_flags & Py_TPFLAGS_ITEMS_AT_END));
+        if (ctx->base->tp_itemsize != 0 &&
+            !(ctx->base->tp_flags & Py_TPFLAGS_TUPLE_SUBCLASS))
+        {
             PyErr_Format(PyExc_TypeError,
                          "arbitrary __slots__ not supported for subtype of '%s'",
                          ctx->base->tp_name);
@@ -4655,6 +4661,9 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
             }
             mp->type = Py_T_OBJECT_EX;
             mp->offset = slotoffset;
+            if (after_items) {
+                mp->flags |= _Py_AFTER_ITEMS;
+            }
 
             /* __dict__ and __weakref__ are already filtered out */
             assert(strcmp(mp->name, "__dict__") != 0);
