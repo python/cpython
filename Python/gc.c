@@ -1363,6 +1363,7 @@ gc_list_set_space(PyGC_Head *list, int space)
 static void
 add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
 {
+    gcstate->generation_stats[gen].duration += stats->duration;
     gcstate->generation_stats[gen].collected += stats->collected;
     gcstate->generation_stats[gen].uncollectable += stats->uncollectable;
     gcstate->generation_stats[gen].collections += 1;
@@ -1387,7 +1388,6 @@ gc_collect_young(PyThreadState *tstate,
     validate_spaces(gcstate);
     gcstate->young.count = 0;
     gcstate->old[gcstate->visited_space].count++;
-    add_stats(gcstate, 0, stats);
     validate_spaces(gcstate);
 }
 
@@ -1701,7 +1701,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     assert(gc_list_is_empty(&increment));
     gcstate->work_to_do -= increment_size;
 
-    add_stats(gcstate, 1, stats);
     if (gc_list_is_empty(not_visited)) {
         completed_scavenge(gcstate);
     }
@@ -1736,7 +1735,6 @@ gc_collect_full(PyThreadState *tstate,
     completed_scavenge(gcstate);
     _PyGC_ClearAllFreeLists(tstate->interp);
     validate_spaces(gcstate);
-    add_stats(gcstate, 2, stats);
 }
 
 /* This is the main function. Read this to understand how the
@@ -1846,10 +1844,11 @@ do_gc_callback(GCState *gcstate, const char *phase,
     assert(PyList_CheckExact(gcstate->callbacks));
     PyObject *info = NULL;
     if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        info = Py_BuildValue("{sisnsn}",
+        info = Py_BuildValue("{sisnsnsd}",
             "generation", generation,
             "collected", stats->collected,
-            "uncollectable", stats->uncollectable);
+            "uncollectable", stats->uncollectable,
+            "duration", stats->duration);
         if (info == NULL) {
             PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");
             return;
@@ -2080,15 +2079,15 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(gcstate, "start", generation, &stats);
     }
-    PyTime_t t1;
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
-        (void)PyTime_PerfCounterRaw(&t1);
         show_stats_each_generations(gcstate);
     }
     if (PyDTrace_GC_START_ENABLED()) {
         PyDTrace_GC_START(generation);
     }
+    PyTime_t start, stop;
+    (void)PyTime_PerfCounterRaw(&start);
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     switch(generation) {
         case 0:
@@ -2103,6 +2102,9 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         default:
             Py_UNREACHABLE();
     }
+    (void)PyTime_PerfCounterRaw(&stop);
+    stats.duration = PyTime_AsSecondsDouble(stop - start);
+    add_stats(gcstate, generation, &stats);
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(stats.uncollectable + stats.collected);
     }
@@ -2124,12 +2126,9 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     _Py_atomic_store_int(&gcstate->collecting, 0);
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        PyTime_t t2;
-        (void)PyTime_PerfCounterRaw(&t2);
-        double d = PyTime_AsSecondsDouble(t2 - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
-            stats.collected + stats.uncollectable, stats.uncollectable, d
+            stats.collected + stats.uncollectable, stats.uncollectable, stats.duration
         );
     }
 

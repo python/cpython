@@ -847,10 +847,11 @@ class GCTests(unittest.TestCase):
         for st in stats:
             self.assertIsInstance(st, dict)
             self.assertEqual(set(st),
-                             {"collected", "collections", "uncollectable"})
+                             {"collected", "collections", "uncollectable", "duration"})
             self.assertGreaterEqual(st["collected"], 0)
             self.assertGreaterEqual(st["collections"], 0)
             self.assertGreaterEqual(st["uncollectable"], 0)
+            self.assertGreaterEqual(st["duration"], 0)
         # Check that collection counts are incremented correctly
         if gc.isenabled():
             self.addCleanup(gc.enable)
@@ -861,11 +862,25 @@ class GCTests(unittest.TestCase):
         self.assertEqual(new[0]["collections"], old[0]["collections"] + 1)
         self.assertEqual(new[1]["collections"], old[1]["collections"])
         self.assertEqual(new[2]["collections"], old[2]["collections"])
+        self.assertGreater(new[0]["duration"], old[0]["duration"])
+        self.assertEqual(new[1]["duration"], old[1]["duration"])
+        self.assertEqual(new[2]["duration"], old[2]["duration"])
+        for stat in ["collected", "uncollectable"]:
+            self.assertGreaterEqual(new[0][stat], old[0][stat])
+            self.assertEqual(new[1][stat], old[1][stat])
+            self.assertEqual(new[2][stat], old[2][stat])
         gc.collect(2)
-        new = gc.get_stats()
-        self.assertEqual(new[0]["collections"], old[0]["collections"] + 1)
+        old, new = new, gc.get_stats()
+        self.assertEqual(new[0]["collections"], old[0]["collections"])
         self.assertEqual(new[1]["collections"], old[1]["collections"])
         self.assertEqual(new[2]["collections"], old[2]["collections"] + 1)
+        self.assertEqual(new[0]["duration"], old[0]["duration"])
+        self.assertEqual(new[1]["duration"], old[1]["duration"])
+        self.assertGreater(new[2]["duration"], old[2]["duration"])
+        for stat in ["collected", "uncollectable"]:
+            self.assertEqual(new[0][stat], old[0][stat])
+            self.assertEqual(new[1][stat], old[1][stat])
+            self.assertGreaterEqual(new[2][stat], old[2][stat])
 
     def test_freeze(self):
         gc.freeze()
@@ -1298,9 +1313,10 @@ class GCCallbackTests(unittest.TestCase):
         # Check that we got the right info dict for all callbacks
         for v in self.visit:
             info = v[2]
-            self.assertTrue("generation" in info)
-            self.assertTrue("collected" in info)
-            self.assertTrue("uncollectable" in info)
+            self.assertIn("generation", info)
+            self.assertIn("collected", info)
+            self.assertIn("uncollectable", info)
+            self.assertIn("duration", info)
 
     def test_collect_generation(self):
         self.preclean()
