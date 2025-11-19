@@ -306,9 +306,7 @@ def configure_wasi_python(context, working_dir):
             "specify via $WASI_SDK_PATH or --wasi-sdk"
         )
 
-    config_site = os.fsdecode(
-        HERE / "config.site-wasm32-wasi"
-    )
+    config_site = os.fsdecode(HERE / "config.site-wasm32-wasi")
 
     wasi_build_dir = working_dir.relative_to(CHECKOUT)
 
