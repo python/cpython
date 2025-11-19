@@ -1,0 +1,2 @@
+Ensure the repr for :exc:`ExceptionGroup` and :exc:`BaseExceptionGroup` does
+not change when its original exception list is mutated.
