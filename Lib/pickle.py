@@ -1322,12 +1322,17 @@ class _Unpickler:
                 if not key:
                     raise EOFError
                 assert isinstance(key, bytes_types)
-                dispatch[key[0]](self)
+                try:
+                    dispatch[key[0]](self)
+                except:
+                    raise UnpicklingError(f"invalid load key, '\\x{key[0]:02x}'.")
         except _Stop as stopinst:
             return stopinst.value
 
     # Return a list of items pushed in the stack after last MARK instruction.
     def pop_mark(self):
+        if not self.metastack:
+            raise UnpicklingError("could not find MARK")
         items = self.stack
         self.stack = self.metastack.pop()
         self.append = self.stack.append
