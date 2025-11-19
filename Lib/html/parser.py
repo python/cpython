@@ -8,6 +8,7 @@
 # and CDATA (character data -- only end tags are special).
 
 
+import string
 import re
 import _markupbase
 
@@ -105,6 +106,10 @@ def _replace_attr_charref(match):
 def _unescape_attrvalue(s):
     return attr_charref.sub(_replace_attr_charref, s)
 
+def _ascii_lower(s, *, table=str.maketrans(string.ascii_uppercase,
+                                           string.ascii_lowercase)):
+    return s.translate(table)
+
 
 class HTMLParser(_markupbase.ParserBase):
     """Find tags and other markup and call handler functions.
@@ -179,7 +184,7 @@ class HTMLParser(_markupbase.ParserBase):
         return self.__starttag_text
 
     def set_cdata_mode(self, elem, *, escapable=False):
-        self.cdata_elem = elem.lower()
+        self.cdata_elem = _ascii_lower(elem)
         self._escapable = escapable
         if self.cdata_elem == 'plaintext':
             self.interesting = re.compile(r'\z')
@@ -284,7 +289,7 @@ class HTMLParser(_markupbase.ParserBase):
                         self.handle_comment(rawdata[i+4:j])
                     elif startswith("<![CDATA[", i) and self._support_cdata:
                         self.unknown_decl(rawdata[i+3:])
-                    elif rawdata[i:i+9].lower() == '<!doctype':
+                    elif _ascii_lower(rawdata[i:i+9]) == '<!doctype':
                         self.handle_decl(rawdata[i+2:])
                     elif startswith("<!", i):
                         # bogus comment
@@ -372,7 +377,7 @@ class HTMLParser(_markupbase.ParserBase):
                 return -1
             self.unknown_decl(rawdata[i+3: j])
             return j + 3
-        elif rawdata[i:i+9].lower() == '<!doctype':
+        elif _ascii_lower(rawdata[i:i+9]) == '<!doctype':
             # find the closing >
             gtpos = rawdata.find('>', i+9)
             if gtpos == -1:
@@ -438,7 +443,7 @@ class HTMLParser(_markupbase.ParserBase):
         match = tagfind_tolerant.match(rawdata, i+1)
         assert match, 'unexpected call to parse_starttag()'
         k = match.end()
-        self.lasttag = tag = match.group(1).lower()
+        self.lasttag = tag = _ascii_lower(match.group(1))
         while k < endpos:
             m = attrfind_tolerant.match(rawdata, k)
             if not m:
@@ -451,7 +456,7 @@ class HTMLParser(_markupbase.ParserBase):
                 attrvalue = attrvalue[1:-1]
             if attrvalue:
                 attrvalue = _unescape_attrvalue(attrvalue)
-            attrs.append((attrname.lower(), attrvalue))
+            attrs.append((_ascii_lower(attrname), attrvalue))
             k = m.end()
 
         end = rawdata[k:endpos].strip()
@@ -507,7 +512,7 @@ class HTMLParser(_markupbase.ParserBase):
         # https://html.spec.whatwg.org/multipage/parsing.html#tag-name-state
         match = tagfind_tolerant.match(rawdata, i+2)
         assert match
-        tag = match.group(1).lower()
+        tag = _ascii_lower(match.group(1))
         self.handle_endtag(tag)
         self.clear_cdata_mode()
         return j
