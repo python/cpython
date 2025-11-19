@@ -1384,6 +1384,14 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             a.foo = 42
         self.assertIs(weakref.ref(a)(), a)
 
+        with self.assertRaises(TypeError):
+            class X(_testcapi.HeapCCollection):
+                __slots__ = ['x']
+
+        with self.assertRaises(TypeError):
+            class X(_testcapi.HeapCCollection):
+                __slots__ = ['__dict__', 'x']
+
     @support.subTests(('base', 'arg'), [
         (tuple, (1, 2, 3)),
         (int, 9876543210**2),
@@ -1413,6 +1421,13 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             a.foo = 42
         self.assertIs(weakref.ref(a)(), a)
         self.assertEqual(a, base(arg))
+
+        with self.assertRaises(TypeError):
+            class X(base):
+                __slots__ = ['x']
+        with self.assertRaises(TypeError):
+            class X(base):
+                __slots__ = ['__dict__', 'x']
 
     def test_slots_special2(self):
         # Testing __qualname__ and __classcell__ in __slots__

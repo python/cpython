@@ -4643,7 +4643,7 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
         Py_ssize_t nslot = PyTuple_GET_SIZE(et->ht_slots);
         if (ctx->base->tp_itemsize != 0) {
             PyErr_Format(PyExc_TypeError,
-                         "nonempty __slots__ not supported for subtype of '%s'",
+                         "arbitrary __slots__ not supported for subtype of '%s'",
                          ctx->base->tp_name);
             return -1;
         }
