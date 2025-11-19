@@ -83,7 +83,7 @@ _test_sock.sendall(b"ready")
         response = client_socket.recv(1024)
         if response != b"ready":
             raise RuntimeError(
-                f"Unexpected response from subprocess: {response}"
+                f"Unexpected response from subprocess: {response!r}"
             )
 
         yield SubprocessInfo(proc, client_socket)
