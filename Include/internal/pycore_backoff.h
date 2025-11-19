@@ -35,20 +35,21 @@ extern "C" {
 #define BACKOFF_MASK 7
 #define MAX_BACKOFF 6
 #define UNREACHABLE_BACKOFF 7
-#define MAX_VALUE 0x1FFF
 
-// We only use values x such that x + 1 is prime.
-static const int lookup_table[] = {1, 6, 30, 126, 508, 2052, 8190, 8190};
+#define MAKE_BACKOFF_COUNTER(value, backoff) \
+    ((_Py_BackoffCounter){ .value_and_backoff = (value << BACKOFF_BITS) | backoff })
 
-static inline _Py_BackoffCounter
-make_backoff_counter(uint16_t value, uint16_t backoff)
-{
-    assert(backoff <= UNREACHABLE_BACKOFF);
-    assert(value <= MAX_VALUE);
-    _Py_BackoffCounter result;
-    result.value_and_backoff = (value << BACKOFF_BITS) | backoff;
-    return result;
-}
+// We only use values x and backoffs b such that
+// x + 1 is prime and is near to 2**(2*b+1).
+static const _Py_BackoffCounter backoff_counter_table[] = {
+    MAKE_BACKOFF_COUNTER(1, 0),
+    MAKE_BACKOFF_COUNTER(6, 1),
+    MAKE_BACKOFF_COUNTER(30, 2),
+    MAKE_BACKOFF_COUNTER(126, 3),
+    MAKE_BACKOFF_COUNTER(508, 4),
+    MAKE_BACKOFF_COUNTER(2052, 5),
+    MAKE_BACKOFF_COUNTER(8190, 6),
+};
 
 static inline _Py_BackoffCounter
 forge_backoff_counter(uint16_t counter)
@@ -63,8 +64,8 @@ restart_backoff_counter(_Py_BackoffCounter counter)
 {
     uint16_t backoff = counter.value_and_backoff & BACKOFF_MASK;
     assert(backoff <= MAX_BACKOFF);
-    backoff = (backoff == MAX_BACKOFF) ? backoff : backoff + 1;
-    return make_backoff_counter(lookup_table[backoff], backoff);
+    backoff = (backoff >= MAX_BACKOFF) ? MAX_BACKOFF : backoff + 1;
+    return backoff_counter_table[backoff];
 }
 
 static inline _Py_BackoffCounter
@@ -112,7 +113,7 @@ trigger_backoff_counter(void)
 static inline _Py_BackoffCounter
 initial_jump_backoff_counter(void)
 {
-    return make_backoff_counter(JUMP_BACKWARD_INITIAL_VALUE,
+    return MAKE_BACKOFF_COUNTER(JUMP_BACKWARD_INITIAL_VALUE,
                                 JUMP_BACKWARD_INITIAL_BACKOFF);
 }
 
@@ -126,7 +127,7 @@ initial_jump_backoff_counter(void)
 static inline _Py_BackoffCounter
 initial_temperature_backoff_counter(void)
 {
-    return make_backoff_counter(SIDE_EXIT_INITIAL_VALUE,
+    return MAKE_BACKOFF_COUNTER(SIDE_EXIT_INITIAL_VALUE,
                                 SIDE_EXIT_INITIAL_BACKOFF);
 }
 
@@ -134,7 +135,7 @@ initial_temperature_backoff_counter(void)
 static inline _Py_BackoffCounter
 initial_unreachable_backoff_counter(void)
 {
-    return make_backoff_counter(0, UNREACHABLE_BACKOFF);
+    return MAKE_BACKOFF_COUNTER(0, UNREACHABLE_BACKOFF);
 }
 
 #ifdef __cplusplus

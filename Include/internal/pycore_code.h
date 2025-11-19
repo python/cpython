@@ -467,20 +467,15 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #endif
 
 static inline _Py_BackoffCounter
-adaptive_counter_bits(uint16_t value, uint16_t backoff) {
-    return make_backoff_counter(value, backoff);
-}
-
-static inline _Py_BackoffCounter
 adaptive_counter_warmup(void) {
-    return adaptive_counter_bits(ADAPTIVE_WARMUP_VALUE,
-                                 ADAPTIVE_WARMUP_BACKOFF);
+    return MAKE_BACKOFF_COUNTER(ADAPTIVE_WARMUP_VALUE,
+                                ADAPTIVE_WARMUP_BACKOFF);
 }
 
 static inline _Py_BackoffCounter
 adaptive_counter_cooldown(void) {
-    return adaptive_counter_bits(ADAPTIVE_COOLDOWN_VALUE,
-                                 ADAPTIVE_COOLDOWN_BACKOFF);
+    return MAKE_BACKOFF_COUNTER(ADAPTIVE_COOLDOWN_VALUE,
+                                ADAPTIVE_COOLDOWN_BACKOFF);
 }
 
 static inline _Py_BackoffCounter
