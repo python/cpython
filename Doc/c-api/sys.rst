@@ -275,7 +275,7 @@ Operating System Utilities
    Return ``0`` if the strings are equal, a negative value if *str1* is less
    than *str2*, or a positive value if *str1* is greater than *str2*.
 
-   This function is async-signal-safe and cannot fail.
+   This function cannot fail.
 
 
 .. c:function:: int PyOS_mystrnicmp(const char *str1, const char *str2, Py_ssize_t size)
@@ -286,7 +286,7 @@ Operating System Utilities
    Return ``0`` if the strings are equal, a negative value if *str1* is less
    than *str2*, or a positive value if *str1* is greater than *str2*.
 
-   This function is async-signal-safe and cannot fail.
+   This function cannot fail.
 
 
 .. _systemfunctions:
