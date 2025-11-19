@@ -168,7 +168,7 @@ class TestColorizeFunction(unittest.TestCase):
 
             # The documentation for file.fileno says:
             # > An OSError is raised if the IO object does not use a file descriptor.
-            # See https://github.com/python/cpython/issues/141570
+            # gh-141570: Check OSError is caught and handled
             with unittest.mock.patch("os.isatty", side_effect=ZeroDivisionError):
                 file = unittest.mock.MagicMock()
                 file.fileno.side_effect = OSError
