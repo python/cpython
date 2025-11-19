@@ -16,7 +16,9 @@ import sys
 import sysconfig
 import tempfile
 
-CHECKOUT = pathlib.Path(__file__).parent.parent.parent.parent
+HERE = pathlib.Path(__file__).parent
+
+CHECKOUT = HERE.parent.parent.parent
 assert (CHECKOUT / "configure").is_file(), (
     "Please update the location of the file"
 )
@@ -304,9 +306,7 @@ def configure_wasi_python(context, working_dir):
             "specify via $WASI_SDK_PATH or --wasi-sdk"
         )
 
-    config_site = os.fsdecode(
-        CHECKOUT / "Tools" / "wasm" / "wasi" / "config.site-wasm32-wasi"
-    )
+    config_site = os.fsdecode(HERE / "config.site-wasm32-wasi")
 
     wasi_build_dir = working_dir.relative_to(CHECKOUT)
 
@@ -324,10 +324,7 @@ def configure_wasi_python(context, working_dir):
     # Use PYTHONPATH to include sysconfig data which must be anchored to the
     # WASI guest's `/` directory.
     args = {
-        "GUEST_DIR": "/",
-        "HOST_DIR": CHECKOUT,
-        "ENV_VAR_NAME": "PYTHONPATH",
-        "ENV_VAR_VALUE": f"/{sysconfig_data_dir}",
+        "PYTHONPATH": f"/{sysconfig_data_dir}",
         "PYTHON_WASM": working_dir / "python.wasm",
     }
     # Check dynamically for wasmtime in case it was specified manually via
@@ -417,16 +414,18 @@ def main():
     default_wasi_sdk = find_wasi_sdk()
     default_host_runner = (
         f"{WASMTIME_HOST_RUNNER_VAR} run "
-        # Make sure the stack size will work for a pydebug
-        # build.
-        # Use 32 MiB stack.
-        "--wasm max-wasm-stack=33554432 "
-        # Enable thread support; causes use of preview1.
-        # "--wasm threads=y --wasi threads=y "
+        # For setting PYTHONPATH to the sysconfig data directory.
+        "--env PYTHONPATH={PYTHONPATH} "
         # Map the checkout to / to load the stdlib from /Lib.
-        "--dir {HOST_DIR}::{GUEST_DIR} "
-        # Set PYTHONPATH to the sysconfig data.
-        "--env {ENV_VAR_NAME}={ENV_VAR_VALUE}"
+        f"--dir {os.fsdecode(CHECKOUT)}::/ "
+        # Flags involving --optimize, --codegen, --debug, --wasm, and --wasi can be kept
+        # in a config file.
+        # We are using such a file to act as defaults in case a user wants to override
+        # only some of the settings themselves, make it easy to modify settings
+        # post-build so that they immediately apply to the Makefile instead of having to
+        # regenerate it, and allow for easy copying of the settings for anyone else who
+        # may want to use them.
+        f"--config {os.fsdecode(HERE / 'wasmtime.toml')}"
     )
     default_logdir = pathlib.Path(tempfile.gettempdir())
 
