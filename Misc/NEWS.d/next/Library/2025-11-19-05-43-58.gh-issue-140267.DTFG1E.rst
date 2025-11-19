@@ -1,0 +1,2 @@
+Fixed thread leak in multiprocessing.Manager accepter thread by adding accepter.join() when before the serve_forever() method exits.
+Fixed test_mymanager_context_prestarted test to expect either an exit code 0 or -signal.SIGTERM
