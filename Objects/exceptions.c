@@ -694,12 +694,12 @@ PyTypeObject _PyExc_ ## EXCNAME = { \
 
 #define ComplexExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCNEW, \
                                 EXCMETHODS, EXCMEMBERS, EXCGETSET, \
-                                EXCSTR, EXCDOC) \
+                                EXCSTR, EXCREPR, EXCDOC) \
 static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), 0, \
-    EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
+    EXCSTORE ## _dealloc, 0, 0, 0, 0, EXCREPR, 0, 0, 0, 0, 0, \
     EXCSTR, 0, 0, 0, \
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, \
     PyDoc_STR(EXCDOC), EXCSTORE ## _traverse, \
@@ -792,7 +792,7 @@ StopIteration_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 ComplexExtendsException(PyExc_Exception, StopIteration, StopIteration,
-                        0, 0, StopIteration_members, 0, 0,
+                        0, 0, StopIteration_members, 0, 0, 0,
                         "Signal the end from iterator.__next__().");
 
 
@@ -865,7 +865,7 @@ static PyMemberDef SystemExit_members[] = {
 };
 
 ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
-                        0, 0, SystemExit_members, 0, 0,
+                        0, 0, SystemExit_members, 0, 0, 0,
                         "Request to exit from the interpreter.");
 
 /*
@@ -1061,6 +1061,19 @@ BaseExceptionGroup_str(PyObject *op)
     return PyUnicode_FromFormat(
         "%S (%zd sub-exception%s)",
         self->msg, num_excs, num_excs > 1 ? "s" : "");
+}
+
+static PyObject *
+BaseExceptionGroup_repr(PyObject *op)
+{
+    PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
+    assert(self->msg);
+    assert(self->excs);
+
+    const char *name = _PyType_Name(Py_TYPE(self));
+    return PyUnicode_FromFormat(
+        "%s(%R, %R)", name,
+        self->msg, self->excs);
 }
 
 /*[clinic input]
@@ -1697,7 +1710,7 @@ static PyMethodDef BaseExceptionGroup_methods[] = {
 ComplexExtendsException(PyExc_BaseException, BaseExceptionGroup,
     BaseExceptionGroup, BaseExceptionGroup_new /* new */,
     BaseExceptionGroup_methods, BaseExceptionGroup_members,
-    0 /* getset */, BaseExceptionGroup_str,
+    0 /* getset */, BaseExceptionGroup_str, BaseExceptionGroup_repr,
     "A combination of multiple unrelated exceptions.");
 
 /*
@@ -2425,7 +2438,7 @@ static PyGetSetDef OSError_getset[] = {
 ComplexExtendsException(PyExc_Exception, OSError,
                         OSError, OSError_new,
                         OSError_methods, OSError_members, OSError_getset,
-                        OSError_str,
+                        OSError_str, 0,
                         "Base class for I/O related errors.");
 
 
@@ -2566,7 +2579,7 @@ static PyMethodDef NameError_methods[] = {
 ComplexExtendsException(PyExc_Exception, NameError,
                         NameError, 0,
                         NameError_methods, NameError_members,
-                        0, BaseException_str, "Name not found globally.");
+                        0, BaseException_str, 0, "Name not found globally.");
 
 /*
  *    UnboundLocalError extends NameError
@@ -2700,7 +2713,7 @@ static PyMethodDef AttributeError_methods[] = {
 ComplexExtendsException(PyExc_Exception, AttributeError,
                         AttributeError, 0,
                         AttributeError_methods, AttributeError_members,
-                        0, BaseException_str, "Attribute not found.");
+                        0, BaseException_str, 0, "Attribute not found.");
 
 /*
  *    SyntaxError extends Exception
@@ -2899,7 +2912,7 @@ static PyMemberDef SyntaxError_members[] = {
 
 ComplexExtendsException(PyExc_Exception, SyntaxError, SyntaxError,
                         0, 0, SyntaxError_members, 0,
-                        SyntaxError_str, "Invalid syntax.");
+                        SyntaxError_str, 0, "Invalid syntax.");
 
 
 /*
@@ -2959,7 +2972,7 @@ KeyError_str(PyObject *op)
 }
 
 ComplexExtendsException(PyExc_LookupError, KeyError, BaseException,
-                        0, 0, 0, 0, KeyError_str, "Mapping key not found.");
+                        0, 0, 0, 0, KeyError_str, 0, "Mapping key not found.");
 
 
 /*
