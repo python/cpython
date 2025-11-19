@@ -523,7 +523,7 @@ PyStackRef_IsHeapSafe(_PyStackRef stackref)
 {
     if (PyStackRef_IsDeferred(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
-        return obj == NULL || _Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj);
+        return obj == NULL || _PyObject_HasDeferredRefcount(obj);
     }
     return true;
 }
@@ -554,7 +554,7 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
     assert(obj != NULL);
-    if (_PyObject_HasDeferredRefcount(obj) || _Py_IsImmortal(obj)) {
+    if (_PyObject_HasDeferredRefcount(obj)) {
         return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
     }
     else {
