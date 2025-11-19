@@ -25,7 +25,8 @@ extern "C" {
    The 16-bit counter is structured as a 13-bit unsigned 'value'
    and a 3-bit 'backoff' field. When resetting the counter, the
    backoff field is incremented (until it reaches a limit) and the
-   value is set to a bit mask representing the value 2**(2*backoff+1) - 1.
+   value is set to a bit mask representing some prime value near
+   to 2**(2*backoff+1) - 1, see value_and_backoff_next.
    The maximum backoff is 6, since 7 is an UNREACHABLE_BACKOFF.
 
    There is an exceptional value which must not be updated, 0xFFFF.
