@@ -414,8 +414,8 @@ def main_loop():
         if iteration % 3 == 0:
             # Very CPU intensive
             result = cpu_intensive_work()
-        elif iteration % 5 == 0:
-            # Expensive recursive operation
+        elif iteration % 2 == 0:
+            # Expensive recursive operation (increased frequency for slower machines)
             result = slow_fibonacci(12)
         else:
             # Medium operation
