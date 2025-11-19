@@ -41,7 +41,7 @@ extern "C" {
 
 // We only use values x and backoffs b such that
 // x + 1 is near to 2**(2*b+1) and x + 1 is prime.
-static const _Py_BackoffCounter backoff_counter_table[] = {
+static _Py_BackoffCounter backoff_counter_table[] = {
     MAKE_BACKOFF_COUNTER(1, 0),
     MAKE_BACKOFF_COUNTER(6, 1),
     MAKE_BACKOFF_COUNTER(30, 2),
