@@ -44,3 +44,14 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
    with ``__name__`` and ``__qualname__`` set to *name* and *qualname*.
    A reference to *frame* is stolen by this function.  The *frame* argument
    must not be ``NULL``.
+
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+.. c:macro:: PyAsyncGenASend_CheckExact(op)
+
+   This is a :term:`soft deprecated` API that was included in Python's C API
+   by mistake.
+
+   It is solely here for completeness; do not use this API.
