@@ -860,11 +860,21 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 Deprecated API
 ^^^^^^^^^^^^^^
 
-.. c:macro:: PyLong_BASE
+These macros are :term:`soft deprecated`. They represent internal constants
+for :c:type:`PyLongObject` instances.
+
+Do not use these; use :c:func:`PyLong_GetNativeLayout` instead.
+
 .. c:macro:: PyLong_SHIFT
+
+   This is currently equivalent to ``30``.
+
+
+.. c:macro:: PyLong_BASE
+
+   This is currently equivalent to :c:expr:`1 << PyLong_SHIFT`.
+
+
 .. c:macro:: PyLong_MASK
 
-   These macros are :term:`soft deprecated`. They represent internal constants
-   for :c:type:`PyLongObject` instances.
-
-   Do not use these; use :c:func:`PyLong_GetNativeLayout` instead.
+   This is currently equivalent to :c:expr:`PyLong_BASE - 1`
