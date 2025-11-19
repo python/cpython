@@ -2677,6 +2677,9 @@ _Py_SetImmortalUntracked(PyObject *op)
     }
 #endif
 #ifdef Py_GIL_DISABLED
+    // We set these bits for all immortals, even static one, to simplify
+    // further checks on hot path. In fact, if _Py_IsImmortal(op) == 1,
+    // then _PyObject_HasDeferredRefcount(op) == 1.
     _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
 #endif
     // Check if already immortal to avoid degrading from static immortal to plain immortal
