@@ -291,10 +291,6 @@ def get_layout(ns):
                 continue
             yield dest, src
 
-    if ns.include_chm:
-        for dest, src in rglob(ns.doc_build / "htmlhelp", PYTHON_CHM_NAME):
-            yield "Doc/{}".format(dest), src
-
     if ns.include_html_doc:
         for dest, src in rglob(ns.doc_build / "html", "**/*"):
             yield "Doc/html/{}".format(dest), src

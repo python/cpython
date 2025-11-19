@@ -219,15 +219,6 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
             "Name": f"{DISPLAY_NAME} {VER_DOT} Manuals{DISPLAY_SUFFIX}",
             "Target": r"%PREFIX%Doc\html\index.html",
         })
-    elif ns.include_chm:
-        STD_PEP514[0]["Help"]["Main Python Documentation"] = {
-            "_": rf"%PREFIX%Doc\{PYTHON_CHM_NAME}",
-        }
-        STD_START[0]["Items"].append({
-            "Name": f"{DISPLAY_NAME} {VER_DOT} Manuals{DISPLAY_SUFFIX}",
-            "Target": "%WINDIR%hhc.exe",
-            "Arguments": rf"%PREFIX%Doc\{PYTHON_CHM_NAME}",
-        })
 
     STD_UNINSTALL.append({
         "kind": "uninstall",

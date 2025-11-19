@@ -66,13 +66,8 @@ Available make targets are:
   starts a local server, and automatically reloads the page in your browser
   when you make changes to reST files (Unix only).
 
-* "htmlhelp", which builds HTML files and a HTML Help project file usable to
-  convert them into a single Compiled HTML (.chm) file -- these are popular
-  under Microsoft Windows, but very handy on every platform.
-
-  To create the CHM file, you need to run the Microsoft HTML Help Workshop
-  over the generated project (.hhp) file.  The ``make.bat`` script does this for
-  you on Windows.
+* "htmlhelp", which builds HTML files in HTML Help format -- this format
+  is useful on every platform.
 
 * "latex", which builds LaTeX source files as input to ``pdflatex`` to produce
   PDF documents.
