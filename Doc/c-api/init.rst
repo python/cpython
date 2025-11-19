@@ -1390,7 +1390,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    See :c:func:`PyUnstable_ThreadState_ResetStackProtection` for undoing this operation.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: void PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
@@ -1400,7 +1400,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    See :c:func:`PyUnstable_ThreadState_SetStackProtection` for an explanation.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)

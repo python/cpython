@@ -730,14 +730,12 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('pymutex', None))
-        if sys.platform.startswith(("linux", "android", "freebsd")):
+        if sys.platform.startswith(("linux", "android", "freebsd", "wasi")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
             self.assertEqual(info.name, "nt")
         elif sys.platform == "emscripten":
             self.assertIn(info.name, {"pthread", "pthread-stubs"})
-        elif sys.platform == "wasi":
-            self.assertEqual(info.name, "pthread-stubs")
 
     def test_abi_info(self):
         info = sys.abi_info
@@ -1725,7 +1723,7 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE**2), vsize('') + 3*self.longdigit)
         # module
         if support.Py_GIL_DISABLED:
-            md_gil = 'P'
+            md_gil = '?'
         else:
             md_gil = ''
         check(unittest, size('PPPP?' + md_gil + 'NPPPPP'))
