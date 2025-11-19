@@ -37,6 +37,9 @@ extern "C" {
 #define UNREACHABLE_BACKOFF 7
 #define MAX_VALUE 0x1FFF
 
+// We only use values x such that x + 1 is prime.
+static const int lookup_table[] = {1, 6, 30, 126, 508, 2052, 8190, 8190};
+
 static inline _Py_BackoffCounter
 make_backoff_counter(uint16_t value, uint16_t backoff)
 {
@@ -61,8 +64,7 @@ restart_backoff_counter(_Py_BackoffCounter counter)
     uint16_t backoff = counter.value_and_backoff & BACKOFF_MASK;
     assert(backoff <= MAX_BACKOFF);
     backoff = (backoff == MAX_BACKOFF) ? backoff : backoff + 1;
-    uint16_t value = (1 << (2 * backoff + 1)) - 1;
-    return make_backoff_counter(value, backoff);
+    return make_backoff_counter(lookup_table[backoff], backoff);
 }
 
 static inline _Py_BackoffCounter
