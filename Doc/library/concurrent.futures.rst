@@ -715,15 +715,6 @@ Exception classes
 
    .. versionadded:: 3.14
 
-.. exception:: ExecutionFailed
-
-   Raised from :class:`~concurrent.futures.InterpreterPoolExecutor` when
-   the given initializer fails or from
-   :meth:`~concurrent.futures.Executor.submit` when there's an uncaught
-   exception from the submitted task.
-
-   .. versionadded:: 3.14
-
 .. currentmodule:: concurrent.futures.process
 
 .. exception:: BrokenProcessPool
