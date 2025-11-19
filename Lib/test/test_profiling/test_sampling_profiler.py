@@ -3356,5 +3356,52 @@ if __name__ == "__main__":
 
         self.assertIn("Results: [2, 4, 6]", stdout)
         self.assertNotIn("Can't pickle", stderr)
+
+@requires_subprocess()
+@skip_if_not_supported
+class TestProcessRunSupport(unittest.TestCase):
+    """
+    Test that ProcessPoolExecutor works correctly with profiling.sampling.
+    """
+
+    def test_process_run_pickle(self):
+        # gh-140729: test use ProcessPoolExecutor.map() can sampling
+        val = 10000
+        test_script = f'''
+import multiprocessing
+
+def worker(x):
+    print(__name__)
+    print('x =', x)
+    return x * 2
+
+if __name__ == "__main__":
+    multiprocessing.set_start_method("spawn")
+    p = multiprocessing.Process(target=worker, args=({val},))
+    p.start()
+    p.join()
+'''
+        with os_helper.temp_dir() as temp_dir:
+            script = script_helper.make_script(
+                temp_dir, 'test_process_run_pickle', test_script
+            )
+            with SuppressCrashReport():
+                with script_helper.spawn_python(
+                    "-m", "cProfile",
+                    script,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                ) as proc:
+                    try:
+                        stdout, stderr = proc.communicate(timeout=SHORT_TIMEOUT)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                        stdout, stderr = proc.communicate()
+
+        self.assertIn(f"x = {val}", stdout)
+        self.assertIn("__mp_main__", stdout)
+        self.assertNotIn("Can't pickle", stderr)
+
 if __name__ == "__main__":
     unittest.main()
