@@ -59,7 +59,7 @@ class IOBindingTest(unittest.TestCase):
         self.editwin.interp = None
         shelltext = '>>> if 1'
         self.editwin.get_prompt_text = Func(result=shelltext)
-        eq(fix(), shelltext)
+        eq(fix(), shelltext)   # Get... call and '\n' not added.
         del self.editwin.interp, self.editwin.get_prompt_text
 
         text.insert(1.0, 'a')
