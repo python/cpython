@@ -5170,7 +5170,7 @@ class TestColorizedTraceback(unittest.TestCase):
                 f'  |   File {fn}"{__file__}"{z}, line {l}{lno_foo+9}{z}, in {f}test_colorized_traceback_from_exception_group{z}',
                 f'  |     {e}foo{z}{E}(){z}',
                 f'  |     {e}~~~{z}{E}^^{z}',
-                f"  |     e = ExceptionGroup('test', [ZeroDivisionError('division by zero')])",
+                f"  |     e = ExceptionGroup('test', (ZeroDivisionError('division by zero'),))",
                 f"  |     foo = {foo}",
                 f'  |     self = <{__name__}.TestColorizedTraceback testMethod=test_colorized_traceback_from_exception_group>',
                 f'  |   File {fn}"{__file__}"{z}, line {l}{lno_foo+6}{z}, in {f}foo{z}',
