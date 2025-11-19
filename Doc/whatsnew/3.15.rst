@@ -316,9 +316,7 @@ Other language changes
   and compression. Common code patterns which can be optimized with
   :func:`~bytearray.take_bytes` are listed below.
 
-  (Contributed by Cody Maloney in :gh:`139871`.)
-
-  .. list-table:: Suggested Optimizing Refactors
+  .. list-table:: Suggested optimizing refactors
       :header-rows: 1
 
       * - Description
@@ -387,10 +385,12 @@ Other language changes
               buffer.resize(n)
               data = buffer.take_bytes()
 
+  (Contributed by Cody Maloney in :gh:`139871`.)
+
 * Many functions related to compiling or parsing Python code, such as
   :func:`compile`, :func:`ast.parse`, :func:`symtable.symtable`,
-  and :func:`importlib.abc.InspectLoader.source_to_code`, now allow to pass
-  the module name. It is needed to unambiguous :ref:`filter <warning-filter>`
+  and :func:`importlib.abc.InspectLoader.source_to_code`, now allow the module
+  name to be passed. It is needed to unambiguously :ref:`filter <warning-filter>`
   syntax warnings by module name.
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
 
@@ -776,6 +776,17 @@ unittest
   (Contributed by Garry Cairns in :gh:`134567`.)
 
 
+venv
+----
+
+* On POSIX platforms, platlib directories will be created if needed when
+  creating virtual environments, instead of using ``lib64 -> lib`` symlink.
+  This means purelib and platlib of virtual environments no longer share the
+  same ``lib`` directory on platforms where :data:`sys.platlibdir` is not
+  equal to ``lib``.
+  (Contributed by Rui Xi in :gh:`133951`.)
+
+
 warnings
 --------
 
@@ -786,17 +797,6 @@ warnings
   constructed starting from different parent directories of the filename
   (with ``/__init__.py``, ``.py`` and, on Windows, ``.pyw`` stripped).
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
-
-
-venv
-----
-
-* On POSIX platforms, platlib directories will be created if needed when
-  creating virtual environments, instead of using ``lib64 -> lib`` symlink.
-  This means purelib and platlib of virtual environments no longer share the
-  same ``lib`` directory on platforms where :data:`sys.platlibdir` is not
-  equal to ``lib``.
-  (Contributed by Rui Xi in :gh:`133951`.)
 
 
 xml.parsers.expat
@@ -1084,18 +1084,22 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C-API for creating
+  a module from a *spec* and *initfunc*.
+  (Contributed by Itamar Oren in :gh:`116146`.)
+
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
+
+* Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``.
+  It should only be used for debugging.
+  (Contributed by Victor Stinner in :gh:`141070`.)
 
 * Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and
   :c:func:`PyUnstable_ThreadState_ResetStackProtection` functions to set
   the stack protection base address and stack protection size of a Python
   thread state.
   (Contributed by Victor Stinner in :gh:`139653`.)
-
-* Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C-API for creating
-  a module from a *spec* and *initfunc*.
-  (Contributed by Itamar Oren in :gh:`116146`.)
 
 
 Changed C APIs
@@ -1242,7 +1246,7 @@ Porting to Python 3.15
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
-* :class:`sqlite3.Connection` APIs has been cleaned up.
+* :class:`sqlite3.Connection` APIs have been cleaned up.
 
   * All parameters of :func:`sqlite3.connect` except *database* are now keyword-only.
   * The first three parameters of methods :meth:`~sqlite3.Connection.create_function`
@@ -1262,7 +1266,7 @@ that may require changes to your code.
 * :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
 
-* Resource warning is now emitted for unclosed
+* A resource warning is now emitted for an unclosed
   :func:`xml.etree.ElementTree.iterparse` iterator if it opened a file.
   Use its :meth:`!close` method or the :func:`contextlib.closing` context
   manager to close it.
