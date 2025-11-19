@@ -891,8 +891,11 @@ def _stringify_single(anno):
 
 
 def _get_annotate_attr(annotate, attr, default):
-    if (value := getattr(annotate, attr, None)) is not None:
-        return value
+    # Try to get the attr on the annotate function. If it doesn't exist, we might
+    # need to look in other places on the object. If all of those fail, we can
+    # return the default at the end.
+    if hasattr(annotate, attr):
+        return getattr(annotate, attr)
 
     # Redirect method attribute access to the underlying function. The C code
     # verifies that the __func__ attribute is some kind of callable, so we need
@@ -909,7 +912,7 @@ def _get_annotate_attr(annotate, attr, default):
         (typing := sys.modules.get("typing", None))
         and isinstance(annotate, typing._BaseGenericAlias)
     ):
-        return getattr(annotate.__origin__.__init__, attr, default)
+        return _get_annotate_attr(annotate.__origin__.__init__, attr, default)
 
     # If annotate is a class instance, its __call__ is the relevant function.
     # However, __call__ Could be a method, a function descriptor, or any other callable.
@@ -921,16 +924,17 @@ def _get_annotate_attr(annotate, attr, default):
     ):
         return _get_annotate_attr(annotate.__call__, attr, default)
 
-    # Classes and generics are callable, usually the __init__ method sets attributes,
+    # Classes and generics are callable. Usually the __init__ method sets attributes,
     # so let's access this method for fake globals and the like.
+    # Technically __init__ can be any callable object, so we recurse.
     if isinstance(annotate, type) or isinstance(annotate, types.GenericAlias):
-        return getattr(annotate.__init__, attr, default)
+        return _get_annotate_attr(annotate.__init__, attr, default)
 
     # Most 'wrapped' functions, including functools.cache and staticmethod, need us
     # to manually, recursively unwrap. For partial.update_wrapper functions, the
     # attribute is accessible on the function itself, so we never get this far.
-    if (unwrapped := getattr(annotate, "__wrapped__", None)) is not None:
-        return _get_annotate_attr(unwrapped, attr, default)
+    if hasattr(annotate, "__wrapped__"):
+        return _get_annotate_attr(annotate.__wrapped__, attr, default)
 
     # Partial functions and methods both store their underlying function as a
     # func attribute. They can wrap any callable, so we need to recursively unwrap.
@@ -983,14 +987,16 @@ def _direct_call_annotate(func, annotate, *args):
     # __new__() to create the instance
     if isinstance(annotate, type):
         inst = annotate.__new__(annotate)
-        func(inst, *args)
+        # func might refer to some non-function object.
+        _direct_call_annotate(func, annotate.__init__, inst, *args)
         return inst
 
     # Generic instantiation is slightly different. Since we want to give
     # __call__ priority, the custom logic for builtin generics is here.
     if isinstance(annotate, types.GenericAlias):
         inst = annotate.__new__(annotate.__origin__)
-        func(inst, *args)
+        # func might refer to some non-function object.
+        _direct_call_annotate(func, annotate.__init__, inst, *args)
         # Try to set the original class on the instance, if possible.
         # This is the same logic used in typing for custom generics.
         try:

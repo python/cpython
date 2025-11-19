@@ -1535,6 +1535,31 @@ class TestCallAnnotateFunction(unittest.TestCase):
 
         self.assertEqual(annotations, {"x": int})
 
+    def test_callable_class_custom_init_annotate_forwardref_fakeglobals(self):
+        # Calling the class will construct a new instance and call its __init__ function
+        # as an annotate function, except this __init__ is not a method,
+        # but a partial function.
+        def custom_init(self, second, format, /, __Format=Format,
+                        __NotImplementedError=NotImplementedError):
+            if format == __Format.VALUE:
+                super(type(self), self).__init__({"x": str})
+            elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                super(type(self), self).__init__({"x": second})
+            else:
+                raise __NotImplementedError(format)
+
+        class Annotate(dict):
+            pass
+
+        Annotate.__init__ = functools.partial(custom_init, functools.Placeholder, int)
+
+        annotations = annotationlib.call_annotate_function(
+            Annotate,
+            Format.FORWARDREF
+        )
+
+        self.assertEqual(annotations, {"x": int})
+
     def test_callable_generic_class_annotate_forwardref_fakeglobals(self):
         # Subscripted generic classes are types.GenericAlias instances
         # for dict subclasses. Check that they are still
@@ -1990,7 +2015,6 @@ class TestCallAnnotateFunction(unittest.TestCase):
             else:
                 raise __NotImplementedError(format)
 
-        print("Single dispatch")
         annotations = annotationlib.call_annotate_function(
             format,
             Format.FORWARDREF,
