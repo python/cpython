@@ -421,8 +421,8 @@ def _init_non_posix(vars):
         vars['TZPATH'] = ''
     try:
         from sysconfig._windows_config import get_windows_config_vars
-        vars.update(get_windows_config_vars())
-    except ImportError:
+        vars.update(get_windows_config_vars() | vars)
+    except:
         pass
 
 #
