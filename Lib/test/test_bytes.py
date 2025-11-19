@@ -1524,6 +1524,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertRaises(BufferError, ba.take_bytes)
         self.assertEqual(ba.take_bytes(), b'abc')
 
+    @support.cpython_only  # tests an implementation detail
     def test_take_bytes_optimization(self):
         # Validate optimization around taking lots of little chunks out of a
         # much bigger buffer. Save work by only copying a little rather than
