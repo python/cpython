@@ -1095,8 +1095,6 @@ New features
 
   (Contributed by Victor Stinner in :gh:`141518`.)
 
-Patch by Victor Stinner.
-
 * Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and
   :c:func:`PyUnstable_ThreadState_ResetStackProtection` functions to set
   the stack protection base address and stack protection size of a Python
