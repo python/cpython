@@ -855,3 +855,16 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
    If *writer* is ``NULL``, no operation is performed.
 
    The writer instance and the *digits* array are invalid after the call.
+
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+.. c:macro:: PyLong_BASE
+.. c:macro:: PyLong_SHIFT
+.. c:macro:: PyLong_MASK
+
+   These macros are :term:`soft deprecated`. They represent internal constants
+   for :c:type:`PyLongObject` instances.
+
+   Do not use these; use :c:func:`PyLong_GetNativeLayout` instead.
