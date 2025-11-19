@@ -36,21 +36,26 @@ extern "C" {
 #define MAX_BACKOFF 6
 #define UNREACHABLE_BACKOFF 7
 
-#define MAKE_BACKOFF_COUNTER(value, backoff) \
-    ((_Py_BackoffCounter){ .value_and_backoff = (value << BACKOFF_BITS) | backoff })
+#define MAKE_VALUE_AND_BACKOFF(value, backoff) \
+    ((value << BACKOFF_BITS) | backoff)
+
+#define MAKE_BACKOFF_COUNTER(value, backoff)                        \
+    ((_Py_BackoffCounter){                                          \
+        .value_and_backoff = MAKE_VALUE_AND_BACKOFF(value, backoff) \
+    })
 
 // We only use values x and backoffs b such that
 // x + 1 is near to 2**(2*b+1) and x + 1 is prime.
-static _Py_BackoffCounter backoff_counter_next_table[] = {
-    MAKE_BACKOFF_COUNTER(6, 1),
-    MAKE_BACKOFF_COUNTER(30, 2),
-    MAKE_BACKOFF_COUNTER(126, 3),
-    MAKE_BACKOFF_COUNTER(508, 4),
-    MAKE_BACKOFF_COUNTER(2052, 5),
-    MAKE_BACKOFF_COUNTER(8190, 6),
+static uint16_t value_and_backoff_next[] = {
+    MAKE_VALUE_AND_BACKOFF(6, 1),
+    MAKE_VALUE_AND_BACKOFF(30, 2),
+    MAKE_VALUE_AND_BACKOFF(126, 3),
+    MAKE_VALUE_AND_BACKOFF(508, 4),
+    MAKE_VALUE_AND_BACKOFF(2052, 5),
+    MAKE_VALUE_AND_BACKOFF(8190, 6),
     // We use the same backoff counter for all backoffs >= MAX_BACKOFF.
-    MAKE_BACKOFF_COUNTER(8190, 6),
-    MAKE_BACKOFF_COUNTER(8190, 6),
+    MAKE_VALUE_AND_BACKOFF(8190, 6),
+    MAKE_VALUE_AND_BACKOFF(8190, 6),
 };
 
 static inline _Py_BackoffCounter
@@ -58,7 +63,9 @@ restart_backoff_counter(_Py_BackoffCounter counter)
 {
     uint16_t backoff = counter.value_and_backoff & BACKOFF_MASK;
     assert(backoff <= MAX_BACKOFF);
-    return backoff_counter_next_table[backoff];
+    return ((_Py_BackoffCounter){
+        .value_and_backoff = value_and_backoff_next[backoff]
+    });
 }
 
 static inline _Py_BackoffCounter
