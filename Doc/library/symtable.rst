@@ -21,11 +21,17 @@ tables.
 Generating Symbol Tables
 ------------------------
 
-.. function:: symtable(code, filename, compile_type)
+.. function:: symtable(code, filename, compile_type, *, module=None)
 
    Return the toplevel :class:`SymbolTable` for the Python source *code*.
    *filename* is the name of the file containing the code.  *compile_type* is
    like the *mode* argument to :func:`compile`.
+   The optional argument *module* specifies the module name.
+   It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
+   by module name.
+
+   .. versionadded:: 3.15
+      Added the *module* parameter.
 
 
 Examining Symbol Tables
@@ -167,11 +173,12 @@ Examining Symbol Tables
 
    .. method:: get_nonlocals()
 
-      Return a tuple containing names of nonlocals in this function.
+      Return a tuple containing names of explicitly declared nonlocals in this function.
 
    .. method:: get_frees()
 
-      Return a tuple containing names of free variables in this function.
+      Return a tuple containing names of :term:`free (closure) variables <closure variable>`
+      in this function.
 
 
 .. class:: Class
@@ -255,7 +262,7 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is a type parameter.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: is_global()
 
@@ -302,7 +309,7 @@ Examining Symbol Tables
       be free from the perspective of ``C.method``, thereby allowing
       the latter to return *1* at runtime and not *2*.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: is_assigned()
 
@@ -312,13 +319,13 @@ Examining Symbol Tables
 
       Return ``True`` if the symbol is a comprehension iteration variable.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: is_comp_cell()
 
       Return ``True`` if the symbol is a cell in an inlined comprehension.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: is_namespace()
 

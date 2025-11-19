@@ -76,8 +76,8 @@ typedef long stwodigits; /* signed variant of twodigits */
     - 1: Zero
     - 2: Negative
 
-   The third lowest bit of lv_tag is reserved for an immortality flag, but is
-   not currently used.
+   The third lowest bit of lv_tag is
+   set to 1 for the small ints.
 
    In a normalized number, ob_digit[ndigits-1] (the most significant
    digit) is never zero.  Also, in all cases, for all valid i,
@@ -100,12 +100,12 @@ struct _longobject {
     _PyLongValue long_value;
 };
 
-PyAPI_FUNC(PyLongObject*) _PyLong_New(Py_ssize_t);
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyLongObject*) _PyLong_New(Py_ssize_t);
 
 // Return a copy of src.
 PyAPI_FUNC(PyObject*) _PyLong_Copy(PyLongObject *src);
 
-PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
     int negative,
     Py_ssize_t digit_count,
     digit *digits);
@@ -138,6 +138,44 @@ _PyLong_CompactValue(const PyLongObject *op)
 
 #define PyUnstable_Long_CompactValue _PyLong_CompactValue
 
+
+/* --- Import/Export API -------------------------------------------------- */
+
+typedef struct PyLongLayout {
+    uint8_t bits_per_digit;
+    uint8_t digit_size;
+    int8_t digits_order;
+    int8_t digit_endianness;
+} PyLongLayout;
+
+PyAPI_FUNC(const PyLongLayout*) PyLong_GetNativeLayout(void);
+
+typedef struct PyLongExport {
+    int64_t value;
+    uint8_t negative;
+    Py_ssize_t ndigits;
+    const void *digits;
+    // Member used internally, must not be used for other purpose.
+    Py_uintptr_t _reserved;
+} PyLongExport;
+
+PyAPI_FUNC(int) PyLong_Export(
+    PyObject *obj,
+    PyLongExport *export_long);
+PyAPI_FUNC(void) PyLong_FreeExport(
+    PyLongExport *export_long);
+
+
+/* --- PyLongWriter API --------------------------------------------------- */
+
+typedef struct PyLongWriter PyLongWriter;
+
+PyAPI_FUNC(PyLongWriter*) PyLongWriter_Create(
+    int negative,
+    Py_ssize_t ndigits,
+    void **digits);
+PyAPI_FUNC(PyObject*) PyLongWriter_Finish(PyLongWriter *writer);
+PyAPI_FUNC(void) PyLongWriter_Discard(PyLongWriter *writer);
 
 #ifdef __cplusplus
 }

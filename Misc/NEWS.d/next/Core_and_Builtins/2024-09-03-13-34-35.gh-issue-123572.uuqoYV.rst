@@ -1,2 +1,0 @@
-Fix key mappings for various F-keys in Windows for the new REPL. Patch by
-devdanzin

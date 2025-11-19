@@ -12,7 +12,7 @@
 --------------
 
 The :mod:`http.cookiejar` module defines classes for automatic handling of HTTP
-cookies.  It is useful for accessing web sites that require small pieces of data
+cookies.  It is useful for accessing websites that require small pieces of data
 -- :dfn:`cookies` -- to be set on the client machine by an HTTP response from a
 web server, and then returned to the server in later HTTP requests.
 
@@ -570,7 +570,7 @@ Netscape protocol strictness switches:
 
    Don't allow setting cookies whose path doesn't path-match request URI.
 
-:attr:`strict_ns_domain` is a collection of flags.  Its value is constructed by
+:attr:`~DefaultCookiePolicy.strict_ns_domain` is a collection of flags.  Its value is constructed by
 or-ing together (for example, ``DomainStrictNoDots|DomainStrictNonDomain`` means
 both flags are set).
 

@@ -31,7 +31,9 @@ PostgreSQL or Oracle.
 
 The :mod:`!sqlite3` module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
-requires SQLite 3.15.2 or newer.
+requires the third-party `SQLite <https://sqlite.org/>`_ library.
+
+.. include:: ../includes/optional-module.rst
 
 This document includes four main sections:
 
@@ -259,10 +261,10 @@ Reference
 Module functions
 ^^^^^^^^^^^^^^^^
 
-.. function:: connect(database, timeout=5.0, detect_types=0, \
+.. function:: connect(database, *, timeout=5.0, detect_types=0, \
                       isolation_level="DEFERRED", check_same_thread=True, \
                       factory=sqlite3.Connection, cached_statements=128, \
-                      uri=False, *, \
+                      uri=False, \
                       autocommit=sqlite3.LEGACY_TRANSACTION_CONTROL)
 
    Open a connection to an SQLite database.
@@ -290,9 +292,6 @@ Module functions
        :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES`
        to enable this.
        Column names takes precedence over declared types if both flags are set.
-       Types cannot be detected for generated fields (for example ``max(data)``),
-       even when the *detect_types* parameter is set; :class:`str` will be
-       returned instead.
        By default (``0``), type detection is disabled.
 
    :param isolation_level:
@@ -358,11 +357,8 @@ Module functions
    .. versionchanged:: 3.12
       Added the *autocommit* parameter.
 
-   .. versionchanged:: 3.13
-      Positional use of the parameters *timeout*, *detect_types*,
-      *isolation_level*, *check_same_thread*, *factory*, *cached_statements*,
-      and *uri* is deprecated.
-      They will become keyword-only parameters in Python 3.15.
+   .. versionchanged:: 3.15
+      All parameters except *database* are now keyword-only.
 
 .. function:: complete_statement(statement)
 
@@ -436,21 +432,6 @@ Module constants
    old style (pre-Python 3.12) transaction control behaviour.
    See :ref:`sqlite3-transaction-control-isolation-level` for more information.
 
-.. data:: PARSE_COLNAMES
-
-   Pass this flag value to the *detect_types* parameter of
-   :func:`connect` to look up a converter function by
-   using the type name, parsed from the query column name,
-   as the converter dictionary key.
-   The type name must be wrapped in square brackets (``[]``).
-
-   .. code-block:: sql
-
-      SELECT p as "p [point]" FROM test;  ! will look up converter "point"
-
-   This flag may be combined with :const:`PARSE_DECLTYPES` using the ``|``
-   (bitwise or) operator.
-
 .. data:: PARSE_DECLTYPES
 
    Pass this flag value to the *detect_types* parameter of
@@ -470,6 +451,27 @@ Module constants
        )
 
    This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
+   (bitwise or) operator.
+
+   .. note::
+
+      Generated fields (for example ``MAX(p)``) are returned as :class:`str`.
+      Use :const:`!PARSE_COLNAMES` to enforce types for such queries.
+
+.. data:: PARSE_COLNAMES
+
+   Pass this flag value to the *detect_types* parameter of
+   :func:`connect` to look up a converter function by
+   using the type name, parsed from the query column name,
+   as the converter dictionary key.
+   The query column name must be wrapped in double quotes (``"``)
+   and the type name must be wrapped in square brackets (``[]``).
+
+   .. code-block:: sql
+
+      SELECT MAX(p) as "p [point]" FROM test;  ! will look up converter "point"
+
+   This flag may be combined with :const:`PARSE_DECLTYPES` using the ``|``
    (bitwise or) operator.
 
 .. data:: SQLITE_OK
@@ -506,6 +508,15 @@ Module constants
 
    Version number of the runtime SQLite library as a :class:`tuple` of
    :class:`integers <int>`.
+
+.. data:: SQLITE_KEYWORDS
+
+   A :class:`tuple` containing all SQLite keywords.
+
+   This constant is only available if Python was compiled with SQLite
+   3.24.0 or greater.
+
+   .. versionadded:: 3.15
 
 .. data:: threadsafety
 
@@ -611,7 +622,7 @@ Connection objects
       supplied, this must be a :term:`callable` returning
       an instance of :class:`Cursor` or its subclasses.
 
-   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
+   .. method:: blobopen(table, column, rowid, /, *, readonly=False, name="main")
 
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
@@ -622,8 +633,8 @@ Connection objects
       :param str column:
           The name of the column where the blob is located.
 
-      :param str row:
-          The name of the row where the blob is located.
+      :param int rowid:
+          The row id where the blob is located.
 
       :param bool readonly:
           Set to ``True`` if the blob should be opened without write
@@ -690,7 +701,7 @@ Connection objects
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
       Return the new cursor object.
 
-   .. method:: create_function(name, narg, func, *, deterministic=False)
+   .. method:: create_function(name, narg, func, /, *, deterministic=False)
 
       Create or remove a user-defined SQL function.
 
@@ -716,6 +727,9 @@ Connection objects
       .. versionchanged:: 3.8
          Added the *deterministic* parameter.
 
+      .. versionchanged:: 3.15
+         The first three parameters are now positional-only.
+
       Example:
 
       .. doctest::
@@ -730,13 +744,8 @@ Connection objects
          ('acbd18db4cc2f85cedef654fccc4a4d8',)
          >>> con.close()
 
-      .. versionchanged:: 3.13
 
-         Passing *name*, *narg*, and *func* as keyword arguments is deprecated.
-         These parameters will become positional-only in Python 3.15.
-
-
-   .. method:: create_aggregate(name, n_arg, aggregate_class)
+   .. method:: create_aggregate(name, n_arg, aggregate_class, /)
 
       Create or remove a user-defined SQL aggregate function.
 
@@ -759,6 +768,9 @@ Connection objects
 
           Set to ``None`` to remove an existing SQL aggregate function.
       :type aggregate_class: :term:`class` | None
+
+      .. versionchanged:: 3.15
+         All three parameters are now positional-only.
 
       Example:
 
@@ -788,11 +800,6 @@ Connection objects
          :hide:
 
          3
-
-      .. versionchanged:: 3.13
-
-         Passing *name*, *n_arg*, and *aggregate_class* as keyword arguments is deprecated.
-         These parameters will become positional-only in Python 3.15.
 
 
    .. method:: create_window_function(name, num_params, aggregate_class, /)
@@ -934,7 +941,7 @@ Connection objects
       Aborted queries will raise an :exc:`OperationalError`.
 
 
-   .. method:: set_authorizer(authorizer_callback)
+   .. method:: set_authorizer(authorizer_callback, /)
 
       Register :term:`callable` *authorizer_callback* to be invoked
       for each attempt to access a column of a table in the database.
@@ -959,12 +966,11 @@ Connection objects
       .. versionchanged:: 3.11
          Added support for disabling the authorizer using ``None``.
 
-      .. versionchanged:: 3.13
-         Passing *authorizer_callback* as a keyword argument is deprecated.
-         The parameter will become positional-only in Python 3.15.
+      .. versionchanged:: 3.15
+         The only parameter is now positional-only.
 
 
-   .. method:: set_progress_handler(progress_handler, n)
+   .. method:: set_progress_handler(progress_handler, /, n)
 
       Register :term:`callable` *progress_handler* to be invoked for every *n*
       instructions of the SQLite virtual machine. This is useful if you want to
@@ -978,12 +984,11 @@ Connection objects
       currently executing query and cause it to raise a :exc:`DatabaseError`
       exception.
 
-      .. versionchanged:: 3.13
-         Passing *progress_handler* as a keyword argument is deprecated.
-         The parameter will become positional-only in Python 3.15.
+      .. versionchanged:: 3.15
+         The first parameter is now positional-only.
 
 
-   .. method:: set_trace_callback(trace_callback)
+   .. method:: set_trace_callback(trace_callback, /)
 
       Register :term:`callable` *trace_callback* to be invoked
       for each SQL statement that is actually executed by the SQLite backend.
@@ -1006,9 +1011,8 @@ Connection objects
 
       .. versionadded:: 3.3
 
-      .. versionchanged:: 3.13
-         Passing *trace_callback* as a keyword argument is deprecated.
-         The parameter will become positional-only in Python 3.15.
+      .. versionchanged:: 3.15
+         The first parameter is now positional-only.
 
 
    .. method:: enable_load_extension(enabled, /)
@@ -1148,7 +1152,7 @@ Connection objects
           the *remaining* number of pages still to be copied,
           and the *total* number of pages.
           Defaults to ``None``.
-      :type progress: :term:`callback` | None
+      :type progress: :term:`callback` | None
 
       :param str name:
           The name of the database to back up.
@@ -1489,7 +1493,9 @@ Cursor objects
       :type parameters: :class:`dict` | :term:`sequence`
 
       :raises ProgrammingError:
-         If *sql* contains more than one SQL statement.
+         When *sql* contains more than one SQL statement.
+         When :ref:`named placeholders <sqlite3-placeholders>` are used
+         and *parameters* is a sequence instead of a :class:`dict`.
 
       If :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`,
@@ -1498,13 +1504,11 @@ Cursor objects
       and there is no open transaction,
       a transaction is implicitly opened before executing *sql*.
 
-      .. deprecated-removed:: 3.12 3.14
+      .. versionchanged:: 3.14
 
-         :exc:`DeprecationWarning` is emitted if
+         :exc:`ProgrammingError` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
          and *parameters* is a sequence instead of a :class:`dict`.
-         Starting with Python 3.14, :exc:`ProgrammingError` will
-         be raised instead.
 
       Use :meth:`executescript` to execute multiple SQL statements.
 
@@ -1526,8 +1530,10 @@ Cursor objects
       :type parameters: :term:`iterable`
 
       :raises ProgrammingError:
-         If *sql* contains more than one SQL statement,
-         or is not a DML statement.
+         When *sql* contains more than one SQL statement
+         or is not a DML statement,
+         When :ref:`named placeholders <sqlite3-placeholders>` are used
+         and the items in *parameters* are sequences instead of :class:`dict`\s.
 
       Example:
 
@@ -1551,14 +1557,12 @@ Cursor objects
 
       .. _RETURNING clauses: https://www.sqlite.org/lang_returning.html
 
-      .. deprecated-removed:: 3.12 3.14
+      .. versionchanged:: 3.14
 
-         :exc:`DeprecationWarning` is emitted if
+         :exc:`ProgrammingError` is emitted if
          :ref:`named placeholders <sqlite3-placeholders>` are used
          and the items in *parameters* are sequences
          instead of :class:`dict`\s.
-         Starting with Python 3.14, :exc:`ProgrammingError` will
-         be raised instead.
 
    .. method:: executescript(sql_script, /)
 
@@ -1609,6 +1613,9 @@ Cursor objects
       If the *size* parameter is used, then it is best for it to retain the same
       value from one :meth:`fetchmany` call to the next.
 
+      .. versionchanged:: 3.15
+         Negative *size* values are rejected by raising :exc:`ValueError`.
+
    .. method:: fetchall()
 
       Return all (remaining) rows of a query result as a :class:`list`.
@@ -1635,6 +1642,9 @@ Cursor objects
 
       Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
       The default value is 1 which means a single row would be fetched per call.
+
+      .. versionchanged:: 3.15
+         Negative values are rejected by raising :exc:`ValueError`.
 
    .. attribute:: connection
 
@@ -2286,7 +2296,7 @@ This section shows recipes for common adapters and converters.
 
    def adapt_datetime_iso(val):
        """Adapt datetime.datetime to timezone-naive ISO 8601 date."""
-       return val.isoformat()
+       return val.replace(tzinfo=None).isoformat()
 
    def adapt_datetime_epoch(val):
        """Adapt datetime.datetime to Unix timestamp."""
@@ -2442,6 +2452,7 @@ Some useful URI tricks include:
    >>> con.execute("CREATE TABLE readonly(data)")
    Traceback (most recent call last):
    OperationalError: attempt to write a readonly database
+   >>> con.close()
 
 * Do not implicitly create a new database file if it does not already exist;
   will raise :exc:`~sqlite3.OperationalError` if unable to create a new file:

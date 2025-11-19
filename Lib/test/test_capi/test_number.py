@@ -1,10 +1,9 @@
 import itertools
 import operator
-import sys
 import unittest
 import warnings
 
-from test.support import cpython_only, import_helper
+from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
 from _testcapi import PY_SSIZE_T_MAX, PY_SSIZE_T_MIN
@@ -205,8 +204,9 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(MemoryError, inplacemultiply, [1, 2], PY_SSIZE_T_MAX//2 + 1)
 
     def test_misc_power(self):
-        # PyNumber_Power()
+        # PyNumber_Power(), PyNumber_InPlacePower()
         power = _testcapi.number_power
+        inplacepower = _testcapi.number_inplacepower
 
         class HasPow(WithDunder):
             methname = '__pow__'
@@ -216,6 +216,38 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, power, 4, 11, 1.25)
         self.assertRaises(TypeError, power, 4, 11, HasPow.with_val(NotImplemented))
         self.assertRaises(TypeError, power, 4, 11, object())
+        self.assertEqual(inplacepower(4, 11, 5), pow(4, 11, 5))
+        self.assertRaises(TypeError, inplacepower, 4, 11, 1.25)
+        self.assertRaises(TypeError, inplacepower, 4, 11, object())
+
+        class X:
+            def __pow__(*args):
+                return args
+
+        x = X()
+        self.assertEqual(power(x, 11), (x, 11))
+        self.assertEqual(inplacepower(x, 11), (x, 11))
+        self.assertEqual(power(x, 11, 5), (x, 11, 5))
+        self.assertEqual(inplacepower(x, 11, 5), (x, 11, 5))
+
+        class X:
+            def __rpow__(*args):
+                return args
+
+        x = X()
+        self.assertEqual(power(4, x), (x, 4))
+        self.assertEqual(inplacepower(4, x), (x, 4))
+        self.assertEqual(power(4, x, 5), (x, 4, 5))
+        self.assertEqual(inplacepower(4, x, 5), (x, 4, 5))
+
+        class X:
+            def __ipow__(*args):
+                return args
+
+        x = X()
+        self.assertEqual(inplacepower(x, 11), (x, 11))
+        # XXX: In-place power doesn't pass the third arg to __ipow__.
+        self.assertEqual(inplacepower(x, 11, 5), (x, 11))
 
     def test_long(self):
         # Test PyNumber_Long()

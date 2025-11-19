@@ -1,1 +1,0 @@
-Updated macOS installer build to use OpenSSL 3.0.15.

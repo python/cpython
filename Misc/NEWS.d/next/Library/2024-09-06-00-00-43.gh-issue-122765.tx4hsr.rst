@@ -1,1 +1,0 @@
-Fix unbalanced quote errors occurring when activate.csh in :mod:`venv` was sourced with a custom prompt containing unpaired quotes or newlines.

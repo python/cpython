@@ -1,3 +1,0 @@
-Make sure that branches in :keyword:`while` statements have consistent offsets for
-:mod:`sys.monitoring`. :keyword:`!while` statements are now compiled with a simple
-jump at the end of the body, instead of duplicating the test.

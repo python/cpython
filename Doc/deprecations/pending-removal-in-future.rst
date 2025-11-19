@@ -1,17 +1,20 @@
-Pending Removal in Future Versions
+Pending removal in future versions
 ----------------------------------
 
 The following APIs will be removed in the future,
 although there is currently no date scheduled for their removal.
 
-* :mod:`argparse`: Nesting argument groups and nesting mutually exclusive
-  groups are deprecated.
+* :mod:`argparse`:
 
-* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
+  * Nesting argument groups and nesting mutually exclusive
+    groups are deprecated.
+  * Passing the undocumented keyword argument *prefix_chars* to
+    :meth:`~argparse.ArgumentParser.add_argument_group` is now
+    deprecated.
+  * The :class:`argparse.FileType` type converter is deprecated.
 
 * :mod:`builtins`:
 
-  * ``bool(NotImplemented)``.
   * Generators: ``throw(type, exc, tb)`` and ``athrow(type, exc, tb)``
     signature is deprecated: use ``throw(exc)`` and ``athrow(exc)`` instead,
     the single argument signature.
@@ -43,6 +46,8 @@ although there is currently no date scheduled for their removal.
   :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
+* :mod:`codecs`: use :func:`open` instead of :func:`codecs.open`. (:gh:`133038`)
+
 * :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
   instead.
 
@@ -57,7 +62,6 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`importlib`:
 
-  * ``load_module()`` method: use ``exec_module()`` instead.
   * :func:`~importlib.util.cache_from_source` *debug_override* parameter is
     deprecated: use the *optimization* parameter instead.
 
@@ -72,7 +76,7 @@ although there is currently no date scheduled for their removal.
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
 
-* :mod:`os`: Calling :func:`os.register_at_fork` in multi-threaded process.
+* :mod:`os`: Calling :func:`os.register_at_fork` in a multi-threaded process.
 
 * :class:`!pydoc.ErrorDuringImport`: A tuple value for *exc_info* parameter is
   deprecated, use an exception instance.
@@ -83,8 +87,6 @@ although there is currently no date scheduled for their removal.
   replacement strings can now only contain ASCII letters and digits and
   underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
-
-* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
 * :mod:`shutil`: :func:`~shutil.rmtree`'s *onerror* parameter is deprecated in
   Python 3.12; use the *onexc* parameter instead.
@@ -106,9 +108,6 @@ although there is currently no date scheduled for their removal.
   * ``ssl.TLSVersion.TLSv1``
   * ``ssl.TLSVersion.TLSv1_1``
 
-* :func:`sysconfig.is_python_build` *check_home* parameter is deprecated and
-  ignored.
-
 * :mod:`threading` methods:
 
   * :meth:`!threading.Condition.notifyAll`: use :meth:`~threading.Condition.notify_all`.
@@ -121,6 +120,11 @@ although there is currently no date scheduled for their removal.
   * :meth:`!threading.activeCount`: use :meth:`threading.active_count`.
 
 * :class:`typing.Text` (:gh:`92332`).
+
+* The internal class ``typing._UnionGenericAlias`` is no longer used to implement
+  :class:`typing.Union`. To preserve compatibility with users using this private
+  class, a compatibility shim will be provided until at least Python 3.17. (Contributed by
+  Jelle Zijlstra in :gh:`105499`.)
 
 * :class:`unittest.IsolatedAsyncioTestCase`: it is deprecated to return a value
   that is not ``None`` from a test case.
@@ -139,10 +143,6 @@ although there is currently no date scheduled for their removal.
   * ``splitvalue()``
   * ``to_bytes()``
 
-* :mod:`urllib.request`: :class:`~urllib.request.URLopener` and
-  :class:`~urllib.request.FancyURLopener` style of invoking requests is
-  deprecated. Use newer :func:`~urllib.request.urlopen` functions and methods.
-
 * :mod:`wsgiref`: ``SimpleHandler.stdout.write()`` should not do partial
   writes.
 
@@ -151,5 +151,5 @@ although there is currently no date scheduled for their removal.
   will always return ``True``. Prefer explicit ``len(elem)`` or
   ``elem is not None`` tests instead.
 
-* :meth:`zipimport.zipimporter.load_module` is deprecated:
-  use :meth:`~zipimport.zipimporter.exec_module` instead.
+* :func:`sys._clear_type_cache` is deprecated:
+  use :func:`sys._clear_internal_caches` instead.

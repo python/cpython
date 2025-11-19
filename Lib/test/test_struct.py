@@ -1,21 +1,27 @@
 from collections import abc
+from itertools import combinations
 import array
 import gc
 import math
 import operator
 import unittest
+import platform
 import struct
 import sys
 import weakref
 
 from test import support
-from test.support import import_helper, suppress_immortalization
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok
+from test.support.testcase import ComplexesAreIdenticalMixin
 
 ISBIGENDIAN = sys.byteorder == "big"
 
 integer_codes = 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q', 'n', 'N'
 byteorders = '', '@', '=', '<', '>', '!'
+
+INF = float('inf')
+NAN = float('nan')
 
 def iter_integer_formats(byteorders=byteorders):
     for code in integer_codes:
@@ -33,7 +39,7 @@ def bigendian_to_native(value):
     else:
         return string_reverse(value)
 
-class StructTest(unittest.TestCase):
+class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     def test_isbigendian(self):
         self.assertEqual((struct.pack('=i', 1)[0] == 0), ISBIGENDIAN)
 
@@ -529,6 +535,9 @@ class StructTest(unittest.TestCase):
 
         for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:
             self.assertTrue(struct.unpack('>?', c)[0])
+            self.assertTrue(struct.unpack('<?', c)[0])
+            self.assertTrue(struct.unpack('=?', c)[0])
+            self.assertTrue(struct.unpack('@?', c)[0])
 
     def test_count_overflow(self):
         hugecount = '{}b'.format(sys.maxsize+1)
@@ -680,10 +689,9 @@ class StructTest(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
         self.assertEqual(stdout.rstrip(), b"")
-        self.assertIn(b"Exception ignored in:", stderr)
+        self.assertIn(b"Exception ignored while calling deallocator", stderr)
         self.assertIn(b"C.__del__", stderr)
 
-    @suppress_immortalization()
     def test__struct_reference_cycle_cleaned_up(self):
         # Regression test for python/cpython#94207.
 
@@ -782,6 +790,33 @@ class StructTest(unittest.TestCase):
     def test_repr(self):
         s = struct.Struct('=i2H')
         self.assertEqual(repr(s), f'Struct({s.format!r})')
+
+    def test_c_complex_round_trip(self):
+        values = [complex(*_) for _ in combinations([1, -1, 0.0, -0.0, 2,
+                                                     -3, INF, -INF, NAN], 2)]
+        for z in values:
+            for f in ['F', 'D', '>F', '>D', '<F', '<D']:
+                with self.subTest(z=z, format=f):
+                    round_trip = struct.unpack(f, struct.pack(f, z))[0]
+                    self.assertComplexesAreIdentical(z, round_trip)
+
+    @unittest.skipIf(
+        support.is_android or support.is_apple_mobile,
+        "Subinterpreters are not supported on Android and iOS"
+    )
+    def test_endian_table_init_subinterpreters(self):
+        # Verify that the _struct extension module can be initialized
+        # concurrently in subinterpreters (gh-140260).
+        try:
+            from concurrent.futures import InterpreterPoolExecutor
+        except ImportError:
+            raise unittest.SkipTest("InterpreterPoolExecutor not available")
+
+        code = "import struct"
+        with InterpreterPoolExecutor(max_workers=5) as executor:
+            results = executor.map(exec, [code] * 5)
+            self.assertListEqual(list(results), [None] * 5)
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """
@@ -900,10 +935,17 @@ class UnpackIteratorTest(unittest.TestCase):
 
         # Check that packing produces a bit pattern representing a quiet NaN:
         # all exponent bits and the msb of the fraction should all be 1.
+        if platform.machine().startswith('parisc'):
+            # HP PA RISC uses 0 for quiet, see:
+            # https://en.wikipedia.org/wiki/NaN#Encoding
+            expected = 0x7c
+        else:
+            expected = 0x7e
+
         packed = struct.pack('<e', math.nan)
-        self.assertEqual(packed[1] & 0x7e, 0x7e)
+        self.assertEqual(packed[1] & 0x7e, expected)
         packed = struct.pack('<e', -math.nan)
-        self.assertEqual(packed[1] & 0x7e, 0x7e)
+        self.assertEqual(packed[1] & 0x7e, expected)
 
         # Checks for round-to-even behavior
         format_bits_float__rounding_list = [

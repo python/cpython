@@ -402,8 +402,8 @@ the heap. Should speed up dispatch in the interpreter.
 .. nonce: eUn4p5
 .. section: Core and Builtins
 
-Static methods (:func:`@staticmethod <staticmethod>`) and class methods
-(:func:`@classmethod <classmethod>`) now inherit the method attributes
+Static methods (:deco:`staticmethod`) and class methods
+(:deco:`classmethod`) now inherit the method attributes
 (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
 ``__annotations__``) and have a new ``__wrapped__`` attribute. Patch by
 Victor Stinner.
@@ -454,7 +454,7 @@ file locations.
 .. nonce: VSF3vg
 .. section: Core and Builtins
 
-Static methods (:func:`@staticmethod <staticmethod>`) are now callable as
+Static methods (:deco:`staticmethod`) are now callable as
 regular functions. Patch by Victor Stinner.
 
 ..
@@ -941,7 +941,7 @@ result from ``entry_points()`` as deprecated.
 
 ..
 
-.. gh: 47383
+.. gh-issue: 47383
 .. date: 2021-04-08-19-32-26
 .. nonce: YI1hdL
 .. section: Library

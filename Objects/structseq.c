@@ -12,7 +12,8 @@
 #include "pycore_modsupport.h"    // _PyArg_NoPositional()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_tuple.h"         // _PyTuple_RESET_HASH_CACHE()
+#include "pycore_typeobject.h"    // _PyStaticType_FiniBuiltin()
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
@@ -72,6 +73,7 @@ PyStructSequence_New(PyTypeObject *type)
     obj = PyObject_GC_NewVar(PyStructSequence, type, size);
     if (obj == NULL)
         return NULL;
+    _PyTuple_RESET_HASH_CACHE(obj);
     /* Hack the size of the variable object, so invisible fields don't appear
      to Python code. */
     Py_SET_SIZE(obj, vsize);
@@ -108,8 +110,9 @@ PyStructSequence_GetItem(PyObject *op, Py_ssize_t index)
 
 
 static int
-structseq_traverse(PyStructSequence *obj, visitproc visit, void *arg)
+structseq_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyStructSequence *obj = (PyStructSequence *)op;
     if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         Py_VISIT(Py_TYPE(obj));
     }
@@ -122,8 +125,9 @@ structseq_traverse(PyStructSequence *obj, visitproc visit, void *arg)
 }
 
 static void
-structseq_dealloc(PyStructSequence *obj)
+structseq_dealloc(PyObject *op)
 {
+    PyStructSequence *obj = (PyStructSequence *)op;
     Py_ssize_t i, size;
     PyObject_GC_UnTrack(obj);
 
@@ -263,93 +267,78 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
 
 
 static PyObject *
-structseq_repr(PyStructSequence *obj)
+structseq_repr(PyObject *op)
 {
+    PyStructSequence *obj = (PyStructSequence *)op;
     PyTypeObject *typ = Py_TYPE(obj);
-    _PyUnicodeWriter writer;
 
-    /* Write "typename(" */
-    PyObject *type_name = PyUnicode_DecodeUTF8(typ->tp_name,
-                                               strlen(typ->tp_name),
-                                               NULL);
-    if (type_name == NULL) {
+    // count 5 characters per item: "x=1, "
+    Py_ssize_t type_name_len = strlen(typ->tp_name);
+    Py_ssize_t prealloc = (type_name_len + 1
+                           + VISIBLE_SIZE(obj) * 5 + 1);
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
+    if (writer == NULL) {
         return NULL;
     }
 
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
-    /* count 5 characters per item: "x=1, " */
-    writer.min_length = (PyUnicode_GET_LENGTH(type_name) + 1
-                         + VISIBLE_SIZE(obj) * 5 + 1);
-
-    if (_PyUnicodeWriter_WriteStr(&writer, type_name) < 0) {
-        Py_DECREF(type_name);
+    // Write "typename("
+    if (PyUnicodeWriter_WriteUTF8(writer, typ->tp_name, type_name_len) < 0) {
         goto error;
     }
-    Py_DECREF(type_name);
-
-    if (_PyUnicodeWriter_WriteChar(&writer, '(') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
         goto error;
     }
 
     for (Py_ssize_t i=0; i < VISIBLE_SIZE(obj); i++) {
         if (i > 0) {
-            /* Write ", " */
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+            // Write ", "
+            if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
+                goto error;
+            }
+            if (PyUnicodeWriter_WriteChar(writer, ' ') < 0) {
                 goto error;
             }
         }
 
-        /* Write "name=repr" */
+        // Write name
         const char *name_utf8 = typ->tp_members[i].name;
         if (name_utf8 == NULL) {
-            PyErr_Format(PyExc_SystemError, "In structseq_repr(), member %zd name is NULL"
+            PyErr_Format(PyExc_SystemError,
+                         "In structseq_repr(), member %zd name is NULL"
                          " for type %.500s", i, typ->tp_name);
             goto error;
         }
-
-        PyObject *name = PyUnicode_DecodeUTF8(name_utf8, strlen(name_utf8), NULL);
-        if (name == NULL) {
-            goto error;
-        }
-        if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
-            Py_DECREF(name);
-            goto error;
-        }
-        Py_DECREF(name);
-
-        if (_PyUnicodeWriter_WriteChar(&writer, '=') < 0) {
+        if (PyUnicodeWriter_WriteUTF8(writer, name_utf8, -1) < 0) {
             goto error;
         }
 
+        // Write "=" + repr(value)
+        if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
+            goto error;
+        }
         PyObject *value = PyStructSequence_GetItem((PyObject*)obj, i);
         assert(value != NULL);
-        PyObject *repr = PyObject_Repr(value);
-        if (repr == NULL) {
+        if (PyUnicodeWriter_WriteRepr(writer, value) < 0) {
             goto error;
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, repr) < 0) {
-            Py_DECREF(repr);
-            goto error;
-        }
-        Py_DECREF(repr);
     }
 
-    if (_PyUnicodeWriter_WriteChar(&writer, ')') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
         goto error;
     }
 
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
 
 static PyObject *
-structseq_reduce(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
+structseq_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyStructSequence *self = (PyStructSequence*)op;
     PyObject* tup = NULL;
     PyObject* dict = NULL;
     PyObject* result;
@@ -364,7 +353,7 @@ structseq_reduce(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
     if (n_unnamed_fields < 0) {
         return NULL;
     }
-    tup = _PyTuple_FromArray(self->ob_item, n_visible_fields);
+    tup = PyTuple_FromArray(self->ob_item, n_visible_fields);
     if (!tup)
         goto error;
 
@@ -393,8 +382,9 @@ error:
 
 
 static PyObject *
-structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
+structseq_replace(PyObject *op, PyObject *args, PyObject *kwargs)
 {
+    PyStructSequence *self = (PyStructSequence*)op;
     PyStructSequence *result = NULL;
     Py_ssize_t n_fields, n_unnamed_fields, i;
 
@@ -463,7 +453,7 @@ error:
 }
 
 static PyMethodDef structseq_methods[] = {
-    {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
+    {"__reduce__", structseq_reduce, METH_NOARGS, NULL},
     {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
         "Return a copy of the structure with new values for the specified fields.")},
@@ -585,14 +575,14 @@ initialize_static_fields(PyTypeObject *type, PyStructSequence_Desc *desc,
     Py_ssize_t n_hidden = n_members - desc->n_in_sequence;
     type->tp_basicsize = sizeof(PyStructSequence) + (n_hidden - 1) * sizeof(PyObject *);
     type->tp_itemsize = sizeof(PyObject *);
-    type->tp_dealloc = (destructor)structseq_dealloc;
-    type->tp_repr = (reprfunc)structseq_repr;
+    type->tp_dealloc = structseq_dealloc;
+    type->tp_repr = structseq_repr;
     type->tp_doc = desc->doc;
     type->tp_base = &PyTuple_Type;
     type->tp_methods = structseq_methods;
     type->tp_new = structseq_new;
     type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | tp_flags;
-    type->tp_traverse = (traverseproc) structseq_traverse;
+    type->tp_traverse = structseq_traverse;
     type->tp_members = tp_members;
 }
 
@@ -725,7 +715,7 @@ _PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
     assert(type->tp_name != NULL);
     assert(type->tp_base == &PyTuple_Type);
     assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    assert(_Py_IsImmortalLoose(type));
+    assert(_Py_IsImmortal(type));
 
     // Cannot delete a type if it still has subclasses
     if (_PyType_HasSubclasses(type)) {
@@ -762,13 +752,13 @@ _PyStructSequence_NewType(PyStructSequence_Desc *desc, unsigned long tp_flags)
     }
 
     /* Initialize Slots */
-    slots[0] = (PyType_Slot){Py_tp_dealloc, (destructor)structseq_dealloc};
-    slots[1] = (PyType_Slot){Py_tp_repr, (reprfunc)structseq_repr};
+    slots[0] = (PyType_Slot){Py_tp_dealloc, structseq_dealloc};
+    slots[1] = (PyType_Slot){Py_tp_repr, structseq_repr};
     slots[2] = (PyType_Slot){Py_tp_doc, (void *)desc->doc};
     slots[3] = (PyType_Slot){Py_tp_methods, structseq_methods};
     slots[4] = (PyType_Slot){Py_tp_new, structseq_new};
     slots[5] = (PyType_Slot){Py_tp_members, members};
-    slots[6] = (PyType_Slot){Py_tp_traverse, (traverseproc)structseq_traverse};
+    slots[6] = (PyType_Slot){Py_tp_traverse, structseq_traverse};
     slots[7] = (PyType_Slot){0, 0};
 
     /* Initialize Spec */

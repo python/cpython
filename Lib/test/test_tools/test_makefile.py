@@ -52,7 +52,10 @@ class TestMakefile(unittest.TestCase):
             if not dirs and not files:
                 continue
             # Skip dirs with hidden-only files:
-            if files and all(filename.startswith('.') for filename in files):
+            if files and all(
+                filename.startswith('.') or filename == '__pycache__'
+                for filename in files
+            ):
                 continue
 
             relpath = os.path.relpath(dirpath, support.STDLIB_DIR)
