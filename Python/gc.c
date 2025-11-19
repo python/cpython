@@ -1388,7 +1388,6 @@ gc_collect_young(PyThreadState *tstate,
     validate_spaces(gcstate);
     gcstate->young.count = 0;
     gcstate->old[gcstate->visited_space].count++;
-    add_stats(gcstate, 0, stats);
     validate_spaces(gcstate);
 }
 
@@ -1702,7 +1701,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     assert(gc_list_is_empty(&increment));
     gcstate->work_to_do -= increment_size;
 
-    add_stats(gcstate, 1, stats);
     if (gc_list_is_empty(not_visited)) {
         completed_scavenge(gcstate);
     }
@@ -1737,7 +1735,6 @@ gc_collect_full(PyThreadState *tstate,
     completed_scavenge(gcstate);
     _PyGC_ClearAllFreeLists(tstate->interp);
     validate_spaces(gcstate);
-    add_stats(gcstate, 2, stats);
 }
 
 /* This is the main function. Read this to understand how the
@@ -2107,6 +2104,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
     (void)PyTime_PerfCounterRaw(&stop);
     stats.duration = PyTime_AsSecondsDouble(stop - start);
+    add_stats(gcstate, generation, &stats);
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(stats.uncollectable + stats.collected);
     }
