@@ -728,7 +728,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             annotate, owner, is_class, globals, allow_evaluation=False
         )
         func = types.FunctionType(
-            _get_annotate_attr(annotate, "__code__", None),
+            _get_annotate_attr(annotate, "__code__"),
             globals,
             closure=closure,
             argdefs=_get_annotate_attr(annotate, "__defaults__", None),
@@ -763,7 +763,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # Grab and store all the annotate function attributes that we might need to access
         # multiple times as variables, as this could be a bit expensive for non-functions.
         annotate_globals = _get_annotate_attr(annotate, "__globals__", {})
-        annotate_code = _get_annotate_attr(annotate, "__code__", None)
+        annotate_code = _get_annotate_attr(annotate, "__code__")
         annotate_defaults = _get_annotate_attr(annotate, "__defaults__", None)
         annotate_kwdefaults = _get_annotate_attr(annotate, "__kwdefaults__", None)
         namespace = {
@@ -890,7 +890,7 @@ def _stringify_single(anno):
         return repr(anno)
 
 
-def _get_annotate_attr(annotate, attr, default):
+def _get_annotate_attr(annotate, attr, default=_sentinel):
     # Try to get the attr on the annotate function. If it doesn't exist, we might
     # need to look in other places on the object. If all of those fail, we can
     # return the default at the end.
@@ -944,6 +944,8 @@ def _get_annotate_attr(annotate, attr, default):
     ):
         return _get_annotate_attr(annotate.func, attr, default)
 
+    if default is _sentinel:
+        raise TypeError(f"annotate function missing {attr!r} attribute")
     return default
 
 def _direct_call_annotate(func, annotate, *args):

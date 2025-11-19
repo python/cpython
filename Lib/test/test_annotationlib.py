@@ -2119,6 +2119,31 @@ class TestCallAnnotateFunction(unittest.TestCase):
             with self.assertRaises(DemoException):
                 annotationlib.call_annotate_function(Annotate(), format=fmt)
 
+    def test_unsupported_callable_object_fakeglobals_error(self):
+        # Test that a readable error is raised when an unsupported callable
+        # type is used as an annotate function with fake globals.
+
+        def annotate(format, /, __Format=Format,
+                   __NotImplementedError=NotImplementedError):
+            if format == __Format.VALUE:
+                return {"x": int}
+            elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                return {"x": str}
+            else:
+                raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(
+            annotate.__call__,
+            Format.VALUE
+        )
+        self.assertEqual(annotations, {"x": int})
+
+        for fmt in (Format.FORWARDREF, Format.STRING):
+            with self.assertRaisesRegex(
+                TypeError, "annotate function missing '__code__' attribute"
+            ):
+                annotationlib.call_annotate_function(annotate.__call__, fmt)
+
 
 class MetaclassTests(unittest.TestCase):
     def test_annotated_meta(self):
