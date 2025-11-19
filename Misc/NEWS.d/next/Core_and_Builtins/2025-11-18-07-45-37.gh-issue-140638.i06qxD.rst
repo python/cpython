@@ -1,0 +1,2 @@
+Expose a ``"duration"`` stat in :func:`gc.get_stats` and
+:data:`gc.callbacks`.
