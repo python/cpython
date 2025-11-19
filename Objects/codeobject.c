@@ -1005,8 +1005,8 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-int
-_PyCode_Addr2LineNoTstate(PyCodeObject *co, int addrq)
+static int
+_PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
@@ -1021,11 +1021,28 @@ _PyCode_Addr2LineNoTstate(PyCodeObject *co, int addrq)
 }
 
 int
+_PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
+{
+    if (addrq < 0) {
+        return co->co_firstlineno;
+    }
+    if (co->_co_monitoring && co->_co_monitoring->lines) {
+        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    }
+    if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
+        return -1;
+    }
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(co, &bounds);
+    return _PyCode_CheckLineNumber(addrq, &bounds);
+}
+
+int
 PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     int lineno;
     Py_BEGIN_CRITICAL_SECTION(co);
-    lineno = _PyCode_Addr2LineNoTstate(co, addrq);
+    lineno = _PyCode_Addr2Line(co, addrq);
     Py_END_CRITICAL_SECTION();
     return lineno;
 }
@@ -2415,6 +2432,7 @@ code_dealloc(PyObject *self)
         PyMem_Free(co_extra);
     }
 #ifdef _Py_TIER2
+    _PyJit_Tracer_InvalidateDependency(tstate, self);
     if (co->co_executors != NULL) {
         clear_executors(co);
     }

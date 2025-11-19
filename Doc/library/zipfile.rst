@@ -23,6 +23,16 @@ decryption of encrypted files in ZIP archives, but it currently cannot
 create an encrypted file.  Decryption is extremely slow as it is
 implemented in native Python rather than C.
 
+..
+   The following paragraph should be similar to ../includes/optional-module.rst
+
+Handling compressed archives requires :term:`optional modules <optional module>`
+such as :mod:`zlib`, :mod:`bz2`, :mod:`lzma`, and :mod:`compression.zstd`.
+If any of them are missing from your copy of CPython,
+look for documentation from your distributor (that is,
+whoever provided Python to you).
+If you are the distributor, see :ref:`optional-module-requirements`.
+
 The module defines the following items:
 
 .. exception:: BadZipFile

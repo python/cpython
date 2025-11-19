@@ -213,7 +213,7 @@ _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
         return NULL;
     }
 
-    PyObject *argstuple = _PyTuple_FromArray(args, nargs);
+    PyObject *argstuple = PyTuple_FromArray(args, nargs);
     if (argstuple == NULL) {
         return NULL;
     }

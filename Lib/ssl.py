@@ -110,11 +110,6 @@ from _ssl import (
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add, RAND_bytes
-try:
-    from _ssl import RAND_egd
-except ImportError:
-    # RAND_egd is not supported on some platforms
-    pass
 from _ssl import get_sigalgs
 
 
