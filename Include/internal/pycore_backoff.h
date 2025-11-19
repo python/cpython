@@ -54,14 +54,6 @@ static _Py_BackoffCounter backoff_counter_next_table[] = {
 };
 
 static inline _Py_BackoffCounter
-forge_backoff_counter(uint16_t counter)
-{
-    _Py_BackoffCounter result;
-    result.value_and_backoff = counter;
-    return result;
-}
-
-static inline _Py_BackoffCounter
 restart_backoff_counter(_Py_BackoffCounter counter)
 {
     uint16_t backoff = counter.value_and_backoff & BACKOFF_MASK;
