@@ -7579,5 +7579,7 @@
             break;
         }
 
+        /* _TRACE_RECORD is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
+
 
 #undef TIER_TWO
