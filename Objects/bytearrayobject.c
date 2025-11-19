@@ -1548,7 +1548,7 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
     }
 
     Py_ssize_t remaining_length = size - to_take;
-    // optimization: If taking less than leaving just copy the small to_take
+    // optimization: If taking less than leaving, just copy the small to_take
     // portion out and move ob_start.
     if (to_take < remaining_length) {
         PyObject *ret = PyBytes_FromStringAndSize(self->ob_start, to_take);
