@@ -58,11 +58,19 @@ static uint16_t value_and_backoff_next[] = {
 static inline _Py_BackoffCounter
 make_backoff_counter(uint16_t value, uint16_t backoff)
 {
-    //assert(backoff <= UNREACHABLE_BACKOFF);
+    assert(backoff <= UNREACHABLE_BACKOFF);
     assert(value <= MAX_VALUE);
     return ((_Py_BackoffCounter){
         .value_and_backoff = MAKE_VALUE_AND_BACKOFF(value, backoff)
     });
+}
+
+static inline _Py_BackoffCounter
+forge_backoff_counter(uint16_t counter)
+{
+    _Py_BackoffCounter result;
+    result.value_and_backoff = counter;
+    return result;
 }
 
 static inline _Py_BackoffCounter

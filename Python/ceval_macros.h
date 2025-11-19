@@ -315,7 +315,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
  * which is always an integral type. */
 // Force re-specialization when tracing a side exit to get good side exits.
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
-    backoff_counter_triggers(make_backoff_counter(0, (COUNTER)))
+    backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
