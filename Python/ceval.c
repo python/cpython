@@ -351,13 +351,21 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+#if _Py_STACK_GROWS_DOWN
     if (here_addr > _tstate->c_stack_soft_limit + margin_count * _PyOS_STACK_MARGIN_BYTES) {
+#else
+    if (here_addr <= _tstate->c_stack_soft_limit - margin_count * _PyOS_STACK_MARGIN_BYTES) {
+#endif
         return 0;
     }
     if (_tstate->c_stack_hard_limit == 0) {
         _Py_InitializeRecursionLimits(tstate);
     }
+#if _Py_STACK_GROWS_DOWN
     return here_addr <= _tstate->c_stack_soft_limit + margin_count * _PyOS_STACK_MARGIN_BYTES;
+#else
+    return here_addr > _tstate->c_stack_soft_limit - margin_count * _PyOS_STACK_MARGIN_BYTES;
+#endif
 }
 
 void
@@ -365,7 +373,11 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+#if _Py_STACK_GROWS_DOWN
     if (here_addr < _tstate->c_stack_hard_limit) {
+#else
+    if (here_addr > _tstate->c_stack_hard_limit) {
+#endif
         Py_FatalError("Unchecked stack overflow.");
     }
 }
@@ -496,18 +508,33 @@ tstate_set_stack(PyThreadState *tstate,
 #ifdef _Py_THREAD_SANITIZER
     // Thread sanitizer crashes if we use more than half the stack.
     uintptr_t stacksize = top - base;
-    base += stacksize / 2;
+#  if _Py_STACK_GROWS_DOWN
+    base += stacksize/2;
+#  else
+    top -= stacksize/2;
+#  endif
 #endif
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+#if _Py_STACK_GROWS_DOWN
     _tstate->c_stack_top = top;
     _tstate->c_stack_hard_limit = base + _PyOS_STACK_MARGIN_BYTES;
     _tstate->c_stack_soft_limit = base + _PyOS_STACK_MARGIN_BYTES * 2;
-
-#ifndef NDEBUG
+#  ifndef NDEBUG
     // Sanity checks
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
     assert(ts->c_stack_hard_limit <= ts->c_stack_soft_limit);
     assert(ts->c_stack_soft_limit < ts->c_stack_top);
+#  endif
+#else
+    _tstate->c_stack_top = base;
+    _tstate->c_stack_hard_limit = top - _PyOS_STACK_MARGIN_BYTES;
+    _tstate->c_stack_soft_limit = top - _PyOS_STACK_MARGIN_BYTES * 2;
+#  ifndef NDEBUG
+    // Sanity checks
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(ts->c_stack_hard_limit >= ts->c_stack_soft_limit);
+    assert(ts->c_stack_soft_limit > ts->c_stack_top);
+#  endif
 #endif
 }
 
@@ -568,9 +595,15 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     assert(_tstate->c_stack_soft_limit != 0);
     assert(_tstate->c_stack_hard_limit != 0);
+#if _Py_STACK_GROWS_DOWN
     if (here_addr < _tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */
         int kbytes_used = (int)(_tstate->c_stack_top - here_addr)/1024;
+#else
+    if (here_addr > _tstate->c_stack_hard_limit) {
+        /* Overflowing while handling an overflow. Give up. */
+        int kbytes_used = (int)(here_addr - _tstate->c_stack_top)/1024;
+#endif
         char buffer[80];
         snprintf(buffer, 80, "Unrecoverable stack overflow (used %d kB)%s", kbytes_used, where);
         Py_FatalError(buffer);
@@ -579,7 +612,11 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         return 0;
     }
     else {
+#if _Py_STACK_GROWS_DOWN
         int kbytes_used = (int)(_tstate->c_stack_top - here_addr)/1024;
+#else
+        int kbytes_used = (int)(here_addr - _tstate->c_stack_top)/1024;
+#endif
         tstate->recursion_headroom++;
         _PyErr_Format(tstate, PyExc_RecursionError,
                     "Stack overflow (used %d kB)%s",
@@ -1142,6 +1179,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+#if !USE_COMPUTED_GOTOS
+    uint8_t tracing_mode = 0;
+    uint8_t dispatch_code;
+#endif
 #endif
     _PyEntryFrame entry;
 

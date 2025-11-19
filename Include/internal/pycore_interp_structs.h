@@ -212,6 +212,9 @@ struct _gc_runtime_state {
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
     /* true if we are currently running the collector */
     int collecting;
+    // The frame that started the current collection. It might be NULL even when
+    // collecting (if no Python frame is running):
+    _PyInterpreterFrame *frame;
     /* list of uncollectable objects */
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
