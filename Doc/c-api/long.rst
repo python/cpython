@@ -863,8 +863,8 @@ Deprecated API
 These macros are :term:`soft deprecated`. They describe parameters
 of the internal representation of :c:type:`PyLongObject` instances.
 
-Use :c:func:`PyLong_GetNativeLayout` instead, along with :c:func:`PyLongExport` and
-:c:type:`PyLongWriter` to access integer data.
+Use :c:func:`PyLong_GetNativeLayout` instead, along with :c:func:`PyLong_Export`
+to read integer data or :c:type:`PyLongWriter` to write it.
 These currently use the same layout, but are designed to continue working correctly
 even if CPython's internal integer representation changes.
 
