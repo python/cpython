@@ -175,6 +175,7 @@ complete listing.
 
    Declare a function returning the specified *type* using a fast-calling
    qualifier for functions that are local to the current file.
+   Semantically, this is equivalent to ``static type``.
 
 .. c:macro:: Py_LOCAL_INLINE(type)
 
