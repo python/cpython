@@ -306,7 +306,8 @@ or on combining URL components into a URL string.
       separator key, with ``&`` as the default separator.
 
 
-.. function:: urlunparse(parts, *, keep_empty=False)
+.. function:: urlunparse(parts)
+              urlunparse(parts, *, keep_empty)
 
    Construct a URL from a tuple as returned by ``urlparse()``. The *parts*
    argument can be any six-item iterable.
@@ -317,7 +318,7 @@ or on combining URL components into a URL string.
 
    If *keep_empty* is true, empty strings are kept in the result (for example,
    a ``?`` for an empty query), only ``None`` components are omitted.
-   This allows to restore the URL that was parsed with option
+   This allows rebuilding a URL that was parsed with option
    ``missing_as_none=True``.
    By default, *keep_empty* is true if *parts* is the result of the
    :func:`urlparse` call with ``missing_as_none=True``.
@@ -406,7 +407,8 @@ or on combining URL components into a URL string.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
-.. function:: urlunsplit(parts, *, keep_empty=False)
+.. function:: urlunsplit(parts)
+              urlunsplit(parts, *, keep_empty)
 
    Combine the elements of a tuple as returned by :func:`urlsplit` into a
    complete URL as a string. The *parts* argument can be any five-item
@@ -418,7 +420,7 @@ or on combining URL components into a URL string.
 
    If *keep_empty* is true, empty strings are kept in the result (for example,
    a ``?`` for an empty query), only ``None`` components are omitted.
-   This allows to restore the URL that was parsed with option
+   This allows rebuilding a URL that was parsed with option
    ``missing_as_none=True``.
    By default, *keep_empty* is true if *parts* is the result of the
    :func:`urlsplit` call with ``missing_as_none=True``.
