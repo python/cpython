@@ -362,9 +362,11 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
         _Py_InitializeRecursionLimits(tstate);
     }
 #if _Py_STACK_GROWS_DOWN
-    return here_addr <= _tstate->c_stack_soft_limit + margin_count * _PyOS_STACK_MARGIN_BYTES;
+    return here_addr <= _tstate->c_stack_soft_limit + margin_count * _PyOS_STACK_MARGIN_BYTES &&
+        here_addr >= _tstate->c_stack_soft_limit - 2 * _PyOS_STACK_MARGIN_BYTES;
 #else
-    return here_addr > _tstate->c_stack_soft_limit - margin_count * _PyOS_STACK_MARGIN_BYTES;
+    return here_addr > _tstate->c_stack_soft_limit - margin_count * _PyOS_STACK_MARGIN_BYTES &&
+        here_addr <= _tstate->c_stack_soft_limit + 2 * _PyOS_STACK_MARGIN_BYTES;
 #endif
 }
 
@@ -455,7 +457,7 @@ int pthread_attr_destroy(pthread_attr_t *a)
 #endif
 
 static void
-hardware_stack_limits(uintptr_t *base, uintptr_t *top)
+hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
 {
 #ifdef WIN32
     ULONG_PTR low, high;
@@ -491,10 +493,19 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top)
         return;
     }
 #  endif
-    uintptr_t here_addr = _Py_get_machine_stack_pointer();
-    uintptr_t top_addr = _Py_SIZE_ROUND_UP(here_addr, 4096);
+    // Add some space for caller function then round to minimum page size
+    // This is a guess at the top of the stack, but should be a reasonably
+    // good guess if called from _PyThreadState_Attach when creating a thread.
+    // If the thread is attached deep in a call stack, then the guess will be poor.
+#if _Py_STACK_GROWS_DOWN
+    uintptr_t top_addr = _Py_SIZE_ROUND_UP(sp + 8*sizeof(void*), SYSTEM_PAGE_SIZE);
     *top = top_addr;
     *base = top_addr - Py_C_STACK_SIZE;
+#  else
+    uintptr_t base_addr = _Py_SIZE_ROUND_DOWN(sp - 8*sizeof(void*), SYSTEM_PAGE_SIZE);
+    *base = base_addr;
+    *top = base_addr + Py_C_STACK_SIZE;
+#endif
 #endif
 }
 
@@ -543,7 +554,8 @@ void
 _Py_InitializeRecursionLimits(PyThreadState *tstate)
 {
     uintptr_t base, top;
-    hardware_stack_limits(&base, &top);
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    hardware_stack_limits(&base, &top, here_addr);
     assert(top != 0);
 
     tstate_set_stack(tstate, base, top);
@@ -587,7 +599,7 @@ PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
 
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
-   if the recursion_depth reaches recursion_limit. */
+   if the stack pointer is between the stack base and c_stack_hard_limit. */
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
@@ -596,10 +608,12 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     assert(_tstate->c_stack_soft_limit != 0);
     assert(_tstate->c_stack_hard_limit != 0);
 #if _Py_STACK_GROWS_DOWN
+    assert(here_addr >= _tstate->c_stack_hard_limit - _PyOS_STACK_MARGIN_BYTES);
     if (here_addr < _tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */
         int kbytes_used = (int)(_tstate->c_stack_top - here_addr)/1024;
 #else
+    assert(here_addr <= _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES);
     if (here_addr > _tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */
         int kbytes_used = (int)(here_addr - _tstate->c_stack_top)/1024;
