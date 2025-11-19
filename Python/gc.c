@@ -663,12 +663,13 @@ visit_reachable(PyObject *op, void *arg)
  * But _gc_next in unreachable list has NEXT_MASK_UNREACHABLE flag.
  * So we can not gc_list_* functions for unreachable until we remove the flag.
  */
-static void
+static Py_ssize_t
 move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 {
     // previous elem in the young list, used for restore gc_prev.
     PyGC_Head *prev = young;
     PyGC_Head *gc = GC_NEXT(young);
+    Py_ssize_t visited = 0;
 
     /* Invariants:  all objects "to the left" of us in young are reachable
      * (directly or indirectly) from outside the young list as it was at entry.
@@ -683,6 +684,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
     /* Record which old space we are in, and set NEXT_MASK_UNREACHABLE bit for convenience */
     uintptr_t flags = NEXT_MASK_UNREACHABLE | (gc->_gc_next & _PyGC_NEXT_MASK_OLD_SPACE_1);
     while (gc != young) {
+        visited++;
         if (gc_get_refs(gc)) {
             /* gc is definitely reachable from outside the
              * original 'young'.  Mark it as such, and traverse
@@ -739,6 +741,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
     young->_gc_next &= _PyGC_PREV_MASK;
     // don't let the pollution of the list head's next pointer leak
     unreachable->_gc_next &= _PyGC_PREV_MASK;
+    return visited;
 }
 
 /* In theory, all tuples should be younger than the
@@ -1240,7 +1243,7 @@ flag set but it does not clear it to skip unnecessary iteration. Before the
 flag is cleared (for example, by using 'clear_unreachable_mask' function or
 by a call to 'move_legacy_finalizers'), the 'unreachable' list is not a normal
 list and we can not use most gc_list_* functions for it. */
-static inline void
+static inline Py_ssize_t
 deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
     validate_list(base, collecting_clear_unreachable_clear);
     /* Using ob_refcnt and gc_refs, calculate which objects in the
@@ -1286,9 +1289,10 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * the reachable objects instead.  But this is a one-time cost, probably not
      * worth complicating the code to speed just a little.
      */
-    move_unreachable(base, unreachable);  // gc_prev is pointer again
+    Py_ssize_t visited = move_unreachable(base, unreachable);  // gc_prev is pointer again
     validate_list(base, collecting_clear_unreachable_clear);
     validate_list(unreachable, collecting_set_unreachable_set);
+    return visited;
 }
 
 /* Handle objects that may have resurrected after a call to 'finalize_garbage', moving
@@ -1316,7 +1320,7 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
     // have the PREV_MARK_COLLECTING set, but the objects are going to be
     // removed so we can skip the expense of clearing the flag.
     PyGC_Head* resurrected = unreachable;
-    deduce_unreachable(resurrected, still_unreachable);
+    (void)deduce_unreachable(resurrected, still_unreachable);
     clear_unreachable_mask(still_unreachable);
 
     // Move the resurrected objects to the old generation for future collection.
@@ -1364,6 +1368,7 @@ static void
 add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
 {
     gcstate->generation_stats[gen].duration += stats->duration;
+    gcstate->generation_stats[gen].visited += stats->visited;
     gcstate->generation_stats[gen].collected += stats->collected;
     gcstate->generation_stats[gen].uncollectable += stats->uncollectable;
     gcstate->generation_stats[gen].collections += 1;
@@ -1754,7 +1759,7 @@ gc_collect_region(PyThreadState *tstate,
     assert(!_PyErr_Occurred(tstate));
 
     gc_list_init(&unreachable);
-    deduce_unreachable(from, &unreachable);
+    stats->visited += deduce_unreachable(from, &unreachable);
     validate_consistent_old_space(from);
     untrack_tuples(from);
 
@@ -1844,10 +1849,11 @@ do_gc_callback(GCState *gcstate, const char *phase,
     assert(PyList_CheckExact(gcstate->callbacks));
     PyObject *info = NULL;
     if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        info = Py_BuildValue("{sisnsnsd}",
+        info = Py_BuildValue("{sisnsnsnsd}",
             "generation", generation,
             "collected", stats->collected,
             "uncollectable", stats->uncollectable,
+            "visited", stats->visited,
             "duration", stats->duration);
         if (info == NULL) {
             PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");

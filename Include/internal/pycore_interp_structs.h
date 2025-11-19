@@ -179,6 +179,8 @@ struct gc_collection_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    // Total number of objects visited:
+    Py_ssize_t visited;
     // Duration of the collection in seconds:
     double duration;
 };
@@ -191,6 +193,8 @@ struct gc_generation_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+    // Total number of objects visited:
+    Py_ssize_t visited;
     // Duration of the collection in seconds:
     double duration;
 };

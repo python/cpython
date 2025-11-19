@@ -98,6 +98,7 @@ struct collection_state {
     // we can't collect objects with deferred references because we may not
     // see all references.
     int skip_deferred_objects;
+    Py_ssize_t visited;
     Py_ssize_t collected;
     Py_ssize_t uncollectable;
     Py_ssize_t long_lived_total;
@@ -975,7 +976,9 @@ static bool
 update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
             void *block, size_t block_size, void *args)
 {
-    PyObject *op = op_from_block(block, args, false);
+    struct collection_state *state = (struct collection_state *)args;
+    state->visited++;
+    PyObject *op = op_from_block(block, &state->base, false);
     if (op == NULL) {
         return true;
     }
@@ -1434,7 +1437,7 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     // Identify objects that are directly reachable from outside the GC heap
     // by computing the difference between the refcount and the number of
     // incoming references.
-    gc_visit_heaps(interp, &update_refs, &state->base);
+    gc_visit_heaps(interp, &update_refs, &state);
 
 #ifdef GC_DEBUG
     // Check that all objects are marked as unreachable and that the computed
@@ -1911,7 +1914,7 @@ handle_resurrected_objects(struct collection_state *state)
 static void
 invoke_gc_callback(PyThreadState *tstate, const char *phase,
                    int generation, Py_ssize_t collected,
-                   Py_ssize_t uncollectable, double duration)
+                   Py_ssize_t uncollectable, Py_ssize_t visited, double duration)
 {
     assert(!_PyErr_Occurred(tstate));
 
@@ -1925,10 +1928,11 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
     assert(PyList_CheckExact(gcstate->callbacks));
     PyObject *info = NULL;
     if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        info = Py_BuildValue("{sisnsnsd}",
+        info = Py_BuildValue("{sisnsnsnsd}",
             "generation", generation,
             "collected", collected,
             "uncollectable", uncollectable,
+            "visited", visited,
             "duration", duration);
         if (info == NULL) {
             PyErr_FormatUnraisable("Exception ignored while "
@@ -2372,7 +2376,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     GC_STAT_ADD(generation, collections, 1);
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
-        invoke_gc_callback(tstate, "start", generation, 0, 0, 0);
+        invoke_gc_callback(tstate, "start", generation, 0, 0, 0, 0);
     }
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
@@ -2427,6 +2431,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     stats->collected += m;
     stats->uncollectable += n;
     stats->duration += duration;
+    stats->visited += state.visited;
 
     GC_STAT_ADD(generation, objects_collected, m);
 #ifdef Py_STATS
@@ -2445,7 +2450,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
-        invoke_gc_callback(tstate, "stop", generation, m, n, duration);
+        invoke_gc_callback(tstate, "stop", generation, m, n, state->visited, duration);
     }
 
     assert(!_PyErr_Occurred(tstate));
