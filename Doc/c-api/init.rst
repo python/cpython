@@ -1858,12 +1858,13 @@ pointer and a void pointer argument.
 .. c:function:: int Py_MakePendingCalls(void)
 
    Execute all pending calls. This is usually executed automatically by the
-   interpreter. If this is not called in the main thread of the main
-   interpreter, this function does nothing and returns ``0``.
+   interpreter.
 
    This function returns ``0`` on success, and returns ``-1`` with an exception
    set on failure.
-
+   
+   If this is not called in the main thread of the main
+   interpreter, this function does nothing and returns ``0``.
    The caller must hold an :term:`attached thread state`.
 
    .. versionadded:: 3.1
