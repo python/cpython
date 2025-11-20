@@ -159,6 +159,8 @@ class LiveStatsCollector(Collector):
         self.filter_input_mode = False  # Currently entering filter text
         self.filter_input_buffer = ""  # Buffer for filter input
         self.finished = False  # Program has finished, showing final state
+        self.finish_timestamp = None  # When profiling finished (for time freezing)
+        self.finish_wall_time = None  # Wall clock time when profiling finished
 
         # Thread tracking state
         self.thread_ids = []  # List of thread IDs seen
@@ -182,6 +184,20 @@ class LiveStatsCollector(Collector):
 
         # Trend tracking (initialized after colors are set up)
         self._trend_tracker = None
+
+    @property
+    def elapsed_time(self):
+        """Get the elapsed time, frozen when finished."""
+        if self.finished and self.finish_timestamp is not None:
+            return self.finish_timestamp - self.start_time
+        return time.perf_counter() - self.start_time if self.start_time else 0
+
+    @property
+    def current_time_display(self):
+        """Get the current time for display, frozen when finished."""
+        if self.finished and self.finish_wall_time is not None:
+            return time.strftime("%H:%M:%S", time.localtime(self.finish_wall_time))
+        return time.strftime("%H:%M:%S")
 
     def _get_or_create_thread_data(self, thread_id):
         """Get or create ThreadData for a thread ID."""
@@ -384,9 +400,7 @@ class LiveStatsCollector(Collector):
 
     def _prepare_display_data(self, height):
         """Prepare data for display rendering."""
-        elapsed = (
-            time.perf_counter() - self.start_time if self.start_time else 0
-        )
+        elapsed = self.elapsed_time
         stats_list = self._build_stats_list()
 
         # Calculate available space for stats
@@ -707,14 +721,26 @@ class LiveStatsCollector(Collector):
         # Clear trend tracking
         if self._trend_tracker is not None:
             self._trend_tracker.clear()
+        # Reset finished state and finish timestamp
+        self.finished = False
+        self.finish_timestamp = None
+        self.finish_wall_time = None
         self.start_time = time.perf_counter()
         self._last_display_update = self.start_time
 
     def mark_finished(self):
         """Mark the profiling session as finished."""
         self.finished = True
+        # Capture the finish timestamp to freeze all timing displays
+        self.finish_timestamp = time.perf_counter()
+        self.finish_wall_time = time.time()  # Wall clock time for display
         # Force a final display update to show the finished message
         if self.display is not None:
+            self._update_display()
+
+    def _handle_finished_input_update(self, had_input):
+        """Update display after input when program is finished."""
+        if self.finished and had_input and self.display is not None:
             self._update_display()
 
     def _show_terminal_too_small(self, height, width):
@@ -809,12 +835,7 @@ class LiveStatsCollector(Collector):
         self.display.set_nodelay(True)
         ch = self.display.get_input()
 
-        # If showing help, any key closes it
-        if self.show_help and ch != -1:
-            self.show_help = False
-            return
-
-        # Handle filter input mode
+        # Handle filter input mode FIRST - takes precedence over all commands
         if self.filter_input_mode:
             if ch == 27:  # ESC key
                 self.filter_input_mode = False
@@ -832,13 +853,18 @@ class LiveStatsCollector(Collector):
                     self.filter_input_buffer = self.filter_input_buffer[:-1]
             elif ch >= 32 and ch < 127:  # Printable characters
                 self.filter_input_buffer += chr(ch)
+
+            # Update display if input was processed while finished
+            self._handle_finished_input_update(ch != -1)
             return
 
-        # If finished, only allow 'q' to quit
-        if self.finished:
-            if ch == ord("q") or ch == ord("Q"):
-                self.running = False
-            return
+        # Handle help toggle keys
+        if ch == ord("h") or ch == ord("H") or ch == ord("?"):
+            self.show_help = not self.show_help
+
+        # If showing help, any other key closes it
+        elif self.show_help and ch != -1:
+            self.show_help = False
 
         # Handle regular commands
         if ch == ord("q") or ch == ord("Q"):
@@ -850,14 +876,13 @@ class LiveStatsCollector(Collector):
         elif ch == ord("S"):
             self._cycle_sort(reverse=True)
 
-        elif ch == ord("h") or ch == ord("H") or ch == ord("?"):
-            self.show_help = not self.show_help
-
         elif ch == ord("p") or ch == ord("P"):
             self.paused = not self.paused
 
         elif ch == ord("r") or ch == ord("R"):
-            self.reset_stats()
+            # Don't allow reset when profiling is finished
+            if not self.finished:
+                self.reset_stats()
 
         elif ch == ord("+") or ch == ord("="):
             # Decrease update interval (faster refresh)
@@ -914,6 +939,9 @@ class LiveStatsCollector(Collector):
                     self.current_thread_index = (
                         self.current_thread_index + 1
                     ) % len(self.thread_ids)
+
+        # Update display if input was processed while finished
+        self._handle_finished_input_update(ch != -1)
 
     def init_curses(self, stdscr):
         """Initialize curses display and suppress stdout/stderr."""

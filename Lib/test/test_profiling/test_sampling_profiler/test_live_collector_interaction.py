@@ -318,27 +318,30 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         self.assertTrue(self.display.contains_text("PROFILING COMPLETE"))
         self.assertTrue(self.display.contains_text("Press 'q' to Quit"))
 
-    def test_finished_state_ignores_most_input(self):
-        """Test that finished state only responds to 'q' key."""
+    def test_finished_state_allows_ui_controls(self):
+        """Test that finished state allows UI controls but prioritizes quit."""
         self.collector.finished = True
         self.collector.running = True
 
-        # Try pressing 's' (sort) - should be ignored
+        # Try pressing 's' (sort) - should work and trigger display update
+        original_sort = self.collector.sort_by
         self.display.simulate_input(ord("s"))
         self.collector._handle_input()
         self.assertTrue(self.collector.running)  # Still running
+        self.assertNotEqual(self.collector.sort_by, original_sort)  # Sort changed
 
-        # Try pressing 'p' (pause) - should be ignored
+        # Try pressing 'p' (pause) - should work
         self.display.simulate_input(ord("p"))
         self.collector._handle_input()
         self.assertTrue(self.collector.running)  # Still running
-        self.assertFalse(self.collector.paused)  # Not paused
+        self.assertTrue(self.collector.paused)  # Now paused
 
-        # Try pressing 'r' (reset) - should be ignored
-        old_total = self.collector.total_samples = 100
+        # Try pressing 'r' (reset) - should be ignored when finished
+        self.collector.total_samples = 100
         self.display.simulate_input(ord("r"))
         self.collector._handle_input()
-        self.assertEqual(self.collector.total_samples, old_total)  # Not reset
+        self.assertTrue(self.collector.running)  # Still running
+        self.assertEqual(self.collector.total_samples, 100)  # NOT reset when finished
 
         # Press 'q' - should stop
         self.display.simulate_input(ord("q"))
@@ -364,6 +367,35 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
 
         # Check that footer contains finished message
         self.assertTrue(self.display.contains_text("PROFILING FINISHED"))
+
+    def test_finished_state_freezes_time(self):
+        """Test that time displays are frozen when finished."""
+        import time as time_module
+
+        # Set up collector with known start time
+        self.collector.start_time = time_module.perf_counter() - 10.0  # 10 seconds ago
+
+        # Mark as finished - this should freeze the time
+        self.collector.mark_finished()
+
+        # Get the frozen elapsed time
+        frozen_elapsed = self.collector.elapsed_time
+        frozen_time_display = self.collector.current_time_display
+
+        # Wait a bit to ensure time would advance
+        time_module.sleep(0.1)
+
+        # Time should remain frozen
+        self.assertEqual(self.collector.elapsed_time, frozen_elapsed)
+        self.assertEqual(self.collector.current_time_display, frozen_time_display)
+
+        # Verify finish timestamp was set
+        self.assertIsNotNone(self.collector.finish_timestamp)
+
+        # Reset should clear the frozen state
+        self.collector.reset_stats()
+        self.assertFalse(self.collector.finished)
+        self.assertIsNone(self.collector.finish_timestamp)
 
 
 class TestLiveCollectorFiltering(unittest.TestCase):
@@ -1129,6 +1161,64 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         # Verify the functions are the right ones
         thread_222_funcs = {loc[2] for loc in thread_222_result.keys()}
         self.assertEqual(thread_222_funcs, {"func4", "func5"})
+
+
+class TestLiveCollectorNewFeatures(unittest.TestCase):
+    """Tests for new features added to live collector."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.display = MockDisplay()
+        self.collector = LiveStatsCollector(1000, display=self.display)
+        self.collector.start_time = time.perf_counter()
+
+    def test_filter_input_takes_precedence_over_commands(self):
+        """Test that filter input mode blocks command keys like 'h' and 'p'."""
+        # Enter filter input mode
+        self.collector.filter_input_mode = True
+        self.collector.filter_input_buffer = ""
+
+        # Press 'h' - should add to filter buffer, not show help
+        self.display.simulate_input(ord("h"))
+        self.collector._handle_input()
+
+        self.assertFalse(self.collector.show_help)  # Help not triggered
+        self.assertEqual(self.collector.filter_input_buffer, "h")  # Added to filter
+        self.assertTrue(self.collector.filter_input_mode)  # Still in filter mode
+
+    def test_reset_blocked_when_finished(self):
+        """Test that reset command is blocked when profiling is finished."""
+        # Set up some sample data and mark as finished
+        self.collector.total_samples = 100
+        self.collector.finished = True
+
+        # Press 'r' for reset
+        self.display.simulate_input(ord("r"))
+        self.collector._handle_input()
+
+        # Should NOT have been reset
+        self.assertEqual(self.collector.total_samples, 100)
+        self.assertTrue(self.collector.finished)
+
+    def test_time_display_fix_when_finished(self):
+        """Test that time display shows correct frozen time when finished."""
+        import time as time_module
+
+        # Mark as finished to freeze time
+        self.collector.mark_finished()
+
+        # Should have set both timestamps correctly
+        self.assertIsNotNone(self.collector.finish_timestamp)
+        self.assertIsNotNone(self.collector.finish_wall_time)
+
+        # Get the frozen time display
+        frozen_time = self.collector.current_time_display
+
+        # Wait a bit
+        time_module.sleep(0.1)
+
+        # Should still show the same frozen time (not jump to wrong time)
+        self.assertEqual(self.collector.current_time_display, frozen_time)
 
 
 if __name__ == "__main__":

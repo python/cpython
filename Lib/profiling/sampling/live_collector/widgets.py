@@ -175,7 +175,7 @@ class HeaderWidget(Widget):
         self.add_str(line, 0, title, A_BOLD | self.colors["cyan"])
         line += 1
 
-        current_time = time.strftime("%H:%M:%S")
+        current_time = self.collector.current_time_display
         uptime = self.format_uptime(elapsed)
 
         # Calculate display refresh rate
