@@ -771,7 +771,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
           All other values for :c:macro:`!FLT_ROUNDS` characterize
           implementation-defined rounding behavior.
 
-      * - .. attribute:: float_info.stdc_iec_559
+      * - .. attribute:: float_info.iec_60559
         - :c:macro:`!__STDC_IEC_559__`
         - A boolean, indicating support the IEC 60559 floating-point standard.
           If true, the :class:`float` type characteristics and behavior matches
