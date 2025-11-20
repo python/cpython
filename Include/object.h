@@ -140,12 +140,12 @@ struct _object {
 #  endif
         };
 #else
-        Py_ssize_t ob_refcnt;
+        Py_ssize_t ob_refcnt;  // part of stable ABI; do not change
 #endif
         _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, char) _aligner;
     };
 
-    PyTypeObject *ob_type;
+    PyTypeObject *ob_type;  // part of stable ABI; do not change
 };
 #else
 // Objects that are not owned by any thread use a thread id (tid) of zero.
@@ -173,7 +173,7 @@ struct _object {
 #ifndef _Py_OPAQUE_PYOBJECT
 struct PyVarObject {
     PyObject ob_base;
-    Py_ssize_t ob_size; /* Number of items in variable part */
+    Py_ssize_t ob_size; // Number of items in variable part. Part of stable ABI
 };
 #endif
 typedef struct PyVarObject PyVarObject;
