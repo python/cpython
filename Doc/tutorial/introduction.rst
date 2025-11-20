@@ -49,7 +49,7 @@ primary prompt, ``>>>``.  (It shouldn't take long.)
 Numbers
 -------
 
-The interpreter acts as a simple calculator: you can type an expression at it
+The interpreter acts as a simple calculator: you can type an expression into it
 and it will write the value.  Expression syntax is straightforward: the
 operators ``+``, ``-``, ``*`` and ``/`` can be used to perform
 arithmetic; parentheses (``()``) can be used for grouping.
