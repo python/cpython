@@ -2429,7 +2429,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except KeyboardInterrupt:
             pass
 
-    def print_stack_entry(self, frame_lineno, prompt_prefix=None):     
+    def print_stack_entry(self, frame_lineno, prompt_prefix=None):
         if prompt_prefix is None:         
             prompt_prefix = line_prefix
         frame, lineno = frame_lineno
