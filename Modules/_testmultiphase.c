@@ -1032,6 +1032,18 @@ PyModExport__test_from_modexport(void)
 }
 
 PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_gil_used(void)
+{
+    static PyModuleDef_Slot slots[] = {
+        {Py_mod_name, "_test_from_modexport_gil_used"},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_USED},
+        {0},
+    };
+    return slots;
+}
+
+PyMODEXPORT_FUNC
 PyModExport__test_from_modexport_null(void)
 {
     return NULL;
@@ -1077,6 +1089,19 @@ PyModExport__test_from_modexport_create_nonmodule(void)
         {Py_mod_create, modexport_create_string},
         {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
         {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+        {0},
+    };
+    return slots;
+}
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_create_nonmodule_gil_used(void)
+{
+    static PyModuleDef_Slot slots[] = {
+        {Py_mod_name, "_test_from_modexport_create_nonmodule"},
+        {Py_mod_create, modexport_create_string},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_USED},
         {0},
     };
     return slots;

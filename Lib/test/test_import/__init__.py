@@ -1,4 +1,5 @@
 import builtins
+import concurrent.interpreters
 import errno
 import glob
 import json
@@ -3407,6 +3408,35 @@ class ModexportTests(unittest.TestCase):
 
         self.assertEqual(module.__name__, modname)
 
+    def test_from_modexport_gil_used(self):
+        # Test that a module with Py_MOD_GIL_USED (re-)enables the GIL.
+        # Do this in a new interpreter to avoid interfering with global state.
+        modname = '_test_from_modexport_gil_used'
+        filename = _testmultiphase.__file__
+        interp = concurrent.interpreters.create()
+        self.addCleanup(interp.close)
+        queue = concurrent.interpreters.create_queue()
+        interp.prepare_main(
+            modname=modname,
+            filename=filename,
+            queue=queue,
+        )
+        enabled_before = sys._is_gil_enabled()
+        interp.exec(f"""if True:
+            import sys
+            from {__name__} import import_extension_from_file
+            module = import_extension_from_file(modname, filename,
+                                                put_in_sys_modules=False)
+            queue.put(module.__name__)
+            queue.put(sys._is_gil_enabled())
+        """)
+
+        self.assertEqual(queue.get(), modname)
+        self.assertEqual(queue.get(), True)
+        self.assertTrue(queue.empty())
+
+        self.assertEqual(enabled_before, sys._is_gil_enabled())
+
     def test_from_modexport_null(self):
         modname = '_test_from_modexport_null'
         filename = _testmultiphase.__file__
@@ -3427,6 +3457,35 @@ class ModexportTests(unittest.TestCase):
         module = import_extension_from_file(modname, filename,
                                             put_in_sys_modules=False)
         self.assertIsInstance(module, str)
+
+    def test_from_modexport_create_nonmodule_gil_used(self):
+        # Test that a module with Py_MOD_GIL_USED (re-)enables the GIL.
+        # Do this in a new interpreter to avoid interfering with global state.
+        modname = '_test_from_modexport_create_nonmodule_gil_used'
+        filename = _testmultiphase.__file__
+        interp = concurrent.interpreters.create()
+        self.addCleanup(interp.close)
+        queue = concurrent.interpreters.create_queue()
+        interp.prepare_main(
+            modname=modname,
+            filename=filename,
+            queue=queue,
+        )
+        enabled_before = sys._is_gil_enabled()
+        interp.exec(f"""if True:
+            import sys
+            from {__name__} import import_extension_from_file
+            module = import_extension_from_file(modname, filename,
+                                                put_in_sys_modules=False)
+            queue.put(module)
+            queue.put(sys._is_gil_enabled())
+        """)
+
+        self.assertIsInstance(queue.get(), str)
+        self.assertEqual(queue.get(), True)
+        self.assertTrue(queue.empty())
+
+        self.assertEqual(enabled_before, sys._is_gil_enabled())
 
     def test_from_modexport_smoke(self):
         # General positive test for sundry features
