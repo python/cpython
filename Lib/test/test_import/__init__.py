@@ -3521,6 +3521,7 @@ class ModexportTests(unittest.TestCase):
             pass
         self.assertEqual(_testcapi.pytype_getmodulebytoken(Sub, token), module)
 
+    @requires_gil_enabled("empty slots re-enable GIL")
     def test_from_modexport_empty_slots(self):
         # Module to test that:
         # - no slots are mandatory for PyModExport
