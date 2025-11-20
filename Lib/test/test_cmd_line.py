@@ -203,7 +203,7 @@ class CmdLineTest(unittest.TestCase):
 
     @support.cpython_only
     def test_null_byte_in_interactive_mode(self):
-        # gh-140594: heap-buffer-underflow in PyOS_StdioReadline when a NUL (\0)
+        # gh-140594: heap-buffer-overflow in PyOS_StdioReadline when a NULL
         # is present in interactive input. The test ensures that feeding a null
         # byte to the interactive prompt does not crash the interpreter.
         proc = spawn_python('-i')
