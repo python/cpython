@@ -1550,7 +1550,9 @@ _PyImport_CheckGILForModule(PyObject* module, PyObject *module_name)
     if (!PyModule_Check(module) ||
         ((PyModuleObject *)module)->md_requires_gil)
     {
-        assert(((PyModuleObject *)module)->md_token_is_def);
+        if (PyModule_Check(module)) {
+            assert(((PyModuleObject *)module)->md_token_is_def);
+        }
         if (_PyImport_EnableGILAndWarn(tstate, module_name) < 0) {
             return -1;
         }
