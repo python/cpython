@@ -716,7 +716,7 @@ The :mod:`functools` module defines the following functions:
 
    .. versionadded:: 3.8
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added support of non-:term:`descriptor` callables.
 
 
