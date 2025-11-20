@@ -92,7 +92,7 @@ Pending removal in Python 3.15
     Use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``
     to create a TypedDict with zero field.
 
-  * The :func:`typing.no_type_check_decorator` decorator function
+  * The :func:`!typing.no_type_check_decorator` decorator function
     has been deprecated since Python 3.13.
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.

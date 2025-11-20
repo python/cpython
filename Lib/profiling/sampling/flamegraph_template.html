@@ -63,6 +63,12 @@
         <button onclick="resetZoom()">🏠 Reset Zoom</button>
         <button onclick="exportSVG()" class="secondary">📁 Export SVG</button>
         <button onclick="toggleLegend()">🔥 Heat Map Legend</button>
+        <div class="thread-filter-wrapper">
+          <label class="thread-filter-label">🧵 Thread:</label>
+          <select id="thread-filter" class="thread-filter-select" onchange="filterByThread()">
+            <option value="all">All Threads</option>
+          </select>
+        </div>
       </div>
     </div>
 

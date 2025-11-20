@@ -2,6 +2,8 @@ const EMBEDDED_DATA = {{FLAMEGRAPH_DATA}};
 
 // Global string table for resolving string indices
 let stringTable = [];
+let originalData = null;
+let currentThreadFilter = 'all';
 
 // Function to resolve string indices to actual strings
 function resolveString(index) {
@@ -149,17 +151,22 @@ function createPythonTooltip(data) {
     const funcname = resolveString(d.data.funcname) || resolveString(d.data.name);
     const filename = resolveString(d.data.filename) || "";
 
+    // Don't show file location for special frames like <GC> and <native>
+    const isSpecialFrame = filename === "~";
+    const fileLocationHTML = isSpecialFrame ? "" : `
+        <div style="color: #5a6c7d; font-size: 13px; margin-bottom: 12px;
+                    font-family: monospace; background: #f8f9fa;
+                    padding: 4px 8px; border-radius: 4px; word-break: break-all; overflow-wrap: break-word;">
+          ${filename}${d.data.lineno ? ":" + d.data.lineno : ""}
+        </div>`;
+
     const tooltipHTML = `
       <div>
         <div style="color: #3776ab; font-weight: 600; font-size: 16px;
                     margin-bottom: 8px; line-height: 1.3; word-break: break-word; overflow-wrap: break-word;">
           ${funcname}
         </div>
-        <div style="color: #5a6c7d; font-size: 13px; margin-bottom: 12px;
-                    font-family: monospace; background: #f8f9fa;
-                    padding: 4px 8px; border-radius: 4px; word-break: break-all; overflow-wrap: break-word;">
-          ${filename}${d.data.lineno ? ":" + d.data.lineno : ""}
-        </div>
+        ${fileLocationHTML}
         <div style="display: grid; grid-template-columns: auto 1fr;
                     gap: 8px 16px; font-size: 14px;">
           <span style="color: #5a6c7d; font-weight: 500;">Execution Time:</span>
@@ -374,6 +381,12 @@ function initFlamegraph() {
     processedData = resolveStringIndices(EMBEDDED_DATA);
   }
 
+  // Store original data for filtering
+  originalData = processedData;
+
+  // Initialize thread filter dropdown
+  initThreadFilter(processedData);
+
   const tooltip = createPythonTooltip(processedData);
   const chart = createFlamegraph(tooltip, processedData.value);
   renderFlamegraph(chart, processedData);
@@ -395,10 +408,26 @@ function populateStats(data) {
   const functionMap = new Map();
 
   function collectFunctions(node) {
-    const filename = resolveString(node.filename);
-    const funcname = resolveString(node.funcname);
+    if (!node) return;
 
-    if (filename && funcname) {
+    let filename = typeof node.filename === 'number' ? resolveString(node.filename) : node.filename;
+    let funcname = typeof node.funcname === 'number' ? resolveString(node.funcname) : node.funcname;
+
+    if (!filename || !funcname) {
+      const nameStr = typeof node.name === 'number' ? resolveString(node.name) : node.name;
+      if (nameStr?.includes('(')) {
+        const match = nameStr.match(/^(.+?)\s*\((.+?):(\d+)\)$/);
+        if (match) {
+          funcname = funcname || match[1];
+          filename = filename || match[2];
+        }
+      }
+    }
+
+    filename = filename || 'unknown';
+    funcname = funcname || 'unknown';
+
+    if (filename !== 'unknown' && funcname !== 'unknown' && node.value > 0) {
       // Calculate direct samples (this node's value minus children's values)
       let childrenValue = 0;
       if (node.children) {
@@ -447,15 +476,26 @@ function populateStats(data) {
   // Populate the 3 cards
   for (let i = 0; i < 3; i++) {
     const num = i + 1;
-    if (i < hotSpots.length) {
+    if (i < hotSpots.length && hotSpots[i]) {
       const hotspot = hotSpots[i];
-      const basename = hotspot.filename.split('/').pop();
-      let funcDisplay = hotspot.funcname;
+      const filename = hotspot.filename || 'unknown';
+      const lineno = hotspot.lineno ?? '?';
+      let funcDisplay = hotspot.funcname || 'unknown';
       if (funcDisplay.length > 35) {
         funcDisplay = funcDisplay.substring(0, 32) + '...';
       }
 
-      document.getElementById(`hotspot-file-${num}`).textContent = `${basename}:${hotspot.lineno}`;
+      // Don't show file:line for special frames like <GC> and <native>
+      const isSpecialFrame = filename === '~' && (lineno === 0 || lineno === '?');
+      let fileDisplay;
+      if (isSpecialFrame) {
+        fileDisplay = '--';
+      } else {
+        const basename = filename !== 'unknown' ? filename.split('/').pop() : 'unknown';
+        fileDisplay = `${basename}:${lineno}`;
+      }
+
+      document.getElementById(`hotspot-file-${num}`).textContent = fileDisplay;
       document.getElementById(`hotspot-func-${num}`).textContent = funcDisplay;
       document.getElementById(`hotspot-detail-${num}`).textContent = `${hotspot.directPercent.toFixed(1)}% samples (${hotspot.directSamples.toLocaleString()})`;
     } else {
@@ -503,5 +543,104 @@ function clearSearch() {
       window.flamegraphChart.clear();
     }
   }
+}
+
+function initThreadFilter(data) {
+  const threadFilter = document.getElementById('thread-filter');
+  const threadWrapper = document.querySelector('.thread-filter-wrapper');
+
+  if (!threadFilter || !data.threads) {
+    return;
+  }
+
+  // Clear existing options except "All Threads"
+  threadFilter.innerHTML = '<option value="all">All Threads</option>';
+
+  // Add thread options
+  const threads = data.threads || [];
+  threads.forEach(threadId => {
+    const option = document.createElement('option');
+    option.value = threadId;
+    option.textContent = `Thread ${threadId}`;
+    threadFilter.appendChild(option);
+  });
+
+  // Show filter if more than one thread
+  if (threads.length > 1 && threadWrapper) {
+    threadWrapper.style.display = 'inline-flex';
+  }
+}
+
+function filterByThread() {
+  const threadFilter = document.getElementById('thread-filter');
+  if (!threadFilter || !originalData) return;
+
+  const selectedThread = threadFilter.value;
+  currentThreadFilter = selectedThread;
+
+  let filteredData;
+  if (selectedThread === 'all') {
+    // Show all data
+    filteredData = originalData;
+  } else {
+    // Filter data by thread
+    const threadId = parseInt(selectedThread);
+    filteredData = filterDataByThread(originalData, threadId);
+
+    if (filteredData.strings) {
+      stringTable = filteredData.strings;
+      filteredData = resolveStringIndices(filteredData);
+    }
+  }
+
+  // Re-render flamegraph with filtered data
+  const tooltip = createPythonTooltip(filteredData);
+  const chart = createFlamegraph(tooltip, filteredData.value);
+  renderFlamegraph(chart, filteredData);
+}
+
+function filterDataByThread(data, threadId) {
+  function filterNode(node) {
+    if (!node.threads || !node.threads.includes(threadId)) {
+      return null;
+    }
+
+    const filteredNode = {
+      ...node,
+      children: []
+    };
+
+    if (node.children && Array.isArray(node.children)) {
+      filteredNode.children = node.children
+        .map(child => filterNode(child))
+        .filter(child => child !== null);
+    }
+
+    return filteredNode;
+  }
+
+  const filteredRoot = {
+    ...data,
+    children: []
+  };
+
+  if (data.children && Array.isArray(data.children)) {
+    filteredRoot.children = data.children
+      .map(child => filterNode(child))
+      .filter(child => child !== null);
+  }
+
+  function recalculateValue(node) {
+    if (!node.children || node.children.length === 0) {
+      return node.value || 0;
+    }
+    const childrenValue = node.children.reduce((sum, child) => sum + recalculateValue(child), 0);
+    node.value = Math.max(node.value || 0, childrenValue);
+    return node.value;
+  }
+
+  recalculateValue(filteredRoot);
+
+  return filteredRoot;
 }
 

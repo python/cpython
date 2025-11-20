@@ -15,7 +15,6 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`builtins`:
 
-  * ``bool(NotImplemented)``.
   * Generators: ``throw(type, exc, tb)`` and ``athrow(type, exc, tb)``
     signature is deprecated: use ``throw(exc)`` and ``athrow(exc)`` instead,
     the single argument signature.
@@ -77,7 +76,7 @@ although there is currently no date scheduled for their removal.
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
 
-* :mod:`os`: Calling :func:`os.register_at_fork` in multi-threaded process.
+* :mod:`os`: Calling :func:`os.register_at_fork` in a multi-threaded process.
 
 * :class:`!pydoc.ErrorDuringImport`: A tuple value for *exc_info* parameter is
   deprecated, use an exception instance.

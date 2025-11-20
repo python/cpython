@@ -13,8 +13,25 @@ from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
+from .gecko_collector import GeckoCollector
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
+
+# Profiling mode constants
+PROFILING_MODE_WALL = 0
+PROFILING_MODE_CPU = 1
+PROFILING_MODE_GIL = 2
+PROFILING_MODE_ALL = 3  # Combines GIL + CPU checks
+
+
+def _parse_mode(mode_string):
+    """Convert mode string to mode constant."""
+    mode_map = {
+        "wall": PROFILING_MODE_WALL,
+        "cpu": PROFILING_MODE_CPU,
+        "gil": PROFILING_MODE_GIL,
+    }
+    return mode_map[mode_string]
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
 Supports the following target modes:
   - -p PID: Profile an existing process by PID
@@ -120,18 +137,20 @@ def _run_with_sync(original_cmd):
 
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, skip_non_matching_threads=True):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads
+                self.pid, all_threads=self.all_threads, mode=mode, native=native, gc=gc,
+                skip_non_matching_threads=skip_non_matching_threads
             )
         else:
             only_active_threads = bool(self.all_threads)
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=only_active_threads
+                self.pid, only_active_thread=only_active_threads, mode=mode, native=native, gc=gc,
+                skip_non_matching_threads=skip_non_matching_threads
             )
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
@@ -596,22 +615,39 @@ def sample(
     show_summary=True,
     output_format="pstats",
     realtime_stats=False,
+    mode=PROFILING_MODE_WALL,
+    native=False,
+    gc=True,
 ):
+    # PROFILING_MODE_ALL implies no skipping at all
+    if mode == PROFILING_MODE_ALL:
+        skip_non_matching_threads = False
+        skip_idle = False
+    else:
+        # Determine skip settings based on output format and mode
+        skip_non_matching_threads = output_format != "gecko"
+        skip_idle = mode != PROFILING_MODE_WALL
+
     profiler = SampleProfiler(
-        pid, sample_interval_usec, all_threads=all_threads
+        pid, sample_interval_usec, all_threads=all_threads, mode=mode, native=native, gc=gc,
+        skip_non_matching_threads=skip_non_matching_threads
     )
     profiler.realtime_stats = realtime_stats
 
     collector = None
     match output_format:
         case "pstats":
-            collector = PstatsCollector(sample_interval_usec)
+            collector = PstatsCollector(sample_interval_usec, skip_idle=skip_idle)
         case "collapsed":
-            collector = CollapsedStackCollector()
+            collector = CollapsedStackCollector(skip_idle=skip_idle)
             filename = filename or f"collapsed.{pid}.txt"
         case "flamegraph":
-            collector = FlamegraphCollector()
+            collector = FlamegraphCollector(skip_idle=skip_idle)
             filename = filename or f"flamegraph.{pid}.html"
+        case "gecko":
+            # Gecko format never skips idle threads to show full thread states
+            collector = GeckoCollector(skip_idle=False)
+            filename = filename or f"gecko.{pid}.json"
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
 
@@ -619,9 +655,14 @@ def sample(
 
     if output_format == "pstats" and not filename:
         stats = pstats.SampledStats(collector).strip_dirs()
-        print_sampled_stats(
-            stats, sort, limit, show_summary, sample_interval_usec
-        )
+        if not stats.stats:
+            print("No samples were collected.")
+            if mode == PROFILING_MODE_CPU:
+                print("This can happen in CPU mode when all threads are idle.")
+        else:
+            print_sampled_stats(
+                stats, sort, limit, show_summary, sample_interval_usec
+            )
     else:
         collector.export(filename)
 
@@ -656,10 +697,15 @@ def _validate_collapsed_format_args(args, parser):
 
 def wait_for_process_and_sample(pid, sort_value, args):
     """Sample the process immediately since it has already signaled readiness."""
-    # Set default collapsed filename with subprocess PID if not already set
+    # Set default filename with subprocess PID if not already set
     filename = args.outfile
-    if not filename and args.format == "collapsed":
-        filename = f"collapsed.{pid}.txt"
+    if not filename:
+        if args.format == "collapsed":
+            filename = f"collapsed.{pid}.txt"
+        elif args.format == "gecko":
+            filename = f"gecko.{pid}.json"
+
+    mode = _parse_mode(args.mode)
 
     sample(
         pid,
@@ -672,6 +718,9 @@ def wait_for_process_and_sample(pid, sort_value, args):
         show_summary=not args.no_summary,
         output_format=args.format,
         realtime_stats=args.realtime_stats,
+        mode=mode,
+        native=args.native,
+        gc=args.gc,
     )
 
 
@@ -722,8 +771,27 @@ def main():
     sampling_group.add_argument(
         "--realtime-stats",
         action="store_true",
-        default=False,
         help="Print real-time sampling statistics (Hz, mean, min, max, stdev) during profiling",
+    )
+    sampling_group.add_argument(
+        "--native",
+        action="store_true",
+        help="Include artificial \"<native>\" frames to denote calls to non-Python code.",
+    )
+    sampling_group.add_argument(
+        "--no-gc",
+        action="store_false",
+        dest="gc",
+        help="Don't include artificial \"<GC>\" frames to denote active garbage collection.",
+    )
+
+    # Mode options
+    mode_group = parser.add_argument_group("Mode options")
+    mode_group.add_argument(
+        "--mode",
+        choices=["wall", "cpu", "gil"],
+        default="wall",
+        help="Sampling mode: wall (all threads), cpu (only CPU-running threads), gil (only GIL-holding threads) (default: wall)",
     )
 
     # Output format selection
@@ -750,6 +818,13 @@ def main():
         const="flamegraph",
         dest="format",
         help="Generate HTML flamegraph visualization",
+    )
+    output_format.add_argument(
+        "--gecko",
+        action="store_const",
+        const="gecko",
+        dest="format",
+        help="Generate Gecko format for Firefox Profiler",
     )
 
     output_group.add_argument(
@@ -829,8 +904,12 @@ def main():
     args = parser.parse_args()
 
     # Validate format-specific arguments
-    if args.format == "collapsed":
+    if args.format in ("collapsed", "gecko"):
         _validate_collapsed_format_args(args, parser)
+
+    # Validate that --mode is not used with --gecko
+    if args.format == "gecko" and args.mode != "wall":
+        parser.error("--mode option is incompatible with --gecko format. Gecko format automatically uses ALL mode (GIL + CPU analysis).")
 
     sort_value = args.sort if args.sort is not None else 2
 
@@ -850,6 +929,12 @@ def main():
     elif target_count > 1:
         parser.error("only one target type can be specified: -p/--pid, -m/--module, or script")
 
+    # Use PROFILING_MODE_ALL for gecko format, otherwise parse user's choice
+    if args.format == "gecko":
+        mode = PROFILING_MODE_ALL
+    else:
+        mode = _parse_mode(args.mode)
+
     if args.pid:
         sample(
             args.pid,
@@ -862,6 +947,9 @@ def main():
             show_summary=not args.no_summary,
             output_format=args.format,
             realtime_stats=args.realtime_stats,
+            mode=mode,
+            native=args.native,
+            gc=args.gc,
         )
     elif args.module or args.args:
         if args.module:
