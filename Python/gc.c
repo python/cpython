@@ -1363,6 +1363,7 @@ gc_list_set_space(PyGC_Head *list, int space)
 static void
 add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
 {
+    gcstate->generation_stats[gen].duration += stats->duration;
     gcstate->generation_stats[gen].collected += stats->collected;
     gcstate->generation_stats[gen].uncollectable += stats->uncollectable;
     gcstate->generation_stats[gen].collections += 1;
@@ -1387,7 +1388,6 @@ gc_collect_young(PyThreadState *tstate,
     validate_spaces(gcstate);
     gcstate->young.count = 0;
     gcstate->old[gcstate->visited_space].count++;
-    add_stats(gcstate, 0, stats);
     validate_spaces(gcstate);
 }
 
@@ -1639,7 +1639,7 @@ assess_work_to_do(GCState *gcstate)
         scale_factor = 2;
     }
     intptr_t new_objects = gcstate->young.count;
-    intptr_t max_heap_fraction = new_objects*3/2;
+    intptr_t max_heap_fraction = new_objects*2;
     intptr_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     if (heap_fraction > max_heap_fraction) {
         heap_fraction = max_heap_fraction;
@@ -1654,6 +1654,9 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     GC_STAT_ADD(1, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
     gcstate->work_to_do += assess_work_to_do(gcstate);
+    if (gcstate->work_to_do < 0) {
+        return;
+    }
     untrack_tuples(&gcstate->young.head);
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
@@ -1696,10 +1699,8 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_collect_region(tstate, &increment, &survivors, stats);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     gcstate->work_to_do -= increment_size;
 
-    add_stats(gcstate, 1, stats);
     if (gc_list_is_empty(not_visited)) {
         completed_scavenge(gcstate);
     }
@@ -1734,7 +1735,6 @@ gc_collect_full(PyThreadState *tstate,
     completed_scavenge(gcstate);
     _PyGC_ClearAllFreeLists(tstate->interp);
     validate_spaces(gcstate);
-    add_stats(gcstate, 2, stats);
 }
 
 /* This is the main function. Read this to understand how the
@@ -1844,10 +1844,11 @@ do_gc_callback(GCState *gcstate, const char *phase,
     assert(PyList_CheckExact(gcstate->callbacks));
     PyObject *info = NULL;
     if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        info = Py_BuildValue("{sisnsn}",
+        info = Py_BuildValue("{sisnsnsd}",
             "generation", generation,
             "collected", stats->collected,
-            "uncollectable", stats->uncollectable);
+            "uncollectable", stats->uncollectable,
+            "duration", stats->duration);
         if (info == NULL) {
             PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");
             return;
@@ -2072,6 +2073,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         // Don't start a garbage collection if one is already in progress.
         return 0;
     }
+    gcstate->frame = tstate->current_frame;
 
     struct gc_collection_stats stats = { 0 };
     if (reason != _Py_GC_REASON_SHUTDOWN) {
@@ -2084,6 +2086,8 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (PyDTrace_GC_START_ENABLED()) {
         PyDTrace_GC_START(generation);
     }
+    PyTime_t start, stop;
+    (void)PyTime_PerfCounterRaw(&start);
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     switch(generation) {
         case 0:
@@ -2098,6 +2102,9 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         default:
             Py_UNREACHABLE();
     }
+    (void)PyTime_PerfCounterRaw(&stop);
+    stats.duration = PyTime_AsSecondsDouble(stop - start);
+    add_stats(gcstate, generation, &stats);
     if (PyDTrace_GC_DONE_ENABLED()) {
         PyDTrace_GC_DONE(stats.uncollectable + stats.collected);
     }
@@ -2107,14 +2114,24 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     _PyErr_SetRaisedException(tstate, exc);
     GC_STAT_ADD(generation, objects_collected, stats.collected);
 #ifdef Py_STATS
-    if (_Py_stats) {
+    PyStats *s = _PyStats_GET();
+    if (s) {
         GC_STAT_ADD(generation, object_visits,
-            _Py_stats->object_stats.object_visits);
-        _Py_stats->object_stats.object_visits = 0;
+            s->object_stats.object_visits);
+        s->object_stats.object_visits = 0;
     }
 #endif
     validate_spaces(gcstate);
+    gcstate->frame = NULL;
     _Py_atomic_store_int(&gcstate->collecting, 0);
+
+    if (gcstate->debug & _PyGC_DEBUG_STATS) {
+        PySys_WriteStderr(
+            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
+            stats.collected + stats.uncollectable, stats.uncollectable, stats.duration
+        );
+    }
+
     return stats.uncollectable + stats.collected;
 }
 
@@ -2219,7 +2236,7 @@ _PyGC_Fini(PyInterpreterState *interp)
 void
 _PyGC_Dump(PyGC_Head *g)
 {
-    _PyObject_Dump(FROM_GC(g));
+    PyUnstable_Object_Dump(FROM_GC(g));
 }
 
 
@@ -2286,26 +2303,27 @@ _Py_ScheduleGC(PyThreadState *tstate)
 }
 
 void
-_PyObject_GC_Link(PyObject *op)
+_Py_TriggerGC(struct _gc_runtime_state *gcstate)
 {
-    PyGC_Head *gc = AS_GC(op);
-    // gc must be correctly aligned
-    _PyObject_ASSERT(op, ((uintptr_t)gc & (sizeof(uintptr_t)-1)) == 0);
-
     PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
-    gc->_gc_next = 0;
-    gc->_gc_prev = 0;
-    gcstate->young.count++; /* number of allocated GC objects */
-    gcstate->heap_size++;
-    if (gcstate->young.count > gcstate->young.threshold &&
-        gcstate->enabled &&
-        gcstate->young.threshold &&
+    if (gcstate->enabled &&
+        gcstate->young.threshold != 0 &&
         !_Py_atomic_load_int_relaxed(&gcstate->collecting) &&
         !_PyErr_Occurred(tstate))
     {
         _Py_ScheduleGC(tstate);
     }
+}
+
+void
+_PyObject_GC_Link(PyObject *op)
+{
+    PyGC_Head *gc = AS_GC(op);
+    // gc must be correctly aligned
+    _PyObject_ASSERT(op, ((uintptr_t)gc & (sizeof(uintptr_t)-1)) == 0);
+    gc->_gc_next = 0;
+    gc->_gc_prev = 0;
+
 }
 
 void
@@ -2414,6 +2432,11 @@ PyObject_GC_Del(void *op)
     PyGC_Head *g = AS_GC(op);
     if (_PyObject_GC_IS_TRACKED(op)) {
         gc_list_remove(g);
+        GCState *gcstate = get_gc_state();
+        if (gcstate->young.count > 0) {
+            gcstate->young.count--;
+        }
+        gcstate->heap_size--;
 #ifdef Py_DEBUG
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
@@ -2427,11 +2450,6 @@ PyObject_GC_Del(void *op)
         PyErr_SetRaisedException(exc);
 #endif
     }
-    GCState *gcstate = get_gc_state();
-    if (gcstate->young.count > 0) {
-        gcstate->young.count--;
-    }
-    gcstate->heap_size--;
     PyObject_Free(((char *)op)-presize);
 }
 

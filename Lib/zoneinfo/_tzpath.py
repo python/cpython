@@ -13,6 +13,13 @@ def _reset_tzpath(to=None, stacklevel=4):
                 + f"not {type(tzpaths)}: {tzpaths!r}"
             )
 
+        tzpaths = [os.fspath(p) for p in tzpaths]
+        if not all(isinstance(p, str) for p in tzpaths):
+            raise TypeError(
+                "All elements of a tzpath sequence must be strings or "
+                "os.PathLike objects which convert to strings."
+            )
+
         if not all(map(os.path.isabs, tzpaths)):
             raise ValueError(_get_invalid_paths_message(tzpaths))
         base_tzpath = tzpaths
@@ -170,6 +177,10 @@ def available_timezones():
         # posixrules is a special symlink-only time zone where it exists, it
         # should not be included in the output
         valid_zones.remove("posixrules")
+    if "localtime" in valid_zones:
+        # localtime is a special symlink-only time zone where it exists, it
+        # should not be included in the output
+        valid_zones.remove("localtime")
 
     return valid_zones
 

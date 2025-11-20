@@ -5,6 +5,7 @@ Test the API of the symtable module.
 import re
 import textwrap
 import symtable
+import warnings
 import unittest
 
 from test import support
@@ -578,6 +579,37 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(st.is_nested())
         self.assertEqual(sorted(st.get_identifiers()), [".0", "y"])
         self.assertEqual(st.get_children(), [])
+
+    def test__symtable_refleak(self):
+        # Regression test for reference leak in PyUnicode_FSDecoder.
+        # See https://github.com/python/cpython/issues/139748.
+        mortal_str = 'this is a mortal string'
+        # check error path when 'compile_type' AC conversion failed
+        self.assertRaises(TypeError, symtable.symtable, '', mortal_str, 1)
+
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            symtable.symtable(source, filename, 'exec')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=module_re)
+            symtable.symtable(source, filename, 'exec', module='package.module')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
 
 
 class ComprehensionTests(unittest.TestCase):

@@ -666,7 +666,7 @@ or the :pypi:`more-itertools` project:
        "Choose a permutation where no element is in its original position."
        seq = tuple(iterable)
        if len(seq) < 2:
-           raise ValueError('derangments require at least two values')
+           raise ValueError('derangements require at least two values')
        perm = list(seq)
        while True:
            random.shuffle(perm)

@@ -6,6 +6,7 @@
 #include "pycore_parking_lot.h"
 #include "pycore_semaphore.h"
 #include "pycore_time.h"          // _PyTime_Add()
+#include "pycore_stats.h"         // FT_STAT_MUTEX_SLEEP_INC()
 
 #ifdef MS_WINDOWS
 #  ifndef WIN32_LEAN_AND_MEAN
@@ -61,6 +62,8 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
     if (timeout == 0) {
         return PY_LOCK_FAILURE;
     }
+
+    FT_STAT_MUTEX_SLEEP_INC();
 
     PyTime_t now;
     // silently ignore error: cannot report error to the caller
@@ -227,7 +230,7 @@ _PyRawMutex_LockSlow(_PyRawMutex *m)
 
         // Wait for us to be woken up. Note that we still have to lock the
         // mutex ourselves: it is NOT handed off to us.
-        _PySemaphore_Wait(&waiter.sema, -1, /*detach=*/0);
+        _PySemaphore_Wait(&waiter.sema, -1);
     }
 
     _PySemaphore_Destroy(&waiter.sema);
