@@ -3424,9 +3424,12 @@ class ModexportTests(unittest.TestCase):
         enabled_before = sys._is_gil_enabled()
         interp.exec(f"""if True:
             import sys
+            from test.support.warnings_helper import check_warnings
             from {__name__} import import_extension_from_file
-            module = import_extension_from_file(modname, filename,
-                                                put_in_sys_modules=False)
+            with check_warnings((".*GIL..has been enabled.*", RuntimeWarning),
+                                quiet=True):
+                module = import_extension_from_file(modname, filename,
+                                                    put_in_sys_modules=False)
             queue.put(module.__name__)
             queue.put(sys._is_gil_enabled())
         """)
@@ -3474,9 +3477,12 @@ class ModexportTests(unittest.TestCase):
         enabled_before = sys._is_gil_enabled()
         interp.exec(f"""if True:
             import sys
+            from test.support.warnings_helper import check_warnings
             from {__name__} import import_extension_from_file
-            module = import_extension_from_file(modname, filename,
-                                                put_in_sys_modules=False)
+            with check_warnings((".*GIL..has been enabled.*", RuntimeWarning),
+                                quiet=True):
+                module = import_extension_from_file(modname, filename,
+                                                    put_in_sys_modules=False)
             queue.put(module)
             queue.put(sys._is_gil_enabled())
         """)
