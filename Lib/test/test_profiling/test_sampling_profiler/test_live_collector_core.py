@@ -36,7 +36,7 @@ class TestLiveStatsCollectorPathSimplification(unittest.TestCase):
         if os_file:
             stdlib_dir = os.path.dirname(os.path.abspath(os_file))
             test_path = os.path.join(stdlib_dir, "json", "decoder.py")
-            simplified = collector._simplify_path(test_path)
+            simplified = collector.simplify_path(test_path)
             # Should remove the stdlib prefix
             self.assertNotIn(stdlib_dir, simplified)
             self.assertIn("json", simplified)
@@ -45,7 +45,7 @@ class TestLiveStatsCollectorPathSimplification(unittest.TestCase):
         """Test that unknown paths are returned unchanged."""
         collector = LiveStatsCollector(1000)
         test_path = "/some/unknown/path/file.py"
-        simplified = collector._simplify_path(test_path)
+        simplified = collector.simplify_path(test_path)
         self.assertEqual(simplified, test_path)
 
 
@@ -56,7 +56,7 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
         """Test processing a single frame."""
         collector = LiveStatsCollector(1000)
         frames = [MockFrameInfo("test.py", 10, "test_func")]
-        collector._process_frames(frames)
+        collector.process_frames(frames)
 
         location = ("test.py", 10, "test_func")
         self.assertEqual(collector.result[location]["direct_calls"], 1)
@@ -70,7 +70,7 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
             MockFrameInfo("test.py", 20, "middle_func"),
             MockFrameInfo("test.py", 30, "outer_func"),
         ]
-        collector._process_frames(frames)
+        collector.process_frames(frames)
 
         # Top frame (inner_func) should have both direct and cumulative
         inner_loc = ("test.py", 10, "inner_func")
@@ -89,7 +89,7 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
     def test_process_empty_frames(self):
         """Test processing empty frames list."""
         collector = LiveStatsCollector(1000)
-        collector._process_frames([])
+        collector.process_frames([])
         # Should not raise an error and result should remain empty
         self.assertEqual(len(collector.result), 0)
 
@@ -98,9 +98,9 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
         collector = LiveStatsCollector(1000)
         frames = [MockFrameInfo("test.py", 10, "test_func")]
 
-        collector._process_frames(frames)
-        collector._process_frames(frames)
-        collector._process_frames(frames)
+        collector.process_frames(frames)
+        collector.process_frames(frames)
+        collector.process_frames(frames)
 
         location = ("test.py", 10, "test_func")
         self.assertEqual(collector.result[location]["direct_calls"], 3)
@@ -112,7 +112,7 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
         frames = [MockFrameInfo("test.py", 10, "test_func")]
 
         # Process frames with thread_id
-        collector._process_frames(frames, thread_id=123)
+        collector.process_frames(frames, thread_id=123)
 
         # Check aggregated result
         location = ("test.py", 10, "test_func")
@@ -135,8 +135,8 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
         frames2 = [MockFrameInfo("test.py", 20, "other_func")]
 
         # Process frames from different threads
-        collector._process_frames(frames1, thread_id=123)
-        collector._process_frames(frames2, thread_id=456)
+        collector.process_frames(frames1, thread_id=123)
+        collector.process_frames(frames2, thread_id=456)
 
         # Check that both threads have their own data
         self.assertIn(123, collector.per_thread_data)
@@ -199,8 +199,8 @@ class TestLiveStatsCollectorCollect(unittest.TestCase):
 
         location = ("test.py", 10, "test_func")
         self.assertEqual(collector.result[location]["direct_calls"], 1)
-        self.assertEqual(collector._successful_samples, 1)
-        self.assertEqual(collector._failed_samples, 0)
+        self.assertEqual(collector.successful_samples, 1)
+        self.assertEqual(collector.failed_samples, 0)
 
     def test_collect_with_empty_frames(self):
         """Test collect with empty frames."""
@@ -212,8 +212,8 @@ class TestLiveStatsCollectorCollect(unittest.TestCase):
         collector.collect(stack_frames)
 
         # Empty frames still count as successful since collect() was called successfully
-        self.assertEqual(collector._successful_samples, 1)
-        self.assertEqual(collector._failed_samples, 0)
+        self.assertEqual(collector.successful_samples, 1)
+        self.assertEqual(collector.failed_samples, 0)
 
     def test_collect_skip_idle_threads(self):
         """Test that idle threads are skipped when skip_idle=True."""
@@ -284,7 +284,7 @@ class TestLiveStatsCollectorStatisticsBuilding(unittest.TestCase):
 
     def test_build_stats_list(self):
         """Test that stats list is built correctly."""
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
         self.assertEqual(len(stats_list), 3)
 
         # Check that all expected keys are present
@@ -298,7 +298,7 @@ class TestLiveStatsCollectorStatisticsBuilding(unittest.TestCase):
     def test_sort_by_nsamples(self):
         """Test sorting by number of samples."""
         self.collector.sort_by = "nsamples"
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Should be sorted by direct_calls descending
         self.assertEqual(stats_list[0]["func"][2], "func1")  # 100 samples
@@ -308,7 +308,7 @@ class TestLiveStatsCollectorStatisticsBuilding(unittest.TestCase):
     def test_sort_by_tottime(self):
         """Test sorting by total time."""
         self.collector.sort_by = "tottime"
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Should be sorted by total_time descending
         # total_time = direct_calls * sample_interval_sec
@@ -319,7 +319,7 @@ class TestLiveStatsCollectorStatisticsBuilding(unittest.TestCase):
     def test_sort_by_cumtime(self):
         """Test sorting by cumulative time."""
         self.collector.sort_by = "cumtime"
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Should be sorted by cumulative_time descending
         self.assertEqual(stats_list[0]["func"][2], "func2")  # 200 cumulative
@@ -329,7 +329,7 @@ class TestLiveStatsCollectorStatisticsBuilding(unittest.TestCase):
     def test_sort_by_sample_pct(self):
         """Test sorting by sample percentage."""
         self.collector.sort_by = "sample_pct"
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Should be sorted by percentage of direct_calls
         self.assertEqual(stats_list[0]["func"][2], "func1")  # 33.3%
@@ -339,7 +339,7 @@ class TestLiveStatsCollectorStatisticsBuilding(unittest.TestCase):
     def test_sort_by_cumul_pct(self):
         """Test sorting by cumulative percentage."""
         self.collector.sort_by = "cumul_pct"
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Should be sorted by percentage of cumulative_calls
         self.assertEqual(stats_list[0]["func"][2], "func2")  # 66.7%
@@ -438,14 +438,14 @@ class TestLiveStatsCollectorFormatting(unittest.TestCase):
         collector = LiveStatsCollector(1000, display=MockDisplay())
         colors = collector._setup_colors()
         collector._initialize_widgets(colors)
-        self.assertEqual(collector._header_widget.format_uptime(45), "0m45s")
+        self.assertEqual(collector.header_widget.format_uptime(45), "0m45s")
 
     def test_format_uptime_minutes(self):
         """Test uptime formatting for minutes."""
         collector = LiveStatsCollector(1000, display=MockDisplay())
         colors = collector._setup_colors()
         collector._initialize_widgets(colors)
-        self.assertEqual(collector._header_widget.format_uptime(125), "2m05s")
+        self.assertEqual(collector.header_widget.format_uptime(125), "2m05s")
 
     def test_format_uptime_hours(self):
         """Test uptime formatting for hours."""
@@ -453,7 +453,7 @@ class TestLiveStatsCollectorFormatting(unittest.TestCase):
         colors = collector._setup_colors()
         collector._initialize_widgets(colors)
         self.assertEqual(
-            collector._header_widget.format_uptime(3661), "1h01m01s"
+            collector.header_widget.format_uptime(3661), "1h01m01s"
         )
 
     def test_format_uptime_large_values(self):
@@ -462,7 +462,7 @@ class TestLiveStatsCollectorFormatting(unittest.TestCase):
         colors = collector._setup_colors()
         collector._initialize_widgets(colors)
         self.assertEqual(
-            collector._header_widget.format_uptime(86400), "24h00m00s"
+            collector.header_widget.format_uptime(86400), "24h00m00s"
         )
 
     def test_format_uptime_zero(self):
@@ -470,7 +470,7 @@ class TestLiveStatsCollectorFormatting(unittest.TestCase):
         collector = LiveStatsCollector(1000, display=MockDisplay())
         colors = collector._setup_colors()
         collector._initialize_widgets(colors)
-        self.assertEqual(collector._header_widget.format_uptime(0), "0m00s")
+        self.assertEqual(collector.header_widget.format_uptime(0), "0m00s")
 
 
 if __name__ == "__main__":
