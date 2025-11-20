@@ -8,10 +8,41 @@ DateTime Objects
 Various date and time objects are supplied by the :mod:`datetime` module.
 Before using any of these functions, the header file :file:`datetime.h` must be
 included in your source (note that this is not included by :file:`Python.h`),
-and the macro :c:macro:`!PyDateTime_IMPORT` must be invoked, usually as part of
+and the macro :c:macro:`PyDateTime_IMPORT` must be invoked, usually as part of
 the module initialisation function.  The macro puts a pointer to a C structure
-into a static variable, :c:data:`!PyDateTimeAPI`, that is used by the following
+into a static variable, :c:data:`PyDateTimeAPI`, that is used by the following
 macros.
+
+.. c:macro:: PyDateTime_IMPORT()
+
+   Import the datetime C API.
+
+   On success, populate the :c:var:`PyDateTimeAPI` pointer.
+   On failure, set :c:var:`PyDateTimeAPI` to ``NULL`` and set an exception.
+   The caller must check if an error occurred via :c:func:`PyErr_Occurred`:
+
+   .. code-block::
+
+      PyDateTime_IMPORT;
+      if (PyErr_Occurred()) { /* cleanup */ }
+
+   .. warning::
+
+      This is not compatible with subinterpreters.
+
+.. c:type:: PyDateTime_CAPI
+
+   Structure containing the fields for the datetime C API.
+
+   The fields of this structure are private and subject to change.
+
+   Do not use this directly; prefer ``PyDateTime_*`` APIs instead.
+
+.. c:var:: PyDateTime_CAPI *PyDateTimeAPI
+
+   Dynamically allocated object containing the datetime C API.
+
+   This variable is only available once :c:macro:`PyDateTime_IMPORT` succeeds.
 
 .. c:type:: PyDateTime_Date
 
@@ -325,3 +356,16 @@ Macros for the convenience of modules implementing the DB API:
 
    Create and return a new :class:`datetime.date` object given an argument
    tuple suitable for passing to :meth:`datetime.date.fromtimestamp`.
+
+
+Internal data
+-------------
+
+The following symbols are exposed by the C API but should be considered
+internal-only.
+
+.. c:macro:: PyDateTime_CAPSULE_NAME
+
+   Name of the datetime capsule to pass to :c:func:`PyCapsule_Import`.
+
+   Internal usage only. Use :c:macro:`PyDateTime_IMPORT` instead.
