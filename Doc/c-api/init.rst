@@ -2716,7 +2716,7 @@ Operating System Thread APIs
    .. warning::
 
       If the current system uses POSIX threads (also known as "pthreads"),
-      this calls :man:`pthread_exit(3)`, attempts to unwind the stack and
+      this calls :manpage:`pthread_exit(3)`, attempts to unwind the stack and
       call C++ destructors on some libc implementations. However, if a
       ``noexcept`` function is reached, they may terminate the process.
       Other systems, such as macOS, do unwinding.
