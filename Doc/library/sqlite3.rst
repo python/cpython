@@ -31,7 +31,9 @@ PostgreSQL or Oracle.
 
 The :mod:`!sqlite3` module was written by Gerhard Häring.  It provides an SQL interface
 compliant with the DB-API 2.0 specification described by :pep:`249`, and
-requires SQLite 3.15.2 or newer.
+requires the third-party `SQLite <https://sqlite.org/>`_ library.
+
+.. include:: ../includes/optional-module.rst
 
 This document includes four main sections:
 
@@ -514,7 +516,7 @@ Module constants
    This constant is only available if Python was compiled with SQLite
    3.24.0 or greater.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: threadsafety
 
@@ -1611,7 +1613,7 @@ Cursor objects
       If the *size* parameter is used, then it is best for it to retain the same
       value from one :meth:`fetchmany` call to the next.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Negative *size* values are rejected by raising :exc:`ValueError`.
 
    .. method:: fetchall()
@@ -1641,7 +1643,7 @@ Cursor objects
       Read/write attribute that controls the number of rows returned by :meth:`fetchmany`.
       The default value is 1 which means a single row would be fetched per call.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Negative values are rejected by raising :exc:`ValueError`.
 
    .. attribute:: connection

@@ -3,6 +3,10 @@ repos:
     rev: v0.13.2
     hooks:
       - id: ruff-check
+        name: Run Ruff (lint) on Apple/
+        args: [--exit-non-zero-on-fix, --config=Apple/.ruff.toml]
+        files: ^Apple/
+      - id: ruff-check
         name: Run Ruff (lint) on Doc/
         args: [--exit-non-zero-on-fix]
         files: ^Doc/
@@ -26,6 +30,14 @@ repos:
         name: Run Ruff (lint) on Tools/peg_generator/
         args: [--exit-non-zero-on-fix, --config=Tools/peg_generator/.ruff.toml]
         files: ^Tools/peg_generator/
+      - id: ruff-check
+        name: Run Ruff (lint) on Tools/wasm/
+        args: [--exit-non-zero-on-fix, --config=Tools/wasm/.ruff.toml]
+        files: ^Tools/wasm/
+      - id: ruff-format
+        name: Run Ruff (format) on Apple/
+        args: [--exit-non-zero-on-fix, --config=Apple/.ruff.toml]
+        files: ^Apple
       - id: ruff-format
         name: Run Ruff (format) on Doc/
         args: [--check]
@@ -34,6 +46,10 @@ repos:
         name: Run Ruff (format) on Tools/build/check_warnings.py
         args: [--check, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/check_warnings.py
+      - id: ruff-format
+        name: Run Ruff (format) on Tools/wasm/
+        args: [--check, --config=Tools/wasm/.ruff.toml]
+        files: ^Tools/wasm/
 
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 25.9.0

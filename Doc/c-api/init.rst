@@ -1113,7 +1113,7 @@ code, or when embedding the Python interpreter:
    This function is safe to call without an :term:`attached thread state`; it
    will simply return ``NULL`` indicating that there was no prior thread state.
 
-   .. seealso:
+   .. seealso::
       :c:func:`PyEval_ReleaseThread`
 
    .. note::
@@ -1123,6 +1123,19 @@ code, or when embedding the Python interpreter:
 
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
+
+.. c:type:: PyGILState_STATE
+
+   The type of the value returned by :c:func:`PyGILState_Ensure` and passed to
+   :c:func:`PyGILState_Release`.
+
+   .. c:enumerator:: PyGILState_LOCKED
+
+      The GIL was already held when :c:func:`PyGILState_Ensure` was called.
+
+   .. c:enumerator:: PyGILState_UNLOCKED
+
+      The GIL was not held when :c:func:`PyGILState_Ensure` was called.
 
 .. c:function:: PyGILState_STATE PyGILState_Ensure()
 
@@ -1174,12 +1187,12 @@ with sub-interpreters:
    made on the main thread.  This is mainly a helper/diagnostic function.
 
    .. note::
-      This function does not account for :term:`thread states <thread state>` created
-      by something other than :c:func:`PyGILState_Ensure` (such as :c:func:`PyThreadState_New`).
+      This function may return non-``NULL`` even when the :term:`thread state`
+      is detached.
       Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
       for most cases.
 
-   .. seealso: :c:func:`PyThreadState_Get``
+   .. seealso:: :c:func:`PyThreadState_Get`
 
 .. c:function:: int PyGILState_Check()
 
@@ -1278,11 +1291,11 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    must be :term:`attached <attached thread state>`
 
    .. versionchanged:: 3.9
-      This function now calls the :c:member:`PyThreadState.on_delete` callback.
+      This function now calls the :c:member:`!PyThreadState.on_delete` callback.
       Previously, that happened in :c:func:`PyThreadState_Delete`.
 
    .. versionchanged:: 3.13
-      The :c:member:`PyThreadState.on_delete` callback was removed.
+      The :c:member:`!PyThreadState.on_delete` callback was removed.
 
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
@@ -1351,6 +1364,43 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    functions.
 
    .. versionadded:: 3.11
+
+
+.. c:function:: int PyUnstable_ThreadState_SetStackProtection(PyThreadState *tstate, void *stack_start_addr, size_t stack_size)
+
+   Set the stack protection start address and stack protection size
+   of a Python thread state.
+
+   On success, return ``0``.
+   On failure, set an exception and return ``-1``.
+
+   CPython implements :ref:`recursion control <recursion>` for C code by raising
+   :py:exc:`RecursionError` when it notices that the machine execution stack is close
+   to overflow. See for example the :c:func:`Py_EnterRecursiveCall` function.
+   For this, it needs to know the location of the current thread's stack, which it
+   normally gets from the operating system.
+   When the stack is changed, for example using context switching techniques like the
+   Boost library's ``boost::context``, you must call
+   :c:func:`~PyUnstable_ThreadState_SetStackProtection` to inform CPython of the change.
+
+   Call :c:func:`~PyUnstable_ThreadState_SetStackProtection` either before
+   or after changing the stack.
+   Do not call any other Python C API between the call and the stack
+   change.
+
+   See :c:func:`PyUnstable_ThreadState_ResetStackProtection` for undoing this operation.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: void PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
+
+   Reset the stack protection start address and stack protection size
+   of a Python thread state to the operating system defaults.
+
+   See :c:func:`PyUnstable_ThreadState_SetStackProtection` for an explanation.
+
+   .. versionadded:: 3.15
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
@@ -1841,6 +1891,25 @@ pointer and a void pointer argument.
       This function now always schedules *func* to be run in the main
       interpreter.
 
+
+.. c:function:: int Py_MakePendingCalls(void)
+
+   Execute all pending calls. This is usually executed automatically by the
+   interpreter.
+
+   This function returns ``0`` on success, and returns ``-1`` with an exception
+   set on failure.
+
+   If this is not called in the main thread of the main
+   interpreter, this function does nothing and returns ``0``.
+   The caller must hold an :term:`attached thread state`.
+
+   .. versionadded:: 3.1
+
+   .. versionchanged:: 3.12
+      This function only runs pending calls in the main interpreter.
+
+
 .. _profiling:
 
 Profiling and Tracing
@@ -2127,7 +2196,7 @@ use a thread key and functions to associate a :c:expr:`void*` value per
 thread.
 
 A :term:`thread state` does *not* need to be :term:`attached <attached thread state>`
-when calling these functions; they suppl their own locking.
+when calling these functions; they supply their own locking.
 
 Note that :file:`Python.h` does not include the declaration of the TLS APIs,
 you need to include :file:`pythread.h` to use thread-local storage.

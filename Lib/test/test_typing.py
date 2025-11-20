@@ -33,7 +33,7 @@ from typing import override
 from typing import is_typeddict, is_protocol
 from typing import reveal_type
 from typing import dataclass_transform
-from typing import no_type_check, no_type_check_decorator
+from typing import no_type_check
 from typing import Type
 from typing import NamedTuple, NotRequired, Required, ReadOnly, TypedDict, NoExtraItems
 from typing import IO, TextIO, BinaryIO
@@ -759,6 +759,16 @@ class TypeParameterDefaultsTests(BaseTestCase):
         self.assertEqual(P.__default__, [str, int])
         class A(Generic[T, P, U]): ...
         self.assertEqual(A[float].__args__, (float, (str, int), float))
+        self.assertEqual(A[float, [range]].__args__, (float, (range,), float))
+        self.assertEqual(A[float, [range], int].__args__, (float, (range,), int))
+
+    def test_paramspec_and_typevar_specialization_2(self):
+        T = TypeVar("T")
+        P = ParamSpec('P', default=...)
+        U = TypeVar("U", default=float)
+        self.assertEqual(P.__default__, ...)
+        class A(Generic[T, P, U]): ...
+        self.assertEqual(A[float].__args__, (float, ..., float))
         self.assertEqual(A[float, [range]].__args__, (float, (range,), float))
         self.assertEqual(A[float, [range], int].__args__, (float, (range,), int))
 
@@ -2272,6 +2282,15 @@ class UnionTests(BaseTestCase):
                          (Literal[0], Literal[Ints.A], Literal[False]))
         self.assertEqual(Union[Literal[1], Literal[Ints.B], Literal[True]].__args__,
                          (Literal[1], Literal[Ints.B], Literal[True]))
+
+    def test_allow_non_types_in_or(self):
+        # gh-140348: Test that using | with a Union object allows things that are
+        # not allowed by is_unionable().
+        U1 = Union[int, str]
+        self.assertEqual(U1 | float, Union[int, str, float])
+        self.assertEqual(U1 | "float", Union[int, str, "float"])
+        self.assertEqual(float | U1, Union[float, int, str])
+        self.assertEqual("float" | U1, Union["float", int, str])
 
 
 class TupleTests(BaseTestCase):
@@ -4722,6 +4741,34 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             D[()]
 
+    def test_generic_init_subclass_not_called_error(self):
+        notes = ["Note: this exception may have been caused by "
+                 r"'GenericTests.test_generic_init_subclass_not_called_error.<locals>.Base.__init_subclass__' "
+                 "(or the '__init_subclass__' method on a superclass) not calling 'super().__init_subclass__()'"]
+
+        class Base:
+            def __init_subclass__(cls) -> None:
+                # Oops, I forgot super().__init_subclass__()!
+                pass
+
+        with self.subTest():
+            class Sub(Base, Generic[T]):
+                pass
+
+            with self.assertRaises(AttributeError) as cm:
+                Sub[int]
+
+            self.assertEqual(cm.exception.__notes__, notes)
+
+        with self.subTest():
+            class Sub[U](Base):
+                pass
+
+            with self.assertRaises(AttributeError) as cm:
+                Sub[int]
+
+            self.assertEqual(cm.exception.__notes__, notes)
+
     def test_generic_subclass_checks(self):
         for typ in [list[int], List[int],
                     tuple[int, str], Tuple[int, str],
@@ -6337,35 +6384,6 @@ class NoTypeCheckTests(BaseTestCase):
         expected_result = {'foo': typing.ClassVar[int]}
         for clazz in [C, D, E, F]:
             self.assertEqual(get_type_hints(clazz), expected_result)
-
-    def test_meta_no_type_check(self):
-        depr_msg = (
-            "'typing.no_type_check_decorator' is deprecated "
-            "and slated for removal in Python 3.15"
-        )
-        with self.assertWarnsRegex(DeprecationWarning, depr_msg):
-            @no_type_check_decorator
-            def magic_decorator(func):
-                return func
-
-        self.assertEqual(magic_decorator.__name__, 'magic_decorator')
-
-        @magic_decorator
-        def foo(a: 'whatevers') -> {}:
-            pass
-
-        @magic_decorator
-        class C:
-            def foo(a: 'whatevers') -> {}:
-                pass
-
-        self.assertEqual(foo.__name__, 'foo')
-        th = get_type_hints(foo)
-        self.assertEqual(th, {})
-        cth = get_type_hints(C.foo)
-        self.assertEqual(cth, {})
-        ith = get_type_hints(C().foo)
-        self.assertEqual(ith, {})
 
 
 class InternalsTests(BaseTestCase):
