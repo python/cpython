@@ -4744,6 +4744,19 @@ class PdbTestInline(unittest.TestCase):
         self.assertNotIn("readline imported", stdout)
         self.assertEqual(stderr, "")
 
+    def test_alternate_stdin(self):
+        script = textwrap.dedent("""
+            import pdb
+            import io
+
+            input_data = io.StringIO("p 40 + 2\\nc\\n")
+            pdb.Pdb(stdin=input_data).set_trace()
+        """)
+        commands = ""
+        stdout, stderr = self._run_script(script, commands)
+        self.assertIn("42", stdout)
+        self.assertEqual(stderr, "")
+
 
 @support.force_colorized_test_class
 class PdbTestColorize(unittest.TestCase):

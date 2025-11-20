@@ -346,8 +346,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         bdb.Bdb.__init__(self, skip=skip, backend=backend if backend else get_default_backend())
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
-        if stdout:
-            self.use_rawinput = 0
+        if stdin:
+            self.use_rawinput = False
         self.prompt = '(Pdb) '
         self.aliases = {}
         self.displaying = {}
