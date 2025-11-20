@@ -25,8 +25,9 @@ extern "C" {
    The 16-bit counter is structured as a 13-bit unsigned 'value'
    and a 3-bit 'backoff' field. When resetting the counter, the
    backoff field is incremented (until it reaches a limit) and the
-   value is set to a bit mask representing some prime value near
-   to 2**(2*backoff+1) - 1, see value_and_backoff_next.
+   value is set to a bit mask representing some prime value - 1.
+   New values and backoffs for each backoff are calculated once
+   at compile time and saved to value_and_backoff_next table.
    The maximum backoff is 6, since 7 is an UNREACHABLE_BACKOFF.
 
    There is an exceptional value which must not be updated, 0xFFFF.
@@ -41,15 +42,15 @@ extern "C" {
 #define MAKE_VALUE_AND_BACKOFF(value, backoff) \
     ((value << BACKOFF_BITS) | backoff)
 
-// We only use values x and backoffs b such that
+// For previous backoff b we use value x such that
 // x + 1 is near to 2**(2*b+1) and x + 1 is prime.
 static const uint16_t value_and_backoff_next[] = {
-    MAKE_VALUE_AND_BACKOFF(6, 1),
-    MAKE_VALUE_AND_BACKOFF(30, 2),
-    MAKE_VALUE_AND_BACKOFF(126, 3),
-    MAKE_VALUE_AND_BACKOFF(508, 4),
-    MAKE_VALUE_AND_BACKOFF(2052, 5),
-    MAKE_VALUE_AND_BACKOFF(8190, 6),
+    MAKE_VALUE_AND_BACKOFF(1, 1),
+    MAKE_VALUE_AND_BACKOFF(6, 2),
+    MAKE_VALUE_AND_BACKOFF(30, 3),
+    MAKE_VALUE_AND_BACKOFF(126, 4),
+    MAKE_VALUE_AND_BACKOFF(508, 5),
+    MAKE_VALUE_AND_BACKOFF(2052, 6),
     // We use the same backoff counter for all backoffs >= MAX_BACKOFF.
     MAKE_VALUE_AND_BACKOFF(8190, 6),
     MAKE_VALUE_AND_BACKOFF(8190, 6),
