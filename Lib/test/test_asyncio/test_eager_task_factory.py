@@ -5,7 +5,7 @@ import contextvars
 import unittest
 
 from unittest import mock
-from asyncio import staggered, tasks
+from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test.support.script_helper import assert_python_ok
 
@@ -225,7 +225,7 @@ class EagerTaskFactoryLoopTests:
             await fut
 
         async def run():
-            winner, index, excs = await staggered.staggered_race(
+            winner, index, excs = await asyncio.staggered.staggered_race(
                 [
                     lambda: blocked(),
                     lambda: asyncio.sleep(1, result="sleep1"),
@@ -247,7 +247,7 @@ class EagerTaskFactoryLoopTests:
             raise ValueError("no good")
 
         async def run():
-            winner, index, excs = await staggered.staggered_race(
+            winner, index, excs = await asyncio.staggered.staggered_race(
                 [
                     lambda: fail(),
                     lambda: asyncio.sleep(1, result="sleep1"),
