@@ -18,7 +18,6 @@ macros.
    Import the datetime C API.
 
    On success, populate the :c:var:`PyDateTimeAPI` pointer.
-
    On failure, set :c:var:`PyDateTimeAPI` to ``NULL`` and set an exception.
    The caller must check if an error occurred via :c:func:`PyErr_Occurred`:
 
