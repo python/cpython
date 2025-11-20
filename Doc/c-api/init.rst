@@ -1862,7 +1862,7 @@ pointer and a void pointer argument.
 
    This function returns ``0`` on success, and returns ``-1`` with an exception
    set on failure.
-   
+
    If this is not called in the main thread of the main
    interpreter, this function does nothing and returns ``0``.
    The caller must hold an :term:`attached thread state`.
