@@ -1575,7 +1575,7 @@ Constants
    Specification that this implementation complies with.
    See https://speleotrove.com/decimal/decarith.html for the specification.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 The following constants are only relevant for the C module. They

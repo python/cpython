@@ -504,6 +504,7 @@ extern "C" {
  * Thread support is stubbed and any attempt to create a new thread fails.
  */
 #if (!defined(HAVE_PTHREAD_STUBS) && \
+     !defined(__wasi__) && \
       (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)))
 #  define Py_CAN_START_THREADS 1
 #endif
