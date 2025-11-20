@@ -2587,14 +2587,17 @@ These APIs are obsolete since Python 3.13 with the introduction of
       would use a lock provided by the operating system.
 
 
-.. c:function:: PyThread_free_lock(PyThread_type_lock lock)
+.. c:function:: void PyThread_free_lock(PyThread_type_lock lock)
 
-   Destroy the lock *lock*.
+   Destroy *lock*. The lock should not be held by any thread when calling
+   this.
+
+   The caller does not need to hold an :term:`attached thread state`.
 
 
 .. c:function:: PyLockStatus PyThread_acquire_lock_timed(PyThread_type_lock lock, long long microseconds, int intr_flag)
 
-   Acquire lock *lock*.
+   Acquire *lock* with a timeout.
 
    This will wait for *microseconds* microseconds to acquire the lock. If the
    timeout expires, this function returns :c:enumerator:`PY_LOCK_FAILURE`.
@@ -2612,7 +2615,7 @@ These APIs are obsolete since Python 3.13 with the introduction of
 
 .. c:function:: int PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
 
-   Acquire lock *lock*.
+   Acquire *lock*.
 
    If *waitflag* is ``1`` and another thread currently holds the lock, this
    function will wait until the lock can be acquired and will always return
@@ -2630,7 +2633,7 @@ These APIs are obsolete since Python 3.13 with the introduction of
 
 .. c:function:: int PyThread_release_lock(PyThread_type_lock lock)
 
-   Release lock *lock*. If *lock* is not held, then this function issues a
+   Release *lock*. If *lock* is not held, then this function issues a
    fatal error.
 
    The caller does not need to hold an :term:`attached thread state`.
