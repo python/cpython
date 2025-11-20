@@ -2560,6 +2560,8 @@ These APIs are obsolete since Python 3.13 with the introduction of
 
    The result of acquiring a lock with a timeout.
 
+   .. c:namespace:: NULL
+
    .. c:enumerator:: PY_LOCK_FAILURE
 
       Failed to acquire the lock.
