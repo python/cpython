@@ -33,6 +33,7 @@ found in the dictionary of type objects.
 
 
 .. c:var:: PyTypeObject PyMethodDescr_Type
+
    The type object for method descriptor objects created from
    :c:type:`PyMethodDef` structures. These descriptors expose C functions as
    methods on a type, and correspond to ``method_descriptor`` objects in the
@@ -43,6 +44,7 @@ found in the dictionary of type objects.
 
 
 .. c:var:: PyTypeObject PyWrapperDescr_Type
+
    The type object for wrapper descriptor objects created by
    :c:func:`PyDescr_NewWrapper` and :c:func:`PyWrapper_New`. Wrapper
    descriptors are used internally to expose special methods implemented
@@ -87,6 +89,7 @@ Built-in descriptors
 
 
 .. c:var:: PyTypeObject PyGetSetDescr_Type
+   
    The type object for get/set descriptor objects created from
    :c:type:`PyGetSetDef` structures. These descriptors implement attributes
    whose value is computed by C getter and setter functions, and are used
