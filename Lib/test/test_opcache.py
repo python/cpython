@@ -1872,6 +1872,33 @@ class TestSpecializer(TestBase):
         self.assert_specialized(for_iter_generator, "FOR_ITER_GEN")
         self.assert_no_opcode(for_iter_generator, "FOR_ITER")
 
+    @cpython_only
+    @requires_specialization_ft
+    def test_call_list_append(self):
+        # gh-141367: only exact lists should use
+        # CALL_LIST_APPEND instruction after specialization.
+
+        r = range(_testinternalcapi.SPECIALIZATION_THRESHOLD)
+
+        def list_append(l):
+            for _ in r:
+                l.append(1)
+
+        list_append([])
+        self.assert_specialized(list_append, "CALL_LIST_APPEND")
+        self.assert_no_opcode(list_append, "CALL_METHOD_DESCRIPTOR_O")
+        self.assert_no_opcode(list_append, "CALL")
+
+        def my_list_append(l):
+            for _ in r:
+                l.append(1)
+
+        class MyList(list): pass
+        my_list_append(MyList())
+        self.assert_specialized(my_list_append, "CALL_METHOD_DESCRIPTOR_O")
+        self.assert_no_opcode(my_list_append, "CALL_LIST_APPEND")
+        self.assert_no_opcode(my_list_append, "CALL")
+
 
 if __name__ == "__main__":
     unittest.main()
