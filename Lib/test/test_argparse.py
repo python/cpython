@@ -582,9 +582,9 @@ class TestOptionalsDest(ParserTestCase):
     """Tests various means of setting destination"""
 
     argument_signatures = [
-        Sig('-x', '--foo-bar'),
+        Sig('-x', '-foobar', '--foo-bar', '-barfoo', '-X'),
         Sig('--baz', dest='zabbaz'),
-        Sig('-y', '-qux'),
+        Sig('-y', '-qux', '-Y'),
         Sig('-z'),
     ]
     failures = ['a']

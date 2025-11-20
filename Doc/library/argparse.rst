@@ -1322,8 +1322,12 @@ attribute is determined by the ``dest`` keyword argument of
 
 For optional argument actions, the value of ``dest`` is normally inferred from
 the option strings.  :class:`ArgumentParser` generates the value of ``dest`` by
-taking the first long option string and stripping away the initial ``-``
-characters.  If no long option strings were supplied, ``dest`` will be derived from
+taking the first double-dash long option string and stripping away the initial
+``-`` characters.
+If no double-dash long option strings were supplied, ``dest`` will be derived
+from the first single-dash long option string by stripping the initial ``-``
+character.
+If no long option strings were supplied, ``dest`` will be derived from
 the first short option string by stripping the initial ``-`` character.  Any
 internal ``-`` characters will be converted to ``_`` characters to make sure
 the string is a valid attribute name.  The examples below illustrate this
