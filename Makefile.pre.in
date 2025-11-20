@@ -3239,7 +3239,6 @@ clean-retain-profile: pycremoval
 	-rm -rf Python/deepfreeze
 	-rm -f Python/frozen_modules/*.h
 	-rm -f Python/frozen_modules/MANIFEST
-	-rm -f jit_stencils*.h
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
@@ -3290,6 +3289,8 @@ distclean: clobber docclean
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc \
 		Misc/python-embed.pc Misc/python-config.sh
 	-rm -f python*-gdb.py
+	# gh-141808: The JIT stencils are deliberately kept in make clean(-retain-profile)
+	-rm -f jit_stencils*.h
 	# Issue #28258: set LC_ALL to avoid issues with Estonian locale.
 	# Expansion is performed here by shell (spawned by make) itself before
 	# arguments are passed to find. So LC_ALL=C must be set as a separate
