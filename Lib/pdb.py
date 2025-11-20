@@ -2430,7 +2430,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             pass
 
     def print_stack_entry(self, frame_lineno, prompt_prefix=None):
-        if prompt_prefix is None:         
+        if prompt_prefix is None:
             prompt_prefix = line_prefix
         frame, lineno = frame_lineno
         if frame is self.curframe:
