@@ -1547,8 +1547,20 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
-    // Copy remaining bytes to a new bytes.
     Py_ssize_t remaining_length = size - to_take;
+    // optimization: If taking less than leaving, just copy the small to_take
+    // portion out and move ob_start.
+    if (to_take < remaining_length) {
+        PyObject *ret = PyBytes_FromStringAndSize(self->ob_start, to_take);
+        if (ret == NULL) {
+            return NULL;
+        }
+        self->ob_start += to_take;
+        Py_SET_SIZE(self, remaining_length);
+        return ret;
+    }
+
+    // Copy remaining bytes to a new bytes.
     PyObject *remaining = PyBytes_FromStringAndSize(self->ob_start + to_take,
                                                     remaining_length);
     if (remaining == NULL) {
