@@ -13,7 +13,7 @@ Module Objects
    .. index:: single: ModuleType (in module types)
 
    This instance of :c:type:`PyTypeObject` represents the Python module type.  This
-   is exposed to Python programs as ``types.ModuleType``.
+   is exposed to Python programs as :py:class:`types.ModuleType`.
 
 
 .. c:function:: int PyModule_Check(PyObject *p)
@@ -71,6 +71,9 @@ Module Objects
    ``PyObject_*`` functions rather than directly manipulate a module's
    :attr:`~object.__dict__`.
 
+   The returned reference is borrowed from the module; it is valid until
+   the module is destroyed.
+
 
 .. c:function:: PyObject* PyModule_GetNameObject(PyObject *module)
 
@@ -90,6 +93,10 @@ Module Objects
    Similar to :c:func:`PyModule_GetNameObject` but return the name encoded to
    ``'utf-8'``.
 
+   The returned buffer is only valid until the module is renamed or destroyed.
+   Note that Python code may rename a module by setting its :py:attr:`~module.__name__`
+   attribute.
+
 .. c:function:: void* PyModule_GetState(PyObject *module)
 
    Return the "state" of the module, that is, a pointer to the block of memory
@@ -101,6 +108,10 @@ Module Objects
 
    Return a pointer to the :c:type:`PyModuleDef` struct from which the module was
    created, or ``NULL`` if the module wasn't created from a definition.
+
+   On error, return ``NULL`` with an exception set.
+   Use :c:func:`PyErr_Occurred` to tell this case apart from a missing
+   :c:type:`!PyModuleDef`.
 
 
 .. c:function:: PyObject* PyModule_GetFilenameObject(PyObject *module)
@@ -121,6 +132,9 @@ Module Objects
 
    Similar to :c:func:`PyModule_GetFilenameObject` but return the filename
    encoded to 'utf-8'.
+
+   The returned buffer is only valid until the module's :py:attr:`~module.__file__` attribute
+   is reassigned or the module is destroyed.
 
    .. deprecated:: 3.2
       :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
@@ -666,6 +680,9 @@ or code that creates modules dynamically.
    Some module authors may prefer defining functions in multiple
    :c:type:`PyMethodDef` arrays; in that case they should call this function
    directly.
+
+   The *functions* array must be statically allocated (or otherwise guaranteed
+   to outlive the module object).
 
    .. versionadded:: 3.5
 
