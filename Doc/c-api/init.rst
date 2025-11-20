@@ -2637,3 +2637,118 @@ These APIs are obsolete since Python 3.13 with the introduction of
    fatal error.
 
    The caller does not need to hold an :term:`attached thread state`.
+
+
+Operating System Thread APIs
+============================
+
+.. c:macro:: PYTHREAD_INVALID_THREAD_ID
+
+   Sentinel value for an invalid thread ID.
+
+   This is currently equivalent to ``-1``.
+
+
+.. c:function:: unsigned long PyThread_start_new_thread(void (*func)(void *), void *arg)
+
+   Start function *func* in a new thread with argument *arg*.
+   The resulting thread is not intended to be joined.
+
+   *func* must not be ``NULL``, but *arg* may be ``NULL``.
+
+   On success, this function returns the ID of the new thread; on failure,
+   this returns :c:macro:`PYTHREAD_INVALID_THREAD_ID`.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+
+.. c:function:: unsigned long PyThread_get_thread_ident(void)
+
+   Return the identifier of the current thread, which will never be zero.
+
+   This function cannot fail, and the caller does not need to hold an
+   :term:`attached thread state`.
+
+   .. seealso::
+      :py:func:`threading.get_ident`
+
+
+.. c:function:: PyObject *PyThread_GetInfo(void)
+
+   Get general information about the current thread in the form of a
+   :ref:`struct sequence <struct-sequence-objects>` object. This information is
+   accessible as :py:attr:`sys.thread_info` in Python.
+
+   On success, this returns a new :term:`strong reference` to the thread
+   information; on failure, this returns ``NULL`` with an exception set.
+
+   The caller must hold an :term:`attached thread state`.
+
+
+.. c:macro:: PY_HAVE_THREAD_NATIVE_ID
+
+   This is defined when the system supports native thread IDs.
+
+
+.. c:function:: unsigned long PyThread_get_thread_native_id(void)
+
+   Get the native ID of the current thread as it was assigned by the operating
+   system's kernel, which will never be less than zero.
+
+   This function is only available when :c:macro:`PY_HAVE_THREAD_NATIVE_ID` is
+   defined.
+
+   This function cannot fail, and the caller does not need to hold an
+   :term:`attached thread state`.
+
+   .. seealso::
+      :py:func:`threading.get_native_id`
+
+
+.. c:function:: void PyThread_exit_thread(void)
+
+   Terminate the current thread. This function is generally considered unsafe
+   and should be avoided. It is kept solely for backwards compatibility.
+
+   This function is only safe to call if all functions in the full call
+   stack are written to safely allow it.
+
+   .. warning::
+
+      If the current system uses POSIX threads (also known as "pthreads"),
+      this calls :man:`pthread_exit(3)`, attempts to unwind the stack and
+      call C++ destructors on some libc implementations. However, if a
+      ``noexcept`` function is reached, they may terminate the process.
+      Other systems, such as macOS, do unwinding.
+
+      On Windows, this function calls ``_endthreadex``, which kills the thread
+      without calling C++ destructors.
+
+      In any case, there is a risk of corruption on the thread's stack.
+
+   .. deprecated:: 3.14
+
+
+.. c:function:: void PyThread_init_thread(void)
+
+   Initialize ``PyThread*`` APIs. Python executes this function automatically,
+   so there's little need to call it from an extension module.
+
+
+.. c:function:: int PyThread_set_stacksize(size_t size)
+
+   Set the stack size of the current thread to *size*.
+
+   This function returns ``0`` on success, ``-1`` if *size* is invalid, or
+   ``-2`` if the system does not support changing the stack size. This function
+   does not set exceptions.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+
+.. c:function:: size_t PyThread_get_stacksize(void)
+
+   Return the stack size of the current thread, or ``0`` if the system's
+   default stack size is in use.
+
+   The caller does not need to hold an :term:`attached thread state`.
