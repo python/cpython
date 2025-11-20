@@ -1,1 +1,0 @@
-A new tracing frontend for the JIT compiler has been implemented. Patch by Ken Jin. Design for CPython by Ken Jin, Mark Shannon and Brandt Bucher.
