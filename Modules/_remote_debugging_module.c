@@ -2761,7 +2761,13 @@ unwind_stack_for_thread(
 
     // Check CPU status
     long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
-    int cpu_status = get_thread_status(unwinder, tid, pthread_id);
+
+    // Optimization: only check CPU status if needed by mode because it's expensive
+    int cpu_status = -1;
+    if (unwinder->mode == PROFILING_MODE_CPU || unwinder->mode == PROFILING_MODE_ALL) {
+        cpu_status = get_thread_status(unwinder, tid, pthread_id);
+    }
+
     if (cpu_status == -1) {
         status_flags |= THREAD_STATUS_UNKNOWN;
     } else if (cpu_status == THREAD_STATE_RUNNING) {

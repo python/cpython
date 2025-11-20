@@ -79,7 +79,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             self._verify_coordinator_command(mock_popen, ("-m", "mymodule"))
             mock_sample.assert_called_once_with(
                 12345,
-                sort=2,  # default sort (sort_value from args.sort)
+                sort=0,  # default sort (sort_value from args.sort)
                 sample_interval_usec=100,
                 duration_sec=10,
                 filename=None,
@@ -118,7 +118,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             )
             mock_sample.assert_called_once_with(
                 12345,
-                sort=2,
+                sort=0,
                 sample_interval_usec=100,
                 duration_sec=10,
                 filename=None,
@@ -148,7 +148,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             self._verify_coordinator_command(mock_popen, ("myscript.py",))
             mock_sample.assert_called_once_with(
                 12345,
-                sort=2,
+                sort=0,
                 sample_interval_usec=100,
                 duration_sec=10,
                 filename=None,
@@ -323,7 +323,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             # Verify profiler options were passed correctly
             mock_sample.assert_called_once_with(
                 12345,
-                sort=2,  # default sort
+                sort=0,  # default sort
                 sample_interval_usec=2000,
                 duration_sec=60,
                 filename="output.txt",
@@ -411,7 +411,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
                     "-v",
                     "--output=/tmp/out",
                     "positional",
-                )
+                ),
+                suppress_output=False
             )
 
     def test_cli_collapsed_format_validation(self):
@@ -627,7 +628,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 filename=None,
                 all_threads=False,
                 limit=15,
-                sort=2,
+                sort=0,
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
