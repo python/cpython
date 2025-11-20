@@ -1975,7 +1975,7 @@ pointer and a void pointer argument.
 
    If this is not called in the main thread of the main
    interpreter, this function does nothing and returns ``0``.
-   The caller must hold an :term:`attached thread state`.
+   The caller must hold the :term:`GIL`.
 
    .. versionadded:: 3.1
 
