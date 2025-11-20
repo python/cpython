@@ -44,7 +44,7 @@ Dictionary Objects
 
 
 .. c:var:: PyTypeObject PyDictProxy_Type
-   
+
    The type object for mapping proxy objects created by
    :c:func:`PyDictProxy_New` and for the read-only ``__dict__`` attribute
    of many built-in types. A :c:type:`PyDictProxy_Type` instance provides a

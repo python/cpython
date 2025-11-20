@@ -89,7 +89,7 @@ Built-in descriptors
 
 
 .. c:var:: PyTypeObject PyGetSetDescr_Type
-   
+
    The type object for get/set descriptor objects created from
    :c:type:`PyGetSetDef` structures. These descriptors implement attributes
    whose value is computed by C getter and setter functions, and are used
