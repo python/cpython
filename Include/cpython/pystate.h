@@ -113,6 +113,9 @@ struct _ts {
     /* Currently holds the GIL. Must be its own field to avoid data races */
     int holds_gil;
 
+    /* Currently requesting the GIL */
+    int gil_requested;
+
     int _whence;
 
     /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
