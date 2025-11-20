@@ -1,5 +1,4 @@
 import builtins
-import concurrent.interpreters
 import errno
 import glob
 import json
@@ -66,8 +65,10 @@ except ImportError:
     _testmultiphase = None
 try:
     import _interpreters
+    import concurrent.interpreters
 except ModuleNotFoundError:
     _interpreters = None
+    concurrent = None
 try:
     import _testinternalcapi
 except ImportError:
@@ -3408,6 +3409,7 @@ class ModexportTests(unittest.TestCase):
 
         self.assertEqual(module.__name__, modname)
 
+    @requires_subinterpreters
     def test_from_modexport_gil_used(self):
         # Test that a module with Py_MOD_GIL_USED (re-)enables the GIL.
         # Do this in a new interpreter to avoid interfering with global state.
@@ -3461,6 +3463,7 @@ class ModexportTests(unittest.TestCase):
                                             put_in_sys_modules=False)
         self.assertIsInstance(module, str)
 
+    @requires_subinterpreters
     def test_from_modexport_create_nonmodule_gil_used(self):
         # Test that a module with Py_MOD_GIL_USED (re-)enables the GIL.
         # Do this in a new interpreter to avoid interfering with global state.
