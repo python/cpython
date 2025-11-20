@@ -240,7 +240,7 @@ The :mod:`bdb` module also defines two classes:
    Normally derived classes don't override the following methods, but they may
    if they want to redefine the definition of stopping and breakpoints.
 
-   .. method:: is_skipped_line(module_name)
+   .. method:: is_skipped_module(module_name)
 
       Return ``True`` if *module_name* matches any skip pattern.
 
