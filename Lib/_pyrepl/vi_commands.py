@@ -28,6 +28,13 @@ class vi_forward_word(MotionCommand):
             r.pos = r.vi_forward_word()
 
 
+class vi_backward_word(MotionCommand):
+    def do(self) -> None:
+        r = self.reader
+        for _ in range(r.get_arg()):
+            r.pos = r.vi_bow()
+
+
 # ============================================================================
 # Mode Switching Commands
 # ============================================================================

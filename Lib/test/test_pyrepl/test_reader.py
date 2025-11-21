@@ -1011,6 +1011,16 @@ class TestViMode(TestCase):
             ("foo.bar", "0e", 2, "e lands on last o of foo"),
             ("foo.bar", "0ee", 3, "second e lands on dot"),
             ("foo.bar", "0eee", 6, "third e lands on last r of bar"),
+
+            # Backward word (b) - cursor at end after ESC
+            ("foo bar", "$b", 4, "b from end lands on bar"),
+            ("foo bar", "$bb", 0, "two b's lands on foo"),
+            ("foo.bar", "$b", 4, "b from end lands on bar"),
+            ("foo.bar", "$bb", 3, "second b lands on dot"),
+            ("foo.bar", "$bbb", 0, "third b lands on foo"),
+            ("get_value(x)", "$b", 10, "b from end lands on x"),
+            ("get_value(x)", "$bb", 9, "second b lands on ("),
+            ("get_value(x)", "$bbb", 0, "third b lands on get_value"),
         ]
 
         for text, keys, expected_pos, desc in test_cases:

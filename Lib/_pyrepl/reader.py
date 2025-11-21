@@ -157,7 +157,7 @@ vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"0", "beginning-of-line"),
         (r"$", "end-of-line"),
         (r"w", "vi-forward-word"),
-        (r"b", "backward-word"),
+        (r"b", "vi-backward-word"),
         (r"e", "end-of-word"),
         (r"^", "first-non-whitespace-character"),
 
