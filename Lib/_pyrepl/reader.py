@@ -57,6 +57,10 @@ def make_default_syntax_table() -> dict[str, int]:
     return st
 
 
+def _is_vi_word_char(c: str) -> bool:
+    return c.isalnum() or c == '_'
+
+
 def make_default_commands() -> dict[CommandName, type[Command]]:
     result: dict[CommandName, type[Command]] = {}
     all_commands = itertools.chain(vars(commands).values(), vars(vi_commands).values())
@@ -512,24 +516,23 @@ class Reader:
         following p most immediately (vi 'e' semantics).
 
         Unlike eow(), this returns the position ON the last word character,
-        not past it. p defaults to self.pos; word boundaries are determined
-        using self.syntax_table."""
+        not past it. p defaults to self.pos; word boundaries use vi rules
+        (alphanumeric + underscore)."""
         if p is None:
             p = self.pos
-        st = self.syntax_table
         b = self.buffer
 
         # If we're already at the end of a word, move past it
-        if (p < len(b) and st.get(b[p], SYNTAX_WORD) == SYNTAX_WORD and
-            (p + 1 >= len(b) or st.get(b[p + 1], SYNTAX_WORD) != SYNTAX_WORD)):
+        if (p < len(b) and _is_vi_word_char(b[p]) and
+            (p + 1 >= len(b) or not _is_vi_word_char(b[p + 1]))):
             p += 1
 
         # Skip non-word characters to find the start of next word
-        while p < len(b) and st.get(b[p], SYNTAX_WORD) != SYNTAX_WORD:
+        while p < len(b) and not _is_vi_word_char(b[p]):
             p += 1
 
         # Move to the last character of this word (not past it)
-        while p + 1 < len(b) and st.get(b[p + 1], SYNTAX_WORD) == SYNTAX_WORD:
+        while p + 1 < len(b) and _is_vi_word_char(b[p + 1]):
             p += 1
 
         # Clamp to valid buffer range
@@ -540,23 +543,40 @@ class Reader:
         (vi 'w' semantics).
 
         Unlike eow(), this lands ON the first character of the next word,
-        not past it. p defaults to self.pos; word boundaries are determined
-        using self.syntax_table."""
+        not past it. p defaults to self.pos; word boundaries use vi rules
+        (alphanumeric + underscore)."""
         if p is None:
             p = self.pos
-        st = self.syntax_table
         b = self.buffer
 
         # Skip the rest of the current word if we're on one
-        while p < len(b) and st.get(b[p], SYNTAX_WORD) == SYNTAX_WORD:
+        while p < len(b) and _is_vi_word_char(b[p]):
             p += 1
 
         # Skip non-word characters to find the start of next word
-        while p < len(b) and st.get(b[p], SYNTAX_WORD) != SYNTAX_WORD:
+        while p < len(b) and not _is_vi_word_char(b[p]):
             p += 1
 
         # Clamp to valid buffer range
         return min(p, len(b) - 1) if b else 0
+
+    def vi_bow(self, p: int | None = None) -> int:
+        """Return the 0-based index of the beginning of the word preceding p
+        (vi 'b' semantics).
+
+        p defaults to self.pos; word boundaries use vi rules
+        (alphanumeric + underscore)."""
+        if p is None:
+            p = self.pos
+        b = self.buffer
+        p -= 1
+        # Skip non-word characters
+        while p >= 0 and not _is_vi_word_char(b[p]):
+            p -= 1
+        # Skip word characters to find beginning of word
+        while p >= 0 and _is_vi_word_char(b[p]):
+            p -= 1
+        return p + 1
 
     def bol(self, p: int | None = None) -> int:
         """Return the 0-based index of the line break preceding p most

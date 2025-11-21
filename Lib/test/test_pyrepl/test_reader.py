@@ -911,7 +911,7 @@ class TestViMode(TestCase):
         self.assertEqual(reader2.buffer[reader2.pos], 't')
 
     def test_word_motion_edge_cases(self):
-        # Test with punctuation - underscore should be a word boundary
+        # Test with underscore - in vi mode, underscore IS a word character
         events = itertools.chain(
             code_to_events("hello_world"),
             [
@@ -921,8 +921,9 @@ class TestViMode(TestCase):
             ],
         )
         reader, _ = self._run_vi(events)
-        # 'w' moves to next word, underscore is not alphanumeric so treated as boundary
-        self.assertIn(reader.pos, [5, 6])  # Could be on '_' or 'w' depending on implementation
+        # In vi mode, underscore is part of word, so 'w' goes past end of "hello_world"
+        # which clamps to end of buffer (pos 10, on 'd')
+        self.assertEqual(reader.pos, 10)
 
         # Test 'e' at end of buffer stays in bounds
         events2 = itertools.chain(
@@ -976,6 +977,43 @@ class TestViMode(TestCase):
         reader2, _ = self._run_vi(events2)
         # Should be at end of "beta"
         self.assertEqual(reader2.buffer[reader2.pos], 'a')  # Last 'a' of "beta"
+
+    def test_vi_word_boundaries(self):
+        """Test vi word motions match vim behavior for word characters.
+
+        In vi, word characters are alphanumeric + underscore.
+        """
+        # Test cases: (text, start_key_sequence, expected_pos, description)
+        test_cases = [
+            # Underscore is part of word in vi, unlike emacs mode
+            ("function_name", "0w", 12, "underscore is word char, w clamps to end"),
+            ("hello_world test", "0w", 12, "underscore word, then to next word"),
+            ("get_value(x)", "0w", 10, "underscore word, skip ( to x"),
+
+            # Basic word motion
+            ("hello world", "0w", 6, "basic word jump"),
+            ("one  two", "0w", 5, "double space handled"),
+            ("abc def ghi", "0ww", 8, "two w's"),
+
+            # End of word (e) - lands ON last char
+            ("function_name", "0e", 12, "e lands on last char of underscore word"),
+            ("foo bar", "0e", 2, "e lands on last char of foo"),
+            ("one two three", "0ee", 6, "two e's land on end of two"),
+        ]
+
+        for text, keys, expected_pos, desc in test_cases:
+            with self.subTest(text=text, keys=keys, desc=desc):
+                key_events = []
+                for k in keys:
+                    key_events.append(Event(evt="key", data=k, raw=bytearray(k.encode())))
+                events = itertools.chain(
+                    code_to_events(text),
+                    [Event(evt="key", data="\x1b", raw=bytearray(b"\x1b"))],  # ESC
+                    key_events,
+                )
+                reader, _ = self._run_vi(events)
+                self.assertEqual(reader.pos, expected_pos,
+                    f"Expected pos {expected_pos} but got {reader.pos} for '{text}' with keys '{keys}'")
 
 
 @force_not_colorized_test_class
