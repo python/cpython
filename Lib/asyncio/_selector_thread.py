@@ -1,12 +1,13 @@
+# Contains code from https://github.com/tornadoweb/tornado/tree/v6.5.2
+# SPDX-License-Identifier: PSF-2.0 AND Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2025 The Tornado Authors
+
 """
 Compatibility for [add|remove]_[reader|writer] where unavailable (Proactor).
 
 Runs select in a background thread.
 
-Adapted from Tornado 6.5.1
-
-:copyright: 2025, The Tornado Authors
-:license: Apache-2.0
+Adapted from Tornado 6.5.2
 """
 
 from __future__ import annotations
