@@ -1073,12 +1073,17 @@ BaseExceptionGroup_repr(PyObject *op)
     PyObject* excs_orig = PyTuple_GET_ITEM(self->args, 1);
     if (PyList_Check(excs_orig)) {
         excs_orig = PySequence_List(self->excs);
+    } else {
+        Py_INCREF(excs_orig);
     }
 
     const char *name = _PyType_Name(Py_TYPE(self));
-    return PyUnicode_FromFormat(
+    PyObject *repr = PyUnicode_FromFormat(
         "%s(%R, %R)", name,
         self->msg, excs_orig);
+
+    Py_DECREF(excs_orig);
+    return repr;
 }
 
 /*[clinic input]
