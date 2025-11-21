@@ -41,6 +41,7 @@ echo.  --experimental-jit-off      Ditto but off by default (PYTHON_JIT=1 enable
 echo.  --experimental-jit-interpreter  Enable the experimental Tier 2 interpreter.
 echo.  --pystats      Enable PyStats collection.
 echo.  --tail-call-interp  Enable tail-calling interpreter (requires LLVM 19 or higher).
+echo.  --enable-stackref-debug  Enable stackref debugging mode.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -98,6 +99,7 @@ if "%~1"=="--experimental-jit-interpreter-off" (set UseTIER2=6) & shift & goto C
 if "%~1"=="--without-remote-debug" (set DisableRemoteDebug=true) & shift & goto CheckOpts
 if "%~1"=="--pystats" (set PyStats=1) & shift & goto CheckOpts
 if "%~1"=="--tail-call-interp" (set UseTailCallInterp=true) & shift & goto CheckOpts
+if "%~1"=="--enable-stackref-debug" (set StackRefDebug=true) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
@@ -202,6 +204,7 @@ echo on
  /p:PyStats=%PyStats%^
  /p:UseTailCallInterp=%UseTailCallInterp%^
  /p:DisableRemoteDebug=%DisableRemoteDebug%^
+ /p:StackRefDebug=%StackRefDebug%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off
