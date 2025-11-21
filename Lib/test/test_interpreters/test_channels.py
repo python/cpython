@@ -5,13 +5,16 @@ from textwrap import dedent
 import unittest
 import time
 
-from test.support import import_helper
+from test.support import import_helper, Py_GIL_DISABLED
 # Raise SkipTest if subinterpreters not supported.
 _channels = import_helper.import_module('_interpchannels')
 from concurrent import interpreters
 from test.support import channels
 from .utils import _run_output, TestBase
 
+
+if Py_GIL_DISABLED:
+    raise unittest.SkipTest("channels aren't completely thread-safe")
 
 class LowLevelTests(TestBase):
 
