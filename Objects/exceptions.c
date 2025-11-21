@@ -905,12 +905,22 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    exceptions = PySequence_Tuple(exceptions);
+    /* Make a copy of the passed exceptions sequence, for use in the repr */
+    PyObject *exceptions_copy = exceptions;
+    if (PyList_Check(exceptions)) {
+        exceptions_copy = PySequence_List(exceptions);
+    } else {
+        Py_INCREF(exceptions_copy);
+    }
+
+    exceptions = PySequence_Tuple(exceptions_copy);
     if (!exceptions) {
         return NULL;
     }
 
-    /* We are now holding a ref to the exceptions tuple */
+    /* We are now holding a ref to (a potential copy of) the original
+     * exceptions sequence and to the exceptions tuple.
+     */
 
     Py_ssize_t numexcs = PyTuple_GET_SIZE(exceptions);
     if (numexcs == 0) {
@@ -988,9 +998,11 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self->msg = Py_NewRef(message);
     self->excs = exceptions;
+    self->excs_orig = exceptions_copy;
     return (PyObject*)self;
 error:
     Py_DECREF(exceptions);
+    Py_DECREF(exceptions_copy);
     return NULL;
 }
 
@@ -1029,6 +1041,7 @@ BaseExceptionGroup_clear(PyObject *op)
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     Py_CLEAR(self->msg);
     Py_CLEAR(self->excs);
+    Py_CLEAR(self->excs_orig);
     return BaseException_clear(op);
 }
 
@@ -1046,6 +1059,7 @@ BaseExceptionGroup_traverse(PyObject *op, visitproc visit, void *arg)
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     Py_VISIT(self->msg);
     Py_VISIT(self->excs);
+    Py_VISIT(self->excs_orig);
     return BaseException_traverse(op, visit, arg);
 }
 
@@ -1068,12 +1082,12 @@ BaseExceptionGroup_repr(PyObject *op)
 {
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     assert(self->msg);
-    assert(self->excs);
+    assert(self->excs_orig);
 
     const char *name = _PyType_Name(Py_TYPE(self));
     return PyUnicode_FromFormat(
         "%s(%R, %R)", name,
-        self->msg, self->excs);
+        self->msg, self->excs_orig);
 }
 
 /*[clinic input]
@@ -1695,6 +1709,8 @@ static PyMemberDef BaseExceptionGroup_members[] = {
         PyDoc_STR("exception message")},
     {"exceptions", _Py_T_OBJECT, offsetof(PyBaseExceptionGroupObject, excs), Py_READONLY,
         PyDoc_STR("nested exceptions")},
+    {"_excs_orig", _Py_T_OBJECT, offsetof(PyBaseExceptionGroupObject, excs_orig), Py_READONLY,
+        PyDoc_STR("private copy of original nested exceptions")},
     {NULL}  /* Sentinel */
 };
 
