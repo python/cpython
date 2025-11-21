@@ -1081,10 +1081,35 @@ instrumentation_cross_checks(PyInterpreterState *interp, PyCodeObject *code)
 static int
 debug_check_sanity(PyInterpreterState *interp, PyCodeObject *code)
 {
-    int res;
+    int res = 1;
     LOCK_CODE(code);
-    res = is_version_up_to_date(code, interp) &&
-          instrumentation_cross_checks(interp, code);
+    // gh-136692: These assertions are triggering on buildbots, so provide
+    // some more information when crashing.
+    uint32_t glob_version = global_version(interp);
+    uintptr_t code_version = code->_co_instrumentation_version;
+    if (glob_version != code_version) {
+        _Py_FatalErrorFormat(
+            __func__,
+            "Instrumentation version mismatch: global=%lu code=%lu",
+            (unsigned long)glob_version, (unsigned long)code_version);
+    }
+
+    _Py_LocalMonitors expected = local_union(
+        interp->monitors,
+        code->_co_monitoring->local_monitors);
+    _Py_LocalMonitors active = code->_co_monitoring->active_monitors;
+    if (!monitors_equals(active, expected)) {
+        char buf1[64];
+        char buf2[64];
+        for (int event = 0; event < _PY_MONITORING_LOCAL_EVENTS; event++) {
+            snprintf(&buf1[event*3], 4, "%02x ", expected.tools[event]);
+            snprintf(&buf2[event*3], 4, "%02x ", active.tools[event]);
+        }
+        _Py_FatalErrorFormat(
+            __func__,
+            "Instrumentation monitors mismatch: expected=%s active=%s",
+            buf1, buf2);
+    }
     UNLOCK_CODE();
     return res;
 }
