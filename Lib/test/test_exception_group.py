@@ -137,7 +137,7 @@ class StrAndReprTests(unittest.TestCase):
 
         self.assertEqual(str(eg), "flat (2 sub-exceptions)")
         self.assertEqual(repr(eg),
-            "ExceptionGroup('flat', (ValueError(1), TypeError(2)))")
+            "ExceptionGroup('flat', [ValueError(1), TypeError(2)])")
 
         # Mutate the list of exceptions passed to BaseExceptionGroup.
         # This shouldn't change the EG's functionality, nor its repr.
@@ -149,11 +149,11 @@ class StrAndReprTests(unittest.TestCase):
         self.assertEqual(str(eg), "nested (4 sub-exceptions)")
         self.assertEqual(repr(eg),
             "ExceptionGroup('nested', "
-                "(ExceptionGroup('flat', "
-                    "(ValueError(1), TypeError(2))), "
+                "[ExceptionGroup('flat', "
+                    "[ValueError(1), TypeError(2)]), "
                  "ValueError(1), "
                  "ExceptionGroup('flat', "
-                    "(ValueError(1), TypeError(2))), TypeError(2)))")
+                    "[ValueError(1), TypeError(2)]), TypeError(2)])")
 
     def test_BaseExceptionGroup(self):
         eg_excs = [ValueError(1), KeyboardInterrupt(2)]
@@ -164,7 +164,7 @@ class StrAndReprTests(unittest.TestCase):
         self.assertEqual(repr(eg),
             "BaseExceptionGroup("
                 "'flat', "
-                "(ValueError(1), KeyboardInterrupt(2)))")
+                "[ValueError(1), KeyboardInterrupt(2)])")
 
         # Mutate the list of exceptions passed to BaseExceptionGroup.
         # This shouldn't change the EG's functionality, nor its repr.
@@ -176,11 +176,11 @@ class StrAndReprTests(unittest.TestCase):
         self.assertEqual(str(eg), "nested (3 sub-exceptions)")
         self.assertEqual(repr(eg),
             "BaseExceptionGroup('nested', "
-                "(BaseExceptionGroup('flat', "
-                    "(ValueError(1), KeyboardInterrupt(2))), "
+                "[BaseExceptionGroup('flat', "
+                    "[ValueError(1), KeyboardInterrupt(2)]), "
                 "ValueError(1), "
                 "BaseExceptionGroup('flat', "
-                    "(ValueError(1), KeyboardInterrupt(2)))))")
+                    "[ValueError(1), KeyboardInterrupt(2)])])")
 
     def test_custom_exception(self):
         class MyEG(ExceptionGroup):
@@ -191,7 +191,7 @@ class StrAndReprTests(unittest.TestCase):
             'flat', eg_excs)
 
         self.assertEqual(str(eg), "flat (2 sub-exceptions)")
-        self.assertEqual(repr(eg), "MyEG('flat', (ValueError(1), TypeError(2)))")
+        self.assertEqual(repr(eg), "MyEG('flat', [ValueError(1), TypeError(2)])")
 
         # Mutate the list of exceptions passed to MyEG.
         # This shouldn't change the EG's functionality, nor its repr.
@@ -203,10 +203,10 @@ class StrAndReprTests(unittest.TestCase):
         self.assertEqual(str(eg), "nested (4 sub-exceptions)")
         self.assertEqual(repr(eg), (
                  "MyEG('nested', "
-                     "(MyEG('flat', (ValueError(1), TypeError(2))), "
+                     "[MyEG('flat', [ValueError(1), TypeError(2)]), "
                       "ValueError(1), "
-                      "MyEG('flat', (ValueError(1), TypeError(2))), "
-                      "TypeError(2)))"))
+                      "MyEG('flat', [ValueError(1), TypeError(2)]), "
+                      "TypeError(2)])"))
 
 
 def create_simple_eg():
