@@ -977,7 +977,6 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
             void *block, size_t block_size, void *args)
 {
     struct collection_state *state = (struct collection_state *)args;
-    state->visited++;
     PyObject *op = op_from_block(block, &state->base, false);
     if (op == NULL) {
         return true;
@@ -994,6 +993,7 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
         gc_clear_unreachable(op);
         return true;
     }
+    state->visited++;
 
     Py_ssize_t refcount = Py_REFCNT(op);
     if (_PyObject_HasDeferredRefcount(op)) {
