@@ -137,20 +137,20 @@ class LiveStatsCollector(Collector):
         self._saved_stderr = None
         self._devnull = None
         self._last_display_update = None
-        self._max_sample_rate = 0  # Track maximum sample rate seen
-        self._successful_samples = 0  # Track samples that captured frames
-        self._failed_samples = 0  # Track samples that failed to capture frames
-        self._display_update_interval = DISPLAY_UPDATE_INTERVAL  # Instance variable for display refresh rate
+        self.max_sample_rate = 0  # Track maximum sample rate seen
+        self.successful_samples = 0  # Track samples that captured frames
+        self.failed_samples = 0  # Track samples that failed to capture frames
+        self.display_update_interval = DISPLAY_UPDATE_INTERVAL  # Instance variable for display refresh rate
 
         # Thread status statistics (bit flags)
-        self._thread_status_counts = {
+        self.thread_status_counts = {
             "has_gil": 0,
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
             "total": 0,  # Total thread count across all samples
         }
-        self._gc_frame_samples = 0  # Track samples with GC frames
+        self.gc_frame_samples = 0  # Track samples with GC frames
 
         # Interactive controls state
         self.paused = False  # Pause UI updates (profiling continues)
@@ -174,10 +174,10 @@ class LiveStatsCollector(Collector):
         self._path_prefixes = self._get_common_path_prefixes()
 
         # Widgets (initialized when display is available)
-        self._header_widget = None
-        self._table_widget = None
-        self._footer_widget = None
-        self._help_widget = None
+        self.header_widget = None
+        self.table_widget = None
+        self.footer_widget = None
+        self.help_widget = None
 
         # Color mode
         self._can_colorize = _colorize.can_colorize()
@@ -256,7 +256,7 @@ class LiveStatsCollector(Collector):
 
         return prefixes
 
-    def _simplify_path(self, filepath):
+    def simplify_path(self, filepath):
         """Simplify a file path by removing common prefixes."""
         # Try to match against known prefixes
         for prefix_path in self._path_prefixes:
@@ -268,7 +268,7 @@ class LiveStatsCollector(Collector):
         # If no match, return the original path
         return filepath
 
-    def _process_frames(self, frames, thread_id=None):
+    def process_frames(self, frames, thread_id=None):
         """Process a single thread's frame stack.
 
         Args:
@@ -295,7 +295,7 @@ class LiveStatsCollector(Collector):
             thread_data.result[top_location]["direct_calls"] += 1
 
     def collect_failed_sample(self):
-        self._failed_samples += 1
+        self.failed_samples += 1
         self.total_samples += 1
 
     def collect(self, stack_frames):
@@ -349,7 +349,7 @@ class LiveStatsCollector(Collector):
 
                 frames = getattr(thread_info, "frame_info", None)
                 if frames:
-                    self._process_frames(frames, thread_id=thread_id)
+                    self.process_frames(frames, thread_id=thread_id)
 
                     # Track thread IDs only for threads that actually have samples
                     if (
@@ -375,12 +375,12 @@ class LiveStatsCollector(Collector):
 
         # Update cumulative thread status counts
         for key, count in temp_status_counts.items():
-            self._thread_status_counts[key] += count
+            self.thread_status_counts[key] += count
 
         if has_gc_frame:
-            self._gc_frame_samples += 1
+            self.gc_frame_samples += 1
 
-        self._successful_samples += 1
+        self.successful_samples += 1
         self.total_samples += 1
 
         # Handle input on every sample for instant responsiveness
@@ -393,7 +393,7 @@ class LiveStatsCollector(Collector):
             if (
                 self._last_display_update is None
                 or (current_time - self._last_display_update)
-                >= self._display_update_interval
+                >= self.display_update_interval
             ):
                 self._update_display()
                 self._last_display_update = current_time
@@ -401,7 +401,7 @@ class LiveStatsCollector(Collector):
     def _prepare_display_data(self, height):
         """Prepare data for display rendering."""
         elapsed = self.elapsed_time
-        stats_list = self._build_stats_list()
+        stats_list = self.build_stats_list()
 
         # Calculate available space for stats
         # Add extra lines for finished banner when in finished state
@@ -422,15 +422,15 @@ class LiveStatsCollector(Collector):
 
     def _initialize_widgets(self, colors):
         """Initialize widgets with display and colors."""
-        if self._header_widget is None:
+        if self.header_widget is None:
             # Initialize trend tracker with colors
             if self._trend_tracker is None:
                 self._trend_tracker = TrendTracker(colors, enabled=True)
 
-            self._header_widget = HeaderWidget(self.display, colors, self)
-            self._table_widget = TableWidget(self.display, colors, self)
-            self._footer_widget = FooterWidget(self.display, colors, self)
-            self._help_widget = HelpWidget(self.display, colors)
+            self.header_widget = HeaderWidget(self.display, colors, self)
+            self.table_widget = TableWidget(self.display, colors, self)
+            self.footer_widget = FooterWidget(self.display, colors, self)
+            self.help_widget = HelpWidget(self.display, colors)
 
     def _render_display_sections(
         self, height, width, elapsed, stats_list, colors
@@ -442,12 +442,12 @@ class LiveStatsCollector(Collector):
             self._initialize_widgets(colors)
 
             # Render header
-            line = self._header_widget.render(
+            line = self.header_widget.render(
                 line, width, elapsed=elapsed, stats_list=stats_list
             )
 
             # Render table
-            line = self._table_widget.render(
+            line = self.table_widget.render(
                 line, width, height=height, stats_list=stats_list
             )
 
@@ -473,7 +473,7 @@ class LiveStatsCollector(Collector):
 
             # Show help screen if requested
             if self.show_help:
-                self._help_widget.render(0, width, height=height)
+                self.help_widget.render(0, width, height=height)
                 self.display.refresh()
                 return
 
@@ -486,11 +486,11 @@ class LiveStatsCollector(Collector):
             )
 
             # Footer
-            self._footer_widget.render(height - 2, width)
+            self.footer_widget.render(height - 2, width)
 
             # Show filter input prompt if in filter input mode
             if self.filter_input_mode:
-                self._footer_widget.render_filter_input_prompt(
+                self.footer_widget.render_filter_input_prompt(
                     height - 1, width
                 )
 
@@ -616,7 +616,7 @@ class LiveStatsCollector(Collector):
             "trend_stable": A_NORMAL,
         }
 
-    def _build_stats_list(self):
+    def build_stats_list(self):
         """Build and sort the statistics list."""
         stats_list = []
         result_source = self._get_current_result_source()
@@ -707,17 +707,17 @@ class LiveStatsCollector(Collector):
         self.view_mode = "ALL"
         self.current_thread_index = 0
         self.total_samples = 0
-        self._successful_samples = 0
-        self._failed_samples = 0
-        self._max_sample_rate = 0
-        self._thread_status_counts = {
+        self.successful_samples = 0
+        self.failed_samples = 0
+        self.max_sample_rate = 0
+        self.thread_status_counts = {
             "has_gil": 0,
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
             "total": 0,
         }
-        self._gc_frame_samples = 0
+        self.gc_frame_samples = 0
         # Clear trend tracking
         if self._trend_tracker is not None:
             self._trend_tracker.clear()
@@ -886,14 +886,14 @@ class LiveStatsCollector(Collector):
 
         elif ch == ord("+") or ch == ord("="):
             # Decrease update interval (faster refresh)
-            self._display_update_interval = max(
-                0.05, self._display_update_interval - 0.05
+            self.display_update_interval = max(
+                0.05, self.display_update_interval - 0.05
             )  # Min 20Hz
 
         elif ch == ord("-") or ch == ord("_"):
             # Increase update interval (slower refresh)
-            self._display_update_interval = min(
-                1.0, self._display_update_interval + 0.05
+            self.display_update_interval = min(
+                1.0, self.display_update_interval + 0.05
             )  # Max 1Hz
 
         elif ch == ord("c") or ch == ord("C"):

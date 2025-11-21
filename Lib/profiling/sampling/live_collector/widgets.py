@@ -180,7 +180,7 @@ class HeaderWidget(Widget):
 
         # Calculate display refresh rate
         refresh_hz = (
-            1.0 / self.collector._display_update_interval if self.collector._display_update_interval > 0 else 0
+            1.0 / self.collector.display_update_interval if self.collector.display_update_interval > 0 else 0
         )
 
         # Get current view mode and thread display
@@ -248,8 +248,8 @@ class HeaderWidget(Widget):
         )
 
         # Update max sample rate
-        if sample_rate > self.collector._max_sample_rate:
-            self.collector._max_sample_rate = sample_rate
+        if sample_rate > self.collector.max_sample_rate:
+            self.collector.max_sample_rate = sample_rate
 
         col = 0
         self.add_str(line, col, "Samples: ", curses.A_BOLD)
@@ -308,11 +308,11 @@ class HeaderWidget(Widget):
     def draw_efficiency_bar(self, line, width):
         """Draw sample efficiency bar showing success/failure rates."""
         success_pct = (
-            self.collector._successful_samples
+            self.collector.successful_samples
             / max(1, self.collector.total_samples)
         ) * 100
         failed_pct = (
-            self.collector._failed_samples
+            self.collector.failed_samples
             / max(1, self.collector.total_samples)
         ) * 100
 
@@ -327,7 +327,7 @@ class HeaderWidget(Widget):
             bar_width = min(MAX_EFFICIENCY_BAR_WIDTH, available_width)
             success_fill = int(
                 (
-                    self.collector._successful_samples
+                    self.collector.successful_samples
                     / max(1, self.collector.total_samples)
                 )
                 * bar_width
@@ -381,7 +381,7 @@ class HeaderWidget(Widget):
         """Draw thread status statistics and GC information."""
         # Get status counts for current view mode
         thread_data = self.collector._get_current_thread_data()
-        status_counts = thread_data.as_status_dict() if thread_data else self.collector._thread_status_counts
+        status_counts = thread_data.as_status_dict() if thread_data else self.collector.thread_status_counts
 
         # Calculate percentages
         total_threads = max(1, status_counts["total"])
@@ -395,7 +395,7 @@ class HeaderWidget(Widget):
             pct_gc = (thread_data.gc_frame_samples / total_samples) * 100
         else:
             total_samples = max(1, self.collector.total_samples)
-            pct_gc = (self.collector._gc_frame_samples / total_samples) * 100
+            pct_gc = (self.collector.gc_frame_samples / total_samples) * 100
 
         col = 0
         self.add_str(line, col, "Threads:   ", curses.A_BOLD)
@@ -809,7 +809,7 @@ class TableWidget(Widget):
 
                 # File:line column
                 if col < width - 10:
-                    simplified_path = self.collector._simplify_path(filename)
+                    simplified_path = self.collector.simplify_path(filename)
                     file_line = f"{simplified_path}:{lineno}"
                     remaining_width = width - col - 1
                     self.add_str(

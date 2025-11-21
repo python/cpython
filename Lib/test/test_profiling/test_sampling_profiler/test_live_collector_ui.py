@@ -68,20 +68,20 @@ class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
     def test_draw_methods_with_mock_display(self):
         """Test that draw methods write to mock display."""
         self.collector.total_samples = 500
-        self.collector._successful_samples = 450
-        self.collector._failed_samples = 50
+        self.collector.successful_samples = 450
+        self.collector.failed_samples = 50
 
         colors = self.collector._setup_colors()
         self.collector._initialize_widgets(colors)
 
         # Test individual widget methods
-        line = self.collector._header_widget.draw_header_info(0, 160, 100.5)
+        line = self.collector.header_widget.draw_header_info(0, 160, 100.5)
         self.assertEqual(line, 2)  # Title + header info line
         self.assertGreater(len(self.mock_display.buffer), 0)
 
         # Clear buffer and test next method
         self.mock_display.buffer.clear()
-        line = self.collector._header_widget.draw_sample_stats(0, 160, 10.0)
+        line = self.collector.header_widget.draw_sample_stats(0, 160, 10.0)
         self.assertEqual(line, 1)
         self.assertGreater(len(self.mock_display.buffer), 0)
 
@@ -100,8 +100,8 @@ class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
         """Test complete display rendering with realistic data."""
         # Add multiple functions with different call counts
         self.collector.total_samples = 1000
-        self.collector._successful_samples = 950
-        self.collector._failed_samples = 50
+        self.collector.successful_samples = 950
+        self.collector.failed_samples = 50
 
         self.collector.result[("app.py", 10, "main")] = {
             "direct_calls": 100,
@@ -135,12 +135,12 @@ class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
     def test_efficiency_bar_visualization(self):
         """Test that efficiency bar shows correct proportions."""
         self.collector.total_samples = 100
-        self.collector._successful_samples = 75
-        self.collector._failed_samples = 25
+        self.collector.successful_samples = 75
+        self.collector.failed_samples = 25
 
         colors = self.collector._setup_colors()
         self.collector._initialize_widgets(colors)
-        self.collector._header_widget.draw_efficiency_bar(0, 160)
+        self.collector.header_widget.draw_efficiency_bar(0, 160)
 
         # Check that something was drawn to the display
         self.assertGreater(len(self.mock_display.buffer), 0)
@@ -170,7 +170,7 @@ class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
             self.mock_display.buffer.clear()
             self.collector.sort_by = sort_mode
 
-            stats_list = self.collector._build_stats_list()
+            stats_list = self.collector.build_stats_list()
             self.assertEqual(len(stats_list), 2)
 
             # Verify sorting worked (func_b should be first for most modes)
@@ -186,7 +186,7 @@ class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
         colors = collector._setup_colors()
         collector._initialize_widgets(colors)
         line, show_sample_pct, show_tottime, show_cumul_pct, show_cumtime = (
-            collector._table_widget.draw_column_headers(0, 70)
+            collector.table_widget.draw_column_headers(0, 70)
         )
 
         # On narrow terminal, some columns should be hidden
@@ -204,7 +204,7 @@ class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
         colors = collector._setup_colors()
         collector._initialize_widgets(colors)
         line, show_sample_pct, show_tottime, show_cumul_pct, show_cumtime = (
-            collector._table_widget.draw_column_headers(0, 60)
+            collector.table_widget.draw_column_headers(0, 60)
         )
 
         # Very narrow should hide even more columns
@@ -252,9 +252,9 @@ class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
 
         colors = self.collector._setup_colors()
         self.collector._initialize_widgets(colors)
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
-        self.collector._header_widget.draw_top_functions(0, 160, stats_list)
+        self.collector.header_widget.draw_top_functions(0, 160, stats_list)
 
         # Top functions section should have written something
         self.assertGreater(len(self.mock_display.buffer), 0)
@@ -334,7 +334,7 @@ class TestLiveStatsCollectorCursesIntegration(unittest.TestCase):
         colors = collector._setup_colors()
         collector._initialize_widgets(colors)
 
-        collector._header_widget.add_str(5, 10, "Test", 0)
+        collector.header_widget.add_str(5, 10, "Test", 0)
         # Verify it was added to the buffer
         self.assertIn((5, 10), mock_display.buffer)
 
@@ -444,7 +444,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
         }
         self.collector._initialize_widgets(colors)
 
-        line = self.collector._header_widget.draw_header_info(0, 160, 100.5)
+        line = self.collector.header_widget.draw_header_info(0, 160, 100.5)
         self.assertEqual(line, 2)  # Title + header info line
 
     def test_draw_sample_stats(self):
@@ -453,9 +453,9 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
         colors = {"cyan": curses.A_BOLD, "green": curses.A_BOLD}
         self.collector._initialize_widgets(colors)
 
-        line = self.collector._header_widget.draw_sample_stats(0, 160, 10.0)
+        line = self.collector.header_widget.draw_sample_stats(0, 160, 10.0)
         self.assertEqual(line, 1)
-        self.assertGreater(self.collector._max_sample_rate, 0)
+        self.assertGreater(self.collector.max_sample_rate, 0)
 
     def test_progress_bar_uses_target_rate(self):
         """Test that progress bar uses target rate instead of max rate."""
@@ -465,7 +465,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
         )  # 10ms = 100Hz target
         collector.start_time = time.perf_counter()
         collector.total_samples = 500
-        collector._max_sample_rate = (
+        collector.max_sample_rate = (
             150  # Higher than target to test we don't use this
         )
 
@@ -477,7 +477,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
 
         # Draw sample stats with a known elapsed time that gives us a specific sample rate
         elapsed = 10.0  # 500 samples in 10 seconds = 50 samples/second
-        line = collector._header_widget.draw_sample_stats(0, 160, elapsed)
+        line = collector.header_widget.draw_sample_stats(0, 160, elapsed)
 
         # Verify display was updated
         self.assertEqual(line, 1)
@@ -543,7 +543,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
                 collector.display.buffer.clear()
 
                 # Draw with 1 second elapsed time (gives us current rate of 100Hz)
-                collector._header_widget.draw_sample_stats(0, 160, 1.0)
+                collector.header_widget.draw_sample_stats(0, 160, 1.0)
 
                 # Check that the current/target format appears in the display with proper units
                 found_current_target_format = False
@@ -564,13 +564,13 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
 
     def test_draw_efficiency_bar(self):
         """Test drawing efficiency bar."""
-        self.collector._successful_samples = 900
-        self.collector._failed_samples = 100
+        self.collector.successful_samples = 900
+        self.collector.failed_samples = 100
         self.collector.total_samples = 1000
         colors = {"green": curses.A_BOLD, "red": curses.A_BOLD}
         self.collector._initialize_widgets(colors)
 
-        line = self.collector._header_widget.draw_efficiency_bar(0, 160)
+        line = self.collector.header_widget.draw_efficiency_bar(0, 160)
         self.assertEqual(line, 1)
 
     def test_draw_function_stats(self):
@@ -586,7 +586,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
             "total_rec_calls": 0,
         }
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
         colors = {
             "cyan": curses.A_BOLD,
             "green": curses.A_BOLD,
@@ -595,7 +595,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
         }
         self.collector._initialize_widgets(colors)
 
-        line = self.collector._header_widget.draw_function_stats(
+        line = self.collector.header_widget.draw_function_stats(
             0, 160, stats_list
         )
         self.assertEqual(line, 1)
@@ -609,7 +609,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
             "total_rec_calls": 0,
         }
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
         colors = {
             "red": curses.A_BOLD,
             "yellow": curses.A_BOLD,
@@ -617,7 +617,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
         }
         self.collector._initialize_widgets(colors)
 
-        line = self.collector._header_widget.draw_top_functions(
+        line = self.collector.header_widget.draw_top_functions(
             0, 160, stats_list
         )
         self.assertEqual(line, 1)
@@ -636,7 +636,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
             show_tottime,
             show_cumul_pct,
             show_cumtime,
-        ) = self.collector._table_widget.draw_column_headers(0, 160)
+        ) = self.collector.table_widget.draw_column_headers(0, 160)
         self.assertEqual(line, 1)
         self.assertTrue(show_sample_pct)
         self.assertTrue(show_tottime)
@@ -657,7 +657,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
             show_tottime,
             show_cumul_pct,
             show_cumtime,
-        ) = self.collector._table_widget.draw_column_headers(0, 70)
+        ) = self.collector.table_widget.draw_column_headers(0, 70)
         self.assertEqual(line, 1)
         # Some columns should be hidden on narrow terminal
         self.assertFalse(show_cumul_pct)
@@ -666,7 +666,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
         """Test drawing footer."""
         colors = self.collector._setup_colors()
         self.collector._initialize_widgets(colors)
-        self.collector._footer_widget.render(38, 160)
+        self.collector.footer_widget.render(38, 160)
         # Should have written some content to the display buffer
         self.assertGreater(len(self.mock_display.buffer), 0)
 
@@ -674,7 +674,7 @@ class TestLiveStatsCollectorDisplayMethods(unittest.TestCase):
         """Test progress bar drawing."""
         colors = self.collector._setup_colors()
         self.collector._initialize_widgets(colors)
-        bar, length = self.collector._header_widget.progress_bar.render_bar(
+        bar, length = self.collector.header_widget.progress_bar.render_bar(
             50, 100, 30
         )
 
@@ -699,7 +699,7 @@ class TestLiveStatsCollectorEdgeCases(unittest.TestCase):
             "total_rec_calls": 0,
         }
 
-        stats_list = collector._build_stats_list()
+        stats_list = collector.build_stats_list()
         self.assertEqual(len(stats_list), 1)
         self.assertEqual(stats_list[0]["func"][2], long_name)
 
@@ -729,8 +729,8 @@ class TestLiveStatsCollectorUpdateDisplay(unittest.TestCase):
     def test_update_display_normal(self):
         """Test normal update_display operation."""
         self.collector.total_samples = 100
-        self.collector._successful_samples = 90
-        self.collector._failed_samples = 10
+        self.collector.successful_samples = 90
+        self.collector.failed_samples = 10
         self.collector.result[("test.py", 10, "func")] = {
             "direct_calls": 50,
             "cumulative_calls": 75,
