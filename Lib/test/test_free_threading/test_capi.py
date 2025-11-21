@@ -1,9 +1,8 @@
 import ctypes
 import sys
-import threading
 import unittest
 
-from test.support import import_helper, threading_helper
+from test.support import threading_helper
 from test.support.threading_helper import run_concurrently
 
 
