@@ -35,7 +35,7 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         )
         self.collector.start_time = time.perf_counter()
         # Set a consistent display update interval for tests
-        self.collector._display_update_interval = 0.1
+        self.collector.display_update_interval = 0.1
 
     def tearDown(self):
         """Clean up after test."""
@@ -92,8 +92,8 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         """Test reset statistics functionality."""
         # Add some stats
         self.collector.total_samples = 100
-        self.collector._successful_samples = 90
-        self.collector._failed_samples = 10
+        self.collector.successful_samples = 90
+        self.collector.failed_samples = 10
         self.collector.result[("test.py", 1, "func")] = {
             "direct_calls": 50,
             "cumulative_calls": 75,
@@ -104,51 +104,51 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
         self.collector.reset_stats()
 
         self.assertEqual(self.collector.total_samples, 0)
-        self.assertEqual(self.collector._successful_samples, 0)
-        self.assertEqual(self.collector._failed_samples, 0)
+        self.assertEqual(self.collector.successful_samples, 0)
+        self.assertEqual(self.collector.failed_samples, 0)
         self.assertEqual(len(self.collector.result), 0)
 
     def test_increase_refresh_rate(self):
         """Test increasing refresh rate (faster updates)."""
-        initial_interval = self.collector._display_update_interval
+        initial_interval = self.collector.display_update_interval
 
         # Simulate '+' key press (faster = smaller interval)
         self.display.simulate_input(ord("+"))
         self.collector._handle_input()
 
-        self.assertLess(self.collector._display_update_interval, initial_interval)
+        self.assertLess(self.collector.display_update_interval, initial_interval)
 
     def test_decrease_refresh_rate(self):
         """Test decreasing refresh rate (slower updates)."""
-        initial_interval = self.collector._display_update_interval
+        initial_interval = self.collector.display_update_interval
 
         # Simulate '-' key press (slower = larger interval)
         self.display.simulate_input(ord("-"))
         self.collector._handle_input()
 
-        self.assertGreater(self.collector._display_update_interval, initial_interval)
+        self.assertGreater(self.collector.display_update_interval, initial_interval)
 
     def test_refresh_rate_minimum(self):
         """Test that refresh rate has a minimum (max speed)."""
-        self.collector._display_update_interval = 0.05  # Set to minimum
+        self.collector.display_update_interval = 0.05  # Set to minimum
 
         # Try to go faster
         self.display.simulate_input(ord("+"))
         self.collector._handle_input()
 
         # Should stay at minimum
-        self.assertEqual(self.collector._display_update_interval, 0.05)
+        self.assertEqual(self.collector.display_update_interval, 0.05)
 
     def test_refresh_rate_maximum(self):
         """Test that refresh rate has a maximum (min speed)."""
-        self.collector._display_update_interval = 1.0  # Set to maximum
+        self.collector.display_update_interval = 1.0  # Set to maximum
 
         # Try to go slower
         self.display.simulate_input(ord("-"))
         self.collector._handle_input()
 
         # Should stay at maximum
-        self.assertEqual(self.collector._display_update_interval, 1.0)
+        self.assertEqual(self.collector.display_update_interval, 1.0)
 
     def test_help_toggle(self):
         """Test help screen toggle."""
@@ -276,23 +276,23 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
 
     def test_increase_refresh_rate_with_equals(self):
         """Test increasing refresh rate with '=' key."""
-        initial_interval = self.collector._display_update_interval
+        initial_interval = self.collector.display_update_interval
 
         # Simulate '=' key press (alternative to '+')
         self.display.simulate_input(ord("="))
         self.collector._handle_input()
 
-        self.assertLess(self.collector._display_update_interval, initial_interval)
+        self.assertLess(self.collector.display_update_interval, initial_interval)
 
     def test_decrease_refresh_rate_with_underscore(self):
         """Test decreasing refresh rate with '_' key."""
-        initial_interval = self.collector._display_update_interval
+        initial_interval = self.collector.display_update_interval
 
         # Simulate '_' key press (alternative to '-')
         self.display.simulate_input(ord("_"))
         self.collector._handle_input()
 
-        self.assertGreater(self.collector._display_update_interval, initial_interval)
+        self.assertGreater(self.collector.display_update_interval, initial_interval)
 
     def test_finished_state_displays_banner(self):
         """Test that finished state shows prominent banner."""
@@ -431,7 +431,7 @@ class TestLiveCollectorFiltering(unittest.TestCase):
         """Test filtering by filename pattern."""
         self.collector.filter_pattern = "models"
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Only models.py should be included
         self.assertEqual(len(stats_list), 1)
@@ -441,7 +441,7 @@ class TestLiveCollectorFiltering(unittest.TestCase):
         """Test filtering by function name."""
         self.collector.filter_pattern = "render"
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         self.assertEqual(len(stats_list), 1)
         self.assertEqual(stats_list[0]["func"][2], "render")
@@ -450,7 +450,7 @@ class TestLiveCollectorFiltering(unittest.TestCase):
         """Test that filtering is case-insensitive."""
         self.collector.filter_pattern = "MODELS"
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Should still match models.py
         self.assertEqual(len(stats_list), 1)
@@ -459,7 +459,7 @@ class TestLiveCollectorFiltering(unittest.TestCase):
         """Test substring filtering."""
         self.collector.filter_pattern = "app/"
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Should match both app files
         self.assertEqual(len(stats_list), 2)
@@ -468,7 +468,7 @@ class TestLiveCollectorFiltering(unittest.TestCase):
         """Test with no filter applied."""
         self.collector.filter_pattern = None
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # All items should be included
         self.assertEqual(len(stats_list), 3)
@@ -477,7 +477,7 @@ class TestLiveCollectorFiltering(unittest.TestCase):
         """Test filtering by partial function name."""
         self.collector.filter_pattern = "save"
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         self.assertEqual(len(stats_list), 1)
         self.assertEqual(stats_list[0]["func"][2], "save")
@@ -486,7 +486,7 @@ class TestLiveCollectorFiltering(unittest.TestCase):
         """Test filtering matches filename:funcname pattern."""
         self.collector.filter_pattern = "views.py:render"
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Should match the combined pattern
         self.assertEqual(len(stats_list), 1)
@@ -496,7 +496,7 @@ class TestLiveCollectorFiltering(unittest.TestCase):
         """Test filter that matches nothing."""
         self.collector.filter_pattern = "nonexistent"
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         self.assertEqual(len(stats_list), 0)
 
@@ -822,7 +822,7 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
 
     def test_stats_list_in_all_mode(self):
         """Test that stats list uses aggregated data in ALL mode."""
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Should have all 3 functions
         self.assertEqual(len(stats_list), 3)
@@ -835,7 +835,7 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
         self.collector.view_mode = "PER_THREAD"
         self.collector.current_thread_index = 0  # First thread (111)
 
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
 
         # Should only have func1 from thread 111
         self.assertEqual(len(stats_list), 1)
@@ -847,19 +847,19 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
 
         # Thread 0 (111) -> func1
         self.collector.current_thread_index = 0
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
         self.assertEqual(len(stats_list), 1)
         self.assertEqual(stats_list[0]["func"][2], "func1")
 
         # Thread 1 (222) -> func2
         self.collector.current_thread_index = 1
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
         self.assertEqual(len(stats_list), 1)
         self.assertEqual(stats_list[0]["func"][2], "func2")
 
         # Thread 2 (333) -> func3
         self.collector.current_thread_index = 2
-        stats_list = self.collector._build_stats_list()
+        stats_list = self.collector.build_stats_list()
         self.assertEqual(len(stats_list), 1)
         self.assertEqual(stats_list[0]["func"][2], "func3")
 
@@ -1036,8 +1036,8 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
 
         # In ALL mode, should show mixed stats (50% on GIL, 50% off GIL)
         self.assertEqual(collector.view_mode, "ALL")
-        total_has_gil = collector._thread_status_counts["has_gil"]
-        total_threads = collector._thread_status_counts["total"]
+        total_has_gil = collector.thread_status_counts["has_gil"]
+        total_threads = collector.thread_status_counts["total"]
         self.assertEqual(total_has_gil, 10)  # Only thread 111 has GIL
         self.assertEqual(total_threads, 20)  # 10 samples * 2 threads
 
@@ -1082,7 +1082,7 @@ class TestLiveCollectorThreadNavigation(unittest.TestCase):
 
         # Check aggregated GC stats (ALL mode)
         # 2 GC samples out of 10 total = 20%
-        self.assertEqual(collector._gc_frame_samples, 2)
+        self.assertEqual(collector.gc_frame_samples, 2)
         self.assertEqual(collector.total_samples, 5)  # 5 collect() calls
 
         # Check per-thread GC stats
