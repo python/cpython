@@ -1437,7 +1437,7 @@ deduce_unreachable_heap(PyInterpreterState *interp,
     // Identify objects that are directly reachable from outside the GC heap
     // by computing the difference between the refcount and the number of
     // incoming references.
-    gc_visit_heaps(interp, &update_refs, &state);
+    gc_visit_heaps(interp, &update_refs, &state->base);
 
 #ifdef GC_DEBUG
     // Check that all objects are marked as unreachable and that the computed
