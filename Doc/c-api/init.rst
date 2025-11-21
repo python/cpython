@@ -1390,7 +1390,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    See :c:func:`PyUnstable_ThreadState_ResetStackProtection` for undoing this operation.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: void PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
@@ -1400,7 +1400,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    See :c:func:`PyUnstable_ThreadState_SetStackProtection` for an explanation.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
@@ -1890,6 +1890,25 @@ pointer and a void pointer argument.
    .. versionchanged:: 3.12
       This function now always schedules *func* to be run in the main
       interpreter.
+
+
+.. c:function:: int Py_MakePendingCalls(void)
+
+   Execute all pending calls. This is usually executed automatically by the
+   interpreter.
+
+   This function returns ``0`` on success, and returns ``-1`` with an exception
+   set on failure.
+
+   If this is not called in the main thread of the main
+   interpreter, this function does nothing and returns ``0``.
+   The caller must hold an :term:`attached thread state`.
+
+   .. versionadded:: 3.1
+
+   .. versionchanged:: 3.12
+      This function only runs pending calls in the main interpreter.
+
 
 .. _profiling:
 
