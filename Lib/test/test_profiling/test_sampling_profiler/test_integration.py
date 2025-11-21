@@ -385,49 +385,15 @@ def cpu_intensive_work():
             result = result % 1000000
     return result
 
-def medium_computation():
-    """Medium complexity function."""
-    result = 0
-    for i in range(100):
-        result += i * i
-    return result
-
-def fast_loop():
-    """Fast simple loop."""
-    total = 0
-    for i in range(50):
-        total += i
-    return total
-
-def nested_calls():
-    """Test nested function calls."""
-    def level1():
-        def level2():
-            return medium_computation()
-        return level2()
-    return level1()
-
 def main_loop():
-    """Main test loop with different execution paths."""
-    max_iterations = 1000
+    """Main test loop."""
+    max_iterations = 200
 
-    iteration = 0
-
-    while iteration < max_iterations:
-        iteration += 1
-
-        # Different execution paths - focus on CPU intensive work
-        if iteration % 3 == 0:
-            # Very CPU intensive
-            result = cpu_intensive_work()
-        elif iteration % 2 == 0:
-            # Expensive recursive operation (increased frequency for slower machines)
-            result = slow_fibonacci(12)
+    for iteration in range(max_iterations):
+        if iteration % 2 == 0:
+            result = slow_fibonacci(15)
         else:
-            # Medium operation
-            result = nested_calls()
-
-        # No sleep - keep CPU busy
+            result = cpu_intensive_work()
 
 if __name__ == "__main__":
     main_loop()
