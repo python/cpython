@@ -4,6 +4,7 @@
 #include "pycore_abstract.h"      // _PySequence_IterSearch()
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_code.h"          // CO_FAST_FREE
+#include "pycore_descrobject.h"   // _PyMember_GetOffset()
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_interpframe.h"   // _PyInterpreterFrame
@@ -2567,8 +2568,6 @@ _PyHeapType_GET_MEMBERS(PyHeapTypeObject* type)
 {
     return PyObject_GetItemData((PyObject *)type);
 }
-
-void *_PyMember_GetOffset(PyObject *obj, PyMemberDef *l);
 
 static int
 traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)

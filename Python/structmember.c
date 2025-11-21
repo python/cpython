@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_descrobject.h"   // _PyMember_GetOffset()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_object.h"        // _Py_TryIncrefCompare(), FT_ATOMIC_*()
 #include "pycore_critical_section.h"
