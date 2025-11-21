@@ -229,8 +229,8 @@ Since 3.11, frames are no longer fully-fledged objects. Instead, a leaner intern
 `_PyInterpreterFrame` structure is used. Most frames are allocated contiguously in a
 per-thread stack (see `_PyThreadState_PushFrame` in [Python/pystate.c](../Python/pystate.c)),
 which improves memory locality and reduces overhead.
-If current `datastack_chunk` has enough space (`_PyThreadState_HasStackSpace`)
-then lightweight `_PyFrame_PushUnchecked` can be used.
+If the current `datastack_chunk` has enough space (`_PyThreadState_HasStackSpace`)
+then the lightweight `_PyFrame_PushUnchecked` can be used instead of `_PyThreadState_PushFrame`.
 
 Sometimes an actual `PyFrameObject` is needed, such as when Python code calls
 `sys._getframe()` or an extension module calls
