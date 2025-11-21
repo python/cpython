@@ -110,13 +110,16 @@ The :mod:`gc` module provides the following functions:
      to be uncollectable (and were therefore moved to the :data:`garbage`
      list) inside this generation;
 
+   * ``visited`` is the total number of unique objects visited during each
+     collection of this generation;
+
    * ``duration`` is the total time in seconds spent in collections for this
      generation.
 
    .. versionadded:: 3.4
 
    .. versionchanged:: next
-      Add ``duration``.
+      Add ``duration`` and ``visited``.
 
 
 .. function:: set_threshold(threshold0, [threshold1, [threshold2]])
@@ -319,6 +322,9 @@ values but should not rebind them):
       "uncollectable": When *phase* is "stop", the number of objects
       that could not be collected and were put in :data:`garbage`.
 
+      "visited": When *phase* is "stop", the number of unique objects visited
+      during the collection.
+
       "duration": When *phase* is "stop", the time in seconds spent in the
       collection.
 
@@ -335,7 +341,7 @@ values but should not rebind them):
    .. versionadded:: 3.3
 
    .. versionchanged:: next
-      Add "duration".
+      Add "duration" and "visited".
 
 
 The following constants are provided for use with :func:`set_debug`:

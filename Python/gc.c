@@ -1759,7 +1759,7 @@ gc_collect_region(PyThreadState *tstate,
     assert(!_PyErr_Occurred(tstate));
 
     gc_list_init(&unreachable);
-    stats->visited += deduce_unreachable(from, &unreachable);
+    stats->visited = deduce_unreachable(from, &unreachable);
     validate_consistent_old_space(from);
     untrack_tuples(from);
 
