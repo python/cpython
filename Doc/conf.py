@@ -224,6 +224,7 @@ nitpick_ignore += [
     ('py:meth', '_SubParsersAction.add_parser'),
     # Attributes/methods/etc. that definitely should be documented better,
     # but are deferred for now:
+    ('py:attr', '__annotations__'),
     ('py:attr', '__wrapped__'),
 ]
 
