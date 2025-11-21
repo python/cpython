@@ -14,14 +14,24 @@ from _colorize import ANSIColors
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .gecko_collector import GeckoCollector
+from .constants import (
+    PROFILING_MODE_WALL,
+    PROFILING_MODE_CPU,
+    PROFILING_MODE_GIL,
+    PROFILING_MODE_ALL,
+    SORT_MODE_NSAMPLES,
+    SORT_MODE_TOTTIME,
+    SORT_MODE_CUMTIME,
+    SORT_MODE_SAMPLE_PCT,
+    SORT_MODE_CUMUL_PCT,
+    SORT_MODE_NSAMPLES_CUMUL,
+)
+try:
+    from .live_collector import LiveStatsCollector
+except ImportError:
+    LiveStatsCollector = None
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
-
-# Profiling mode constants
-PROFILING_MODE_WALL = 0
-PROFILING_MODE_CPU = 1
-PROFILING_MODE_GIL = 2
-PROFILING_MODE_ALL = 3  # Combines GIL + CPU checks
 
 
 def _parse_mode(mode_string):
@@ -42,6 +52,7 @@ Supports the following output formats:
   - --pstats: Detailed profiling statistics with sorting options
   - --collapsed: Stack traces for generating flamegraphs
   - --flamegraph Interactive HTML flamegraph visualization (requires web browser)
+  - --live: Live top-like statistics display using ncurses
 
 Examples:
   # Profile process 1234 for 10 seconds with default settings
@@ -61,6 +72,9 @@ Examples:
 
   # Generate a HTML flamegraph
   python -m profiling.sampling --flamegraph -p 1234
+
+  # Display live top-like statistics (press 'q' to quit, 's' to cycle sort)
+  python -m profiling.sampling --live -p 1234
 
   # Profile all threads, sort by total time
   python -m profiling.sampling -a --sort-tottime -p 1234
@@ -91,7 +105,7 @@ _READY_MESSAGE = b"ready"
 _RECV_BUFFER_SIZE = 1024
 
 
-def _run_with_sync(original_cmd):
+def _run_with_sync(original_cmd, suppress_output=False):
     """Run a command with socket-based synchronization and return the process."""
     # Create a TCP socket for synchronization with better socket options
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sync_sock:
@@ -110,7 +124,14 @@ def _run_with_sync(original_cmd):
         cmd = (sys.executable, "-m", "profiling.sampling._sync_coordinator", str(sync_port), cwd) + tuple(target_args)
 
         # Start the process with coordinator
-        process = subprocess.Popen(cmd)
+        # Suppress stdout/stderr if requested (for live mode)
+        popen_kwargs = {}
+        if suppress_output:
+            popen_kwargs['stdin'] = subprocess.DEVNULL
+            popen_kwargs['stdout'] = subprocess.DEVNULL
+            popen_kwargs['stderr'] = subprocess.DEVNULL
+
+        process = subprocess.Popen(cmd, **popen_kwargs)
 
         try:
             # Wait for ready signal with timeout
@@ -168,6 +189,10 @@ class SampleProfiler:
         last_realtime_update = start_time
 
         while running_time < duration_sec:
+            # Check if live collector wants to stop
+            if hasattr(collector, 'running') and not collector.running:
+                break
+
             current_time = time.perf_counter()
             if next_time < current_time:
                 try:
@@ -177,6 +202,7 @@ class SampleProfiler:
                     duration_sec = current_time - start_time
                     break
                 except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
+                    collector.collect_failed_sample()
                     errors += 1
                 except Exception as e:
                     if not self._is_process_running():
@@ -213,16 +239,19 @@ class SampleProfiler:
         sample_rate = num_samples / running_time
         error_rate = (errors / num_samples) * 100 if num_samples > 0 else 0
 
-        print(f"Captured {num_samples} samples in {running_time:.2f} seconds")
-        print(f"Sample rate: {sample_rate:.2f} samples/sec")
-        print(f"Error rate: {error_rate:.2f}%")
+        # Don't print stats for live mode (curses is handling display)
+        is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
+        if not is_live_mode:
+            print(f"Captured {num_samples} samples in {running_time:.2f} seconds")
+            print(f"Sample rate: {sample_rate:.2f} samples/sec")
+            print(f"Error rate: {error_rate:.2f}%")
 
         # Pass stats to flamegraph collector if it's the right type
         if hasattr(collector, 'set_stats'):
             collector.set_stats(self.sample_interval_usec, running_time, sample_rate, error_rate)
 
         expected_samples = int(duration_sec / sample_interval_sec)
-        if num_samples < expected_samples:
+        if num_samples < expected_samples and not is_live_mode:
             print(
                 f"Warning: missed {expected_samples - num_samples} samples "
                 f"from the expected total of {expected_samples} "
@@ -648,10 +677,52 @@ def sample(
             # Gecko format never skips idle threads to show full thread states
             collector = GeckoCollector(skip_idle=False)
             filename = filename or f"gecko.{pid}.json"
+        case "live":
+            # Map sort value to sort_by string
+            sort_by_map = {
+                SORT_MODE_NSAMPLES: "nsamples",
+                SORT_MODE_TOTTIME: "tottime",
+                SORT_MODE_CUMTIME: "cumtime",
+                SORT_MODE_SAMPLE_PCT: "sample_pct",
+                SORT_MODE_CUMUL_PCT: "cumul_pct",
+                SORT_MODE_NSAMPLES_CUMUL: "cumul_pct",
+            }
+            sort_by = sort_by_map.get(sort, "tottime")
+            collector = LiveStatsCollector(
+                sample_interval_usec,
+                skip_idle=skip_idle,
+                sort_by=sort_by,
+                limit=limit or 20,
+                pid=pid,
+                mode=mode,
+            )
+            # Live mode is interactive, don't save file by default
+            # User can specify -o if they want to save stats
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
 
-    profiler.sample(collector, duration_sec)
+    # For live mode, wrap sampling in curses
+    if output_format == "live":
+        import curses
+        def curses_wrapper_func(stdscr):
+            collector.init_curses(stdscr)
+            try:
+                profiler.sample(collector, duration_sec)
+                # Mark as finished and keep the TUI running until user presses 'q'
+                collector.mark_finished()
+                # Keep processing input until user quits
+                while collector.running:
+                    collector._handle_input()
+                    time.sleep(0.05)  # Small sleep to avoid busy waiting
+            finally:
+                collector.cleanup_curses()
+
+        try:
+            curses.wrapper(curses_wrapper_func)
+        except KeyboardInterrupt:
+            pass
+    else:
+        profiler.sample(collector, duration_sec)
 
     if output_format == "pstats" and not filename:
         stats = pstats.SampledStats(collector).strip_dirs()
@@ -663,36 +734,80 @@ def sample(
             print_sampled_stats(
                 stats, sort, limit, show_summary, sample_interval_usec
             )
-    else:
+    elif output_format != "live":
+        # Live mode is interactive only, no export unless filename specified
         collector.export(filename)
 
 
-def _validate_collapsed_format_args(args, parser):
-    # Check for incompatible pstats options
+def _validate_file_output_format_args(args, parser):
+    """Validate arguments when using file-based output formats.
+
+    File-based formats (--collapsed, --gecko, --flamegraph) generate raw stack
+    data or visualizations, not formatted statistics, so pstats display options
+    are not applicable.
+    """
     invalid_opts = []
 
-    # Get list of pstats-specific options
-    pstats_options = {"sort": None, "limit": None, "no_summary": False}
+    # Check if any pstats-specific sort options were provided
+    if args.sort is not None:
+        # Get the sort option name that was used
+        sort_names = {
+            SORT_MODE_NSAMPLES: "--sort-nsamples",
+            SORT_MODE_TOTTIME: "--sort-tottime",
+            SORT_MODE_CUMTIME: "--sort-cumtime",
+            SORT_MODE_SAMPLE_PCT: "--sort-sample-pct",
+            SORT_MODE_CUMUL_PCT: "--sort-cumul-pct",
+            SORT_MODE_NSAMPLES_CUMUL: "--sort-nsamples-cumul",
+            -1: "--sort-name",
+        }
+        sort_opt = sort_names.get(args.sort, "sort")
+        invalid_opts.append(sort_opt)
 
-    # Find the default values from the argument definitions
-    for action in parser._actions:
-        if action.dest in pstats_options and hasattr(action, "default"):
-            pstats_options[action.dest] = action.default
+    # Check limit option (default is 15)
+    if args.limit != 15:
+        invalid_opts.append("-l/--limit")
 
-    # Check if any pstats-specific options were provided by comparing with defaults
-    for opt, default in pstats_options.items():
-        if getattr(args, opt) != default:
-            invalid_opts.append(opt.replace("no_", ""))
+    # Check no_summary option
+    if args.no_summary:
+        invalid_opts.append("--no-summary")
 
     if invalid_opts:
         parser.error(
-            f"The following options are only valid with --pstats format: {', '.join(invalid_opts)}"
+            f"--{args.format} format is incompatible with: {', '.join(invalid_opts)}. "
+            "These options are only valid with --pstats format."
         )
+
+    # Validate that --mode is not used with --gecko
+    if args.format == "gecko" and args.mode != "wall":
+        parser.error("--mode option is incompatible with --gecko format. Gecko format automatically uses ALL mode (GIL + CPU analysis).")
 
     # Set default output filename for collapsed format only if we have a PID
     # For module/script execution, this will be set later with the subprocess PID
     if not args.outfile and args.pid is not None:
         args.outfile = f"collapsed.{args.pid}.txt"
+
+
+def _validate_live_format_args(args, parser):
+    """Validate arguments when using --live output format.
+
+    Live mode provides an interactive TUI that is incompatible with file output
+    and certain pstats display options.
+    """
+    invalid_opts = []
+
+    # Live mode is incompatible with file output
+    if args.outfile:
+        invalid_opts.append("-o/--outfile")
+
+    # pstats-specific display options are incompatible
+    if args.no_summary:
+        invalid_opts.append("--no-summary")
+
+    if invalid_opts:
+        parser.error(
+            f"--live mode is incompatible with: {', '.join(invalid_opts)}. "
+            "Live mode provides its own interactive display."
+        )
 
 
 def wait_for_process_and_sample(pid, sort_value, args):
@@ -826,6 +941,13 @@ def main():
         dest="format",
         help="Generate Gecko format for Firefox Profiler",
     )
+    output_format.add_argument(
+        "--live",
+        action="store_const",
+        const="live",
+        dest="format",
+        help="Display live top-like live statistics in a terminal UI",
+    )
 
     output_group.add_argument(
         "-o",
@@ -841,42 +963,42 @@ def main():
     sort_group.add_argument(
         "--sort-nsamples",
         action="store_const",
-        const=0,
+        const=SORT_MODE_NSAMPLES,
         dest="sort",
-        help="Sort by number of direct samples (nsamples column)",
+        help="Sort by number of direct samples (nsamples column, default)",
     )
     sort_group.add_argument(
         "--sort-tottime",
         action="store_const",
-        const=1,
+        const=SORT_MODE_TOTTIME,
         dest="sort",
         help="Sort by total time (tottime column)",
     )
     sort_group.add_argument(
         "--sort-cumtime",
         action="store_const",
-        const=2,
+        const=SORT_MODE_CUMTIME,
         dest="sort",
-        help="Sort by cumulative time (cumtime column, default)",
+        help="Sort by cumulative time (cumtime column)",
     )
     sort_group.add_argument(
         "--sort-sample-pct",
         action="store_const",
-        const=3,
+        const=SORT_MODE_SAMPLE_PCT,
         dest="sort",
         help="Sort by sample percentage (sample%% column)",
     )
     sort_group.add_argument(
         "--sort-cumul-pct",
         action="store_const",
-        const=4,
+        const=SORT_MODE_CUMUL_PCT,
         dest="sort",
         help="Sort by cumulative sample percentage (cumul%% column)",
     )
     sort_group.add_argument(
         "--sort-nsamples-cumul",
         action="store_const",
-        const=5,
+        const=SORT_MODE_NSAMPLES_CUMUL,
         dest="sort",
         help="Sort by cumulative samples (nsamples column, cumulative part)",
     )
@@ -903,15 +1025,21 @@ def main():
 
     args = parser.parse_args()
 
+    # Check if live mode is available early
+    if args.format == "live" and LiveStatsCollector is None:
+        print(
+            "Error: Live mode (--live) requires the curses module, which is not available.\n",
+            file=sys.stderr
+        )
+        sys.exit(1)
+
     # Validate format-specific arguments
-    if args.format in ("collapsed", "gecko"):
-        _validate_collapsed_format_args(args, parser)
+    if args.format in ("collapsed", "gecko", "flamegraph"):
+        _validate_file_output_format_args(args, parser)
+    elif args.format == "live":
+        _validate_live_format_args(args, parser)
 
-    # Validate that --mode is not used with --gecko
-    if args.format == "gecko" and args.mode != "wall":
-        parser.error("--mode option is incompatible with --gecko format. Gecko format automatically uses ALL mode (GIL + CPU analysis).")
-
-    sort_value = args.sort if args.sort is not None else 2
+    sort_value = args.sort if args.sort is not None else SORT_MODE_NSAMPLES
 
     if args.module is not None and not args.module:
         parser.error("argument -m/--module: expected one argument")
@@ -958,7 +1086,9 @@ def main():
             cmd = (sys.executable, *args.args)
 
         # Use synchronized process startup
-        process = _run_with_sync(cmd)
+        # Suppress output if using live mode
+        suppress_output = (args.format == "live")
+        process = _run_with_sync(cmd, suppress_output=suppress_output)
 
         # Process has already signaled readiness, start sampling immediately
         try:
