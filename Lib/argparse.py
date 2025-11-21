@@ -937,6 +937,7 @@ class BooleanOptionalAction(Action):
             _option_strings.append(option_string)
 
             if len(option_string) > 2 and option_string[0] == option_string[1]:
+                # two-dash long option: '--foo' -> '--no-foo'
                 if option_string.startswith('no-', 2):
                     raise ValueError(f'invalid option name {option_string!r} '
                                      f'for BooleanOptionalAction')
@@ -944,6 +945,7 @@ class BooleanOptionalAction(Action):
                 _option_strings.append(option_string)
                 neg_option_strings.append(option_string)
             elif len(option_string) > 2 and option_string[0] != option_string[1]:
+                # single-dash long option: '-foo' -> '-nofoo'
                 if option_string.startswith('no', 1):
                     raise ValueError(f'invalid option name {option_string!r} '
                                      f'for BooleanOptionalAction')
