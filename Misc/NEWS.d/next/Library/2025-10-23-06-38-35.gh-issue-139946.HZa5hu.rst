@@ -1,0 +1,1 @@
+Distinguish stdout and stderr when colorizing output in argparse module.
