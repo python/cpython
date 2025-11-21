@@ -2376,7 +2376,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     GC_STAT_ADD(generation, collections, 1);
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
-        invoke_gc_callback(tstate, "start", generation, 0, 0, 0, 0);
+        invoke_gc_callback(tstate, "start", generation, 0, 0, 0, 0.0);
     }
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
@@ -2450,7 +2450,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
-        invoke_gc_callback(tstate, "stop", generation, m, n, state->visited, duration);
+        invoke_gc_callback(tstate, "stop", generation, m, n, state.visited, duration);
     }
 
     assert(!_PyErr_Occurred(tstate));
