@@ -9,6 +9,8 @@ Adapted from Tornado 6.5.1
 :license: Apache-2.0
 """
 
+from __future__ import annotations
+
 import asyncio
 import atexit
 import contextvars
@@ -32,9 +34,6 @@ from typing import (
     Union,
 )
 
-if typing.TYPE_CHECKING:
-    from typing_extensions import TypeVarTuple, Unpack
-
 
 class _HasFileno(Protocol):
     def fileno(self) -> int:
@@ -44,9 +43,6 @@ class _HasFileno(Protocol):
 _FileDescriptorLike = Union[int, _HasFileno]
 
 _T = TypeVar("_T")
-
-if typing.TYPE_CHECKING:
-    _Ts = TypeVarTuple("_Ts")
 
 # Collection of selector thread event loops to shut down on exit.
 _selector_loops: Set["SelectorThread"] = set()
@@ -299,4 +295,3 @@ class SelectorThread:
             return False
         self._wake_selector()
         return True
-
