@@ -101,6 +101,12 @@ def make_quoted_pairs(value):
     return str(value).replace('\\', '\\\\').replace('"', '\\"')
 
 
+def make_parenthesis_pairs(value):
+    """Escape parenthesis and backslash for use within a comment."""
+    return str(value).replace('\\', '\\\\') \
+        .replace('(', '\\(').replace(')', '\\)')
+
+
 def quote_string(value):
     escaped = make_quoted_pairs(value)
     return f'"{escaped}"'
@@ -2941,10 +2947,7 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # the way encoded strings handle continuation lines, we need to
                 # be prepared to encode any whitespace if the next line turns
                 # out to start with an encoded word.
-                line = newline + tstr
-                if line[0] not in WSP:
-                    line = ' ' + line
-                lines.append(line)
+                lines.append(newline + tstr)
 
                 whitespace_accumulator = []
                 for char in lines[-1]:
@@ -2966,6 +2969,13 @@ def _refold_parse_tree(parse_tree, *, policy):
                     [ValueTerminal(make_quoted_pairs(p), 'ptext')
                      for p in newparts] +
                     [ValueTerminal('"', 'ptext')])
+            if part.token_type == 'comment':
+                newparts = (
+                    [ValueTerminal('(', 'ptext')] +
+                    [ValueTerminal(make_parenthesis_pairs(p), 'ptext')
+                     if p.token_type == 'ptext' else p
+                     for p in newparts] +
+                    [ValueTerminal(')', 'ptext')])
             if not part.as_ew_allowed:
                 wrap_as_ew_blocked += 1
                 newparts.append(end_ew_not_allowed)
@@ -2980,10 +2990,7 @@ def _refold_parse_tree(parse_tree, *, policy):
         # We can't figure out how to wrap, it, so give up.
         newline = _steal_trailing_WSP_if_exists(lines)
         if newline or part.startswith_fws():
-            line = newline + tstr
-            if line[0] not in WSP:
-                line = ' ' + line
-            lines.append(line)
+            lines.append(newline + tstr)
         else:
             # We can't fold it onto the next line either...
             lines[-1] += tstr

@@ -3298,67 +3298,18 @@ class TestFolding(TestEmailBase):
         policy = self.policy.clone(max_line_length=40)
         cases = [
             # (to, folded)
-
-            # 1. Unwrappable Comments
-
-            # Entire line is <= 40 characters, 40 characters exactly
-            # No folding
-            ('spy@example.org(loremipsumdolorsitametc)', 'spy@example.org(loremipsumdolorsitametc)\n'),
-            ('(loremipsumdolorsitametc)spy@example.org', '(loremipsumdolorsitametc)spy@example.org\n'),
-            # Entire line is > 40 characters, 41 characters
-            # Folding triggered
-            ('spy@example.org(loremipsumdolorsitametco)','spy@example.org\n (loremipsumdolorsitametco)\n'),
-             ('(loremipsumdolorsitametco)spy@example.org', '(loremipsumdolorsitametco)spy@example.org\n'),
-            # Entire line is > 40 characters, 54 characters, `len(tstr) <= maxlen - len(lines[-1])` is `True`
-            # Folding triggered
-            # Comment part < 40 characthers, 39 characters, `len(tstr) + 1 <= maxlen` is `True`
-            # No attempt to fold the subpart
-            ('spy@example.org(loremipsumdolorsitametconsecteturadip)',
-             'spy@example.org\n'
-             ' (loremipsumdolorsitametconsecteturadip)\n'),
-            ('(loremipsumdolorsitametconsecteturadip)spy@example.org',
-             '(loremipsumdolorsitametconsecteturadip)spy@example.org\n'),
-            # Entire line is > 40 characters, 55 characters, `len(tstr) <= maxlen - len(lines[-1])` is `True`
-            # Folding triggered
-            # Comment part >= 40 characters, 40 characters exactly, `len(tstr) + 1 <= maxlen` is `False`
-            # Attempt to fold the subpart
-            ('spy@example.org(loremipsumdolorsitametconsecteturadipi)',
-             'spy@example.org\n'
-             ' (loremipsumdolorsitametconsecteturadipi)\n'),
-            ('(loremipsumdolorsitametconsecteturadipi)spy@example.org',
-             '(loremipsumdolorsitametconsecteturadipi)spy@example.org\n'),
-
-            # 2. Wrappable comments
-
-            # Entire line is <= 40 characters, 40 characters exactly
-            # No folding
-            ('spy@example.org(loremipsumd olorsitamet)', 'spy@example.org(loremipsumd olorsitamet)\n'),
-            ('(loremipsumd olorsitamet)spy@example.org', '(loremipsumd olorsitamet)spy@example.org\n'),
-            # Entire line is > 40 characters, 41 characters
-            # Folding triggered
-            # Comment part < 40 characters
-            ('spy@example.org(loremipsumd olorsitametc)', 'spy@example.org\n (loremipsumd olorsitametc)\n'),
-            ('(loremipsumd olorsitametc)spy@example.org', '(loremipsumd olorsitametc)spy@example.org\n'),
-            # Entire line is > 40 characters, 56 characters
-            # Folding triggered
-            # Comment part > 40 characters, 41 characters
-            ('spy@example.org(loremipsumd loremipsumdolorsitametconse)', 'spy@example.org(loremipsumd\n loremipsumdolorsitametconse)\n'),
-            ('(loremipsumd loremipsumdolorsitametconse)spy@example.org', '(loremipsumd\n loremipsumdolorsitametconse)spy@example.org\n'),
-            # Entire line is > 40 characters, 70 characters
-            # Folding triggered
-            # Comment part > 40 characters, 55 characters
-            # One word in the comment > 40 characters, 41 characters
-            ('spy@example.org(loremipsumd loremipsumdolorsitametconsecteturadipisci)', 'spy@example.org(loremipsumd\n loremipsumdolorsitametconsecteturadipisci)\n'),
-            ('(loremipsumd loremipsumdolorsitametconsecteturadipisci)spy@example.org', '(loremipsumd\n loremipsumdolorsitametconsecteturadipisci)spy@example.org\n'),
-
-            # 3. Nested comments
-
-            ('spy@example.org((loremipsumdolorsitametconsecteturadi))', 'spy@example.org(\n (loremipsumdolorsitametconsecteturadi))\n'),
-            ('spy@example.org((loremipsumdolorsitametconsecteturadip))', 'spy@example.org(\n (loremipsumdolorsitametconsecteturadip)\n )\n'),
-            ('spy@example.org((loremipsumdolorsitam)(loremipsumdolorsitam))', 'spy@example.org((loremipsumdolorsitam)\n (loremipsumdolorsitam))\n'),
-            ('spy@example.org((loremipsumdolorsitametc)(loremipsumdolorsitametc))', 'spy@example.org(\n (loremipsumdolorsitametc)\n (loremipsumdolorsitametc))\n'),
-            ('spy@example.org(loremipsumdolorsitametc(loremipsumdolorsitametc))', 'spy@example.org(loremipsumdolorsitametc\n (loremipsumdolorsitametc))\n'),
-            ('spy@example.org((loremipsumdolorsitametc)loremipsumdolorsitametc)', 'spy@example.org(\n (loremipsumdolorsitametc)\n loremipsumdolorsitametc)\n'),
+            ('(loremipsumdolorsitametconsecteturadipi)<spy@example.org>',
+             '(loremipsumdolorsitametconsecteturadipi)<spy@example.org>\n'),
+            ('<spy@example.org>(loremipsumdolorsitametconsecteturadipi)',
+             '<spy@example.org>(loremipsumdolorsitametconsecteturadipi)\n'),
+            ('(loremipsum dolorsitametconsecteturadipi)<spy@example.org>',
+             '(loremipsum dolorsitametconsecteturadipi)<spy@example.org>\n'),
+             ('<spy@example.org>(loremipsum dolorsitametconsecteturadipi)',
+             '<spy@example.org>(loremipsum\n dolorsitametconsecteturadipi)\n'),
+            ('(Escaped \\( \\) chars \\\\ in comments stay escaped)<spy@example.org>',
+             '(Escaped \\( \\) chars \\\\ in comments stay\n escaped)<spy@example.org>\n'),
+            ('((loremipsum)(loremipsum)(loremipsum)(loremipsum))<spy@example.org>',
+             '((loremipsum)(loremipsum)(loremipsum)(loremipsum))<spy@example.org>\n'),
         ]
         for (to, folded) in cases:
             with self.subTest(to=to):
