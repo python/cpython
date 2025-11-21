@@ -1981,12 +1981,11 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
     @threading_helper.requires_working_threading()
-    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     @requires_subinterpreters
     def test_pending_call_creates_thread_subinterpreter(self):
-        interpreters = import_helper.import_module("concurrent.interpreters")
-        r, w = os.pipe()
+        # For better isolation, run the entire test in a different subprocess.
         source = f"""if True:
+        code = '''if True:
         import _testinternalcapi
         import threading
         import time
@@ -1995,9 +1994,7 @@ class SubinterpreterTest(unittest.TestCase):
 
         def output():
             time.sleep(1)
-            os.write({w}, b"x")
-            os.close({w})
-
+            print("x", end="")
 
         def callback():
             threading.Thread(target=output).start()
@@ -2007,15 +2004,19 @@ class SubinterpreterTest(unittest.TestCase):
             time.sleep(1)
             _testinternalcapi.simple_pending_call(callback)
 
-
         threading.Thread(target=create_pending_call).start()
-        """
+        '''
+
+        import concurrent.interpreters as interpreters
+
         interp = interpreters.create()
-        interp.exec(source)
+        interp.exec(code)
         interp.close()
-        data = os.read(r, 1)
-        self.assertEqual(data, b"x")
-        os.close(r)
+        """
+        rc, out, err = assert_python_ok('-c', source)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b"x")
+        self.assertEqual(err, b"")
 
 
 @requires_subinterpreters
