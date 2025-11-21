@@ -811,20 +811,20 @@ class TestBooleanOptionalActionSingleDash(ParserTestCase):
     argument_signatures = [
         Sig('-foo', '-x', action=argparse.BooleanOptionalAction),
     ]
-    failures = ['--foo', '--no-foo', '-no-x']
+    failures = ['--foo', '--no-foo', '-no-foo', '-no-x', '-nox']
     successes = [
         ('', NS(foo=None)),
         ('-foo', NS(foo=True)),
-        ('-no-foo', NS(foo=False)),
+        ('-nofoo', NS(foo=False)),
         ('-x', NS(foo=True)),
     ]
 
     def test_invalid_name(self):
         parser = argparse.ArgumentParser()
         with self.assertRaises(ValueError) as cm:
-            parser.add_argument('-no-foo', action=argparse.BooleanOptionalAction)
+            parser.add_argument('-nofoo', action=argparse.BooleanOptionalAction)
         self.assertEqual(str(cm.exception),
-                         "invalid option name '-no-foo' for BooleanOptionalAction")
+                         "invalid option name '-nofoo' for BooleanOptionalAction")
 
 class TestBooleanOptionalActionAlternatePrefixChars(ParserTestCase):
     """Tests BooleanOptionalAction with custom prefixes"""
@@ -855,11 +855,13 @@ class TestBooleanOptionalActionSingleAlternatePrefixChar(ParserTestCase):
     argument_signatures = [
         Sig('+foo', '+x', action=argparse.BooleanOptionalAction),
     ]
-    failures = ['++foo', '++no-foo', '-no-foo', '+no-x', '-no-x']
+    failures = ['++foo', '++no-foo', '++nofoo',
+                '-no-foo', '-nofoo', '+no-foo', '-nofoo',
+                '+no-x', '+nox', '-no-x', '-nox']
     successes = [
         ('', NS(foo=None)),
         ('+foo', NS(foo=True)),
-        ('+no-foo', NS(foo=False)),
+        ('+nofoo', NS(foo=False)),
         ('+x', NS(foo=True)),
     ]
 
@@ -869,9 +871,9 @@ class TestBooleanOptionalActionSingleAlternatePrefixChar(ParserTestCase):
                 'BooleanOptionalAction.*is not valid for positional arguments'):
             parser.add_argument('-foo', action=argparse.BooleanOptionalAction)
         with self.assertRaises(ValueError) as cm:
-            parser.add_argument('+no-foo', action=argparse.BooleanOptionalAction)
+            parser.add_argument('+nofoo', action=argparse.BooleanOptionalAction)
         self.assertEqual(str(cm.exception),
-                         "invalid option name '+no-foo' for BooleanOptionalAction")
+                         "invalid option name '+nofoo' for BooleanOptionalAction")
 
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""

@@ -944,10 +944,10 @@ class BooleanOptionalAction(Action):
                 _option_strings.append(option_string)
                 neg_option_strings.append(option_string)
             elif len(option_string) > 2 and option_string[0] != option_string[1]:
-                if option_string.startswith('no-', 1):
+                if option_string.startswith('no', 1):
                     raise ValueError(f'invalid option name {option_string!r} '
                                      f'for BooleanOptionalAction')
-                option_string = option_string[:1] + 'no-' + option_string[1:]
+                option_string = option_string[:1] + 'no' + option_string[1:]
                 _option_strings.append(option_string)
                 neg_option_strings.append(option_string)
 

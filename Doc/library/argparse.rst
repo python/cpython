@@ -1446,7 +1446,7 @@ this API may be passed as the ``action`` parameter to
        Namespace(foo=False)
 
    Single-dash long options are also supported.
-   For example, negative option ``-no-foo`` is automatically added for
+   For example, negative option ``-nofoo`` is automatically added for
    positive option ``-foo``.
    But no additional options are added for short options such as ``-f``.
 
