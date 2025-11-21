@@ -437,7 +437,7 @@ Module contents
    By default, it is set to the module name of the caller.
 
    This function is not strictly required, because any Python
-   mechanism for creating a new class with :attr:`~object.__annotations__` can
+   mechanism for creating a new class with :attr:`!__annotations__` can
    then apply the :deco:`dataclass` function to convert that class to
    a dataclass.  This function is provided as a convenience.  For
    example::
