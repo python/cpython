@@ -483,11 +483,12 @@ validate_consistent_old_space(PyGC_Head *head)
 /* Set all gc_refs = ob_refcnt.  After this, gc_refs is > 0 and
  * PREV_MASK_COLLECTING bit is set for all objects in containers.
  */
-static void
+static Py_ssize_t
 update_refs(PyGC_Head *containers)
 {
     PyGC_Head *next;
     PyGC_Head *gc = GC_NEXT(containers);
+    Py_ssize_t visited = 0;
 
     while (gc != containers) {
         next = GC_NEXT(gc);
@@ -519,7 +520,9 @@ update_refs(PyGC_Head *containers)
          */
         _PyObject_ASSERT(op, gc_get_refs(gc) != 0);
         gc = next;
+        visited++;
     }
+    return visited;
 }
 
 /* A traversal callback for subtract_refs. */
@@ -663,13 +666,12 @@ visit_reachable(PyObject *op, void *arg)
  * But _gc_next in unreachable list has NEXT_MASK_UNREACHABLE flag.
  * So we can not gc_list_* functions for unreachable until we remove the flag.
  */
-static Py_ssize_t
+static void
 move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 {
     // previous elem in the young list, used for restore gc_prev.
     PyGC_Head *prev = young;
     PyGC_Head *gc = GC_NEXT(young);
-    Py_ssize_t visited = 0;
 
     /* Invariants:  all objects "to the left" of us in young are reachable
      * (directly or indirectly) from outside the young list as it was at entry.
@@ -684,7 +686,6 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
     /* Record which old space we are in, and set NEXT_MASK_UNREACHABLE bit for convenience */
     uintptr_t flags = NEXT_MASK_UNREACHABLE | (gc->_gc_next & _PyGC_NEXT_MASK_OLD_SPACE_1);
     while (gc != young) {
-        visited++;
         if (gc_get_refs(gc)) {
             /* gc is definitely reachable from outside the
              * original 'young'.  Mark it as such, and traverse
@@ -741,7 +742,6 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
     young->_gc_next &= _PyGC_PREV_MASK;
     // don't let the pollution of the list head's next pointer leak
     unreachable->_gc_next &= _PyGC_PREV_MASK;
-    return visited;
 }
 
 /* In theory, all tuples should be younger than the
@@ -1251,7 +1251,7 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * refcount greater than 0 when all the references within the
      * set are taken into account).
      */
-    update_refs(base);  // gc_prev is used for gc_refs
+    Py_ssize_t visited = update_refs(base);  // gc_prev is used for gc_refs
     subtract_refs(base);
 
     /* Leave everything reachable from outside base in base, and move
@@ -1289,7 +1289,7 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * the reachable objects instead.  But this is a one-time cost, probably not
      * worth complicating the code to speed just a little.
      */
-    Py_ssize_t visited = move_unreachable(base, unreachable);  // gc_prev is pointer again
+    move_unreachable(base, unreachable);  // gc_prev is pointer again
     validate_list(base, collecting_clear_unreachable_clear);
     validate_list(unreachable, collecting_set_unreachable_set);
     return visited;
