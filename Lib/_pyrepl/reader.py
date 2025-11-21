@@ -170,6 +170,12 @@ vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"o", "vi-open-below"),
         (r"O", "vi-open-above"),
 
+        # Delete commands
+        (r"dw", "vi-delete-word"),
+        (r"dd", "vi-delete-line"),
+        (r"d0", "vi-delete-to-bol"),
+        (r"d$", "vi-delete-to-eol"),
+
         # Special keys still work in normal mode
         (r"\<left>", "left"),
         (r"\<right>", "right"),

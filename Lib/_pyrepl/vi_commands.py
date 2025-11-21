@@ -2,7 +2,7 @@
 Vi-specific commands for pyrepl.
 """
 
-from .commands import Command, MotionCommand
+from .commands import Command, MotionCommand, KillCommand
 
 
 # ============================================================================
@@ -83,3 +83,38 @@ class vi_open_above(Command):
         self.reader.insert('\n')
         self.reader.pos -= 1
         self.reader.enter_insert_mode()
+
+
+# ============================================================================
+# Delete Commands
+# ============================================================================
+
+class vi_delete_word(KillCommand):
+    """Delete from cursor to start of next word (dw)."""
+    def do(self) -> None:
+        r = self.reader
+        for _ in range(r.get_arg()):
+            end = r.vi_forward_word()
+            if end > r.pos:
+                self.kill_range(r.pos, end)
+
+
+class vi_delete_line(KillCommand):
+    """Delete entire line content (dd)."""
+    def do(self) -> None:
+        r = self.reader
+        self.kill_range(r.bol(), r.eol())
+
+
+class vi_delete_to_bol(KillCommand):
+    """Delete from cursor to beginning of line (d0)."""
+    def do(self) -> None:
+        r = self.reader
+        self.kill_range(r.bol(), r.pos)
+
+
+class vi_delete_to_eol(KillCommand):
+    """Delete from cursor to end of line (d$)."""
+    def do(self) -> None:
+        r = self.reader
+        self.kill_range(r.pos, r.eol())
