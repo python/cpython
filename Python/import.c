@@ -1565,7 +1565,8 @@ _PyImport_CheckGILForModule(PyObject* module, PyObject *module_name)
 }
 
 int
-_PyImport_EnableGILAndWarn(PyThreadState *tstate, PyObject *module_name) {
+_PyImport_EnableGILAndWarn(PyThreadState *tstate, PyObject *module_name)
+{
     if (_PyEval_EnableGILPermanent(tstate)) {
         return PyErr_WarnFormat(
             PyExc_RuntimeWarning,
