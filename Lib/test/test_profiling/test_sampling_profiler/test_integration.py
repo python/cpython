@@ -25,8 +25,6 @@ except ImportError:
 
 from test.support import (
     requires_subprocess,
-    captured_stdout,
-    captured_stderr,
     SHORT_TIMEOUT,
 )
 
