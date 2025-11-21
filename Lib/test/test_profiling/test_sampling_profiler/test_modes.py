@@ -444,10 +444,11 @@ main()
 
     def test_parse_mode_function(self):
         """Test the _parse_mode function with all valid modes."""
-        self.assertEqual(profiling.sampling.sample._parse_mode("wall"), 0)
-        self.assertEqual(profiling.sampling.sample._parse_mode("cpu"), 1)
-        self.assertEqual(profiling.sampling.sample._parse_mode("gil"), 2)
+        from profiling.sampling.cli import _parse_mode
+        self.assertEqual(_parse_mode("wall"), 0)
+        self.assertEqual(_parse_mode("cpu"), 1)
+        self.assertEqual(_parse_mode("gil"), 2)
 
         # Test invalid mode raises KeyError
         with self.assertRaises(KeyError):
-            profiling.sampling.sample._parse_mode("invalid")
+            _parse_mode("invalid")

@@ -13,6 +13,8 @@ from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .gecko_collector import GeckoCollector
 from .constants import (
     PROFILING_MODE_WALL,
+    PROFILING_MODE_CPU,
+    PROFILING_MODE_GIL,
     PROFILING_MODE_ALL,
 )
 try:
