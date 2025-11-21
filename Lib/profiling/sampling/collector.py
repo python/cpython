@@ -1,19 +1,18 @@
 from abc import ABC, abstractmethod
-
-# Thread status flags
-try:
-    from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED
-except ImportError:
-    # Fallback for tests or when module is not available
-    THREAD_STATUS_HAS_GIL = (1 << 0)
-    THREAD_STATUS_ON_CPU = (1 << 1)
-    THREAD_STATUS_UNKNOWN = (1 << 2)
-    THREAD_STATUS_GIL_REQUESTED = (1 << 3)
+from .constants import (
+    THREAD_STATUS_HAS_GIL,
+    THREAD_STATUS_ON_CPU,
+    THREAD_STATUS_UNKNOWN,
+    THREAD_STATUS_GIL_REQUESTED,
+)
 
 class Collector(ABC):
     @abstractmethod
     def collect(self, stack_frames):
         """Collect profiling data from stack frames."""
+
+    def collect_failed_sample(self):
+        """Collect data about a failed sample attempt."""
 
     @abstractmethod
     def export(self, filename):

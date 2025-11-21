@@ -1275,3 +1275,10 @@ that may require changes to your code.
   Use its :meth:`!close` method or the :func:`contextlib.closing` context
   manager to close it.
   (Contributed by Osama Abdelkader and Serhiy Storchaka in :gh:`140601`.)
+
+* If a short option and a single-dash long option are passed to
+  :meth:`argparse.ArgumentParser.add_argument`, *dest* is now inferred from
+  the single-dash long option. For example, in ``add_argument('-f', '-foo')``,
+  *dest* is now ``'foo'`` instead of ``'f'``.
+  Pass an explicit *dest* argument to preserve the old behavior.
+  (Contributed by Serhiy Storchaka in :gh:`138697`.)
