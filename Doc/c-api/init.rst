@@ -2606,8 +2606,10 @@ These APIs are obsolete since Python 3.13 with the introduction of
    If *microseconds* is ``-1``, this will wait indefinitely until the lock has
    been released.
 
-   If *intr_flag* is ``1``, acquiring the lock may be interrupted by CTRL^C,
-   in which case this function returns :c:enumerator:`PY_LOCK_INTR`.
+   If *intr_flag* is ``1``, acquiring the lock may be interrupted by a signal,
+   in which case this function returns :c:enumerator:`PY_LOCK_INTR`. Upon
+   interruption, it's generally expected that the caller makes a call to
+   :c:func:`Py_MakePendingCalls` to propagate an exception to Python code.
 
    If the lock is successfully acquired, this function returns
    :c:enumerator:`PY_LOCK_ACQUIRED`.
