@@ -2572,14 +2572,14 @@ These APIs are obsolete since Python 3.13 with the introduction of
 
    .. c:enumerator:: PY_LOCK_INTR
 
-      The lock was interrupted by an interrupt signal.
+      The lock was interrupted by a signal.
 
 
 .. c:function:: PyThread_type_lock PyThread_allocate_lock(void)
 
    Allocate a new lock.
 
-   On success, this function returns a non-zero lock; on failure, this
+   On success, this function returns a lock; on failure, this
    function returns ``0`` without an exception set.
 
    The caller does not need to hold an :term:`attached thread state`.
@@ -2625,10 +2625,10 @@ These APIs are obsolete since Python 3.13 with the introduction of
 
    If *waitflag* is ``0`` and another thread holds the lock, this function will
    not wait and instead return ``0``. If the lock is not held by any other
-   thread, then this function will quickly acquire it and return ``1``.
+   thread, then this function will acquire it and return ``1``.
 
    Unlike :c:func:`PyThread_acquire_lock_timed`, acquiring the lock cannot be
-   interrupted by CTRL^C.
+   interrupted by a signal.
 
    The caller does not need to hold an :term:`attached thread state`.
 
@@ -2648,7 +2648,7 @@ Operating System Thread APIs
 
    Sentinel value for an invalid thread ID.
 
-   This is currently equivalent to ``-1``.
+   This is currently equivalent to ``(unsigned long)-1``.
 
 
 .. c:function:: unsigned long PyThread_start_new_thread(void (*func)(void *), void *arg)
@@ -2658,7 +2658,7 @@ Operating System Thread APIs
 
    *func* must not be ``NULL``, but *arg* may be ``NULL``.
 
-   On success, this function returns the ID of the new thread; on failure,
+   On success, this function returns the identifier of the new thread; on failure,
    this returns :c:macro:`PYTHREAD_INVALID_THREAD_ID`.
 
    The caller does not need to hold an :term:`attached thread state`.
@@ -2689,12 +2689,12 @@ Operating System Thread APIs
 
 .. c:macro:: PY_HAVE_THREAD_NATIVE_ID
 
-   This is defined when the system supports native thread IDs.
+   This macro is defined when the system supports native thread IDs.
 
 
 .. c:function:: unsigned long PyThread_get_thread_native_id(void)
 
-   Get the native ID of the current thread as it was assigned by the operating
+   Get the native identifier of the current thread as it was assigned by the operating
    system's kernel, which will never be less than zero.
 
    This function is only available when :c:macro:`PY_HAVE_THREAD_NATIVE_ID` is
@@ -2723,7 +2723,7 @@ Operating System Thread APIs
       ``noexcept`` function is reached, it may terminate the process.
       Other systems, such as macOS, do unwinding.
 
-      On Windows, this function calls ``_endthreadex``, which kills the thread
+      On Windows, this function calls ``_endthreadex()``, which kills the thread
       without calling C++ destructors.
 
       In any case, there is a risk of corruption on the thread's stack.
@@ -2739,7 +2739,7 @@ Operating System Thread APIs
 
 .. c:function:: int PyThread_set_stacksize(size_t size)
 
-   Set the stack size of the current thread to *size*.
+   Set the stack size of the current thread to *size* bytes.
 
    This function returns ``0`` on success, ``-1`` if *size* is invalid, or
    ``-2`` if the system does not support changing the stack size. This function
@@ -2750,7 +2750,7 @@ Operating System Thread APIs
 
 .. c:function:: size_t PyThread_get_stacksize(void)
 
-   Return the stack size of the current thread, or ``0`` if the system's
+   Return the stack size of the current thread in bytes, or ``0`` if the system's
    default stack size is in use.
 
    The caller does not need to hold an :term:`attached thread state`.
