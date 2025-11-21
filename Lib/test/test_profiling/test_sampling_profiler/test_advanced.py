@@ -265,7 +265,7 @@ if __name__ == "__main__":
                         proc.kill()
                         stdout, stderr = proc.communicate()
 
-        if "PermissionError" in stderr:
+        if "Permission Error" in stderr:
             self.skipTest("Insufficient permissions for remote profiling")
 
         self.assertIn("Results: [2, 4, 6]", stdout)
