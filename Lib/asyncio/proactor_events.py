@@ -23,6 +23,7 @@ from . import sslproto
 from . import transports
 from . import trsock
 from .log import logger
+from ._selector_thread import SelectorThread as _SelectorThread
 
 
 def _set_socket_extra(transport, sock):
@@ -633,6 +634,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         logger.debug('Using proactor: %s', proactor.__class__.__name__)
         self._proactor = proactor
         self._selector = proactor   # convenient alias
+        self._selector_thread = None
         self._self_reading_future = None
         self._accept_futures = {}   # socket file descriptor => Future
         proactor.set_loop(self)
@@ -640,6 +642,17 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         if threading.current_thread() is threading.main_thread():
             # wakeup fd can only be installed to a file descriptor from the main thread
             signal.set_wakeup_fd(self._csock.fileno())
+
+    def _get_selector_thread(self):
+        """Return the SelectorThread.
+
+        creating it on first request,
+        so no thread is created until/unless
+        the first call to `add_reader` and friends.
+        """
+        if self._selector_thread is None:
+            self._selector_thread = _SelectorThread(self)
+        return self._selector_thread
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None):
@@ -697,9 +710,24 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         self._proactor.close()
         self._proactor = None
         self._selector = None
+        if self._selector_thread is not None:
+            self._selector_thread.close()
+            self._selector_thread = None
 
         # Close the event loop
         super().close()
+
+    def add_reader(self, fd, callback, *args):
+        return self._get_selector_thread().add_reader(fd, callback, *args)
+
+    def remove_reader(self, fd):
+        return self._get_selector_thread().remove_reader(fd)
+
+    def add_writer(self, fd, callback, *args):
+        return self._get_selector_thread().add_writer(fd, callback, *args)
+
+    def remove_writer(self, fd):
+        return self._get_selector_thread().remove_writer(fd)
 
     async def sock_recv(self, sock, n):
         return await self._proactor.recv(sock, n)
