@@ -167,7 +167,8 @@ The following functions provide locale-independent string to number conversions.
    Case insensitive comparison of strings. The function works almost
    identically to :c:func:`!strcmp` except that it ignores the case and locale.
 
-   This is an alias of :c:func:`PyOS_mystricmp` on all platforms except Windows.
+   This is an alias of :c:func:`PyOS_mystricmp` on all platforms except Windows,
+   where it is an alias of :c:func:`!strcmp`.
 
 
 .. c:function:: int PyOS_strnicmp(const char *s1, const char *s2, Py_ssize_t  size)
@@ -175,7 +176,8 @@ The following functions provide locale-independent string to number conversions.
    Case insensitive comparison of strings. The function works almost
    identically to :c:func:`!strncmp` except that it ignores the case and locale.
 
-   This is an alias of :c:func:`PyOS_mystricmp` on all platforms except Windows.
+   This is an alias of :c:func:`PyOS_mystricmp` on all platforms except Windows,
+   where it is an alias of :c:func:`!strncmp`.
 
 
 .. c:function:: int PyOS_mystricmp(const char *str1, const char *str2)
