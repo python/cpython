@@ -521,46 +521,79 @@ class Reader:
         """Return the 0-based index of the last character of the word
         following p most immediately (vi 'e' semantics).
 
-        Unlike eow(), this returns the position ON the last word character,
-        not past it. p defaults to self.pos; word boundaries use vi rules
-        (alphanumeric + underscore)."""
+        Vi has three character classes: word chars (alnum + _), punctuation
+        (non-word, non-whitespace), and whitespace. 'e' moves to the end
+        of the current or next word/punctuation sequence."""
         if p is None:
             p = self.pos
         b = self.buffer
 
-        # If we're already at the end of a word, move past it
-        if (p < len(b) and _is_vi_word_char(b[p]) and
-            (p + 1 >= len(b) or not _is_vi_word_char(b[p + 1]))):
+        if not b:
+            return 0
+
+        # Helper to check if at end of current sequence
+        def at_sequence_end(pos: int) -> bool:
+            if pos >= len(b) - 1:
+                return True
+            curr_is_word = _is_vi_word_char(b[pos])
+            next_is_word = _is_vi_word_char(b[pos + 1])
+            curr_is_space = b[pos].isspace()
+            next_is_space = b[pos + 1].isspace()
+            if curr_is_word:
+                return not next_is_word
+            elif not curr_is_space:
+                # Punctuation - at end if next is word or whitespace
+                return next_is_word or next_is_space
+            return True
+
+        # If already at end of a word/punctuation, move forward
+        if p < len(b) and at_sequence_end(p):
             p += 1
 
-        # Skip non-word characters to find the start of next word
-        while p < len(b) and not _is_vi_word_char(b[p]):
+        # Skip whitespace
+        while p < len(b) and b[p].isspace():
             p += 1
 
-        # Move to the last character of this word (not past it)
-        while p + 1 < len(b) and _is_vi_word_char(b[p + 1]):
-            p += 1
+        if p >= len(b):
+            return len(b) - 1
 
-        # Clamp to valid buffer range
-        return min(p, len(b) - 1) if b else 0
+        # Move to end of current word or punctuation sequence
+        if _is_vi_word_char(b[p]):
+            while p + 1 < len(b) and _is_vi_word_char(b[p + 1]):
+                p += 1
+        else:
+            # Punctuation sequence
+            while p + 1 < len(b) and not _is_vi_word_char(b[p + 1]) and not b[p + 1].isspace():
+                p += 1
+
+        return min(p, len(b) - 1)
 
     def vi_forward_word(self, p: int | None = None) -> int:
         """Return the 0-based index of the first character of the next word
         (vi 'w' semantics).
 
-        Unlike eow(), this lands ON the first character of the next word,
-        not past it. p defaults to self.pos; word boundaries use vi rules
-        (alphanumeric + underscore)."""
+        Vi has three character classes: word chars (alnum + _), punctuation
+        (non-word, non-whitespace), and whitespace. 'w' moves to the start
+        of the next word or punctuation sequence."""
         if p is None:
             p = self.pos
         b = self.buffer
 
-        # Skip the rest of the current word if we're on one
-        while p < len(b) and _is_vi_word_char(b[p]):
-            p += 1
+        if not b or p >= len(b):
+            return max(0, len(b) - 1) if b else 0
 
-        # Skip non-word characters to find the start of next word
-        while p < len(b) and not _is_vi_word_char(b[p]):
+        # Skip current word or punctuation sequence
+        if _is_vi_word_char(b[p]):
+            # On a word char - skip word chars
+            while p < len(b) and _is_vi_word_char(b[p]):
+                p += 1
+        elif not b[p].isspace():
+            # On punctuation - skip punctuation
+            while p < len(b) and not _is_vi_word_char(b[p]) and not b[p].isspace():
+                p += 1
+
+        # Skip whitespace to find next word or punctuation
+        while p < len(b) and b[p].isspace():
             p += 1
 
         # Clamp to valid buffer range
@@ -570,19 +603,35 @@ class Reader:
         """Return the 0-based index of the beginning of the word preceding p
         (vi 'b' semantics).
 
-        p defaults to self.pos; word boundaries use vi rules
-        (alphanumeric + underscore)."""
+        Vi has three character classes: word chars (alnum + _), punctuation
+        (non-word, non-whitespace), and whitespace. 'b' moves to the start
+        of the current or previous word/punctuation sequence."""
         if p is None:
             p = self.pos
         b = self.buffer
+
+        if not b or p <= 0:
+            return 0
+
         p -= 1
-        # Skip non-word characters
-        while p >= 0 and not _is_vi_word_char(b[p]):
+
+        # Skip whitespace going backward
+        while p >= 0 and b[p].isspace():
             p -= 1
-        # Skip word characters to find beginning of word
-        while p >= 0 and _is_vi_word_char(b[p]):
-            p -= 1
-        return p + 1
+
+        if p < 0:
+            return 0
+
+        # Now skip the word or punctuation sequence we landed in
+        if _is_vi_word_char(b[p]):
+            while p > 0 and _is_vi_word_char(b[p - 1]):
+                p -= 1
+        else:
+            # Punctuation sequence
+            while p > 0 and not _is_vi_word_char(b[p - 1]) and not b[p - 1].isspace():
+                p -= 1
+
+        return p
 
     def bol(self, p: int | None = None) -> int:
         """Return the 0-based index of the line break preceding p most

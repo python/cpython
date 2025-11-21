@@ -979,16 +979,26 @@ class TestViMode(TestCase):
         self.assertEqual(reader2.buffer[reader2.pos], 'a')  # Last 'a' of "beta"
 
     def test_vi_word_boundaries(self):
-        """Test vi word motions match vim behavior for word characters.
+        """Test vi word motions match vim behavior.
 
-        In vi, word characters are alphanumeric + underscore.
+        Vi has three character classes:
+        1. Word chars: alphanumeric + underscore
+        2. Punctuation: non-word, non-whitespace (forms separate words)
+        3. Whitespace: delimiters
         """
         # Test cases: (text, start_key_sequence, expected_pos, description)
         test_cases = [
             # Underscore is part of word in vi, unlike emacs mode
             ("function_name", "0w", 12, "underscore is word char, w clamps to end"),
-            ("hello_world test", "0w", 12, "underscore word, then to next word"),
-            ("get_value(x)", "0w", 10, "underscore word, skip ( to x"),
+            ("hello_world test", "0w", 12, "underscore word to end"),
+
+            # Punctuation is a separate word
+            ("foo.bar", "0w", 3, "w stops at dot (punctuation)"),
+            ("foo.bar", "0ww", 4, "second w goes to bar"),
+            ("foo..bar", "0w", 3, "w stops at first dot"),
+            ("foo..bar", "0ww", 5, "second w skips dot sequence to bar"),
+            ("get_value(x)", "0w", 9, "underscore word stops at ("),
+            ("get_value(x)", "0ww", 10, "second w goes to x"),
 
             # Basic word motion
             ("hello world", "0w", 6, "basic word jump"),
@@ -998,7 +1008,9 @@ class TestViMode(TestCase):
             # End of word (e) - lands ON last char
             ("function_name", "0e", 12, "e lands on last char of underscore word"),
             ("foo bar", "0e", 2, "e lands on last char of foo"),
-            ("one two three", "0ee", 6, "two e's land on end of two"),
+            ("foo.bar", "0e", 2, "e lands on last o of foo"),
+            ("foo.bar", "0ee", 3, "second e lands on dot"),
+            ("foo.bar", "0eee", 6, "third e lands on last r of bar"),
         ]
 
         for text, keys, expected_pos, desc in test_cases:
