@@ -1282,6 +1282,13 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_BASIC_COMPLETER
+
+   If this variable is set to any value, PyREPL will use :mod:`rlcompleter` to
+   implement tab completion, instead of the default one which uses colors.
+
+   .. versionadded:: 3.15
+
 .. envvar:: PYTHON_HISTORY
 
    This environment variable can be used to set the location of a
