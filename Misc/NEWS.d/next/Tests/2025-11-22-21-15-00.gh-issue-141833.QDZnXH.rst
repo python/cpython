@@ -1,0 +1,2 @@
+Remove ``assert ex is not None`` and the line getting the executor in
+``test_attr_promotion_failure``.
