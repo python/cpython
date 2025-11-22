@@ -156,7 +156,7 @@ BINDIR=		@bindir@
 LIBDIR=		@libdir@
 MANDIR=		@mandir@
 INCLUDEDIR=	@includedir@
-CONFINCLUDEDIR=	$(exec_prefix)/include
+CONFINCLUDEDIR=	$(INCLUDEDIR)
 PLATLIBDIR=	@PLATLIBDIR@
 SCRIPTDIR=	$(prefix)/$(PLATLIBDIR)
 # executable name for shebangs
