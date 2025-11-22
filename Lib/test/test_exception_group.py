@@ -193,6 +193,28 @@ class StrAndReprTests(unittest.TestCase):
                       "MyEG('flat', [ValueError(1), TypeError(2)]), "
                       "TypeError(2)])"))
 
+    def test_exceptions_mutation(self):
+        class MyEG(ExceptionGroup):
+            pass
+
+        excs = [ValueError(1), TypeError(2)]
+        eg = MyEG('test', excs)
+
+        self.assertEqual(repr(eg), "MyEG('test', [ValueError(1), TypeError(2)])")
+        excs.clear()
+
+        # Ensure that clearing the exceptions sequence doesn't change the repr.
+        self.assertEqual(repr(eg), "MyEG('test', [ValueError(1), TypeError(2)])")
+
+        # Ensure that the args are still as passed.
+        self.assertEqual(eg.args, ('test', []))
+
+        excs = (ValueError(1), KeyboardInterrupt(2))
+        eg = BaseExceptionGroup('test', excs)
+
+        # Ensure that other, immutable, sequences still work fine.
+        self.assertEqual(repr(eg), "BaseExceptionGroup('test', (ValueError(1), KeyboardInterrupt(2)))")
+
 
 def create_simple_eg():
     excs = []
