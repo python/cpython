@@ -1,0 +1,2 @@
+Setup ``__module__`` attribute for built-in static methods.  Patch by Sergey
+B Kirpichev.
