@@ -58,6 +58,7 @@ class FunctionKind(enum.Enum):
     CLASS_METHOD    = enum.auto()
     METHOD_INIT     = enum.auto()
     METHOD_NEW      = enum.auto()
+    METHOD_GETATTR  = enum.auto()
     GETTER          = enum.auto()
     SETTER          = enum.auto()
 
@@ -74,6 +75,7 @@ STATIC_METHOD: Final = FunctionKind.STATIC_METHOD
 CLASS_METHOD: Final = FunctionKind.CLASS_METHOD
 METHOD_INIT: Final = FunctionKind.METHOD_INIT
 METHOD_NEW: Final = FunctionKind.METHOD_NEW
+METHOD_GETATTR: Final = FunctionKind.METHOD_GETATTR
 GETTER: Final = FunctionKind.GETTER
 SETTER: Final = FunctionKind.SETTER
 
@@ -161,7 +163,7 @@ class Function:
             case FunctionKind.STATIC_METHOD:
                 flags.append('METH_STATIC')
             case _ as kind:
-                acceptable_kinds = {FunctionKind.CALLABLE, FunctionKind.GETTER, FunctionKind.SETTER}
+                acceptable_kinds = {FunctionKind.CALLABLE, FunctionKind.GETTER, FunctionKind.SETTER, FunctionKind.METHOD_GETATTR}
                 assert kind in acceptable_kinds, f"unknown kind: {kind!r}"
         if self.coexist:
             flags.append('METH_COEXIST')
