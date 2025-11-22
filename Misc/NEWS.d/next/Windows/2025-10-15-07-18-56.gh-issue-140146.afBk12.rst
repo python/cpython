@@ -1,0 +1,1 @@
+Replaces ``Tcl_CreateFileHandler`` in the ``EventHook`` function in ``Modules/_tkinter.c`` by ``Tcl_CreateChannelHandler``, as the former is Unix-specific and the latter is platform-independent. This cleans up the code in ``Modules/_tkinter.c``, and also allows stdin to be used as a pipe on all platforms. Patch by Michiel de Hoon.
