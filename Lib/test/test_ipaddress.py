@@ -1078,16 +1078,6 @@ class ComparisonTests(unittest.TestCase):
         self.assertRaises(TypeError, v6net_scoped.__lt__, v4net)
         self.assertRaises(TypeError, v6net_scoped.__gt__, v4net)
 
-    def test_network_eq_with_faux_object(self):
-        class AlwaysTrue:
-            version = 42
-            def __eq__(self, other):
-                return True
-
-        always_true = AlwaysTrue()
-        self.assertEqual(ipaddress.IPv4Network('43.48.0.0/12'), always_true)
-        self.assertEqual(ipaddress.IPv6Network('::eeff:ae3f:d473/128'), always_true)
-
     def test_address_eq_with_faux_object(self):
         class AlwaysTrue:
             def __init__(self, ip_value):
@@ -1112,6 +1102,16 @@ class ComparisonTests(unittest.TestCase):
         intf6 = ipaddress.IPv6Interface('::1/128')
         always_true_intf6 = AlwaysTrue(intf6._ip)
         self.assertEqual(intf6, always_true_intf6)
+
+    def test_network_eq_with_faux_object(self):
+        class AlwaysTrue:
+            version = 42
+            def __eq__(self, other):
+                return True
+
+        always_true = AlwaysTrue()
+        self.assertEqual(ipaddress.IPv4Network('43.48.0.0/12'), always_true)
+        self.assertEqual(ipaddress.IPv6Network('::eeff:ae3f:d473/128'), always_true)
 
 
 class IpaddrUnitTest(unittest.TestCase):
