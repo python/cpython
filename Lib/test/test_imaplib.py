@@ -657,6 +657,21 @@ class NewIMAPTestsMixin:
         self.assertEqual(data[0], b'Returned to authenticated state. (Success)')
         self.assertEqual(client.state, 'AUTH')
 
+    def test_select_readonly_mailbox(self):
+        class ReadOnlyHandler(SimpleIMAPHandler):
+            def cmd_SELECT(self, tag, args):
+                self.server.is_selected = True
+                self._send_line(b'* 1 EXISTS')
+                self._send_line(b'* OK [READ-ONLY] Mailbox is read-only')
+                self._send_tagged(tag, 'OK', '[READ-ONLY] SELECT completed')
+        client, _ = self._setup(ReadOnlyHandler)
+        client.login('user', 'pass')
+        self.assertFalse(client.is_readonly)
+        typ, data = client.select('INBOX')
+        self.assertEqual(typ, 'OK')
+        self.assertTrue(client.is_readonly)
+        self.assertEqual(client.state, 'SELECTED')
+
     # property tests
 
     def test_file_property_should_not_be_accessed(self):
