@@ -11,15 +11,6 @@
  * HEADERS AND INCLUDES
  * ============================================================================ */
 
-#include <assert.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #ifndef Py_BUILD_CORE_BUILTIN
 #    define Py_BUILD_CORE_MODULE 1
 #endif
@@ -31,6 +22,18 @@
 #include <internal/pycore_long.h>           // _PyLong_GetZero
 #include <internal/pycore_stackref.h>       // Py_TAG_BITS
 #include "../Python/remote_debug.h"
+
+// gh-141784: Python.h header must be included first, before system headers.
+// Otherwise, some types such as ino_t can be defined differently, causing ABI
+// issues.
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
@@ -186,7 +189,6 @@ static PyStructSequence_Field ThreadInfo_fields[] = {
     {"thread_id", "Thread ID"},
     {"status", "Thread status (flags: HAS_GIL, ON_CPU, UNKNOWN or legacy enum)"},
     {"frame_info", "Frame information"},
-    {"gc_collecting", "Whether GC is collecting (interpreter-level)"},
     {NULL}
 };
 
@@ -2726,8 +2728,6 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    int gc_collecting = GET_MEMBER(int, gc_state, unwinder->debug_offsets.gc.collecting);
-
     // Calculate thread status using flags (always)
     int status_flags = 0;
 
@@ -2761,7 +2761,13 @@ unwind_stack_for_thread(
 
     // Check CPU status
     long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
-    int cpu_status = get_thread_status(unwinder, tid, pthread_id);
+
+    // Optimization: only check CPU status if needed by mode because it's expensive
+    int cpu_status = -1;
+    if (unwinder->mode == PROFILING_MODE_CPU || unwinder->mode == PROFILING_MODE_ALL) {
+        cpu_status = get_thread_status(unwinder, tid, pthread_id);
+    }
+
     if (cpu_status == -1) {
         status_flags |= THREAD_STATUS_UNKNOWN;
     } else if (cpu_status == THREAD_STATE_RUNNING) {
@@ -2827,18 +2833,10 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    PyObject *py_gc_collecting = PyBool_FromLong(gc_collecting);
-    if (py_gc_collecting == NULL) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create gc_collecting");
-        Py_DECREF(py_status);
-        goto error;
-    }
-
     // py_status contains status flags (bitfield)
     PyStructSequence_SetItem(result, 0, thread_id);
     PyStructSequence_SetItem(result, 1, py_status);  // Steals reference
     PyStructSequence_SetItem(result, 2, frame_info); // Steals reference
-    PyStructSequence_SetItem(result, 3, py_gc_collecting); // Steals reference
 
     cleanup_stack_chunks(&chunks);
     return result;

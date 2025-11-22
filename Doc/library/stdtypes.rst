@@ -3191,7 +3191,7 @@ objects.
 
          Taking all bytes is a zero-copy operation.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
          See the :ref:`What's New <whatsnew315-bytearray-take-bytes>` entry for
          common code patterns which can be optimized with

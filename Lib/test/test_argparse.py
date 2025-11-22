@@ -581,13 +581,22 @@ class TestOptionalsShortLong(ParserTestCase):
 class TestOptionalsDest(ParserTestCase):
     """Tests various means of setting destination"""
 
-    argument_signatures = [Sig('--foo-bar'), Sig('--baz', dest='zabbaz')]
+    argument_signatures = [
+        Sig('-x', '-foobar', '--foo-bar', '-barfoo', '-X'),
+        Sig('--baz', dest='zabbaz'),
+        Sig('-y', '-qux', '-Y'),
+        Sig('-z'),
+    ]
     failures = ['a']
     successes = [
-        ('--foo-bar f', NS(foo_bar='f', zabbaz=None)),
-        ('--baz g', NS(foo_bar=None, zabbaz='g')),
-        ('--foo-bar h --baz i', NS(foo_bar='h', zabbaz='i')),
-        ('--baz j --foo-bar k', NS(foo_bar='k', zabbaz='j')),
+        ('--foo-bar f', NS(foo_bar='f', zabbaz=None, qux=None, z=None)),
+        ('-x f', NS(foo_bar='f', zabbaz=None, qux=None, z=None)),
+        ('--baz g', NS(foo_bar=None, zabbaz='g', qux=None, z=None)),
+        ('--foo-bar h --baz i', NS(foo_bar='h', zabbaz='i', qux=None, z=None)),
+        ('--baz j --foo-bar k', NS(foo_bar='k', zabbaz='j', qux=None, z=None)),
+        ('-qux l', NS(foo_bar=None, zabbaz=None, qux='l', z=None)),
+        ('-y l', NS(foo_bar=None, zabbaz=None, qux='l', z=None)),
+        ('-z m', NS(foo_bar=None, zabbaz=None, qux=None, z='m')),
     ]
 
 
@@ -5611,6 +5620,8 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertTypeError('-', errmsg='dest= is required')
         self.assertTypeError('--', errmsg='dest= is required')
         self.assertTypeError('---', errmsg='dest= is required')
+        self.assertTypeError('-', '--', '---',
+                errmsg="dest= is required for options like '-', '--', '---'")
 
     def test_invalid_prefix(self):
         self.assertValueError('--foo', '+foo',

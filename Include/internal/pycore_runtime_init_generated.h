@@ -2068,6 +2068,7 @@ extern "C" {
     INIT_ID(symmetric_difference_update), \
     INIT_ID(tabsize), \
     INIT_ID(tag), \
+    INIT_ID(take_bytes), \
     INIT_ID(target), \
     INIT_ID(target_is_directory), \
     INIT_ID(task), \
