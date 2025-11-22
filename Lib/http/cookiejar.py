@@ -2037,8 +2037,13 @@ class MozillaCookieJar(FileCookieJar):
                     line.strip() == ""):
                     continue
 
-                domain, domain_specified, path, secure, expires, name, value = \
-                        line.split("\t")
+                fields = line.split("\t")
+                if len(fields) != 7:
+                    raise LoadError(
+                        "invalid fields in Netscape format cookies file %r: %r"
+                        % (filename, line)
+                    )
+                domain, domain_specified, path, secure, expires, name, value = fields
                 secure = (secure == "TRUE")
                 domain_specified = (domain_specified == "TRUE")
                 if name == "":
