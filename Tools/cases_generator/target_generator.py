@@ -34,7 +34,7 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
     targets = ["&&_unknown_opcode,\n"] * 256
     for name, op in analysis.opmap.items():
         if op < 256:
-            targets[op] = f"&&record_previous_inst,\n"
+            targets[op] = f"&&TARGET_TRACE_RECORD,\n"
     out.emit("#if _Py_TIER2\n")
     out.emit("static void *opcode_tracing_targets_table[256] = {\n")
     for target in targets:
@@ -84,7 +84,7 @@ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
     # Emit the tracing dispatch table.
     out.emit("static py_tail_call_funcptr instruction_funcptr_tracing_table[256] = {\n")
     for name in sorted(analysis.instructions.keys()):
-        out.emit(f"[{name}] = _TAIL_CALL_record_previous_inst,\n")
+        out.emit(f"[{name}] = _TAIL_CALL_TRACE_RECORD,\n")
     named_values = analysis.opmap.values()
     for rest in range(256):
         if rest not in named_values:
