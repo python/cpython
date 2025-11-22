@@ -1,0 +1,2 @@
+Ensure that only digits convertible to integers are accepted as section number
+in MIME header parameter.
