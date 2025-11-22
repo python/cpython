@@ -433,7 +433,7 @@ Zstandard dictionaries
    loading the dictionary.
 
     .. list-table:: Difference for compression
-       :widths: 10 14 10
+       :widths: auto
        :header-rows: 1
 
        * -
