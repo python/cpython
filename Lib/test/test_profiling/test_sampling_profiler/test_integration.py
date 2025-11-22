@@ -27,6 +27,7 @@ from test.support import (
     requires_subprocess,
     captured_stdout,
     captured_stderr,
+    SHORT_TIMEOUT,
 )
 
 from .helpers import (
@@ -36,6 +37,9 @@ from .helpers import (
     PROCESS_VM_READV_SUPPORTED,
 )
 from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo
+
+# Duration for profiling tests - long enough for process to complete naturally
+PROFILING_TIMEOUT = str(int(SHORT_TIMEOUT))
 
 
 @skip_if_not_supported
@@ -381,47 +385,15 @@ def cpu_intensive_work():
             result = result % 1000000
     return result
 
-def medium_computation():
-    """Medium complexity function."""
-    result = 0
-    for i in range(100):
-        result += i * i
-    return result
-
-def fast_loop():
-    """Fast simple loop."""
-    total = 0
-    for i in range(50):
-        total += i
-    return total
-
-def nested_calls():
-    """Test nested function calls."""
-    def level1():
-        def level2():
-            return medium_computation()
-        return level2()
-    return level1()
-
 def main_loop():
-    """Main test loop with different execution paths."""
-    iteration = 0
+    """Main test loop."""
+    max_iterations = 200
 
-    while True:
-        iteration += 1
-
-        # Different execution paths - focus on CPU intensive work
-        if iteration % 3 == 0:
-            # Very CPU intensive
-            result = cpu_intensive_work()
-        elif iteration % 2 == 0:
-            # Expensive recursive operation (increased frequency for slower machines)
-            result = slow_fibonacci(12)
+    for iteration in range(max_iterations):
+        if iteration % 2 == 0:
+            result = slow_fibonacci(15)
         else:
-            # Medium operation
-            result = nested_calls()
-
-        # No sleep - keep CPU busy
+            result = cpu_intensive_work()
 
 if __name__ == "__main__":
     main_loop()
@@ -434,9 +406,10 @@ if __name__ == "__main__":
             mock.patch("sys.stdout", captured_output),
         ):
             try:
+                # Sample for up to SHORT_TIMEOUT seconds, but process exits after fixed iterations
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
-                    duration_sec=2,
+                    duration_sec=SHORT_TIMEOUT,
                     sample_interval_usec=1000,  # 1ms
                     show_summary=False,
                 )
@@ -578,7 +551,8 @@ if __name__ == "__main__":
         script_file.flush()
         self.addCleanup(close_and_unlink, script_file)
 
-        test_args = ["profiling.sampling.sample", "-d", "1", script_file.name]
+        # Sample for up to SHORT_TIMEOUT seconds, but process exits after fixed iterations
+        test_args = ["profiling.sampling.sample", "-d", PROFILING_TIMEOUT, script_file.name]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -612,7 +586,7 @@ if __name__ == "__main__":
         test_args = [
             "profiling.sampling.sample",
             "-d",
-            "1",
+            PROFILING_TIMEOUT,
             "-m",
             "test_module",
         ]
