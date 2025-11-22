@@ -1,0 +1,1 @@
+:program:`pygettext`: open files with the uft-8 encoding
