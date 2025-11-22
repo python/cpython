@@ -350,18 +350,19 @@ Decimal objects
    *value* can be an integer, string, tuple, :class:`float`, or another :class:`Decimal`
    object. If no *value* is given, returns ``Decimal('0')``.  If *value* is a
    string, it should conform to the decimal numeric string syntax after leading
-   and trailing whitespace characters, as well as underscores throughout, are removed::
+   and trailing whitespace characters, as well as underscores throughout, are removed:
 
-      sign           ::=  '+' | '-'
-      digit          ::=  '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
-      indicator      ::=  'e' | 'E'
-      digits         ::=  digit [digit]...
-      decimal-part   ::=  digits '.' [digits] | ['.'] digits
-      exponent-part  ::=  indicator [sign] digits
-      infinity       ::=  'Infinity' | 'Inf'
-      nan            ::=  'NaN' [digits] | 'sNaN' [digits]
-      numeric-value  ::=  decimal-part [exponent-part] | infinity
-      numeric-string ::=  [sign] numeric-value | [sign] nan
+   .. productionlist:: decimal
+      sign: "+" | "-"
+      digit: "0"..."9"
+      indicator: "e" | "E"
+      digits: (`digit`)+
+      decimal_part: `digits` "." [`digits`] | ["."] `digits`
+      exponent_part: `indicator` [`sign`] `digits`
+      infinity: "Infinity" | "Inf"
+      nan: "NaN" [`digits`] | "sNaN" [`digits`]
+      numeric_value: `decimal_part` [`exponent_part`] | `infinity`
+      numeric_string: [`sign`] `numeric_value` | [`sign`] `nan`
 
    Other Unicode decimal digits are also permitted where ``digit``
    appears above.  These include decimal digits from various other
