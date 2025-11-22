@@ -529,11 +529,8 @@ def _partial_annotate(partial_obj, format):
     import inspect
     from annotationlib import get_annotations
 
-    # Get the wrapped function
-    func = partial_obj.func
-
     # Get annotations from the wrapped function
-    func_annotations = get_annotations(func, format=format)
+    func_annotations = get_annotations(partial_obj.func, format=format)
 
     if not func_annotations:
         return {}
@@ -577,11 +574,8 @@ def _partialmethod_annotate(partialmethod_obj, format):
     import inspect
     from annotationlib import get_annotations
 
-    # Get the wrapped function
-    func = partialmethod_obj.func
-
     # Get annotations from the wrapped function
-    func_annotations = get_annotations(func, format=format)
+    func_annotations = get_annotations(partialmethod_obj.func, format=format)
 
     if not func_annotations:
         return {}
@@ -590,7 +584,7 @@ def _partialmethod_annotate(partialmethod_obj, format):
     # The first parameter (self/cls) should remain, but bound args should be removed
     try:
         # Get the function signature
-        func_sig = inspect.signature(func, annotation_format=format)
+        func_sig = inspect.signature(partialmethod_obj.func, annotation_format=format)
         func_params = list(func_sig.parameters.keys())
 
         if not func_params:
