@@ -1,0 +1,7 @@
+Add a PyUnstable API for :pep:`523`:
+
+* :c:type:`PyUnstable_FrameEvalFunction` type
+* :c:func:`PyUnstable_InterpreterState_GetEvalFrameFunc`
+* :c:func:`PyUnstable_InterpreterState_SetEvalFrameFunc`
+
+Patch by Victor Stinner.
