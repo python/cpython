@@ -644,6 +644,7 @@ class partialmethod:
 
     __class_getitem__ = classmethod(GenericAlias)
 
+
 # Helper functions
 
 def _unwrap_partial(func):
