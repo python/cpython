@@ -40,13 +40,45 @@ PyDoc_STRVAR(_abc__get_dump__doc__,
     {"_get_dump", (PyCFunction)_abc__get_dump, METH_O, _abc__get_dump__doc__},
 
 PyDoc_STRVAR(_abc__abc_init__doc__,
-"_abc_init($module, self, /)\n"
+"_abc_init($module, self, bases, namespace, /)\n"
 "--\n"
 "\n"
 "Internal ABC helper for class set-up. Should be never used outside abc module.");
 
 #define _ABC__ABC_INIT_METHODDEF    \
-    {"_abc_init", (PyCFunction)_abc__abc_init, METH_O, _abc__abc_init__doc__},
+    {"_abc_init", _PyCFunction_CAST(_abc__abc_init), METH_FASTCALL, _abc__abc_init__doc__},
+
+static PyObject *
+_abc__abc_init_impl(PyObject *module, PyObject *self, PyObject *bases,
+                    PyObject *namespace);
+
+static PyObject *
+_abc__abc_init(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *self;
+    PyObject *bases;
+    PyObject *namespace;
+
+    if (!_PyArg_CheckPositional("_abc_init", nargs, 3, 3)) {
+        goto exit;
+    }
+    self = args[0];
+    if (!PyTuple_Check(args[1])) {
+        _PyArg_BadArgument("_abc_init", "argument 2", "tuple", args[1]);
+        goto exit;
+    }
+    bases = args[1];
+    if (!PyDict_Check(args[2])) {
+        _PyArg_BadArgument("_abc_init", "argument 3", "dict", args[2]);
+        goto exit;
+    }
+    namespace = args[2];
+    return_value = _abc__abc_init_impl(module, self, bases, namespace);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_abc__abc_register__doc__,
 "_abc_register($module, self, subclass, /)\n"
@@ -161,4 +193,4 @@ _abc_get_cache_token(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _abc_get_cache_token_impl(module);
 }
-/*[clinic end generated code: output=1989b6716c950e17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9fa68621578b46d0 input=a9049054013a1b77]*/
