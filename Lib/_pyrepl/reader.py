@@ -29,9 +29,9 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 
 from . import commands, console, input
+from . import vi_commands
 from .utils import wlen, unbracket, disp_str, gen_colors, THEME
 from .trace import trace
-from . import vi_commands
 
 
 # types
