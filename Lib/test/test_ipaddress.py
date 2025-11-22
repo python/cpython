@@ -1078,17 +1078,17 @@ class ComparisonTests(unittest.TestCase):
         self.assertRaises(TypeError, v6net_scoped.__lt__, v4net)
         self.assertRaises(TypeError, v6net_scoped.__gt__, v4net)
 
-    def test_network_eq_with_version_attribute(self):
+    def test_network_eq_with_faux_object(self):
         class AlwaysTrue:
             version = 42
             def __eq__(self, other):
                 return True
 
         always_true = AlwaysTrue()
-        self.assertTrue(ipaddress.IPv4Network('43.48.0.0/12') == always_true)
-        self.assertTrue(ipaddress.IPv6Network('::eeff:ae3f:d473/128') == always_true)
+        self.assertEqual(ipaddress.IPv4Network('43.48.0.0/12'), always_true)
+        self.assertEqual(ipaddress.IPv6Network('::eeff:ae3f:d473/128'), always_true)
 
-    def test_address_eq_with_version_attribute(self):
+    def test_address_eq_with_faux_object(self):
         class AlwaysTrue:
             def __init__(self, ip_value):
                 self._ip = ip_value
@@ -1099,19 +1099,19 @@ class ComparisonTests(unittest.TestCase):
 
         addr4 = ipaddress.IPv4Address('192.168.1.1')
         always_true4 = AlwaysTrue(addr4._ip)
-        self.assertTrue(addr4 == always_true4)
+        self.assertEqual(addr4, always_true4)
 
         addr6 = ipaddress.IPv6Address('::1')
         always_true6 = AlwaysTrue(addr6._ip)
-        self.assertTrue(addr6 == always_true6)
+        self.assertEqual(addr6, always_true6)
 
         intf4 = ipaddress.IPv4Interface('192.168.1.1/24')
         always_true_intf4 = AlwaysTrue(intf4._ip)
-        self.assertTrue(intf4 == always_true_intf4)
+        self.assertEqual(intf4, always_true_intf4)
 
         intf6 = ipaddress.IPv6Interface('::1/128')
         always_true_intf6 = AlwaysTrue(intf6._ip)
-        self.assertTrue(intf6 == always_true_intf6)
+        self.assertEqual(intf6, always_true_intf6)
 
 
 class IpaddrUnitTest(unittest.TestCase):

@@ -1,4 +1,4 @@
-Fix :mod:`ipaddress` address and network objects' ``__eq__`` methods to
-return ``NotImplemented`` instead of ``False`` when comparing with objects
-that have matching attribute names but are not actual address or network
-objects.
+:mod:`ipaddress`: fix equality testing for :class:`~ipaddress.IPv4Address`,
+:class:`~ipaddress.IPv6Address`, :class:`~ipaddress.IPv4Network`, and
+:class:`~ipaddress.IPv6Network` to avoid comparing instances of incorrect
+types.
