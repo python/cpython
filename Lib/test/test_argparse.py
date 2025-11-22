@@ -22,6 +22,7 @@ from test.support import (
     captured_stderr,
     force_not_colorized,
     force_not_colorized_test_class,
+    swap_attr,
 )
 from test.support import import_helper
 from test.support import os_helper
@@ -580,13 +581,22 @@ class TestOptionalsShortLong(ParserTestCase):
 class TestOptionalsDest(ParserTestCase):
     """Tests various means of setting destination"""
 
-    argument_signatures = [Sig('--foo-bar'), Sig('--baz', dest='zabbaz')]
+    argument_signatures = [
+        Sig('-x', '-foobar', '--foo-bar', '-barfoo', '-X'),
+        Sig('--baz', dest='zabbaz'),
+        Sig('-y', '-qux', '-Y'),
+        Sig('-z'),
+    ]
     failures = ['a']
     successes = [
-        ('--foo-bar f', NS(foo_bar='f', zabbaz=None)),
-        ('--baz g', NS(foo_bar=None, zabbaz='g')),
-        ('--foo-bar h --baz i', NS(foo_bar='h', zabbaz='i')),
-        ('--baz j --foo-bar k', NS(foo_bar='k', zabbaz='j')),
+        ('--foo-bar f', NS(foo_bar='f', zabbaz=None, qux=None, z=None)),
+        ('-x f', NS(foo_bar='f', zabbaz=None, qux=None, z=None)),
+        ('--baz g', NS(foo_bar=None, zabbaz='g', qux=None, z=None)),
+        ('--foo-bar h --baz i', NS(foo_bar='h', zabbaz='i', qux=None, z=None)),
+        ('--baz j --foo-bar k', NS(foo_bar='k', zabbaz='j', qux=None, z=None)),
+        ('-qux l', NS(foo_bar=None, zabbaz=None, qux='l', z=None)),
+        ('-y l', NS(foo_bar=None, zabbaz=None, qux='l', z=None)),
+        ('-z m', NS(foo_bar=None, zabbaz=None, qux=None, z='m')),
     ]
 
 
@@ -2282,11 +2292,12 @@ class TestNegativeNumber(ParserTestCase):
         ('--complex -1e-3j', NS(int=None, float=None, complex=-0.001j)),
     ]
 
+@force_not_colorized_test_class
 class TestArgumentAndSubparserSuggestions(TestCase):
     """Test error handling and suggestion when a user makes a typo"""
 
     def test_wrong_argument_error_with_suggestions(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
@@ -2306,7 +2317,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_wrong_argument_subparsers_with_suggestions(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers(required=True)
         subparsers.add_parser('foo')
         subparsers.add_parser('bar')
@@ -2330,18 +2341,19 @@ class TestArgumentAndSubparserSuggestions(TestCase):
             excinfo.exception.stderr,
         )
 
-    def test_wrong_argument_no_suggestion_implicit(self):
-        parser = ErrorRaisingArgumentParser()
+    def test_wrong_argument_with_suggestion_explicit(self):
+        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
         parser.add_argument('foo', choices=['bar', 'baz'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
         self.assertIn(
-            "error: argument foo: invalid choice: 'bazz' (choose from bar, baz)",
+            "error: argument foo: invalid choice: 'bazz', maybe you meant"
+             " 'baz'? (choose from bar, baz)",
             excinfo.exception.stderr,
         )
 
     def test_suggestions_choices_empty(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('bazz',))
@@ -2351,7 +2363,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_suggestions_choices_int(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[1, 2])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
@@ -2361,7 +2373,7 @@ class TestArgumentAndSubparserSuggestions(TestCase):
         )
 
     def test_suggestions_choices_mixed_types(self):
-        parser = ErrorRaisingArgumentParser(suggest_on_error=True)
+        parser = ErrorRaisingArgumentParser()
         parser.add_argument('foo', choices=[1, '2'])
         with self.assertRaises(ArgumentParserError) as excinfo:
             parser.parse_args(('3',))
@@ -5608,6 +5620,8 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertTypeError('-', errmsg='dest= is required')
         self.assertTypeError('--', errmsg='dest= is required')
         self.assertTypeError('---', errmsg='dest= is required')
+        self.assertTypeError('-', '--', '---',
+                errmsg="dest= is required for options like '-', '--', '---'")
 
     def test_invalid_prefix(self):
         self.assertValueError('--foo', '+foo',
@@ -5830,6 +5844,7 @@ class TestConflictHandling(TestCase):
 # Help and Version option tests
 # =============================
 
+@force_not_colorized_test_class
 class TestOptionalsHelpVersionActions(TestCase):
     """Test the help and version actions"""
 
@@ -6144,6 +6159,7 @@ class TestTypeFunctionCallOnlyOnce(TestCase):
 # Check that deprecated arguments output warning
 # ==============================================
 
+@force_not_colorized_test_class
 class TestDeprecatedArguments(TestCase):
 
     def test_deprecated_option(self):
@@ -7128,7 +7144,8 @@ class TestColorized(TestCase):
     def setUp(self):
         super().setUp()
         # Ensure color even if ran with NO_COLOR=1
-        _colorize.can_colorize = lambda *args, **kwargs: True
+        self.enterContext(swap_attr(_colorize, 'can_colorize',
+                                     lambda *args, **kwargs: True))
         self.theme = _colorize.get_theme(force_color=True).argparse
 
     def test_argparse_color(self):
@@ -7311,11 +7328,11 @@ class TestColorized(TestCase):
             {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
 
             {heading}positional arguments:{reset}
-                 {pos_b}spam{reset}               spam help
+                 {pos_b}spam{reset}           spam help
 
             {heading}options:{reset}
-                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
-                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+                 {short_b}-h{reset}, {long_b}--help{reset}     show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
 
     def test_custom_formatter_class(self):
@@ -7348,12 +7365,72 @@ class TestColorized(TestCase):
             {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}+f {label}FOO{reset}] {pos}spam{reset}
 
             {heading}positional arguments:{reset}
-                 {pos_b}spam{reset}               spam help
+                 {pos_b}spam{reset}           spam help
 
             {heading}options:{reset}
-                 {short_b}-h{reset}, {long_b}--help{reset}         show this help message and exit
-                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}      foo help
+                 {short_b}-h{reset}, {long_b}--help{reset}     show this help message and exit
+                 {short_b}+f{reset}, {long_b}++foo{reset} {label_b}FOO{reset}  foo help
         '''))
+
+    def test_subparser_prog_is_stored_without_color(self):
+        parser = argparse.ArgumentParser(prog='complex', color=True)
+        sub = parser.add_subparsers(dest='command')
+        demo_parser = sub.add_parser('demo')
+
+        self.assertNotIn('\x1b[', demo_parser.prog)
+
+        demo_parser.color = False
+        help_text = demo_parser.format_help()
+        self.assertNotIn('\x1b[', help_text)
+
+    def test_error_and_warning_keywords_colorized(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        parser.add_argument('foo')
+
+        with self.assertRaises(SystemExit):
+            with captured_stderr() as stderr:
+                parser.parse_args([])
+
+        err = stderr.getvalue()
+        error_color = self.theme.error
+        reset = self.theme.reset
+        self.assertIn(f'{error_color}error:{reset}', err)
+
+        with captured_stderr() as stderr:
+            parser._warning('test warning')
+
+        warn = stderr.getvalue()
+        warning_color = self.theme.warning
+        self.assertIn(f'{warning_color}warning:{reset}', warn)
+
+    def test_error_and_warning_not_colorized_when_disabled(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=False)
+        parser.add_argument('foo')
+
+        with self.assertRaises(SystemExit):
+            with captured_stderr() as stderr:
+                parser.parse_args([])
+
+        err = stderr.getvalue()
+        self.assertNotIn('\x1b[', err)
+        self.assertIn('error:', err)
+
+        with captured_stderr() as stderr:
+            parser._warning('test warning')
+
+        warn = stderr.getvalue()
+        self.assertNotIn('\x1b[', warn)
+        self.assertIn('warning:', warn)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(argparse, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 def tearDownModule():

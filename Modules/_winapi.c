@@ -1920,7 +1920,6 @@ static PyObject *
 _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
 /*[clinic end generated code: output=d0c3e29e49d323dd input=c7aa53bfbce69d70]*/
 {
-    PyObject *buf = NULL;
     DWORD nread, navail, nleft;
     BOOL ret;
 
@@ -1930,20 +1929,26 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
     }
 
     if (size) {
-        buf = PyBytes_FromStringAndSize(NULL, size);
-        if (!buf)
+        PyBytesWriter *writer = PyBytesWriter_Create(size);
+        if (writer == NULL) {
             return NULL;
+        }
+        char *buf = PyBytesWriter_GetData(writer);
+
         Py_BEGIN_ALLOW_THREADS
-        ret = PeekNamedPipe(handle, PyBytes_AS_STRING(buf), size, &nread,
+        ret = PeekNamedPipe(handle, buf, size, &nread,
                             &navail, &nleft);
         Py_END_ALLOW_THREADS
         if (!ret) {
-            Py_DECREF(buf);
+            PyBytesWriter_Discard(writer);
             return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
         }
-        if (_PyBytes_Resize(&buf, nread))
+
+        PyObject *res = PyBytesWriter_FinishWithSize(writer, nread);
+        if (res == NULL) {
             return NULL;
-        return Py_BuildValue("NII", buf, navail, nleft);
+        }
+        return Py_BuildValue("NII", res, navail, nleft);
     }
     else {
         Py_BEGIN_ALLOW_THREADS
