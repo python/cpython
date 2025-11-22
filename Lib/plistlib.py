@@ -140,7 +140,15 @@ def _decode_base64(s):
 _dateParser = re.compile(r"(?P<year>\d\d\d\d)(?:-(?P<month>\d\d)(?:-(?P<day>\d\d)(?:T(?P<hour>\d\d)(?::(?P<minute>\d\d)(?::(?P<second>\d\d))?)?)?)?)?Z", re.ASCII)
 
 
+# NSDate.distantPast is represented in an unparseable format, see #85255.
+_distantPast = '0000-12-30T00:00:00Z'
+
+
 def _date_from_string(s, aware_datetime):
+    if s == _distantPast:
+        if aware_datetime:
+            return datetime.datetime.min.astimezone(datetime.UTC)
+        return datetime.datetime.min
     order = ('year', 'month', 'day', 'hour', 'minute', 'second')
     gd = _dateParser.match(s).groupdict()
     lst = []
@@ -155,6 +163,8 @@ def _date_from_string(s, aware_datetime):
 
 
 def _date_to_string(d, aware_datetime):
+    if d.year == datetime.datetime.min.year:
+        return _distantPast
     if aware_datetime:
         d = d.astimezone(datetime.UTC)
     return '%04d-%02d-%02dT%02d:%02d:%02dZ' % (
