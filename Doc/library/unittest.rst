@@ -1437,7 +1437,7 @@ Test cases
       that lists the differences between the sets.  This method is used by
       default when comparing sets or frozensets with :meth:`assertEqual`.
 
-      Fails if either of *first* or *second* does not have a :meth:`frozenset.difference`
+      Fails if either of *first* or *second* does not have a :meth:`~frozenset.difference`
       method.
 
       .. versionadded:: 3.1
@@ -1655,7 +1655,7 @@ Test cases
       :async:
 
       Method called immediately after the test method has been called and the
-      result recorded.  This is called before :meth:`TestCase.tearDown`. This is called even if
+      result recorded.  This is called before :meth:`~TestCase.tearDown`. This is called even if
       the test method raised an exception, so the implementation in subclasses may need
       to be particularly careful about checking internal state.  Any exception, other than
       :exc:`AssertionError` or :exc:`SkipTest`, raised by this method will be
@@ -1684,7 +1684,7 @@ Test cases
       Sets up a new event loop to run the test, collecting the result into
       the :class:`TestResult` object passed as *result*.  If *result* is
       omitted or ``None``, a temporary result object is created (by calling
-      the :meth:`TestCase.defaultTestResult` method) and used. The result object is
+      the :meth:`~TestCase.defaultTestResult` method) and used. The result object is
       returned to :meth:`run`'s caller. At the end of the test all the tasks
       in the event loop are cancelled.
 
