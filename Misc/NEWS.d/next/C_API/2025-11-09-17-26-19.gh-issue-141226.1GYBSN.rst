@@ -1,0 +1,2 @@
+Expose :c:func:`!PyExpat_CheckCompatibility` for checking Expat C API
+compatibility. Patch by Bénédikt Tran.
