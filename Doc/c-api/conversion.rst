@@ -165,13 +165,41 @@ The following functions provide locale-independent string to number conversions.
 .. c:function:: int PyOS_stricmp(const char *s1, const char *s2)
 
    Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`!strcmp` except that it ignores the case.
+   identically to :c:func:`!strcmp` except that it ignores the case and locale.
+
+   This is an alias of :c:func:`PyOS_mystricmp` on all platforms except Windows,
+   where it is an alias of :c:func:`!strcmp`.
 
 
 .. c:function:: int PyOS_strnicmp(const char *s1, const char *s2, Py_ssize_t  size)
 
    Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`!strncmp` except that it ignores the case.
+   identically to :c:func:`!strncmp` except that it ignores the case and locale.
+
+   This is an alias of :c:func:`PyOS_mystricmp` on all platforms except Windows,
+   where it is an alias of :c:func:`!strncmp`.
+
+
+.. c:function:: int PyOS_mystricmp(const char *str1, const char *str2)
+
+   Case insensitive comparison of strings. The function works almost
+   identically to :c:func:`!strcmp` except that it ignores the case and locale.
+
+   Return ``0`` if the strings are equal, a negative value if *str1* is less
+   than *str2*, or a positive value if *str1* is greater than *str2*.
+
+   This function cannot fail.
+
+
+.. c:function:: int PyOS_mystrnicmp(const char *str1, const char *str2, Py_ssize_t size)
+
+  Case insensitive comparison of strings. The function works almost
+  identically to :c:func:`!strncmp` except that it ignores the case and locale.
+
+  Return ``0`` if the strings are equal, a negative value if *str1* is less
+  than *str2*, or a positive value if *str1* is greater than *str2*.
+
+  This function cannot fail.
 
 
 Character classification and conversion
