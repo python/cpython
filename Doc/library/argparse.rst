@@ -1445,7 +1445,17 @@ this API may be passed as the ``action`` parameter to
        >>> parser.parse_args(['--no-foo'])
        Namespace(foo=False)
 
+   Single-dash long options are also supported.
+   For example, negative option ``-nofoo`` is automatically added for
+   positive option ``-foo``.
+   But no additional options are added for short options such as ``-f``.
+
    .. versionadded:: 3.9
+
+   .. versionchanged:: next
+      Added support for single-dash options.
+
+      Added support for alternate prefix_chars_.
 
 
 The parse_args() method
