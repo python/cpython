@@ -920,7 +920,7 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
         self.assertEqual(str(cm.exception), message)
 
     def test_missing_arguments(self):
-        msg = "A.method_two_args() missing 1 required positional argument: 'y'"
+        msg = "A.method_two_args() missing 1 required argument: 'y'"
         with self.check_raises_type_error(msg):
             A().method_two_args("x")
 
