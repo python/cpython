@@ -4,9 +4,7 @@
 Graphic User Interface FAQ
 ==========================
 
-.. only:: html
-
-   .. contents::
+.. contents::
 
 .. XXX need review for Python 3.
 
