@@ -29,40 +29,32 @@ except ImportError:
     LiveStatsCollector = None
 
 
+class CustomFormatter(
+    argparse.ArgumentDefaultsHelpFormatter,
+    argparse.RawDescriptionHelpFormatter,
+):
+    """Custom formatter that combines default values display with raw description formatting."""
+    pass
+
+
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
 
 Commands:
   run        Run and profile a script or module
   attach     Attach to and profile a running process
-  live       Interactive TUI profiler (top-like interface)
 
 Examples:
-  # Run and profile a script (default: pstats to stdout)
+  # Run and profile a script
   python -m profiling.sampling run script.py arg1 arg2
-
-  # Run and profile a module
-  python -m profiling.sampling run -m mymodule arg1 arg2
 
   # Attach to a running process
   python -m profiling.sampling attach 1234
 
-  # Live interactive mode for a process
-  python -m profiling.sampling live 1234
+  # Live interactive mode for a script
+  python -m profiling.sampling run --live script.py
 
-  # Live mode for a script
-  python -m profiling.sampling live script.py
-
-  # Generate flamegraph from a script
-  python -m profiling.sampling run --flamegraph -o output.html script.py
-
-  # Profile with custom interval and duration
-  python -m profiling.sampling run -i 50 -d 30 script.py
-
-  # Profile all threads, sort by total time
-  python -m profiling.sampling attach -a --sort tottime 1234
-
-  # Save collapsed stacks to file
-  python -m profiling.sampling run --collapsed -o stacks.txt script.py
+  # Live interactive mode for a running process
+  python -m profiling.sampling attach --live 1234
 
 Use 'python -m profiling.sampling <command> --help' for command-specific help."""
 
@@ -167,14 +159,16 @@ def _add_sampling_options(parser):
         "--interval",
         type=int,
         default=100,
-        help="Sampling interval in microseconds (default: 100)",
+        metavar="MICROSECONDS",
+        help="Sampling interval",
     )
     sampling_group.add_argument(
         "-d",
         "--duration",
         type=int,
         default=10,
-        help="Sampling duration in seconds (default: 10)",
+        metavar="SECONDS",
+        help="Sampling duration",
     )
     sampling_group.add_argument(
         "-a",
@@ -208,7 +202,7 @@ def _add_mode_options(parser):
         choices=["wall", "cpu", "gil"],
         default="wall",
         help="Sampling mode: wall (all samples), cpu (only samples when thread is on CPU), "
-        "gil (only samples when thread holds the GIL) (default: wall)",
+        "gil (only samples when thread holds the GIL)",
     )
 
 
@@ -270,14 +264,14 @@ def _add_pstats_options(parser):
             "name",
         ],
         default="nsamples",
-        help="Sort order for pstats output (default: nsamples)",
+        help="Sort order for pstats output",
     )
     pstats_group.add_argument(
         "-l",
         "--limit",
         type=int,
         default=15,
-        help="Limit the number of rows in the output (default: 15)",
+        help="Limit the number of rows in the output",
     )
     pstats_group.add_argument(
         "--no-summary",
@@ -368,13 +362,18 @@ def _validate_args(args, parser):
         parser: ArgumentParser instance for error reporting
     """
     # Check if live mode is available
-    if args.command == "live" and LiveStatsCollector is None:
+    if hasattr(args, 'live') and args.live and LiveStatsCollector is None:
         parser.error(
             "Live mode requires the curses module, which is not available."
         )
 
-    # Only validate format options for run/attach commands (live doesn't have format option)
-    if args.command not in ("run", "attach"):
+    # Live mode is incompatible with format options
+    if hasattr(args, 'live') and args.live:
+        if args.format != "pstats":
+            format_flag = f"--{args.format}"
+            parser.error(
+                f"--live is incompatible with {format_flag}. Live mode uses a TUI interface."
+            )
         return
 
     # Validate gecko mode doesn't use non-wall mode
@@ -406,7 +405,7 @@ def main():
     # Create the main parser
     parser = argparse.ArgumentParser(
         description=_HELP_DESCRIPTION,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=CustomFormatter,
     )
 
     # Create subparsers for commands
@@ -418,8 +417,24 @@ def main():
     run_parser = subparsers.add_parser(
         "run",
         help="Run and profile a script or module",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="Run and profile a Python script or module",
+        formatter_class=CustomFormatter,
+        description="""Run and profile a Python script or module
+
+Examples:
+  # Run and profile a module
+  python -m profiling.sampling run -m mymodule arg1 arg2
+
+  # Generate flamegraph from a script
+  python -m profiling.sampling run --flamegraph -o output.html script.py
+
+  # Profile with custom interval and duration
+  python -m profiling.sampling run -i 50 -d 30 script.py
+
+  # Save collapsed stacks to file
+  python -m profiling.sampling run --collapsed -o stacks.txt script.py
+
+  # Live interactive mode for a script
+  python -m profiling.sampling run --live script.py""",
     )
     run_parser.add_argument(
         "-m",
@@ -436,6 +451,11 @@ def main():
         nargs=argparse.REMAINDER,
         help="Arguments to pass to the script or module",
     )
+    run_parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Interactive TUI profiler (top-like interface, press 'q' to quit, 's' to cycle sort)",
+    )
     _add_sampling_options(run_parser)
     _add_mode_options(run_parser)
     _add_format_options(run_parser)
@@ -445,43 +465,30 @@ def main():
     attach_parser = subparsers.add_parser(
         "attach",
         help="Attach to and profile a running process",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="Attach to a running process and profile it",
+        formatter_class=CustomFormatter,
+        description="""Attach to a running process and profile it
+
+Examples:
+  # Profile all threads, sort by total time
+  python -m profiling.sampling attach -a --sort tottime 1234
+
+  # Live interactive mode for a running process
+  python -m profiling.sampling attach --live 1234""",
     )
     attach_parser.add_argument(
         "pid",
         type=int,
         help="Process ID to attach to",
     )
+    attach_parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Interactive TUI profiler (top-like interface, press 'q' to quit, 's' to cycle sort)",
+    )
     _add_sampling_options(attach_parser)
     _add_mode_options(attach_parser)
     _add_format_options(attach_parser)
     _add_pstats_options(attach_parser)
-
-    # === LIVE COMMAND ===
-    live_parser = subparsers.add_parser(
-        "live",
-        help="Interactive TUI profiler (top-like interface)",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="Interactive live profiling with a terminal UI (press 'q' to quit, 's' to cycle sort)",
-    )
-    live_parser.add_argument(
-        "-m",
-        "--module",
-        action="store_true",
-        help="Run target as a module (like python -m)",
-    )
-    live_parser.add_argument(
-        "target",
-        help="Process ID, script file, or module name to profile",
-    )
-    live_parser.add_argument(
-        "args",
-        nargs=argparse.REMAINDER,
-        help="Arguments to pass to the script or module (if not a PID)",
-    )
-    _add_sampling_options(live_parser)
-    _add_mode_options(live_parser)
 
     # Parse arguments
     args = parser.parse_args()
@@ -493,7 +500,6 @@ def main():
     command_handlers = {
         "run": _handle_run,
         "attach": _handle_attach,
-        "live": _handle_live,
     }
 
     # Execute the appropriate command
@@ -506,6 +512,11 @@ def main():
 
 def _handle_attach(args):
     """Handle the 'attach' command."""
+    # Check if live mode is requested
+    if args.live:
+        _handle_live_attach(args, args.pid)
+        return
+
     # Use PROFILING_MODE_ALL for gecko format
     mode = (
         PROFILING_MODE_ALL
@@ -539,6 +550,11 @@ def _handle_attach(args):
 
 def _handle_run(args):
     """Handle the 'run' command."""
+    # Check if live mode is requested
+    if args.live:
+        _handle_live_run(args)
+        return
+
     # Build the command to run
     if args.module:
         cmd = (sys.executable, "-m", args.target, *args.args)
@@ -587,26 +603,6 @@ def _handle_run(args):
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait()
-
-
-def _handle_live(args):
-    """Handle the 'live' command."""
-    # Determine if target is a PID or a script/module
-    try:
-        # Try to parse as PID
-        pid = int(args.target)
-        is_pid = True
-    except ValueError:
-        # It's a script or module name
-        is_pid = False
-        pid = None
-
-    if is_pid:
-        # Attach to existing process in live mode
-        _handle_live_attach(args, pid)
-    else:
-        # Run script/module in live mode
-        _handle_live_run(args)
 
 
 def _handle_live_attach(args, pid):

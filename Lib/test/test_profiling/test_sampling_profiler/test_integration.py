@@ -405,12 +405,13 @@ if __name__ == "__main__":
         ):
             try:
                 # Sample for up to SHORT_TIMEOUT seconds, but process exits after fixed iterations
+                collector = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
+                    collector,
                     duration_sec=SHORT_TIMEOUT,
-                    sample_interval_usec=1000,  # 1ms
-                    show_summary=False,
                 )
+                collector.print_stats(show_summary=False)
             except PermissionError:
                 self.skipTest("Insufficient permissions for remote profiling")
 
@@ -552,7 +553,7 @@ if __name__ == "__main__":
         self.addCleanup(close_and_unlink, script_file)
 
         # Sample for up to SHORT_TIMEOUT seconds, but process exits after fixed iterations
-        test_args = ["profiling.sampling.sample", "-d", PROFILING_TIMEOUT, script_file.name]
+        test_args = ["profiling.sampling.sample", "run", "-d", PROFILING_TIMEOUT, script_file.name]
 
         with (
             mock.patch("sys.argv", test_args),
