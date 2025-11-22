@@ -1660,29 +1660,35 @@ class _ActionsContainer(object):
     def _get_optional_kwargs(self, *args, **kwargs):
         # determine short and long option strings
         option_strings = []
-        long_option_strings = []
         for option_string in args:
             # error on strings that don't start with an appropriate prefix
             if not option_string[0] in self.prefix_chars:
                 raise ValueError(
                     f'invalid option string {option_string!r}: '
                     f'must start with a character {self.prefix_chars!r}')
-
-            # strings starting with two prefix characters are long options
             option_strings.append(option_string)
-            if len(option_string) > 1 and option_string[1] in self.prefix_chars:
-                long_option_strings.append(option_string)
 
         # infer destination, '--foo-bar' -> 'foo_bar' and '-x' -> 'x'
         dest = kwargs.pop('dest', None)
         if dest is None:
-            if long_option_strings:
-                dest_option_string = long_option_strings[0]
-            else:
-                dest_option_string = option_strings[0]
-            dest = dest_option_string.lstrip(self.prefix_chars)
+            priority = 0
+            for option_string in option_strings:
+                if len(option_string) <= 2:
+                    # short option: '-x' -> 'x'
+                    if priority < 1:
+                        dest = option_string.lstrip(self.prefix_chars)
+                        priority = 1
+                elif option_string[1] not in self.prefix_chars:
+                    # single-dash long option: '-foo' -> 'foo'
+                    if priority < 2:
+                        dest = option_string.lstrip(self.prefix_chars)
+                        priority = 2
+                else:
+                    # two-dash long option: '--foo' -> 'foo'
+                    dest = option_string.lstrip(self.prefix_chars)
+                    break
             if not dest:
-                msg = f'dest= is required for options like {option_string!r}'
+                msg = f'dest= is required for options like {repr(option_strings)[1:-1]}'
                 raise TypeError(msg)
             dest = dest.replace('-', '_')
 
@@ -2749,6 +2755,14 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             except (AttributeError, OSError):
                 pass
 
+    def _get_theme(self, file=None):
+        from _colorize import can_colorize, get_theme
+
+        if self.color and can_colorize(file=file):
+            return get_theme(force_color=True).argparse
+        else:
+            return get_theme(force_no_color=True).argparse
+
     # ===============
     # Exiting methods
     # ===============
@@ -2768,13 +2782,21 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         should either exit or raise an exception.
         """
         self.print_usage(_sys.stderr)
+        theme = self._get_theme(file=_sys.stderr)
+        fmt = _('%(prog)s: error: %(message)s\n')
+        fmt = fmt.replace('error: %(message)s',
+                        f'{theme.error}error:{theme.reset} {theme.message}%(message)s{theme.reset}')
+
         args = {'prog': self.prog, 'message': message}
-        self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+        self.exit(2, fmt % args)
 
     def _warning(self, message):
+        theme = self._get_theme(file=_sys.stderr)
+        fmt = _('%(prog)s: warning: %(message)s\n')
+        fmt = fmt.replace('warning: %(message)s',
+                        f'{theme.warning}warning:{theme.reset} {theme.message}%(message)s{theme.reset}')
         args = {'prog': self.prog, 'message': message}
-        self._print_message(_('%(prog)s: warning: %(message)s\n') % args, _sys.stderr)
-
+        self._print_message(fmt % args, _sys.stderr)
 
 def __getattr__(name):
     if name == "__version__":

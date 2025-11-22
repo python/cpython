@@ -85,6 +85,9 @@ class ForwardRef:
         # These are always set to None here but may be non-None if a ForwardRef
         # is created through __class__ assignment on a _Stringifier object.
         self.__globals__ = None
+        # This may be either a cell object (for a ForwardRef referring to a single name)
+        # or a dict mapping cell names to cell objects (for a ForwardRef containing references
+        # to multiple names).
         self.__cell__ = None
         self.__extra_names__ = None
         # These are initially None but serve as a cache and may be set to a non-None
@@ -117,7 +120,7 @@ class ForwardRef:
                 is_forwardref_format = True
             case _:
                 raise NotImplementedError(format)
-        if self.__cell__ is not None:
+        if isinstance(self.__cell__, types.CellType):
             try:
                 return self.__cell__.cell_contents
             except ValueError:
@@ -147,26 +150,42 @@ class ForwardRef:
         if globals is None:
             globals = {}
 
+        if type_params is None and owner is not None:
+            type_params = getattr(owner, "__type_params__", None)
+
         if locals is None:
             locals = {}
             if isinstance(owner, type):
                 locals.update(vars(owner))
+        elif (
+            type_params is not None
+            or isinstance(self.__cell__, dict)
+            or self.__extra_names__
+        ):
+            # Create a new locals dict if necessary,
+            # to avoid mutating the argument.
+            locals = dict(locals)
 
-        if type_params is None and owner is not None:
-            # "Inject" type parameters into the local namespace
-            # (unless they are shadowed by assignments *in* the local namespace),
-            # as a way of emulating annotation scopes when calling `eval()`
-            type_params = getattr(owner, "__type_params__", None)
-
-        # Type parameters exist in their own scope, which is logically
-        # between the locals and the globals. We simulate this by adding
-        # them to the globals.
+        # "Inject" type parameters into the local namespace
+        # (unless they are shadowed by assignments *in* the local namespace),
+        # as a way of emulating annotation scopes when calling `eval()`
         if type_params is not None:
-            globals = dict(globals)
             for param in type_params:
-                globals[param.__name__] = param
+                locals.setdefault(param.__name__, param)
+
+        # Similar logic can be used for nonlocals, which should not
+        # override locals.
+        if isinstance(self.__cell__, dict):
+            for cell_name, cell in self.__cell__.items():
+                try:
+                    cell_value = cell.cell_contents
+                except ValueError:
+                    pass
+                else:
+                    locals.setdefault(cell_name, cell_value)
+
         if self.__extra_names__:
-            locals = {**locals, **self.__extra_names__}
+            locals.update(self.__extra_names__)
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
@@ -187,8 +206,11 @@ class ForwardRef:
             except Exception:
                 if not is_forwardref_format:
                     raise
+
+            # All variables, in scoping order, should be checked before
+            # triggering __missing__ to create a _Stringifier.
             new_locals = _StringifierDict(
-                {**builtins.__dict__, **locals},
+                {**builtins.__dict__, **globals, **locals},
                 globals=globals,
                 owner=owner,
                 is_class=self.__forward_is_class__,
@@ -199,7 +221,7 @@ class ForwardRef:
             except Exception:
                 return self
             else:
-                new_locals.transmogrify()
+                new_locals.transmogrify(self.__cell__)
                 return result
 
     def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
@@ -271,7 +293,7 @@ class ForwardRef:
             self.__forward_module__,
             id(self.__globals__),  # dictionaries are not hashable, so hash by identity
             self.__forward_is_class__,
-            self.__cell__,
+            tuple(sorted(self.__cell__.items())) if isinstance(self.__cell__, dict) else self.__cell__,
             self.__owner__,
             tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None,
         ))
@@ -639,13 +661,15 @@ class _StringifierDict(dict):
         self.stringifiers.append(fwdref)
         return fwdref
 
-    def transmogrify(self):
+    def transmogrify(self, cell_dict):
         for obj in self.stringifiers:
             obj.__class__ = ForwardRef
             obj.__stringifier_dict__ = None  # not needed for ForwardRef
             if isinstance(obj.__ast_node__, str):
                 obj.__arg__ = obj.__ast_node__
                 obj.__ast_node__ = None
+            if cell_dict is not None and obj.__cell__ is None:
+                obj.__cell__ = cell_dict
 
     def create_unique_name(self):
         name = f"__annotationlib_name_{self.next_id}__"
@@ -709,7 +733,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
 
         globals = _StringifierDict({}, format=format)
         is_class = isinstance(owner, type)
-        closure = _build_closure(
+        closure, _ = _build_closure(
             annotate, owner, is_class, globals, allow_evaluation=False
         )
         func = types.FunctionType(
@@ -753,7 +777,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             is_class=is_class,
             format=format,
         )
-        closure = _build_closure(
+        closure, cell_dict = _build_closure(
             annotate, owner, is_class, globals, allow_evaluation=True
         )
         func = types.FunctionType(
@@ -771,7 +795,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         except Exception:
             pass
         else:
-            globals.transmogrify()
+            globals.transmogrify(cell_dict)
             return result
 
         # Try again, but do not provide any globals. This allows us to return
@@ -783,7 +807,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             is_class=is_class,
             format=format,
         )
-        closure = _build_closure(
+        closure, cell_dict = _build_closure(
             annotate, owner, is_class, globals, allow_evaluation=False
         )
         func = types.FunctionType(
@@ -794,7 +818,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             kwdefaults=annotate.__kwdefaults__,
         )
         result = func(Format.VALUE_WITH_FAKE_GLOBALS)
-        globals.transmogrify()
+        globals.transmogrify(cell_dict)
         if _is_evaluate:
             if isinstance(result, ForwardRef):
                 return result.evaluate(format=Format.FORWARDREF)
@@ -819,14 +843,11 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
 
 def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
     if not annotate.__closure__:
-        return None
-    freevars = annotate.__code__.co_freevars
+        return None, None
     new_closure = []
-    for i, cell in enumerate(annotate.__closure__):
-        if i < len(freevars):
-            name = freevars[i]
-        else:
-            name = "__cell__"
+    cell_dict = {}
+    for name, cell in zip(annotate.__code__.co_freevars, annotate.__closure__, strict=True):
+        cell_dict[name] = cell
         new_cell = None
         if allow_evaluation:
             try:
@@ -847,7 +868,7 @@ def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluat
             stringifier_dict.stringifiers.append(fwdref)
             new_cell = types.CellType(fwdref)
         new_closure.append(new_cell)
-    return tuple(new_closure)
+    return tuple(new_closure), cell_dict
 
 
 def _stringify_single(anno):

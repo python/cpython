@@ -2418,6 +2418,86 @@ set_vectorcall_nop(PyObject *self, PyObject *func)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+module_get_gc_hooks(PyObject *self, PyObject *arg)
+{
+    PyModuleObject *mod = (PyModuleObject *)arg;
+    PyObject *traverse = NULL;
+    PyObject *clear = NULL;
+    PyObject *free = NULL;
+    PyObject *result = NULL;
+    traverse = PyLong_FromVoidPtr(mod->md_state_traverse);
+    if (!traverse) {
+        goto finally;
+    }
+    clear = PyLong_FromVoidPtr(mod->md_state_clear);
+    if (!clear) {
+        goto finally;
+    }
+    free = PyLong_FromVoidPtr(mod->md_state_free);
+    if (!free) {
+        goto finally;
+    }
+    result = PyTuple_FromArray((PyObject*[]){ traverse, clear, free }, 3);
+finally:
+    Py_XDECREF(traverse);
+    Py_XDECREF(clear);
+    Py_XDECREF(free);
+    return result;
+}
+
+
+static void
+check_threadstate_set_stack_protection(PyThreadState *tstate,
+                                       void *start, size_t size)
+{
+    assert(PyUnstable_ThreadState_SetStackProtection(tstate, start, size) == 0);
+    assert(!PyErr_Occurred());
+
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(ts->c_stack_top == (uintptr_t)start + size);
+    assert(ts->c_stack_hard_limit <= ts->c_stack_soft_limit);
+    assert(ts->c_stack_soft_limit < ts->c_stack_top);
+}
+
+
+static PyObject *
+test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(!PyErr_Occurred());
+
+    uintptr_t init_base = ts->c_stack_init_base;
+    size_t init_top = ts->c_stack_init_top;
+
+    // Test the minimum stack size
+    size_t size = _PyOS_MIN_STACK_SIZE;
+    void *start = (void*)(_Py_get_machine_stack_pointer() - size);
+    check_threadstate_set_stack_protection(tstate, start, size);
+
+    // Test a larger size
+    size = 7654321;
+    assert(size > _PyOS_MIN_STACK_SIZE);
+    start = (void*)(_Py_get_machine_stack_pointer() - size);
+    check_threadstate_set_stack_protection(tstate, start, size);
+
+    // Test invalid size (too small)
+    size = 5;
+    start = (void*)(_Py_get_machine_stack_pointer() - size);
+    assert(PyUnstable_ThreadState_SetStackProtection(tstate, start, size) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_ValueError));
+    PyErr_Clear();
+
+    // Test PyUnstable_ThreadState_ResetStackProtection()
+    PyUnstable_ThreadState_ResetStackProtection(tstate);
+    assert(ts->c_stack_init_base == init_base);
+    assert(ts->c_stack_init_top == init_top);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2527,6 +2607,9 @@ static PyMethodDef module_functions[] = {
 #endif
     {"simple_pending_call", simple_pending_call, METH_O},
     {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
+    {"module_get_gc_hooks", module_get_gc_hooks, METH_O},
+    {"test_threadstate_set_stack_protection",
+     test_threadstate_set_stack_protection, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2578,7 +2661,8 @@ module_exec(PyObject *module)
     }
 
     if (PyModule_Add(module, "TIER2_THRESHOLD",
-                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 1)) < 0) {
+        // + 1 more due to one loop spent on tracing.
+                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 2)) < 0) {
         return 1;
     }
 

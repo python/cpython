@@ -581,13 +581,22 @@ class TestOptionalsShortLong(ParserTestCase):
 class TestOptionalsDest(ParserTestCase):
     """Tests various means of setting destination"""
 
-    argument_signatures = [Sig('--foo-bar'), Sig('--baz', dest='zabbaz')]
+    argument_signatures = [
+        Sig('-x', '-foobar', '--foo-bar', '-barfoo', '-X'),
+        Sig('--baz', dest='zabbaz'),
+        Sig('-y', '-qux', '-Y'),
+        Sig('-z'),
+    ]
     failures = ['a']
     successes = [
-        ('--foo-bar f', NS(foo_bar='f', zabbaz=None)),
-        ('--baz g', NS(foo_bar=None, zabbaz='g')),
-        ('--foo-bar h --baz i', NS(foo_bar='h', zabbaz='i')),
-        ('--baz j --foo-bar k', NS(foo_bar='k', zabbaz='j')),
+        ('--foo-bar f', NS(foo_bar='f', zabbaz=None, qux=None, z=None)),
+        ('-x f', NS(foo_bar='f', zabbaz=None, qux=None, z=None)),
+        ('--baz g', NS(foo_bar=None, zabbaz='g', qux=None, z=None)),
+        ('--foo-bar h --baz i', NS(foo_bar='h', zabbaz='i', qux=None, z=None)),
+        ('--baz j --foo-bar k', NS(foo_bar='k', zabbaz='j', qux=None, z=None)),
+        ('-qux l', NS(foo_bar=None, zabbaz=None, qux='l', z=None)),
+        ('-y l', NS(foo_bar=None, zabbaz=None, qux='l', z=None)),
+        ('-z m', NS(foo_bar=None, zabbaz=None, qux=None, z='m')),
     ]
 
 
@@ -2283,6 +2292,7 @@ class TestNegativeNumber(ParserTestCase):
         ('--complex -1e-3j', NS(int=None, float=None, complex=-0.001j)),
     ]
 
+@force_not_colorized_test_class
 class TestArgumentAndSubparserSuggestions(TestCase):
     """Test error handling and suggestion when a user makes a typo"""
 
@@ -5610,6 +5620,8 @@ class TestInvalidArgumentConstructors(TestCase):
         self.assertTypeError('-', errmsg='dest= is required')
         self.assertTypeError('--', errmsg='dest= is required')
         self.assertTypeError('---', errmsg='dest= is required')
+        self.assertTypeError('-', '--', '---',
+                errmsg="dest= is required for options like '-', '--', '---'")
 
     def test_invalid_prefix(self):
         self.assertValueError('--foo', '+foo',
@@ -6147,6 +6159,7 @@ class TestTypeFunctionCallOnlyOnce(TestCase):
 # Check that deprecated arguments output warning
 # ==============================================
 
+@force_not_colorized_test_class
 class TestDeprecatedArguments(TestCase):
 
     def test_deprecated_option(self):
@@ -7369,6 +7382,45 @@ class TestColorized(TestCase):
         demo_parser.color = False
         help_text = demo_parser.format_help()
         self.assertNotIn('\x1b[', help_text)
+
+    def test_error_and_warning_keywords_colorized(self):
+        parser = argparse.ArgumentParser(prog='PROG')
+        parser.add_argument('foo')
+
+        with self.assertRaises(SystemExit):
+            with captured_stderr() as stderr:
+                parser.parse_args([])
+
+        err = stderr.getvalue()
+        error_color = self.theme.error
+        reset = self.theme.reset
+        self.assertIn(f'{error_color}error:{reset}', err)
+
+        with captured_stderr() as stderr:
+            parser._warning('test warning')
+
+        warn = stderr.getvalue()
+        warning_color = self.theme.warning
+        self.assertIn(f'{warning_color}warning:{reset}', warn)
+
+    def test_error_and_warning_not_colorized_when_disabled(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=False)
+        parser.add_argument('foo')
+
+        with self.assertRaises(SystemExit):
+            with captured_stderr() as stderr:
+                parser.parse_args([])
+
+        err = stderr.getvalue()
+        self.assertNotIn('\x1b[', err)
+        self.assertIn('error:', err)
+
+        with captured_stderr() as stderr:
+            parser._warning('test warning')
+
+        warn = stderr.getvalue()
+        self.assertNotIn('\x1b[', warn)
+        self.assertIn('warning:', warn)
 
 
 class TestModule(unittest.TestCase):
