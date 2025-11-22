@@ -11,7 +11,7 @@
 #if !_Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
-        switch (opcode)
+        switch (dispatch_code)
 #endif
         {
 #endif /* _Py_TAIL_CALL_INTERP */
@@ -1533,7 +1533,7 @@
                 if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                     next_instr = this_instr;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _Py_Specialize_Call(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
+                    _Py_Specialize_Call(callable, self_or_null, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     DISPATCH_SAME_OPARG();
                 }
@@ -3470,11 +3470,6 @@
                 self = nos;
                 assert(oparg == 1);
                 PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
-                if (!PyList_CheckExact(self_o)) {
-                    UPDATE_MISS_STATS(CALL);
-                    assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
-                }
                 if (!LOCK_OBJECT(self_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -11688,6 +11683,68 @@
             DISPATCH();
         }
 
+        TARGET(TRACE_RECORD) {
+            #if _Py_TAIL_CALL_INTERP
+            int opcode = TRACE_RECORD;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(TRACE_RECORD);
+            opcode = TRACE_RECORD;
+            #if _Py_TIER2
+            assert(IS_JIT_TRACING());
+            next_instr = this_instr;
+            frame->instr_ptr = prev_instr;
+            opcode = next_instr->op.code;
+            bool stop_tracing = (opcode == WITH_EXCEPT_START ||
+                                 opcode == RERAISE || opcode == CLEANUP_THROW ||
+                                 opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (full) {
+                LEAVE_TRACING();
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = stop_tracing_and_jit(tstate, frame);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+                DISPATCH_GOTO_NON_TRACING();
+            }
+            _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+            if ((_tstate->jit_tracer_state.prev_state.instr->op.code == CALL_LIST_APPEND &&
+                 opcode == POP_TOP) ||
+                (_tstate->jit_tracer_state.prev_state.instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
+                 opcode == STORE_FAST)) {
+                _tstate->jit_tracer_state.prev_state.instr_is_super = true;
+            }
+            else {
+                _tstate->jit_tracer_state.prev_state.instr = next_instr;
+            }
+            PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            if (_tstate->jit_tracer_state.prev_state.instr_code != (PyCodeObject *)prev_code) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_SETREF(_tstate->jit_tracer_state.prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            _tstate->jit_tracer_state.prev_state.instr_frame = frame;
+            _tstate->jit_tracer_state.prev_state.instr_oparg = oparg;
+            _tstate->jit_tracer_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
+            if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
+                (&next_instr[1])->counter = trigger_backoff_counter();
+            }
+            DISPATCH_GOTO_NON_TRACING();
+            #else
+            (void)prev_instr;
+            Py_FatalError("JIT instruction executed in non-jit build.");
+            #endif
+        }
+
         TARGET(UNARY_INVERT) {
             #if _Py_TAIL_CALL_INTERP
             int opcode = UNARY_INVERT;
@@ -12259,62 +12316,13 @@ JUMP_TO_LABEL(error);
             DISPATCH();
         }
 
-        LABEL(record_previous_inst)
-        {
-            #if _Py_TIER2
-            assert(IS_JIT_TRACING());
-            int opcode = next_instr->op.code;
-            bool stop_tracing = (opcode == WITH_EXCEPT_START ||
-                                 opcode == RERAISE || opcode == CLEANUP_THROW ||
-                                 opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (full) {
-                LEAVE_TRACING();
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = stop_tracing_and_jit(tstate, frame);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err < 0) {
-                    JUMP_TO_LABEL(error);
-                }
-                DISPATCH_GOTO_NON_TRACING();
-            }
-            _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-            if ((_tstate->jit_tracer_state.prev_state.instr->op.code == CALL_LIST_APPEND &&
-                 opcode == POP_TOP) ||
-                (_tstate->jit_tracer_state.prev_state.instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
-                 opcode == STORE_FAST)) {
-                _tstate->jit_tracer_state.prev_state.instr_is_super = true;
-            }
-            else {
-                _tstate->jit_tracer_state.prev_state.instr = next_instr;
-            }
-            PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
-            if (_tstate->jit_tracer_state.prev_state.instr_code != (PyCodeObject *)prev_code) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                Py_SETREF(_tstate->jit_tracer_state.prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            _tstate->jit_tracer_state.prev_state.instr_frame = frame;
-            _tstate->jit_tracer_state.prev_state.instr_oparg = oparg;
-            _tstate->jit_tracer_state.prev_state.instr_stacklevel = PyStackRef_IsNone(frame->f_executable) ? 2 : STACK_LEVEL();
-            if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]]) {
-                (&next_instr[1])->counter = trigger_backoff_counter();
-            }
-            DISPATCH_GOTO_NON_TRACING();
-            #else
-            Py_FatalError("JIT label executed in non-jit build.");
-            #endif
-        }
-
         LABEL(stop_tracing)
         {
             #if _Py_TIER2
             assert(IS_JIT_TRACING());
             int opcode = next_instr->op.code;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, true);
+            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, _EXIT_TRACE);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LEAVE_TRACING();
             _PyFrame_SetStackPointer(frame, stack_pointer);

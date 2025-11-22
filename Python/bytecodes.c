@@ -3689,7 +3689,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
-                _Py_Specialize_Call(callable, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
+                _Py_Specialize_Call(callable, self_or_null, next_instr, oparg + !PyStackRef_IsNull(self_or_null));
                 DISPATCH_SAME_OPARG();
             }
             OPCODE_DEFERRED_INC(CALL);
@@ -4395,7 +4395,6 @@ dummy_func(
             assert(oparg == 1);
             PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
 
-            DEOPT_IF(!PyList_CheckExact(self_o));
             DEOPT_IF(!LOCK_OBJECT(self_o));
             STAT_INC(CALL, hit);
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
@@ -5637,14 +5636,16 @@ dummy_func(
             DISPATCH();
         }
 
-        label(record_previous_inst) {
+        inst(TRACE_RECORD, (--)) {
 #if _Py_TIER2
             assert(IS_JIT_TRACING());
-            int opcode = next_instr->op.code;
+            next_instr = this_instr;
+            frame->instr_ptr = prev_instr;
+            opcode = next_instr->op.code;
             bool stop_tracing = (opcode == WITH_EXCEPT_START ||
                 opcode == RERAISE || opcode == CLEANUP_THROW ||
                 opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
-            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing);
+            int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             if (full) {
                 LEAVE_TRACING();
                 int err = stop_tracing_and_jit(tstate, frame);
@@ -5676,7 +5677,8 @@ dummy_func(
             }
             DISPATCH_GOTO_NON_TRACING();
 #else
-            Py_FatalError("JIT label executed in non-jit build.");
+            (void)prev_instr;
+            Py_FatalError("JIT instruction executed in non-jit build.");
 #endif
         }
 
@@ -5684,7 +5686,7 @@ dummy_func(
 #if _Py_TIER2
             assert(IS_JIT_TRACING());
             int opcode = next_instr->op.code;
-            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, true);
+            _PyJit_translate_single_bytecode_to_trace(tstate, frame, NULL, _EXIT_TRACE);
             LEAVE_TRACING();
             int err = stop_tracing_and_jit(tstate, frame);
             ERROR_IF(err < 0);

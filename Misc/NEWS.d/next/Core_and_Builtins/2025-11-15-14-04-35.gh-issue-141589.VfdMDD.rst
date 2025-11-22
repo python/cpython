@@ -1,0 +1,3 @@
+Change ``backoff counter`` to use prime numbers instead of powers of 2.
+Use only 3 bits for ``counter`` and 13 bits for ``value``.
+This allows to support values up to 8191. Patch by Mikhail Efimov.
