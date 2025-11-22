@@ -3560,6 +3560,15 @@ class Win32ProcessTestCase(BaseTestCase):
                            "import sys; sys.exit(47)"],
                           preexec_fn=lambda: 1)
 
+    def test_args_quoting(self):
+        with tempfile.NamedTemporaryFile(suffix=".bat", delete_on_close=False) as f:
+            f.write(b"echo %*\n")
+            f.close()
+            p = subprocess.run([f.file.name, "a b", "", "c<>d", "e"],
+                               capture_output=True)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            self.assertEndsWith(p.stdout.strip(), b'"a b" "" "c<>d" e')
+
     @support.cpython_only
     def test_issue31471(self):
         # There shouldn't be an assertion failure in Popen() in case the env
