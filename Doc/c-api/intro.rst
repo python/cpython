@@ -322,6 +322,15 @@ complete listing.
       PyDoc_VAR(python_doc) = PyDoc_STR("A genus of constricting snakes in the Pythonidae family native "
                                         "to the tropics and subtropics of the Eastern Hemisphere.");
 
+.. c:macro:: Py_ARRAY_LENGTH(array)
+
+   Compute the length (number of elements) of a statically allocated C array at
+   compile time.
+
+   The *array* argument must be a C array with a size known at compile time,
+   not a pointer. On supported compilers, passing a pointer will result in a
+   compilation error or otherwise produce incorrect results.
+
 
 .. _api-objects:
 
