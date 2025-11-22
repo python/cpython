@@ -745,7 +745,6 @@ module_exec(PyObject *module)
     return 0;
 
 error:
-    sqlite3_shutdown();
     return -1;
 }
 
