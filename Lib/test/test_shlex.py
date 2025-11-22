@@ -368,6 +368,15 @@ class ShlexTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             shlex_instance.punctuation_chars = False
 
+    def testNewlineAfterComment(self):
+        """Test that newline after comment is not consumed (POSIX compliance)"""
+        # When whitespace is customized to exclude newlines, newlines should
+        # be treated as tokens, even when following a comment
+        s = shlex.shlex('a # comment \n b', posix=True)
+        s.whitespace = ' '
+        result = list(s)
+        self.assertEqual(result, ['a', '\n', 'b'])
+
     @cpython_only
     def test_lazy_imports(self):
         import_helper.ensure_lazy_imports('shlex', {'collections', 're', 'os'})
