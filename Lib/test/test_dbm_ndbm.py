@@ -160,6 +160,25 @@ class DbmTestCase(unittest.TestCase):
                 self.assertNotIn(k, db)
             self.assertEqual(len(db), 0)
 
+    def test_type_errors(self):
+        with dbm.ndbm.open(self.filename, 'c') as db:
+            with self.assertRaisesRegex(
+                TypeError, "^a bytes-like object is required, not 'int'$",
+            ):
+                db[123]
+            with self.assertRaisesRegex(
+                TypeError, "^dbm key must be bytes or str, not 'int'$",
+            ):
+                123 in db
+            with self.assertRaisesRegex(
+                TypeError, "^dbm key must be bytes or str, not 'NoneType'$",
+            ):
+                db[None] = 123
+            with self.assertRaisesRegex(
+                TypeError, "^dbm value must be bytes or str, not 'int'$",
+            ):
+                db['foo'] = 123
+
 
 if __name__ == '__main__':
     unittest.main()
