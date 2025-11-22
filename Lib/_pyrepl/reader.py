@@ -186,9 +186,13 @@ vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"dd", "vi-delete-line"),
         (r"d0", "vi-delete-to-bol"),
         (r"d$", "vi-delete-to-eol"),
+        (r"D", "vi-delete-to-eol"),
+        (r"X", "vi-delete-char-before"),
 
         # Change commands
         (r"cw", "vi-change-word"),
+        (r"C", "vi-change-to-eol"),
+        (r"s", "vi-substitute-char"),
 
         # Replace commands
         (r"r", "vi-replace-char"),

@@ -137,10 +137,19 @@ class vi_delete_to_bol(KillCommand):
 
 
 class vi_delete_to_eol(KillCommand):
-    """Delete from cursor to end of line (d$)."""
+    """Delete from cursor to end of line (d$ or D)."""
     def do(self) -> None:
         r = self.reader
         self.kill_range(r.pos, r.eol())
+
+
+class vi_delete_char_before(KillCommand):
+    """Delete character before cursor (X)."""
+    def do(self) -> None:
+        r = self.reader
+        for _ in range(r.get_arg()):
+            if r.pos > 0:
+                self.kill_range(r.pos - 1, r.pos)
 
 
 # ============================================================================
@@ -342,6 +351,24 @@ class vi_change_word(KillCommand):
             end = r.vi_eow() + 1  # +1 to include last char
             if end > r.pos:
                 self.kill_range(r.pos, end)
+        r.enter_insert_mode()
+
+
+class vi_change_to_eol(KillCommand):
+    """Change from cursor to end of line (C)."""
+    def do(self) -> None:
+        r = self.reader
+        self.kill_range(r.pos, r.eol())
+        r.enter_insert_mode()
+
+
+class vi_substitute_char(KillCommand):
+    """Delete character under cursor and enter insert mode (s)."""
+    def do(self) -> None:
+        r = self.reader
+        for _ in range(r.get_arg()):
+            if r.pos < len(r.buffer):
+                self.kill_range(r.pos, r.pos + 1)
         r.enter_insert_mode()
 
 

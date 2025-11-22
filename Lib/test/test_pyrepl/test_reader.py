@@ -1252,6 +1252,60 @@ class TestViMode(TestCase):
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "hello")
 
+    def test_D_delete_to_eol(self):
+        events = itertools.chain(
+            code_to_events("hello world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # BOL
+                Event(evt="key", data="w", raw=bytearray(b"w")),        # forward word
+                Event(evt="key", data="D", raw=bytearray(b"D")),        # delete to EOL
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "hello ")
+
+    def test_C_change_to_eol(self):
+        events = itertools.chain(
+            code_to_events("hello world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # BOL
+                Event(evt="key", data="w", raw=bytearray(b"w")),        # forward word
+                Event(evt="key", data="C", raw=bytearray(b"C")),        # change to EOL
+            ],
+            code_to_events("there"),
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "hello there")
+        self.assertEqual(reader.vi_mode, ViMode.INSERT)
+
+    def test_s_substitute_char(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # BOL
+                Event(evt="key", data="s", raw=bytearray(b"s")),        # substitute
+            ],
+            code_to_events("j"),
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "jello")
+        self.assertEqual(reader.vi_mode, ViMode.INSERT)
+
+    def test_X_delete_char_before(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="X", raw=bytearray(b"X")),        # delete before
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "helo")
+        self.assertEqual(reader.vi_mode, ViMode.NORMAL)
+
 
 @force_not_colorized_test_class
 class TestHistoricalReaderBindings(TestCase):
