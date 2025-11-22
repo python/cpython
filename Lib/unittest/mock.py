@@ -1381,12 +1381,12 @@ class _patch(object):
         return patcher
 
 
-    def __call__(self, func):
+    def __call__(self, func, *, is_inherited=False):
         if isinstance(func, type):
             return self.decorate_class(func)
         if inspect.iscoroutinefunction(func):
-            return self.decorate_async_callable(func)
-        return self.decorate_callable(func)
+            return self.decorate_async_callable(func, is_inherited=is_inherited)
+        return self.decorate_callable(func, is_inherited=is_inherited)
 
 
     def decorate_class(self, klass):
@@ -1399,54 +1399,63 @@ class _patch(object):
                 continue
 
             patcher = self.copy()
-            setattr(klass, attr, patcher(attr_value))
+            setattr(klass, attr, patcher(attr_value,
+                # avoid mutating a method if it's inherited
+                is_inherited=getattr(
+                    _safe_super(klass, klass), attr, _missing
+                ) is attr_value
+            ))
         return klass
 
 
     @contextlib.contextmanager
     def decoration_helper(self, patched, args, keywargs):
+        # patchings from the parent class should be applied first
+        patchings_chain = []
+        while hasattr(patched, 'patchings'):
+            patchings_chain.append(patched.patchings)
+            patched = patched.__wrapped__
         extra_args = []
         with contextlib.ExitStack() as exit_stack:
-            for patching in patched.patchings:
-                arg = exit_stack.enter_context(patching)
-                if patching.attribute_name is not None:
-                    keywargs.update(arg)
-                elif patching.new is DEFAULT:
-                    extra_args.append(arg)
+            for patchings in reversed(patchings_chain):
+                for patching in patchings:
+                    arg = exit_stack.enter_context(patching)
+                    if patching.attribute_name is not None:
+                        keywargs.update(arg)
+                    elif patching.new is DEFAULT:
+                        extra_args.append(arg)
 
             args += tuple(extra_args)
-            yield (args, keywargs)
+            yield (patched, args, keywargs)
 
 
-    def decorate_callable(self, func):
+    def decorate_callable(self, func, *, is_inherited=False):
         # NB. Keep the method in sync with decorate_async_callable()
-        if hasattr(func, 'patchings'):
+        if hasattr(func, 'patchings') and not is_inherited:
             func.patchings.append(self)
             return func
 
         @wraps(func)
         def patched(*args, **keywargs):
-            with self.decoration_helper(patched,
-                                        args,
-                                        keywargs) as (newargs, newkeywargs):
-                return func(*newargs, **newkeywargs)
+            with self.decoration_helper(patched, args, keywargs) as (
+                    newfunc, newargs, newkeywargs):
+                return newfunc(*newargs, **newkeywargs)
 
         patched.patchings = [self]
         return patched
 
 
-    def decorate_async_callable(self, func):
+    def decorate_async_callable(self, func, *, is_inherited=False):
         # NB. Keep the method in sync with decorate_callable()
-        if hasattr(func, 'patchings'):
+        if hasattr(func, 'patchings') and not is_inherited:
             func.patchings.append(self)
             return func
 
         @wraps(func)
         async def patched(*args, **keywargs):
-            with self.decoration_helper(patched,
-                                        args,
-                                        keywargs) as (newargs, newkeywargs):
-                return await func(*newargs, **newkeywargs)
+            with self.decoration_helper(patched, args, keywargs) as (
+                    newfunc, newargs, newkeywargs):
+                return await newfunc(*newargs, **newkeywargs)
 
         patched.patchings = [self]
         return patched
