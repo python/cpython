@@ -1237,19 +1237,122 @@ PyTime_PerfCounterRaw(PyTime_t *result)
     return PyTime_MonotonicRaw(result);
 }
 
+#ifdef MS_WINDOWS
+static int _cumulativeDaysInMonth[12] = {
+    0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
+};
+static int _cumulativeDaysInMonthLeap[12] = {
+    0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335
+};
+
+time_t FILETIME_diff_seconds(FILETIME t1, FILETIME t2) {
+    ULARGE_INTEGER t1_int;
+    t1_int.LowPart = t1.dwLowDateTime;
+    t1_int.HighPart = t1.dwHighDateTime;
+
+    ULARGE_INTEGER t2_int;
+    t2_int.LowPart = t2.dwLowDateTime;
+    t2_int.HighPart = t2.dwHighDateTime;
+
+    ULARGE_INTEGER difference;
+    difference.QuadPart = t1_int.QuadPart - t2_int.QuadPart;
+    // Convert from hundreds of NS to seconds.
+    return (time_t) difference.QuadPart / (10 * SEC_TO_US);
+}
+#endif
 
 int
 _PyTime_localtime(time_t t, struct tm *tm)
 {
 #ifdef MS_WINDOWS
-    int error;
+    // While Windows does have unix-like localtime functions in the CRT, they
+    // more constrained than a usual libc on a unix system. In particular, they
+    // don't support negative numbers.
+    if (t >= 0) {
+        int error;
 
-    error = localtime_s(tm, &t);
-    if (error != 0) {
-        errno = error;
-        PyErr_SetFromErrno(PyExc_OSError);
+        error = localtime_s(tm, &t);
+        if (error != 0) {
+            errno = error;
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+        return 0;
+    }
+    // For negative numbers, we use the equivalent win32 APIs, which involves
+    // converting our time_t to a win32 FILETIME.
+    // Windows doesn't provide an API to do this from C, only in the C++ WinRT
+    // * https://devblogs.microsoft.com/oldnewthing/20220602-00/?p=106706
+    // * https://learn.microsoft.com/en-us/windows/win32/sysinfo/converting-a-time-t-value-to-a-file-time
+    // We perform that conversion here. Firstly, Windows FILETIME uses hundredths
+    // of nanoseconds instead of seconds.
+    #define HUNDREDTH_NANOSECONDS_IN_SECONDS 10000000LL
+    // Secondly, the Windows epoch is 1601 instead of 1970, so this represents
+    // the number of hundredths of nanoseconds between those years:
+    // * https://www.wolframalpha.com/input?i=January+1%2C+1970+-+%28116444736000000000+*+100%29+nanoseconds
+    #define UNIX_EPOCH_TO_WINDOWS_HUNDREDTH_NS 116444736000000000LL;
+    ULARGE_INTEGER time_value;
+    time_value.QuadPart = (t * HUNDREDTH_NANOSECONDS_IN_SECONDS) + UNIX_EPOCH_TO_WINDOWS_HUNDREDTH_NS;
+
+    FILETIME tAsFiletime;
+    tAsFiletime.dwLowDateTime = time_value.LowPart;
+    tAsFiletime.dwHighDateTime = time_value.HighPart;
+
+    SYSTEMTIME utcSystemTime;
+    if (!FileTimeToSystemTime(&tAsFiletime, &utcSystemTime)) {
+        PyErr_SetFromWindowsErr(GetLastError());
         return -1;
     }
+
+    SYSTEMTIME localTime;
+    if (!SystemTimeToTzSpecificLocalTimeEx(NULL, &utcSystemTime, &localTime)) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return -1;
+    }
+
+    // SYSTEMTIME just has the year number, `struct tm` is years since 1900.
+    tm->tm_year = localTime.wYear - 1900;
+    // SYSTEMTIME uses 1-indexed months, `struct tm` is 0-indexed.
+    tm->tm_mon = localTime.wMonth - 1;
+    tm->tm_wday = localTime.wDayOfWeek;
+    tm->tm_mday = localTime.wDay;
+    tm->tm_hour = localTime.wHour;
+    tm->tm_min = localTime.wMinute;
+    tm->tm_sec = localTime.wSecond;
+
+    // We have two remaining fields in the `tm` struct to fill:
+    // `tm_yday` is the day in the current year, this is a function of whether
+    // we are in a leap year or not.
+    if (false /*is_leap_year*/) {
+        tm->tm_yday = _cumulativeDaysInMonthLeap[tm->tm_mon];
+    } else {
+        tm->tm_yday = _cumulativeDaysInMonth[tm->tm_mon];
+    }
+    tm->tm_yday += (localTime.wDay - 1);
+
+    // `tm_isdst` says whether or not DST was in effect locally at this time.
+    // This is a little trickier.
+    tm->tm_isdst = -1;
+    /*
+    FILETIME localTimeAsFiletime;
+    if (!SystemTimeToFileTime(&localTime, &localTimeAsFiletime)) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return -1;
+    }
+
+    time_t utc_diff = FILETIME_diff_seconds(tAsFiletime, localTimeAsFiletime);
+
+    TIME_ZONE_INFORMATION tzInfo;
+    if (!GetTimeZoneInformationForYear(localTime.wYear, NULL, &tzInfo)) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return -1;
+    }
+
+    tm->tm_isdst = 0;
+    if (tzInfo.Bias + tzInfo.StandardBias + tzInfo.DaylightBias == utc_diff / 60) {
+        tm->tm_isdst = 1;
+    }*/
+
     return 0;
 #else /* !MS_WINDOWS */
 
