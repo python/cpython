@@ -362,7 +362,7 @@ gc_get_stats_impl(PyObject *module)
                              "collections", st->collections,
                              "collected", st->collected,
                              "uncollectable", st->uncollectable,
-                             "visited", st->visited,
+                             "candidates", st->candidates,
                              "duration", st->duration
                             );
         if (dict == NULL)

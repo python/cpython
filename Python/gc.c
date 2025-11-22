@@ -488,7 +488,7 @@ update_refs(PyGC_Head *containers)
 {
     PyGC_Head *next;
     PyGC_Head *gc = GC_NEXT(containers);
-    Py_ssize_t visited = 0;
+    Py_ssize_t candidates = 0;
 
     while (gc != containers) {
         next = GC_NEXT(gc);
@@ -520,9 +520,9 @@ update_refs(PyGC_Head *containers)
          */
         _PyObject_ASSERT(op, gc_get_refs(gc) != 0);
         gc = next;
-        visited++;
+        candidates++;
     }
-    return visited;
+    return candidates;
 }
 
 /* A traversal callback for subtract_refs. */
@@ -1251,7 +1251,7 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * refcount greater than 0 when all the references within the
      * set are taken into account).
      */
-    Py_ssize_t visited = update_refs(base);  // gc_prev is used for gc_refs
+    Py_ssize_t candidates = update_refs(base);  // gc_prev is used for gc_refs
     subtract_refs(base);
 
     /* Leave everything reachable from outside base in base, and move
@@ -1292,7 +1292,7 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
     move_unreachable(base, unreachable);  // gc_prev is pointer again
     validate_list(base, collecting_clear_unreachable_clear);
     validate_list(unreachable, collecting_set_unreachable_set);
-    return visited;
+    return candidates;
 }
 
 /* Handle objects that may have resurrected after a call to 'finalize_garbage', moving
@@ -1368,9 +1368,9 @@ static void
 add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
 {
     gcstate->generation_stats[gen].duration += stats->duration;
-    gcstate->generation_stats[gen].visited += stats->visited;
     gcstate->generation_stats[gen].collected += stats->collected;
     gcstate->generation_stats[gen].uncollectable += stats->uncollectable;
+    gcstate->generation_stats[gen].candidates += stats->candidates;
     gcstate->generation_stats[gen].collections += 1;
 }
 
@@ -1759,7 +1759,7 @@ gc_collect_region(PyThreadState *tstate,
     assert(!_PyErr_Occurred(tstate));
 
     gc_list_init(&unreachable);
-    stats->visited = deduce_unreachable(from, &unreachable);
+    stats->candidates = deduce_unreachable(from, &unreachable);
     validate_consistent_old_space(from);
     untrack_tuples(from);
 
@@ -1853,7 +1853,7 @@ do_gc_callback(GCState *gcstate, const char *phase,
             "generation", generation,
             "collected", stats->collected,
             "uncollectable", stats->uncollectable,
-            "visited", stats->visited,
+            "candidates", stats->candidates,
             "duration", stats->duration);
         if (info == NULL) {
             PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");

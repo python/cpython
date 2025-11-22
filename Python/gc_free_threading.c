@@ -98,9 +98,9 @@ struct collection_state {
     // we can't collect objects with deferred references because we may not
     // see all references.
     int skip_deferred_objects;
-    Py_ssize_t visited;
     Py_ssize_t collected;
     Py_ssize_t uncollectable;
+    Py_ssize_t candidates;
     Py_ssize_t long_lived_total;
     struct worklist unreachable;
     struct worklist legacy_finalizers;
@@ -993,7 +993,7 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
         gc_clear_unreachable(op);
         return true;
     }
-    state->visited++;
+    state->candidates++;
 
     Py_ssize_t refcount = Py_REFCNT(op);
     if (_PyObject_HasDeferredRefcount(op)) {
@@ -1914,7 +1914,8 @@ handle_resurrected_objects(struct collection_state *state)
 static void
 invoke_gc_callback(PyThreadState *tstate, const char *phase,
                    int generation, Py_ssize_t collected,
-                   Py_ssize_t uncollectable, Py_ssize_t visited, double duration)
+                   Py_ssize_t uncollectable, Py_ssize_t candidates,
+                   double duration)
 {
     assert(!_PyErr_Occurred(tstate));
 
@@ -1932,7 +1933,7 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
             "generation", generation,
             "collected", collected,
             "uncollectable", uncollectable,
-            "visited", visited,
+            "candidates", candidates,
             "duration", duration);
         if (info == NULL) {
             PyErr_FormatUnraisable("Exception ignored while "
@@ -2431,7 +2432,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     stats->collected += m;
     stats->uncollectable += n;
     stats->duration += duration;
-    stats->visited += state.visited;
+    stats->candidates += state.candidates;
 
     GC_STAT_ADD(generation, objects_collected, m);
 #ifdef Py_STATS
@@ -2450,7 +2451,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
-        invoke_gc_callback(tstate, "stop", generation, m, n, state.visited, duration);
+        invoke_gc_callback(tstate, "stop", generation, m, n, state.candidates, duration);
     }
 
     assert(!_PyErr_Occurred(tstate));
