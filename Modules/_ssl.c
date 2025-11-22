@@ -1576,8 +1576,8 @@ _get_aia_uri(X509 *certificate, int nid) {
         }
         uri = ad->location->d.uniformResourceIdentifier;
         ostr = PyUnicode_FromStringAndSize(
-                (const char *)ASN1_STRING_get0_data(uri),
-                ASN1_STRING_length(uri));
+                   (const char *)ASN1_STRING_get0_data(uri),
+                   ASN1_STRING_length(uri));
         if (ostr == NULL) {
             goto fail;
         }
