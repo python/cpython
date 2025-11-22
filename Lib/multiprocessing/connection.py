@@ -470,6 +470,7 @@ class Listener(object):
     connections, or for a Windows named pipe.
     '''
     def __init__(self, address=None, family=None, backlog=1, authkey=None):
+
         family = family or (address and address_type(address)) \
                  or default_family
         address = address or arbitrary_address(family)
@@ -484,6 +485,10 @@ class Listener(object):
             raise TypeError('authkey should be a byte string')
 
         self._authkey = authkey
+
+    def settimeout(self, timeout):
+        if timeout:
+            self._listener.settimeout(timeout)
 
     def accept(self):
         '''
@@ -639,6 +644,9 @@ class SocketListener(object):
         else:
             self._unlink = None
 
+    def settimeout(self, timeout):
+        self._socket.settimeout(timeout)
+
     def accept(self):
         s, self._last_accepted = self._socket.accept()
         s.setblocking(True)
@@ -696,6 +704,9 @@ if sys.platform == 'win32':
                 _winapi.PIPE_UNLIMITED_INSTANCES, BUFSIZE, BUFSIZE,
                 _winapi.NMPWAIT_WAIT_FOREVER, _winapi.NULL
                 )
+
+        def settimeout(self, timeout):
+            pass
 
         def accept(self):
             self._handle_queue.append(self._new_handle())

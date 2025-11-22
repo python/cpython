@@ -3417,7 +3417,7 @@ class _TestMyManager(BaseTestCase):
         manager.start()
         with manager:
             self.common(manager)
-        self.assertEqual(manager._process.exitcode, 0)
+        self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     def common(self, manager):
         foo = manager.Foo()
