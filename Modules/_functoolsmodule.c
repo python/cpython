@@ -361,6 +361,32 @@ partial_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 }
 
 static PyObject *
+partial_annotate(PyObject *self, PyObject *format_obj)
+{
+    /* Delegate to Python functools._partial_annotate helper */
+    PyObject *functools = NULL, *helper = NULL, *result = NULL;
+
+    /* Import functools module */
+    functools = PyImport_ImportModule("functools");
+    if (functools == NULL) {
+        return NULL;
+    }
+
+    /* Get the _partial_annotate function */
+    helper = PyObject_GetAttrString(functools, "_partial_annotate");
+    Py_DECREF(functools);
+    if (helper == NULL) {
+        return NULL;
+    }
+
+    /* Call _partial_annotate(self, format) */
+    result = PyObject_CallFunctionObjArgs(helper, self, format_obj, NULL);
+    Py_DECREF(helper);
+
+    return result;
+}
+
+static PyObject *
 partial_vectorcall(PyObject *self, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
@@ -833,6 +859,7 @@ partial_setstate(PyObject *self, PyObject *state)
 static PyMethodDef partial_methods[] = {
     {"__reduce__", partial_reduce, METH_NOARGS},
     {"__setstate__", partial_setstate, METH_O},
+    {"__annotate__", partial_annotate, METH_O},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
