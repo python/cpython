@@ -22,6 +22,7 @@ if __name__ == "__main__":
     __path__ = [str(Path(__file__).resolve().parent)]
 
 from .support.appxmanifest import *
+from .support.build_details import *
 from .support.catalog import *
 from .support.constants import *
 from .support.filesets import *
@@ -319,6 +320,9 @@ def get_layout(ns):
     if ns.include_install_json or ns.include_install_embed_json or ns.include_install_test_json:
         yield "__install__.json", ns.temp / "__install__.json"
 
+    if ns.include_build_details_json:
+        yield "build-details.json", ns.temp / "build-details.json"
+
 
 def _compile_one_py(src, dest, name, optimize, checked=True):
     import py_compile
@@ -425,6 +429,12 @@ def generate_source_files(ns):
         ns.temp.mkdir(parents=True, exist_ok=True)
         with open(ns.temp / "__install__.json", "w", encoding="utf-8") as f:
             json.dump(calculate_install_json(ns, for_test=True), f, indent=2)
+
+    if ns.include_build_details_json:
+        log_info("Generating build-details.json in {}", ns.temp)
+        ns.temp.mkdir(parents=True, exist_ok=True)
+        base_path = Path(sys.base_prefix, "build-details.json")
+        write_relative_build_details(ns.temp / "build-details.json", base_path)
 
 
 def _create_zip_file(ns):
