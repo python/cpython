@@ -183,8 +183,9 @@ class WindowsConsole(Console):
 
         while len(self.screen) < min(len(screen), self.height):
             self._hide_cursor()
-            self._move_relative(0, len(self.screen) - 1)
-            self.__write("\n")
+            if len(self.screen):
+                self._move_relative(0, len(self.screen) - 1)
+                self.__write("\n")
             self.posxy = 0, len(self.screen)
             self.screen.append("")
 
