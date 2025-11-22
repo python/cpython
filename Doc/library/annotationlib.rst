@@ -385,8 +385,8 @@ Functions
      using ``getattr()`` and ``dict.get()`` for safety.
    * Supports objects that provide their own :attr:`~object.__annotate__` method,
      such as :class:`functools.partial` and :class:`functools.partialmethod`.
-     See :ref:`below <functools-objects-annotations>` for details on using
-     :func:`!get_annotations` with :mod:`functools` objects.
+     See the :mod:`functools` module documentation for details on how these
+     objects support annotations.
 
    *eval_str* controls whether or not values of type :class:`!str` are
    replaced with the result of calling :func:`eval` on those values:
@@ -442,93 +442,33 @@ Functions
 
    .. versionadded:: 3.14
 
-.. _functools-objects-annotations:
+Supporting annotations in custom objects
+-------------------------------------------
 
-Using :func:`!get_annotations` with :mod:`functools` objects
---------------------------------------------------------------
+Objects can support annotation introspection by implementing the :attr:`~object.__annotate__`
+protocol. When an object provides an :attr:`!__annotate__` attribute, :func:`get_annotations`
+will call it to retrieve the annotations for that object. The :attr:`!__annotate__` function
+should accept a single argument, a member of the :class:`Format` enum, and return a dictionary
+mapping annotation names to their values in the requested format.
 
-:func:`get_annotations` has special support for :class:`functools.partial`
-and :class:`functools.partialmethod` objects. When called on these objects,
-it returns only the annotations for parameters that have not been bound by
-the partial application, along with the return annotation if present.
+This mechanism allows objects to dynamically compute their annotations based on their state.
+For example, :class:`functools.partial` and :class:`functools.partialmethod` objects use
+:attr:`!__annotate__` to provide annotations that reflect only the unbound parameters,
+excluding parameters that have been filled by the partial application. See the
+:mod:`functools` module documentation for details on how these specific objects handle
+annotations.
 
-For :class:`functools.partial` objects, positional arguments bind to parameters
-in order, and the annotations for those parameters are excluded from the result:
+Other examples of objects that implement :attr:`!__annotate__` include:
 
-.. doctest::
+* :class:`typing.TypedDict` classes created through the functional syntax
+* Generic classes and functions with type parameters
 
-   >>> from functools import partial
-   >>> def func(a: int, b: str, c: float) -> bool:
-   ...     return True
-   >>> partial_func = partial(func, 1)  # Binds 'a'
-   >>> get_annotations(partial_func)
-   {'b': <class 'str'>, 'c': <class 'float'>, 'return': <class 'bool'>}
-
-Keyword arguments in :class:`functools.partial` set default values but do not
-remove parameters from the signature, so their annotations are retained:
-
-.. doctest::
-
-   >>> partial_func_kw = partial(func, b="hello")  # Sets default for 'b'
-   >>> get_annotations(partial_func_kw)
-   {'a': <class 'int'>, 'b': <class 'str'>, 'c': <class 'float'>, 'return': <class 'bool'>}
-
-For :class:`functools.partialmethod` objects accessed through a class (unbound),
-the first parameter (usually ``self`` or ``cls``) is preserved, and subsequent
-parameters are handled similarly to :class:`functools.partial`:
-
-.. doctest::
-
-   >>> from functools import partialmethod
-   >>> class MyClass:
-   ...     def method(self, a: int, b: str) -> bool:
-   ...         return True
-   ...     partial_method = partialmethod(method, 1)  # Binds 'a'
-   >>> get_annotations(MyClass.partial_method)
-   {'b': <class 'str'>, 'return': <class 'bool'>}
-
-When a :class:`functools.partialmethod` is accessed through an instance (bound),
-it becomes a :class:`functools.partial` object and is handled accordingly:
-
-.. doctest::
-
-   >>> obj = MyClass()
-   >>> get_annotations(obj.partial_method)  # Same as above, 'self' is also bound
-   {'b': <class 'str'>, 'return': <class 'bool'>}
-
-This behavior ensures that :func:`get_annotations` returns annotations that
-accurately reflect the signature of the partial or partialmethod object, as
-determined by :func:`inspect.signature`.
-
-If :func:`!get_annotations` cannot reliably determine which parameters are bound
-(for example, if :func:`inspect.signature` raises an error), it will raise a
-:exc:`TypeError` rather than returning incorrect annotations. This ensures that
-you either get correct annotations or a clear error, never incorrect annotations:
-
-.. doctest::
-
-   >>> from functools import partial
-   >>> import inspect
-   >>> def func(a: int, b: str) -> bool:
-   ...     return True
-   >>> partial_func = partial(func, 1)
-   >>> # Simulate a case where signature inspection fails
-   >>> original_sig = inspect.signature
-   >>> def broken_signature(obj):
-   ...     if isinstance(obj, partial):
-   ...         raise ValueError("Cannot inspect signature")
-   ...     return original_sig(obj)
-   >>> inspect.signature = broken_signature
-   >>> try:
-   ...     get_annotations(partial_func)
-   ... except TypeError as e:
-   ...     print(f"Got expected error: {e}")
-   ... finally:
-   ...     inspect.signature = original_sig
-   Got expected error: Cannot compute annotations for ...: unable to determine signature
-
-This design prevents the common error of returning annotations that include
-parameters which have already been bound by the partial application.
+When implementing :attr:`!__annotate__` for custom objects, the function should handle
+all three primary formats (:attr:`~Format.VALUE`, :attr:`~Format.FORWARDREF`, and
+:attr:`~Format.STRING`) by either returning appropriate values or raising
+:exc:`NotImplementedError` to fall back to default behavior. Helper functions like
+:func:`annotations_to_string` and :func:`call_annotate_function` can assist with
+implementing format support.
 
 
 Recipes
