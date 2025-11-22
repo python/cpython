@@ -3435,3 +3435,13 @@ Changes in the C API
   functions on Python 3.13 and older.
 
 .. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/
+
+
+Notable changes in 3.14.1
+=========================
+
+* Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and
+  :c:func:`PyUnstable_ThreadState_ResetStackProtection` functions to set
+  the stack protection base address and stack protection size of a Python
+  thread state.
+  (Contributed by Victor Stinner in :gh:`139653`.)
