@@ -357,8 +357,16 @@ def parseaddr(addr, *, strict=True):
 def unquote(str):
     """Remove quotes from a string."""
     if len(str) > 1:
-        if str.startswith('"') and str.endswith('"'):
-            return str[1:-1].replace('\\\\', '\\').replace('\\"', '"')
+        if str.startswith('"'):
+            pos = 1
+            while pos < len(str):
+                if str[pos] == '\\' and pos + 1 < len(str):
+                    pos += 2
+                elif str[pos] == '"':
+                    content = str[1:pos]
+                    return re.sub(r'\\(.)', r'\1', content)
+                else:
+                    pos += 1
         if str.startswith('<') and str.endswith('>'):
             return str[1:-1]
     return str

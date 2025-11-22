@@ -186,5 +186,35 @@ class FormatDateTests(unittest.TestCase):
         string = utils.formatdate(timeval, localtime=True)
         self.assertEqual(string, 'Thu, 01 Dec 2011 18:00:00 +0300')
 
+class UnquoteTests(unittest.TestCase):
+
+    def test_unquote_basic(self):
+        self.assertEqual(utils.unquote('"value"'), 'value')
+
+    def test_unquote_with_trailing_garbage(self):
+        self.assertEqual(utils.unquote('"bound"\n\tX-Priority: 3'), 'bound')
+
+    def test_unquote_with_escaped_quote(self):
+        self.assertEqual(utils.unquote(r'"val\"ue"'), 'val"ue')
+
+    def test_unquote_with_escaped_backslash(self):
+        self.assertEqual(utils.unquote(r'"val\\ue"'), r'val\ue')
+
+    def test_unquote_angle_brackets(self):
+        self.assertEqual(utils.unquote('<value>'), 'value')
+
+    def test_unquote_no_quotes(self):
+        self.assertEqual(utils.unquote('value'), 'value')
+
+    def test_unquote_single_char(self):
+        self.assertEqual(utils.unquote('v'), 'v')
+
+    def test_unquote_empty_quoted(self):
+        self.assertEqual(utils.unquote('""'), '')
+
+    def test_unquote_mixed_escapes(self):
+        self.assertEqual(utils.unquote(r'"a\\b\"c"'), r'a\b"c')
+
+
 if __name__ == '__main__':
     unittest.main()
