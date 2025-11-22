@@ -166,3 +166,15 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
    Empty an existing set of all elements. Return ``0`` on
    success. Return ``-1`` and raise :exc:`SystemError` if *set* is not an instance of
    :class:`set` or its subtype.
+
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+.. c:macro:: PySet_MINSIZE
+
+   This is a :term:`soft deprecated` constant representing the size of a
+   preallocated table inside :c:type:`PySetObject` instances.
+
+   This is documented solely for completeness and not useful to users in any
+   way. If looking for the size of a set, use :c:func:`PySet_Size` instead.
