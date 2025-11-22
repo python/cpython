@@ -220,6 +220,7 @@ Operations which work with sequences (some of them with mappings too) include:
               __concat__(a, b)
 
    Return ``a + b`` for *a* and *b* sequences.
+   Note: this calls ``__add__`` - there is no ``__concat__`` dunder method.
 
 
 .. function:: contains(a, b)
@@ -519,6 +520,7 @@ will perform the update, so no subsequent assignment is necessary:
               __iconcat__(a, b)
 
    ``a = iconcat(a, b)`` is equivalent to ``a += b`` for *a* and *b* sequences.
+   Note: this calls ``__iadd__`` - there is no ``__iconcat__`` dunder method.
 
 
 .. function:: ifloordiv(a, b)
