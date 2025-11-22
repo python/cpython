@@ -753,7 +753,7 @@ Turtle motion
    is not a full circle, one endpoint of the arc is the current pen
    position.  Draw the arc in counterclockwise direction if *radius* is
    positive, otherwise in clockwise direction.  Finally the direction of the
-   turtle is changed by the amount of *extent*.
+   turtle is changed by the sign of the *extent*.
 
    As the circle is approximated by an inscribed regular polygon, *steps*
    determines the number of steps to use.  If not given, it will be
