@@ -982,10 +982,6 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
-    if (gc_is_alive(op)) {
-        return true;
-    }
-
     // Exclude immortal objects from garbage collection
     if (_Py_IsImmortal(op)) {
         op->ob_tid = 0;
@@ -993,7 +989,11 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
         gc_clear_unreachable(op);
         return true;
     }
+    // Marked objects count as candidates, immortals don't:
     state->candidates++;
+    if (gc_is_alive(op)) {
+        return true;
+    }
 
     Py_ssize_t refcount = Py_REFCNT(op);
     if (_PyObject_HasDeferredRefcount(op)) {

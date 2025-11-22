@@ -1667,6 +1667,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
         Py_ssize_t objects_marked = mark_at_start(tstate);
         GC_STAT_ADD(1, objects_transitively_reachable, objects_marked);
         gcstate->work_to_do -= objects_marked;
+        stats->candidates += objects_marked;
         validate_spaces(gcstate);
         return;
     }
