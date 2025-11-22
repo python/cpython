@@ -191,12 +191,15 @@ class Server(object):
     def accepter(self):
         while True:
             try:
+                self.listener.settimeout(20)
                 c = self.listener.accept()
             except OSError:
                 continue
             t = threading.Thread(target=self.handle_request, args=(c,))
             t.daemon = True
             t.start()
+            if self.stop_event.is_set():
+                break
 
     def _handle_request(self, c):
         request = None
