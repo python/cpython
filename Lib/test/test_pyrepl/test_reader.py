@@ -11,7 +11,7 @@ from .support import ScreenEqualMixin, code_to_events
 from .support import prepare_reader, prepare_console, prepare_vi_reader
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
-from _pyrepl.types import ViMode
+from _pyrepl.types import VI_MODE_INSERT, VI_MODE_NORMAL
 from _colorize import default_theme
 
 overrides = {"reset": "z", "soft_keyword": "K"}
@@ -565,7 +565,7 @@ class TestReaderInColor(ScreenEqualMixin, TestCase):
             prepare_reader=prepare_vi_reader,
         )
         self.assertEqual(reader.get_unicode(), "hello")
-        self.assertTrue(reader.vi_mode == ViMode.NORMAL)
+        self.assertTrue(reader.vi_mode == VI_MODE_NORMAL)
         self.assertEqual(reader.pos, len("hello") - 2)  # After 'h' left movement
 
     def test_control_characters(self):
@@ -593,7 +593,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "Xhello!")
-        self.assertTrue(reader.vi_mode == ViMode.INSERT)
+        self.assertTrue(reader.vi_mode == VI_MODE_INSERT)
 
     def test_escape_switches_to_normal_mode_and_is_idempotent(self):
         events = itertools.chain(
@@ -606,7 +606,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "hello")
-        self.assertTrue(reader.vi_mode == ViMode.NORMAL)
+        self.assertTrue(reader.vi_mode == VI_MODE_NORMAL)
         self.assertEqual(reader.pos, len("hello") - 2)  # After 'h' left movement
 
     def test_normal_mode_motion_and_edit_commands(self):
@@ -624,7 +624,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "hl!lo")
-        self.assertTrue(reader.vi_mode == ViMode.NORMAL)
+        self.assertTrue(reader.vi_mode == VI_MODE_NORMAL)
 
     def test_open_below_and_above(self):
         events = itertools.chain(
@@ -652,9 +652,9 @@ class TestViMode(TestCase):
             ],
         )
         reader, console = self._run_vi(events)
-        self.assertTrue(reader.vi_mode == ViMode.NORMAL)
+        self.assertTrue(reader.vi_mode == VI_MODE_NORMAL)
         reader.prepare()
-        self.assertTrue(reader.vi_mode == ViMode.INSERT)
+        self.assertTrue(reader.vi_mode == VI_MODE_INSERT)
         console.prepare.assert_called()  # ensure console prepare called again
 
     def test_translator_stack_preserves_mode(self):
@@ -667,7 +667,7 @@ class TestViMode(TestCase):
             ],
         )
         reader, _ = self._run_vi(events_insert_path)
-        self.assertTrue(reader.vi_mode == ViMode.INSERT)
+        self.assertTrue(reader.vi_mode == VI_MODE_INSERT)
 
         events_normal_path = itertools.chain(
             code_to_events("hello"),
@@ -678,7 +678,7 @@ class TestViMode(TestCase):
             ],
         )
         reader, _ = self._run_vi(events_normal_path)
-        self.assertTrue(reader.vi_mode == ViMode.NORMAL)
+        self.assertTrue(reader.vi_mode == VI_MODE_NORMAL)
 
     def test_insert_bol_and_append_eol(self):
         events = itertools.chain(
@@ -695,7 +695,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "[hello]")
-        self.assertTrue(reader.vi_mode == ViMode.NORMAL)
+        self.assertTrue(reader.vi_mode == VI_MODE_NORMAL)
 
     def test_insert_mode_from_normal(self):
         events = itertools.chain(
@@ -711,7 +711,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "heXllo")
-        self.assertTrue(reader.vi_mode == ViMode.INSERT)
+        self.assertTrue(reader.vi_mode == VI_MODE_INSERT)
 
     def test_hjkl_motions(self):
         events = itertools.chain(
@@ -727,7 +727,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "hllo")
-        self.assertTrue(reader.vi_mode == ViMode.NORMAL)
+        self.assertTrue(reader.vi_mode == VI_MODE_NORMAL)
 
     def test_dollar_end_of_line(self):
         events = itertools.chain(
@@ -770,7 +770,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "abcfghij")
-        self.assertTrue(reader.vi_mode == ViMode.NORMAL)
+        self.assertTrue(reader.vi_mode == VI_MODE_NORMAL)
 
     def test_multiline_navigation(self):
         # Test j/k navigation across multiple lines
@@ -813,7 +813,7 @@ class TestViMode(TestCase):
             ],
         )
         reader, _ = self._run_vi(events)
-        self.assertTrue(reader.vi_mode == ViMode.NORMAL)
+        self.assertTrue(reader.vi_mode == VI_MODE_NORMAL)
         self.assertEqual(reader.get_unicode(), "hello")
 
     def test_backspace_in_normal_mode(self):
@@ -826,7 +826,7 @@ class TestViMode(TestCase):
             ],
         )
         reader, _ = self._run_vi(events)
-        self.assertTrue(reader.vi_mode == ViMode.NORMAL)
+        self.assertTrue(reader.vi_mode == VI_MODE_NORMAL)
         self.assertIsNotNone(reader.get_unicode())
 
     def test_end_of_word_motion(self):
@@ -1171,7 +1171,7 @@ class TestViMode(TestCase):
         reader, _ = self._run_vi(events)
         self.assertEqual("".join(reader.buffer), "heXlo")
         self.assertEqual(reader.pos, 2)  # cursor stays on replaced char
-        self.assertEqual(reader.vi_mode, ViMode.NORMAL)  # stays in normal mode
+        self.assertEqual(reader.vi_mode, VI_MODE_NORMAL)  # stays in normal mode
 
     def test_undo_after_insert(self):
         events = itertools.chain(
@@ -1183,7 +1183,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "")
-        self.assertEqual(reader.vi_mode, ViMode.NORMAL)
+        self.assertEqual(reader.vi_mode, VI_MODE_NORMAL)
 
     def test_undo_after_delete_word(self):
         events = itertools.chain(
@@ -1278,7 +1278,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "hello there")
-        self.assertEqual(reader.vi_mode, ViMode.INSERT)
+        self.assertEqual(reader.vi_mode, VI_MODE_INSERT)
 
     def test_s_substitute_char(self):
         events = itertools.chain(
@@ -1292,7 +1292,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "jello")
-        self.assertEqual(reader.vi_mode, ViMode.INSERT)
+        self.assertEqual(reader.vi_mode, VI_MODE_INSERT)
 
     def test_X_delete_char_before(self):
         events = itertools.chain(
@@ -1304,7 +1304,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "helo")
-        self.assertEqual(reader.vi_mode, ViMode.NORMAL)
+        self.assertEqual(reader.vi_mode, VI_MODE_NORMAL)
 
     def test_dd_deletes_current_line(self):
         events = itertools.chain(
@@ -1384,7 +1384,7 @@ class TestViMode(TestCase):
         )
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.get_unicode(), "first\nsecond\nthird")
-        self.assertEqual(reader.vi_mode, ViMode.INSERT)
+        self.assertEqual(reader.vi_mode, VI_MODE_INSERT)
 
     def test_w_motion_crosses_lines(self):
         events = itertools.chain(

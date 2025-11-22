@@ -12,9 +12,8 @@ type CharBuffer = list[str]
 type CharWidths = list[int]
 
 
-class ViMode(str, enum.Enum):
-    INSERT = "insert"
-    NORMAL = "normal"
+VI_MODE_INSERT = 0
+VI_MODE_NORMAL = 1
 
 
 class ViFindDirection(str, enum.Enum):

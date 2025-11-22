@@ -458,7 +458,6 @@ class UnixConsole(Console):
             or bool(self.pollob.poll(timeout))
         )
 
-
     def set_cursor_vis(self, visible):
         """
         Set the visibility of the cursor.

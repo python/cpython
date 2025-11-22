@@ -44,7 +44,7 @@ SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)
 MAX_VI_UNDO_STACK_SIZE = 100
 
 
-from .types import ViMode, ViFindState
+from .types import VI_MODE_INSERT, VI_MODE_NORMAL, ViFindState
 
 
 def make_default_syntax_table() -> dict[str, int]:
@@ -316,7 +316,7 @@ class Reader:
     can_colorize: bool = False
     threading_hook: Callback | None = None
     use_vi_mode: bool = False
-    vi_mode: ViMode = ViMode.INSERT
+    vi_mode: int = VI_MODE_INSERT
     vi_find: ViFindState = field(default_factory=ViFindState)
     undo_stack: list[ViUndoState] = field(default_factory=list)
 
@@ -387,9 +387,9 @@ class Reader:
 
     def collect_keymap(self) -> tuple[tuple[KeySpec, CommandName], ...]:
         if self.use_vi_mode:
-            if self.vi_mode == ViMode.INSERT:
+            if self.vi_mode == VI_MODE_INSERT:
                 return vi_insert_keymap
-            elif self.vi_mode == ViMode.NORMAL:
+            elif self.vi_mode == VI_MODE_NORMAL:
                 return vi_normal_keymap
         return default_keymap
 
@@ -1084,10 +1084,10 @@ class Reader:
         return "".join(self.buffer)
 
     def enter_insert_mode(self) -> None:
-        if self.vi_mode == ViMode.INSERT:
+        if self.vi_mode == VI_MODE_INSERT:
             return
 
-        self.vi_mode = ViMode.INSERT
+        self.vi_mode = VI_MODE_INSERT
 
         if len(self.undo_stack) > MAX_VI_UNDO_STACK_SIZE:
             self.undo_stack.pop(0)
@@ -1106,10 +1106,10 @@ class Reader:
         self.dirty = True
 
     def enter_normal_mode(self) -> None:
-        if self.vi_mode == ViMode.NORMAL:
+        if self.vi_mode == VI_MODE_NORMAL:
             return
 
-        self.vi_mode = ViMode.NORMAL
+        self.vi_mode = VI_MODE_NORMAL
 
         # Switch translator to normal mode keymap
         self.keymap = self.collect_keymap()

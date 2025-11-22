@@ -23,7 +23,7 @@ from __future__ import annotations
 import os
 import time
 
-from .types import ViMode
+from .types import VI_MODE_NORMAL
 
 # Categories of actions:
 #  killing
@@ -328,7 +328,7 @@ class right(MotionCommand):
         for _ in range(r.get_arg()):
             p = r.pos + 1
             # In vi normal mode, don't move past the last character
-            if r.vi_mode == ViMode.NORMAL:
+            if r.vi_mode == VI_MODE_NORMAL:
                 eol_pos = r.eol()
                 max_pos = max(r.bol(), eol_pos - 1) if eol_pos > r.bol() else r.bol()
                 if p <= max_pos:
@@ -351,7 +351,7 @@ class end_of_line(MotionCommand):
     def do(self) -> None:
         r = self.reader
         eol_pos = r.eol()
-        if r.vi_mode == ViMode.NORMAL:
+        if r.vi_mode == VI_MODE_NORMAL:
             bol_pos = r.bol()
             # Don't go past the last character (but stay at bol if line is empty)
             r.pos = max(bol_pos, eol_pos - 1) if eol_pos > bol_pos else bol_pos
