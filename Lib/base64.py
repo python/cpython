@@ -59,7 +59,7 @@ def b64encode(s, altchars=None):
     return encoded
 
 
-def b64decode(s, altchars=None, validate=False):
+def b64decode(s, altchars=None, validate=True):
     """Decode the Base64 encoded bytes-like object or ASCII string s.
 
     Optional altchars must be a bytes-like object or ASCII string of length 2
@@ -86,8 +86,8 @@ def b64decode(s, altchars=None, validate=False):
         if validate:
             s = s.translate(bytes.maketrans(b'+/' + altchars, altchars + b'+/'))
         else:
-            for b in set(b'+/') - set(altchars):
-                if b in s:
+            for b in b'+/':
+                if b not in altchars and b in s:
                     badchar = b
                     break
             s = s.translate(bytes.maketrans(altchars, b'+/'))
