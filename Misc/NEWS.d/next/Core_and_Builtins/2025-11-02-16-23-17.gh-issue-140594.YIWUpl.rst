@@ -1,0 +1,2 @@
+Fix a buffer overflow when a single NULL character is read from the standard input.
+Patch by Shamil Abdulaev.
