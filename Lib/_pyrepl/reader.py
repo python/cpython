@@ -157,7 +157,9 @@ vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"0", "beginning-of-line"),
         (r"$", "end-of-line"),
         (r"w", "vi-forward-word"),
+        (r"W", "vi-forward-word-ws"),
         (r"b", "vi-backward-word"),
+        (r"B", "vi-backward-word-ws"),
         (r"e", "end-of-word"),
         (r"^", "first-non-whitespace-character"),
 
@@ -599,6 +601,29 @@ class Reader:
         # Clamp to valid buffer range
         return min(p, len(b) - 1) if b else 0
 
+    def vi_forward_word_ws(self, p: int | None = None) -> int:
+        """Return the 0-based index of the first character of the next WORD
+        (vi 'W' semantics).
+
+        Treats white space as the only separator."""
+        if p is None:
+            p = self.pos
+        b = self.buffer
+
+        if not b or p >= len(b):
+            return max(0, len(b) - 1) if b else 0
+
+        # Skip all non-whitespace (the current WORD)
+        while p < len(b) and not b[p].isspace():
+            p += 1
+
+        # Skip whitespace to find next WORD
+        while p < len(b) and b[p].isspace():
+            p += 1
+
+        # Clamp to valid buffer range
+        return min(p, len(b) - 1) if b else 0
+
     def vi_bow(self, p: int | None = None) -> int:
         """Return the 0-based index of the beginning of the word preceding p
         (vi 'b' semantics).
@@ -630,6 +655,33 @@ class Reader:
             # Punctuation sequence
             while p > 0 and not _is_vi_word_char(b[p - 1]) and not b[p - 1].isspace():
                 p -= 1
+
+        return p
+
+    def vi_bow_ws(self, p: int | None = None) -> int:
+        """Return the 0-based index of the beginning of the WORD preceding p
+        (vi 'B' semantics).
+
+        Treats white space as the only separator."""
+        if p is None:
+            p = self.pos
+        b = self.buffer
+
+        if not b or p <= 0:
+            return 0
+
+        p -= 1
+
+        # Skip whitespace going backward
+        while p >= 0 and b[p].isspace():
+            p -= 1
+
+        if p < 0:
+            return 0
+
+        # Now skip the WORD we landed in
+        while p > 0 and not b[p - 1].isspace():
+            p -= 1
 
         return p
 

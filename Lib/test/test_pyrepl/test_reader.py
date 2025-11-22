@@ -1021,6 +1021,27 @@ class TestViMode(TestCase):
             ("get_value(x)", "$b", 10, "b from end lands on x"),
             ("get_value(x)", "$bb", 9, "second b lands on ("),
             ("get_value(x)", "$bbb", 0, "third b lands on get_value"),
+
+            # W (WORD motion by whitespace-delimited words)
+            ("foo.bar baz", "0W", 8, "W skips punctuation to baz"),
+            ("one,two three", "0W", 8, "W skips comma to three"),
+            ("hello   world", "0W", 8, "W handles multiple spaces"),
+            ("get_value(x)", "0W", 11, "W clamps to end (no whitespace)"),
+
+            # Backward W (B)
+            ("foo.bar baz", "$B", 8, "B from end lands on baz"),
+            ("foo.bar baz", "$BB", 0, "second B lands on foo.bar"),
+            ("one,two three", "$B", 8, "B from end lands on three"),
+            ("one,two three", "$BB", 0, "second B lands on one,two"),
+            ("hello   world", "$B", 8, "B from end lands on world"),
+            ("hello   world", "$BB", 0, "second B lands on hello"),
+
+            # Edge cases
+            ("   spaces", "0w", 3, "w from BOL skips leading spaces"),
+            ("trailing   ", "0w", 10, "w clamps at end after trailing spaces"),
+            ("a", "0w", 0, "w on single char stays in bounds"),
+            ("", "0w", 0, "w on empty buffer stays at 0"),
+            ("a b c", "0www", 4, "multiple w's work correctly"),
         ]
 
         for text, keys, expected_pos, desc in test_cases:

@@ -27,12 +27,25 @@ class vi_forward_word(MotionCommand):
         for _ in range(r.get_arg()):
             r.pos = r.vi_forward_word()
 
+class vi_forward_word_ws(MotionCommand):
+    def do(self) -> None:
+        r = self.reader
+        for _ in range(r.get_arg()):
+            r.pos = r.vi_forward_word_ws()
 
 class vi_backward_word(MotionCommand):
     def do(self) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
             r.pos = r.vi_bow()
+
+
+class vi_backward_word_ws(MotionCommand):
+    def do(self) -> None:
+        r = self.reader
+        for _ in range(r.get_arg()):
+            r.pos = r.vi_bow_ws()
+
 
 
 # ============================================================================
