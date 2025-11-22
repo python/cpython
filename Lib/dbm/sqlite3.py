@@ -130,6 +130,12 @@ class _Database(MutableMapping):
     def reorganize(self):
         self._execute(REORGANIZE)
 
+    def setdefault(self, key, default):
+        if key in self:
+            return self[key]
+        else:
+            self[key] = default
+            return default
 
 def open(filename, /, flag="r", mode=0o666):
     """Open a dbm.sqlite3 database and return the dbm object.
