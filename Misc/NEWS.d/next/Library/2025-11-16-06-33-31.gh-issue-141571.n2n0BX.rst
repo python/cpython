@@ -1,0 +1,1 @@
+Avoid redundant color initialization in argparse.HelpFormatter. Patch by Chilla Kalyan.
