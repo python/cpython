@@ -638,33 +638,43 @@ multiple base classes looks like this::
        <statement-N>
 
 For most purposes, in the simplest cases, you can think of the search for
-attributes inherited from a parent class as depth-first, left-to-right, not
+attributes inherited from a parent class as breadth-first, left-to-right, not
 searching twice in the same class where there is an overlap in the hierarchy.
-Thus, if an attribute is not found in :class:`!DerivedClassName`, it is searched
-for in :class:`!Base1`, then (recursively) in the base classes of :class:`!Base1`,
-and if it was not found there, it was searched for in :class:`!Base2`, and so on.
+For examnple::
 
-In fact, it is slightly more complex than that; the method resolution order
-changes dynamically to support cooperative calls to :func:`super`.  This
-approach is known in some other multiple-inheritance languages as
-call-next-method and is more powerful than the super call found in
-single-inheritance languages.
+   >>> class Animal:
+   ...     def whoami(self):
+   ...         print("I'm an Animal")
+   ...
+   >>> class Cat(Animal):
+   ...     pass
+   ...
+   >>> class Dog(Animal):
+   ...     def whoami(self):
+   ...         print("I'm a Dog")
+   ...
+   >>> class CatDog(Cat, Dog):
+   ...     pass
+   ...
+   >>> catdog = CatDog()
+   >>> catdog.whoami()
+   I'm a Dog
 
-Dynamic ordering is necessary because all cases of multiple inheritance exhibit
-one or more diamond relationships (where at least one of the parent classes
-can be accessed through multiple paths from the bottommost class).  For example,
-all classes inherit from :class:`object`, so any case of multiple inheritance
-provides more than one path to reach :class:`object`.  To keep the base classes
-from being accessed more than once, the dynamic algorithm linearizes the search
-order in a way that preserves the left-to-right ordering specified in each
-class, that calls each parent only once, and that is monotonic (meaning that a
-class can be subclassed without affecting the precedence order of its parents).
-Taken together, these properties make it possible to design reliable and
-extensible classes with multiple inheritance.  For more detail, see
-:ref:`python_2.3_mro`.
+In reality it is a little more complicated. Python uses the C3 method
+resolution order (MRO). Each class has a built-in attribute
+:attr:`~type.__mro__` that returns a tuple of classes that are considered
+during method resolution::
 
-In some cases multiple inheritance is not allowed; see :ref:`multiple-inheritance`
-for details.
+   >>> for cls in CatDog.__mro__:
+   ...     print(cls)
+   ...
+   <class '__main__.CatDog'>
+   <class '__main__.Cat'>
+   <class '__main__.Dog'>
+   <class '__main__.Animal'>
+   <class 'object'>
+
+For more details, see :ref:`python_2.3_mro`.
 
 
 .. _tut-private:
