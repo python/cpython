@@ -1306,6 +1306,102 @@ class TestViMode(TestCase):
         self.assertEqual(reader.get_unicode(), "helo")
         self.assertEqual(reader.vi_mode, ViMode.NORMAL)
 
+    def test_dd_deletes_current_line(self):
+        events = itertools.chain(
+            code_to_events("first"),
+            [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+            code_to_events("second"),
+            [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+            code_to_events("third"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="k", raw=bytearray(b"k")),        # up to second
+                Event(evt="key", data="d", raw=bytearray(b"d")),        # dd
+                Event(evt="key", data="d", raw=bytearray(b"d")),
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "first\n\nthird")
+
+    def test_j_k_navigation_between_lines(self):
+        events = itertools.chain(
+            code_to_events("short"),
+            [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+            code_to_events("longer line"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="k", raw=bytearray(b"k")),        # up
+                Event(evt="key", data="$", raw=bytearray(b"$")),        # end of line
+                Event(evt="key", data="j", raw=bytearray(b"j")),        # down
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "short\nlonger line")
+        # Cursor should be somewhere on second line
+        self.assertGreater(reader.pos, 6)  # past the newline
+
+    def test_dollar_stops_at_line_end(self):
+        events = itertools.chain(
+            code_to_events("first"),
+            [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+            code_to_events("second"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="k", raw=bytearray(b"k")),        # up to first
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # BOL
+                Event(evt="key", data="$", raw=bytearray(b"$")),        # EOL
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        # $ should stop at end of "first", not go to newline or beyond
+        self.assertEqual(reader.pos, 4)  # 'first'[4] = 't'
+
+    def test_zero_goes_to_line_start(self):
+        events = itertools.chain(
+            code_to_events("first"),
+            [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+            code_to_events("second"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # BOL of second
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        # 0 should go to start of "second" line (position 6)
+        self.assertEqual(reader.pos, 6)
+
+    def test_o_opens_line_below(self):
+        events = itertools.chain(
+            code_to_events("first"),
+            [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+            code_to_events("third"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="k", raw=bytearray(b"k")),        # up to first
+                Event(evt="key", data="o", raw=bytearray(b"o")),        # open below
+            ],
+            code_to_events("second"),
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "first\nsecond\nthird")
+        self.assertEqual(reader.vi_mode, ViMode.INSERT)
+
+    def test_w_motion_crosses_lines(self):
+        events = itertools.chain(
+            code_to_events("end"),
+            [Event(evt="key", data="\n", raw=bytearray(b"\n"))],
+            code_to_events("start"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="k", raw=bytearray(b"k")),        # up
+                Event(evt="key", data="$", raw=bytearray(b"$")),        # end of "end"
+                Event(evt="key", data="w", raw=bytearray(b"w")),        # word forward
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        # w from end of first line should go to start of "start"
+        self.assertEqual(reader.pos, 4)  # position of 's' in "start"
+
 
 @force_not_colorized_test_class
 class TestHistoricalReaderBindings(TestCase):
