@@ -3,6 +3,7 @@ Vi-specific commands for pyrepl.
 """
 
 from .commands import Command, MotionCommand, KillCommand
+from . import input as _input
 
 
 # ============================================================================
@@ -138,3 +139,188 @@ class vi_delete_to_eol(KillCommand):
     def do(self) -> None:
         r = self.reader
         self.kill_range(r.pos, r.eol())
+
+
+# ============================================================================
+# Find Commands (f/F/t/T)
+# ============================================================================
+
+def _make_find_char_keymap() -> tuple[tuple[str, str], ...]:
+    """Create a keymap where all printable ASCII maps to vi-find-execute.
+
+    Once vi-find-execute is called, it will pop our input translator."""
+    entries = []
+    for i in range(32, 127):
+        if i == 92:  # backslash needs escaping
+            entries.append((r"\\", "vi-find-execute"))
+        else:
+            entries.append((chr(i), "vi-find-execute"))
+    entries.append((r"\<escape>", "vi-find-cancel"))
+    return tuple(entries)
+
+
+_find_char_keymap = _make_find_char_keymap()
+
+
+class vi_find_char(Command):
+    """Start forward find (f). Waits for target character."""
+    def do(self) -> None:
+        r = self.reader
+        r.pending_find_direction = "forward"
+        r.pending_find_inclusive = True
+        trans = _input.KeymapTranslator(
+            _find_char_keymap,
+            invalid_cls="vi-find-cancel",
+            character_cls="vi-find-execute"
+        )
+        r.push_input_trans(trans)
+
+
+class vi_find_char_back(Command):
+    """Start backward find (F). Waits for target character."""
+    def do(self) -> None:
+        r = self.reader
+        r.pending_find_direction = "backward"
+        r.pending_find_inclusive = True
+        trans = _input.KeymapTranslator(
+            _find_char_keymap,
+            invalid_cls="vi-find-cancel",
+            character_cls="vi-find-execute"
+        )
+        r.push_input_trans(trans)
+
+
+class vi_till_char(Command):
+    """Start forward till (t). Waits for target character."""
+    def do(self) -> None:
+        r = self.reader
+        r.pending_find_direction = "forward"
+        r.pending_find_inclusive = False
+        trans = _input.KeymapTranslator(
+            _find_char_keymap,
+            invalid_cls="vi-find-cancel",
+            character_cls="vi-find-execute"
+        )
+        r.push_input_trans(trans)
+
+
+class vi_till_char_back(Command):
+    """Start backward till (T). Waits for target character."""
+    def do(self) -> None:
+        r = self.reader
+        r.pending_find_direction = "backward"
+        r.pending_find_inclusive = False
+        trans = _input.KeymapTranslator(
+            _find_char_keymap,
+            invalid_cls="vi-find-cancel",
+            character_cls="vi-find-execute"
+        )
+        r.push_input_trans(trans)
+
+
+class vi_find_execute(MotionCommand):
+    """Execute the pending find with the pressed character."""
+    def do(self) -> None:
+        r = self.reader
+        r.pop_input_trans()
+
+        char = self.event[-1]
+        if not char:
+            return
+
+        direction = r.pending_find_direction
+        inclusive = r.pending_find_inclusive
+
+        # Store for repeat with ; and ,
+        r.last_find_char = char
+        r.last_find_direction = direction
+        r.last_find_inclusive = inclusive
+
+        r.pending_find_direction = None
+        self._execute_find(char, direction, inclusive)
+
+    def _execute_find(self, char: str, direction: str | None, inclusive: bool) -> None:
+        r = self.reader
+        for _ in range(r.get_arg()):
+            if direction == "forward":
+                new_pos = r.find_char_forward(char)
+                if new_pos is not None:
+                    if not inclusive:
+                        new_pos -= 1
+                    if new_pos > r.pos:
+                        r.pos = new_pos
+            else:
+                new_pos = r.find_char_backward(char)
+                if new_pos is not None:
+                    if not inclusive:
+                        new_pos += 1
+                    if new_pos < r.pos:
+                        r.pos = new_pos
+
+
+class vi_find_cancel(Command):
+    """Cancel pending find operation."""
+    def do(self) -> None:
+        r = self.reader
+        r.pop_input_trans()
+        r.pending_find_direction = None
+
+
+# ============================================================================
+# Repeat Find Commands (; and ,)
+# ============================================================================
+
+class vi_repeat_find(MotionCommand):
+    """Repeat last f/F/t/T in the same direction (;)."""
+    def do(self) -> None:
+        r = self.reader
+        if r.last_find_char is None:
+            return
+
+        char = r.last_find_char
+        direction = r.last_find_direction
+        inclusive = r.last_find_inclusive
+
+        for _ in range(r.get_arg()):
+            if direction == "forward":
+                new_pos = r.find_char_forward(char)
+                if new_pos is not None:
+                    if not inclusive:
+                        new_pos -= 1
+                    if new_pos > r.pos:
+                        r.pos = new_pos
+            else:
+                new_pos = r.find_char_backward(char)
+                if new_pos is not None:
+                    if not inclusive:
+                        new_pos += 1
+                    if new_pos < r.pos:
+                        r.pos = new_pos
+
+
+class vi_repeat_find_opposite(MotionCommand):
+    """Repeat last f/F/t/T in opposite direction (,)."""
+    def do(self) -> None:
+        r = self.reader
+        if r.last_find_char is None:
+            return
+
+        char = r.last_find_char
+        direction = "backward" if r.last_find_direction == "forward" else "forward"
+        inclusive = r.last_find_inclusive
+
+        for _ in range(r.get_arg()):
+            if direction == "forward":
+                new_pos = r.find_char_forward(char)
+                if new_pos is not None:
+                    if not inclusive:
+                        new_pos -= 1
+                    if new_pos > r.pos:
+                        r.pos = new_pos
+            else:
+                new_pos = r.find_char_backward(char)
+                if new_pos is not None:
+                    if not inclusive:
+                        new_pos += 1
+                    if new_pos < r.pos:
+                        r.pos = new_pos

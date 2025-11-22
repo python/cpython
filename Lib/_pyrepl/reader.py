@@ -163,6 +163,14 @@ vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"e", "end-of-word"),
         (r"^", "first-non-whitespace-character"),
 
+        # Find motions
+        (r"f", "vi-find-char"),
+        (r"F", "vi-find-char-back"),
+        (r"t", "vi-till-char"),
+        (r"T", "vi-till-char-back"),
+        (r";", "vi-repeat-find"),
+        (r",", "vi-repeat-find-opposite"),
+
         # Edit commands
         (r"x", "delete"),
         (r"i", "vi-insert-mode"),
@@ -295,6 +303,12 @@ class Reader:
     threading_hook: Callback | None = None
     use_vi_mode: bool = False
     vi_mode: ViMode = ViMode.INSERT
+    # Vi find state (for f/F/t/T and ;/,)
+    last_find_char: str | None = None
+    last_find_direction: str | None = None  # "forward" or "backward"
+    last_find_inclusive: bool = True  # f/F=True, t/T=False
+    pending_find_direction: str | None = None
+    pending_find_inclusive: bool = True
 
     ## cached metadata to speed up screen refreshes
     @dataclass
@@ -684,6 +698,24 @@ class Reader:
             p -= 1
 
         return p
+
+    def find_char_forward(self, char: str, p: int | None = None) -> int | None:
+        """Find next occurrence of char after p. Returns index or None."""
+        if p is None:
+            p = self.pos
+        for i in range(p + 1, len(self.buffer)):
+            if self.buffer[i] == char:
+                return i
+        return None
+
+    def find_char_backward(self, char: str, p: int | None = None) -> int | None:
+        """Find previous occurrence of char before p. Returns index or None."""
+        if p is None:
+            p = self.pos
+        for i in range(p - 1, -1, -1):
+            if self.buffer[i] == char:
+                return i
+        return None
 
     def bol(self, p: int | None = None) -> int:
         """Return the 0-based index of the line break preceding p most

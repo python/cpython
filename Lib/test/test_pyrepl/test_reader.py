@@ -1058,6 +1058,90 @@ class TestViMode(TestCase):
                 self.assertEqual(reader.pos, expected_pos,
                     f"Expected pos {expected_pos} but got {reader.pos} for '{text}' with keys '{keys}'")
 
+    def test_find_char_forward(self):
+        events = itertools.chain(
+            code_to_events("hello world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Go to BOL
+                Event(evt="key", data="f", raw=bytearray(b"f")),        # Find
+                Event(evt="key", data="o", raw=bytearray(b"o")),        # Target char
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.pos, 4)
+        self.assertEqual(reader.buffer[reader.pos], 'o')
+
+    def test_find_char_backward(self):
+        events = itertools.chain(
+            code_to_events("hello world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="F", raw=bytearray(b"F")),        # Find back
+                Event(evt="key", data="l", raw=bytearray(b"l")),        # Target char
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.buffer[reader.pos], 'l')
+
+    def test_till_char_forward(self):
+        events = itertools.chain(
+            code_to_events("hello world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Go to BOL
+                Event(evt="key", data="t", raw=bytearray(b"t")),        # Till
+                Event(evt="key", data="o", raw=bytearray(b"o")),        # Target char
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.pos, 3)
+        self.assertEqual(reader.buffer[reader.pos], 'l')
+
+    def test_semicolon_repeat_find(self):
+        events = itertools.chain(
+            code_to_events("hello world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Go to BOL
+                Event(evt="key", data="f", raw=bytearray(b"f")),        # Find
+                Event(evt="key", data="o", raw=bytearray(b"o")),        # First 'o'
+                Event(evt="key", data=";", raw=bytearray(b";")),        # Repeat - second 'o'
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.pos, 7)
+        self.assertEqual(reader.buffer[reader.pos], 'o')
+
+    def test_comma_repeat_find_opposite(self):
+        events = itertools.chain(
+            code_to_events("hello world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Go to BOL
+                Event(evt="key", data="f", raw=bytearray(b"f")),        # Find forward
+                Event(evt="key", data="l", raw=bytearray(b"l")),        # First 'l' at pos 2
+                Event(evt="key", data=";", raw=bytearray(b";")),        # Second 'l' at pos 3
+                Event(evt="key", data=",", raw=bytearray(b",")),        # Reverse - back to pos 2
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.pos, 2)
+        self.assertEqual(reader.buffer[reader.pos], 'l')
+
+    def test_find_char_escape_cancels(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC to normal
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # Go to BOL
+                Event(evt="key", data="f", raw=bytearray(b"f")),        # Start find
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC to cancel
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.pos, 0)
+
 
 @force_not_colorized_test_class
 class TestHistoricalReaderBindings(TestCase):
