@@ -244,6 +244,9 @@ _Py_c_quot(Py_complex a, Py_complex b)
 
     return r;
 }
+#ifdef _M_ARM64
+#pragma optimize("", on)
+#endif
 
 Py_complex
 _Py_cr_quot(Py_complex a, double b)
@@ -260,51 +263,12 @@ _Py_cr_quot(Py_complex a, double b)
     return r;
 }
 
-/* an equivalent of _Py_c_quot() function, when 1st argument is real */
 Py_complex
 _Py_rc_quot(double a, Py_complex b)
 {
-    Py_complex r;
-    const double abs_breal = b.real < 0 ? -b.real : b.real;
-    const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
-
-    if (abs_breal >= abs_bimag) {
-        if (abs_breal == 0.0) {
-            errno = EDOM;
-            r.real = r.imag = 0.0;
-        }
-        else {
-            const double ratio = b.imag / b.real;
-            const double denom = b.real + b.imag * ratio;
-            r.real = a / denom;
-            r.imag = (-a * ratio) / denom;
-        }
-    }
-    else if (abs_bimag >= abs_breal) {
-        const double ratio = b.real / b.imag;
-        const double denom = b.real * ratio + b.imag;
-        assert(b.imag != 0.0);
-        r.real = (a * ratio) / denom;
-        r.imag = (-a) / denom;
-    }
-    else {
-        r.real = r.imag = Py_NAN;
-    }
-
-    if (isnan(r.real) && isnan(r.imag) && isfinite(a)
-        && (isinf(abs_breal) || isinf(abs_bimag)))
-    {
-        const double x = copysign(isinf(b.real) ? 1.0 : 0.0, b.real);
-        const double y = copysign(isinf(b.imag) ? 1.0 : 0.0, b.imag);
-        r.real = 0.0 * (a*x);
-        r.imag = 0.0 * (-a*y);
-    }
-
-    return r;
+    errno = 0;
+    return _Py_c_quot((Py_complex){a, 0.0}, b);
 }
-#ifdef _M_ARM64
-#pragma optimize("", on)
-#endif
 
 Py_complex
 _Py_c_pow(Py_complex a, Py_complex b)

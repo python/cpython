@@ -187,13 +187,16 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertComplexesAreIdentical(float(1)/complex(-INF, -INF),
                                          complex(-0.0, 0))
         self.assertComplexesAreIdentical(float(1)/complex(INF, NAN),
-                                         complex(0.0, -0.0))
+                                         complex(0.0, 0.0))
         self.assertComplexesAreIdentical(float(1)/complex(-INF, NAN),
                                          complex(-0.0, -0.0))
         self.assertComplexesAreIdentical(float(1)/complex(NAN, INF),
                                          complex(0.0, -0.0))
         self.assertComplexesAreIdentical(float(INF)/complex(NAN, INF),
                                          complex(NAN, NAN))
+
+        self.assertComplexesAreIdentical(float(-1.0)/complex(0.0, 1.0),
+                                         complex(0.0, 1))
 
     def test_truediv_zero_division(self):
         for a, b in ZERO_DIVISION:
