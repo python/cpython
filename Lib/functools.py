@@ -644,6 +644,7 @@ class partialmethod:
 
     __class_getitem__ = classmethod(GenericAlias)
 
+# Helper functions
 
 def _unwrap_partial(func):
     while isinstance(func, partial):
@@ -660,7 +661,6 @@ def _unwrap_partialmethod(func):
             func = getattr(func, 'func')
         func = _unwrap_partial(func)
     return func
-
 
 ################################################################################
 ### LRU Cache function decorator
