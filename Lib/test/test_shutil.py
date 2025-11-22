@@ -31,6 +31,7 @@ except ImportError:
 from test import support
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
+from pathlib import Path
 
 TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
@@ -3474,6 +3475,25 @@ class TestGetTerminalSize(unittest.TestCase):
             self.assertEqual(size.columns, 30)
             self.assertEqual(size.lines, 40)
 
+class TestCopyReturnType(unittest.TestCase):
+	def setUp(self):
+		self.tempdir = tempfile.TemporaryDirectory()
+		self.src = Path(self.tempdir.name) / "src.txt"
+		self.dst_file = Path(self.tempdir.name) / "dst.txt"
+		self.dst_dir = Path(self.tempdir.name) / "dst_dir"
+		self.src.write_text("hello")
+		self.dst_dir.mkdir()
+
+	def tearDown(self):
+		self.tempdir.cleanup()
+
+	def test_copy_returns_str_to_file(self):
+		result = shutil.copy(self.src, self.dst_file)
+		self.assertIsInstance(result, str)
+
+	def test_copy_returns_str_to_dir(self):
+		result = shutil.copy(self.src, self.dst_dir)
+		self.assertIsInstance(result,str)
 
 class PublicAPITests(unittest.TestCase):
     """Ensures that the correct values are exposed in the public API."""
