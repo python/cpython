@@ -1224,7 +1224,7 @@ generator expression scopes as if they were positional-only parameters called
 ``implicit0``. (Contributed by Jelle Zijlstra in :issue:`19611`.)
 
 To reduce code churn when upgrading from Python 2.7 and the legacy
-:func:`inspect.getargspec` API, the previously documented deprecation of
+:func:`!inspect.getargspec` API, the previously documented deprecation of
 :func:`inspect.getfullargspec` has been reversed. While this function is
 convenient for single/source Python 2/3 code bases, the richer
 :func:`inspect.signature` interface remains the recommended approach for new
