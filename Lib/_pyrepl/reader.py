@@ -186,6 +186,12 @@ vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"d0", "vi-delete-to-bol"),
         (r"d$", "vi-delete-to-eol"),
 
+        # Change commands
+        (r"cw", "vi-change-word"),
+
+        # Replace commands
+        (r"r", "vi-replace-char"),
+
         # Special keys still work in normal mode
         (r"\<left>", "left"),
         (r"\<right>", "right"),

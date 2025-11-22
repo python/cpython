@@ -146,21 +146,21 @@ class vi_delete_to_eol(KillCommand):
 # Find Commands (f/F/t/T)
 # ============================================================================
 
-def _make_find_char_keymap() -> tuple[tuple[str, str], ...]:
-    """Create a keymap where all printable ASCII maps to vi-find-execute.
+def _make_char_capture_keymap(execute_cmd: str, cancel_cmd: str) -> tuple[tuple[str, str], ...]:
+    """Create a keymap where all printable ASCII maps to execute_cmd.
 
-    Once vi-find-execute is called, it will pop our input translator."""
+    Once execute_cmd is called, it will pop our input translator."""
     entries = []
     for i in range(32, 127):
         if i == 92:  # backslash needs escaping
-            entries.append((r"\\", "vi-find-execute"))
+            entries.append((r"\\", execute_cmd))
         else:
-            entries.append((chr(i), "vi-find-execute"))
-    entries.append((r"\<escape>", "vi-find-cancel"))
+            entries.append((chr(i), execute_cmd))
+    entries.append((r"\<escape>", cancel_cmd))
     return tuple(entries)
 
-
-_find_char_keymap = _make_find_char_keymap()
+_find_char_keymap = _make_char_capture_keymap("vi-find-execute", "vi-find-cancel")
+_replace_char_keymap = _make_char_capture_keymap("vi-replace-execute", "vi-replace-cancel")
 
 
 class vi_find_char(Command):
@@ -327,3 +327,51 @@ class vi_repeat_find_opposite(MotionCommand):
                         new_pos += 1
                     if new_pos < r.pos:
                         r.pos = new_pos
+
+
+# ============================================================================
+# Change Commands
+# ============================================================================
+
+class vi_change_word(KillCommand):
+    """Change from cursor to end of word (cw)."""
+    def do(self) -> None:
+        r = self.reader
+        for _ in range(r.get_arg()):
+            end = r.vi_eow() + 1  # +1 to include last char
+            if end > r.pos:
+                self.kill_range(r.pos, end)
+        r.enter_insert_mode()
+
+
+# ============================================================================
+# Replace Commands
+# ============================================================================
+
+class vi_replace_char(Command):
+    """Replace character under cursor with next typed character (r)."""
+    def do(self) -> None:
+        r = self.reader
+        translator = _input.KeymapTranslator(
+            _replace_char_keymap,
+            invalid_cls="vi-replace-cancel",
+            character_cls="vi-replace-execute"
+        )
+        r.push_input_trans(translator)
+
+class vi_replace_execute(Command):
+    """Execute character replacement with the pressed character."""
+    def do(self) -> None:
+        r = self.reader
+        r.pop_input_trans()
+        pending_char = self.event[-1]
+        if not pending_char or r.pos >= len(r.buffer):
+            return
+        r.buffer[r.pos] = pending_char
+        r.dirty = True
+
+class vi_replace_cancel(Command):
+    """Cancel pending replace operation."""
+    def do(self) -> None:
+        r = self.reader
+        r.pop_input_trans()

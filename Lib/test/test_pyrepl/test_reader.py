@@ -1142,6 +1142,37 @@ class TestViMode(TestCase):
         reader, _ = self._run_vi(events)
         self.assertEqual(reader.pos, 0)
 
+    def test_change_word(self):
+        events = itertools.chain(
+            code_to_events("hello world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # BOL
+                Event(evt="key", data="c", raw=bytearray(b"c")),        # change
+                Event(evt="key", data="w", raw=bytearray(b"w")),        # word
+            ],
+            code_to_events("hi"),  # replacement text
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual("".join(reader.buffer), "hi world")
+
+    def test_replace_char(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # BOL
+                Event(evt="key", data="l", raw=bytearray(b"l")),        # move right to 'e'
+                Event(evt="key", data="l", raw=bytearray(b"l")),        # move right to first 'l'
+                Event(evt="key", data="r", raw=bytearray(b"r")),        # replace
+                Event(evt="key", data="X", raw=bytearray(b"X")),        # replacement char
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual("".join(reader.buffer), "heXlo")
+        self.assertEqual(reader.pos, 2)  # cursor stays on replaced char
+        self.assertEqual(reader.vi_mode, ViMode.NORMAL)  # stays in normal mode
+
 
 @force_not_colorized_test_class
 class TestHistoricalReaderBindings(TestCase):
