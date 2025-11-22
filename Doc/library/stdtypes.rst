@@ -4856,9 +4856,9 @@ operations:
    Return a shallow copy of the set.
 
 
-Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-:meth:`difference`, :meth:`symmetric_difference`, :meth:`issubset`, and
-:meth:`issuperset` methods will accept any iterable as an argument.  In
+Note, the non-operator versions of :meth:`~frozenset.union`,
+:meth:`~frozenset.intersection`, :meth:`~frozenset.difference`, :meth:`~frozenset.symmetric_difference`, :meth:`~frozenset.issubset`, and
+:meth:`~frozenset.issuperset` methods will accept any iterable as an argument.  In
 contrast, their operator based counterparts require their arguments to be
 sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
 in favor of the more readable ``set('abc').intersection('cbs')``.
@@ -4934,14 +4934,14 @@ apply to immutable instances of :class:`frozenset`:
    Remove all elements from the set.
 
 
-Note, the non-operator versions of the :meth:`update`,
-:meth:`intersection_update`, :meth:`difference_update`, and
-:meth:`symmetric_difference_update` methods will accept any iterable as an
+Note, the non-operator versions of the :meth:`~set.update`,
+:meth:`~set.intersection_update`, :meth:`~set.difference_update`, and
+:meth:`~set.symmetric_difference_update` methods will accept any iterable as an
 argument.
 
 Note, the *elem* argument to the :meth:`~object.__contains__`,
-:meth:`remove`, and
-:meth:`discard` methods may be a set.  To support searching for an equivalent
+:meth:`~set.remove`, and
+:meth:`~set.discard` methods may be a set.  To support searching for an equivalent
 frozenset, a temporary one is created from *elem*.
 
 
