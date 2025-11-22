@@ -1070,11 +1070,13 @@ BaseExceptionGroup_repr(PyObject *op)
     assert(self->msg);
     assert(self->excs);
 
+    /* Use the actual exceptions tuple for accuracy, but make it look like the
+     * original exception sequence, if possible, for backwards compatibility. */
     PyObject* excs_orig = PyTuple_GET_ITEM(self->args, 1);
     if (PyList_Check(excs_orig)) {
         excs_orig = PySequence_List(self->excs);
     } else {
-        Py_INCREF(excs_orig);
+        excs_orig = Py_NewRef(self->excs);
     }
 
     const char *name = _PyType_Name(Py_TYPE(self));
