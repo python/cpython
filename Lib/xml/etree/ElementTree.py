@@ -704,7 +704,7 @@ class ElementTree:
 
           *default_namespace* -- sets the default XML namespace (for "xmlns")
 
-          *method* -- either "xml" (default), "html, "text", or "c14n"
+          *method* -- either "xml" (default), "html or "text"
 
           *short_empty_elements* -- controls the formatting of elements
                                     that contain no content. If True (default)
@@ -720,10 +720,7 @@ class ElementTree:
         elif method not in _serialize:
             raise ValueError("unknown method %r" % method)
         if not encoding:
-            if method == "c14n":
-                encoding = "utf-8"
-            else:
-                encoding = "us-ascii"
+            encoding = "us-ascii"
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
@@ -738,10 +735,6 @@ class ElementTree:
                 serialize = _serialize[method]
                 serialize(write, self._root, qnames, namespaces,
                           short_empty_elements=short_empty_elements)
-
-    def write_c14n(self, file):
-        # lxml.etree compatibility.  use output method instead
-        return self.write(file, method="c14n")
 
 # --------------------------------------------------------------------
 # serialization support
@@ -971,8 +964,6 @@ _serialize = {
     "xml": _serialize_xml,
     "html": _serialize_html,
     "text": _serialize_text,
-# this optional method is imported at the end of the module
-#   "c14n": _serialize_c14n,
 }
 
 
@@ -1084,8 +1075,8 @@ def tostring(element, encoding=None, method=None, *,
 
     *element* is an Element instance, *encoding* is an optional output
     encoding defaulting to US-ASCII, *method* is an optional output which can
-    be one of "xml" (default), "html", "text" or "c14n", *default_namespace*
-    sets the default XML namespace (for "xmlns").
+    be one of "xml" (default), "html" or "text", *default_namespace* sets the
+    default XML namespace (for "xmlns").
 
     Returns an (optionally) encoded string containing the XML data.
 
