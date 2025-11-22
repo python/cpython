@@ -1082,8 +1082,7 @@ BaseExceptionGroup_repr(PyObject *op)
 
     const char *name = _PyType_Name(Py_TYPE(self));
     PyObject *repr = PyUnicode_FromFormat(
-        "%s(%R, %R)", name,
-        self->msg, excs_orig);
+        "%T(%R, %R)", self, self->msg, excs_orig);
 
     Py_DECREF(excs_orig);
     return repr;
