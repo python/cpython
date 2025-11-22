@@ -65,7 +65,7 @@ POST request.
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
 
 
-.. function:: b64decode(s, altchars=None, validate=False)
+.. function:: b64decode(s, altchars=None, validate=True)
 
    Decode the Base64 encoded :term:`bytes-like object` or ASCII string
    *s* and return the decoded :class:`bytes`.
@@ -77,15 +77,24 @@ POST request.
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
 
-   If *validate* is ``False`` (the default), characters that are neither
-   in the normal base-64 alphabet nor the alternative alphabet are
-   discarded prior to the padding check.  If *validate* is ``True``,
-   these non-alphabet characters in the input result in a
+   By default, non-alphabet characters in the input result in a
    :exc:`binascii.Error`.
+   If *validate* is false, characters that are neither in the normal base-64
+   alphabet nor the alternative alphabet are discarded prior to the padding
+   check, but the ``+`` and ``/`` characters keep their meaning if they are
+   not in *altchars* (they will be discarded in future Python versions).
 
-   For more information about the strict base64 check, see :func:`binascii.a2b_base64`
+   For more information about the strict base64 check, see
+   :func:`binascii.a2b_base64`.
 
-   May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.
+   .. versionchanged:: next
+      *validate* is now ``True`` by default.
+      The ``+`` and ``/`` characters no longer preserve their meaning if they
+      are not in the alternative alphabet and *validate* is true.
+      :exc:`FutureWarning` is now emitted if the ``+`` or ``/`` characters
+      which are not in the alternative alphabet occur in the input and
+      *validate* is false.
+
 
 .. function:: standard_b64encode(s)
 
@@ -97,6 +106,9 @@ POST request.
 
    Decode :term:`bytes-like object` or ASCII string *s* using the standard
    Base64 alphabet and return the decoded :class:`bytes`.
+
+   .. versionchanged:: next
+      Non-alphabet characters in the input result in a :exc:`binascii.Error`.
 
 
 .. function:: urlsafe_b64encode(s)
@@ -115,6 +127,9 @@ POST request.
    alphabet, which substitutes ``-`` instead of ``+`` and ``_`` instead of
    ``/`` in the standard Base64 alphabet, and return the decoded
    :class:`bytes`.
+
+   .. versionchanged:: next
+      Non-alphabet characters in the input result in a :exc:`binascii.Error`.
 
 
 .. function:: b32encode(s)
