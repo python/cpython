@@ -1,0 +1,4 @@
+Add configure option :option:`--with-missing-stdlib-config=FILE` allows
+which distributors to pass a `JSON <https://www.json.org/json-en.html>`_
+configuration file containing custom error messages for missing
+:term:`standard library` modules.
