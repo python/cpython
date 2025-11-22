@@ -1240,8 +1240,7 @@ add_executor_dependency(PyObject *self, PyObject *args)
 static PyObject *
 invalidate_executors(PyObject *self, PyObject *obj)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    _Py_Executors_InvalidateDependency(interp, obj, 1);
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), obj, 1);
     Py_RETURN_NONE;
 }
 

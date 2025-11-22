@@ -4436,14 +4436,12 @@
             _PyStackRef iter;
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
-            #ifndef Py_GIL_DISABLED
             PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(list_o) == &PyList_Type);
             if ((size_t)PyStackRef_UntagInt(null_or_index) >= (size_t)PyList_GET_SIZE(list_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            #endif
             break;
         }
 
