@@ -745,7 +745,7 @@ The contextlib module
 The new :mod:`contextlib` module provides some functions and a decorator that
 are useful for writing objects for use with the ':keyword:`with`' statement.
 
-The decorator is called :func:`contextmanager`, and lets you write a single
+The decorator is called :deco:`contextmanager`, and lets you write a single
 generator function instead of defining a new class.  The generator should yield
 exactly one value.  The code up to the :keyword:`yield` will be executed as the
 :meth:`~object.__enter__` method, and the value yielded will be the method's return
