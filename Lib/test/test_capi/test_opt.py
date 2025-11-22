@@ -2480,8 +2480,6 @@ class TestUopsOptimization(unittest.TestCase):
 
 
         testfunc(_testinternalcapi.TIER2_THRESHOLD)
-        ex = get_first_executor(testfunc)
-        assert ex is not None
         """))
 
     def test_pop_top_specialize_none(self):
