@@ -1,0 +1,2 @@
+Fix :c:macro:`Py_mod_gil` with API added in :pep:`793`:
+:c:func:`!PyModule_FromSlotsAndSpec` and ``PyModExport`` hooks
