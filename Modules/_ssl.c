@@ -1644,8 +1644,8 @@ _get_crl_dp(X509 *certificate) {
             }
             uri = gn->d.uniformResourceIdentifier;
             ouri = PyUnicode_FromStringAndSize(
-                    (const char *)ASN1_STRING_get0_data(uri),
-                    ASN1_STRING_length(uri));
+                       (const char *)ASN1_STRING_get0_data(uri),
+                       ASN1_STRING_length(uri));
             if (ouri == NULL)
                 goto done;
 
