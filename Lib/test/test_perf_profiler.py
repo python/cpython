@@ -167,7 +167,6 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertNotIn(f"py::bar:{script}", child_perf_file_contents)
         self.assertNotIn(f"py::baz:{script}", child_perf_file_contents)
 
-   
     def test_sys_api(self):
         code = """if 1:
                 import sys
