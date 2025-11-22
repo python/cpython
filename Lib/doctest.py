@@ -1167,6 +1167,15 @@ class DocTestFinder:
                 if pat.match(source_lines[lineno]):
                     return lineno
 
+        # Handle __test__ string doctests by finding a unique line
+        # in the string and matching it in the source file
+        if isinstance(obj, str) and source_lines is not None:
+            # This will find __test__ string doctests if and only if the string
+            # contains any unique line.
+            for offset, line in enumerate(obj.splitlines(keepends=True)):
+                if source_lines.count(line) == 1:
+                    return source_lines.index(line) - offset
+
         # We couldn't find the line number.
         return None
 

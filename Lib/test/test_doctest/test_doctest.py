@@ -833,6 +833,60 @@ class TestDocTestFinder(unittest.TestCase):
             self.assertEqual(len(include_empty_finder.find(mod)), 1)
             self.assertEqual(len(exclude_empty_finder.find(mod)), 0)
 
+    def test_lineno_of_test_dict_strings(self):
+        """Test that line numbers are correctly found for __test__ dict strings."""
+        # Create a temporary module with a __test__ dict containing triple-quoted strings
+        module_content = '''\
+"""Module docstring."""
+
+def dummy_function():
+    """Dummy function docstring."""
+    pass
+
+__test__ = {
+    'test_string': """
+    This is a test string.
+    >>> 1 + 1
+    2
+    """,
+}
+'''
+        with tempfile.TemporaryDirectory() as tmpdir:
+            module_path = os.path.join(tmpdir, 'test_module_lineno.py')
+            with open(module_path, 'w') as f:
+                f.write(module_content)
+
+            sys.path.insert(0, tmpdir)
+            try:
+                # Import the module
+                import test_module_lineno
+
+                # Use DocTestFinder to find tests
+                finder = doctest.DocTestFinder()
+                tests = finder.find(test_module_lineno)
+
+                # Find the test from __test__ dict
+                test_dict_test = None
+                for test in tests:
+                    if '__test__' in test.name:
+                        test_dict_test = test
+                        break
+
+                # Assert that we found the test and it has a valid line number
+                self.assertIsNotNone(test_dict_test, "__test__ dict test not found")
+                # The line number should not be None - this is what the bug fix addresses
+                self.assertIsNotNone(test_dict_test.lineno,
+                                     "Line number should not be None for __test__ dict strings")
+                # The line number should be around line 9 (where the triple-quoted string starts)
+                # Allowing some tolerance for exact line number
+                self.assertGreater(test_dict_test.lineno, 0,
+                                   "Line number should be positive")
+            finally:
+                # Clean up
+                if 'test_module_lineno' in sys.modules:
+                    del sys.modules['test_module_lineno']
+                sys.path.pop(0)
+
 def test_DocTestParser(): r"""
 Unit tests for the `DocTestParser` class.
 
@@ -2434,7 +2488,8 @@ def test_DocTestSuite_errors():
          <BLANKLINE>
          >>> print(result.failures[1][1]) # doctest: +ELLIPSIS
          Traceback (most recent call last):
-           File "...sample_doctest_errors.py", line None, in test.test_doctest.sample_doctest_errors.__test__.bad
+           File "...sample_doctest_errors.py", line 37, in test.test_doctest.sample_doctest_errors.__test__.bad
+             >...>> 2 + 2
          AssertionError: Failed example:
              2 + 2
          Expected:
@@ -2464,7 +2519,8 @@ def test_DocTestSuite_errors():
          <BLANKLINE>
          >>> print(result.errors[1][1]) # doctest: +ELLIPSIS
          Traceback (most recent call last):
-           File "...sample_doctest_errors.py", line None, in test.test_doctest.sample_doctest_errors.__test__.bad
+           File "...sample_doctest_errors.py", line 39, in test.test_doctest.sample_doctest_errors.__test__.bad
+             >...>> 1/0
            File "<doctest test.test_doctest.sample_doctest_errors.__test__.bad[1]>", line 1, in <module>
              1/0
              ~^~
@@ -3256,7 +3312,7 @@ Tests for error reporting in the testmod() function.
             ~^~
         ZeroDivisionError: division by zero
     **********************************************************************
-    File "...sample_doctest_errors.py", line ?, in test.test_doctest.sample_doctest_errors.__test__.bad
+    File "...sample_doctest_errors.py", line 37, in test.test_doctest.sample_doctest_errors.__test__.bad
     Failed example:
         2 + 2
     Expected:
@@ -3264,7 +3320,7 @@ Tests for error reporting in the testmod() function.
     Got:
         4
     **********************************************************************
-    File "...sample_doctest_errors.py", line ?, in test.test_doctest.sample_doctest_errors.__test__.bad
+    File "...sample_doctest_errors.py", line 39, in test.test_doctest.sample_doctest_errors.__test__.bad
     Failed example:
         1/0
     Exception raised:
