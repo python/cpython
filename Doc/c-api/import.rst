@@ -316,8 +316,8 @@ Importing Modules
 
 .. c:var:: struct _inittab *PyImport_Inittab
 
-   The table of built-in modules used by Python. Do not use this directly; use
-   :c:func:`PyImport_ExtendInittab` and :c:func:`PyImport_AppendInittab`
+   The table of built-in modules used by Python initialization. Do not use this directly;
+   use :c:func:`PyImport_ExtendInittab` and :c:func:`PyImport_AppendInittab`
    instead.
 
 
