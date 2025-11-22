@@ -494,9 +494,7 @@ class partialmethod:
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
 
-    def __annotate__(self, format):
-        """Return annotations for the partial method."""
-        return _partialmethod_annotate(self, format)
+    __annotate__  =  _partialmethod_annotate
 
     __class_getitem__ = classmethod(GenericAlias)
 
