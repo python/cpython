@@ -4,6 +4,7 @@ Vi-specific commands for pyrepl.
 
 from .commands import Command, MotionCommand, KillCommand
 from . import input as _input
+from .types import ViFindDirection
 
 
 # ============================================================================
@@ -166,8 +167,8 @@ class vi_find_char(Command):
     """Start forward find (f). Waits for target character."""
     def do(self) -> None:
         r = self.reader
-        r.pending_find_direction = "forward"
-        r.pending_find_inclusive = True
+        r.vi_find.pending_direction = ViFindDirection.FORWARD
+        r.vi_find.pending_inclusive = True
         trans = _input.KeymapTranslator(
             _find_char_keymap,
             invalid_cls="vi-find-cancel",
@@ -180,8 +181,8 @@ class vi_find_char_back(Command):
     """Start backward find (F). Waits for target character."""
     def do(self) -> None:
         r = self.reader
-        r.pending_find_direction = "backward"
-        r.pending_find_inclusive = True
+        r.vi_find.pending_direction = ViFindDirection.BACKWARD
+        r.vi_find.pending_inclusive = True
         trans = _input.KeymapTranslator(
             _find_char_keymap,
             invalid_cls="vi-find-cancel",
@@ -194,8 +195,8 @@ class vi_till_char(Command):
     """Start forward till (t). Waits for target character."""
     def do(self) -> None:
         r = self.reader
-        r.pending_find_direction = "forward"
-        r.pending_find_inclusive = False
+        r.vi_find.pending_direction = ViFindDirection.FORWARD
+        r.vi_find.pending_inclusive = False
         trans = _input.KeymapTranslator(
             _find_char_keymap,
             invalid_cls="vi-find-cancel",
@@ -208,8 +209,8 @@ class vi_till_char_back(Command):
     """Start backward till (T). Waits for target character."""
     def do(self) -> None:
         r = self.reader
-        r.pending_find_direction = "backward"
-        r.pending_find_inclusive = False
+        r.vi_find.pending_direction = ViFindDirection.BACKWARD
+        r.vi_find.pending_inclusive = False
         trans = _input.KeymapTranslator(
             _find_char_keymap,
             invalid_cls="vi-find-cancel",
@@ -228,21 +229,21 @@ class vi_find_execute(MotionCommand):
         if not char:
             return
 
-        direction = r.pending_find_direction
-        inclusive = r.pending_find_inclusive
+        direction = r.vi_find.pending_direction
+        inclusive = r.vi_find.pending_inclusive
 
         # Store for repeat with ; and ,
-        r.last_find_char = char
-        r.last_find_direction = direction
-        r.last_find_inclusive = inclusive
+        r.vi_find.last_char = char
+        r.vi_find.last_direction = direction
+        r.vi_find.last_inclusive = inclusive
 
-        r.pending_find_direction = None
+        r.vi_find.pending_direction = None
         self._execute_find(char, direction, inclusive)
 
-    def _execute_find(self, char: str, direction: str | None, inclusive: bool) -> None:
+    def _execute_find(self, char: str, direction: ViFindDirection | None, inclusive: bool) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
-            if direction == "forward":
+            if direction == ViFindDirection.FORWARD:
                 new_pos = r.find_char_forward(char)
                 if new_pos is not None:
                     if not inclusive:
@@ -263,7 +264,7 @@ class vi_find_cancel(Command):
     def do(self) -> None:
         r = self.reader
         r.pop_input_trans()
-        r.pending_find_direction = None
+        r.vi_find.pending_direction = None
 
 
 # ============================================================================
@@ -274,15 +275,15 @@ class vi_repeat_find(MotionCommand):
     """Repeat last f/F/t/T in the same direction (;)."""
     def do(self) -> None:
         r = self.reader
-        if r.last_find_char is None:
+        if r.vi_find.last_char is None:
             return
 
-        char = r.last_find_char
-        direction = r.last_find_direction
-        inclusive = r.last_find_inclusive
+        char = r.vi_find.last_char
+        direction = r.vi_find.last_direction
+        inclusive = r.vi_find.last_inclusive
 
         for _ in range(r.get_arg()):
-            if direction == "forward":
+            if direction == ViFindDirection.FORWARD:
                 new_pos = r.find_char_forward(char)
                 if new_pos is not None:
                     if not inclusive:
@@ -302,15 +303,17 @@ class vi_repeat_find_opposite(MotionCommand):
     """Repeat last f/F/t/T in opposite direction (,)."""
     def do(self) -> None:
         r = self.reader
-        if r.last_find_char is None:
+        if r.vi_find.last_char is None:
             return
 
-        char = r.last_find_char
-        direction = "backward" if r.last_find_direction == "forward" else "forward"
-        inclusive = r.last_find_inclusive
+        char = r.vi_find.last_char
+        direction = (ViFindDirection.BACKWARD
+                     if r.vi_find.last_direction == ViFindDirection.FORWARD
+                     else ViFindDirection.FORWARD)
+        inclusive = r.vi_find.last_inclusive
 
         for _ in range(r.get_arg()):
-            if direction == "forward":
+            if direction == ViFindDirection.FORWARD:
                 new_pos = r.find_char_forward(char)
                 if new_pos is not None:
                     if not inclusive:

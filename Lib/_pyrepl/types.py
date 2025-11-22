@@ -1,5 +1,6 @@
 import enum
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
 
 type Callback = Callable[[], object]
 type SimpleContextManager = Iterator[None]
@@ -14,3 +15,17 @@ type CharWidths = list[int]
 class ViMode(str, enum.Enum):
     INSERT = "insert"
     NORMAL = "normal"
+
+
+class ViFindDirection(str, enum.Enum):
+    FORWARD = "forward"
+    BACKWARD = "backward"
+
+
+@dataclass
+class ViFindState:
+    last_char: str | None = None
+    last_direction: ViFindDirection | None = None
+    last_inclusive: bool = True  # f/F=True, t/T=False
+    pending_direction: ViFindDirection | None = None
+    pending_inclusive: bool = True

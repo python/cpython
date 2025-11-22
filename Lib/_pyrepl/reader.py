@@ -43,7 +43,7 @@ from .types import Callback, SimpleContextManager, KeySpec, CommandName
 SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)
 
 
-from .types import ViMode
+from .types import ViMode, ViFindState
 
 
 def make_default_syntax_table() -> dict[str, int]:
@@ -303,12 +303,7 @@ class Reader:
     threading_hook: Callback | None = None
     use_vi_mode: bool = False
     vi_mode: ViMode = ViMode.INSERT
-    # Vi find state (for f/F/t/T and ;/,)
-    last_find_char: str | None = None
-    last_find_direction: str | None = None  # "forward" or "backward"
-    last_find_inclusive: bool = True  # f/F=True, t/T=False
-    pending_find_direction: str | None = None
-    pending_find_inclusive: bool = True
+    vi_find: ViFindState = field(default_factory=ViFindState)
 
     ## cached metadata to speed up screen refreshes
     @dataclass
