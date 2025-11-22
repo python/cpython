@@ -36,11 +36,12 @@ from . import vi_commands
 
 # types
 Command = commands.Command
-from .types import Callback, SimpleContextManager, KeySpec, CommandName
+from .types import Callback, SimpleContextManager, KeySpec, CommandName, ViUndoState
 
 
 # syntax classes
 SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)
+MAX_VI_UNDO_STACK_SIZE = 100
 
 
 from .types import ViMode, ViFindState
@@ -192,6 +193,9 @@ vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         # Replace commands
         (r"r", "vi-replace-char"),
 
+        # Undo commands
+        (r"u", "vi-undo"),
+
         # Special keys still work in normal mode
         (r"\<left>", "left"),
         (r"\<right>", "right"),
@@ -310,6 +314,7 @@ class Reader:
     use_vi_mode: bool = False
     vi_mode: ViMode = ViMode.INSERT
     vi_find: ViFindState = field(default_factory=ViFindState)
+    undo_stack: list[ViUndoState] = field(default_factory=list)
 
     ## cached metadata to speed up screen refreshes
     @dataclass
@@ -894,6 +899,7 @@ class Reader:
             self.last_command = None
             if self.use_vi_mode:
                 self.enter_insert_mode()
+                self.undo_stack.clear()
             self.calc_screen()
         except BaseException:
             self.restore()
@@ -958,6 +964,13 @@ class Reader:
             return  # nothing to do
 
         command = command_type(self, *cmd)  # type: ignore[arg-type]
+
+        # Save undo state in vi mode if the command modifies the buffer
+        if self.use_vi_mode and getattr(command_type, 'modifies_buffer', False):
+            self.undo_stack.append(ViUndoState(
+                buffer_snapshot=self.buffer.copy(),
+                pos_snapshot=self.pos,
+            ))
         command.do()
 
         self.after_command(command)
@@ -1071,6 +1084,14 @@ class Reader:
             return
 
         self.vi_mode = ViMode.INSERT
+
+        if len(self.undo_stack) > MAX_VI_UNDO_STACK_SIZE:
+            self.undo_stack.pop(0)
+
+        self.undo_stack.append(ViUndoState(
+            buffer_snapshot=self.buffer.copy(),
+            pos_snapshot=self.pos,
+        ))
 
         # Switch translator to insert mode keymap
         self.keymap = self.collect_keymap()

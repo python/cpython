@@ -29,3 +29,8 @@ class ViFindState:
     last_inclusive: bool = True  # f/F=True, t/T=False
     pending_direction: ViFindDirection | None = None
     pending_inclusive: bool = True
+
+@dataclass
+class ViUndoState:
+    buffer_snapshot: CharBuffer = field(default_factory=list)
+    pos_snapshot: int = 0

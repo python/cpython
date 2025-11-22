@@ -1173,6 +1173,85 @@ class TestViMode(TestCase):
         self.assertEqual(reader.pos, 2)  # cursor stays on replaced char
         self.assertEqual(reader.vi_mode, ViMode.NORMAL)  # stays in normal mode
 
+    def test_undo_after_insert(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="u", raw=bytearray(b"u")),        # undo
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "")
+        self.assertEqual(reader.vi_mode, ViMode.NORMAL)
+
+    def test_undo_after_delete_word(self):
+        events = itertools.chain(
+            code_to_events("hello world"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # BOL
+                Event(evt="key", data="d", raw=bytearray(b"d")),        # delete
+                Event(evt="key", data="w", raw=bytearray(b"w")),        # word
+                Event(evt="key", data="u", raw=bytearray(b"u")),        # undo
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "hello world")
+
+    def test_undo_after_x_delete(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="x", raw=bytearray(b"x")),        # delete char
+                Event(evt="key", data="u", raw=bytearray(b"u")),        # undo
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "hello")
+
+    def test_undo_stack_cleared_on_prepare(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [Event(evt="key", data="\x1b", raw=bytearray(b"\x1b"))],
+        )
+        reader, console = self._run_vi(events)
+        self.assertGreater(len(reader.undo_stack), 0)
+        reader.prepare()
+        self.assertEqual(len(reader.undo_stack), 0)
+
+    def test_multiple_undo(self):
+        events = itertools.chain(
+            code_to_events("a"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="a", raw=bytearray(b"a")),        # append
+            ],
+            code_to_events("b"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="u", raw=bytearray(b"u")),        # undo 'b'
+                Event(evt="key", data="u", raw=bytearray(b"u")),        # undo 'a'
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "")
+
+    def test_undo_after_replace(self):
+        events = itertools.chain(
+            code_to_events("hello"),
+            [
+                Event(evt="key", data="\x1b", raw=bytearray(b"\x1b")),  # ESC
+                Event(evt="key", data="0", raw=bytearray(b"0")),        # BOL
+                Event(evt="key", data="r", raw=bytearray(b"r")),        # replace
+                Event(evt="key", data="X", raw=bytearray(b"X")),        # replacement
+                Event(evt="key", data="u", raw=bytearray(b"u")),        # undo
+            ],
+        )
+        reader, _ = self._run_vi(events)
+        self.assertEqual(reader.get_unicode(), "hello")
+
 
 @force_not_colorized_test_class
 class TestHistoricalReaderBindings(TestCase):

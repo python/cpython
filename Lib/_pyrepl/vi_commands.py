@@ -5,6 +5,7 @@ Vi-specific commands for pyrepl.
 from .commands import Command, MotionCommand, KillCommand
 from . import input as _input
 from .types import ViFindDirection
+from .trace import trace
 
 
 # ============================================================================
@@ -361,6 +362,8 @@ class vi_replace_char(Command):
 
 class vi_replace_execute(Command):
     """Execute character replacement with the pressed character."""
+    modifies_buffer = True
+
     def do(self) -> None:
         r = self.reader
         r.pop_input_trans()
@@ -375,3 +378,20 @@ class vi_replace_cancel(Command):
     def do(self) -> None:
         r = self.reader
         r.pop_input_trans()
+
+
+# ============================================================================
+# Undo Commands
+# ============================================================================
+
+class vi_undo(Command):
+    """Undo last change (u)."""
+    def do(self) -> None:
+        r = self.reader
+        trace("vi_undo: undo_stack size =", len(r.undo_stack))
+        if not r.undo_stack:
+            return
+        state = r.undo_stack.pop()
+        r.buffer[:] = state.buffer_snapshot
+        r.pos = state.pos_snapshot
+        r.dirty = True
