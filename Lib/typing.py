@@ -112,6 +112,12 @@ __all__ = [
     'TypedDict',  # Not really a type.
     'Generator',
 
+    # Empty collection types.
+    'EmptyList',
+    'EmptyDict',
+    'EmptySet',
+    'EmptyTuple',
+
     # Other concrete types.
     'BinaryIO',
     'IO',
@@ -2810,6 +2816,40 @@ DefaultDict = _alias(collections.defaultdict, 2, name='DefaultDict')
 OrderedDict = _alias(collections.OrderedDict, 2)
 Counter = _alias(collections.Counter, 1)
 ChainMap = _alias(collections.ChainMap, 2)
+
+# Empty collection types
+def _empty_list_getitem(self, parameters):
+    raise TypeError(f"{self._name} cannot be subscriptable")
+
+
+def _empty_dict_getitem(self, parameters):
+    raise TypeError(f"{self._name} cannot be subscriptable")
+
+
+def _empty_set_getitem(self, parameters):
+    raise TypeError(f"{self._name} cannot be subscriptable")
+
+
+def _empty_tuple_getitem(self, parameters):
+    raise TypeError(f"{self._name} cannot be subscriptable")
+
+
+EmptyList = _SpecialForm(_empty_list_getitem)
+EmptyList._name = 'EmptyList'
+EmptyList.__doc__ = """Special form for type hinting empty lists: []."""
+
+EmptyDict = _SpecialForm(_empty_dict_getitem)
+EmptyDict._name = 'EmptyDict'
+EmptyDict.__doc__ = """Special form for type hinting empty dicts: {}."""
+
+EmptySet = _SpecialForm(_empty_set_getitem)
+EmptySet._name = 'EmptySet'
+EmptySet.__doc__ = """Special form for type hinting empty sets: set()."""
+
+EmptyTuple = _SpecialForm(_empty_tuple_getitem)
+EmptyTuple._name = 'EmptyTuple'
+EmptyTuple.__doc__ = """Special form for type hinting empty tuples: ()."""
+
 Generator = _alias(collections.abc.Generator, 3, defaults=(types.NoneType, types.NoneType))
 AsyncGenerator = _alias(collections.abc.AsyncGenerator, 2, defaults=(types.NoneType,))
 Type = _alias(type, 1, inst=False, name='Type')
