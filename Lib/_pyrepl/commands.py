@@ -61,8 +61,6 @@ class Command:
 
 
 class KillCommand(Command):
-    modifies_buffer = True
-
     def kill_range(self, start: int, end: int) -> None:
         if start == end:
             return
@@ -424,8 +422,6 @@ class transpose_characters(EditCommand):
 
 
 class backspace(EditCommand):
-    modifies_buffer = True
-
     def do(self) -> None:
         r = self.reader
         b = r.buffer
@@ -439,8 +435,6 @@ class backspace(EditCommand):
 
 
 class delete(EditCommand):
-    modifies_buffer = True
-
     def do(self) -> None:
         r = self.reader
         b = r.buffer

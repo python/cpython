@@ -173,7 +173,7 @@ vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r",", "vi-repeat-find-opposite"),
 
         # Edit commands
-        (r"x", "delete"),
+        (r"x", "vi-delete"),
         (r"i", "vi-insert-mode"),
         (r"a", "vi-append-mode"),
         (r"A", "vi-append-eol"),
@@ -207,12 +207,12 @@ vi_normal_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\<down>", "down"),
         (r"\<home>", "beginning-of-line"),
         (r"\<end>", "end-of-line"),
-        (r"\<delete>", "delete"),
+        (r"\<delete>", "vi-delete"),
         (r"\<backspace>", "left"),
 
         # Control keys (important ones that work in both modes)
         (r"\C-c", "interrupt"),
-        (r"\C-d", "delete"),
+        (r"\C-d", "vi-delete"),
         (r"\C-l", "clear-screen"),
         (r"\C-r", "reverse-history-isearch"),
 

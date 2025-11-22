@@ -2,10 +2,15 @@
 Vi-specific commands for pyrepl.
 """
 
-from .commands import Command, MotionCommand, KillCommand
+from .commands import Command, MotionCommand, KillCommand, delete
 from . import input as _input
 from .types import ViFindDirection
 from .trace import trace
+
+
+class ViKillCommand(KillCommand):
+    """Base class for Vi kill commands that modify the buffer."""
+    modifies_buffer = True
 
 
 # ============================================================================
@@ -112,7 +117,12 @@ class vi_open_above(Command):
 # Delete Commands
 # ============================================================================
 
-class vi_delete_word(KillCommand):
+class vi_delete(delete):
+    """Delete character under cursor (x)."""
+    modifies_buffer = True
+
+
+class vi_delete_word(ViKillCommand):
     """Delete from cursor to start of next word (dw)."""
     def do(self) -> None:
         r = self.reader
@@ -122,28 +132,28 @@ class vi_delete_word(KillCommand):
                 self.kill_range(r.pos, end)
 
 
-class vi_delete_line(KillCommand):
+class vi_delete_line(ViKillCommand):
     """Delete entire line content (dd)."""
     def do(self) -> None:
         r = self.reader
         self.kill_range(r.bol(), r.eol())
 
 
-class vi_delete_to_bol(KillCommand):
+class vi_delete_to_bol(ViKillCommand):
     """Delete from cursor to beginning of line (d0)."""
     def do(self) -> None:
         r = self.reader
         self.kill_range(r.bol(), r.pos)
 
 
-class vi_delete_to_eol(KillCommand):
+class vi_delete_to_eol(ViKillCommand):
     """Delete from cursor to end of line (d$ or D)."""
     def do(self) -> None:
         r = self.reader
         self.kill_range(r.pos, r.eol())
 
 
-class vi_delete_char_before(KillCommand):
+class vi_delete_char_before(ViKillCommand):
     """Delete character before cursor (X)."""
     def do(self) -> None:
         r = self.reader
@@ -343,7 +353,7 @@ class vi_repeat_find_opposite(MotionCommand):
 # Change Commands
 # ============================================================================
 
-class vi_change_word(KillCommand):
+class vi_change_word(ViKillCommand):
     """Change from cursor to end of word (cw)."""
     def do(self) -> None:
         r = self.reader
@@ -354,7 +364,7 @@ class vi_change_word(KillCommand):
         r.enter_insert_mode()
 
 
-class vi_change_to_eol(KillCommand):
+class vi_change_to_eol(ViKillCommand):
     """Change from cursor to end of line (C)."""
     def do(self) -> None:
         r = self.reader
@@ -362,7 +372,7 @@ class vi_change_to_eol(KillCommand):
         r.enter_insert_mode()
 
 
-class vi_substitute_char(KillCommand):
+class vi_substitute_char(ViKillCommand):
     """Delete character under cursor and enter insert mode (s)."""
     def do(self) -> None:
         r = self.reader
