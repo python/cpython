@@ -1,0 +1,3 @@
+Add new attribute ``status`` to :class:`unittest.TestCase` containing member
+of (also new) ``unittest.TestStatus`` enum. This can be used to check
+the test result in ``tearDown`` / ``cleanup`` phase.
