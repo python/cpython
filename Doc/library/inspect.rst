@@ -198,10 +198,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | read more :ref:`here      |
 |                 |                   | <inspect-module-co-flags>`|
 +-----------------+-------------------+---------------------------+
-|                 | co_lnotab         | encoded mapping of line   |
-|                 |                   | numbers to bytecode       |
-|                 |                   | indices                   |
-+-----------------+-------------------+---------------------------+
 |                 | co_freevars       | tuple of names of free    |
 |                 |                   | variables (referenced via |
 |                 |                   | a function's closure)     |
