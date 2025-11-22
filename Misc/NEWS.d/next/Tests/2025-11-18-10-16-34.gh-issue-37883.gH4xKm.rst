@@ -1,0 +1,3 @@
+Fix ``test_resource.test_fsize_ismax`` to handle systems where
+``RLIMIT_FSIZE`` max limit is less than ``RLIM_INFINITY``. Patched by
+Shamil Abdulaev.
