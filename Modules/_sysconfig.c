@@ -57,7 +57,6 @@ _sysconfig_config_vars_impl(PyObject *module)
         return NULL;
     }
 
-    
     if (PyDict_SetItemString(config, "HAVE_IO_H",
 #   ifdef HAVE_IO_H
         _PyLong_GetOne()
@@ -69,7 +68,6 @@ _sysconfig_config_vars_impl(PyObject *module)
         return NULL;
     }
 
-    
     if (PyDict_SetItemString(config, "HAVE_SYS_UTIME_H",
 #   ifdef HAVE_SYS_UTIME_H
         _PyLong_GetOne()
@@ -648,7 +646,7 @@ _sysconfig_config_vars_impl(PyObject *module)
     }
 #   endif
 
-#   ifdef ALT_SOABI 
+#   ifdef ALT_SOABI
     if (PyDict_SetItemString(config, "ALT_SOABI", PyUnicode_FromString(ALT_SOABI)) < 0) {
         Py_DECREF(config);
         return NULL;
