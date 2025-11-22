@@ -23,6 +23,8 @@ from __future__ import annotations
 import os
 import time
 
+from .types import ViMode
+
 # Categories of actions:
 #  killing
 #  yanking
@@ -59,6 +61,8 @@ class Command:
 
 
 class KillCommand(Command):
+    modifies_buffer = True
+
     def kill_range(self, start: int, end: int) -> None:
         if start == end:
             return
@@ -325,10 +329,19 @@ class right(MotionCommand):
         b = r.buffer
         for _ in range(r.get_arg()):
             p = r.pos + 1
-            if p <= len(b):
-                r.pos = p
+            # In vi normal mode, don't move past the last character
+            if r.vi_mode == ViMode.NORMAL:
+                eol_pos = r.eol()
+                max_pos = max(r.bol(), eol_pos - 1) if eol_pos > r.bol() else r.bol()
+                if p <= max_pos:
+                    r.pos = p
+                else:
+                    self.reader.error("end of line")
             else:
-                self.reader.error("end of buffer")
+                if p <= len(b):
+                    r.pos = p
+                else:
+                    self.reader.error("end of buffer")
 
 
 class beginning_of_line(MotionCommand):
@@ -338,7 +351,14 @@ class beginning_of_line(MotionCommand):
 
 class end_of_line(MotionCommand):
     def do(self) -> None:
-        self.reader.pos = self.reader.eol()
+        r = self.reader
+        eol_pos = r.eol()
+        if r.vi_mode == ViMode.NORMAL:
+            bol_pos = r.bol()
+            # Don't go past the last character (but stay at bol if line is empty)
+            r.pos = max(bol_pos, eol_pos - 1) if eol_pos > bol_pos else bol_pos
+        else:
+            r.pos = eol_pos
 
 
 class home(MotionCommand):
@@ -404,6 +424,8 @@ class transpose_characters(EditCommand):
 
 
 class backspace(EditCommand):
+    modifies_buffer = True
+
     def do(self) -> None:
         r = self.reader
         b = r.buffer
@@ -417,6 +439,8 @@ class backspace(EditCommand):
 
 
 class delete(EditCommand):
+    modifies_buffer = True
+
     def do(self) -> None:
         r = self.reader
         b = r.buffer
