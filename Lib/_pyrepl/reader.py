@@ -186,7 +186,7 @@ class Reader:
         that we're done.
     """
 
-    console: console.Console
+    console: console.Console = field(repr=False)
 
     ## state
     buffer: list[str] = field(default_factory=list)
