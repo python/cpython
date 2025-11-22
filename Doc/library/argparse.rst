@@ -1322,8 +1322,12 @@ attribute is determined by the ``dest`` keyword argument of
 
 For optional argument actions, the value of ``dest`` is normally inferred from
 the option strings.  :class:`ArgumentParser` generates the value of ``dest`` by
-taking the first long option string and stripping away the initial ``--``
-string.  If no long option strings were supplied, ``dest`` will be derived from
+taking the first double-dash long option string and stripping away the initial
+``-`` characters.
+If no double-dash long option strings were supplied, ``dest`` will be derived
+from the first single-dash long option string by stripping the initial ``-``
+character.
+If no long option strings were supplied, ``dest`` will be derived from
 the first short option string by stripping the initial ``-`` character.  Any
 internal ``-`` characters will be converted to ``_`` characters to make sure
 the string is a valid attribute name.  The examples below illustrate this
@@ -1331,11 +1335,12 @@ behavior::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('-f', '--foo-bar', '--foo')
+   >>> parser.add_argument('-q', '-quz')
    >>> parser.add_argument('-x', '-y')
-   >>> parser.parse_args('-f 1 -x 2'.split())
-   Namespace(foo_bar='1', x='2')
-   >>> parser.parse_args('--foo 1 -y 2'.split())
-   Namespace(foo_bar='1', x='2')
+   >>> parser.parse_args('-f 1 -q 2 -x 3'.split())
+   Namespace(foo_bar='1', quz='2', x='3')
+   >>> parser.parse_args('--foo 1 -quz 2 -y 3'.split())
+   Namespace(foo_bar='1', quz='2', x='2')
 
 ``dest`` allows a custom attribute name to be provided::
 
@@ -1343,6 +1348,9 @@ behavior::
    >>> parser.add_argument('--foo', dest='bar')
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
+
+.. versionchanged:: next
+   Single-dash long option now takes precedence over short options.
 
 
 .. _deprecated:

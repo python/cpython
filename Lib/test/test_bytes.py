@@ -2655,6 +2655,10 @@ class FreeThreadingTest(unittest.TestCase):
             c = a.zfill(0x400000)
             assert not c or c[-1] not in (0xdd, 0xcd)
 
+        def resize(b, a):  # MODIFIES!
+            b.wait()
+            a.resize(10)
+
         def take_bytes(b, a):  # MODIFIES!
             b.wait()
             c = a.take_bytes()
@@ -2727,6 +2731,8 @@ class FreeThreadingTest(unittest.TestCase):
         check([clear] + [splitlines] * 10, bytearray(b'\n' * 0x400))
         check([clear] + [startswith] * 10)
         check([clear] + [strip] * 10)
+
+        check([clear] + [resize] * 10)
 
         check([clear] + [take_bytes] * 10)
         check([take_bytes_n] * 10, bytearray(b'0123456789' * 0x400))
