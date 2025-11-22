@@ -111,7 +111,7 @@ The :mod:`gc` module provides the following functions:
      list) inside this generation;
 
    * ``candidates`` is the total number of objects in this generation which were
-     traversed and considered for collection;
+     considered for collection and traversed;
 
    * ``duration`` is the total time in seconds spent in collections for this
      generation.
@@ -323,7 +323,7 @@ values but should not rebind them):
       that could not be collected and were put in :data:`garbage`.
 
       "candidates": When *phase* is "stop", the total number of objects in this
-      generation which were traversed and considered for collection.
+      generation which were considered for collection and traversed.
 
       "duration": When *phase* is "stop", the time in seconds spent in the
       collection.
