@@ -1,0 +1,3 @@
+Update :ref:`asyncio streams` to use :gh:`139871`
+:func:`bytearray.take_bytes` for a over 10% performance improvement on
+pyperformance asyncio_tcp benchmark.
