@@ -248,8 +248,10 @@ but literal strings in the latter two.
       # Ignore warnings in "yourmodule.submodule" which contain "generic".
       # Note that the '.' in 'message' marks any character and in 'module' it is escaped,
       #   in order to match a literal dot character.
+
    filterwarnings("ignore", message="generic", module=r"yourmodule\.submodule")
       # Ignore warnings in "yourmodule.submodule" which START with "generic".
+
    filterwarnings("ignore", module="yourmodule.*")
       # Ignore all warnings in "yourmodule" and its submodules.
       # Note that the '.' in 'module' marks any character so is not escaped.
@@ -259,6 +261,7 @@ but literal strings in the latter two.
       #   (but not those containing it).
       # Also note that the '.' in the module part does not need to be escaped
       #   since it is not a regular expression.
+
    -W "ignore:::yourmodule:"
       # Ignore all warnings in "yourmodule", but NOT in its submodules.
 

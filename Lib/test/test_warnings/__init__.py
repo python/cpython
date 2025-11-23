@@ -1366,7 +1366,7 @@ class EnvironmentVariableTests(BaseTest):
 
     def test_string_literals(self):
         # Ensure message/module are treated as string literals
-        rc, stdout, stderr = assert_python_ok("-c",
+        _, stdout, stderr = assert_python_ok("-c",
             "import sys, warnings; "
             "sys.stdout.write(warnings.filters[0][1].pattern); "
             "sys.stderr.write(warnings.filters[0][3].pattern)",
