@@ -50,12 +50,22 @@ The :mod:`functools` module defines the following functions:
         479001600
 
    The cache is threadsafe so that the wrapped function can be used in
-   multiple threads.  This means that the underlying data structure will
+   multiple threads. This means that the underlying data structure will
    remain coherent during concurrent updates.
 
    It is possible for the wrapped function to be called more than once if
    another thread makes an additional call before the initial call has been
    completed and cached.
+
+   In particular, when the same key is computed concurrently in multiple
+   threads, each thread may execute the wrapped function independently
+   before the first result is stored in the cache. As a consequence, the
+   return values from these concurrent calls may be distinct objects even
+   though they correspond to the same cache key.
+
+   This behavior means that ``lru_cache`` should not be relied upon for
+   singleton object creation or other scenarios requiring that only one
+   instance be constructed for a given key without external synchronization.
 
    .. versionadded:: 3.9
 
