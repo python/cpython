@@ -546,7 +546,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         """)
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '1\n2\n3\n' * INIT_LOOPS)
-    
+
     @staticmethod
     def _nogil_filtered_err(err: str, mod_name: str) -> str:
         if not support.Py_GIL_DISABLED:
