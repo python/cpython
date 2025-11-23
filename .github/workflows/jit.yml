@@ -57,10 +57,9 @@ jobs:
       fail-fast: false
       matrix:
         target:
-# To re-enable later when we support these.
-#          - i686-pc-windows-msvc/msvc
-#          - x86_64-pc-windows-msvc/msvc
-#          - aarch64-pc-windows-msvc/msvc
+          - i686-pc-windows-msvc/msvc
+          - x86_64-pc-windows-msvc/msvc
+          - aarch64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
           - aarch64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
@@ -71,16 +70,15 @@ jobs:
         llvm:
           - 21
         include:
-# To re-enable later when we support these.
-#          - target: i686-pc-windows-msvc/msvc
-#            architecture: Win32
-#            runner: windows-2022
-#          - target: x86_64-pc-windows-msvc/msvc
-#            architecture: x64
-#            runner: windows-2022
-#          - target: aarch64-pc-windows-msvc/msvc
-#            architecture: ARM64
-#            runner: windows-11-arm
+          - target: i686-pc-windows-msvc/msvc
+            architecture: Win32
+            runner: windows-2022
+          - target: x86_64-pc-windows-msvc/msvc
+            architecture: x64
+            runner: windows-2022
+          - target: aarch64-pc-windows-msvc/msvc
+            architecture: ARM64
+            runner: windows-11-arm
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
             runner: macos-15-intel
