@@ -1379,6 +1379,7 @@ _Unpickler_ReadFromFile(PickleState *state, UnpicklerObject *self, Py_ssize_t n)
         }
         while (cursize < n) {
             Py_ssize_t prevsize = cursize;
+            // geometrically double the chunk size to avoid CPU DoS
             cursize += Py_MIN(cursize, n - cursize);
             if (_PyBytes_Resize(&data, cursize) < 0) {
                 return -1;
@@ -1573,6 +1574,7 @@ _Unpickler_MemoGet(PickleState *st, UnpicklerObject *self, size_t idx)
         }
         if (idx < self->memo_size) {
             (void)PyDict_Pop(self->memo_dict, key, &value);
+            // Migrate dict entry to array for faster future access
             self->memo[idx] = value;
         }
         else {
