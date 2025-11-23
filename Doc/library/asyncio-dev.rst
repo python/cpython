@@ -248,3 +248,105 @@ Output in debug mode::
       File "../t.py", line 4, in bug
         raise Exception("not consumed")
     Exception: not consumed
+
+Asynchronous generators best practices
+======================================
+
+By :term:`asynchronous generator` in this section we will mean
+an :term:`asynchronous generator iterator` that returned by
+:term:`asynchronous generator` function.
+
+Manually close the generator
+----------------------------
+
+If an asynchronous generator happens to exit early by :keyword:`break`, the caller
+task being cancelled, or other exceptions, the generator's async cleanup code
+will run and possibly raise exceptions or access context variables in an
+unexpected context--perhaps after the lifetime of tasks it depends, or
+during the event loop shutdown when the async-generator garbage collection hook
+is called.
+
+To prevent this, it is recommended to explicitly close the async generator by
+calling :meth:`~agen.aclose` method, or using :func:`contextlib.aclosing` context
+manager::
+
+  import asyncio
+  import contextlib
+
+  async def gen():
+    yield 1
+    yield 2
+
+  async def func():
+    async with contextlib.aclosing(gen()) as g:
+      async for x in g:
+        break
+
+  asyncio.run(func())
+
+
+Only create a generator when a loop is already running
+------------------------------------------------------
+
+As said abovew, if an asynchronous generator is not resumed before it is
+finalized, then any finalization procedures will be delayed. The event loop
+handles this situation and doing it best to call async generator-iterator's
+:meth:`~agen.aclose` at the proper moment, thus allowing any pending
+:keyword:`!finally` clauses to execute.
+
+Then it is recomended to create async generators only after the event loop
+has already been created.
+
+
+Avoid iterating and closing the same generator concurrently
+-----------------------------------------------------------
+
+The async generators allow to be reentered while another
+:meth:`~agen.aclose`/:meth:`~agen.aclose`/:meth:`~agen.aclose` call is in
+progress. This may lead to an inconsistent state of the async generator
+and cause errors.
+
+Let's consider following example::
+
+  import asyncio
+
+  async def consumer():
+      for idx in range(100):
+          await asyncio.sleep(0)
+          message = yield idx
+          print('received', message)
+
+  async def amain():
+      agenerator = consumer()
+      await agenerator.asend(None)
+
+      fa = asyncio.create_task(agenerator.asend('A'))
+      fb = asyncio.create_task(agenerator.asend('B'))
+      await fa
+      await fb
+
+  asyncio.run(amain())
+
+Output::
+
+  received A
+  Traceback (most recent call last):
+    File "test.py", line 38, in <module>
+      asyncio.run(amain())
+      ~~~~~~~~~~~^^^^^^^^^
+    File "Lib\asyncio\runners.py", line 204, in run
+      return runner.run(main)
+             ~~~~~~~~~~^^^^^^
+    File "Lib\asyncio\runners.py", line 127, in run
+      return self._loop.run_until_complete(task)
+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+    File "Lib\asyncio\base_events.py", line 719, in run_until_complete
+      return future.result()
+             ~~~~~~~~~~~~~^^
+    File "test.py", line 36, in amain
+      await fb
+  RuntimeError: anext(): asynchronous generator is already running
+
+
+Therefore, it is recommended to avoid using the async generators in parallel
+tasks or in the multiple event loops.
