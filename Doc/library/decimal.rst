@@ -264,7 +264,7 @@ allows the settings to be changed.  This approach meets the needs of most
 applications.
 
 For more advanced work, it may be useful to create alternate contexts using the
-Context() constructor.  To make an alternate active, use the :func:`setcontext`
+:meth:`Context` constructor.  To make an alternate active, use the :func:`setcontext`
 function.
 
 In accordance with the standard, the :mod:`decimal` module provides two ready to
@@ -1575,7 +1575,7 @@ Constants
    Specification that this implementation complies with.
    See https://speleotrove.com/decimal/decarith.html for the specification.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 The following constants are only relevant for the C module. They
