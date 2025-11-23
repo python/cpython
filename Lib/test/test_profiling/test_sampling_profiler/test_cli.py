@@ -91,6 +91,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mode=0,
                 native=False,
                 gc=True,
+                async_aware=False,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -130,6 +131,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mode=0,
                 native=False,
                 gc=True,
+                async_aware=False,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -160,6 +162,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mode=0,
                 native=False,
                 gc=True,
+                async_aware=False,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -290,6 +293,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mode=0,
                 native=False,
                 gc=True,
+                async_aware=False,
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -335,6 +339,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mode=0,
                 native=False,
                 gc=True,
+                async_aware=False,
             )
 
     def test_cli_empty_module_name(self):
@@ -635,6 +640,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mode=0,
                 native=False,
                 gc=True,
+                async_aware=False,
             )
 
     def test_sort_options(self):
