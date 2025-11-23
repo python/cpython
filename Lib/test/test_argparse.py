@@ -7288,6 +7288,8 @@ class TestColorized(TestCase):
         short_b = self.theme.short_option
         label_b = self.theme.label
         pos_b = self.theme.action
+        default = self.theme.default
+        default_value = self.theme.default_value
         reset = self.theme.reset
 
         # Act
@@ -7314,17 +7316,17 @@ class TestColorized(TestCase):
 
                 {heading}options:{reset}
                   {short_b}-h{reset}, {long_b}--help{reset}            show this help message and exit
-                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam (default: False)
-                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam (default: False)
+                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam {default}(default: {default_value}False{default}){reset}
+                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam {default}(default: {default_value}False{default}){reset}
                   {short_b}-o{reset}, {long_b}--optional1{reset}
                   {long_b}--optional2{reset} {label_b}OPTIONAL2{reset}
-                                        pick one (default: None)
+                                        pick one {default}(default: {default_value}None{default}){reset}
                   {long_b}--optional3{reset} {label_b}{{X,Y,Z}}{reset}
-                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
-                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
-                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one (default: None)
+                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {default_value}None{default}){reset}
+                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {default_value}None{default}){reset}
+                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {default_value}None{default}){reset}
                   {short_b}-p{reset}, {long_b}--optional7{reset} {label_b}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}
-                                        pick one (default: None)
+                                        pick one {default}(default: {default_value}None{default}){reset}
                   {short_b}+f{reset} {label_b}F{reset}
                   {long_b}++bar{reset} {label_b}BAR{reset}
                   {long_b}-+baz{reset} {label_b}BAZ{reset}
