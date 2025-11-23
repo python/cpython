@@ -5,8 +5,11 @@ import multiprocessing.forkserver
 import sys
 import unittest
 
+from test.support import has_fork_support
+
 
 @unittest.skipIf(sys.platform == "win32", "forkserver not available on Windows")
+@unittest.skipUnless(has_fork_support, "requires working os.fork()")
 class TestForkserverPreload(unittest.TestCase):
     """Tests for forkserver preload functionality."""
 
