@@ -748,7 +748,14 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
             if action.default is not SUPPRESS:
                 defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
                 if action.option_strings or action.nargs in defaulting_nargs:
-                    help += _(' (default: %(default)s)')
+                    t = self._theme
+                    default_str = _(" (default: %(default)s)")
+                    prefix, suffix = default_str.split("%(default)s")
+                    help += (
+                        f" {t.default}{prefix.lstrip()}"
+                        f"{t.default_value}%(default)s"
+                        f"{t.default}{suffix}{t.reset}"
+                    )
         return help
 
 
