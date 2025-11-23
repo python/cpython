@@ -239,6 +239,9 @@ def _handle_preload(preload, main_path=None, sys_path=None, on_error='ignore'):
         try:
             spawn.import_main_path(main_path)
         except Exception as e:
+            # Catch broad Exception because import_main_path() uses
+            # runpy.run_path() which executes the script and can raise
+            # any exception, not just ImportError
             match on_error:
                 case 'fail':
                     raise
@@ -258,6 +261,7 @@ def _handle_preload(preload, main_path=None, sys_path=None, on_error='ignore'):
         try:
             __import__(modname)
         except ImportError as e:
+            # Only catch ImportError for regular module imports
             match on_error:
                 case 'fail':
                     raise
