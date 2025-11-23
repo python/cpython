@@ -2,7 +2,10 @@
 
 import multiprocessing
 import multiprocessing.forkserver
+import os
+import tempfile
 import unittest
+from multiprocessing.forkserver import _handle_preload
 
 
 class TestForkserverPreload(unittest.TestCase):
@@ -114,6 +117,89 @@ class TestForkserverPreload(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             self.ctx.set_forkserver_preload(['os'], on_error='invalid')
         self.assertIn("on_error must be 'ignore', 'warn', or 'fail'", str(cm.exception))
+
+
+class TestHandlePreload(unittest.TestCase):
+    """Unit tests for _handle_preload() function."""
+
+    def test_handle_preload_main_on_error_fail(self):
+        """Test that __main__ import failures raise with on_error='fail'."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('raise RuntimeError("test error in __main__")\n')
+            bad_main_path = f.name
+
+        try:
+            with self.assertRaises(RuntimeError) as cm:
+                _handle_preload(['__main__'], main_path=bad_main_path, on_error='fail')
+            self.assertIn("test error in __main__", str(cm.exception))
+        finally:
+            os.unlink(bad_main_path)
+
+    def test_handle_preload_main_on_error_warn(self):
+        """Test that __main__ import failures warn with on_error='warn'."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('raise ImportError("test import error")\n')
+            bad_main_path = f.name
+
+        try:
+            with self.assertWarns(ImportWarning) as cm:
+                _handle_preload(['__main__'], main_path=bad_main_path, on_error='warn')
+            self.assertIn("Failed to preload __main__", str(cm.warning))
+            self.assertIn("test import error", str(cm.warning))
+        finally:
+            os.unlink(bad_main_path)
+
+    def test_handle_preload_main_on_error_ignore(self):
+        """Test that __main__ import failures are ignored with on_error='ignore'."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('raise ImportError("test import error")\n')
+            bad_main_path = f.name
+
+        try:
+            # Should not raise
+            _handle_preload(['__main__'], main_path=bad_main_path, on_error='ignore')
+        finally:
+            os.unlink(bad_main_path)
+
+    def test_handle_preload_main_valid(self):
+        """Test that valid __main__ preload works."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('test_var = 42\n')
+            valid_main_path = f.name
+
+        try:
+            _handle_preload(['__main__'], main_path=valid_main_path, on_error='fail')
+            # Should complete without raising
+        finally:
+            os.unlink(valid_main_path)
+
+    def test_handle_preload_module_on_error_fail(self):
+        """Test that module import failures raise with on_error='fail'."""
+        with self.assertRaises(ModuleNotFoundError):
+            _handle_preload(['nonexistent_test_module_xyz'], on_error='fail')
+
+    def test_handle_preload_module_on_error_warn(self):
+        """Test that module import failures warn with on_error='warn'."""
+        with self.assertWarns(ImportWarning) as cm:
+            _handle_preload(['nonexistent_test_module_xyz'], on_error='warn')
+        self.assertIn("Failed to preload module", str(cm.warning))
+
+    def test_handle_preload_module_on_error_ignore(self):
+        """Test that module import failures are ignored with on_error='ignore'."""
+        # Should not raise
+        _handle_preload(['nonexistent_test_module_xyz'], on_error='ignore')
+
+    def test_handle_preload_combined(self):
+        """Test preloading both __main__ and modules."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('import sys\n')
+            valid_main_path = f.name
+
+        try:
+            _handle_preload(['__main__', 'os', 'sys'], main_path=valid_main_path, on_error='fail')
+            # Should complete without raising
+        finally:
+            os.unlink(valid_main_path)
 
 
 if __name__ == '__main__':
