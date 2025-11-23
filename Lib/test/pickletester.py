@@ -1181,7 +1181,12 @@ class AbstractUnpickleTests:
 
     def test_too_large_long_binput(self):
         # Test that LONG_BINPUT with large id does not cause allocation of
-        # too large memo table.
+        # too large memo table. The C implementation uses a dict-based memo
+        # for sparse indices (when idx > memo_len * 2) instead of allocating
+        # a massive array. This test verifies large sparse indices work without
+        # causing memory exhaustion.
+        #
+        # If the threshold formula changes, ensure test indices still exceed it.
         data = lambda n: (b'(]r' + struct.pack('<I', n) +
                           b'j' + struct.pack('<I', n) + b't.')
         #    0: (    MARK
