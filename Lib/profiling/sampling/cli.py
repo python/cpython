@@ -160,7 +160,7 @@ def _add_sampling_options(parser):
         type=int,
         default=100,
         metavar="MICROSECONDS",
-        help="Sampling interval",
+        help="sampling interval",
     )
     sampling_group.add_argument(
         "-d",
