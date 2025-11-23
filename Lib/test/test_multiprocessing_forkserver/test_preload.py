@@ -3,7 +3,6 @@
 import multiprocessing
 import multiprocessing.forkserver
 import unittest
-import warnings
 
 
 class TestForkserverPreload(unittest.TestCase):
@@ -86,7 +85,9 @@ class TestForkserverPreload(unittest.TestCase):
             with self.assertRaises((EOFError, ConnectionError, BrokenPipeError)) as cm:
                 p.start()  # Exception raised here
             # Verify that the helpful note was added
-            self.assertIn('Forkserver process may have crashed', str(cm.exception.__notes__[0]))
+            notes = getattr(cm.exception, '__notes__', [])
+            self.assertTrue(notes, "Expected exception to have __notes__")
+            self.assertIn('Forkserver process may have crashed', notes[0])
         finally:
             # Ensure pipes are closed even if exception is raised
             w.close()
