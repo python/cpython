@@ -506,7 +506,7 @@ Summation and product functions
 
    Roughly equivalent to::
 
-       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q, strict=True)))
 
    .. versionadded:: 3.8
 
