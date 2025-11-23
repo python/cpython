@@ -1,4 +1,0 @@
-The :mod:`multiprocessing` forkserver process now flushes stdout and stderr
-before it forks to avoid the confusion children inheriting any buffered but
-not yet written output data.  Normally there is none, but when using
-:func:`multiprocessing.set_forkserver_preload` there *could* be.
