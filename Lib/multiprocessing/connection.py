@@ -487,8 +487,10 @@ class Listener(object):
         self._authkey = authkey
 
     def settimeout(self, timeout):
-        if timeout:
-            self._listener.settimeout(timeout)
+        '''
+        Set timeout for the accept method.
+        '''
+        self._listener.settimeout(timeout)
 
     def accept(self):
         '''
@@ -645,7 +647,8 @@ class SocketListener(object):
             self._unlink = None
 
     def settimeout(self, timeout):
-        self._socket.settimeout(timeout)
+        if timeout:
+            self._socket.settimeout(timeout)
 
     def accept(self):
         s, self._last_accepted = self._socket.accept()
@@ -692,6 +695,7 @@ if sys.platform == 'win32':
                 self, PipeListener._finalize_pipe_listener,
                 args=(self._handle_queue, self._address), exitpriority=0
                 )
+            self._timeout = _winapi.INFINITE
 
         def _new_handle(self, first=False):
             flags = _winapi.PIPE_ACCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAPPED
@@ -706,7 +710,8 @@ if sys.platform == 'win32':
                 )
 
         def settimeout(self, timeout):
-            pass
+            if timeout:
+                self._timeout = int(timeout * 1000)
 
         def accept(self):
             self._handle_queue.append(self._new_handle())
@@ -721,7 +726,9 @@ if sys.platform == 'win32':
             else:
                 try:
                     res = _winapi.WaitForMultipleObjects(
-                        [ov.event], False, INFINITE)
+                        [ov.event], False, self._timeout)
+                    if res == _winapi.WAIT_TIMEOUT:
+                        raise TimeoutError("PipeListener timed out")
                 except:
                     ov.cancel()
                     _winapi.CloseHandle(handle)

@@ -3399,7 +3399,7 @@ class _TestMyManager(BaseTestCase):
         # bpo-30356: BaseManager._finalize_manager() sends SIGTERM
         # to the manager process if it takes longer than 1 second to stop,
         # which happens on slow buildbots.
-        self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
+        self.assertEqual(manager._process.exitcode, 0)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_mymanager_context(self):

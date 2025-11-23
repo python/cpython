@@ -171,6 +171,7 @@ class Server(object):
         '''
         self.stop_event = threading.Event()
         process.current_process()._manager_server = self
+        accepter = None
         try:
             accepter = threading.Thread(target=self.accepter)
             accepter.daemon = True
@@ -189,17 +190,19 @@ class Server(object):
             sys.exit(0)
 
     def accepter(self):
-        while True:
+        handler_threads = []
+        while True and not self.stop_event.is_set():
             try:
-                self.listener.settimeout(20)
+                self.listener.settimeout(3)
                 c = self.listener.accept()
             except OSError:
                 continue
             t = threading.Thread(target=self.handle_request, args=(c,))
+            handler_threads.append(t)
             t.daemon = True
             t.start()
-            if self.stop_event.is_set():
-                break
+        for t in handler_threads:
+            t.join()
 
     def _handle_request(self, c):
         request = None
