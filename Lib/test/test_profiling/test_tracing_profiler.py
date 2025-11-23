@@ -172,6 +172,8 @@ class TestCommandLine(unittest.TestCase):
             f.close()
             assert_python_ok('-m', "cProfile", f.name)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Profiler with multiprocessing can not run on win32')
     def test_profile_multiprocessing(self):
         test_script = '''
 import multiprocessing
