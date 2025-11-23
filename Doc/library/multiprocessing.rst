@@ -1222,9 +1222,9 @@ Miscellaneous
    launched (before creating a :class:`Pool` or starting a :class:`Process`).
 
    The *on_error* parameter controls how :exc:`ImportError` exceptions during
-   module preloading are handled: ``'ignore'`` (default) silently ignores
-   failures, ``'warn'`` causes the forkserver subprocess to emit an
-   :exc:`ImportWarning` to stderr, and ``'fail'`` causes the forkserver
+   module preloading are handled: ``"ignore"`` (default) silently ignores
+   failures, ``"warn"`` causes the forkserver subprocess to emit an
+   :exc:`ImportWarning` to stderr, and ``"fail"`` causes the forkserver
    subprocess to exit with the exception traceback on stderr, making
    subsequent process creation fail with :exc:`EOFError` or
    :exc:`ConnectionError`.

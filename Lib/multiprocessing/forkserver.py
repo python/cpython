@@ -69,8 +69,8 @@ class ForkServer(object):
         '''Set list of module names to try to load in forkserver process.
 
         The on_error parameter controls how import failures are handled:
-        'ignore' (default) silently ignores failures, 'warn' emits warnings,
-        and 'fail' raises exceptions breaking the forkserver context.
+        "ignore" (default) silently ignores failures, "warn" emits warnings,
+        and "fail" raises exceptions breaking the forkserver context.
         '''
         if not all(type(mod) is str for mod in modules_names):
             raise TypeError('module_names must be a list of strings')
@@ -226,7 +226,7 @@ def _handle_preload(preload, main_path=None, sys_path=None, on_error='ignore'):
         preload: List of module names to preload.
         main_path: Path to __main__ module if '__main__' is in preload.
         sys_path: sys.path to use for imports (None means use current).
-        on_error: How to handle import errors ('ignore', 'warn', or 'fail').
+        on_error: How to handle import errors ("ignore", "warn", or "fail").
     """
     if not preload:
         return

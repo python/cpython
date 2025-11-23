@@ -181,8 +181,8 @@ class BaseContext(object):
         '''Set list of module names to try to load in forkserver process.
 
         The on_error parameter controls how import failures are handled:
-        'ignore' (default) silently ignores failures, 'warn' emits warnings,
-        and 'fail' raises exceptions breaking the forkserver context.
+        "ignore" (default) silently ignores failures, "warn" emits warnings,
+        and "fail" raises exceptions breaking the forkserver context.
         '''
         from .forkserver import set_forkserver_preload
         set_forkserver_preload(module_names, on_error=on_error)
