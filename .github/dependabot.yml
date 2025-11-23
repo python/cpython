@@ -14,7 +14,7 @@ updates:
           - "version-update:semver-patch"
     cooldown:
       # https://blog.yossarian.net/2025/11/21/We-should-all-be-using-dependency-cooldowns
-      - default-days: "14"
+      default-days: 14
   - package-ecosystem: "pip"
     directory: "/Tools/"
     schedule:
@@ -23,4 +23,4 @@ updates:
       - "skip issue"
       - "skip news"
     cooldown:
-      - default-days: "14"
+      default-days: 14
