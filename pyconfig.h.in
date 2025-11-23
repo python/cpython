@@ -2023,6 +2023,9 @@
 /* HACL* library can compile SIMD256 implementations */
 #undef _Py_HACL_CAN_COMPILE_VEC256
 
+/* Define to 1 if the machine stack grows down (default); 0 if it grows up. */
+#undef _Py_STACK_GROWS_DOWN
+
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
