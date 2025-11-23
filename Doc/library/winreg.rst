@@ -488,8 +488,8 @@ This module offers the following functions:
    *type* is an integer that specifies the type of the data. See
    :ref:`Value Types <value-types>` for the available types.
 
-   *value* is the new value to set. Accepts str, int, list of str, bytes-like object,
-   or None depending on the *type* parameter.
+   *value* is the new value to set. The acceptable types depend on the *type*
+   parameter.
 
    This method can also set additional value and type information for the specified
    key.  The key identified by the key parameter must have been opened with
@@ -692,7 +692,8 @@ For more information, see `Registry Value Types
 .. data:: REG_BINARY
 
    Binary data in any form.
-   *value* must be a :term:`bytes-like object` in Python for this type.
+   *value* must be a :term:`bytes-like object` for this type.
+   Returns a :class:`bytes` object, or :const:`None` for empty values.
 
 .. data:: REG_DWORD
 
@@ -725,6 +726,7 @@ For more information, see `Registry Value Types
    A sequence of null-terminated strings, terminated by two null characters.
    (Python handles this termination automatically.)
    *value* must be a :class:`list` of :class:`str` in Python for this type.
+   Returns a :class:`list` of :class:`str`, or an empty list for empty values.
 
 .. data:: REG_NONE
 
