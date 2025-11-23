@@ -1,1 +1,0 @@
-Fix import of :mod:`ctypes` on Android and Cygwin when ABI flags are present.

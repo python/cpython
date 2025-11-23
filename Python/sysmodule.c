@@ -1587,10 +1587,10 @@ get_hash_info(PyThreadState *tstate)
     } while(0)
 
     SET_HASH_INFO_ITEM(PyLong_FromLong(8 * sizeof(Py_hash_t)));
-    SET_HASH_INFO_ITEM(PyLong_FromSsize_t(_PyHASH_MODULUS));
-    SET_HASH_INFO_ITEM(PyLong_FromLong(_PyHASH_INF));
+    SET_HASH_INFO_ITEM(PyLong_FromSsize_t(PyHASH_MODULUS));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(PyHASH_INF));
     SET_HASH_INFO_ITEM(PyLong_FromLong(0));  // This is no longer used
-    SET_HASH_INFO_ITEM(PyLong_FromLong(_PyHASH_IMAG));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(PyHASH_IMAG));
     SET_HASH_INFO_ITEM(PyUnicode_FromString(hashfunc->name));
     SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->hash_bits));
     SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->seed_bits));
@@ -2380,14 +2380,14 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
                 return NULL;
             }
         }
-        else if (strcmp(backend, "perf_jit") == 0) {
-            _PyPerf_Callbacks cur_cb;
-            _PyPerfTrampoline_GetCallbacks(&cur_cb);
-            if (cur_cb.write_state != _Py_perfmap_jit_callbacks.write_state) {
-                if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_jit_callbacks) < 0 ) {
-                    PyErr_SetString(PyExc_ValueError, "can't activate perf jit trampoline");
-                    return NULL;
-                }
+    }
+    else if (strcmp(backend, "perf_jit") == 0) {
+        _PyPerf_Callbacks cur_cb;
+        _PyPerfTrampoline_GetCallbacks(&cur_cb);
+        if (cur_cb.write_state != _Py_perfmap_jit_callbacks.write_state) {
+            if (_PyPerfTrampoline_SetCallbacks(&_Py_perfmap_jit_callbacks) < 0 ) {
+                PyErr_SetString(PyExc_ValueError, "can't activate perf jit trampoline");
+                return NULL;
             }
         }
     }
