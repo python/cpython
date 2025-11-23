@@ -30,7 +30,7 @@ class TestForkserverPreload(unittest.TestCase):
 
     @staticmethod
     def _send_value(conn, value):
-        """Helper to send a value through a connection."""
+        """Send value through connection. Static method to be picklable as Process target."""
         conn.send(value)
 
     def test_preload_on_error_ignore_default(self):
