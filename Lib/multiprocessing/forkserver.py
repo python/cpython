@@ -42,6 +42,7 @@ class ForkServer(object):
         self._inherited_fds = None
         self._lock = threading.Lock()
         self._preload_modules = ['__main__']
+        self._raise_exceptions = False
 
     def _stop(self):
         # Method used by unit tests to stop the server
@@ -64,11 +65,17 @@ class ForkServer(object):
         self._forkserver_address = None
         self._forkserver_authkey = None
 
-    def set_forkserver_preload(self, modules_names):
-        '''Set list of module names to try to load in forkserver process.'''
+    def set_forkserver_preload(self, modules_names, *, raise_exceptions=False):
+        '''Set list of module names to try to load in forkserver process.
+
+        If raise_exceptions is True, ImportError exceptions during preload
+        will be raised instead of being silently ignored. Such errors will
+        break all use of the forkserver multiprocessing context.
+        '''
         if not all(type(mod) is str for mod in modules_names):
             raise TypeError('module_names must be a list of strings')
         self._preload_modules = modules_names
+        self._raise_exceptions = raise_exceptions
 
     def get_inherited_fds(self):
         '''Return list of fds inherited from parent process.
@@ -152,6 +159,8 @@ class ForkServer(object):
                     main_kws['sys_path'] = data['sys_path']
                 if 'init_main_from_path' in data:
                     main_kws['main_path'] = data['init_main_from_path']
+                if self._raise_exceptions:
+                    main_kws['raise_exceptions'] = True
 
             with socket.socket(socket.AF_UNIX) as listener:
                 address = connection.arbitrary_address('AF_UNIX')
@@ -197,7 +206,7 @@ class ForkServer(object):
 #
 
 def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
-         *, authkey_r=None):
+         *, authkey_r=None, raise_exceptions=False):
     """Run forkserver."""
     if authkey_r is not None:
         try:
@@ -221,6 +230,8 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
             try:
                 __import__(modname)
             except ImportError:
+                if raise_exceptions:
+                    raise
                 pass
 
         # gh-135335: flush stdout/stderr in case any of the preloaded modules

@@ -1,0 +1,5 @@
+Add a ``raise_exceptions`` keyword-only parameter to
+:func:`multiprocessing.set_forkserver_preload`. When set to ``True``,
+:exc:`ImportError` exceptions during module preloading will be raised instead
+of being silently ignored. Defaults to ``False`` for backward compatibility.
+Contributed by Nick Neumann.

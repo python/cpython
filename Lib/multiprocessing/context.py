@@ -177,12 +177,15 @@ class BaseContext(object):
         from .spawn import set_executable
         set_executable(executable)
 
-    def set_forkserver_preload(self, module_names):
+    def set_forkserver_preload(self, module_names, *, raise_exceptions=False):
         '''Set list of module names to try to load in forkserver process.
-        This is really just a hint.
+
+        If raise_exceptions is True, ImportError exceptions during preload
+        will be raised instead of being silently ignored. Such errors will
+        break all use of the forkserver multiprocessing context.
         '''
         from .forkserver import set_forkserver_preload
-        set_forkserver_preload(module_names)
+        set_forkserver_preload(module_names, raise_exceptions=raise_exceptions)
 
     def get_context(self, method=None):
         if method is None:

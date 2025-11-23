@@ -1211,21 +1211,30 @@ Miscellaneous
    .. versionchanged:: 3.11
       Accepts a :term:`path-like object`.
 
-.. function:: set_forkserver_preload(module_names)
+.. function:: set_forkserver_preload(module_names, *, raise_exceptions=False)
 
    Set a list of module names for the forkserver main process to attempt to
    import so that their already imported state is inherited by forked
-   processes. Any :exc:`ImportError` when doing so is silently ignored.
-   This can be used as a performance enhancement to avoid repeated work
-   in every process.
+   processes. This can be used as a performance enhancement to avoid repeated
+   work in every process.
 
    For this to work, it must be called before the forkserver process has been
    launched (before creating a :class:`Pool` or starting a :class:`Process`).
+
+   By default, any :exc:`ImportError` when importing modules is silently
+   ignored. If *raise_exceptions* is ``True``, :exc:`ImportError` exceptions
+   will be raised in the forkserver subprocess, causing it to exit. The
+   exception traceback will appear on stderr, and subsequent attempts to
+   create processes will fail with :exc:`EOFError` or :exc:`ConnectionError`.
+   Use *raise_exceptions* during development to catch import problems early.
 
    Only meaningful when using the ``'forkserver'`` start method.
    See :ref:`multiprocessing-start-methods`.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: next
+      Added the *raise_exceptions* parameter.
 
 .. function:: set_start_method(method, force=False)
 
