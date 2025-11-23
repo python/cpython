@@ -967,6 +967,7 @@ LDLIBRARY
 LIBRARY
 BUILDEXEEXT
 NO_AS_NEEDED
+_Py_STACK_GROWS_DOWN
 MULTIARCH_CPPFLAGS
 PLATFORM_TRIPLET
 MULTIARCH
@@ -7211,6 +7212,18 @@ esac
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
+
+
+# Guess C stack direction
+case $host in #(
+  hppa*) :
+    _Py_STACK_GROWS_DOWN=0 ;; #(
+  *) :
+    _Py_STACK_GROWS_DOWN=1 ;;
+esac
+
+printf "%s\n" "#define _Py_STACK_GROWS_DOWN $_Py_STACK_GROWS_DOWN" >>confdefs.h
+
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for PEP 11 support tier" >&5

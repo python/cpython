@@ -636,7 +636,7 @@ Retrieving source code
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added parameters *inherit_class_doc* and *fallback_to_class_doc*.
 
       Documentation strings on :class:`~functools.cached_property`
@@ -1788,7 +1788,7 @@ Buffer flags
 
 .. _inspect-module-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`inspect` module also provides a basic introspection capability
