@@ -12,7 +12,15 @@ class TestForkserverPreload(unittest.TestCase):
 
     def setUp(self):
         self._saved_warnoptions = sys.warnoptions.copy()
-        sys.warnoptions.clear()
+        # Remove warning options that would convert ImportWarning to errors:
+        # - 'error' converts all warnings to errors
+        # - 'error::ImportWarning' specifically converts ImportWarning
+        # Keep other specific options like 'error::BytesWarning' that
+        # subprocess's _args_from_interpreter_flags() expects to remove
+        sys.warnoptions[:] = [
+            opt for opt in sys.warnoptions
+            if opt not in ('error', 'error::ImportWarning')
+        ]
         self.ctx = multiprocessing.get_context('forkserver')
         forkserver._forkserver._stop()
 
