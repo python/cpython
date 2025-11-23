@@ -1,2 +1,2 @@
 Set ``__main__.__spec__`` to ``None`` when running a script with
-:mod:`profile` or `cProfile`
+:mod:`profile` or :mod:`cProfile`
