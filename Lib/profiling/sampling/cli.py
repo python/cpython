@@ -263,15 +263,15 @@ def _add_pstats_options(parser):
             "nsamples-cumul",
             "name",
         ],
-        default="nsamples",
-        help="Sort order for pstats output",
+        default=None,
+        help="Sort order for pstats output (default: nsamples)",
     )
     pstats_group.add_argument(
         "-l",
         "--limit",
         type=int,
-        default=15,
-        help="Limit the number of rows in the output",
+        default=None,
+        help="Limit the number of rows in the output (default: 15)",
     )
     pstats_group.add_argument(
         "--no-summary",
@@ -343,10 +343,12 @@ def _handle_output(collector, args, pid, mode):
         if args.outfile:
             collector.export(args.outfile)
         else:
-            # Print to stdout
-            sort_mode = _sort_to_mode(args.sort)
+            # Print to stdout with defaults applied
+            sort_choice = args.sort if args.sort is not None else "nsamples"
+            limit = args.limit if args.limit is not None else 15
+            sort_mode = _sort_to_mode(sort_choice)
             collector.print_stats(
-                sort_mode, args.limit, not args.no_summary, mode
+                sort_mode, limit, not args.no_summary, mode
             )
     else:
         # Export to file
@@ -374,6 +376,21 @@ def _validate_args(args, parser):
             parser.error(
                 f"--live is incompatible with {format_flag}. Live mode uses a TUI interface."
             )
+
+        # Live mode is also incompatible with pstats-specific options
+        issues = []
+        if args.sort is not None:
+            issues.append("--sort")
+        if args.limit is not None:
+            issues.append("--limit")
+        if args.no_summary:
+            issues.append("--no-summary")
+
+        if issues:
+            parser.error(
+                f"Options {', '.join(issues)} are incompatible with --live. "
+                "Live mode uses a TUI interface with its own controls."
+            )
         return
 
     # Validate gecko mode doesn't use non-wall mode
@@ -386,9 +403,9 @@ def _validate_args(args, parser):
     # Validate pstats-specific options are only used with pstats format
     if args.format != "pstats":
         issues = []
-        if args.sort != "nsamples":
+        if args.sort is not None:
             issues.append("--sort")
-        if args.limit != 15:
+        if args.limit is not None:
             issues.append("--limit")
         if args.no_summary:
             issues.append("--no-summary")

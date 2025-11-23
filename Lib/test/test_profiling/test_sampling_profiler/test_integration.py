@@ -730,3 +730,53 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
         self.assertIn(
             "No such file or directory: 'nonexistent_file.txt'", output
         )
+
+    def test_live_incompatible_with_pstats_options(self):
+        """Test that --live is incompatible with individual pstats options."""
+        test_cases = [
+            (["--sort", "tottime"], "--sort"),
+            (["--limit", "30"], "--limit"),
+            (["--no-summary"], "--no-summary"),
+        ]
+
+        for args, expected_flag in test_cases:
+            with self.subTest(args=args):
+                test_args = ["profiling.sampling.cli", "run", "--live"] + args + ["test.py"]
+                with mock.patch("sys.argv", test_args):
+                    with self.assertRaises(SystemExit) as cm:
+                        from profiling.sampling.cli import main
+                        main()
+                    self.assertNotEqual(cm.exception.code, 0)
+
+    def test_live_incompatible_with_multiple_pstats_options(self):
+        """Test that --live is incompatible with multiple pstats options."""
+        test_args = [
+            "profiling.sampling.cli", "run", "--live",
+            "--sort", "cumtime", "--limit", "25", "--no-summary", "test.py"
+        ]
+
+        with mock.patch("sys.argv", test_args):
+            with self.assertRaises(SystemExit) as cm:
+                from profiling.sampling.cli import main
+                main()
+            self.assertNotEqual(cm.exception.code, 0)
+
+    def test_live_incompatible_with_pstats_default_values(self):
+        """Test that --live blocks pstats options even with default values."""
+        # Test with --sort=nsamples (the default value)
+        test_args = ["profiling.sampling.cli", "run", "--live", "--sort=nsamples", "test.py"]
+
+        with mock.patch("sys.argv", test_args):
+            with self.assertRaises(SystemExit) as cm:
+                from profiling.sampling.cli import main
+                main()
+            self.assertNotEqual(cm.exception.code, 0)
+
+        # Test with --limit=15 (the default value)
+        test_args = ["profiling.sampling.cli", "run", "--live", "--limit=15", "test.py"]
+
+        with mock.patch("sys.argv", test_args):
+            with self.assertRaises(SystemExit) as cm:
+                from profiling.sampling.cli import main
+                main()
+            self.assertNotEqual(cm.exception.code, 0)
