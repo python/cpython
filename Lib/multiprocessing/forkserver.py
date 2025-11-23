@@ -247,7 +247,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                         with warnings.catch_warnings():
                             warnings.simplefilter('always', ImportWarning)
                             warnings.warn(
-                                f"Failed to import __main__ from {main_path!r}: {e}",
+                                f"Failed to preload __main__ from {main_path!r}: {e}",
                                 ImportWarning,
                                 stacklevel=2
                             )
