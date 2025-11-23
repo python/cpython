@@ -120,12 +120,11 @@ class ForkServer(object):
                     connection.deliver_challenge(
                             wrapped_client, self._forkserver_authkey)
                 except (EOFError, ConnectionError, BrokenPipeError) as exc:
-                    # Add helpful context if forkserver likely crashed during preload
                     if (self._preload_modules and
                         self._preload_on_error == 'fail'):
                         exc.add_note(
                             "Forkserver process may have crashed during module "
-                            "preloading. Check stderr for ImportError traceback."
+                            "preloading. Check stderr."
                         )
                     raise
                 finally:
@@ -261,7 +260,6 @@ def _handle_preload(preload, main_path=None, sys_path=None, on_error='ignore'):
         try:
             __import__(modname)
         except ImportError as e:
-            # Only catch ImportError for regular module imports
             match on_error:
                 case 'fail':
                     raise
