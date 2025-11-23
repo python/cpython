@@ -1195,8 +1195,9 @@ def assign_opcodes(
     # This is an historical oddity.
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
 
-    instmap["INSTRUMENTED_LINE"] = 254
-    instmap["ENTER_EXECUTOR"] = 255
+    instmap["INSTRUMENTED_LINE"] = 253
+    instmap["ENTER_EXECUTOR"] = 254
+    instmap["TRACE_RECORD"] = 255
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
 
@@ -1221,7 +1222,7 @@ def assign_opcodes(
     # Specialized ops appear in their own section
     # Instrumented opcodes are at the end of the valid range
     min_internal = instmap["RESUME"] + 1
-    min_instrumented = 254 - (len(instrumented) - 1)
+    min_instrumented = 254 - len(instrumented)
     assert min_internal + len(specialized) < min_instrumented
 
     next_opcode = 1

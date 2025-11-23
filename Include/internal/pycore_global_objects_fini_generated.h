@@ -13,7 +13,7 @@ static inline void
 _PyStaticObject_CheckRefcnt(PyObject *obj) {
     if (!_Py_IsImmortal(obj)) {
         fprintf(stderr, "Immortal Object has less refcnt than expected.\n");
-        _PyObject_Dump(obj);
+        PyUnstable_Object_Dump(obj);
     }
 }
 #endif
@@ -2070,6 +2070,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(symmetric_difference_update));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tabsize));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tag));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(take_bytes));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(target));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(target_is_directory));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(task));
