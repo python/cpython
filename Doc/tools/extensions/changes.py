@@ -33,14 +33,31 @@ class PyVersionChange(VersionChange):
         return super().run()
 
 
+class TerribleHashableDictHack:
+    def __init__(self, deprecated, removed):
+        self.deprecated = deprecated
+        self.removed = removed
+
+    def __hash__(self):
+        return hash((self.deprecated, self.removed))
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+
+class FormatToPctTranslator:
+    def __getitem__(self, name):
+        return f'%({name})s'
+
+
 class DeprecatedRemoved(VersionChange):
     required_arguments = 2
 
     _deprecated_label = sphinx_gettext(
-        "Deprecated since version %s, will be removed in version %s"
+        "Deprecated since version {deprecated}, will be removed in version {removed}"
     )
     _removed_label = sphinx_gettext(
-        "Deprecated since version %s, removed in version %s"
+        "Deprecated since version {deprecated}, removed in version {removed}"
     )
 
     def run(self) -> list[Node]:
@@ -54,16 +71,23 @@ class DeprecatedRemoved(VersionChange):
             raise ValueError(
                 "deprecated-removed:: second argument cannot be `next`"
             )
-        self.arguments[0] = version_deprecated, version_removed
+        self.arguments[0] = TerribleHashableDictHack(
+            deprecated=version_deprecated,
+            removed=version_removed,
+        )
 
         # Set the label based on if we have reached the removal version
         current_version = tuple(map(int, self.config.version.split(".")))
         removed_version = tuple(map(int, version_removed.split(".")))
         if current_version < removed_version:
-            versionlabels[self.name] = self._deprecated_label
+            versionlabels[self.name] = self._deprecated_label.format_map(
+                FormatToPctTranslator()
+            )
             versionlabel_classes[self.name] = "deprecated"
         else:
-            versionlabels[self.name] = self._removed_label
+            versionlabels[self.name] = self._removed_label.format_map(
+                FormatToPctTranslator()
+            )
             versionlabel_classes[self.name] = "removed"
         try:
             return super().run()
