@@ -57,15 +57,8 @@ The :mod:`functools` module defines the following functions:
    another thread makes an additional call before the initial call has been
    completed and cached.
 
-   In particular, when the same key is computed concurrently in multiple
-   threads, each thread may execute the wrapped function independently
-   before the first result is stored in the cache. As a consequence, the
-   return values from these concurrent calls may be distinct objects even
-   though they correspond to the same cache key.
-
-   This behavior means that ``lru_cache`` should not be relied upon for
-   singleton object creation or other scenarios requiring that only one
-   instance be constructed for a given key without external synchronization.
+   Call-once behavior is not guaranteed: no locks are held during the function
+   call, so the same key may be computed multiple times concurrently.
 
    .. versionadded:: 3.9
 
