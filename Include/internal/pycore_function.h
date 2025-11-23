@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-extern PyObject* _PyFunction_Vectorcall(
+PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     PyObject *func,
     PyObject *const *stack,
     size_t nargsf,

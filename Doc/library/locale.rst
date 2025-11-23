@@ -58,7 +58,7 @@ The :mod:`locale` module defines the following exception and functions:
    specified in the :envvar:`LANG` environment variable).  If the locale is not
    changed thereafter, using multithreading should not cause problems.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Support language codes with ``@``-modifiers.
 
 
@@ -374,7 +374,7 @@ The :mod:`locale` module defines the following exception and functions:
    determined.
    The "C" locale is represented as ``(None, None)``.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       ``@``-modifier are no longer silently removed, but included in
       the language code.
 
@@ -524,8 +524,8 @@ The :mod:`locale` module defines the following exception and functions:
    SSH connections.
 
    Python doesn't internally use locale-dependent character transformation functions
-   from ``ctype.h``. Instead, an internal ``pyctype.h`` provides locale-independent
-   equivalents like :c:macro:`!Py_TOLOWER`.
+   from ``ctype.h``. Instead, ``pyctype.h`` provides locale-independent
+   equivalents like :c:macro:`Py_TOLOWER`.
 
 
 .. data:: LC_COLLATE

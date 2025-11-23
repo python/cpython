@@ -1843,9 +1843,9 @@ expression support in the :mod:`re` module).
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
 
-   The casefolding algorithm is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
+   The casefolding algorithm is `described in section 3.13.3 'Default Case
+   Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G53253>`__.
 
    .. versionadded:: 3.3
 
@@ -2056,7 +2056,7 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G91002>`_.
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
 
 
 .. method:: str.isascii()
@@ -2157,6 +2157,19 @@ expression support in the :mod:`re` module).
    character, for example uppercase characters may only follow uncased characters
    and lowercase characters only cased ones.  Return ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Spam, Spam, Spam'.istitle()
+      True
+      >>> 'spam, spam, spam'.istitle()
+      False
+      >>> 'SPAM, SPAM, SPAM'.istitle()
+      False
+
+   See also :meth:`title`.
+
 
 .. method:: str.isupper()
 
@@ -2196,9 +2209,9 @@ expression support in the :mod:`re` module).
    Return a copy of the string with all the cased characters [4]_ converted to
    lowercase.
 
-   The lowercasing algorithm used is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
+   The lowercasing algorithm used is `described in section 3.13.2 'Default Case
+   Conversion' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
 
 
 .. method:: str.lstrip(chars=None, /)
@@ -2534,6 +2547,8 @@ expression support in the :mod:`re` module).
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
+   See also :meth:`istitle`.
+
 
 .. method:: str.translate(table, /)
 
@@ -2561,9 +2576,9 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
-   The uppercasing algorithm used is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
+   The uppercasing algorithm used is `described in section 3.13.2 'Default Case
+   Conversion' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
 
 
 .. method:: str.zfill(width, /)
@@ -3157,6 +3172,30 @@ objects.
       (bytearray(b'abc\x00\x00'), 5)
 
       .. versionadded:: 3.14
+
+   .. method:: take_bytes(n=None, /)
+
+      Remove the first *n* bytes from the bytearray and return them as an immutable
+      :class:`bytes`.
+      By default (if *n* is ``None``), return all bytes and clear the bytearray.
+
+      If *n* is negative, index from the end and take the first :func:`len`
+      plus *n* bytes. If *n* is out of bounds, raise :exc:`IndexError`.
+
+      Taking less than the full length will leave remaining bytes in the
+      :class:`bytearray`, which requires a copy. If the remaining bytes should be
+      discarded, use :func:`~bytearray.resize` or :keyword:`del` to truncate
+      then :func:`~bytearray.take_bytes` without a size.
+
+      .. impl-detail::
+
+         Taking all bytes is a zero-copy operation.
+
+      .. versionadded:: 3.15
+
+         See the :ref:`What's New <whatsnew315-bytearray-take-bytes>` entry for
+         common code patterns which can be optimized with
+         :func:`bytearray.take_bytes`.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -4716,11 +4755,12 @@ other sequence-like behavior.
 
 There are currently two built-in set types, :class:`set` and :class:`frozenset`.
 The :class:`set` type is mutable --- the contents can be changed using methods
-like :meth:`~set.add` and :meth:`~set.remove`.  Since it is mutable, it has no
-hash value and cannot be used as either a dictionary key or as an element of
-another set.  The :class:`frozenset` type is immutable and :term:`hashable` ---
-its contents cannot be altered after it is created; it can therefore be used as
-a dictionary key or as an element of another set.
+like :meth:`add <frozenset.add>` and :meth:`remove <frozenset.add>`.
+Since it is mutable, it has no hash value and cannot be used as
+either a dictionary key or as an element of another set.
+The :class:`frozenset` type is immutable and :term:`hashable` ---
+its contents cannot be altered after it is created;
+it can therefore be used as a dictionary key or as an element of another set.
 
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
 of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to the
@@ -5544,6 +5584,7 @@ list is non-exhaustive.
 * :class:`collections.abc.MutableMapping`
 * :class:`collections.abc.Sequence`
 * :class:`collections.abc.MutableSequence`
+* :class:`collections.abc.ByteString`
 * :class:`collections.abc.MappingView`
 * :class:`collections.abc.KeysView`
 * :class:`collections.abc.ItemsView`
@@ -5928,7 +5969,7 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is commonly used used to indicate that something is omitted.
+This object is commonly used to indicate that something is omitted.
 It supports no special operations.  There is exactly one ellipsis object, named
 :const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()`` produces the
 :const:`Ellipsis` singleton.

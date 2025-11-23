@@ -16,9 +16,8 @@ Objects, values and types
    single: data
 
 :dfn:`Objects` are Python's abstraction for data.  All data in a Python program
-is represented by objects or by relations between objects. (In a sense, and in
-conformance to Von Neumann's model of a "stored program computer", code is also
-represented by objects.)
+is represented by objects or by relations between objects. Even code is
+represented by objects.
 
 .. index::
    pair: built-in function; id
@@ -28,9 +27,6 @@ represented by objects.)
    single: type of an object
    single: mutable object
    single: immutable object
-
-.. XXX it *is* now possible in some cases to change an object's
-   type, under certain controlled conditions
 
 Every object has an identity, a type and a value.  An object's *identity* never
 changes once it has been created; you may think of it as the object's address in
@@ -1185,6 +1181,7 @@ Special attributes
    single: __module__ (class attribute)
    single: __dict__ (class attribute)
    single: __bases__ (class attribute)
+   single: __base__ (class attribute)
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
    single: __annotate__ (class attribute)
@@ -1218,6 +1215,13 @@ Special attributes
      - A :class:`tuple` containing the class's bases.
        In most cases, for a class defined as ``class X(A, B, C)``,
        ``X.__bases__`` will be exactly equal to ``(A, B, C)``.
+
+   * - .. attribute:: type.__base__
+     - .. impl-detail::
+
+          The single base class in the inheritance chain that is responsible
+          for the memory layout of instances. This attribute corresponds to
+          :c:member:`~PyTypeObject.tp_base` at the C level.
 
    * - .. attribute:: type.__doc__
      - The class's documentation string, or ``None`` if undefined.
@@ -2558,7 +2562,7 @@ instance dictionary.  In contrast, non-data descriptors can be overridden by
 instances.
 
 Python methods (including those decorated with
-:func:`@staticmethod <staticmethod>` and :func:`@classmethod <classmethod>`) are
+:deco:`staticmethod` and :deco:`classmethod`) are
 implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
@@ -2626,8 +2630,8 @@ Notes on using *__slots__*:
   descriptor directly from the base class). This renders the meaning of the
   program undefined.  In the future, a check may be added to prevent this.
 
-* :exc:`TypeError` will be raised if nonempty *__slots__* are defined for a
-  class derived from a
+* :exc:`TypeError` will be raised if *__slots__* other than *__dict__* and
+  *__weakref__* are defined for a class derived from a
   :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
   :class:`int`, :class:`bytes`, and :class:`tuple`.
 
@@ -2651,6 +2655,10 @@ Notes on using *__slots__*:
   created for each
   of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
+
+.. versionchanged:: next
+   Allowed defining the *__dict__* and *__weakref__* *__slots__* for any class.
+
 
 .. _class-customization:
 
@@ -2993,7 +3001,7 @@ class method ``__class_getitem__()``.
 
    When defined on a class, ``__class_getitem__()`` is automatically a class
    method. As such, there is no need for it to be decorated with
-   :func:`@classmethod<classmethod>` when it is defined.
+   :deco:`classmethod` when it is defined.
 
 
 The purpose of *__class_getitem__*
@@ -3142,17 +3150,20 @@ objects.  The :mod:`collections.abc` module provides a
 :term:`abstract base class` to help create those methods from a base set of
 :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
 :meth:`~object.__delitem__`, and :meth:`!keys`.
-Mutable sequences should provide methods :meth:`~sequence.append`,
-:meth:`~sequence.count`, :meth:`~sequence.index`, :meth:`~sequence.extend`,
-:meth:`~sequence.insert`, :meth:`~sequence.pop`, :meth:`~sequence.remove`,
-:meth:`~sequence.reverse` and :meth:`!sort`,
+
+Mutable sequences should provide methods
+:meth:`~sequence.append`, :meth:`~sequence.clear`, :meth:`~sequence.count`,
+:meth:`~sequence.extend`, :meth:`~sequence.index`, :meth:`~sequence.insert`,
+:meth:`~sequence.pop`, :meth:`~sequence.remove`, and :meth:`~sequence.reverse`,
 like Python standard :class:`list` objects.
 Finally, sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
 :meth:`~object.__add__`, :meth:`~object.__radd__`, :meth:`~object.__iadd__`,
 :meth:`~object.__mul__`, :meth:`~object.__rmul__` and :meth:`~object.__imul__`
 described below; they should not define other numerical
-operators.  It is recommended that both mappings and sequences implement the
+operators.
+
+It is recommended that both mappings and sequences implement the
 :meth:`~object.__contains__` method to allow efficient use of the ``in``
 operator; for
 mappings, ``in`` should search the mapping's keys; for sequences, it should
