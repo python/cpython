@@ -244,11 +244,13 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                         raise
                     case 'warn':
                         import warnings
-                        warnings.warn(
-                            f"Failed to import __main__ from {main_path!r}: {e}",
-                            ImportWarning,
-                            stacklevel=2
-                        )
+                        with warnings.catch_warnings():
+                            warnings.simplefilter('always', ImportWarning)
+                            warnings.warn(
+                                f"Failed to import __main__ from {main_path!r}: {e}",
+                                ImportWarning,
+                                stacklevel=2
+                            )
                     case 'ignore':
                         pass
             finally:
@@ -262,11 +264,13 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                         raise
                     case 'warn':
                         import warnings
-                        warnings.warn(
-                            f"Failed to preload module {modname!r}: {e}",
-                            ImportWarning,
-                            stacklevel=2
-                        )
+                        with warnings.catch_warnings():
+                            warnings.simplefilter('always', ImportWarning)
+                            warnings.warn(
+                                f"Failed to preload module {modname!r}: {e}",
+                                ImportWarning,
+                                stacklevel=2
+                            )
                     case 'ignore':
                         pass
 
