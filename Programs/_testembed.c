@@ -2260,7 +2260,7 @@ static PyMethodDef create_static_module_methods[] = {
 
 static struct PyModuleDef create_static_module_def = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "test.create_static_module",
+    .m_name = "create_static_module",
     .m_size = 0,
     .m_methods = create_static_module_methods,
     .m_slots = extension_slots,
@@ -2287,7 +2287,7 @@ test_create_module_from_initfunc(void)
         L"print(f'{embedded_ext.executed=}');"
     };
     PyConfig config;
-    if (PyImport_AppendInittab("test.create_static_module",
+    if (PyImport_AppendInittab("create_static_module",
                                &PyInit_create_static_module) != 0) {
         fprintf(stderr, "PyImport_AppendInittab() failed\n");
         return 1;
@@ -2299,7 +2299,7 @@ test_create_module_from_initfunc(void)
     int result = PyRun_SimpleString(
         "import sys\n"
         "from importlib.util import spec_from_loader\n"
-        "from test import create_static_module\n"
+        "import create_static_module\n"
         "class StaticExtensionImporter:\n"
         "   _ORIGIN = \"static-extension\"\n"
         "   @classmethod\n"
