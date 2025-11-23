@@ -1,6 +1,7 @@
 """Tests for forkserver preload functionality."""
 
 import multiprocessing
+import sys
 import tempfile
 import unittest
 from multiprocessing import forkserver
@@ -10,12 +11,14 @@ class TestForkserverPreload(unittest.TestCase):
     """Tests for forkserver preload functionality."""
 
     def setUp(self):
+        self._saved_warnoptions = sys.warnoptions.copy()
+        sys.warnoptions.clear()
         self.ctx = multiprocessing.get_context('forkserver')
         forkserver._forkserver._stop()
 
     def tearDown(self):
+        sys.warnoptions[:] = self._saved_warnoptions
         forkserver._forkserver._stop()
-        self.ctx.set_forkserver_preload([])
 
     @staticmethod
     def _send_value(conn, value):

@@ -244,13 +244,11 @@ def _handle_preload(preload, main_path=None, sys_path=None, on_error='ignore'):
                     raise
                 case 'warn':
                     import warnings
-                    with warnings.catch_warnings():
-                        warnings.simplefilter('always', ImportWarning)
-                        warnings.warn(
-                            f"Failed to preload __main__ from {main_path!r}: {e}",
-                            ImportWarning,
-                            stacklevel=2
-                        )
+                    warnings.warn(
+                        f"Failed to preload __main__ from {main_path!r}: {e}",
+                        ImportWarning,
+                        stacklevel=2
+                    )
                 case 'ignore':
                     pass
         finally:
@@ -265,13 +263,11 @@ def _handle_preload(preload, main_path=None, sys_path=None, on_error='ignore'):
                     raise
                 case 'warn':
                     import warnings
-                    with warnings.catch_warnings():
-                        warnings.simplefilter('always', ImportWarning)
-                        warnings.warn(
-                            f"Failed to preload module {modname!r}: {e}",
-                            ImportWarning,
-                            stacklevel=2
-                        )
+                    warnings.warn(
+                        f"Failed to preload module {modname!r}: {e}",
+                        ImportWarning,
+                        stacklevel=2
+                    )
                 case 'ignore':
                     pass
 
