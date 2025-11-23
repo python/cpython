@@ -197,7 +197,7 @@ def main():
             # in the module's namespace.
             globs = module.__dict__
             globs.update({
-                '__spec__': spec,
+                '__spec__': None,
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,

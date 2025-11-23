@@ -602,13 +602,16 @@ def main():
                 code = compile(fp.read(), progname, 'exec')
             spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
                                                   origin=progname)
-            globs = {
-                '__spec__': spec,
+            module = importlib.util.module_from_spec(spec)
+            sys.modules['__main__'] = module
+            globs = module.__dict__
+            globs.update({
+                '__spec__': None,
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,
                 '__cached__': None,
-            }
+            })
         try:
             runctx(code, globs, None, options.outfile, options.sort)
         except BrokenPipeError as exc:
