@@ -2841,20 +2841,28 @@ scanner_dealloc(PyObject *self)
 static int
 scanner_begin(ScannerObject* self)
 {
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (self->executing) {
         PyErr_SetString(PyExc_ValueError,
                         "regular expression scanner already executing");
-        return 0;
+        result = 0;
     }
-    self->executing = 1;
-    return 1;
+    else {
+        self->executing = 1;
+        result = 1;
+    }
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static void
 scanner_end(ScannerObject* self)
 {
+    Py_BEGIN_CRITICAL_SECTION(self);
     assert(self->executing);
     self->executing = 0;
+    Py_END_CRITICAL_SECTION();
 }
 
 /*[clinic input]
