@@ -69,7 +69,7 @@ hardware (availability of `HPET
 <https://en.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the
 Windows configuration.
 
-.. versionadded:: 3.15
+.. versionadded:: next
 
    Support for :meth:`loop.add_reader`, :meth:`loop.add_writer` added to :class:`ProactorEventLoop`.
 
