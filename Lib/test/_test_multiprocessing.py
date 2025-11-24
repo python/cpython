@@ -7184,7 +7184,7 @@ class TestSharedMemoryNames(unittest.TestCase):
             print("SUCCESS")
         """)
 
-        rc, out, err = assert_python_ok("-c", test_script)
+        rc, out, err = script_helper.assert_python_ok("-c", test_script)
         self.assertIn(b"SUCCESS", out)
         self.assertNotIn(b"traceback", err.lower(), err)
         self.assertNotIn(b"resource_tracker.py", err, err)
