@@ -363,7 +363,7 @@ This module offers the following functions:
       *reserved* is deprecated and will be removed in the future.
       Please use :func:`OpenKeyEx` instead.
 
-.. function:: OpenKeyEx(key, sub_key, options=0, access=KEY_READ, reserved=0)
+.. function:: OpenKeyEx(key, sub_key, options=0, access=KEY_READ, *, reserved=0)
 
    Opens the specified key, returning a :ref:`handle object <handle-object>`.
 

@@ -1063,7 +1063,7 @@ exit:
 
 PyDoc_STRVAR(winreg_OpenKeyEx__doc__,
 "OpenKeyEx($module, /, key, sub_key, options=0, access=winreg.KEY_READ,\n"
-"          reserved=0)\n"
+"          *, reserved=0)\n"
 "--\n"
 "\n"
 "Opens the specified key.\n"
@@ -1133,7 +1133,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     HKEY _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 5, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1174,11 +1174,15 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
     reserved = PyLong_AsInt(args[4]);
     if (reserved == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional_pos:
+skip_optional_kwonly:
     _return_value = winreg_OpenKeyEx_impl(module, key, sub_key, options, access, reserved);
     if (_return_value == NULL) {
         goto exit;
@@ -1889,4 +1893,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=e32c46000e9d47b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2d8704d0cd55051d input=a9049054013a1b77]*/

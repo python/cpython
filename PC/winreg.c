@@ -1430,6 +1430,7 @@ winreg.OpenKeyEx -> HKEY
     access: REGSAM(c_default='KEY_READ') = winreg.KEY_READ
         An integer that specifies an access mask that describes the desired
         security access for the key.  Default is KEY_READ.
+    *
     reserved: int = 0
         A reserved integer that be should zero.  If it is not zero,
         it will be used as the options parameter for compatibility reasons.
@@ -1444,7 +1445,7 @@ If the function fails, an OSError exception is raised.
 static HKEY
 winreg_OpenKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                       int options, REGSAM access, int reserved)
-/*[clinic end generated code: output=db8d3dc70876a046 input=d997970b48ac2e30]*/
+/*[clinic end generated code: output=db8d3dc70876a046 input=c8b4acb92b668596]*/
 {
     HKEY retKey;
     long rc;
