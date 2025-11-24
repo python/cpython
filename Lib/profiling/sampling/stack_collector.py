@@ -929,4 +929,3 @@ class HeatmapCollector(StackTraceCollector):
             f'            {nav_buttons_html}\n'
             f'        </div>\n'
         )
-
