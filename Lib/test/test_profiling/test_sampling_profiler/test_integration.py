@@ -724,7 +724,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
         )
         output = result.stdout + result.stderr
 
-        if "Permission Error" in output:
+        if "PermissionError" in output:
             self.skipTest("Insufficient permissions for remote profiling")
         self.assertNotIn("Script file not found", output)
         self.assertIn(
