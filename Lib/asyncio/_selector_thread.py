@@ -10,8 +10,6 @@ Runs select in a background thread.
 Adapted from Tornado 6.5.2
 """
 
-from __future__ import annotations
-
 import asyncio
 import atexit
 import contextvars
@@ -25,14 +23,7 @@ import typing
 from typing import (
     Any,
     Callable,
-    Dict,
-    List,
-    Optional,
     Protocol,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
 )
 
 
@@ -41,12 +32,10 @@ class _HasFileno(Protocol):
         pass
 
 
-_FileDescriptorLike = Union[int, _HasFileno]
-
-_T = TypeVar("_T")
+_FileDescriptorLike = int | _HasFileno
 
 # Collection of selector thread event loops to shut down on exit.
-_selector_loops: Set["SelectorThread"] = set()
+_selector_loops: set["SelectorThread"] = set()
 
 
 def _atexit_callback() -> None:
@@ -89,28 +78,21 @@ class SelectorThread:
         self._real_loop = real_loop
 
         self._select_cond = threading.Condition()
-        self._select_args: Optional[
-            Tuple[List[_FileDescriptorLike], List[_FileDescriptorLike]]
-        ] = None
+        self._select_args: tuple[list[_FileDescriptorLike], list[_FileDescriptorLike]] | None = None
         self._closing_selector = False
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._thread_manager_handle = self._thread_manager()
-
-        async def thread_manager_anext() -> None:
-            # the anext builtin wasn't added until 3.10. We just need to iterate
-            # this generator one step.
-            await self._thread_manager_handle.__anext__()
 
         # When the loop starts, start the thread. Not too soon because we can't
         # clean up if we get to this point but the event loop is closed without
         # starting.
         self._real_loop.call_soon(
-            lambda: self._real_loop.create_task(thread_manager_anext()),
+            lambda: self._real_loop.create_task(self._thread_manager_handle.__anext__()),
             context=self._main_thread_ctx,
         )
 
-        self._readers: Dict[int, Tuple[_FileDescriptorLike, Callable]] = {}
-        self._writers: Dict[int, Tuple[_FileDescriptorLike, Callable]] = {}
+        self._readers: dict[int, tuple[_FileDescriptorLike, Callable]] = {}
+        self._writers: dict[int, tuple[_FileDescriptorLike, Callable]] = {}
 
         # Writing to _waker_w will wake up the selector thread, which
         # watches for _waker_r to be readable.
@@ -142,7 +124,7 @@ class SelectorThread:
         # can be shut down in this way (non-daemon threads would require the
         # introduction of a new hook: https://bugs.python.org/issue41962)
         self._thread = threading.Thread(
-            name="Tornado selector",
+            name="Asyncio selector",
             daemon=True,
             target=self._run_select,
         )
@@ -184,7 +166,7 @@ class SelectorThread:
             self._select_cond.notify()
 
     def _run_select(self) -> None:
-        while True:
+        while not self._closing_selector:
             with self._select_cond:
                 while self._select_args is None and not self._closing_selector:
                     self._select_cond.wait()
@@ -232,25 +214,17 @@ class SelectorThread:
                 else:
                     raise
 
-            try:
-                self._real_loop.call_soon_threadsafe(
+            # if close has already started, don't schedule callbacks,
+            # which could cause a race
+            with self._select_cond:
+                if self._closing_selector:
+                    return
+            self._real_loop.call_soon_threadsafe(
                     self._handle_select, rs, ws, context=self._main_thread_ctx
                 )
-            except RuntimeError:
-                # "Event loop is closed". Swallow the exception for
-                # consistency with PollIOLoop (and logical consistency
-                # with the fact that we can't guarantee that an
-                # add_callback that completes without error will
-                # eventually execute).
-                pass
-            except AttributeError:
-                # ProactorEventLoop may raise this instead of RuntimeError
-                # if call_soon_threadsafe races with a call to close().
-                # Swallow it too for consistency.
-                pass
 
     def _handle_select(
-        self, rs: List[_FileDescriptorLike], ws: List[_FileDescriptorLike]
+        self, rs: list[_FileDescriptorLike], ws: list[_FileDescriptorLike]
     ) -> None:
         for r in rs:
             self._handle_event(r, self._readers)
@@ -261,7 +235,7 @@ class SelectorThread:
     def _handle_event(
         self,
         fd: _FileDescriptorLike,
-        cb_map: Dict[int, Tuple[_FileDescriptorLike, Callable]],
+        cb_map: dict[int, tuple[_FileDescriptorLike, Callable]],
     ) -> None:
         try:
             fileobj, callback = cb_map[fd]
@@ -269,7 +243,7 @@ class SelectorThread:
             return
         callback()
 
-    def _split_fd(self, fd: _FileDescriptorLike) -> Tuple[int, _FileDescriptorLike]:
+    def _split_fd(self, fd: _FileDescriptorLike) -> tuple[int, _FileDescriptorLike]:
         """Return fd, file object
 
         Keeps a handle on the fileobject given,

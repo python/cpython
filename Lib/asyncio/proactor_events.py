@@ -646,7 +646,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     def _get_selector_thread(self):
         """Return the SelectorThread.
 
-        creating it on first request,
+        Creates the thread it on first request,
         so no thread is created until/unless
         the first call to `add_reader` and friends.
         """
@@ -705,14 +705,14 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         # Call these methods before closing the event loop (before calling
         # BaseEventLoop.close), because they can schedule callbacks with
         # call_soon(), which is forbidden when the event loop is closed.
+        if self._selector_thread is not None:
+            self._selector_thread.close()
+            self._selector_thread = None
         self._stop_accept_futures()
         self._close_self_pipe()
         self._proactor.close()
         self._proactor = None
         self._selector = None
-        if self._selector_thread is not None:
-            self._selector_thread.close()
-            self._selector_thread = None
 
         # Close the event loop
         super().close()
