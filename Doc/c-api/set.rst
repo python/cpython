@@ -179,7 +179,7 @@ Deprecated API
    This is documented solely for completeness, as there are no guarantees
    that a given version of CPython uses preallocated tables with a fixed
    size.
-   In code that does not deal with unstable set internals, 
+   In code that does not deal with unstable set internals,
    :c:macro:`!PySet_MINSIZE` can be replaced with a small constant like ``8``.
 
    If looking for the size of a set, use :c:func:`PySet_Size` instead.
