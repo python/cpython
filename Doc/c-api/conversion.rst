@@ -162,44 +162,33 @@ The following functions provide locale-independent string to number conversions.
    .. versionadded:: 3.1
 
 
-.. c:function:: int PyOS_stricmp(const char *s1, const char *s2)
-
-   Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`!strcmp` except that it ignores the case and locale.
-
-   This is an alias of :c:func:`PyOS_mystricmp` on all platforms except Windows,
-   where it is an alias of :c:func:`!strcmp`.
-
-
-.. c:function:: int PyOS_strnicmp(const char *s1, const char *s2, Py_ssize_t  size)
-
-   Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`!strncmp` except that it ignores the case and locale.
-
-   This is an alias of :c:func:`PyOS_mystricmp` on all platforms except Windows,
-   where it is an alias of :c:func:`!strncmp`.
-
-
 .. c:function:: int PyOS_mystricmp(const char *str1, const char *str2)
+                int PyOS_mystrnicmp(const char *str1, const char *str2, Py_ssize_t size)
 
-   Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`!strcmp` except that it ignores the case and locale.
+   Case insensitive comparison of strings. These functions work almost
+   identically to :c:func:`!strcmp` and :c:func:`!strncmp` (respectively),
+   except that they ignore the case of ASCII characters.
 
-   Return ``0`` if the strings are equal, a negative value if *str1* is less
-   than *str2*, or a positive value if *str1* is greater than *str2*.
+   Return ``0`` if the strings are equal, a negative value if *str1* sorts
+   lexicographically before *str2*, or a positive value if it sorts after.
 
-   This function cannot fail.
+   In the *str1* or *str2* arguments, a NUL byte marks the end of the string.
+   For :c:func:`!PyOS_mystrnicmp`, the *size* argument gives the maximum size
+   of the string, as if NUL was present at the index given by *size*.
+
+   These functions do not use the locale.
 
 
-.. c:function:: int PyOS_mystrnicmp(const char *str1, const char *str2, Py_ssize_t size)
+.. c:function:: int PyOS_stricmp(const char *str1, const char *str2)
+                int PyOS_strnicmp(const char *str1, const char *str2, Py_ssize_t  size)
 
-  Case insensitive comparison of strings. The function works almost
-  identically to :c:func:`!strncmp` except that it ignores the case and locale.
+   Case insensitive comparison of strings.
 
-  Return ``0`` if the strings are equal, a negative value if *str1* is less
-  than *str2*, or a positive value if *str1* is greater than *str2*.
+   On Windows, these are aliases of :c:func:`!stricmp` and :c:func:`!strnicmp`,
+   respectively.
 
-  This function cannot fail.
+   On other platforms, they are aliases of :c:func:`PyOS_mystricmp` and
+   :c:func:`PyOS_mystrnicmp`, respectively.
 
 
 Character classification and conversion
