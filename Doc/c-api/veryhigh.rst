@@ -426,8 +426,8 @@ Stack Effects
 
 .. c:function:: int PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
 
-   Similar to :c:func:`PyCompile_OpcodeStackEffect`, but also includes the
-   stack effect of jumping depending on the value of *jump*.
+   Similar to :c:func:`PyCompile_OpcodeStackEffect`, but don't include the
+   stack effect of jumping if *jump* is zero.
 
    If *jump* is ``0``, this will not include the stack effect of jumping, but
    if *jump* is ``1`` or ``-1``, this will include it.
