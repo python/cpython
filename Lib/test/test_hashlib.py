@@ -40,16 +40,15 @@ else:
 openssl_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
 
 try:
-    from _hashlib import HASH
+    import _hashlib
 except ImportError:
-    HASH = None
-
-try:
-    from _hashlib import HASHXOF, openssl_md_meth_names, get_fips_mode
-except ImportError:
-    HASHXOF = None
-    openssl_md_meth_names = frozenset()
-
+    _hashlib = None
+# The extension module may exist but only define some of these. gh-141907
+HASH = getattr(_hashlib, 'HASH', None)
+HASHXOF = getattr(_hashlib, 'HASHXOF', None)
+openssl_md_meth_names = getattr(_hashlib, 'openssl_md_meth_names', frozenset())
+get_fips_mode = getattr(_hashlib, 'get_fips_mode', None)
+if not get_fips_mode:
     def get_fips_mode():
         return 0
 
