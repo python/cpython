@@ -2228,7 +2228,16 @@ expression support in the :mod:`re` module).
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
    *iterable*, including :class:`bytes` objects.  The separator between
-   elements is the string providing this method.
+   elements is the string providing this method. For example:
+
+   .. doctest::
+
+      >>> ', '.join(['spam', 'spam', 'spam'])
+      'spam, spam, spam'
+      >>> '-'.join('Python')
+      'P-y-t-h-o-n'
+
+   See also :meth:`split`.
 
 
 .. method:: str.ljust(width, fillchar=' ', /)
@@ -2441,6 +2450,8 @@ expression support in the :mod:`re` module).
       []
       >>> "   foo   ".split(maxsplit=0)
       ['foo   ']
+
+   See also :meth:`join`.
 
 
 .. index::
