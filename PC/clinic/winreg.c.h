@@ -284,7 +284,7 @@ exit:
 
 PyDoc_STRVAR(winreg_CreateKeyEx__doc__,
 "CreateKeyEx($module, /, key, sub_key, reserved=0,\n"
-"            access=winreg.KEY_WRITE, options=0, create_only=False)\n"
+"            access=winreg.KEY_WRITE, *, options=0, create_only=False)\n"
 "--\n"
 "\n"
 "Creates or opens the specified key.\n"
@@ -362,7 +362,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     HKEY _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -403,20 +403,24 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_pos;
         }
     }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
     if (args[4]) {
         options = PyLong_AsInt(args[4]);
         if (options == -1 && PyErr_Occurred()) {
             goto exit;
         }
         if (!--noptargs) {
-            goto skip_optional_pos;
+            goto skip_optional_kwonly;
         }
     }
     create_only = PyObject_IsTrue(args[5]);
     if (create_only < 0) {
         goto exit;
     }
-skip_optional_pos:
+skip_optional_kwonly:
     _return_value = winreg_CreateKeyEx_impl(module, key, sub_key, reserved, access, options, create_only);
     if (_return_value == NULL) {
         goto exit;
@@ -1885,4 +1889,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=e4015905d06f7360 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e32c46000e9d47b5 input=a9049054013a1b77]*/

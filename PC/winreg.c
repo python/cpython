@@ -931,6 +931,7 @@ winreg.CreateKeyEx -> HKEY
     access: REGSAM(c_default='KEY_WRITE') = winreg.KEY_WRITE
         An integer that specifies an access mask that describes the
         desired security access for the key. Default is KEY_WRITE.
+    *
     options: int = 0
         Can be one of the REG_OPTION_* constants.
     create_only: bool = False
@@ -952,7 +953,7 @@ static HKEY
 winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                         int reserved, REGSAM access, int options,
                         int create_only)
-/*[clinic end generated code: output=10c0a5f7beea07e3 input=23d740b8cd7fb0df]*/
+/*[clinic end generated code: output=10c0a5f7beea07e3 input=434f3dbac49bf638]*/
 {
     HKEY retKey;
     long rc;

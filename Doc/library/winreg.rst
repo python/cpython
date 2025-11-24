@@ -87,7 +87,7 @@ This module offers the following functions:
       See :ref:`above <exception-changed>`.
 
 
-.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE, options=0, create_only=False)
+.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE, *, options=0, create_only=False)
 
    Creates or opens the specified key, returning a
    :ref:`handle object <handle-object>`.
