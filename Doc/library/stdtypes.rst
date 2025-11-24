@@ -2057,13 +2057,32 @@ expression support in the :mod:`re` module).
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
+   For example:
+
+   .. doctest::
+
+      >>> 'Letters and spaces'.isalpha()
+      False
+      >>> 'LettersOnly'.isalpha()
+      True
+      >>> 'µ'.isalpha()  # non-ASCII characters can be considered alphabetical too
+      True
+
+   See :ref:`unicode-properties`.
 
 
 .. method:: str.isascii()
 
    Return ``True`` if the string is empty or all characters in the string are ASCII,
    ``False`` otherwise.
-   ASCII characters have code points in the range U+0000-U+007F.
+   ASCII characters have code points in the range U+0000-U+007F. For example:
+
+   .. doctest::
+
+      >>> 'ASCII characters'.isascii()
+      True
+      >>> 'µ'.isascii()
+      False
 
    .. versionadded:: 3.7
 
@@ -2073,9 +2092,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are decimal
    characters and there is at least one character, ``False``
    otherwise. Decimal characters are those that can be used to form
-   numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
+   numbers in base 10, such as U+0660, ARABIC-INDIC DIGIT
    ZERO.  Formally a decimal character is a character in the Unicode
-   General Category "Nd".
+   General Category "Nd". For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdecimal()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # Arabic-Indic digits zero to nine
+      True
+      >>> 'alphabetic'.isdecimal()
+      False
 
 
 .. method:: str.isdigit()
