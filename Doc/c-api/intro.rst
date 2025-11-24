@@ -326,9 +326,10 @@ complete listing.
 
    Compute the length of a statically allocated C array at compile time.
 
-   The *array* argument must be a C array with a size known at compile time,
-   not on the heap. Passing a heap-allocated array will result in a compilation
-   error on some compilers, or otherwise produce incorrect results.
+   The *array* argument must be a C array with a size known at compile time.
+   Passing an array with an unknown size, such as a heap-allocated array,
+   will result in a compilation error on some compilers, or otherwise produce
+   incorrect results.
 
    This is roughly equivalent to::
 
