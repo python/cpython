@@ -3594,9 +3594,9 @@ def quux():
         # Check if the custom prefix appeared in the output
         self.assertIn('CUSTOM_PREFIX> ', stdout.getvalue())
 
-        def test_find_function_found_with_encoding_cookie(self):
-            self._assert_find_function(
-                """\
+    def test_find_function_found_with_encoding_cookie(self):
+        self._assert_find_function(
+            """\
 # coding: iso-8859-15
 def foo():
     pass
