@@ -1,0 +1,369 @@
+"""
+Aplicación GUI en Python (Tkinter) para construir y visualizar
+un Árbol Binario de Búsqueda (ABB) con:
+- Interfaz de acceso (contraseña enmascarada: UNAD)
+- Interfaz principal con: Agregar Nodo, Buscar Nodo, Limpiar, Salir
+- Grafico del árbol (hasta 4 niveles)
+- Paneles para recorridos: Preorden, Inorden y Posorden
+- Manejo de excepciones (entrada no entera, nodo no encontrado, exceso de niveles)
+
+Fecha: 2025-11-24
+Autor: Samara Montoya
+"""
+
+import tkinter as tk
+from tkinter import messagebox, simpledialog
+from datetime import date
+
+MAX_LEVELS = 4  # máximo de niveles permitidos
+CANVAS_WIDTH = 700
+CANVAS_HEIGHT = 400
+NODE_RADIUS = 18
+
+class Node:
+    def __init__(self, key):
+        self.key = key
+        self.left = None
+        self.right = None
+        self.level = 1  # nivel del nodo en el árbol (raíz = 1)
+
+class BST:
+    def __init__(self):
+        self.root = None
+
+    def insert(self, key):
+        if self.root is None:
+            self.root = Node(key)
+            return True
+        else:
+            return self._insert_recursive(self.root, key, 1)
+
+    def _insert_recursive(self, current, key, lvl):
+        # Evitar duplicados
+        if key == current.key:
+            return False
+        if key < current.key:
+            if current.left is None:
+                if lvl + 1 > MAX_LEVELS:
+                    raise ValueError(f"No se permite crear nodos por encima del nivel {MAX_LEVELS}.")
+                current.left = Node(key)
+                current.left.level = lvl + 1
+                return True
+            else:
+                return self._insert_recursive(current.left, key, lvl + 1)
+        else:
+            if current.right is None:
+                if lvl + 1 > MAX_LEVELS:
+                    raise ValueError(f"No se permite crear nodos por encima del nivel {MAX_LEVELS}.")
+                current.right = Node(key)
+                current.right.level = lvl + 1
+                return True
+            else:
+                return self._insert_recursive(current.right, key, lvl + 1)
+
+    def search(self, key):
+        return self._search_recursive(self.root, key)
+
+    def _search_recursive(self, current, key):
+        if current is None:
+            return None
+        if key == current.key:
+            return current
+        elif key < current.key:
+            return self._search_recursive(current.left, key)
+        else:
+            return self._search_recursive(current.right, key)
+
+    def clear(self):
+        self.root = None
+
+    def inorder(self):
+        res = []
+        self._inorder(self.root, res)
+        return res
+
+    def _inorder(self, node, res):
+        if node:
+            self._inorder(node.left, res)
+            res.append(node.key)
+            self._inorder(node.right, res)
+
+    def preorder(self):
+        res = []
+        self._preorder(self.root, res)
+        return res
+
+    def _preorder(self, node, res):
+        if node:
+            res.append(node.key)
+            self._preorder(node.left, res)
+            self._preorder(node.right, res)
+
+    def postorder(self):
+        res = []
+        self._postorder(self.root, res)
+        return res
+
+    def _postorder(self, node, res):
+        if node:
+            self._postorder(node.left, res)
+            self._postorder(node.right, res)
+            res.append(node.key)
+
+# ----------------------------------------------------
+# GUI
+# ----------------------------------------------------
+class App:
+    def __init__(self, master):
+        self.master = master
+        master.title("Acceso - Árbol Binario de Búsqueda")
+        master.resizable(False, False)
+
+        # Datos de la pantalla de acceso
+        tk.Label(master, text="Árbol Binario de Búsqueda", font=("Arial", 16, "bold")).grid(row=0, column=0, columnspan=2, pady=8)
+        tk.Label(master, text="Estudiante:").grid(row=1, column=0, sticky='e')
+        self.student_name_var = tk.StringVar(value="")
+        tk.Entry(master, textvariable=self.student_name_var).grid(row=1, column=1)
+
+        tk.Label(master, text="Fecha:").grid(row=2, column=0, sticky='e')
+        self.date_var = tk.StringVar(value=str(date(2025,11,24)))
+        tk.Entry(master, textvariable=self.date_var, state='readonly').grid(row=2, column=1)
+
+        tk.Label(master, text="Contraseña:").grid(row=3, column=0, sticky='e')
+        self.pass_entry = tk.Entry(master, show='*')
+        self.pass_entry.grid(row=3, column=1)
+
+        tk.Button(master, text="Ingresar", command=self.check_password).grid(row=4, column=0, columnspan=2, pady=10)
+        tk.Label(master, text="(Contraseña genérica: UNAD)", font=("Arial", 8)).grid(row=5, column=0, columnspan=2)
+
+        # instancia del árbol
+        self.tree = BST()
+        # nombre actual del estudiante (por defecto)
+        self.current_student = "Estudiante"
+
+    def check_password(self):
+        pwd = self.pass_entry.get().strip()
+        if pwd == "UNAD":
+            self.open_main_window()
+            self.master.withdraw()
+        else:
+            messagebox.showerror("Acceso denegado", "Contraseña incorrecta.")
+
+    def open_main_window(self):
+        self.main = tk.Toplevel(self.master)
+        self.main.title("Árbol Binario de Búsqueda - Principal")
+        self.main.protocol("WM_DELETE_WINDOW", self.on_exit)
+
+        # Entrada y botones
+        control_frame = tk.Frame(self.main)
+        control_frame.pack(side='top', fill='x', padx=8, pady=6)
+
+        tk.Label(control_frame, text="Valor (entero):").pack(side='left')
+        self.value_entry = tk.Entry(control_frame)
+        self.value_entry.pack(side='left', padx=4)
+
+        tk.Button(control_frame, text="Agregar Nodo", command=self.add_node).pack(side='left', padx=4)
+        tk.Button(control_frame, text="Buscar Nodo", command=self.search_node).pack(side='left', padx=4)
+        tk.Button(control_frame, text="Limpiar", command=self.clear_all).pack(side='left', padx=4)
+        tk.Button(control_frame, text="Salir", command=self.on_exit).pack(side='left', padx=4)
+
+        # Paneles de graficación (canvas)
+        panels_frame = tk.Frame(self.main)
+        panels_frame.pack(side='top', fill='both', expand=True, padx=8, pady=6)
+
+        # Canvas para árbol
+        tree_frame = tk.LabelFrame(panels_frame, text="Árbol")
+        tree_frame.grid(row=0, column=0, rowspan=2, padx=6, pady=6)
+        self.tree_canvas = tk.Canvas(tree_frame, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, bg='white')
+        self.tree_canvas.pack()
+
+        # Paneles para recorridos
+        trav_frame = tk.Frame(panels_frame)
+        trav_frame.grid(row=0, column=1, sticky='n')
+
+        self.pre_txt = tk.Text(trav_frame, width=30, height=6)
+        pre_frame = tk.LabelFrame(trav_frame, text="Preorden")
+        pre_frame.pack(fill='both', padx=4, pady=4)
+        self.pre_txt.pack(in_=pre_frame)
+
+        self.in_txt = tk.Text(trav_frame, width=30, height=6)
+        in_frame = tk.LabelFrame(trav_frame, text="Inorden")
+        in_frame.pack(fill='both', padx=4, pady=4)
+        self.in_txt.pack(in_=in_frame)
+
+        self.post_txt = tk.Text(trav_frame, width=30, height=6)
+        post_frame = tk.LabelFrame(trav_frame, text="Posorden")
+        post_frame.pack(fill='both', padx=4, pady=4)
+        self.post_txt.pack(in_=post_frame)
+
+        # estado
+        self.status_var = tk.StringVar(value="Listo")
+        tk.Label(self.main, textvariable=self.status_var).pack(side='bottom', anchor='w', padx=6)
+
+        # para dibujar se mantienen mapas de posiciones
+        self.positions = {}  # key -> (x,y)
+
+        # refrescar inicialmente
+        self.redraw_all()
+
+    def add_node(self):
+        # Guardar el nombre del estudiante ingresado
+        self.current_student = self.student_name_var.get().strip() or "Estudiante"
+
+        
+        val = self.value_entry.get().strip()
+        if val == "":
+            messagebox.showwarning("Entrada vacía", "Por favor ingrese un valor entero.")
+            return
+        try:
+            k = int(val)
+        except ValueError:
+            messagebox.showerror("Tipo inválido", "El valor ingresado no es un número entero.")
+            return
+        try:
+            inserted = self.tree.insert(k)
+            if not inserted:
+                messagebox.showinfo("Duplicado", "El valor ya existe en el árbol.")
+                return
+            self.status_var.set(f"Nodo {k} agregado.")
+            # Guardar recorridos en archivo
+            self.save_traversals()
+            self.value_entry.delete(0, 'end')
+            self.redraw_all()
+        except ValueError as ve:
+            messagebox.showerror("Nivel excedido", str(ve))
+
+    def search_node(self):
+        val = self.value_entry.get().strip()
+        if val == "":
+            messagebox.showwarning("Entrada vacía", "Ingrese el valor a buscar.")
+            return
+        try:
+            k = int(val)
+        except ValueError:
+            messagebox.showerror("Tipo inválido", "El valor ingresado no es un número entero.")
+            return
+        node = self.tree.search(k)
+        if node is None:
+            messagebox.showinfo("No encontrado", f"El nodo {k} no existe en el árbol.")
+            return
+        else:
+            self.status_var.set(f"Nodo {k} encontrado (nivel {node.level}).")
+            self.highlight_node(k)
+
+    def clear_all(self):
+        if messagebox.askyesno("Confirmar", "¿Desea limpiar todo el árbol y los recorridos?"):
+            self.tree.clear()
+            self.positions.clear()
+            self.tree_canvas.delete('all')
+            self.pre_txt.delete('1.0', 'end')
+            self.in_txt.delete('1.0', 'end')
+            self.post_txt.delete('1.0', 'end')
+            self.status_var.set("Árbol limpiado.")
+
+    def on_exit(self):
+        if messagebox.askyesno("Salir", "¿Desea salir de la aplicación?"):
+            self.master.destroy()
+
+    # Dibujado del árbol: se asignan posiciones X por recorrido inorden (para mantener orden visual)
+    def compute_positions(self):
+        # Nuevo posicionamiento basado en índice inorden
+        nodes = self.tree.inorder()
+        total = len(nodes)
+        index_map = {key: i for i, key in enumerate(nodes)}
+        self.positions = {}
+
+        def assign(node, depth):
+            if node is None:
+                return
+            assign(node.left, depth + 1)
+
+            i = index_map[node.key]
+            x = (i + 1) * (CANVAS_WIDTH / (total + 1))
+            y = depth * 80 + 40
+            self.positions[node.key] = (x, y)
+
+            assign(node.right, depth + 1)
+
+        assign(self.tree.root, 1)
+
+    def max_depth(self, node):
+        if node is None:
+            return 0
+        return max(node.level, self.max_depth(node.left), self.max_depth(node.right))
+
+    def redraw_all(self):
+        # actualizar textos de recorridos
+        self.pre_txt.delete('1.0', 'end')
+        self.in_txt.delete('1.0', 'end')
+        self.post_txt.delete('1.0', 'end')
+        self.pre_txt.insert('end', ' - '.join(map(str, self.tree.preorder())))
+        self.in_txt.insert('end', ' - '.join(map(str, self.tree.inorder())))
+        self.post_txt.insert('end', ' - '.join(map(str, self.tree.postorder())))
+
+        # dibujar árbol
+        self.tree_canvas.delete('all')
+        if self.tree.root is None:
+            return
+
+        # prevenir niveles mayores a MAX_LEVELS (ya controlado en inserción)
+        self.compute_positions()
+
+        # dibujar líneas y nodos
+        def draw_lines(node):
+            if node is None:
+                return
+            if node.left:
+                x1, y1 = self.positions[node.key]
+                x2, y2 = self.positions[node.left.key]
+                self.tree_canvas.create_line(x1, y1, x2, y2)
+            if node.right:
+                x1, y1 = self.positions[node.key]
+                x2, y2 = self.positions[node.right.key]
+                self.tree_canvas.create_line(x1, y1, x2, y2)
+            draw_lines(node.left)
+            draw_lines(node.right)
+
+        def draw_nodes(node):
+            if node is None:
+                return
+            x, y = self.positions[node.key]
+            self.tree_canvas.create_oval(x - NODE_RADIUS, y - NODE_RADIUS, x + NODE_RADIUS, y + NODE_RADIUS, fill='lightblue', tags=(f"node_{node.key}"))
+            self.tree_canvas.create_text(x, y, text=str(node.key), tags=(f"text_{node.key}"))
+            draw_nodes(node.left)
+            draw_nodes(node.right)
+
+        draw_lines(self.tree.root)
+        draw_nodes(self.tree.root)
+
+    def highlight_node(self, key):
+        # redibujar y marcar en rojo el nodo encontrado
+        self.redraw_all()
+        if key in self.positions:
+            x, y = self.positions[key]
+            self.tree_canvas.create_oval(x - NODE_RADIUS - 4, y - NODE_RADIUS - 4, x + NODE_RADIUS + 4, y + NODE_RADIUS + 4, outline='red', width=3)
+
+    def save_traversals(self):
+        # Guarda recorridos en archivo
+        try:
+            with open('recorridos.txt', 'w', encoding='utf-8') as f:
+                f.write(f"Estudiante: {self.current_student}
+")
+                f.write("Preorden: " + ' - '.join(map(str, self.tree.preorder())) + "
+")
+                f.write("Inorden: " + ' - '.join(map(str, self.tree.inorder())) + "
+")
+                f.write("Posorden: " + ' - '.join(map(str, self.tree.postorder())) + "
+")
+        except Exception as e:
+            # si falla la escritura, mostrar en status (no romper la app)
+            try:
+                self.status_var.set(f"Error guardando recorridos: {e}")
+            except:
+                pass
+
+# Ejecutar la aplicación
+if __name__ == '__main__':
+    root = tk.Tk()
+    app = App(root)
+    root.mainloop()
