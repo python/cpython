@@ -1,10 +1,15 @@
 from abc import ABC, abstractmethod
+from collections import deque
 from .constants import (
     THREAD_STATUS_HAS_GIL,
     THREAD_STATUS_ON_CPU,
-    THREAD_STATUS_UNKNOWN,
-    THREAD_STATUS_GIL_REQUESTED,
 )
+
+try:
+    from _remote_debugging import FrameInfo
+except ImportError:
+    # Fallback definition if _remote_debugging is not available
+    FrameInfo = None
 
 class Collector(ABC):
     @abstractmethod
