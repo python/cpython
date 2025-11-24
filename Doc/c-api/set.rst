@@ -183,6 +183,3 @@ Deprecated API
    :c:macro:`!PySet_MINSIZE` can be replaced with a small constant like ``8``.
 
    If looking for the size of a set, use :c:func:`PySet_Size` instead.
-   
-   .. deprecated:: next
-      The constant is :term:`soft deprecated`.
