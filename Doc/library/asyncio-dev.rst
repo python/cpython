@@ -288,7 +288,7 @@ manager::
 Only create a generator when a loop is already running
 ------------------------------------------------------
 
-As said abovew, if an asynchronous generator is not resumed before it is
+As said above, if an asynchronous generator is not resumed before it is
 finalized, then any finalization procedures will be delayed. The event loop
 handles this situation and doing it best to call async generator-iterator's
 :meth:`~agen.aclose` at the proper moment, thus allowing any pending
