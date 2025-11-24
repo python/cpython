@@ -459,7 +459,7 @@ ABC hierarchy::
         .. versionchanged:: 3.4
            Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
 
-    .. staticmethod:: source_to_code(data, path='<string>')
+    .. staticmethod:: source_to_code(data, path='<string>', fullname=None)
 
         Create a code object from Python source.
 
@@ -471,10 +471,18 @@ ABC hierarchy::
         With the subsequent code object one can execute it in a module by
         running ``exec(code, module.__dict__)``.
 
+        The optional argument *fullname* specifies the module name.
+        It is needed to unambiguous :ref:`filter <warning-filter>` syntax
+        warnings by module name.
+
         .. versionadded:: 3.4
 
         .. versionchanged:: 3.5
            Made the method static.
+
+        .. versionadded:: 3.15
+           Added the *fullname* parameter.
+
 
     .. method:: exec_module(module)
 
@@ -1040,7 +1048,7 @@ find and load modules.
       :meth:`PathFinder.invalidate_caches` invalidates :class:`NamespacePath`,
       forcing the path value to be recomputed next time it is accessed.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. class:: SourceFileLoader(fullname, path)

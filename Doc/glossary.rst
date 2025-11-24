@@ -1025,6 +1025,15 @@ Glossary
       applied to all scopes, only those relying on a known set of local
       and nonlocal variable names are restricted to optimized scopes.
 
+   optional module
+      An :term:`extension module` that is part of the :term:`standard library`,
+      but may be absent in some builds of :term:`CPython`,
+      usually due to missing third-party libraries or because the module
+      is not available for a given platform.
+
+      See :ref:`optional-module-requirements` for a list of optional modules
+      that require third-party libraries.
+
    package
       A Python :term:`module` which can contain submodules or recursively,
       subpackages.  Technically, a package is a Python module with a

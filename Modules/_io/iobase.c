@@ -885,7 +885,7 @@ static PyType_Slot iobase_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec iobase_spec = {
+PyType_Spec _Py_iobase_spec = {
     .name = "_io._IOBase",
     .basicsize = sizeof(iobase),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -927,33 +927,33 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
         return PyObject_CallMethodNoArgs(self, &_Py_ID(readall));
     }
 
-    /* TODO: allocate a bytes object directly instead and manually construct
-       a writable memoryview pointing to it. */
     b = PyByteArray_FromStringAndSize(NULL, n);
-    if (b == NULL)
+    if (b == NULL) {
         return NULL;
+    }
 
     res = PyObject_CallMethodObjArgs(self, &_Py_ID(readinto), b, NULL);
     if (res == NULL || res == Py_None) {
-        Py_DECREF(b);
-        return res;
+        goto cleanup;
     }
 
     Py_ssize_t bytes_filled = PyNumber_AsSsize_t(res, PyExc_ValueError);
-    Py_DECREF(res);
+    Py_CLEAR(res);
     if (bytes_filled == -1 && PyErr_Occurred()) {
-        Py_DECREF(b);
-        return NULL;
+        goto cleanup;
     }
     if (bytes_filled < 0 || bytes_filled > n) {
-        Py_DECREF(b);
         PyErr_Format(PyExc_ValueError,
                      "readinto returned %zd outside buffer size %zd",
                      bytes_filled, n);
-        return NULL;
+        goto cleanup;
     }
+    if (PyByteArray_Resize(b, bytes_filled) < 0) {
+        goto cleanup;
+    }
+    res = PyObject_CallMethodNoArgs(b, &_Py_ID(take_bytes));
 
-    res = PyBytes_FromStringAndSize(PyByteArray_AsString(b), bytes_filled);
+cleanup:
     Py_DECREF(b);
     return res;
 }
@@ -1046,7 +1046,7 @@ static PyType_Slot rawiobase_slots[] = {
 };
 
 /* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
-PyType_Spec rawiobase_spec = {
+PyType_Spec _Py_rawiobase_spec = {
     .name = "_io._RawIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),

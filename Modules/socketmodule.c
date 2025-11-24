@@ -7294,10 +7294,10 @@ _socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
     unsigned long index;
 #endif
 
+    errno = ENODEV;  // in case 'if_nametoindex' does not set errno
     index = if_nametoindex(PyBytes_AS_STRING(oname));
     if (index == 0) {
-        /* if_nametoindex() doesn't set errno */
-        PyErr_SetString(PyExc_OSError, "no interface with this name");
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -7317,6 +7317,7 @@ static PyObject *
 _socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
 /*[clinic end generated code: output=e48bc324993052e0 input=c93f753d0cf6d7d1]*/
 {
+    errno = ENXIO;  // in case 'if_indextoname' does not set errno
     char name[IF_NAMESIZE + 1];
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -8899,6 +8900,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef IPV6_HOPLIMIT
     ADD_INT_MACRO(m, IPV6_HOPLIMIT);
+#endif
+#ifdef IPV6_HDRINCL
+    ADD_INT_MACRO(m, IPV6_HDRINCL);
 #endif
 #ifdef IPV6_HOPOPTS
     ADD_INT_MACRO(m, IPV6_HOPOPTS);
