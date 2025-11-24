@@ -50,7 +50,7 @@ The :mod:`functools` module defines the following functions:
         479001600
 
    The cache is threadsafe so that the wrapped function can be used in
-   multiple threads. This means that the underlying data structure will
+   multiple threads.  This means that the underlying data structure will
    remain coherent during concurrent updates.
 
    It is possible for the wrapped function to be called more than once if
