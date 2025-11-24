@@ -332,19 +332,20 @@ class FlamegraphCollector(StackTraceCollector):
         """
         data_json = json.dumps(data)
         template_dir = importlib.resources.files(__package__)
+        flamegraph_assets_dir = template_dir / "_flamegraph_assets"
 
         # Load base template and assets
-        html_template = (template_dir / "flamegraph_template.html").read_text(encoding="utf-8")
-        html_template = self._inline_first_party_assets(html_template, template_dir)
+        html_template = (flamegraph_assets_dir / "flamegraph_template.html").read_text(encoding="utf-8")
+        html_template = self._inline_first_party_assets(html_template, flamegraph_assets_dir)
         html_template = self._inline_vendor_assets(html_template, template_dir)
         html_template = self._inline_logo(html_template, template_dir)
 
         # Replace data placeholder
         return html_template.replace("{{FLAMEGRAPH_DATA}}", data_json)
 
-    def _inline_first_party_assets(self, html_template, template_dir):
-        css_content = (template_dir / "flamegraph.css").read_text(encoding="utf-8")
-        js_content = (template_dir / "flamegraph.js").read_text(encoding="utf-8")
+    def _inline_first_party_assets(self, html_template, flamegraph_assets_dir):
+        css_content = (flamegraph_assets_dir / "flamegraph.css").read_text(encoding="utf-8")
+        js_content = (flamegraph_assets_dir / "flamegraph.js").read_text(encoding="utf-8")
 
         html_template = html_template.replace(
             "<!-- INLINE_CSS -->", f"<style>\n{css_content}\n</style>"
