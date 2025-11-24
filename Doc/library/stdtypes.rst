@@ -1994,9 +1994,9 @@ expression support in the :mod:`re` module).
 
    .. doctest::
 
-      >>> 'a commom word'.isalpha()
+      >>> 'Letters and spaces'.isalpha()
       False
-      >>> 'acommomword'.isalpha()
+      >>> 'LettersOnly'.isalpha()
       True
       >>> 'µ'.isalpha()  # non-ASCII characters can be considered alphabetical too
       True
