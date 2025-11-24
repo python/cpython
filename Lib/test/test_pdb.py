@@ -3567,7 +3567,6 @@ class PdbTestCase(unittest.TestCase):
     def test_find_function_found(self):
         self._assert_find_function(
             """\
-
 def foo():
     pass
 
@@ -3594,6 +3593,7 @@ def quux():
 
         # Check if the custom prefix appeared in the output
         self.assertIn('CUSTOM_PREFIX> ', stdout.getvalue())
+        
     def test_find_function_found_with_encoding_cookie(self):
         self._assert_find_function(
             """\
