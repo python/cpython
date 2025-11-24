@@ -58,14 +58,9 @@ The :mod:`functools` module defines the following functions:
    completed and cached.
 
    Call-once behavior is not guaranteed because locks are not held during the
-   function call.Potentially another call with the same arguments could occur
-   before the first call has returned.
+   function call. Potentially another call with the same arguments could
+   occur before the first call has returned.
 
-
-<<<<<<< HEAD
-=======
-
->>>>>>> ad161da7c8 (fixes)
    .. versionadded:: 3.9
 
 
