@@ -5,5 +5,3 @@ allowed to execute is restricted by overriding the
 :meth:`~pickle.Unpickler.find_class` method.
 This could have led to symptoms including a :exc:`MemoryError`, swapping, out
 of memory (OOM) killed processes or containers, or even system crashes.
-
-.. note:: Regardless of improvements, :mod:`pickle` remains insecure for use on untrusted data.
