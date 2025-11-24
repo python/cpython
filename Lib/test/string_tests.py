@@ -295,6 +295,32 @@ class BaseTest:
         else:
             self.checkraises(TypeError, 'hello', 'index', 42)
 
+        # For a variety of combinations,
+        #    verify that str.index() matches __contains__
+        #    and that the found substring is really at that location
+        charset = ['', 'a', 'b', 'c']
+        digits = 5
+        base = len(charset)
+        teststrings = set()
+        for i in range(base ** digits):
+            entry = []
+            for j in range(digits):
+                i, m = divmod(i, base)
+                entry.append(charset[m])
+            teststrings.add(''.join(entry))
+        teststrings = [self.fixtype(ts) for ts in teststrings]
+        for i in teststrings:
+            for j in teststrings:
+                try:
+                    loc = i.index(j)
+                except ValueError:
+                    loc = -1
+                r1 = (loc != -1)
+                r2 = j in i
+                self.assertEqual(r1, r2)
+                if loc != -1:
+                    self.assertEqual(i[loc:loc+len(j)], j)
+
     def test_rindex(self):
         self.checkequal(12, 'abcdefghiabc', 'rindex', '')
         self.checkequal(3,  'abcdefghiabc', 'rindex', 'def')
@@ -320,6 +346,32 @@ class BaseTest:
             self.checkraises(ValueError, 'hello', 'rindex', 42)
         else:
             self.checkraises(TypeError, 'hello', 'rindex', 42)
+
+        # For a variety of combinations,
+        #    verify that str.rindex() matches __contains__
+        #    and that the found substring is really at that location
+        charset = ['', 'a', 'b', 'c']
+        digits = 5
+        base = len(charset)
+        teststrings = set()
+        for i in range(base ** digits):
+            entry = []
+            for j in range(digits):
+                i, m = divmod(i, base)
+                entry.append(charset[m])
+            teststrings.add(''.join(entry))
+        teststrings = [self.fixtype(ts) for ts in teststrings]
+        for i in teststrings:
+            for j in teststrings:
+                try:
+                    loc = i.rindex(j)
+                except ValueError:
+                    loc = -1
+                r1 = (loc != -1)
+                r2 = j in i
+                self.assertEqual(r1, r2)
+                if loc != -1:
+                    self.assertEqual(i[loc:loc+len(j)], j)
 
     def test_find_periodic_pattern(self):
         """Cover the special path for periodic patterns."""
