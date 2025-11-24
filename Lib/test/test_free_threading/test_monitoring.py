@@ -9,7 +9,7 @@ import weakref
 
 from sys import monitoring
 from test.support import threading_helper
-from threading import Thread, _PyRLock
+from threading import Thread, _PyRLock, Barrier
 from unittest import TestCase
 
 
