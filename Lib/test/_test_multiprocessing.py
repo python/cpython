@@ -6956,28 +6956,13 @@ class _TestSpawnedSysPath(BaseTestCase):
         if multiprocessing.get_start_method() != "forkserver":
             self.skipTest("forkserver specific test")
 
-        # Create a test module in the temporary directory on the child's path
-        # TODO: This can all be simplified once gh-126631 is fixed and we can
-        #       use __main__ instead of a module.
-        dirname = os.path.join(self._temp_dir, 'preloaded_module')
-        init_name = os.path.join(dirname, '__init__.py')
-        os.mkdir(dirname)
-        with open(init_name, "w") as f:
-            cmd = '''if 1:
-                import sys
-                print('stderr', end='', file=sys.stderr)
-                print('stdout', end='', file=sys.stdout)
-            '''
-            f.write(cmd)
-
         name = os.path.join(os.path.dirname(__file__), 'mp_preload_flush.py')
-        env = {'PYTHONPATH': self._temp_dir}
-        _, out, err = test.support.script_helper.assert_python_ok(name, **env)
+        _, out, err = test.support.script_helper.assert_python_ok(name)
 
         # Check stderr first, as it is more likely to be useful to see in the
         # event of a failure.
-        self.assertEqual(err.decode().rstrip(), 'stderr')
-        self.assertEqual(out.decode().rstrip(), 'stdout')
+        self.assertEqual(err.decode().rstrip(), '__main____mp_main__')
+        self.assertEqual(out.decode().rstrip(), '__main____mp_main__')
 
 
 class MiscTestCase(unittest.TestCase):
@@ -7364,3 +7349,46 @@ class ForkInThreads(unittest.TestCase):
         res = assert_python_failure("-c", code, PYTHONWARNINGS='error')
         self.assertIn(b'DeprecationWarning', res.err)
         self.assertIn(b'is multi-threaded, use of forkpty() may lead to deadlocks in the child', res.err)
+
+@unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
+class TestSharedMemoryNames(unittest.TestCase):
+    def test_that_shared_memory_name_with_colons_has_no_resource_tracker_errors(self):
+        # Test script that creates and cleans up shared memory with colon in name
+        test_script = textwrap.dedent("""
+            import sys
+            from multiprocessing import shared_memory
+            import time
+
+            # Test various patterns of colons in names
+            test_names = [
+                "a:b",
+                "a:b:c",
+                "test:name:with:many:colons",
+                ":starts:with:colon",
+                "ends:with:colon:",
+                "::double::colons::",
+                "name\\nwithnewline",
+                "name-with-trailing-newline\\n",
+                "\\nname-starts-with-newline",
+                "colons:and\\nnewlines:mix",
+                "multi\\nline\\nname",
+            ]
+
+            for name in test_names:
+                try:
+                    shm = shared_memory.SharedMemory(create=True, size=100, name=name)
+                    shm.buf[:5] = b'hello'  # Write something to the shared memory
+                    shm.close()
+                    shm.unlink()
+
+                except Exception as e:
+                    print(f"Error with name '{name}': {e}", file=sys.stderr)
+                    sys.exit(1)
+
+            print("SUCCESS")
+        """)
+
+        rc, out, err = assert_python_ok("-c", test_script)
+        self.assertIn(b"SUCCESS", out)
+        self.assertNotIn(b"traceback", err.lower(), err)
+        self.assertNotIn(b"resource_tracker.py", err, err)

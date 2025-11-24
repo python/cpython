@@ -133,18 +133,8 @@ def _path_to_module(path):
 
 
 class StackTraceCollector(Collector):
-    """Base class for stack trace analysis collectors.
-
-    This abstract base class provides common functionality for processing
-    stack traces from profiling data. Subclasses should implement the
-    process_frames method to handle the actual analysis.
-
-    Args:
-        skip_idle: If True, skip idle threads in frame processing
-    """
-
-    def __init__(self, *, skip_idle=False):
-        """Initialize the collector with optional idle thread skipping."""
+    def __init__(self, sample_interval_usec, *, skip_idle=False):
+        self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
 
     def collect(self, stack_frames, skip_idle=False):
@@ -214,12 +204,16 @@ class CollapsedStackCollector(StackTraceCollector):
 
         lines = []
         for (call_tree, thread_id), count in self.stack_counter.items():
-            # Format as semicolon-separated stack with thread info
-            stack_str = ";".join(
-                f"{os.path.basename(frame[0])}:{frame[2]}:{frame[1]}"
-                for frame in call_tree
-            )
-            lines.append((f"tid:{thread_id};{stack_str}", count))
+            parts = [f"tid:{thread_id}"]
+            for file, line, func in call_tree:
+                # This is what pstats does for "special" frames:
+                if file == "~" and line == 0:
+                    part = func
+                else:
+                    part = f"{os.path.basename(file)}:{func}:{line}"
+                parts.append(part)
+            stack_str = ";".join(parts)
+            lines.append((stack_str, count))
 
         # Sort by count (descending) then by stack string for deterministic output
         lines.sort(key=lambda x: (-x[1], x[0]))
@@ -333,7 +327,10 @@ class FlamegraphCollector(StackTraceCollector):
     def _format_function_name(func):
         filename, lineno, funcname = func
 
-        # Optimize path display for long filenames
+        # Special frames like <GC> and <native> should not show file:line
+        if filename == "~" and lineno == 0:
+            return funcname
+
         if len(filename) > 50:
             path_parts = filename.split("/")
             if len(path_parts) > 2:

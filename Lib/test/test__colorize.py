@@ -1,4 +1,5 @@
 import contextlib
+import dataclasses
 import io
 import sys
 import unittest
@@ -19,6 +20,42 @@ def supports_virtual_terminal():
         return unittest.mock.patch("nt._supports_virtual_terminal", return_value=True)
     else:
         return contextlib.nullcontext()
+
+
+class TestTheme(unittest.TestCase):
+
+    def test_attributes(self):
+        # only theme configurations attributes by default
+        for field in dataclasses.fields(_colorize.Theme):
+            with self.subTest(field.name):
+                self.assertIsSubclass(field.type, _colorize.ThemeSection)
+                self.assertIsNotNone(field.default_factory)
+
+    def test_copy_with(self):
+        theme = _colorize.Theme()
+
+        copy = theme.copy_with()
+        self.assertEqual(theme, copy)
+
+        unittest_no_colors = _colorize.Unittest.no_colors()
+        copy = theme.copy_with(unittest=unittest_no_colors)
+        self.assertEqual(copy.argparse, theme.argparse)
+        self.assertEqual(copy.difflib, theme.difflib)
+        self.assertEqual(copy.syntax, theme.syntax)
+        self.assertEqual(copy.traceback, theme.traceback)
+        self.assertEqual(copy.unittest, unittest_no_colors)
+
+    def test_no_colors(self):
+        # idempotence test
+        theme_no_colors = _colorize.Theme().no_colors()
+        theme_no_colors_no_colors = theme_no_colors.no_colors()
+        self.assertEqual(theme_no_colors, theme_no_colors_no_colors)
+
+        # attributes check
+        for section in dataclasses.fields(_colorize.Theme):
+            with self.subTest(section.name):
+                section_theme = getattr(theme_no_colors, section.name)
+                self.assertEqual(section_theme, section.type.no_colors())
 
 
 class TestColorizeFunction(unittest.TestCase):
@@ -124,6 +161,17 @@ class TestColorizeFunction(unittest.TestCase):
             with unittest.mock.patch("os.isatty", side_effect=ZeroDivisionError):
                 file = unittest.mock.MagicMock()
                 file.fileno.side_effect = io.UnsupportedOperation
+                file.isatty.return_value = True
+                self.assertEqual(_colorize.can_colorize(file=file), True)
+                file.isatty.return_value = False
+                self.assertEqual(_colorize.can_colorize(file=file), False)
+
+            # The documentation for file.fileno says:
+            # > An OSError is raised if the IO object does not use a file descriptor.
+            # gh-141570: Check OSError is caught and handled
+            with unittest.mock.patch("os.isatty", side_effect=ZeroDivisionError):
+                file = unittest.mock.MagicMock()
+                file.fileno.side_effect = OSError
                 file.isatty.return_value = True
                 self.assertEqual(_colorize.can_colorize(file=file), True)
                 file.isatty.return_value = False
