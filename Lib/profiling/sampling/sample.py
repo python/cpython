@@ -65,8 +65,10 @@ class SampleProfiler:
             current_time = time.perf_counter()
             if next_time < current_time:
                 try:
-                    if async_aware:
+                    if async_aware == "all":
                         stack_frames = self.unwinder.get_all_awaited_by()
+                    elif async_aware == "running":
+                        stack_frames = self.unwinder.get_async_stack_trace()
                     else:
                         stack_frames = self.unwinder.get_stack_trace()
                     collector.collect(stack_frames)
@@ -186,7 +188,7 @@ def sample(
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
-    async_aware=False,
+    async_aware=None,
     native=False,
     gc=True,
 ):
@@ -242,6 +244,7 @@ def sample_live(
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
+    async_aware=None,
     native=False,
     gc=True,
 ):

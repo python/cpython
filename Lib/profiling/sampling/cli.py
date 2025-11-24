@@ -192,6 +192,14 @@ def _add_sampling_options(parser):
         dest="gc",
         help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
     )
+    sampling_group.add_argument(
+        "--async-aware",
+        choices=["running", "all"],
+        default=None,
+        metavar="MODE",
+        help="Enable async-aware profiling: 'running' (only running task) "
+        "or 'all' (all tasks including waiting)",
+    )
 
 
 def _add_mode_options(parser):
@@ -557,6 +565,7 @@ def _handle_attach(args):
         all_threads=args.all_threads,
         realtime_stats=args.realtime_stats,
         mode=mode,
+        async_aware=args.async_aware,
         native=args.native,
         gc=args.gc,
     )
@@ -605,6 +614,7 @@ def _handle_run(args):
             all_threads=args.all_threads,
             realtime_stats=args.realtime_stats,
             mode=mode,
+            async_aware=args.async_aware,
             native=args.native,
             gc=args.gc,
         )
@@ -647,6 +657,7 @@ def _handle_live_attach(args, pid):
         all_threads=args.all_threads,
         realtime_stats=args.realtime_stats,
         mode=mode,
+        async_aware=args.async_aware,
         native=args.native,
         gc=args.gc,
     )
@@ -687,6 +698,7 @@ def _handle_live_run(args):
             all_threads=args.all_threads,
             realtime_stats=args.realtime_stats,
             mode=mode,
+            async_aware=args.async_aware,
             native=args.native,
             gc=args.gc,
         )

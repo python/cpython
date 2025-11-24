@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections import deque
 from .constants import (
     THREAD_STATUS_HAS_GIL,
     THREAD_STATUS_ON_CPU,
@@ -40,19 +39,20 @@ class Collector(ABC):
                     yield frames, thread_info.thread_id
 
     def _iter_async_frames(self, awaited_info_list):
-        # Phase 1: Index tasks and build parent relationships
-        task_map, child_to_parents, all_task_ids = self._build_task_graph(awaited_info_list)
+        # Phase 1: Index tasks and build parent relationships with pre-computed selection
+        task_map, child_to_parent, all_task_ids, all_parent_ids = self._build_task_graph(awaited_info_list)
 
         # Phase 2: Find leaf tasks (tasks not awaited by anyone)
-        leaf_task_ids = self._find_leaf_tasks(child_to_parents, all_task_ids)
+        leaf_task_ids = self._find_leaf_tasks(all_task_ids, all_parent_ids)
 
-        # Phase 3: Build linear stacks via BFS from each leaf to root
-        yield from self._build_linear_stacks(leaf_task_ids, task_map, child_to_parents)
+        # Phase 3: Build linear stacks from each leaf to root (optimized - no sorting!)
+        yield from self._build_linear_stacks(leaf_task_ids, task_map, child_to_parent)
 
     def _build_task_graph(self, awaited_info_list):
         task_map = {}
-        child_to_parents = {}
+        child_to_parent = {}  # Maps child_id -> (selected_parent_id, parent_count)
         all_task_ids = set()
+        all_parent_ids = set()  # Track ALL parent IDs for leaf detection
 
         for awaited_info in awaited_info_list:
             thread_id = awaited_info.thread_id
@@ -61,70 +61,68 @@ class Collector(ABC):
                 task_map[task_id] = (task_info, thread_id)
                 all_task_ids.add(task_id)
 
-                # Store parent task IDs (not frames - those are in task_info.coroutine_stack)
+                # Pre-compute selected parent and count for optimization
                 if task_info.awaited_by:
-                    child_to_parents[task_id] = [p.task_name for p in task_info.awaited_by]
+                    parent_ids = [p.task_name for p in task_info.awaited_by]
+                    parent_count = len(parent_ids)
+                    # Track ALL parents for leaf detection
+                    all_parent_ids.update(parent_ids)
+                    # Use min() for O(n) instead of sorted()[0] which is O(n log n)
+                    selected_parent = min(parent_ids) if parent_count > 1 else parent_ids[0]
+                    child_to_parent[task_id] = (selected_parent, parent_count)
 
-        return task_map, child_to_parents, all_task_ids
+        return task_map, child_to_parent, all_task_ids, all_parent_ids
 
-    def _find_leaf_tasks(self, child_to_parents, all_task_ids):
-        all_parent_ids = set()
-        for parent_ids in child_to_parents.values():
-            all_parent_ids.update(parent_ids)
+    def _find_leaf_tasks(self, all_task_ids, all_parent_ids):
+        # Leaves are tasks that are not parents of any other task
         return all_task_ids - all_parent_ids
 
-    def _build_linear_stacks(self, leaf_task_ids, task_map, child_to_parents):
+    def _build_linear_stacks(self, leaf_task_ids, task_map, child_to_parent):
         for leaf_id in leaf_task_ids:
-            # Track yielded paths to avoid duplicates from multiple parent paths
-            yielded_paths = set()
+            frames = []
+            visited = set()
+            current_id = leaf_id
+            thread_id = None
 
-            # BFS queue: (current_task_id, frames_so_far, path_for_cycle_detection, thread_id)
-            # Use deque for O(1) popleft instead of O(n) list.pop(0)
-            queue = deque([(leaf_id, [], frozenset(), None)])
-
-            while queue:
-                current_id, frames, path, thread_id = queue.popleft()
-
+            # Follow the single parent chain from leaf to root
+            while current_id is not None:
                 # Cycle detection
-                if current_id in path:
-                    continue
+                if current_id in visited:
+                    break
+                visited.add(current_id)
 
-                # End of path (parent ID not in task_map)
+                # Check if task exists in task_map
                 if current_id not in task_map:
-                    if frames:
-                        yield frames, thread_id, leaf_id
-                    continue
+                    break
 
-                # Process current task
                 task_info, tid = task_map[current_id]
 
-                # Set thread_id from first task if not already set
+                # Set thread_id from first task
                 if thread_id is None:
                     thread_id = tid
-
-                new_frames = list(frames)
-                new_path = path | {current_id}
 
                 # Add all frames from all coroutines in this task
                 if task_info.coroutine_stack:
                     for coro_info in task_info.coroutine_stack:
                         for frame in coro_info.call_stack:
-                            new_frames.append(frame)
+                            frames.append(frame)
 
-                # Add task boundary marker
+                # Get pre-computed parent info (no sorting needed!)
+                parent_info = child_to_parent.get(current_id)
+
+                # Add task boundary marker with parent count annotation if multiple parents
                 task_name = task_info.task_name or "Task-" + str(task_info.task_id)
-                new_frames.append(FrameInfo(("<task>", 0, task_name)))
-
-                # Get parent task IDs
-                parent_ids = child_to_parents.get(current_id, [])
-
-                if not parent_ids:
-                    # Root task - yield complete stack (deduplicate)
-                    path_sig = frozenset(new_path)
-                    if path_sig not in yielded_paths:
-                        yielded_paths.add(path_sig)
-                        yield new_frames, thread_id, leaf_id
+                if parent_info:
+                    selected_parent, parent_count = parent_info
+                    if parent_count > 1:
+                        task_name = f"{task_name} ({parent_count} parents)"
+                    frames.append(FrameInfo(("<task>", 0, task_name)))
+                    current_id = selected_parent
                 else:
-                    # Continue to each parent (creates multiple paths if >1 parent)
-                    for parent_id in parent_ids:
-                        queue.append((parent_id, new_frames, new_path, thread_id))
+                    # Root task - no parent
+                    frames.append(FrameInfo(("<task>", 0, task_name)))
+                    current_id = None
+
+            # Yield the complete stack if we collected any frames
+            if frames and thread_id is not None:
+                yield frames, thread_id, leaf_id
