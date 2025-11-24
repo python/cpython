@@ -11,7 +11,8 @@ from .string_table import StringTable
 
 
 class StackTraceCollector(Collector):
-    def __init__(self, *, skip_idle=False):
+    def __init__(self, sample_interval_usec, *, skip_idle=False):
+        self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
 
     def collect(self, stack_frames, skip_idle=False):

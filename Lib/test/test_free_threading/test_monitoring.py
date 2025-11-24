@@ -73,6 +73,9 @@ class InstrumentationMultiThreadedMixin:
                 break
 
             self.during_threads()
+            # Sleep to avoid setting monitoring events too rapidly and
+            # overflowing the global version counter
+            time.sleep(0.0001)
 
         self.after_test()
 
