@@ -17,8 +17,12 @@
     <div class="file-stats">
         <div class="stats-grid">
             <div class="stat-item">
+                <div class="stat-value"><!-- TOTAL_SELF_SAMPLES --></div>
+                <div class="stat-label">Self Samples</div>
+            </div>
+            <div class="stat-item">
                 <div class="stat-value"><!-- TOTAL_SAMPLES --></div>
-                <div class="stat-label">Total Samples</div>
+                <div class="stat-label">Cumulative Samples</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value"><!-- NUM_LINES --></div>
@@ -29,8 +33,12 @@
                 <div class="stat-label">% of Total</div>
             </div>
             <div class="stat-item">
+                <div class="stat-value"><!-- MAX_SELF_SAMPLES --></div>
+                <div class="stat-label">Max Self/Line</div>
+            </div>
+            <div class="stat-item">
                 <div class="stat-value"><!-- MAX_SAMPLES --></div>
-                <div class="stat-label">Max Samples/Line</div>
+                <div class="stat-label">Max Cumulative/Line</div>
             </div>
         </div>
     </div>
@@ -44,10 +52,18 @@
                 <span>→</span>
                 <span>Hot (Max)</span>
             </div>
+            <button id="toggle-color-mode" title="Toggle between self and cumulative coloring">🎨 Color: Self</button>
+            <button id="toggle-cold" title="Hide lines with zero samples">❄️ Hide Cold</button>
         </div>
     </div>
 
     <div class="code-container">
+        <div class="code-header-row">
+            <div class="header-line-number">Line</div>
+            <div class="header-samples-self">Self</div>
+            <div class="header-samples-cumulative">Total</div>
+            <div class="header-content">Code</div>
+        </div>
 <!-- CODE_LINES -->
     </div>
 

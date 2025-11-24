@@ -1,6 +1,11 @@
 // Tachyon Profiler - Heatmap JavaScript
 // Interactive features for the heatmap visualization
 
+// State management
+let currentMenu = null;
+let colorMode = 'self';  // 'self' or 'cumulative' - default to self
+let coldCodeHidden = false;
+
 // Apply background colors on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Apply background colors
@@ -11,9 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
-// State management
-let currentMenu = null;
 
 // Utility: Create element with class and content
 function createElement(tag, className, textContent = '') {
@@ -59,7 +61,21 @@ function showNavigationMenu(button, items, title) {
 
     items.forEach(linkData => {
         const item = createElement('div', 'callee-menu-item');
-        item.appendChild(createElement('div', 'callee-menu-func', linkData.func));
+
+        // Create function name with count
+        const funcDiv = createElement('div', 'callee-menu-func');
+        funcDiv.textContent = linkData.func;
+
+        // Add count badge if available
+        if (linkData.count !== undefined && linkData.count > 0) {
+            const countBadge = createElement('span', 'count-badge');
+            countBadge.textContent = linkData.count.toLocaleString();
+            countBadge.title = `${linkData.count.toLocaleString()} samples`;
+            funcDiv.appendChild(document.createTextNode(' '));
+            funcDiv.appendChild(countBadge);
+        }
+
+        item.appendChild(funcDiv);
         item.appendChild(createElement('div', 'callee-menu-file', linkData.file));
         item.addEventListener('click', () => window.location.href = linkData.link);
         menu.appendChild(item);
@@ -124,9 +140,14 @@ document.querySelectorAll('.line-number').forEach(lineNum => {
 setTimeout(scrollToTargetLine, 100);
 window.addEventListener('hashchange', () => setTimeout(scrollToTargetLine, 50));
 
-// Get sample count from line element
+// Get sample count from line element based on current color mode
 function getSampleCount(line) {
-    const text = line.querySelector('.line-samples')?.textContent.trim().replace(/,/g, '');
+    let text;
+    if (colorMode === 'self') {
+        text = line.querySelector('.line-samples-self')?.textContent.trim().replace(/,/g, '');
+    } else {
+        text = line.querySelector('.line-samples-cumulative')?.textContent.trim().replace(/,/g, '');
+    }
     return parseInt(text) || 0;
 }
 
@@ -182,3 +203,85 @@ function buildScrollMarker() {
 // Build scroll marker on load and resize
 setTimeout(buildScrollMarker, 200);
 window.addEventListener('resize', buildScrollMarker);
+
+// ========================================
+// HIDE COLD CODE TOGGLE
+// ========================================
+
+function toggleColdCode() {
+    coldCodeHidden = !coldCodeHidden;
+    const lines = document.querySelectorAll('.code-line');
+    const toggleBtn = document.getElementById('toggle-cold');
+
+    lines.forEach(line => {
+        // Check both self and cumulative samples
+        const selfSamples = line.querySelector('.line-samples-self')?.textContent.trim();
+        const cumulativeSamples = line.querySelector('.line-samples-cumulative')?.textContent.trim();
+
+        // Line is cold if both are empty
+        if ((!selfSamples || selfSamples === '') && (!cumulativeSamples || cumulativeSamples === '')) {
+            if (coldCodeHidden) {
+                line.style.display = 'none';
+            } else {
+                line.style.display = 'flex';
+            }
+        }
+    });
+
+    if (toggleBtn) {
+        toggleBtn.textContent = coldCodeHidden ? '🔥 Show Cold' : '❄️ Hide Cold';
+        toggleBtn.classList.toggle('active', coldCodeHidden);
+    }
+}
+
+// Initialize toggle button
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('toggle-cold');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleColdCode);
+    }
+});
+
+// ========================================
+// COLOR MODE TOGGLE (SELF vs CUMULATIVE)
+// ========================================
+
+function toggleColorMode() {
+    colorMode = colorMode === 'self' ? 'cumulative' : 'self';
+    const lines = document.querySelectorAll('.code-line');
+    const toggleBtn = document.getElementById('toggle-color-mode');
+
+    lines.forEach(line => {
+        let bgColor;
+        if (colorMode === 'self') {
+            bgColor = line.getAttribute('data-self-color');
+        } else {
+            bgColor = line.getAttribute('data-cumulative-color');
+        }
+
+        if (bgColor) {
+            line.style.background = bgColor;
+        }
+    });
+
+    if (toggleBtn) {
+        if (colorMode === 'self') {
+            toggleBtn.textContent = '🎨 Color: Self';
+            toggleBtn.classList.remove('cumulative');
+        } else {
+            toggleBtn.textContent = '📊 Color: Cumulative';
+            toggleBtn.classList.add('cumulative');
+        }
+    }
+
+    // Rebuild scroll marker with new color mode
+    buildScrollMarker();
+}
+
+// Initialize color mode toggle button
+document.addEventListener('DOMContentLoaded', () => {
+    const colorModeBtn = document.getElementById('toggle-color-mode');
+    if (colorModeBtn) {
+        colorModeBtn.addEventListener('click', toggleColorMode);
+    }
+});

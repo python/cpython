@@ -1,63 +1,62 @@
-function filterTable() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const moduleFilter = document.getElementById('moduleFilter').value;
-    const table = document.getElementById('fileTable');
-    const rows = table.getElementsByTagName('tr');
+// Toggle type section (stdlib, project, etc)
+function toggleTypeSection(header) {
+    const section = header.parentElement;
+    const content = section.querySelector('.type-content');
+    const icon = header.querySelector('.type-icon');
 
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        const text = row.textContent.toLowerCase();
-        const moduleType = row.getAttribute('data-module-type');
-
-        const matchesSearch = text.includes(searchTerm);
-        const matchesModule = moduleFilter === 'all' || moduleType === moduleFilter;
-
-        row.style.display = (matchesSearch && matchesModule) ? '' : 'none';
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.textContent = '▼';
+    } else {
+        content.style.display = 'none';
+        icon.textContent = '▶';
     }
 }
 
-// Track current sort state
-let currentSortColumn = -1;
-let currentSortAscending = true;
+// Toggle individual folder
+function toggleFolder(header) {
+    const folder = header.parentElement;
+    const content = folder.querySelector('.folder-content');
+    const icon = header.querySelector('.folder-icon');
 
-function sortTable(columnIndex) {
-    const table = document.getElementById('fileTable');
-    const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-
-    // Determine sort direction
-    let ascending = true;
-    if (currentSortColumn === columnIndex) {
-        // Same column - toggle direction
-        ascending = !currentSortAscending;
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        icon.textContent = '▼';
+        folder.classList.remove('collapsed');
     } else {
-        // New column - default direction based on type
-        // For numeric columns (samples, lines, %), descending is default
-        // For text columns (file, module, type), ascending is default
-        ascending = columnIndex <= 2; // Columns 0-2 are text, 3+ are numeric
+        content.style.display = 'none';
+        icon.textContent = '▶';
+        folder.classList.add('collapsed');
     }
+}
 
-    rows.sort((a, b) => {
-        let aVal = a.cells[columnIndex].textContent.trim();
-        let bVal = b.cells[columnIndex].textContent.trim();
-
-        // Try to parse as number
-        const aNum = parseFloat(aVal.replace(/,/g, '').replace('%', ''));
-        const bNum = parseFloat(bVal.replace(/,/g, '').replace('%', ''));
-
-        let result;
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-            result = aNum - bNum;  // Numeric comparison
-        } else {
-            result = aVal.localeCompare(bVal);  // String comparison
-        }
-
-        return ascending ? result : -result;
+// Expand all folders
+function expandAll() {
+    // Expand all type sections
+    document.querySelectorAll('.type-section').forEach(section => {
+        const content = section.querySelector('.type-content');
+        const icon = section.querySelector('.type-icon');
+        content.style.display = 'block';
+        icon.textContent = '▼';
     });
 
-    rows.forEach(row => tbody.appendChild(row));
+    // Expand all folders
+    document.querySelectorAll('.folder-node').forEach(folder => {
+        const content = folder.querySelector('.folder-content');
+        const icon = folder.querySelector('.folder-icon');
+        content.style.display = 'block';
+        icon.textContent = '▼';
+        folder.classList.remove('collapsed');
+    });
+}
 
-    // Update sort state
-    currentSortColumn = columnIndex;
-    currentSortAscending = ascending;
+// Collapse all folders (but keep type sections expanded)
+function collapseAll() {
+    document.querySelectorAll('.folder-node').forEach(folder => {
+        const content = folder.querySelector('.folder-content');
+        const icon = folder.querySelector('.folder-icon');
+        content.style.display = 'none';
+        icon.textContent = '▶';
+        folder.classList.add('collapsed');
+    });
 }

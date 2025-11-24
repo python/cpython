@@ -42,31 +42,13 @@
                 <h2>Profiled Files</h2>
 
                 <div class="filter-controls">
-                    <input type="text" id="searchInput" placeholder="🔍 Search files..." onkeyup="filterTable()">
-                    <select id="moduleFilter" onchange="filterTable()">
-                        <option value="all">All Modules</option>
-                        <option value="stdlib">Standard Library</option>
-                        <option value="site-packages">Site Packages</option>
-                        <option value="project">Project</option>
-                        <option value="other">Other</option>
-                    </select>
+                    <button onclick="expandAll()" class="control-btn">Expand All</button>
+                    <button onclick="collapseAll()" class="control-btn">Collapse All</button>
                 </div>
 
-                <table id="fileTable">
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable(0)">File ⇅</th>
-                            <th onclick="sortTable(1)">Module ⇅</th>
-                            <th onclick="sortTable(2)">Type ⇅</th>
-                            <th onclick="sortTable(3)" style="text-align: right;">Line Samples ⇅</th>
-                            <th onclick="sortTable(4)" style="text-align: right;">Lines Hit ⇅</th>
-                            <th style="text-align: left;">Intensity</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-<!-- TABLE_ROWS -->
-                    </tbody>
-                </table>
+                <div class="module-sections">
+<!-- SECTIONS_HTML -->
+                </div>
             </div>
 
             <footer>
