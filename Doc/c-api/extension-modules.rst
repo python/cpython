@@ -209,7 +209,7 @@ For non-ASCII module names, use :samp:`PyInitU_{<name>}` instead, with
 with underscores).
 
 If a module exports both :samp:`PyInit_{<name>}` and
-:samp:`PyModExport_{<name>}`, the  :samp:`PyInit_{<name>}` function
+:samp:`PyModExport_{<name>}`, the :samp:`PyInit_{<name>}` function
 is ignored.
 
 Like with :c:macro:`PyMODEXPORT_FUNC`, it is recommended to define the
