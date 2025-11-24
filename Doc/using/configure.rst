@@ -1210,6 +1210,20 @@ the version of the cross compiled host Python.
 
    .. versionadded:: 3.11
 
+.. option:: --enable-cross-run
+
+   Enable running the target CPython binary on the build host during
+   cross-compilation.
+
+   By default, the build system assumes that target binaries cannot be executed
+   on the build host when cross-compiling which can disable optimizations such
+   as PGO.
+
+   When `--enable-cross-run` is used, the build system may attempt to execute
+   the target binaries, which is appropriate for situations where emulated
+   execution is transparently available.
+
+   .. versionadded:: 3.15
 
 Cross compiling example::
 

@@ -1094,6 +1094,7 @@ with_suffix
 enable_shared
 with_static_libpython
 enable_profiling
+enable_cross_run
 enable_gil
 with_pydebug
 with_trace_refs
@@ -1829,6 +1830,8 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --enable-cross-run      allow running target binaries during
+                          cross-compilation (default is no)
   --disable-gil           enable support for running without the GIL (default
                           is no)
   --enable-pystats        enable internal statistics gathering (default is no)
@@ -7790,8 +7793,30 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 printf "%s\n" "$LDLIBRARY" >&6; }
 
+# Check for --enable-cross-run
+# Check whether --enable-cross-run was given.
+if test ${enable_cross_run+y}
+then :
+  enableval=$enable_cross_run;
+else case e in #(
+  e) enable_cross_run=no ;;
+esac
+fi
+
+
 if test "$cross_compiling" = yes; then
-  RUNSHARED=
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to keep RUNSHARED for cross build" >&5
+printf %s "checking whether to keep RUNSHARED for cross build... " >&6; }
+  if test "$enable_cross_run" = yes
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes (--enable-cross-run)" >&5
+printf "%s\n" "yes (--enable-cross-run)" >&6; }
+else case e in #(
+  e) RUNSHARED=
+     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; } ;;
+esac
+fi
 fi
 
 # HOSTRUNNER - Program to run CPython for the host platform

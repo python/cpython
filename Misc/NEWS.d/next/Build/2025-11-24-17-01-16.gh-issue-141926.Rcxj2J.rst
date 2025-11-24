@@ -1,0 +1,2 @@
+Add ```--enable-cross-run`` to allow execution of the target binary (e.g.,
+for PGO) during cross-compilation.

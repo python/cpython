@@ -1630,8 +1630,19 @@ else # shared is disabled
 fi
 AC_MSG_RESULT([$LDLIBRARY])
 
+# Check for --enable-cross-run
+AC_ARG_ENABLE([cross-run],
+  [AS_HELP_STRING([--enable-cross-run],
+    [allow running target binaries during cross-compilation (default is no)])],
+  [],
+  [enable_cross_run=no])
+
 if test "$cross_compiling" = yes; then
-  RUNSHARED=
+  AC_MSG_CHECKING([whether to keep RUNSHARED for cross build])
+  AS_IF([test "$enable_cross_run" = yes],
+    [AC_MSG_RESULT([yes (--enable-cross-run)])],
+    [RUNSHARED=
+     AC_MSG_RESULT([no])])
 fi
 
 # HOSTRUNNER - Program to run CPython for the host platform
