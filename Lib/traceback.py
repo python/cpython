@@ -206,9 +206,9 @@ def _safe_string(value, what, func=str):
 
 # --
 
-def print_exc(limit=None, file=None, chain=True):
+def print_exc(limit=None, file=None, chain=True, **kwargs):
     """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
-    print_exception(sys.exception(), limit=limit, file=file, chain=chain)
+    print_exception(sys.exception(), limit=limit, file=file, chain=chain, **kwargs)
 
 def format_exc(limit=None, chain=True):
     """Like print_exc() but return a string."""
@@ -1107,11 +1107,14 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
-        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \
-                sys.flags.no_site and \
-                getattr(exc_value, "name", None) not in sys.stdlib_module_names:
-            self._str += (". Site initialization is disabled, did you forget to "
-                + "add the site-packages directory to sys.path?")
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError):
+            module_name = getattr(exc_value, "name", None)
+            if module_name in sys.stdlib_module_names:
+                self._str = f"Standard library module '{module_name}' was not found"
+            elif sys.flags.no_site:
+                self._str += (". Site initialization is disabled, did you forget to "
+                    + "add the site-packages directory to sys.path "
+                    + "or to enable your virtual environment?")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)

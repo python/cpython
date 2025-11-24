@@ -1,6 +1,0 @@
-Fixes multiple issues that allowed ``tarfile`` extraction filters
-(``filter="data"`` and ``filter="tar"``) to be bypassed using crafted
-symlinks and hard links.
-
-Addresses :cve:`2024-12718`, :cve:`2025-4138`, :cve:`2025-4330`, and :cve:`2025-4517`.
-

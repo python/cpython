@@ -96,9 +96,15 @@ class TestSupport(unittest.TestCase):
                         self.test_get_attribute)
         self.assertRaises(unittest.SkipTest, support.get_attribute, self, "foo")
 
-    @unittest.skip("failing buildbots")
+    @unittest.skipIf(support.is_android or support.is_apple_mobile,
+                     'Mobile platforms redirect stdout to system log')
     def test_get_original_stdout(self):
-        self.assertEqual(support.get_original_stdout(), sys.stdout)
+        if isinstance(sys.stdout, io.StringIO):
+            # gh-55258: When --junit-xml is used, stdout is a StringIO:
+            # use sys.__stdout__ in this case.
+            self.assertEqual(support.get_original_stdout(), sys.__stdout__)
+        else:
+            self.assertEqual(support.get_original_stdout(), sys.stdout)
 
     def test_unload(self):
         import sched  # noqa: F401
@@ -485,6 +491,7 @@ class TestSupport(unittest.TestCase):
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
                          'need os.waitpid() and os.WNOHANG')
     @support.requires_fork()
@@ -791,10 +798,10 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(linked)
         # The value is cached, so make sure it returns the same value again.
         self.assertIs(linked, support.linked_to_musl())
-        # The unlike libc, the musl version is a triple.
+        # The musl version is either triple or just a major version number.
         if linked:
             self.assertIsInstance(linked, tuple)
-            self.assertEqual(3, len(linked))
+            self.assertIn(len(linked), (1, 3))
             for v in linked:
                 self.assertIsInstance(v, int)
 
@@ -865,22 +872,22 @@ class TestHashlibSupport(unittest.TestCase):
             return default
 
     def fetch_hash_function(self, name, implementation):
-        info = hashlib_helper.get_hash_info(name)
-        match implementation:
-            case "hashlib":
-                assert info.hashlib is not None, info
-                return getattr(self.hashlib, info.hashlib)
-            case "openssl":
-                try:
-                    return getattr(self._hashlib, info.openssl, None)
-                except TypeError:
-                    return None
-        fullname = info.fullname(implementation)
+        info = hashlib_helper.get_hash_func_info(name)
+        match hashlib_helper.Implementation(implementation):
+            case hashlib_helper.Implementation.hashlib:
+                method_name = info.hashlib.member_name
+                assert isinstance(method_name, str), method_name
+                return getattr(self.hashlib, method_name)
+            case hashlib_helper.Implementation.openssl:
+                method_name = info.openssl.member_name
+                assert isinstance(method_name, str | None), method_name
+                return getattr(self._hashlib, method_name or "", None)
+        fullname = info[implementation].fullname
         return self.try_import_attribute(fullname)
 
     def fetch_hmac_function(self, name):
-        fullname = hashlib_helper._EXPLICIT_HMAC_CONSTRUCTORS[name]
-        return self.try_import_attribute(fullname)
+        target = hashlib_helper.get_hmac_item_info(name)
+        return target.import_member()
 
     def check_openssl_hash(self, name, *, disabled=True):
         """Check that OpenSSL HASH interface is enabled/disabled."""

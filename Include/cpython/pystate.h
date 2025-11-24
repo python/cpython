@@ -28,10 +28,10 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 /* Remote debugger support */
-#define Py_MAX_SCRIPT_PATH_SIZE 512
+#define _Py_MAX_SCRIPT_PATH_SIZE 512
 typedef struct {
     int32_t debugger_pending_call;
-    char debugger_script_path[Py_MAX_SCRIPT_PATH_SIZE];
+    char debugger_script_path[_Py_MAX_SCRIPT_PATH_SIZE];
 } _PyRemoteDebuggerSupport;
 
 typedef struct _err_stackitem {
@@ -107,10 +107,14 @@ struct _ts {
 #  define _PyThreadState_WHENCE_THREADING 3
 #  define _PyThreadState_WHENCE_GILSTATE 4
 #  define _PyThreadState_WHENCE_EXEC 5
+#  define _PyThreadState_WHENCE_THREADING_DAEMON 6
 #endif
 
     /* Currently holds the GIL. Must be its own field to avoid data races */
     int holds_gil;
+
+    /* Currently requesting the GIL */
+    int gil_requested;
 
     int _whence;
 
@@ -157,6 +161,11 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
+    /* List of objects that still need to be cleaned up, singly linked
+     * via their gc headers' gc_next pointers. The list is populated by
+     * _PyTrash_thread_deposit_object and cleaned up by
+     * _PyTrash_thread_destroy_chain.
+     */
     PyObject *delete_later;
 
     /* Tagged pointer to top-most critical section, or zero if there is no
@@ -211,6 +220,15 @@ struct _ts {
     */
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
+
+#ifdef Py_STATS
+    // Pointer to PyStats structure, NULL if recording is off.  For the
+    // free-threaded build, the structure is per-thread (stored as a pointer
+    // in _PyThreadStateImpl).  For the default build, the structure is stored
+    // in the PyInterpreterState structure (threads do not have their own
+    // structure and all share the same per-interpreter structure).
+    PyStats *pystats;
+#endif
 };
 
 /* other API */
@@ -233,6 +251,21 @@ PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
 // function is set, otherwise disable them.
 PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
 
+#ifdef Py_STATS
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+extern _Py_thread_local PyThreadState *_Py_tss_tstate;
+
+static inline PyStats*
+_PyThreadState_GetStatsFast(void)
+{
+    if (_Py_tss_tstate == NULL) {
+        return NULL; // no attached thread state
+    }
+    return _Py_tss_tstate->pystats;
+}
+#endif
+#endif // Py_STATS
+
 /* PyGILState */
 
 /* Helper/diagnostic function - return 1 if the current thread
@@ -245,6 +278,18 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    thread id to that thread's current frame.
 */
 PyAPI_FUNC(PyObject*) _PyThread_CurrentFrames(void);
+
+// Set the stack protection start address and stack protection size
+// of a Python thread state
+PyAPI_FUNC(int) PyUnstable_ThreadState_SetStackProtection(
+    PyThreadState *tstate,
+    void *stack_start_addr,  // Stack start address
+    size_t stack_size);      // Stack size (in bytes)
+
+// Reset the stack protection start address and stack protection size
+// of a Python thread state
+PyAPI_FUNC(void) PyUnstable_ThreadState_ResetStackProtection(
+    PyThreadState *tstate);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */

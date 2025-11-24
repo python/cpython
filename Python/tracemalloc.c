@@ -36,7 +36,7 @@ static int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
    the GIL held from PyMem_RawFree(). It cannot acquire the lock because it
    would introduce a deadlock in _PyThreadState_DeleteCurrent(). */
 #define tables_lock _PyRuntime.tracemalloc.tables_lock
-#define TABLES_LOCK() PyMutex_LockFlags(&tables_lock, _Py_LOCK_DONT_DETACH)
+#define TABLES_LOCK() PyMutex_Lock(&tables_lock)
 #define TABLES_UNLOCK() PyMutex_Unlock(&tables_lock)
 
 
@@ -230,7 +230,7 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
     }
     frame->lineno = (unsigned int)lineno;
 
-    PyObject *filename = filename = _PyFrame_GetCode(pyframe)->co_filename;
+    PyObject *filename = _PyFrame_GetCode(pyframe)->co_filename;
     if (filename == NULL) {
 #ifdef TRACE_DEBUG
         tracemalloc_error("failed to get the filename of the code object");
