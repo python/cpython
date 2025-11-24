@@ -2057,6 +2057,18 @@ expression support in the :mod:`re` module).
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
+   For example:
+
+   .. doctest::
+
+      >>> 'Letters and spaces'.isalpha()
+      False
+      >>> 'LettersOnly'.isalpha()
+      True
+      >>> 'µ'.isalpha()  # non-ASCII characters can be considered alphabetical too
+      True
+
+   See :ref:`unicode-properties`.
 
 
 .. method:: str.isascii()
