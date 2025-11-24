@@ -2662,6 +2662,38 @@ class TestUopsOptimization(unittest.TestCase):
                               f" {executor} at offset {idx} rather"
                               f" than expected _EXIT_TRACE")
 
+    def test_enter_executor_valid_op_arg(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import sys
+            sys.setrecursionlimit(30) # reduce time of the run
+
+            str_v1 = ''
+            tuple_v2 = (None, None, None, None, None)
+            small_int_v3 = 4
+
+            def f1():
+
+                for _ in range(10):
+                    abs(0)
+
+                tuple_v2[small_int_v3]
+                tuple_v2[small_int_v3]
+                tuple_v2[small_int_v3]
+
+                def recursive_wrapper_4569():
+                    str_v1 > str_v1
+                    str_v1 > str_v1
+                    str_v1 > str_v1
+                    recursive_wrapper_4569()
+
+                recursive_wrapper_4569()
+
+            for i_f1 in range(19000):
+                try:
+                    f1()
+                except RecursionError:
+                    pass
+        """))
 
 
 def global_identity(x):
