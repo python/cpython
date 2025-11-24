@@ -6,6 +6,10 @@
 Compatibility for [add|remove]_[reader|writer] where unavailable (Proactor).
 
 Runs select in a background thread.
+_Only_ `select.select` is called in the background thread.
+
+Callbacks are all handled back in the event loop's thread,
+as scheduled by `loop.call_soon_threadsafe`.
 
 Adapted from Tornado 6.5.2
 """
@@ -61,10 +65,8 @@ class SelectorThread:
 
     Instances of this class start a second thread to run a selector.
     This thread is completely hidden from the user;
-    all callbacks are run on the wrapped event loop's thread.
-
-    Typically used via ``AddThreadSelectorEventLoop``,
-    but can be attached to a running asyncio loop.
+    all callbacks are run on the wrapped event loop's thread
+    via :meth:`loop.call_soon_threadsafe`.
     """
 
     _closed = False
@@ -140,6 +142,7 @@ class SelectorThread:
             raise
 
     def _wake_selector(self) -> None:
+        """Wake the selector thread from another thread."""
         if self._closed:
             return
         try:
@@ -148,12 +151,18 @@ class SelectorThread:
             pass
 
     def _consume_waker(self) -> None:
+        """Consume messages sent via _wake_selector."""
         try:
             self._waker_r.recv(1024)
         except BlockingIOError:
             pass
 
     def _start_select(self) -> None:
+        """Start select waiting for events.
+
+        Called from the event loop thread,
+        schedules select to be called in the background thread.
+        """
         # Capture reader and writer sets here in the event loop
         # thread to avoid any problems with concurrent
         # modification while the select loop uses them.
@@ -163,6 +172,12 @@ class SelectorThread:
             self._select_cond.notify()
 
     def _run_select(self) -> None:
+        """The main function of the select thread.
+
+        Runs `select.select()` until `_closing_selector` attribute is set (typically by `close()`).
+        Schedules handling of `select.select` output on the main thread
+        via `loop.call_soon_threadsafe()`.
+        """
         while not self._closing_selector:
             with self._select_cond:
                 while self._select_args is None and not self._closing_selector:
@@ -223,6 +238,10 @@ class SelectorThread:
     def _handle_select(
         self, rs: list[_FileDescriptorLike], ws: list[_FileDescriptorLike]
     ) -> None:
+        """Handle the result of select.select.
+
+        This method is called on the event loop thread via `call_soon_threadsafe`.
+        """
         for r in rs:
             self._handle_event(r, self._readers)
         for w in ws:
@@ -234,6 +253,11 @@ class SelectorThread:
         fd: _FileDescriptorLike,
         cb_map: dict[int, tuple[_FileDescriptorLike, Callable]],
     ) -> None:
+        """Handle one callback event.
+
+        This method is called on the event loop thread via `call_soon_threadsafe` (from `_handle_select`),
+        so exception handler wrappers, etc. are applied.
+        """
         try:
             fileobj, callback = cb_map[fd]
         except KeyError:
