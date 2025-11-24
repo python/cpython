@@ -6,7 +6,7 @@ import unittest
 
 try:
     import _remote_debugging  # noqa: F401
-    from profiling.sampling.sample import SampleProfiler, print_sampled_stats
+    from profiling.sampling.sample import SampleProfiler
     from profiling.sampling.pstats_collector import PstatsCollector
 except ImportError:
     raise unittest.SkipTest(
@@ -14,6 +14,24 @@ except ImportError:
     )
 
 from test.support import force_not_colorized_test_class
+
+
+def print_sampled_stats(stats, sort=-1, limit=None, show_summary=True, sample_interval_usec=100):
+    """Helper function to maintain compatibility with old test API.
+
+    This wraps the new PstatsCollector.print_stats() API to work with the
+    existing test infrastructure.
+    """
+    # Create a mock collector that populates stats correctly
+    collector = PstatsCollector(sample_interval_usec=sample_interval_usec)
+
+    # Override create_stats to populate self.stats with the provided stats
+    def mock_create_stats():
+        collector.stats = stats.stats
+    collector.create_stats = mock_create_stats
+
+    # Call the new print_stats method
+    collector.print_stats(sort=sort, limit=limit, show_summary=show_summary)
 
 
 class TestSampleProfiler(unittest.TestCase):
@@ -406,8 +424,8 @@ class TestPrintSampledStats(unittest.TestCase):
 
             result = output.getvalue()
 
-        # Should still print header
-        self.assertIn("Profile Stats:", result)
+        # Should print message about no samples
+        self.assertIn("No samples were collected.", result)
 
     def test_print_sampled_stats_sample_percentage_sorting(self):
         """Test sample percentage sorting options."""

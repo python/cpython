@@ -175,7 +175,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
     def test_collapsed_stack_collector_with_empty_and_deep_stacks(self):
         """Test CollapsedStackCollector handles empty frames, single-frame stacks, and very deep call stacks."""
-        collector = CollapsedStackCollector()
+        collector = CollapsedStackCollector(1000)
 
         # Test with empty frames
         collector.collect([])
@@ -197,7 +197,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         # Test with very deep stack
         deep_stack = [(f"file{i}.py", i, f"func{i}") for i in range(100)]
         test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, deep_stack)])]
-        collector = CollapsedStackCollector()
+        collector = CollapsedStackCollector(1000)
         collector.collect(test_frames)
         # One aggregated path with 100 frames (reversed)
         (((path_tuple, thread_id),),) = (collector.stack_counter.keys(),)
@@ -297,7 +297,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(func2_stats[3], 2.0)  # ct (cumulative time)
 
     def test_collapsed_stack_collector_basic(self):
-        collector = CollapsedStackCollector()
+        collector = CollapsedStackCollector(1000)
 
         # Test empty state
         self.assertEqual(len(collector.stack_counter), 0)
@@ -327,7 +327,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collapsed_out = tempfile.NamedTemporaryFile(delete=False)
         self.addCleanup(close_and_unlink, collapsed_out)
 
-        collector = CollapsedStackCollector()
+        collector = CollapsedStackCollector(1000)
 
         test_frames1 = [
             MockInterpreterInfo(
@@ -377,7 +377,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
     def test_flamegraph_collector_basic(self):
         """Test basic FlamegraphCollector functionality."""
-        collector = FlamegraphCollector()
+        collector = FlamegraphCollector(1000)
 
         # Empty collector should produce 'No Data'
         data = collector._convert_to_flamegraph_format()
@@ -437,7 +437,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         )
         self.addCleanup(close_and_unlink, flamegraph_out)
 
-        collector = FlamegraphCollector()
+        collector = FlamegraphCollector(1000)
 
         # Create some test data (use Interpreter/Thread objects like runtime)
         test_frames1 = [
@@ -495,7 +495,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
     def test_gecko_collector_basic(self):
         """Test basic GeckoCollector functionality."""
-        collector = GeckoCollector()
+        collector = GeckoCollector(1000)
 
         # Test empty state
         self.assertEqual(len(collector.threads), 0)
@@ -592,7 +592,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         gecko_out = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
         self.addCleanup(close_and_unlink, gecko_out)
 
-        collector = GeckoCollector()
+        collector = GeckoCollector(1000)
 
         test_frames1 = [
             MockInterpreterInfo(
@@ -668,7 +668,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
             THREAD_STATUS_ON_CPU = 1 << 1
             THREAD_STATUS_GIL_REQUESTED = 1 << 3
 
-        collector = GeckoCollector()
+        collector = GeckoCollector(1000)
 
         # Status combinations for different thread states
         HAS_GIL_ON_CPU = (

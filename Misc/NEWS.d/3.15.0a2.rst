@@ -388,7 +388,7 @@ Add :func:`os.reload_environ` to ``os.__all__``.
 .. nonce: L13UCV
 .. section: Library
 
-Fix :func:`profiling.sampling.sample` incorrectly handling a
+Fix ``profiling.sampling.sample()`` incorrectly handling a
 :exc:`FileNotFoundError` or :exc:`PermissionError`.
 
 ..
