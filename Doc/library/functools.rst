@@ -57,9 +57,15 @@ The :mod:`functools` module defines the following functions:
    another thread makes an additional call before the initial call has been
    completed and cached.
 
-   Call-once behavior is not guaranteed: no locks are held during the function
-   call, so the same key may be computed multiple times concurrently.
+   Call-once behavior is not guaranteed because locks are not held during the
+   function call.Potentially another call with the same arguments could occur
+   before the first call has returned.
 
+
+<<<<<<< HEAD
+=======
+
+>>>>>>> ad161da7c8 (fixes)
    .. versionadded:: 3.9
 
 
