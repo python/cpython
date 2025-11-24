@@ -231,7 +231,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    *linejunk*: A function that accepts a single string argument, and returns
    true if the string is junk, or false if not. The default is ``None``. There
    is also a module-level function :func:`IS_LINE_JUNK`, which filters out lines
-   without visible characters, except for at most one pound character (``'#'``)
+   without visible characters, except for at most one hash character (``'#'``)
    -- however the underlying :class:`SequenceMatcher` class does a dynamic
    analysis of which lines are so frequent as to constitute noise, and this
    usually works better than using this function.
@@ -278,7 +278,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       emu
 
 
-.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
+.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n', *, color=False)
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in unified diff format.
@@ -296,6 +296,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    For inputs that do not have trailing newlines, set the *lineterm* argument to
    ``""`` so that the output will be uniformly newline free.
+
+   Set *color* to ``True`` to enable output in color, similar to
+   :program:`git diff --color`. Even if enabled, it can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
    The unified diff format normally has a header for filenames and modification
    times.  Any or all of these may be specified using strings for *fromfile*,
@@ -318,6 +322,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
        guido
 
    See :ref:`difflib-interface` for a more detailed example.
+
+   .. versionchanged:: 3.15
+      Added the *color* parameter.
+
 
 .. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
 
