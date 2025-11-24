@@ -109,8 +109,8 @@ class SelectorThread:
             context=self._main_thread_ctx,
         )
 
-        self._readers: Dict[_FileDescriptorLike, Callable] = {}
-        self._writers: Dict[_FileDescriptorLike, Callable] = {}
+        self._readers: Dict[int, Tuple[_FileDescriptorLike, Callable]] = {}
+        self._writers: Dict[int, Tuple[_FileDescriptorLike, Callable]] = {}
 
         # Writing to _waker_w will wake up the selector thread, which
         # watches for _waker_r to be readable.
@@ -261,27 +261,45 @@ class SelectorThread:
     def _handle_event(
         self,
         fd: _FileDescriptorLike,
-        cb_map: Dict[_FileDescriptorLike, Callable],
+        cb_map: Dict[int, Tuple[_FileDescriptorLike, Callable]],
     ) -> None:
         try:
-            callback = cb_map[fd]
+            fileobj, callback = cb_map[fd]
         except KeyError:
             return
         callback()
 
+    def _split_fd(self, fd: _FileDescriptorLike) -> Tuple[int, _FileDescriptorLike]:
+        """Return fd, file object
+
+        Keeps a handle on the fileobject given,
+        but always registers integer FD
+        """
+        fileno = fd
+        if not isinstance(fileno, int):
+            try:
+                fileno = int(fileno.fileno())
+            except (AttributeError, TypeError, ValueError):
+                # This code matches selectors._fileobj_to_fd function.
+                raise ValueError(f"Invalid file object: {fd!r}") from None
+        return fileno, fd
+
     def add_reader(
         self, fd: _FileDescriptorLike, callback: Callable[..., None], *args: Any
     ) -> None:
-        self._readers[fd] = functools.partial(callback, *args)
+        fd, fileobj = self._split_fd(fd)
+        self._readers[fd] = (fileobj, functools.partial(callback, *args))
         self._wake_selector()
 
     def add_writer(
         self, fd: _FileDescriptorLike, callback: Callable[..., None], *args: Any
     ) -> None:
-        self._writers[fd] = functools.partial(callback, *args)
+        fd, fileobj = self._split_fd(fd)
+        self._writers[fd] = (fileobj, functools.partial(callback, *args))
         self._wake_selector()
 
     def remove_reader(self, fd: _FileDescriptorLike) -> bool:
+        fd, _ = self._split_fd(fd)
         try:
             del self._readers[fd]
         except KeyError:
@@ -290,6 +308,7 @@ class SelectorThread:
         return True
 
     def remove_writer(self, fd: _FileDescriptorLike) -> bool:
+        fd, _ = self._split_fd(fd)
         try:
             del self._writers[fd]
         except KeyError:

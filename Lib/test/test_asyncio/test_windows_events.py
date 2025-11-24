@@ -357,17 +357,17 @@ class ProactorTests(WindowsEventsTestCase):
 
             self.loop.add_reader(b, read)
             _selector_thread = self.loop._selector_thread
-            assert b in _selector_thread._readers
+            assert b.fileno() in _selector_thread._readers
             assert _selector_thread is not None
             self.loop.add_writer(a, write)
             assert self.loop._selector_thread is _selector_thread
-            assert a in _selector_thread._writers
+            assert a.fileno() in _selector_thread._writers
             msg = await asyncio.wait_for(read_future, timeout=10)
 
             self.loop.remove_writer(a)
-            assert a not in _selector_thread._writers
+            assert a.fileno() not in _selector_thread._writers
             self.loop.remove_reader(b)
-            assert b not in _selector_thread._readers
+            assert b.fileno() not in _selector_thread._readers
             a.close()
             b.close()
             assert self.loop._selector_thread is _selector_thread
