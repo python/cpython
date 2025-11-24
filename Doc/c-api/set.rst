@@ -173,8 +173,16 @@ Deprecated API
 
 .. c:macro:: PySet_MINSIZE
 
-   This is a :term:`soft deprecated` constant representing the size of a
+   A :term:`soft deprecated` constant representing the size of an internal
    preallocated table inside :c:type:`PySetObject` instances.
 
-   This is documented solely for completeness and not useful to users in any
-   way. If looking for the size of a set, use :c:func:`PySet_Size` instead.
+   This is documented solely for completeness, as there are no guarantees
+   that a given version of CPython uses preallocated tables with a fixed
+   size.
+   In code that does not deal with unstable set internals, 
+   :c:macro:`!PySet_MINSIZE` can be replaced with a small constant like ``8``.
+
+   If looking for the size of a set, use :c:func:`PySet_Size` instead.
+   
+   .. deprecated:: next
+      The constant is :term:`soft deprecated`.
