@@ -60,7 +60,7 @@ All event loops on Windows do not support the following methods:
 :class:`ProactorEventLoop` has the following limitations:
 
 * :meth:`loop.add_reader` and :meth:`loop.add_writer` only accept
-  socket handles (e.g. pipe file descriptors are not supported).
+  socket handles (for example, pipe file descriptors are not supported).
   When called, :func:`select.select` is run in an additional thread.
 
 The resolution of the monotonic clock on Windows is usually around 15.6
@@ -72,6 +72,7 @@ Windows configuration.
 .. versionadded:: 3.15
 
    Support for :meth:`loop.add_reader`, :meth:`loop.add_writer` added to :class:`ProactorEventLoop`.
+
 
 .. _asyncio-windows-subprocess:
 
