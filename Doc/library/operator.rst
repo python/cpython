@@ -220,7 +220,7 @@ Operations which work with sequences (some of them with mappings too) include:
               __concat__(a, b)
 
    Return ``a + b`` for *a* and *b* sequences.
-   (Note that there is no :meth:`!__concat__` method. 
+   (Note that there is no :meth:`!__concat__` method.
    Instead, the :meth:`~object.__add__` method is called.)
 
 
@@ -521,7 +521,7 @@ will perform the update, so no subsequent assignment is necessary:
               __iconcat__(a, b)
 
    ``a = iconcat(a, b)`` is equivalent to ``a += b`` for *a* and *b* sequences.
-   (Note that there is no :meth:`!__iconcat__` method. 
+   (Note that there is no :meth:`!__iconcat__` method.
    Instead, the :meth:`~object.__iadd__` method is called.)
 
 
