@@ -47,16 +47,13 @@ def _atexit_callback() -> None:
             loop._waker_w.send(b"a")
         except BlockingIOError:
             pass
-        if loop._thread is not None:
-            # If we don't join our (daemon) thread here, we may get a deadlock
-            # during interpreter shutdown. I don't really understand why. This
-            # deadlock happens every time in CI (both travis and appveyor) but
-            # I've never been able to reproduce locally.
-            loop._thread.join()
     _selector_loops.clear()
 
 
-atexit.register(_atexit_callback)
+# use internal _register_atexit to avoid need for daemon threads
+# I can't find a public API for equivalent functionality
+# to run something prior to thread join during process teardown
+threading._register_atexit(_atexit_callback)
 
 
 class SelectorThread:
@@ -120,18 +117,18 @@ class SelectorThread:
     async def _thread_manager(self) -> typing.AsyncGenerator[None, None]:
         # Create a thread to run the select system call. We manage this thread
         # manually so we can trigger a clean shutdown from an atexit hook. Note
-        # that due to the order of operations at shutdown, only daemon threads
-        # can be shut down in this way (non-daemon threads would require the
-        # introduction of a new hook: https://bugs.python.org/issue41962)
+        # that due to the order of operations at shutdown,
+        # we rely on private `threading._register_atexit`
+        # to wake the thread before joining to avoid hangs.
+        # See https://github.com/python/cpython/issues/86128 for more info
         self._thread = threading.Thread(
-            name="Asyncio selector",
-            daemon=True,
+            name="asyncio selector",
             target=self._run_select,
         )
         self._thread.start()
         self._start_select()
         try:
-            # The presense of this yield statement means that this coroutine
+            # The presence of this yield statement means that this coroutine
             # is actually an asynchronous generator, which has a special
             # shutdown protocol. We wait at this yield point until the
             # event loop's shutdown_asyncgens method is called, at which point
