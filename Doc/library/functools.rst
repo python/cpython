@@ -59,7 +59,7 @@ The :mod:`functools` module defines the following functions:
 
    Call-once behavior is not guaranteed because locks are not held during the
    function call. Potentially another call with the same arguments could
-   occur before the first call is completed.
+   occur while the first call is still running.
 
    .. versionadded:: 3.9
 
