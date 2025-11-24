@@ -323,8 +323,8 @@ Type Objects
 .. c:function:: PyObject* PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 
    Find the first superclass whose module was created from the given
-   :c:type:`PyModuleDef` *def*, or whose *token* is equal to *def*,
-   and return that module.
+   :c:type:`PyModuleDef` *def*, or whose :ref:`module token <ext-module-token>`
+   is equal to *def*, and return that module.
 
    Note that modules created from a :c:type:`PyModuleDef` always have their
    token set to the :c:type:`PyModuleDef`'s address.
@@ -344,7 +344,7 @@ Type Objects
 .. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *tp_token, PyTypeObject **result)
 
    Find the first superclass in *type*'s :term:`method resolution order` whose
-   :c:macro:`Py_tp_token` token is equal to the given one.
+   :c:macro:`Py_tp_token` token is equal to *tp_token*.
 
    * If found, set *\*result* to a new :term:`strong reference`
      to it and return ``1``.
@@ -355,7 +355,7 @@ Type Objects
    The *result* argument may be ``NULL``, in which case *\*result* is not set.
    Use this if you need only the return value.
 
-   The *token* argument may not be ``NULL``.
+   The *tp_token* argument may not be ``NULL``.
 
    .. versionadded:: 3.14
 
