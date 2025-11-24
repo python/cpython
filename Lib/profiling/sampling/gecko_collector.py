@@ -56,7 +56,8 @@ STACKWALK_DISABLED = 0
 
 
 class GeckoCollector(Collector):
-    def __init__(self, *, skip_idle=False):
+    def __init__(self, sample_interval_usec, *, skip_idle=False):
+        self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
         self.start_time = time.time() * 1000  # milliseconds since epoch
 

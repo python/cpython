@@ -1,0 +1,4 @@
+Add a new ``--live`` mode to the tachyon profiler in
+:mod:`!profiling.sampling` module. This mode consist of a live TUI that
+displays real-time profiling statistics as the target application runs,
+similar to ``top``. Patch by Pablo Galindo

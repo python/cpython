@@ -1,0 +1,4 @@
+Fix :term:`free threading` race condition in
+:c:func:`PyImport_AddModuleRef`. It was previously possible for two calls to
+the function return two different objects, only one of which was stored in
+:data:`sys.modules`.

@@ -168,6 +168,8 @@ class Argparse(ThemeSection):
     short_option: str = ANSIColors.BOLD_GREEN
     label: str = ANSIColors.BOLD_YELLOW
     action: str = ANSIColors.BOLD_GREEN
+    default: str = ANSIColors.GREY
+    default_value: str = ANSIColors.YELLOW
     reset: str = ANSIColors.RESET
     error: str = ANSIColors.BOLD_MAGENTA
     warning: str = ANSIColors.BOLD_YELLOW

@@ -638,7 +638,7 @@ The following functions and structs are used to create
          under the :ref:`limited API <limited-c-api>`.
 
       .. versionchanged:: 3.14
-         The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
+         The field :c:member:`~PyTypeObject.tp_vectorcall` can now be set
          using :c:data:`Py_tp_vectorcall`.  See the field's documentation
          for details.
 

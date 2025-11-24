@@ -2573,6 +2573,7 @@ LIBSUBDIRS=	asyncio \
 		profile \
 		profiling profiling/sampling profiling/tracing \
 		profiling/sampling/_assets \
+		profiling/sampling/live_collector \
 		profiling/sampling/_vendor/d3/7.8.5 \
 		profiling/sampling/_vendor/d3-flame-graph/4.1.3 \
 		pydoc_data \

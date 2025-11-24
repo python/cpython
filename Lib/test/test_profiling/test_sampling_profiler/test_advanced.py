@@ -69,14 +69,16 @@ if __name__ == "__main__":
             mock.patch("sys.stdout", captured_output),
         ):
             try:
+                from profiling.sampling.pstats_collector import PstatsCollector
+                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
+                    collector,
                     duration_sec=1,
-                    sample_interval_usec=5000,
-                    show_summary=False,
                     native=False,
                     gc=True,
                 )
+                collector.print_stats(show_summary=False)
             except PermissionError:
                 self.skipTest("Insufficient permissions for remote profiling")
 
@@ -97,14 +99,16 @@ if __name__ == "__main__":
             mock.patch("sys.stdout", captured_output),
         ):
             try:
+                from profiling.sampling.pstats_collector import PstatsCollector
+                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
+                    collector,
                     duration_sec=1,
-                    sample_interval_usec=5000,
-                    show_summary=False,
                     native=False,
                     gc=False,
                 )
+                collector.print_stats(show_summary=False)
             except PermissionError:
                 self.skipTest("Insufficient permissions for remote profiling")
 
@@ -159,14 +163,15 @@ if __name__ == "__main__":
                 mock.patch("sys.stdout", captured_output),
             ):
                 try:
+                    from profiling.sampling.stack_collector import CollapsedStackCollector
+                    collector = CollapsedStackCollector(1000, skip_idle=False)
                     profiling.sampling.sample.sample(
                         subproc.process.pid,
+                        collector,
                         duration_sec=1,
-                        filename=collapsed_file.name,
-                        output_format="collapsed",
-                        sample_interval_usec=1000,
                         native=True,
                     )
+                    collector.export(collapsed_file.name)
                 except PermissionError:
                     self.skipTest(
                         "Insufficient permissions for remote profiling"
@@ -199,12 +204,14 @@ if __name__ == "__main__":
             mock.patch("sys.stdout", captured_output),
         ):
             try:
+                from profiling.sampling.pstats_collector import PstatsCollector
+                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
+                    collector,
                     duration_sec=1,
-                    sample_interval_usec=5000,
-                    show_summary=False,
                 )
+                collector.print_stats(show_summary=False)
             except PermissionError:
                 self.skipTest("Insufficient permissions for remote profiling")
             output = captured_output.getvalue()
@@ -239,7 +246,8 @@ if __name__ == "__main__":
             with SuppressCrashReport():
                 with script_helper.spawn_python(
                     "-m",
-                    "profiling.sampling.sample",
+                    "profiling.sampling",
+                    "run",
                     "-d",
                     "5",
                     "-i",
@@ -257,7 +265,7 @@ if __name__ == "__main__":
                         proc.kill()
                         stdout, stderr = proc.communicate()
 
-        if "PermissionError" in stderr:
+        if "Permission Error" in stderr:
             self.skipTest("Insufficient permissions for remote profiling")
 
         self.assertIn("Results: [2, 4, 6]", stdout)

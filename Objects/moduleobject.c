@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_EnableGILTransient()
 #include "pycore_dict.h"          // _PyDict_EnablePerThreadRefcounting()
 #include "pycore_fileutils.h"     // _Py_wgetcwd
 #include "pycore_import.h"        // _PyImport_GetNextModuleIndex()
@@ -521,6 +522,22 @@ module_from_def_and_spec(
         }
 #undef COPY_COMMON_SLOT
     }
+
+#ifdef Py_GIL_DISABLED
+    // For modules created directly from slots (not from a def), we enable
+    // the GIL here (pairing `_PyEval_EnableGILTransient` with
+    // an immediate `_PyImport_EnableGILAndWarn`).
+    // For modules created from a def, the caller is responsible for this.
+    if (!original_def && requires_gil) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_PyEval_EnableGILTransient(tstate) < 0) {
+            goto error;
+        }
+        if (_PyImport_EnableGILAndWarn(tstate, nameobj) < 0) {
+            goto error;
+        }
+    }
+#endif
 
     /* By default, multi-phase init modules are expected
        to work under multiple interpreters. */

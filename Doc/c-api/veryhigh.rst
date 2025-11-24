@@ -396,3 +396,43 @@ Available start symbols
       * :pep:`484`
 
    .. versionadded:: 3.8
+
+
+Stack Effects
+^^^^^^^^^^^^^
+
+.. seealso::
+   :py:func:`dis.stack_effect`
+
+
+.. c:macro:: PY_INVALID_STACK_EFFECT
+
+   Sentinel value representing an invalid stack effect.
+
+   This is currently equivalent to ``INT_MAX``.
+
+   .. versionadded:: 3.8
+
+
+.. c:function:: int PyCompile_OpcodeStackEffect(int opcode, int oparg)
+
+   Compute the stack effect of *opcode* with argument *oparg*.
+
+   On success, this function returns the stack effect; on failure, this
+   returns :c:macro:`PY_INVALID_STACK_EFFECT`.
+
+   .. versionadded:: 3.4
+
+
+.. c:function:: int PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump)
+
+   Similar to :c:func:`PyCompile_OpcodeStackEffect`, but don't include the
+   stack effect of jumping if *jump* is zero.
+
+   If *jump* is ``0``, this will not include the stack effect of jumping, but
+   if *jump* is ``1`` or ``-1``, this will include it.
+
+   On success, this function returns the stack effect; on failure, this
+   returns :c:macro:`PY_INVALID_STACK_EFFECT`.
+
+   .. versionadded:: 3.8

@@ -590,7 +590,7 @@ def make_deferred_ref_count_obj():
 class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
-    ITEMS = 1000
+    ITEMS = 1400
     LOOPS = 4
     WRITERS = 2
 
