@@ -249,6 +249,7 @@ Output in debug mode::
         raise Exception("not consumed")
     Exception: not consumed
 
+
 Asynchronous generators best practices
 ======================================
 
@@ -284,7 +285,6 @@ manager::
 
   asyncio.run(func())
 
-
 Only create a generator when a loop is already running
 ------------------------------------------------------
 
@@ -296,7 +296,6 @@ handles this situation and doing it best to call async generator-iterator's
 
 Then it is recomended to create async generators only after the event loop
 has already been created.
-
 
 Avoid iterating and closing the same generator concurrently
 -----------------------------------------------------------
