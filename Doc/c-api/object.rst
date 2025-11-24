@@ -85,6 +85,35 @@ Object Protocol
    instead of the :func:`repr`.
 
 
+.. c:function:: void PyUnstable_Object_Dump(PyObject *op)
+
+   Dump an object *op* to ``stderr``. This should only be used for debugging.
+
+   The output is intended to try dumping objects even after memory corruption:
+
+   * Information is written starting with fields that are the least likely to
+     crash when accessed.
+   * This function can be called without an :term:`attached thread state`, but
+     it's not recommended to do so: it can cause deadlocks.
+   * An object that does not belong to the current interpreter may be dumped,
+     but this may also cause crashes or unintended behavior.
+   * Implement a heuristic to detect if the object memory has been freed. Don't
+     display the object contents in this case, only its memory address.
+   * The output format may change at any time.
+
+   Example of output:
+
+   .. code-block:: output
+
+       object address  : 0x7f80124702c0
+       object refcount : 2
+       object type     : 0x9902e0
+       object type name: str
+       object repr     : 'abcdef'
+
+   .. versionadded:: next
+
+
 .. c:function:: int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.
