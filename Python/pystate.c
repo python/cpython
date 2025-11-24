@@ -1483,6 +1483,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->gilstate_counter = 1;
 
     tstate->current_frame = NULL;
+    tstate->entry_frame = NULL;
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;

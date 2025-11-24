@@ -258,14 +258,17 @@ process_frame_chain(
     uintptr_t initial_frame_addr,
     StackChunkList *chunks,
     PyObject *frame_info,
-    uintptr_t gc_frame)
+    uintptr_t gc_frame,
+    uintptr_t base_frame_addr)
 {
     uintptr_t frame_addr = initial_frame_addr;
     uintptr_t prev_frame_addr = 0;
+    uintptr_t last_frame_addr = 0;  // Track the last frame we processed
     const size_t MAX_FRAMES = 1024;
     size_t frame_count = 0;
 
     while ((void*)frame_addr != NULL) {
+        last_frame_addr = frame_addr;  // Remember this frame before moving to next
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
         uintptr_t stackpointer = 0;
@@ -345,6 +348,17 @@ process_frame_chain(
 
         prev_frame_addr = next_frame_addr;
         frame_addr = next_frame_addr;
+    }
+
+    // Validate we reached the base frame if it's set
+    if (base_frame_addr != 0 && last_frame_addr != 0) {
+        if (last_frame_addr != base_frame_addr) {
+            // We didn't reach the expected bottom frame - incomplete sample
+            PyErr_Format(PyExc_RuntimeError,
+                "Incomplete sample: reached frame 0x%lx but expected base frame 0x%lx",
+                last_frame_addr, base_frame_addr);
+            return -1;
+        }
     }
 
     return 0;

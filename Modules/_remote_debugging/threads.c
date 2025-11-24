@@ -388,7 +388,13 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info, gc_frame) < 0) {
+    // Read base_frame for validation
+    uintptr_t base_frame_addr = 0;
+    if (unwinder->debug_offsets.thread_state.base_frame != 0) {
+        base_frame_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.base_frame);
+    }
+
+    if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info, gc_frame, base_frame_addr) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
         goto error;
     }

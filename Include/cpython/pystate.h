@@ -135,6 +135,11 @@ struct _ts {
     /* Pointer to currently executing frame. */
     struct _PyInterpreterFrame *current_frame;
 
+    /* Pointer to the entry/bottommost frame of the current call stack.
+     * This is the frame that was entered when starting execution.
+     * Used by profiling/sampling to detect incomplete stack traces. */
+    struct _PyInterpreterFrame *entry_frame;
+
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
     PyObject *c_profileobj;

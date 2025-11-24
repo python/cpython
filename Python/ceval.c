@@ -1234,6 +1234,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry.frame.previous = tstate->current_frame;
     frame->previous = &entry.frame;
     tstate->current_frame = frame;
+    /* Track entry frame for profiling/sampling */
+    if (entry.frame.previous == NULL) {
+        tstate->entry_frame = &entry.frame;
+    }
     entry.frame.localsplus[0] = PyStackRef_NULL;
 #ifdef _Py_TIER2
     if (tstate->current_executor != NULL) {
@@ -1300,6 +1304,10 @@ early_exit:
     assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
     /* Restore previous frame and exit */
     tstate->current_frame = frame->previous;
+    /* Clear entry frame if we're returning to no frame */
+    if (tstate->current_frame == NULL) {
+        tstate->entry_frame = NULL;
+    }
     return NULL;
 }
 #ifdef _Py_TIER2
