@@ -40,9 +40,13 @@ else:
 openssl_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
 
 try:
-    from _hashlib import HASH, HASHXOF, openssl_md_meth_names, get_fips_mode
+    from _hashlib import HASH
 except ImportError:
     HASH = None
+
+try:
+    from _hashlib import HASHXOF, openssl_md_meth_names, get_fips_mode
+except ImportError:
     HASHXOF = None
     openssl_md_meth_names = frozenset()
 
@@ -631,9 +635,14 @@ class HashLibTestCase(unittest.TestCase):
         constructors = self.constructors_to_test[name]
         for hash_object_constructor in constructors:
             m = hash_object_constructor()
-            if HASH is not None and isinstance(m, HASH):
-                # _hashopenssl's variant does not have extra SHA3 attributes
-                continue
+            if name.startswith('shake_'):
+                if HASHXOF is not None and isinstance(m, HASHXOF):
+                    # _hashopenssl's variant does not have extra SHA3 attributes
+                    continue
+            else:
+                if HASH is not None and isinstance(m, HASH):
+                    # _hashopenssl's variant does not have extra SHA3 attributes
+                    continue
             self.assertEqual(capacity + rate, 1600)
             self.assertEqual(m._capacity_bits, capacity)
             self.assertEqual(m._rate_bits, rate)
@@ -1156,7 +1165,8 @@ class HashLibTestCase(unittest.TestCase):
     def test_hash_disallow_instantiation(self):
         # internal types like _hashlib.HASH are not constructable
         support.check_disallow_instantiation(self, HASH)
-        support.check_disallow_instantiation(self, HASHXOF)
+        if HASHXOF is not None:
+            support.check_disallow_instantiation(self, HASHXOF)
 
     def test_readonly_types(self):
         for algorithm, constructors in self.constructors_to_test.items():
