@@ -341,9 +341,8 @@ bytearray_iconcat_lock_held(PyObject *op, PyObject *other)
         }
 
         /* Get the bytes out of the temporary bytearray.
-
-           Just returning other doesn't work as __init__ calls this and can't
-           change self. */
+         * Just returning other doesn't work as __init__ calls this and can't
+         * change self. */
         if (PyByteArray_CheckExact(other)) {
             PyObject *taken = PyObject_CallMethodNoArgs(other,
                                                         &_Py_ID(take_bytes));
