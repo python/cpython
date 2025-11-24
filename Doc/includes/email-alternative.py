@@ -36,7 +36,7 @@ msg.add_alternative("""\
             recette
         </a> sera sûrement un très bon repas.
     </p>
-    <img src="cid:{asparagus_cid}" />
+    <img src="cid:{asparagus_cid}">
   </body>
 </html>
 """.format(asparagus_cid=asparagus_cid[1:-1]), subtype='html')

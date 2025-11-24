@@ -1,1 +1,0 @@
-``difflib.Differ`` is much faster for some cases of diffs where many pairs of lines are equally similar.

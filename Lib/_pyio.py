@@ -16,15 +16,16 @@ else:
     _setmode = None
 
 import io
-from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END)  # noqa: F401
+from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END, Reader, Writer)  # noqa: F401
 
 valid_seek_flags = {0, 1, 2}  # Hardwired values
 if hasattr(os, 'SEEK_HOLE') :
     valid_seek_flags.add(os.SEEK_HOLE)
     valid_seek_flags.add(os.SEEK_DATA)
 
-# open() uses st_blksize whenever we can
-DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
+# open() uses max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)
+# when the device block size is available.
+DEFAULT_BUFFER_SIZE = 128 * 1024  # bytes
 
 # NOTE: Base classes defined here are registered with the "official" ABCs
 # defined in io.py. We don't use real inheritance though, because we don't want
@@ -123,10 +124,10 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     the size of a fixed-size chunk buffer.  When no buffering argument is
     given, the default buffering policy works as follows:
 
-    * Binary files are buffered in fixed-size chunks; the size of the buffer
-      is chosen using a heuristic trying to determine the underlying device's
-      "block size" and falling back on `io.DEFAULT_BUFFER_SIZE`.
-      On many systems, the buffer will typically be 4096 or 8192 bytes long.
+   * Binary files are buffered in fixed-size chunks; the size of the buffer
+     is max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)
+     when the device block size is available.
+     On most systems, the buffer will typically be 128 kilobytes long.
 
     * "Interactive" text files (files for which isatty() returns True)
       use line buffering.  Other text files use the policy described above
@@ -238,18 +239,11 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     result = raw
     try:
         line_buffering = False
-        if buffering == 1 or buffering < 0 and raw.isatty():
+        if buffering == 1 or buffering < 0 and raw._isatty_open_only():
             buffering = -1
             line_buffering = True
         if buffering < 0:
-            buffering = DEFAULT_BUFFER_SIZE
-            try:
-                bs = os.fstat(raw.fileno()).st_blksize
-            except (OSError, AttributeError):
-                pass
-            else:
-                if bs > 1:
-                    buffering = bs
+            buffering = max(min(raw._blksize, 8192 * 1024), DEFAULT_BUFFER_SIZE)
         if buffering < 0:
             raise ValueError("invalid buffering size")
         if buffering == 0:
@@ -413,6 +407,9 @@ class IOBase(metaclass=abc.ABCMeta):
         if closed:
             return
 
+        if dealloc_warn := getattr(self, "_dealloc_warn", None):
+            dealloc_warn(self)
+
         # If close() fails, the caller logs the exception with
         # sys.unraisablehook. close() must be called at the end at __del__().
         self.close()
@@ -549,7 +546,7 @@ class IOBase(metaclass=abc.ABCMeta):
             res += b
             if res.endswith(b"\n"):
                 break
-        return bytes(res)
+        return res.take_bytes()
 
     def __iter__(self):
         self._checkClosed()
@@ -620,8 +617,10 @@ class RawIOBase(IOBase):
         n = self.readinto(b)
         if n is None:
             return None
+        if n < 0 or n > len(b):
+            raise ValueError(f"readinto returned {n} outside buffer size {len(b)}")
         del b[n:]
-        return bytes(b)
+        return b.take_bytes()
 
     def readall(self):
         """Read until EOF, using multiple read() call."""
@@ -629,7 +628,7 @@ class RawIOBase(IOBase):
         while data := self.read(DEFAULT_BUFFER_SIZE):
             res += data
         if res:
-            return bytes(res)
+            return res.take_bytes()
         else:
             # b'' or None
             return data
@@ -651,8 +650,6 @@ class RawIOBase(IOBase):
         self._unsupported("write")
 
 io.RawIOBase.register(RawIOBase)
-from _io import FileIO
-RawIOBase.register(FileIO)
 
 
 class BufferedIOBase(IOBase):
@@ -859,6 +856,10 @@ class _BufferedIOMixin(BufferedIOBase):
         else:
             return "<{}.{} name={!r}>".format(modname, clsname, name)
 
+    def _dealloc_warn(self, source):
+        if dealloc_warn := getattr(self.raw, "_dealloc_warn", None):
+            dealloc_warn(source)
+
     ### Lower-level APIs ###
 
     def fileno(self):
@@ -877,16 +878,28 @@ class BytesIO(BufferedIOBase):
     _buffer = None
 
     def __init__(self, initial_bytes=None):
+        # Use to keep self._buffer and self._pos consistent.
+        self._lock = Lock()
+
         buf = bytearray()
         if initial_bytes is not None:
             buf += initial_bytes
-        self._buffer = buf
-        self._pos = 0
+
+        with self._lock:
+            self._buffer = buf
+            self._pos = 0
 
     def __getstate__(self):
         if self.closed:
             raise ValueError("__getstate__ on closed file")
-        return self.__dict__.copy()
+        with self._lock:
+            state = self.__dict__.copy()
+        del state['_lock']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._lock = Lock()
 
     def getvalue(self):
         """Return the bytes value (contents) of the buffer
@@ -919,14 +932,16 @@ class BytesIO(BufferedIOBase):
                 raise TypeError(f"{size!r} is not an integer")
             else:
                 size = size_index()
-        if size < 0:
-            size = len(self._buffer)
-        if len(self._buffer) <= self._pos:
-            return b""
-        newpos = min(len(self._buffer), self._pos + size)
-        b = self._buffer[self._pos : newpos]
-        self._pos = newpos
-        return bytes(b)
+
+        with self._lock:
+            if size < 0:
+                size = len(self._buffer)
+            if len(self._buffer) <= self._pos:
+                return b""
+            newpos = min(len(self._buffer), self._pos + size)
+            b = self._buffer[self._pos : newpos]
+            self._pos = newpos
+            return bytes(b)
 
     def read1(self, size=-1):
         """This is the same as read.
@@ -942,14 +957,14 @@ class BytesIO(BufferedIOBase):
             n = view.nbytes  # Size of any bytes-like object
         if n == 0:
             return 0
-        pos = self._pos
-        if pos > len(self._buffer):
-            # Inserts null bytes between the current end of the file
-            # and the new write position.
-            padding = b'\x00' * (pos - len(self._buffer))
-            self._buffer += padding
-        self._buffer[pos:pos + n] = b
-        self._pos += n
+
+        with self._lock:
+            pos = self._pos
+            if pos > len(self._buffer):
+                # Pad buffer to pos with null bytes.
+                self._buffer.resize(pos)
+            self._buffer[pos:pos + n] = b
+            self._pos += n
         return n
 
     def seek(self, pos, whence=0):
@@ -966,9 +981,11 @@ class BytesIO(BufferedIOBase):
                 raise ValueError("negative seek position %r" % (pos,))
             self._pos = pos
         elif whence == 1:
-            self._pos = max(0, self._pos + pos)
+            with self._lock:
+                self._pos = max(0, self._pos + pos)
         elif whence == 2:
-            self._pos = max(0, len(self._buffer) + pos)
+            with self._lock:
+                self._pos = max(0, len(self._buffer) + pos)
         else:
             raise ValueError("unsupported whence value")
         return self._pos
@@ -981,18 +998,20 @@ class BytesIO(BufferedIOBase):
     def truncate(self, pos=None):
         if self.closed:
             raise ValueError("truncate on closed file")
-        if pos is None:
-            pos = self._pos
-        else:
-            try:
-                pos_index = pos.__index__
-            except AttributeError:
-                raise TypeError(f"{pos!r} is not an integer")
+
+        with self._lock:
+            if pos is None:
+                pos = self._pos
             else:
-                pos = pos_index()
-            if pos < 0:
-                raise ValueError("negative truncate position %r" % (pos,))
-        del self._buffer[pos:]
+                try:
+                    pos_index = pos.__index__
+                except AttributeError:
+                    raise TypeError(f"{pos!r} is not an integer")
+                else:
+                    pos = pos_index()
+                if pos < 0:
+                    raise ValueError("negative truncate position %r" % (pos,))
+            del self._buffer[pos:]
         return pos
 
     def readable(self):
@@ -1463,6 +1482,17 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         return BufferedWriter.write(self, b)
 
 
+def _new_buffersize(bytes_read):
+    # Parallels _io/fileio.c new_buffersize
+    if bytes_read > 65536:
+        addend = bytes_read >> 3
+    else:
+        addend = 256 + bytes_read
+    if addend < DEFAULT_BUFFER_SIZE:
+        addend = DEFAULT_BUFFER_SIZE
+    return bytes_read + addend
+
+
 class FileIO(RawIOBase):
     _fd = -1
     _created = False
@@ -1470,6 +1500,7 @@ class FileIO(RawIOBase):
     _writable = False
     _appending = False
     _seekable = None
+    _truncate = False
     _closefd = True
 
     def __init__(self, file, mode='r', closefd=True, opener=None):
@@ -1487,6 +1518,7 @@ class FileIO(RawIOBase):
         """
         if self._fd >= 0:
             # Have to close the existing file first.
+            self._stat_atopen = None
             try:
                 if self._closefd:
                     os.close(self._fd)
@@ -1524,6 +1556,7 @@ class FileIO(RawIOBase):
             flags = 0
         elif 'w' in mode:
             self._writable = True
+            self._truncate = True
             flags = os.O_CREAT | os.O_TRUNC
         elif 'a' in mode:
             self._writable = True
@@ -1559,25 +1592,22 @@ class FileIO(RawIOBase):
                     if not isinstance(fd, int):
                         raise TypeError('expected integer from opener')
                     if fd < 0:
-                        raise OSError('Negative file descriptor')
+                        # bpo-27066: Raise a ValueError for bad value.
+                        raise ValueError(f'opener returned {fd}')
                 owned_fd = fd
                 if not noinherit_flag:
                     os.set_inheritable(fd, False)
 
             self._closefd = closefd
-            fdfstat = os.fstat(fd)
+            self._stat_atopen = os.fstat(fd)
             try:
-                if stat.S_ISDIR(fdfstat.st_mode):
+                if stat.S_ISDIR(self._stat_atopen.st_mode):
                     raise IsADirectoryError(errno.EISDIR,
                                             os.strerror(errno.EISDIR), file)
             except AttributeError:
                 # Ignore the AttributeError if stat.S_ISDIR or errno.EISDIR
                 # don't exist.
                 pass
-            self._blksize = getattr(fdfstat, 'st_blksize', 0)
-            if self._blksize <= 1:
-                self._blksize = DEFAULT_BUFFER_SIZE
-            self._estimated_size = fdfstat.st_size
 
             if _setmode:
                 # don't translate newlines (\r\n <=> \n)
@@ -1594,17 +1624,17 @@ class FileIO(RawIOBase):
                     if e.errno != errno.ESPIPE:
                         raise
         except:
+            self._stat_atopen = None
             if owned_fd is not None:
                 os.close(owned_fd)
             raise
         self._fd = fd
 
-    def __del__(self):
+    def _dealloc_warn(self, source):
         if self._fd >= 0 and self._closefd and not self.closed:
             import warnings
-            warnings.warn('unclosed file %r' % (self,), ResourceWarning,
+            warnings.warn(f'unclosed file {source!r}', ResourceWarning,
                           stacklevel=2, source=self)
-            self.close()
 
     def __getstate__(self):
         raise TypeError(f"cannot pickle {self.__class__.__name__!r} object")
@@ -1623,6 +1653,17 @@ class FileIO(RawIOBase):
             return ('<%s name=%r mode=%r closefd=%r>' %
                     (class_name, name, self.mode, self._closefd))
 
+    @property
+    def _blksize(self):
+        if self._stat_atopen is None:
+            return DEFAULT_BUFFER_SIZE
+
+        blksize = getattr(self._stat_atopen, "st_blksize", 0)
+        # WASI sets blsize to 0
+        if not blksize:
+            return DEFAULT_BUFFER_SIZE
+        return blksize
+
     def _checkReadable(self):
         if not self._readable:
             raise UnsupportedOperation('File not open for reading')
@@ -1634,7 +1675,13 @@ class FileIO(RawIOBase):
     def read(self, size=None):
         """Read at most size bytes, returned as bytes.
 
-        Only makes one system call, so less data may be returned than requested
+        If size is less than 0, read all bytes in the file making
+        multiple read calls. See ``FileIO.readall``.
+
+        Attempts to make only one system call, retrying only per
+        PEP 475 (EINTR). This means less data may be returned than
+        requested.
+
         In non-blocking mode, returns None if no data is available.
         Return an empty bytes object at EOF.
         """
@@ -1650,49 +1697,57 @@ class FileIO(RawIOBase):
     def readall(self):
         """Read all data from the file, returned as bytes.
 
-        In non-blocking mode, returns as much as is immediately available,
-        or None if no data is available.  Return an empty bytes object at EOF.
+        Reads until either there is an error or read() returns size 0
+        (indicates EOF). If the file is already at EOF, returns an
+        empty bytes object.
+
+        In non-blocking mode, returns as much data as could be read
+        before EAGAIN. If no data is available (EAGAIN is returned
+        before bytes are read) returns None.
         """
         self._checkClosed()
         self._checkReadable()
-        if self._estimated_size <= 0:
+        if self._stat_atopen is None or self._stat_atopen.st_size <= 0:
             bufsize = DEFAULT_BUFFER_SIZE
         else:
-            bufsize = self._estimated_size + 1
+            # In order to detect end of file, need a read() of at least 1
+            # byte which returns size 0. Oversize the buffer by 1 byte so the
+            # I/O can be completed with two read() calls (one for all data, one
+            # for EOF) without needing to resize the buffer.
+            bufsize = self._stat_atopen.st_size + 1
 
-            if self._estimated_size > 65536:
+            if self._stat_atopen.st_size > 65536:
                 try:
                     pos = os.lseek(self._fd, 0, SEEK_CUR)
-                    if self._estimated_size >= pos:
-                        bufsize = self._estimated_size - pos + 1
+                    if self._stat_atopen.st_size >= pos:
+                        bufsize = self._stat_atopen.st_size - pos + 1
                 except OSError:
                     pass
 
-        result = bytearray()
-        while True:
-            if len(result) >= bufsize:
-                bufsize = len(result)
-                bufsize += max(bufsize, DEFAULT_BUFFER_SIZE)
-            n = bufsize - len(result)
-            try:
-                chunk = os.read(self._fd, n)
-            except BlockingIOError:
-                if result:
-                    break
+        result = bytearray(bufsize)
+        bytes_read = 0
+        try:
+            while n := os.readinto(self._fd, memoryview(result)[bytes_read:]):
+                bytes_read += n
+                if bytes_read >= len(result):
+                    result.resize(_new_buffersize(bytes_read))
+        except BlockingIOError:
+            if not bytes_read:
                 return None
-            if not chunk: # reached the end of the file
-                break
-            result += chunk
 
-        return bytes(result)
+        assert len(result) - bytes_read >= 1, \
+            "os.readinto buffer size 0 will result in erroneous EOF / returns 0"
+        result.resize(bytes_read)
+        return result.take_bytes()
 
-    def readinto(self, b):
+    def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""
-        m = memoryview(b).cast('B')
-        data = self.read(len(m))
-        n = len(data)
-        m[:n] = data
-        return n
+        self._checkClosed()
+        self._checkReadable()
+        try:
+            return os.readinto(self._fd, buffer)
+        except BlockingIOError:
+            return None
 
     def write(self, b):
         """Write bytes b to file, return number written.
@@ -1742,7 +1797,7 @@ class FileIO(RawIOBase):
         if size is None:
             size = self.tell()
         os.ftruncate(self._fd, size)
-        self._estimated_size = size
+        self._stat_atopen = None
         return size
 
     def close(self):
@@ -1752,8 +1807,9 @@ class FileIO(RawIOBase):
         called more than once without error.
         """
         if not self.closed:
+            self._stat_atopen = None
             try:
-                if self._closefd:
+                if self._closefd and self._fd >= 0:
                     os.close(self._fd)
             finally:
                 super().close()
@@ -1790,6 +1846,21 @@ class FileIO(RawIOBase):
         self._checkClosed()
         return os.isatty(self._fd)
 
+    def _isatty_open_only(self):
+        """Checks whether the file is a TTY using an open-only optimization.
+
+        TTYs are always character devices. If the interpreter knows a file is
+        not a character device when it would call ``isatty``, can skip that
+        call. Inside ``open()``  there is a fresh stat result that contains that
+        information. Use the stat result to skip a system call. Outside of that
+        context TOCTOU issues (the fd could be arbitrarily modified by
+        surrounding code).
+        """
+        if (self._stat_atopen is not None
+            and not stat.S_ISCHR(self._stat_atopen.st_mode)):
+            return False
+        return os.isatty(self._fd)
+
     @property
     def closefd(self):
         """True if the file descriptor will be closed by close()."""
@@ -1810,7 +1881,10 @@ class FileIO(RawIOBase):
                 return 'ab'
         elif self._readable:
             if self._writable:
-                return 'rb+'
+                if self._truncate:
+                    return 'wb+'
+                else:
+                    return 'rb+'
             else:
                 return 'rb'
         else:
@@ -2014,8 +2088,7 @@ class TextIOWrapper(TextIOBase):
             raise ValueError("invalid encoding: %r" % encoding)
 
         if not codecs.lookup(encoding)._is_text_encoding:
-            msg = ("%r is not a text encoding; "
-                   "use codecs.open() to handle arbitrary codecs")
+            msg = "%r is not a text encoding"
             raise LookupError(msg % encoding)
 
         if errors is None:
@@ -2523,9 +2596,12 @@ class TextIOWrapper(TextIOBase):
                 size = size_index()
         decoder = self._decoder or self._get_decoder()
         if size < 0:
+            chunk = self.buffer.read()
+            if chunk is None:
+                raise BlockingIOError("Read returned None.")
             # Read everything.
             result = (self._get_decoded_chars() +
-                      decoder.decode(self.buffer.read(), final=True))
+                      decoder.decode(chunk, final=True))
             if self._snapshot is not None:
                 self._set_decoded_chars('')
                 self._snapshot = None
@@ -2644,6 +2720,10 @@ class TextIOWrapper(TextIOBase):
     @property
     def newlines(self):
         return self._decoder.newlines if self._decoder else None
+
+    def _dealloc_warn(self, source):
+        if dealloc_warn := getattr(self.buffer, "_dealloc_warn", None):
+            dealloc_warn(source)
 
 
 class StringIO(TextIOWrapper):

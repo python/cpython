@@ -138,7 +138,7 @@ from fractions import Fraction
 from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
+from math import hypot, sqrt, fabs, exp, erfc, tau, log, fsum, sumprod
 from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
 from functools import reduce
 from operator import itemgetter
@@ -248,6 +248,7 @@ def geometric_mean(data):
                 found_zero = True
             else:
                 raise StatisticsError('No negative inputs allowed', x)
+
     total = fsum(map(log, count_positive(data)))
 
     if not n:
@@ -618,9 +619,14 @@ def stdev(data, xbar=None):
     if n < 2:
         raise StatisticsError('stdev requires at least two data points')
     mss = ss / (n - 1)
+    try:
+        mss_numerator = mss.numerator
+        mss_denominator = mss.denominator
+    except AttributeError:
+        raise ValueError('inf or nan encountered in data')
     if issubclass(T, Decimal):
-        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
-    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+        return _decimal_sqrt_of_frac(mss_numerator, mss_denominator)
+    return _float_sqrt_of_frac(mss_numerator, mss_denominator)
 
 
 def pstdev(data, mu=None):
@@ -636,9 +642,14 @@ def pstdev(data, mu=None):
     if n < 1:
         raise StatisticsError('pstdev requires at least one data point')
     mss = ss / n
+    try:
+        mss_numerator = mss.numerator
+        mss_denominator = mss.denominator
+    except AttributeError:
+        raise ValueError('inf or nan encountered in data')
     if issubclass(T, Decimal):
-        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
-    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+        return _decimal_sqrt_of_frac(mss_numerator, mss_denominator)
+    return _float_sqrt_of_frac(mss_numerator, mss_denominator)
 
 
 ## Statistics for relations between two inputs #############################
@@ -710,6 +721,7 @@ def correlation(x, y, /, *, method='linear'):
         start = (n - 1) / -2            # Center rankings around zero
         x = _rank(x, start=start)
         y = _rank(y, start=start)
+
     else:
         xbar = fsum(x) / n
         ybar = fsum(y) / n
@@ -808,9 +820,9 @@ def register(*kernels):
 @register('normal', 'gauss')
 def normal_kernel():
     sqrt2pi = sqrt(2 * pi)
-    sqrt2 = sqrt(2)
+    neg_sqrt2 = -sqrt(2)
     pdf = lambda t: exp(-1/2 * t * t) / sqrt2pi
-    cdf = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
+    cdf = lambda t: 1/2 * erfc(t / neg_sqrt2)
     invcdf = lambda t: _normal_dist_inv_cdf(t, 0.0, 1.0)
     support = None
     return pdf, cdf, invcdf, support
@@ -870,9 +882,12 @@ def _newton_raphson(f_inv_estimate, f, f_prime, tolerance=1e-12):
     return f_inv
 
 def _quartic_invcdf_estimate(p):
+    # A handrolled piecewise approximation. There is no magic here.
     sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
+    if p < 0.0106:
+        return ((2.0 * p) ** 0.3838 - 1.0) * sign
     x = (2.0 * p) ** 0.4258865685331 - 1.0
-    if p >= 0.004 < 0.499:
+    if p < 0.499:
         x += 0.026818732 * sin(7.101753784 * p + 2.73230839482953)
     return x * sign
 
@@ -886,8 +901,11 @@ def quartic_kernel():
     return pdf, cdf, invcdf, support
 
 def _triweight_invcdf_estimate(p):
+    # A handrolled piecewise approximation. There is no magic here.
     sign, p = (1.0, p) if p <= 1/2 else (-1.0, 1.0 - p)
     x = (2.0 * p) ** 0.3400218741872791 - 1.0
+    if 0.00001 < p < 0.499:
+        x -= 0.033 * sin(1.07 * tau * (p - 0.035))
     return x * sign
 
 @register('triweight')
@@ -1207,91 +1225,6 @@ def quantiles(data, *, n=4, method='exclusive'):
 
 ## Normal Distribution #####################################################
 
-def _normal_dist_inv_cdf(p, mu, sigma):
-    # There is no closed-form solution to the inverse CDF for the normal
-    # distribution, so we use a rational approximation instead:
-    # Wichura, M.J. (1988). "Algorithm AS241: The Percentage Points of the
-    # Normal Distribution".  Applied Statistics. Blackwell Publishing. 37
-    # (3): 477–484. doi:10.2307/2347330. JSTOR 2347330.
-    q = p - 0.5
-
-    if fabs(q) <= 0.425:
-        r = 0.180625 - q * q
-        # Hash sum: 55.88319_28806_14901_4439
-        num = (((((((2.50908_09287_30122_6727e+3 * r +
-                     3.34305_75583_58812_8105e+4) * r +
-                     6.72657_70927_00870_0853e+4) * r +
-                     4.59219_53931_54987_1457e+4) * r +
-                     1.37316_93765_50946_1125e+4) * r +
-                     1.97159_09503_06551_4427e+3) * r +
-                     1.33141_66789_17843_7745e+2) * r +
-                     3.38713_28727_96366_6080e+0) * q
-        den = (((((((5.22649_52788_52854_5610e+3 * r +
-                     2.87290_85735_72194_2674e+4) * r +
-                     3.93078_95800_09271_0610e+4) * r +
-                     2.12137_94301_58659_5867e+4) * r +
-                     5.39419_60214_24751_1077e+3) * r +
-                     6.87187_00749_20579_0830e+2) * r +
-                     4.23133_30701_60091_1252e+1) * r +
-                     1.0)
-        x = num / den
-        return mu + (x * sigma)
-
-    r = p if q <= 0.0 else 1.0 - p
-    r = sqrt(-log(r))
-    if r <= 5.0:
-        r = r - 1.6
-        # Hash sum: 49.33206_50330_16102_89036
-        num = (((((((7.74545_01427_83414_07640e-4 * r +
-                     2.27238_44989_26918_45833e-2) * r +
-                     2.41780_72517_74506_11770e-1) * r +
-                     1.27045_82524_52368_38258e+0) * r +
-                     3.64784_83247_63204_60504e+0) * r +
-                     5.76949_72214_60691_40550e+0) * r +
-                     4.63033_78461_56545_29590e+0) * r +
-                     1.42343_71107_49683_57734e+0)
-        den = (((((((1.05075_00716_44416_84324e-9 * r +
-                     5.47593_80849_95344_94600e-4) * r +
-                     1.51986_66563_61645_71966e-2) * r +
-                     1.48103_97642_74800_74590e-1) * r +
-                     6.89767_33498_51000_04550e-1) * r +
-                     1.67638_48301_83803_84940e+0) * r +
-                     2.05319_16266_37758_82187e+0) * r +
-                     1.0)
-    else:
-        r = r - 5.0
-        # Hash sum: 47.52583_31754_92896_71629
-        num = (((((((2.01033_43992_92288_13265e-7 * r +
-                     2.71155_55687_43487_57815e-5) * r +
-                     1.24266_09473_88078_43860e-3) * r +
-                     2.65321_89526_57612_30930e-2) * r +
-                     2.96560_57182_85048_91230e-1) * r +
-                     1.78482_65399_17291_33580e+0) * r +
-                     5.46378_49111_64114_36990e+0) * r +
-                     6.65790_46435_01103_77720e+0)
-        den = (((((((2.04426_31033_89939_78564e-15 * r +
-                     1.42151_17583_16445_88870e-7) * r +
-                     1.84631_83175_10054_68180e-5) * r +
-                     7.86869_13114_56132_59100e-4) * r +
-                     1.48753_61290_85061_48525e-2) * r +
-                     1.36929_88092_27358_05310e-1) * r +
-                     5.99832_20655_58879_37690e-1) * r +
-                     1.0)
-
-    x = num / den
-    if q < 0.0:
-        x = -x
-
-    return mu + (x * sigma)
-
-
-# If available, use C implementation
-try:
-    from _statistics import _normal_dist_inv_cdf
-except ImportError:
-    pass
-
-
 class NormalDist:
     "Normal distribution of a random variable"
     # https://en.wikipedia.org/wiki/Normal_distribution
@@ -1334,7 +1267,7 @@ class NormalDist:
         "Cumulative distribution function.  P(X <= x)"
         if not self._sigma:
             raise StatisticsError('cdf() not defined when sigma is zero')
-        return 0.5 * (1.0 + erf((x - self._mu) / (self._sigma * _SQRT2)))
+        return 0.5 * erfc((self._mu - x) / (self._sigma * _SQRT2))
 
     def inv_cdf(self, p):
         """Inverse cumulative distribution function.  x : P(X <= x) = p
@@ -1388,7 +1321,7 @@ class NormalDist:
         dv = Y_var - X_var
         dm = fabs(Y._mu - X._mu)
         if not dv:
-            return 1.0 - erf(dm / (2.0 * X._sigma * _SQRT2))
+            return erfc(dm / (2.0 * X._sigma * _SQRT2))
         a = X._mu * Y_var - Y._mu * X_var
         b = X._sigma * Y._sigma * sqrt(dm * dm + dv * log(Y_var / X_var))
         x1 = (a + b) / dv
@@ -1555,11 +1488,13 @@ def _sum(data):
     types_add = types.add
     partials = {}
     partials_get = partials.get
+
     for typ, values in groupby(data, type):
         types_add(typ)
         for n, d in map(_exact_ratio, values):
             count += 1
             partials[d] = partials_get(d, 0) + n
+
     if None in partials:
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
@@ -1568,6 +1503,7 @@ def _sum(data):
     else:
         # Sum all the partial sums using builtin sum.
         total = sum(Fraction(n, d) for d, n in partials.items())
+
     T = reduce(_coerce, types, int)  # or raise TypeError
     return (T, total, count)
 
@@ -1590,6 +1526,7 @@ def _ss(data, c=None):
     types_add = types.add
     sx_partials = defaultdict(int)
     sxx_partials = defaultdict(int)
+
     for typ, values in groupby(data, type):
         types_add(typ)
         for n, d in map(_exact_ratio, values):
@@ -1599,11 +1536,13 @@ def _ss(data, c=None):
 
     if not count:
         ssd = c = Fraction(0)
+
     elif None in sx_partials:
         # The sum will be a NAN or INF. We can ignore all the finite
         # partials, and just look at this special one.
         ssd = c = sx_partials[None]
         assert not _isfinite(ssd)
+
     else:
         sx = sum(Fraction(n, d) for d, n in sx_partials.items())
         sxx = sum(Fraction(n, d*d) for d, n in sxx_partials.items())
@@ -1687,8 +1626,10 @@ def _convert(value, T):
         # This covers the cases where T is Fraction, or where value is
         # a NAN or INF (Decimal or float).
         return value
+
     if issubclass(T, int) and value.denominator != 1:
         T = float
+
     try:
         # FIXME: what do we do if this overflows?
         return T(value)
@@ -1851,3 +1792,88 @@ def _sqrtprod(x: float, y: float) -> float:
     # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
     d = sumprod((x, h), (y, -h))
     return h + d / (2.0 * h)
+
+
+def _normal_dist_inv_cdf(p, mu, sigma):
+    # There is no closed-form solution to the inverse CDF for the normal
+    # distribution, so we use a rational approximation instead:
+    # Wichura, M.J. (1988). "Algorithm AS241: The Percentage Points of the
+    # Normal Distribution".  Applied Statistics. Blackwell Publishing. 37
+    # (3): 477–484. doi:10.2307/2347330. JSTOR 2347330.
+    q = p - 0.5
+
+    if fabs(q) <= 0.425:
+        r = 0.180625 - q * q
+        # Hash sum: 55.88319_28806_14901_4439
+        num = (((((((2.50908_09287_30122_6727e+3 * r +
+                     3.34305_75583_58812_8105e+4) * r +
+                     6.72657_70927_00870_0853e+4) * r +
+                     4.59219_53931_54987_1457e+4) * r +
+                     1.37316_93765_50946_1125e+4) * r +
+                     1.97159_09503_06551_4427e+3) * r +
+                     1.33141_66789_17843_7745e+2) * r +
+                     3.38713_28727_96366_6080e+0) * q
+        den = (((((((5.22649_52788_52854_5610e+3 * r +
+                     2.87290_85735_72194_2674e+4) * r +
+                     3.93078_95800_09271_0610e+4) * r +
+                     2.12137_94301_58659_5867e+4) * r +
+                     5.39419_60214_24751_1077e+3) * r +
+                     6.87187_00749_20579_0830e+2) * r +
+                     4.23133_30701_60091_1252e+1) * r +
+                     1.0)
+        x = num / den
+        return mu + (x * sigma)
+
+    r = p if q <= 0.0 else 1.0 - p
+    r = sqrt(-log(r))
+    if r <= 5.0:
+        r = r - 1.6
+        # Hash sum: 49.33206_50330_16102_89036
+        num = (((((((7.74545_01427_83414_07640e-4 * r +
+                     2.27238_44989_26918_45833e-2) * r +
+                     2.41780_72517_74506_11770e-1) * r +
+                     1.27045_82524_52368_38258e+0) * r +
+                     3.64784_83247_63204_60504e+0) * r +
+                     5.76949_72214_60691_40550e+0) * r +
+                     4.63033_78461_56545_29590e+0) * r +
+                     1.42343_71107_49683_57734e+0)
+        den = (((((((1.05075_00716_44416_84324e-9 * r +
+                     5.47593_80849_95344_94600e-4) * r +
+                     1.51986_66563_61645_71966e-2) * r +
+                     1.48103_97642_74800_74590e-1) * r +
+                     6.89767_33498_51000_04550e-1) * r +
+                     1.67638_48301_83803_84940e+0) * r +
+                     2.05319_16266_37758_82187e+0) * r +
+                     1.0)
+    else:
+        r = r - 5.0
+        # Hash sum: 47.52583_31754_92896_71629
+        num = (((((((2.01033_43992_92288_13265e-7 * r +
+                     2.71155_55687_43487_57815e-5) * r +
+                     1.24266_09473_88078_43860e-3) * r +
+                     2.65321_89526_57612_30930e-2) * r +
+                     2.96560_57182_85048_91230e-1) * r +
+                     1.78482_65399_17291_33580e+0) * r +
+                     5.46378_49111_64114_36990e+0) * r +
+                     6.65790_46435_01103_77720e+0)
+        den = (((((((2.04426_31033_89939_78564e-15 * r +
+                     1.42151_17583_16445_88870e-7) * r +
+                     1.84631_83175_10054_68180e-5) * r +
+                     7.86869_13114_56132_59100e-4) * r +
+                     1.48753_61290_85061_48525e-2) * r +
+                     1.36929_88092_27358_05310e-1) * r +
+                     5.99832_20655_58879_37690e-1) * r +
+                     1.0)
+
+    x = num / den
+    if q < 0.0:
+        x = -x
+
+    return mu + (x * sigma)
+
+
+# If available, use C implementation
+try:
+    from _statistics import _normal_dist_inv_cdf
+except ImportError:
+    pass

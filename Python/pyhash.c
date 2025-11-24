@@ -22,14 +22,14 @@ extern PyHash_FuncDef PyHash_Func;
 static PyHash_FuncDef PyHash_Func;
 #endif
 
-/* Count _Py_HashBytes() calls */
+/* Count Py_HashBuffer() calls */
 #ifdef Py_HASH_STATS
 #define Py_HASH_STATS_MAX 32
 static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
 #endif
 
 /* For numeric types, the hash of a number x is based on the reduction
-   of x modulo the prime P = 2**_PyHASH_BITS - 1.  It's designed so that
+   of x modulo the prime P = 2**PyHASH_BITS - 1.  It's designed so that
    hash(x) == hash(y) whenever x and y are numerically equal, even if
    x and y have different types.
 
@@ -52,8 +52,8 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
 
    If the result of the reduction is infinity (this is impossible for
    integers, floats and Decimals) then use the predefined hash value
-   _PyHASH_INF for x >= 0, or -_PyHASH_INF for x < 0, instead.
-   _PyHASH_INF and -_PyHASH_INF are also used for the
+   PyHASH_INF for x >= 0, or -PyHASH_INF for x < 0, instead.
+   PyHASH_INF and -PyHASH_INF are also used for the
    hashes of float and Decimal infinities.
 
    NaNs hash with a pointer hash.  Having distinct hash values prevents
@@ -65,16 +65,16 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
    efficiently, even if the exponent of the binary or decimal number
    is large.  The key point is that
 
-      reduce(x * y) == reduce(x) * reduce(y) (modulo _PyHASH_MODULUS)
+      reduce(x * y) == reduce(x) * reduce(y) (modulo PyHASH_MODULUS)
 
    provided that {reduce(x), reduce(y)} != {0, infinity}.  The reduction of a
    binary or decimal float is never infinity, since the denominator is a power
    of 2 (for binary) or a divisor of a power of 10 (for decimal).  So we have,
    for nonnegative x,
 
-      reduce(x * 2**e) == reduce(x) * reduce(2**e) % _PyHASH_MODULUS
+      reduce(x * 2**e) == reduce(x) * reduce(2**e) % PyHASH_MODULUS
 
-      reduce(x * 10**e) == reduce(x) * reduce(10**e) % _PyHASH_MODULUS
+      reduce(x * 10**e) == reduce(x) * reduce(10**e) % PyHASH_MODULUS
 
    and reduce(10**e) can be computed efficiently by the usual modular
    exponentiation algorithm.  For reduce(2**e) it's even better: since
@@ -92,7 +92,7 @@ _Py_HashDouble(PyObject *inst, double v)
 
     if (!isfinite(v)) {
         if (isinf(v))
-            return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
+            return v > 0 ? PyHASH_INF : -PyHASH_INF;
         else
             return PyObject_GenericHash(inst);
     }
@@ -109,19 +109,19 @@ _Py_HashDouble(PyObject *inst, double v)
        and hexadecimal floating point. */
     x = 0;
     while (m) {
-        x = ((x << 28) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - 28);
+        x = ((x << 28) & PyHASH_MODULUS) | x >> (PyHASH_BITS - 28);
         m *= 268435456.0;  /* 2**28 */
         e -= 28;
         y = (Py_uhash_t)m;  /* pull out integer part */
         m -= y;
         x += y;
-        if (x >= _PyHASH_MODULUS)
-            x -= _PyHASH_MODULUS;
+        if (x >= PyHASH_MODULUS)
+            x -= PyHASH_MODULUS;
     }
 
-    /* adjust for the exponent;  first reduce it modulo _PyHASH_BITS */
-    e = e >= 0 ? e % _PyHASH_BITS : _PyHASH_BITS-1-((-1-e) % _PyHASH_BITS);
-    x = ((x << e) & _PyHASH_MODULUS) | x >> (_PyHASH_BITS - e);
+    /* adjust for the exponent;  first reduce it modulo PyHASH_BITS */
+    e = e >= 0 ? e % PyHASH_BITS : PyHASH_BITS-1-((-1-e) % PyHASH_BITS);
+    x = ((x << e) & PyHASH_MODULUS) | x >> (PyHASH_BITS - e);
 
     x = x * sign;
     if (x == (Py_uhash_t)-1)
@@ -146,9 +146,8 @@ PyObject_GenericHash(PyObject *obj)
 }
 
 Py_hash_t
-_Py_HashBytes(const void *src, Py_ssize_t len)
+Py_HashBuffer(const void *ptr, Py_ssize_t len)
 {
-    Py_hash_t x;
     /*
       We make the hash of the empty string be 0, rather than using
       (prefix ^ suffix), since this slightly obfuscates the hash secret
@@ -161,11 +160,12 @@ _Py_HashBytes(const void *src, Py_ssize_t len)
     hashstats[(len <= Py_HASH_STATS_MAX) ? len : 0]++;
 #endif
 
+    Py_hash_t x;
 #if Py_HASH_CUTOFF > 0
     if (len < Py_HASH_CUTOFF) {
         /* Optimize hashing of very small strings with inline DJBX33A. */
         Py_uhash_t hash;
-        const unsigned char *p = src;
+        const unsigned char *p = ptr;
         hash = 5381; /* DJBX33A starts with 5381 */
 
         switch(len) {
@@ -186,10 +186,13 @@ _Py_HashBytes(const void *src, Py_ssize_t len)
     }
     else
 #endif /* Py_HASH_CUTOFF */
-        x = PyHash_Func.hash(src, len);
+    {
+        x = PyHash_Func.hash(ptr, len);
+    }
 
-    if (x == -1)
+    if (x == -1) {
         return -2;
+    }
     return x;
 }
 

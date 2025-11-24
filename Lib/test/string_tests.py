@@ -767,6 +767,15 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
 
+    def test_replacement_on_buffer_boundary(self):
+        # gh-127971: Check we don't read past the end of the buffer when a
+        # potential match misses on the last character.
+        any_3_nonblank_codepoints = '!!!'
+        seven_codepoints = any_3_nonblank_codepoints + ' ' + any_3_nonblank_codepoints
+        a = (' ' * 243) + seven_codepoints + (' ' * 7)
+        b = ' ' * 6 + chr(256)
+        a.replace(seven_codepoints, b)
+
     def test_replace_uses_two_way_maxcount(self):
         # Test that maxcount works in _two_way_count in fastsearch.h
         A, B = "A"*1000, "B"*1000
@@ -1132,8 +1141,8 @@ class StringLikeTest(BaseTest):
         self.checkequal('\u2160\u2171\u2172',
                         '\u2170\u2171\u2172', 'capitalize')
         # check with Ll chars with no upper - nothing changes here
-        self.checkequal('\u019b\u1d00\u1d86\u0221\u1fb7',
-                        '\u019b\u1d00\u1d86\u0221\u1fb7', 'capitalize')
+        self.checkequal('\u1d00\u1d86\u0221\u1fb7',
+                        '\u1d00\u1d86\u0221\u1fb7', 'capitalize')
 
     def test_startswith(self):
         self.checkequal(True, 'hello', 'startswith', 'he')

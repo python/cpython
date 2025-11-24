@@ -8,7 +8,7 @@ from unittest import mock
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class ToThreadTests(unittest.IsolatedAsyncioTestCase):
@@ -30,7 +30,9 @@ class ToThreadTests(unittest.IsolatedAsyncioTestCase):
         func.assert_called_once()
 
     async def test_to_thread_concurrent(self):
-        func = mock.Mock()
+        calls = []
+        def func():
+            calls.append(1)
 
         futs = []
         for _ in range(10):
@@ -38,7 +40,7 @@ class ToThreadTests(unittest.IsolatedAsyncioTestCase):
             futs.append(fut)
         await asyncio.gather(*futs)
 
-        self.assertEqual(func.call_count, 10)
+        self.assertEqual(sum(calls), 10)
 
     async def test_to_thread_args_kwargs(self):
         # Unlike run_in_executor(), to_thread() should directly accept kwargs.

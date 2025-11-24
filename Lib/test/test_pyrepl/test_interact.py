@@ -1,5 +1,6 @@
 import contextlib
 import io
+import warnings
 import unittest
 from unittest.mock import patch
 from textwrap import dedent
@@ -53,6 +54,19 @@ class TestSimpleInteract(unittest.TestCase):
         self.assertFalse(more)
         self.assertEqual(f.getvalue(), "1\n")
 
+    @force_not_colorized
+    def test_multiple_statements_fail_early(self):
+        console = InteractiveColoredConsole()
+        code = dedent("""\
+        raise Exception('foobar')
+        print('spam', 'eggs', sep='&')
+        """)
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            console.runsource(code)
+        self.assertIn('Exception: foobar', f.getvalue())
+        self.assertNotIn('spam&eggs', f.getvalue())
+
     def test_empty(self):
         namespace = {}
         code = ""
@@ -88,6 +102,20 @@ class TestSimpleInteract(unittest.TestCase):
         self.assertFalse(result)
         self.assertIn('SyntaxError', f.getvalue())
 
+    @force_not_colorized
+    def test_runsource_show_syntax_error_location(self):
+        console = InteractiveColoredConsole()
+        source = "def f(x, x): ..."
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        r = """
+    def f(x, x): ...
+             ^
+SyntaxError: duplicate parameter 'x' in function definition"""
+        self.assertIn(r, f.getvalue())
+
     def test_runsource_shows_syntax_error_for_failed_compilation(self):
         console = InteractiveColoredConsole()
         source = "print('Hello, world!'"
@@ -103,14 +131,48 @@ class TestSimpleInteract(unittest.TestCase):
             console.runsource(source)
             mock_showsyntaxerror.assert_called_once()
 
+    def test_runsource_survives_null_bytes(self):
+        console = InteractiveColoredConsole()
+        source = "\x00\n"
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        self.assertIn("source code string cannot contain null bytes", f.getvalue())
+
     def test_no_active_future(self):
         console = InteractiveColoredConsole()
-        source = "x: int = 1; print(__annotate__(1))"
+        source = dedent("""\
+        x: int = 1
+        print(__annotate__(1))
+        """)
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             result = console.runsource(source)
         self.assertFalse(result)
         self.assertEqual(f.getvalue(), "{'x': <class 'int'>}\n")
+
+    def test_future_annotations(self):
+        console = InteractiveColoredConsole()
+        source = dedent("""\
+        from __future__ import annotations
+        def g(x: int): ...
+        print(g.__annotations__)
+        """)
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        self.assertEqual(f.getvalue(), "{'x': 'int'}\n")
+
+    def test_future_barry_as_flufl(self):
+        console = InteractiveColoredConsole()
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            result = console.runsource("from __future__ import barry_as_FLUFL\n")
+            result = console.runsource("""print("black" <> 'blue')\n""")
+        self.assertFalse(result)
+        self.assertEqual(f.getvalue(), "True\n")
 
 
 class TestMoreLines(unittest.TestCase):
@@ -212,3 +274,28 @@ class TestMoreLines(unittest.TestCase):
         code = "if foo:"
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
         self.assertTrue(_more_lines(console, code))
+
+
+class TestWarnings(unittest.TestCase):
+    def test_pep_765_warning(self):
+        """
+        Test that a SyntaxWarning emitted from the
+        AST optimizer is only shown once in the REPL.
+        """
+        # gh-131927
+        console = InteractiveColoredConsole()
+        code = dedent("""\
+        def f():
+            try:
+                return 1
+            finally:
+                return 2
+        """)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            console.runsource(code)
+
+        count = sum("'return' in a 'finally' block" in str(w.message)
+                    for w in caught)
+        self.assertEqual(count, 1)

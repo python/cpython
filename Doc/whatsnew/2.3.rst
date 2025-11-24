@@ -353,7 +353,7 @@ convert them to Unicode using the ``mbcs`` encoding.
 Other systems also allow Unicode strings as file names but convert them to byte
 strings before passing them to the system, which can cause a :exc:`UnicodeError`
 to be raised. Applications can test whether arbitrary Unicode strings are
-supported as file names by checking :attr:`os.path.supports_unicode_filenames`,
+supported as file names by checking :const:`os.path.supports_unicode_filenames`,
 a Boolean value.
 
 Under MacOS, :func:`os.listdir` may now return Unicode filenames.
@@ -1113,10 +1113,10 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
      <type '_socket.socket'>
 
 * One of the noted incompatibilities between old- and new-style classes has been
-  removed: you can now assign to the :attr:`~definition.__name__` and :attr:`~class.__bases__`
+  removed: you can now assign to the :attr:`~type.__name__` and :attr:`~type.__bases__`
   attributes of new-style classes.  There are some restrictions on what can be
-  assigned to :attr:`~class.__bases__` along the lines of those relating to assigning to
-  an instance's :attr:`~instance.__class__` attribute.
+  assigned to :attr:`!__bases__` along the lines of those relating to assigning to
+  an instance's :attr:`~object.__class__` attribute.
 
 .. ======================================================================
 
@@ -1925,8 +1925,8 @@ Changes to Python's build process and to the C API include:
   dependence on a system version or local installation of Expat.
 
 * If you dynamically allocate type objects in your extension, you should be
-  aware of a change in the rules relating to the :attr:`!__module__` and
-  :attr:`~definition.__name__` attributes.  In summary, you will want to ensure the type's
+  aware of a change in the rules relating to the :attr:`~type.__module__` and
+  :attr:`~type.__name__` attributes.  In summary, you will want to ensure the type's
   dictionary contains a ``'__module__'`` key; making the module name the part of
   the type name leading up to the final period will no longer have the desired
   effect.  For more detail, read the API reference documentation or the  source.

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2010 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -50,7 +50,7 @@ class Generator:
         expanded to 8 spaces) than maxheaderlen, the header will split as
         defined in the Header class.  Set maxheaderlen to zero to disable
         header wrapping.  The default is 78, as recommended (but not required)
-        by RFC 2822.
+        by RFC 5322 section 2.1.1.
 
         The policy keyword specifies a policy object that controls a number of
         aspects of the generator's operation.  If no policy is specified,
@@ -227,7 +227,7 @@ class Generator:
             folded = self.policy.fold(h, v)
             if self.policy.verify_generated_headers:
                 linesep = self.policy.linesep
-                if not folded.endswith(self.policy.linesep):
+                if not folded.endswith(linesep):
                     raise HeaderWriteError(
                         f'folded header does not end with {linesep!r}: {folded!r}')
                 if NEWLINE_WITHOUT_FWSP.search(folded.removesuffix(linesep)):

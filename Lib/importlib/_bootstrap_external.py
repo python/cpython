@@ -209,7 +209,11 @@ def _write_atomic(path, data, mode=0o666):
         # We first write data to a temporary file, and then use os.replace() to
         # perform an atomic rename.
         with _io.FileIO(fd, 'wb') as file:
-            file.write(data)
+            bytes_written = file.write(data)
+        if bytes_written != len(data):
+            # Raise an OSError so the 'except' below cleans up the partially
+            # written file.
+            raise OSError("os.write() didn't write the full pyc file")
         _os.replace(path_tmp, path)
     except OSError:
         try:
@@ -293,7 +297,8 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         # Strip initial drive from a Windows path. We know we have an absolute
         # path here, so the second part of the check rules out a POSIX path that
         # happens to contain a colon at the second character.
-        if head[1] == ':' and head[0] not in path_separators:
+        # Slicing avoids issues with an empty (or short) `head`.
+        if head[1:2] == ':' and head[0:1] not in path_separators:
             head = head[2:]
 
         # Strip initial path separator from `head` to complete the conversion
@@ -547,8 +552,7 @@ def decode_source(source_bytes):
     import tokenize  # To avoid bootstrap issues.
     source_bytes_readline = _io.BytesIO(source_bytes).readline
     encoding = tokenize.detect_encoding(source_bytes_readline)
-    newline_decoder = _io.IncrementalNewlineDecoder(None, True)
-    return newline_decoder.decode(source_bytes.decode(encoding[0]))
+    return _io.TextIOWrapper(_io.BytesIO(source_bytes), encoding=encoding[0], newline=None).read()
 
 
 # Module specifications #######################################################
@@ -712,6 +716,12 @@ class WindowsRegistryFinder:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
+        _warnings.warn('importlib.machinery.WindowsRegistryFinder is '
+                       'deprecated; use site configuration instead. '
+                       'Future versions of Python may not enable this '
+                       'finder by default.',
+                       DeprecationWarning, stacklevel=2)
+
         filepath = cls._search_registry(fullname)
         if filepath is None:
             return None
@@ -808,13 +818,14 @@ class SourceLoader(_LoaderBasics):
                               name=fullname) from exc
         return decode_source(source_bytes)
 
-    def source_to_code(self, data, path, *, _optimize=-1):
+    def source_to_code(self, data, path, fullname=None, *, _optimize=-1):
         """Return the code object compiled from source.
 
         The 'data' argument can be any object type that compile() supports.
         """
         return _bootstrap._call_with_frames_removed(compile, data, path, 'exec',
-                                        dont_inherit=True, optimize=_optimize)
+                                        dont_inherit=True, optimize=_optimize,
+                                        module=fullname)
 
     def get_code(self, fullname):
         """Concrete implementation of InspectLoader.get_code.
@@ -883,7 +894,7 @@ class SourceLoader(_LoaderBasics):
                                                  source_path=source_path)
         if source_bytes is None:
             source_bytes = self.get_data(source_path)
-        code_object = self.source_to_code(source_bytes, source_path)
+        code_object = self.source_to_code(source_bytes, source_path, fullname)
         _bootstrap._verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
                 source_mtime is not None):
@@ -1075,12 +1086,18 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
         return self.path
 
 
-class _NamespacePath:
-    """Represents a namespace package's path.  It uses the module name
-    to find its parent module, and from there it looks up the parent's
-    __path__.  When this changes, the module's own path is recomputed,
-    using path_finder.  For top-level modules, the parent module's path
-    is sys.path."""
+class NamespacePath:
+    """Represents a namespace package's path.
+
+    It uses the module *name* to find its parent module, and from there it looks
+    up the parent's __path__. When this changes, the module's own path is
+    recomputed, using *path_finder*. The initial value is set to *path*.
+
+    For top-level modules, the parent module's path is sys.path.
+
+    *path_finder* should be a callable with the same signature as
+    MetaPathFinder.find_spec((fullname, path, target=None) -> spec).
+    """
 
     # When invalidate_caches() is called, this epoch is incremented
     # https://bugs.python.org/issue45703
@@ -1105,7 +1122,15 @@ class _NamespacePath:
 
     def _get_parent_path(self):
         parent_module_name, path_attr_name = self._find_parent_path_names()
-        return getattr(sys.modules[parent_module_name], path_attr_name)
+        try:
+            module = sys.modules[parent_module_name]
+        except KeyError as e:
+            raise ModuleNotFoundError(
+                f"{parent_module_name!r} must be imported before finding {self._name!r}.",
+                name=parent_module_name,
+            ) from e
+        else:
+            return getattr(module, path_attr_name)
 
     def _recalculate(self):
         # If the parent's path has changed, recalculate _path
@@ -1134,7 +1159,7 @@ class _NamespacePath:
         return len(self._recalculate())
 
     def __repr__(self):
-        return f'_NamespacePath({self._path!r})'
+        return f'NamespacePath({self._path!r})'
 
     def __contains__(self, item):
         return item in self._recalculate()
@@ -1143,12 +1168,16 @@ class _NamespacePath:
         self._path.append(item)
 
 
+# For backwards-compatibility for anyone desperate enough to get at the class back in the day.
+_NamespacePath = NamespacePath
+
+
 # This class is actually exposed publicly in a namespace package's __loader__
 # attribute, so it should be available through a non-private name.
 # https://github.com/python/cpython/issues/92054
 class NamespaceLoader:
     def __init__(self, name, path, path_finder):
-        self._path = _NamespacePath(name, path, path_finder)
+        self._path = NamespacePath(name, path, path_finder)
 
     def is_package(self, fullname):
         return True
@@ -1157,7 +1186,7 @@ class NamespaceLoader:
         return ''
 
     def get_code(self, fullname):
-        return compile('', '<string>', 'exec', dont_inherit=True)
+        return compile('', '<string>', 'exec', dont_inherit=True, module=fullname)
 
     def create_module(self, spec):
         """Use default semantics for module creation."""
@@ -1203,9 +1232,9 @@ class PathFinder:
                 del sys.path_importer_cache[name]
             elif hasattr(finder, 'invalidate_caches'):
                 finder.invalidate_caches()
-        # Also invalidate the caches of _NamespacePaths
+        # Also invalidate the caches of NamespacePaths
         # https://bugs.python.org/issue45703
-        _NamespacePath._epoch += 1
+        NamespacePath._epoch += 1
 
         from importlib.metadata import MetadataPathFinder
         MetadataPathFinder.invalidate_caches()
@@ -1234,7 +1263,7 @@ class PathFinder:
         if path == '':
             try:
                 path = _os.getcwd()
-            except FileNotFoundError:
+            except (FileNotFoundError, PermissionError):
                 # Don't cache the failure as the cwd can easily change to
                 # a valid directory later on.
                 return None
@@ -1291,7 +1320,7 @@ class PathFinder:
                 # We found at least one namespace path.  Return a spec which
                 # can create the namespace package.
                 spec.origin = None
-                spec.submodule_search_locations = _NamespacePath(fullname, namespace_path, cls._get_spec)
+                spec.submodule_search_locations = NamespacePath(fullname, namespace_path, cls._get_spec)
                 return spec
             else:
                 return None
@@ -1487,7 +1516,13 @@ class AppleFrameworkLoader(ExtensionFileLoader):
         )
 
         # Ensure that the __file__ points at the .fwork location
-        module.__file__ = path
+        try:
+            module.__file__ = path
+        except AttributeError:
+            # Not important enough to report.
+            # (The error is also ignored in _bootstrap._init_module_attrs or
+            # import_run_extension in import.c)
+            pass
 
         return module
 
