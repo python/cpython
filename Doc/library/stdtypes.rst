@@ -2014,7 +2014,7 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isdecimal()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal() # ARABIC-INDIC DIGIT ZERO TO NINE
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # Arabic-Indic digits zero to nine
       True
       >>> 'alphabetic'.isdecimal()
       False
