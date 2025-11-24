@@ -2000,7 +2000,7 @@ expression support in the :mod:`re` module).
 
    .. doctest::
 
-      >>> 'a common word'.isascii()
+      >>> 'ASCII characters'.isascii()
       True
       >>> 'µ'.isascii()
       False
