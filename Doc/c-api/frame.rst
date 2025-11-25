@@ -236,6 +236,16 @@ Unless using :pep:`523`, you will not need this.
    .. versionadded:: 3.12
 
 
+.. c:function:: PyFrameObject* PyUnstable_InterpreterFrame_GetFrameObject(PyUnstable_InterpreterFrame *frame)
+
+   Get a frame object from an interpreter frame.
+
+   Return a new :term:`strong reference` on success, or set an exception and
+   return ``NULL`` on error.
+
+   .. versionadded:: next
+
+
 .. c:function:: int PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
 
    Return the byte offset into the last executed instruction.
@@ -248,5 +258,3 @@ Unless using :pep:`523`, you will not need this.
    Return the currently executing line number, or -1 if there is no line number.
 
    .. versionadded:: 3.12
-
-
