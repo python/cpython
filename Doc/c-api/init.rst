@@ -2587,7 +2587,7 @@ These APIs are obsolete since Python 3.13 with the introduction of
    On success, this function returns a lock; on failure, this
    function returns ``0`` without an exception set.
 
-   The caller does not need to hold an :term:`attached thread state`.
+   The caller does not need to hold the :term:`GIL`.
 
    .. versionchanged:: 3.15
       This function now always uses :c:type:`PyMutex`. In prior versions, this
@@ -2599,7 +2599,7 @@ These APIs are obsolete since Python 3.13 with the introduction of
    Destroy *lock*. The lock should not be held by any thread when calling
    this.
 
-   The caller does not need to hold an :term:`attached thread state`.
+   The caller does not need to hold the :term:`GIL`.
 
 
 .. c:function:: PyLockStatus PyThread_acquire_lock_timed(PyThread_type_lock lock, long long microseconds, int intr_flag)
@@ -2619,7 +2619,7 @@ These APIs are obsolete since Python 3.13 with the introduction of
    If the lock is successfully acquired, this function returns
    :c:enumerator:`PY_LOCK_ACQUIRED`.
 
-   The caller does not need to hold an :term:`attached thread state`.
+   The caller does not need to hold the :term:`GIL`.
 
 
 .. c:function:: int PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
@@ -2637,7 +2637,7 @@ These APIs are obsolete since Python 3.13 with the introduction of
    Unlike :c:func:`PyThread_acquire_lock_timed`, acquiring the lock cannot be
    interrupted by a signal.
 
-   The caller does not need to hold an :term:`attached thread state`.
+   The caller does not need to hold the :term:`GIL`.
 
 
 .. c:function:: int PyThread_release_lock(PyThread_type_lock lock)
@@ -2645,7 +2645,7 @@ These APIs are obsolete since Python 3.13 with the introduction of
    Release *lock*. If *lock* is not held, then this function issues a
    fatal error.
 
-   The caller does not need to hold an :term:`attached thread state`.
+   The caller does not need to hold the :term:`GIL`.
 
 
 Operating System Thread APIs
@@ -2668,15 +2668,15 @@ Operating System Thread APIs
    On success, this function returns the identifier of the new thread; on failure,
    this returns :c:macro:`PYTHREAD_INVALID_THREAD_ID`.
 
-   The caller does not need to hold an :term:`attached thread state`.
+   The caller does not need to hold the :term:`GIL`.
 
 
 .. c:function:: unsigned long PyThread_get_thread_ident(void)
 
    Return the identifier of the current thread, which will never be zero.
 
-   This function cannot fail, and the caller does not need to hold an
-   :term:`attached thread state`.
+   This function cannot fail, and the caller does not need to hold the
+   :term:`GIL`.
 
    .. seealso::
       :py:func:`threading.get_ident`
@@ -2691,7 +2691,7 @@ Operating System Thread APIs
    On success, this returns a new :term:`strong reference` to the thread
    information; on failure, this returns ``NULL`` with an exception set.
 
-   The caller must hold an :term:`attached thread state`.
+   The caller must hold the :term:`GIL`.
 
 
 .. c:macro:: PY_HAVE_THREAD_NATIVE_ID
@@ -2707,8 +2707,8 @@ Operating System Thread APIs
    This function is only available when :c:macro:`PY_HAVE_THREAD_NATIVE_ID` is
    defined.
 
-   This function cannot fail, and the caller does not need to hold an
-   :term:`attached thread state`.
+   This function cannot fail, and the caller does not need to hold the
+   :term:`GIL`.
 
    .. seealso::
       :py:func:`threading.get_native_id`
@@ -2735,8 +2735,6 @@ Operating System Thread APIs
 
       In any case, there is a risk of corruption on the thread's stack.
 
-   .. deprecated:: 3.14
-
 
 .. c:function:: void PyThread_init_thread(void)
 
@@ -2752,7 +2750,7 @@ Operating System Thread APIs
    ``-2`` if the system does not support changing the stack size. This function
    does not set exceptions.
 
-   The caller does not need to hold an :term:`attached thread state`.
+   The caller does not need to hold the :term:`GIL`.
 
 
 .. c:function:: size_t PyThread_get_stacksize(void)
@@ -2760,4 +2758,4 @@ Operating System Thread APIs
    Return the stack size of the current thread in bytes, or ``0`` if the system's
    default stack size is in use.
 
-   The caller does not need to hold an :term:`attached thread state`.
+   The caller does not need to hold the :term:`GIL`.
