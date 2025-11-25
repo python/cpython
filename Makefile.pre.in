@@ -3385,6 +3385,7 @@ MODULE__DECIMAL_DEPS=@LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
+MODULE__REMOTE_DEBUGGING_DEPS=$(srcdir)/Modules/_remote_debugging/_remote_debugging.h
 
 # HACL*-based cryptographic primitives
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
