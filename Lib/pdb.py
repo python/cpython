@@ -654,7 +654,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _get_tb_and_exceptions(self, tb_or_exc):
         """
-        Given a tracecack or an exception, return a tuple of chained exceptions
+        Given a traceback or an exception, return a tuple of chained exceptions
         and current traceback to inspect.
 
         This will deal with selecting the right ``__cause__`` or ``__context__``
@@ -2429,7 +2429,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except KeyboardInterrupt:
             pass
 
-    def print_stack_entry(self, frame_lineno, prompt_prefix=line_prefix):
+    def print_stack_entry(self, frame_lineno, prompt_prefix=None):
+        if prompt_prefix is None:
+            prompt_prefix = line_prefix
         frame, lineno = frame_lineno
         if frame is self.curframe:
             prefix = '> '
