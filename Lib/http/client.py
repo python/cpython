@@ -1339,7 +1339,13 @@ class HTTPConnection:
     def request(self, method, url, body=None, headers={}, *,
                 encode_chunked=False):
         """Send a complete request to the server."""
+    try:
         self._send_request(method, url, body, headers, encode_chunked)
+    except:
+        # If the transmission fails (e.g. timeout), close the connection
+        # to reset the state machine to _CS_IDLE.
+        self.close()
+        raise
 
     def _send_request(self, method, url, body, headers, encode_chunked):
         # Honor explicitly requested Host: and Accept-Encoding: headers.
