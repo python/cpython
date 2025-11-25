@@ -890,6 +890,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     PyObject *message = NULL;
     PyObject *exceptions = NULL;
+    PyObject *exceptions_str = NULL;
 
     if (!PyArg_ParseTuple(args,
                           "UO:BaseExceptionGroup.__new__",
@@ -903,6 +904,11 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyExc_TypeError,
             "second argument (exceptions) must be a sequence");
         return NULL;
+    }
+
+    /* Save initial exceptions sequence as a string incase sequence is mutated */
+    if (!PyList_Check(exceptions) && !PyTuple_Check(exceptions)) {
+        exceptions_str = PyObject_Repr(exceptions);
     }
 
     exceptions = PySequence_Tuple(exceptions);
@@ -988,9 +994,11 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self->msg = Py_NewRef(message);
     self->excs = exceptions;
+    self->excs_str = exceptions_str;
     return (PyObject*)self;
 error:
     Py_DECREF(exceptions);
+    Py_XDECREF(exceptions_str);
     return NULL;
 }
 
@@ -1029,6 +1037,7 @@ BaseExceptionGroup_clear(PyObject *op)
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     Py_CLEAR(self->msg);
     Py_CLEAR(self->excs);
+    Py_CLEAR(self->excs_str);
     return BaseException_clear(op);
 }
 
@@ -1046,6 +1055,7 @@ BaseExceptionGroup_traverse(PyObject *op, visitproc visit, void *arg)
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     Py_VISIT(self->msg);
     Py_VISIT(self->excs);
+    Py_VISIT(self->excs_str);
     return BaseException_traverse(op, visit, arg);
 }
 
@@ -1068,24 +1078,34 @@ BaseExceptionGroup_repr(PyObject *op)
 {
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     assert(self->msg);
-    assert(self->excs);
 
-    /* Use the actual exceptions tuple for accuracy, but make it look like the
-     * original exception sequence, if possible, for backwards compatibility. */
-    PyObject* excs_orig = PyTuple_GET_ITEM(self->args, 1);
-    if (PyList_Check(excs_orig)) {
-        excs_orig = PySequence_List(self->excs);
-    }
-    else {
-        excs_orig = Py_NewRef(self->excs);
+    PyObject *exceptions_str = Py_XNewRef(self->excs_str);
+
+    /* If the initial exceptions string was not saved in the constructor. */
+    if (!exceptions_str) {
+        assert(self->excs);
+
+        /* Older versions of this code delegated to BaseException's repr, inserting
+         * the current value of self.args[1]. However, mutating that sequence makes
+         * the repr appear as if the ExceptionGroup itself has changed, which it hasn't.
+         * So we use the actual exceptions tuple for accuracy, but make it look like the
+         * original exception sequence if possible, for backwards compatibility. */
+        if (PyList_Check(PyTuple_GET_ITEM(self->args, 1))) {
+            PyObject *exceptions_list = PySequence_List(self->excs);
+            exceptions_str = PyObject_Repr(exceptions_list);
+            Py_DECREF(exceptions_list);
+        }
+        else {
+            exceptions_str = PyObject_Repr(self->excs);
+        }
     }
 
     const char *name = _PyType_Name(Py_TYPE(self));
     PyObject *repr = PyUnicode_FromFormat(
-        "%s(%R, %R)", name,
-        self->msg, excs_orig);
+        "%s(%R, %U)", name,
+        self->msg, exceptions_str);
 
-    Py_DECREF(excs_orig);
+    Py_DECREF(exceptions_str);
     return repr;
 }
 
@@ -1708,6 +1728,8 @@ static PyMemberDef BaseExceptionGroup_members[] = {
         PyDoc_STR("exception message")},
     {"exceptions", _Py_T_OBJECT, offsetof(PyBaseExceptionGroupObject, excs), Py_READONLY,
         PyDoc_STR("nested exceptions")},
+    {"_exceptions_str", _Py_T_OBJECT, offsetof(PyBaseExceptionGroupObject, excs_str), Py_READONLY,
+        PyDoc_STR("private string representation of initial exceptions sequence")},
     {NULL}  /* Sentinel */
 };
 
