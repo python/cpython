@@ -7194,6 +7194,7 @@ SRCDIRS="\
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
+  Modules/_remote_debugging \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
