@@ -212,9 +212,9 @@ def _write_atomic(path, data, mode=0o666):
             bytes_written = 0
             while bytes_written < len(data):
                 last_bytes_written = file.write(data[bytes_written:])
-                if last_bytes_written is None or last_bytes_written < 1:
-                    raise OSError("os.write() didn't write the full pyc file")
                 bytes_written += last_bytes_written
+                if last_bytes_written < 1:
+                    raise OSError("os.write() didn't write the full pyc file")
         _os.replace(path_tmp, path)
     except OSError:
         try:
