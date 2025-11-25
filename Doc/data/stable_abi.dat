@@ -464,6 +464,7 @@ data,PyMethodDescr_Type,3.2,,
 type,PyModuleDef,3.2,,full-abi
 type,PyModuleDef_Base,3.2,,full-abi
 func,PyModuleDef_Init,3.5,,
+type,PyModuleDef_Slot,3.5,,full-abi
 data,PyModuleDef_Type,3.5,,
 func,PyModule_Add,3.13,,
 func,PyModule_AddFunctions,3.7,,

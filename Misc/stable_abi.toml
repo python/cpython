@@ -1906,6 +1906,9 @@
     added = '3.5'
 [const.Py_mod_exec]
     added = '3.5'
+[struct.PyModuleDef_Slot]
+    added = '3.5'
+    struct_abi_kind = 'full-abi'
 
 # New slots in 3.5:
 # d51374ed78a3e3145911a16cdf3b9b84b3ba7d15 - Matrix multiplication (PEP 465)
