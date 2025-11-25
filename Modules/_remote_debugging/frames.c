@@ -154,14 +154,17 @@ is_frame_valid(
 
     void* frame = (void*)frame_addr;
 
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
+    char owner = GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner);
+    if (owner == FRAME_OWNED_BY_INTERPRETER) {
         return 0;  // C frame
     }
 
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_GENERATOR
-        && GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_THREAD) {
-        PyErr_Format(PyExc_RuntimeError, "Unhandled frame owner %d.\n",
-                    GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner));
+    if (owner == FRAME_OWNED_BY_THREAD_STATE) {
+        return 0;  // Sentinel base frame - end of stack
+    }
+
+    if (owner != FRAME_OWNED_BY_GENERATOR && owner != FRAME_OWNED_BY_THREAD) {
+        PyErr_Format(PyExc_RuntimeError, "Unhandled frame owner %d.\n", owner);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Unhandled frame owner type in async frame");
         return -1;
     }
@@ -258,20 +261,20 @@ process_frame_chain(
     uintptr_t initial_frame_addr,
     StackChunkList *chunks,
     PyObject *frame_info,
-    uintptr_t gc_frame,
-    uintptr_t base_frame_addr)
+    uintptr_t base_frame_addr,
+    uintptr_t gc_frame)
 {
     uintptr_t frame_addr = initial_frame_addr;
     uintptr_t prev_frame_addr = 0;
-    uintptr_t last_frame_addr = 0;  // Track the last frame we processed
+    uintptr_t last_frame_addr = 0;  // Track last frame visited for validation
     const size_t MAX_FRAMES = 1024;
     size_t frame_count = 0;
 
     while ((void*)frame_addr != NULL) {
-        last_frame_addr = frame_addr;  // Remember this frame before moving to next
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
         uintptr_t stackpointer = 0;
+        last_frame_addr = frame_addr;  // Remember this frame address
 
         if (++frame_count > MAX_FRAMES) {
             PyErr_SetString(PyExc_RuntimeError, "Too many stack frames (possible infinite loop)");
@@ -279,7 +282,6 @@ process_frame_chain(
             return -1;
         }
 
-        // Try chunks first, fallback to direct memory read
         if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, chunks) < 0) {
             PyErr_Clear();
             uintptr_t address_of_code_object = 0;
@@ -350,15 +352,12 @@ process_frame_chain(
         frame_addr = next_frame_addr;
     }
 
-    // Validate we reached the base frame if it's set
-    if (base_frame_addr != 0 && last_frame_addr != 0) {
-        if (last_frame_addr != base_frame_addr) {
-            // We didn't reach the expected bottom frame - incomplete sample
-            PyErr_Format(PyExc_RuntimeError,
-                "Incomplete sample: reached frame 0x%lx but expected base frame 0x%lx",
-                last_frame_addr, base_frame_addr);
-            return -1;
-        }
+    // Validate we reached the base frame (sentinel at bottom of stack)
+    if (last_frame_addr != base_frame_addr) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Incomplete sample: did not reach base frame (expected 0x%lx, got 0x%lx)",
+            base_frame_addr, last_frame_addr);
+        return -1;
     }
 
     return 0;

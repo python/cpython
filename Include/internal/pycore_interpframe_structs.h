@@ -24,6 +24,7 @@ enum _frameowner {
     FRAME_OWNED_BY_GENERATOR = 1,
     FRAME_OWNED_BY_FRAME_OBJECT = 2,
     FRAME_OWNED_BY_INTERPRETER = 3,
+    FRAME_OWNED_BY_THREAD_STATE = 4,  /* Sentinel base frame in thread state */
 };
 
 struct _PyInterpreterFrame {
