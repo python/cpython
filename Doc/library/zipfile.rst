@@ -16,10 +16,10 @@ provides tools to create, read, write, append, and list a ZIP file.  Any
 advanced use of this module will require an understanding of the format, as
 defined in `PKZIP Application Note`_.
 
-This module does not currently handle multi-disk ZIP files.
+This module does not handle multi-disk ZIP files.
 It can handle ZIP files that use the ZIP64 extensions
 (that is ZIP files that are more than 4 GiB in size).  It supports
-decryption of encrypted files in ZIP archives, but it currently cannot
+decryption of encrypted files in ZIP archives, but it cannot
 create an encrypted file.  Decryption is extremely slow as it is
 implemented in native Python rather than C.
 
@@ -248,7 +248,7 @@ ZipFile Objects
    .. note::
 
       *metadata_encoding* is an instance-wide setting for the ZipFile.
-      It is not currently possible to set this on a per-member basis.
+      It is not possible to set this on a per-member basis.
 
       This attribute is a workaround for legacy implementations which produce
       archives with names in the current locale encoding or code page (mostly
