@@ -1562,7 +1562,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
          This function was added in a bugfix release, and
          extensions that use it will be incompatible with Python 3.14.0.
          Most packaging tools for Python are not able to handle this
-         incompatibility automatically, and will need.
+         incompatibility automatically, and will need explicit configuration.
          When using PyPA standards (wheels and source distributions),
          specify ``Requires-Python: != 3.14.0.*`` in
          `core metadata <https://packaging.python.org/en/latest/specifications/core-metadata/#requires-python>`_.
@@ -1582,7 +1582,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
          This function was added in a bugfix release, and
          extensions that use it will be incompatible with Python 3.14.0.
          Most packaging tools for Python are not able to handle this
-         incompatibility automatically, and will need.
+         incompatibility automatically, and will need explicit configuration.
          When using PyPA standards (wheels and source distributions),
          specify ``Requires-Python: != 3.14.0.*`` in
          `core metadata <https://packaging.python.org/en/latest/specifications/core-metadata/#requires-python>`_.
