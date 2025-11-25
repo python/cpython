@@ -1,0 +1,2 @@
+Retry writing ``.pyc`` files if we get interrupted by a system call or
+something that results in a truncated write.
