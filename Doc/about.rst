@@ -33,7 +33,7 @@ Contributors to the Python documentation
 
 Many people have contributed to the Python language, the Python standard
 library, and the Python documentation.  See the `CPython
-GitHub repository <https://github.com/python/cpython/graphs/contributors>`_
+GitHub repository <https://github.com/python/cpython/graphs/contributors>`__
 for a partial list of contributors.
 
 It is only with the input and contributions of the Python community
