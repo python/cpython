@@ -436,24 +436,26 @@ int pthread_attr_destroy(pthread_attr_t *a)
 
 #endif
 
-
-void
-_Py_InitializeRecursionLimits(PyThreadState *tstate)
+static void
+hardware_stack_limits(uintptr_t *base, uintptr_t *top)
 {
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
 #ifdef WIN32
     ULONG_PTR low, high;
     GetCurrentThreadStackLimits(&low, &high);
-    _tstate->c_stack_top = (uintptr_t)high;
+    *top = (uintptr_t)high;
     ULONG guarantee = 0;
     SetThreadStackGuarantee(&guarantee);
-    _tstate->c_stack_hard_limit = ((uintptr_t)low) + guarantee + _PyOS_STACK_MARGIN_BYTES;
-    _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES;
+    *base = (uintptr_t)low + guarantee;
+#elif defined(__APPLE__)
+    pthread_t this_thread = pthread_self();
+    void *stack_addr = pthread_get_stackaddr_np(this_thread); // top of the stack
+    size_t stack_size = pthread_get_stacksize_np(this_thread);
+    *top = (uintptr_t)stack_addr;
+    *base = ((uintptr_t)stack_addr) - stack_size;
 #else
-    uintptr_t here_addr = _Py_get_machine_stack_pointer();
-/// XXX musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size
-/// (on alpine at least) is much smaller than expected and imposes undue limits
-/// compared to the old stack size estimation.  (We assume musl is not glibc.)
+    /// XXX musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size
+    /// (on alpine at least) is much smaller than expected and imposes undue limits
+    /// compared to the old stack size estimation.  (We assume musl is not glibc.)
 #  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
         !defined(__NetBSD__) && (defined(__GLIBC__) || !defined(__linux__))
     size_t stack_size, guard_size;
@@ -466,37 +468,105 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
         err |= pthread_attr_destroy(&attr);
     }
     if (err == 0) {
-        uintptr_t base = ((uintptr_t)stack_addr) + guard_size;
-        uintptr_t top = base + stack_size;
-#    ifdef _Py_THREAD_SANITIZER
-        // Thread sanitizer crashes if we use a bit more than half the stack.
-#      if _Py_STACK_GROWS_DOWN
-        base += stack_size / 2;
-#      else
-        top -= stack_size / 2;
-#      endif
-#    endif
-#    if _Py_STACK_GROWS_DOWN
-        _tstate->c_stack_top = top;
-        _tstate->c_stack_hard_limit = base + _PyOS_STACK_MARGIN_BYTES;
-        _tstate->c_stack_soft_limit = base + _PyOS_STACK_MARGIN_BYTES * 2;
-        assert(_tstate->c_stack_soft_limit < here_addr);
-        assert(here_addr < _tstate->c_stack_top);
-#    else
-        _tstate->c_stack_top = base;
-        _tstate->c_stack_hard_limit = top - _PyOS_STACK_MARGIN_BYTES;
-        _tstate->c_stack_soft_limit = top - _PyOS_STACK_MARGIN_BYTES * 2;
-        assert(here_addr > base);
-        assert(here_addr < _tstate->c_stack_soft_limit);
-#    endif
+        *base = ((uintptr_t)stack_addr) + guard_size;
+        *top = (uintptr_t)stack_addr + stack_size;
         return;
     }
 #  endif
-    _tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
-    _tstate->c_stack_soft_limit = _tstate->c_stack_top - Py_C_STACK_SIZE;
-    _tstate->c_stack_hard_limit = _tstate->c_stack_top - (Py_C_STACK_SIZE + _PyOS_STACK_MARGIN_BYTES);
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    uintptr_t top_addr = _Py_SIZE_ROUND_UP(here_addr, 4096);
+    *top = top_addr;
+    *base = top_addr - Py_C_STACK_SIZE;
 #endif
 }
+
+static void
+tstate_set_stack(PyThreadState *tstate,
+                 uintptr_t base, uintptr_t top)
+{
+    assert(base < top);
+    assert((top - base) >= _PyOS_MIN_STACK_SIZE);
+
+#ifdef _Py_THREAD_SANITIZER
+    // Thread sanitizer crashes if we use more than half the stack.
+    uintptr_t stacksize = top - base;
+#  if _Py_STACK_GROWS_DOWN
+    base += stacksize / 2;
+#  else
+    top -= stacksize / 2;
+#  endif
+#endif
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+#if _Py_STACK_GROWS_DOWN
+    _tstate->c_stack_top = top;
+    _tstate->c_stack_hard_limit = base + _PyOS_STACK_MARGIN_BYTES;
+    _tstate->c_stack_soft_limit = base + _PyOS_STACK_MARGIN_BYTES * 2;
+#  ifndef NDEBUG
+    // Sanity checks
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(ts->c_stack_hard_limit <= ts->c_stack_soft_limit);
+    assert(ts->c_stack_soft_limit < ts->c_stack_top);
+#  endif
+#else
+    _tstate->c_stack_top = base;
+    _tstate->c_stack_hard_limit = top - _PyOS_STACK_MARGIN_BYTES;
+    _tstate->c_stack_soft_limit = top - _PyOS_STACK_MARGIN_BYTES * 2;
+#  ifndef NDEBUG
+    // Sanity checks
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(ts->c_stack_hard_limit >= ts->c_stack_soft_limit);
+    assert(ts->c_stack_soft_limit > ts->c_stack_top);
+#  endif
+#endif
+}
+
+
+void
+_Py_InitializeRecursionLimits(PyThreadState *tstate)
+{
+    uintptr_t base, top;
+    hardware_stack_limits(&base, &top);
+    assert(top != 0);
+
+    tstate_set_stack(tstate, base, top);
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    ts->c_stack_init_base = base;
+    ts->c_stack_init_top = top;
+}
+
+
+int
+PyUnstable_ThreadState_SetStackProtection(PyThreadState *tstate,
+                                void *stack_start_addr, size_t stack_size)
+{
+    if (stack_size < _PyOS_MIN_STACK_SIZE) {
+        PyErr_Format(PyExc_ValueError,
+                     "stack_size must be at least %zu bytes",
+                     _PyOS_MIN_STACK_SIZE);
+        return -1;
+    }
+
+    uintptr_t base = (uintptr_t)stack_start_addr;
+    uintptr_t top = base + stack_size;
+    tstate_set_stack(tstate, base, top);
+    return 0;
+}
+
+
+void
+PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
+{
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    if (ts->c_stack_init_top != 0) {
+        tstate_set_stack(tstate,
+                         ts->c_stack_init_base,
+                         ts->c_stack_init_top);
+        return;
+    }
+
+    _Py_InitializeRecursionLimits(tstate);
+}
+
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
    if the recursion_depth reaches recursion_limit. */
