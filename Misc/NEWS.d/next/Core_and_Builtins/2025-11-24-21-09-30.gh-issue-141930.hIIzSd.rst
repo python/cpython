@@ -1,2 +1,1 @@
-Retry writing ``.pyc`` files if we get interrupted by a system call or
-something that results in a truncated write.
+Use ``BufferedWriter`` to ensure that writes to ``.pyc`` files are retried, or an appropriate error is raised.
