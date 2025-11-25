@@ -205,7 +205,7 @@ More details are at :ref:`sys-path-init`.
    script is calculated after the symlink is followed. In other words the
    directory containing the symlink is **not** added to the module search path.
 
-   After initialization, Python programs may modify :data:sys.path directly. This
+   After initialization, Python programs may modify :data:`sys.path` directly. This
    can be useful in some situations, but it may also lead to import-related issues
    if misused.
 
@@ -213,7 +213,7 @@ More details are at :ref:`sys-path-init`.
    containing the executed script at the beginning of the module search path.
    Because this entry precedes the standard library path, modules in the script
    directory can shadow standard library modules of the same name. This is usually
-   unintended and can lead to confusing errors. See section :ref:tut-standardmodules
+   unintended and can lead to confusing errors. See section :ref:`tut-standardmodules`
    for more information.
 
 
