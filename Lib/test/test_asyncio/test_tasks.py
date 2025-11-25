@@ -1,7 +1,6 @@
 """Tests for tasks.py."""
 
 import collections
-from concurrent.futures import thread
 import contextlib
 import contextvars
 import gc
@@ -3689,7 +3688,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
 
             thread_future.cancel()
             await asyncio.sleep(0)
-        
+
         self.loop.run_until_complete(target())
         self.assertEqual(0, len(self.loop._ready))
 
