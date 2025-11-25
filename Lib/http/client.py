@@ -887,9 +887,12 @@ class HTTPConnection:
 
         self._validate_host(self.host)
 
-        # This is stored as an instance variable to allow unit
-        # tests to replace it with a suitable mockup
-        self._create_connection = socket.create_connection
+        # Callable used to open sockets. Kept on the instance so tests
+        # can replace it; use a thin wrapper so the real
+        # `socket.create_connection` is invoked at `connect()` time.
+        # This avoids permanently capturing a patched factory at
+        # construction time.
+        self._create_connection = (lambda *a, **kw: socket.create_connection(*a, **kw))
 
     def set_tunnel(self, host, port=None, headers=None):
         """Set up host and port for HTTP CONNECT tunnelling.
@@ -1341,7 +1344,7 @@ class HTTPConnection:
         """Send a complete request to the server."""
         try:
             self._send_request(method, url, body, headers, encode_chunked)
-        except TimeoutError:
+        except OSError:
             # If the transmission fails (e.g. timeout), close the connection
             # to reset the state machine to _CS_IDLE
             self.close()
