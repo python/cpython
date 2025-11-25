@@ -90,6 +90,18 @@ class BaseTest:
         args = self.fixtype(args)
         getattr(obj, methodname)(*args)
 
+    def _get_teststrings(self, charset, digits):
+        base = len(charset)
+        teststrings = set()
+        for i in range(base ** digits):
+            entry = []
+            for j in range(digits):
+                i, m = divmod(i, base)
+                entry.append(charset[m])
+            teststrings.add(''.join(entry))
+        teststrings = [self.fixtype(ts) for ts in teststrings]
+        return teststrings
+
     def test_count(self):
         self.checkequal(3, 'aaa', 'count', 'a')
         self.checkequal(0, 'aaa', 'count', 'b')
@@ -132,15 +144,7 @@ class BaseTest:
         #    replacing all occurrences and then differencing the string lengths
         charset = ['', 'a', 'b']
         digits = 7
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(charset, digits)
         for i in teststrings:
             n = len(i)
             for j in teststrings:
@@ -199,15 +203,7 @@ class BaseTest:
         #    and that the found substring is really at that location
         charset = ['', 'a', 'b', 'c']
         digits = 5
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(charset, digits)
         for i in teststrings:
             for j in teststrings:
                 loc = i.find(j)
@@ -246,15 +242,7 @@ class BaseTest:
         #    and that the found substring is really at that location
         charset = ['', 'a', 'b', 'c']
         digits = 5
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(charset, digits)
         for i in teststrings:
             for j in teststrings:
                 loc = i.rfind(j)
@@ -300,20 +288,13 @@ class BaseTest:
         #    and that the found substring is really at that location
         charset = ['', 'a', 'b', 'c']
         digits = 5
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(charset, digits)
         for i in teststrings:
             for j in teststrings:
-                try:
+                if j in i:
                     loc = i.index(j)
-                except ValueError:
+                else:
+                    self.assertRaises(ValueError, i.index, j)
                     loc = -1
                 r1 = (loc != -1)
                 r2 = j in i
@@ -352,20 +333,13 @@ class BaseTest:
         #    and that the found substring is really at that location
         charset = ['', 'a', 'b', 'c']
         digits = 5
-        base = len(charset)
-        teststrings = set()
-        for i in range(base ** digits):
-            entry = []
-            for j in range(digits):
-                i, m = divmod(i, base)
-                entry.append(charset[m])
-            teststrings.add(''.join(entry))
-        teststrings = [self.fixtype(ts) for ts in teststrings]
+        teststrings = self._get_teststrings(charset, digits)
         for i in teststrings:
             for j in teststrings:
-                try:
+                if j in i:
                     loc = i.rindex(j)
-                except ValueError:
+                else:
+                    self.assertRaises(ValueError, i.rindex, j)
                     loc = -1
                 r1 = (loc != -1)
                 r2 = j in i
