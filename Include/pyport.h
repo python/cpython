@@ -504,6 +504,7 @@ extern "C" {
  * Thread support is stubbed and any attempt to create a new thread fails.
  */
 #if (!defined(HAVE_PTHREAD_STUBS) && \
+     !defined(__wasi__) && \
       (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)))
 #  define Py_CAN_START_THREADS 1
 #endif
@@ -674,6 +675,12 @@ extern "C" {
 #  define _Py_NONSTRING __attribute__((nonstring))
 #else
 #  define _Py_NONSTRING
+#endif
+
+
+// Assume the stack grows down unless specified otherwise
+#ifndef _Py_STACK_GROWS_DOWN
+#  define _Py_STACK_GROWS_DOWN 1
 #endif
 
 

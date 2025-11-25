@@ -604,7 +604,14 @@ def main():
         with open(args[0], 'rb') as f:
             func(f, sys.stdout.buffer)
     else:
-        func(sys.stdin.buffer, sys.stdout.buffer)
+        if sys.stdin.isatty():
+            # gh-138775: read terminal input data all at once to detect EOF
+            import io
+            data = sys.stdin.buffer.read()
+            buffer = io.BytesIO(data)
+        else:
+            buffer = sys.stdin.buffer
+        func(buffer, sys.stdout.buffer)
 
 
 if __name__ == '__main__':

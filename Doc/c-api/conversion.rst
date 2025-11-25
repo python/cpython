@@ -105,7 +105,7 @@ The following functions provide locale-independent string to number conversions.
 
    If ``s`` represents a value that is too large to store in a float
    (for example, ``"1e500"`` is such a string on many platforms) then
-   if ``overflow_exception`` is ``NULL`` return ``Py_INFINITY`` (with
+   if ``overflow_exception`` is ``NULL`` return :c:macro:`!INFINITY` (with
    an appropriate sign) and don't set any exception.  Otherwise,
    ``overflow_exception`` must point to a Python exception object;
    raise that exception and return ``-1.0``.  In both cases, set
@@ -162,16 +162,33 @@ The following functions provide locale-independent string to number conversions.
    .. versionadded:: 3.1
 
 
-.. c:function:: int PyOS_stricmp(const char *s1, const char *s2)
+.. c:function:: int PyOS_mystricmp(const char *str1, const char *str2)
+                int PyOS_mystrnicmp(const char *str1, const char *str2, Py_ssize_t size)
 
-   Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`!strcmp` except that it ignores the case.
+   Case insensitive comparison of strings. These functions work almost
+   identically to :c:func:`!strcmp` and :c:func:`!strncmp` (respectively),
+   except that they ignore the case of ASCII characters.
+
+   Return ``0`` if the strings are equal, a negative value if *str1* sorts
+   lexicographically before *str2*, or a positive value if it sorts after.
+
+   In the *str1* or *str2* arguments, a NUL byte marks the end of the string.
+   For :c:func:`!PyOS_mystrnicmp`, the *size* argument gives the maximum size
+   of the string, as if NUL was present at the index given by *size*.
+
+   These functions do not use the locale.
 
 
-.. c:function:: int PyOS_strnicmp(const char *s1, const char *s2, Py_ssize_t  size)
+.. c:function:: int PyOS_stricmp(const char *str1, const char *str2)
+                int PyOS_strnicmp(const char *str1, const char *str2, Py_ssize_t  size)
 
-   Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`!strncmp` except that it ignores the case.
+   Case insensitive comparison of strings.
+
+   On Windows, these are aliases of :c:func:`!stricmp` and :c:func:`!strnicmp`,
+   respectively.
+
+   On other platforms, they are aliases of :c:func:`PyOS_mystricmp` and
+   :c:func:`PyOS_mystrnicmp`, respectively.
 
 
 Character classification and conversion
