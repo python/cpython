@@ -16,7 +16,7 @@ provides tools to create, read, write, append, and list a ZIP file.  Any
 advanced use of this module will require an understanding of the format, as
 defined in `PKZIP Application Note`_.
 
-This module does not handle multi-disk ZIP files.
+This module does not handle multipart ZIP files.
 It can handle ZIP files that use the ZIP64 extensions
 (that is ZIP files that are more than 4 GiB in size).  It supports
 decryption of encrypted files in ZIP archives, but it cannot
