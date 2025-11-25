@@ -1341,7 +1341,7 @@ class HTTPConnection:
         """Send a complete request to the server."""
         try:
             self._send_request(method, url, body, headers, encode_chunked)
-        except Exception:
+        except TimeoutError:
             # If the transmission fails (e.g. timeout), close the connection
             # to reset the state machine to _CS_IDLE
             self.close()
