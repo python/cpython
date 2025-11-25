@@ -3580,6 +3580,20 @@ def quux():
             ('bœr', 5),
         )
 
+    def test_print_stack_entry_uses_dynamic_line_prefix(self):
+        """Test that pdb.line_prefix binding is dynamic (gh-141781)."""
+        stdout = io.StringIO()
+        p = pdb.Pdb(stdout=stdout)
+
+        # Get the current frame to use for printing
+        frame = sys._getframe()
+
+        with support.swap_attr(pdb, 'line_prefix', 'CUSTOM_PREFIX> '):
+            p.print_stack_entry((frame, frame.f_lineno))
+
+        # Check if the custom prefix appeared in the output
+        self.assertIn('CUSTOM_PREFIX> ', stdout.getvalue())
+
     def test_find_function_found_with_encoding_cookie(self):
         self._assert_find_function(
             """\
