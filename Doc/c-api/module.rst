@@ -328,6 +328,8 @@ The available slot types are:
    ``PyModuleDef`` has non-``NULL`` ``m_traverse``, ``m_clear``,
    ``m_free``; non-zero ``m_size``; or slots other than ``Py_mod_create``.
 
+   .. versionadded:: 3.5
+
 .. c:macro:: Py_mod_exec
 
    Specifies a function that is called to *execute* the module.
@@ -341,6 +343,8 @@ The available slot types are:
 
    If multiple ``Py_mod_exec`` slots are specified, they are processed in the
    order they appear in the *m_slots* array.
+
+   .. versionadded:: 3.5
 
 .. c:macro:: Py_mod_multiple_interpreters
 
