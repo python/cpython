@@ -54,7 +54,14 @@ class TestAsyncStackReconstruction(unittest.TestCase):
         self.assertEqual(thread_id, 100)
 
     def test_parent_child_chain(self):
-        """Test _build_linear_stacks: BFS follows parent links from leaf to root."""
+        """Test _build_linear_stacks: BFS follows parent links from leaf to root.
+
+        Task graph:
+
+            Parent (id=1)
+                |
+            Child (id=2)
+        """
         collector = PstatsCollector(sample_interval_usec=1000)
 
         child = MockTaskInfo(
@@ -91,10 +98,17 @@ class TestAsyncStackReconstruction(unittest.TestCase):
         self.assertIn("parent_fn", func_names)
 
     def test_multiple_leaf_tasks(self):
-        """Test _find_leaf_tasks: identifies multiple leaves correctly."""
-        collector = PstatsCollector(sample_interval_usec=1000)
+        """Test _find_leaf_tasks: identifies multiple leaves correctly.
 
-        # Two leaves, one root
+        Task graph (fan-out from root):
+
+                Root (id=1)
+                /        \
+          Leaf1 (id=10)  Leaf2 (id=20)
+
+        Expected: 2 stacks (one for each leaf).
+        """
+        collector = PstatsCollector(sample_interval_usec=1000)
         leaf1 = MockTaskInfo(
             task_id=10,
             task_name="Leaf1",
@@ -125,10 +139,15 @@ class TestAsyncStackReconstruction(unittest.TestCase):
         self.assertEqual(leaf_ids, {10, 20})
 
     def test_cycle_detection(self):
-        """Test _build_linear_stacks: cycle detection prevents infinite loops."""
-        collector = PstatsCollector(sample_interval_usec=1000)
+        """Test _build_linear_stacks: cycle detection prevents infinite loops.
 
-        # A -> B -> A (cycle)
+        Task graph (cyclic dependency):
+
+            A (id=1) <---> B (id=2)
+
+        Neither task is a leaf (both have parents), so no stacks are produced.
+        """
+        collector = PstatsCollector(sample_interval_usec=1000)
         task_a = MockTaskInfo(
             task_id=1,
             task_name="A",
@@ -265,12 +284,14 @@ class TestAsyncStackReconstruction(unittest.TestCase):
         """
         collector = PstatsCollector(sample_interval_usec=1000)
 
-        # Diamond: Root spawns A and B, both await Child
-        #     Root (id=1)
-        #     /      \
-        #   A(id=2)  B(id=3)
-        #     \      /
-        #    Child(id=4)
+        # Diamond pattern: Root spawns A and B, both await Child
+        #
+        #         Root (id=1)
+        #         /        \
+        #     A (id=2)    B (id=3)
+        #         \        /
+        #        Child (id=4)
+        #
 
         child = MockTaskInfo(
             task_id=4,
@@ -375,11 +396,18 @@ class TestAsyncStackReconstruction(unittest.TestCase):
     def test_frame_ordering(self):
         """Test _build_linear_stacks: frames are collected in correct order (leaf->root).
 
-        Verifies stack is built bottom-up: leaf frames first, then parent frames.
+        Task graph (3-level chain):
+
+            Root (id=1)   <- root_bottom, root_top
+                |
+            Middle (id=2) <- mid_bottom, mid_top
+                |
+            Leaf (id=3)   <- leaf_bottom, leaf_top
+
+        Expected frame order: leaf_bottom, leaf_top, mid_bottom, mid_top, root_bottom, root_top
+        (stack is built bottom-up: leaf frames first, then parent frames).
         """
         collector = PstatsCollector(sample_interval_usec=1000)
-
-        # 3-level chain with distinctive frame names
         leaf = MockTaskInfo(
             task_id=3,
             task_name="Leaf",
@@ -438,22 +466,25 @@ class TestAsyncStackReconstruction(unittest.TestCase):
     def test_complex_multi_parent_convergence(self):
         """Test _build_linear_stacks: multiple leaves with same parents pick deterministically.
 
-        Tests that when multiple leaves have multiple parents, each leaf picks the same parent
-        (sorted, first one) and all leaves are annotated with parent count.
-              Root
-             /    \\
-           A       B
-            \\     /
-         LeafX  LeafY
+        Tests that when multiple leaves have multiple parents, each leaf picks the same
+        parent (sorted, first one) and all leaves are annotated with parent count.
+
+        Task graph structure (both leaves awaited by both A and B):
+
+                    Root (id=1)
+                    /        \
+               A (id=2)    B (id=3)
+                  |  \    /  |
+                  |   \  /   |
+                  |    \/    |
+                  |    /\    |
+                  |   /  \   |
+            LeafX (id=4)  LeafY (id=5)
+
+        Expected behavior: Both leaves pick parent A (lowest id=2) for their stack path.
+        Result: 2 stacks, both going through A -> Root (B is skipped).
         """
         collector = PstatsCollector(sample_interval_usec=1000)
-
-        # More complex: 2 leaves, both with 2 parents each, converging to 1 root
-        #       Root(1)
-        #       /     \
-        #     A(2)   B(3)
-        #     / \     / \
-        # LeafX(4) LeafY(5)
 
         leaf_x = MockTaskInfo(
             task_id=4,
