@@ -2568,6 +2568,29 @@ class TunnelTests(TestCase):
         self.assertIsNotNone(exc)
         self.assertTrue(sock.file_closed)
 
+class HTTPConnectionStateTests(TestCase):
+    def test_connect_timeout_resets_state(self):
+        with mock.patch('socket.create_connection', side_effect=TimeoutError("timed out")):
+            conn = client.HTTPConnection('10.255.255.1', 80, timeout=0.01)
+
+            with self.assertRaises(TimeoutError):
+                conn.request('GET', '/')
+
+        self.assertEqual(conn._HTTPConnection__state, client._CS_IDLE)
+        self.assertIsNone(conn.sock)
+
+        with mock.patch('socket.create_connection') as mock_cc:
+            fake_sock = mock.Mock()
+            mock_cc.return_value = fake_sock
+            # Provide a working socket for the second request.
+            conn.request("GET", "/second")
+
+        # Ensure the connection is in a usable state (either idle or
+        # request-sent depending on response handling).
+        self.assertIn(conn._HTTPConnection__state,
+                      (client._CS_REQ_SENT, client._CS_IDLE))
+
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main()
+
