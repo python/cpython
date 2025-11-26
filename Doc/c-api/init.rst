@@ -1717,7 +1717,8 @@ function. You can create and destroy them using the following functions:
       Only C-level static and global variables are shared between these
       module objects.
 
-   *  For modules using single-phase initialization,
+   *  For modules using legacy
+      :ref:`single-phase initialization <single-phase-initialization>`,
       e.g. :c:func:`PyModule_Create`, the first time a particular extension
       is imported, it is initialized normally, and a (shallow) copy of its
       module's dictionary is squirreled away.
