@@ -257,6 +257,7 @@ By :term:`asynchronous generator` in this section we will mean
 an :term:`asynchronous generator iterator` that is returned by an
 :term:`asynchronous generator` function.
 
+
 Manually close the generator
 ----------------------------
 
@@ -284,17 +285,31 @@ manager::
 
   asyncio.run(func())
 
+
 Only create a generator when a loop is already running
 ------------------------------------------------------
 
-As said above, if an asynchronous generator is not resumed before it is
-finalized, then any finalization procedures will be delayed. The event loop
-handles this situation and doing its best to call the async generator-iterator's
-:meth:`~agen.aclose` method at the proper moment, thus allowing any pending
-:keyword:`!finally` clauses to run.
-
-Then it is recomended to create async generators only after the event loop
+It is recommended to create asynchronous generators only after the event loop
 has already been created.
+
+To ensure that asynchronous generators close reliably, the event loop uses the
+:func:`sys.set_asyncgen_hooks` function to register callback functions. These
+callbacks update the list of running asynchronous generators to keep it in a
+consistent state.
+
+When the :meth:`loop.shutdown_asyncgens() <asyncio.loop.shutdown_asyncgens>`
+function is called, the running generators are stopped gracefully, and the
+list is cleared.
+
+The asynchronous generator calls the corresponding system hook when on the
+first iteration. At the same time, the generator remembers that the hook was
+called and don't call it twice.
+
+So, if the iteration begins before the event loop is created, the event loop
+will not be able to add it to its list of active generators because the hooks
+will be set after the generator tries to call it. Consequently, the event loop
+will not be able to terminate the generator if necessary.
+
 
 Avoid iterating and closing the same generator concurrently
 -----------------------------------------------------------
