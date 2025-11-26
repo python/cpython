@@ -599,8 +599,7 @@ class ExecutionLoaderGetCodeTests:
 class SourceOnlyLoader:
 
     # Globals that should be defined for all modules.
-    source = (b"_ = '::'.join([__name__, __file__, __cached__, "
-              b"repr(__loader__)])")
+    source = (b"_ = '::'.join([__name__, __file__, __cached__, repr(__loader__)])")
 
     def __init__(self, path):
         self.path = path
@@ -681,8 +680,7 @@ class SourceLoaderTestHarness:
         self.assertEqual(values[0], self.name)
         self.assertEqual(values[1], self.path)
         self.assertEqual(values[2], self.cached)
-        self.assertEqual(values[3], self.package)
-        self.assertEqual(values[4], repr(self.loader))
+        self.assertEqual(values[3], repr(self.loader))
 
     def verify_code(self, code_object):
         module = types.ModuleType(self.name)
