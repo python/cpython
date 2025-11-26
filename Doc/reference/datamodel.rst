@@ -3037,9 +3037,8 @@ the class method :meth:`~object.__class_getitem__` may be called instead.
 object if it is properly defined.
 
 Presented with the :term:`expression` ``obj[x]``, the Python interpreter
-follows something like the following process to decide whether
-:meth:`~object.__getitem__` or :meth:`~object.__class_getitem__` should be
-called::
+follows a process similar to the following to determine which operation should
+be used to perform the subscription::
 
    from inspect import isclass
 
@@ -3048,21 +3047,37 @@ called::
 
        class_of_obj = type(obj)
 
-       # If the class of obj defines __getitem__,
-       # call class_of_obj.__getitem__(obj, x)
+       # 1. If the class defines a mapping slot (__getitem__),
+       # call it directly.
        if hasattr(class_of_obj, '__getitem__'):
            return class_of_obj.__getitem__(obj, x)
 
-       # Else, if obj is a class and defines __class_getitem__,
+       # 2. If the class defines a sequence slot (sq_item)
+       # and the key is an integer, call sq_item.
+       if hasattr(class_of_obj, '__getitem__') is False:
+           # simplified model: CPython checks tp_as_sequence->sq_item
+           if isinstance(x, int) and hasattr(class_of_obj, '__len__'):
+               return obj.__getitem__(x)
+
+       # 3. If obj is a class and defines __class_getitem__,
        # call obj.__class_getitem__(x)
-       elif isclass(obj) and hasattr(obj, '__class_getitem__'):
+       if isclass(obj) and hasattr(obj, '__class_getitem__'):
            return obj.__class_getitem__(x)
 
-       # Else, raise an exception
+       # 4. Attribute-based fallback: if __getitem__ is provided
+       # by __getattribute__ or __getattr__, call it.
+       try:
+           attr_getitem = obj.__getattribute__('__getitem__')
+       except AttributeError:
+           pass
        else:
-           raise TypeError(
-               f"'{class_of_obj.__name__}' object is not subscriptable"
-           )
+           if callable(attr_getitem):
+               return attr_getitem(x)
+
+       # 5. Otherwise, raise an exception.
+       raise TypeError(
+           f"'{class_of_obj.__name__}' object is not subscriptable"
+       )
 
 In Python, all classes are themselves instances of other classes. The class of
 a class is known as that class's :term:`metaclass`, and most classes have the
