@@ -1,2 +1,2 @@
 Remove data copy from :mod:`re` compilation of regexes with large charsets
-by using :func:`bytearray.take_byes`.
+by using :func:`bytearray.take_bytes`.
