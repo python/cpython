@@ -1344,11 +1344,12 @@ class HTTPConnection:
         """Send a complete request to the server."""
         try:
             self._send_request(method, url, body, headers, encode_chunked)
-        except OSError:
+        except OSError as e:
             # If the transmission fails (e.g. timeout), close the connection
             # to reset the state machine to _CS_IDLE
+        if getattr(e, "errno", None) != errno.EPIPE:
             self.close()
-            raise
+        raise
 
     def _send_request(self, method, url, body, headers, encode_chunked):
         # Honor explicitly requested Host: and Accept-Encoding: headers.
