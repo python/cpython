@@ -1088,7 +1088,8 @@ BaseExceptionGroup_repr(PyObject *op)
 
     PyObject *exceptions_str = Py_XNewRef(self->excs_str);
 
-    /* If the initial exceptions string was not saved in the constructor. */
+    /* If the initial exceptions string was not saved in the constructor,
+     * our call to Py_XNewRef returns NULL and we now format it on-demand. */
     if (!exceptions_str) {
         assert(self->excs);
 
