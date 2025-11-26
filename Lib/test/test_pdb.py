@@ -4587,6 +4587,26 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    def test_async_break(self):
+        script = """
+            import asyncio
+
+            async def main():
+                print(f"Hello")
+                await asyncio.sleep(1)
+                print(f"World!")
+
+            asyncio.run(main())
+        """
+        commands = """
+            break main
+            continue
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("Breakpoint 1 at", stdout)
+        self.assertIn("Hello", stdout)
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
