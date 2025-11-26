@@ -219,7 +219,7 @@ class StrAndReprTests(unittest.TestCase):
         excs = collections.deque([ValueError(1), TypeError(2)])
         eg = ExceptionGroup('test', excs)
 
-        self.assertEqual(repr(eg), f"ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))")
+        self.assertEqual(repr(eg), "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))")
         excs.clear()
 
         # Ensure that clearing the exceptions sequence doesn't change the repr.
