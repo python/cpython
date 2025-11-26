@@ -386,73 +386,29 @@ Names (identifiers and keywords)
 :data:`~token.NAME` tokens represent *identifiers*, *keywords*, and
 *soft keywords*.
 
-Within the ASCII range (U+0001..U+007F), the valid characters for names
-include the uppercase and lowercase letters (``A-Z`` and ``a-z``),
-the underscore ``_`` and, except for the first character, the digits
-``0`` through ``9``.
+Names are composed of the following characters:
+
+* uppercase and lowercase letters (``A-Z`` and ``a-z``),
+* the underscore (``_``),
+* digits (``0`` through ``9``), which cannot appear as the first character, and
+* non-ASCII characters. Valid names may only contain "letter-like" and
+  "digit-like" characters; see :ref:`lexical-names-nonascii` for details.
 
 Names must contain at least one character, but have no upper length limit.
 Case is significant.
 
-Besides ``A-Z``, ``a-z``, ``_`` and ``0-9``, names can also use "letter-like"
-and "number-like" characters from outside the ASCII range, as detailed below.
-
-All identifiers are converted into the `normalization form`_ NFKC while
-parsing; comparison of identifiers is based on NFKC.
-
-Formally, the first character of a normalized identifier must belong to the
-set ``id_start``, which is the union of:
-
-* Unicode category ``<Lu>`` - uppercase letters (includes ``A`` to ``Z``)
-* Unicode category ``<Ll>`` - lowercase letters (includes ``a`` to ``z``)
-* Unicode category ``<Lt>`` - titlecase letters
-* Unicode category ``<Lm>`` - modifier letters
-* Unicode category ``<Lo>`` - other letters
-* Unicode category ``<Nl>`` - letter numbers
-* {``"_"``} - the underscore
-* ``<Other_ID_Start>`` - an explicit set of characters in `PropList.txt`_
-  to support backwards compatibility
-
-The remaining characters must belong to the set ``id_continue``, which is the
-union of:
-
-* all characters in ``id_start``
-* Unicode category ``<Nd>`` - decimal numbers (includes ``0`` to ``9``)
-* Unicode category ``<Pc>`` - connector punctuations
-* Unicode category ``<Mn>`` - nonspacing marks
-* Unicode category ``<Mc>`` - spacing combining marks
-* ``<Other_ID_Continue>`` - another explicit set of characters in
-  `PropList.txt`_ to support backwards compatibility
-
-Unicode categories use the version of the Unicode Character Database as
-included in the :mod:`unicodedata` module.
-
-These sets are based on the Unicode standard annex `UAX-31`_.
-See also :pep:`3131` for further details.
-
-Even more formally, names are described by the following lexical definitions:
+Formally, names are described by the following lexical definitions:
 
 .. grammar-snippet::
    :group: python-grammar
 
-   NAME:         `xid_start` `xid_continue`*
-   id_start:     <Lu> | <Ll> | <Lt> | <Lm> | <Lo> | <Nl> | "_" | <Other_ID_Start>
-   id_continue:  `id_start` | <Nd> | <Pc> | <Mn> | <Mc> | <Other_ID_Continue>
-   xid_start:    <all characters in `id_start` whose NFKC normalization is
-                  in (`id_start` `xid_continue`*)">
-   xid_continue: <all characters in `id_continue` whose NFKC normalization is
-                  in (`id_continue`*)">
-   identifier:   <`NAME`, except keywords>
+   NAME:          `name_start` `name_continue`*
+   name_start:    "a"..."z" | "A"..."Z" | "_" | <non-ASCII character>
+   name_continue: name_start | "0"..."9"
+   identifier:    <`NAME`, except keywords>
 
-A non-normative listing of all valid identifier characters as defined by
-Unicode is available in the `DerivedCoreProperties.txt`_ file in the Unicode
-Character Database.
-
-
-.. _UAX-31: https://www.unicode.org/reports/tr31/
-.. _PropList.txt: https://www.unicode.org/Public/17.0.0/ucd/PropList.txt
-.. _DerivedCoreProperties.txt: https://www.unicode.org/Public/17.0.0/ucd/DerivedCoreProperties.txt
-.. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
+Note that not all names matched by this grammar are valid; see
+:ref:`lexical-names-nonascii` for details.
 
 
 .. _keywords:
@@ -553,6 +509,95 @@ characters:
    class definition, are re-written to use a mangled form to help avoid name
    clashes between "private" attributes of base and derived classes. See section
    :ref:`atom-identifiers`.
+
+
+.. _lexical-names-nonascii:
+
+Non-ASCII characters in names
+-----------------------------
+
+Names that contain non-ASCII characters need additional normalization
+and validation beyond the rules and grammar explained
+:ref:`above <identifiers>`.
+For example, ``ř_1``, ``蛇``, or ``साँप``  are valid names, but ``r〰2``,
+``€``, or ``🐍`` are not.
+
+This section explains the exact rules.
+
+All names are converted into the `normalization form`_ NFKC while parsing.
+This means that, for example, some typographic variants of characters are
+converted to their "basic" form. For example, ``ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ`` normalizes to
+``finalization``, so Python treats them as the same name::
+
+   >>> ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ = 3
+   >>> finalization
+   3
+
+.. note::
+
+   Normalization is done at the lexical level only.
+   Run-time functions that take names as *strings* generally do not normalize
+   their arguments.
+   For example, the variable defined above is accessible at run time in the
+   :func:`globals` dictionary as ``globals()["finalization"]`` but not
+   ``globals()["ﬁⁿₐˡᵢᶻₐᵗᵢᵒₙ"]``.
+
+Similarly to how ASCII-only names must contain only letters, digits and
+the underscore, and cannot start with a digit, a valid name must
+start with a character in the "letter-like" set ``xid_start``,
+and the remaining characters must be in the "letter- and digit-like" set
+``xid_continue``.
+
+These sets based on the *XID_Start* and *XID_Continue* sets as defined by the
+Unicode standard annex `UAX-31`_.
+Python's ``xid_start`` additionally includes the underscore (``_``).
+Note that Python does not necessarily conform to `UAX-31`_.
+
+A non-normative listing of characters in the *XID_Start* and *XID_Continue*
+sets as defined by Unicode is available in the `DerivedCoreProperties.txt`_
+file in the Unicode Character Database.
+For reference, the construction rules for the ``xid_*`` sets are given below.
+
+The set ``id_start`` is defined as the union of:
+
+* Unicode category ``<Lu>`` - uppercase letters (includes ``A`` to ``Z``)
+* Unicode category ``<Ll>`` - lowercase letters (includes ``a`` to ``z``)
+* Unicode category ``<Lt>`` - titlecase letters
+* Unicode category ``<Lm>`` - modifier letters
+* Unicode category ``<Lo>`` - other letters
+* Unicode category ``<Nl>`` - letter numbers
+* {``"_"``} - the underscore
+* ``<Other_ID_Start>`` - an explicit set of characters in `PropList.txt`_
+  to support backwards compatibility
+
+The set ``xid_start`` then closes this set under NFKC normalization, by
+removing all characters whose normalization is not of the form
+``id_start id_continue*``.
+
+The set ``id_continue`` is defined as the union of:
+
+* ``id_start`` (see above)
+* Unicode category ``<Nd>`` - decimal numbers (includes ``0`` to ``9``)
+* Unicode category ``<Pc>`` - connector punctuations
+* Unicode category ``<Mn>`` - nonspacing marks
+* Unicode category ``<Mc>`` - spacing combining marks
+* ``<Other_ID_Continue>`` - another explicit set of characters in
+  `PropList.txt`_ to support backwards compatibility
+
+Again, ``xid_continue`` closes this set under NFKC normalization.
+
+Unicode categories use the version of the Unicode Character Database as
+included in the :mod:`unicodedata` module.
+
+.. _UAX-31: https://www.unicode.org/reports/tr31/
+.. _PropList.txt: https://www.unicode.org/Public/17.0.0/ucd/PropList.txt
+.. _DerivedCoreProperties.txt: https://www.unicode.org/Public/17.0.0/ucd/DerivedCoreProperties.txt
+.. _normalization form: https://www.unicode.org/reports/tr15/#Norm_Forms
+
+.. seealso::
+
+   * :pep:`3131` -- Supporting Non-ASCII Identifiers
+   * :pep:`672` -- Unicode-related Security Considerations for Python
 
 
 .. _literals:
