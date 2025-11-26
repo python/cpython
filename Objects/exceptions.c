@@ -1747,8 +1747,6 @@ static PyMemberDef BaseExceptionGroup_members[] = {
         PyDoc_STR("exception message")},
     {"exceptions", _Py_T_OBJECT, offsetof(PyBaseExceptionGroupObject, excs), Py_READONLY,
         PyDoc_STR("nested exceptions")},
-    {"_exceptions_str", _Py_T_OBJECT, offsetof(PyBaseExceptionGroupObject, excs_str), Py_READONLY,
-        PyDoc_STR("private string representation of initial exceptions sequence")},
     {NULL}  /* Sentinel */
 };
 
