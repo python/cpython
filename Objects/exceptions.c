@@ -1100,12 +1100,20 @@ BaseExceptionGroup_repr(PyObject *op)
          * original exception sequence if possible, for backwards compatibility. */
         if (PyList_Check(PyTuple_GET_ITEM(self->args, 1))) {
             PyObject *exceptions_list = PySequence_List(self->excs);
+            if (!exceptions_list) {
+                goto error;
+            }
+
             exceptions_str = PyObject_Repr(exceptions_list);
             Py_DECREF(exceptions_list);
         }
         else {
             exceptions_str = PyObject_Repr(self->excs);
         }
+    }
+
+    if (!exceptions_str) {
+        goto error;
     }
 
     const char *name = _PyType_Name(Py_TYPE(self));
@@ -1115,6 +1123,8 @@ BaseExceptionGroup_repr(PyObject *op)
 
     Py_DECREF(exceptions_str);
     return repr;
+error:
+    return NULL;
 }
 
 /*[clinic input]
