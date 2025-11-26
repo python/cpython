@@ -201,6 +201,20 @@ PyObject_GetItem(PyObject *o, PyObject *key)
                      ((PyTypeObject *)o)->tp_name);
         return NULL;
     }
+    
+    // Try attribute-based fallback: obj.__getitem__(key)
+    PyObject *attr_getitem = PyObject_GetAttr(o, &_Py_ID(__getitem__));
+    if (attr_getitem != NULL) {
+        if (PyCallable_Check(attr_getitem)) {
+            PyObject *res = PyObject_CallOneArg(attr_getitem, key);
+            Py_DECREF(attr_getitem);
+            return res;
+        }
+        Py_DECREF(attr_getitem);
+    } 
+    else {
+        PyErr_Clear();
+    }
 
     return type_error("'%.200s' object is not subscriptable", o);
 }
