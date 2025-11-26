@@ -1858,10 +1858,16 @@ expression support in the :mod:`re` module).
    ``{}``.  Each replacement field contains either the numeric index of a
    positional argument, or the name of a keyword argument.  Returns a copy of
    the string where each replacement field is replaced with the string value of
-   the corresponding argument.
+   the corresponding argument. For example:
+
+   .. doctest::
 
       >>> "The sum of 1 + 2 is {0}".format(1+2)
       'The sum of 1 + 2 is 3'
+      >>> "The sum of {a} + {b} is {answer}".format(answer=1+2, a=1, b=2)
+      'The sum of 1 + 2 is 3'
+      >>> "{1} expects the {0} Inquisition!".format("Spanish", "Nobody")
+      'Nobody expects the Spanish Inquisition!'
 
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
@@ -1921,13 +1927,32 @@ expression support in the :mod:`re` module).
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
+   For example:
+
+   .. doctest::
+
+      >>> 'Letters and spaces'.isalpha()
+      False
+      >>> 'LettersOnly'.isalpha()
+      True
+      >>> 'µ'.isalpha()  # non-ASCII characters can be considered alphabetical too
+      True
+
+   See :ref:`unicode-properties`.
 
 
 .. method:: str.isascii()
 
    Return ``True`` if the string is empty or all characters in the string are ASCII,
    ``False`` otherwise.
-   ASCII characters have code points in the range U+0000-U+007F.
+   ASCII characters have code points in the range U+0000-U+007F. For example:
+
+   .. doctest::
+
+      >>> 'ASCII characters'.isascii()
+      True
+      >>> 'µ'.isascii()
+      False
 
    .. versionadded:: 3.7
 
@@ -1937,9 +1962,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are decimal
    characters and there is at least one character, ``False``
    otherwise. Decimal characters are those that can be used to form
-   numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
+   numbers in base 10, such as U+0660, ARABIC-INDIC DIGIT
    ZERO.  Formally a decimal character is a character in the Unicode
-   General Category "Nd".
+   General Category "Nd". For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdecimal()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # Arabic-Indic digits zero to nine
+      True
+      >>> 'alphabetic'.isdecimal()
+      False
 
 
 .. method:: str.isdigit()
@@ -2058,7 +2092,16 @@ expression support in the :mod:`re` module).
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
    *iterable*, including :class:`bytes` objects.  The separator between
-   elements is the string providing this method.
+   elements is the string providing this method. For example:
+
+   .. doctest::
+
+      >>> ', '.join(['spam', 'spam', 'spam'])
+      'spam, spam, spam'
+      >>> '-'.join('Python')
+      'P-y-t-h-o-n'
+
+   See also :meth:`split`.
 
 
 .. method:: str.ljust(width, fillchar=' ', /)
@@ -2271,6 +2314,8 @@ expression support in the :mod:`re` module).
       []
       >>> "   foo   ".split(maxsplit=0)
       ['foo   ']
+
+   See also :meth:`join`.
 
 
 .. index::

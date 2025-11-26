@@ -442,6 +442,7 @@ data,PyMethodDescr_Type,3.2,,
 type,PyModuleDef,3.2,,full-abi
 type,PyModuleDef_Base,3.2,,full-abi
 func,PyModuleDef_Init,3.5,,
+type,PyModuleDef_Slot,3.5,,full-abi
 data,PyModuleDef_Type,3.5,,
 func,PyModule_Add,3.13,,
 func,PyModule_AddFunctions,3.7,,
@@ -945,6 +946,10 @@ macro,Py_bf_getbuffer,3.11,,
 macro,Py_bf_releasebuffer,3.11,,
 type,Py_buffer,3.11,,full-abi
 type,Py_intptr_t,3.2,,
+macro,Py_mod_create,3.5,,
+macro,Py_mod_exec,3.5,,
+macro,Py_mod_gil,3.13,,
+macro,Py_mod_multiple_interpreters,3.12,,
 macro,Py_mp_ass_subscript,3.2,,
 macro,Py_mp_length,3.2,,
 macro,Py_mp_subscript,3.2,,
