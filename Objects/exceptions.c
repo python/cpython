@@ -1100,7 +1100,7 @@ BaseExceptionGroup_repr(PyObject *op)
         if (PyList_Check(PyTuple_GET_ITEM(self->args, 1))) {
             PyObject *exceptions_list = PySequence_List(self->excs);
             if (!exceptions_list) {
-                goto error;
+                return NULL;
             }
 
             exceptions_str = PyObject_Repr(exceptions_list);
@@ -1111,7 +1111,7 @@ BaseExceptionGroup_repr(PyObject *op)
         }
 
         if (!exceptions_str) {
-            goto error;
+            return NULL;
         }
     } else {
         exceptions_str = Py_NewRef(self->excs_str);
@@ -1126,8 +1126,6 @@ BaseExceptionGroup_repr(PyObject *op)
 
     Py_DECREF(exceptions_str);
     return repr;
-error:
-    return NULL;
 }
 
 /*[clinic input]
