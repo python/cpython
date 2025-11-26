@@ -666,24 +666,33 @@ tuple_richcompare(PyObject *v, PyObject *w, int op)
     if (!PyTuple_Check(v) || !PyTuple_Check(w))
         Py_RETURN_NOTIMPLEMENTED;
 
+    if (v == w) {
+        Py_RETURN_RICHCOMPARE(0, 0, op);
+    }
+
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
 
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
 
-    /* Note:  the corresponding code for lists has an "early out" test
-     * here when op is EQ or NE and the lengths differ.  That pays there,
-     * but Tim was unable to find any real code where EQ/NE tuple
-     * compares don't have the same length, so testing for it here would
-     * have cost without benefit.
-     */
+    if (vlen != wlen && (op == Py_EQ || op == Py_NE)) {
+        if (op == Py_EQ) {
+            Py_RETURN_FALSE;
+        }
+        else {
+            Py_RETURN_TRUE;
+        }
+    }
 
     /* Search for the first index where items are different.
      * Note that because tuples are immutable, it's safe to reuse
      * vlen and wlen across the comparison calls.
      */
     for (i = 0; i < vlen && i < wlen; i++) {
+        if (vt->ob_item[i] == wt->ob_item[i]) {
+            continue;
+        }
         int k = PyObject_RichCompareBool(vt->ob_item[i],
                                          wt->ob_item[i], Py_EQ);
         if (k < 0)
