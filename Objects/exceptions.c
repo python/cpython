@@ -1086,11 +1086,10 @@ BaseExceptionGroup_repr(PyObject *op)
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     assert(self->msg);
 
-    PyObject *exceptions_str = Py_XNewRef(self->excs_str);
+    PyObject *exceptions_str = NULL;
 
-    /* If the initial exceptions string was not saved in the constructor,
-     * our call to Py_XNewRef returns NULL and we now format it on-demand. */
-    if (!exceptions_str) {
+    /* If the initial exceptions string was not saved in the constructor. */
+    if (!self->excs_str) {
         assert(self->excs);
 
         /* Older versions of this code delegated to BaseException's repr, inserting
@@ -1110,11 +1109,15 @@ BaseExceptionGroup_repr(PyObject *op)
         else {
             exceptions_str = PyObject_Repr(self->excs);
         }
+
+        if (!exceptions_str) {
+            goto error;
+        }
+    } else {
+        exceptions_str = Py_NewRef(self->excs_str);
     }
 
-    if (!exceptions_str) {
-        goto error;
-    }
+    assert(exceptions_str != NULL);
 
     const char *name = _PyType_Name(Py_TYPE(self));
     PyObject *repr = PyUnicode_FromFormat(
