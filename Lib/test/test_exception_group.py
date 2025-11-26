@@ -213,17 +213,26 @@ class StrAndReprTests(unittest.TestCase):
         eg = BaseExceptionGroup('test', excs)
 
         # Ensure that immutable sequences still work fine.
-        self.assertEqual(repr(eg), "BaseExceptionGroup('test', (ValueError(1), KeyboardInterrupt(2)))")
+        self.assertEqual(
+            repr(eg),
+            "BaseExceptionGroup('test', (ValueError(1), KeyboardInterrupt(2)))"
+        )
 
         # Test non-standard custom sequences.
         excs = collections.deque([ValueError(1), TypeError(2)])
         eg = ExceptionGroup('test', excs)
 
-        self.assertEqual(repr(eg), "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))")
+        self.assertEqual(
+            repr(eg),
+            "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))"
+        )
         excs.clear()
 
         # Ensure that clearing the exceptions sequence doesn't change the repr.
-        self.assertEqual(repr(eg), "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))")
+        self.assertEqual(
+            repr(eg),
+            "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))"
+        )
 
     def test_repr_raises(self):
         class MySeq(collections.abc.Sequence):
@@ -243,7 +252,10 @@ class StrAndReprTests(unittest.TestCase):
                     raise self.raises
                 return None
 
-        with self.assertRaisesRegex(TypeError, r".*MySeq\.__repr__\(\) must return a str, not NoneType"):
+        with self.assertRaisesRegex(
+            TypeError,
+            r".*MySeq\.__repr__\(\) must return a str, not NoneType"
+        ):
             ExceptionGroup("test", MySeq(None))
 
         with self.assertRaises(ValueError):

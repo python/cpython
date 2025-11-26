@@ -1092,11 +1092,10 @@ BaseExceptionGroup_repr(PyObject *op)
     if (!self->excs_str) {
         assert(self->excs);
 
-        /* Older versions of this code delegated to BaseException's repr, inserting
-         * the current value of self.args[1]. However, mutating that sequence makes
-         * the repr appear as if the ExceptionGroup itself has changed, which it hasn't.
-         * So we use the actual exceptions tuple for accuracy, but make it look like the
-         * original exception sequence if possible, for backwards compatibility. */
+        /* Older versions delegated to BaseException, inserting the current
+         * value of self.args[1]; but this can be mutable and go out-of-sync
+         * with self.exceptions. Instead, use self.exceptions for accuracy,
+         * making it look like self.args[1] for backwards compatibility. */
         if (PyList_Check(PyTuple_GET_ITEM(self->args, 1))) {
             PyObject *exceptions_list = PySequence_List(self->excs);
             if (!exceptions_list) {
