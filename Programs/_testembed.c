@@ -2329,16 +2329,11 @@ int
 mp_pkg_exec(PyObject *mod)
 {
     // make this a namespace package
-    PyObject *path_list = PyList_New(0);   // empty list = namespace package
-    if (!path_list) {
-        return -1;
-    }
-    if (PyModule_AddObject(mod, "__path__", path_list) < 0) {
-        Py_DECREF(path_list);
+    // empty list = namespace package
+    if (PyModule_Add(mod, "__path__", PyList_New(0)) < 0) {
         return -1;
     }
     if (PyModule_AddStringConstant(mod, "mp_pkg_exec_slot_ran", "yes") < 0) {
-        Py_DECREF(path_list);
         return -1;
     }
     return 0;
