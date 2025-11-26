@@ -981,7 +981,7 @@ their subgroups based on the types of the contained exceptions.
    .. impl-detail::
 
       The ``excs`` parameter may be any sequence, but lists and tuples are
-      specifically processed more efficiently here. For optimum performance,
+      specifically processed more efficiently here. For optimal performance,
       pass a tuple as ``excs``.
 
    .. attribute:: message
