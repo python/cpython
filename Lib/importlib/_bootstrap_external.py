@@ -208,8 +208,8 @@ def _write_atomic(path, data, mode=0o666):
     try:
         # We first write data to a temporary file, and then use os.replace() to
         # perform an atomic rename.
-        with _io.FileIO(fd, 'wb') as file, _io.BufferedWriter(file) as writer:
-            writer.write(data)
+        with _io.open(fd, 'wb') as file:
+            file.write(data)
         _os.replace(path_tmp, path)
     except OSError:
         try:
