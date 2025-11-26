@@ -225,6 +225,31 @@ class StrAndReprTests(unittest.TestCase):
         # Ensure that clearing the exceptions sequence doesn't change the repr.
         self.assertEqual(repr(eg), "ExceptionGroup('test', deque([ValueError(1), TypeError(2)]))")
 
+    def test_repr_raises(self):
+        class MySeq(collections.abc.Sequence):
+            def __init__(self, raises):
+                self.raises = raises
+
+            def __len__(self):
+                return 1
+
+            def __getitem__(self, index):
+                if index == 0:
+                    return ValueError(1)
+                raise IndexError
+
+            def __repr__(self):
+                if self.raises:
+                    raise self.raises
+                return None
+
+        with self.assertRaisesRegex(TypeError, r".*MySeq\.__repr__\(\) must return a str, not NoneType"):
+            ExceptionGroup("test", MySeq(None))
+
+        with self.assertRaises(ValueError):
+            BaseExceptionGroup("test", MySeq(ValueError))
+
+
 
 def create_simple_eg():
     excs = []
