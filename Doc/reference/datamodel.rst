@@ -323,8 +323,8 @@ Sequences also support slicing: ``a[start:stop]`` selects all items with index *
 that *start* ``<=`` *k* ``<`` *stop*.  When used as an expression, a slice is a
 sequence of the same type. The comment above about negative subscripts also applies
 to negative slice positions.
-Note that no error is raised if a slice positions is larger than the length
-of the sequence.
+Note that no error is raised if a slice position is less than zero or larger
+than the length of the sequence.
 
 If *start* is missing or ``None``, slicing behaves as if *start* was zero.
 If *stop* is missing or ``None``, slicing behaves as if *stop* was equal to

@@ -1120,10 +1120,7 @@ Formal subscription grammar
    subscript:    `slice` | `tuple_slices`
    tuple_slices: ','.(`slice` | `starred_expression`)+ [',']
    slice:        `proper_slice` | `assignment_expression`
-   proper_slice: [`lower_bound`] ":" [`upper_bound`] [ ":" [`stride`] ]
-   lower_bound:  `expression`
-   upper_bound:  `expression`
-   stride:       `expression`
+   proper_slice: [`expression`] ":" [`expression`] [ ":" [`expression`] ]
 
 There is a semantic difference between the alternatives for *subscript*.
 If *subscript* contains ony one unstarred *slice* without a trailing comma,
