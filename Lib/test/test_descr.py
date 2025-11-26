@@ -6261,5 +6261,23 @@ class TestGenericDescriptors(unittest.TestCase):
             weakref_descriptor.__get__(IntSubclass(), IntSubclass)
 
 
+class TestGetItemAttributeFallback(unittest.TestCase):
+
+    def test_attribute_fallback_for_configview(self):
+        class ConfigView:
+            def __init__(self, target):
+                self.target = target
+
+            def __getattr__(self, name):
+                return getattr(self.target, name)
+
+        class Config:
+            def __getitem__(self, key):
+                return ("view", key)
+
+        cfg = ConfigView(Config())
+        self.assertEqual(cfg["x"], ("view", "x"))
+
+
 if __name__ == "__main__":
     unittest.main()
