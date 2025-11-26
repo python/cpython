@@ -201,7 +201,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
                      ((PyTypeObject *)o)->tp_name);
         return NULL;
     }
-    
+
     // Try attribute-based fallback: obj.__getitem__(key)
     PyObject *attr_getitem = PyObject_GetAttr(o, &_Py_ID(__getitem__));
     if (attr_getitem != NULL) {
@@ -211,7 +211,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
             return res;
         }
         Py_DECREF(attr_getitem);
-    } 
+    }
     else {
         PyErr_Clear();
     }
