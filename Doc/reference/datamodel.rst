@@ -310,6 +310,9 @@ including built-in sequences, interpret negative subscripts by adding the
 sequence length. For example, ``a[-2]`` equals ``a[n-2]``, the second to last
 item of sequence a with length ``n``.
 
+The resulting value must be a nonnegative integer less than the number of items
+in the sequence. If it is not, an :exc:`IndexError` is raised.
+
 .. index::
    single: slicing
    single: start (slice object attribute)
@@ -356,17 +359,22 @@ Strings
       pair: built-in function; chr
       pair: built-in function; ord
       single: character
-      single: integer
+      pair: string; item
       single: Unicode
 
-   A string is a sequence of values that represent Unicode code points.
-   All the code points in the range ``U+0000 - U+10FFFF`` can be
-   represented in a string.  Python doesn't have a :c:expr:`char` type;
-   instead, every code point in the string is represented as a string
-   object with length ``1``.  The built-in function :func:`ord`
+   A string (:class:`str`) is a sequence of values that represent
+   :dfn:`characters`, or more formally, *Unicode code points*.
+   All the code points in the range ``0`` to ``0x10FFFF`` can be
+   represented in a string.
+
+   Python doesn't have a dedicated *character* type.
+   Instead, every code point in the string is represented as a string
+   object with length ``1``.
+
+   The built-in function :func:`ord`
    converts a code point from its string form to an integer in the
-   range ``0 - 10FFFF``; :func:`chr` converts an integer in the range
-   ``0 - 10FFFF`` to the corresponding length ``1`` string object.
+   range ``0`` to ``0x10FFFF``; :func:`chr` converts an integer in the range
+   ``0`` to ``0x10FFFF`` to the corresponding length ``1`` string object.
    :meth:`str.encode` can be used to convert a :class:`str` to
    :class:`bytes` using the given text encoding, and
    :meth:`bytes.decode` can be used to achieve the opposite.
@@ -377,7 +385,7 @@ Tuples
       pair: singleton; tuple
       pair: empty; tuple
 
-   The items of a tuple are arbitrary Python objects. Tuples of two or
+   The items of a :class:`tuple` are arbitrary Python objects. Tuples of two or
    more items are formed by comma-separated lists of expressions.  A tuple
    of one item (a 'singleton') can be formed by affixing a comma to an
    expression (an expression by itself does not create a tuple, since
@@ -387,7 +395,7 @@ Tuples
 Bytes
    .. index:: bytes, byte
 
-   A bytes object is an immutable array.  The items are 8-bit bytes,
+   A :class:`bytes` object is an immutable array.  The items are 8-bit bytes,
    represented by integers in the range 0 <= x < 256.  Bytes literals
    (like ``b'abc'``) and the built-in :func:`bytes` constructor
    can be used to create bytes objects.  Also, bytes objects can be
@@ -3238,7 +3246,8 @@ through the object's keys; for sequences, it should iterate through the values.
    See :ref:`subscriptions` for details on the syntax.
 
    There are two types of built-in objects that support subscription
-   via :meth:`~object.__getitem__`:
+   via :meth:`!__getitem__`:
+
    - **sequences**, where *subscript* (also called
      *index*) should be an integer or a :class:`slice` object.
      See :ref:`sequence documentation <datamodel-sequences>` for the expected
@@ -3247,71 +3256,23 @@ through the object's keys; for sequences, it should iterate through the values.
      See :ref:`mapping documentation <datamodel-mappings>` for the expected
      behavior.
 
-   If *subscript* is of an inappropriate type, :meth:`~object.__getitem__`
+   If *subscript* is of an inappropriate type, :meth:`!__getitem__`
    should raise :exc:`TypeError`.
-   If *subscript* has an inappropriate value, :meth:`~object.__getitem__`
+   If *subscript* has an inappropriate value, :meth:`!__getitem__`
    should raise an :exc:`LookupError` or one of its subclasses
    (:exc:`IndexError` for sequences; :exc:`KeyError` for mappings).
 
-<<<<
+   .. note::
 
-The formal syntax makes no special provision for negative indices in
-:term:`sequences <sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
-method that interprets negative indices by adding the length of the sequence
-to the index so that, for example, ``x[-1]`` selects the last item of ``x``. The
-resulting value must be a nonnegative integer less than the number of items in
-the sequence, and the subscription selects the item whose index is that value
-(counting from zero). Since the support for negative indices and slicing
-occurs in the object's :meth:`~object.__getitem__` method, subclasses overriding
-this method will need to explicitly add that support.
-
-.. index::
-   single: character
-   pair: string; item
-
-A :class:`string <str>` is a special kind of sequence whose items are
-*characters*. A character is not a separate data type but a
-string of exactly one character.
-
-...
-
-
-A slicing selects a range of items in a sequence object (e.g., a string, tuple
-or list).  Slicings may be used as expressions or as targets in assignment or
-:keyword:`del` statements.  The syntax for a slicing:
-
-
-.. index::
-   single: start (slice object attribute)
-   single: stop (slice object attribute)
-   single: step (slice object attribute)
-
-The semantics for a slicing are as follows.  The primary is indexed (using the
-same :meth:`~object.__getitem__` method as
-normal subscription) with a key that is constructed from the slice list, as
-follows.  If the slice list contains at least one comma, the key is a tuple
-containing the conversion of the slice items; otherwise, the conversion of the
-lone slice item is the key.  The conversion of a slice item that is an
-expression is that expression.  The conversion of a proper slice is a slice
-object (see section :ref:`types`) whose :attr:`~slice.start`,
-:attr:`~slice.stop` and :attr:`~slice.step` attributes are the values of the
-expressions given as lower bound, upper bound and stride, respectively,
-substituting ``None`` for missing expressions.
-
-
-
->>>>>>
+      The sequence iteration protocol (used, for example, in :keyword:`for`
+      loops), expects that an :exc:`IndexError` will be raised for illegal
+      indexes to allow proper detection of the end of a sequence.
 
    .. note::
 
-      :keyword:`for` loops expect that an :exc:`IndexError` will be raised for
-      illegal indexes to allow proper detection of the end of the sequence.
-
-   .. note::
-
-      When :ref:`subscripting<subscriptions>` a *class*, the special
+      When :ref:`subscripting <subscriptions>` a *class*, the special
       class method :meth:`~object.__class_getitem__` may be called instead of
-      ``__getitem__()``. See :ref:`classgetitem-versus-getitem` for more
+      :meth:`!__getitem__`. See :ref:`classgetitem-versus-getitem` for more
       details.
 
 

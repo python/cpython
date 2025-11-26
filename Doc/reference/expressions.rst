@@ -964,13 +964,13 @@ In the simplest case, the subscript is single expression.
 Depending on the type of the object being subscribed, the subscript is
 sometimes called a *key* (for mappings), *index* (for sequences),
 or *type argument* (for :term:`generic types <generic type>`).
-Syntacticall, these are all equivalent::
+Syntactically, these are all equivalent::
 
-   >>> number_names = ['zero', 'one', 'two', 'three', 'four', 'five']
-   >>> number_names[2]  # Subscripting a list using the index 2
-   'two'
+   >>> colors = ['red', 'blue', 'green', 'black']
+   >>> colors[3]  # Subscripting a list using the index 3
+   'black'
 
-   >>> list[str]  # Parameterizing `list` using the type argument `str`
+   >>> list[str]  # Parameterizing the list type using the type argument str
    list[str]
 
 At runtime, the interpreter will evaluate the primary and
@@ -994,7 +994,26 @@ the subscript::
    subscripted with: 'aaa'
 
 See :meth:`~object.__getitem__` documentation for how built-in types handle
-subscription, including support for negative subscripts.
+subscription.
+
+Subscriptions may also be used as targets in :ref:`assignment <assignment>` or
+:ref:`deletion <del>` statements.
+In these cases, the interpreter will call the subscripted object's
+:meth:`~object.__setitem__` or :meth:`~object.__delitem__` method,
+respectively, instead of :meth:`~object.__getitem__`.
+
+.. code-block::
+
+   >>> colors = ['red', 'blue', 'green', 'black']
+   >>> colors[3] = 'white'  # Setting item at index
+   >>> colors
+   ['red', 'blue', 'green', 'white']
+   >>> del colors[3]  # Deleting item at index 3
+   >>> colors
+   ['red', 'blue', 'green']
+
+All advanced forms of *subscript* documented in the following sections
+are also usable for assignment and deletion.
 
 
 .. index::
@@ -1106,10 +1125,11 @@ Formal subscription grammar
    upper_bound:  `expression`
    stride:       `expression`
 
+There is a semantic difference between the alternatives for *subscript*.
 If *subscript* contains ony one unstarred *slice* without a trailing comma,
 it will evaluate to the value of that *slice*.
 Otherwise, *subscript* will evaluate to a :class:`tuple` containing
-the items of *subscript*.
+the items of *tuple_slices*.
 
 .. index::
    pair: object; callable
