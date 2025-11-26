@@ -6,6 +6,7 @@ module with arguments identifying each test.
 """
 
 import contextlib
+import importlib.machinery
 import os
 import sys
 import unittest.mock
@@ -706,7 +707,8 @@ def test_builtin__import__():
         __import__("importlib")
         __import__("email")
         __import__("pythoninfo")
-        __import__("audit_test_data.submodule", level=1, globals={"__package__": "test"})
+        spec = importlib.machinery.ModuleSpec("test", None, is_package=True)
+        __import__("audit_test_data.submodule", level=1, globals={"__spec__": spec})
         __import__("test.audit_test_data.submodule2")
         __import__("_testcapi")
 
@@ -726,8 +728,9 @@ def test_builtin__import__():
 
 def test_import_statement():
     import importlib # noqa: F401
-    # Set __package__ so relative imports work
-    with swap_item(globals(), "__package__", "test"):
+    # Set __spec__.parent so relative imports work
+    spec = importlib.machinery.ModuleSpec("test", None, is_package=True)
+    with swap_item(globals(), "__spec__", spec):
         with TestHook() as hook:
             import importlib # noqa: F401
             import email # noqa: F401

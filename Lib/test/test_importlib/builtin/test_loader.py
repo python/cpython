@@ -13,7 +13,7 @@ class LoaderTests(abc.LoaderTests):
     """Test load_module() for built-in modules."""
 
     def setUp(self):
-        self.verification = {'__name__': 'errno', '__package__': '',
+        self.verification = {'__name__': 'errno',
                              '__loader__': self.machinery.BuiltinImporter}
 
     def verify(self, module):

@@ -33,14 +33,13 @@ Module Objects
       single: __name__ (module attribute)
       single: __doc__ (module attribute)
       single: __file__ (module attribute)
-      single: __package__ (module attribute)
       single: __loader__ (module attribute)
 
    Return a new module object with :attr:`module.__name__` set to *name*.
    The module's :attr:`!__name__`, :attr:`~module.__doc__`,
-   :attr:`~module.__package__` and :attr:`~module.__loader__` attributes are
-   filled in (all but :attr:`!__name__` are set to ``None``). The caller is
-   responsible for setting a :attr:`~module.__file__` attribute.
+   and :attr:`~module.__loader__` attributes are filled in (all but
+   :attr:`!__name__` are set to ``None``). The caller is responsible for
+   setting a :attr:`~module.__file__` attribute.
 
    Return ``NULL`` with an exception set on error.
 
@@ -49,6 +48,9 @@ Module Objects
    .. versionchanged:: 3.4
       :attr:`~module.__package__` and :attr:`~module.__loader__` are now set to
       ``None``.
+
+   .. deprecated-removed:: 3.12 3.15
+      :attr:`~module.__package__`
 
 
 .. c:function:: PyObject* PyModule_New(const char *name)

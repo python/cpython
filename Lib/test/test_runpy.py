@@ -58,7 +58,6 @@ implicit_namespace = {
     "__name__": None,
     "__file__": None,
     "__cached__": None,
-    "__package__": None,
     "__doc__": None,
     "__spec__": None
 }
@@ -178,7 +177,6 @@ class ExecutionLayerTestCase(unittest.TestCase, CodeExecutionMixin):
             "__name__": mod_name,
             "__file__": mod_fname,
             "__loader__": mod_loader,
-            "__package__": mod_package,
             "__spec__": mod_spec,
             "run_argv0": mod_fname,
             "run_name_in_sys_modules": True,
@@ -307,7 +305,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             "__name__": mod_name,
             "__file__": mod_fname,
             "__cached__": mod_spec.cached,
-            "__package__": mod_name.rpartition(".")[0],
             "__spec__": mod_spec,
         })
         if alter_sys:
@@ -348,7 +345,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             "__name__": mod_name,
             "__file__": mod_fname,
             "__cached__": importlib.util.cache_from_source(mod_fname),
-            "__package__": pkg_name,
             "__spec__": mod_spec,
         })
         if alter_sys:
@@ -417,7 +413,6 @@ from ..uncle.cousin import nephew
             if verbose > 1: print("Running from source:", mod_name)
             d1 = run_module(mod_name, run_name=run_name) # Read from source
             self.assertEqual(d1["__name__"], expected_name)
-            self.assertEqual(d1["__package__"], pkg_name)
             self.assertIn("sibling", d1)
             self.assertIn("nephew", d1)
             del d1 # Ensure __loader__ entry doesn't keep file open
@@ -431,7 +426,6 @@ from ..uncle.cousin import nephew
                 importlib.invalidate_caches()
                 d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
                 self.assertEqual(d2["__name__"], expected_name)
-                self.assertEqual(d2["__package__"], pkg_name)
                 self.assertIn("sibling", d2)
                 self.assertIn("nephew", d2)
                 del d2 # Ensure __loader__ entry doesn't keep file open
@@ -553,7 +547,6 @@ from ..uncle.cousin import nephew
             "__name__": run_name,
             "__file__": mod_fname,
             "__cached__": importlib.util.cache_from_source(mod_fname),
-            "__package__": mod_name.rpartition(".")[0],
             "__spec__": mod_spec,
         })
         def create_ns(init_globals):
@@ -633,7 +626,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             "__name__": expected_name,
             "__file__": expected_file,
             "__cached__": mod_cached,
-            "__package__": "",
             "__spec__": mod_spec,
             "run_argv0": expected_argv0,
             "run_name_in_sys_modules": True,
@@ -651,7 +643,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                 mod_spec.loader = None
             expected_ns["__spec__"] = mod_spec
         expected_ns["__name__"] = run_name
-        expected_ns["__package__"] = run_name.rpartition(".")[0]
         self.check_code_execution(create_ns, expected_ns)
 
     def _check_import_error(self, script_name, msg):

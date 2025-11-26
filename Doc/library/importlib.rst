@@ -367,7 +367,6 @@ ABC hierarchy::
         - :attr:`module.__file__`
         - :attr:`module.__cached__` *(deprecated)*
         - :attr:`module.__path__`
-        - :attr:`module.__package__` *(deprecated)*
         - :attr:`module.__loader__` *(deprecated)*
 
         When :meth:`exec_module` is available then backwards-compatible
@@ -384,6 +383,9 @@ ABC hierarchy::
            :meth:`load_module`.  The import machinery takes care of all the
            other responsibilities of :meth:`load_module` when
            :meth:`exec_module` is implemented.
+
+        .. deprecated-removed:: 3.12 3.15
+           :attr:`~module.__package__` is no longer set.
 
 
 .. class:: ResourceLoader
@@ -1271,7 +1273,6 @@ find and load modules.
 
       (Read-only) The fully qualified name of the package the module is in (or the
       empty string for a top-level module).
-      See :attr:`module.__package__`.
       If the module is a package then this is the same as :attr:`name`.
 
    .. attribute:: has_location

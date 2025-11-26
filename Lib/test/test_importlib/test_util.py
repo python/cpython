@@ -108,11 +108,6 @@ class ModuleFromSpecTests:
         module = self.util.module_from_spec(spec)
         self.assertIs(module.__loader__, loader)
 
-    def test___package__(self):
-        spec = self.machinery.ModuleSpec('test.pkg', object())
-        module = self.util.module_from_spec(spec)
-        self.assertEqual(module.__package__, spec.parent)
-
     def test___path__(self):
         spec = self.machinery.ModuleSpec('test', object(), is_package=True)
         module = self.util.module_from_spec(spec)

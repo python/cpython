@@ -1154,7 +1154,8 @@ class EditorWindow:
         fname = self.extfiles.get(name, name)
         try:
             try:
-                mod = importlib.import_module('.' + fname, package=__package__)
+                mod = importlib.import_module('.' + fname,
+                                              package=__spec__.parent)
             except (ImportError, TypeError):
                 mod = importlib.import_module(fname)
         except ImportError:

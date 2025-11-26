@@ -340,13 +340,11 @@ class ModuleSpecMethodsTests:
             loaded = self.bootstrap._load(self.spec)
             loaded.__name__ = 'ham'
             del loaded.__loader__
-            del loaded.__package__
             del loaded.__spec__
             self.bootstrap._exec(self.spec, loaded)
 
         self.assertEqual(loaded.__name__, self.spec.name)
         self.assertIs(loaded.__loader__, self.spec.loader)
-        self.assertEqual(loaded.__package__, self.spec.parent)
         self.assertIs(loaded.__spec__, self.spec)
         self.assertNotHasAttr(loaded, '__path__')
         self.assertNotHasAttr(loaded, '__file__')

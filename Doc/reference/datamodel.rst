@@ -891,7 +891,6 @@ Attribute assignment updates the module's namespace dictionary, e.g.,
 .. index::
    single: __name__ (module attribute)
    single: __spec__ (module attribute)
-   single: __package__ (module attribute)
    single: __loader__ (module attribute)
    single: __path__ (module attribute)
    single: __file__ (module attribute)
@@ -958,51 +957,6 @@ this approach.
 
    .. versionadded:: 3.4
 
-.. attribute:: module.__package__
-
-   The :term:`package` a module belongs to.
-
-   If the module is top-level (that is, not a part of any specific package)
-   then the attribute should be set to ``''`` (the empty string). Otherwise,
-   it should be set to the name of the module's package (which can be equal to
-   :attr:`module.__name__` if the module itself is a package). See :pep:`366`
-   for further details.
-
-   This attribute is used instead of :attr:`~module.__name__` to calculate
-   explicit relative imports for main modules. It defaults to ``None`` for
-   modules created dynamically using the :class:`types.ModuleType` constructor;
-   use :func:`importlib.util.module_from_spec` instead to ensure the attribute
-   is set to a :class:`str`.
-
-   It is **strongly** recommended that you use
-   :attr:`module.__spec__.parent <importlib.machinery.ModuleSpec.parent>`
-   instead of :attr:`!module.__package__`. :attr:`__package__` is now only used
-   as a fallback if :attr:`!__spec__.parent` is not set, and this fallback
-   path is deprecated.
-
-   .. versionchanged:: 3.4
-      This attribute now defaults to ``None`` for modules created dynamically
-      using the :class:`types.ModuleType` constructor.
-      Previously the attribute was optional.
-
-   .. versionchanged:: 3.6
-      The value of :attr:`!__package__` is expected to be the same as
-      :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`.
-      :attr:`__package__` is now only used as a fallback during import
-      resolution if :attr:`!__spec__.parent` is not defined.
-
-   .. versionchanged:: 3.10
-      :exc:`ImportWarning` is raised if an import resolution falls back to
-      :attr:`!__package__` instead of
-      :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`.
-
-   .. versionchanged:: 3.12
-      Raise :exc:`DeprecationWarning` instead of :exc:`ImportWarning` when
-      falling back to :attr:`!__package__` during import resolution.
-
-   .. deprecated-removed:: 3.13 3.15
-      :attr:`!__package__` will cease to be set or taken into consideration
-      by the import system or standard library.
 
 .. attribute:: module.__loader__
 
@@ -1080,6 +1034,9 @@ this approach.
       :attr:`!__spec__.cached` is deprecated. In Python 3.15,
       :attr:`!__cached__` will cease to be set or taken into consideration by
       the import system or standard library.
+
+.. deprecated-removed:: 3.12 3.15
+   :attr:`~module.__package__`
 
 Other writable attributes on module objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

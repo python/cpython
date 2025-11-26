@@ -1460,7 +1460,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__or__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__orig_class__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__origin__));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__package__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__parameters__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__path__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__pos__));

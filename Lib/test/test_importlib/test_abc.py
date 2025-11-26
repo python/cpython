@@ -599,7 +599,7 @@ class ExecutionLoaderGetCodeTests:
 class SourceOnlyLoader:
 
     # Globals that should be defined for all modules.
-    source = (b"_ = '::'.join([__name__, __file__, __cached__, __package__, "
+    source = (b"_ = '::'.join([__name__, __file__, __cached__, "
               b"repr(__loader__)])")
 
     def __init__(self, path):
@@ -676,7 +676,6 @@ class SourceLoaderTestHarness:
         self.assertEqual(module.__name__, self.name)
         self.assertEqual(module.__file__, self.path)
         self.assertEqual(module.__cached__, self.cached)
-        self.assertEqual(module.__package__, self.package)
         self.assertEqual(module.__loader__, self.loader)
         values = module._.split('::')
         self.assertEqual(values[0], self.name)
@@ -689,7 +688,6 @@ class SourceLoaderTestHarness:
         module = types.ModuleType(self.name)
         module.__file__ = self.path
         module.__cached__ = self.cached
-        module.__package__ = self.package
         module.__loader__ = self.loader
         module.__path__ = []
         exec(code_object, module.__dict__)
@@ -730,7 +728,7 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         self.verify_code(code)
 
     def test_load_module(self):
-        # Loading a module should set __name__, __loader__, __package__,
+        # Loading a module should set __name__, __loader__,
         # __path__ (for packages), __file__, and __cached__.
         # The module should also be put into sys.modules.
         with warnings.catch_warnings():
@@ -744,8 +742,6 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
                 self.assertIn(self.name, sys.modules)
 
     def test_package_settings(self):
-        # __package__ needs to be set, while __path__ is set on if the module
-        # is a package.
         # Testing the values for a package are covered by test_load_module.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ImportWarning)

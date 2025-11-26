@@ -43,7 +43,6 @@ def from_cache(seconds, repeat):
     name = '<benchmark import>'
     module = types.ModuleType(name)
     module.__file__ = '<test>'
-    module.__package__ = ''
     with util.uncache(name):
         sys.modules[name] = module
         yield from bench(name, repeat=repeat, seconds=seconds)

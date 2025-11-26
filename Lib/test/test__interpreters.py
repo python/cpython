@@ -818,7 +818,6 @@ class RunStringTests(TestBase):
         self.assertEqual(ns, {
             '__name__': '__main__',
             '__doc__': None,
-            '__package__': None,
             '__spec__': None,
             'spam': 42,
             })

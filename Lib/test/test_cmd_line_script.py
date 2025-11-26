@@ -45,17 +45,13 @@ _loader = __loader__ if __loader__ is BuiltinImporter else type(__loader__)
 print('__loader__==%a' % _loader)
 print('__file__==%a' % __file__)
 print('__cached__==%a' % __cached__)
-print('__package__==%r' % __package__)
 # Check PEP 451 details
 import os.path
-if __package__ is not None:
+if __spec__ is not None:
     print('__main__ was located through the import system')
     assertIdentical(__spec__.loader, __loader__)
     expected_spec_name = os.path.splitext(os.path.basename(__file__))[0]
-    if __package__:
-        expected_spec_name = __package__ + "." + expected_spec_name
     assertEqual(__spec__.name, expected_spec_name)
-    assertEqual(__spec__.parent, __package__)
     assertIdentical(__spec__.submodule_search_locations, None)
     assertEqual(__spec__.origin, __file__)
     if __spec__.cached is not None:
@@ -101,7 +97,6 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         printed_loader = '__loader__==%a' % expected_loader
         printed_file = '__file__==%a' % expected_file
-        printed_package = '__package__==%r' % expected_package
         printed_argv0 = 'sys.argv[0]==%a' % expected_argv0
         printed_path0 = 'sys.path[0]==%a' % expected_path0
         if expected_cwd is None:
@@ -110,12 +105,10 @@ class CmdLineTest(unittest.TestCase):
         if verbose > 1:
             print('Expected output:')
             print(printed_file)
-            print(printed_package)
             print(printed_argv0)
             print(printed_cwd)
         self.assertIn(printed_loader.encode('utf-8'), data)
         self.assertIn(printed_file.encode('utf-8'), data)
-        self.assertIn(printed_package.encode('utf-8'), data)
         self.assertIn(printed_argv0.encode('utf-8'), data)
         # PYTHONSAFEPATH=1 changes the default sys.path[0]
         if not sys.flags.safe_path:

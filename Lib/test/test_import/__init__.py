@@ -1514,35 +1514,6 @@ class RelativeImportTests(unittest.TestCase):
         from .. import relimport
         self.assertHasAttr(relimport, "RelativeImportTests")
 
-    def test_issue3221(self):
-        # Note for mergers: the 'absolute' tests from the 2.x branch
-        # are missing in Py3k because implicit relative imports are
-        # a thing of the past
-        #
-        # Regression test for http://bugs.python.org/issue3221.
-        def check_relative():
-            exec("from . import relimport", ns)
-
-        # Check relative import OK with __package__ and __name__ correct
-        ns = dict(__package__='test', __name__='test.notarealmodule')
-        check_relative()
-
-        # Check relative import OK with only __name__ wrong
-        ns = dict(__package__='test', __name__='notarealpkg.notarealmodule')
-        check_relative()
-
-        # Check relative import fails with only __package__ wrong
-        ns = dict(__package__='foo', __name__='test.notarealmodule')
-        self.assertRaises(ModuleNotFoundError, check_relative)
-
-        # Check relative import fails with __package__ and __name__ wrong
-        ns = dict(__package__='foo', __name__='notarealpkg.notarealmodule')
-        self.assertRaises(ModuleNotFoundError, check_relative)
-
-        # Check relative import fails with package set to a non-string
-        ns = dict(__package__=object())
-        self.assertRaises(TypeError, check_relative)
-
     def test_parentless_import_shadowed_by_global(self):
         # Test as if this were done from the REPL where this error most commonly occurs (bpo-37409).
         script_helper.assert_python_failure('-W', 'ignore', '-c',
@@ -1841,7 +1812,6 @@ class ImportlibBootstrapTests(unittest.TestCase):
         mod = sys.modules['_frozen_importlib']
         self.assertIs(mod, _bootstrap)
         self.assertEqual(mod.__name__, 'importlib._bootstrap')
-        self.assertEqual(mod.__package__, 'importlib')
         self.assertEndsWith(mod.__file__, '_bootstrap.py')
 
     def test_frozen_importlib_external_is_bootstrap_external(self):
@@ -1849,7 +1819,6 @@ class ImportlibBootstrapTests(unittest.TestCase):
         mod = sys.modules['_frozen_importlib_external']
         self.assertIs(mod, _bootstrap_external)
         self.assertEqual(mod.__name__, 'importlib._bootstrap_external')
-        self.assertEqual(mod.__package__, 'importlib')
         self.assertEndsWith(mod.__file__, '_bootstrap_external.py')
 
     def test_there_can_be_only_one(self):

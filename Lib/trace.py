@@ -718,7 +718,6 @@ def main():
             globs = {
                 '__name__': '__main__',
                 '__file__': code.co_filename,
-                '__package__': mod_spec.parent,
                 '__loader__': mod_spec.loader,
                 '__spec__': mod_spec,
                 '__cached__': None,
@@ -733,7 +732,6 @@ def main():
             globs = {
                 '__file__': opts.progname,
                 '__name__': '__main__',
-                '__package__': None,
                 '__cached__': None,
             }
         t.runctx(code, globs, globs)

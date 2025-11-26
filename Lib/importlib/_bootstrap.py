@@ -770,12 +770,6 @@ def _init_module_attrs(spec, module, *, override=False):
             module.__loader__ = loader
         except AttributeError:
             pass
-    # __package__
-    if override or getattr(module, '__package__', None) is None:
-        try:
-            module.__package__ = spec.parent
-        except AttributeError:
-            pass
     # __spec__
     try:
         module.__spec__ = spec
@@ -892,16 +886,6 @@ def _load_backward_compatible(spec):
     if getattr(module, '__loader__', None) is None:
         try:
             module.__loader__ = spec.loader
-        except AttributeError:
-            pass
-    if getattr(module, '__package__', None) is None:
-        try:
-            # Since module.__path__ may not line up with
-            # spec.submodule_search_paths, we can't necessarily rely
-            # on spec.parent here.
-            module.__package__ = module.__name__
-            if not hasattr(module, '__path__'):
-                module.__package__ = spec.name.rpartition('.')[0]
         except AttributeError:
             pass
     if getattr(module, '__spec__', None) is None:
@@ -1295,7 +1279,7 @@ def _sanity_check(name, package, level):
         raise ValueError('level must be >= 0')
     if level > 0:
         if not isinstance(package, str):
-            raise TypeError('__package__ not set to a string')
+            raise TypeError('__spec__.parent not set to a string')
         elif not package:
             raise ImportError('attempted relative import with no known parent '
                               'package')
@@ -1396,8 +1380,7 @@ def _gcd_import(name, package=None, level=0):
     being made from, and the level adjustment.
 
     This function represents the greatest common denominator of functionality
-    between import_module and __import__. This includes setting __package__ if
-    the loader did not.
+    between import_module and __import__.
 
     """
     _sanity_check(name, package, level)
@@ -1443,25 +1426,13 @@ def _handle_fromlist(module, fromlist, import_, *, recursive=False):
     return module
 
 
-def _calc___package__(globals):
-    """Calculate what __package__ should be.
-
-    __package__ is not guaranteed to be defined or could be set to None
-    to represent that its proper value is unknown.
-
-    """
-    package = globals.get('__package__')
+def _calc_package(globals):
+    """Calculate what the package should be."""
     spec = globals.get('__spec__')
-    if package is not None:
-        if spec is not None and package != spec.parent:
-            _warnings.warn("__package__ != __spec__.parent "
-                           f"({package!r} != {spec.parent!r})",
-                           DeprecationWarning, stacklevel=3)
-        return package
-    elif spec is not None:
+    if spec is not None:
         return spec.parent
     else:
-        _warnings.warn("can't resolve package from __spec__ or __package__, "
+        _warnings.warn("can't resolve package from __spec__, "
                        "falling back on __name__ and __path__",
                        ImportWarning, stacklevel=3)
         package = globals['__name__']
@@ -1485,7 +1456,7 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
         module = _gcd_import(name)
     else:
         globals_ = globals if globals is not None else {}
-        package = _calc___package__(globals_)
+        package = _calc_package(globals_)
         module = _gcd_import(name, package, level)
     if not fromlist:
         # Return up to the first dot in 'name'. This is complicated by the fact

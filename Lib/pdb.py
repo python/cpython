@@ -250,7 +250,6 @@ class _ModuleTarget(_ExecutableTarget):
         return dict(
             __name__='__main__',
             __file__=os.path.normcase(os.path.abspath(self.filename)),
-            __package__=self._spec.parent,
             __loader__=self._spec.loader,
             __spec__=self._spec,
             __builtins__=__builtins__,
@@ -288,7 +287,6 @@ class _ZipTarget(_ExecutableTarget):
         return dict(
             __name__='__main__',
             __file__=os.path.normcase(os.path.abspath(self.filename)),
-            __package__=self._spec.parent,
             __loader__=self._spec.loader,
             __spec__=self._spec,
             __builtins__=__builtins__,

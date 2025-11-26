@@ -3631,44 +3631,11 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
         _PyErr_SetString(tstate, PyExc_TypeError, "globals must be a dict");
         goto error;
     }
-    if (PyDict_GetItemRef(globals, &_Py_ID(__package__), &package) < 0) {
-        goto error;
-    }
-    if (package == Py_None) {
-        Py_DECREF(package);
-        package = NULL;
-    }
     if (PyDict_GetItemRef(globals, &_Py_ID(__spec__), &spec) < 0) {
         goto error;
     }
 
-    if (package != NULL) {
-        if (!PyUnicode_Check(package)) {
-            _PyErr_SetString(tstate, PyExc_TypeError,
-                             "package must be a string");
-            goto error;
-        }
-        else if (spec != NULL && spec != Py_None) {
-            int equal;
-            PyObject *parent = PyObject_GetAttr(spec, &_Py_ID(parent));
-            if (parent == NULL) {
-                goto error;
-            }
-
-            equal = PyObject_RichCompareBool(package, parent, Py_EQ);
-            Py_DECREF(parent);
-            if (equal < 0) {
-                goto error;
-            }
-            else if (equal == 0) {
-                if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                        "__package__ != __spec__.parent", 1) < 0) {
-                    goto error;
-                }
-            }
-        }
-    }
-    else if (spec != NULL && spec != Py_None) {
+    if (spec != NULL && spec != Py_None) {
         package = PyObject_GetAttr(spec, &_Py_ID(parent));
         if (package == NULL) {
             goto error;
@@ -3681,7 +3648,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
     }
     else {
         if (PyErr_WarnEx(PyExc_ImportWarning,
-                    "can't resolve package from __spec__ or __package__, "
+                    "can't resolve package from __spec__, "
                     "falling back on __name__ and __path__", 1) < 0) {
             goto error;
         }

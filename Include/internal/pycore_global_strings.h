@@ -183,7 +183,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__or__)
         STRUCT_FOR_ID(__orig_class__)
         STRUCT_FOR_ID(__origin__)
-        STRUCT_FOR_ID(__package__)
         STRUCT_FOR_ID(__parameters__)
         STRUCT_FOR_ID(__path__)
         STRUCT_FOR_ID(__pos__)

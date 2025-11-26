@@ -233,7 +233,6 @@ class ReloadTests:
                     path = os.path.join(cwd, name + '.py')
                     cached = self.util.cache_from_source(path)
                     expected = {'__name__': name,
-                                '__package__': '',
                                 '__file__': path,
                                 '__cached__': cached,
                                 '__doc__': None,
@@ -254,7 +253,6 @@ class ReloadTests:
                     init_path = os.path.join(cwd, name, '__init__.py')
                     cached = self.util.cache_from_source(init_path)
                     expected = {'__name__': name,
-                                '__package__': name,
                                 '__file__': init_path,
                                 '__cached__': cached,
                                 '__path__': [os.path.dirname(init_path)],
@@ -285,7 +283,6 @@ class ReloadTests:
                     bad_path = os.path.join(cwd, name, '__init.py')
                     cached = self.util.cache_from_source(bad_path)
                     expected = {'__name__': name,
-                                '__package__': name,
                                 '__doc__': None,
                                 '__file__': None,
                                 }
@@ -314,7 +311,6 @@ class ReloadTests:
                     init_path = os.path.join(cwd, name, '__init__.py')
                     cached = self.util.cache_from_source(init_path)
                     expected = {'__name__': name,
-                                '__package__': name,
                                 '__file__': init_path,
                                 '__cached__': cached,
                                 '__path__': [os.path.dirname(init_path)],

@@ -4,4 +4,4 @@ import logging
 
 
 # Name the logger after the package.
-logger = logging.getLogger(__package__)
+logger = logging.getLogger(__spec__.parent)

@@ -29,8 +29,7 @@ HARDCODED_SUBMODULES = {
 
 
 def make_default_module_completer() -> ModuleCompleter:
-    # Inside pyrepl, __package__ is set to None by default
-    return ModuleCompleter(namespace={'__package__': None})
+    return ModuleCompleter()
 
 
 class ModuleCompleter:
@@ -102,7 +101,11 @@ class ModuleCompleter:
 
         if path.startswith('.'):
             # Convert relative path to absolute path
-            package = self.namespace.get('__package__', '')
+            spec = self.namespace.get('__spec__')
+            if spec:
+                package = spec.parent
+            else:
+                package = ""
             path = self.resolve_relative_name(path, package)  # type: ignore[assignment]
             if path is None:
                 return []

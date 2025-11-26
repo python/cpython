@@ -948,12 +948,8 @@ subsequent extension in :pep:`420`.
 Python 3.3.  :pep:`420` also introduced the :meth:`!find_loader` protocol as an
 alternative to :meth:`!find_module`.
 
-:pep:`366` describes the addition of the ``__package__`` attribute for
-explicit relative imports in main modules.
-
 :pep:`328` introduced absolute and explicit relative imports and initially
-proposed ``__name__`` for semantics :pep:`366` would eventually specify for
-``__package__``.
+proposed ``__name__`` for semantics.
 
 :pep:`338` defines executing modules as scripts.
 

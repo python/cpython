@@ -21,7 +21,6 @@ else:
     # importlib._bootstrap is the built-in import, ensure we don't create
     # a second copy of the module.
     _bootstrap.__name__ = 'importlib._bootstrap'
-    _bootstrap.__package__ = 'importlib'
     try:
         _bootstrap.__file__ = __file__.replace('__init__.py', '_bootstrap.py')
     except NameError:
@@ -38,7 +37,6 @@ except ImportError:
     _bootstrap._bootstrap_external = _bootstrap_external
 else:
     _bootstrap_external.__name__ = 'importlib._bootstrap_external'
-    _bootstrap_external.__package__ = 'importlib'
     try:
         _bootstrap_external.__file__ = __file__.replace('__init__.py', '_bootstrap_external.py')
     except NameError:

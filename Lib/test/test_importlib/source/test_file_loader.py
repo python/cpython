@@ -77,8 +77,7 @@ class SimpleTest(abc.LoaderTests):
                 warnings.simplefilter('ignore', DeprecationWarning)
                 module = loader.load_module('_temp')
             self.assertIn('_temp', sys.modules)
-            check = {'__name__': '_temp', '__file__': mapping['_temp'],
-                     '__package__': ''}
+            check = {'__name__': '_temp', '__file__': mapping['_temp']}
             for attr, value in check.items():
                 self.assertEqual(getattr(module, attr), value)
 
@@ -91,8 +90,7 @@ class SimpleTest(abc.LoaderTests):
                 module = loader.load_module('_pkg')
             self.assertIn('_pkg', sys.modules)
             check = {'__name__': '_pkg', '__file__': mapping['_pkg.__init__'],
-                     '__path__': [os.path.dirname(mapping['_pkg.__init__'])],
-                     '__package__': '_pkg'}
+                     '__path__': [os.path.dirname(mapping['_pkg.__init__'])]}
             for attr, value in check.items():
                 self.assertEqual(getattr(module, attr), value)
 
@@ -105,8 +103,7 @@ class SimpleTest(abc.LoaderTests):
                 warnings.simplefilter('ignore', DeprecationWarning)
                 module = loader.load_module('_pkg.mod')
             self.assertIn('_pkg.mod', sys.modules)
-            check = {'__name__': '_pkg.mod', '__file__': mapping['_pkg.mod'],
-                     '__package__': '_pkg'}
+            check = {'__name__': '_pkg.mod', '__file__': mapping['_pkg.mod']}
             for attr, value in check.items():
                 self.assertEqual(getattr(module, attr), value)
 
@@ -136,7 +133,7 @@ class SimpleTest(abc.LoaderTests):
 
     def test_state_after_failure(self):
         # A failed reload should leave the original module intact.
-        attributes = ('__file__', '__path__', '__package__')
+        attributes = ('__file__', '__path__')
         value = '<test>'
         name = '_temp'
         with util.create_modules(name) as mapping:
